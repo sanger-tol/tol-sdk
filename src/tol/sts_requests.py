@@ -6,22 +6,22 @@ import os
 import requests
 
 
-STS_API_LOCATION = os.environ['STS_API_LOCATION']
-FLOWS_STS_API_KEY = os.environ["FLOWS_STS_API_KEY"]
+STS_URL = os.environ['STS_URL']
+STS_API_KEY = os.environ["STS_API_KEY"]
 
 
 def __override_method(method, relative_url, headers=None, **kwargs):
     if headers is None:
         new_headers = {
-            "Authorization": FLOWS_STS_API_KEY
+            "Authorization": STS_API_KEY
         }
     else:
         new_headers = {
-            "Authorization": FLOWS_STS_API_KEY,
+            "Authorization": STS_API_KEY,
             **headers
         }
     return method(
-        f'{STS_API_LOCATION}/api/v1/{relative_url}',
+        f'{STS_URL}/api/v1/{relative_url}',
         headers=new_headers,
         **kwargs
     )
