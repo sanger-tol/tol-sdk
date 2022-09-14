@@ -11,7 +11,7 @@ from .. import (
     update_datetime_setting,
     sts_requests
 )
-from . import get_prefect_logger
+from .logger import get_prefect_logger
 from ..eln import (
     get_benchling_instance,
     generate_assay_results
