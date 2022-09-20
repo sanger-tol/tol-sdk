@@ -62,7 +62,7 @@ def post_sequencing_requests_to_sts(submissions, platform):
         if submission_date is None:
             get_prefect_logger().warning(submission["fluidx_id"]
                                          + " does not have a submission date")
-            submission_date = "1970/01/01"
+            submission_date = "1970-01-01"
         payload = {"platform": platform,
                    "fluidx_id": submission["fluidx_id"],
                    "sample_ref": submission["sanger_sample_id"],
