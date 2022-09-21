@@ -6,7 +6,7 @@ from prefect import task
 from prefect.engine.signals import FAIL
 from datetime import timedelta
 
-from .. import (
+from ..sts import (
     get_datetime_setting,
     update_datetime_setting,
     sts_requests
