@@ -1,12 +1,12 @@
-# SPDX-FileCopyrightText: 2021 Genome Research Ltd.
+# SPDX-FileCopyrightText: 2022 Genome Research Ltd.
 #
 # SPDX-License-Identifier: MIT
 
 from flask_restx import Resource as FlaskRestxResource
 from functools import wraps
 
-from main.auth import auth
-from main.service.base import BaseService
+from ..auth import auth
+from ..service.base import BaseService
 
 
 LIST_GET_PARAMS_DICT = {

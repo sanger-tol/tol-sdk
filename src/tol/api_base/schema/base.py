@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2021 Genome Research Ltd.
+# SPDX-FileCopyrightText: 2022 Genome Research Ltd.
 #
 # SPDX-License-Identifier: MIT
 
@@ -11,7 +11,7 @@ from marshmallow_sqlalchemy import SQLAlchemyAutoSchema, \
 from marshmallow_jsonapi.fields import ResourceMeta, Relationship, Str, \
                                        DateTime, List, Dict
 
-from main.model import db
+from ..model import db
 
 
 def setup_schema(cls):

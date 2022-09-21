@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2021 Genome Research Ltd.
+# SPDX-FileCopyrightText: 2022 Genome Research Ltd.
 #
 # SPDX-License-Identifier: MIT
 
@@ -10,12 +10,12 @@ from sqlalchemy.exc import IntegrityError
 from marshmallow import ValidationError
 from marshmallow_jsonapi.exceptions import IncorrectTypeError
 
-from main.model import InstanceDoesNotExistException, \
+from ..model import InstanceDoesNotExistException, \
                        StemInstanceDoesNotExistException, \
                        BadParameterException, \
                        NamedEnumInstanceDoesNotExistException, \
                        NamedEnumStemInstanceDoesNotExistException
-from main.schema import BadEnumNameException
+from ..schema import BadEnumNameException
 
 
 class BadParameterStringException(Exception):
