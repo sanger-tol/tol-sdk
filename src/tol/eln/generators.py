@@ -30,3 +30,10 @@ def generate_assay_results(benchling, **kwargs):
         benchling.assay_results,
         **kwargs
     )
+
+
+def generate_containers(benchling, **kwargs):
+    return generate_flattened_type(
+        benchling.containers,
+        **kwargs
+    )

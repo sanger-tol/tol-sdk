@@ -14,7 +14,9 @@ from .. import (
 from .logger import get_prefect_logger
 from ..eln import (
     get_benchling_instance,
-    generate_assay_results
+    generate_assay_results,
+    generate_workflow_tasks,
+    generate_containers
 )
 
 
@@ -54,6 +56,75 @@ def add_sanger_sample_ids(submissions, eln_sanger_sample_id_schema_id):
     return ret
 
 
+def get_fluidx_ids_for_workflow_task_list(workflow_task_ids):
+    benchling = get_benchling_instance()
+    ret = {}
+    # We can only get 20 at once
+    for workflow_task_id_page in \
+            [workflow_task_ids[i:i + 20] for i in range(0, len(workflow_task_ids), 20)]:
+        workflow_tasks_page = generate_workflow_tasks(
+            benchling,
+            ids=workflow_task_id_page
+        )
+        for workflow_task in workflow_tasks_page:
+            workflow_task_id = workflow_task.id
+            fluidx_id = workflow_task.fields.to_dict()["Sample Tube"]["displayValue"]
+            ret[workflow_task_id] = fluidx_id
+    print("Found this many FluidX IDs: " + str(len(ret)))
+    return ret
+
+
+@task(max_retries=3, retry_delay=timedelta(seconds=60))
+def add_fluidx_ids(submissions):
+    workflow_task_ids = [d['workflow_task_id'] for d in submissions]
+    fluidx_ids = get_fluidx_ids_for_workflow_task_list(
+        workflow_task_ids)
+    ret = []
+    for submission in submissions:
+        if submission["workflow_task_id"] in fluidx_ids:
+            ret.append({**submission,
+                        'fluidx_id': fluidx_ids[submission["workflow_task_id"]]})
+        else:
+            get_prefect_logger().warning("Cannot find Sanger Sample ID for workflow task: "
+                                         + submission["workflow_task_id"])
+    get_prefect_logger().info("Total number of viable submissions: " + str(len(ret)))
+    return ret
+
+
+def get_created_dates_for_container_list(container_ids):
+    benchling = get_benchling_instance()
+    ret = {}
+    # We can only get 20 at once
+    for containers_page in [container_ids[i:i + 20] for i in range(0, len(container_ids), 20)]:
+        container_results_page = generate_containers(
+            benchling,
+            ids=containers_page
+        )
+        for container in container_results_page:
+            container_barcode = container.barcode
+            created_date = container.created_at
+            ret[container_barcode] = created_date.strftime('%Y-%m-%d %H:%M:%S')
+    print("Found this many container created dates: " + str(len(ret)))
+    return ret
+
+
+@task(max_retries=3, retry_delay=timedelta(seconds=60))
+def add_container_dates(submissions):
+    container_ids = [d['container_eln_id'] for d in submissions]
+    container_dates = get_created_dates_for_container_list(
+        container_ids)
+    ret = []
+    for submission in submissions:
+        if submission["sanger_sample_id"] in container_dates:
+            ret.append({**submission,
+                        'submission_date': container_dates[submission["sanger_sample_id"]]})
+        else:
+            get_prefect_logger().warning("Cannot find created date for tube: "
+                                         + submission["sanger_sample_id"])
+    get_prefect_logger().info("Total number of viable submissions: " + str(len(ret)))
+    return ret
+
+
 @task(max_retries=3, retry_delay=timedelta(seconds=60))
 def post_sequencing_requests_to_sts(submissions, platform):
     updated_count = 0
@@ -62,11 +133,11 @@ def post_sequencing_requests_to_sts(submissions, platform):
         if submission_date is None:
             get_prefect_logger().warning(submission["fluidx_id"]
                                          + " does not have a submission date")
-            submission_date = "1970-01-01"
+            submission_date = "1970-01-01 00:00:00"
         payload = {"platform": platform,
                    "fluidx_id": submission["fluidx_id"],
                    "sample_ref": submission["sanger_sample_id"],
-                   "submit_date": submission_date + " 00:00:00"}
+                   "submit_date": submission_date}
         r = sts_requests.post(
             '/sequencing-requests',
             json=payload

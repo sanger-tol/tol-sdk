@@ -6,8 +6,8 @@ import os
 import requests
 
 
-STS_URL = os.environ['STS_URL']
-STS_API_KEY = os.environ["STS_API_KEY"]
+STS_URL = os.getenv('STS_URL')
+STS_API_KEY = os.getenv('STS_API_KEY')
 
 
 def __override_method(method, relative_url, headers=None, **kwargs):

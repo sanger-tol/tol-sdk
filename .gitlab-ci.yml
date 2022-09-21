@@ -9,7 +9,11 @@ include:
 
 stages:
   - lint
+  - unit test
   - deploy
+
+test-package:
+  extends: .test-python-package
 
 deploy-package:
   extends: .deploy-python-package
