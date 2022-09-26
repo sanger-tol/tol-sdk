@@ -3,4 +3,5 @@
 # SPDX-License-Identifier: MIT
 
 from .auth import *  # noqa
+from .sanitise import *  # noqa
 from .generators import *  # noqa

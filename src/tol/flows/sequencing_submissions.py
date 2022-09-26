@@ -16,7 +16,8 @@ from ..eln import (
     get_benchling_instance,
     generate_assay_results,
     generate_workflow_tasks,
-    generate_containers
+    generate_containers,
+    sanitise_value
 )
 
 
@@ -31,9 +32,11 @@ def get_sanger_sample_ids_for_container_list(container_ids, eln_schema_id):
             storage_ids=containers_page
         )
         for assay_result in assay_results_page:
-            container_eln_id = assay_result.fields.to_dict()["sample_tube"]["displayValue"]
-            sanger_sample_id = assay_result.fields.to_dict()["sanger_sample_id"]["value"]
-            ret[container_eln_id] = sanger_sample_id
+            container_fluidx_id = sanitise_value(
+                assay_result.fields.to_dict()["sample_tube"]["displayValue"])
+            sanger_sample_id = sanitise_value(
+                assay_result.fields.to_dict()["sanger_sample_id"]["value"])
+            ret[container_fluidx_id] = sanger_sample_id
     print("Found this many Sanger Sample IDs: " + str(len(ret)))
     return ret
 
@@ -68,7 +71,8 @@ def get_fluidx_ids_for_workflow_task_list(workflow_task_ids):
         )
         for workflow_task in workflow_tasks_page:
             workflow_task_id = workflow_task.id
-            fluidx_id = workflow_task.fields.to_dict()["Sample Tube"]["displayValue"]
+            fluidx_id = sanitise_value(
+                workflow_task.fields.to_dict()["Sample Tube"]["displayValue"])
             ret[workflow_task_id] = fluidx_id
     print("Found this many FluidX IDs: " + str(len(ret)))
     return ret
