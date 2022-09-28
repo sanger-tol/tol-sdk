@@ -37,3 +37,10 @@ def generate_containers(benchling, **kwargs):
         benchling.containers,
         **kwargs
     )
+
+
+def generate_boxes(benchling, **kwargs):
+    return generate_flattened_type(
+        benchling.boxes,
+        **kwargs
+    )
