@@ -51,6 +51,14 @@ def put(relative_url, **kwargs):
     )
 
 
+def patch(relative_url, **kwargs):
+    return __override_method(
+        requests.patch,
+        relative_url,
+        **kwargs
+    )
+
+
 def delete(relative_url, **kwargs):
     return __override_method(
         requests.delete,
