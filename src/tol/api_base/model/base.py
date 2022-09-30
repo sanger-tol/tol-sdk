@@ -94,7 +94,8 @@ class Base(db.Model):
     # maps __tablename__ to type_
     tablename_type_dict = {}
 
-    def __init__(self, **data):
+    def __init__(self, iterable=(), **data):
+        self.__dict__.update(iterable, **data)
         converted_data = self._convert_enum_names_to_foreign_key_ids(data)
         return super().__init__(**converted_data)
 
