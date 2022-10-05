@@ -7,3 +7,4 @@ from .resource import *  # noqa
 from .schema import *  # noqa
 from .service import *  # noqa
 from .swagger import *  # noqa
+from . import auth  # noqa

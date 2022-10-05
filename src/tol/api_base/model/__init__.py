@@ -5,3 +5,5 @@
 from .base import *  # noqa
 from .enum_base import *  # noqa
 from .log_base import *  # noqa
+from .user import *  # noqa
+from .role import *  # noqa

@@ -6,6 +6,7 @@ from datetime import datetime
 from sqlalchemy.ext.declarative import declared_attr
 
 from .base import Base, db
+from .user import get_request_user_id
 
 
 class LogMixin(object):
@@ -44,11 +45,15 @@ class LogBase(Base, LogMixin):
 
     def save_update(self, user_id=None):
         if self._should_update:
+            if not user_id:
+                user_id = get_request_user_id()
             self.last_modified_by = user_id
             self.last_modified_at = datetime.now()
         super().save_update()
 
     def save_create(self, user_id=None):
+        if not user_id:
+            user_id = get_request_user_id()
         self.created_by = user_id
         self.last_modified_by = user_id
         super().save_create()

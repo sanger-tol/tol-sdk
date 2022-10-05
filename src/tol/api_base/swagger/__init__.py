@@ -3,3 +3,5 @@
 # SPDX-License-Identifier: MIT
 
 from .base import *  # noqa
+from .user import *  # noqa
+from .role import *  # noqa
