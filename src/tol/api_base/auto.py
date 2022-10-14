@@ -43,3 +43,4 @@ def auto_generate_crud(cls):
 
     api = AutoGenerateSwagger.api
     _auto_generated_objects.append(api)
+    return cls
