@@ -7,5 +7,5 @@ from .resource import *  # noqa
 from .schema import *  # noqa
 from .service import *  # noqa
 from .swagger import *  # noqa
-from . import auth  # noqa
-from . import auto_generate_crud, get_auto_generated_apis  # noqa
+from .auth import auth  # noqa
+from .auto import auto_generate_crud, get_auto_generated_apis  # noqa
