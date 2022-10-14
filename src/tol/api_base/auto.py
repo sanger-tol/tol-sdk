@@ -2,7 +2,6 @@
 #
 # SPDX-License-Identifier: MIT
 
-from .model import setup_model
 from .resource import AutoResourceGroup, setup_resource_group
 from .service import BaseService, setup_service
 from .schema import BaseSchema, setup_schema
