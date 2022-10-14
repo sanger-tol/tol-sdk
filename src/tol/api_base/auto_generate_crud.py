@@ -11,8 +11,10 @@ from .swagger import BaseSwagger, setup_swagger
 
 _auto_generated_objects = []
 
+
 def get_auto_generated_apis():
     return _auto_generated_objects
+
 
 def auto_generate_crud(cls):
     setup_model(cls)
