@@ -8,4 +8,4 @@ from .schema import *  # noqa
 from .service import *  # noqa
 from .swagger import *  # noqa
 from .auth import auth  # noqa
-from .auto import auto_generate_crud, get_auto_generated_apis  # noqa
+from .auto import setup_endpoints, get_auto_generated_apis  # noqa

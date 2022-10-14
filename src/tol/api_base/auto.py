@@ -9,38 +9,44 @@ from .schema import BaseSchema, setup_schema
 from .swagger import BaseSwagger, setup_swagger
 
 
-_auto_generated_objects = []
+_auto_generated_apis = []
 
 
 def get_auto_generated_apis():
-    return _auto_generated_objects
+    return _auto_generated_apis
 
 
-def auto_generate_crud(cls):
-    setup_model(cls)
-
-    @setup_schema
-    class AutoGenerateSchema(BaseSchema):
-        class Meta(BaseSchema.BaseMeta):
-            model = cls
-
-    @setup_service
-    class AutoGenerateService(BaseService):
-        class Meta:
-            model = cls
-            schema = AutoGenerateSchema
-
-    @setup_swagger
-    class AutoGenerateSwagger(BaseSwagger):
-        class Meta:
-            schema = AutoGenerateSchema
-
-    @setup_resource_group
-    class AutoGenerateResourceGroup(AutoResourceGroup):
-        class Meta:
-            service = AutoGenerateService
-            swagger = AutoGenerateSwagger
-
-    api = AutoGenerateSwagger.api
-    _auto_generated_objects.append(api)
+def setup_endpoints(cls):
+    cls.setup()
     return cls
+
+
+class Auto():
+    @classmethod
+    def setup(cls):
+        cls.setup_model()
+
+        @setup_schema
+        class AutoGenerateSchema(BaseSchema):
+            class Meta(BaseSchema.BaseMeta):
+                model = cls
+
+        @setup_service
+        class AutoGenerateService(BaseService):
+            class Meta:
+                model = cls
+                schema = AutoGenerateSchema
+
+        @setup_swagger
+        class AutoGenerateSwagger(BaseSwagger):
+            class Meta:
+                schema = AutoGenerateSchema
+
+        @setup_resource_group
+        class AutoGenerateResourceGroup(AutoResourceGroup):
+            class Meta:
+                service = AutoGenerateService
+                swagger = AutoGenerateSwagger
+
+        api = AutoGenerateSwagger.api
+        _auto_generated_apis.append(api)
