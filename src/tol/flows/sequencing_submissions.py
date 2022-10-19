@@ -16,7 +16,9 @@ from ..eln import (
     get_benchling_instance,
     generate_assay_results,
     generate_workflow_tasks,
+    generate_workflow_outputs,
     generate_containers,
+    generate_custom_entities,
     sanitise_value
 )
 
@@ -37,7 +39,7 @@ def get_sanger_sample_ids_for_container_list(container_ids, eln_schema_id):
             sanger_sample_id = sanitise_value(
                 assay_result.fields.to_dict()["sanger_sample_id"]["value"])
             ret[container_fluidx_id] = sanger_sample_id
-    print("Found this many Sanger Sample IDs: " + str(len(ret)))
+    get_prefect_logger().info("Found this many Sanger Sample IDs: " + str(len(ret)))
     return ret
 
 
@@ -74,7 +76,7 @@ def get_fluidx_ids_for_workflow_task_list(workflow_task_ids):
             fluidx_id = sanitise_value(
                 workflow_task.fields.to_dict()["Sample Tube"]["displayValue"])
             ret[workflow_task_id] = fluidx_id
-    print("Found this many FluidX IDs: " + str(len(ret)))
+    get_prefect_logger().info("Found this many FluidX IDs: " + str(len(ret)))
     return ret
 
 
@@ -108,7 +110,7 @@ def get_created_dates_for_container_list(container_ids):
             container_barcode = container.barcode
             created_date = container.created_at
             ret[container_barcode] = created_date.strftime('%Y-%m-%d %H:%M:%S')
-    print("Found this many container created dates: " + str(len(ret)))
+    get_prefect_logger().info("Found this many container created dates: " + str(len(ret)))
     return ret
 
 
@@ -127,6 +129,107 @@ def add_container_dates(submissions):
                                          + submission["sanger_sample_id"])
     get_prefect_logger().info("Total number of viable submissions: " + str(len(ret)))
     return ret
+
+
+def get_contents_for_container_list(container_ids):
+    benchling = get_benchling_instance()
+    ret = {}
+    # We can only get 20 at once
+    for containers_page in [container_ids[i:i + 20] for i in range(0, len(container_ids), 20)]:
+        returned_page = generate_containers(
+            benchling,
+            ids=containers_page,
+            archive_reason="ANY_ARCHIVED_OR_NOT_ARCHIVED"
+        )
+        for container in returned_page:
+            if len(container.contents) > 0:
+                container_fluidx_id = container.barcode
+                entity_id = container.contents[0].entity.to_dict()["fields"]["Tissue"]["value"]
+                ret[container_fluidx_id] = entity_id
+    get_prefect_logger().info("Found this many Entity IDs: " + str(len(ret)))
+    return ret
+
+
+@task(max_retries=3, retry_delay=timedelta(seconds=60))
+def add_container_contents(submissions):
+    container_ids = [d['container_eln_id'] for d in submissions]
+    entity_ids = get_contents_for_container_list(
+        container_ids)
+    ret = []
+    for submission in submissions:
+        if submission["fluidx_id"] in entity_ids:
+            ret.append({**submission,
+                        'entity_id': entity_ids[submission["fluidx_id"]]})
+        else:
+            get_prefect_logger().warning("Cannot find Entity ID for tube: "
+                                         + submission["fluidx_id"])
+    get_prefect_logger().info("Total number of containers with contents: " + str(len(ret)))
+    return ret
+
+
+def get_sts_ids_for_entity_list(entity_ids):
+    benchling = get_benchling_instance()
+    ret = {}
+    # We can only get 20 at once
+    for entities_page in [entity_ids[i:i + 20] for i in range(0, len(entity_ids), 20)]:
+        returned_page = generate_custom_entities(
+            benchling,
+            ids=entities_page,
+            archive_reason="ANY_ARCHIVED_OR_NOT_ARCHIVED"
+        )
+        for entity in returned_page:
+            entity_id = entity.id
+            sts_id = entity.fields["STS ID"].value
+            ret[entity_id] = sts_id
+    get_prefect_logger().info("Found this many STS IDs: " + str(len(ret)))
+    return ret
+
+
+@task(max_retries=3, retry_delay=timedelta(seconds=60))
+def add_entity_sts_ids(submissions):
+    entity_ids = [d['entity_id'] for d in submissions]
+    sts_ids = get_sts_ids_for_entity_list(
+        entity_ids)
+    ret = []
+    for submission in submissions:
+        if submission["entity_id"] in sts_ids:
+            ret.append({**submission,
+                        'sts_id': sts_ids[submission["entity_id"]]})
+        else:
+            get_prefect_logger().warning("Cannot find STS ID for tube: "
+                                         + submission["fluidx_id"])
+    get_prefect_logger().info("Total number of containers with content parent's STS id: " +
+                              str(len(ret)))
+    return ret
+
+
+@task(max_retries=3, retry_delay=timedelta(seconds=60))
+def post_ep_samples_to_sts(submissions):
+    updated_count = 0
+    for submission in submissions:
+        submission_date = submission["submission_date"]
+        if submission_date is None:
+            get_prefect_logger().warning(submission["fluidx_id"]
+                                         + " does not have a submission date")
+            submission_date = "1970-01-01 00:00:00"
+        payload = {"fluidx_id": submission["fluidx_id"],
+                   "sample_id": submission["sts_id"],
+                   "type": "DNA",
+                   "extraction_date": submission_date}
+        r = sts_requests.post(
+            '/ep_samples/' + submission["fluidx_id"],
+            json=payload
+        )
+        if r.ok:
+            updated_count += 1
+        else:
+            get_prefect_logger().warning(
+                f"A sample failed with code {r.status_code}, "
+                f"and response {r.json()}, "
+                f"containing data: {payload}"
+            )
+    get_prefect_logger().info("Total number of ep_samples posted: " + str(updated_count))
+    return True
 
 
 @task(max_retries=3, retry_delay=timedelta(seconds=60))
@@ -183,3 +286,25 @@ def update_lastrun_datetime(key, new_datetime, go):
         raise FAIL()
     get_prefect_logger().info(f"Updated last run date to {new_datetime}")
     return True
+
+
+@task(max_retries=3, retry_delay=timedelta(seconds=60))
+def get_new_lres_sample_data_from_eln(lastrun_datetime, schema_id):
+    benchling = get_benchling_instance()
+    lres_submissions = generate_workflow_outputs(
+        benchling,
+        schema_id=schema_id,
+        modified_at="> " + lastrun_datetime.isoformat("T")
+    )
+    lres_list = []
+    for lres_submission in lres_submissions:
+        tube_field = lres_submission.fields.to_dict()["Sample Tube ID"]
+        submission_date_field = lres_submission.fields.to_dict()["Submitted (Submission date)"]
+        submission_date = submission_date_field["value"]
+        if submission_date is not None:
+            submission_date += " 00:00:00"
+        lres_list.append({"fluidx_id": sanitise_value(tube_field["displayValue"]),
+                          "container_eln_id": tube_field["value"],
+                          "submission_date": submission_date})
+    get_prefect_logger().info("Found this many LRES submissions: " + str(len(lres_list)))
+    return lres_list

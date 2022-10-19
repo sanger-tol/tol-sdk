@@ -44,3 +44,10 @@ def generate_boxes(benchling, **kwargs):
         benchling.boxes,
         **kwargs
     )
+
+
+def generate_custom_entities(benchling, **kwargs):
+    return generate_flattened_type(
+        benchling.custom_entities,
+        **kwargs
+    )
