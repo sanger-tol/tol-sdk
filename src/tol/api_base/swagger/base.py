@@ -313,11 +313,12 @@ class BaseSwagger:
 
     @classmethod
     def _create_api(cls):
-        cls.api = Namespace(
-            cls.get_type(),
-            description=cls._get_api_description(),
-            path=cls._get_api_path()
-        )
+        if not hasattr(cls, 'api'):
+            cls.api = Namespace(
+                cls.get_type(),
+                description=cls._get_api_description(),
+                path=cls._get_api_path()
+            )
 
     @classmethod
     def setup(cls):
