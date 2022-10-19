@@ -48,5 +48,5 @@ class Auto():
                 service = AutoGenerateService
                 swagger = AutoGenerateSwagger
 
-        api = AutoGenerateSwagger.api
+        api = AutoGenerateSwagger.api # noqa
         _auto_generated_apis.append(random.randint(1, 9))
