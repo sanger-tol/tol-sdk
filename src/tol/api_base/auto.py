@@ -13,28 +13,28 @@ class Auto():
 
     @classmethod
     def setup_model_crud(cls, model_class):
-        @setup_schema
         class AutoGenerateSchema(BaseSchema):
             class Meta(BaseSchema.BaseMeta):
                 model = model_class
 
-        @setup_service
         class AutoGenerateService(BaseService):
             class Meta:
                 model = model_class
                 schema = AutoGenerateSchema
 
-        @setup_swagger
         class AutoGenerateSwagger(BaseSwagger):
             class Meta:
                 schema = AutoGenerateSchema
 
-        @setup_resource_group
         class AutoGenerateResourceGroup(AutoResourceGroup):
             class Meta:
                 service = AutoGenerateService
                 swagger = AutoGenerateSwagger
 
+        AutoGenerateSchema = AutoGenerateSchema.setup()
+        AutoGenerateService = AutoGenerateService.setup()
+        AutoGenerateSwagger = AutoGenerateSwagger.setup()
+        AutoGenerateResourceGroup = AutoGenerateResourceGroup.setup()
         api = AutoGenerateSwagger.api
         cls._auto_generated_apis.append(api)
 
