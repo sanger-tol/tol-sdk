@@ -32,17 +32,11 @@ class Auto():
                 swagger = AutoGenerateSwagger
 
         AutoGenerateSchema = AutoGenerateSchema.setup()
-        AutoGenerateService = AutoGenerateService.setup()
-        AutoGenerateSwagger = AutoGenerateSwagger.setup()
-        AutoGenerateResourceGroup = AutoGenerateResourceGroup.setup()
+        AutoGenerateService.setup()
+        AutoGenerateSwagger.setup()
+        AutoGenerateResourceGroup.setup()
         api = AutoGenerateSwagger.api
         cls._auto_generated_apis.append(api)
-
-
-def setup_endpoints(model_class):
-    model_class.setup()
-    Auto.setup_model_crud(model_class)
-    return model_class
 
 
 def get_auto_generated_apis():
