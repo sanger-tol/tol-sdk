@@ -40,7 +40,7 @@ class Auto():
 
 
 def setup_endpoints(model_class):
-    model_class = model_class.setup()
+    model_class.setup()
     Auto.setup_model_crud(model_class)
     return model_class
 
