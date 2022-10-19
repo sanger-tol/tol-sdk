@@ -6,6 +6,7 @@ from .resource import AutoResourceGroup, setup_resource_group
 from .service import BaseService, setup_service
 from .schema import BaseSchema, setup_schema
 from .swagger import BaseSwagger, setup_swagger
+import random
 
 
 _auto_generated_apis = []
@@ -48,4 +49,4 @@ class Auto():
                 swagger = AutoGenerateSwagger
 
         api = AutoGenerateSwagger.api
-        _auto_generated_apis.append(api)
+        _auto_generated_apis.append(random.randint(1, 9))
