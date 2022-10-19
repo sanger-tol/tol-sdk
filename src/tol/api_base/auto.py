@@ -2,10 +2,10 @@
 #
 # SPDX-License-Identifier: MIT
 
-from .resource import AutoResourceGroup, setup_resource_group
-from .service import BaseService, setup_service
-from .schema import BaseSchema, setup_schema
-from .swagger import BaseSwagger, setup_swagger
+from .resource import AutoResourceGroup
+from .service import BaseService
+from .schema import BaseSchema
+from .swagger import BaseSwagger
 
 
 class Auto():
