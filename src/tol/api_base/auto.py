@@ -6,14 +6,6 @@ from .resource import AutoResourceGroup, setup_resource_group
 from .service import BaseService, setup_service
 from .schema import BaseSchema, setup_schema
 from .swagger import BaseSwagger, setup_swagger
-import random
-
-
-_auto_generated_apis = []
-
-
-def get_auto_generated_apis():
-    return _auto_generated_apis
 
 
 def setup_endpoints(cls):
@@ -22,6 +14,8 @@ def setup_endpoints(cls):
 
 
 class Auto():
+    _auto_generated_apis = []
+
     @classmethod
     def setup(cls):
         cls.setup_model()
@@ -48,5 +42,9 @@ class Auto():
                 service = AutoGenerateService
                 swagger = AutoGenerateSwagger
 
-        api = AutoGenerateSwagger.api # noqa
-        _auto_generated_apis.append(random.randint(1, 9))
+        api = AutoGenerateSwagger.api
+        cls._auto_generated_apis.append(api)
+
+
+def get_auto_generated_apis():
+    return Auto._auto_generated_apis
