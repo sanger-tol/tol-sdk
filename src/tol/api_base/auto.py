@@ -13,8 +13,6 @@ class Auto():
 
     @classmethod
     def setup_model_crud(cls, model_class):
-        cls.setup_model()
-
         @setup_schema
         class AutoGenerateSchema(BaseSchema):
             class Meta(BaseSchema.BaseMeta):
