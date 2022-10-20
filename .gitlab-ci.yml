@@ -8,6 +8,7 @@ include:
     file: '/gitlab/main.yml'
 
 stages:
+  - lint
   - deploy
 
 deploy-package:
