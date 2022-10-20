@@ -8,4 +8,4 @@ from .schema import *  # noqa
 from .service import *  # noqa
 from .swagger import *  # noqa
 from .auth import auth  # noqa
-from .auto import *  # noqa
+from .auto import setup_model_crud  # noqa
