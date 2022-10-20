@@ -9,8 +9,6 @@ from .swagger import BaseSwagger
 
 
 class Auto():
-    _auto_generated_apis = []
-
     @classmethod
     def setup_model_crud(cls, model_class):
         class AutoGenerateSchema(BaseSchema):
@@ -35,9 +33,4 @@ class Auto():
         AutoGenerateService.setup()
         AutoGenerateSwagger.setup()
         AutoGenerateResourceGroup.setup()
-        api = AutoGenerateSwagger.api
-        cls._auto_generated_apis.append(api)
-
-
-def get_auto_generated_apis():
-    return Auto._auto_generated_apis
+        return AutoGenerateSwagger.api
