@@ -11,10 +11,10 @@ from marshmallow import ValidationError
 from marshmallow_jsonapi.exceptions import IncorrectTypeError
 
 from ..model import InstanceDoesNotExistException, \
-                       StemInstanceDoesNotExistException, \
+                       RelatedInstanceDoesNotExistException, \
                        BadParameterException, \
                        NamedEnumInstanceDoesNotExistException, \
-                       NamedEnumStemInstanceDoesNotExistException
+                       NamedEnumRelatedInstanceDoesNotExistException
 from ..schema import BadEnumNameException
 
 
@@ -42,12 +42,12 @@ def handle_404(function):
             return function(cls, identifier, *args, **kwargs)
         except (
             InstanceDoesNotExistException,
-            StemInstanceDoesNotExistException
+            RelatedInstanceDoesNotExistException
         ):
             return cls.error_404(identifier)
         except (
             NamedEnumInstanceDoesNotExistException,
-            NamedEnumStemInstanceDoesNotExistException
+            NamedEnumRelatedInstanceDoesNotExistException
         ):
             return cls.error_404_named_enum(identifier)
     return wrapper

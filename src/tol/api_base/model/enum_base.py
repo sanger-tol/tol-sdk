@@ -2,11 +2,22 @@
 #
 # SPDX-License-Identifier: MIT
 
+from ..error import CustomException
 from .base import Base, db
 
 
-class NamedEnumInstanceDoesNotExistException(Exception): # TODO remove
-    pass
+class NamedEnumInstanceDoesNotExistException(CustomException):
+    # TODO is this all wrong?????? should it be stem and not related????
+    """Used on 'related' endpoints"""
+    def __init__(model, name):
+        errors = [
+            f'An instance of type {model.get_type()} '
+            f'with name {name} does not exist.'
+        ]
+        super().__init__(
+            errors,
+            status_code=404
+        )
 
 
 class EnumBase(Base):

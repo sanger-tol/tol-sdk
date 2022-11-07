@@ -11,6 +11,8 @@ from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.inspection import inspect
 
+from ..error import CustomException
+
 
 PAGE_SIZE = 20
 
@@ -36,32 +38,67 @@ class ModelValidationError(Exception):
         )
 
 
-class BadParameterException(Exception): # TODO remove
+class BadParameterException(CustomException):
     def __init__(self, message):
-        self.message = message
-        super().__init__(message)
+        errors = [
+            message
+        ]
+        super().__init__(
+            errors,
+            status_code=400
+        )
 
 
-class ExtraFieldsNotPermittedException(Exception): # TODO remove
-    def __init__(self, ext_fields):
-        self._ext_fields = ext_fields
+class ExtraFieldsNotPermittedException(CustomException):
+    def __init__(self):
+        errors = [
+            'Extra fields are not permitted on this resource'
+        ]
+        super().__init__(
+            errors,
+            status_code=400
+        )
 
-    def get_extra_fields_str(self):
-        return ', '.join(self._ext_fields.keys())
+
+class InstanceDoesNotExistException(CustomException):
+    def __init__(self, model_class, id_):
+        errors = [
+            f'An instance of type {model_class.get_type()} '
+            f'with id {id_} does not exist.'
+        ]
+        super().__init__(
+            errors,
+            status_code=404
+        )
 
 
-class InstanceDoesNotExistException(Exception): # TODO remove
-    pass
-
-
-class StemInstanceDoesNotExistException(Exception): # TODO remove
+class RelatedInstanceDoesNotExistException(CustomException):
+    # TODO is this all wrong?????? should it be stem and not related????
     """Used on 'related' endpoints"""
-    pass
+    def __init__(relation_model, relation_id):
+        errors = [
+            f'An instance of type {relation_model.get_type()} '
+            f'with id {relation_id} does not exist.'
+        ]
+        super().__init__(
+            errors,
+            status_code=404
+        )
 
 
-class NamedEnumStemInstanceDoesNotExistException(Exception): # TODO remove
+class NamedEnumRelatedInstanceDoesNotExistException(CustomException):
     """Used on 'related' endpoints concerning enum tables"""
-    pass
+    # TODO is this all wrong?????? should it be stem and not related????
+    """Used on 'related' endpoints"""
+    def __init__(relation_model, relation_name):
+        errors = [
+            f'An instance of type {relation_model.get_type()} '
+            f'with name {relation_name} does not exist.'
+        ]
+        super().__init__(
+            errors,
+            status_code=404
+        )
 
 
 class ExtColumn(db.Column):
@@ -223,9 +260,7 @@ class Base(db.Model):
 
     def _update_ext(self, ext_data_changes):
         if not self.has_ext_column():
-            raise ExtraFieldsNotPermittedException(
-                ext_data_changes
-            )
+            raise ExtraFieldsNotPermittedException()
         ext_data = {**self.ext}
         for key, value in ext_data_changes.items():
             if value is None:
@@ -416,7 +451,7 @@ class Base(db.Model):
                                      .filter_by(id=relation_id) \
                                      .one_or_none()
         if related_instance is None:
-            raise StemInstanceDoesNotExistException()
+            raise RelatedInstanceDoesNotExistException(relation_model, relation_id)
 
     @classmethod
     def _get_related_model_id_by_name(cls, relation_model, relation_name):
@@ -424,7 +459,7 @@ class Base(db.Model):
                                      .filter_by(name=relation_name) \
                                      .one_or_none()
         if related_instance is None:
-            raise NamedEnumStemInstanceDoesNotExistException()
+            raise NamedEnumRelatedInstanceDoesNotExistException()
         return related_instance.id
 
     @staticmethod
@@ -440,7 +475,7 @@ class Base(db.Model):
     def find_by_id(cls, id_):
         instance = cls.query.filter_by(id=id_).one_or_none()
         if instance is None:
-            raise InstanceDoesNotExistException()
+            raise InstanceDoesNotExistException(cls, id_)
         return instance
 
     @classmethod
