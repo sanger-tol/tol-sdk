@@ -53,7 +53,7 @@ def handle_404(function):
     return wrapper
 
 
-def handle_400_db_integrity_error(function):
+def handle_400_db_integrity_error(function): # TODO remove
     @wraps(function)
     def wrapper(cls, *args, **kwargs):
         try:
@@ -68,7 +68,7 @@ def handle_400_db_integrity_error(function):
     return wrapper
 
 
-def handle_400_data_validation_error(function):
+def handle_400_data_validation_error(function): # TODO remove
     @wraps(function)
     def wrapper(cls, *args, **kwargs):
         try:
@@ -84,7 +84,7 @@ def handle_400_data_validation_error(function):
     return wrapper
 
 
-def handle_400_bad_parameter(function):
+def handle_400_bad_parameter(function): # TODO remove
     @wraps(function)
     def wrapper(cls, *args, **kwargs):
         try:
@@ -96,7 +96,7 @@ def handle_400_bad_parameter(function):
     return wrapper
 
 
-def handle_400_nonexistent_service(function):
+def handle_400_nonexistent_service(function): # TODO remove
     @wraps(function)
     def wrapper(cls, *args, **kwargs):
         try:
