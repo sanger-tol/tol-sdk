@@ -5,7 +5,7 @@
 from .base import Base, db
 
 
-class NamedEnumInstanceDoesNotExistException(Exception):
+class NamedEnumInstanceDoesNotExistException(Exception): # TODO remove
     pass
 
 

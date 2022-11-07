@@ -24,7 +24,7 @@ def auth_dec():
         def decorated(resource, *args, **kwargs):
             api_key = request.headers.get('Authorization')
             if not api_key:
-                return resource.auth_error("Api key is missing")
+                return resource.auth_error("Api key is missing") # TODO Don't assume that resouce has auth_error??
             user_id = get_user_id_via_api_key(api_key)
             if user_id is None:
                 return resource.auth_error("User does not exist")

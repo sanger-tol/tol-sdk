@@ -36,13 +36,13 @@ class ModelValidationError(Exception):
         )
 
 
-class BadParameterException(Exception):
+class BadParameterException(Exception): # TODO remove
     def __init__(self, message):
         self.message = message
         super().__init__(message)
 
 
-class ExtraFieldsNotPermittedException(Exception):
+class ExtraFieldsNotPermittedException(Exception): # TODO remove
     def __init__(self, ext_fields):
         self._ext_fields = ext_fields
 
@@ -50,16 +50,16 @@ class ExtraFieldsNotPermittedException(Exception):
         return ', '.join(self._ext_fields.keys())
 
 
-class InstanceDoesNotExistException(Exception):
+class InstanceDoesNotExistException(Exception): # TODO remove
     pass
 
 
-class StemInstanceDoesNotExistException(Exception):
+class StemInstanceDoesNotExistException(Exception): # TODO remove
     """Used on 'related' endpoints"""
     pass
 
 
-class NamedEnumStemInstanceDoesNotExistException(Exception):
+class NamedEnumStemInstanceDoesNotExistException(Exception): # TODO remove
     """Used on 'related' endpoints concerning enum tables"""
     pass
 
