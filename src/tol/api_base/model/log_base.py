@@ -52,11 +52,18 @@ class LogBase(Base, LogMixin):
         super().save_update()
 
     def save_create(self, user_id=None):
+        self._update_metadata(user_id)
+        super().save_create()
+
+    def add(self, user_id=None):
+        self._update_metadata(user_id)
+        super().add()
+
+    def _update_metadata(self, user_id):
         if not user_id:
             user_id = get_request_user_id()
         self.created_by = user_id
         self.last_modified_by = user_id
-        super().save_create()
 
     def _get_updated_history(self, schema):
         old_history = [*self.history]
