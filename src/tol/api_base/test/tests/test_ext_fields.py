@@ -2,8 +2,8 @@
 #
 # SPDX-License-Identifier: MIT
 
-from test.base import BaseTestCase
-from test.base.models import A_ModelRelationship, \
+from test import BaseTestCase
+from test.models import A_ModelRelationship, \
                              F_ModelWithExtField
 
 

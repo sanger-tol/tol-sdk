@@ -4,7 +4,7 @@
 
 from main.schema.base import BaseSchema, setup_schema
 
-from test.base.models import A_ModelRelationship, \
+from test.models import A_ModelRelationship, \
                              B_ModelRelationship, \
                              C_ModelWithNullableColumn, \
                              D_ModelWithNonNullableColumn, \

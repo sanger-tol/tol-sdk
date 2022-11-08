@@ -6,10 +6,10 @@ from main.auth import auth
 
 from main.resource.base import AutoResourceGroup, BaseResource, setup_resource_group
 
-from test.base.services import A_Service, B_Service, C_Service, D_Service, \
+from test.services import A_Service, B_Service, C_Service, D_Service, \
                                E_Service, F_Service, G_Service, H_Service, \
                                I_Service, J_Service
-from test.base.swaggers import A_Swagger, B_Swagger, C_Swagger, D_Swagger, \
+from test.swaggers import A_Swagger, B_Swagger, C_Swagger, D_Swagger, \
                                E_Swagger, F_Swagger, G_Swagger, H_Swagger, \
                                I_Swagger, J_Swagger
 

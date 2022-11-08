@@ -4,7 +4,7 @@
 
 from main.service.base import BaseService, setup_service, provide_body_data
 
-from test.base.models import A_ModelRelationship, \
+from test.models import A_ModelRelationship, \
                              B_ModelRelationship, \
                              C_ModelWithNullableColumn, \
                              D_ModelWithNonNullableColumn, \
@@ -14,7 +14,7 @@ from test.base.models import A_ModelRelationship, \
                              H_ModelLog, \
                              I_ModelEnum, \
                              J_ModelEnumDependent
-from test.base.schemas import A_Schema, B_Schema, C_Schema, \
+from test.schemas import A_Schema, B_Schema, C_Schema, \
                               D_Schema, E_Schema, F_Schema, \
                               G_Schema, H_Schema, I_Schema, \
                               J_Schema

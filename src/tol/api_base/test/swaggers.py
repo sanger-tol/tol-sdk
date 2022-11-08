@@ -4,7 +4,7 @@
 
 from main.swagger.base import BaseSwagger, setup_swagger
 
-from test.base.schemas import A_Schema, B_Schema, C_Schema, \
+from test.schemas import A_Schema, B_Schema, C_Schema, \
                               D_Schema, E_Schema, F_Schema, \
                               G_Schema, H_Schema, I_Schema, \
                               J_Schema

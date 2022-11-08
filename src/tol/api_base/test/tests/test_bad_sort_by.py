@@ -2,7 +2,7 @@
 #
 # SPDX-License-Identifier: MIT
 
-from test.base import BaseTestCase
+from test import BaseTestCase
 
 
 class TestBadSortByParameter400(BaseTestCase):

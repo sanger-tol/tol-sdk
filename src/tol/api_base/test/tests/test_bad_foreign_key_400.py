@@ -2,28 +2,29 @@
 #
 # SPDX-License-Identifier: MIT
 
-from test.base import BaseTestCase
+from test import BaseTestCase
 
 
-class TestBadFieldsError(BaseTestCase):
-    def test_B_id_in_request_body_post_400(self):
-        self.add_A(id=9090)
+class TestBadForeignKey400(BaseTestCase):
+    def test_post_B_with_bad_foreign_key_error(self):
+        self.add_A(id=20)
+
         response = self.client.open(
             '/api/v1/B',
             method='POST',
             json={
-                'data': {
-                    'id': 9999,
-                    'type': 'B',
+                "data": {
+                    "type": 'B',
+                    "attributes": {},
                     "relationships": {
                         "A": {
                             "data": {
                                 "type": 'A',
-                                "id": 9090
+                                "id": 9999
                             }
                         }
                     }
-                },
+                }
             },
             headers=self._get_api_key_1_headers()
         )

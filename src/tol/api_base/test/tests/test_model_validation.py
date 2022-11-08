@@ -7,7 +7,7 @@ import pytest
 from main.model.base import Base, db, setup_model, \
                             ModelValidationError
 
-from test.base import BaseTestCase
+from test import BaseTestCase
 
 
 class TestModelValidation(BaseTestCase):

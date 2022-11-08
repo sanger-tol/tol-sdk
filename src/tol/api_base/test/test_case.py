@@ -6,7 +6,7 @@ from flask_testing import TestCase as FlaskTestCase
 
 from main.model import db, Role, User
 
-from test.base.models import A_ModelRelationship, B_ModelRelationship, \
+from test.models import A_ModelRelationship, B_ModelRelationship, \
                              C_ModelWithNullableColumn, \
                              D_ModelWithNonNullableColumn, \
                              E_ModelRelationship, F_ModelWithExtField, \
