@@ -2,24 +2,25 @@
 #
 # SPDX-License-Identifier: MIT
 
-from prefect import task
-from prefect.engine.signals import FAIL
 from datetime import timedelta
 
-from ..sts import (
-    get_datetime_setting,
-    update_datetime_setting,
-    sts_requests
-)
+from prefect import task
+from prefect.engine.signals import FAIL
+
 from .logger import get_prefect_logger
 from ..eln import (
-    get_benchling_instance,
     generate_assay_results,
-    generate_workflow_tasks,
-    generate_workflow_outputs,
     generate_containers,
     generate_custom_entities,
+    generate_workflow_outputs,
+    generate_workflow_tasks,
+    get_benchling_instance,
     sanitise_value
+)
+from ..sts import (
+    get_datetime_setting,
+    sts_requests,
+    update_datetime_setting,
 )
 
 
@@ -35,11 +36,11 @@ def get_sanger_sample_ids_for_container_list(container_ids, eln_schema_id):
         )
         for assay_result in assay_results_page:
             container_fluidx_id = sanitise_value(
-                assay_result.fields.to_dict()["sample_tube"]["displayValue"])
+                assay_result.fields.to_dict()['sample_tube']['displayValue'])
             sanger_sample_id = sanitise_value(
-                assay_result.fields.to_dict()["sanger_sample_id"]["value"])
+                assay_result.fields.to_dict()['sanger_sample_id']['value'])
             ret[container_fluidx_id] = sanger_sample_id
-    get_prefect_logger().info("Found this many Sanger Sample IDs: " + str(len(ret)))
+    get_prefect_logger().info('Found this many Sanger Sample IDs: ' + str(len(ret)))
     return ret
 
 
@@ -51,13 +52,13 @@ def add_sanger_sample_ids(submissions, eln_sanger_sample_id_schema_id):
         eln_sanger_sample_id_schema_id)
     ret = []
     for submission in submissions:
-        if submission["fluidx_id"] in sanger_sample_ids:
+        if submission['fluidx_id'] in sanger_sample_ids:
             ret.append({**submission,
-                        'sanger_sample_id': sanger_sample_ids[submission["fluidx_id"]]})
+                        'sanger_sample_id': sanger_sample_ids[submission['fluidx_id']]})
         else:
-            get_prefect_logger().warning("Cannot find Sanger Sample ID for tube: "
-                                         + submission["fluidx_id"])
-    get_prefect_logger().info("Total number of viable submissions: " + str(len(ret)))
+            get_prefect_logger().warning('Cannot find Sanger Sample ID for tube: '
+                                         + submission['fluidx_id'])
+    get_prefect_logger().info('Total number of viable submissions: ' + str(len(ret)))
     return ret
 
 
@@ -74,9 +75,9 @@ def get_fluidx_ids_for_workflow_task_list(workflow_task_ids):
         for workflow_task in workflow_tasks_page:
             workflow_task_id = workflow_task.id
             fluidx_id = sanitise_value(
-                workflow_task.fields.to_dict()["Sample Tube"]["displayValue"])
+                workflow_task.fields.to_dict()['Sample Tube']['displayValue'])
             ret[workflow_task_id] = fluidx_id
-    get_prefect_logger().info("Found this many FluidX IDs: " + str(len(ret)))
+    get_prefect_logger().info('Found this many FluidX IDs: ' + str(len(ret)))
     return ret
 
 
@@ -87,13 +88,13 @@ def add_fluidx_ids(submissions):
         workflow_task_ids)
     ret = []
     for submission in submissions:
-        if submission["workflow_task_id"] in fluidx_ids:
+        if submission['workflow_task_id'] in fluidx_ids:
             ret.append({**submission,
-                        'fluidx_id': fluidx_ids[submission["workflow_task_id"]]})
+                        'fluidx_id': fluidx_ids[submission['workflow_task_id']]})
         else:
-            get_prefect_logger().warning("Cannot find Sanger Sample ID for workflow task: "
-                                         + submission["workflow_task_id"])
-    get_prefect_logger().info("Total number of viable submissions: " + str(len(ret)))
+            get_prefect_logger().warning('Cannot find Sanger Sample ID for workflow task: '
+                                         + submission['workflow_task_id'])
+    get_prefect_logger().info('Total number of viable submissions: ' + str(len(ret)))
     return ret
 
 
@@ -110,7 +111,7 @@ def get_created_dates_for_container_list(container_ids):
             container_barcode = container.barcode
             created_date = container.created_at
             ret[container_barcode] = created_date.strftime('%Y-%m-%d %H:%M:%S')
-    get_prefect_logger().info("Found this many container created dates: " + str(len(ret)))
+    get_prefect_logger().info('Found this many container created dates: ' + str(len(ret)))
     return ret
 
 
@@ -121,13 +122,13 @@ def add_container_dates(submissions):
         container_ids)
     ret = []
     for submission in submissions:
-        if submission["sanger_sample_id"] in container_dates:
+        if submission['sanger_sample_id'] in container_dates:
             ret.append({**submission,
-                        'submission_date': container_dates[submission["sanger_sample_id"]]})
+                        'submission_date': container_dates[submission['sanger_sample_id']]})
         else:
-            get_prefect_logger().warning("Cannot find created date for tube: "
-                                         + submission["sanger_sample_id"])
-    get_prefect_logger().info("Total number of viable submissions: " + str(len(ret)))
+            get_prefect_logger().warning('Cannot find created date for tube: '
+                                         + submission['sanger_sample_id'])
+    get_prefect_logger().info('Total number of viable submissions: ' + str(len(ret)))
     return ret
 
 
@@ -139,14 +140,14 @@ def get_contents_for_container_list(container_ids):
         returned_page = generate_containers(
             benchling,
             ids=containers_page,
-            archive_reason="ANY_ARCHIVED_OR_NOT_ARCHIVED"
+            archive_reason='ANY_ARCHIVED_OR_NOT_ARCHIVED'
         )
         for container in returned_page:
             if len(container.contents) > 0:
                 container_fluidx_id = container.barcode
-                entity_id = container.contents[0].entity.to_dict()["fields"]["Tissue"]["value"]
+                entity_id = container.contents[0].entity.to_dict()['fields']['Tissue']['value']
                 ret[container_fluidx_id] = entity_id
-    get_prefect_logger().info("Found this many Entity IDs: " + str(len(ret)))
+    get_prefect_logger().info('Found this many Entity IDs: ' + str(len(ret)))
     return ret
 
 
@@ -157,13 +158,13 @@ def add_container_contents(submissions):
         container_ids)
     ret = []
     for submission in submissions:
-        if submission["fluidx_id"] in entity_ids:
+        if submission['fluidx_id'] in entity_ids:
             ret.append({**submission,
-                        'entity_id': entity_ids[submission["fluidx_id"]]})
+                        'entity_id': entity_ids[submission['fluidx_id']]})
         else:
-            get_prefect_logger().warning("Cannot find Entity ID for tube: "
-                                         + submission["fluidx_id"])
-    get_prefect_logger().info("Total number of containers with contents: " + str(len(ret)))
+            get_prefect_logger().warning('Cannot find Entity ID for tube: '
+                                         + submission['fluidx_id'])
+    get_prefect_logger().info('Total number of containers with contents: ' + str(len(ret)))
     return ret
 
 
@@ -175,13 +176,13 @@ def get_sts_ids_for_entity_list(entity_ids):
         returned_page = generate_custom_entities(
             benchling,
             ids=entities_page,
-            archive_reason="ANY_ARCHIVED_OR_NOT_ARCHIVED"
+            archive_reason='ANY_ARCHIVED_OR_NOT_ARCHIVED'
         )
         for entity in returned_page:
             entity_id = entity.id
-            sts_id = entity.fields["STS ID"].value
+            sts_id = entity.fields['STS ID'].value
             ret[entity_id] = sts_id
-    get_prefect_logger().info("Found this many STS IDs: " + str(len(ret)))
+    get_prefect_logger().info('Found this many STS IDs: ' + str(len(ret)))
     return ret
 
 
@@ -192,12 +193,12 @@ def add_entity_sts_ids(submissions):
         entity_ids)
     ret = []
     for submission in submissions:
-        if submission["entity_id"] in sts_ids:
+        if submission['entity_id'] in sts_ids:
             ret.append({**submission,
-                        'sts_id': sts_ids[submission["entity_id"]]})
+                        'sts_id': sts_ids[submission['entity_id']]})
         else:
-            get_prefect_logger().warning("Cannot find STS ID for tube: "
-                                         + submission["fluidx_id"])
+            get_prefect_logger().warning('Cannot find STS ID for tube: '
+                                         + submission['fluidx_id'])
     get_prefect_logger().info("Total number of containers with content parent's STS id: " +
                               str(len(ret)))
     return ret
@@ -207,28 +208,28 @@ def add_entity_sts_ids(submissions):
 def post_ep_samples_to_sts(submissions):
     updated_count = 0
     for submission in submissions:
-        submission_date = submission["submission_date"]
+        submission_date = submission['submission_date']
         if submission_date is None:
-            get_prefect_logger().warning(submission["fluidx_id"]
-                                         + " does not have a submission date")
-            submission_date = "1970-01-01 00:00:00"
-        payload = {"fluidx_id": submission["fluidx_id"],
-                   "sample_id": submission["sts_id"],
-                   "type": "DNA",
-                   "extraction_date": submission_date}
+            get_prefect_logger().warning(submission['fluidx_id']
+                                         + ' does not have a submission date')
+            submission_date = '1970-01-01 00:00:00'
+        payload = {'fluidx_id': submission['fluidx_id'],
+                   'sample_id': submission['sts_id'],
+                   'type': 'DNA',
+                   'extraction_date': submission_date}
         r = sts_requests.post(
-            '/ep_samples/' + submission["fluidx_id"],
+            '/ep_samples/' + submission['fluidx_id'],
             json=payload
         )
         if r.ok:
             updated_count += 1
         else:
             get_prefect_logger().warning(
-                f"A sample failed with code {r.status_code}, "
-                f"and response {r.json()}, "
-                f"containing data: {payload}"
+                f'A sample failed with code {r.status_code}, '
+                f'and response {r.json()}, '
+                f'containing data: {payload}'
             )
-    get_prefect_logger().info("Total number of ep_samples posted: " + str(updated_count))
+    get_prefect_logger().info('Total number of ep_samples posted: ' + str(updated_count))
     return True
 
 
@@ -236,15 +237,15 @@ def post_ep_samples_to_sts(submissions):
 def post_sequencing_requests_to_sts(submissions, platform):
     updated_count = 0
     for submission in submissions:
-        submission_date = submission["submission_date"]
+        submission_date = submission['submission_date']
         if submission_date is None:
-            get_prefect_logger().warning(submission["fluidx_id"]
-                                         + " does not have a submission date")
-            submission_date = "1970-01-01 00:00:00"
-        payload = {"platform": platform,
-                   "fluidx_id": submission["fluidx_id"],
-                   "sample_ref": submission["sanger_sample_id"],
-                   "submit_date": submission_date}
+            get_prefect_logger().warning(submission['fluidx_id']
+                                         + ' does not have a submission date')
+            submission_date = '1970-01-01 00:00:00'
+        payload = {'platform': platform,
+                   'fluidx_id': submission['fluidx_id'],
+                   'sample_ref': submission['sanger_sample_id'],
+                   'submit_date': submission_date}
         r = sts_requests.post(
             '/sequencing-requests',
             json=payload
@@ -253,11 +254,11 @@ def post_sequencing_requests_to_sts(submissions, platform):
             updated_count += 1
         else:
             get_prefect_logger().warning(
-                f"A sample failed with code {r.status_code}, "
-                f"and response {r.json()}, "
-                f"containing data: {payload}"
+                f'A sample failed with code {r.status_code}, '
+                f'and response {r.json()}, '
+                f'containing data: {payload}'
             )
-    get_prefect_logger().info("Total number of sequencing requests posted: " + str(updated_count))
+    get_prefect_logger().info('Total number of sequencing requests posted: ' + str(updated_count))
     return True
 
 
@@ -269,7 +270,7 @@ def get_lastrun_datetime(key):
             'Could not load the datetime of last run.'
         )
         raise FAIL()
-    get_prefect_logger().info(f"Last run on {lastrun_datetime}")
+    get_prefect_logger().info(f'Last run on {lastrun_datetime}')
     return lastrun_datetime
 
 
@@ -284,7 +285,7 @@ def update_lastrun_datetime(key, new_datetime, go):
             'Could not update the datetime for this run.'
         )
         raise FAIL()
-    get_prefect_logger().info(f"Updated last run date to {new_datetime}")
+    get_prefect_logger().info(f'Updated last run date to {new_datetime}')
     return True
 
 
@@ -294,17 +295,17 @@ def get_new_lres_sample_data_from_eln(lastrun_datetime, schema_id):
     lres_submissions = generate_workflow_outputs(
         benchling,
         schema_id=schema_id,
-        modified_at="> " + lastrun_datetime.isoformat("T")
+        modified_at='> ' + lastrun_datetime.isoformat('T')
     )
     lres_list = []
     for lres_submission in lres_submissions:
-        tube_field = lres_submission.fields.to_dict()["Sample Tube ID"]
-        submission_date_field = lres_submission.fields.to_dict()["Submitted (Submission date)"]
-        submission_date = submission_date_field["value"]
+        tube_field = lres_submission.fields.to_dict()['Sample Tube ID']
+        submission_date_field = lres_submission.fields.to_dict()['Submitted (Submission date)']
+        submission_date = submission_date_field['value']
         if submission_date is not None:
-            submission_date += " 00:00:00"
-        lres_list.append({"fluidx_id": sanitise_value(tube_field["displayValue"]),
-                          "container_eln_id": tube_field["value"],
-                          "submission_date": submission_date})
-    get_prefect_logger().info("Found this many LRES submissions: " + str(len(lres_list)))
+            submission_date += ' 00:00:00'
+        lres_list.append({'fluidx_id': sanitise_value(tube_field['displayValue']),
+                          'container_eln_id': tube_field['value'],
+                          'submission_date': submission_date})
+    get_prefect_logger().info('Found this many LRES submissions: ' + str(len(lres_list)))
     return lres_list

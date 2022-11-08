@@ -3,6 +3,7 @@
 # SPDX-License-Identifier: MIT
 
 import os
+
 import requests
 
 
@@ -13,11 +14,11 @@ STS_API_KEY = os.getenv('STS_API_KEY')
 def __override_method(method, relative_url, headers=None, **kwargs):
     if headers is None:
         new_headers = {
-            "Authorization": STS_API_KEY
+            'Authorization': STS_API_KEY
         }
     else:
         new_headers = {
-            "Authorization": STS_API_KEY,
+            'Authorization': STS_API_KEY,
             **headers
         }
     return method(

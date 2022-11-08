@@ -3,8 +3,10 @@
 # SPDX-License-Identifier: MIT
 
 from __future__ import absolute_import
-from tol.eln import generate_flattened_type
+
 from unittest import TestCase
+
+from tol.eln import generate_flattened_type
 
 
 class MockList():

@@ -3,4 +3,5 @@
 # SPDX-License-Identifier: MIT
 
 [flake8]
+extend-ignore = A,D,I,N,Q
 max-line-length = 99

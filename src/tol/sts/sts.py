@@ -32,8 +32,8 @@ def get_datetime_setting(setting_key):
     return dateutil_parse(value)
 
 
-def update_datetime_setting(setting_key, new_value, format=None):
-    string_datetime = str(new_value) if format is None else new_value.strftime(format)
+def update_datetime_setting(setting_key, new_value, fmt=None):
+    string_datetime = str(new_value) if fmt is None else new_value.strftime(fmt)
     return update_setting(
         setting_key,
         string_datetime

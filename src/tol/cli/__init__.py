@@ -2,8 +2,4 @@
 #
 # SPDX-License-Identifier: MIT
 
-import prefect
-
-
-def get_prefect_logger():
-    return prefect.context.get('logger')
+from .cli import *  # noqa
