@@ -58,6 +58,7 @@ class LogBase(Base, LogMixin):
     def add(self, user_id=None):
         self._update_metadata(user_id)
         super().add()
+        db.session.flush()
 
     def _update_metadata(self, user_id):
         if not user_id:

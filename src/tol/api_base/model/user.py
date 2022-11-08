@@ -24,7 +24,8 @@ class User(Base):
 
 
 def get_user_id_via_api_key(api_key):
-    user = db.session.query(User).filter(User.api_key == api_key).one_or_none()
+    with db.session.no_autoflush:
+        user = db.session.query(User).filter(User.api_key == api_key).one_or_none()
     return user.id if user is not None else None
 
 
