@@ -5,3 +5,5 @@
 from .base import *  # noqa
 from .user import *  # noqa
 from .role import *  # noqa
+from .auth import *  # noqa
+from .state import *  # noqa

@@ -6,7 +6,7 @@ from functools import wraps
 from flask import request
 from flask_restx import Namespace
 
-from .model.user import get_user_id_via_api_key
+from .model.auth import get_user_id_via_token
 
 
 authorizations = {
@@ -22,10 +22,10 @@ def auth_dec():
     def wrap_decorator(function):
         @wraps(function)
         def decorated(resource, *args, **kwargs):
-            api_key = request.headers.get('Authorization')
-            if not api_key:
-                return resource.auth_error("Api key is missing")
-            user_id = get_user_id_via_api_key(api_key)
+            token = request.headers.get('Authorization')
+            if not token:
+                return resource.auth_error("Auth token is missing")
+            user_id = get_user_id_via_token(token)
             if user_id is None:
                 return resource.auth_error("User does not exist")
             return function(resource, *args, user_id=user_id, **kwargs)

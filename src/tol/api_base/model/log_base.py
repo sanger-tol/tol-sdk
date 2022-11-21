@@ -6,7 +6,7 @@ from datetime import datetime
 from sqlalchemy.ext.declarative import declared_attr
 
 from .base import Base, db
-from .user import get_request_user_id
+from .auth import get_request_user_id
 
 
 class LogMixin(object):
@@ -58,7 +58,6 @@ class LogBase(Base, LogMixin):
     def add(self, user_id=None):
         self._update_metadata(user_id)
         super().add()
-        db.session.flush()
 
     def _update_metadata(self, user_id):
         if not user_id:

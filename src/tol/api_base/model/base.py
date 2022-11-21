@@ -218,8 +218,13 @@ class Base(db.Model):
         model = cls.get_model_by_type(type_)
         return model.is_enum_table()
 
+    @classmethod
+    def query(cls):
+        return db.session.query(cls)
+
     def add(self):
         db.session.add(self)
+        db.session.flush()
 
     def _update_ext(self, ext_data_changes):
         if not self.has_ext_column():

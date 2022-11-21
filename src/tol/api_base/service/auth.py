@@ -1,0 +1,118 @@
+# SPDX-FileCopyrightText: 2022 Genome Research Ltd.
+#
+# SPDX-License-Identifier: MIT
+
+from ..model import User, State, Auth
+from ..schema import AuthSchema
+from . import BaseService, setup_service, \
+              provide_body_data, handle_400_data_validation_error, \
+              handle_400_db_integrity_error, \
+              handle_404, handle_400_nonexistent_service
+
+from flask import jsonify
+import uuid
+import urllib.parse
+from datetime import datetime, timedelta
+import os
+import requests
+from requests.auth import HTTPBasicAuth
+
+
+@setup_service
+class AuthService(BaseService):
+    class Meta:
+        model = Auth
+        schema = AuthSchema
+
+    @classmethod
+    def login(cls):
+        state_uuid = str(uuid.uuid4())
+        params = {
+            "client_id": os.getenv('ELIXIR_CLIENT_ID'),
+            "response_type": "code",
+            "state": state_uuid,
+            "redirect_uri": os.getenv('ELIXIR_REDIRECT_URI'),
+            "scope": 'openid profile email'
+        }
+        # save the state in a table so that we can use it
+        state = State()
+        state.state = state_uuid
+        state.add()
+        State.commit()
+
+        # clear out states older than one hour so this table doesn't fill up
+        since = datetime.now() - timedelta(hours=1)
+        State.query() \
+            .filter(State.created_at < since) \
+            .delete()
+        State.commit()
+
+        login_url = {
+            'loginUrl': "https://login.elixir-czech.org/oidc/authorize?"
+                        + urllib.parse.urlencode(params)
+        }
+
+        return login_url, 200
+
+    @classmethod
+    @provide_body_data
+    @handle_400_db_integrity_error
+    @handle_400_data_validation_error
+    @handle_400_nonexistent_service
+    @handle_404
+    def get_token_from_callback(cls, data):
+        # check that we know about this state
+        state_from_db = State.query() \
+            .filter(State.state == data['state']) \
+            .one_or_none()
+        if state_from_db is None:
+            return {
+                'detail': 'Unknown state'
+            }, 404
+        client_auth = HTTPBasicAuth(
+            os.getenv('ELIXIR_CLIENT_ID'),
+            os.getenv('ELIXIR_CLIENT_SECRET')
+        )
+        post_data = {
+            "grant_type": "authorization_code",
+            "code": data['code'],
+            "redirect_uri": os.getenv('ELIXIR_REDIRECT_URI')
+        }
+        response = requests.post(
+            'https://login.elixir-czech.org/oidc/token',
+            auth=client_auth,
+            data=post_data
+        )
+        return response.json(), 200
+
+    @classmethod
+    @provide_body_data
+    @handle_400_db_integrity_error
+    @handle_400_data_validation_error
+    @handle_400_nonexistent_service
+    @handle_404
+    def create_user_profile(cls, data):
+        # get the user infromation from Elixir for this token
+        response = requests.get(
+            'https://login.elixir-czech.org/oidc/userinfo',
+            headers={"Authorization": "Bearer " + data["token"]}
+        )
+        user_info_from_elixir = response.json()
+        if user_info_from_elixir.get('error') is None:
+            user = User.query() \
+                .filter(User.email == user_info_from_elixir['email']) \
+                .one_or_none()
+            if not user:
+                # a new user for the system - create entry
+                user = User()
+                user.email = user_info_from_elixir['email']
+                user.name = user_info_from_elixir['name']
+                user.add()
+            # save the token so that we can authenticate against it in future
+            user.token = data["token"]
+            User.commit()
+            return jsonify(user)
+        else:
+            return {
+                'detail': 'Error getting data from Elixir'
+            }, 404

@@ -8,3 +8,4 @@ benchling-sdk
 prefect
 pytest
 Flask-SQLAlchemy == 2.4.4
+connexion == 2.14.1
