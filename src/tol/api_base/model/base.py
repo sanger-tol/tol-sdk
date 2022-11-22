@@ -443,7 +443,7 @@ class Base(db.Model):
 
     @classmethod
     def find_by_id(cls, id_):
-        instance = cls.query.filter_by(id=id_).one_or_none()
+        instance = cls.query().filter_by(id=id_).one_or_none()
         if instance is None:
             raise InstanceDoesNotExistException()
         return instance

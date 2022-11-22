@@ -6,7 +6,7 @@ from functools import wraps
 from flask import request
 from flask_restx import Namespace
 
-from .model.auth import get_user_id_via_token
+from .model import get_user_id_via_token
 
 
 authorizations = {

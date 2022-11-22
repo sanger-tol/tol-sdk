@@ -2,7 +2,7 @@
 #
 # SPDX-License-Identifier: MIT
 
-import datetime
+from datetime import datetime
 from flask import request, has_request_context
 
 from .base import Base, db, setup_model
@@ -36,7 +36,7 @@ def get_user_id_via_token(token):
                 auth_token.delete()
                 return None
 
-    return auth_token.user_id if auth_token is not None else None
+        return auth_token.user_id if auth_token is not None else None
 
 
 def get_request_user_id():

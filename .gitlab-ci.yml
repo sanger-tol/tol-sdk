@@ -2,6 +2,12 @@
 #
 # SPDX-License-Identifier: MIT
 
+# Used to set up the build environment
+variables:
+  DOCKER_IMAGE: $CI_REGISTRY/tol/tol-core/build-base:1.0.0
+  DIND_IMAGE: $CI_REGISTRY/tol/tol-core/dind:1.0.0
+
+
 include:
   - project: 'tol/tol-core'
     ref: main
@@ -10,10 +16,35 @@ include:
 stages:
   - lint
   - unit test
+  - system test
   - deploy
 
-test-package:
-  extends: .test-python-package
+
+api-base-unit-test:
+  stage: unit test
+  image: $DOCKER_IMAGE
+  services:
+    - name: $DIND_IMAGE
+      alias: docker
+  variables:
+    DOCKER_TLS_CERTDIR: ''
+    DOCKER_HOST: tcp://docker:2375
+  script:
+    - docker-compose run tol-sdk-api-unit-test
+
+api-base-system-test:
+  stage: system test
+  image: $DOCKER_IMAGE
+  services:
+    - name: $DIND_IMAGE
+      alias: docker
+  variables:
+    DOCKER_TLS_CERTDIR: ''
+    DOCKER_HOST: tcp://docker:2375
+  script:
+    - docker-compose up -d tol-sdk-api-db
+    - docker-compose run tol-sdk-api-system-test
+    - docker-compose down
 
 deploy-package:
   extends: .deploy-python-package
