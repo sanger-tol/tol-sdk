@@ -119,6 +119,18 @@ def test(env_file, type_):
     run(command)
 
 
+# Run flow
+@cli.command()
+@click.option('--env-file', default='.env.dev', help='set a custom .env file')
+@click.argument('filename', type=click.Path(exists=True))
+def flow(env_file, filename):
+    click.echo('Running flow...')
+    flow_name = os.path.basename(filename)
+    command = f'docker run --env-file {env_file} -v $(pwd)/app/flows:/flows gitlab-registry.internal.sanger.ac.uk/tol/tol-core/flows-base:1.1.0 python3 /flows/{flow_name}'
+    click.secho(command, fg='green')
+    run(command)
+
+
 def get_app():
     return os.path.basename(os.getcwd())
 
