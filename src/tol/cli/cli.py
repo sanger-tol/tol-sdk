@@ -70,10 +70,11 @@ def down():
 
 # Restore a database from backup
 @cli.command()
-def restore():
+@click.option('--env-file', default='.env.dev', help='set a custom .env file')
+def restore(env_file):
     service = get_app()
     click.echo('Restoring database...')
-    command = f'docker compose --env-file .env.dev run {service}-dbutils python3 run.py restore'
+    command = f'docker compose --env-file {env_file} run {service}-dbutils python3 run.py restore'
     click.secho(command, fg='green')
     run(command)
 
@@ -126,7 +127,10 @@ def test(env_file, type_):
 def flow(env_file, filename):
     click.echo('Running flow...')
     flow_name = os.path.basename(filename)
-    command = f'docker run --env-file {env_file} -v $(pwd)/app/flows:/flows gitlab-registry.internal.sanger.ac.uk/tol/tol-core/flows-base:1.1.0 python3 /flows/{flow_name}'
+    command = f'docker run --env-file {env_file} ' \
+        + '-v $(pwd)/app/flows:/flows ' \
+        + 'gitlab-registry.internal.sanger.ac.uk/tol/tol-core/flows-base:1.1.0 ' \
+        + f'python3 /flows/{flow_name}'
     click.secho(command, fg='green')
     run(command)
 
