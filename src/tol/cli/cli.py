@@ -10,14 +10,18 @@ import click
 
 
 @click.group()
-def cli():
+@click.option(
+    '--env-file', default='.env.dev',
+    type=click.Path(exists=True), help='set a custom .env file'
+)
+def cli(env_file):
     pass
 
 
 # Lint
 @cli.command()
 @click.option('--type', 'type_', default='python', type=click.Choice(['python', 'license']),
-              help='type of test')
+              help='type of lint')
 def lint(type_):
     # service = get_app()
     click.echo('Running lint...')
@@ -37,8 +41,9 @@ def lint(type_):
 @click.option('--ui/--no-ui', default=True, help='build the UI container')
 @click.option('--db/--no-db', default=True, help='build the DB container')
 @click.option('--api/--no-api', default=True, help='build the API container')
-@click.option('--env-file', default='.env.dev', help='set a custom .env file')
-def up(ui, db, api, env_file):
+@click.pass_context
+def up(ctx, ui, db, api):
+    env_file = ctx.parent.params['env_file']
     service = get_app()
     click.echo(f'Starting {service}...')
     containers = []
@@ -70,8 +75,9 @@ def down():
 
 # Restore a database from backup
 @cli.command()
-@click.option('--env-file', default='.env.dev', help='set a custom .env file')
-def restore(env_file):
+@click.pass_context
+def restore(ctx):
+    env_file = ctx.parent.params['env_file']
     service = get_app()
     click.echo('Restoring database...')
     command = f'docker compose --env-file {env_file} run {service}-dbutils python3 run.py restore'
@@ -79,10 +85,18 @@ def restore(env_file):
     run(command)
 
 
+# The Alembic group
+@cli.group
+@click.pass_context
+def alembic(ctx):
+    pass
+
+
 # Run an Alembic upgrade on the databse
-@cli.command()
-@click.option('--env-file', default='.env.dev', help='set a custom .env file')
-def alembic(env_file):
+@alembic.command()
+@click.pass_context
+def upgrade(ctx):
+    env_file = ctx.parent.parent.params['env_file']
     service = get_app()
     click.echo('Running alembic upgrade...')
     command = f'docker compose build {service}-api && docker compose --env-file {env_file} ' \
@@ -92,10 +106,11 @@ def alembic(env_file):
 
 
 # Create a new database migration
-@cli.command()
+@alembic.command()
 @click.option('--message', required=True, help='migration message')
-@click.option('--env-file', default='.env.dev', help='set a custom .env file')
-def migration(message, env_file):
+@click.pass_context
+def migration(ctx, message):
+    env_file = ctx.parent.parent.params['env_file']
     service = get_app()
     click.echo('Creating alembic migration...')
     command = f'docker compose build {service}-api && docker compose --env-file {env_file} ' \
@@ -104,12 +119,26 @@ def migration(message, env_file):
     run(command)
 
 
+# Merge heads
+@alembic.command()
+@click.pass_context
+def merge(ctx):
+    env_file = ctx.parent.parent.params['env_file']
+    service = get_app()
+    click.echo('Merging heads...')
+    command = f'docker compose build {service}-api && docker compose --env-file {env_file} ' \
+        + f'run {service}-alembic alembic merge heads -m "merge heads"'
+    click.secho(command, fg='green')
+    run(command)
+
+
 # Run tests
 @cli.command()
-@click.option('--env-file', default='.env.dev', help='set a custom .env file')
 @click.option('--type', 'type_', default='unit', type=click.Choice(['unit', 'integration']),
               help='type of test')
-def test(env_file, type_):
+@click.pass_context
+def test(ctx, type_):
+    env_file = ctx.parent.params['env_file']
     service = get_app()
     click.echo('Running tests...')
     command = f'docker run {service}-api pytest'
@@ -122,9 +151,10 @@ def test(env_file, type_):
 
 # Run flow
 @cli.command()
-@click.option('--env-file', default='.env.dev', help='set a custom .env file')
 @click.argument('filename', type=click.Path(exists=True))
-def flow(env_file, filename):
+@click.pass_context
+def flow(ctx, filename):
+    env_file = ctx.parent.params['env_file']
     click.echo('Running flow...')
     flow_name = os.path.basename(filename)
     command = f'docker run --env-file {env_file} ' \
