@@ -2,6 +2,8 @@
 #
 # SPDX-License-Identifier: MIT
 
+from .sanitise import sanitise_value
+
 
 def flatten_entity(entity):
     flattened_entity = {}
@@ -18,3 +20,12 @@ def flatten_entity(entity):
         else:
             flattened_entity[field] = value
     return flattened_entity
+
+
+def convert_sts_entity_to_eln_entity_fields(sts_entity, mapping):
+    eln_entity = {}
+    flattened_entity = flatten_entity(sts_entity)
+    for sts_name, eln_name in mapping['field_mappings'].items():
+        if sts_name in flattened_entity:
+            eln_entity[eln_name] = sanitise_value(flattened_entity[sts_name])
+    return eln_entity
