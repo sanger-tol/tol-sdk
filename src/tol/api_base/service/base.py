@@ -6,106 +6,16 @@ import json
 
 from flask import Response, request
 from functools import wraps
-from sqlalchemy.exc import IntegrityError
-from marshmallow import ValidationError
-from marshmallow_jsonapi.exceptions import IncorrectTypeError
 
-from ..model import InstanceDoesNotExistException, \
-                       StemInstanceDoesNotExistException, \
-                       BadParameterException, \
-                       NamedEnumInstanceDoesNotExistException, \
-                       NamedEnumStemInstanceDoesNotExistException
-from ..schema import BadEnumNameException
-
-
-class BadParameterStringException(Exception):
-    def __init__(self, message):
-        self.message = message
-        super().__init__(message)
-
-
-class BadTargetServiceException(Exception):
-    def __init__(self, target_service):
-        self.message = f"No endpoint exists with name '{target_service}'."
-        super().__init__(self.message)
+from ..error import (
+    BadTargetServiceException,
+    BadParameterStringException
+)
 
 
 def setup_service(cls):
     cls.setup()
     return cls
-
-
-def handle_404(function):
-    @wraps(function)
-    def wrapper(cls, identifier, *args, **kwargs):
-        try:
-            return function(cls, identifier, *args, **kwargs)
-        except (
-            InstanceDoesNotExistException,
-            StemInstanceDoesNotExistException
-        ):
-            return cls.error_404(identifier)
-        except (
-            NamedEnumInstanceDoesNotExistException,
-            NamedEnumStemInstanceDoesNotExistException
-        ):
-            return cls.error_404_named_enum(identifier)
-    return wrapper
-
-
-def handle_400_db_integrity_error(function):
-    @wraps(function)
-    def wrapper(cls, *args, **kwargs):
-        try:
-            return function(cls, *args, **kwargs)
-        except IntegrityError:
-            return cls.error_400(
-                "An integrity error occured in the database. "
-                "This is most likely due to either a dependency on "
-                "this instance, if deleting, or a foreign reference "
-                "to an object that does not exist, if creating/updating."
-            )
-    return wrapper
-
-
-def handle_400_data_validation_error(function):
-    @wraps(function)
-    def wrapper(cls, *args, **kwargs):
-        try:
-            return function(cls, *args, **kwargs)
-        except (ValidationError, IncorrectTypeError) as e:
-            return cls.error_400_marshmallow(
-                e.messages
-            )
-        except BadEnumNameException as e:
-            return cls.error_400_validation(
-                e.message
-            )
-    return wrapper
-
-
-def handle_400_bad_parameter(function):
-    @wraps(function)
-    def wrapper(cls, *args, **kwargs):
-        try:
-            return function(cls, *args, **kwargs)
-        except BadParameterException as e:
-            return cls.error_400(
-                e.message
-            )
-    return wrapper
-
-
-def handle_400_nonexistent_service(function):
-    @wraps(function)
-    def wrapper(cls, *args, **kwargs):
-        try:
-            return function(cls, *args, **kwargs)
-        except BadTargetServiceException as e:
-            return cls.error_400(
-                e.message
-            )
-    return wrapper
 
 
 def provide_body_data(function):
@@ -119,20 +29,15 @@ def provide_body_data(function):
 def provide_parameters(function):
     @wraps(function)
     def wrapper(cls, *args, **kwargs):
-        try:
-            page, eq_filters, sort_by = cls.parse_parameters()
-            return function(
-                cls,
-                *args,
-                page=page,
-                eq_filters=eq_filters,
-                sort_by=sort_by,
-                **kwargs
-            )
-        except BadParameterStringException as e:
-            return cls.error_400(
-                e.message
-            )
+        page, eq_filters, sort_by = cls.parse_parameters()
+        return function(
+            cls,
+            *args,
+            page=page,
+            eq_filters=eq_filters,
+            sort_by=sort_by,
+            **kwargs
+        )
     return wrapper
 
 
@@ -217,47 +122,11 @@ class BaseService:
         return page, eq_filters, sort_by
 
     @classmethod
-    def error_400(cls, message):
-        return cls._custom_error(
-            "Bad Request",
-            400,
-            message
-        )
-
-    @classmethod
-    def error_400_validation(cls, message):
-        return cls._custom_error(
-            'Validation Error',
-            400,
-            message
-        )
-
-    @classmethod
-    def error_400_marshmallow(cls, messages):
-        return messages, 400
-
-    @classmethod
     def error_401(cls, message):
         return cls._custom_error(
             "Unauthorized",
             401,
             message
-        )
-
-    @classmethod
-    def error_404(cls, id):
-        return cls._custom_error(
-            "Not Found",
-            404,
-            f"No {cls.get_type()} found with id {id}."
-        )
-
-    @classmethod
-    def error_404_named_enum(cls, name):
-        return cls._custom_error(
-            "Not Found",
-            404,
-            f"No name '{name}' exists on enum {cls.get_type()}."
         )
 
     @classmethod
@@ -317,7 +186,6 @@ class BaseService:
         return new_model_instance
 
     @classmethod
-    @handle_404
     def read_by_id(cls, id, user_id=None):
         schema = cls.Meta.schema()
         model_instance = cls.Meta.model.find_by_id(id)
@@ -325,9 +193,6 @@ class BaseService:
 
     @classmethod
     @provide_body_data
-    @handle_400_db_integrity_error
-    @handle_400_data_validation_error
-    @handle_404
     def update_by_id(cls, id, data, user_id=None):
         schema = cls.Meta.schema()
         old_model_instance = cls.Meta.model.find_by_id(id)
@@ -340,8 +205,6 @@ class BaseService:
         return schema.dump(new_model_instance), 200
 
     @classmethod
-    @handle_400_db_integrity_error
-    @handle_404
     def delete_by_id(cls, id, user_id=None):
         model_instance = cls.Meta.model.find_by_id(id)
         model_instance.delete()
@@ -349,8 +212,6 @@ class BaseService:
 
     @classmethod
     @provide_body_data
-    @handle_400_db_integrity_error
-    @handle_400_data_validation_error
     def create(cls, data, user_id=None):
         schema = cls.Meta.schema()
         model_instance = schema.load(data)
@@ -359,7 +220,6 @@ class BaseService:
 
     @classmethod
     @provide_parameters
-    @handle_400_bad_parameter
     def read_bulk(cls, user_id=None, **kwargs):
         schema = cls.Meta.schema(many=True)
         model_instances = cls.Meta.model.bulk_find(**kwargs)
@@ -367,9 +227,6 @@ class BaseService:
 
     @classmethod
     @provide_parameters
-    @handle_400_bad_parameter
-    @handle_400_nonexistent_service
-    @handle_404
     def read_bulk_related_by_id(cls, id, target_service_name, user_id=None, **kwargs):
         """
         Called on the service for the first part of the endpoint
@@ -381,7 +238,6 @@ class BaseService:
         return schema.dump(model_instances), 200
 
     @classmethod
-    @handle_404
     def read_by_name(cls, name, user_id=None):
         """Used only for enum services"""
         schema = cls.Meta.schema()
@@ -390,9 +246,6 @@ class BaseService:
 
     @classmethod
     @provide_body_data
-    @handle_400_db_integrity_error
-    @handle_400_data_validation_error
-    @handle_404
     def update_by_name(cls, name, data, user_id=None):
         """Used only for enum services"""
         schema = cls.Meta.schema()
@@ -406,8 +259,6 @@ class BaseService:
         return schema.dump(new_model_instance), 200
 
     @classmethod
-    @handle_400_db_integrity_error
-    @handle_404
     def delete_by_name(cls, name, user_id=None):
         """Used only for enum services"""
         model_instance = cls.Meta.model.find_by_name(name)
@@ -416,9 +267,6 @@ class BaseService:
 
     @classmethod
     @provide_parameters
-    @handle_400_bad_parameter
-    @handle_400_nonexistent_service
-    @handle_404
     def read_bulk_related_by_name(cls, name, target_service_name, user_id=None, **kwargs):
         """
         Called on the service for the first part of the endpoint

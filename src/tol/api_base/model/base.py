@@ -12,6 +12,14 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.inspection import inspect
 
 
+from ..error import (
+    IdNotFoundException,
+    EnumNameNotFoundException,
+    BadParameterException,
+    ExtraFieldsNotPermittedException
+)
+
+
 PAGE_SIZE = 20
 
 
@@ -36,30 +44,16 @@ class ModelValidationError(Exception):
         )
 
 
-class BadParameterException(Exception):
-    def __init__(self, message):
-        self.message = message
-        super().__init__(message)
-
-
-class ExtraFieldsNotPermittedException(Exception):
-    def __init__(self, ext_fields):
-        self._ext_fields = ext_fields
-
-    def get_extra_fields_str(self):
-        return ', '.join(self._ext_fields.keys())
-
-
-class InstanceDoesNotExistException(Exception):
+class InstanceDoesNotExistException(IdNotFoundException):
     pass
 
 
-class StemInstanceDoesNotExistException(Exception):
+class StemInstanceDoesNotExistException(IdNotFoundException):
     """Used on 'related' endpoints"""
     pass
 
 
-class NamedEnumStemInstanceDoesNotExistException(Exception):
+class NamedEnumStemInstanceDoesNotExistException(EnumNameNotFoundException):
     """Used on 'related' endpoints concerning enum tables"""
     pass
 
@@ -228,9 +222,7 @@ class Base(db.Model):
 
     def _update_ext(self, ext_data_changes):
         if not self.has_ext_column():
-            raise ExtraFieldsNotPermittedException(
-                ext_data_changes
-            )
+            raise ExtraFieldsNotPermittedException()
         ext_data = {**self.ext}
         for key, value in ext_data_changes.items():
             if value is None:
@@ -421,7 +413,10 @@ class Base(db.Model):
                                      .filter_by(id=relation_id) \
                                      .one_or_none()
         if related_instance is None:
-            raise StemInstanceDoesNotExistException()
+            raise StemInstanceDoesNotExistException(
+                relation_model.get_type(),
+                relation_id
+            )
 
     @classmethod
     def _get_related_model_id_by_name(cls, relation_model, relation_name):
@@ -429,7 +424,10 @@ class Base(db.Model):
                                      .filter_by(name=relation_name) \
                                      .one_or_none()
         if related_instance is None:
-            raise NamedEnumStemInstanceDoesNotExistException()
+            raise NamedEnumStemInstanceDoesNotExistException(
+                relation_model.get_type(),
+                relation_name
+            )
         return related_instance.id
 
     @staticmethod
@@ -442,10 +440,13 @@ class Base(db.Model):
         db.session.commit()
 
     @classmethod
-    def find_by_id(cls, id_):
-        instance = cls.query().filter_by(id=id_).one_or_none()
+    def find_by_id(cls, id):
+        instance = cls.query().filter_by(id=id).one_or_none()
         if instance is None:
-            raise InstanceDoesNotExistException()
+            raise InstanceDoesNotExistException(
+                cls.get_type(),
+                id
+            )
         return instance
 
     @classmethod

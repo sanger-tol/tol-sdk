@@ -1,8 +1,4 @@
-# SPDX-FileCopyrightText: 2021 Genome Research Ltd.
-#
-# SPDX-License-Identifier: MIT
-
-# SPDX-FileCopyrightText: 2021 Genome Research Ltd.
+# SPDX-FileCopyrightText: 2022 Genome Research Ltd.
 #
 # SPDX-License-Identifier: MIT
 
@@ -15,6 +11,7 @@ from flask_restx import Api
 
 from tol.api_base import encoder
 from tol.api_base.model import db, User, Role, Auth
+import tol.api_base.error.handler as error_handler
 
 from .models import A_ModelRelationship, \
                     B_ModelRelationship, \
@@ -64,9 +61,11 @@ class BaseTestCase(TestCase):
         blueprint = Blueprint('api', __name__, url_prefix='/api/v1')
         _setup_api(blueprint)
         app.register_blueprint(blueprint)
+        app.register_blueprint(error_handler.blueprint)
         app.json_encoder = encoder.JSONEncoder
         app.config['SQLALCHEMY_DATABASE_URI'] = os.environ['DB_URI']
         app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+        app.config['PROPAGATE_EXCEPTIONS'] = True
         db.init_app(app)
         return app
 

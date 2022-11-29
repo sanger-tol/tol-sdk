@@ -126,7 +126,12 @@ def test(env_file, type_):
 def flow(env_file, filename):
     click.echo('Running flow...')
     flow_name = os.path.basename(filename)
-    command = f'docker run --env-file {env_file} -v $(pwd)/app/flows:/flows gitlab-registry.internal.sanger.ac.uk/tol/tol-core/flows-base:1.1.0 python3 /flows/{flow_name}'
+    command = (
+        f'docker run --env-file {env_file} -v '
+        '$(pwd)/app/flows:/flows '
+        'gitlab-registry.internal.sanger.ac.uk/tol/tol-core/flows-base:1.1.0 python3 '
+        f'/flows/{flow_name}'
+    )
     click.secho(command, fg='green')
     run(command)
 

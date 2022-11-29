@@ -3,9 +3,10 @@
 # SPDX-License-Identifier: MIT
 
 from .base import Base, db
+from ..error import EnumNameNotFoundException
 
 
-class NamedEnumInstanceDoesNotExistException(Exception):
+class NamedEnumInstanceDoesNotExistException(EnumNameNotFoundException):
     pass
 
 
@@ -30,7 +31,10 @@ class EnumBase(Base):
         query = db.session.query(cls)
         instance = query.filter_by(name=name).one_or_none()
         if instance is None:
-            raise NamedEnumInstanceDoesNotExistException()
+            raise NamedEnumInstanceDoesNotExistException(
+                cls.get_type(),
+                name
+            )
         return instance
 
     @classmethod

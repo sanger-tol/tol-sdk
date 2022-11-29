@@ -27,8 +27,7 @@ class TestListGetEnum(BaseTestCase):
                 'errors': [{
                     'title': 'Bad Request',
                     'detail': "The (filter) name 'WRONG' does not "
-                              'exist on the enum I.',
-                    'code': 400
+                              'exist on the enum I.'
                 }]
             }
         )

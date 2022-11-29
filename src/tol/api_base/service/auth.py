@@ -4,11 +4,11 @@
 
 from ..model import User, State, Auth
 from ..schema import AuthSchema
-from . import BaseService, setup_service, \
-              provide_body_data, handle_400_data_validation_error, \
-              handle_400_db_integrity_error, \
-              handle_404, handle_400_nonexistent_service
-
+from . import (
+    BaseService,
+    setup_service,
+    provide_body_data
+)
 from flask import jsonify
 import uuid
 import urllib.parse
@@ -56,10 +56,6 @@ class AuthService(BaseService):
 
     @classmethod
     @provide_body_data
-    @handle_400_db_integrity_error
-    @handle_400_data_validation_error
-    @handle_400_nonexistent_service
-    @handle_404
     def get_token_from_callback(cls, data):
         # check that we know about this state
         state_from_db = State.query() \
@@ -87,10 +83,6 @@ class AuthService(BaseService):
 
     @classmethod
     @provide_body_data
-    @handle_400_db_integrity_error
-    @handle_400_data_validation_error
-    @handle_400_nonexistent_service
-    @handle_404
     def create_user_profile(cls, data):
         # get the user infromation from Elixir for this token
         response = requests.get(

@@ -70,12 +70,11 @@ class TestEnumLinkRelationshipByName(BaseTestCase):
             response.json,
             {
                 'errors': [{
-                    'code': 400,
                     'detail': 'An integrity error occured in the database. This is '
                               'most likely due to either a dependency on this '
                               'instance, if deleting, or a foreign reference to an '
                               'object that does not exist, if creating/updating.',
-                    'title': 'Bad Request'
+                    'title': 'Integrity Error'
                 }]
             }
         )

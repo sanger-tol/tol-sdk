@@ -22,12 +22,6 @@ class CombinedOpts(JsonapiSchemaOpts, SQLAlchemyAutoSchemaOpts):
     pass
 
 
-class BadEnumNameException(Exception):
-    def __init__(self, message):
-        self.message = message
-        super().__init__(message)
-
-
 class BaseSchema(SQLAlchemyAutoSchema, JsonapiSchema):
     class BaseMeta(SQLAlchemyAutoSchema.Meta):
         strict = True

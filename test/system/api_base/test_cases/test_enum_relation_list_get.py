@@ -88,7 +88,6 @@ class TestEnumRelationListGet(BaseTestCase):
             {
                 'errors': [{
                     'title': 'Not Found',
-                    'code': 404,
                     'detail': "No name 'nothing' exists on enum I."
                 }]
             }
