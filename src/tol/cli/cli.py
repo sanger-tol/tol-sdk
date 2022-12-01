@@ -106,15 +106,29 @@ def migration(message, env_file):
 # Run tests
 @cli.command()
 @click.option('--env-file', default='.env.dev', help='set a custom .env file')
-@click.option('--type', 'type_', default='unit', type=click.Choice(['unit', 'integration']),
+@click.option('--type', 'type_', default='unit',
+              type=click.Choice(['unit', 'system', 'integration']),
               help='type of test')
 def test(env_file, type_):
     service = get_app()
     click.echo('Running tests...')
-    command = f'docker run {service}-api pytest'
+    if type_ == 'unit':
+        docker_compose_entry = f'{service}-python-unit-test'
+        command = (
+            f'docker compose build {docker_compose_entry} && '
+            f'docker compose --env-file {env_file} run {docker_compose_entry}'
+        )
+    if type_ == 'system':
+        docker_compose_entry = f'{service}-python-system-test'
+        db_entry = f'{service}-python-db'
+        command = (
+            f'docker compose build {docker_compose_entry} && '
+            f'docker compose --env-file {env_file} up -d {db_entry} && '
+            f'docker compose --env-file {env_file} run {docker_compose_entry}'
+        )
     if type_ == 'integration':
-        command = f'docker compose --env-file {env_file} up --build --abort-on-container-exit ' \
-            + f'{service}-api-test'
+        click.echo('Integration tests are not supported at this time.')
+        return
     click.secho(command, fg='green')
     run(command)
 
@@ -141,7 +155,9 @@ def get_app():
 
 
 def run(command):
-    os.system(command)
+    return_code = os.system(command)
+    if return_code != 0:
+        exit(return_code)
 
 
 def run_capture(command):

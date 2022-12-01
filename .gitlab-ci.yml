@@ -10,7 +10,7 @@ variables:
 
 include:
   - project: 'tol/tol-core'
-    ref: main
+    ref: v1.1.0
     file: '/gitlab/main.yml'
 
 stages:
@@ -20,31 +20,11 @@ stages:
   - deploy
 
 
-api-base-unit-test:
-  stage: unit test
-  image: $DOCKER_IMAGE
-  services:
-    - name: $DIND_IMAGE
-      alias: docker
-  variables:
-    DOCKER_TLS_CERTDIR: ''
-    DOCKER_HOST: tcp://docker:2375
-  script:
-    - docker-compose run tol-sdk-api-unit-test
+tol-sdk-python-unit-test:
+  extends: .unit-test-python
 
 api-base-system-test:
-  stage: system test
-  image: $DOCKER_IMAGE
-  services:
-    - name: $DIND_IMAGE
-      alias: docker
-  variables:
-    DOCKER_TLS_CERTDIR: ''
-    DOCKER_HOST: tcp://docker:2375
-  script:
-    - docker-compose up -d tol-sdk-api-db
-    - docker-compose run tol-sdk-api-system-test
-    - docker-compose down
+  extends: .system-test-python
 
 deploy-package:
   extends: .deploy-python-package

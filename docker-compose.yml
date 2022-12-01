@@ -2,17 +2,15 @@
 #
 # SPDX-License-Identifier: MIT
 
-# This is used for local development only
 version: '3.1'
 
 services:
-  tol-sdk-api-unit-test:
-    image: python:3.8
-    volumes:
-      - ./:/app
-    command: bash -c "pip3 install /app && pip3 install -r /app/requirements-test.txt && pytest -v /app/test/unit"
+    
+  tol-sdk-python-unit-test:
+    build: .
+    command: pytest -v unit
 
-  tol-sdk-api-db:
+  tol-sdk-python-db:
     image: postgres:11
     environment:
       - POSTGRES_USER=test-user
@@ -21,15 +19,13 @@ services:
     networks:
       - api-base-test-network
     
-  tol-sdk-api-system-test:
-    image: python:3.8
-    command: bash -c "pip3 install /app && python3 -m pip install -r /app/requirements-test.txt && pytest -v /app/test/system/api_base"
+  tol-sdk-python-system-test:
+    build: .
+    command: pytest -v system
     environment:
-      - DB_URI=postgresql://test-user:test-password@tol-sdk-api-db:5432/test-db
-    volumes:
-      - ./:/app
+      - DB_URI=postgresql://test-user:test-password@tol-sdk-python-db:5432/test-db
     depends_on:
-      - tol-sdk-api-db
+      - tol-sdk-python-db
     networks:
       - api-base-test-network
 
