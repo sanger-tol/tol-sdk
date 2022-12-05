@@ -5,107 +5,103 @@
 from __future__ import absolute_import
 
 from tol.api_base.auth import auth
-
 from tol.api_base.resource.base import AutoResourceGroup, BaseResource, setup_resource_group
 
-from .services import A_Service, B_Service, C_Service, D_Service, \
-                               E_Service, F_Service, G_Service, H_Service, \
-                               I_Service, J_Service
-from .swaggers import A_Swagger, B_Swagger, C_Swagger, D_Swagger, \
-                               E_Swagger, F_Swagger, G_Swagger, H_Swagger, \
-                               I_Swagger, J_Swagger
+from .services import AService, BService, CService, DService, EService, FService, GService, \
+    HService, IService, JService
+from .swaggers import ASwagger, BSwagger, CSwagger, DSwagger, ESwagger, FSwagger, GSwagger, \
+    HSwagger, ISwagger, JSwagger
 
-
-api_A = A_Swagger.api
-api_B = B_Swagger.api
-api_C = C_Swagger.api
-api_D = D_Swagger.api
-api_E = E_Swagger.api
-api_F = F_Swagger.api
-api_G = G_Swagger.api
-api_H = H_Swagger.api
-api_I = I_Swagger.api
-api_J = J_Swagger.api
+api_a = ASwagger.api
+api_b = BSwagger.api
+api_c = CSwagger.api
+api_d = DSwagger.api
+api_e = ESwagger.api
+api_f = FSwagger.api
+api_g = GSwagger.api
+api_h = HSwagger.api
+api_i = ISwagger.api
+api_j = JSwagger.api
 
 
 @setup_resource_group
-class A_Resource(AutoResourceGroup):
+class AResource(AutoResourceGroup):
     class Meta:
-        service = A_Service
-        swagger = A_Swagger
+        service = AService
+        swagger = ASwagger
 
 
 @setup_resource_group
-class B_Resource(AutoResourceGroup):
+class BResource(AutoResourceGroup):
     class Meta:
-        service = B_Service
-        swagger = B_Swagger
+        service = BService
+        swagger = BSwagger
 
 
 @setup_resource_group
-class C_Resource(AutoResourceGroup):
+class CResource(AutoResourceGroup):
     class Meta:
-        service = C_Service
-        swagger = C_Swagger
+        service = CService
+        swagger = CSwagger
 
 
 @setup_resource_group
-class D_Resource(AutoResourceGroup):
+class DResource(AutoResourceGroup):
     class Meta:
-        service = D_Service
-        swagger = D_Swagger
+        service = DService
+        swagger = DSwagger
 
 
 @setup_resource_group
-class E_Resource(AutoResourceGroup):
+class EResource(AutoResourceGroup):
     class Meta:
-        service = E_Service
-        swagger = E_Swagger
+        service = EService
+        swagger = ESwagger
 
 
 @setup_resource_group
-class F_Resource(AutoResourceGroup):
+class FResource(AutoResourceGroup):
     class Meta:
-        service = F_Service
-        swagger = F_Swagger
+        service = FService
+        swagger = FSwagger
 
 
 @setup_resource_group
-class G_Resource(AutoResourceGroup):
+class GResource(AutoResourceGroup):
     class Meta:
-        service = G_Service
-        swagger = G_Swagger
+        service = GService
+        swagger = GSwagger
 
 
 @setup_resource_group
-class H_Resource(AutoResourceGroup):
+class HResource(AutoResourceGroup):
     class Meta:
-        service = H_Service
-        swagger = H_Swagger
+        service = HService
+        swagger = HSwagger
 
-    @api_H.route('/42')
-    class H_42Resource(BaseResource):
+    @api_h.route('/42')
+    class H42Resource(BaseResource):
         @classmethod
         def get(cls):
-            return H_Service.return_42()
+            return HService.return_42()
 
 
 @setup_resource_group
-class I_Resource(AutoResourceGroup):
+class IResource(AutoResourceGroup):
     class Meta:
-        service = I_Service
-        swagger = I_Swagger
+        service = IService
+        swagger = ISwagger
 
-    @api_I.route('/parrot')
-    class I_ParrotResouce(BaseResource):
+    @api_i.route('/parrot')
+    class IParrotResouce(BaseResource):
         @classmethod
-        @auth(api_I)
+        @auth(api_i)
         def post(cls, user_id=None):
-            return I_Service.parrot(user_id=user_id)
+            return IService.parrot(user_id=user_id)
 
 
 @setup_resource_group
-class J_Resource(AutoResourceGroup):
+class JResource(AutoResourceGroup):
     class Meta:
-        service = J_Service
-        swagger = J_Swagger
+        service = JService
+        swagger = JSwagger

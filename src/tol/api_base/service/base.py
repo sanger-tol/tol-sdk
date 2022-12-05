@@ -3,13 +3,13 @@
 # SPDX-License-Identifier: MIT
 
 import json
-
-from flask import Response, request
 from functools import wraps
 
+from flask import Response, request
+
 from ..error import (
-    BadTargetServiceException,
-    BadParameterStringException
+    BadParameterStringException,
+    BadTargetServiceException
 )
 
 
@@ -69,7 +69,7 @@ class BaseService:
     def _split_filter_term(cls, filter_term):
         if '==' not in filter_term:
             raise BadParameterStringException(
-                "There is no double equals sign in filter "
+                'There is no double equals sign in filter '
                 f"term: '{filter_term}'."
             )
         (filter_key, filter_value) = filter_term.split('==', 1)
@@ -86,8 +86,8 @@ class BaseService:
         if not filter_string:
             return None
         if not (
-            filter_string.startswith('[') and
-            filter_string.endswith(']')
+            filter_string.startswith('[')
+            and filter_string.endswith(']')
         ):
             raise BadParameterStringException(
                 'The entire filter query parameter must '
@@ -124,7 +124,7 @@ class BaseService:
     @classmethod
     def error_401(cls, message):
         return cls._custom_error(
-            "Unauthorized",
+            'Unauthorized',
             401,
             message
         )
@@ -132,15 +132,15 @@ class BaseService:
     @classmethod
     def _custom_error(cls, title, code, detail):
         errors = [{
-            "title": title,
-            "code": code,
-            "detail": detail
+            'title': title,
+            'code': code,
+            'detail': detail
         }]
         response = {
             'errors': errors
         }
         return Response(
-            mimetype="application/json",
+            mimetype='application/json',
             response=json.dumps(response),
             status=code
         )
@@ -153,9 +153,9 @@ class BaseService:
         return target_service
 
     @classmethod
-    def get_bulk_results_for_related_by_id(cls, id, calling_service, **kwargs):
+    def get_bulk_results_for_related_by_id(cls, id_, calling_service, **kwargs):
         relation_model = calling_service.get_model()
-        return cls.get_model().bulk_find_on_relation_id(relation_model, id, **kwargs)
+        return cls.get_model().bulk_find_on_relation_id(relation_model, id_, **kwargs)
 
     @classmethod
     def get_bulk_results_for_related_by_name(cls, name, calling_service, **kwargs):
@@ -186,16 +186,16 @@ class BaseService:
         return new_model_instance
 
     @classmethod
-    def read_by_id(cls, id, user_id=None):
+    def read_by_id(cls, id_, user_id=None):
         schema = cls.Meta.schema()
-        model_instance = cls.Meta.model.find_by_id(id)
+        model_instance = cls.Meta.model.find_by_id(id_)
         return schema.dump(model_instance), 200
 
     @classmethod
     @provide_body_data
-    def update_by_id(cls, id, data, user_id=None):
+    def update_by_id(cls, id_, data, user_id=None):
         schema = cls.Meta.schema()
-        old_model_instance = cls.Meta.model.find_by_id(id)
+        old_model_instance = cls.Meta.model.find_by_id(id_)
         new_model_instance = cls._update_model_instance(
             old_model_instance,
             data,
@@ -205,8 +205,8 @@ class BaseService:
         return schema.dump(new_model_instance), 200
 
     @classmethod
-    def delete_by_id(cls, id, user_id=None):
-        model_instance = cls.Meta.model.find_by_id(id)
+    def delete_by_id(cls, id_, user_id=None):
+        model_instance = cls.Meta.model.find_by_id(id_)
         model_instance.delete()
         return None, 204
 
@@ -227,14 +227,14 @@ class BaseService:
 
     @classmethod
     @provide_parameters
-    def read_bulk_related_by_id(cls, id, target_service_name, user_id=None, **kwargs):
+    def read_bulk_related_by_id(cls, id_, target_service_name, user_id=None, **kwargs):
         """
         Called on the service for the first part of the endpoint
         e.g. A in /A/{id}/B
         """
         target_service = cls._get_target_service_by_name(target_service_name)
         schema = target_service.get_schema(many=True)
-        model_instances = target_service.get_bulk_results_for_related_by_id(id, cls, **kwargs)
+        model_instances = target_service.get_bulk_results_for_related_by_id(id_, cls, **kwargs)
         return schema.dump(model_instances), 200
 
     @classmethod

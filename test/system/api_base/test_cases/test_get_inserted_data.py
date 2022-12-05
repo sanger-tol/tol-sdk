@@ -6,9 +6,9 @@ from ..test_case import BaseTestCase
 
 
 class TestGetInsertedData(BaseTestCase):
-    def test_get_inserted_B_200(self):
-        self.add_A(id=90)
-        self.add_B(id=10, a_id=90)
+    def test_get_inserted_b_200(self):
+        self.add_a(id=90)
+        self.add_b(id=10, a_id=90)
 
         expected = {
             'data': {
@@ -43,8 +43,8 @@ class TestGetInsertedData(BaseTestCase):
         )
         self.assertEqual(expected, response.json)
 
-    def test_get_inserted_C_200(self):
-        self.add_C(id=9, other_column='test the world')
+    def test_get_inserted_c_200(self):
+        self.add_c(id=9, other_column='test the world')
 
         expected = {
             'data': {
@@ -67,8 +67,8 @@ class TestGetInsertedData(BaseTestCase):
         )
         self.assertEqual(expected, response.json)
 
-    def test_get_inserted_D_200(self):
-        self.add_D(
+    def test_get_inserted_d_200(self):
+        self.add_d(
             id=1122,
             non_nullable_column='This shouldnt be null',
             other_column='This, however, can be null!',
@@ -79,8 +79,8 @@ class TestGetInsertedData(BaseTestCase):
                 'id': '1122',
                 'type': 'D',
                 'attributes': {
-                    "non_nullable_column": 'This shouldnt be null',
-                    "other_column": 'This, however, can be null!',
+                    'non_nullable_column': 'This shouldnt be null',
+                    'other_column': 'This, however, can be null!',
                 }
             }
         }

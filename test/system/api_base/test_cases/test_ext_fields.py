@@ -2,28 +2,27 @@
 #
 # SPDX-License-Identifier: MIT
 
+from ..models import AModelRelationship, FModelWithExtField
 from ..test_case import BaseTestCase
-from ..models import A_ModelRelationship, \
-                             F_ModelWithExtField
 
 
 class TestExtraFieldsInRequestBody(BaseTestCase):
-    def test_ext_field_does_not_exist_A(self):
+    def test_ext_field_does_not_exist_a(self):
         self.assertEqual(
-            A_ModelRelationship.has_ext_column(),
+            AModelRelationship.has_ext_column(),
             False
         )
 
-    def test_ext_field_exists_F(self):
+    def test_ext_field_exists_f(self):
         self.assertEqual(
-            F_ModelWithExtField.has_ext_column(),
+            FModelWithExtField.has_ext_column(),
             True
         )
 
-    def test_extra_fields_post_F_201(self):
+    def test_extra_fields_post_f_201(self):
         extra_fields = {
-            "extra_field": "superfluity",
-            "another_ext": "Yet another extra field"
+            'extra_field': 'superfluity',
+            'another_ext': 'Yet another extra field'
         }
         response = self.client.open(
             '/api/v1/F',
@@ -43,13 +42,13 @@ class TestExtraFieldsInRequestBody(BaseTestCase):
             f'Response body is : {response.data.decode("utf-8")}'
         )
 
-        id = response.json['data']['id']
+        id_ = response.json['data']['id']
         self.assertEqual(
             response.json,
             {
                 'data': {
                     'type': 'F',
-                    'id': id,
+                    'id': id_,
                     'attributes': {
                         'other_column': None
                     },
@@ -59,10 +58,10 @@ class TestExtraFieldsInRequestBody(BaseTestCase):
                 }
             }
         )
-        F_instance = F_ModelWithExtField.find_by_id(id)
-        self.assertEqual(F_instance.ext, extra_fields)
+        f_instance = FModelWithExtField.find_by_id(id_)
+        self.assertEqual(f_instance.ext, extra_fields)
 
-    def test_no_extra_fields_post_F_201(self):
+    def test_no_extra_fields_post_f_201(self):
         response = self.client.open(
             '/api/v1/F',
             method='POST',
@@ -78,7 +77,7 @@ class TestExtraFieldsInRequestBody(BaseTestCase):
         )
         self.assert201(response)
 
-        id = response.json['data']['id']
+        id_ = response.json['data']['id']
         self.assertEqual(
             response.json,
             {
@@ -87,19 +86,19 @@ class TestExtraFieldsInRequestBody(BaseTestCase):
                     'attributes': {
                         'other_column': 'nice test'
                     },
-                    'id': id,
+                    'id': id_,
                     'meta': {
                         'ext': {}
                     }
                 }
             }
         )
-        F_instance = F_ModelWithExtField.find_by_id(id)
-        self.assertEqual(F_instance.ext, {})
+        f_instance = FModelWithExtField.find_by_id(id_)
+        self.assertEqual(f_instance.ext, {})
 
-    def test_extra_fields_patch_B_400(self):
-        self.add_A(id=50)
-        self.add_B(id=20, a_id=50)
+    def test_extra_fields_patch_b_400(self):
+        self.add_a(id=50)
+        self.add_b(id=20, a_id=50)
 
         response = self.client.open(
             '/api/v1/B/20',
@@ -122,8 +121,8 @@ class TestExtraFieldsInRequestBody(BaseTestCase):
             f'Response body is : {response.data.decode("utf-8")}'
         )
 
-    def test_no_extra_fields_get_F_200(self):
-        self.add_F(id=290)
+    def test_no_extra_fields_get_f_200(self):
+        self.add_f(id=290)
 
         response = self.client.open(
             '/api/v1/F/290',
@@ -150,15 +149,15 @@ class TestExtraFieldsInRequestBody(BaseTestCase):
             }
         )
 
-    def test_variety_type_extra_fields_get_F_200(self):
+    def test_variety_type_extra_fields_get_f_200(self):
         ext_data = {
-            "arrayData": [27, {
-                "testElement": "123"
+            'arrayData': [27, {
+                'testElement': '123'
             }],
-            "float": 9090.248,
-            "null": [None]
+            'float': 9090.248,
+            'null': [None]
         }
-        self.add_F(id=297, ext=ext_data)
+        self.add_f(id=297, ext=ext_data)
 
         response = self.client.open(
             '/api/v1/F/297',
@@ -184,14 +183,14 @@ class TestExtraFieldsInRequestBody(BaseTestCase):
             }
         )
 
-    def test_extra_fields_overwrite_patch_F_200(self):
-        self.add_F(
+    def test_extra_fields_overwrite_patch_f_200(self):
+        self.add_f(
             id=90900,
             ext={
-                "first": "nice",
-                "second": "nicer",
-                "third": "nicest",
-                "fourth": "irrelevant"
+                'first': 'nice',
+                'second': 'nicer',
+                'third': 'nicest',
+                'fourth': 'irrelevant'
             }
         )
         # overwrite 1,2 ; remove 3, leave 4 unchanged, add 5
@@ -204,10 +203,10 @@ class TestExtraFieldsInRequestBody(BaseTestCase):
                     'attributes': {},
                     'meta': {
                         'ext': {
-                            "first": "not very nice",
-                            "second": "much less nice",
-                            "third": None,
-                            "fifth": "the worst of the bunch"
+                            'first': 'not very nice',
+                            'second': 'much less nice',
+                            'third': None,
+                            'fifth': 'the worst of the bunch'
                         }
                     }
                 }
@@ -226,11 +225,11 @@ class TestExtraFieldsInRequestBody(BaseTestCase):
                     'other_column': None
                 },
                 'meta': {
-                    "ext": {
-                        "first": "not very nice",
-                        "second": "much less nice",
-                        "fourth": "irrelevant",
-                        "fifth": "the worst of the bunch",
+                    'ext': {
+                        'first': 'not very nice',
+                        'second': 'much less nice',
+                        'fourth': 'irrelevant',
+                        'fifth': 'the worst of the bunch',
                     },
                 }
             }

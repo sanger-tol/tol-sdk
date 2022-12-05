@@ -7,7 +7,7 @@ from ..test_case import BaseTestCase
 
 class TestBadSortByParameter200(BaseTestCase):
     def test_no_sort_by_key_200(self):
-        self.add_D(id=890, non_nullable_column='a nice test')
+        self.add_d(id=890, non_nullable_column='a nice test')
         response = self.client.open(
             '/api/v1/D?sort_by=',
             method='GET'
@@ -19,10 +19,10 @@ class TestBadSortByParameter200(BaseTestCase):
         self.assertEqual(len(response.json['data']), 1)
 
     def test_sort_by_default_id_ascending_200(self):
-        self.add_C(id=89)
-        self.add_C(id=39489)
-        self.add_C(id=768)
-        self.add_C(id=78)
+        self.add_c(id=89)
+        self.add_c(id=39489)
+        self.add_c(id=768)
+        self.add_c(id=78)
 
         # no sort_by parameter specified
         response = self.client.open(
@@ -77,9 +77,9 @@ class TestBadSortByParameter200(BaseTestCase):
         )
 
     def test_sort_by_and_filter_200(self):
-        self.add_G(id=90909, bool_column=True)
-        self.add_G(id=45878, bool_column=False)
-        self.add_G(id=7482, bool_column=True)
+        self.add_g(id=90909, bool_column=True)
+        self.add_g(id=45878, bool_column=False)
+        self.add_g(id=7482, bool_column=True)
 
         # filter for two, sort by id descending
         response = self.client.open(

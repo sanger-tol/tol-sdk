@@ -1,7 +1,8 @@
 # SPDX-FileCopyrightText: 2021 Genome Research Ltd.
 #
 # SPDX-License-Identifier: MIT
-from tol.sciops.messages import LabwareMessage, CreateLabwareMessage, UpdateLabwareMessage
+
+from tol.sciops.messages import CreateLabwareMessage, LabwareMessage, UpdateLabwareMessage
 
 
 class MessageBuilder:
@@ -17,79 +18,79 @@ class MessageBuilder:
         elif isinstance(message, UpdateLabwareMessage):
             return cls._build_update_labware_message(message)
         else:
-            raise TypeError("Unknown message type provided")
+            raise TypeError('Unknown message type provided')
 
     @staticmethod
     def _build_create_labware_message(message: CreateLabwareMessage) -> dict:
         """ Build a create_labware message """
-        output = dict()
-        labware_dict = dict()
+        output = {}
+        labware_dict = {}
         samples = []
         for sample in message.samples:
-            sample_dict = dict()
+            sample_dict = {}
             sample_dict.update(
-                {} if sample.sample_uuid is None else {"sampleUuid": sample.sample_uuid.encode()})
+                {} if sample.sample_uuid is None else {'sampleUuid': sample.sample_uuid.encode()})
             sample_dict.update(
-                {} if sample.study_uuid is None else {"studyUuid": sample.study_uuid.encode()})
+                {} if sample.study_uuid is None else {'studyUuid': sample.study_uuid.encode()})
             sample_dict.update({} if sample.sanger_sample_id is None else {
-                "sangerSampleId": sample.sanger_sample_id})
-            sample_dict.update({} if sample.location is None else {"location": sample.location})
+                'sangerSampleId': sample.sanger_sample_id})
+            sample_dict.update({} if sample.location is None else {'location': sample.location})
             sample_dict.update(
                 {} if sample.supplier_sample_name is None else {
-                    "supplierSampleName": sample.supplier_sample_name})
-            sample_dict.update({} if sample.volume is None else {"volume": sample.volume})
+                    'supplierSampleName': sample.supplier_sample_name})
+            sample_dict.update({} if sample.volume is None else {'volume': sample.volume})
             sample_dict.update(
-                {} if sample.concentration is None else {"concentration": sample.concentration})
+                {} if sample.concentration is None else {'concentration': sample.concentration})
             sample_dict.update(
-                {} if sample.public_name is None else {"publicName": sample.public_name})
-            sample_dict.update({} if sample.taxon_id is None else {"taxonId": sample.taxon_id})
+                {} if sample.public_name is None else {'publicName': sample.public_name})
+            sample_dict.update({} if sample.taxon_id is None else {'taxonId': sample.taxon_id})
             sample_dict.update(
-                {} if sample.common_name is None else {"commonName": sample.common_name})
-            sample_dict.update({} if sample.donor_id is None else {"donorId": sample.donor_id})
+                {} if sample.common_name is None else {'commonName': sample.common_name})
+            sample_dict.update({} if sample.donor_id is None else {'donorId': sample.donor_id})
             sample_dict.update(
-                {} if sample.library_type is None else {"libraryType": sample.library_type})
+                {} if sample.library_type is None else {'libraryType': sample.library_type})
             sample_dict.update({} if sample.country_of_origin is None else {
-                "countryOfOrigin": sample.country_of_origin})
+                'countryOfOrigin': sample.country_of_origin})
             sample_dict.update({} if sample.sample_collection_date_utc is None else {
-                "sampleCollectionDateUtc": sample.sample_collection_date_utc.timestamp() * 1000})
+                'sampleCollectionDateUtc': sample.sample_collection_date_utc.timestamp() * 1000})
             samples.append(sample_dict)
         labware_dict.update(
-            {} if message.labware_type is None else {"labwareType": message.labware_type})
+            {} if message.labware_type is None else {'labwareType': message.labware_type})
         labware_dict.update(
-            {} if message.labware_uuid is None else {"labwareUuid": message.labware_uuid.encode()})
-        labware_dict.update({} if message.barcode is None else {"barcode": message.barcode})
-        labware_dict["samples"] = samples
+            {} if message.labware_uuid is None else {'labwareUuid': message.labware_uuid.encode()})
+        labware_dict.update({} if message.barcode is None else {'barcode': message.barcode})
+        labware_dict['samples'] = samples
         output.update(
-            {} if message.message_uuid is None else {"messageUuid": message.message_uuid.encode()})
+            {} if message.message_uuid is None else {'messageUuid': message.message_uuid.encode()})
         output.update({} if message.message_create_date_utc is None else {
-            "messageCreateDateUtc": message.message_create_date_utc.timestamp() * 1000})
-        output["labware"] = labware_dict
+            'messageCreateDateUtc': message.message_create_date_utc.timestamp() * 1000})
+        output['labware'] = labware_dict
         return output
 
     @staticmethod
     def _build_update_labware_message(message: UpdateLabwareMessage) -> dict:
         """ Build a update_labware message """
-        output = dict()
+        output = {}
         labware_updates = []
         sample_updates = []
         for upd in message.labware_updates:
-            labware_updates_dict = dict()
+            labware_updates_dict = {}
             labware_updates_dict.update(
-                {} if upd.uuid is None else {"labwareUuid": upd.uuid.encode()})
-            labware_updates_dict.update({} if upd.name is None else {"name": upd.name})
-            labware_updates_dict.update({} if upd.value is None else {"value": upd.value})
+                {} if upd.uuid is None else {'labwareUuid': upd.uuid.encode()})
+            labware_updates_dict.update({} if upd.name is None else {'name': upd.name})
+            labware_updates_dict.update({} if upd.value is None else {'value': upd.value})
             labware_updates.append(labware_updates_dict)
         for upd in message.sample_updates:
-            sample_updates_dict = dict()
+            sample_updates_dict = {}
             sample_updates_dict.update(
-                {} if upd.uuid is None else {"sampleUuid": upd.uuid.encode()})
-            sample_updates_dict.update({} if upd.name is None else {"name": upd.name})
-            sample_updates_dict.update({} if upd.value is None else {"value": upd.value})
+                {} if upd.uuid is None else {'sampleUuid': upd.uuid.encode()})
+            sample_updates_dict.update({} if upd.name is None else {'name': upd.name})
+            sample_updates_dict.update({} if upd.value is None else {'value': upd.value})
             sample_updates.append(sample_updates_dict)
         output.update(
-            {} if message.message_uuid is None else {"messageUuid": message.message_uuid.encode()})
+            {} if message.message_uuid is None else {'messageUuid': message.message_uuid.encode()})
         output.update({} if message.message_create_date_utc is None else {
-            "messageCreateDateUtc": message.message_create_date_utc.timestamp() * 1000})
-        output["labwareUpdates"] = labware_updates
-        output["sampleUpdates"] = sample_updates
+            'messageCreateDateUtc': message.message_create_date_utc.timestamp() * 1000})
+        output['labwareUpdates'] = labware_updates
+        output['sampleUpdates'] = sample_updates
         return output

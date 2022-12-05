@@ -3,6 +3,7 @@
 # SPDX-License-Identifier: MIT
 
 from datetime import datetime
+
 from flask_restx import Namespace, fields
 
 
@@ -122,7 +123,7 @@ class BaseSwagger:
         if 'name' in attributes and cls.is_enum_swagger():
             attributes['name'] = {
                 'type': 'string',
-                'default': "name"
+                'default': 'name'
             }
         return {
             'type': 'object',
@@ -143,7 +144,7 @@ class BaseSwagger:
                         },
                         'id': {
                             'type': 'string',
-                            'default': "1"
+                            'default': '1'
                         }
                     }
                 }
@@ -170,11 +171,11 @@ class BaseSwagger:
     @classmethod
     def _get_many_to_one_relationships_dict(cls, is_request):
         relationships = cls.request_many_to_one_relationships \
-                        if is_request \
-                        else cls.response_many_to_one_relationships
+            if is_request \
+            else cls.response_many_to_one_relationships
         return {
             special_name: cls._get_individual_many_to_one_relationship_dict(
-                relationships[special_name]["target_table"]
+                relationships[special_name]['target_table']
             )
             for special_name
             in relationships.keys()
@@ -225,7 +226,7 @@ class BaseSwagger:
             }
         }
         return {
-            "type": "object",
+            'type': 'object',
             'properties': {
                 'type': {
                     'type': 'string',
@@ -248,7 +249,7 @@ class BaseSwagger:
         return {
             'type': 'object',
             'properties': {
-                "data": cls.get_resource_object_schema_model(
+                'data': cls.get_resource_object_schema_model(
                     is_request=True
                 )
             }

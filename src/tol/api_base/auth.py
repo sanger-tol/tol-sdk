@@ -3,7 +3,9 @@
 # SPDX-License-Identifier: MIT
 
 from functools import wraps
+
 from flask import request
+
 from flask_restx import Namespace
 
 from .model import get_user_id_via_token
@@ -24,10 +26,10 @@ def auth_dec():
         def decorated(resource, *args, **kwargs):
             token = request.headers.get('Authorization')
             if not token:
-                return resource.auth_error("Auth token is missing")
+                return resource.auth_error('Auth token is missing')
             user_id = get_user_id_via_token(token)
             if user_id is None:
-                return resource.auth_error("User does not exist")
+                return resource.auth_error('User does not exist')
             return function(resource, *args, user_id=user_id, **kwargs)
         return decorated
     return wrap_decorator

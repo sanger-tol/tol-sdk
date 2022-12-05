@@ -6,8 +6,8 @@ from ..test_case import BaseTestCase
 
 
 class TestEnumMethodsByName(BaseTestCase):
-    def test_I_get_by_name_200(self):
-        self.add_I(id=348598, name='testing')
+    def test_i_get_by_name_200(self):
+        self.add_i(id=348598, name='testing')
         # get by name
         response = self.client.open(
             '/api/v1/enum/I/testing',
@@ -39,9 +39,9 @@ class TestEnumMethodsByName(BaseTestCase):
             }
         )
 
-    def test_I_get_by_bad_name_404(self):
+    def test_i_get_by_bad_name_404(self):
         # add an irrelevant I
-        self.add_I(id=348523, name='nice')
+        self.add_i(id=348523, name='nice')
         # get a non-existent name
         response = self.client.open(
             '/api/v1/enum/I/not_nice',
@@ -54,7 +54,7 @@ class TestEnumMethodsByName(BaseTestCase):
 
     def test_no_override_id_by_name_patch_400(self):
         # add an I
-        self.add_I(id=4989, name='happy')
+        self.add_i(id=4989, name='happy')
         # attempt to patch to a new id
         response = self.client.open(
             '/api/v1/enum/I/happy',
@@ -128,7 +128,7 @@ class TestEnumMethodsByName(BaseTestCase):
 
     def test_override_name_by_name_patch_200(self):
         # add an I
-        self.add_I(id=1480, name='nicely')
+        self.add_i(id=1480, name='nicely')
         # attempt to patch to a new id
         response = self.client.open(
             '/api/v1/enum/I/nicely',
@@ -169,8 +169,8 @@ class TestEnumMethodsByName(BaseTestCase):
             }
         )
 
-    def test_delete_by_name_I(self):
-        self.add_I(id=34989, name='day', description='quaint')
+    def test_delete_by_name_i(self):
+        self.add_i(id=34989, name='day', description='quaint')
 
         # delete the instance by name
         response = self.client.open(
@@ -190,12 +190,12 @@ class TestEnumMethodsByName(BaseTestCase):
             f'Response body is : {response.data.decode("utf-8")}'
         )
 
-    def test_equivalent_methods_list_get_I_and_J(self):
+    def test_equivalent_methods_list_get_i_and_j(self):
         # add the data
-        self.add_I(id=878, name='excellent')
-        self.add_J(id=909090, I='excellent')
-        self.add_J(id=8374483, I='excellent')
-        self.add_J(id=987, I='excellent')
+        self.add_i(id=878, name='excellent')
+        self.add_j(id=909090, I='excellent')
+        self.add_j(id=8374483, I='excellent')
+        self.add_j(id=987, I='excellent')
 
         # the expected data (should be identical for both)
         expected_data = {

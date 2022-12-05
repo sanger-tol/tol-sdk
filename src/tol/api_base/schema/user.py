@@ -2,9 +2,8 @@
 #
 # SPDX-License-Identifier: MIT
 
-from ..model import User
-
 from .base import BaseSchema, setup_schema
+from ..model import User
 
 
 @setup_schema

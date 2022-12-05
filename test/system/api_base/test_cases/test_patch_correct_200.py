@@ -6,13 +6,13 @@ from ..test_case import BaseTestCase
 
 
 class TestUpdatedCorrectly200(BaseTestCase):
-    def test_updated_correctly_B_200(self):
+    def test_updated_correctly_b_200(self):
         a_id = 109
         new_a_id = 9090
         b_id = 218
-        self.add_A(id=a_id)
-        self.add_A(id=new_a_id)
-        self.add_B(id=b_id, a_id=a_id)
+        self.add_a(id=a_id)
+        self.add_a(id=new_a_id)
+        self.add_b(id=b_id, a_id=a_id)
 
         response = self.client.open(
             f'/api/v1/B/{b_id}',
@@ -21,10 +21,10 @@ class TestUpdatedCorrectly200(BaseTestCase):
                 'data': {
                     'type': 'B',
                     'relationships': {
-                        "A": {
-                            "data": {
-                                "type": 'A',
-                                "id": str(new_a_id)
+                        'A': {
+                            'data': {
+                                'type': 'A',
+                                'id': str(new_a_id)
                             }
                         }
                     }
@@ -53,7 +53,7 @@ class TestUpdatedCorrectly200(BaseTestCase):
                                 'related': f'/A/{new_a_id}'
                             }
                         },
-                        "E": {
+                        'E': {
                             'links': {
                                 'related': f'/B/{b_id}/E'
                             }

@@ -199,8 +199,8 @@ def add_entity_sts_ids(submissions):
         else:
             get_prefect_logger().warning('Cannot find STS ID for tube: '
                                          + submission['fluidx_id'])
-    get_prefect_logger().info("Total number of containers with content parent's STS id: " +
-                              str(len(ret)))
+    get_prefect_logger().info("Total number of containers with content parent's STS id: "
+                              f'{len(ret)}')
     return ret
 
 

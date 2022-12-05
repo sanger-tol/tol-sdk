@@ -2,7 +2,7 @@
 #
 # SPDX-License-Identifier: MIT
 
-from flask_restx import fields, Namespace
+from flask_restx import Namespace, fields
 
 from ..schema import AuthSchema
 from ..swagger import BaseSwagger, setup_swagger

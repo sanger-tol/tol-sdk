@@ -6,21 +6,21 @@ from ..test_case import BaseTestCase
 
 
 class TestListGet(BaseTestCase):
-    def test_get_multiple_inserted_C_200(self):
+    def test_get_multiple_inserted_c_200(self):
         c_1 = {
-            "id": 9090,
+            'id': 9090,
         }
         c_2 = {
-            "id": 80808,
-            "nullable_column": "hello, how are you"
+            'id': 80808,
+            'nullable_column': 'hello, how are you'
         }
         c_3 = {
-            "id": 989089,
-            "other_column": "fine, and yourself?"
+            'id': 989089,
+            'other_column': 'fine, and yourself?'
         }
-        self.add_C(**c_1)
-        self.add_C(**c_2)
-        self.add_C(**c_3)
+        self.add_c(**c_1)
+        self.add_c(**c_2)
+        self.add_c(**c_3)
 
         response = self.client.open(
             '/api/v1/C',
@@ -46,7 +46,7 @@ class TestListGet(BaseTestCase):
                         'type': 'C',
                         'id': '80808',
                         'attributes': {
-                            'nullable_column': "hello, how are you",
+                            'nullable_column': 'hello, how are you',
                             'other_column': None
                         }
                     },
@@ -55,18 +55,18 @@ class TestListGet(BaseTestCase):
                         'id': '989089',
                         'attributes': {
                             'nullable_column': None,
-                            'other_column': "fine, and yourself?"
+                            'other_column': 'fine, and yourself?'
                         }
                     },
                 ]
             }
         )
 
-    def test_paged_correct_quantity_C_200(self):
+    def test_paged_correct_quantity_c_200(self):
         for i in range(47):
-            self.add_C(
+            self.add_c(
                 id=i,
-                nullable_column="attack of the clones"
+                nullable_column='attack of the clones'
             )
 
         # (implictly) first page
@@ -116,14 +116,14 @@ class TestListGet(BaseTestCase):
         # should not be populated at all
         self.assertEqual(len(response.json['data']), 0)
 
-    def test_quantity_all_parameters_simultaneously_get_C_200(self):
+    def test_quantity_all_parameters_simultaneously_get_c_200(self):
         # add 50 C's, half of which the filter should match
         for i in range(50):
-            self.add_C(
+            self.add_c(
                 id=i,
-                nullable_column="monoclonal antibodies"
+                nullable_column='monoclonal antibodies'
                 if i % 2 == 0
-                else "something about clones"
+                else 'something about clones'
             )
 
         response = self.client.open(
@@ -138,10 +138,10 @@ class TestListGet(BaseTestCase):
         # 5 = 50/2 - 20
         self.assertEqual(len(response.json['data']), 5)
 
-    def test_bad_page_get_C_400(self):
-        self.add_C(
+    def test_bad_page_get_c_400(self):
+        self.add_c(
             id=100,
-            nullable_column="test not clone"
+            nullable_column='test not clone'
         )
 
         # out of range page

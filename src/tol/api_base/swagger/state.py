@@ -2,9 +2,8 @@
 #
 # SPDX-License-Identifier: MIT
 
-from ..schema import StateSchema
-
 from .base import BaseSwagger, setup_swagger
+from ..schema import StateSchema
 
 
 @setup_swagger

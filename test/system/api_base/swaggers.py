@@ -4,67 +4,65 @@
 
 from tol.api_base.swagger.base import BaseSwagger, setup_swagger
 
-from .schemas import A_Schema, B_Schema, C_Schema, \
-                              D_Schema, E_Schema, F_Schema, \
-                              G_Schema, H_Schema, I_Schema, \
-                              J_Schema
+from .schemas import ASchema, BSchema, CSchema, DSchema, ESchema, FSchema, \
+    GSchema, HSchema, ISchema, JSchema
 
 
 @setup_swagger
-class A_Swagger(BaseSwagger):
+class ASwagger(BaseSwagger):
     class Meta:
-        schema = A_Schema
+        schema = ASchema
 
 
 @setup_swagger
-class B_Swagger(BaseSwagger):
+class BSwagger(BaseSwagger):
     class Meta:
-        schema = B_Schema
+        schema = BSchema
 
 
 @setup_swagger
-class C_Swagger(BaseSwagger):
+class CSwagger(BaseSwagger):
     class Meta:
-        schema = C_Schema
+        schema = CSchema
 
 
 @setup_swagger
-class D_Swagger(BaseSwagger):
+class DSwagger(BaseSwagger):
     class Meta:
-        schema = D_Schema
+        schema = DSchema
 
 
 @setup_swagger
-class E_Swagger(BaseSwagger):
+class ESwagger(BaseSwagger):
     class Meta:
-        schema = E_Schema
+        schema = ESchema
 
 
 @setup_swagger
-class F_Swagger(BaseSwagger):
+class FSwagger(BaseSwagger):
     class Meta:
-        schema = F_Schema
+        schema = FSchema
 
 
 @setup_swagger
-class G_Swagger(BaseSwagger):
+class GSwagger(BaseSwagger):
     class Meta:
-        schema = G_Schema
+        schema = GSchema
 
 
 @setup_swagger
-class H_Swagger(BaseSwagger):
+class HSwagger(BaseSwagger):
     class Meta:
-        schema = H_Schema
+        schema = HSchema
 
 
 @setup_swagger
-class I_Swagger(BaseSwagger):
+class ISwagger(BaseSwagger):
     class Meta:
-        schema = I_Schema
+        schema = ISchema
 
 
 @setup_swagger
-class J_Swagger(BaseSwagger):
+class JSwagger(BaseSwagger):
     class Meta:
-        schema = J_Schema
+        schema = JSchema

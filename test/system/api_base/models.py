@@ -4,99 +4,99 @@
 
 from __future__ import absolute_import
 
-from tol.api_base.model.base import Base, db, ExtColumn, setup_model
-from tol.api_base.model.log_base import LogBase
+from tol.api_base.model.base import Base, ExtColumn, db, setup_model
 from tol.api_base.model.enum_base import EnumBase
+from tol.api_base.model.log_base import LogBase
 
 
 @setup_model
-class A_ModelRelationship(Base):
-    __tablename__ = 'test_A'
+class AModelRelationship(Base):
+    __tablename__ = 'test_a'
 
     class Meta:
         type_ = 'A'
 
     # the variable below is necessary on every test model!
     __table_args__ = {'extend_existing': True}
-    id = db.Column(db.Integer, primary_key=True)
-    test_B = db.relationship('B_ModelRelationship', back_populates='test_A')
+    id = db.Column(db.Integer, primary_key=True)  # noqa A003
+    test_b = db.relationship('BModelRelationship', back_populates='test_a')
 
 
 @setup_model
-class B_ModelRelationship(Base):
-    __tablename__ = 'test_B'
+class BModelRelationship(Base):
+    __tablename__ = 'test_b'
 
     class Meta:
         type_ = 'B'
 
     __table_args__ = {'extend_existing': True}
-    id = db.Column(db.Integer, primary_key=True)
-    a_id = db.Column(db.Integer, db.ForeignKey("test_A.id"), nullable=False)
-    test_A = db.relationship(A_ModelRelationship, back_populates='test_B', foreign_keys=[a_id])
-    test_E = db.relationship('E_ModelRelationship', back_populates='test_B')
+    id = db.Column(db.Integer, primary_key=True)  # noqa A003
+    a_id = db.Column(db.Integer, db.ForeignKey('test_a.id'), nullable=False)
+    test_a = db.relationship(AModelRelationship, back_populates='test_b', foreign_keys=[a_id])
+    test_e = db.relationship('EModelRelationship', back_populates='test_b')
 
 
 @setup_model
-class C_ModelWithNullableColumn(Base):
-    __tablename__ = 'test_C'
+class CModelWithNullableColumn(Base):
+    __tablename__ = 'test_c'
 
     class Meta:
         type_ = 'C'
 
     __table_args__ = {'extend_existing': True}
-    id = db.Column(db.Integer, primary_key=True)
+    id = db.Column(db.Integer, primary_key=True)  # noqa A003
     nullable_column = db.Column(db.String, nullable=True)
     other_column = db.Column(db.String, nullable=True)
 
 
 @setup_model
-class D_ModelWithNonNullableColumn(Base):
-    __tablename__ = 'test_D'
+class DModelWithNonNullableColumn(Base):
+    __tablename__ = 'test_d'
 
     class Meta:
         type_ = 'D'
 
     __table_args__ = {'extend_existing': True}
-    id = db.Column(db.Integer, primary_key=True)
+    id = db.Column(db.Integer, primary_key=True)  # noqa A003
     non_nullable_column = db.Column(db.String, nullable=False)
     other_column = db.Column(db.String, nullable=True)
 
 
 @setup_model
-class E_ModelRelationship(Base):
-    __tablename__ = 'test_E'
+class EModelRelationship(Base):
+    __tablename__ = 'test_e'
 
     class Meta:
         type_ = 'E'
 
     __table_args__ = {'extend_existing': True}
-    id = db.Column(db.Integer, primary_key=True)
-    b_id = db.Column(db.Integer, db.ForeignKey("test_B.id"), nullable=False)
-    test_B = db.relationship(B_ModelRelationship, back_populates='test_E', foreign_keys=[b_id])
+    id = db.Column(db.Integer, primary_key=True)  # noqa A003
+    b_id = db.Column(db.Integer, db.ForeignKey('test_b.id'), nullable=False)
+    test_b = db.relationship(BModelRelationship, back_populates='test_e', foreign_keys=[b_id])
 
 
 @setup_model
-class F_ModelWithExtField(Base):
-    __tablename__ = 'test_F'
+class FModelWithExtField(Base):
+    __tablename__ = 'test_f'
 
     class Meta:
         type_ = 'F'
 
     __table_args__ = {'extend_existing': True}
-    id = db.Column(db.Integer, primary_key=True)
+    id = db.Column(db.Integer, primary_key=True)  # noqa A003
     ext = ExtColumn()
     other_column = db.Column(db.String, nullable=True)
 
 
 @setup_model
-class G_ModelWithFilterableFields(Base):
-    __tablename__ = 'test_G'
+class GModelWithFilterableFields(Base):
+    __tablename__ = 'test_g'
 
     class Meta:
         type_ = 'G'
 
     __table_args__ = {'extend_existing': True}
-    id = db.Column(db.Integer, primary_key=True)
+    id = db.Column(db.Integer, primary_key=True)  # noqa A003
     float_column = db.Column(db.Float, nullable=True)
     bool_column = db.Column(db.Boolean, nullable=True)
     datetime_column = db.Column(db.DateTime, nullable=True)
@@ -104,36 +104,36 @@ class G_ModelWithFilterableFields(Base):
 
 
 @setup_model
-class H_ModelLog(LogBase):
-    __tablename__ = 'test_H'
+class HModelLog(LogBase):
+    __tablename__ = 'test_h'
 
     class Meta:
         type_ = 'H'
 
     __table_args__ = {'extend_existing': True}
-    id = db.Column(db.Integer, primary_key=True)
+    id = db.Column(db.Integer, primary_key=True)  # noqa A003
     string_column = db.Column(db.String, nullable=True)
 
 
 @setup_model
-class I_ModelEnum(EnumBase):
-    __tablename__ = 'test_I'
+class IModelEnum(EnumBase):
+    __tablename__ = 'test_i'
 
     class Meta:
         type_ = 'I'
 
     __table_args__ = {'extend_existing': True}
-    test_J = db.relationship('J_ModelEnumDependent', back_populates='test_I')
+    test_j = db.relationship('JModelEnumDependent', back_populates='test_i')
 
 
 @setup_model
-class J_ModelEnumDependent(Base):
-    __tablename__ = 'test_J'
+class JModelEnumDependent(Base):
+    __tablename__ = 'test_j'
 
     class Meta:
         type_ = 'J'
 
     __table_args__ = {'extend_existing': True}
-    id = db.Column(db.Integer, primary_key=True)
-    i_id = db.Column(db.Integer, db.ForeignKey("test_I.id"), nullable=False)
-    test_I = db.relationship(I_ModelEnum, back_populates='test_J', foreign_keys=[i_id])
+    id = db.Column(db.Integer, primary_key=True)  # noqa A003
+    i_id = db.Column(db.Integer, db.ForeignKey('test_i.id'), nullable=False)
+    test_i = db.relationship(IModelEnum, back_populates='test_j', foreign_keys=[i_id])

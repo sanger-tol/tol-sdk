@@ -34,14 +34,14 @@ class Update:
 @dataclass
 class LabwareMessage:
     SUBJECT = None
-    VERSION = "latest"
+    VERSION = 'latest'
     message_uuid: str
     message_create_date_utc: datetime = None
 
 
 @dataclass
 class CreateLabwareMessage(LabwareMessage):
-    SUBJECT = "create-labware"
+    SUBJECT = 'create-labware'
     labware_type: str = None
     labware_uuid: str = None
     barcode: str = None
@@ -50,6 +50,6 @@ class CreateLabwareMessage(LabwareMessage):
 
 @dataclass
 class UpdateLabwareMessage(LabwareMessage):
-    SUBJECT = "update-labware"
+    SUBJECT = 'update-labware'
     labware_updates: List[Update] = field(default_factory=list)
     sample_updates: List[Update] = field(default_factory=list)

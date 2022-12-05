@@ -3,24 +3,25 @@
 # SPDX-License-Identifier: MIT
 
 from datetime import datetime
-from flask import request, has_request_context
+
+from flask import has_request_context, request
 
 from .base import Base, db, setup_model
 
 
 @setup_model
 class Auth(Base):
-    __tablename__ = "auth"
+    __tablename__ = 'auth'
 
     class Meta:
         type_ = 'auth'
 
-    id = db.Column(db.Integer, primary_key=True)
+    id = db.Column(db.Integer, primary_key=True)  # noqa A003
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
     token = db.Column(db.String(), nullable=False, unique=True)
     created_at = db.Column(db.DateTime(), nullable=False)
     expires_at = db.Column(db.DateTime(), nullable=False)
-    user = db.relationship("User", back_populates="auth",
+    user = db.relationship('User', back_populates='auth',
                            uselist=False, foreign_keys=[user_id])
 
 

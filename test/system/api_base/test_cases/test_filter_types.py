@@ -8,8 +8,8 @@ from ..test_case import BaseTestCase
 
 
 class TestFilterTypes(BaseTestCase):
-    def test_string_bad_delimiter_list_get_G_400(self):
-        self.add_G(id=1001)
+    def test_string_bad_delimiter_list_get_g_400(self):
+        self.add_g(id=1001)
 
         # undelimited string
         response = self.client.open(
@@ -29,9 +29,9 @@ class TestFilterTypes(BaseTestCase):
             f'Response body is : {response.data.decode("utf-8")}'
         )
 
-    def test_string_good_delimiters_list_get_G_200(self):
-        self.add_G(id=101, string_column="match", bool_column=True)
-        self.add_G(id=1090, string_column="no match", bool_column=False)
+    def test_string_good_delimiters_list_get_g_200(self):
+        self.add_g(id=101, string_column='match', bool_column=True)
+        self.add_g(id=1090, string_column='no match', bool_column=False)
 
         response = self.client.open(
             '/api/v1/G?filter=[string_column=="match"]'
@@ -63,9 +63,9 @@ class TestFilterTypes(BaseTestCase):
             }
         )
 
-    def test_float_filter_correct_list_get_G_200(self):
-        self.add_G(id=501, string_column="laughter", float_column=9.16)
-        self.add_G(id=17890, string_column="good medicine", float_column=1.89)
+    def test_float_filter_correct_list_get_g_200(self):
+        self.add_g(id=501, string_column='laughter', float_column=9.16)
+        self.add_g(id=17890, string_column='good medicine', float_column=1.89)
 
         # filter for one
         response = self.client.open(
@@ -91,7 +91,7 @@ class TestFilterTypes(BaseTestCase):
                             'float_column': 1.89,
                             'bool_column': None,
                             'datetime_column': None,
-                            'string_column': "good medicine"
+                            'string_column': 'good medicine'
                         }
                     }
                 ]
@@ -114,11 +114,11 @@ class TestFilterTypes(BaseTestCase):
             }
         )
 
-    def test_datetime_filter_correct_list_get_G_200(self):
+    def test_datetime_filter_correct_list_get_g_200(self):
         first_datetime = datetime.now()
         second_datetime = datetime.now()
-        self.add_G(id=501, string_column="hamburger", datetime_column=first_datetime)
-        self.add_G(id=17890, string_column="cat", datetime_column=second_datetime)
+        self.add_g(id=501, string_column='hamburger', datetime_column=first_datetime)
+        self.add_g(id=17890, string_column='cat', datetime_column=second_datetime)
 
         # filter for none
         response = self.client.open(
@@ -166,11 +166,11 @@ class TestFilterTypes(BaseTestCase):
             }
         )
 
-    def test_multiple_filters_correct_list_get_C_200(self):
+    def test_multiple_filters_correct_list_get_c_200(self):
         # testing bool and float
-        self.add_G(id=999, float_column=1.0, bool_column=True)
-        self.add_G(id=1021, float_column=49584.0, bool_column=True)
-        self.add_G(id=34989, float_column=1.0, bool_column=False)
+        self.add_g(id=999, float_column=1.0, bool_column=True)
+        self.add_g(id=1021, float_column=49584.0, bool_column=True)
+        self.add_g(id=34989, float_column=1.0, bool_column=False)
 
         # get none
         response = self.client.open(

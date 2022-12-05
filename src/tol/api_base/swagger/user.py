@@ -2,9 +2,8 @@
 #
 # SPDX-License-Identifier: MIT
 
-from ..schema import UserSchema
-
 from .base import BaseSwagger, setup_swagger
+from ..schema import UserSchema
 
 
 @setup_swagger

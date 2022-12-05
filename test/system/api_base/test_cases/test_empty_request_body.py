@@ -6,7 +6,7 @@ from ..test_case import BaseTestCase
 
 
 class TestEmptyRequestBody(BaseTestCase):
-    def test_post_D_with_empty_request_body_400(self):
+    def test_post_d_with_empty_request_body_400(self):
         response = self.client.open(
             '/api/v1/D',
             method='POST',
@@ -18,7 +18,7 @@ class TestEmptyRequestBody(BaseTestCase):
             f'Response body is : {response.data.decode("utf-8")}'
         )
 
-    def test_post_D_with_no_data_400(self):
+    def test_post_d_with_no_data_400(self):
         response = self.client.open(
             '/api/v1/D',
             method='POST',
@@ -35,8 +35,8 @@ class TestEmptyRequestBody(BaseTestCase):
             f'Response body is : {response.data.decode("utf-8")}'
         )
 
-    def test_patch_C_with_empty_request_body_400(self):
-        self.add_C(id=9099)
+    def test_patch_c_with_empty_request_body_400(self):
+        self.add_c(id=9099)
         response = self.client.open(
             '/api/v1/C/9099',
             method='PATCH',
@@ -48,8 +48,8 @@ class TestEmptyRequestBody(BaseTestCase):
             f'Response body is : {response.data.decode("utf-8")}'
         )
 
-    def test_patch_C_with_no_attributes_200(self):
-        self.add_C(id=9099)
+    def test_patch_c_with_no_attributes_200(self):
+        self.add_c(id=9099)
         response = self.client.open(
             '/api/v1/C/9099',
             method='PATCH',

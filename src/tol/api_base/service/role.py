@@ -2,10 +2,9 @@
 #
 # SPDX-License-Identifier: MIT
 
+from .base import BaseService, setup_service
 from ..model import Role
 from ..schema import RoleSchema
-
-from .base import BaseService, setup_service
 
 
 @setup_service

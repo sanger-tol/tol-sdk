@@ -10,7 +10,7 @@ from tol.eln import generate_flattened_type
 
 
 class MockList():
-    def list(self):
+    def list(self):  # noqa A003
         return [[1, 2, 3], [4, 5, 6]]
 
 

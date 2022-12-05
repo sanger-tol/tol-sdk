@@ -6,15 +6,15 @@ from ..test_case import BaseTestCase
 
 
 class TestHistoryColumnLogBase(BaseTestCase):
-    def test_no_change_history_unmodified_patch_H(self):
+    def test_no_change_history_unmodified_patch_h(self):
         # post in the first instance
         response = self.client.open(
             '/api/v1/H',
             method='POST',
             json={
-                "data": {
-                    "type": 'H',
-                    "attributes": {
+                'data': {
+                    'type': 'H',
+                    'attributes': {
                         'string_column': 'I love testing :)'
                     }
                 }
@@ -30,9 +30,9 @@ class TestHistoryColumnLogBase(BaseTestCase):
             f'/api/v1/H/{instance_id}',
             method='PATCH',
             json={
-                "data": {
-                    "type": 'H',
-                    "attributes": {
+                'data': {
+                    'type': 'H',
+                    'attributes': {
                         'string_column': 'how are you?'
                     }
                 }
@@ -104,9 +104,9 @@ class TestHistoryColumnLogBase(BaseTestCase):
             f'/api/v1/H/{instance_id}',
             method='PATCH',
             json={
-                "data": {
-                    "type": 'H',
-                    "attributes": {
+                'data': {
+                    'type': 'H',
+                    'attributes': {
                         'string_column': 'how are you?'
                     }
                 }
@@ -124,15 +124,15 @@ class TestHistoryColumnLogBase(BaseTestCase):
             final_state
         )
 
-    def test_compose_post_patch_H(self):
+    def test_compose_post_patch_h(self):
         # post in the first instance
         response = self.client.open(
             '/api/v1/H',
             method='POST',
             json={
-                "data": {
-                    "type": 'H',
-                    "attributes": {
+                'data': {
+                    'type': 'H',
+                    'attributes': {
                         'string_column': 'hello there'
                     }
                 }
@@ -185,9 +185,9 @@ class TestHistoryColumnLogBase(BaseTestCase):
             f'/api/v1/H/{instance_id}',
             method='PATCH',
             json={
-                "data": {
-                    "type": 'H',
-                    "attributes": {
+                'data': {
+                    'type': 'H',
+                    'attributes': {
                         'string_column': 'how are you?'
                     }
                 }
@@ -260,9 +260,9 @@ class TestHistoryColumnLogBase(BaseTestCase):
             f'/api/v1/H/{instance_id}',
             method='PATCH',
             json={
-                "data": {
-                    "type": 'H',
-                    "attributes": {
+                'data': {
+                    'type': 'H',
+                    'attributes': {
                         'string_column': None
                     }
                 }
@@ -357,9 +357,9 @@ class TestHistoryColumnLogBase(BaseTestCase):
             '/api/v1/H',
             method='POST',
             json={
-                "data": {
-                    "type": 'H',
-                    "attributes": {
+                'data': {
+                    'type': 'H',
+                    'attributes': {
                         'string_column': 'a worthy adversary'
                     }
                 }
@@ -377,9 +377,9 @@ class TestHistoryColumnLogBase(BaseTestCase):
             f'/api/v1/H/{instance_id}',
             method='PATCH',
             json={
-                "data": {
-                    "type": 'H',
-                    "attributes": {
+                'data': {
+                    'type': 'H',
+                    'attributes': {
                         'bad_column': 'this will break'
                     }
                 }
@@ -444,9 +444,9 @@ class TestHistoryColumnLogBase(BaseTestCase):
             '/api/v1/H',
             method='POST',
             json={
-                "data": {
-                    "type": 'H',
-                    "attributes": {
+                'data': {
+                    'type': 'H',
+                    'attributes': {
                         'string_column': 'hello there',
                         'history': [{
                             'fake': 'fradulent'
@@ -467,7 +467,7 @@ class TestHistoryColumnLogBase(BaseTestCase):
                 'errors': [{
                     'detail': 'Unknown field.',
                     'source': {
-                        "pointer": "/data/attributes/history"
+                        'pointer': '/data/attributes/history'
                     }
                 }]
             }
@@ -479,9 +479,9 @@ class TestHistoryColumnLogBase(BaseTestCase):
             '/api/v1/H',
             method='POST',
             json={
-                "data": {
-                    "type": 'H',
-                    "attributes": {
+                'data': {
+                    'type': 'H',
+                    'attributes': {
                         'string_column': 'this is great fun'
                     }
                 }
@@ -497,9 +497,9 @@ class TestHistoryColumnLogBase(BaseTestCase):
             f'/api/v1/H/{instance_id}',
             method='PATCH',
             json={
-                "data": {
-                    "type": 'H',
-                    "attributes": {
+                'data': {
+                    'type': 'H',
+                    'attributes': {
                         'string_column': 'very happy'
                     }
                 }

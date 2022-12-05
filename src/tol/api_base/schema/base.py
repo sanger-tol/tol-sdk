@@ -2,14 +2,14 @@
 #
 # SPDX-License-Identifier: MIT
 
-from marshmallow.decorators import post_dump, pre_dump, post_load, pre_load
+from marshmallow.decorators import post_dump, post_load, pre_dump, pre_load
 from marshmallow.exceptions import ValidationError
+
 from marshmallow_jsonapi import Schema as JsonapiSchema, \
-                                SchemaOpts as JsonapiSchemaOpts
-from marshmallow_sqlalchemy import SQLAlchemyAutoSchema, \
-                                   SQLAlchemyAutoSchemaOpts
-from marshmallow_jsonapi.fields import ResourceMeta, Relationship, Str, \
-                                       DateTime, List, Dict
+    SchemaOpts as JsonapiSchemaOpts
+from marshmallow_jsonapi.fields import DateTime, Dict, List, Relationship, ResourceMeta, Str
+
+from marshmallow_sqlalchemy import SQLAlchemyAutoSchema, SQLAlchemyAutoSchemaOpts
 
 from ..model import db
 
@@ -37,22 +37,22 @@ class BaseSchema(SQLAlchemyAutoSchema, JsonapiSchema):
 
     OPTIONS_CLASS = CombinedOpts
 
-    id = Str(dump_only=True)
+    id = Str(dump_only=True)  # noqa A003
 
     def __init__(self, many=False, **kwargs):
         exclude = kwargs.pop('exclude', []) + self.get_excluded_columns(many=many)
         return super().__init__(exclude=exclude, many=many, **kwargs)
 
     @classmethod
-    def setup(old_cls):
+    def setup(cls):
         """Dynamically adds fields to a Schema Class inheriting
         from BaseSchema"""
-        old_cls.Meta.setup_meta()
-        old_cls._populate_public_attribute_and_enum_names()
+        cls.Meta.setup_meta()
+        cls._populate_public_attribute_and_enum_names()
         new_cls = type(
-            f'_{old_cls.get_type().title()}Schema',
-            (old_cls,),
-            old_cls.get_dynamically_added_fields()
+            f'_{cls.get_type().title()}Schema',
+            (cls,),
+            cls.get_dynamically_added_fields()
         )
         return new_cls
 
@@ -104,8 +104,8 @@ class BaseSchema(SQLAlchemyAutoSchema, JsonapiSchema):
             target_table_type
         )
         cls.many_to_one_relationship_info[special_name] = {
-            "target_table": target_table_type,
-            "foreign_key_name": foreign_key_name
+            'target_table': target_table_type,
+            'foreign_key_name': foreign_key_name
         }
         return special_name, cls._create_many_to_one_relationship_field(
             target_table_type,

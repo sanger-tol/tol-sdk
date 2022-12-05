@@ -2,78 +2,69 @@
 #
 # SPDX-License-Identifier: MIT
 
-from tol.api_base.service.base import BaseService, setup_service, provide_body_data
+from tol.api_base.service.base import BaseService, provide_body_data, setup_service
 
-from .models import A_ModelRelationship, \
-                             B_ModelRelationship, \
-                             C_ModelWithNullableColumn, \
-                             D_ModelWithNonNullableColumn, \
-                             E_ModelRelationship, \
-                             F_ModelWithExtField, \
-                             G_ModelWithFilterableFields, \
-                             H_ModelLog, \
-                             I_ModelEnum, \
-                             J_ModelEnumDependent
-from .schemas import A_Schema, B_Schema, C_Schema, \
-                              D_Schema, E_Schema, F_Schema, \
-                              G_Schema, H_Schema, I_Schema, \
-                              J_Schema
+from .models import AModelRelationship, BModelRelationship, CModelWithNullableColumn, \
+    DModelWithNonNullableColumn, EModelRelationship, FModelWithExtField, \
+    GModelWithFilterableFields, HModelLog, IModelEnum, JModelEnumDependent
+from .schemas import ASchema, BSchema, CSchema, DSchema, ESchema, FSchema, \
+    GSchema, HSchema, ISchema, JSchema
 
 
 @setup_service
-class A_Service(BaseService):
+class AService(BaseService):
     class Meta:
-        model = A_ModelRelationship
-        schema = A_Schema
+        model = AModelRelationship
+        schema = ASchema
 
 
 @setup_service
-class B_Service(BaseService):
+class BService(BaseService):
     class Meta:
-        model = B_ModelRelationship
-        schema = B_Schema
+        model = BModelRelationship
+        schema = BSchema
 
 
 @setup_service
-class C_Service(BaseService):
+class CService(BaseService):
     class Meta:
-        model = C_ModelWithNullableColumn
-        schema = C_Schema
+        model = CModelWithNullableColumn
+        schema = CSchema
 
 
 @setup_service
-class D_Service(BaseService):
+class DService(BaseService):
     class Meta:
-        model = D_ModelWithNonNullableColumn
-        schema = D_Schema
+        model = DModelWithNonNullableColumn
+        schema = DSchema
 
 
 @setup_service
-class E_Service(BaseService):
+class EService(BaseService):
     class Meta:
-        model = E_ModelRelationship
-        schema = E_Schema
+        model = EModelRelationship
+        schema = ESchema
 
 
 @setup_service
-class F_Service(BaseService):
+class FService(BaseService):
     class Meta:
-        model = F_ModelWithExtField
-        schema = F_Schema
+        model = FModelWithExtField
+        schema = FSchema
 
 
 @setup_service
-class G_Service(BaseService):
+class GService(BaseService):
     class Meta:
-        model = G_ModelWithFilterableFields
-        schema = G_Schema
+        model = GModelWithFilterableFields
+        schema = GSchema
 
 
 @setup_service
-class H_Service(BaseService):
+class HService(BaseService):
     class Meta:
-        model = H_ModelLog
-        schema = H_Schema
+        model = HModelLog
+        schema = HSchema
 
     @classmethod
     def return_42(cls):
@@ -81,10 +72,10 @@ class H_Service(BaseService):
 
 
 @setup_service
-class I_Service(BaseService):
+class IService(BaseService):
     class Meta:
-        model = I_ModelEnum
-        schema = I_Schema
+        model = IModelEnum
+        schema = ISchema
 
     @classmethod
     @provide_body_data
@@ -93,7 +84,7 @@ class I_Service(BaseService):
 
 
 @setup_service
-class J_Service(BaseService):
+class JService(BaseService):
     class Meta:
-        model = J_ModelEnumDependent
-        schema = J_Schema
+        model = JModelEnumDependent
+        schema = JSchema

@@ -6,8 +6,8 @@ from ..test_case import BaseTestCase
 
 
 class TestEnumLinkRelationshipByName(BaseTestCase):
-    def test_post_J_specify_I_by_name(self):
-        self.add_I(id=4857, name='nicely')
+    def test_post_j_specify_i_by_name(self):
+        self.add_i(id=4857, name='nicely')
         response = self.client.open(
             '/api/v1/J',
             method='POST',
@@ -42,8 +42,8 @@ class TestEnumLinkRelationshipByName(BaseTestCase):
 
     def test_bad_enum_name_link_400(self):
         # add an enum and a dependant
-        self.add_I(id=39489, name='biology')
-        self.add_J(id=349992, I='biology')
+        self.add_i(id=39489, name='biology')
+        self.add_j(id=349992, I='biology')
 
         # attempt to patch the enum ref to non-existent name
         response = self.client.open(

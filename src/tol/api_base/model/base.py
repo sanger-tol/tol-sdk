@@ -2,21 +2,22 @@
 #
 # SPDX-License-Identifier: MIT
 
-import dateutil.parser
 import json
-
 from datetime import datetime
-from sqlalchemy import and_
+
+import dateutil.parser
+
 from flask_sqlalchemy import SQLAlchemy
+
+from sqlalchemy import and_
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.inspection import inspect
 
-
 from ..error import (
-    IdNotFoundException,
-    EnumNameNotFoundException,
     BadParameterException,
-    ExtraFieldsNotPermittedException
+    EnumNameNotFoundException,
+    ExtraFieldsNotPermittedException,
+    IdNotFoundException
 )
 
 
@@ -143,9 +144,9 @@ class Base(db.Model):
         relation_model_name_dict = {
             r_model_name: cls.get_relation_enum_name_by_id(
                 r_model_name,
-                id
-                ) if id is not None else None
-            for r_model_name, id in zip(
+                id_
+            ) if id_ is not None else None
+            for r_model_name, id_ in zip(
                 enum_relation_names,
                 foreign_key_ids,
             )
@@ -365,11 +366,11 @@ class Base(db.Model):
             page = int(page)
         except ValueError:
             raise BadParameterException(
-                "The page number must be an integer."
+                'The page number must be an integer.'
             )
         if page < 1:
             raise BadParameterException(
-                "The page number must be 1 or greater."
+                'The page number must be 1 or greater.'
             )
         return page
 
@@ -440,12 +441,12 @@ class Base(db.Model):
         db.session.commit()
 
     @classmethod
-    def find_by_id(cls, id):
-        instance = cls.query().filter_by(id=id).one_or_none()
+    def find_by_id(cls, id_):
+        instance = cls.query().filter_by(id=id_).one_or_none()
         if instance is None:
             raise InstanceDoesNotExistException(
                 cls.get_type(),
-                id
+                id_
             )
         return instance
 
@@ -576,9 +577,9 @@ class Base(db.Model):
         return relation_model.get_id_from_name(enum_name)
 
     @classmethod
-    def get_relation_enum_name_by_id(cls, relation_type, id):
+    def get_relation_enum_name_by_id(cls, relation_type, id_):
         relation_model = cls.get_model_by_type(relation_type)
-        return relation_model.get_name_from_id(id)
+        return relation_model.get_name_from_id(id_)
 
     @classmethod
     def _get_related_enum_table_names(cls):
@@ -628,15 +629,15 @@ class Base(db.Model):
     @classmethod
     def _filter_value_is_delimited_by(cls, filter_value, delimiter):
         return (
-            filter_value.startswith(delimiter) and
-            filter_value.endswith(delimiter)
+            filter_value.startswith(delimiter)
+            and filter_value.endswith(delimiter)
         )
 
     @classmethod
     def _filter_value_is_delimited_string(cls, filter_value):
         return (
-            cls._filter_value_is_delimited_by(filter_value, '"') or
-            cls._filter_value_is_delimited_by(filter_value, "'")
+            cls._filter_value_is_delimited_by(filter_value, '"')
+            or cls._filter_value_is_delimited_by(filter_value, "'")
         )
 
     @classmethod
@@ -687,7 +688,7 @@ class Base(db.Model):
         if filter_enum_name not in valid_enum_names:
             raise BadParameterException(
                 f"The (filter) name '{filter_enum_name}' does not exist on "
-                f"the enum {filter_key}."
+                f'the enum {filter_key}.'
             )
         return filter_enum_name
 

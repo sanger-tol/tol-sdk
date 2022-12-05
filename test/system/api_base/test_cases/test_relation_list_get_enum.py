@@ -6,10 +6,10 @@ from ..test_case import BaseTestCase
 
 
 class TestListGetEnum(BaseTestCase):
-    def test_filter_bad_enum_name_I_on_list_get_J_400(self):
+    def test_filter_bad_enum_name_i_on_list_get_i_400(self):
         # add an I and a connected J
-        self.add_I(id=348989, name='right')
-        self.add_J(id=34789, I='right')
+        self.add_i(id=348989, name='right')
+        self.add_j(id=34789, I='right')
 
         # try to filter by a bad name
         response = self.client.open(
@@ -32,17 +32,17 @@ class TestListGetEnum(BaseTestCase):
             }
         )
 
-    def test_filter_enum_I_on_list_get_J(self):
+    def test_filter_enum_i_on_list_get_j(self):
         # add three I's
-        self.add_I(id=4857, name='easy')
-        self.add_I(id=2384, name='as')
-        self.add_I(id=93848, name='ABC')
+        self.add_i(id=4857, name='easy')
+        self.add_i(id=2384, name='as')
+        self.add_i(id=93848, name='ABC')
 
         # add four J's
-        self.add_J(id=3847384, I='ABC')
-        self.add_J(id=2348, I='easy')
-        self.add_J(id=234856, I='ABC')
-        self.add_J(id=33, I='as')
+        self.add_j(id=3847384, I='ABC')
+        self.add_j(id=2348, I='easy')
+        self.add_j(id=234856, I='ABC')
+        self.add_j(id=33, I='as')
 
         # get I=ABC with id descending
         response = self.client.open(
@@ -76,17 +76,17 @@ class TestListGetEnum(BaseTestCase):
             }
         )
 
-    def test_sort_by_enum_I_on_list_get_J(self):
+    def test_sort_by_enum_i_on_list_get_j(self):
         # add two I's
-        self.add_I(id=4857, name='fun')
-        self.add_I(id=2384, name='also fun')
+        self.add_i(id=4857, name='fun')
+        self.add_i(id=2384, name='also fun')
 
         # add two and three J's respectively
-        self.add_J(id=29348, I='fun')
-        self.add_J(id=4857, I='also fun')
-        self.add_J(id=587, I='fun')
-        self.add_J(id=23487, I='also fun')
-        self.add_J(id=8394789, I='also fun')
+        self.add_j(id=29348, I='fun')
+        self.add_j(id=4857, I='also fun')
+        self.add_j(id=587, I='fun')
+        self.add_j(id=23487, I='also fun')
+        self.add_j(id=8394789, I='also fun')
 
         # sort by I ascending
         response = self.client.open(

@@ -3,31 +3,32 @@
 # SPDX-License-Identifier: MIT
 
 from datetime import datetime
+
 from sqlalchemy.ext.declarative import declared_attr
 
-from .base import Base, db
 from .auth import get_request_user_id
+from .base import Base, db
 
 
 class LogMixin(object):
     @declared_attr
-    def created_at(cls):
+    def created_at(self):
         return db.Column(db.DateTime, nullable=False, default=db.func.now())
 
     @declared_attr
-    def created_by(cls):
+    def created_by(self):
         return db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
 
     @declared_attr
-    def last_modified_at(cls):
+    def last_modified_at(self):
         return db.Column(db.DateTime, nullable=False, default=db.func.now())
 
     @declared_attr
-    def last_modified_by(cls):
+    def last_modified_by(self):
         return db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
 
     @declared_attr
-    def history(cls):
+    def history(self):
         return db.Column(db.JSON, nullable=False, default=[])
 
 

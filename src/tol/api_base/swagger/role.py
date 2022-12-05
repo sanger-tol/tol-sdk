@@ -2,9 +2,8 @@
 #
 # SPDX-License-Identifier: MIT
 
-from ..schema import RoleSchema
-
 from .base import BaseSwagger, setup_swagger
+from ..schema import RoleSchema
 
 
 @setup_swagger

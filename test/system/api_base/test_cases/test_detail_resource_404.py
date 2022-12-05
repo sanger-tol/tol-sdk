@@ -6,7 +6,7 @@ from ..test_case import BaseTestCase
 
 
 class TestDetailResource404(BaseTestCase):
-    def test_get_B_404(self):
+    def test_get_b_404(self):
         response = self.client.open(
             '/api/v1/B/9999',
             method='GET',
@@ -16,7 +16,7 @@ class TestDetailResource404(BaseTestCase):
             f'Response body is : {response.data.decode("utf-8")}'
         )
 
-    def test_get_C_404(self):
+    def test_get_c_404(self):
         response = self.client.open(
             '/api/v1/C/9999',
             method='GET',
@@ -26,7 +26,7 @@ class TestDetailResource404(BaseTestCase):
             f'Response body is : {response.data.decode("utf-8")}'
         )
 
-    def test_get_D_404(self):
+    def test_get_d_404(self):
         response = self.client.open(
             '/api/v1/D/9999',
             method='GET',
@@ -36,7 +36,7 @@ class TestDetailResource404(BaseTestCase):
             f'Response body is : {response.data.decode("utf-8")}'
         )
 
-    def test_delete_B_404(self):
+    def test_delete_b_404(self):
         response = self.client.open(
             '/api/v1/B/9999',
             method='DELETE',
@@ -47,7 +47,7 @@ class TestDetailResource404(BaseTestCase):
             f'Response body is : {response.data.decode("utf-8")}'
         )
 
-    def test_delete_C_404(self):
+    def test_delete_c_404(self):
         response = self.client.open(
             '/api/v1/C/9999',
             method='DELETE',
@@ -58,7 +58,7 @@ class TestDetailResource404(BaseTestCase):
             f'Response body is : {response.data.decode("utf-8")}'
         )
 
-    def test_delete_D_404(self):
+    def test_delete_d_404(self):
         response = self.client.open(
             '/api/v1/D/9999',
             method='DELETE',
@@ -69,16 +69,16 @@ class TestDetailResource404(BaseTestCase):
             f'Response body is : {response.data.decode("utf-8")}'
         )
 
-    def test_patch_B_404(self):
+    def test_patch_b_404(self):
         response = self.client.open(
             '/api/v1/B/9999',
             method='PATCH',
             json={
-                "data": {
-                    "attributes": {
-                        "a_id": 0
+                'data': {
+                    'attributes': {
+                        'a_id': 0
                     },
-                    "type": "B"
+                    'type': 'B'
                 }
             },
             headers=self._get_auth_user_1_headers()
@@ -88,15 +88,15 @@ class TestDetailResource404(BaseTestCase):
             f'Response body is : {response.data.decode("utf-8")}'
         )
 
-    def test_patch_C_404(self):
+    def test_patch_c_404(self):
         response = self.client.open(
             '/api/v1/C/9999',
             method='PATCH',
             json={
-                "data": {
-                    "type": "C",
-                    "attributes": {
-                        "nullable_column": 'test_string'
+                'data': {
+                    'type': 'C',
+                    'attributes': {
+                        'nullable_column': 'test_string'
                     }
                 }
             },
@@ -107,15 +107,15 @@ class TestDetailResource404(BaseTestCase):
             f'Response body is : {response.data.decode("utf-8")}'
         )
 
-    def test_patch_D_404(self):
+    def test_patch_d_404(self):
         response = self.client.open(
             '/api/v1/D/9999',
             method='PATCH',
             json={
-                "data": {
-                    "type": "D",
-                    "attributes": {
-                        "non_nullable_column": 'ANOTHER TEST STRING'
+                'data': {
+                    'type': 'D',
+                    'attributes': {
+                        'non_nullable_column': 'ANOTHER TEST STRING'
                     }
                 }
             },

@@ -2,8 +2,9 @@
 #
 # SPDX-License-Identifier: MIT
 
-from flask_restx import Resource as FlaskRestxResource
 from functools import wraps
+
+from flask_restx import Resource as FlaskRestxResource
 
 from ..auth import auth
 from ..service.base import BaseService
@@ -119,7 +120,7 @@ def _document_post(cls):
         api.expect(swagger.request_model),
         api.response(
             201,
-            description="Created",
+            description='Created',
             model=swagger.individual_response_model
         ),
         api.response(400, description='Bad Request'),
@@ -301,15 +302,15 @@ class BaseListResource(BaseResource):
 
 class BaseDetailResource(BaseResource):
     @classmethod
-    def get(cls, id, user_id=None):
+    def get(cls, id, user_id=None):  # noqa A002
         return cls.Meta.service.read_by_id(id, user_id=user_id)
 
     @classmethod
-    def patch(cls, id, user_id=None):
+    def patch(cls, id, user_id=None):  # noqa A002
         return cls.Meta.service.update_by_id(id, user_id=user_id)
 
     @classmethod
-    def delete(cls, id, user_id=None):
+    def delete(cls, id, user_id=None):  # noqa A002
         return cls.Meta.service.delete_by_id(id, user_id=user_id)
 
 
@@ -329,7 +330,7 @@ class BaseEnumNameDetailResource(BaseResource):
 
 class BaseRelationListResource(BaseResource):
     @classmethod
-    def get(cls, id, user_id=None):
+    def get(cls, id, user_id=None):  # noqa A002
         return cls.Meta.service.read_bulk_related_by_id(
             id,
             cls.relation,

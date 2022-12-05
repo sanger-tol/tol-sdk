@@ -2,20 +2,23 @@
 #
 # SPDX-License-Identifier: MIT
 
-from ..model import User, State, Auth
-from ..schema import AuthSchema
-from . import (
-    BaseService,
-    setup_service,
-    provide_body_data
-)
-from flask import jsonify
-import uuid
-import urllib.parse
-from datetime import datetime, timedelta
 import os
+import urllib.parse
+import uuid
+from datetime import datetime, timedelta
+
+from flask import jsonify
+
 import requests
 from requests.auth import HTTPBasicAuth
+
+from . import (
+    BaseService,
+    provide_body_data,
+    setup_service
+)
+from ..model import Auth, State, User
+from ..schema import AuthSchema
 
 
 @setup_service
@@ -28,11 +31,11 @@ class AuthService(BaseService):
     def login(cls):
         state_uuid = str(uuid.uuid4())
         params = {
-            "client_id": os.getenv('ELIXIR_CLIENT_ID'),
-            "response_type": "code",
-            "state": state_uuid,
-            "redirect_uri": os.getenv('ELIXIR_REDIRECT_URI'),
-            "scope": 'openid profile email'
+            'client_id': os.getenv('ELIXIR_CLIENT_ID'),
+            'response_type': 'code',
+            'state': state_uuid,
+            'redirect_uri': os.getenv('ELIXIR_REDIRECT_URI'),
+            'scope': 'openid profile email'
         }
         # save the state in a table so that we can use it
         state = State()
@@ -48,7 +51,7 @@ class AuthService(BaseService):
         State.commit()
 
         login_url = {
-            'loginUrl': "https://login.elixir-czech.org/oidc/authorize?"
+            'loginUrl': 'https://login.elixir-czech.org/oidc/authorize?'
                         + urllib.parse.urlencode(params)
         }
 
@@ -70,9 +73,9 @@ class AuthService(BaseService):
             os.getenv('ELIXIR_CLIENT_SECRET')
         )
         post_data = {
-            "grant_type": "authorization_code",
-            "code": data['code'],
-            "redirect_uri": os.getenv('ELIXIR_REDIRECT_URI')
+            'grant_type': 'authorization_code',
+            'code': data['code'],
+            'redirect_uri': os.getenv('ELIXIR_REDIRECT_URI')
         }
         response = requests.post(
             'https://login.elixir-czech.org/oidc/token',
@@ -87,7 +90,7 @@ class AuthService(BaseService):
         # get the user infromation from Elixir for this token
         response = requests.get(
             'https://login.elixir-czech.org/oidc/userinfo',
-            headers={"Authorization": "Bearer " + data["token"]}
+            headers={'Authorization': 'Bearer ' + data['token']}
         )
         user_info_from_elixir = response.json()
         if user_info_from_elixir.get('error') is None:
@@ -101,7 +104,7 @@ class AuthService(BaseService):
                 user.name = user_info_from_elixir['name']
                 user.add()
             # save the token so that we can authenticate against it in future
-            user.token = data["token"]
+            user.token = data['token']
             User.commit()
             return jsonify(user)
         else:

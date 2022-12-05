@@ -1,13 +1,16 @@
 # SPDX-FileCopyrightText: 2021 Genome Research Ltd.
 #
 # SPDX-License-Identifier: MIT
+
 import logging
-import tol.sciops.configuration as config
 from abc import ABCMeta, abstractmethod
+
 from lab_share_lib.exceptions import TransientRabbitError
 from lab_share_lib.processing.rabbit_message import RabbitMessage
 from lab_share_lib.rabbit.avro_encoder import AvroEncoderBinary
 from lab_share_lib.rabbit.schema_registry import SchemaRegistry
+
+import tol.sciops.configuration as config
 
 LOGGER = logging.getLogger(__name__)
 
@@ -45,18 +48,18 @@ class FeedbackProcessor(MessageProcessor):
         except TransientRabbitError as ex:
             # Cause the consumer to restart and try this message again.
             # Ideally we will delay the consumer.
-            LOGGER.error(f"Transient error while processing message: {ex.message}")
+            LOGGER.error(f'Transient error while processing message: {ex.message}')
             raise
         except Exception as ex:
             LOGGER.error(
-                f"Unrecoverable error while decoding RabbitMQ message: {type(ex)} {str(ex)}")
+                f'Unrecoverable error while decoding RabbitMQ message: {type(ex)} {str(ex)}')
             return False  # Send the message to dead letters.
 
         if not message.contains_single_message:
-            LOGGER.error("RabbitMQ message received containing multiple AVRO encoded messages.")
+            LOGGER.error('RabbitMQ message received containing multiple AVRO encoded messages.')
             return False  # Send the message to dead letters.
 
-        LOGGER.info(f"Received queue feedback message: {str(message.message)}")
+        LOGGER.info(f'Received queue feedback message: {str(message.message)}')
         return True
 
 

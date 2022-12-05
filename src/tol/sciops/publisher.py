@@ -1,23 +1,26 @@
 # SPDX-FileCopyrightText: 2021 Genome Research Ltd.
 #
 # SPDX-License-Identifier: MIT
-import sys
-import logging
-import uuid
+
 import datetime
-import tol.sciops.configuration as config
-from lab_share_lib.rabbit.schema_registry import SchemaRegistry
-from lab_share_lib.rabbit.basic_publisher import BasicPublisher
-from lab_share_lib.rabbit.avro_encoder import AvroEncoderBinary
-from lab_share_lib.types import RabbitServerDetails
+import logging
+import sys
+import uuid
+
 from lab_share_lib.constants import RABBITMQ_HEADER_VALUE_ENCODER_TYPE_BINARY
-from tol.sciops.messages import LabwareMessage, CreateLabwareMessage, UpdateLabwareMessage, \
-     Sample, Update
+from lab_share_lib.rabbit.avro_encoder import AvroEncoderBinary
+from lab_share_lib.rabbit.basic_publisher import BasicPublisher
+from lab_share_lib.rabbit.schema_registry import SchemaRegistry
+from lab_share_lib.types import RabbitServerDetails
+
+import tol.sciops.configuration as config
 from tol.sciops.message_builder import MessageBuilder
+from tol.sciops.messages import CreateLabwareMessage, LabwareMessage, Sample, Update, \
+    UpdateLabwareMessage
 
 logging.basicConfig(stream=sys.stdout, level=logging.INFO)
 # Change the next line to also output pika mq logging
-logging.getLogger("pika").propagate = False
+logging.getLogger('pika').propagate = False
 LOGGER = logging.getLogger(__name__)
 
 
@@ -34,7 +37,7 @@ class SciOpsPublisher:
 
     def __init__(self):
         """ Constructor """
-        LOGGER.info("Initialising SciOps publisher")
+        LOGGER.info('Initialising SciOps publisher')
         self.__registry = SchemaRegistry(config.REDPANDA_URL, config.REDPANDA_API_KEY)
         self.__rabbitmq_details = RabbitServerDetails(
             uses_ssl=config.RABBITMQ_USE_SSL,
@@ -56,7 +59,7 @@ class SciOpsPublisher:
     def _create_encoder(self, subject) -> AvroEncoderBinary:
         """ Create a message encoder """
         encoder = AvroEncoderBinary(self.__registry, subject)
-        encoder.set_compression_codec("snappy")
+        encoder.set_compression_codec('snappy')
         return encoder
 
     def send_message(self, msg_to_send: LabwareMessage):
@@ -69,7 +72,7 @@ class SciOpsPublisher:
         encoded_message = encoder.encode([built_msg], version=version)
 
         publisher = self._create_publisher()
-        LOGGER.info(f"Sending message {built_msg}")
+        LOGGER.info(f'Sending message {built_msg}')
 
         publisher.publish_message(
             config.RABBITMQ_EXCHANGE,
@@ -81,9 +84,9 @@ class SciOpsPublisher:
         )
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     # TESTING ONLY....
-    LOGGER.info("About to publish messages")
+    LOGGER.info('About to publish messages')
 
     sample_uuid = str(uuid.uuid4())
     study_uuid = str(uuid.uuid4())
@@ -92,24 +95,24 @@ if __name__ == "__main__":
     create_msg = CreateLabwareMessage(
         message_uuid=str(uuid.uuid4()),
         message_create_date_utc=datetime.datetime.now(datetime.timezone.utc),
-        labware_type="Plate12x8",
+        labware_type='Plate12x8',
         labware_uuid=labware_uuid,
-        barcode="1",
+        barcode='1',
         samples=[
             Sample(
                 sample_uuid=sample_uuid,
                 study_uuid=study_uuid,
-                sanger_sample_id="TestSample1",
-                location="A1",
-                supplier_sample_name="TestSample1SupplierName",
-                volume="5",
-                concentration="5",
-                public_name="TestSample1PublicName",
-                taxon_id="10090",
-                common_name="Mus Musculus",
-                donor_id="TestSample1",
-                library_type="Library1",
-                country_of_origin="United Kingdom",
+                sanger_sample_id='TestSample1',
+                location='A1',
+                supplier_sample_name='TestSample1SupplierName',
+                volume='5',
+                concentration='5',
+                public_name='TestSample1PublicName',
+                taxon_id='10090',
+                common_name='Mus Musculus',
+                donor_id='TestSample1',
+                library_type='Library1',
+                country_of_origin='United Kingdom',
                 sample_collection_date_utc=datetime.datetime.now(datetime.timezone.utc)
             )
         ]
@@ -121,15 +124,15 @@ if __name__ == "__main__":
         labware_updates=[
             Update(
                 uuid=labware_uuid,
-                name="barcode",
-                value="2"
+                name='barcode',
+                value='2'
             )
         ],
         sample_updates=[
             Update(
                 uuid=sample_uuid,
-                name="volume",
-                value="6"
+                name='volume',
+                value='6'
             )
         ]
     )
@@ -138,4 +141,4 @@ if __name__ == "__main__":
     publisher.send_message(create_msg)
     publisher.send_message(update_msg)
 
-    LOGGER.info("Finished publishing messages")
+    LOGGER.info('Finished publishing messages')

@@ -6,8 +6,8 @@ from ..test_case import BaseTestCase
 
 
 class TestPostRelationships(BaseTestCase):
-    def test_post_B_good_relationship_201(self):
-        self.add_A(id=300)
+    def test_post_b_good_relationship_201(self):
+        self.add_a(id=300)
 
         response = self.client.open(
             '/api/v1/B',
@@ -32,13 +32,13 @@ class TestPostRelationships(BaseTestCase):
             response,
             f'Response body is : {response.data.decode("utf-8")}'
         )
-        id = response.json['data']['id']
+        id_ = response.json['data']['id']
         self.assertEqual(
             response.json,
             {
                 'data': {
                     'type': 'B',
-                    'id': id,
+                    'id': id_,
                     'relationships': {
                         'A': {
                             'links': {
@@ -49,9 +49,9 @@ class TestPostRelationships(BaseTestCase):
                                 'id': '300'
                             }
                         },
-                        "E": {
+                        'E': {
                             'links': {
-                                'related': f'/B/{id}/E'
+                                'related': f'/B/{id_}/E'
                             }
                         }
                     }
@@ -59,8 +59,8 @@ class TestPostRelationships(BaseTestCase):
             }
         )
 
-    def test_post_B_bad_relationship_400(self):
-        self.add_A(id=300)
+    def test_post_b_bad_relationship_400(self):
+        self.add_a(id=300)
 
         response = self.client.open(
             '/api/v1/B',

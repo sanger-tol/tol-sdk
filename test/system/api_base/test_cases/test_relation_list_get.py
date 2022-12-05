@@ -6,17 +6,17 @@ from ..test_case import BaseTestCase
 
 
 class TestRelationListGet(BaseTestCase):
-    def test_relation_list_get_A_B_200(self):
+    def test_relation_list_get_a_b_200(self):
         # add two A's
-        self.add_A(id=20)
-        self.add_A(id=29)
+        self.add_a(id=20)
+        self.add_a(id=29)
 
         # add two B's on the first A
-        self.add_B(id=89, a_id=20)
-        self.add_B(id=290, a_id=20)
+        self.add_b(id=89, a_id=20)
+        self.add_b(id=290, a_id=20)
 
         # add one B on the second A
-        self.add_B(id=8080, a_id=29)
+        self.add_b(id=8080, a_id=29)
 
         # get the first A's B's
         response = self.client.open(
@@ -47,7 +47,7 @@ class TestRelationListGet(BaseTestCase):
                                     'related': '/A/20'
                                 }
                             },
-                            "E": {
+                            'E': {
                                 'links': {
                                     'related': '/B/89/E'
                                 }
@@ -67,7 +67,7 @@ class TestRelationListGet(BaseTestCase):
                                     'related': '/A/20'
                                 }
                             },
-                            "E": {
+                            'E': {
                                 'links': {
                                     'related': '/B/290/E'
                                 }
@@ -107,7 +107,7 @@ class TestRelationListGet(BaseTestCase):
                                     'related': '/A/29'
                                 }
                             },
-                            "E": {
+                            'E': {
                                 'links': {
                                     'related': '/B/8080/E'
                                 }
@@ -118,10 +118,10 @@ class TestRelationListGet(BaseTestCase):
             }
         )
 
-    def test_relation_list_get_no_stem_A_B_404(self):
+    def test_relation_list_get_no_stem_a_b_404(self):
         # add an irrelevant A and connected B
-        self.add_A(id=99)
-        self.add_B(id=100, a_id=99)
+        self.add_a(id=99)
+        self.add_b(id=100, a_id=99)
 
         # try to get the B's of a non-existent A
         response = self.client.open(
@@ -137,11 +137,11 @@ class TestRelationListGet(BaseTestCase):
         """Confirm that the page parameter works with a relation
         list get endpoint"""
         # add an A
-        self.add_A(id=789)
+        self.add_a(id=789)
 
         # add 59 B's
         for i in range(1, 60):
-            self.add_B(id=i, a_id=789)
+            self.add_b(id=i, a_id=789)
 
         # combine parameters on relation list get
         response = self.client.open(
@@ -157,12 +157,12 @@ class TestRelationListGet(BaseTestCase):
 
     def test_relation_list_get_with_sort_by_parameter_200(self):
         # add an A
-        self.add_A(id=298)
+        self.add_a(id=298)
 
         # add 3 B's in no particular order
-        self.add_B(id=9090, a_id=298)
-        self.add_B(id=348, a_id=298)
-        self.add_B(id=200000, a_id=298)
+        self.add_b(id=9090, a_id=298)
+        self.add_b(id=348, a_id=298)
+        self.add_b(id=200000, a_id=298)
 
         # combine parameters on relation list get
         response = self.client.open(
@@ -192,7 +192,7 @@ class TestRelationListGet(BaseTestCase):
                                     'related': '/A/298'
                                 }
                             },
-                            "E": {
+                            'E': {
                                 'links': {
                                     'related': '/B/200000/E'
                                 }
@@ -212,7 +212,7 @@ class TestRelationListGet(BaseTestCase):
                                     'related': '/A/298'
                                 }
                             },
-                            "E": {
+                            'E': {
                                 'links': {
                                     'related': '/B/9090/E'
                                 }
@@ -232,7 +232,7 @@ class TestRelationListGet(BaseTestCase):
                                     'related': '/A/298'
                                 }
                             },
-                            "E": {
+                            'E': {
                                 'links': {
                                     'related': '/B/348/E'
                                 }

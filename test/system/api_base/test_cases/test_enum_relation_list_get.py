@@ -6,14 +6,14 @@ from ..test_case import BaseTestCase
 
 
 class TestEnumRelationListGet(BaseTestCase):
-    def test_I_relation_on_J_list_get_200(self):
+    def test_i_relation_on_j_list_get_200(self):
         # add two I's
-        self.add_I(id=34091, name='thing1')
-        self.add_I(id=981234, name='thing3')
+        self.add_i(id=34091, name='thing1')
+        self.add_i(id=981234, name='thing3')
         # add some J's
-        self.add_J(id=878934, I='thing3')
-        self.add_J(id=98823, I='thing1')
-        self.add_J(id=3453290, I='thing1')
+        self.add_j(id=878934, I='thing3')
+        self.add_j(id=98823, I='thing1')
+        self.add_j(id=3453290, I='thing1')
 
         # get thing3's J's
         response = self.client.open(
@@ -70,9 +70,9 @@ class TestEnumRelationListGet(BaseTestCase):
             }
         )
 
-    def test_I_bad_name_relation_on_J_list_get_404(self):
+    def test_i_bad_name_relation_on_j_list_get_404(self):
         # add an I
-        self.add_I(id=98902, name='thing2')
+        self.add_i(id=98902, name='thing2')
         # try to get the J's of a non-existent I
         response = self.client.open(
             '/api/v1/enum/I/nothing/J',

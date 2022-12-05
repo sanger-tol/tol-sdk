@@ -6,21 +6,21 @@ from ..test_case import BaseTestCase
 
 
 class TestBadForeignKey400(BaseTestCase):
-    def test_post_B_with_bad_foreign_key_error(self):
-        self.add_A(id=20)
+    def test_post_b_with_bad_foreign_key_error(self):
+        self.add_a(id=20)
 
         response = self.client.open(
             '/api/v1/B',
             method='POST',
             json={
-                "data": {
-                    "type": 'B',
-                    "attributes": {},
-                    "relationships": {
-                        "A": {
-                            "data": {
-                                "type": 'A',
-                                "id": 9999
+                'data': {
+                    'type': 'B',
+                    'attributes': {},
+                    'relationships': {
+                        'A': {
+                            'data': {
+                                'type': 'A',
+                                'id': 9999
                             }
                         }
                     }

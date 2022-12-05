@@ -2,10 +2,9 @@
 #
 # SPDX-License-Identifier: MIT
 
+from .base import AutoResourceGroup, setup_resource_group
 from ..service import UserService
 from ..swagger import UserSwagger
-
-from .base import AutoResourceGroup, setup_resource_group
 
 
 api_user = UserSwagger.api

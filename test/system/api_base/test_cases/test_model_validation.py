@@ -4,8 +4,7 @@
 
 import pytest
 
-from tol.api_base.model.base import Base, db, setup_model, \
-                            ModelValidationError
+from tol.api_base.model.base import Base, ModelValidationError, db, setup_model
 
 from ..test_case import BaseTestCase
 
@@ -20,7 +19,7 @@ class TestModelValidation(BaseTestCase):
 
             __tablename__ = 'test_GG'
 
-            id = db.Column(db.Integer, primary_key=True)
+            id = db.Column(db.Integer, primary_key=True)  # noqa A003
 
         setup_model(GoodModel)
 
@@ -29,7 +28,7 @@ class TestModelValidation(BaseTestCase):
 
             __tablename__ = 'test_BB'
 
-            id = db.Column(db.Integer, primary_key=True)
+            id = db.Column(db.Integer, primary_key=True)  # noqa A003
 
         with pytest.raises(ModelValidationError):
             setup_model(BadModel)
@@ -41,7 +40,7 @@ class TestModelValidation(BaseTestCase):
 
             __tablename__ = 'test_BBB'
 
-            id = db.Column(db.Integer, primary_key=True)
+            id = db.Column(db.Integer, primary_key=True)  # noqa A003
 
         with pytest.raises(ModelValidationError):
             setup_model(BadModel)

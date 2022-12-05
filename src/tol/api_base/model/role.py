@@ -7,13 +7,13 @@ from .base import Base, db, setup_model
 
 @setup_model
 class Role(Base):
-    __tablename__ = "role"
+    __tablename__ = 'role'
 
     class Meta:
         type_ = 'roles'
 
-    id = db.Column(db.Integer, primary_key=True)
+    id = db.Column(db.Integer, primary_key=True)  # noqa A003
     role = db.Column(db.String())
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
-    user = db.relationship("User", back_populates="role",
+    user = db.relationship('User', back_populates='role',
                            uselist=False, foreign_keys=[user_id])

@@ -7,7 +7,7 @@ from .base import Base, db, setup_model
 
 @setup_model
 class State(Base):
-    __tablename__ = "state"
+    __tablename__ = 'state'
 
     class Meta:
         type_ = 'states'

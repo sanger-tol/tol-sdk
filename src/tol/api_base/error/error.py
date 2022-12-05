@@ -21,10 +21,10 @@ class _CustomException(Exception):
 
 
 class IdNotFoundException(_CustomException):
-    def __init__(self, type_: str, id: int):
+    def __init__(self, type_: str, id_: int):
         errors = [{
             'title': 'Not Found',
-            'detail': f'No {type_} with id {id} was found.'
+            'detail': f'No {type_} with id {id_} was found.'
         }]
         super().__init__(
             errors=errors,
@@ -47,7 +47,7 @@ class EnumNameNotFoundException(_CustomException):
 class BadParameterException(_CustomException):
     def __init__(self, message: str):
         errors = [{
-            'title': "Bad Request",
+            'title': 'Bad Request',
             'detail': message
         }]
         super().__init__(

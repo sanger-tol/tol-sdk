@@ -13,7 +13,7 @@ class NamedEnumInstanceDoesNotExistException(EnumNameNotFoundException):
 class EnumBase(Base):
     __abstract__ = True
 
-    id = db.Column(db.Integer(), primary_key=True)
+    id = db.Column(db.Integer(), primary_key=True)  # noqa A003
     name = db.Column(db.String(), unique=True, nullable=False)
     description = db.Column(db.String(), nullable=True)
 
@@ -46,9 +46,9 @@ class EnumBase(Base):
         return instance.id
 
     @classmethod
-    def get_name_from_id(cls, id):
+    def get_name_from_id(cls, id_):
         query = db.session.query(cls)
-        instance = query.filter_by(id=id).one_or_none()
+        instance = query.filter_by(id=id_).one_or_none()
         if instance is None:
             return None
         return instance.name

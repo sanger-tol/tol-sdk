@@ -6,73 +6,66 @@ from __future__ import absolute_import
 
 from tol.api_base.schema.base import BaseSchema, setup_schema
 
-from .models import A_ModelRelationship, \
-                             B_ModelRelationship, \
-                             C_ModelWithNullableColumn, \
-                             D_ModelWithNonNullableColumn, \
-                             E_ModelRelationship, \
-                             F_ModelWithExtField, \
-                             G_ModelWithFilterableFields, \
-                             H_ModelLog, \
-                             I_ModelEnum, \
-                             J_ModelEnumDependent
+from .models import AModelRelationship, BModelRelationship, CModelWithNullableColumn, \
+    DModelWithNonNullableColumn, EModelRelationship, FModelWithExtField, \
+    GModelWithFilterableFields, HModelLog, IModelEnum, JModelEnumDependent
 
 
 @setup_schema
-class A_Schema(BaseSchema):
+class ASchema(BaseSchema):
     class Meta(BaseSchema.BaseMeta):
-        model = A_ModelRelationship
+        model = AModelRelationship
 
 
 @setup_schema
-class B_Schema(BaseSchema):
+class BSchema(BaseSchema):
     class Meta(BaseSchema.BaseMeta):
-        model = B_ModelRelationship
+        model = BModelRelationship
 
 
 @setup_schema
-class C_Schema(BaseSchema):
+class CSchema(BaseSchema):
     class Meta(BaseSchema.BaseMeta):
-        model = C_ModelWithNullableColumn
+        model = CModelWithNullableColumn
 
 
 @setup_schema
-class D_Schema(BaseSchema):
+class DSchema(BaseSchema):
     class Meta(BaseSchema.BaseMeta):
-        model = D_ModelWithNonNullableColumn
+        model = DModelWithNonNullableColumn
 
 
 @setup_schema
-class E_Schema(BaseSchema):
+class ESchema(BaseSchema):
     class Meta(BaseSchema.BaseMeta):
-        model = E_ModelRelationship
+        model = EModelRelationship
 
 
 @setup_schema
-class F_Schema(BaseSchema):
+class FSchema(BaseSchema):
     class Meta(BaseSchema.BaseMeta):
-        model = F_ModelWithExtField
+        model = FModelWithExtField
 
 
 @setup_schema
-class G_Schema(BaseSchema):
+class GSchema(BaseSchema):
     class Meta(BaseSchema.BaseMeta):
-        model = G_ModelWithFilterableFields
+        model = GModelWithFilterableFields
 
 
 @setup_schema
-class H_Schema(BaseSchema):
+class HSchema(BaseSchema):
     class Meta(BaseSchema.BaseMeta):
-        model = H_ModelLog
+        model = HModelLog
 
 
 @setup_schema
-class I_Schema(BaseSchema):
+class ISchema(BaseSchema):
     class Meta(BaseSchema.BaseMeta):
-        model = I_ModelEnum
+        model = IModelEnum
 
 
 @setup_schema
-class J_Schema(BaseSchema):
+class JSchema(BaseSchema):
     class Meta(BaseSchema.BaseMeta):
-        model = J_ModelEnumDependent
+        model = JModelEnumDependent
