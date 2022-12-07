@@ -48,7 +48,12 @@ class AuthService(BaseService):
         State.query() \
             .filter(State.created_at < since) \
             .delete()
-        State.commit()
+
+        # clear out expired auth tokens
+        Auth.query() \
+            .filter(Auth.expires_at < datetime.now()) \
+            .delete()
+        Auth.commit()
 
         login_url = {
             'loginUrl': 'https://login.elixir-czech.org/oidc/authorize?'
@@ -104,8 +109,11 @@ class AuthService(BaseService):
                 user.name = user_info_from_elixir['name']
                 user.add()
             # save the token so that we can authenticate against it in future
-            user.token = data['token']
-            User.commit()
+            auth = Auth(user_id=user.id,
+                        token=data['token'],
+                        created_at=datetime.now(),
+                        expires_at=datetime.now() + timedelta(days=7))
+            auth.save_create()
             return jsonify(user)
         else:
             return {
