@@ -15,7 +15,7 @@ authorizations = {
     'ApiKeyAuth': {
         'type': 'apiKey',
         'in': 'header',
-        'name': 'Authorization'
+        'name': 'Token'
     }
 }
 
@@ -24,7 +24,7 @@ def auth_dec():
     def wrap_decorator(function):
         @wraps(function)
         def decorated(resource, *args, **kwargs):
-            token = request.headers.get('Authorization')
+            token = request.headers.get('Token')
             if not token:
                 return resource.auth_error('Auth token is missing')
             user_id = get_user_id_via_token(token)
