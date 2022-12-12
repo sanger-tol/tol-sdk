@@ -45,7 +45,7 @@ class interface:
         request = []
         for entity in entities:
             entity_fields = convert_sts_entity_to_eln_entity_fields(entity, mapping)
-            name = "TEST"
+            name = entity_fields["sts_id"]["value"]
             print(entity_fields)
             custom_fields = {}
             create_sample = CustomEntityBulkCreate(
@@ -63,7 +63,7 @@ class interface:
             print(f'{response.task_id}')
         except BenchlingError as error:
             raise Exception(400, error.json['error']['message'])
-        return request, create_sample, self.__generate_response(task, entities, id_field)
+        return self.__generate_response(task, entities, id_field)
 
     def update(self, entities, mapping_name):
         mapping = self.mappings[mapping_name]
