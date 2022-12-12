@@ -116,7 +116,8 @@ def test(env_file, type_):
         docker_compose_entry = f'{service}-python-unit-test'
         command = (
             f'docker compose build {docker_compose_entry} && '
-            f'docker compose --env-file {env_file} run {docker_compose_entry}'
+            f'docker compose --env-file {env_file} run {docker_compose_entry} '
+            f'sh -c "[ -d unit ] && pytest -v unit || echo \'No unit tests found\'"'
         )
     if type_ == 'system':
         docker_compose_entry = f'{service}-python-system-test'
@@ -124,7 +125,8 @@ def test(env_file, type_):
         command = (
             f'docker compose build {docker_compose_entry} && '
             f'docker compose --env-file {env_file} up -d {db_entry} && '
-            f'docker compose --env-file {env_file} run {docker_compose_entry}'
+            f'docker compose --env-file {env_file} run {docker_compose_entry} '
+            f'sh -c "[ -d system ] && pytest -v system || echo \'No system tests found\'"'
         )
     if type_ == 'integration':
         click.echo('Integration tests are not supported at this time.')
