@@ -12,13 +12,16 @@ from .entities import convert_sts_entity_to_eln_entity_fields
 
 class interface:
 
-    def __init__(self, url, config):
-        self.url = url
-        api_key = config["api_key"]
-        self.benchling_interface = self.__get_benchling_interface(url, api_key)
+    def __init__(self, config, api_key="DEFAULT"):
+        if api_key == "DEFAULT":
+            self.api_key = config["api_key"]
+        else:
+            self.api_key = api_key
+        self.url = config["url"]
         self.registry_id = config["registry_id"]
         self.project_id = config["project_id"]
         self.mappings = config["entities"]
+        self.benchling_interface = self.__get_benchling_interface(self.url, self.api_key)
 
     def __get_benchling_interface(self, url, api_key):
         return (Benchling(url=url, auth_method=ApiKeyAuth(api_key)))
@@ -27,34 +30,32 @@ class interface:
         response = [{"id": entity[id_field], "status": "PASSED"} for entity in entities]
         try:
             if task.status == "FAILED":
-                print(task.message)
                 for error in task.errors.additional_properties:
                     response[error["index"]]["status"] = "FAILED"
                     response[error["index"]]["message"] = error["message"]
-                print(response)
                 return(response)
             else:
-                print("Success")
+                pass
         except BenchlingError as error:
             raise Exception(400, error.json['error']['message'])
 
     def register(self, entities, mapping_name):
         mapping = self.mappings[mapping_name]
         schema_id = mapping["schema_id"]
-        id_field = mapping["id_field"]
+        name_field = mapping["name_field"]
         request = []
         for entity in entities:
             entity_fields = convert_sts_entity_to_eln_entity_fields(entity, mapping)
-            name = entity_fields["sts_id"]["value"]
-            print(entity_fields)
+            print(json.dumps(entity_fields, indent=4))
+            name = entity[name_field]
             custom_fields = {}
             create_sample = CustomEntityBulkCreate(
-                naming_strategy=NamingStrategy.IDS_FROM_NAMES,
+                naming_strategy=NamingStrategy.REPLACE_NAMES_FROM_PARTS,
                 schema_id=schema_id,
                 name=name,
                 fields=fields(entity_fields),
-                registry_id=self.registry_id,
                 folder_id=self.project_id,
+                registry_id=self.registry_id,
                 custom_fields=fields(custom_fields))
             request.append(create_sample)
         try:
@@ -62,19 +63,20 @@ class interface:
             task = self.benchling_interface.tasks.wait_for_task(response.task_id, interval_wait_seconds=3)
             print(f'{response.task_id}')
         except BenchlingError as error:
-            raise Exception(400, error.json['error']['message'])
-        return self.__generate_response(task, entities, id_field)
+            raise Exception(400, error.json['kerror']['message'])
+        return task #, self.__generate_response(task, entities, name_field)
 
     def update(self, entities, mapping_name):
         mapping = self.mappings[mapping_name]
+        schema_id = mapping["schema_id"]
         id_field = mapping["id_field"]
         request = []
         for entity in entities:
             entity_fields = convert_sts_entity_to_eln_entity_fields(entity, mapping)
+            name = entity_fields["sts_id"]["value"]
             custom_fields = {}
             update_sample = CustomEntityBulkUpdate(
-                # id=sample['eln_id'],
-                name=entity[id_field],
+                id=sample[id_field],
                 fields=fields(entity_fields),
                 custom_fields=fields(custom_fields))
             request.append(update_sample)
