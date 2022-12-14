@@ -5,8 +5,13 @@
 import re
 
 
-def sanitise_value(value):
-    value = re.sub(r'\\n', '\n', value)
-    value = re.sub(r'\\t', '\t', value)
-    value = value.strip()
+def sanitise_value(value, default=''):
+    if value is None:
+        value = ''
+    if default != '' and value == '':
+        value = default
+    if isinstance(value, str):
+        value = re.sub(r'\\n', '\n', value)
+        value = re.sub(r'\\t', '\t', value)
+        value = value.strip()
     return value
