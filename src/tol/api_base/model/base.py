@@ -361,7 +361,7 @@ class Base(db.Model):
     @classmethod
     def _preprocess_page(cls, page):
         if not page:
-            return None
+            return 1
         try:
             page = int(page)
         except ValueError:
@@ -375,28 +375,61 @@ class Base(db.Model):
         return page
 
     @classmethod
-    def _paginate_query(cls, query, page):
-        page = cls._preprocess_page(page)
-        if page is not None:
-            query = query.offset((page - 1) * PAGE_SIZE)
-        return query.limit(PAGE_SIZE)
+    def _preprocess_page_size(cls, page_size):
+        if not page_size:
+            return PAGE_SIZE
+        try:
+            page_size = int(page_size)
+        except ValueError:
+            raise BadParameterException(
+                'The page_size number must be an integer.'
+            )
+        if page_size < 1:
+            raise BadParameterException(
+                'The page_size number must be 1 or greater.'
+            )
+        return page_size
 
     @classmethod
-    def _postprocess_bulk_find(cls, query, page=None, eq_filters=None, sort_by=None):
+    def _paginate_query(cls, query, page, page_size):
+        page = cls._preprocess_page(page)
+        page_size = cls._preprocess_page_size(page_size)
+        offset = 0
+        if page is not None:
+            offset = (page - 1) * page_size
+            query = query.offset(offset)
+        return query.limit(page_size), page, page_size, offset, offset + page_size
+
+    @classmethod
+    def _postprocess_bulk_find(cls, query,
+                               page=None, page_size=None, eq_filters=None, sort_by=None):
         query = cls._filter_query(query, eq_filters)
         query = cls._sort_by_query(query, sort_by)
-        return cls._paginate_query(query, page)
+        total = query.count()
+        query, page, page_size, offset, limit = cls._paginate_query(query, page, page_size)
+        metadata = {
+            'page': page,
+            'page_size': page_size,
+            'offset': offset,
+            'limit': limit,
+            'total': total
+        }
+        return query, metadata
 
     @classmethod
     def bulk_find(cls, **kwargs):
         query = db.session.query(cls)
-        return cls._postprocess_bulk_find(query, **kwargs).all()
+        query, metadata = cls._postprocess_bulk_find(query, **kwargs)
+        metadata = {'meta': metadata}
+        return query.all(), metadata
 
     @classmethod
     def _bulk_find_on_relation(cls, relation_model, relation_id, **kwargs):
         foreign_key = cls._get_foreign_key_from_relation_model(relation_model)
         query = db.session.query(cls).filter(foreign_key == relation_id)
-        return cls._postprocess_bulk_find(query, **kwargs).all()
+        query, metadata = cls._postprocess_bulk_find(query, **kwargs)
+        metadata = {'meta': metadata}
+        return query.all(), metadata
 
     @classmethod
     def bulk_find_on_relation_id(cls, relation_model, relation_id, **kwargs):

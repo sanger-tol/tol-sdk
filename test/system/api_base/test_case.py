@@ -44,10 +44,10 @@ class BaseTestCase(TestCase):
     token_2 = 'SomethingElse'
 
     def _get_auth_user_1_headers(self):
-        return {'Authorization': self.token_1}
+        return {'Token': self.token_1}
 
     def _get_auth_user_2_headers(self):
-        return {'Authorization': self.token_2}
+        return {'Token': self.token_2}
 
     def create_app(self):
         app = Flask(__name__)

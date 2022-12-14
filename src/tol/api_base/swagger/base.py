@@ -291,6 +291,13 @@ class BaseSwagger:
         cls.bulk_response_model = cls.api.model(
             f'{type_.title()} Bulk Response',
             {
+                'meta': fields.Nested(cls.api.model('meta', {
+                    'page': fields.Integer(example=1),
+                    'page_size': fields.Integer(example=1),
+                    'offset': fields.Integer(example=0),
+                    'limit': fields.Integer(example=1),
+                    'total': fields.Integer(example=23),
+                })),
                 'data': fields.List(
                     fields.Nested(cls.response_resource_object)
                 )

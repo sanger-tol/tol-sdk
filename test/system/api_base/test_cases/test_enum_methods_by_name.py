@@ -199,6 +199,13 @@ class TestEnumMethodsByName(BaseTestCase):
 
         # the expected data (should be identical for both)
         expected_data = {
+            'meta': {
+                'page': 1,
+                'page_size': 20,
+                'offset': 0,
+                'limit': 20,
+                'total': 3
+            },
             'data': [
                 {
                     'type': 'J',

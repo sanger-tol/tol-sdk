@@ -57,6 +57,13 @@ class TestListGetEnum(BaseTestCase):
         self.assertEqual(
             response.json,
             {
+                'meta': {
+                    'page': 1,
+                    'page_size': 20,
+                    'offset': 0,
+                    'limit': 20,
+                    'total': 2
+                },
                 'data': [
                     {
                         'type': 'J',
@@ -101,6 +108,13 @@ class TestListGetEnum(BaseTestCase):
         self.assertEqual(
             response.json,
             {
+                'meta': {
+                    'page': 1,
+                    'page_size': 20,
+                    'offset': 0,
+                    'limit': 20,
+                    'total': 5
+                },
                 'data': [
                     {
                         'type': 'J',
@@ -154,6 +168,13 @@ class TestListGetEnum(BaseTestCase):
         self.assertEqual(
             response.json,
             {
+                'meta': {
+                    'page': 1,
+                    'page_size': 20,
+                    'offset': 0,
+                    'limit': 20,
+                    'total': 5
+                },
                 'data': [
                     {
                         'type': 'J',

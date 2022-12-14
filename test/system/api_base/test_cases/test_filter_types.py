@@ -48,6 +48,13 @@ class TestFilterTypes(BaseTestCase):
         self.assertEqual(
             response.json,
             {
+                'meta': {
+                    'page': 1,
+                    'page_size': 20,
+                    'offset': 0,
+                    'limit': 20,
+                    'total': 1
+                },
                 'data': [
                     {
                         'type': 'G',
@@ -83,6 +90,13 @@ class TestFilterTypes(BaseTestCase):
         self.assertEqual(
             response.json,
             {
+                'meta': {
+                    'page': 1,
+                    'page_size': 20,
+                    'offset': 0,
+                    'limit': 20,
+                    'total': 1
+                },
                 'data': [
                     {
                         'type': 'G',
@@ -110,6 +124,13 @@ class TestFilterTypes(BaseTestCase):
         self.assertEqual(
             response.json,
             {
+                'meta': {
+                    'page': 1,
+                    'page_size': 20,
+                    'offset': 0,
+                    'limit': 20,
+                    'total': 0
+                },
                 'data': []
             }
         )
@@ -132,6 +153,13 @@ class TestFilterTypes(BaseTestCase):
         self.assertEqual(
             response.json,
             {
+                'meta': {
+                    'page': 1,
+                    'page_size': 20,
+                    'offset': 0,
+                    'limit': 20,
+                    'total': 0
+                },
                 'data': []
             }
         )
@@ -149,6 +177,13 @@ class TestFilterTypes(BaseTestCase):
         self.assertEqual(
             response.json,
             {
+                'meta': {
+                    'page': 1,
+                    'page_size': 20,
+                    'offset': 0,
+                    'limit': 20,
+                    'total': 1
+                },
                 'data': [
                     {
                         'type': 'G',
@@ -194,6 +229,13 @@ class TestFilterTypes(BaseTestCase):
         self.assertEqual(
             response.json,
             {
+                'meta': {
+                    'page': 1,
+                    'page_size': 20,
+                    'offset': 0,
+                    'limit': 20,
+                    'total': 1
+                },
                 'data': [
                     {
                         'type': 'G',

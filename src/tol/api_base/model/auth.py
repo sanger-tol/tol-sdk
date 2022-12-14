@@ -42,5 +42,5 @@ def get_user_id_via_token(token):
 
 def get_request_user_id():
     if has_request_context():
-        api_key = request.headers.get('Authorization')
+        api_key = request.headers.get('Token')
         return get_user_id_via_token(api_key)

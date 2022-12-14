@@ -33,6 +33,13 @@ class TestListGet(BaseTestCase):
         self.assertEqual(
             response.json,
             {
+                'meta': {
+                    'page': 1,
+                    'page_size': 20,
+                    'offset': 0,
+                    'limit': 20,
+                    'total': 3
+                },
                 'data': [
                     {
                         'type': 'C',

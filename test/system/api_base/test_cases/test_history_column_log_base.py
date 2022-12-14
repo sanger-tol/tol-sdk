@@ -117,7 +117,6 @@ class TestHistoryColumnLogBase(BaseTestCase):
             response,
             f'Response body is : {response.data.decode("utf-8")}'
         )
-        print(response.json)
         # assert that the history has not changed
         self.assertEqual(
             response.json,
@@ -513,6 +512,13 @@ class TestHistoryColumnLogBase(BaseTestCase):
         last_modified_at = response.json['data']['attributes']['last_modified_at']
         # list (many) get, and assert that it doesn't contain the history for each one.
         expected_response = {
+            'meta': {
+                'page': 1,
+                'page_size': 20,
+                'offset': 0,
+                'limit': 20,
+                'total': 1
+            },
             'data': [
                 {
                     'type': 'H',

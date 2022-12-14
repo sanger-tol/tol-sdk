@@ -33,6 +33,13 @@ class TestRelationListGet(BaseTestCase):
         self.assertEqual(
             response.json,
             {
+                'meta': {
+                    'page': 1,
+                    'page_size': 20,
+                    'offset': 0,
+                    'limit': 20,
+                    'total': 2
+                },
                 'data': [
                     {
                         'id': '89',
@@ -93,6 +100,13 @@ class TestRelationListGet(BaseTestCase):
         self.assertEqual(
             response.json,
             {
+                'meta': {
+                    'page': 1,
+                    'page_size': 20,
+                    'offset': 0,
+                    'limit': 20,
+                    'total': 1
+                },
                 'data': [
                     {
                         'id': '8080',
@@ -178,6 +192,13 @@ class TestRelationListGet(BaseTestCase):
         self.assertEqual(
             response.json,
             {
+                'meta': {
+                    'page': 1,
+                    'page_size': 20,
+                    'offset': 0,
+                    'limit': 20,
+                    'total': 3
+                },
                 'data': [
                     {
                         'id': '200000',

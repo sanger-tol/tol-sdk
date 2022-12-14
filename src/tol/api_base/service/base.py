@@ -29,11 +29,12 @@ def provide_body_data(function):
 def provide_parameters(function):
     @wraps(function)
     def wrapper(cls, *args, **kwargs):
-        page, eq_filters, sort_by = cls.parse_parameters()
+        page, page_size, eq_filters, sort_by = cls.parse_parameters()
         return function(
             cls,
             *args,
             page=page,
+            page_size=page_size,
             eq_filters=eq_filters,
             sort_by=sort_by,
             **kwargs
@@ -117,9 +118,10 @@ class BaseService:
     @classmethod
     def parse_parameters(cls):
         page = request.args.get('page')
+        page_size = request.args.get('page_size')
         eq_filters = cls._parse_filters()
         sort_by = cls._parse_sort_by()
-        return page, eq_filters, sort_by
+        return page, page_size, eq_filters, sort_by
 
     @classmethod
     def error_401(cls, message):
@@ -222,8 +224,9 @@ class BaseService:
     @provide_parameters
     def read_bulk(cls, user_id=None, **kwargs):
         schema = cls.Meta.schema(many=True)
-        model_instances = cls.Meta.model.bulk_find(**kwargs)
-        return schema.dump(model_instances), 200
+        model_instances, metadata = cls.Meta.model.bulk_find(**kwargs)
+        response = schema.dump(model_instances)
+        return dict(**metadata, **response), 200
 
     @classmethod
     @provide_parameters
@@ -234,8 +237,10 @@ class BaseService:
         """
         target_service = cls._get_target_service_by_name(target_service_name)
         schema = target_service.get_schema(many=True)
-        model_instances = target_service.get_bulk_results_for_related_by_id(id_, cls, **kwargs)
-        return schema.dump(model_instances), 200
+        model_instances, metadata \
+            = target_service.get_bulk_results_for_related_by_id(id_, cls, **kwargs)
+        response = schema.dump(model_instances)
+        return dict(**metadata, **response), 200
 
     @classmethod
     def read_by_name(cls, name, user_id=None):
@@ -276,5 +281,7 @@ class BaseService:
         """
         target_service = cls._get_target_service_by_name(target_service_name)
         schema = target_service.get_schema(many=True)
-        model_instances = target_service.get_bulk_results_for_related_by_name(name, cls, **kwargs)
-        return schema.dump(model_instances), 200
+        model_instances, metadata \
+            = target_service.get_bulk_results_for_related_by_name(name, cls, **kwargs)
+        response = schema.dump(model_instances)
+        return dict(**metadata, **response), 200
