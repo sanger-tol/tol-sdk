@@ -10,9 +10,13 @@ def flatten_entity(entity):
     for field, value in entity.items():
         if type(value) is list:
             for index, subentity in enumerate(value):
-                for subfield, subvalue in subentity.items():
-                    new_name = field + '_' + str(index) + '_' + subfield
-                    flattened_entity[new_name] = subvalue
+                if type(subentity) is dict:
+                    for subfield, subvalue in subentity.items():
+                        new_name = field + '_' + str(index) + '_' + subfield
+                        flattened_entity[new_name] = subvalue
+                elif type(subentity) is str:
+                    new_name = field + '_' + str(index)
+                    flattened_entity[new_name] = subentity
         elif type(value) is dict:
             for subfield, subvalue in value.items():
                 new_name = field + '_' + subfield

@@ -134,7 +134,6 @@ def merge(ctx):
 
 # Run tests
 @cli.command()
-@click.option('--env-file', default='.env.dev', help='set a custom .env file')
 @click.option('--type', 'type_', default='unit',
               type=click.Choice(['unit', 'system', 'integration']),
               help='type of test')
@@ -177,7 +176,7 @@ def flow(ctx, filename):
     command = (
         f'docker run --env-file {env_file} -v '
         '$(pwd)/app/flows:/flows '
-        'gitlab-registry.internal.sanger.ac.uk/tol/tol-core/flows-base:1.1.1 python3 '
+        'gitlab-registry.internal.sanger.ac.uk/tol/tol-core/flows-base:1.1.2 python3 '
         f'/flows/{flow_name}'
     )
     click.secho(command, fg='green')

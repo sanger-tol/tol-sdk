@@ -99,17 +99,14 @@ class Interface:
             response = self.benchling_interface.custom_entities.bulk_update(request)
             task = self.benchling_interface.tasks.wait_for_task(
                 response.task_id, interval_wait_seconds=3)
-            print(f'{response.task_id}')
         except BenchlingError as error:
             raise Exception(400, error.json['error']['message'])
         response = [{'id': entity[id_field], 'status': 'PASSED'} for entity in entities]
         try:
             if task.status == 'FAILED':
-                for error in task.errors.additional_properties:
-                    response[error['index']]['status'] = 'FAILED'
-                    response[error['index']]['message'] = error['message']
-                return response
-            else:
-                return response
+                response = [{'id': entity[id_field],
+                             'status': 'FAILED',
+                             'message': task.message} for entity in entities]
+            return response
         except BenchlingError as error:
             raise Exception(400, error.json['error']['message'])
