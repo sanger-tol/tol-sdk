@@ -63,6 +63,26 @@ def up(ctx, ui, db, api):
         click.secho('UI: ' + get_container_url(f'{service}-ui'), fg='yellow')
 
 
+# Log a ToL service
+@cli.command()
+@click.option('--ui/--no-ui', default=True, help='build the UI container')
+@click.option('--db/--no-db', default=True, help='build the DB container')
+@click.option('--api/--no-api', default=True, help='build the API container')
+def log(ui, db, api):
+    service = get_app()
+    containers = []
+    if ui:
+        containers.append(f'{service}-ui')
+    if db:
+        containers.append(f'{service}-db')
+    if api:
+        containers.append(f'{service}-api')
+    command = f'docker compose logs --tail=0 --follow ' \
+        + ' '.join(containers)
+    click.secho(command, fg='green')
+    run(command)
+
+
 # Stop a ToL service
 @cli.command()
 def down():
@@ -71,6 +91,17 @@ def down():
     command = 'docker compose down'
     click.secho(command, fg='green')
     run(command)
+
+
+# Prune
+@cli.command()
+def prune():
+    click.echo(f'Pruning all Docker containers, volumes, etc...')
+    command = 'docker system prune -af'
+    click.secho(command, fg='green')
+    run(command)
+    command = 'docker volume prune -f'
+    click.secho(command, fg='green')
 
 
 # Restore a database from backup
