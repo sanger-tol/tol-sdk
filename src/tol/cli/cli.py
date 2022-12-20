@@ -77,7 +77,7 @@ def log(ui, db, api):
         containers.append(f'{service}-db')
     if api:
         containers.append(f'{service}-api')
-    command = f'docker compose logs --tail=0 --follow ' \
+    command = 'docker compose logs --tail=0 --follow ' \
         + ' '.join(containers)
     click.secho(command, fg='green')
     run(command)
@@ -96,7 +96,7 @@ def down():
 # Prune
 @cli.command()
 def prune():
-    click.echo(f'Pruning all Docker containers, volumes, etc...')
+    click.echo('Pruning all Docker containers, volumes, etc...')
     command = 'docker system prune -af'
     click.secho(command, fg='green')
     run(command)
