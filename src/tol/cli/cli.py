@@ -30,7 +30,7 @@ def lint(type_):
         click.secho(command, fg='green')
         run(command)
     if type_ == 'python':
-        linter = 'gitlab-registry.internal.sanger.ac.uk/tol/tol-core/lint:1.0.0'
+        linter = 'gitlab-registry.internal.sanger.ac.uk/tol/tol-core/lint:1.0.1'
         command = f'docker run --rm --volume $(pwd):/project {linter}'
         click.secho(command, fg='green')
         run(command)
