@@ -7,7 +7,7 @@ from abc import ABCMeta, abstractmethod
 
 from lab_share_lib.exceptions import TransientRabbitError
 from lab_share_lib.processing.rabbit_message import RabbitMessage
-from lab_share_lib.rabbit.avro_encoder import AvroEncoderBinary
+from lab_share_lib.processing.rabbit_message_processor import ENCODERS
 from lab_share_lib.rabbit.schema_registry import SchemaRegistry
 
 import tol.sciops.configuration as config
@@ -25,6 +25,12 @@ class MessageProcessor(object, metaclass=ABCMeta):
     def __init__(self):
         self.__registry = SchemaRegistry(config.REDPANDA_URL, config.REDPANDA_API_KEY)
 
+    def build_avro_encoder(self, encoder_type, subject):
+        if encoder_type not in ENCODERS.keys():
+            raise Exception(f'Encoder type {encoder_type} not recognised')
+
+        return ENCODERS[encoder_type](self.__registry, subject)
+
     @abstractmethod
     def process_message(self, headers, body):
         pass
@@ -32,7 +38,7 @@ class MessageProcessor(object, metaclass=ABCMeta):
     def _unpack(self, headers, body) -> RabbitMessage:
         """ Helper method to decode a received feedback message """
         message = RabbitMessage(headers, body)
-        message.decode(AvroEncoderBinary(self.__registry, message.subject))
+        message.decode(self.build_avro_encoder(message.encoder_type, message.subject))
         return message
 
 

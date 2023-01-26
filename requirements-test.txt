@@ -13,4 +13,4 @@ pytest==6.0.1
 randomize>=0.13
 responses
 
-git+https://git@github.com/sanger/lab-share-lib.git@develop
+git+https://git@github.com/sanger/lab-share-lib.git@v0.1.5

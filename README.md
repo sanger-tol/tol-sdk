@@ -132,4 +132,19 @@ def process_message(self, headers, body):
     return ret
 
 ```
+### Available Traction Library Types
+The following is a list of Production/UAT Traction *library type*s that may be specified in a message:
+
+* Pacbio_Amplicon
+* Pacbio_HiFi
+* Pacbio_HiFi_mplx
+* Pacbio_IsoSeq
+* PacBio_IsoSeq_mplx
+* Pacbio_Microbial_mplx
+* PacBio_Ultra_Low_Input
+* PacBio_Ultra_Low_Input_mplx
+* Saphyr_v1
+
+### Checking successful message delivery in SciOps Traction GUI:
+The GUI URL is: [https://uat.traction.psd.sanger.ac.uk/#/pacbio/samples](https://uat.traction.psd.sanger.ac.uk/#/pacbio/samples)
 
