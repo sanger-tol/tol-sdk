@@ -50,7 +50,7 @@ class Jira:
             entry['tolid'] = jm.get_species_id(issue)
             entry['species_name'] = jm.get_species_name(issue)
             entry['jira_issue'] = issue.key
-            entry['jira_issue_link'] = f'{ja.jira_path}/browse/{issue.key}'
+            entry['jira_issue_link'] = f'https://{ja.jira_path}/browse/{issue.key}'
             entry['jira_issue_last_updated'] = issue.fields.updated
             entry['jbrowse_link'] = ''
             entries.append(entry)
