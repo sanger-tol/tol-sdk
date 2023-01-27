@@ -31,5 +31,5 @@ def convert_sts_entity_to_eln_entity_fields(sts_entity, mapping):
     flattened_entity = flatten_entity(sts_entity)
     for sts_name, eln_name in mapping['field_mappings'].items():
         if sts_name in flattened_entity:
-            eln_entity[eln_name] = {'value': sanitise_value(flattened_entity[sts_name])}
+            eln_entity[eln_name] = {'value': sanitise_value(flattened_entity[sts_name], None)}
     return eln_entity

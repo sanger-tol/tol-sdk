@@ -14,6 +14,8 @@ class TestSanitise(TestCase):
     def test_sanitise_value(self):
         self.assertEqual('', sanitise_value(None))
         self.assertEqual('default', sanitise_value(None, default='default'))
+        self.assertIsNone(sanitise_value(None, default=None))
+        self.assertIsNone(sanitise_value('', default=None))
         self.assertEqual('field', sanitise_value('field', default='default'))
         self.assertEqual('field', sanitise_value('field'))
         self.assertEqual('field', sanitise_value('field '))
