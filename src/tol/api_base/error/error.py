@@ -81,3 +81,12 @@ class BadTargetServiceException(_CustomException):
             'detail': f"No endpoint exists with name '{target_service}'."
         }]
         super().__init__(errors, 400)
+
+
+class WildcardFilterOnNonStringColumn(_CustomException):
+    def __init__(self, filter_column):
+        errors = [{
+            'title': 'Wildcard filter on non-string column',
+            'detail': f'The field {filter_column} is not a string.'
+        }]
+        super().__init__(errors, 400)

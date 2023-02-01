@@ -34,7 +34,13 @@ LIST_GET_PARAMS_DICT = {
         'description': 'Filters by equality. Formatted '
                        'like [key1==value1,key2==value2]. '
                        'Delimit strings with " or \', e.g. "string".'
-    }
+    },
+    'wildcard': {
+        'in': 'query',
+        'description': 'Filters for containing the given substring. '
+                       'Formatted like [key1==value1,key2==value2]. '
+                       'Delimit strings with " or \', e.g. "string".'
+    },
 }
 
 

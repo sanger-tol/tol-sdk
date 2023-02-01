@@ -29,13 +29,14 @@ def provide_body_data(function):
 def provide_parameters(function):
     @wraps(function)
     def wrapper(cls, *args, **kwargs):
-        page, page_size, eq_filters, sort_by = cls.parse_parameters()
+        page, page_size, exact_filters, wildcard_filters, sort_by = cls.parse_parameters()
         return function(
             cls,
             *args,
             page=page,
             page_size=page_size,
-            eq_filters=eq_filters,
+            exact_filters=exact_filters,
+            wildcard_filters=wildcard_filters,
             sort_by=sort_by,
             **kwargs
         )
@@ -82,13 +83,13 @@ class BaseService:
         return filter_key, filter_value
 
     @classmethod
-    def _parse_filters(cls):
-        filter_string = request.args.get('filter')
-        if not filter_string:
+    def _parse_filter_string(cls, key: str):
+        exact_filter_string = request.args.get(key)
+        if not exact_filter_string:
             return None
         if not (
-            filter_string.startswith('[')
-            and filter_string.endswith(']')
+            exact_filter_string.startswith('[')
+            and exact_filter_string.endswith(']')
         ):
             raise BadParameterStringException(
                 'The entire filter query parameter must '
@@ -97,7 +98,7 @@ class BaseService:
         filter_terms = [
             cls._split_filter_term(filter_term)
             for filter_term
-            in filter_string[1:-1].split(',')
+            in exact_filter_string[1:-1].split(',')
         ]
         return {
             filter_key: filter_value
@@ -119,9 +120,10 @@ class BaseService:
     def parse_parameters(cls):
         page = request.args.get('page')
         page_size = request.args.get('page_size')
-        eq_filters = cls._parse_filters()
+        exact_filters = cls._parse_filter_string('filter')
+        wildcard_filters = cls._parse_filter_string('wildcard')
         sort_by = cls._parse_sort_by()
-        return page, page_size, eq_filters, sort_by
+        return page, page_size, exact_filters, wildcard_filters, sort_by
 
     @classmethod
     def error_401(cls, message):

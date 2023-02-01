@@ -17,8 +17,10 @@ from ..error import (
     BadParameterException,
     EnumNameNotFoundException,
     ExtraFieldsNotPermittedException,
-    IdNotFoundException
+    IdNotFoundException,
+    WildcardFilterOnNonStringColumn
 )
+from ..utils.string import escape_psql_like_string
 
 
 PAGE_SIZE = 20
@@ -297,13 +299,23 @@ class Base(db.Model):
         self.save()
 
     @classmethod
-    def _get_eq_filter_terms(cls, eq_filters):
-        if not eq_filters:
+    def _get_exact_filter_terms(cls, exact_filters):
+        if not exact_filters:
             return None
         return [
             getattr(cls, filter_key) == filter_value
             for (filter_key, filter_value)
-            in cls._preprocess_filters(eq_filters).items()
+            in cls._preprocess_exact_filters(exact_filters).items()
+        ]
+
+    @classmethod
+    def _get_wildcard_filter_terms(cls, wildcard_filters):
+        if not wildcard_filters:
+            return None
+        return [
+            getattr(cls, filter_key).ilike(f'%{filter_value}%')
+            for (filter_key, filter_value)
+            in cls._preprocess_wildcard_filters(wildcard_filters).items()
         ]
 
     @classmethod
@@ -352,10 +364,21 @@ class Base(db.Model):
         )
 
     @classmethod
-    def _filter_query(cls, query, eq_filters):
-        eq_filter_terms = cls._get_eq_filter_terms(eq_filters)
-        if eq_filter_terms is not None:
-            query = query.filter(and_(*eq_filter_terms))
+    def _exact_filter_query(cls, query, exact_filters):
+        exact_filter_terms = cls._get_exact_filter_terms(exact_filters)
+        if exact_filter_terms is not None:
+            query = query.filter(and_(*exact_filter_terms))
+        return query
+
+    @classmethod
+    def _wildcard_filter_query(cls, query, wildcard_filters):
+        wildcard_filters_terms = cls._get_wildcard_filter_terms(
+            wildcard_filters
+        )
+        if wildcard_filters_terms is not None:
+            query = query.filter(
+                and_(*wildcard_filters_terms)
+            )
         return query
 
     @classmethod
@@ -401,9 +424,17 @@ class Base(db.Model):
         return query.limit(page_size), page, page_size, offset, offset + page_size
 
     @classmethod
-    def _postprocess_bulk_find(cls, query,
-                               page=None, page_size=None, eq_filters=None, sort_by=None):
-        query = cls._filter_query(query, eq_filters)
+    def _postprocess_bulk_find(
+        cls,
+        query,
+        page=None,
+        page_size=None,
+        exact_filters=None,
+        wildcard_filters=None,
+        sort_by=None
+    ):
+        query = cls._exact_filter_query(query, exact_filters)
+        query = cls._wildcard_filter_query(query, wildcard_filters)
         query = cls._sort_by_query(query, sort_by)
         total = query.count()
         query, page, page_size, offset, limit = cls._paginate_query(query, page, page_size)
@@ -726,7 +757,7 @@ class Base(db.Model):
         return filter_enum_name
 
     @classmethod
-    def _preprocess_filter_value(cls, filter_key, filter_value, enum_names):
+    def _preprocess_exact_filter_value(cls, filter_key, filter_value, enum_names):
         if getattr(cls, filter_key, None) is None and filter_key not in enum_names:
             raise BadParameterException(
                 f"The filter key '{filter_key}' is invalid."
@@ -747,23 +778,52 @@ class Base(db.Model):
         )
 
     @classmethod
-    def _preprocess_filters(cls, eq_filters):
-        if not eq_filters:
-            return None
-        if cls.has_ext_column() and 'ext' in eq_filters.keys():
+    def _preprocess_wildcard_filter_value(cls, filter_key, filter_value):
+        python_type = cls.get_column_python_type(filter_key)
+
+        if python_type != str:
+            raise WildcardFilterOnNonStringColumn(filter_key)
+
+        return escape_psql_like_string(
+            cls._preprocess_string_filter_value(filter_value)
+        )
+
+    @classmethod
+    def _check_not_ext_filter(cls, filters):
+        if cls.has_ext_column() and 'ext' in filters.keys():
             raise BadParameterException(
                 "This API cannot filter against 'extra' columns."
             )
+
+    @classmethod
+    def _preprocess_exact_filters(cls, exact_filters):
+        if not exact_filters:
+            return None
+        cls._check_not_ext_filter(exact_filters)
         enum_names = cls.get_related_enum_types()
-        processed_eq_filters = {
-            filter_key: cls._preprocess_filter_value(
+        processed_exact_filters = {
+            filter_key: cls._preprocess_exact_filter_value(
                 filter_key,
                 filter_value,
                 enum_names
             )
             for (filter_key, filter_value)
-            in eq_filters.items()
+            in exact_filters.items()
         }
         return cls._convert_enum_names_to_foreign_key_ids(
-            processed_eq_filters
+            processed_exact_filters
         )
+
+    @classmethod
+    def _preprocess_wildcard_filters(cls, wildcard_filters):
+        if not wildcard_filters:
+            return None
+        cls._check_not_ext_filter(wildcard_filters)
+        return {
+            filter_key: cls._preprocess_wildcard_filter_value(
+                filter_key,
+                filter_value
+            )
+            for (filter_key, filter_value)
+            in wildcard_filters.items()
+        }
