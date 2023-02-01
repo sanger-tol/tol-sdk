@@ -12,7 +12,7 @@ COPY ./src /app/src
 WORKDIR /app
 
 # install package
-RUN pip install .
+RUN pip install .[all]
 
 # install the testing requirements
 COPY requirements-test.txt /app/
