@@ -46,7 +46,7 @@ def parse_filter_str_to_dict(filter_str):
             filter_tuple = filter_val.split('==')
 
             if len(filter_tuple) >= 2:
-                filter_dict[filter_tuple[0]] = filter_tuple[1]
+                filter_dict[filter_tuple[0]] = filter_tuple[1][1:-1]
 
     return filter_dict
 
