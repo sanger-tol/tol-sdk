@@ -10,5 +10,3 @@ from ..model import User
 class UserSchema(BaseSchema):
     class Meta(BaseSchema.BaseMeta):
         model = User
-        # exclude access credentials
-        exclude = ('api_key', 'token')

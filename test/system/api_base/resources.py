@@ -5,6 +5,7 @@
 from __future__ import absolute_import
 
 from tol.api_base.auth import auth
+from tol.api_base.resource import api_user # noqa
 from tol.api_base.resource.base import AutoResourceGroup, BaseResource, setup_resource_group
 
 from .services import AService, BService, CService, DService, EService, FService, GService, \

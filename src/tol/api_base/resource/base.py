@@ -197,6 +197,9 @@ def _document_enum_relation_list_resource(cls, relation):
 
 
 class AutoResourceGroup:
+    # any resources groups that should be excluded from relations
+    exclude_relations = ['auth']
+
     @classmethod
     def is_enum_resource(cls):
         return cls.Meta.service.is_enum_service()
@@ -216,6 +219,16 @@ class AutoResourceGroup:
         cls.add_enum_relation_list_resources()
 
     @classmethod
+    def get_relationship_names(cls):
+        return [
+            r for r in (
+                cls.Meta.service.get_model()
+                   .get_one_to_many_relationship_names()
+            )
+            if r not in cls.exclude_relations
+        ]
+
+    @classmethod
     def setup(cls):
         if cls.is_enum_resource():
             cls._setup_enum_resource()
@@ -224,9 +237,9 @@ class AutoResourceGroup:
 
     @classmethod
     def populate_relation_list_get_swaggers(cls):
-        relationship_names = cls.Meta.service.get_model() \
-                                     .get_one_to_many_relationship_names()
-        cls.Meta.swagger.duplicate_relationship_swaggers(relationship_names)
+        cls.Meta.swagger.duplicate_relationship_swaggers(
+            cls.get_relationship_names()
+        )
 
     @classmethod
     def add_list_resource(cls):
@@ -268,11 +281,9 @@ class AutoResourceGroup:
 
     @classmethod
     def add_relation_list_resources(cls):
-        relationship_names = cls.Meta.service.get_model() \
-                                     .get_one_to_many_relationship_names()
         cls.relation_list_resources = [
             cls._declare_and_decorate_relation_list_resource(r_name)
-            for r_name in relationship_names
+            for r_name in cls.get_relationship_names()
         ]
 
     @classmethod
@@ -286,11 +297,9 @@ class AutoResourceGroup:
 
     @classmethod
     def add_enum_relation_list_resources(cls):
-        relationship_names = cls.Meta.service.get_model() \
-                                     .get_one_to_many_relationship_names()
         cls.relation_list_resources = [
             cls._declare_and_decorate_enum_relation_list_resource(r_name)
-            for r_name in relationship_names
+            for r_name in cls.get_relationship_names()
         ]
 
 
@@ -361,6 +370,6 @@ class BaseEnumNameRelationListResource(BaseResource):
 
 def setup_resource_group(cls):
     """Dynamically adds detail, list, and related list resources
-    to a BaseResource inheritor."""
+    to a AutoResourceGroup inheritor."""
     cls.setup()
     return cls

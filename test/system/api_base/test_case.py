@@ -18,7 +18,19 @@ from tol.api_base.model import Auth, Role, User, db
 from .models import AModelRelationship, BModelRelationship, CModelWithNullableColumn, \
     DModelWithNonNullableColumn, EModelRelationship, FModelWithExtField, \
     GModelWithFilterableFields, HModelLog, IModelEnum, JModelEnumDependent
-from .resources import api_a, api_b, api_c, api_d, api_e, api_f, api_g, api_h, api_i, api_j
+from .resources import (
+    api_a,
+    api_b,
+    api_c,
+    api_d,
+    api_e,
+    api_f,
+    api_g,
+    api_h,
+    api_i,
+    api_j,
+    api_user
+)
 
 
 def _setup_api(blueprint):
@@ -37,6 +49,7 @@ def _setup_api(blueprint):
     api.add_namespace(api_h)
     api.add_namespace(api_i)
     api.add_namespace(api_j)
+    api.add_namespace(api_user)
 
 
 class BaseTestCase(TestCase):

@@ -4,15 +4,8 @@
 
 from flask_restx import Namespace, fields
 
-from ..schema import AuthSchema
-from ..swagger import BaseSwagger, setup_swagger
 
-
-@setup_swagger
-class AuthSwagger(BaseSwagger):
-    class Meta:
-        schema = AuthSchema
-
+class AuthSwagger:
     api = Namespace(
         'auth',
         description='Life Science login authentication',

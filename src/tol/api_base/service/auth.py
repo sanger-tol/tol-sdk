@@ -12,20 +12,13 @@ from flask import jsonify
 import requests
 from requests.auth import HTTPBasicAuth
 
-from . import (
-    BaseService,
-    provide_body_data,
-    setup_service
-)
+from . import provide_body_data
 from ..model import Auth, State, User
-from ..schema import AuthSchema
 
 
-@setup_service
-class AuthService(BaseService):
+class AuthService:
     class Meta:
         model = Auth
-        schema = AuthSchema
 
     @classmethod
     def login(cls):
