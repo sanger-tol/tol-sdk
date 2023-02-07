@@ -26,7 +26,7 @@ class ApiDataSource(DataSource):
         url -- the URL of the instance (including path with API prefix)
         key -- the API key to use for authentication
         """
-        super(ApiDataSource, self).__init__(config)
+        super().__init__(config)
         self.cache = LFUCache(100000)  # Might want to make this configurable at some point
 
     def get_by_id(self, object_type: str, id_: int):
@@ -34,13 +34,27 @@ class ApiDataSource(DataSource):
         ret, _ = self.get_by_link(url)
         return ret
 
+    def _get(self, path, params):
+        return requests.get(f'{self.url}{path}', params=params)
+
+    def _post(self, path, json):
+        return requests.post(f'{self.url}/{path}', json=json,
+                             headers={'Token': self.key})
+
+    def _patch(self, path, json):
+        return requests.patch(f'{self.url}/{path}', json=json,
+                              headers={'Token': self.key})
+
+    def _delete(self, path):
+        return requests.delete(f'{self.url}/{path}')
+
     def get_by_link(self, link: str, params: Dict = {}):
-        response = requests.get(f'{self.url}/{link}', params=params)
+        response = self._get(f'/{link}', params=params)
         if response.status_code != 200:
             raise DataSourceError('Cannot find object(s)',
                                   response.text,
                                   response.status_code)
-        json = response.json()
+        json = response.json() if callable(response.json) else response.json
         meta = json['meta'] if 'meta' in json else {'total': 1}
         return self.unpack(json), meta
 
@@ -85,42 +99,93 @@ class ApiDataSource(DataSource):
         key = f'{type_}{id_}'
         if key in self.cache:
             cached_object = self.cache[key]
-            cached_object.update_attributes_from_json(obj_dict['attributes'])
+            cached_object.update_attributes_from_dict(obj_dict['attributes'])
             return cached_object
-        new_object = ApiObject.create(obj_dict)
-        self.cache[key] = new_object
+        new_object = ApiObject(type_, id_)
+        self._update_object_from_json(new_object, obj_dict)
+        self._cache_object(new_object)
         return new_object
 
+    def _cache_object(self, obj):
+        id_ = obj.id
+        type_ = obj.type
+        key = f'{type_}{id_}'
+        self.cache[key] = obj
+
+    def _convert_relationships_from_json_to_objects(self, relationships: Dict):
+        # We see both one- and many- ends of the relationships here
+        ret = {}
+        for k, v in relationships.items():
+            if 'data' in v:  # Relationship to single object
+                ret[k] = self._get_from_cache_or_remote(v['data']['type'], v['data']['id'])
+            # Ignore many end
+        return ret
+
+    def _update_attributes_from_object(self, obj: ApiObject):
+        for k in obj.attributes.keys():
+            obj.attributes[k] = getattr(obj, k)
+
+    def _update_relationships_from_object(self, obj: ApiObject):
+        for k in obj.relationships.keys():
+            obj.relationships[k] = getattr(obj, k)
+
+    def _get_from_cache_or_remote(self, type_, id_):
+        key = f'{type_}{id_}'
+        if key in self.cache:
+            return self.cache.get(key)
+        return self.get_by_id(type_, id_)
+
     def delete_by_id(self, object_type: str, id_: int):
-        url = f'{object_type}/{id_}'
-        response = requests.delete(f'{self.url}/{url}')
+        url = f'/{object_type}/{id_}'
+        response = self._delete(url)
         if response.status_code != 204:
             raise DataSourceError('Cannot find object(s)',
                                   response.text,
                                   response.status_code)
         return
 
+    def delete(self, obj: ApiObject):
+        return self.delete_by_id(obj.type, obj.id)
+
     def create(self, obj: ApiObject):
-        url = f'{obj.type}'
-        json = {'data': obj.to_json()}
-        response = requests.post(f'{self.url}/{url}', json=json)
-        if response.status_code != 200:
+        url = f'/{obj.type}'
+        obj_json = obj.to_json()
+        if 'id' in obj_json:
+            del obj_json['id']
+        json = {'data': obj_json}
+        response = self._post(path=url, json=json)
+        if response.status_code != 201:
             raise DataSourceError('Cannot create object',
                                   response.text,
                                   response.status_code)
-        json = response.json()
-        obj._id = json['data']['id']
-        obj.update_attributes_from_json(json['data']['attributes'])
+        json = response.json() if callable(response.json) else response.json
+        self._update_object_from_json(obj, json['data'])
+        self._cache_object(obj)
         return obj
 
     def update(self, obj: ApiObject):
-        url = f'{obj.type}/{obj.id}'
-        json = {'data': obj.to_json()}
-        response = requests.patch(f'{self.url}/{url}', json=json)
+        url = f'/{obj.type}/{obj.id}'
+        # We may have updated object's attributes/relationships since this was created
+        self._update_attributes_from_object(obj)
+        self._update_relationships_from_object(obj)
+        obj_json = obj.to_json()
+        if 'id' in obj_json:
+            del obj_json['id']
+        json = {'data': obj_json}
+        response = self._patch(path=url, json=json)
         if response.status_code != 200:
             raise DataSourceError('Cannot update object',
                                   response.text,
                                   response.status_code)
-        json = response.json()
-        obj.update_attributes_from_json(json['data']['attributes'])
+        json = response.json() if callable(response.json) else response.json
+        self._update_object_from_json(obj, json['data'])
+        self._cache_object(obj)
         return obj
+
+    def _update_object_from_json(self, obj: ApiObject, obj_json: Dict):
+        obj._id = obj_json['id']
+        obj.update_attributes_from_dict(obj_json.get('attributes', {}))
+        if 'relationships' in obj_json:
+            relationships_obj = \
+                self._convert_relationships_from_json_to_objects(obj_json['relationships'])
+            obj.update_relationships_from_dict(relationships_obj)

@@ -9,11 +9,11 @@ class TestHistoryColumnLogBase(BaseTestCase):
     def test_no_change_history_unmodified_patch_h(self):
         # post in the first instance
         response = self.client.open(
-            '/api/v1/H',
+            '/api/v1/h',
             method='POST',
             json={
                 'data': {
-                    'type': 'H',
+                    'type': 'h',
                     'attributes': {
                         'string_column': 'I love testing :)'
                     }
@@ -27,11 +27,11 @@ class TestHistoryColumnLogBase(BaseTestCase):
         created_at = response.json['data']['attributes']['created_at']
         # patch this to new state
         response = self.client.open(
-            f'/api/v1/H/{instance_id}',
+            f'/api/v1/h/{instance_id}',
             method='PATCH',
             json={
                 'data': {
-                    'type': 'H',
+                    'type': 'h',
                     'attributes': {
                         'string_column': 'how are you?'
                     }
@@ -46,7 +46,7 @@ class TestHistoryColumnLogBase(BaseTestCase):
         last_modified_at = response.json['data']['attributes']['last_modified_at']
         final_state = {
             'data': {
-                'type': 'H',
+                'type': 'h',
                 'id': instance_id,
                 'attributes': {
                     'string_column': 'how are you?',
@@ -101,11 +101,11 @@ class TestHistoryColumnLogBase(BaseTestCase):
         )
         # patch a new update with no change, first user
         response = self.client.open(
-            f'/api/v1/H/{instance_id}',
+            f'/api/v1/h/{instance_id}',
             method='PATCH',
             json={
                 'data': {
-                    'type': 'H',
+                    'type': 'h',
                     'attributes': {
                         'string_column': 'how are you?'
                     }
@@ -126,11 +126,11 @@ class TestHistoryColumnLogBase(BaseTestCase):
     def test_compose_post_patch_h(self):
         # post in the first instance
         response = self.client.open(
-            '/api/v1/H',
+            '/api/v1/h',
             method='POST',
             json={
                 'data': {
-                    'type': 'H',
+                    'type': 'h',
                     'attributes': {
                         'string_column': 'hello there'
                     }
@@ -147,7 +147,7 @@ class TestHistoryColumnLogBase(BaseTestCase):
             response.json,
             {
                 'data': {
-                    'type': 'H',
+                    'type': 'h',
                     'id': instance_id,
                     'attributes': {
                         'string_column': 'hello there',
@@ -181,11 +181,11 @@ class TestHistoryColumnLogBase(BaseTestCase):
 
         # patch this to new state
         response = self.client.open(
-            f'/api/v1/H/{instance_id}',
+            f'/api/v1/h/{instance_id}',
             method='PATCH',
             json={
                 'data': {
-                    'type': 'H',
+                    'type': 'h',
                     'attributes': {
                         'string_column': 'how are you?'
                     }
@@ -204,7 +204,7 @@ class TestHistoryColumnLogBase(BaseTestCase):
             response.json,
             {
                 'data': {
-                    'type': 'H',
+                    'type': 'h',
                     'id': instance_id,
                     'attributes': {
                         'string_column': 'how are you?',
@@ -256,11 +256,11 @@ class TestHistoryColumnLogBase(BaseTestCase):
 
         # patch this to another new state
         response = self.client.open(
-            f'/api/v1/H/{instance_id}',
+            f'/api/v1/h/{instance_id}',
             method='PATCH',
             json={
                 'data': {
-                    'type': 'H',
+                    'type': 'h',
                     'attributes': {
                         'string_column': None
                     }
@@ -279,7 +279,7 @@ class TestHistoryColumnLogBase(BaseTestCase):
             response.json,
             {
                 'data': {
-                    'type': 'H',
+                    'type': 'h',
                     'id': instance_id,
                     'attributes': {
                         'string_column': None,
@@ -353,11 +353,11 @@ class TestHistoryColumnLogBase(BaseTestCase):
     def test_no_history_change_on_failed_patch(self):
         # post in the instance
         response = self.client.open(
-            '/api/v1/H',
+            '/api/v1/h',
             method='POST',
             json={
                 'data': {
-                    'type': 'H',
+                    'type': 'h',
                     'attributes': {
                         'string_column': 'a worthy adversary'
                     }
@@ -373,11 +373,11 @@ class TestHistoryColumnLogBase(BaseTestCase):
 
         # delibrately fail a patch request by specifying a bad attribute
         response = self.client.open(
-            f'/api/v1/H/{instance_id}',
+            f'/api/v1/h/{instance_id}',
             method='PATCH',
             json={
                 'data': {
-                    'type': 'H',
+                    'type': 'h',
                     'attributes': {
                         'bad_column': 'this will break'
                     }
@@ -392,7 +392,7 @@ class TestHistoryColumnLogBase(BaseTestCase):
 
         # get the instance
         response = self.client.open(
-            f'/api/v1/H/{instance_id}',
+            f'/api/v1/h/{instance_id}',
             method='GET'
         )
         self.assert200(
@@ -405,7 +405,7 @@ class TestHistoryColumnLogBase(BaseTestCase):
             response.json,
             {
                 'data': {
-                    'type': 'H',
+                    'type': 'h',
                     'id': instance_id,
                     'attributes': {
                         'string_column': 'a worthy adversary',
@@ -440,11 +440,11 @@ class TestHistoryColumnLogBase(BaseTestCase):
     def test_specifying_history_error_400(self):
         # specify history on a request
         response = self.client.open(
-            '/api/v1/H',
+            '/api/v1/h',
             method='POST',
             json={
                 'data': {
-                    'type': 'H',
+                    'type': 'h',
                     'attributes': {
                         'string_column': 'hello there',
                         'history': [{
@@ -475,11 +475,11 @@ class TestHistoryColumnLogBase(BaseTestCase):
     def test_no_history_on_list_get_endpoints(self):
         # post in the first instance
         response = self.client.open(
-            '/api/v1/H',
+            '/api/v1/h',
             method='POST',
             json={
                 'data': {
-                    'type': 'H',
+                    'type': 'h',
                     'attributes': {
                         'string_column': 'this is great fun'
                     }
@@ -493,11 +493,11 @@ class TestHistoryColumnLogBase(BaseTestCase):
         created_at = response.json['data']['attributes']['created_at']
         # patch this to new state
         response = self.client.open(
-            f'/api/v1/H/{instance_id}',
+            f'/api/v1/h/{instance_id}',
             method='PATCH',
             json={
                 'data': {
-                    'type': 'H',
+                    'type': 'h',
                     'attributes': {
                         'string_column': 'very happy'
                     }
@@ -521,7 +521,7 @@ class TestHistoryColumnLogBase(BaseTestCase):
             },
             'data': [
                 {
-                    'type': 'H',
+                    'type': 'h',
                     'id': instance_id,
                     'attributes': {
                         'string_column': 'very happy',
@@ -552,7 +552,7 @@ class TestHistoryColumnLogBase(BaseTestCase):
             ]
         }
         response = self.client.open(
-            '/api/v1/H',
+            '/api/v1/h',
             method='GET',
         )
         self.assert200(

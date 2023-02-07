@@ -25,11 +25,11 @@ class TestExtraFieldsInRequestBody(BaseTestCase):
             'another_ext': 'Yet another extra field'
         }
         response = self.client.open(
-            '/api/v1/F',
+            '/api/v1/f',
             method='POST',
             json={
                 'data': {
-                    'type': 'F',
+                    'type': 'f',
                     'meta': {
                         'ext': extra_fields
                     }
@@ -47,7 +47,7 @@ class TestExtraFieldsInRequestBody(BaseTestCase):
             response.json,
             {
                 'data': {
-                    'type': 'F',
+                    'type': 'f',
                     'id': id_,
                     'attributes': {
                         'other_column': None
@@ -63,11 +63,11 @@ class TestExtraFieldsInRequestBody(BaseTestCase):
 
     def test_no_extra_fields_post_f_201(self):
         response = self.client.open(
-            '/api/v1/F',
+            '/api/v1/f',
             method='POST',
             json={
                 'data': {
-                    'type': 'F',
+                    'type': 'f',
                     'attributes': {
                         'other_column': 'nice test'
                     }
@@ -82,7 +82,7 @@ class TestExtraFieldsInRequestBody(BaseTestCase):
             response.json,
             {
                 'data': {
-                    'type': 'F',
+                    'type': 'f',
                     'attributes': {
                         'other_column': 'nice test'
                     },
@@ -101,11 +101,11 @@ class TestExtraFieldsInRequestBody(BaseTestCase):
         self.add_b(id=20, a_id=50)
 
         response = self.client.open(
-            '/api/v1/B/20',
+            '/api/v1/b/20',
             method='PATCH',
             json={
                 'data': {
-                    'type': 'B',
+                    'type': 'b',
                     'attributes': {},
                     'meta': {
                         'ext': {
@@ -125,7 +125,7 @@ class TestExtraFieldsInRequestBody(BaseTestCase):
         self.add_f(id=290)
 
         response = self.client.open(
-            '/api/v1/F/290',
+            '/api/v1/f/290',
             method='GET'
         )
         self.assert200(
@@ -137,7 +137,7 @@ class TestExtraFieldsInRequestBody(BaseTestCase):
             response.json,
             {
                 'data': {
-                    'type': 'F',
+                    'type': 'f',
                     'id': '290',
                     'attributes': {
                         'other_column': None
@@ -160,7 +160,7 @@ class TestExtraFieldsInRequestBody(BaseTestCase):
         self.add_f(id=297, ext=ext_data)
 
         response = self.client.open(
-            '/api/v1/F/297',
+            '/api/v1/f/297',
             method='GET'
         )
         self.assert200(
@@ -171,7 +171,7 @@ class TestExtraFieldsInRequestBody(BaseTestCase):
             response.json,
             {
                 'data': {
-                    'type': 'F',
+                    'type': 'f',
                     'id': '297',
                     'attributes': {
                         'other_column': None
@@ -195,11 +195,11 @@ class TestExtraFieldsInRequestBody(BaseTestCase):
         )
         # overwrite 1,2 ; remove 3, leave 4 unchanged, add 5
         response = self.client.open(
-            '/api/v1/F/90900',
+            '/api/v1/f/90900',
             method='PATCH',
             json={
                 'data': {
-                    'type': 'F',
+                    'type': 'f',
                     'attributes': {},
                     'meta': {
                         'ext': {
@@ -219,7 +219,7 @@ class TestExtraFieldsInRequestBody(BaseTestCase):
         )
         expected = {
             'data': {
-                'type': 'F',
+                'type': 'f',
                 'id': '90900',
                 'attributes': {
                     'other_column': None

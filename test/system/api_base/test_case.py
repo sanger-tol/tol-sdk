@@ -172,6 +172,9 @@ class BaseTestCase(TestCase):
         db.session.query(User).delete()
 
         db.session.commit()
+        db.session.close()
+        db.session.remove()
+        db.engine.dispose()
 
     def assert201(self, response, *args):
         self.assertEqual(response.status_code, 201)

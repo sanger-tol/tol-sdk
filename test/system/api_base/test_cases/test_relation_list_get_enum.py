@@ -9,11 +9,11 @@ class TestListGetEnum(BaseTestCase):
     def test_filter_bad_enum_name_i_on_list_get_i_400(self):
         # add an I and a connected J
         self.add_i(id=348989, name='right')
-        self.add_j(id=34789, I='right')
+        self.add_j(id=34789, i='right')
 
         # try to filter by a bad name
         response = self.client.open(
-            '/api/v1/J?filter=[I=="WRONG"]',
+            '/api/v1/j?filter=[i=="WRONG"]',
             method='GET'
         )
         self.assert400(
@@ -27,7 +27,7 @@ class TestListGetEnum(BaseTestCase):
                 'errors': [{
                     'title': 'Bad Request',
                     'detail': "The (filter) name 'WRONG' does not "
-                              'exist on the enum I.'
+                              'exist on the enum i.'
                 }]
             }
         )
@@ -39,14 +39,14 @@ class TestListGetEnum(BaseTestCase):
         self.add_i(id=93848, name='ABC')
 
         # add four J's
-        self.add_j(id=3847384, I='ABC')
-        self.add_j(id=2348, I='easy')
-        self.add_j(id=234856, I='ABC')
-        self.add_j(id=33, I='as')
+        self.add_j(id=3847384, i='ABC')
+        self.add_j(id=2348, i='easy')
+        self.add_j(id=234856, i='ABC')
+        self.add_j(id=33, i='as')
 
         # get I=ABC with id descending
         response = self.client.open(
-            '/api/v1/J?filter=[I=="ABC"]&sort_by=-id',
+            '/api/v1/j?filter=[i=="ABC"]&sort_by=-id',
             method='GET'
         )
         self.assert200(
@@ -66,17 +66,17 @@ class TestListGetEnum(BaseTestCase):
                 },
                 'data': [
                     {
-                        'type': 'J',
+                        'type': 'j',
                         'id': '3847384',
                         'attributes': {
-                            'I': 'ABC'
+                            'i': 'ABC'
                         }
                     },
                     {
-                        'type': 'J',
+                        'type': 'j',
                         'id': '234856',
                         'attributes': {
-                            'I': 'ABC'
+                            'i': 'ABC'
                         }
                     }
                 ]
@@ -89,15 +89,15 @@ class TestListGetEnum(BaseTestCase):
         self.add_i(id=2384, name='also fun')
 
         # add two and three J's respectively
-        self.add_j(id=29348, I='fun')
-        self.add_j(id=4857, I='also fun')
-        self.add_j(id=587, I='fun')
-        self.add_j(id=23487, I='also fun')
-        self.add_j(id=8394789, I='also fun')
+        self.add_j(id=29348, i='fun')
+        self.add_j(id=4857, i='also fun')
+        self.add_j(id=587, i='fun')
+        self.add_j(id=23487, i='also fun')
+        self.add_j(id=8394789, i='also fun')
 
         # sort by I ascending
         response = self.client.open(
-            '/api/v1/J?sort_by=I',
+            '/api/v1/j?sort_by=i',
             method='GET'
         )
         self.assert200(
@@ -117,38 +117,38 @@ class TestListGetEnum(BaseTestCase):
                 },
                 'data': [
                     {
-                        'type': 'J',
+                        'type': 'j',
                         'id': '4857',
                         'attributes': {
-                            'I': 'also fun'
+                            'i': 'also fun'
                         }
                     },
                     {
-                        'type': 'J',
+                        'type': 'j',
                         'id': '23487',
                         'attributes': {
-                            'I': 'also fun'
+                            'i': 'also fun'
                         }
                     },
                     {
-                        'type': 'J',
+                        'type': 'j',
                         'id': '8394789',
                         'attributes': {
-                            'I': 'also fun'
+                            'i': 'also fun'
                         }
                     },
                     {
-                        'type': 'J',
+                        'type': 'j',
                         'id': '29348',
                         'attributes': {
-                            'I': 'fun'
+                            'i': 'fun'
                         }
                     },
                     {
-                        'type': 'J',
+                        'type': 'j',
                         'id': '587',
                         'attributes': {
-                            'I': 'fun'
+                            'i': 'fun'
                         }
                     },
                 ]
@@ -157,7 +157,7 @@ class TestListGetEnum(BaseTestCase):
 
         # sort by I descending
         response = self.client.open(
-            '/api/v1/J?sort_by=-I',
+            '/api/v1/j?sort_by=-i',
             method='GET'
         )
         self.assert200(
@@ -177,38 +177,38 @@ class TestListGetEnum(BaseTestCase):
                 },
                 'data': [
                     {
-                        'type': 'J',
+                        'type': 'j',
                         'id': '29348',
                         'attributes': {
-                            'I': 'fun'
+                            'i': 'fun'
                         }
                     },
                     {
-                        'type': 'J',
+                        'type': 'j',
                         'id': '587',
                         'attributes': {
-                            'I': 'fun'
+                            'i': 'fun'
                         }
                     },
                     {
-                        'type': 'J',
+                        'type': 'j',
                         'id': '4857',
                         'attributes': {
-                            'I': 'also fun'
+                            'i': 'also fun'
                         }
                     },
                     {
-                        'type': 'J',
+                        'type': 'j',
                         'id': '23487',
                         'attributes': {
-                            'I': 'also fun'
+                            'i': 'also fun'
                         }
                     },
                     {
-                        'type': 'J',
+                        'type': 'j',
                         'id': '8394789',
                         'attributes': {
-                            'I': 'also fun'
+                            'i': 'also fun'
                         }
                     },
                 ]

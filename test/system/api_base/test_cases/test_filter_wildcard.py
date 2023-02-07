@@ -11,7 +11,7 @@ class TestFilterWildcard(BaseTestCase):
 
         # undelimited string
         response = self.client.open(
-            '/api/v1/G?wildcard=[string_column==undelimited]'
+            '/api/v1/g?wildcard=[string_column==undelimited]'
         )
         self.assert400(
             response,
@@ -20,7 +20,7 @@ class TestFilterWildcard(BaseTestCase):
 
         # unmatching delimiters
         response = self.client.open(
-            '/api/v1/G?wildcard=[string_column==\'unmatching"]'
+            '/api/v1/g?wildcard=[string_column==\'unmatching"]'
         )
         self.assert400(
             response,
@@ -32,7 +32,7 @@ class TestFilterWildcard(BaseTestCase):
         self.add_g(id=1090, string_column='no metch', bool_column=False)  # contains a typo
 
         response = self.client.open(
-            '/api/v1/G?wildcard=[string_column=="match"]'
+            '/api/v1/g?wildcard=[string_column=="match"]'
         )
         self.assert200(
             response,
@@ -55,7 +55,7 @@ class TestFilterWildcard(BaseTestCase):
                 },
                 'data': [
                     {
-                        'type': 'G',
+                        'type': 'g',
                         'id': '101',
                         'attributes': {
                             'float_column': None,
@@ -80,7 +80,7 @@ class TestFilterWildcard(BaseTestCase):
 
         # try to get it directly
         response = self.client.open(
-            '/api/v1/G?wildcard=[string_column==" should only"]'
+            '/api/v1/g?wildcard=[string_column==" should only"]'
         )
         self.assert200(
             response,
@@ -92,7 +92,7 @@ class TestFilterWildcard(BaseTestCase):
         # underscore matches just one character.
         # Check that it doesn't either added G (especially the first)
         response = self.client.open(
-            '/api/v1/G?wildcard=[string_column=="this should only match directly_"]'
+            '/api/v1/g?wildcard=[string_column=="this should only match directly_"]'
         )
         self.assert200(
             response,
@@ -103,7 +103,7 @@ class TestFilterWildcard(BaseTestCase):
 
         # precent sign matches any string. Check that it doesn't match either added G
         response = self.client.open(
-            '/api/v1/G?wildcard=[string_column=="%"]'
+            '/api/v1/g?wildcard=[string_column=="%"]'
         )
         self.assert200(
             response,
@@ -119,7 +119,7 @@ class TestFilterWildcard(BaseTestCase):
         #
         # float
         response = self.client.open(
-            '/api/v1/G?wildcard=[float_column=="not a string"]'
+            '/api/v1/g?wildcard=[float_column=="not a string"]'
         )
         self.assert400(
             response,
@@ -131,7 +131,7 @@ class TestFilterWildcard(BaseTestCase):
         )
         # bool
         response = self.client.open(
-            '/api/v1/G?wildcard=[bool_column=="not a string"]'
+            '/api/v1/g?wildcard=[bool_column=="not a string"]'
         )
         self.assert400(
             response,
@@ -143,7 +143,7 @@ class TestFilterWildcard(BaseTestCase):
         )
         # datetime
         response = self.client.open(
-            '/api/v1/G?wildcard=[datetime_column=="not a string"]'
+            '/api/v1/g?wildcard=[datetime_column=="not a string"]'
         )
         self.assert400(
             response,
@@ -166,7 +166,7 @@ class TestFilterWildcard(BaseTestCase):
 
         # filter against a direct match around it
         response = self.client.open(
-            '/api/v1/G?wildcard=[string_column=="has % a singl"]'
+            '/api/v1/g?wildcard=[string_column=="has % a singl"]'
         )
         self.assert200(
             response,
@@ -177,7 +177,7 @@ class TestFilterWildcard(BaseTestCase):
 
         # no matches trying to use the underscore single-char wildcard
         response = self.client.open(
-            '/api/v1/G?wildcard=[string_column=="has _ a singl"]'
+            '/api/v1/g?wildcard=[string_column=="has _ a singl"]'
         )
         self.assert200(
             response,
@@ -198,7 +198,7 @@ class TestFilterWildcard(BaseTestCase):
 
         # filter against a direct match around it
         response = self.client.open(
-            '/api/v1/G?wildcard=[string_column=="has _ a singl"]'
+            '/api/v1/g?wildcard=[string_column=="has _ a singl"]'
         )
         self.assert200(
             response,
@@ -209,7 +209,7 @@ class TestFilterWildcard(BaseTestCase):
 
         # no matches trying to use the percent-sign wildcard
         response = self.client.open(
-            '/api/v1/G?wildcard=[string_column=="has % a singl"]'
+            '/api/v1/g?wildcard=[string_column=="has % a singl"]'
         )
         self.assert200(
             response,

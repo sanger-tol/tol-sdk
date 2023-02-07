@@ -11,16 +11,16 @@ class TestBadFieldsError(BaseTestCase):
     def test_b_id_in_request_body_post_400(self):
         self.add_a(id=9090)
         response = self.client.open(
-            '/api/v1/B',
+            '/api/v1/b',
             method='POST',
             json={
                 'data': {
                     'id': 9999,
-                    'type': 'B',
+                    'type': 'b',
                     'relationships': {
-                        'A': {
+                        'a': {
                             'data': {
-                                'type': 'A',
+                                'type': 'a',
                                 'id': 9090
                             }
                         }

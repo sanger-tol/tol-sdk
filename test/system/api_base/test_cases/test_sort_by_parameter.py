@@ -9,7 +9,7 @@ class TestBadSortByParameter200(BaseTestCase):
     def test_no_sort_by_key_200(self):
         self.add_d(id=890, non_nullable_column='a nice test')
         response = self.client.open(
-            '/api/v1/D?sort_by=',
+            '/api/v1/d?sort_by=',
             method='GET'
         )
         self.assert200(
@@ -26,7 +26,7 @@ class TestBadSortByParameter200(BaseTestCase):
 
         # no sort_by parameter specified
         response = self.client.open(
-            '/api/v1/C',
+            '/api/v1/c',
             method='GET'
         )
         self.assert200(
@@ -48,7 +48,7 @@ class TestBadSortByParameter200(BaseTestCase):
                 },
                 'data': [
                     {
-                        'type': 'C',
+                        'type': 'c',
                         'id': '78',
                         'attributes': {
                             'nullable_column': None,
@@ -56,7 +56,7 @@ class TestBadSortByParameter200(BaseTestCase):
                         }
                     },
                     {
-                        'type': 'C',
+                        'type': 'c',
                         'id': '89',
                         'attributes': {
                             'nullable_column': None,
@@ -64,7 +64,7 @@ class TestBadSortByParameter200(BaseTestCase):
                         }
                     },
                     {
-                        'type': 'C',
+                        'type': 'c',
                         'id': '768',
                         'attributes': {
                             'nullable_column': None,
@@ -72,7 +72,7 @@ class TestBadSortByParameter200(BaseTestCase):
                         }
                     },
                     {
-                        'type': 'C',
+                        'type': 'c',
                         'id': '39489',
                         'attributes': {
                             'nullable_column': None,
@@ -90,7 +90,7 @@ class TestBadSortByParameter200(BaseTestCase):
 
         # filter for two, sort by id descending
         response = self.client.open(
-            '/api/v1/G?sort_by=-id&filter=[bool_column==true]',
+            '/api/v1/g?sort_by=-id&filter=[bool_column==true]',
             method='GET'
         )
         self.assert200(
@@ -112,7 +112,7 @@ class TestBadSortByParameter200(BaseTestCase):
                 },
                 'data': [
                     {
-                        'type': 'G',
+                        'type': 'g',
                         'id': '90909',
                         'attributes': {
                             'float_column': None,
@@ -122,7 +122,7 @@ class TestBadSortByParameter200(BaseTestCase):
                         }
                     },
                     {
-                        'type': 'G',
+                        'type': 'g',
                         'id': '7482',
                         'attributes': {
                             'float_column': None,

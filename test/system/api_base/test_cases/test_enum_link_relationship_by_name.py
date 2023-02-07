@@ -9,14 +9,14 @@ class TestEnumLinkRelationshipByName(BaseTestCase):
     def test_post_j_specify_i_by_name(self):
         self.add_i(id=4857, name='nicely')
         response = self.client.open(
-            '/api/v1/J',
+            '/api/v1/j',
             method='POST',
             headers=self._get_auth_user_1_headers(),
             json={
                 'data': {
-                    'type': 'J',
+                    'type': 'j',
                     'attributes': {
-                        'I': 'nicely'
+                        'i': 'nicely'
                     }
                 }
             }
@@ -31,10 +31,10 @@ class TestEnumLinkRelationshipByName(BaseTestCase):
             response.json,
             {
                 'data': {
-                    'type': 'J',
+                    'type': 'j',
                     'id': created_id,
                     'attributes': {
-                        'I': 'nicely'
+                        'i': 'nicely'
                     }
                 }
             }
@@ -43,17 +43,17 @@ class TestEnumLinkRelationshipByName(BaseTestCase):
     def test_bad_enum_name_link_400(self):
         # add an enum and a dependant
         self.add_i(id=39489, name='biology')
-        self.add_j(id=349992, I='biology')
+        self.add_j(id=349992, i='biology')
 
         # attempt to patch the enum ref to non-existent name
         response = self.client.open(
-            '/api/v1/J/349992',
+            '/api/v1/j/349992',
             method='PATCH',
             json={
                 'data': {
-                    'type': 'J',
+                    'type': 'j',
                     'attributes': {
-                        'I': 'physics'
+                        'i': 'physics'
                     }
                 }
             },

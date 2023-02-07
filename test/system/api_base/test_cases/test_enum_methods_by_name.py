@@ -10,7 +10,7 @@ class TestEnumMethodsByName(BaseTestCase):
         self.add_i(id=348598, name='testing')
         # get by name
         response = self.client.open(
-            '/api/v1/enum/I/testing',
+            '/api/v1/enum/i/testing',
             method='GET'
         )
         self.assert200(
@@ -22,16 +22,16 @@ class TestEnumMethodsByName(BaseTestCase):
             response.json,
             {
                 'data': {
-                    'type': 'I',
+                    'type': 'i',
                     'id': '348598',
                     'attributes': {
                         'name': 'testing',
                         'description': None
                     },
                     'relationships': {
-                        'J': {
+                        'j': {
                             'links': {
-                                'related': '/enum/I/testing/J'
+                                'related': '/enum/i/testing/j'
                             }
                         }
                     }
@@ -44,7 +44,7 @@ class TestEnumMethodsByName(BaseTestCase):
         self.add_i(id=348523, name='nice')
         # get a non-existent name
         response = self.client.open(
-            '/api/v1/enum/I/not_nice',
+            '/api/v1/enum/i/not_nice',
             method='GET'
         )
         self.assert404(
@@ -57,11 +57,11 @@ class TestEnumMethodsByName(BaseTestCase):
         self.add_i(id=4989, name='happy')
         # attempt to patch to a new id
         response = self.client.open(
-            '/api/v1/enum/I/happy',
+            '/api/v1/enum/i/happy',
             method='PATCH',
             json={
                 'data': {
-                    'type': 'I',
+                    'type': 'i',
                     'id': '1337',
                     'attributes': {
                         'name': 'dinosaur',
@@ -89,7 +89,7 @@ class TestEnumMethodsByName(BaseTestCase):
         )
         # confirm that no state change occured
         response = self.client.open(
-            '/api/v1/enum/I/happy',
+            '/api/v1/enum/i/happy',
             method='GET'
         )
         self.assert200(
@@ -101,15 +101,15 @@ class TestEnumMethodsByName(BaseTestCase):
             {
                 'data': {
                     'id': '4989',
-                    'type': 'I',
+                    'type': 'i',
                     'attributes': {
                         'name': 'happy',
                         'description': None
                     },
                     'relationships': {
-                        'J': {
+                        'j': {
                             'links': {
-                                'related': '/enum/I/happy/J'
+                                'related': '/enum/i/happy/j'
                             }
                         }
                     }
@@ -118,7 +118,7 @@ class TestEnumMethodsByName(BaseTestCase):
         )
         # assert that no new entry has been created
         response = self.client.open(
-            '/api/v1/enum/I/dinosaur',
+            '/api/v1/enum/i/dinosaur',
             method='GET'
         )
         self.assert404(
@@ -131,11 +131,11 @@ class TestEnumMethodsByName(BaseTestCase):
         self.add_i(id=1480, name='nicely')
         # attempt to patch to a new id
         response = self.client.open(
-            '/api/v1/enum/I/nicely',
+            '/api/v1/enum/i/nicely',
             method='PATCH',
             json={
                 'data': {
-                    'type': 'I',
+                    'type': 'i',
                     'attributes': {
                         'name': 'new'
                     }
@@ -152,16 +152,16 @@ class TestEnumMethodsByName(BaseTestCase):
             response.json,
             {
                 'data': {
-                    'type': 'I',
+                    'type': 'i',
                     'id': '1480',
                     'attributes': {
                         'name': 'new',
                         'description': None
                     },
                     'relationships': {
-                        'J': {
+                        'j': {
                             'links': {
-                                'related': '/enum/I/new/J'
+                                'related': '/enum/i/new/j'
                             }
                         }
                     }
@@ -174,7 +174,7 @@ class TestEnumMethodsByName(BaseTestCase):
 
         # delete the instance by name
         response = self.client.open(
-            '/api/v1/enum/I/day',
+            '/api/v1/enum/i/day',
             method='DELETE',
             headers=self._get_auth_user_1_headers()
         )
@@ -182,7 +182,7 @@ class TestEnumMethodsByName(BaseTestCase):
 
         # confirm that it is no longer in the db
         response = self.client.open(
-            '/api/v1/enum/I/day',
+            '/api/v1/enum/i/day',
             method='GET'
         )
         self.assert404(
@@ -193,9 +193,9 @@ class TestEnumMethodsByName(BaseTestCase):
     def test_equivalent_methods_list_get_i_and_j(self):
         # add the data
         self.add_i(id=878, name='excellent')
-        self.add_j(id=909090, I='excellent')
-        self.add_j(id=8374483, I='excellent')
-        self.add_j(id=987, I='excellent')
+        self.add_j(id=909090, i='excellent')
+        self.add_j(id=8374483, i='excellent')
+        self.add_j(id=987, i='excellent')
 
         # the expected data (should be identical for both)
         expected_data = {
@@ -208,24 +208,24 @@ class TestEnumMethodsByName(BaseTestCase):
             },
             'data': [
                 {
-                    'type': 'J',
+                    'type': 'j',
                     'id': '987',
                     'attributes': {
-                        'I': 'excellent'
+                        'i': 'excellent'
                     }
                 },
                 {
-                    'type': 'J',
+                    'type': 'j',
                     'id': '909090',
                     'attributes': {
-                        'I': 'excellent'
+                        'i': 'excellent'
                     }
                 },
                 {
-                    'type': 'J',
+                    'type': 'j',
                     'id': '8374483',
                     'attributes': {
-                        'I': 'excellent'
+                        'i': 'excellent'
                     }
                 },
             ]
@@ -233,7 +233,7 @@ class TestEnumMethodsByName(BaseTestCase):
 
         # J-relation list get on I
         first_response = self.client.open(
-            '/api/v1/enum/I/excellent/J',
+            '/api/v1/enum/i/excellent/j',
             method='GET'
         )
         self.assert200(
@@ -245,7 +245,7 @@ class TestEnumMethodsByName(BaseTestCase):
 
         # list-get on J, filter by I=excellent
         second_response = self.client.open(
-            '/api/v1/J?filter=[I=="excellent"]',
+            '/api/v1/j?filter=[i=="excellent"]',
             method='GET'
         )
         self.assert200(

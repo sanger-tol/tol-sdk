@@ -8,7 +8,7 @@ from ..test_case import BaseTestCase
 class TestCustomEndpoints(BaseTestCase):
     def test_custom_endpoint_simple_list_get_200(self):
         response = self.client.open(
-            '/api/v1/H/42',
+            '/api/v1/h/42',
             method='GET'
         )
         self.assert200(
@@ -34,7 +34,7 @@ class TestCustomEndpoints(BaseTestCase):
             }
         }
         response = self.client.open(
-            '/api/v1/enum/I/parrot',
+            '/api/v1/enum/i/parrot',
             method='POST',
             json=data,
             headers=self._get_auth_user_1_headers()
@@ -61,7 +61,7 @@ class TestCustomEndpoints(BaseTestCase):
         }
         # POST with no auth headers
         response = self.client.open(
-            '/api/v1/enum/I/parrot',
+            '/api/v1/enum/i/parrot',
             method='POST',
             json=data
         )

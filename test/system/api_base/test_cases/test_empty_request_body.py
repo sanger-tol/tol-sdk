@@ -8,7 +8,7 @@ from ..test_case import BaseTestCase
 class TestEmptyRequestBody(BaseTestCase):
     def test_post_d_with_empty_request_body_400(self):
         response = self.client.open(
-            '/api/v1/D',
+            '/api/v1/d',
             method='POST',
             json={},
             headers=self._get_auth_user_1_headers()
@@ -20,7 +20,7 @@ class TestEmptyRequestBody(BaseTestCase):
 
     def test_post_d_with_no_data_400(self):
         response = self.client.open(
-            '/api/v1/D',
+            '/api/v1/d',
             method='POST',
             json={
                 'data': {
@@ -38,7 +38,7 @@ class TestEmptyRequestBody(BaseTestCase):
     def test_patch_c_with_empty_request_body_400(self):
         self.add_c(id=9099)
         response = self.client.open(
-            '/api/v1/C/9099',
+            '/api/v1/c/9099',
             method='PATCH',
             json={},
             headers=self._get_auth_user_1_headers()
@@ -51,11 +51,11 @@ class TestEmptyRequestBody(BaseTestCase):
     def test_patch_c_with_no_attributes_200(self):
         self.add_c(id=9099)
         response = self.client.open(
-            '/api/v1/C/9099',
+            '/api/v1/c/9099',
             method='PATCH',
             json={
                 'data': {
-                    'type': 'C',
+                    'type': 'c',
                     'attributes': {}
                 }
             },

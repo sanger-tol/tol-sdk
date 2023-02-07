@@ -10,16 +10,16 @@ class TestPostRelationships(BaseTestCase):
         self.add_a(id=300)
 
         response = self.client.open(
-            '/api/v1/B',
+            '/api/v1/b',
             method='POST',
             json={
                 'data': {
-                    'type': 'B',
+                    'type': 'b',
                     'attributes': {},
                     'relationships': {
-                        'A': {
+                        'a': {
                             'data': {
-                                'type': 'A',
+                                'type': 'a',
                                 'id': '300'
                             }
                         }
@@ -37,21 +37,21 @@ class TestPostRelationships(BaseTestCase):
             response.json,
             {
                 'data': {
-                    'type': 'B',
+                    'type': 'b',
                     'id': id_,
                     'relationships': {
-                        'A': {
+                        'a': {
                             'links': {
-                                'related': '/A/300'
+                                'related': '/a/300'
                             },
                             'data': {
-                                'type': 'A',
+                                'type': 'a',
                                 'id': '300'
                             }
                         },
-                        'E': {
+                        'e': {
                             'links': {
-                                'related': f'/B/{id_}/E'
+                                'related': f'/b/{id_}/e'
                             }
                         }
                     }
@@ -63,16 +63,16 @@ class TestPostRelationships(BaseTestCase):
         self.add_a(id=300)
 
         response = self.client.open(
-            '/api/v1/B',
+            '/api/v1/b',
             method='POST',
             json={
                 'data': {
-                    'type': 'B',
+                    'type': 'b',
                     'attributes': {},
                     'relationships': {
-                        'A': {
+                        'a': {
                             'data': {
-                                'type': 'A',
+                                'type': 'a',
                                 'id': '57900'
                             }
                         }

@@ -14,12 +14,13 @@ class AModelRelationship(Base):
     __tablename__ = 'test_a'
 
     class Meta:
-        type_ = 'A'
+        type_ = 'a'
 
     # the variable below is necessary on every test model!
     __table_args__ = {'extend_existing': True}
     id = db.Column(db.Integer, primary_key=True)  # noqa A003
     test_b = db.relationship('BModelRelationship', back_populates='test_a')
+    string_column = db.Column(db.String, nullable=True)
 
 
 @setup_model
@@ -27,7 +28,7 @@ class BModelRelationship(Base):
     __tablename__ = 'test_b'
 
     class Meta:
-        type_ = 'B'
+        type_ = 'b'
 
     __table_args__ = {'extend_existing': True}
     id = db.Column(db.Integer, primary_key=True)  # noqa A003
@@ -41,7 +42,7 @@ class CModelWithNullableColumn(Base):
     __tablename__ = 'test_c'
 
     class Meta:
-        type_ = 'C'
+        type_ = 'c'
 
     __table_args__ = {'extend_existing': True}
     id = db.Column(db.Integer, primary_key=True)  # noqa A003
@@ -54,7 +55,7 @@ class DModelWithNonNullableColumn(Base):
     __tablename__ = 'test_d'
 
     class Meta:
-        type_ = 'D'
+        type_ = 'd'
 
     __table_args__ = {'extend_existing': True}
     id = db.Column(db.Integer, primary_key=True)  # noqa A003
@@ -67,7 +68,7 @@ class EModelRelationship(Base):
     __tablename__ = 'test_e'
 
     class Meta:
-        type_ = 'E'
+        type_ = 'e'
 
     __table_args__ = {'extend_existing': True}
     id = db.Column(db.Integer, primary_key=True)  # noqa A003
@@ -80,7 +81,7 @@ class FModelWithExtField(Base):
     __tablename__ = 'test_f'
 
     class Meta:
-        type_ = 'F'
+        type_ = 'f'
 
     __table_args__ = {'extend_existing': True}
     id = db.Column(db.Integer, primary_key=True)  # noqa A003
@@ -93,7 +94,7 @@ class GModelWithFilterableFields(Base):
     __tablename__ = 'test_g'
 
     class Meta:
-        type_ = 'G'
+        type_ = 'g'
 
     __table_args__ = {'extend_existing': True}
     id = db.Column(db.Integer, primary_key=True)  # noqa A003
@@ -108,7 +109,7 @@ class HModelLog(LogBase):
     __tablename__ = 'test_h'
 
     class Meta:
-        type_ = 'H'
+        type_ = 'h'
 
     __table_args__ = {'extend_existing': True}
     id = db.Column(db.Integer, primary_key=True)  # noqa A003
@@ -120,7 +121,7 @@ class IModelEnum(EnumBase):
     __tablename__ = 'test_i'
 
     class Meta:
-        type_ = 'I'
+        type_ = 'i'
 
     __table_args__ = {'extend_existing': True}
     test_j = db.relationship('JModelEnumDependent', back_populates='test_i')
@@ -131,7 +132,7 @@ class JModelEnumDependent(Base):
     __tablename__ = 'test_j'
 
     class Meta:
-        type_ = 'J'
+        type_ = 'j'
 
     __table_args__ = {'extend_existing': True}
     id = db.Column(db.Integer, primary_key=True)  # noqa A003

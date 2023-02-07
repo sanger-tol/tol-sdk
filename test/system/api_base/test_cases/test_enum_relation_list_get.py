@@ -11,13 +11,13 @@ class TestEnumRelationListGet(BaseTestCase):
         self.add_i(id=34091, name='thing1')
         self.add_i(id=981234, name='thing3')
         # add some J's
-        self.add_j(id=878934, I='thing3')
-        self.add_j(id=98823, I='thing1')
-        self.add_j(id=3453290, I='thing1')
+        self.add_j(id=878934, i='thing3')
+        self.add_j(id=98823, i='thing1')
+        self.add_j(id=3453290, i='thing1')
 
         # get thing3's J's
         response = self.client.open(
-            '/api/v1/enum/I/thing3/J',
+            '/api/v1/enum/i/thing3/j',
             method='GET'
         )
         self.assert200(
@@ -36,10 +36,10 @@ class TestEnumRelationListGet(BaseTestCase):
                     'total': 1
                 },
                 'data': [{
-                    'type': 'J',
+                    'type': 'j',
                     'id': '878934',
                     'attributes': {
-                        'I': 'thing3'
+                        'i': 'thing3'
                     }
                 }]
             }
@@ -47,7 +47,7 @@ class TestEnumRelationListGet(BaseTestCase):
 
         # get thing1's J's, in descending order of id
         response = self.client.open(
-            '/api/v1/enum/I/thing1/J?sort_by=-id',
+            '/api/v1/enum/i/thing1/j?sort_by=-id',
             method='GET'
         )
         self.assert200(
@@ -67,17 +67,17 @@ class TestEnumRelationListGet(BaseTestCase):
                 },
                 'data': [
                     {
-                        'type': 'J',
+                        'type': 'j',
                         'id': '3453290',
                         'attributes': {
-                            'I': 'thing1'
+                            'i': 'thing1'
                         }
                     },
                     {
-                        'type': 'J',
+                        'type': 'j',
                         'id': '98823',
                         'attributes': {
-                            'I': 'thing1'
+                            'i': 'thing1'
                         }
                     }
                 ]
@@ -89,7 +89,7 @@ class TestEnumRelationListGet(BaseTestCase):
         self.add_i(id=98902, name='thing2')
         # try to get the J's of a non-existent I
         response = self.client.open(
-            '/api/v1/enum/I/nothing/J',
+            '/api/v1/enum/i/nothing/j',
             method='GET'
         )
         self.assert404(
@@ -102,7 +102,7 @@ class TestEnumRelationListGet(BaseTestCase):
             {
                 'errors': [{
                     'title': 'Not Found',
-                    'detail': "No name 'nothing' exists on enum I."
+                    'detail': "No name 'nothing' exists on enum i."
                 }]
             }
         )

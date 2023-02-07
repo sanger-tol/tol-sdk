@@ -15,15 +15,15 @@ class TestUpdatedCorrectly200(BaseTestCase):
         self.add_b(id=b_id, a_id=a_id)
 
         response = self.client.open(
-            f'/api/v1/B/{b_id}',
+            f'/api/v1/b/{b_id}',
             method='PATCH',
             json={
                 'data': {
-                    'type': 'B',
+                    'type': 'b',
                     'relationships': {
-                        'A': {
+                        'a': {
                             'data': {
-                                'type': 'A',
+                                'type': 'a',
                                 'id': str(new_a_id)
                             }
                         }
@@ -42,20 +42,20 @@ class TestUpdatedCorrectly200(BaseTestCase):
             {
                 'data': {
                     'id': str(b_id),
-                    'type': 'B',
+                    'type': 'b',
                     'relationships': {
-                        'A': {
+                        'a': {
                             'data': {
                                 'id': str(new_a_id),
-                                'type': 'A'
+                                'type': 'a'
                             },
                             'links': {
-                                'related': f'/A/{new_a_id}'
+                                'related': f'/a/{new_a_id}'
                             }
                         },
-                        'E': {
+                        'e': {
                             'links': {
-                                'related': f'/B/{b_id}/E'
+                                'related': f'/b/{b_id}/e'
                             }
                         }
                     }

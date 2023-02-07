@@ -8,11 +8,11 @@ from ..test_case import BaseTestCase
 class TestColumnNullabilityPost(BaseTestCase):
     def test_collumn_nullabillity_post_c_no_error(self):
         response = self.client.open(
-            '/api/v1/C',
+            '/api/v1/c',
             method='POST',
             json={
                 'data': {
-                    'type': 'C',
+                    'type': 'c',
                     'attributes': {
                         'other_column': 'no matter'
                     }
@@ -28,7 +28,7 @@ class TestColumnNullabilityPost(BaseTestCase):
             response.json,
             {
                 'data': {
-                    'type': 'C',
+                    'type': 'c',
                     'attributes': {
                         'other_column': 'no matter',
                         'nullable_column': None
@@ -40,11 +40,11 @@ class TestColumnNullabilityPost(BaseTestCase):
 
     def test_non_nullable_column_omitted_post_d_error(self):
         response = self.client.open(
-            '/api/v1/D',
+            '/api/v1/d',
             method='POST',
             json={
                 'data': {
-                    'type': 'D',
+                    'type': 'd',
                     'attributes': {
                         'other_column': 'no matter'
                     }

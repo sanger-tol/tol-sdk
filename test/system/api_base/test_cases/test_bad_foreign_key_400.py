@@ -10,16 +10,16 @@ class TestBadForeignKey400(BaseTestCase):
         self.add_a(id=20)
 
         response = self.client.open(
-            '/api/v1/B',
+            '/api/v1/b',
             method='POST',
             json={
                 'data': {
-                    'type': 'B',
+                    'type': 'b',
                     'attributes': {},
                     'relationships': {
-                        'A': {
+                        'a': {
                             'data': {
-                                'type': 'A',
+                                'type': 'a',
                                 'id': 9999
                             }
                         }

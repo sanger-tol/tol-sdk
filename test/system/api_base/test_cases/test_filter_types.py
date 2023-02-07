@@ -13,7 +13,7 @@ class TestFilterTypes(BaseTestCase):
 
         # undelimited string
         response = self.client.open(
-            '/api/v1/G?filter=[string_column==undelimited]'
+            '/api/v1/g?filter=[string_column==undelimited]'
         )
         self.assert400(
             response,
@@ -22,7 +22,7 @@ class TestFilterTypes(BaseTestCase):
 
         # unmatching delimiters
         response = self.client.open(
-            '/api/v1/G?filter=[string_column==\'unmatching"]'
+            '/api/v1/g?filter=[string_column==\'unmatching"]'
         )
         self.assert400(
             response,
@@ -34,7 +34,7 @@ class TestFilterTypes(BaseTestCase):
         self.add_g(id=1090, string_column='no match', bool_column=False)
 
         response = self.client.open(
-            '/api/v1/G?filter=[string_column=="match"]'
+            '/api/v1/g?filter=[string_column=="match"]'
         )
         self.assert200(
             response,
@@ -57,7 +57,7 @@ class TestFilterTypes(BaseTestCase):
                 },
                 'data': [
                     {
-                        'type': 'G',
+                        'type': 'g',
                         'id': '101',
                         'attributes': {
                             'float_column': None,
@@ -76,7 +76,7 @@ class TestFilterTypes(BaseTestCase):
 
         # filter for one
         response = self.client.open(
-            '/api/v1/G?filter=[float_column==1.89]'
+            '/api/v1/g?filter=[float_column==1.89]'
         )
         self.assert200(
             response,
@@ -99,7 +99,7 @@ class TestFilterTypes(BaseTestCase):
                 },
                 'data': [
                     {
-                        'type': 'G',
+                        'type': 'g',
                         'id': '17890',
                         'attributes': {
                             'float_column': 1.89,
@@ -114,7 +114,7 @@ class TestFilterTypes(BaseTestCase):
 
         # filter for none
         response = self.client.open(
-            '/api/v1/G?filter=[float_column==42.9]'
+            '/api/v1/g?filter=[float_column==42.9]'
         )
         self.assert200(
             response,
@@ -143,7 +143,7 @@ class TestFilterTypes(BaseTestCase):
 
         # filter for none
         response = self.client.open(
-            f'/api/v1/G?filter=[datetime_column=={str(datetime.now())}]'
+            f'/api/v1/g?filter=[datetime_column=={str(datetime.now())}]'
         )
         self.assert200(
             response,
@@ -166,7 +166,7 @@ class TestFilterTypes(BaseTestCase):
 
         # filter for one
         response = self.client.open(
-            f'/api/v1/G?filter=[datetime_column=={str(first_datetime)}]'
+            f'/api/v1/g?filter=[datetime_column=={str(first_datetime)}]'
         )
         self.assert200(
             response,
@@ -186,7 +186,7 @@ class TestFilterTypes(BaseTestCase):
                 },
                 'data': [
                     {
-                        'type': 'G',
+                        'type': 'g',
                         'id': '501',
                         'attributes': {
                             'float_column': None,
@@ -209,7 +209,7 @@ class TestFilterTypes(BaseTestCase):
 
         # get none
         response = self.client.open(
-            '/api/v1/G?filter=[float_column==898.34,bool_column==True]'
+            '/api/v1/g?filter=[float_column==898.34,bool_column==True]'
         )
         self.assert200(
             response,
@@ -219,7 +219,7 @@ class TestFilterTypes(BaseTestCase):
 
         # get one
         response = self.client.open(
-            '/api/v1/G?filter=[float_column==1.0,bool_column==True]'
+            '/api/v1/g?filter=[float_column==1.0,bool_column==True]'
         )
         self.assert200(
             response,
@@ -238,7 +238,7 @@ class TestFilterTypes(BaseTestCase):
                 },
                 'data': [
                     {
-                        'type': 'G',
+                        'type': 'g',
                         'id': '999',
                         'attributes': {
                             'float_column': 1.0,

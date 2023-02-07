@@ -5,14 +5,16 @@
 import tol.jira.jira_methods as jm
 from tol.jira.jira_auth import JiraAuth
 
+from ..core import DataSource
 
-class Jira:
+
+class Jira(DataSource):
     def __init__(self, config, api_token='DEFAULT'):
-        if api_token == 'DEFAULT':
-            self.api_token = config['api_token']
-        else:
+        # url, api_token
+        super().__init__(config)
+
+        if api_token != 'DEFAULT':
             self.api_token = api_token
-        self.url = config['url']
 
     def get_specimens_for_treeval(self, page_number=1, page_size=1, filter_='', sort_by=''):
 

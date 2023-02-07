@@ -8,7 +8,7 @@ from ..test_case import BaseTestCase
 class TestWrongType400(BaseTestCase):
     def test_post_d_with_invalid_type_400(self):
         response = self.client.open(
-            '/api/v1/D',
+            '/api/v1/d',
             method='POST',
             json={
                 'data': {

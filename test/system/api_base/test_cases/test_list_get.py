@@ -23,7 +23,7 @@ class TestListGet(BaseTestCase):
         self.add_c(**c_3)
 
         response = self.client.open(
-            '/api/v1/C',
+            '/api/v1/c',
             method='GET'
         )
         self.assert200(
@@ -42,7 +42,7 @@ class TestListGet(BaseTestCase):
                 },
                 'data': [
                     {
-                        'type': 'C',
+                        'type': 'c',
                         'id': '9090',
                         'attributes': {
                             'nullable_column': None,
@@ -50,7 +50,7 @@ class TestListGet(BaseTestCase):
                         }
                     },
                     {
-                        'type': 'C',
+                        'type': 'c',
                         'id': '80808',
                         'attributes': {
                             'nullable_column': 'hello, how are you',
@@ -58,7 +58,7 @@ class TestListGet(BaseTestCase):
                         }
                     },
                     {
-                        'type': 'C',
+                        'type': 'c',
                         'id': '989089',
                         'attributes': {
                             'nullable_column': None,
@@ -78,7 +78,7 @@ class TestListGet(BaseTestCase):
 
         # (implictly) first page
         response = self.client.open(
-            '/api/v1/C',
+            '/api/v1/c',
             method='GET'
         )
         self.assert200(
@@ -90,7 +90,7 @@ class TestListGet(BaseTestCase):
 
         # last (partially) populated page
         response = self.client.open(
-            '/api/v1/C?page=3',
+            '/api/v1/c?page=3',
             method='GET'
         )
         self.assert200(
@@ -102,7 +102,7 @@ class TestListGet(BaseTestCase):
 
         # first unpopulated page
         response = self.client.open(
-            '/api/v1/C?page=4',
+            '/api/v1/c?page=4',
             method='GET'
         )
         self.assert200(
@@ -113,7 +113,7 @@ class TestListGet(BaseTestCase):
 
         # obviously out of range page
         response = self.client.open(
-            '/api/v1/C?page=9999',
+            '/api/v1/c?page=9999',
             method='GET'
         )
         self.assert200(
@@ -134,7 +134,7 @@ class TestListGet(BaseTestCase):
             )
 
         response = self.client.open(
-            '/api/v1/C?page=2&sort_by=-nullable_column&filter='
+            '/api/v1/c?page=2&sort_by=-nullable_column&filter='
             '[nullable_column=="something about clones"]',
             method='GET'
         )
@@ -153,7 +153,7 @@ class TestListGet(BaseTestCase):
 
         # out of range page
         response = self.client.open(
-            '/api/v1/C?page=0',
+            '/api/v1/c?page=0',
             method='GET'
         )
         self.assert400(
@@ -163,7 +163,7 @@ class TestListGet(BaseTestCase):
 
         # non int page
         response = self.client.open(
-            '/api/v1/C?page=not_int',
+            '/api/v1/c?page=not_int',
             method='GET'
         )
         self.assert400(

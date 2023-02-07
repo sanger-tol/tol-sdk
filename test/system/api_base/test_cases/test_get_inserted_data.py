@@ -12,21 +12,21 @@ class TestGetInsertedData(BaseTestCase):
 
         expected = {
             'data': {
-                'type': 'B',
+                'type': 'b',
                 'id': '10',
                 'relationships': {
-                    'A': {
+                    'a': {
                         'data': {
                             'id': '90',
-                            'type': 'A'
+                            'type': 'a'
                         },
                         'links': {
-                            'related': '/A/90'
+                            'related': '/a/90'
                         }
                     },
-                    'E': {
+                    'e': {
                         'links': {
-                            'related': '/B/10/E'
+                            'related': '/b/10/e'
                         }
                     }
                 }
@@ -34,7 +34,7 @@ class TestGetInsertedData(BaseTestCase):
         }
 
         response = self.client.open(
-            '/api/v1/B/10',
+            '/api/v1/b/10',
             method='GET',
         )
         self.assert200(
@@ -49,7 +49,7 @@ class TestGetInsertedData(BaseTestCase):
         expected = {
             'data': {
                 'id': '9',
-                'type': 'C',
+                'type': 'c',
                 'attributes': {
                     'nullable_column': None,
                     'other_column': 'test the world',
@@ -58,7 +58,7 @@ class TestGetInsertedData(BaseTestCase):
         }
 
         response = self.client.open(
-            '/api/v1/C/9',
+            '/api/v1/c/9',
             method='GET',
         )
         self.assert200(
@@ -77,7 +77,7 @@ class TestGetInsertedData(BaseTestCase):
         expected = {
             'data': {
                 'id': '1122',
-                'type': 'D',
+                'type': 'd',
                 'attributes': {
                     'non_nullable_column': 'This shouldnt be null',
                     'other_column': 'This, however, can be null!',
@@ -85,7 +85,7 @@ class TestGetInsertedData(BaseTestCase):
             }
         }
         response = self.client.open(
-            '/api/v1/D/1122',
+            '/api/v1/d/1122',
             method='GET',
         )
         self.assert200(

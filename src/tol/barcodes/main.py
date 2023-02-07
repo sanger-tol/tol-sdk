@@ -9,12 +9,15 @@ from marshmallow import Schema, fields
 
 import requests
 
+from ..core import DataSource
 
-class Interface:
+
+class Interface(DataSource):
 
     def __init__(self, config):
-        self.pmb_url = config['pmb_url']
-        self.barcodebar_url = config['barcodebar_url']
+        # pbm_url
+        # barcodebar_url
+        super().__init__(config)
 
     def printers(self):
         """Show all printers"""

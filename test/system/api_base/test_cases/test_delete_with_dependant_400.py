@@ -12,7 +12,7 @@ class TestDeleteWithDependant400(BaseTestCase):
         self.add_e(id=40, b_id=30)
 
         response = self.client.open(
-            '/api/v1/B/30',
+            '/api/v1/b/30',
             method='DELETE',
             headers=self._get_auth_user_1_headers()
         )

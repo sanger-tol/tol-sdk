@@ -20,7 +20,7 @@ class TestRelationListGet(BaseTestCase):
 
         # get the first A's B's
         response = self.client.open(
-            '/api/v1/A/20/B',
+            '/api/v1/a/20/b',
             method='GET'
         )
         self.assert200(
@@ -43,40 +43,40 @@ class TestRelationListGet(BaseTestCase):
                 'data': [
                     {
                         'id': '89',
-                        'type': 'B',
+                        'type': 'b',
                         'relationships': {
-                            'A': {
+                            'a': {
                                 'data': {
                                     'id': '20',
-                                    'type': 'A'
+                                    'type': 'a'
                                 },
                                 'links': {
-                                    'related': '/A/20'
+                                    'related': '/a/20'
                                 }
                             },
-                            'E': {
+                            'e': {
                                 'links': {
-                                    'related': '/B/89/E'
+                                    'related': '/b/89/e'
                                 }
                             }
                         }
                     },
                     {
                         'id': '290',
-                        'type': 'B',
+                        'type': 'b',
                         'relationships': {
-                            'A': {
+                            'a': {
                                 'data': {
                                     'id': '20',
-                                    'type': 'A'
+                                    'type': 'a'
                                 },
                                 'links': {
-                                    'related': '/A/20'
+                                    'related': '/a/20'
                                 }
                             },
-                            'E': {
+                            'e': {
                                 'links': {
-                                    'related': '/B/290/E'
+                                    'related': '/b/290/e'
                                 }
                             }
                         }
@@ -87,7 +87,7 @@ class TestRelationListGet(BaseTestCase):
 
         # get the second A's B
         response = self.client.open(
-            '/api/v1/A/29/B',
+            '/api/v1/a/29/b',
             method='GET'
         )
         self.assert200(
@@ -110,20 +110,20 @@ class TestRelationListGet(BaseTestCase):
                 'data': [
                     {
                         'id': '8080',
-                        'type': 'B',
+                        'type': 'b',
                         'relationships': {
-                            'A': {
+                            'a': {
                                 'data': {
                                     'id': '29',
-                                    'type': 'A'
+                                    'type': 'a'
                                 },
                                 'links': {
-                                    'related': '/A/29'
+                                    'related': '/a/29'
                                 }
                             },
-                            'E': {
+                            'e': {
                                 'links': {
-                                    'related': '/B/8080/E'
+                                    'related': '/b/8080/e'
                                 }
                             }
                         }
@@ -139,7 +139,7 @@ class TestRelationListGet(BaseTestCase):
 
         # try to get the B's of a non-existent A
         response = self.client.open(
-            '/api/v1/A/560/B',
+            '/api/v1/a/560/b',
             method='GET'
         )
         self.assert404(
@@ -159,7 +159,7 @@ class TestRelationListGet(BaseTestCase):
 
         # combine parameters on relation list get
         response = self.client.open(
-            '/api/v1/A/789/B?page=3',
+            '/api/v1/a/789/b?page=3',
             method='GET'
         )
         self.assert200(
@@ -180,7 +180,7 @@ class TestRelationListGet(BaseTestCase):
 
         # combine parameters on relation list get
         response = self.client.open(
-            '/api/v1/A/298/B?sort_by=-id',
+            '/api/v1/a/298/b?sort_by=-id',
             method='GET'
         )
         self.assert200(
@@ -202,60 +202,60 @@ class TestRelationListGet(BaseTestCase):
                 'data': [
                     {
                         'id': '200000',
-                        'type': 'B',
+                        'type': 'b',
                         'relationships': {
-                            'A': {
+                            'a': {
                                 'data': {
                                     'id': '298',
-                                    'type': 'A'
+                                    'type': 'a'
                                 },
                                 'links': {
-                                    'related': '/A/298'
+                                    'related': '/a/298'
                                 }
                             },
-                            'E': {
+                            'e': {
                                 'links': {
-                                    'related': '/B/200000/E'
+                                    'related': '/b/200000/e'
                                 }
                             }
                         }
                     },
                     {
                         'id': '9090',
-                        'type': 'B',
+                        'type': 'b',
                         'relationships': {
-                            'A': {
+                            'a': {
                                 'data': {
                                     'id': '298',
-                                    'type': 'A'
+                                    'type': 'a'
                                 },
                                 'links': {
-                                    'related': '/A/298'
+                                    'related': '/a/298'
                                 }
                             },
-                            'E': {
+                            'e': {
                                 'links': {
-                                    'related': '/B/9090/E'
+                                    'related': '/b/9090/e'
                                 }
                             }
                         }
                     },
                     {
                         'id': '348',
-                        'type': 'B',
+                        'type': 'b',
                         'relationships': {
-                            'A': {
+                            'a': {
                                 'data': {
                                     'id': '298',
-                                    'type': 'A'
+                                    'type': 'a'
                                 },
                                 'links': {
-                                    'related': '/A/298'
+                                    'related': '/a/298'
                                 }
                             },
-                            'E': {
+                            'e': {
                                 'links': {
-                                    'related': '/B/348/E'
+                                    'related': '/b/348/e'
                                 }
                             }
                         }

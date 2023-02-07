@@ -10,7 +10,7 @@ class TestMalformedFilterString(BaseTestCase):
         self.add_g(id=89890, string_column='test, yet again')
         # no enclosing brackets
         response = self.client.open(
-            '/api/v1/G?filter=string_column=="test, yet again"',
+            '/api/v1/g?filter=string_column=="test, yet again"',
             method='GET'
         )
         self.assert400(
@@ -20,7 +20,7 @@ class TestMalformedFilterString(BaseTestCase):
 
         # opening, but not closing
         response = self.client.open(
-            '/api/v1/G?filter=[string_column=="test, yet again"',
+            '/api/v1/g?filter=[string_column=="test, yet again"',
             method='GET'
         )
         self.assert400(
@@ -30,7 +30,7 @@ class TestMalformedFilterString(BaseTestCase):
 
         # closing, but not opening
         response = self.client.open(
-            '/api/v1/G?filter=string_column=="test, yet again"]',
+            '/api/v1/g?filter=string_column=="test, yet again"]',
             method='GET'
         )
         self.assert400(
@@ -43,7 +43,7 @@ class TestMalformedFilterString(BaseTestCase):
 
         # single instead of double equals sign
         response = self.client.open(
-            '/api/v1/G?filter=[string_column="tests are fun!!"]',
+            '/api/v1/g?filter=[string_column="tests are fun!!"]',
             method='GET'
         )
         self.assert400(

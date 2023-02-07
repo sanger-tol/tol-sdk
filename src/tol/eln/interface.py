@@ -14,19 +14,17 @@ from benchling_sdk.models import (
     CustomEntityBulkCreate, CustomEntityBulkUpdate)
 
 from .entities import convert_sts_entity_to_eln_entity_fields
+from ..core import DataSource
 
 
-class Interface:
+class Interface(DataSource):
 
     def __init__(self, config, api_key='DEFAULT'):
-        if api_key == 'DEFAULT':
-            self.api_key = config['api_key']
-        else:
+        # url, api_key, registry_id, project_id, entities
+        super().__init__(config)
+
+        if api_key != 'DEFAULT':
             self.api_key = api_key
-        self.url = config['url']
-        self.registry_id = config['registry_id']
-        self.project_id = config['project_id']
-        self.mappings = config['entities']
         self.benchling_interface = self.__get_benchling_interface(self.url, self.api_key)
 
     def __get_benchling_interface(self, url, api_key):
@@ -46,7 +44,7 @@ class Interface:
             raise Exception(400, error.json['error']['message'])
 
     def register(self, entities, mapping_name):
-        mapping = self.mappings[mapping_name]
+        mapping = self.entities[mapping_name]
         schema_id = mapping['schema_id']
         name_field = mapping['name_field']
         request = []
@@ -84,7 +82,7 @@ class Interface:
             raise Exception(400, error.json['error']['message'])
 
     def update(self, entities, mapping_name):
-        mapping = self.mappings[mapping_name]
+        mapping = self.entities[mapping_name]
         id_field = mapping['id_field']
         request = []
         for entity in entities:

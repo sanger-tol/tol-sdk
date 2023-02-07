@@ -23,23 +23,29 @@ class TestPagination(BaseTestCase):
             },
             'data': [
                 {
-                    'type': 'A',
+                    'type': 'a',
                     'id': '92',
+                    'attributes': {
+                        'string_column': None
+                    },
                     'relationships': {
-                        'B': {
+                        'b': {
                             'links': {
-                                'related': '/A/92/B'
+                                'related': '/a/92/b'
                             }
                         }
                     }
                 },
                 {
-                    'type': 'A',
+                    'type': 'a',
                     'id': '93',
+                    'attributes': {
+                        'string_column': None
+                    },
                     'relationships': {
-                        'B': {
+                        'b': {
                             'links': {
-                                'related': '/A/93/B'
+                                'related': '/a/93/b'
                             }
                         }
                     }
@@ -47,7 +53,7 @@ class TestPagination(BaseTestCase):
             ]
         }
         response = self.client.open(
-            '/api/v1/A?page=2&page_size=2',
+            '/api/v1/a?page=2&page_size=2',
             method='GET',
         )
         self.assert200(
@@ -71,20 +77,20 @@ class TestPagination(BaseTestCase):
             },
             'data': [
                 {
-                    'type': 'B',
+                    'type': 'b',
                     'id': '32',
                     'relationships': {
-                        'A': {
+                        'a': {
                             'links': {
-                                'related': '/A/233'
+                                'related': '/a/233'
                             },
                             'data': {
-                                'type': 'A', 'id': '233'
+                                'type': 'a', 'id': '233'
                             }
                         },
-                        'E': {
+                        'e': {
                             'links': {
-                                'related': '/B/32/E'
+                                'related': '/b/32/e'
                             }
                         }
                     }
@@ -92,7 +98,7 @@ class TestPagination(BaseTestCase):
             ]
         }
         response = self.client.open(
-            '/api/v1/A/233/B?page=2&page_size=2',
+            '/api/v1/a/233/b?page=2&page_size=2',
             method='GET',
         )
         print(response.json)
