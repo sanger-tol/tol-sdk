@@ -116,7 +116,7 @@ class ApiDataSource(DataSource):
         # We see both one- and many- ends of the relationships here
         ret = {}
         for k, v in relationships.items():
-            if 'data' in v:  # Relationship to single object
+            if 'data' in v and v['data'] is not None:  # Relationship to single object
                 ret[k] = self._get_from_cache_or_remote(v['data']['type'], v['data']['id'])
             # Ignore many end
         return ret
