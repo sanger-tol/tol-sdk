@@ -20,9 +20,18 @@ def get_species_name(issue):
 
 
 def get_species_id(issue):
-    species_id = issue.fields.customfield_11627
+    species_id = str(issue.fields.summary)
 
-    if species_id:
+    if species_id != '':
+        species_id = species_id.replace(' GenomeArk assembly', '')
+        species_id = species_id.replace(' ERGA assembly', '')
+        species_id = species_id.replace(' Darwin assembly', '')
+        species_id = species_id.replace(' faculty assembly', '')
+        species_id = species_id.replace(' ASG assembly', '')
+        species_id = species_id.replace(' VGP assembly', '')
+        species_id = species_id.replace(' external assembly', '')
+        species_id = species_id.replace(' assembly', '')
+
         return species_id
     else:
         return ''
@@ -32,7 +41,12 @@ def get_species_id(issue):
 
 def add_contains_str_filter(jql_field_map, filter_dict, field_key):
     field_value = filter_dict.get(field_key, '')
-    return f" AND {jql_field_map[field_key]} ~ '*{field_value}*'" if field_value else ''
+    if jql_field_map[field_key][1] == 'contains':
+        return f" AND {jql_field_map[field_key][0]} ~ '*{field_value}*'" if field_value else ''
+    elif jql_field_map[field_key][1] == 'equals':
+        return f" AND {jql_field_map[field_key][0]} = '{field_value}'" if field_value else ''
+    else:
+        return ''
 
 
 def parse_filter_str_to_dict(filter_str):
@@ -66,7 +80,7 @@ def apply_filter_sort_to_jql(jql, jql_field_map, filter_, sort_by):
     if sort_by:
         (sort_field, sort_direction) = (sort_by[1:], 'DESC') if sort_by[0] == '-' \
             else (sort_by, 'ASC')
-        jql += f' ORDER BY {jql_field_map[sort_field]} {sort_direction}' \
-            if sort_field or jql_field_map[sort_field] else ''
+        jql += f' ORDER BY {jql_field_map[sort_field][0]} {sort_direction}' \
+            if sort_field or jql_field_map[sort_field][0] else ''
 
     return jql

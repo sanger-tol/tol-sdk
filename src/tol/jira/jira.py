@@ -9,6 +9,7 @@ from ..core import DataSource
 
 
 class Jira(DataSource):
+
     def __init__(self, config, api_token='DEFAULT'):
         # url, api_token
         super().__init__(config)
@@ -21,18 +22,22 @@ class Jira(DataSource):
         page_size = int(page_size)
         page_number = int(page_number)
 
-        jql_field_map = {'tolid': "'Sample ID'",
-                         'species_name': "'Species Name'",
-                         'jira_issue': 'key',
-                         'jira_issue_last_updated': 'updated',
-                         'jbrowse_link': "'Datatype Available'"}
+        jql_field_map = {
+            'tolid': ("'Sample ID'", 'contains'),
+            'species_name': ("'Species Name'", 'contains'),
+            'jira_issue': ('key', 'equals'),
+            'jira_issue_link': ('key', 'equals'),
+            'jira_issue_last_updated': ('updated', 'equals'),
+            'assignee': ("'Assignee'", 'equals'),
+            'jbrowse_link': ("'Datatype Available'", 'contains')
+        }
 
         ja = JiraAuth(url=self.url, password=self.api_token)
-        jql_request = jm.apply_filter_sort_to_jql('project in (GRIT,RC)',
+        jql_request = jm.apply_filter_sort_to_jql('project in (GRIT,RC) AND labels = "Treeval"',
                                                   jql_field_map, filter_, sort_by)
 
         # Return all results for page until the number requested.
-        results = ja.auth_jira.search_issues(jql_request)
+        results = ja.auth_jira.search_issues(jql_request, maxResults=0)
 
         entries_len = len(results)
         offset = page_size * (page_number - 1)
@@ -49,15 +54,17 @@ class Jira(DataSource):
         for i in filtered_jira_results:
             issue = ja.auth_jira.issue(i)
             entry = {}
+
             entry['tolid'] = jm.get_species_id(issue)
             entry['species_name'] = jm.get_species_name(issue)
             entry['jira_issue'] = issue.key
             entry['jira_issue_link'] = f'https://{ja.jira_path}/browse/{issue.key}'
-            entry['jira_issue_last_updated'] = issue.fields.updated
+            entry['jira_issue_last_updated'] = str(issue.fields.updated)
             entry['jbrowse_link'] = ''
+            entry['assignee'] = str(issue.fields.assignee)
             entries.append(entry)
 
         return {'total': entries_len, 'data': entries}
 
     def get_specimen_for_treeval(self, tolid):
-        return self.get_specimens_for_treeval(1, 1, f'[tolid={id}]', 'tolid')[0]
+        return self.get_specimens_for_treeval(1, 1, f'[tolid={tolid}]', 'tolid')[0]
