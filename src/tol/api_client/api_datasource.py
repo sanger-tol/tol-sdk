@@ -19,7 +19,7 @@ from ..core import (
 
 class ApiDataSource(DataSource):
 
-    def __init__(self, config):
+    def __init__(self, config: Dict):
         """Initialises an API base data source.
 
         We expect the following keys in the config:
