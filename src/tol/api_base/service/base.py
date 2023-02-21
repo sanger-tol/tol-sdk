@@ -219,7 +219,7 @@ class BaseService:
     def create(cls, data, user_id=None):
         schema = cls.Meta.schema()
         model_instance = schema.load(data)
-        model_instance.save_create(user_id=user_id)
+        model_instance.save(user_id=user_id)
         return schema.dump(model_instance), 201
 
     @classmethod

@@ -4,22 +4,25 @@
 
 FROM python:3.8
 
-# copy package files
-COPY setup.cfg pyproject.toml /app/
-
-COPY ./src /app/src
-
 WORKDIR /app
 
-# install package
-RUN pip install .[all]
+# copy package files
+COPY setup.cfg pyproject.toml ./
+
+# create the stub directory
+RUN mkdir -p src/tol && touch src/tol/__init__.py
+
+# install package (editable, so that we don't have to reinstall after copying src/)
+RUN pip install -e .[all]
 
 # install the testing requirements
-COPY requirements-test.txt /app/
+COPY requirements-test.txt .
+RUN pip install -r requirements-test.txt
 
-RUN pip install -r /app/requirements-test.txt
-
-# copy tests
-COPY ./test /test
+# copy in the source
+COPY src src
 
 WORKDIR /test
+
+# copy tests
+COPY test .

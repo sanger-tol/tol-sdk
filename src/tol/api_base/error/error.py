@@ -56,6 +56,15 @@ class BadParameterException(_CustomException):
         )
 
 
+class CandidateKeyNotProvidedExpection(_CustomException):
+    def __init__(self):
+        errors = [{
+            'title': 'Bad Request',
+            'detail': 'Candidate key was not provided'
+        }]
+        super().__init__(errors, 400)
+
+
 class ExtraFieldsNotPermittedException(_CustomException):
     def __init__(self):
         errors = [{

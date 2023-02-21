@@ -106,7 +106,7 @@ class AuthService:
                         token=data['token'],
                         created_at=datetime.now(),
                         expires_at=datetime.now() + timedelta(days=7))
-            auth.save_create()
+            auth.save()
             return jsonify(user)
         else:
             return {

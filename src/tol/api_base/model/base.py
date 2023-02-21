@@ -15,6 +15,7 @@ from sqlalchemy.inspection import inspect
 
 from ..error import (
     BadParameterException,
+    CandidateKeyNotProvidedExpection,
     EnumNameNotFoundException,
     ExtraFieldsNotPermittedException,
     IdNotFoundException,
@@ -291,12 +292,27 @@ class Base(db.Model):
             db.session.rollback()
             raise e
 
-    def save(self):
+    def save(self, **kwargs):
         self.add()
         self.commit()
 
-    def save_create(self, **kwargs):
-        self.save()
+    @classmethod
+    def one_or_create(cls, candidate_key, data={}):
+        """
+        Returns an existing object if an instance matches ALL
+        the candidate_key values, else creates a new instance
+        """
+        if candidate_key is None:
+            raise CandidateKeyNotProvidedExpection()
+        query = db.session.query(cls)
+        query = cls._exact_filter_query(
+            query,
+            cls._add_filter_delimiters(candidate_key)
+        ).one_or_none()
+        if query is None:
+            combined_data = {**data, **candidate_key}
+            return cls(combined_data), True
+        return query, False
 
     @classmethod
     def _get_exact_filter_terms(cls, exact_filters):
@@ -689,6 +705,20 @@ class Base(db.Model):
             return True
         except ValueError:
             return False
+
+    @classmethod
+    def _add_filter_delimiters(cls, filter_values):
+        return {
+            filter_key: cls._add_delimiter_by_type(filter_value, "'")
+            for (filter_key, filter_value)
+            in filter_values.items()
+        }
+
+    @classmethod
+    def _add_delimiter_by_type(cls, value, delimiter):
+        if type(value) == str:
+            return (f'{delimiter}{value}{delimiter}')
+        return str(value)
 
     @classmethod
     def _filter_value_is_delimited_by(cls, filter_value, delimiter):

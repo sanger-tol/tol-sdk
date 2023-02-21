@@ -52,9 +52,9 @@ class LogBase(Base, LogMixin):
             self.last_modified_at = datetime.now()
         super().save_update()
 
-    def save_create(self, user_id=None):
-        self._update_metadata(user_id)
-        super().save_create()
+    def save(self, user_id=None):
+        self.add(user_id)
+        self.commit()
 
     def add(self, user_id=None):
         self._update_metadata(user_id)
@@ -72,8 +72,12 @@ class LogBase(Base, LogMixin):
             schema.create_history_entry(self)
         ]
 
-    def update(self, *args, schema=None, **kwargs):
+    def update(self, *args, schema=None, user_id=None, **kwargs):
         updated_history = self._get_updated_history(schema)
         super().update(*args, **kwargs)
         if self._should_update:
+            if not user_id:
+                user_id = get_request_user_id()
+            self.last_modified_by = user_id
+            self.last_modified_at = datetime.now()
             self.history = updated_history
