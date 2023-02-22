@@ -90,7 +90,7 @@ class TestBadSortByParameter200(BaseTestCase):
 
         # filter for two, sort by id descending
         response = self.client.open(
-            '/api/v1/g?sort_by=-id&filter=[bool_column==true]',
+            '/api/v1/g?sort_by=-id&filter={"exact":{"bool_column":true}}',
             method='GET'
         )
         self.assert200(

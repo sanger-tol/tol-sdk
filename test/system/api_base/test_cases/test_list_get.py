@@ -135,7 +135,7 @@ class TestListGet(BaseTestCase):
 
         response = self.client.open(
             '/api/v1/c?page=2&sort_by=-nullable_column&filter='
-            '[nullable_column=="something about clones"]',
+            '{"exact":{"nullable_column": "something about clones"}}',
             method='GET'
         )
         self.assert200(

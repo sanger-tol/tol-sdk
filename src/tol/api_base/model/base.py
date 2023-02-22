@@ -21,7 +21,11 @@ from ..error import (
     IdNotFoundException,
     WildcardFilterOnNonStringColumn
 )
-from ..utils.string import escape_psql_like_string
+from ..utils import (
+    escape_psql_like_string,
+    parse_filters,
+    parse_sort_by
+)
 
 
 PAGE_SIZE = 20
@@ -307,7 +311,7 @@ class Base(db.Model):
         query = db.session.query(cls)
         query = cls._exact_filter_query(
             query,
-            cls._add_filter_delimiters(candidate_key)
+            candidate_key
         ).one_or_none()
         if query is None:
             combined_data = {**data, **candidate_key}
@@ -445,13 +449,13 @@ class Base(db.Model):
         query,
         page=None,
         page_size=None,
-        exact_filters=None,
-        wildcard_filters=None,
+        filter=None,  # noqa
         sort_by=None
     ):
+        exact_filters, wildcard_filters = parse_filters(filter)
         query = cls._exact_filter_query(query, exact_filters)
         query = cls._wildcard_filter_query(query, wildcard_filters)
-        query = cls._sort_by_query(query, sort_by)
+        query = cls._sort_by_query(query, parse_sort_by(sort_by))
         total = query.count()
         query, page, page_size, offset, limit = cls._paginate_query(query, page, page_size)
         metadata = {
@@ -707,46 +711,8 @@ class Base(db.Model):
             return False
 
     @classmethod
-    def _add_filter_delimiters(cls, filter_values):
-        return {
-            filter_key: cls._add_delimiter_by_type(filter_value, "'")
-            for (filter_key, filter_value)
-            in filter_values.items()
-        }
-
-    @classmethod
-    def _add_delimiter_by_type(cls, value, delimiter):
-        if type(value) == str:
-            return (f'{delimiter}{value}{delimiter}')
-        return str(value)
-
-    @classmethod
-    def _filter_value_is_delimited_by(cls, filter_value, delimiter):
-        return (
-            filter_value.startswith(delimiter)
-            and filter_value.endswith(delimiter)
-        )
-
-    @classmethod
-    def _filter_value_is_delimited_string(cls, filter_value):
-        return (
-            cls._filter_value_is_delimited_by(filter_value, '"')
-            or cls._filter_value_is_delimited_by(filter_value, "'")
-        )
-
-    @classmethod
     def _filter_value_is_bool(cls, filter_value):
         return filter_value.lower() in ['true', 'false']
-
-    @classmethod
-    def _preprocess_string_filter_value(cls, filter_value):
-        if not cls._filter_value_is_delimited_string(filter_value):
-            raise BadParameterException(
-                f"The string filter value '{filter_value}' must be surrounded "
-                "by quotation marks (either ' or \")"
-            )
-        # strip surrounding quotes
-        return filter_value[1:-1]
 
     @classmethod
     def _preprocess_non_string_filter_value(cls, filter_value, python_type):
@@ -773,11 +739,8 @@ class Base(db.Model):
         return filter_value
 
     @classmethod
-    def _preprocess_enum_filter(cls, filter_key, filter_value):
+    def _preprocess_enum_filter(cls, filter_key, filter_enum_name):
         enum_relation_model = cls.get_model_by_type(filter_key)
-        filter_enum_name = cls._preprocess_string_filter_value(
-            filter_value
-        )
         valid_enum_names = enum_relation_model.get_enum_values()
         if filter_enum_name not in valid_enum_names:
             raise BadParameterException(
@@ -792,20 +755,10 @@ class Base(db.Model):
             raise BadParameterException(
                 f"The filter key '{filter_key}' is invalid."
             )
-
         # pre-remove enum types
         if filter_key in enum_names:
             return cls._preprocess_enum_filter(filter_key, filter_value)
-
-        python_type = cls.get_column_python_type(filter_key)
-
-        if python_type == str:
-            return cls._preprocess_string_filter_value(filter_value)
-
-        return cls._preprocess_non_string_filter_value(
-            filter_value,
-            python_type
-        )
+        return filter_value
 
     @classmethod
     def _preprocess_wildcard_filter_value(cls, filter_key, filter_value):
@@ -814,9 +767,7 @@ class Base(db.Model):
         if python_type != str:
             raise WildcardFilterOnNonStringColumn(filter_key)
 
-        return escape_psql_like_string(
-            cls._preprocess_string_filter_value(filter_value)
-        )
+        return escape_psql_like_string(filter_value)
 
     @classmethod
     def _check_not_ext_filter(cls, filters):

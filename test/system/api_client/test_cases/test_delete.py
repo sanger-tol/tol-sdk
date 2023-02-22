@@ -18,13 +18,13 @@ class TestDelete(BaseTestCase):
         self.add_g(**g_1)
         ads = TestApiDataSource({'client': self.client,
                                  'key': self.token_1})
-        gs = list(ads.get_list('g', filter_='[string_column=="fine"]'))
+        gs = list(ads.get_list('g', filter_='{"exact": {"string_column":"fine"}}'))
         self.assertEqual(1, len(gs))
         g = gs[0]
         ads.delete(g)
         self.assertEqual(1, ads.delete_count)
         # Check it returns nothing in list_get
-        gs = list(ads.get_list('g', filter_='[string_column=="fine"]'))
+        gs = list(ads.get_list('g', filter_='{"exact": {"string_column":"fine"}}'))
         self.assertEqual(0, len(gs))
 
     def test_delete_with_relationship(self):

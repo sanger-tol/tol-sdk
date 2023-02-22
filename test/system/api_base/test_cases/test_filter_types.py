@@ -8,33 +8,12 @@ from ..test_case import BaseTestCase
 
 
 class TestFilterTypes(BaseTestCase):
-    def test_string_bad_delimiter_list_get_g_400(self):
-        self.add_g(id=1001)
-
-        # undelimited string
-        response = self.client.open(
-            '/api/v1/g?filter=[string_column==undelimited]'
-        )
-        self.assert400(
-            response,
-            f'Response body is : {response.data.decode("utf-8")}'
-        )
-
-        # unmatching delimiters
-        response = self.client.open(
-            '/api/v1/g?filter=[string_column==\'unmatching"]'
-        )
-        self.assert400(
-            response,
-            f'Response body is : {response.data.decode("utf-8")}'
-        )
-
     def test_string_good_delimiters_list_get_g_200(self):
         self.add_g(id=101, string_column='match', bool_column=True)
         self.add_g(id=1090, string_column='no match', bool_column=False)
 
         response = self.client.open(
-            '/api/v1/g?filter=[string_column=="match"]'
+            '/api/v1/g?filter={"exact":{"string_column":"match"}}'
         )
         self.assert200(
             response,
@@ -76,7 +55,7 @@ class TestFilterTypes(BaseTestCase):
 
         # filter for one
         response = self.client.open(
-            '/api/v1/g?filter=[float_column==1.89]'
+            '/api/v1/g?filter={"exact":{"float_column":1.89}}'
         )
         self.assert200(
             response,
@@ -114,7 +93,7 @@ class TestFilterTypes(BaseTestCase):
 
         # filter for none
         response = self.client.open(
-            '/api/v1/g?filter=[float_column==42.9]'
+            '/api/v1/g?filter={"exact":{"float_column":42.9}}'
         )
         self.assert200(
             response,
@@ -143,7 +122,7 @@ class TestFilterTypes(BaseTestCase):
 
         # filter for none
         response = self.client.open(
-            f'/api/v1/g?filter=[datetime_column=={str(datetime.now())}]'
+            f'/api/v1/g?filter={{"exact": {{"datetime_column": "{str(datetime.now())}"}}}}'
         )
         self.assert200(
             response,
@@ -166,7 +145,7 @@ class TestFilterTypes(BaseTestCase):
 
         # filter for one
         response = self.client.open(
-            f'/api/v1/g?filter=[datetime_column=={str(first_datetime)}]'
+            f'/api/v1/g?filter={{"exact": {{"datetime_column":"{str(first_datetime)}"}}}}'
         )
         self.assert200(
             response,
@@ -209,7 +188,7 @@ class TestFilterTypes(BaseTestCase):
 
         # get none
         response = self.client.open(
-            '/api/v1/g?filter=[float_column==898.34,bool_column==True]'
+            '/api/v1/g?filter={"exact":{"float_column":898.34,"bool_column":true}}'
         )
         self.assert200(
             response,
@@ -219,7 +198,7 @@ class TestFilterTypes(BaseTestCase):
 
         # get one
         response = self.client.open(
-            '/api/v1/g?filter=[float_column==1.0,bool_column==True]'
+            '/api/v1/g?filter={"exact":{"float_column":1.0,"bool_column":true}}'
         )
         self.assert200(
             response,
@@ -249,4 +228,35 @@ class TestFilterTypes(BaseTestCase):
                     }
                 ]
             }
+        )
+
+    def test_bad_json_filter(self):
+        """Has a bad JSON string"""
+
+        # missing a closing brace
+        response = self.client.open(
+            '/api/v1/g?filter={"exact":{"float_column":898.34,"bool_column":true}'
+        )
+        self.assert400(
+            response,
+            f'Response body is : {response.data.decode("utf-8")}'
+        )
+
+        # missing an opening brace
+        response = self.client.open(
+            '/api/v1/g?filter={"exact":"float_column":898.34,"bool_column":true}}'
+        )
+        self.assert400(
+            response,
+            f'Response body is : {response.data.decode("utf-8")}'
+        )
+
+    def test_string_delimiters_in_filter(self):
+        # contains an (escaped) string delimiter
+        response = self.client.open(
+            '/api/v1/g?filter={"exact":{"string_column":"this one\'s gnarly string"}}'
+        )
+        self.assert200(
+            response,
+            f'Response body is : {response.data.decode("utf-8")}'
         )

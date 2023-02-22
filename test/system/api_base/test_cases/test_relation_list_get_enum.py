@@ -13,7 +13,7 @@ class TestListGetEnum(BaseTestCase):
 
         # try to filter by a bad name
         response = self.client.open(
-            '/api/v1/j?filter=[i=="WRONG"]',
+            '/api/v1/j?filter={"exact":{"i":"WRONG"}}',
             method='GET'
         )
         self.assert400(
@@ -46,7 +46,7 @@ class TestListGetEnum(BaseTestCase):
 
         # get I=ABC with id descending
         response = self.client.open(
-            '/api/v1/j?filter=[i=="ABC"]&sort_by=-id',
+            '/api/v1/j?filter={"exact":{"i":"ABC"}}&sort_by=-id',
             method='GET'
         )
         self.assert200(

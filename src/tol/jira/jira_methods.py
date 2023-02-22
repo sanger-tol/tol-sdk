@@ -4,6 +4,9 @@
 
 # Methods for reading from JIRA object.
 
+from ..api_base.utils import parse_filters
+
+
 def get_species_name(issue):
     species_name = issue.fields.customfield_11676
 
@@ -50,19 +53,13 @@ def add_contains_str_filter(jql_field_map, filter_dict, field_key):
 
 
 def parse_filter_str_to_dict(filter_str):
-    filter_dict = {}
+    (exact_filters, _) = parse_filters(filter_str)
 
-    # Trim '[' and ']'
-    if filter_str:
-        filter_str = filter_str[1:-1]
-
-        for filter_val in filter_str.split(','):
-            filter_tuple = filter_val.split('==')
-
-            if len(filter_tuple) >= 2:
-                filter_dict[filter_tuple[0]] = filter_tuple[1][1:-1]
-
-    return filter_dict
+    return (
+        exact_filters
+        if exact_filters is not None
+        else {}
+    )
 
 
 def apply_filter_sort_to_jql(jql, jql_field_map, filter_, sort_by):

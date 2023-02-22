@@ -245,7 +245,7 @@ class TestEnumMethodsByName(BaseTestCase):
 
         # list-get on J, filter by I=excellent
         second_response = self.client.open(
-            '/api/v1/j?filter=[i=="excellent"]',
+            '/api/v1/j?filter={"exact":{"i":"excellent"}}',
             method='GET'
         )
         self.assert200(
