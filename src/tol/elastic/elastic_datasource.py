@@ -18,7 +18,7 @@ class ElasticDataSource(DataSource):
         self._initialise_elasticsearch()
 
     def _initialise_elasticsearch(self):
-        self.es = Elasticsearch(self.uri, basic_auth=(self.user, self.password))
+        self.es = Elasticsearch(self.uri, http_auth=(self.user, self.password))
         self.helpers = helpers
 
     def _prefix_fields(self, dict_: Dict, prefix: str):
