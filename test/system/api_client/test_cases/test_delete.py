@@ -17,6 +17,7 @@ class TestDelete(BaseTestCase):
         }
         self.add_g(**g_1)
         ads = TestApiDataSource({'client': self.client,
+                                 'url': 'none',
                                  'key': self.token_1})
         gs = list(ads.get_list('g', filter_='{"exact": {"string_column":"fine"}}'))
         self.assertEqual(1, len(gs))
@@ -31,6 +32,7 @@ class TestDelete(BaseTestCase):
         self.add_a(id=20, string_column='test')
         self.add_b(id=89, a_id=20)
         ads = TestApiDataSource({'client': self.client,
+                                 'url': 'none',
                                  'key': self.token_1})
 
         # Get the b already in the database
@@ -47,6 +49,7 @@ class TestDelete(BaseTestCase):
 
     def test_delete_non_existing(self):
         ads = TestApiDataSource({'client': self.client,
+                                 'url': 'none',
                                  'key': self.token_1})
 
         g1 = ApiObject('g', None,

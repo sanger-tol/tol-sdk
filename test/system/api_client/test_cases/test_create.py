@@ -16,6 +16,7 @@ class TestCreate(BaseTestCase):
                                    'other_column': 'def'})
         self.assertIsNone(c1.id)
         ads = TestApiDataSource({'client': self.client,
+                                 'url': 'none',
                                  'key': self.token_1})
         ads.create(c1)
         self.assertIsNotNone(c1.id)
@@ -29,6 +30,7 @@ class TestCreate(BaseTestCase):
         self.assertIsNone(a1.id)
         self.assertIsNone(b1.id)
         ads = TestApiDataSource({'client': self.client,
+                                 'url': 'none',
                                  'key': self.token_1})
         ads.create(a1)
         self.assertIsNotNone(a1.id)
@@ -45,6 +47,7 @@ class TestCreate(BaseTestCase):
         self.assertIsNone(a1.id)
         self.assertIsNone(b1.id)
         ads = TestApiDataSource({'client': self.client,
+                                 'url': 'none',
                                  'key': self.token_1})
         # a has not been created
         # check that calling ads.create(b1) raises an exception

@@ -20,6 +20,7 @@ class TestListGet(BaseTestCase):
         self.add_b(id=8080, a_id=29)
 
         ads = TestApiDataSource({'client': self.client,
+                                 'url': 'none',
                                  'key': self.token_1})
         ret = ads.get_list('b')
 

@@ -17,6 +17,7 @@ class TestUpdate(BaseTestCase):
         }
         self.add_c(**c_1)
         ads = TestApiDataSource({'client': self.client,
+                                 'url': 'none',
                                  'key': self.token_1})
         cs = list(ads.get_list('c', filter_='{"exact": {"other_column":"fine"}}'))
         self.assertEqual(1, len(cs))
@@ -34,6 +35,7 @@ class TestUpdate(BaseTestCase):
         self.add_a(id=20, string_column='test')
         self.add_b(id=89, a_id=20)
         ads = TestApiDataSource({'client': self.client,
+                                 'url': 'none',
                                  'key': self.token_1})
 
         new_a = ApiObject('a', None,
@@ -56,6 +58,7 @@ class TestUpdate(BaseTestCase):
         self.add_a(id=20, string_column='test')
         self.add_b(id=89, a_id=20)
         ads = TestApiDataSource({'client': self.client,
+                                 'url': 'none',
                                  'key': self.token_1})
 
         new_a = ApiObject('a', None,

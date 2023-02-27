@@ -14,7 +14,7 @@ class MlwhDataSource(DataSource):
 
     def __init__(self, config: Dict):
         # uri
-        super().__init__(config)
+        super().__init__(config, expected=['uri'])
 
         self.mlwh_connection = self._connect_to_mlwh(self.uri)
 

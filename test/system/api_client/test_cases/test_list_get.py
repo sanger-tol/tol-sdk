@@ -26,6 +26,7 @@ class TestListGet(BaseTestCase):
         self.add_c(**c_3)
 
         ads = TestApiDataSource({'client': self.client,
+                                 'url': 'none',
                                  'key': self.token_1})
         ret = ads.get_list('c')
 
@@ -63,6 +64,7 @@ class TestListGet(BaseTestCase):
         self.add_c(**c_3)
 
         ads = TestApiDataSource({'client': self.client,
+                                 'url': 'none',
                                  'key': self.token_1})
         ret = ads.get_list('c', sort_by='nullable_column')
 
@@ -94,6 +96,7 @@ class TestListGet(BaseTestCase):
         self.add_c(**c_3)
 
         ads = TestApiDataSource({'client': self.client,
+                                 'url': 'none',
                                  'key': self.token_1})
         ret = ads.get_list('c', filter_='{"exact": {"nullable_column":"fine"}}')
 
@@ -110,6 +113,7 @@ class TestListGet(BaseTestCase):
             )
 
         ads = TestApiDataSource({'client': self.client,
+                                 'url': 'none',
                                  'key': self.token_1})
         ret = ads.get_list('c')
 
@@ -128,6 +132,7 @@ class TestListGet(BaseTestCase):
             )
 
         ads = TestApiDataSource({'client': self.client,
+                                 'url': 'none',
                                  'key': self.token_1})
         ret = ads.get_list('c')
 
@@ -148,6 +153,7 @@ class TestListGet(BaseTestCase):
             )
 
         ads = TestApiDataSource({'client': self.client,
+                                 'url': 'none',
                                  'key': self.token_1})
         ret = ads.get_list('c', page_size=5)
 

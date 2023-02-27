@@ -26,7 +26,7 @@ class ApiDataSource(DataSource):
         url -- the URL of the instance (including path with API prefix)
         key -- the API key to use for authentication
         """
-        super().__init__(config)
+        super().__init__(config, expected=['url', 'key'])
         self.cache = LFUCache(100000)  # Might want to make this configurable at some point
 
     def get_by_id(self, object_type: str, id_: int):
