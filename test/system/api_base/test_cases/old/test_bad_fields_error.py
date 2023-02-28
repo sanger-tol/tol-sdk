@@ -4,7 +4,7 @@
 
 from __future__ import absolute_import
 
-from ..test_case import BaseTestCase
+from ...test_case import BaseTestCase
 
 
 class TestBadFieldsError(BaseTestCase):
