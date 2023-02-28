@@ -76,6 +76,7 @@ class ServiceNamespace:
         """
         def decorator(function: Callable) -> Callable:
             function._doc = doc
+
             @wraps(function)
             def wrapper(*args, **kwargs):
                 return function(*args, **kwargs)
