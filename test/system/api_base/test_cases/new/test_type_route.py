@@ -9,10 +9,10 @@ from ...test_case import BaseTestCase
 
 class TestTypeRoute(BaseTestCase):
     def test_simple_type_route(self):
-        api_test = ServiceNamespace()
+        ns_test = ServiceNamespace()
 
         # the class to add doc on
-        @api_test.route('/test')
+        @ns_test.route('/test')
         class TestService:
             @classmethod
             def get(cls):
@@ -28,10 +28,10 @@ class TestTypeRoute(BaseTestCase):
             }
         )
         self.assertEqual(
-            len(api_test.services),
+            len(ns_test.services),
             1
         )
         self.assertEqual(
-            api_test.services[0],
+            ns_test.services[0],
             TestService
         )
