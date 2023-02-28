@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: MIT
 
 from functools import wraps
-
+from typing import Callable
 from flask import request
 
 
@@ -44,3 +44,15 @@ def provide_parameters(function):
             **kwargs
         )
     return wrapper
+
+
+def type_route(path: str, method: str) -> Callable:
+    """
+    Routes the decorated callable on a service using the
+    specified path (prefixed by the type of the Service)
+
+    Params:
+    * path - the path in Flask-RestX format
+    * method - the HTTP method (e.g. GET or POST)
+    """
+    pass
