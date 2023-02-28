@@ -35,3 +35,35 @@ class TestRoute(BaseTestCase):
             ns_test.services[0],
             TestService
         )
+
+    def test_complex_route(self):
+        ns_test = ServiceNamespace()
+
+        DOC = {
+            'params': {
+                'page': {
+                    'in': 'query',
+                    'type': 'integer',
+                    'description': 'The page of the results.' # noqa
+                },
+            },
+            "responses": {
+                200: 'Success'
+            }
+        }
+
+        # the class to add doc on
+        @ns_test.route('/test')
+        class TestService:
+            @ns_test.doc(DOC)
+            @classmethod
+            def get(cls):
+                pass
+
+        self.assertTrue(
+            hasattr(TestService.get, '_doc')
+        )
+        self.assertEqual(
+            TestService.get._doc,
+            DOC
+        )
