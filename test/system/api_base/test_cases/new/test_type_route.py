@@ -17,7 +17,7 @@ class TestTypeRoute(BaseTestCase):
             @classmethod
             def get(cls):
                 pass
-        
+
         self.assertTrue(
             hasattr(TestClass, '_doc')
         )

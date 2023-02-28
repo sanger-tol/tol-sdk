@@ -2,10 +2,9 @@
 #
 # SPDX-License-Identifier: MIT
 
-import sys
-
 from functools import wraps
 from typing import Callable
+
 from flask import request
 
 
