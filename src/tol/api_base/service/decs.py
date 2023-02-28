@@ -48,18 +48,21 @@ def provide_parameters(function):
 
 
 class ServiceNamespace:
+    def __init__(self):
+        self.services = []
+
     def route(self, path: str) -> Callable:
         """
-        Routes the decorated callable on a service using the
+        Routes the decorated service class using the
         specified path (prefixed by the type of the Service)
 
         Params:
         * path - the path in Flask-RestX format
-        * method - the HTTP method (e.g. GET or POST)
         """
         def wrapper(cls):
             cls._doc = {
                 'path': path
             }
+            self.services.append(cls)
             return cls
         return wrapper
