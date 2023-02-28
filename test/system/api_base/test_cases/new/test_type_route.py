@@ -9,10 +9,10 @@ from ...test_case import BaseTestCase
 
 class TestTypeRoute(BaseTestCase):
     def test_simple_type_route(self):
-        router = ServiceNamespace()
+        api_test = ServiceNamespace()
 
         # the class to add doc on
-        @router.route('/test')
+        @api_test.route('/test')
         class TestClass:
             @classmethod
             def get(cls):
