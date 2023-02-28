@@ -13,17 +13,25 @@ class TestTypeRoute(BaseTestCase):
 
         # the class to add doc on
         @api_test.route('/test')
-        class TestClass:
+        class TestService:
             @classmethod
             def get(cls):
                 pass
 
         self.assertTrue(
-            hasattr(TestClass, '_doc')
+            hasattr(TestService, '_doc')
         )
         self.assertEqual(
-            TestClass._doc,
+            TestService._doc,
             {
                 'path': '/test'
             }
+        )
+        self.assertEqual(
+            len(api_test.services),
+            1
+        )
+        self.assertEqual(
+            api_test.services[0],
+            TestService
         )
