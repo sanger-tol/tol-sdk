@@ -51,7 +51,7 @@ class ServiceNamespace:
     def __init__(self):
         self.services = []
 
-    def route(self, path: str) -> Callable:
+    def route(self, path: str):
         """
         Routes the decorated service class using the
         specified path (prefixed by the type of the Service)
