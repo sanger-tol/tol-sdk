@@ -2,18 +2,20 @@
 #
 # SPDX-License-Identifier: MIT
 
-from tol.api_base import type_route
+from tol.api_base import ServiceNamespace
 
 from ...test_case import BaseTestCase
 
 
 class TestTypeRoute(BaseTestCase):
     def test_simple_type_route(self):
+        router = ServiceNamespace()
+
         # the class to add doc on
+        @router.route('/test')
         class TestClass:
             @classmethod
-            @type_route('/test', 'GET')
-            def test_method(cls):
+            def get(cls):
                 pass
         
         self.assertTrue(
@@ -22,9 +24,7 @@ class TestTypeRoute(BaseTestCase):
         self.assertEqual(
             TestClass._doc,
             {
-                '/test': {
-                    'GET': TestClass.test_method
-                }
+                'path': '/test'
             }
         )
 
@@ -32,27 +32,27 @@ class TestTypeRoute(BaseTestCase):
         # the class to add doc on
         class TestClass:
             @classmethod
-            @type_route('/test', 'GET')
+            @router.type_route('/test', 'GET')
             def test_get(cls):
                 pass
         
             @classmethod
-            @type_route('/test', 'POST')
+            @router.type_route('/test', 'POST')
             def test_post(cls):
                 pass
         
             @classmethod
-            @type_route('/test', 'DELETE')
+            @router.type_route('/test', 'DELETE')
             def test_delete(cls):
                 pass
         
             @classmethod
-            @type_route('/test/<id>', 'GET')
+            @router.type_route('/test/<id>', 'GET')
             def test_detail_get(cls):
                 pass
 
             @classmethod
-            @type_route('/test/<id>', 'PATCH')
+            @router.type_route('/test/<id>', 'PATCH')
             def test_detail_patch(cls):
                 pass
         
@@ -63,13 +63,13 @@ class TestTypeRoute(BaseTestCase):
             TestClass._doc,
             {
                 '/test': {
-                    'GET': TestClass.test_get,
-                    'POST': TestClass.test_post,
-                    'DELETE': TestClass.test_delete
+                    'GET': 'test_get',
+                    'POST': 'test_post',
+                    'DELETE': 'test_delete'
                 },
                 '/test/<id>': {
-                    'GET': TestClass.test_detail_get,
-                    'PATCH': TestClass.test_detail_patch
+                    'GET': 'test_detail_get',
+                    'PATCH': 'test_detail_patch'
                 }
             }
         )
