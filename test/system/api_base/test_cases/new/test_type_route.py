@@ -7,8 +7,8 @@ from tol.api_base import ServiceNamespace
 from ...test_case import BaseTestCase
 
 
-class TestTypeRoute(BaseTestCase):
-    def test_simple_type_route(self):
+class TestRoute(BaseTestCase):
+    def test_simple_route(self):
         ns_test = ServiceNamespace()
 
         # the class to add doc on
