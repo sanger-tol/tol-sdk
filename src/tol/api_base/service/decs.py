@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: MIT
 
 from functools import wraps
-from typing import Callable
+from typing import Any, Callable, Dict
 
 from flask import request
 
@@ -66,3 +66,18 @@ class ServiceNamespace:
             self.services.append(cls)
             return cls
         return wrapper
+
+    def doc(self, doc: Dict[str, Any]) -> Callable:
+        """
+        Adds documentation to the decorated method
+
+        Params:
+        * doc - the method's documentation
+        """
+        def decorator(function: Callable) -> Callable:
+            function._doc = doc
+            @wraps(function)
+            def wrapper(*args, **kwargs):
+                return function(*args, **kwargs)
+            return wrapper
+        return decorator
