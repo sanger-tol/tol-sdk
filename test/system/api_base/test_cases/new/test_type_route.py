@@ -39,7 +39,7 @@ class TestRoute(BaseTestCase):
     def test_complex_route(self):
         ns_test = ServiceNamespace()
 
-        DOC = {
+        doc = {
             'params': {
                 'page': {
                     'in': 'query',
@@ -47,7 +47,7 @@ class TestRoute(BaseTestCase):
                     'description': 'The page of the results.' # noqa
                 },
             },
-            "responses": {
+            'responses': {
                 200: 'Success'
             }
         }
@@ -55,7 +55,7 @@ class TestRoute(BaseTestCase):
         # the class to add doc on
         @ns_test.route('/test')
         class TestService:
-            @ns_test.doc(DOC)
+            @ns_test.doc(doc)
             @classmethod
             def get(cls):
                 pass
@@ -65,5 +65,5 @@ class TestRoute(BaseTestCase):
         )
         self.assertEqual(
             TestService.get._doc,
-            DOC
+            doc
         )
