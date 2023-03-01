@@ -94,7 +94,7 @@ class TestRoute(BaseTestCase):
         # the class to add doc on
         @ns_test.route('/test')
         class TestService:
-            @ns_test.doc(doc)
+            @ns_test.doc(**doc)
             def get(cls):
                 pass
 

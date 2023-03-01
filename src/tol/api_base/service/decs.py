@@ -67,7 +67,7 @@ class ServiceNamespace:
             return cls
         return wrapper
 
-    def doc(self, doc: Dict[str, Any]) -> Callable:
+    def doc(self, **doc_kwargs) -> Callable:
         """
         Adds documentation to the decorated method
 
@@ -75,7 +75,7 @@ class ServiceNamespace:
         * doc - the method's documentation
         """
         def decorator(function: Callable) -> Callable:
-            function._doc = doc
+            function._doc = doc_kwargs
 
             @wraps(function)
             def wrapper(*args, **kwargs):
