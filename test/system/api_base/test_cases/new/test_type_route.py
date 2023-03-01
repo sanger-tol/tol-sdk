@@ -34,6 +34,47 @@ class TestRoute(BaseTestCase):
             TestService
         )
 
+    def test_complex_route(self):
+        ns_test = ServiceNamespace()
+
+        # the first class to add doc on
+        @ns_test.route('/test')
+        class TestService1:
+            pass
+
+        # the second class to add doc on
+        @ns_test.route('/test/second')
+        class TestService2:
+            pass
+
+        self.assertTrue(
+            hasattr(TestService1, '_doc')
+        )
+        self.assertEqual(
+            TestService1._doc,
+            {
+                'path': '/test'
+            }
+        )
+        self.assertTrue(
+            hasattr(TestService2, '_doc')
+        )
+        self.assertEqual(
+            TestService2._doc,
+            {
+                'path': '/test/second'
+            }
+        )
+
+        self.assertEqual(
+            len(ns_test.services),
+            2
+        )
+        self.assertEqual(
+            ns_test.services,
+            [TestService1, TestService2]
+        )
+
     def test_function_doc(self):
         ns_test = ServiceNamespace()
 
