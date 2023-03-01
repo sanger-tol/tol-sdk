@@ -4,11 +4,11 @@
 
 from typing import Dict
 
-from flask_restx import Namespace, fields
+from flask_restx import Namespace, fields as restx_fields
 
 
 class Swagger:
-    def __init__(self, name: str, fields: Dict[str, fields.Raw]):
+    def __init__(self, name: str, fields: Dict[str, restx_fields.Raw]):
         self.name = name
         self.fields = fields
 
