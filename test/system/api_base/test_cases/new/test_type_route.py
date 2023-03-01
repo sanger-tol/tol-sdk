@@ -14,9 +14,7 @@ class TestRoute(BaseTestCase):
         # the class to add doc on
         @ns_test.route('/test')
         class TestService:
-            @classmethod
-            def get(cls):
-                pass
+            pass
 
         self.assertTrue(
             hasattr(TestService, '_doc')
