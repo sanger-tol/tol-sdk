@@ -44,40 +44,47 @@ class LogBase(Base, LogMixin):
     def has_log_details(cls):
         return True
 
-    def save_update(self, user_id=None):
-        if self._should_update:
-            if not user_id:
-                user_id = get_request_user_id()
-            self.last_modified_by = user_id
-            self.last_modified_at = datetime.now()
-        super().save_update()
-
-    def save(self, user_id=None):
-        self.add(user_id)
-        self.commit()
-
     def add(self, user_id=None):
-        self._update_metadata(user_id)
+        if self.is_new():
+            self._add_metadata(user_id=user_id)
+        else:
+            self._update_metadata(user_id=user_id)
         super().add()
 
-    def _update_metadata(self, user_id):
+    def save(self, user_id=None):
+        self.add(user_id=user_id)
+        self.commit()
+
+    def _add_metadata(self, user_id=None):
         if not user_id:
             user_id = get_request_user_id()
         self.created_by = user_id
         self.last_modified_by = user_id
 
-    def _get_updated_history(self, schema):
-        old_history = [*self.history]
-        return old_history + [
-            schema.create_history_entry(self)
-        ]
+    def _update_metadata(self, *args, user_id=None, **kwargs):
+        history_entry = self._get_history_entry()
+        if history_entry is None:
+            return
+        self.history = [*self.history, history_entry]
+        if not user_id:
+            user_id = get_request_user_id()
+        self.last_modified_by = user_id
+        self.last_modified_at = datetime.now()
 
-    def update(self, *args, schema=None, user_id=None, **kwargs):
-        updated_history = self._get_updated_history(schema)
-        super().update(*args, **kwargs)
-        if self._should_update:
-            if not user_id:
-                user_id = get_request_user_id()
-            self.last_modified_by = user_id
-            self.last_modified_at = datetime.now()
-            self.history = updated_history
+    def _get_history_entry(self):
+        state = db.inspect(self)
+        old_state_for_changed = {
+            attr.key: attr.load_history().deleted[0]
+            for attr in state.attrs
+            if attr.load_history().has_changes()
+        }
+
+        if not old_state_for_changed:
+            return None
+        dump = {
+            **self.to_dict(),
+            **old_state_for_changed
+        }
+        # create a clone of the original model, pre-update
+        model = self.__class__(dump)
+        return self.schema.create_history_entry(model)

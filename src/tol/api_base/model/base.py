@@ -97,9 +97,13 @@ class Base(db.Model):
     tablename_type_dict = {}
 
     def __init__(self, iterable=(), **data):
+        self._new = True
         self.__dict__.update(iterable, **data)
         converted_data = self._convert_enum_names_to_foreign_key_ids(data)
-        return super().__init__(**converted_data)
+        super().__init__(**converted_data)
+
+    def is_new(self):
+        return hasattr(self, '_new') and self._new
 
     @classmethod
     def _convert_enum_names_to_foreign_key_ids(cls, data):
@@ -224,9 +228,10 @@ class Base(db.Model):
     def query(cls):
         return db.session.query(cls)
 
-    def add(self):
+    def add(self, **kwargs):
         db.session.add(self)
         db.session.flush()
+        self._new = False
 
     def _update_ext(self, ext_data_changes):
         if not self.has_ext_column():
@@ -239,10 +244,6 @@ class Base(db.Model):
             else:
                 ext_data[key] = value
         self.ext = ext_data
-
-    def save_update(self, **kwargs):
-        if self._should_update:
-            self.commit()
 
     def _no_change_on_columns(self, data, **kwargs):
         for key, value in data.items():
@@ -276,9 +277,7 @@ class Base(db.Model):
 
     def update(self, data, ext=None, **kwargs):
         converted_data = self._convert_enum_names_to_foreign_key_ids(data)
-        self._should_update = True
         if self._no_change_on_update(converted_data, ext=ext, **kwargs):
-            self._should_update = False
             return
         self._update_data(converted_data)
         if ext is not None:
@@ -309,14 +308,14 @@ class Base(db.Model):
         if candidate_key is None:
             raise CandidateKeyNotProvidedExpection()
         query = db.session.query(cls)
-        query = cls._exact_filter_query(
+        result = cls._exact_filter_query(
             query,
             candidate_key
         ).one_or_none()
-        if query is None:
+        if result is None:
             combined_data = {**data, **candidate_key}
             return cls(combined_data), True
-        return query, False
+        return result, False
 
     @classmethod
     def _get_exact_filter_terms(cls, exact_filters):

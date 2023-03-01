@@ -54,6 +54,7 @@ class BaseSchema(SQLAlchemyAutoSchema, JsonapiSchema):
             (cls,),
             cls.get_dynamically_added_fields()
         )
+        new_cls.Meta.model.schema = new_cls
         return new_cls
 
     @classmethod
@@ -274,7 +275,7 @@ class BaseSchema(SQLAlchemyAutoSchema, JsonapiSchema):
         instance = self.instance
         if instance is None:
             return self.Meta.model(**data)
-        instance.update(data, schema=self)
+        instance.update(data)
         return instance
 
     def _preprocess_ext_on_create(self, ext):
@@ -295,7 +296,7 @@ class BaseSchema(SQLAlchemyAutoSchema, JsonapiSchema):
                 **data,
                 ext=self._preprocess_ext_on_create(ext)
             )
-        instance.update(data, ext=ext, schema=self)
+        instance.update(data, ext=ext)
         return instance
 
     def _remove_resource_metadata(self, data):

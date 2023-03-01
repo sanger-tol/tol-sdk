@@ -100,7 +100,7 @@ class BaseService:
             instance=old_model_instance,
             partial=True
         )
-        new_model_instance.save_update(user_id=user_id)
+        new_model_instance.save(user_id=user_id)
         return new_model_instance
 
     @classmethod

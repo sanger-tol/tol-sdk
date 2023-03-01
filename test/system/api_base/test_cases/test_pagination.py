@@ -101,7 +101,6 @@ class TestPagination(BaseTestCase):
             '/api/v1/a/233/b?page=2&page_size=2',
             method='GET',
         )
-        print(response.json)
         self.assert200(
             response,
             f'Response body is : {response.data.decode("utf-8")}'
