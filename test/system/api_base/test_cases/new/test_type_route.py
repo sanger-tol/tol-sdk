@@ -2,7 +2,9 @@
 #
 # SPDX-License-Identifier: MIT
 
-from tol.api_base import ServiceNamespace
+import pytest
+
+from tol.api_base import ServiceNamespace, BadHTTPMethodException
 
 from ...test_case import BaseTestCase
 
@@ -105,3 +107,26 @@ class TestRoute(BaseTestCase):
             TestService.get._doc,
             doc
         )
+
+    def test_function_doc_bad_method(self):
+        ns_test = ServiceNamespace()
+
+        doc = {
+            'params': {
+                'page': {
+                    'in': 'query',
+                    'type': 'integer',
+                    'description': 'The page of the results.' # noqa
+                },
+            },
+            'responses': {
+                200: 'Success'
+            }
+        }
+        with pytest.raises(BadHTTPMethodException):
+            # the class with a nonsense method
+            @ns_test.route('/test')
+            class TestService: # noqa
+                @ns_test.doc(**doc)
+                def nonsense(cls):
+                    pass
