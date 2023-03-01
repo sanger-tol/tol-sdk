@@ -95,7 +95,6 @@ class TestRoute(BaseTestCase):
         @ns_test.route('/test')
         class TestService:
             @ns_test.doc(doc)
-            @classmethod
             def get(cls):
                 pass
 
