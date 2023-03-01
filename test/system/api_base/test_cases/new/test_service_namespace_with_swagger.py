@@ -28,6 +28,7 @@ class TestNSWithSwagger(BaseTestCase):
             '400': 'Bad Request',
             '404': 'Not Found'
         }
+
         # the class to add doc on
         @ns_test.route('/test')
         class TestService:

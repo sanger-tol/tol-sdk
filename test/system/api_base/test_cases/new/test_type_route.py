@@ -4,7 +4,7 @@
 
 import pytest
 
-from tol.api_base import ServiceNamespace, BadHTTPMethodException
+from tol.api_base import BadHTTPMethodException, ServiceNamespace
 
 from ...test_case import BaseTestCase
 
@@ -97,7 +97,7 @@ class TestRoute(BaseTestCase):
         @ns_test.route('/test')
         class TestService:
             @ns_test.doc(**doc)
-            def get(cls):
+            def get(self):
                 pass
 
         self.assertTrue(
@@ -128,5 +128,5 @@ class TestRoute(BaseTestCase):
             @ns_test.route('/test')
             class TestService: # noqa
                 @ns_test.doc(**doc)
-                def nonsense(cls):
+                def nonsense(self):
                     pass

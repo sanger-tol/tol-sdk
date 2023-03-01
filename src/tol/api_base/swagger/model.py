@@ -3,7 +3,8 @@
 # SPDX-License-Identifier: MIT
 
 from typing import Dict
-from flask_restx import fields, Namespace
+
+from flask_restx import Namespace, fields
 
 
 class Swagger:
