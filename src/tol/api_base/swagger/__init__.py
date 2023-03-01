@@ -7,3 +7,4 @@ from .auth import *  # noqa
 from .user import *  # noqa
 from .role import *  # noqa
 from .environment import *  # noqa
+from .model import *  # noqa
