@@ -9,7 +9,8 @@ from typing import Callable
 class BadHTTPMethodException(Exception):
     def __init__(self, method: str):
         super().__init__(
-            f'The method "{method}" is invalid for HTTP.'
+            f'The method "{method}" is invalid for HTTP. '
+            'Please name your methods after a lowercase HTTP method.'
         )
 
 
