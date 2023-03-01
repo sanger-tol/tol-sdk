@@ -34,7 +34,7 @@ class TestRoute(BaseTestCase):
             TestService
         )
 
-    def test_complex_route(self):
+    def test_function_doc(self):
         ns_test = ServiceNamespace()
 
         doc = {
