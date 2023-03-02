@@ -34,7 +34,7 @@ class ServiceNamespace:
     def __init__(self):
         self.__services: Dict[str, object] = {}
 
-    def route(self, path: str):
+    def route(self, path: str) -> object:
         """
         Routes the decorated service class using the
         specified path (this will automatically beprefixed
