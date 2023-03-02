@@ -132,10 +132,10 @@ class TestRoute(BaseTestCase):
 
             def nonsense(self):
                 pass
-    
+
         @ns_test.route('/test/<id>')
         class TestServiceDetail:
-            def get(self, id: int):
+            def get(self, id_: int):
                 pass
 
             @ns_test.doc(
@@ -143,10 +143,10 @@ class TestRoute(BaseTestCase):
                     204: 'Success'
                 }
             )
-            def delete(self, id: int):
+            def delete(self, id_: int):
                 pass
 
-            def nonsense(self, id: int):
+            def nonsense(self, id_: int):
                 pass
 
         http_methods = ns_test.identify_http_methods()
