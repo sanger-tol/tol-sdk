@@ -5,8 +5,8 @@
 import pytest
 
 from tol.api_base import (
-    NoHTTPMethodsException,
     BadHTTPMethodException,
+    NoHTTPMethodsException,
     ServiceNamespace
 )
 
@@ -169,4 +169,3 @@ class TestRoute:
             class TestService: # noqa
                 def nonsense(self):
                     pass
-
