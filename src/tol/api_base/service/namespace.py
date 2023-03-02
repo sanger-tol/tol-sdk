@@ -18,6 +18,13 @@ class BadHTTPMethodException(Exception):
         )
 
 
+class NoHTTPMethodsException(Exception):
+    def __init__(self, service: object):
+        super().__init__(
+            f'The service class "{service.__name__}" has no HTTP methods.'
+        )
+
+
 class ServiceNamespace:
     """
     Registers and documents the services for a type.
@@ -37,18 +44,19 @@ class ServiceNamespace:
     def route(self, path: str) -> object:
         """
         Routes the decorated service class using the
-        specified path (this will automatically beprefixed
-        by the type of the Service)
+        specified path (this will automatically be
+        prefixed by the type of the Service)
 
         Params:
         * path - the path in Flask-RestX format
         """
-        def wrapper(cls):
-            cls._doc = {
+        def wrapper(service):
+            self.__check_service_methods(service)
+            service._doc = {
                 'path': path
             }
-            self.__services[path] = cls
-            return cls
+            self.__services[path] = service
+            return service
         return wrapper
 
     def doc(self, **doc_kwargs) -> Callable:
@@ -101,3 +109,8 @@ class ServiceNamespace:
         method = function.__name__
         if method not in self.__PERMITTED_METHODS:
             raise BadHTTPMethodException(method)
+
+    def __check_service_methods(self, service: object) -> None:
+        methods = self.__identify_http_methods_on_service(service)
+        if not methods:
+            raise NoHTTPMethodsException(service)

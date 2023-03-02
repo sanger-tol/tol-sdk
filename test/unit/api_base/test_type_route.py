@@ -4,7 +4,11 @@
 
 import pytest
 
-from tol.api_base import BadHTTPMethodException, ServiceNamespace
+from tol.api_base import (
+    NoHTTPMethodsException,
+    BadHTTPMethodException,
+    ServiceNamespace
+)
 
 
 class TestRoute:
@@ -14,7 +18,8 @@ class TestRoute:
         # the class to add doc on
         @ns_test.route('/test')
         class TestService:
-            pass
+            def get(self):
+                pass
 
         assert hasattr(TestService, '_doc')
         assert TestService._doc == {
@@ -27,12 +32,14 @@ class TestRoute:
         # the first class to add doc on
         @ns_test.route('/test')
         class TestService1:
-            pass
+            def get(self):
+                pass
 
         # the second class to add doc on
         @ns_test.route('/test/second')
         class TestService2:
-            pass
+            def get(self):
+                pass
 
         assert hasattr(TestService1, '_doc')
         assert TestService1._doc == {
@@ -92,6 +99,9 @@ class TestRoute:
                 def nonsense(self):
                     pass
 
+                def patch(self):
+                    pass
+
     def test_multiple_methods_configure_correctly(self):
         ns_test = ServiceNamespace()
 
@@ -149,3 +159,14 @@ class TestRoute:
                 ]
             }
         }
+
+    def test_service_doc_with_no_http_methods(self):
+        ns_test = ServiceNamespace()
+
+        with pytest.raises(NoHTTPMethodsException):
+            # the class with no http methods
+            @ns_test.route('/test')
+            class TestService: # noqa
+                def nonsense(self):
+                    pass
+
