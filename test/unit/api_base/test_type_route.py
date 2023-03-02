@@ -6,10 +6,8 @@ import pytest
 
 from tol.api_base import BadHTTPMethodException, ServiceNamespace
 
-from ...test_case import BaseTestCase
 
-
-class TestRoute(BaseTestCase):
+class TestRoute:
     def test_simple_route(self):
         ns_test = ServiceNamespace()
 
@@ -18,15 +16,10 @@ class TestRoute(BaseTestCase):
         class TestService:
             pass
 
-        self.assertTrue(
-            hasattr(TestService, '_doc')
-        )
-        self.assertEqual(
-            TestService._doc,
-            {
-                'path': '/test'
-            }
-        )
+        assert hasattr(TestService, '_doc')
+        assert TestService._doc == {
+            'path': '/test'
+        }
 
     def test_complex_route(self):
         ns_test = ServiceNamespace()
@@ -41,24 +34,14 @@ class TestRoute(BaseTestCase):
         class TestService2:
             pass
 
-        self.assertTrue(
-            hasattr(TestService1, '_doc')
-        )
-        self.assertEqual(
-            TestService1._doc,
-            {
-                'path': '/test'
-            }
-        )
-        self.assertTrue(
-            hasattr(TestService2, '_doc')
-        )
-        self.assertEqual(
-            TestService2._doc,
-            {
-                'path': '/test/second'
-            }
-        )
+        assert hasattr(TestService1, '_doc')
+        assert TestService1._doc == {
+            'path': '/test'
+        }
+        assert hasattr(TestService2, '_doc')
+        assert TestService2._doc == {
+            'path': '/test/second'
+        }
 
     def test_function_doc(self):
         ns_test = ServiceNamespace()
@@ -83,13 +66,8 @@ class TestRoute(BaseTestCase):
             def get(self):
                 pass
 
-        self.assertTrue(
-            hasattr(TestService.get, '_doc')
-        )
-        self.assertEqual(
-            TestService.get._doc,
-            doc
-        )
+        assert hasattr(TestService.get, '_doc')
+        assert TestService.get._doc == doc
 
     def test_function_doc_bad_method(self):
         ns_test = ServiceNamespace()
@@ -150,27 +128,18 @@ class TestRoute(BaseTestCase):
                 pass
 
         http_methods = ns_test.identify_http_methods()
-        self.assertEqual(
-            len(http_methods),
-            2
-        )
-        self.assertEqual(
-            set(http_methods.keys()),
-            {
-                '/test',
-                '/test/<id>'
+        assert len(http_methods) == 2
+        assert set(http_methods.keys()) == {
+            '/test',
+            '/test/<id>'
+        }
+        assert http_methods == {
+            '/test': {
+                'get': TestService.get,
+                'post': TestService.post
+            },
+            '/test/<id>': {
+                'get': TestServiceDetail.get,
+                'delete': TestServiceDetail.delete
             }
-        )
-        self.assertEqual(
-            http_methods,
-            {
-                '/test': {
-                    'get': TestService.get,
-                    'post': TestService.post
-                },
-                '/test/<id>': {
-                    'get': TestServiceDetail.get,
-                    'delete': TestServiceDetail.delete
-                }
-            }
-        )
+        }

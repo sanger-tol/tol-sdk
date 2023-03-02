@@ -4,10 +4,8 @@
 
 from tol.api_base import ServiceNamespace, Swagger, fields
 
-from ...test_case import BaseTestCase
 
-
-class TestNSWithSwagger(BaseTestCase):
+class TestNSWithSwagger:
     def test_doc_with_swagger(self):
         ns_test = ServiceNamespace()
 
@@ -38,12 +36,7 @@ class TestNSWithSwagger(BaseTestCase):
             def get(self):
                 pass
 
-        self.assertTrue(
-            hasattr(TestService.get, '_doc')
-        )
-        self.assertEqual(
-            TestService.get._doc,
-            {
-                'responses': responses
-            }
-        )
+        assert hasattr(TestService.get, '_doc') == True
+        assert TestService.get._doc == {
+            'responses': responses
+        }
