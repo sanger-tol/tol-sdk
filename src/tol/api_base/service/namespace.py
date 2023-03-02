@@ -47,7 +47,8 @@ class ServiceNamespace:
         Adds documentation to the decorated method
 
         Params:
-        * doc - the method's documentation
+        * doc_kwargs    - the method's documentation (in
+                          flask-restx format)
         """
         def decorator(function: Callable) -> Callable:
             self.__check_function_method(function)
