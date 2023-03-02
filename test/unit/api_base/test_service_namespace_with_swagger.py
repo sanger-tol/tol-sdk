@@ -36,7 +36,7 @@ class TestNSWithSwagger:
             def get(self):
                 pass
 
-        assert hasattr(TestService.get, '_doc') == True
+        assert hasattr(TestService.get, '_doc')
         assert TestService.get._doc == {
             'responses': responses
         }
