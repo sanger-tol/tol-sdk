@@ -3,10 +3,10 @@
 # SPDX-License-Identifier: MIT
 
 from functools import wraps
-from typing import Callable, Dict
+from typing import Any, Callable, Dict, List
 
 
-ServiceHttpMethodsDict = Dict[str, Callable]
+ServiceHttpMethodsDict = Dict[str, Any]
 NamespaceHttpMethodsDict = Dict[str, ServiceHttpMethodsDict]
 
 
@@ -69,9 +69,12 @@ class ServiceNamespace:
             return wrapper
         return decorator
 
-    def identify_http_methods(self) -> NamespaceHttpMethodsDict:
+    def get_services_config(self) -> NamespaceHttpMethodsDict:
+        """
+        Gets the method configuration of all registered services
+        """
         return {
-            path: self.__identify_http_methods_on_service(service)
+            path: self.__get_service_config(service)
             for path, service in self.__services.items()
         }
 
@@ -80,11 +83,18 @@ class ServiceNamespace:
             getattr(service, method, None)
         )
 
-    def __identify_http_methods_on_service(self, service: object) -> ServiceHttpMethodsDict:
-        return {
-            method: getattr(service, method)
-            for method in self.__PERMITTED_METHODS
+    def __identify_http_methods_on_service(self, service: object) -> List[str]:
+        return [
+            method for method in self.__PERMITTED_METHODS
             if self.__service_has_http_method(service, method)
+        ]
+
+    def __get_service_config(self, service: object) -> ServiceHttpMethodsDict:
+        return {
+            'class': service,
+            'methods': self.__identify_http_methods_on_service(
+                service
+            )
         }
 
     def __check_function_method(self, function: Callable) -> None:
