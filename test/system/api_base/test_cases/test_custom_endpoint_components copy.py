@@ -4,8 +4,8 @@
 
 from datetime import datetime
 
-from ...models import HModelLog
-from ...test_case import BaseTestCase
+from ..models import HModelLog
+from ..test_case import BaseTestCase
 
 
 class TestCustomEndpointComponents(BaseTestCase):

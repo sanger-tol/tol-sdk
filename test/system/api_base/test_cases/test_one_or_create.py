@@ -6,8 +6,8 @@ import pytest
 
 from sqlalchemy.exc import MultipleResultsFound
 
-from ...models import CModelWithNullableColumn
-from ...test_case import BaseTestCase
+from ..models import CModelWithNullableColumn
+from ..test_case import BaseTestCase
 
 
 class TestOneOrCreate(BaseTestCase):

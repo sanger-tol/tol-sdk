@@ -2,7 +2,7 @@
 #
 # SPDX-License-Identifier: MIT
 
-from ...test_case import BaseTestCase
+from ..test_case import BaseTestCase
 
 
 class TestEnumLinkRelationshipByName(BaseTestCase):

@@ -4,7 +4,7 @@
 
 from datetime import datetime
 
-from ...test_case import BaseTestCase
+from ..test_case import BaseTestCase
 
 
 class TestFilterTypes(BaseTestCase):

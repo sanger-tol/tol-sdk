@@ -6,7 +6,7 @@ import pytest
 
 from tol.api_base.model.base import Base, ModelValidationError, db, setup_model
 
-from ...test_case import BaseTestCase
+from ..test_case import BaseTestCase
 
 
 class TestModelValidation(BaseTestCase):
