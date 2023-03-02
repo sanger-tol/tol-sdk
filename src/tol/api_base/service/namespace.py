@@ -19,7 +19,11 @@ class BadHTTPMethodException(Exception):
 
 
 class ServiceNamespace:
-    PERMITTED_METHODS = [
+    """
+    Registers and documents the services for a type.
+    """
+
+    __PERMITTED_METHODS = [
         'get',
         'put',
         'post',
@@ -64,6 +68,12 @@ class ServiceNamespace:
             return wrapper
         return decorator
 
+    def identify_http_methods(self) -> NamespaceHttpMethodsDict:
+        return {
+            path: self.__identify_http_methods_on_service(service)
+            for path, service in self.__services.items()
+        }
+
     def __service_has_http_method(self, service: object, method: str) -> bool:
         return (
             hasattr(service, method) and callable(getattr(service, method))
@@ -72,17 +82,11 @@ class ServiceNamespace:
     def __identify_http_methods_on_service(self, service: object) -> ServiceHttpMethodsDict:
         return {
             method: getattr(service, method)
-            for method in self.PERMITTED_METHODS
+            for method in self.__PERMITTED_METHODS
             if self.__service_has_http_method(service, method)
-        }
-
-    def identify_http_methods(self) -> NamespaceHttpMethodsDict:
-        return {
-            path: self.__identify_http_methods_on_service(service)
-            for path, service in self.__services.items()
         }
 
     def __check_function_method(self, function: Callable) -> None:
         method = function.__name__
-        if method not in self.PERMITTED_METHODS:
+        if method not in self.__PERMITTED_METHODS:
             raise BadHTTPMethodException(method)
