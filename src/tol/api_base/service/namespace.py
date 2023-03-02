@@ -3,7 +3,11 @@
 # SPDX-License-Identifier: MIT
 
 from functools import wraps
-from typing import Callable
+from typing import Callable, Dict
+
+
+ServiceHttpMethodsDict = Dict[str, Callable]
+NamespaceHttpMethodsDict = Dict[str, ServiceHttpMethodsDict]
 
 
 class BadHTTPMethodException(Exception):
@@ -24,7 +28,7 @@ class ServiceNamespace:
     ]
 
     def __init__(self):
-        self.services = []
+        self.__services: Dict[str, object] = {}
 
     def route(self, path: str):
         """
@@ -38,7 +42,7 @@ class ServiceNamespace:
             cls._doc = {
                 'path': path
             }
-            self.services.append(cls)
+            self.__services[path] = cls
             return cls
         return wrapper
 
@@ -59,6 +63,25 @@ class ServiceNamespace:
                 return function(*args, **kwargs)
             return wrapper
         return decorator
+
+    def __service_has_http_method(self, service: object, method: str) -> bool:
+        return (
+            hasattr(service, method) and 
+            callable(getattr(service, method))
+        )
+
+    def __identify_http_methods_on_service(self, service: object) -> ServiceHttpMethodsDict:
+        return {
+            method: getattr(service, method)
+            for method in self.PERMITTED_METHODS
+            if self.__service_has_http_method(service, method)
+        }
+
+    def identify_http_methods(self) -> NamespaceHttpMethodsDict:
+        return {
+            path: self.__identify_http_methods_on_service(service)
+            for path, service in self.__services.items()
+        }
 
     def __check_function_method(self, function: Callable) -> None:
         method = function.__name__

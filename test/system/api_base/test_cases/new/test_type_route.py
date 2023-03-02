@@ -27,14 +27,6 @@ class TestRoute(BaseTestCase):
                 'path': '/test'
             }
         )
-        self.assertEqual(
-            len(ns_test.services),
-            1
-        )
-        self.assertEqual(
-            ns_test.services[0],
-            TestService
-        )
 
     def test_complex_route(self):
         ns_test = ServiceNamespace()
@@ -66,15 +58,6 @@ class TestRoute(BaseTestCase):
             {
                 'path': '/test/second'
             }
-        )
-
-        self.assertEqual(
-            len(ns_test.services),
-            2
-        )
-        self.assertEqual(
-            ns_test.services,
-            [TestService1, TestService2]
         )
 
     def test_function_doc(self):
@@ -130,3 +113,64 @@ class TestRoute(BaseTestCase):
                 @ns_test.doc(**doc)
                 def nonsense(self):
                     pass
+
+    def test_multiple_methods_configure_correctly(self):
+        ns_test = ServiceNamespace()
+
+        @ns_test.route('/test')
+        class TestService:
+            def get(self):
+                pass
+
+            @ns_test.doc(
+                responses={
+                    200: 'Success'
+                }
+            )
+            def post(self):
+                pass
+
+            def nonsense(self):
+                pass
+    
+        @ns_test.route('/test/<id>')
+        class TestServiceDetail:
+            def get(self, id: int):
+                pass
+
+            @ns_test.doc(
+                responses={
+                    204: 'Success'
+                }
+            )
+            def delete(self, id: int):
+                pass
+
+            def nonsense(self, id: int):
+                pass
+
+        http_methods = ns_test.identify_http_methods()
+        self.assertEqual(
+            len(http_methods),
+            2
+        )
+        self.assertEqual(
+            set(http_methods.keys()),
+            {
+                '/test',
+                '/test/<id>'
+            }
+        )
+        self.assertEqual(
+            http_methods,
+            {
+                '/test': {
+                    'get': TestService.get,
+                    'post': TestService.post
+                },
+                '/test/<id>': {
+                    'get': TestServiceDetail.get,
+                    'delete': TestServiceDetail.delete
+                }
+            }
+        )
