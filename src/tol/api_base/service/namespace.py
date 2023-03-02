@@ -76,8 +76,8 @@ class ServiceNamespace:
         }
 
     def __service_has_http_method(self, service: object, method: str) -> bool:
-        return (
-            hasattr(service, method) and callable(getattr(service, method))
+        return callable(
+            getattr(service, method, None)
         )
 
     def __identify_http_methods_on_service(self, service: object) -> ServiceHttpMethodsDict:
