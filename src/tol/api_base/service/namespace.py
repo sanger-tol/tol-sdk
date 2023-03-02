@@ -7,7 +7,7 @@ from typing import Any, Callable, Dict, List
 
 
 ServiceHttpMethodsDict = Dict[str, Any]
-NamespaceHttpMethodsDict = Dict[str, ServiceHttpMethodsDict]
+NamespaceServicesConfig = Dict[str, ServiceHttpMethodsDict]
 
 
 class BadHTTPMethodException(Exception):
@@ -77,7 +77,7 @@ class ServiceNamespace:
             return wrapper
         return decorator
 
-    def get_services_config(self) -> NamespaceHttpMethodsDict:
+    def get_services_config(self) -> NamespaceServicesConfig:
         """
         Gets the method configuration of all registered services
         """
