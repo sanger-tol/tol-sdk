@@ -37,7 +37,8 @@ class ServiceNamespace:
     def route(self, path: str):
         """
         Routes the decorated service class using the
-        specified path (prefixed by the type of the Service)
+        specified path (this will automatically beprefixed
+        by the type of the Service)
 
         Params:
         * path - the path in Flask-RestX format
