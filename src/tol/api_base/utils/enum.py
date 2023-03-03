@@ -33,6 +33,7 @@ class Sources(_StrEnum):
     An enum containing all possible
     sources of data
     """
+
     DATABASE = 'DATABASE'
     ELASTIC = 'ELASTIC'
     JIRA = 'JIRA'
