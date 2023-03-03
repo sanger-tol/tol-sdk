@@ -13,7 +13,7 @@ class TestDeclaredAttr:
 
             # declared attribute
             @deferred_attr
-            def also_fun(self):
+            def also_fun(cls): #  noqa N805
                 return 'yes'
 
         assert hasattr(TestExampleClass, 'also_fun')
@@ -38,7 +38,7 @@ class TestDeclaredAttr:
 
             # deferred attribute
             @deferred_attr
-            def also_fun(cls):
+            def also_fun(cls): #  noqa N805
                 return 'yes'
 
         # calculate the value
@@ -56,5 +56,5 @@ class TestDeclaredAttr:
             # declared attribute that raises an exception
             # when called
             @deferred_attr
-            def also_fun(cls):
+            def also_fun(cls): #  noqa N805
                 raise Exception('I have been called')
