@@ -11,10 +11,15 @@ def deferred_attr(function: Callable) -> Callable:
     Indicates that the function will return the
     value for the given attribute name. Its execution
     is deferred until after all classes have been setup.
+    Must be at the bottom of the decorator stack, if there
+    are others.
     """
     function._deferred_attr = True
+    name = function.__name__
 
+    @classmethod
     @wraps(function)
-    def wrapper(*args, **kwargs):
-        return function(*args, **kwargs)
+    def wrapper(cls, *args, **kwargs):
+        value = function(cls, *args, **kwargs)
+        setattr(cls, name, value)
     return wrapper

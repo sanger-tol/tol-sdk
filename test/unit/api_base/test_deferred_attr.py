@@ -37,3 +37,20 @@ class TestDeclaredAttr:
 
         assert hasattr(TestExampleClass, 'also_fun')
         assert not hasattr(TestExampleClass.also_fun, '_deferred_attr')
+
+    def test_calling_deferred_attr_sets_value(self):
+        class TestExampleClass:
+            # regular attribute
+            fun = True
+
+            # declared attribute
+            @deferred_attr
+            def also_fun(cls):
+                return 'yes'
+
+        # calculate the value
+        TestExampleClass.also_fun()
+        # assert that it's now a concrete value == 'yes'
+        assert not hasattr(TestExampleClass.also_fun, '_deferred_attr')
+        assert not callable(TestExampleClass.also_fun)
+        assert TestExampleClass.also_fun == 'yes'
