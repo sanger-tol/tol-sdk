@@ -137,7 +137,7 @@ class TestRoute:
             def nonsense(self, id_: int):
                 pass
 
-        http_methods = ns_test.get_services_config()
+        http_methods = ns_test.to_dict()
         assert len(http_methods) == 2
         assert set(http_methods.keys()) == {
             '/test',

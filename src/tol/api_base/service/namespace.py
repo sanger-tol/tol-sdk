@@ -77,7 +77,7 @@ class ServiceNamespace:
             return wrapper
         return decorator
 
-    def get_services_config(self) -> NamespaceServicesConfig:
+    def to_dict(self) -> NamespaceServicesConfig:
         """
         Gets the method configuration of all registered services
         """
