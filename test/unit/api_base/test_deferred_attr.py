@@ -4,13 +4,6 @@
 
 from tol.api_base import deferred_attr
 
-# TODO:
-# - func._declared_attr is set to True
-#   only if decorated
-# - calling the function sets the attribute
-# - the actual function is not called upon
-#   decoration
-
 
 class TestDeclaredAttr:
     def test_declared_attr_set_when_decorated(self):
