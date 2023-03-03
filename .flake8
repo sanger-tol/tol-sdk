@@ -4,4 +4,4 @@
 
 [flake8]
 max-line-length = 99
-extend-ignore = B902,D,N818
+extend-ignore = B902,D,N818,N805
