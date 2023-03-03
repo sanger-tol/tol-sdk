@@ -43,7 +43,7 @@ class TestDeclaredAttr:
             # regular attribute
             fun = True
 
-            # declared attribute
+            # deferred attribute
             @deferred_attr
             def also_fun(cls):
                 return 'yes'
@@ -54,3 +54,14 @@ class TestDeclaredAttr:
         assert not hasattr(TestExampleClass.also_fun, '_deferred_attr')
         assert not callable(TestExampleClass.also_fun)
         assert TestExampleClass.also_fun == 'yes'
+
+    def test_decorating_does_not_call(self):
+        class TestExampleClass:
+            # regular attribute
+            fun = True
+
+            # declared attribute that raises an exception
+            # when called
+            @deferred_attr
+            def also_fun(cls):
+                raise Exception('I have been called')
