@@ -21,12 +21,12 @@ from tol.api_base.utils.config import IndividualConfig
 # - update is passed the ResouceMeta data
 
 
-INDIVIDUAL_CONFIG_DICT = dict(
-    type_='specimen',
-    meta={},
-    source=Sources.DATABASE,
-    id_scheme=IdSchemes.EXTERNAL,
-    methods={
+INDIVIDUAL_CONFIG_DICT = {
+    'type_': 'specimen',
+    'meta': {},
+    'source': Sources.DATABASE,
+    'id_scheme': IdSchemes.EXTERNAL,
+    'methods': {
         'auth': [
             Methods.CREATE, Methods.DELETE, Methods.UPDATE, Methods.UPSERT
         ],
@@ -34,11 +34,11 @@ INDIVIDUAL_CONFIG_DICT = dict(
             Methods.GET, Methods.BULK_GET
         ]
     },
-    attributes={
+    'attributes': {
         'tolid': fields.String(unique=True, example='mHomSap52', required=True),
         'active': fields.Boolean(required=False)
     },
-    relationships={
+    'relationships': {
         'one': {
             'species': {
                 'key': 'taxon_id',
@@ -59,7 +59,7 @@ INDIVIDUAL_CONFIG_DICT = dict(
             'samples'
         ]
     }
-)
+}
 
 
 class TestAutoSchema:
@@ -153,7 +153,7 @@ class TestAutoSchema:
         assert observed_dump_onlys == expected_dump_onlys
 
     def test_dump_only_true_on_auto_increment_id_scheme(self):
-        # make the source a database
+        # make the IdScheme auto_increment
         copy_dict = deepcopy(INDIVIDUAL_CONFIG_DICT)
         copy_dict['id_scheme'] = IdSchemes.AUTO_INCREMENT
         # generate the auto schema
@@ -163,4 +163,4 @@ class TestAutoSchema:
         schema_class = generator.generate()
         id_field = schema_class._declared_fields['id']
 
-        assert id_field.dump_only == True
+        assert id_field.dump_only is True
