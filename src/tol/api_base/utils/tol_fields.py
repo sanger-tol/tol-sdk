@@ -46,6 +46,23 @@ class Field(ABC):
         pass
 
 
+class ForeignKey(Field):
+    def __init__(self, required = False, example = None):
+        super().__init__(
+            required=required,
+            unique=False,
+            example=None
+        )
+
+    @property
+    def python_type(self):
+        return str
+
+    @property
+    def default_example(self):
+        return 'key'
+
+
 class String(Field):
     @property
     def python_type(self):

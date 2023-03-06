@@ -6,7 +6,7 @@ from datetime import datetime
 from typing import Dict
 from marshmallow_jsonapi import Schema, fields as schema_fields
 
-from ..utils.config import IndividualConfig
+from ..utils.config import IndividualConfig, OneRelationshipConfig
 from ..utils.enum import IdSchemes
 from ..utils.tol_fields import Field as TolField
 
@@ -51,6 +51,23 @@ class AutoSchemaGenerator:
             required=tol_field.required
         )
 
+    def __generate_one_relationship_field(
+        self,
+        relation_type: str,
+        relationship_config: OneRelationshipConfig
+    ) -> schema_fields.Relationship:
+
+        foreign_key_name = relationship_config.field
+        dump_only = not relationship_config.field.required
+        return schema_fields.Relationship(
+            related_url=f'/{relation_type}/{{id}}',
+            related_url_kwargs={'id': f'<{foreign_key_name}>'},
+            include_resource_linkage=True,
+            type_=relation_type,
+            attribute=foreign_key_name,
+            dump_only=dump_only
+        )
+
     def __get_schema_field_from_python_type(
         self,
         python_type: object
@@ -66,7 +83,13 @@ class AutoSchemaGenerator:
         raise NotImplementedError()
 
     def __generate_one_relationships(self) -> None:
-        pass
+        one = self.__config.relationships.one
+        for relation_type, config in one.items():
+            field = self.__generate_one_relationship_field(
+                relation_type,
+                config
+            )
+            self.__extra_attributes[relation_type] = field
 
     def __generate_many_relationships(self) -> None:
         pass

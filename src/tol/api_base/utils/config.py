@@ -9,9 +9,23 @@ from tol.api_base import IdSchemes, Methods, Sources, tol_fields
 
 
 @dataclass
+class OneRelationshipConfig:
+    key: str
+    field: tol_fields.ForeignKey
+
+
+@dataclass
 class ConfigRelationships:
-    one: Dict[str, str]
+    one: Dict[str, OneRelationshipConfig]
     many: List[str]
+
+    def __post_init__(self):
+        self.one = {
+            key: OneRelationshipConfig(
+                **value
+            )
+            for key, value in self.one.items()
+        }
 
 
 @dataclass
