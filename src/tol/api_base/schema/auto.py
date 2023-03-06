@@ -4,6 +4,7 @@
 
 from datetime import datetime
 from typing import Dict
+
 from marshmallow_jsonapi import Schema, fields as schema_fields
 
 from ..utils.config import IndividualConfig, OneRelationshipConfig

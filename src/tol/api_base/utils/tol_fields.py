@@ -13,9 +13,9 @@ class Field(ABC):
 
     def __init__(
         self,
-        required = False,
-        unique = False,
-        example = None
+        required=False,
+        unique=False,
+        example=None
     ):
         self.__required = required
         self.__unique = unique
