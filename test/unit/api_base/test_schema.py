@@ -2,6 +2,8 @@
 #
 # SPDX-License-Identifier: MIT
 
+from copy import deepcopy
+
 from marshmallow_jsonapi import fields as schema_fields
 
 from tol.api_base import IdSchemes, Methods, Sources, tol_fields as fields
@@ -19,7 +21,7 @@ from tol.api_base.utils.config import IndividualConfig
 # - update is passed the ResouceMeta data
 
 
-INDIVIDUAL_CONFIG = IndividualConfig(
+INDIVIDUAL_CONFIG_DICT = dict(
     type_='specimen',
     meta={},
     source=Sources.DATABASE,
@@ -63,7 +65,9 @@ INDIVIDUAL_CONFIG = IndividualConfig(
 class TestAutoSchema:
     def test_only_correct_fields_present(self):
         # generate the auto schema
-        generator = AutoSchemaGenerator(INDIVIDUAL_CONFIG)
+        generator = AutoSchemaGenerator(
+            IndividualConfig(**INDIVIDUAL_CONFIG_DICT)
+        )
         schema_class = generator.generate()
         present_fields = list(schema_class._declared_fields.keys())
 
@@ -84,7 +88,9 @@ class TestAutoSchema:
 
     def test_fields_have_correct_type(self):
         # generate the auto schema
-        generator = AutoSchemaGenerator(INDIVIDUAL_CONFIG)
+        generator = AutoSchemaGenerator(
+            IndividualConfig(**INDIVIDUAL_CONFIG_DICT)
+        )
         schema_class = generator.generate()
         observed_types = {
             field: type(value)
@@ -104,7 +110,9 @@ class TestAutoSchema:
 
     def test_required_fields(self):
         # generate the auto schema
-        generator = AutoSchemaGenerator(INDIVIDUAL_CONFIG)
+        generator = AutoSchemaGenerator(
+            IndividualConfig(**INDIVIDUAL_CONFIG_DICT)
+        )
         schema_class = generator.generate()
         observed_requireds = {
             field: value.required
@@ -124,7 +132,9 @@ class TestAutoSchema:
 
     def test_dump_only_fields(self):
         # generate the auto schema
-        generator = AutoSchemaGenerator(INDIVIDUAL_CONFIG)
+        generator = AutoSchemaGenerator(
+            IndividualConfig(**INDIVIDUAL_CONFIG_DICT)
+        )
         schema_class = generator.generate()
         observed_dump_onlys = {
             field: value.dump_only
@@ -141,3 +151,16 @@ class TestAutoSchema:
             'samples': False
         }
         assert observed_dump_onlys == expected_dump_onlys
+
+    def test_dump_only_true_on_auto_increment_id_scheme(self):
+        # make the source a database
+        copy_dict = deepcopy(INDIVIDUAL_CONFIG_DICT)
+        copy_dict['id_scheme'] = IdSchemes.AUTO_INCREMENT
+        # generate the auto schema
+        generator = AutoSchemaGenerator(
+            IndividualConfig(**copy_dict)
+        )
+        schema_class = generator.generate()
+        id_field = schema_class._declared_fields['id']
+
+        assert id_field.dump_only == True
