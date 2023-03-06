@@ -11,6 +11,7 @@ from tol.api_base.utils.config import IndividualConfig
 # TODO test:
 # - all declared fields are on the schema
 # - datatypes are correct
+# - dump only is respected
 # - required fields are respected
 # - excluded fields are respected
 # - update works correctly, with a correctly injected
@@ -44,7 +45,11 @@ INDIVIDUAL_CONFIG = IndividualConfig(
             },
             'creator': {
                 'key': 'created_by',
-                'field': fields.ForeignKey(required=True, example='1'),
+                'field': fields.ForeignKey(
+                    required=True,
+                    example='1',
+                    dump_only=True
+                ),
                 'target_type': 'users'
             }
         },

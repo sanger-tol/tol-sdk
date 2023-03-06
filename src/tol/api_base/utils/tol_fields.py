@@ -47,7 +47,8 @@ class Field(ABC):
 
 
 class ForeignKey(Field):
-    def __init__(self, required=False, example=None):
+    def __init__(self, required=False, example=None, dump_only=False):
+        self.__dump_only = dump_only
         super().__init__(
             required=required,
             unique=False,
@@ -61,6 +62,10 @@ class ForeignKey(Field):
     @property
     def default_example(self):
         return 'key'
+
+    @property
+    def dump_only(self):
+        return self.__dump_only
 
 
 class String(Field):
