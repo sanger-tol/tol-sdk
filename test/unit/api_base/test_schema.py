@@ -2,6 +2,8 @@
 #
 # SPDX-License-Identifier: MIT
 
+from marshmallow_jsonapi import fields as schema_fields
+
 from tol.api_base import IdSchemes, Methods, Sources, tol_fields as fields
 from tol.api_base.schema.auto import AutoSchemaGenerator
 from tol.api_base.utils.config import IndividualConfig
@@ -74,3 +76,23 @@ class TestAutoSchema:
 
         # assert that relationship keys are not present
         assert 'taxon_id' not in present_fields
+
+    def test_fields_have_correct_type(self):
+        # generate the auto schema
+        generator = AutoSchemaGenerator(INDIVIDUAL_CONFIG)
+        schema_class = generator.generate()
+        observed_types = {
+            field: type(value)
+            for field, value
+            in schema_class._declared_fields.items()
+        }
+        
+        expected_types = {
+            'id': schema_fields.String,
+            'tolid': schema_fields.String,
+            'active': schema_fields.Boolean,
+            'species': schema_fields.Relationship,
+            'creator': schema_fields.Relationship,
+            'samples': schema_fields.Relationship
+        }
+        assert observed_types == expected_types
