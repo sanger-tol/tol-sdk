@@ -1,0 +1,106 @@
+# SPDX-FileCopyrightText: 2023 Genome Research Ltd.
+#
+# SPDX-License-Identifier: MIT
+
+from datetime import datetime
+from typing import Dict
+from marshmallow_jsonapi import Schema, fields as schema_fields
+
+from ..utils.config import IndividualConfig
+from ..utils.enum import IdSchemes
+from ..utils.tol_fields import Field as TolField
+
+
+class AutoSchemaGenerator:
+    """
+    Generates an AutoSchema class, given the
+    config for an individual type. Consider
+    this a private API!
+    """
+
+    def __init__(self, config: IndividualConfig):
+        self.__config = config
+        self.__extra_attributes: Dict[str, schema_fields.Field] = {}
+
+    def generate(self):
+        self.__generate_extra_attributes()
+        return self.__generate_new_schema_class()
+
+    def __generate_extra_attributes(self):
+        self.__generate_id_field()
+        self.__generate_regular_attributes()
+        self.__generate_one_relationships()
+        self.__generate_many_relationships()
+        self.__generate_meta_class()
+
+    def __generate_regular_attributes(self) -> None:
+        for attribute, tol_field in self.__config.attributes.items():
+            schema_field = self.__generate_schema_field_from_tol_field(
+                tol_field
+            )
+            self.__extra_attributes[attribute] = schema_field
+
+    def __generate_schema_field_from_tol_field(
+        self,
+        tol_field: TolField
+    ) -> schema_fields.Field:
+        schema_field_class = self.__get_schema_field_from_python_type(
+            tol_field.python_type
+        )
+        return schema_field_class(
+            required=tol_field.required
+        )
+
+    def __get_schema_field_from_python_type(
+        self,
+        python_type: object
+    ) -> schema_fields.Field:
+        if python_type == str:
+            return schema_fields.String
+        if python_type == int:
+            return schema_fields.Integer
+        if python_type == bool:
+            return schema_fields.Boolean
+        if python_type == datetime:
+            return schema_fields.DateTime
+        raise NotImplementedError()
+
+    def __generate_one_relationships(self) -> None:
+        pass
+
+    def __generate_many_relationships(self) -> None:
+        pass
+
+    def __generate_meta_class(self) -> None:
+        stored_type = self.__config.type_
+
+        class Meta:
+            type_ = stored_type
+        self.__extra_attributes['Meta'] = Meta
+
+    def __generate_id_field(self) -> None:
+        id_scheme = self.__config.id_scheme
+        id_field = self.__generate_id_field_from_scheme(id_scheme)
+        self.__extra_attributes['id'] = id_field
+
+    def __generate_id_field_from_scheme(
+        self,
+        id_scheme: IdSchemes
+    ) -> schema_fields.Field:
+        # only auto incrementing keys are dump only
+        if id_scheme == IdSchemes.AUTO_INCREMENT:
+            return schema_fields.String(
+                required=True,
+                dump_only=True
+            )
+        else:
+            return schema_fields.String(
+                required=True
+            )
+
+    def __generate_new_schema_class(self) -> Schema:
+        return type(
+            f'{self.__config.type_.capitalize()}Schema',
+            (Schema,),
+            self.__extra_attributes
+        )
