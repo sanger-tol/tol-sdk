@@ -121,3 +121,23 @@ class TestAutoSchema:
             'samples': False
         }
         assert observed_requireds == expected_requireds
+
+    def test_dump_only_fields(self):
+        # generate the auto schema
+        generator = AutoSchemaGenerator(INDIVIDUAL_CONFIG)
+        schema_class = generator.generate()
+        observed_dump_onlys = {
+            field: value.dump_only
+            for field, value
+            in schema_class._declared_fields.items()
+        }
+
+        expected_dump_onlys = {
+            'id': False,
+            'tolid': False,
+            'active': False,
+            'species': False,
+            'creator': True,
+            'samples': False
+        }
+        assert observed_dump_onlys == expected_dump_onlys
