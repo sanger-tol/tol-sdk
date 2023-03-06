@@ -57,7 +57,7 @@ class AutoSchemaGenerator:
         relationship_config: OneRelationshipConfig
     ) -> schema_fields.Relationship:
 
-        foreign_key_name = relationship_config.field
+        foreign_key_name = relationship_config.key
         dump_only = not relationship_config.field.required
         return schema_fields.Relationship(
             related_url=f'/{relation_type}/{{id}}',
