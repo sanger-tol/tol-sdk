@@ -11,6 +11,7 @@ from tol.api_base import IdSchemes, Methods, Sources, tol_fields
 @dataclass
 class OneRelationshipConfig:
     key: str
+    target_type: str
     field: tol_fields.ForeignKey
 
 

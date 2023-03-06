@@ -53,17 +53,17 @@ class AutoSchemaGenerator:
 
     def __generate_one_relationship_field(
         self,
-        relation_type: str,
         relationship_config: OneRelationshipConfig
     ) -> schema_fields.Relationship:
 
+        target = relationship_config.target_type
         foreign_key_name = relationship_config.key
         dump_only = not relationship_config.field.required
         return schema_fields.Relationship(
-            related_url=f'/{relation_type}/{{id}}',
+            related_url=f'/{target}/{{id}}',
             related_url_kwargs={'id': f'<{foreign_key_name}>'},
             include_resource_linkage=True,
-            type_=relation_type,
+            type_=target,
             attribute=foreign_key_name,
             dump_only=dump_only
         )
@@ -84,15 +84,32 @@ class AutoSchemaGenerator:
 
     def __generate_one_relationships(self) -> None:
         one = self.__config.relationships.one
-        for relation_type, config in one.items():
+        for field_name, config in one.items():
             field = self.__generate_one_relationship_field(
-                relation_type,
                 config
             )
-            self.__extra_attributes[relation_type] = field
+            self.__extra_attributes[field_name] = field
 
     def __generate_many_relationships(self) -> None:
-        pass
+        for target in self.__config.relationships.many:
+            field = self.__generate_many_relationship_for_target(
+                target
+            )
+            self.__extra_attributes[target] = field
+
+    def __generate_many_relationship_for_target(
+        self,
+        target: str
+    ) -> schema_fields.Relationship:
+
+        type_ = self.__config.type_
+        return schema_fields.Relationship(
+            f'/{type_}/{{id}}/{target}',
+            related_url_kwargs={'id': '<id>'},
+            many=True,
+            type_=target,
+            dump_default=lambda: []
+        )
 
     def __generate_meta_class(self) -> None:
         stored_type = self.__config.type_
@@ -122,8 +139,9 @@ class AutoSchemaGenerator:
             )
 
     def __generate_new_schema_class(self) -> Schema:
+        name = f'{self.__config.type_.capitalize()}Schema'
         return type(
-            f'{self.__config.type_.capitalize()}Schema',
+            name,
             (Schema,),
             self.__extra_attributes
         )

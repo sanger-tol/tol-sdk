@@ -37,7 +37,13 @@ INDIVIDUAL_CONFIG = IndividualConfig(
         'one': {
             'species': {
                 'key': 'taxon_id',
-                'field': fields.ForeignKey(required=True, example='9606')
+                'field': fields.ForeignKey(required=True, example='9606'),
+                'target_type': 'species'
+            },
+            'creator': {
+                'key': 'created_by',
+                'field': fields.ForeignKey(required=True, example='1'),
+                'target_type': 'users'
             }
         },
         'many': [
@@ -52,17 +58,19 @@ class TestAutoSchema:
         # generate the auto schema
         generator = AutoSchemaGenerator(INDIVIDUAL_CONFIG)
         schema_class = generator.generate()
-        present_fields = schema_class._declared_fields
+        present_fields = list(schema_class._declared_fields.keys())
 
         # assert that all fields are present
-        new_fields = [
+        expected_fields = [
+            'id',
             'tolid',
             'active',
             'species',
+            'creator',
             'samples'
         ]
-        for field in new_fields:
-            assert field in present_fields
+        # assert that only these fields are present
+        assert present_fields == expected_fields
 
         # assert that relationship keys are not present
         assert 'taxon_id' not in present_fields

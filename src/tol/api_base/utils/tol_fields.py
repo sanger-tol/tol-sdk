@@ -47,11 +47,11 @@ class Field(ABC):
 
 
 class ForeignKey(Field):
-    def __init__(self, required = False, example = None):
+    def __init__(self, required=False, example=None):
         super().__init__(
             required=required,
             unique=False,
-            example=None
+            example=example
         )
 
     @property
