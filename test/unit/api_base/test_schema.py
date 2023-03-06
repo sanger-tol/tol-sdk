@@ -33,8 +33,8 @@ INDIVIDUAL_CONFIG = IndividualConfig(
         ]
     },
     attributes={
-        'tolid': fields.String(unique=True, example='mHomSap52'),
-        'active': fields.Boolean()
+        'tolid': fields.String(unique=True, example='mHomSap52', required=True),
+        'active': fields.Boolean(required=False)
     },
     relationships={
         'one': {
@@ -101,3 +101,23 @@ class TestAutoSchema:
             'samples': schema_fields.Relationship
         }
         assert observed_types == expected_types
+
+    def test_required_fields(self):
+        # generate the auto schema
+        generator = AutoSchemaGenerator(INDIVIDUAL_CONFIG)
+        schema_class = generator.generate()
+        observed_requireds = {
+            field: value.required
+            for field, value
+            in schema_class._declared_fields.items()
+        }
+
+        expected_requireds = {
+            'id': True,
+            'tolid': True,
+            'active': False,
+            'species': True,
+            'creator': True,
+            'samples': False
+        }
+        assert observed_requireds == expected_requireds

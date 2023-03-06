@@ -60,13 +60,15 @@ class AutoSchemaGenerator:
         target = relationship_config.target_type
         foreign_key_name = relationship_config.key
         dump_only = relationship_config.field.dump_only
+        required = relationship_config.field.required
         return schema_fields.Relationship(
             related_url=f'/{target}/{{id}}',
             related_url_kwargs={'id': f'<{foreign_key_name}>'},
             include_resource_linkage=True,
             type_=target,
             attribute=foreign_key_name,
-            dump_only=dump_only
+            dump_only=dump_only,
+            required=required
         )
 
     def __get_schema_field_from_python_type(
