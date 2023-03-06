@@ -91,7 +91,7 @@ class TestAutoSchema:
             for field, value
             in schema_class._declared_fields.items()
         }
-        
+
         expected_types = {
             'id': schema_fields.String,
             'tolid': schema_fields.String,
