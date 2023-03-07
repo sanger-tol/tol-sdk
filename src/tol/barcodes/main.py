@@ -120,7 +120,6 @@ class Interface(DataSource):
     ):
         raise NotImplementedError()
 
-    
     def get_by_ids(
         self,
         ids,
@@ -128,7 +127,6 @@ class Interface(DataSource):
     ):
         raise NotImplementedError()
 
-    
     def upsert(
         self,
         object_type: str,
@@ -137,7 +135,6 @@ class Interface(DataSource):
     ) -> None:
         raise NotImplementedError()
 
-    
     def update(
         self,
         object_type: str,
@@ -146,7 +143,6 @@ class Interface(DataSource):
     ) -> None:
         raise NotImplementedError()
 
-    
     def delete(
         self,
         object_type: str,

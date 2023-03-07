@@ -20,7 +20,6 @@ class TestDataSourceExpected(DataSource):
     ):
         raise NotImplementedError()
 
-    
     def get_by_ids(
         self,
         ids,
@@ -28,7 +27,6 @@ class TestDataSourceExpected(DataSource):
     ):
         raise NotImplementedError()
 
-    
     def upsert(
         self,
         object_type: str,
@@ -37,7 +35,6 @@ class TestDataSourceExpected(DataSource):
     ) -> None:
         raise NotImplementedError()
 
-    
     def update(
         self,
         object_type: str,
@@ -46,7 +43,6 @@ class TestDataSourceExpected(DataSource):
     ) -> None:
         raise NotImplementedError()
 
-    
     def delete(
         self,
         object_type: str,
@@ -54,7 +50,6 @@ class TestDataSourceExpected(DataSource):
         **kwargs
     ) -> None:
         raise NotImplementedError()
-
 
 
 class TestDataSourceNoExpected(DataSource):
@@ -70,7 +65,6 @@ class TestDataSourceNoExpected(DataSource):
     ):
         raise NotImplementedError()
 
-    
     def get_by_ids(
         self,
         ids,
@@ -78,7 +72,6 @@ class TestDataSourceNoExpected(DataSource):
     ):
         raise NotImplementedError()
 
-    
     def upsert(
         self,
         object_type: str,
@@ -87,7 +80,6 @@ class TestDataSourceNoExpected(DataSource):
     ) -> None:
         raise NotImplementedError()
 
-    
     def update(
         self,
         object_type: str,
@@ -96,7 +88,6 @@ class TestDataSourceNoExpected(DataSource):
     ) -> None:
         raise NotImplementedError()
 
-    
     def delete(
         self,
         object_type: str,
@@ -104,7 +95,6 @@ class TestDataSourceNoExpected(DataSource):
         **kwargs
     ) -> None:
         raise NotImplementedError()
-
 
 
 class TestDataSource(TestCase):

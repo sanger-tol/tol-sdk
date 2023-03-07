@@ -41,7 +41,7 @@ class ElasticDataSource(DataSource):
             }
 
     def upsert(self, index: str, objects: Generator,
-               data_filter = None,
+               data_filter=None,
                chunk_size: int = 100,
                id_func=lambda x: x['id'],
                field_prefix: str = ''):
@@ -89,7 +89,7 @@ class ElasticDataSource(DataSource):
         **kwargs
     ):
         raise NotImplementedError()
-    
+
     def update(
         self,
         object_type: str,
@@ -97,7 +97,7 @@ class ElasticDataSource(DataSource):
         **kwargs
     ) -> None:
         raise NotImplementedError()
-    
+
     def delete(
         self,
         object_type: str,
