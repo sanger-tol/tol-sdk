@@ -43,7 +43,7 @@ class DataSource(ABC):
         self,
         object_type: str,
         page: int,
-        filter: DataSourceFilter = None,
+        data_filter: DataSourceFilter = None,
         **kwargs
     ) -> List[DataObject]:
         """
@@ -84,9 +84,11 @@ class DataSource(ABC):
     ) -> None:
         """
         For each `id, UpdateDict` pair in the updates iterable,
-        updates the instance with id=id with the given updates. 
+        updates the instance with id=id with the given updates.
+        This is equivalent to a PATCH in HTTP semantics, and
+        does an overwrite field-by-field, rather than a full
+        replacement 
         """
-        # TODO is this a PUT or PATCH? i.e. does it fully replace, or setattr each specified key:value?
 
     @abstractmethod
     def delete(

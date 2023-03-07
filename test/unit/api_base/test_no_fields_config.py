@@ -4,7 +4,7 @@
 
 from copy import deepcopy
 
-from tol.api_base import tol_fields, IdSchemes, Methods, Sources
+from tol.api_base import IdSchemes, Methods, Sources, tol_fields
 from tol.api_base.utils.config import IndividualConfig
 
 
