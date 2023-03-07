@@ -41,6 +41,7 @@ class ElasticDataSource(DataSource):
             }
 
     def upsert(self, index: str, objects: Generator,
+               data_filter = None,
                chunk_size: int = 100,
                id_func=lambda x: x['id'],
                field_prefix: str = ''):
@@ -81,3 +82,35 @@ class ElasticDataSource(DataSource):
         if no_of_errors > 0:
             raise DataSourceError(f'{no_of_errors} errors encountered '
                                   f'upserting {no_of_operations} objects')
+
+    def get_by_ids(
+        self,
+        ids,
+        **kwargs
+    ):
+        raise NotImplementedError()
+    
+    def update(
+        self,
+        object_type: str,
+        updates,
+        **kwargs
+    ) -> None:
+        raise NotImplementedError()
+    
+    def delete(
+        self,
+        object_type: str,
+        ids,
+        **kwargs
+    ) -> None:
+        raise NotImplementedError()
+
+    def get_list_page(
+        self,
+        object_type: str,
+        page: int,
+        data_filter=None,
+        **kwargs
+    ):
+        raise NotImplementedError()
