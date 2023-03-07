@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: MIT
 
 from abc import ABC, abstractmethod
-from typing import Any, Dict, List, Iterable, Tuple
+from typing import Any, Dict, Iterable, List, Tuple
 
 from .datasource_error import DataSourceError
 from .datasource_filter import DataSourceFilter
