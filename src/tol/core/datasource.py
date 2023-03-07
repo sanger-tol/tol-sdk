@@ -87,7 +87,7 @@ class DataSource(ABC):
         updates the instance with id=id with the given updates.
         This is equivalent to a PATCH in HTTP semantics, and
         does an overwrite field-by-field, rather than a full
-        replacement 
+        replacement
         """
 
     @abstractmethod
