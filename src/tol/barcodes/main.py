@@ -110,3 +110,47 @@ class Interface(DataSource):
                     + url
                 )
                 return {'DryRun': curl}
+
+    def get_list_page(
+        self,
+        object_type: str,
+        page: int,
+        data_filter=None,
+        **kwargs
+    ):
+        raise NotImplementedError()
+
+    
+    def get_by_ids(
+        self,
+        ids,
+        **kwargs
+    ):
+        raise NotImplementedError()
+
+    
+    def upsert(
+        self,
+        object_type: str,
+        objects,
+        **kwargs
+    ) -> None:
+        raise NotImplementedError()
+
+    
+    def update(
+        self,
+        object_type: str,
+        updates,
+        **kwargs
+    ) -> None:
+        raise NotImplementedError()
+
+    
+    def delete(
+        self,
+        object_type: str,
+        ids,
+        **kwargs
+    ) -> None:
+        raise NotImplementedError()
