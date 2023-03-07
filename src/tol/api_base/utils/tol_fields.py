@@ -46,14 +46,34 @@ class Field(ABC):
         pass
 
 
-class ForeignKey(Field):
-    def __init__(self, required=False, example=None, dump_only=False):
+class ToOneRelationship(Field):
+    """
+    This creates a -to-one relationship towards the target.
+    """
+    def __init__(
+        self,
+        target: str,
+        foreign_key: str,
+        required=False,
+        example=None,
+        dump_only=False
+    ):
+        self.__target = target
         self.__dump_only = dump_only
+        self.__foreign_key = foreign_key
         super().__init__(
             required=required,
             unique=False,
             example=example
         )
+
+    @property
+    def foreign_key(self):
+        return self.__foreign_key
+
+    @property
+    def target(self):
+        return self.__target
 
     @property
     def python_type(self):

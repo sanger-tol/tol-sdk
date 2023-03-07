@@ -13,14 +13,7 @@ MethodsDict = Dict[str, List[Methods]]
 AttributesDict = Dict[str, tol_fields.Field]
 
 
-@dataclass
-class OneRelationshipConfig:
-    key: str
-    target_type: str
-    field: tol_fields.ForeignKey
-
-
-OneRelationshipDict = Dict[str, OneRelationshipConfig]
+OneRelationshipDict = Dict[str, tol_fields.ToOneRelationship]
 ManyRelationshipList = List[str]
 
 
@@ -28,15 +21,6 @@ ManyRelationshipList = List[str]
 class ConfigRelationships:
     one: Optional[OneRelationshipDict] = None
     many: Optional[ManyRelationshipList] = None
-
-    def __post_init__(self):
-        if self.one is not None:
-            self.one = {
-                key: OneRelationshipConfig(
-                    **value
-                )
-                for key, value in self.one.items()
-            }
 
 
 @dataclass

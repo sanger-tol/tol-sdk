@@ -27,20 +27,19 @@ INDIVIDUAL_CONFIG_DICT = {
     },
     'relationships': {
         'one': {
-            'species': {
-                'key': 'taxon_id',
-                'field': tol_fields.ForeignKey(required=True, example='9606'),
-                'target_type': 'species'
-            },
-            'creator': {
-                'key': 'created_by',
-                'field': tol_fields.ForeignKey(
-                    required=True,
-                    example='1',
-                    dump_only=True
-                ),
-                'target_type': 'users'
-            }
+            'species': tol_fields.ToOneRelationship(
+                'species',
+                'taxon_id',
+                required=True,
+                example='9606'
+            ),
+            'creator': tol_fields.ToOneRelationship(
+                'users',
+                'created_by',
+                required=True,
+                example='1',
+                dump_only=True
+            )
         },
         'many': [
             'samples'

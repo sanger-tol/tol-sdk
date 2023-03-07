@@ -6,7 +6,7 @@ from copy import deepcopy
 
 from marshmallow_jsonapi import fields as schema_fields
 
-from tol.api_base import IdSchemes, Methods, Sources, tol_fields as fields
+from tol.api_base import IdSchemes, Methods, Sources, tol_fields
 from tol.api_base.schema.auto import AutoSchemaGenerator
 from tol.api_base.utils.config import IndividualConfig
 
@@ -35,25 +35,24 @@ INDIVIDUAL_CONFIG_DICT = {
         ]
     },
     'attributes': {
-        'tolid': fields.String(unique=True, example='mHomSap52', required=True),
-        'active': fields.Boolean(required=False)
+        'tolid': tol_fields.String(unique=True, example='mHomSap52', required=True),
+        'active': tol_fields.Boolean(required=False)
     },
     'relationships': {
         'one': {
-            'species': {
-                'key': 'taxon_id',
-                'field': fields.ForeignKey(required=True, example='9606'),
-                'target_type': 'species'
-            },
-            'creator': {
-                'key': 'created_by',
-                'field': fields.ForeignKey(
-                    required=True,
-                    example='1',
-                    dump_only=True
-                ),
-                'target_type': 'users'
-            }
+            'species': tol_fields.ToOneRelationship(
+                'species',
+                'taxon_id',
+                required=True,
+                example='9606'
+            ),
+            'creator': tol_fields.ToOneRelationship(
+                'users',
+                'created_by',
+                required=True,
+                example='1',
+                dump_only=True
+            )
         },
         'many': [
             'samples'

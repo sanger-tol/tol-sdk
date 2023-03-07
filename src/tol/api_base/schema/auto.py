@@ -7,9 +7,9 @@ from typing import Dict
 
 from marshmallow_jsonapi import Schema, fields as schema_fields
 
-from ..utils.config import IndividualConfig, OneRelationshipConfig
+from ..utils import tol_fields
+from ..utils.config import IndividualConfig
 from ..utils.enum import IdSchemes
-from ..utils.tol_fields import Field as TolField
 
 
 class AutoSchemaGenerator:
@@ -43,7 +43,7 @@ class AutoSchemaGenerator:
 
     def __generate_schema_field_from_tol_field(
         self,
-        tol_field: TolField
+        tol_field: tol_fields.Field
     ) -> schema_fields.Field:
         schema_field_class = self.__get_schema_field_from_python_type(
             tol_field.python_type
@@ -54,21 +54,19 @@ class AutoSchemaGenerator:
 
     def __generate_one_relationship_field(
         self,
-        relationship_config: OneRelationshipConfig
+        relationship: tol_fields.ToOneRelationship
     ) -> schema_fields.Relationship:
 
-        target = relationship_config.target_type
-        foreign_key_name = relationship_config.key
-        dump_only = relationship_config.field.dump_only
-        required = relationship_config.field.required
+        target = relationship.target
+        foreign_key_name = relationship.foreign_key
         return schema_fields.Relationship(
             related_url=f'/{target}/{{id}}',
             related_url_kwargs={'id': f'<{foreign_key_name}>'},
             include_resource_linkage=True,
             type_=target,
             attribute=foreign_key_name,
-            dump_only=dump_only,
-            required=required
+            dump_only=relationship.dump_only,
+            required=relationship.required
         )
 
     def __get_schema_field_from_python_type(
