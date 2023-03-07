@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: MIT
 
 from dataclasses import dataclass
-from typing import Any, Dict, Tuple
+from typing import Any, Dict, Optional
 
 
 @dataclass
@@ -27,12 +27,14 @@ class DataSourceFilter:
     """
     Configures the filtering for a DataSource
     """
-    exact: ExactFilter
-    wildcard: WildcardFilter
+    exact: Optional[ExactFilter] = None
+    wildcard: Optional[WildcardFilter] = None
 
     def __post_init__(self):
-        self.exact = ExactFilter(**self.exact)
-        self.wildcard = WildcardFilter(
+        if self.exact is not None:
+            self.exact = ExactFilter(**self.exact)
+        if self.wildcard is not None:
+            self.wildcard = WildcardFilter(
             **self.wildcard
         )
 
