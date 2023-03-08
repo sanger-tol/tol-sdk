@@ -7,7 +7,7 @@ from typing import Dict, Generator
 
 from elasticsearch import (Elasticsearch, helpers)
 
-from ..core import DataSource
+from ..core import (DataSource, DataSourceError)
 
 
 class ElasticDataSource(DataSource):
@@ -44,10 +44,40 @@ class ElasticDataSource(DataSource):
                chunk_size: int = 100,
                id_func=lambda x: x['id'],
                field_prefix: str = ''):
-        self.helpers.bulk(self.es,
-                          self._action_for_upsert(index,
-                                                  objects,
-                                                  id_func,
-                                                  field_prefix),
-                          stats_only=True,
-                          chunk_size=chunk_size)
+        (no_of_operations, no_of_errors) = \
+            self.helpers.bulk(self.es,
+                              self._action_for_upsert(index,
+                                                      objects,
+                                                      id_func,
+                                                      field_prefix),
+                              stats_only=True,
+                              chunk_size=chunk_size)
+        if no_of_errors > 0:
+            raise DataSourceError(f'{no_of_errors} errors encountered '
+                                  f'upserting {no_of_operations} objects')
+
+    def _action_for_update(self, index: str, objects: Generator, id_func: Callable,
+                           field_prefix: str):
+        for object_ in objects:
+            yield {
+                '_op_type': 'update',
+                '_index': index,
+                '_id': id_func(object_),
+                'doc': self._prefix_fields(object_, field_prefix)
+            }
+
+    def update(self, index: str, objects: Generator,
+               chunk_size: int = 100,
+               id_func=lambda x: x['id'],
+               field_prefix: str = ''):
+        (no_of_operations, no_of_errors) = \
+            self.helpers.bulk(self.es,
+                              self._action_for_update(index,
+                                                      objects,
+                                                      id_func,
+                                                      field_prefix),
+                              stats_only=True,
+                              chunk_size=chunk_size)
+        if no_of_errors > 0:
+            raise DataSourceError(f'{no_of_errors} errors encountered '
+                                  f'upserting {no_of_operations} objects')
