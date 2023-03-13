@@ -29,12 +29,13 @@ class Jira(DataSource):
             'jira_issue_link': ('key', 'equals'),
             'jira_issue_last_updated': ('updated', 'equals'),
             'assignee': ("'Assignee'", 'equals'),
-            'jbrowse_link': ("'Datatype Available'", 'contains')
+            'jbrowse_link': ("'Treeval'", 'equals')
         }
 
         ja = JiraAuth(url=self.url, password=self.api_token)
-        jql_request = jm.apply_filter_sort_to_jql('project in (GRIT,RC) AND labels = "Treeval"',
-                                                  jql_field_map, filter_, sort_by)
+        jql_request = jm.apply_filter_sort_to_jql(
+            "project in (GRIT,RC) AND 'Treeval' is not EMPTY",
+            jql_field_map, filter_, sort_by)
 
         # Return all results for page until the number requested.
         results = ja.auth_jira.search_issues(jql_request, maxResults=0)
@@ -60,7 +61,7 @@ class Jira(DataSource):
             entry['jira_issue'] = issue.key
             entry['jira_issue_link'] = f'https://{ja.jira_path}/browse/{issue.key}'
             entry['jira_issue_last_updated'] = str(issue.fields.updated)
-            entry['jbrowse_link'] = ''
+            entry['jbrowse_link'] = jm.get_jbrowse_link(issue)
             entry['assignee'] = str(issue.fields.assignee)
             entries.append(entry)
 

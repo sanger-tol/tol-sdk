@@ -40,6 +40,15 @@ def get_species_id(issue):
         return ''
 
 
+def get_jbrowse_link(issue):
+    jbrowse_link = issue.fields.customfield_12200
+
+    if jbrowse_link:
+        return jbrowse_link
+    else:
+        return ''
+
+
 # Methods to build up Jira Query Language string.
 
 def add_contains_str_filter(jql_field_map, filter_dict, field_key):
