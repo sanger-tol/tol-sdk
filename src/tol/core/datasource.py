@@ -51,58 +51,6 @@ class DataSource(ABC):
         a DataSourceFilter filter keyword argument.
         """
 
-    @abstractmethod
-    def get_by_ids(
-        self,
-        ids: Iterable[DataId],
-        **kwargs
-    ) -> List[DataObject]:
-        """
-        Returns a list of DataObject dictionaries specified by the given
-        id's
-        """
-        # TODO what if one(many?) is not found? Exception or None?
-
-    @abstractmethod
-    def upsert(
-        self,
-        object_type: str,
-        objects: Iterable[DataObject],
-        **kwargs
-    ) -> None:
-        """
-        Takes an Iterable of DataObject dicts, and upserts (updates if present,
-        creates if absent) the relevant instances
-        """
-
-    @abstractmethod
-    def update(
-        self,
-        object_type: str,
-        updates: Iterable[DataSourceUpdate],
-        **kwargs
-    ) -> None:
-        """
-        For each `id, UpdateDict` pair in the updates iterable,
-        updates the instance with id=id with the given updates.
-        This is equivalent to a PATCH in HTTP semantics, and
-        does an overwrite field-by-field, rather than a full
-        replacement
-        """
-
-    @abstractmethod
-    def delete(
-        self,
-        object_type: str,
-        ids: Iterable[DataId],
-        **kwargs
-    ) -> None:
-        """
-        Deletes the instances of type `object_type` with the
-        specified IDs
-        """
-
-
 class ReadOnlyError(Exception):
     def __init__(self, data_source: DataSource):
         super().__init__(
