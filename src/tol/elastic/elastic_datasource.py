@@ -90,14 +90,6 @@ class ElasticDataSource(DataSource):
     ):
         raise NotImplementedError()
 
-    def update(
-        self,
-        object_type: str,
-        updates,
-        **kwargs
-    ) -> None:
-        raise NotImplementedError()
-
     def delete(
         self,
         object_type: str,
