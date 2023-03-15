@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: MIT
 
 from abc import ABC, abstractmethod
-from typing import Any, Dict, Iterable, List, Tuple
+from typing import Any, Dict, List, Tuple
 
 from .datasource_error import DataSourceError
 from .datasource_filter import DataSourceFilter
@@ -50,6 +50,7 @@ class DataSource(ABC):
         Gets a page of results. Supports filtering by adding
         a DataSourceFilter filter keyword argument.
         """
+
 
 class ReadOnlyError(Exception):
     def __init__(self, data_source: DataSource):
