@@ -45,6 +45,9 @@ class DataSource(ABC):
     """
     The central class for managing operations on heterogeneous data sources
     """
+
+    DEFAULT_PAGE_SIZE = 20
+
     def __init__(self, config: DataSourceConfig, expected: List[str] = None):
         self.__validate_config(config, expected)
         for k, v in config.items():
@@ -67,6 +70,12 @@ class DataSource(ABC):
     @abstractmethod
     def get_by_id(self, object_type: str, id_: str, **kwargs):
         pass
+
+    def get_page_size(self) -> int:
+        if hasattr(self, 'page_size'):
+            return self.page_size
+        else:
+            return self.DEFAULT_PAGE_SIZE
 
 
 class ReadOnlyError(Exception):
