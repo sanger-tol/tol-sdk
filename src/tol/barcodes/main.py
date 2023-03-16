@@ -9,7 +9,7 @@ from marshmallow import Schema, fields
 
 import requests
 
-from ..core import DataSource
+from ..core import DataSource, unsupported
 
 
 class Interface(DataSource):
@@ -110,3 +110,7 @@ class Interface(DataSource):
                     + url
                 )
                 return {'DryRun': curl}
+
+    @unsupported
+    def get_by_id(self, *args, **kwargs):
+        pass

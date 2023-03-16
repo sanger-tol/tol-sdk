@@ -5,17 +5,29 @@
 from typing import Dict
 from unittest import TestCase
 
-from tol.core import (DataSource, DataSourceError)
+from tol.core import (
+    DataSource,
+    DataSourceError,
+    unsupported
+)
 
 
 class TestDataSourceExpected(DataSource):
     def __init__(self, config: Dict):
         super().__init__(config, expected=['field1', 'field2'])
 
+    @unsupported
+    def get_by_id(self, *args, **kwargs):
+        pass
+
 
 class TestDataSourceNoExpected(DataSource):
     def __init__(self, config: Dict):
         super().__init__(config, expected=[])
+
+    @unsupported
+    def get_by_id(self, *args, **kwargs):
+        pass
 
 
 class TestDataSource(TestCase):
