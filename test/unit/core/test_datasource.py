@@ -20,6 +20,10 @@ class TestDataSourceExpected(DataSource):
     def get_by_id(self, *args, **kwargs):
         pass
 
+    @unsupported
+    def get_list_page(self, *args, **kwargs):
+        pass
+
 
 class TestDataSourceNoExpected(DataSource):
     def __init__(self, config: Dict):
@@ -27,6 +31,10 @@ class TestDataSourceNoExpected(DataSource):
 
     @unsupported
     def get_by_id(self, *args, **kwargs):
+        pass
+
+    @unsupported
+    def get_list_page(self, *args, **kwargs):
         pass
 
 

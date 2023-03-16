@@ -9,6 +9,7 @@ from functools import wraps
 from typing import Any, Callable, Dict, List, Tuple
 
 from .datasource_error import DataSourceError
+from .datasource_filter import DataSourceFilter
 
 
 DataId = str
@@ -69,6 +70,16 @@ class DataSource(ABC):
 
     @abstractmethod
     def get_by_id(self, object_type: str, id_: str, **kwargs):
+        pass
+
+    @abstractmethod
+    def get_list_page(
+        self,
+        object_type: str,
+        page: int,
+        object_filters: DataSourceFilter = None,
+        **kwargs
+    ):
         pass
 
     def get_page_size(self) -> int:
