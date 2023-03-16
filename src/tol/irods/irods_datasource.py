@@ -27,6 +27,15 @@ class IrodsDataSource(DataSource):
         self._initialise_irods()
         self.cache = LFUCache(100000)
 
+    def get_list_page(
+        self,
+        object_type: str,
+        page: int,
+        data_filter=None,
+        **kwargs
+    ):
+        raise NotImplementedError()
+
     def _initialise_irods(self):
         self.irods = iRODSSession(host=self.host,
                                   port=self.port,
