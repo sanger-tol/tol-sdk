@@ -56,3 +56,22 @@ class TestDataSource(TestCase):
     def test_unsupported_method_exception(self):
         with self.assertRaises(UnsupportedMethodException):
             TestDataSourceNoExpected({}).get_by_id()
+
+    def test_unsupported_method_doc(self):
+        self.assertTrue(
+            hasattr(
+                TestDataSourceNoExpected({}).get_by_id,
+                '_unsupported'
+            )
+        )
+
+    def test_supported_method_no_exception(self):
+        TestDataSourceNoExpected({}).get_list_page()
+
+    def test_supported_method_no_doc(self):
+        self.assertFalse(
+            hasattr(
+                TestDataSourceNoExpected({}).get_list_page,
+                '_unsupported'
+            )
+        )
