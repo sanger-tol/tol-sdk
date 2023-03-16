@@ -83,21 +83,6 @@ class ElasticDataSource(DataSource):
             raise DataSourceError(f'{no_of_errors} errors encountered '
                                   f'upserting {no_of_operations} objects')
 
-    def get_by_ids(
-        self,
-        ids,
-        **kwargs
-    ):
-        raise NotImplementedError()
-
-    def delete(
-        self,
-        object_type: str,
-        ids,
-        **kwargs
-    ) -> None:
-        raise NotImplementedError()
-
     def get_list_page(
         self,
         object_type: str,
