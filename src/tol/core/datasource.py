@@ -38,19 +38,6 @@ class DataSource(ABC):
                     detail=f'{k} missing in config dict'
                 )
 
-    @abstractmethod
-    def get_list_page(
-        self,
-        object_type: str,
-        page: int,
-        data_filter: DataSourceFilter = None,
-        **kwargs
-    ) -> List[DataObject]:
-        """
-        Gets a page of results. Supports filtering by adding
-        a DataSourceFilter filter keyword argument.
-        """
-
 
 class ReadOnlyError(Exception):
     def __init__(self, data_source: DataSource):
