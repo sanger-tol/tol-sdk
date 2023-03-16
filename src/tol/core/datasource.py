@@ -2,8 +2,11 @@
 #
 # SPDX-License-Identifier: MIT
 
+from __future__ import annotations
+
 from abc import ABC
-from typing import Any, Dict, List, Tuple
+from functools import wraps
+from typing import Any, Callable, Dict, List, Tuple
 
 from .datasource_error import DataSourceError
 
@@ -12,6 +15,25 @@ DataId = str
 DataObject = Dict[str, Any]
 DataSourceUpdate = Tuple[DataId, DataObject]
 DataSourceConfig = Dict[str, Any]
+
+
+class UnsupportedMethodException(NotImplementedError):
+    def __init__(self, obj: DataSource, method: Callable):
+        super().__init__(
+            f'The method {method.__name__} is '
+            f'unsupported on {obj.__name__}.'
+        )
+
+
+def unsupported(method: Callable) -> Callable:
+
+    @wraps(method)
+    def wrapper(obj: DataSource, *args, **kwargs) -> None:
+        raise UnsupportedMethodException(
+            obj,
+            method
+        )
+    return wrapper
 
 
 class DataSource(ABC):
