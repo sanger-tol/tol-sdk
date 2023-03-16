@@ -95,7 +95,7 @@ class ElasticDataSource(DataSource):
     def get_by_id(
         self,
         object_type: str,
-        id: str,
+        id_: str,
         **kwargs
     ):
         pass
