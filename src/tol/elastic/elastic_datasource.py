@@ -91,3 +91,11 @@ class ElasticDataSource(DataSource):
         **kwargs
     ):
         raise NotImplementedError()
+
+    def get_by_id(
+        self,
+        object_type: str,
+        id: str,
+        **kwargs
+    ):
+        pass
