@@ -13,9 +13,8 @@ from irods.column import Criterion, In
 from irods.data_object import iRODSDataObject
 from irods.models import Collection, DataObject, DataObjectMeta
 from irods.session import iRODSSession
-from tol.core.datasource import unsupported
 
-from ..core import DataSource
+from ..core import DataSource, unsupported
 
 
 class IrodsDataSource(DataSource):
