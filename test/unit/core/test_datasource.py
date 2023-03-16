@@ -8,7 +8,8 @@ from unittest import TestCase
 from tol.core import (
     DataSource,
     DataSourceError,
-    unsupported
+    unsupported,
+    UnsupportedMethodException
 )
 
 
@@ -33,9 +34,10 @@ class TestDataSourceNoExpected(DataSource):
     def get_by_id(self, *args, **kwargs):
         pass
 
-    @unsupported
     def get_list_page(self, *args, **kwargs):
-        pass
+        return [{
+            'hello': 'world'
+        }]
 
 
 class TestDataSource(TestCase):
@@ -50,3 +52,7 @@ class TestDataSource(TestCase):
         TestDataSourceNoExpected({})
         TestDataSourceNoExpected({'field1': 'value1'})
         TestDataSourceNoExpected({'field1': 'value1', 'field2': 'value2'})
+
+    def test_unsupported_method_exception(self):
+        with self.assertRaises(UnsupportedMethodException):
+            TestDataSourceNoExpected({}).get_by_id()

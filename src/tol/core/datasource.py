@@ -22,7 +22,7 @@ class UnsupportedMethodException(NotImplementedError):
     def __init__(self, obj: DataSource, method: Callable):
         super().__init__(
             f'The method {method.__name__} is '
-            f'unsupported on {obj.__name__}.'
+            f'unsupported on {obj.__class__.__name__}.'
         )
 
 
