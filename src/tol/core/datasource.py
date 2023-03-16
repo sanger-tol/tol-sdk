@@ -2,11 +2,10 @@
 #
 # SPDX-License-Identifier: MIT
 
-from abc import ABC, abstractmethod
+from abc import ABC
 from typing import Any, Dict, List, Tuple
 
 from .datasource_error import DataSourceError
-from .datasource_filter import DataSourceFilter
 
 
 DataId = str
