@@ -4,7 +4,7 @@
 
 from __future__ import annotations
 
-from abc import ABC
+from abc import ABC, abstractmethod
 from functools import wraps
 from typing import Any, Callable, Dict, List, Tuple
 
@@ -26,6 +26,11 @@ class UnsupportedMethodException(NotImplementedError):
 
 
 def unsupported(method: Callable) -> Callable:
+    """
+    Indicates that an abstract method on ABC DataSource is
+    unsupported on the decorated inherited class's method.
+    """
+    method._unsupported = True
 
     @wraps(method)
     def wrapper(obj: DataSource, *args, **kwargs) -> None:
@@ -58,6 +63,10 @@ class DataSource(ABC):
                     title='Incorrect configuration',
                     detail=f'{k} missing in config dict'
                 )
+
+    @abstractmethod
+    def get_by_id(self, object_type: str, id: str, **kwargs):
+        pass
 
 
 class ReadOnlyError(Exception):

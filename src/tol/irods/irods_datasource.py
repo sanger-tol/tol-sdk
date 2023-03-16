@@ -13,6 +13,7 @@ from irods.column import Criterion, In
 from irods.data_object import iRODSDataObject
 from irods.models import Collection, DataObject, DataObjectMeta
 from irods.session import iRODSSession
+from tol.core.datasource import unsupported
 
 from ..core import DataSource
 
@@ -112,3 +113,7 @@ class IrodsDataSource(DataSource):
     def get_run_data(self, study_ids: List[str]):
         files = self.get_file_data(study_ids)
         return self._convert_files_to_runs(files)
+
+    @unsupported
+    def get_by_id(self, *args, **kwargs):
+        pass
