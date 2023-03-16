@@ -8,8 +8,8 @@ from unittest import TestCase
 from tol.core import (
     DataSource,
     DataSourceError,
-    unsupported,
-    UnsupportedMethodException
+    UnsupportedMethodException,
+    unsupported
 )
 
 
