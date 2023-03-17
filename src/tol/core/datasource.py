@@ -69,8 +69,8 @@ class DataSource(ABC):
     def __method_is_supported(self, method_name) -> bool:
         method = getattr(self, method_name)
         return (
-            hasattr(method, '_unsupported') and
-            method._unsupported == True
+            hasattr(method, '_unsupported')
+            and method._unsupported is True
         ) is False
 
     def __validate_config(
