@@ -53,9 +53,9 @@ INDIVIDUAL_CONFIG_DICT = {
                 dump_only=True
             )
         },
-        'many': [
-            'samples'
-        ]
+        'many': {
+            'samples': 'samples'
+        }
     }
 }
 
@@ -162,3 +162,20 @@ class TestAutoSchema:
         id_field = schema_class._declared_fields['id']
 
         assert id_field.dump_only is True
+
+    def test_renamed_many_relationship(self):
+        # rename the "samples" many-relationship
+        copy_dict = deepcopy(INDIVIDUAL_CONFIG_DICT)
+        copy_dict['relationships']['many'] = {
+            'test_samples': 'samples'
+        }
+        # generate the auto schema
+        generator = _AutoSchemaGenerator(
+            IndividualConfig(**copy_dict)
+        )
+        schema_class = generator.generate()
+        fields = schema_class._declared_fields
+        assert 'test_samples' in fields
+        assert 'samples' not in fields
+        # assert that test_samples points to samples
+        assert fields['test_samples'].type_ == 'samples'

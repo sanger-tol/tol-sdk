@@ -92,11 +92,11 @@ class _AutoSchemaGenerator:
             self.__extra_attributes[field_name] = field
 
     def __generate_many_relationships(self) -> None:
-        for target in self.__config.relationships.many:
+        for field_name, target in self.__config.relationships.many.items():
             field = self.__generate_many_relationship_for_target(
                 target
             )
-            self.__extra_attributes[target] = field
+            self.__extra_attributes[field_name] = field
 
     def __generate_many_relationship_for_target(
         self,
