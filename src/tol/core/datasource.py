@@ -107,10 +107,3 @@ class DataSource(ABC):
             return self.page_size
         else:
             return self.DEFAULT_PAGE_SIZE
-
-
-class ReadOnlyError(Exception):
-    def __init__(self, data_source: DataSource):
-        super().__init__(
-            f'The DataSource {data_source.__name__} is read-only.'
-        )
