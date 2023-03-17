@@ -89,7 +89,7 @@ class DataSource(ABC):
                 )
 
     @abstractmethod
-    def get_by_id(self, object_type: str, id_: str, **kwargs):
+    def get_by_id(self, object_type: str, id_: DataId, **kwargs):
         pass
 
     @abstractmethod
