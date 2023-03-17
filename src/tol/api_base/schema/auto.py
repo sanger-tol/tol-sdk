@@ -103,7 +103,7 @@ class _AutoSchemaGenerator:
         target: str
     ) -> schema_fields.Relationship:
 
-        type_ = self.__config.type_
+        type_ = self.__config.object_type
         return schema_fields.Relationship(
             f'/{type_}/{{id}}/{target}',
             related_url_kwargs={'id': '<id>'},
@@ -113,7 +113,7 @@ class _AutoSchemaGenerator:
         )
 
     def __generate_meta_class(self) -> None:
-        stored_type = self.__config.type_
+        stored_type = self.__config.object_type
 
         class Meta:
             type_ = stored_type
@@ -140,7 +140,7 @@ class _AutoSchemaGenerator:
             )
 
     def __generate_new_schema_class(self) -> Schema:
-        name = f'{self.__config.type_.capitalize()}Schema'
+        name = f'{self.__config.object_type.capitalize()}Schema'
         return type(
             name,
             (Schema,),

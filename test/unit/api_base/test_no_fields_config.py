@@ -9,7 +9,7 @@ from tol.api_base.utils.config import IndividualConfig
 
 
 INDIVIDUAL_CONFIG_DICT = {
-    'type_': 'specimen',
+    'object_type': 'specimen',
     'meta': {},
     'source': Sources.DATABASE,
     'id_scheme': IdSchemes.EXTERNAL,
