@@ -16,16 +16,8 @@ class Methods(_StrEnum):
     on a type.
     """
 
-    GET = 'GET'
-    BULK_GET = 'BULK_GET'
-    CREATE = 'CREATE'
-    BULK_CREATE = 'BULK_CREATE'
-    UPDATE = 'UPDATE'
-    BULK_UPDATE = 'BULK_UPDATE'
-    DELETE = 'DELETE'
-    BULK_DELETE = 'BULK_DELETE'
-    UPSERT = 'UPSERT'
-    BULK_UPSERT = 'UPSERT'
+    GET_BY_ID = 'GET_BY_ID'
+    GET_LIST_PAGE = 'GET_LIST_PAGE'
 
 
 class Sources(_StrEnum):

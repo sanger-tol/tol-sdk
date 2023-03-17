@@ -15,10 +15,10 @@ INDIVIDUAL_CONFIG_DICT = {
     'id_scheme': IdSchemes.EXTERNAL,
     'methods': {
         'auth': [
-            Methods.CREATE, Methods.DELETE, Methods.UPDATE, Methods.UPSERT
+            Methods.GET_LIST_PAGE
         ],
         'noauth': [
-            Methods.GET, Methods.BULK_GET
+            Methods.GET_BY_ID
         ]
     },
     'attributes': {
