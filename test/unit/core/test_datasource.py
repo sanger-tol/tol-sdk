@@ -58,7 +58,7 @@ class TestDataSource(TestCase):
             TestDataSourceNoExpected({}).get_by_id()
 
     def test_unsupported_method_doc(self):
-        method = TestDataSourceNoExpected({}).get_by_id 
+        method = TestDataSourceNoExpected({}).get_by_id
         self.assertTrue(hasattr(method, '_unsupported'))
         self.assertTrue(method._unsupported)
 
