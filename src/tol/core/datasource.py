@@ -29,7 +29,8 @@ class UnsupportedOperationException(NotImplementedError):
 def unsupported(method: Callable) -> Callable:
     """
     Indicates that an abstract operation on ABC DataSource is
-    unsupported on the decorated inherited class's method.
+    unsupported on the decorated inherited class's method and
+    will return an UnsupportedOperationException if called.
     """
     method._unsupported = True
 
