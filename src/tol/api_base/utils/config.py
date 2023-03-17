@@ -27,6 +27,12 @@ class ConfigRelationships:
 
 @dataclass
 class IndividualConfig:
+    """
+    Configures the core (non-custom) behaviour of an
+    object type, as expressed in terms of methods acting
+    on objects and data sources.
+    """
+
     object_type: ObjectType
     id_scheme: IdSchemes
     methods: MethodsDict
