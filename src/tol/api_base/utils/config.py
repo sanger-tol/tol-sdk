@@ -29,8 +29,9 @@ class ConfigRelationships:
 class IndividualConfig:
     """
     Configures the core (non-custom) behaviour of an
-    object type, as expressed in terms of methods acting
-    on objects and data sources.
+    object_type, as expressed in terms of methods acting
+    on objects of its own type and DataSource, as well as
+    others.
     """
 
     object_type: ObjectType
