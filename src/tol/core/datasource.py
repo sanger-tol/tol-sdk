@@ -67,10 +67,10 @@ class DataSource(ABC):
         ]
 
     def __operation_is_supported(self, name) -> bool:
-        opeartion = getattr(self, name)
+        operation = getattr(self, name)
         return (
-            hasattr(opeartion, '_unsupported')
-            and opeartion._unsupported is True
+            hasattr(operation, '_unsupported')
+            and operation._unsupported is True
         ) is False
 
     def __validate_config(
