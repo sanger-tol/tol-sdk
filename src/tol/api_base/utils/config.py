@@ -5,7 +5,7 @@
 from dataclasses import dataclass
 from typing import Any, Dict, List, Optional
 
-from tol.api_base import IdSchemes, Methods, Sources, tol_fields
+from tol.api_base import IdSchemes, Methods, tol_fields
 
 
 ObjectType = str
@@ -28,7 +28,6 @@ class ConfigRelationships:
 class IndividualConfig:
     object_type: ObjectType
     id_scheme: IdSchemes
-    source: Sources
     methods: MethodsDict
     meta: Optional[MetaDict] = None
     attributes: Optional[AttributesDict] = None

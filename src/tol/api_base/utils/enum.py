@@ -16,19 +16,8 @@ class Methods(_StrEnum):
     on a type.
     """
 
-    GET_BY_ID = 'GET_BY_ID'
-    GET_LIST_PAGE = 'GET_LIST_PAGE'
-
-
-class Sources(_StrEnum):
-    """
-    An enum containing all possible
-    sources of data
-    """
-
-    DATABASE = 'DATABASE'
-    ELASTIC = 'ELASTIC'
-    JIRA = 'JIRA'
+    GET_BY_ID = 'get_by_id'
+    GET_LIST_PAGE = 'get_list_page'
 
 
 class IdSchemes(Enum):

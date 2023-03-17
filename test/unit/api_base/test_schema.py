@@ -6,7 +6,7 @@ from copy import deepcopy
 
 from marshmallow_jsonapi import fields as schema_fields
 
-from tol.api_base import IdSchemes, Methods, Sources, tol_fields
+from tol.api_base import IdSchemes, Methods, tol_fields
 from tol.api_base.schema.auto import _AutoSchemaGenerator
 from tol.api_base.utils.config import IndividualConfig
 
@@ -23,7 +23,6 @@ from tol.api_base.utils.config import IndividualConfig
 
 INDIVIDUAL_CONFIG_DICT = {
     'object_type': 'specimen',
-    'source': Sources.DATABASE,
     'id_scheme': IdSchemes.EXTERNAL,
     'methods': {
         'auth': [
