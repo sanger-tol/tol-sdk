@@ -40,9 +40,9 @@ INDIVIDUAL_CONFIG_DICT = {
                 dump_only=True
             )
         },
-        'many': [
-            'samples'
-        ]
+        'many': {
+            'samples': 'samples'
+        }
     }
 }
 
