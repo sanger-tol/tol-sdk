@@ -7,7 +7,7 @@ from copy import deepcopy
 from marshmallow_jsonapi import fields as schema_fields
 
 from tol.api_base import IdSchemes, Methods, Sources, tol_fields
-from tol.api_base.schema.auto import AutoSchemaGenerator
+from tol.api_base.schema.auto import _AutoSchemaGenerator
 from tol.api_base.utils.config import IndividualConfig
 
 # TODO test:
@@ -64,7 +64,7 @@ INDIVIDUAL_CONFIG_DICT = {
 class TestAutoSchema:
     def test_only_correct_fields_present(self):
         # generate the auto schema
-        generator = AutoSchemaGenerator(
+        generator = _AutoSchemaGenerator(
             IndividualConfig(**INDIVIDUAL_CONFIG_DICT)
         )
         schema_class = generator.generate()
@@ -87,7 +87,7 @@ class TestAutoSchema:
 
     def test_fields_have_correct_type(self):
         # generate the auto schema
-        generator = AutoSchemaGenerator(
+        generator = _AutoSchemaGenerator(
             IndividualConfig(**INDIVIDUAL_CONFIG_DICT)
         )
         schema_class = generator.generate()
@@ -109,7 +109,7 @@ class TestAutoSchema:
 
     def test_required_fields(self):
         # generate the auto schema
-        generator = AutoSchemaGenerator(
+        generator = _AutoSchemaGenerator(
             IndividualConfig(**INDIVIDUAL_CONFIG_DICT)
         )
         schema_class = generator.generate()
@@ -131,7 +131,7 @@ class TestAutoSchema:
 
     def test_dump_only_fields(self):
         # generate the auto schema
-        generator = AutoSchemaGenerator(
+        generator = _AutoSchemaGenerator(
             IndividualConfig(**INDIVIDUAL_CONFIG_DICT)
         )
         schema_class = generator.generate()
@@ -156,7 +156,7 @@ class TestAutoSchema:
         copy_dict = deepcopy(INDIVIDUAL_CONFIG_DICT)
         copy_dict['id_scheme'] = IdSchemes.AUTO_INCREMENT
         # generate the auto schema
-        generator = AutoSchemaGenerator(
+        generator = _AutoSchemaGenerator(
             IndividualConfig(**copy_dict)
         )
         schema_class = generator.generate()

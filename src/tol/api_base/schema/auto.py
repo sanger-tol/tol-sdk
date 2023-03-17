@@ -12,7 +12,7 @@ from ..utils.config import IndividualConfig
 from ..utils.enum import IdSchemes
 
 
-class AutoSchemaGenerator:
+class _AutoSchemaGenerator:
     """
     Generates an AutoSchema class, given the
     config for an individual type. Consider
