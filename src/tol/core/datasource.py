@@ -49,10 +49,29 @@ class DataSource(ABC):
 
     DEFAULT_PAGE_SIZE = 20
 
+    __METHODS = [
+        'get_by_id',
+        'get_list_page'
+    ]
+
     def __init__(self, config: DataSourceConfig, expected: List[str] = None):
         self.__validate_config(config, expected)
         for k, v in config.items():
             setattr(self, k, v)
+
+    @property
+    def supported_methods(self) -> List[str]:
+        return [
+            method_name for method_name in self.__METHODS
+            if self.__method_is_supported(method_name)
+        ]
+
+    def __method_is_supported(self, method_name) -> bool:
+        method = getattr(self, method_name)
+        return (
+            hasattr(method, '_unsupported') and
+            method._unsupported == True
+        ) is False
 
     def __validate_config(
         self,

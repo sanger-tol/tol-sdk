@@ -72,3 +72,17 @@ class TestDataSource(TestCase):
                 '_unsupported'
             )
         )
+
+    def test_get_supported_methods(self):
+        # first has no supported methods
+        self.assertEqual(
+            TestDataSourceExpected(
+                {'field1': 'value1', 'field2': 'value2'}
+            ).supported_methods,
+            []
+        )
+        # second supports one
+        self.assertEqual(
+            TestDataSourceNoExpected({}).supported_methods,
+            ['get_list_page']
+        )

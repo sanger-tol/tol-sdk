@@ -5,12 +5,13 @@
 from dataclasses import dataclass
 from typing import Any, Dict, List, Optional
 
-from tol.api_base import IdSchemes, Methods, tol_fields
+from tol.api_base import IdSchemes, tol_fields
 
 
 ObjectType = str
+Method = str
 MetaDict = Dict[str, Any]
-MethodsDict = Dict[str, List[Methods]]
+MethodsDict = Dict[str, List[Method]]
 AttributesDict = Dict[str, tol_fields.Field]
 
 

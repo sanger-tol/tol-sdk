@@ -6,7 +6,7 @@ from copy import deepcopy
 
 from marshmallow_jsonapi import fields as schema_fields
 
-from tol.api_base import IdSchemes, Methods, tol_fields
+from tol.api_base import IdSchemes, tol_fields
 from tol.api_base.schema.auto import _AutoSchemaGenerator
 from tol.api_base.utils.config import IndividualConfig
 
@@ -26,10 +26,10 @@ INDIVIDUAL_CONFIG_DICT = {
     'id_scheme': IdSchemes.EXTERNAL,
     'methods': {
         'auth': [
-            Methods.GET_BY_ID
+            'get_by_id'
         ],
         'noauth': [
-            Methods.GET_LIST_PAGE
+            'get_list_page'
         ]
     },
     'attributes': {

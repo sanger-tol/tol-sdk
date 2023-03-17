@@ -4,7 +4,7 @@
 
 from copy import deepcopy
 
-from tol.api_base import IdSchemes, Methods, tol_fields
+from tol.api_base import IdSchemes, tol_fields
 from tol.api_base.utils.config import IndividualConfig
 
 
@@ -14,10 +14,10 @@ INDIVIDUAL_CONFIG_DICT = {
     'id_scheme': IdSchemes.EXTERNAL,
     'methods': {
         'auth': [
-            Methods.GET_LIST_PAGE
+            'get_list_page'
         ],
         'noauth': [
-            Methods.GET_BY_ID
+            'get_by_id'
         ]
     },
     'attributes': {

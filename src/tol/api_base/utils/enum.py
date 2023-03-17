@@ -6,21 +6,7 @@
 from enum import Enum
 
 
-class _StrEnum(str, Enum):
-    pass
-
-
-class Methods(_StrEnum):
-    """
-    An enum containing all of the methods possible
-    on a type.
-    """
-
-    GET_BY_ID = 'get_by_id'
-    GET_LIST_PAGE = 'get_list_page'
-
-
-class IdSchemes(Enum):
+class IdSchemes(str, Enum):
     """
     An enum describing the possible types of
     identifier value protocol
