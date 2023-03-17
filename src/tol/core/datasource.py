@@ -18,24 +18,24 @@ DataSourceUpdate = Tuple[DataId, DataObject]
 DataSourceConfig = Dict[str, Any]
 
 
-class UnsupportedMethodException(NotImplementedError):
+class UnsupportedOperationException(NotImplementedError):
     def __init__(self, obj: DataSource, method: Callable):
         super().__init__(
-            f'The method {method.__name__} is '
+            f'The operation {method.__name__} is '
             f'unsupported on {obj.__class__.__name__}.'
         )
 
 
 def unsupported(method: Callable) -> Callable:
     """
-    Indicates that an abstract method on ABC DataSource is
+    Indicates that an abstract operation on ABC DataSource is
     unsupported on the decorated inherited class's method.
     """
     method._unsupported = True
 
     @wraps(method)
     def wrapper(obj: DataSource, *args, **kwargs) -> None:
-        raise UnsupportedMethodException(
+        raise UnsupportedOperationException(
             obj,
             method
         )
@@ -49,7 +49,7 @@ class DataSource(ABC):
 
     DEFAULT_PAGE_SIZE = 20
 
-    __METHODS = [
+    __OPERATIONS = [
         'get_by_id',
         'get_list_page'
     ]
@@ -60,17 +60,17 @@ class DataSource(ABC):
             setattr(self, k, v)
 
     @property
-    def supported_methods(self) -> List[str]:
+    def supported_operations(self) -> List[str]:
         return [
-            method_name for method_name in self.__METHODS
-            if self.__method_is_supported(method_name)
+            operation for operation in self.__OPERATIONS
+            if self.__operation_is_supported(operation)
         ]
 
-    def __method_is_supported(self, method_name) -> bool:
-        method = getattr(self, method_name)
+    def __operation_is_supported(self, name) -> bool:
+        opeartion = getattr(self, name)
         return (
-            hasattr(method, '_unsupported')
-            and method._unsupported is True
+            hasattr(opeartion, '_unsupported')
+            and opeartion._unsupported is True
         ) is False
 
     def __validate_config(

@@ -8,7 +8,7 @@ from unittest import TestCase
 from tol.core import (
     DataSource,
     DataSourceError,
-    UnsupportedMethodException,
+    UnsupportedOperationException,
     unsupported
 )
 
@@ -54,7 +54,7 @@ class TestDataSource(TestCase):
         TestDataSourceNoExpected({'field1': 'value1', 'field2': 'value2'})
 
     def test_unsupported_method_exception(self):
-        with self.assertRaises(UnsupportedMethodException):
+        with self.assertRaises(UnsupportedOperationException):
             TestDataSourceNoExpected({}).get_by_id()
 
     def test_unsupported_method_doc(self):
@@ -78,11 +78,11 @@ class TestDataSource(TestCase):
         self.assertEqual(
             TestDataSourceExpected(
                 {'field1': 'value1', 'field2': 'value2'}
-            ).supported_methods,
+            ).supported_operations,
             []
         )
         # second supports one
         self.assertEqual(
-            TestDataSourceNoExpected({}).supported_methods,
+            TestDataSourceNoExpected({}).supported_operations,
             ['get_list_page']
         )
