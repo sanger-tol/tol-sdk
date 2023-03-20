@@ -7,10 +7,13 @@ from copy import deepcopy
 from tol.api_base import IdSchemes, tol_fields
 from tol.api_base.utils.config import IndividualConfig
 
+from .data_source import _TestDataSource
+
 
 INDIVIDUAL_CONFIG_DICT = {
     'object_type': 'specimen',
     'meta': {},
+    'data_source': _TestDataSource({}),
     'id_scheme': IdSchemes.EXTERNAL,
     'methods': {
         'auth': [

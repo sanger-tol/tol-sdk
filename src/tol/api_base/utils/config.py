@@ -5,7 +5,8 @@
 from dataclasses import dataclass
 from typing import Any, Dict, List, Optional
 
-from tol.api_base import IdSchemes, tol_fields
+from ..utils import tol_fields, IdSchemes
+from ...core.datasource import DataSource
 
 
 ObjectType = str
@@ -35,6 +36,7 @@ class IndividualConfig:
     """
 
     object_type: ObjectType
+    data_source: DataSource
     id_scheme: IdSchemes
     methods: MethodsDict
     meta: Optional[MetaDict] = None
@@ -48,4 +50,4 @@ class IndividualConfig:
             )
 
 
-Config = Dict[str, IndividualConfig]
+CombinedConfig = Dict[str, IndividualConfig]

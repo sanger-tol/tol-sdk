@@ -10,6 +10,8 @@ from tol.api_base import IdSchemes, tol_fields
 from tol.api_base.schema.auto import _AutoSchemaGenerator
 from tol.api_base.utils.config import IndividualConfig
 
+from .data_source import _TestDataSource
+
 # TODO test:
 # - all declared fields are on the schema
 # - datatypes are correct
@@ -23,6 +25,7 @@ from tol.api_base.utils.config import IndividualConfig
 
 INDIVIDUAL_CONFIG_DICT = {
     'object_type': 'specimen',
+    'data_source': _TestDataSource({}),
     'id_scheme': IdSchemes.EXTERNAL,
     'methods': {
         'auth': [
