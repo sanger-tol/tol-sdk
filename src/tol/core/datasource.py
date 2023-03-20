@@ -96,7 +96,7 @@ class DataSource(ABC):
     def get_list_page(
         self,
         object_type: str,
-        page: int,
+        page_number: int,
         object_filters: DataSourceFilter = None,
         **kwargs
     ):
