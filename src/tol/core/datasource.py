@@ -6,7 +6,7 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from functools import wraps
-from typing import Any, Callable, Dict, List, Tuple
+from typing import Any, Callable, Dict, Iterable, List, Tuple
 
 from .datasource_error import DataSourceError
 from .datasource_filter import DataSourceFilter
@@ -89,10 +89,15 @@ class DataSource(ABC):
                 )
 
     @abstractmethod
-    def get_by_id(self, object_type: str, object_id: DataId, **kwargs):
+    def get_by_id(
+        self,
+        object_type: str,
+        object_ids: Iterable[DataId],
+        **kwargs
+    ):
         """
-        Gets a DataObject, of specified object_type, with the id
-        equal to the given object_id.
+        Gets a List of DataObjet instances, of specified object_type,
+        with their id's equal to those given in the object_ids Iterable.
         """
 
     @abstractmethod
