@@ -3,6 +3,7 @@
 # SPDX-License-Identifier: MIT
 
 import pytest
+
 from tol.api_base.datasource import CombinedDataSource
 from tol.api_base.utils.config import IndividualConfig
 from tol.core import DataSource, unsupported
