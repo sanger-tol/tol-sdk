@@ -8,7 +8,7 @@ import typing
 from abc import ABC
 from typing import Any, Dict
 
-# only import data source for type hints
+# only import DataSource for type hints
 if typing.TYPE_CHECKING:
     from .datasource import DataSource
 
