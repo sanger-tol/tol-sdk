@@ -4,11 +4,13 @@
 
 import pytest
 
-from tol.api_base.datasource import CombinedDataSource
+from tol.api_base.datasource import (
+    CombinedDataSource,
+    UnsupportedOperationForTypeError
+)
 from tol.api_base.utils.config import IndividualConfig
 from tol.core import (
     DataSource,
-    UnsupportedOperationException,
     unsupported,
 )
 
@@ -106,9 +108,9 @@ class TestCombinedDataSource:
         assert ds_2.count == 0
 
     def test_calling_unsupported_subordinate_exception(self):
-        with pytest.raises(UnsupportedOperationException):
+        with pytest.raises(UnsupportedOperationForTypeError):
             combined_ds.get_by_id('species', [])
-        with pytest.raises(UnsupportedOperationException):
+        with pytest.raises(UnsupportedOperationForTypeError):
             combined_ds.get_by_id('specimens', [])
-        with pytest.raises(UnsupportedOperationException):
+        with pytest.raises(UnsupportedOperationForTypeError):
             combined_ds.get_list_page('samples', [])

@@ -16,6 +16,20 @@ from ...core import (
 )
 
 
+class UnsupportedOperationForTypeError(NotImplementedError):
+    def __init__(
+        self,
+        operation_name: str,
+        data_source: DataSource,
+        object_type: str
+    ):
+        super().__init__(
+            f'The operation {operation_name} is unsupported '
+            f'for the type {object_type}, since it is provided '
+            f'by the DataSource inheritor {data_source}.'
+        )
+
+
 def delegate(operation: Callable) -> Callable:
     name = operation.__name__
 

@@ -2,4 +2,4 @@
 #
 # SPDX-License-Identifier: MIT
 
-from .combined_datasource import CombinedDataSource  # noqa
+from .combined_datasource import *  # noqa
