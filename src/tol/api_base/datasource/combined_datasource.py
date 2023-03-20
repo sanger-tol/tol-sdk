@@ -19,19 +19,17 @@ from ...core import (
 class UnsupportedOperationForTypeError(NotImplementedError):
     def __init__(
         self,
+        object_type: str,
         operation_name: str,
-        data_source: DataSource,
-        object_type: str
     ):
         super().__init__(
             f'The operation {operation_name} is unsupported '
-            f'for the type {object_type}, since it is provided '
-            f'by the DataSource inheritor {data_source}.'
+            f'for the type {object_type}.'
         )
 
 
 def delegate(operation: Callable) -> Callable:
-    name = operation.__name__
+    operation_name = operation.__name__
 
     @wraps(operation)
     def wrapper(
@@ -40,9 +38,17 @@ def delegate(operation: Callable) -> Callable:
         *args,
         **kwargs
     ) -> Any:
+        if not combined_ds.operation_is_supported_for_type(
+            object_type,
+            operation_name
+        ):
+            raise UnsupportedOperationForTypeError(
+                object_type,
+                operation_name
+            )
         return combined_ds.call_subordinate_operation(
             object_type,
-            name,
+            operation_name,
             *args,
             **kwargs
         )
