@@ -2,7 +2,10 @@
 #
 # SPDX-License-Identifier: MIT
 
-from typing import Iterable, List
+from __future__ import annotations
+
+from functools import wraps
+from typing import Any, Callable, Iterable, List
 
 from ..utils.config import CombinedConfig, IndividualConfig
 from ...core import (
@@ -11,6 +14,25 @@ from ...core import (
     DataSource,
     DataSourceFilter
 )
+
+
+def delegate(operation: Callable) -> Callable:
+    name = operation.__name__
+
+    @wraps(operation)
+    def wrapper(
+        combined_ds: CombinedDataSource,
+        object_type: str,
+        *args,
+        **kwargs
+    ) -> Any:
+        return combined_ds.call_subordinate_operation(
+            object_type,
+            name,
+            *args,
+            **kwargs
+        )
+    return wrapper
 
 
 class CombinedDataSource(DataSource):
@@ -25,6 +47,7 @@ class CombinedDataSource(DataSource):
         }
         super().__init__(datasource_config)
 
+    @delegate
     def get_by_id(
         self,
         object_type: str,
@@ -33,6 +56,7 @@ class CombinedDataSource(DataSource):
     ) -> List[DataObject]:
         pass
 
+    @delegate
     def get_list_page(
         self,
         object_type: str,
@@ -48,6 +72,24 @@ class CombinedDataSource(DataSource):
         object_type: str,
         operation_name: str
     ) -> bool:
+        data_source = self.__get_data_source_for_type(object_type)
+        return operation_name in data_source.supported_operations
+
+    def call_subordinate_operation(
+        self,
+        object_type: str,
+        operation_name: str,
+        *args,
+        **kwargs
+    ) -> Any:
+        subordinate_ds = self.__get_data_source_for_type(object_type)
+        subordinate_op = getattr(subordinate_ds, operation_name)
+        return subordinate_op(
+            object_type,
+            *args,
+            **kwargs
+        )
+
+    def __get_data_source_for_type(self, object_type: str) -> DataSource:
         individual_config: IndividualConfig = self.combined[object_type]
-        print(individual_config)
-        return operation_name in individual_config.data_source.supported_operations
+        return individual_config.data_source
