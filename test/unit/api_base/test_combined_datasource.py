@@ -6,8 +6,11 @@ import pytest
 
 from tol.api_base.datasource import CombinedDataSource
 from tol.api_base.utils.config import IndividualConfig
-from tol.core import DataSource, unsupported
-from tol.core.datasource import UnsupportedOperationException
+from tol.core import (
+    DataSource,
+    unsupported,
+    UnsupportedOperationException
+)
 
 
 class _TestDataSource1(DataSource):  # noqa
