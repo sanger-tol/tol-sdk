@@ -2,6 +2,14 @@
 #
 # SPDX-License-Identifier: MIT
 
+from __future__ import annotations
+
+import typing
+
+# only import data source for type hints
+if typing.TYPE_CHECKING:
+    from .datasource import DataSource
+
 from abc import ABC
 from typing import Any, Dict
 
@@ -18,9 +26,11 @@ class DataObject(ABC):
     def __init__(
         self,
         object_type: str,
+        data_source: DataSource,
         data: DataDict
     ):
         self.__object_type = object_type
+        self.__data_source = data_source
         self.set_data(data)
 
     @property
