@@ -10,11 +10,11 @@ from typing import Any, Callable, Dict, Iterable, List, Tuple
 
 from .datasource_error import DataSourceError
 from .datasource_filter import DataSourceFilter
+from .data_object import DataDict, DataObject
 
 
 DataId = str
-DataObject = Dict[str, Any]
-DataSourceUpdate = Tuple[DataId, DataObject]
+DataSourceUpdate = Tuple[DataId, DataDict]
 DataSourceConfig = Dict[str, Any]
 
 
@@ -94,9 +94,9 @@ class DataSource(ABC):
         object_type: str,
         object_ids: Iterable[DataId],
         **kwargs
-    ):
+    ) -> List[DataObject]:
         """
-        Gets a List of DataObjet instances, of specified object_type,
+        Gets a List of DataObject instances, of specified object_type,
         with their id's equal to those given in the object_ids Iterable.
         """
 
@@ -108,7 +108,7 @@ class DataSource(ABC):
         page_size: int = None,
         object_filters: DataSourceFilter = None,
         **kwargs
-    ):
+    ) -> List[DataObject]:
         """
         Gets a page of DataObject instances, of specified object_type, of
         the given page_size and page_number (starting from 1).
