@@ -4,7 +4,7 @@
 
 from typing import Iterable, List
 
-from ..utils.config import CombinedConfig
+from ..utils.config import CombinedConfig, IndividualConfig
 from ...core import (
     DataId,
     DataObject,
@@ -48,4 +48,6 @@ class CombinedDataSource(DataSource):
         object_type: str,
         operation_name: str
     ) -> bool:
-        pass
+        individual_config: IndividualConfig = self.combined[object_type]
+        print(individual_config)
+        return operation_name in individual_config.data_source.supported_operations

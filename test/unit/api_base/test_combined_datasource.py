@@ -3,6 +3,7 @@
 # SPDX-License-Identifier: MIT
 
 from tol.api_base.datasource import CombinedDataSource
+from tol.api_base.utils.config import IndividualConfig
 from tol.core import DataSource, unsupported
 
 
@@ -35,18 +36,24 @@ ds_2 = _TestDataSource2({})
 
 combined_ds = CombinedDataSource(
     {
-        'species': {
-            'object_type': 'species',
-            'data_source': ds_1
-        },
-        'specimen': {
-            'object_type': 'specimen',
-            'data_source': ds_1
-        },
-        'samples': {
-            'object_type': 'samples',
-            'data_source': ds_2
-        },
+        'species': IndividualConfig(
+            object_type='species',
+            data_source=ds_1,
+            id_scheme=None,
+            methods={}
+        ),
+        'specimens': IndividualConfig(
+            object_type='specimens',
+            data_source=ds_1,
+            id_scheme=None,
+            methods={}
+        ),
+        'samples': IndividualConfig(
+            object_type='samples',
+            data_source=ds_2,
+            id_scheme=None,
+            methods={}
+        ),
     }
 )
 
@@ -54,7 +61,7 @@ combined_ds = CombinedDataSource(
 class TestCombinedDataSource:
     def test_supported_methods(self):
         assert combined_ds.operation_is_supported_for_type(
-            'specimen',
+            'specimens',
             'get_by_id'
         ) is False
         assert combined_ds.operation_is_supported_for_type(
@@ -67,7 +74,7 @@ class TestCombinedDataSource:
         ) is True
 
         assert combined_ds.operation_is_supported_for_type(
-            'specimen',
+            'specimens',
             'get_list_page'
         ) is True
         assert combined_ds.operation_is_supported_for_type(
