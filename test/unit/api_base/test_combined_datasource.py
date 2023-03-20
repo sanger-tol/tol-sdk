@@ -78,3 +78,16 @@ class TestCombinedDataSource:
             'samples',
             'get_list_page'
         ) is False
+
+    def test_calling_supported_method_count(self):
+        combined_ds.get_by_id('samples', [])
+        assert _TestDataSource1.count == 0
+        assert _TestDataSource2.count == 1
+
+        # reset
+        _TestDataSource2.count = 0
+
+        combined_ds.get_list_page('species', 1)
+        combined_ds.get_list_page('specimen', 1)
+        assert _TestDataSource1.count == 2
+        assert _TestDataSource2.count == 0
