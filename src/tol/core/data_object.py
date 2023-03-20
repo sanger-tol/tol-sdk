@@ -5,13 +5,12 @@
 from __future__ import annotations
 
 import typing
+from abc import ABC
+from typing import Any, Dict
 
 # only import data source for type hints
 if typing.TYPE_CHECKING:
     from .datasource import DataSource
-
-from abc import ABC
-from typing import Any, Dict
 
 
 DataDict = Dict[str, Any]
