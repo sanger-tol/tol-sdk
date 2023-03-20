@@ -6,9 +6,9 @@ from typing import Iterable, List
 
 from ..utils.config import CombinedConfig
 from ...core import (
-    DataSource,
     DataId,
     DataObject,
+    DataSource,
     DataSourceFilter
 )
 
