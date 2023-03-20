@@ -89,18 +89,25 @@ class DataSource(ABC):
                 )
 
     @abstractmethod
-    def get_by_id(self, object_type: str, id_: DataId, **kwargs):
-        pass
+    def get_by_id(self, object_type: str, object_id: DataId, **kwargs):
+        """
+        Gets a DataObject, of specified object_type, with the id
+        equal to the given object_id.
+        """
 
     @abstractmethod
     def get_list_page(
         self,
         object_type: str,
         page_number: int,
+        page_size: int = None,
         object_filters: DataSourceFilter = None,
         **kwargs
     ):
-        pass
+        """
+        Gets a page of DataObject instances, of specified object_type, of
+        the given page_size and page_number (starting from 1).
+        """
 
     def get_page_size(self) -> int:
         if hasattr(self, 'page_size'):
