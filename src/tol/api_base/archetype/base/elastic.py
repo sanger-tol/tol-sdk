@@ -6,7 +6,6 @@ from abc import ABC
 
 from .base import Archetype
 from ...utils.config import IndividualConfig
-from ....elastic import ElasticDataSource
 
 
 class ElasticArchetype(Archetype, ABC):
@@ -20,4 +19,4 @@ class ElasticArchetype(Archetype, ABC):
     # given to the constructor for every object_type
 
     def to_config(self) -> IndividualConfig:
-        return super().to_config()
+        raise NotImplementedError()
