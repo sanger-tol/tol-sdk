@@ -6,7 +6,8 @@ import pytest
 
 from tol.api_base.datasource import (
     CombinedDataSource,
-    UnsupportedOperationForTypeError
+    NonExistentTypeError,
+    UnsupportedOperationForTypeError,
 )
 from tol.api_base.utils.config import IndividualConfig
 from tol.core import (
@@ -114,3 +115,7 @@ class TestCombinedDataSource:
             combined_ds.get_by_id('specimens', [])
         with pytest.raises(UnsupportedOperationForTypeError):
             combined_ds.get_list_page('samples', [])
+
+    def test_type_does_not_exist_error(self):
+        with pytest.raises(NonExistentTypeError):
+            combined_ds.get_by_id('fake', [])

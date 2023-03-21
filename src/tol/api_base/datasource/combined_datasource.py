@@ -7,7 +7,7 @@ from __future__ import annotations
 from functools import wraps
 from typing import Any, Callable, Iterable, List
 
-from ..utils.config import CombinedConfig, IndividualConfig
+from ..utils.config import CombinedConfig
 from ...core import (
     DataId,
     DataObject,
@@ -25,6 +25,13 @@ class UnsupportedOperationForTypeError(NotImplementedError):
         super().__init__(
             f'The operation {operation_name} is unsupported '
             f'for the type {object_type}.'
+        )
+
+
+class NonExistentTypeError(Exception):
+    def __init__(self, object_type: str) -> None:
+        super().__init__(
+            f'No DataObject exists with type {object_type}.'
         )
 
 
@@ -63,7 +70,11 @@ class CombinedDataSource(DataSource):
 
     def __init__(self, combined_config: CombinedConfig):
         datasource_config = {
-            'combined': combined_config
+            'combined': {
+                object_type: individual_config.data_source
+                for object_type, individual_config
+                in combined_config.items()
+            }
         }
         super().__init__(datasource_config)
 
@@ -111,5 +122,7 @@ class CombinedDataSource(DataSource):
         )
 
     def __get_data_source_for_type(self, object_type: str) -> DataSource:
-        individual_config: IndividualConfig = self.combined[object_type]
-        return individual_config.data_source
+        data_source = self.combined.get(object_type, None)
+        if data_source is None:
+            raise NonExistentTypeError(object_type)
+        return data_source

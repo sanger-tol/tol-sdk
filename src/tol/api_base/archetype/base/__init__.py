@@ -2,4 +2,4 @@
 #
 # SPDX-License-Identifier: MIT
 
-from .base import *  # noqa
+from .base import Archetype  # noqa

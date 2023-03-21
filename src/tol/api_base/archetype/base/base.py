@@ -4,8 +4,8 @@
 
 from abc import ABC, abstractmethod
 
-from ..utils.config import IndividualConfig
-from ...core.datasource import DataSource
+from ...utils.config import IndividualConfig
+from ....core.datasource import DataSource
 
 
 class Archetype(ABC):
