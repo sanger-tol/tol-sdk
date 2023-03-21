@@ -119,3 +119,5 @@ class TestCombinedDataSource:
     def test_type_does_not_exist_error(self):
         with pytest.raises(NonExistentTypeError):
             combined_ds.get_by_id('fake', [])
+        with pytest.raises(NonExistentTypeError):
+            combined_ds.get_list_page('fake', [])
