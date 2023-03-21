@@ -46,7 +46,7 @@ def delegate(operation: Callable) -> Callable:
                 object_type,
                 operation_name
             )
-        return combined_ds.call_subordinate_operation(
+        return combined_ds.delegate_operation(
             object_type,
             operation_name,
             *args,
@@ -95,7 +95,7 @@ class CombinedDataSource(DataSource):
         data_source = self.__get_data_source_for_type(object_type)
         return operation_name in data_source.supported_operations
 
-    def call_subordinate_operation(
+    def delegate_operation(
         self,
         object_type: str,
         operation_name: str,
