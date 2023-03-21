@@ -3,3 +3,4 @@
 # SPDX-License-Identifier: MIT
 
 from .base import Archetype  # noqa
+from .elastic import ElasticArchetype  # noqa
