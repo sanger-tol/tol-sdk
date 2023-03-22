@@ -2,7 +2,9 @@
 #
 # SPDX-License-Identifier: MIT
 
-from abc import ABC, abstractmethod
+from abc import ABC, abstractmethod, abstractproperty
+
+from tol.api_base.utils import tol_fields
 
 from ...utils.config import IndividualConfig
 from ....core.datasource import DataSource
@@ -22,6 +24,19 @@ class Archetype(ABC):
     def data_source(self) -> DataSource:
         return self.__data_source
 
+    @abstractproperty
+    def id_field(self) -> tol_fields.Id:
+        """
+        Returns the archetypic tol_field.Id for the inherited
+        class
+        """
+        pass
+
     @abstractmethod
     def to_config(self) -> IndividualConfig:
+        """
+        Produces an IndividualConfig DataClass instance, defining
+        everything other classes require to operate upon this
+        archetype.
+        """
         pass

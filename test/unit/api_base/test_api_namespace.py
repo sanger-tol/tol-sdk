@@ -6,16 +6,6 @@ from tol.api_base import tol_fields
 
 from .data_source import _TestDataSource
 
-# TODO test:
-# - all declared fields are on the schema
-# - datatypes are correct
-# - dump only is respected
-# - required fields are respected
-# - excluded fields are respected
-# - update works correctly, with a correctly injected
-#   and instantiated DataModel object
-# - update is passed the ResouceMeta data
-
 
 INDIVIDUAL_CONFIG_DICT = {
     'object_type': 'specimen',
