@@ -57,7 +57,7 @@ class Id(Field):
     ):
         self.__dump_only = dump_only
         super().__init__(
-            required=False,
+            required=True,
             unique=True,
             example=example
         )
