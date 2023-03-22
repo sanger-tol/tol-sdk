@@ -4,6 +4,8 @@
 
 from tol.api_base import tol_fields
 
+from tol.api_base import ServiceNamespace
+
 from .data_source import _TestDataSource
 
 
@@ -44,3 +46,7 @@ INDIVIDUAL_CONFIG_DICT = {
         }
     }
 }
+
+
+class TestApiNamespace:
+    pass
