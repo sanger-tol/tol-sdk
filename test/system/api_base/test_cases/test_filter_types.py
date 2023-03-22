@@ -32,7 +32,14 @@ class TestFilterTypes(BaseTestCase):
                     'page_size': 20,
                     'offset': 0,
                     'limit': 20,
-                    'total': 1
+                    'total': 1,
+                    'types': {
+                        'id': 'int',
+                        'float_column': 'float',
+                        'bool_column': 'bool',
+                        'datetime_column': 'datetime',
+                        'string_column': 'str'
+                    }
                 },
                 'data': [
                     {
@@ -74,7 +81,14 @@ class TestFilterTypes(BaseTestCase):
                     'page_size': 20,
                     'offset': 0,
                     'limit': 20,
-                    'total': 1
+                    'total': 1,
+                    'types': {
+                        'id': 'int',
+                        'float_column': 'float',
+                        'bool_column': 'bool',
+                        'datetime_column': 'datetime',
+                        'string_column': 'str'
+                    }
                 },
                 'data': [
                     {
@@ -108,7 +122,14 @@ class TestFilterTypes(BaseTestCase):
                     'page_size': 20,
                     'offset': 0,
                     'limit': 20,
-                    'total': 0
+                    'total': 0,
+                    'types': {
+                        'id': 'int',
+                        'float_column': 'float',
+                        'bool_column': 'bool',
+                        'datetime_column': 'datetime',
+                        'string_column': 'str'
+                    }
                 },
                 'data': []
             }
@@ -137,7 +158,14 @@ class TestFilterTypes(BaseTestCase):
                     'page_size': 20,
                     'offset': 0,
                     'limit': 20,
-                    'total': 0
+                    'total': 0,
+                    'types': {
+                        'id': 'int',
+                        'float_column': 'float',
+                        'bool_column': 'bool',
+                        'datetime_column': 'datetime',
+                        'string_column': 'str'
+                    }
                 },
                 'data': []
             }
@@ -161,7 +189,14 @@ class TestFilterTypes(BaseTestCase):
                     'page_size': 20,
                     'offset': 0,
                     'limit': 20,
-                    'total': 1
+                    'total': 1,
+                    'types': {
+                        'id': 'int',
+                        'float_column': 'float',
+                        'bool_column': 'bool',
+                        'datetime_column': 'datetime',
+                        'string_column': 'str'
+                    }
                 },
                 'data': [
                     {
@@ -213,7 +248,14 @@ class TestFilterTypes(BaseTestCase):
                     'page_size': 20,
                     'offset': 0,
                     'limit': 20,
-                    'total': 1
+                    'total': 1,
+                    'types': {
+                        'id': 'int',
+                        'float_column': 'float',
+                        'bool_column': 'bool',
+                        'datetime_column': 'datetime',
+                        'string_column': 'str'
+                    }
                 },
                 'data': [
                     {

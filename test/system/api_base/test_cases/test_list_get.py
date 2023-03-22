@@ -38,7 +38,12 @@ class TestListGet(BaseTestCase):
                     'page_size': 20,
                     'offset': 0,
                     'limit': 20,
-                    'total': 3
+                    'total': 3,
+                    'types': {
+                        'id': 'int',
+                        'nullable_column': 'str',
+                        'other_column': 'str'
+                    }
                 },
                 'data': [
                     {

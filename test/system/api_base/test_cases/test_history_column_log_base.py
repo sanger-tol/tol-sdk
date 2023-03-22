@@ -517,7 +517,16 @@ class TestHistoryColumnLogBase(BaseTestCase):
                 'page_size': 20,
                 'offset': 0,
                 'limit': 20,
-                'total': 1
+                'total': 1,
+                'types': {
+                    'id': 'int',
+                    'string_column': 'str',
+                    'created_at': 'datetime',
+                    'created_by': 'int',
+                    'last_modified_at': 'datetime',
+                    'last_modified_by': 'int',
+                    'history': 'dict'
+                }
             },
             'data': [
                 {

@@ -204,7 +204,11 @@ class TestEnumMethodsByName(BaseTestCase):
                 'page_size': 20,
                 'offset': 0,
                 'limit': 20,
-                'total': 3
+                'total': 3,
+                'types': {
+                    'id': 'int',
+                    'i_id': 'int'
+                }
             },
             'data': [
                 {

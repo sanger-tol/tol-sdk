@@ -92,10 +92,21 @@ class BadTargetServiceException(_CustomException):
         super().__init__(errors, 400)
 
 
-class WildcardFilterOnNonStringColumn(_CustomException):
-    def __init__(self, filter_column):
+class ContainsFilterOnUnsupportedColumnType(_CustomException):
+    def __init__(self, filter_column, filter_type):
         errors = [{
-            'title': 'Wildcard filter on non-string column',
-            'detail': f'The field {filter_column} is not a string.'
+            'title': 'Contains filter on unsupported column type',
+            'detail': f'The contains filter only supports types str, int, float \
+                      ({filter_column}: {filter_type.__name__})'
+        }]
+        super().__init__(errors, 400)
+
+
+class RangeFilterOnUnsupportedColumnType(_CustomException):
+    def __init__(self, filter_column, filter_type):
+        errors = [{
+            'title': 'Contains filter on unsupported column type',
+            'detail': f'The range filter only supports types datetime, int, float \
+                      ({filter_column}: {filter_type.__name__})'
         }]
         super().__init__(errors, 400)

@@ -62,7 +62,7 @@ def add_contains_str_filter(jql_field_map, filter_dict, field_key):
 
 
 def parse_filter_str_to_dict(filter_str):
-    (exact_filters, _) = parse_filters(filter_str)
+    (exact_filters, _, _) = parse_filters(filter_str)
 
     return (
         exact_filters

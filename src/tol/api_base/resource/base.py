@@ -31,7 +31,7 @@ LIST_GET_PARAMS_DICT = {
     },
     'filter': {
         'in': 'query',
-        'description': 'A JSON string of filters. Wildcard and exact supported.'
+        'description': 'A JSON string of filters. Contains and exact supported.'
         # TODO elaborate upon this.
     },
 }

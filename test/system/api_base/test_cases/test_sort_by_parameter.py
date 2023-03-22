@@ -44,7 +44,12 @@ class TestBadSortByParameter200(BaseTestCase):
                     'page_size': 20,
                     'offset': 0,
                     'limit': 20,
-                    'total': 4
+                    'total': 4,
+                    'types': {
+                        'id': 'int',
+                        'nullable_column': 'str',
+                        'other_column': 'str'
+                    }
                 },
                 'data': [
                     {
@@ -108,7 +113,14 @@ class TestBadSortByParameter200(BaseTestCase):
                     'page_size': 20,
                     'offset': 0,
                     'limit': 20,
-                    'total': 2
+                    'total': 2,
+                    'types': {
+                        'id': 'int',
+                        'float_column': 'float',
+                        'datetime_column': 'datetime',
+                        'bool_column': 'bool',
+                        'string_column': 'str'
+                    }
                 },
                 'data': [
                     {

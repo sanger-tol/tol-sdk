@@ -62,7 +62,11 @@ class TestListGetEnum(BaseTestCase):
                     'page_size': 20,
                     'offset': 0,
                     'limit': 20,
-                    'total': 2
+                    'total': 2,
+                    'types': {
+                        'id': 'int',
+                        'i_id': 'int'
+                    }
                 },
                 'data': [
                     {
@@ -113,7 +117,11 @@ class TestListGetEnum(BaseTestCase):
                     'page_size': 20,
                     'offset': 0,
                     'limit': 20,
-                    'total': 5
+                    'total': 5,
+                    'types': {
+                        'id': 'int',
+                        'i_id': 'int'
+                    }
                 },
                 'data': [
                     {
@@ -173,7 +181,11 @@ class TestListGetEnum(BaseTestCase):
                     'page_size': 20,
                     'offset': 0,
                     'limit': 20,
-                    'total': 5
+                    'total': 5,
+                    'types': {
+                        'id': 'int',
+                        'i_id': 'int'
+                    }
                 },
                 'data': [
                     {

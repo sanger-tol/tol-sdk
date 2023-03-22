@@ -9,21 +9,24 @@ import dateutil.parser
 
 from flask_sqlalchemy import SQLAlchemy
 
-from sqlalchemy import and_
+from sqlalchemy import String, and_
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.inspection import inspect
+from sqlalchemy.sql.expression import cast
 
 from ..error import (
     BadParameterException,
     CandidateKeyNotProvidedExpection,
+    ContainsFilterOnUnsupportedColumnType,
     EnumNameNotFoundException,
     ExtraFieldsNotPermittedException,
     IdNotFoundException,
-    WildcardFilterOnNonStringColumn
+    RangeFilterOnUnsupportedColumnType
 )
 from ..utils import (
     escape_psql_like_string,
     parse_filters,
+    parse_range_filters,
     parse_sort_by
 )
 
@@ -328,14 +331,29 @@ class Base(db.Model):
         ]
 
     @classmethod
-    def _get_wildcard_filter_terms(cls, wildcard_filters):
-        if not wildcard_filters:
+    def _get_and_cast_attr(cls, filter_key):
+        attr = getattr(cls, filter_key)
+        return cast(attr, String)
+
+    @classmethod
+    def _get_contains_filter_terms(cls, contains_filters):
+        if not contains_filters:
             return None
         return [
-            getattr(cls, filter_key).ilike(f'%{filter_value}%')
+            cls._get_and_cast_attr(filter_key).ilike(f'%{filter_value}%')
             for (filter_key, filter_value)
-            in cls._preprocess_wildcard_filters(wildcard_filters).items()
+            in cls._preprocess_contains_filters(contains_filters).items()
         ]
+
+    @classmethod
+    def _get_range_filter_terms(cls, range_filters):
+        if not range_filters:
+            return None
+        processed_range_filters = []
+        for (filter_key, filter_dict) in cls._preprocess_range_filters(range_filters).items():
+            processed_range_filters.append(getattr(cls, filter_key) >= filter_dict.get('from'))
+            processed_range_filters.append(getattr(cls, filter_key) <= filter_dict.get('to'))
+        return processed_range_filters
 
     @classmethod
     def _get_sort_by_column(cls, sort_by_column_name, ascending):
@@ -390,13 +408,24 @@ class Base(db.Model):
         return query
 
     @classmethod
-    def _wildcard_filter_query(cls, query, wildcard_filters):
-        wildcard_filters_terms = cls._get_wildcard_filter_terms(
-            wildcard_filters
+    def _contains_filter_query(cls, query, contains_filters):
+        contains_filter_terms = cls._get_contains_filter_terms(
+            contains_filters
         )
-        if wildcard_filters_terms is not None:
+        if contains_filter_terms is not None:
             query = query.filter(
-                and_(*wildcard_filters_terms)
+                and_(*contains_filter_terms)
+            )
+        return query
+
+    @classmethod
+    def _range_filter_query(cls, query, range_filters):
+        range_filter_terms = cls._get_range_filter_terms(
+            range_filters
+        )
+        if range_filter_terms is not None:
+            query = query.filter(
+                and_(*range_filter_terms)
             )
         return query
 
@@ -451,9 +480,10 @@ class Base(db.Model):
         filter=None,  # noqa
         sort_by=None
     ):
-        exact_filters, wildcard_filters = parse_filters(filter)
+        exact_filters, contains_filters, range_filters = parse_filters(filter)
         query = cls._exact_filter_query(query, exact_filters)
-        query = cls._wildcard_filter_query(query, wildcard_filters)
+        query = cls._contains_filter_query(query, contains_filters)
+        query = cls._range_filter_query(query, range_filters)
         query = cls._sort_by_query(query, parse_sort_by(sort_by))
         total = query.count()
         query, page, page_size, offset, limit = cls._paginate_query(query, page, page_size)
@@ -462,7 +492,8 @@ class Base(db.Model):
             'page_size': page_size,
             'offset': offset,
             'limit': limit,
-            'total': total
+            'total': total,
+            'types': cls.get_column_types()
         }
         return query, metadata
 
@@ -590,6 +621,14 @@ class Base(db.Model):
         return column.type.python_type
 
     @classmethod
+    def get_column_types(cls):
+        types = {}
+        for c in cls.get_column_names():
+            t = cls.get_column_python_type(c)
+            types[c] = str(t.__name__)
+        return types
+
+    @classmethod
     def column_is_nullable(cls, column_name):
         return cls.__table__.columns[column_name].nullable
 
@@ -694,50 +733,6 @@ class Base(db.Model):
         return target_table, target_column
 
     @classmethod
-    def _filter_value_is_float(cls, filter_value):
-        try:
-            float(filter_value)
-            return True
-        except ValueError:
-            return False
-
-    @classmethod
-    def _filter_value_is_datetime(cls, filter_value):
-        try:
-            dateutil.parser.parse(filter_value)
-            return True
-        except ValueError:
-            return False
-
-    @classmethod
-    def _filter_value_is_bool(cls, filter_value):
-        return filter_value.lower() in ['true', 'false']
-
-    @classmethod
-    def _preprocess_non_string_filter_value(cls, filter_value, python_type):
-        if python_type == int and not filter_value.isdigit():
-            raise BadParameterException(
-                f"The filter value '{filter_value}' must be an integer."
-            )
-        if python_type == float and not cls._filter_value_is_float(filter_value):
-            raise BadParameterException(
-                f"The filter value '{filter_value}' must be a float (number)."
-            )
-        if python_type == datetime and not cls._filter_value_is_datetime(filter_value):
-            raise BadParameterException(
-                f"The filter value '{filter_value}' must be a valid datetime."
-            )
-        if python_type == bool:
-            if not cls._filter_value_is_bool(filter_value):
-                raise BadParameterException(
-                    f"The filter value '{filter_value}' must be a boolean"
-                )
-            # convert to boolean
-            return filter_value.lower() == 'true'
-        # nothing needs to change, return unmodified filter value
-        return filter_value
-
-    @classmethod
     def _preprocess_enum_filter(cls, filter_key, filter_enum_name):
         enum_relation_model = cls.get_model_by_type(filter_key)
         valid_enum_names = enum_relation_model.get_enum_values()
@@ -760,13 +755,61 @@ class Base(db.Model):
         return filter_value
 
     @classmethod
-    def _preprocess_wildcard_filter_value(cls, filter_key, filter_value):
+    def _filter_value_is_float(cls, filter_value):
+        try:
+            float(filter_value)
+            return True
+        except ValueError:
+            return False
+
+    @classmethod
+    def _filter_value_is_datetime(cls, filter_value):
+        try:
+            dateutil.parser.parse(filter_value)
+            # check not number - some numbers convert to a datetime
+            # (e.g. int 25 converts to the 25th of the current month)
+            return not cls._filter_value_is_float(filter_value)
+        except ValueError:
+            return False
+
+    @classmethod
+    def _validate_non_string_filter_value(cls, filter_value, python_type):
+        filter_value = str(filter_value)
+        if python_type == int and not filter_value.isdigit():
+            raise BadParameterException(
+                f"The filter value '{filter_value}' must be an integer."
+            )
+        if python_type == float and not cls._filter_value_is_float(filter_value):
+            raise BadParameterException(
+                f"The filter value '{filter_value}' must be a float (number)."
+            )
+        if python_type == datetime and not cls._filter_value_is_datetime(filter_value):
+            raise BadParameterException(
+                f"The filter value '{filter_value}' must be a valid datetime."
+            )
+
+    @classmethod
+    def _preprocess_contains_filter_value(cls, filter_key, filter_value):
         python_type = cls.get_column_python_type(filter_key)
-
+        if python_type not in (str, int, float):
+            raise ContainsFilterOnUnsupportedColumnType(filter_key, python_type)
         if python_type != str:
-            raise WildcardFilterOnNonStringColumn(filter_key)
+            cls._validate_non_string_filter_value(filter_value, python_type)
+        return escape_psql_like_string(str(filter_value))
 
-        return escape_psql_like_string(filter_value)
+    @classmethod
+    def _validate_range_from_and_to(cls, filter_dict, python_type):
+        from_, to = parse_range_filters(filter_dict)
+        cls._validate_non_string_filter_value(from_, python_type)
+        cls._validate_non_string_filter_value(to, python_type)
+
+    @classmethod
+    def _preprocess_range_filter_dict(cls, filter_key, filter_dict):
+        python_type = cls.get_column_python_type(filter_key)
+        if python_type not in (datetime, int, float):
+            raise RangeFilterOnUnsupportedColumnType(filter_key, python_type)
+        cls._validate_range_from_and_to(filter_dict, python_type)
+        return filter_dict
 
     @classmethod
     def _check_not_ext_filter(cls, filters):
@@ -795,15 +838,29 @@ class Base(db.Model):
         )
 
     @classmethod
-    def _preprocess_wildcard_filters(cls, wildcard_filters):
-        if not wildcard_filters:
+    def _preprocess_contains_filters(cls, contains_filters):
+        if not contains_filters:
             return None
-        cls._check_not_ext_filter(wildcard_filters)
+        cls._check_not_ext_filter(contains_filters)
         return {
-            filter_key: cls._preprocess_wildcard_filter_value(
+            filter_key: cls._preprocess_contains_filter_value(
                 filter_key,
                 filter_value
             )
             for (filter_key, filter_value)
-            in wildcard_filters.items()
+            in contains_filters.items()
+        }
+
+    @classmethod
+    def _preprocess_range_filters(cls, range_filters):
+        if not range_filters:
+            return None
+        cls._check_not_ext_filter(range_filters)
+        return {
+            filter_key: cls._preprocess_range_filter_dict(
+                filter_key,
+                filter_dict
+            )
+            for (filter_key, filter_dict)
+            in range_filters.items()
         }

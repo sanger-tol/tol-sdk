@@ -33,7 +33,11 @@ class TestEnumRelationListGet(BaseTestCase):
                     'page_size': 20,
                     'offset': 0,
                     'limit': 20,
-                    'total': 1
+                    'total': 1,
+                    'types': {
+                        'id': 'int',
+                        'i_id': 'int'
+                    }
                 },
                 'data': [{
                     'type': 'j',
@@ -63,7 +67,11 @@ class TestEnumRelationListGet(BaseTestCase):
                     'page_size': 20,
                     'offset': 0,
                     'limit': 20,
-                    'total': 2
+                    'total': 2,
+                    'types': {
+                        'id': 'int',
+                        'i_id': 'int'
+                    }
                 },
                 'data': [
                     {

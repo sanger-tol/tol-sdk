@@ -38,7 +38,11 @@ class TestRelationListGet(BaseTestCase):
                     'page_size': 20,
                     'offset': 0,
                     'limit': 20,
-                    'total': 2
+                    'total': 2,
+                    'types': {
+                        'id': 'int',
+                        'a_id': 'int'
+                    }
                 },
                 'data': [
                     {
@@ -105,7 +109,11 @@ class TestRelationListGet(BaseTestCase):
                     'page_size': 20,
                     'offset': 0,
                     'limit': 20,
-                    'total': 1
+                    'total': 1,
+                    'types': {
+                        'id': 'int',
+                        'a_id': 'int'
+                    }
                 },
                 'data': [
                     {
@@ -197,7 +205,11 @@ class TestRelationListGet(BaseTestCase):
                     'page_size': 20,
                     'offset': 0,
                     'limit': 20,
-                    'total': 3
+                    'total': 3,
+                    'types': {
+                        'id': 'int',
+                        'a_id': 'int'
+                    }
                 },
                 'data': [
                     {

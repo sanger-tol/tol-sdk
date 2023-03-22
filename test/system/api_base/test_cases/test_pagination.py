@@ -19,7 +19,11 @@ class TestPagination(BaseTestCase):
                 'page_size': 2,
                 'offset': 2,
                 'limit': 4,
-                'total': 5
+                'total': 5,
+                'types': {
+                    'id': 'int',
+                    'string_column': 'str'
+                }
             },
             'data': [
                 {
@@ -73,7 +77,11 @@ class TestPagination(BaseTestCase):
                 'page_size': 2,
                 'offset': 2,
                 'limit': 4,
-                'total': 3
+                'total': 3,
+                'types': {
+                    'id': 'int',
+                    'a_id': 'int'
+                }
             },
             'data': [
                 {

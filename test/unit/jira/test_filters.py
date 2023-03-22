@@ -35,11 +35,11 @@ def test_parse_filter_str_to_dict_3():
 
 def test_parse_filter_str_to_dict_4():
     """
-    Ignore any wildcard filters
+    Ignore any contains filters
     """
     in_ = json.dumps({
         'exact': {},
-        'wildcard': {
+        'contains': {
             'fake': 'ignore'
         }
     })
@@ -64,7 +64,7 @@ def test_parse_filter_str_to_dict_5():
             'int': int_,
             'string': string_
         },
-        'wildcard': {
+        'contains': {
             'fake': 'ignore'
         }
     })
