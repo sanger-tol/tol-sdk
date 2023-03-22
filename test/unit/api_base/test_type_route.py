@@ -9,7 +9,7 @@ from tol.api_base import (
     NoHTTPMethodsException,
     ServiceNamespace
 )
-from tol.api_base.service.namespace import ServiceConfig
+from tol.api_base.service.namespace import ServiceConfig, ServiceMethodConfig, ServiceMethodResponse
 
 
 class TestRoute:
@@ -107,17 +107,29 @@ class TestRoute:
         assert http_methods == {
             '/test': ServiceConfig(
                 service=TestService,
-                methods=[
-                    'get',
-                    'post'
-                ]
+                methods={
+                    'get': ServiceMethodConfig(),
+                    'post': ServiceMethodConfig(
+                        responses={
+                            200: ServiceMethodResponse(
+                                description='Success'
+                            )
+                        }
+                    )
+                }
             ),
             '/test/<id>': ServiceConfig(
                 service=TestServiceDetail,
-                methods=[
-                    'get',
-                    'delete'
-                ]
+                methods={
+                    'get': ServiceMethodConfig(),
+                    'delete': ServiceMethodConfig(
+                        responses={
+                            204: ServiceMethodResponse(
+                                description='Success'
+                            )
+                        }
+                    )
+                }
             )
         }
 

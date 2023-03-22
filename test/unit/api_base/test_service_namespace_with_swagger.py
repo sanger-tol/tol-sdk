@@ -4,7 +4,7 @@
 
 from re import S
 from tol.api_base import ServiceNamespace, Swagger, fields
-from tol.api_base.service.namespace import ServiceMethodResponse
+from tol.api_base.service.namespace import ServiceMethodConfig, ServiceMethodResponse
 
 
 class TestNSWithSwagger:
@@ -45,15 +45,15 @@ class TestNSWithSwagger:
                 404,
                 description='Not Found'
             )
-            @ns_test.expects(
+            @ns_test.expect(
                 test_swagger
             )
             def get(self):
                 pass
 
         assert hasattr(TestService.get, '_doc')
-        assert TestService.get._doc == {
-            'responses': {
+        assert TestService.get._doc == ServiceMethodConfig(
+            responses={
                 404: ServiceMethodResponse(
                     description='Not Found'
                 ),
@@ -65,5 +65,5 @@ class TestNSWithSwagger:
                     swagger=test_swagger
                 )
             },
-            'expects': test_swagger
-        }
+            expects=test_swagger
+        )

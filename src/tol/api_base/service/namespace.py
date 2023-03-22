@@ -26,7 +26,7 @@ class NoHTTPMethodsException(Exception):
 
 @dataclass
 class ServiceMethodResponse:
-    description: Optional[str] = None
+    description: str
     swagger: Optional[Swagger] = None
 
 
@@ -97,9 +97,14 @@ class ServiceNamespace:
 
         def decorator(method: Callable) -> Callable:
             self.__validate_function_method(method)
-            method._doc['responses'][status_code] = ServiceMethodResponse(
+            response = ServiceMethodResponse(
                 description=description,
                 swagger=swagger
+            )
+            self.__add_response_to_doc(
+                method,
+                status_code,
+                response
             )
 
             @wraps(method)
@@ -108,7 +113,7 @@ class ServiceNamespace:
             return wrapper
         return decorator
 
-    def expects(
+    def expect(
         self,
         swagger: Swagger
     ) -> Callable:
@@ -122,7 +127,7 @@ class ServiceNamespace:
 
         def decorator(method: Callable) -> Callable:
             self.__validate_function_method(method)
-            method._doc['expects'] = swagger
+            method._doc.expects = swagger
 
             @wraps(method)
             def wrapper(*args, **kwargs):
@@ -141,25 +146,48 @@ class ServiceNamespace:
 
     def __create_method_doc_if_null(self, method) -> None:
         if not hasattr(method, '_doc'):
-            method._doc = {
-                'responses': {}
-            }
+            method._doc = ServiceMethodConfig()
+
+    def __add_response_to_doc(
+        self,
+        method: Callable,
+        status_code: int,
+        response: ServiceMethodResponse
+    ) -> None:
+        if method._doc.responses is None:
+            method._doc.responses = {}
+        method._doc.responses[status_code] = response
 
     def __service_has_http_method(self, service: object, method: str) -> bool:
         return callable(
             getattr(service, method, None)
         )
 
-    def __identify_http_methods_on_service(self, service: object) -> List[str]:
-        return [
-            method for method in self.__PERMITTED_METHODS
-            if self.__service_has_http_method(service, method)
-        ]
+    def __get_http_methods_on_service(self, service: object) -> List[str]:
+        return {
+            method_name: self.__get_service_method_config(
+                service,
+                method_name
+            )
+            for method_name in self.__PERMITTED_METHODS
+            if self.__service_has_http_method(service, method_name)
+        }
+
+    def __get_service_method_config(
+        self,
+        service: object,
+        method_name: str
+    ) -> ServiceMethodConfig:
+        method = getattr(service, method_name)
+        if hasattr(method, '_doc'):
+            return method._doc
+        else:
+            return ServiceMethodConfig()
 
     def __get_service_config(self, service: object) -> ServiceConfig:
         return ServiceConfig(
             service=service,
-            methods=self.__identify_http_methods_on_service(
+            methods=self.__get_http_methods_on_service(
                 service
             )
         )
@@ -171,6 +199,6 @@ class ServiceNamespace:
         self.__create_method_doc_if_null(method)
 
     def __check_service_methods(self, service: object) -> None:
-        methods = self.__identify_http_methods_on_service(service)
+        methods = self.__get_http_methods_on_service(service)
         if not methods:
             raise NoHTTPMethodsException(service)
