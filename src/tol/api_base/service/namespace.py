@@ -4,7 +4,7 @@
 
 from dataclasses import dataclass
 from functools import wraps
-from typing import Any, Callable, Dict, List, Optional, Tuple
+from typing import Callable, Dict, List, Optional
 
 from ..swagger.model import Swagger
 
