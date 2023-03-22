@@ -46,7 +46,6 @@ class Field(ABC):
         pass
 
 
-
 class Id(Field):
     """
     The ID field of an archetype.

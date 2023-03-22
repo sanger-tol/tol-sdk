@@ -154,7 +154,7 @@ class TestAutoSchema:
 
     def test_dump_only(self):
         copy_dict = deepcopy(INDIVIDUAL_CONFIG_DICT)
-        copy_dict['id_field'] = tol_fields.Id(dump_only=True) 
+        copy_dict['id_field'] = tol_fields.Id(dump_only=True)
         # generate the auto schema
         generator = AutoSchemaGenerator(
             IndividualConfig(**copy_dict)

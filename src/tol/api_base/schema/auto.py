@@ -128,10 +128,10 @@ class AutoSchemaGenerator:
         self,
         id_from_archetype: tol_fields.Id
     ) -> schema_fields.Field:
-            return schema_fields.String(
-                required=True,
-                dump_only=id_from_archetype.dump_only
-            )
+        return schema_fields.String(
+            required=True,
+            dump_only=id_from_archetype.dump_only
+        )
 
     def __generate_new_schema_class(self) -> Schema:
         name = f'{self.__config.object_type.capitalize()}Schema'
