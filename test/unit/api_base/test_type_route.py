@@ -73,10 +73,9 @@ class TestRoute:
             def get(self):
                 pass
 
-            @ns_test.doc(
-                responses={
-                    200: 'Success'
-                }
+            @ns_test.response(
+                200,
+                description='Success'
             )
             def post(self):
                 pass
@@ -89,10 +88,9 @@ class TestRoute:
             def get(self, id_: int):
                 pass
 
-            @ns_test.doc(
-                responses={
-                    204: 'Success'
-                }
+            @ns_test.response(
+                204,
+                description='Success'
             )
             def delete(self, id_: int):
                 pass
@@ -106,13 +104,14 @@ class TestRoute:
             '/test',
             '/test/<id>'
         }
+        print(http_methods)
         assert http_methods == {
             '/test': ServiceConfig(
                 service=TestService,
-                methods={
-                    'get': None,
-                    'post': None
-                }
+                methods=[
+                    'get',
+                    'post'
+                ]
             ),
             '/test/<id>': ServiceConfig(
                 service=TestServiceDetail,
