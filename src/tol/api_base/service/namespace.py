@@ -32,7 +32,7 @@ class ServiceMethodResponse:
 
 @dataclass
 class ServiceMethodConfig:
-    expects: Optional[Swagger] = None
+    expect: Optional[Swagger] = None
     responses: Optional[Dict[int, ServiceMethodResponse]] = None
 
 
@@ -127,7 +127,7 @@ class ServiceNamespace:
 
         def decorator(method: Callable) -> Callable:
             self.__validate_function_method(method)
-            method._doc.expects = swagger
+            method._doc.expect = swagger
 
             @wraps(method)
             def wrapper(*args, **kwargs):

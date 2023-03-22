@@ -92,7 +92,7 @@ class ApiNamespace(FlaskRestxNamespace):
 
         decorators = reversed([
             *self.__get_response_decorators(method_config.responses),
-            *self.__get_expect_decorator(method_config.expects),
+            *self.__get_expect_decorator(method_config.expect),
             wraps(decorated)
         ])
         for decorator in decorators:

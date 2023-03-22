@@ -55,5 +55,5 @@ class TestNSWithSwagger:
                     swagger=test_swagger
                 )
             },
-            expects=test_swagger
+            expect=test_swagger
         )
