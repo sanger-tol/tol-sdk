@@ -113,7 +113,8 @@ class ServiceNamespace:
         swagger: Swagger
     ) -> Callable:
         """
-        Documents a method with an expected Swagger model
+        Documents a method with an expected Swagger model on the
+        request
 
         Params:
         * swagger - the Swagger model to expect
