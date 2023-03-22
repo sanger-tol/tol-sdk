@@ -104,7 +104,6 @@ class TestRoute:
             '/test',
             '/test/<id>'
         }
-        print(http_methods)
         assert http_methods == {
             '/test': ServiceConfig(
                 service=TestService,
