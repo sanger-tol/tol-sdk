@@ -2,13 +2,7 @@
 #
 # SPDX-License-Identifier: MIT
 
-from copy import deepcopy
-
-from marshmallow_jsonapi import fields as schema_fields
-
 from tol.api_base import IdSchemes, tol_fields
-from tol.api_base.resource.auto import ApiNamespace
-from tol.api_base.utils.config import IndividualConfig
 
 from .data_source import _TestDataSource
 
