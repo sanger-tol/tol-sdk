@@ -25,11 +25,11 @@ class ApiNamespace(FlaskRestxNamespace):
         custom_service_ns: ServiceNamespace = None,
         description: str = None
     ) -> None:
-        object_type = IndividualConfig.object_type
+        object_type = config.object_type
         self.__config = config
         self.__service_ns = custom_service_ns
         self.__resources: List[Resource] = []
-        super(FlaskRestxNamespace, self).__init__(
+        super().__init__(
             object_type,
             description=description,
             path=f'/{object_type}'

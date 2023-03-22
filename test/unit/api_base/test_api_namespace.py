@@ -2,9 +2,9 @@
 #
 # SPDX-License-Identifier: MIT
 
-from tol.api_base import tol_fields
-
-from tol.api_base import ServiceNamespace
+from tol.api_base import ServiceNamespace, tol_fields
+from tol.api_base.api.namespace import ApiNamespace
+from tol.api_base.utils.config import IndividualConfig
 
 from .data_source import _TestDataSource
 
@@ -12,7 +12,7 @@ from .data_source import _TestDataSource
 INDIVIDUAL_CONFIG_DICT = {
     'object_type': 'specimen',
     'data_source': _TestDataSource({}),
-    'id': tol_fields.Id(),
+    'id_field': tol_fields.Id(),
     'methods': {
         'auth': [
             'get_by_id'
@@ -49,4 +49,42 @@ INDIVIDUAL_CONFIG_DICT = {
 
 
 class TestApiNamespace:
-    pass
+    def test_resource_generation(self):
+        service_ns = ServiceNamespace()
+
+        @service_ns.route('/get-example')
+        class ExampleServiceGet:
+            def get(self):
+                pass
+
+        @service_ns.route('/post-example')
+        class ExampleServicePost:
+            def post(self):
+                pass
+
+        @service_ns.route('/delete-namespace/<str:id>')
+        class ExampleServiceDeleteById:
+            def delete(self, id):
+                pass
+
+        @service_ns.route('/patch-and-get-example')
+        class ExampleServicePatchAndGet:
+            def patch(self):
+                pass
+
+            def get(self):
+                pass
+
+        individual_config = IndividualConfig(
+            **INDIVIDUAL_CONFIG_DICT
+        )
+        api_ns = ApiNamespace(
+            individual_config,
+            service_ns,
+            description='Test example :D'
+        )
+
+        # get the created resources
+        resources = api_ns.resources
+        # there should be 4
+        assert len(resources) == 4
