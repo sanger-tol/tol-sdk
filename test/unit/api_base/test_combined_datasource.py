@@ -4,6 +4,7 @@
 
 import pytest
 
+from tol.api_base import tol_fields
 from tol.api_base.datasource import (
     CombinedDataSource,
     NonExistentTypeError,
@@ -48,19 +49,19 @@ combined_ds = CombinedDataSource(
         'species': IndividualConfig(
             object_type='species',
             data_source=ds_1,
-            id_scheme=None,
+            id_field=tol_fields.Id(),
             methods={}
         ),
         'specimens': IndividualConfig(
             object_type='specimens',
             data_source=ds_1,
-            id_scheme=None,
+            id_field=tol_fields.Id(),
             methods={}
         ),
         'samples': IndividualConfig(
             object_type='samples',
             data_source=ds_2,
-            id_scheme=None,
+            id_field=tol_fields.Id(),
             methods={}
         ),
     }

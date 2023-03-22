@@ -5,7 +5,7 @@
 from dataclasses import dataclass
 from typing import Any, Dict, List, Optional
 
-from ..utils import IdSchemes, tol_fields
+from ..utils import tol_fields
 from ...core.datasource import DataSource
 
 
@@ -37,7 +37,7 @@ class IndividualConfig:
 
     object_type: ObjectType
     data_source: DataSource
-    id_scheme: IdSchemes
+    id_field: tol_fields.Id
     methods: MethodsDict
     meta: Optional[MetaDict] = None
     attributes: Optional[AttributesDict] = None

@@ -46,6 +46,36 @@ class Field(ABC):
         pass
 
 
+
+class Id(Field):
+    """
+    The ID field of an archetype.
+    """
+    def __init__(
+        self,
+        example=None,
+        dump_only=False
+    ):
+        self.__dump_only = dump_only
+        super().__init__(
+            required=False,
+            unique=True,
+            example=example
+        )
+
+    @property
+    def python_type(self):
+        return str
+
+    @property
+    def default_example(self):
+        return 'example-ID'
+
+    @property
+    def dump_only(self):
+        return self.__dump_only
+
+
 class ToOneRelationship(Field):
     """
     This creates a -to-one relationship towards the target.

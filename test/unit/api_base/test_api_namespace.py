@@ -2,7 +2,7 @@
 #
 # SPDX-License-Identifier: MIT
 
-from tol.api_base import IdSchemes, tol_fields
+from tol.api_base import tol_fields
 
 from .data_source import _TestDataSource
 
@@ -20,7 +20,7 @@ from .data_source import _TestDataSource
 INDIVIDUAL_CONFIG_DICT = {
     'object_type': 'specimen',
     'data_source': _TestDataSource({}),
-    'id_scheme': IdSchemes.EXTERNAL,
+    'id': tol_fields.Id(),
     'methods': {
         'auth': [
             'get_by_id'

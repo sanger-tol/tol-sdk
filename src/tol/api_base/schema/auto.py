@@ -9,7 +9,6 @@ from marshmallow_jsonapi import Schema, fields as schema_fields
 
 from ..utils import tol_fields
 from ..utils.config import IndividualConfig
-from ..utils.enum import IdSchemes
 
 
 class AutoSchemaGenerator:
@@ -28,7 +27,7 @@ class AutoSchemaGenerator:
         return self.__generate_new_schema_class()
 
     def __generate_extra_attributes(self):
-        self.__generate_id_field()
+        self.__generate_id()
         self.__generate_regular_attributes()
         self.__generate_one_relationships()
         self.__generate_many_relationships()
@@ -119,24 +118,19 @@ class AutoSchemaGenerator:
             type_ = stored_type
         self.__extra_attributes['Meta'] = Meta
 
-    def __generate_id_field(self) -> None:
-        id_scheme = self.__config.id_scheme
-        id_field = self.__generate_id_field_from_scheme(id_scheme)
+    def __generate_id(self) -> None:
+        id_field = self.__generate_id_field(
+            self.__config.id_field
+        )
         self.__extra_attributes['id'] = id_field
 
-    def __generate_id_field_from_scheme(
+    def __generate_id_field(
         self,
-        id_scheme: IdSchemes
+        id_from_archetype: tol_fields.Id
     ) -> schema_fields.Field:
-        # only auto incrementing keys are dump only
-        if id_scheme == IdSchemes.AUTO_INCREMENT:
             return schema_fields.String(
                 required=True,
-                dump_only=True
-            )
-        else:
-            return schema_fields.String(
-                required=True
+                dump_only=id_from_archetype.dump_only
             )
 
     def __generate_new_schema_class(self) -> Schema:

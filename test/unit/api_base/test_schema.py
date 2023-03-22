@@ -6,7 +6,7 @@ from copy import deepcopy
 
 from marshmallow_jsonapi import fields as schema_fields
 
-from tol.api_base import IdSchemes, tol_fields
+from tol.api_base import tol_fields
 from tol.api_base.schema.auto import AutoSchemaGenerator
 from tol.api_base.utils.config import IndividualConfig
 
@@ -26,7 +26,7 @@ from .data_source import _TestDataSource
 INDIVIDUAL_CONFIG_DICT = {
     'object_type': 'specimen',
     'data_source': _TestDataSource({}),
-    'id_scheme': IdSchemes.EXTERNAL,
+    'id_field': tol_fields.Id(),
     'methods': {
         'auth': [
             'get_by_id'
@@ -152,10 +152,9 @@ class TestAutoSchema:
         }
         assert observed_dump_onlys == expected_dump_onlys
 
-    def test_dump_only_true_on_auto_increment_id_scheme(self):
-        # make the IdScheme auto_increment
+    def test_dump_only(self):
         copy_dict = deepcopy(INDIVIDUAL_CONFIG_DICT)
-        copy_dict['id_scheme'] = IdSchemes.AUTO_INCREMENT
+        copy_dict['id_field'] = tol_fields.Id(dump_only=True) 
         # generate the auto schema
         generator = AutoSchemaGenerator(
             IndividualConfig(**copy_dict)
