@@ -64,7 +64,7 @@ class TestApiNamespace:
 
         @service_ns.route('/delete-namespace/<str:id>')
         class ExampleServiceDeleteById:
-            def delete(self, id):
+            def delete(self, object_id):
                 pass
 
         @service_ns.route('/patch-and-get-example')

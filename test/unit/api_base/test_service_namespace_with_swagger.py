@@ -2,7 +2,6 @@
 #
 # SPDX-License-Identifier: MIT
 
-from re import S
 from tol.api_base import ServiceNamespace, Swagger, fields
 from tol.api_base.service.namespace import ServiceMethodConfig, ServiceMethodResponse
 
@@ -19,15 +18,6 @@ class TestNSWithSwagger:
                 'test_bool': fields.Boolean()
             }
         )
-
-        responses = {
-            '200': (
-                'Success',
-                test_swagger
-            ),
-            '400': 'Bad Request',
-            '404': 'Not Found'
-        }
 
         # the class to add doc on
         @ns_test.route('/test')

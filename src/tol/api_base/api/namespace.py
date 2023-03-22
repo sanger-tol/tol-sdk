@@ -50,7 +50,7 @@ class ApiNamespace(FlaskRestxNamespace):
         path: str,
         service_config: ServiceConfig
     ) -> Resource:
-        resource_name = '' # TODO make a name!!
+        resource_name = ''  # TODO make a name!!
         methods_dict = self.__get_documented_methods(service_config)
         new_resource = type(
             resource_name,
@@ -85,6 +85,7 @@ class ApiNamespace(FlaskRestxNamespace):
 
         # get the service method and "clone" it
         method = getattr(service, method_name)
+
         def decorated(_obj: object, *args, **kwargs) -> Any:
             return method(*args, **kwargs)
         decorated.__name__ = method_name

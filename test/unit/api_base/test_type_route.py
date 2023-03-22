@@ -9,7 +9,11 @@ from tol.api_base import (
     NoHTTPMethodsException,
     ServiceNamespace
 )
-from tol.api_base.service.namespace import ServiceConfig, ServiceMethodConfig, ServiceMethodResponse
+from tol.api_base.service.namespace import (
+    ServiceConfig,
+    ServiceMethodConfig,
+    ServiceMethodResponse
+)
 
 
 class TestRoute:
