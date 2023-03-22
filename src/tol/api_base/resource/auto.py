@@ -9,8 +9,8 @@ from flask_restx import (
     Resource
 )
 
-from ..utils.config import IndividualConfig
 from ..service.namespace import ServiceNamespace
+from ..utils.config import IndividualConfig
 
 
 class ApiNamespace(FlaskRestxNamespace):
@@ -18,7 +18,7 @@ class ApiNamespace(FlaskRestxNamespace):
     Takes a service namespace and implements it using
     flask-restx resources.
     """
-    
+
     def __init__(
         self,
         config: IndividualConfig,

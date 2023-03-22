@@ -11,7 +11,7 @@ from ....core.datasource import DataSource
 class Archetype(ABC):
     """
     A declarative Archetype class for an object_type.
-    
+
     Must implement the to_config method.
     """
 
