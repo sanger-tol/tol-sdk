@@ -38,3 +38,14 @@ class ApiNamespace(FlaskRestxNamespace):
 
     def __initialise_resources(self) -> None:
         pass
+
+    def __create_resource(self, route_url: str) -> Resource:
+        resource_name = ''
+        new_resource = type(
+            resource_name,
+            (Resource,),
+            {}
+        )
+        new_resource = self.route(
+
+        )

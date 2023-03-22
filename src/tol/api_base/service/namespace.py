@@ -2,12 +2,9 @@
 #
 # SPDX-License-Identifier: MIT
 
+from dataclasses import dataclass
 from functools import wraps
-from typing import Any, Callable, Dict, List
-
-
-ServiceHttpMethodsDict = Dict[str, Any]
-NamespaceServicesConfig = Dict[str, ServiceHttpMethodsDict]
+from typing import Callable, Dict, List
 
 
 class BadHTTPMethodException(Exception):
@@ -23,6 +20,15 @@ class NoHTTPMethodsException(Exception):
         super().__init__(
             f'The service class "{service.__name__}" has no HTTP methods.'
         )
+
+
+@dataclass
+class ServiceConfig:
+    service: object
+    methods: List[str]
+
+
+NamespaceServicesConfig = Dict[str, ServiceConfig]
 
 
 class ServiceNamespace:
@@ -97,13 +103,13 @@ class ServiceNamespace:
             if self.__service_has_http_method(service, method)
         ]
 
-    def __get_service_config(self, service: object) -> ServiceHttpMethodsDict:
-        return {
-            'class': service,
-            'methods': self.__identify_http_methods_on_service(
+    def __get_service_config(self, service: object) -> ServiceConfig:
+        return ServiceConfig(
+            service=service,
+            methods=self.__identify_http_methods_on_service(
                 service
             )
-        }
+        )
 
     def __check_function_method(self, function: Callable) -> None:
         method = function.__name__

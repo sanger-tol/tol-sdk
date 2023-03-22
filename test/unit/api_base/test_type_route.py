@@ -9,6 +9,7 @@ from tol.api_base import (
     NoHTTPMethodsException,
     ServiceNamespace
 )
+from tol.api_base.service.namespace import ServiceConfig
 
 
 class TestRoute:
@@ -144,20 +145,20 @@ class TestRoute:
             '/test/<id>'
         }
         assert http_methods == {
-            '/test': {
-                'class': TestService,
-                'methods': [
+            '/test': ServiceConfig(
+                service=TestService,
+                methods=[
                     'get',
                     'post'
                 ]
-            },
-            '/test/<id>': {
-                'class': TestServiceDetail,
-                'methods': [
+            ),
+            '/test/<id>': ServiceConfig(
+                service=TestServiceDetail,
+                methods=[
                     'get',
                     'delete'
                 ]
-            }
+            )
         }
 
     def test_service_doc_with_no_http_methods(self):
