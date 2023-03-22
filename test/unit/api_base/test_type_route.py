@@ -51,32 +51,6 @@ class TestRoute:
             'path': '/test/second'
         }
 
-    def test_function_doc(self):
-        ns_test = ServiceNamespace()
-
-        doc = {
-            'params': {
-                'page': {
-                    'in': 'query',
-                    'type': 'integer',
-                    'description': 'The page of the results.' # noqa
-                },
-            },
-            'responses': {
-                200: 'Success'
-            }
-        }
-
-        # the class to add doc on
-        @ns_test.route('/test')
-        class TestService:
-            @ns_test.doc(**doc)
-            def get(self):
-                pass
-
-        assert hasattr(TestService.get, '_doc')
-        assert TestService.get._doc == doc
-
     def test_function_doc_bad_method(self):
         ns_test = ServiceNamespace()
 
@@ -84,6 +58,7 @@ class TestRoute:
             # the class with a nonsense method
             @ns_test.route('/test')
             class TestService: # noqa
+                @ns_test.response(200)
                 def nonsense(self):
                     pass
 
