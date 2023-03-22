@@ -5,7 +5,7 @@
 from copy import deepcopy
 
 from tol.api_base import tol_fields
-from tol.api_base.utils.config import IndividualConfig
+from tol.api_base.utils.config import DataTypeConfig
 
 from .data_source import _TestDataSource
 
@@ -54,14 +54,14 @@ class TestNoFields:
     def test_no_meta(self):
         config_copy = deepcopy(INDIVIDUAL_CONFIG_DICT)
         del config_copy['meta']
-        IndividualConfig(**config_copy)
+        DataTypeConfig(**config_copy)
 
     def test_no_attributes(self):
         config_copy = deepcopy(INDIVIDUAL_CONFIG_DICT)
         del config_copy['attributes']
-        IndividualConfig(**config_copy)
+        DataTypeConfig(**config_copy)
 
     def test_no_relationships(self):
         config_copy = deepcopy(INDIVIDUAL_CONFIG_DICT)
         del config_copy['relationships']
-        IndividualConfig(**config_copy)
+        DataTypeConfig(**config_copy)

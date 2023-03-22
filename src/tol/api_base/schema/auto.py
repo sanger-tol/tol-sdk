@@ -8,7 +8,7 @@ from typing import Dict
 from marshmallow_jsonapi import Schema, fields as schema_fields
 
 from ..utils import tol_fields
-from ..utils.config import IndividualConfig
+from ..utils.config import DataTypeConfig
 
 
 class AutoSchemaGenerator:
@@ -18,7 +18,7 @@ class AutoSchemaGenerator:
     this a private API!
     """
 
-    def __init__(self, config: IndividualConfig):
+    def __init__(self, config: DataTypeConfig):
         self.__config = config
         self.__extra_attributes: Dict[str, schema_fields.Field] = {}
 

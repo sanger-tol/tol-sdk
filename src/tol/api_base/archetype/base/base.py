@@ -6,7 +6,7 @@ from abc import ABC, abstractmethod, abstractproperty
 
 from tol.api_base.utils import tol_fields
 
-from ...utils.config import IndividualConfig
+from ...utils.config import DataTypeConfig
 from ....core.datasource import DataSource
 
 
@@ -33,7 +33,7 @@ class Archetype(ABC):
         pass
 
     @abstractmethod
-    def to_config(self) -> IndividualConfig:
+    def to_config(self) -> DataTypeConfig:
         """
         Produces an IndividualConfig DataClass instance, defining
         everything other classes require to operate upon this

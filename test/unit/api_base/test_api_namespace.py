@@ -4,7 +4,7 @@
 
 from tol.api_base import ServiceNamespace, tol_fields
 from tol.api_base.api.namespace import ApiNamespace
-from tol.api_base.utils.config import IndividualConfig
+from tol.api_base.utils.config import DataTypeConfig
 
 from .data_source import _TestDataSource
 
@@ -75,7 +75,7 @@ class TestApiNamespace:
             def get(self):
                 pass
 
-        individual_config = IndividualConfig(
+        individual_config = DataTypeConfig(
             **INDIVIDUAL_CONFIG_DICT
         )
         api_ns = ApiNamespace(

@@ -27,7 +27,7 @@ class ConfigRelationships:
 
 
 @dataclass
-class IndividualConfig:
+class DataTypeConfig:
     """
     Configures the core (non-custom) behaviour of an
     object_type, as expressed in terms of methods acting
@@ -50,4 +50,4 @@ class IndividualConfig:
             )
 
 
-CombinedConfig = Dict[str, IndividualConfig]
+CombinedConfig = Dict[str, DataTypeConfig]

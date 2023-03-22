@@ -8,7 +8,7 @@ from marshmallow_jsonapi import fields as schema_fields
 
 from tol.api_base import tol_fields
 from tol.api_base.schema.auto import AutoSchemaGenerator
-from tol.api_base.utils.config import IndividualConfig
+from tol.api_base.utils.config import DataTypeConfig
 
 from .data_source import _TestDataSource
 
@@ -66,7 +66,7 @@ class TestAutoSchema:
     def test_only_correct_fields_present(self):
         # generate the auto schema
         generator = AutoSchemaGenerator(
-            IndividualConfig(**INDIVIDUAL_CONFIG_DICT)
+            DataTypeConfig(**INDIVIDUAL_CONFIG_DICT)
         )
         schema_class = generator.generate()
         present_fields = list(schema_class._declared_fields.keys())
@@ -89,7 +89,7 @@ class TestAutoSchema:
     def test_fields_have_correct_type(self):
         # generate the auto schema
         generator = AutoSchemaGenerator(
-            IndividualConfig(**INDIVIDUAL_CONFIG_DICT)
+            DataTypeConfig(**INDIVIDUAL_CONFIG_DICT)
         )
         schema_class = generator.generate()
         observed_types = {
@@ -111,7 +111,7 @@ class TestAutoSchema:
     def test_required_fields(self):
         # generate the auto schema
         generator = AutoSchemaGenerator(
-            IndividualConfig(**INDIVIDUAL_CONFIG_DICT)
+            DataTypeConfig(**INDIVIDUAL_CONFIG_DICT)
         )
         schema_class = generator.generate()
         observed_requireds = {
@@ -133,7 +133,7 @@ class TestAutoSchema:
     def test_dump_only_fields(self):
         # generate the auto schema
         generator = AutoSchemaGenerator(
-            IndividualConfig(**INDIVIDUAL_CONFIG_DICT)
+            DataTypeConfig(**INDIVIDUAL_CONFIG_DICT)
         )
         schema_class = generator.generate()
         observed_dump_onlys = {
@@ -157,7 +157,7 @@ class TestAutoSchema:
         copy_dict['id_field'] = tol_fields.Id(dump_only=True)
         # generate the auto schema
         generator = AutoSchemaGenerator(
-            IndividualConfig(**copy_dict)
+            DataTypeConfig(**copy_dict)
         )
         schema_class = generator.generate()
         id_field = schema_class._declared_fields['id']
@@ -172,7 +172,7 @@ class TestAutoSchema:
         }
         # generate the auto schema
         generator = AutoSchemaGenerator(
-            IndividualConfig(**copy_dict)
+            DataTypeConfig(**copy_dict)
         )
         schema_class = generator.generate()
         fields = schema_class._declared_fields

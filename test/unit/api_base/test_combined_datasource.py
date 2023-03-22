@@ -10,7 +10,7 @@ from tol.api_base.datasource import (
     NonExistentTypeError,
     UnsupportedOperationForTypeError,
 )
-from tol.api_base.utils.config import IndividualConfig
+from tol.api_base.utils.config import DataTypeConfig
 from tol.core import (
     DataSource,
     unsupported,
@@ -46,19 +46,19 @@ ds_2 = _TestDataSource2({})
 
 combined_ds = CombinedDataSource(
     {
-        'species': IndividualConfig(
+        'species': DataTypeConfig(
             object_type='species',
             data_source=ds_1,
             id_field=tol_fields.Id(),
             methods={}
         ),
-        'specimens': IndividualConfig(
+        'specimens': DataTypeConfig(
             object_type='specimens',
             data_source=ds_1,
             id_field=tol_fields.Id(),
             methods={}
         ),
-        'samples': IndividualConfig(
+        'samples': DataTypeConfig(
             object_type='samples',
             data_source=ds_2,
             id_field=tol_fields.Id(),

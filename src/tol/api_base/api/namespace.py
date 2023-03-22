@@ -2,50 +2,59 @@
 #
 # SPDX-License-Identifier: MIT
 
-from typing import List
+from typing import Callable
 
 from flask_restx import (
     Namespace as FlaskRestxNamespace,
     Resource
 )
 
-from ..service.namespace import ServiceNamespace
-from ..utils.config import IndividualConfig
+from ..service.namespace import ServiceConfig, ServiceMethodConfig, ServiceNamespace
+from ..utils.config import DataTypeConfig
 
 
 class ApiNamespace(FlaskRestxNamespace):
     """
     Takes a service namespace and implements it using
-    flask-restx resources.
+    flask-restx resources. Consider this a private API!
     """
 
     def __init__(
         self,
-        config: IndividualConfig,
-        custom_service_ns: ServiceNamespace = None,
+        config: DataTypeConfig,
+        custom_service_namespace: ServiceNamespace = None,
         description: str = None
     ) -> None:
         object_type = config.object_type
-        self.__config = config
-        self.__service_ns = custom_service_ns
-        self.__resources: List[Resource] = []
         super().__init__(
             object_type,
             description=description,
             path=f'/{object_type}'
         )
-        self.__initialise_resources()
+        self.__initialise_resources(custom_service_namespace)
 
-    def __initialise_resources(self) -> None:
-        pass
+    def __initialise_resources(self, service_ns: ServiceNamespace) -> None:
+        service_dict = service_ns.to_dict()
+        for path, service_config in service_dict.items():
+            self.__create_resource(path, service_config)
 
-    def __create_resource(self, route_url: str) -> Resource:
-        resource_name = ''
+    def __create_resource(
+        self,
+        path: str,
+        service_config: ServiceConfig
+    ) -> Resource:
+        resource_name = '' # TODO make a name!!
         new_resource = type(
             resource_name,
             (Resource,),
             {}
         )
-        new_resource = self.route(
+        self.route(new_resource)(path)
 
-        )
+    def __get_documented_method(
+        self,
+        method: Callable,
+        method_config: ServiceMethodConfig
+    ) -> Callable:
+        name = method.__name__
+
