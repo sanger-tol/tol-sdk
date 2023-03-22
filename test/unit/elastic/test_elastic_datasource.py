@@ -2,16 +2,26 @@
 #
 # SPDX-License-Identifier: MIT
 
+from datetime import datetime
 from unittest import (TestCase, mock)
 
 from tol.core import DataSourceError
 from tol.elastic import ElasticDataSource
 
 
+dt = datetime.fromtimestamp(1234567890)
+
+
 class MockElasticDataSource(ElasticDataSource):
     def _initialise_elasticsearch(self):
         self.es = mock.Mock()
         self.helpers = mock.Mock()
+
+    def _add_updated(self, dict_):
+        return {**dict_, 'tol_updated_at': dt}
+
+    def _add_checksum(self, dict_):
+        return {**dict_, 'tol_checksum': 'abc123'}
 
 
 class TestElasticDataSource(TestCase):
@@ -26,13 +36,17 @@ class TestElasticDataSource(TestCase):
                     'doc_as_upsert': True,
                     '_index': 'index',
                     '_id': 1,
-                    'doc': objects[0]}
+                    'doc': {'id': 1, 'field1': 'value1', 'field2': 'value2',
+                            'tol_updated_at': dt,
+                            'tol_checksum': 'abc123'}}
         self.assertEqual(expected, next(generator))
         expected = {'_op_type': 'update',
                     'doc_as_upsert': True,
                     '_index': 'index',
                     '_id': 2,
-                    'doc': objects[1]}
+                    'doc': {'id': 2, 'field1': 'value3', 'field2': 'value4',
+                            'tol_updated_at': dt,
+                            'tol_checksum': 'abc123'}}
         self.assertEqual(expected, next(generator))
         eds.helpers.bulk.return_value = (2, 0)
         eds.upsert('index', objects, id_func=lambda x: x['field1'])
@@ -48,13 +62,17 @@ class TestElasticDataSource(TestCase):
                     'doc_as_upsert': True,
                     '_index': 'index',
                     '_id': 'value1',
-                    'doc': {'pre_field1': 'value1', 'pre_field2': 'value2'}}
+                    'doc': {'pre_field1': 'value1', 'pre_field2': 'value2',
+                            'pre_tol_updated_at': dt,
+                            'pre_tol_checksum': 'abc123'}}
         self.assertEqual(expected, next(generator))
         expected = {'_op_type': 'update',
                     'doc_as_upsert': True,
                     '_index': 'index',
                     '_id': 'value3',
-                    'doc': {'pre_field1': 'value3', 'pre_field2': 'value4'}}
+                    'doc': {'pre_field1': 'value3', 'pre_field2': 'value4',
+                            'pre_tol_updated_at': dt,
+                            'pre_tol_checksum': 'abc123'}}
         self.assertEqual(expected, next(generator))
         eds.helpers.bulk.return_value = (2, 0)
         eds.upsert('index', objects, id_func=lambda x: x['field1'])
@@ -77,12 +95,16 @@ class TestElasticDataSource(TestCase):
         expected = {'_op_type': 'update',
                     '_index': 'index',
                     '_id': 1,
-                    'doc': objects[0]}
+                    'doc': {'id': 1, 'field1': 'value1', 'field2': 'value2',
+                            'tol_updated_at': dt,
+                            'tol_checksum': 'abc123'}}
         self.assertEqual(expected, next(generator))
         expected = {'_op_type': 'update',
                     '_index': 'index',
                     '_id': 2,
-                    'doc': objects[1]}
+                    'doc': {'id': 2, 'field1': 'value3', 'field2': 'value4',
+                            'tol_updated_at': dt,
+                            'tol_checksum': 'abc123'}}
         self.assertEqual(expected, next(generator))
         eds.helpers.bulk.return_value = (2, 0)
         eds.update('index', objects, id_func=lambda x: x['field1'])

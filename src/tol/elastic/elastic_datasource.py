@@ -2,7 +2,10 @@
 #
 # SPDX-License-Identifier: MIT
 
+import hashlib
+import json
 from collections.abc import Callable
+from datetime import datetime
 from typing import Dict, Generator
 
 from elasticsearch import (Elasticsearch, helpers)
@@ -29,15 +32,27 @@ class ElasticDataSource(DataSource):
             ret[prefix + '_' + k] = v
         return ret
 
+    def _add_updated(self, dict_: Dict):
+        return {**dict_, 'tol_updated_at': datetime.now()}
+
+    def _add_checksum(self, dict_: Dict):
+        dhash = hashlib.md5()
+        encoded = json.dumps(dict_, sort_keys=True).encode()
+        dhash.update(encoded)
+        return {**dict_, 'checksum': dhash.hexdigest()}
+
     def _action_for_upsert(self, index: str, objects: Generator, id_func: Callable,
                            field_prefix: str):
         for object_ in objects:
+            obj = self._add_checksum(object_)
+            obj = self._add_updated(obj)
+            obj = self._prefix_fields(obj, field_prefix)
             yield {
                 '_op_type': 'update',
                 'doc_as_upsert': True,
                 '_index': index,
                 '_id': id_func(object_),
-                'doc': self._prefix_fields(object_, field_prefix)
+                'doc': obj
             }
 
     def upsert(self, index: str, objects: Generator,
@@ -59,11 +74,14 @@ class ElasticDataSource(DataSource):
     def _action_for_update(self, index: str, objects: Generator, id_func: Callable,
                            field_prefix: str):
         for object_ in objects:
+            obj = self._add_checksum(object_)
+            obj = self._add_updated(obj)
+            obj = self._prefix_fields(obj, field_prefix)
             yield {
                 '_op_type': 'update',
                 '_index': index,
                 '_id': id_func(object_),
-                'doc': self._prefix_fields(object_, field_prefix)
+                'doc': obj
             }
 
     def update(self, index: str, objects: Generator,

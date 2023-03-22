@@ -54,6 +54,8 @@ class IrodsDataSource(DataSource):
                                           results=[result])
             if not re.search('(cram|bam)$', data_object.name):
                 continue
+            if re.search('(scraps|removed)', data_object.name):
+                continue
             metadata_keys = data_object.metadata.keys()
             metadata = {}
             for key in metadata_keys:
@@ -73,9 +75,18 @@ class IrodsDataSource(DataSource):
             }
 
     def _map_keys(self, results: Generator):
-        mapping = {'id_run': 'run_id',
-                   'lane': 'position'}
+        mapping = {'id_run': 'run_id',  # Illumina
+                   'run': 'run_id',  # PacBio
+                   'lane': 'position',  # Illumina
+                   'well': 'position'}  # PacBio
         for result in results:
+            # Ignore those with target = 0
+            if 'id_run' in result and 'target' in result:
+                if result['target'] == '0':
+                    continue
+            # Ignore those with a list of tags (these are legacy)
+            if 'tag_index' in result and isinstance(result['tag_index'], list):
+                continue
             new_obj = {}
             for k, v in result.items():
                 if k in mapping:
@@ -84,7 +95,7 @@ class IrodsDataSource(DataSource):
                     new_obj[k] = v
             yield new_obj
 
-    def get_file_data(self, study_ids: List[str]):
+    def get_run_data(self, study_ids: List[str]):
         query = self.irods.query(DataObject) \
             .add_keyword(irods.keywords.ZONE_KW, self.query_zone)
 
@@ -94,21 +105,3 @@ class IrodsDataSource(DataSource):
         results = filtered_query.get_results()
 
         return self._map_keys(self._format_results(results))
-
-    def _convert_files_to_runs(self, files: Generator):
-        seen_runs = {}
-        for file_ in files:
-            if 'run_id' in file_ and 'position' in file_ and 'tag_index' in file_:
-                key = file_['run_id'] + '_' + file_['position'] + '_' + file_['tag_index']
-                if key not in seen_runs:
-                    seen_runs[key] = True
-                    yield {
-                        'run_id': file_['run_id'],
-                        'position': file_['position'],
-                        'tag_index': file_['tag_index'],
-                        'file_exists': True
-                    }
-
-    def get_run_data(self, study_ids: List[str]):
-        files = self.get_file_data(study_ids)
-        return self._convert_files_to_runs(files)
