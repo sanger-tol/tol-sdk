@@ -16,7 +16,7 @@ from ..service.namespace import ServiceNamespace
 class ApiNamespace(FlaskRestxNamespace):
     """
     Takes a service namespace and implements it using
-    flask-restx resources. Consider this a private API.
+    flask-restx resources.
     """
     
     def __init__(
