@@ -80,23 +80,10 @@ class TestRoute:
     def test_function_doc_bad_method(self):
         ns_test = ServiceNamespace()
 
-        doc = {
-            'params': {
-                'page': {
-                    'in': 'query',
-                    'type': 'integer',
-                    'description': 'The page of the results.' # noqa
-                },
-            },
-            'responses': {
-                200: 'Success'
-            }
-        }
         with pytest.raises(BadHTTPMethodException):
             # the class with a nonsense method
             @ns_test.route('/test')
             class TestService: # noqa
-                @ns_test.doc(**doc)
                 def nonsense(self):
                     pass
 
@@ -147,10 +134,10 @@ class TestRoute:
         assert http_methods == {
             '/test': ServiceConfig(
                 service=TestService,
-                methods=[
-                    'get',
-                    'post'
-                ]
+                methods={
+                    'get': None,
+                    'post': None
+                }
             ),
             '/test/<id>': ServiceConfig(
                 service=TestServiceDetail,

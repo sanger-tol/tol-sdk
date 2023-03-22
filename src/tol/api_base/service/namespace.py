@@ -4,7 +4,9 @@
 
 from dataclasses import dataclass
 from functools import wraps
-from typing import Callable, Dict, List
+from typing import Any, Callable, Dict, List, Optional, Tuple
+
+from ..swagger.model import Swagger
 
 
 class BadHTTPMethodException(Exception):
@@ -23,9 +25,21 @@ class NoHTTPMethodsException(Exception):
 
 
 @dataclass
+class ServiceMethodResponse:
+    description: Optional[str] = None
+    swagger: Optional[Swagger] = None
+
+
+@dataclass
+class ServiceMethodConfig:
+    expects: Optional[Swagger] = None
+    responses: Optional[Dict[int, ServiceMethodResponse]] = None
+
+
+@dataclass
 class ServiceConfig:
     service: object
-    methods: List[str]
+    methods: Dict[str, ServiceMethodConfig]
 
 
 NamespaceServicesConfig = Dict[str, ServiceConfig]
@@ -65,21 +79,53 @@ class ServiceNamespace:
             return service
         return wrapper
 
-    def doc(self, **doc_kwargs) -> Callable:
+    def response(
+        self,
+        status_code: int,
+        description: str = None,
+        swagger: Swagger = None
+    ) -> Callable:
         """
-        Adds documentation to the decorated method
+        Documents a method response.
 
         Params:
-        * doc_kwargs    - the method's documentation (in
-                          flask-restx format)
+        * status_code   - the status code of this response (e.g. 200)
+        * description   - a (short) description of this response
+                          (e.g. OK)
+        * swagger       - the Swagger model that will be returned
         """
-        def decorator(function: Callable) -> Callable:
-            self.__check_function_method(function)
-            function._doc = doc_kwargs
 
-            @wraps(function)
+        def decorator(method: Callable) -> Callable:
+            self.__validate_function_method(method)
+            method._doc['responses'][status_code] = ServiceMethodResponse(
+                description=description,
+                swagger=swagger
+            )
+
+            @wraps(method)
             def wrapper(*args, **kwargs):
-                return function(*args, **kwargs)
+                return method(*args, **kwargs)
+            return wrapper
+        return decorator
+
+    def expects(
+        self,
+        swagger: Swagger
+    ) -> Callable:
+        """
+        Documents a method with an expected Swagger model
+
+        Params:
+        * swagger - the Swagger model to expect
+        """
+
+        def decorator(method: Callable) -> Callable:
+            self.__validate_function_method(method)
+            method._doc['expects'] = swagger
+
+            @wraps(method)
+            def wrapper(*args, **kwargs):
+                return method(*args, **kwargs)
             return wrapper
         return decorator
 
@@ -91,6 +137,12 @@ class ServiceNamespace:
             path: self.__get_service_config(service)
             for path, service in self.__services.items()
         }
+
+    def __create_method_doc_if_null(self, method) -> None:
+        if not hasattr(method, '_doc'):
+            method._doc = {
+                'responses': {}
+            }
 
     def __service_has_http_method(self, service: object, method: str) -> bool:
         return callable(
@@ -111,10 +163,11 @@ class ServiceNamespace:
             )
         )
 
-    def __check_function_method(self, function: Callable) -> None:
-        method = function.__name__
-        if method not in self.__PERMITTED_METHODS:
-            raise BadHTTPMethodException(method)
+    def __validate_function_method(self, method: Callable) -> None:
+        name = method.__name__
+        if name not in self.__PERMITTED_METHODS:
+            raise BadHTTPMethodException(name)
+        self.__create_method_doc_if_null(method)
 
     def __check_service_methods(self, service: object) -> None:
         methods = self.__identify_http_methods_on_service(service)
