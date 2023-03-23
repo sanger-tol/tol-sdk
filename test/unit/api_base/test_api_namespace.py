@@ -49,65 +49,86 @@ INDIVIDUAL_CONFIG_DICT = {
 }
 
 
+
+service_ns = ServiceNamespace()
+
+
+@service_ns.route('/get-example')
+class ExampleServiceGet:
+    def get(self):
+        pass
+
+
+@service_ns.route('/post-example')
+class ExampleServicePost:
+    def post(self):
+        pass
+
+
+@service_ns.route('/delete-namespace/<str:id>')
+class ExampleServiceDeleteById:
+    def delete(self, object_id):
+        pass
+
+
+patch_expect_swagger = Swagger(
+    'patch expect',
+    {
+        'test': tol_fields.String()
+    }
+)
+
+
+@service_ns.route('/patch-and-get-example')
+class ExampleServicePatchAndGet:
+    @service_ns.expect(
+        patch_expect_swagger
+    )
+    def patch(self):
+        pass
+
+    def get(self):
+        pass
+
+
+individual_config = DataTypeConfig(
+    **INDIVIDUAL_CONFIG_DICT
+)
+api_ns = ApiNamespace(
+    individual_config,
+    service_ns,
+    description='Test example :D'
+)
+
+
 class TestApiNamespace:
-    def test_resource_generation(self):
-        service_ns = ServiceNamespace()
-
-        @service_ns.route('/get-example')
-        class ExampleServiceGet:
-            def get(self):
-                pass
-
-        @service_ns.route('/post-example')
-        class ExampleServicePost:
-            def post(self):
-                pass
-
-        @service_ns.route('/delete-namespace/<str:id>')
-        class ExampleServiceDeleteById:
-            def delete(self, object_id):
-                pass
-
-        patch_expect_swagger = Swagger(
-            'patch expect',
-            {
-                'test': tol_fields.String()
-            }
-        )
-
-        @service_ns.route('/patch-and-get-example')
-        class ExampleServicePatchAndGet:
-            @service_ns.expect(
-                patch_expect_swagger
-            )
-            def patch(self):
-                pass
-
-            def get(self):
-                pass
-
-        individual_config = DataTypeConfig(
-            **INDIVIDUAL_CONFIG_DICT
-        )
-        api_ns = ApiNamespace(
-            individual_config,
-            service_ns,
-            description='Test example :D'
-        )
-
-        # get the created resources
-        resources = api_ns.resources
+    def test_resource_number(self):
         # there should be 4
-        assert len(resources) == 4
+        assert len(api_ns.resources) == 4
 
+    def test_resources_have_1_url(self):
         # assert that each resource only has one url
-        for resource in resources:
+        for resource in api_ns.resources:
             assert len(resource.urls) == 1
 
+    def test_resources_methods(self):
+        __DEFINED_METHODS = [
+            'get',
+            'post',
+            'delete',
+            'patch'
+        ]
         # make the resources dict
         resources_dict = {
-            resource.urls[0]: resource.resource
-            for resource in resources
+            resource.urls[0]: {
+                method for method in resource.resource.__dict__
+                if method in __DEFINED_METHODS
+            }
+            for resource in api_ns.resources
         }
-        print(resources_dict)
-        assert False
+        assert resources_dict == {
+            '/get-example': {'get'},
+            '/post-example': {'post'},
+            '/delete-namespace/<str:id>': {'delete'},
+            '/patch-and-get-example': {'get', 'patch'}
+        }
