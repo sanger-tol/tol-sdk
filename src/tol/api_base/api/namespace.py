@@ -50,14 +50,14 @@ class ApiNamespace(FlaskRestxNamespace):
         path: str,
         service_config: ServiceConfig
     ) -> Resource:
-        resource_name = ''  # TODO make a name!!
+        resource_name = 'AutoResource'
         methods_dict = self.__get_documented_methods(service_config)
         new_resource = type(
             resource_name,
             (Resource,),
             methods_dict
         )
-        self.route(new_resource)(path)
+        self.route(path)(new_resource)
 
     def __get_documented_methods(
         self,
@@ -80,24 +80,34 @@ class ApiNamespace(FlaskRestxNamespace):
         method_name: str,
         method_config: ServiceMethodConfig
     ) -> Callable:
-        # TODO check self/cls resolves correctly!!!
-        # TODO refactor this into smaller chunks
+        # TODO check self/cls resolves correctly
 
         # get the service method and "clone" it
         method = getattr(service, method_name)
 
-        def decorated(_obj: object, *args, **kwargs) -> Any:
+        def __method_to_decorate(_obj: object, *args, **kwargs) -> Any:
             return method(*args, **kwargs)
-        decorated.__name__ = method_name
+        __method_to_decorate.__name__ = method_name
+        return self.__apply_decorators(
+            __method_to_decorate,
+            method_config
+        )
 
+        
+
+    def __apply_decorators(
+        self,
+        method: Callable,
+        method_config: ServiceMethodConfig
+    ) -> Callable:
         decorators = reversed([
             *self.__get_response_decorators(method_config.responses),
             *self.__get_expect_decorator(method_config.expect),
-            wraps(decorated)
+            wraps(method)
         ])
         for decorator in decorators:
-            decorated = decorator(decorated)
-        return decorated
+            method = decorator(method)
+        return method
 
     def __get_expect_decorator(
         self,
@@ -106,7 +116,7 @@ class ApiNamespace(FlaskRestxNamespace):
         if swagger is None:
             return []
         else:
-            return self.expect(swagger)
+            return [self.expect(swagger)]
 
     def __get_response_decorators(
         self,

@@ -4,6 +4,7 @@
 
 from tol.api_base import ServiceNamespace, tol_fields
 from tol.api_base.api.namespace import ApiNamespace
+from tol.api_base.swagger.model import Swagger
 from tol.api_base.utils.config import DataTypeConfig
 
 from .data_source import _TestDataSource
@@ -67,8 +68,18 @@ class TestApiNamespace:
             def delete(self, object_id):
                 pass
 
+        patch_expect_swagger = Swagger(
+            'patch expect',
+            {
+                'test': tol_fields.String()
+            }
+        )
+
         @service_ns.route('/patch-and-get-example')
         class ExampleServicePatchAndGet:
+            @service_ns.expect(
+                patch_expect_swagger
+            )
             def patch(self):
                 pass
 
@@ -88,3 +99,15 @@ class TestApiNamespace:
         resources = api_ns.resources
         # there should be 4
         assert len(resources) == 4
+
+        # assert that each resource only has one url
+        for resource in resources:
+            assert len(resource.urls) == 1
+
+        # make the resources dict
+        resources_dict = {
+            resource.urls[0]: resource.resource
+            for resource in resources
+        }
+        print(resources_dict)
+        assert False
