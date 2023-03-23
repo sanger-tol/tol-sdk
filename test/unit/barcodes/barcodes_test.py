@@ -13,6 +13,28 @@ def mock_everything(f):
     def wrapper():
         with requests_mock.Mocker() as m:
             pmb_url = 'http://afake.address.ac.uk:9292'
+            baracoda_url = 'https://anotherfake.address.ac.uk'
+            m.register_uri(
+                'POST',
+                path.join(baracoda_url, 'barcodes_group', 'TEST', 'new?count=3'),
+                status_code=201,
+                json={
+                    'barcodes_group': {
+                        'barcodes': [
+                            'TEST-111110',
+                            'TEST-111111',
+                            'TEST-111112',
+                        ],
+                        'id': 122349,
+                    }
+                },
+            )
+            m.register_uri(
+                'POST',
+                path.join(baracoda_url, 'barcodes_group', 'TEST', 'new?count=1'),
+                status_code=201,
+                json={'barcodes_group': {'barcodes': ['TEST-111110'], 'id': 122349}},
+            )
             m.register_uri(
                 'GET',
                 path.join(pmb_url, 'v1', 'printers'),
@@ -51,23 +73,19 @@ def mock_everything(f):
                         'id': '2',
                         'type': 'label_templates',
                         'attributes': {'name': 'label_template_b'},
-                        'included': [
-                            {
-                                'id': '4',
-                                'type': 'bitmaps',
-                                'attributes': {
-                                    'field_name': 'required_field_1'
-                                },
-                            },
-                            {
-                                'id': '5',
-                                'type': 'bitmaps',
-                                'attributes': {
-                                    'field_name': 'required_field_2'
-                                },
-                            },
-                        ],
-                    }
+                    },
+                    'included': [
+                        {
+                            'id': '4',
+                            'type': 'bitmaps',
+                            'attributes': {'field_name': 'required_field_1'},
+                        },
+                        {
+                            'id': '5',
+                            'type': 'bitmaps',
+                            'attributes': {'field_name': 'required_field_2'},
+                        },
+                    ],
                 },
             )
             m.register_uri(
@@ -83,81 +101,68 @@ def mock_everything(f):
 
 @mock_everything
 def test_printers():
-    barcodes = tol.barcodes.Interface({
-        'pmb_url': 'http://afake.address.ac.uk:9292',
-        'barcodebar_url': 'https://anotherfake.address.ac.uk'
-    })
+    barcodes = tol.barcodes.Interface(
+        {
+            'pmb_url': 'http://afake.address.ac.uk:9292',
+            'baracoda_url': 'https://anotherfake.address.ac.uk',
+            'generate_limit': 500,
+            'print_limit': 500,
+        }
+    )
     response = barcodes.printers()
-    assert response == [{'id': '1', 'name': 'printer_a', 'type': 'toshiba'}]
+    assert response == {
+        'status_code': 200,
+        'message': 'SUCCESS',
+        'data': [{'id': '1', 'name': 'printer_a', 'type': 'toshiba'}],
+    }
 
 
 @mock_everything
 def test_label_templates():
-    barcodes = tol.barcodes.Interface({
-        'pmb_url': 'http://afake.address.ac.uk:9292',
-        'barcodebar_url': 'https://anotherfake.address.ac.uk'
-    })
+    barcodes = tol.barcodes.Interface(
+        {
+            'pmb_url': 'http://afake.address.ac.uk:9292',
+            'baracoda_url': 'https://anotherfake.address.ac.uk',
+            'generate_limit': 500,
+            'print_limit': 500,
+        }
+    )
     response = barcodes.label_templates()
-    assert response == [{'id': '2', 'name': 'label_template_b'}]
+    assert response == {
+        'status_code': 200,
+        'message': 'SUCCESS',
+        'data': [{'id': '2', 'name': 'label_template_b'}],
+    }
 
 
 @mock_everything
 def test_required_fields():
-    barcodes = tol.barcodes.Interface({
-        'pmb_url': 'http://afake.address.ac.uk:9292',
-        'barcodebar_url': 'https://anotherfake.address.ac.uk'
-    })
+    barcodes = tol.barcodes.Interface(
+        {
+            'pmb_url': 'http://afake.address.ac.uk:9292',
+            'baracoda_url': 'https://anotherfake.address.ac.uk',
+            'generate_limit': 500,
+            'print_limit': 500,
+        }
+    )
     response = barcodes.required_fields('label_template_b')
-    assert response == [
-        'required_field_1',
-        'required_field_2',
-    ]
-
-
-@mock_everything
-def test_validate_pass():
-    barcodes = tol.barcodes.Interface({
-        'pmb_url': 'http://afake.address.ac.uk:9292',
-        'barcodebar_url': 'https://anotherfake.address.ac.uk'
-    })
-    label_data = [
-        {
-            'barcode': 'COS00001',
-            'required_field_1': 'abc123',
-            'required_field_2': 'abc345',
-        }
-    ]
-    response = barcodes.validate_label_data(label_data, 'label_template_b')
-    assert response == {}
-
-
-@mock_everything
-def test_validate_fail():
-    barcodes = tol.barcodes.Interface({
-        'pmb_url': 'http://afake.address.ac.uk:9292',
-        'barcodebar_url': 'https://anotherfake.address.ac.uk'
-    })
-    label_data = [
-        {
-            'barcode': 'COS00001',
-            'required_field_x': 'abc123',
-            'required_field_2': 'abc345',
-        }
-    ]
-    response = barcodes.validate_label_data(label_data, 'label_template_b')
-    print(response)
     assert response == {
-        'required_field_1': ['Missing data for required field.'],
-        'required_field_x': ['Unknown field.'],
+        'status_code': 200,
+        'message': 'SUCCESS',
+        'data': ['label_name', 'required_field_1', 'required_field_2'],
     }
 
 
 @mock_everything
 def test_print_labels_fail():
-    barcodes = tol.barcodes.Interface({
-        'pmb_url': 'http://afake.address.ac.uk:9292',
-        'barcodebar_url': 'https://anotherfake.address.ac.uk'
-    })
+    barcodes = tol.barcodes.Interface(
+        {
+            'pmb_url': 'http://afake.address.ac.uk:9292',
+            'baracoda_url': 'https://anotherfake.address.ac.uk',
+            'generate_limit': 500,
+            'print_limit': 500,
+        }
+    )
     label_data = [
         {
             'barcode': 'COS00001',
@@ -168,15 +173,26 @@ def test_print_labels_fail():
     response = barcodes.print_labels(
         label_data, 'printer_a', 'label_template_b', dry=False
     )
-    assert 'ValidationError' in response.keys()
+    assert response == {
+        'status_code': 400,
+        'message': 'Validation error',
+        'data': {
+            'required_field_1': ['Missing data for required field.'],
+            'required_field_x': ['Unknown field.'],
+        },
+    }
 
 
 @mock_everything
 def test_print_labels_pass():
-    barcodes = tol.barcodes.Interface({
-        'pmb_url': 'http://afake.address.ac.uk:9292',
-        'barcodebar_url': 'https://anotherfake.address.ac.uk'
-    })
+    barcodes = tol.barcodes.Interface(
+        {
+            'pmb_url': 'http://afake.address.ac.uk:9292',
+            'baracoda_url': 'https://anotherfake.address.ac.uk',
+            'generate_limit': 500,
+            'print_limit': 500,
+        }
+    )
     label_data = [
         {
             'barcode': 'COS00001',
@@ -187,4 +203,67 @@ def test_print_labels_pass():
     response = barcodes.print_labels(
         label_data, 'printer_a', 'label_template_b', dry=False
     )
-    assert response == {'Response': 'message'}
+    assert response == {'status_code': 200, 'message': 'SUCCESS', 'data': {}}
+
+
+@mock_everything
+def test_print_labels_pass_dry():
+    barcodes = tol.barcodes.Interface(
+        {
+            'pmb_url': 'http://afake.address.ac.uk:9292',
+            'baracoda_url': 'https://anotherfake.address.ac.uk',
+            'generate_limit': 500,
+            'print_limit': 500,
+        }
+    )
+    label_data = [
+        {
+            'barcode': 'COS00001',
+            'required_field_1': 'abc123',
+            'required_field_2': 'abc345',
+        }
+    ]
+    response = barcodes.print_labels(
+        label_data, 'printer_a', 'label_template_b', dry=True
+    )
+    assert response == {
+        'status_code': 200,
+        'message': 'Dry run',
+        'data': {}
+    }
+
+
+@mock_everything
+def test_generate_pass():
+    barcodes = tol.barcodes.Interface(
+        {
+            'pmb_url': 'http://afake.address.ac.uk:9292',
+            'baracoda_url': 'https://anotherfake.address.ac.uk',
+            'generate_limit': 500,
+            'print_limit': 500,
+        }
+    )
+    response = barcodes.generate('TEST', 3)
+    assert response == {
+        'status_code': 200,
+        'message': 'SUCCESS',
+        'data': ['TEST-111110', 'TEST-111111', 'TEST-111112'],
+    }
+
+
+@mock_everything
+def test_generate_pass_with_limit():
+    barcodes = tol.barcodes.Interface(
+        {
+            'pmb_url': 'http://afake.address.ac.uk:9292',
+            'baracoda_url': 'https://anotherfake.address.ac.uk',
+            'generate_limit': 1,
+            'print_limit': 500,
+        }
+    )
+    response = barcodes.generate('TEST', 3)
+    assert response == {
+        'status_code': 200,
+        'message': 'SUCCESS',
+        'data': ['TEST-111110'],
+    }

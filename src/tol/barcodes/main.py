@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: MIT
 
 import json
-from os import getenv, path
+from os import path
 
 from marshmallow import Schema, fields
 
@@ -13,16 +13,20 @@ from ..core import DataSource
 
 
 class Interface(DataSource):
-
     def __init__(self, config):
-        # pbm_url
-        # barcodebar_url
+        # pmb_url baracoda_url, generate_limit, print_limit
         super().__init__(config)
+
+    def custom_response(self, status_code=200, message='SUCCESS', data={}):
+        return {'status_code': status_code, 'message': message, 'data': data}
 
     def printers(self):
         """Show all printers"""
         printers = []
-        response = requests.get(path.join(self.pmb_url, 'v1', 'printers'))
+        try:
+            response = requests.get(path.join(self.pmb_url, 'v1', 'printers'))
+        except requests.exceptions.RequestException as error:
+            return self.custom_response(status_code=400, message=str(error))
         for i in response.json()['data']:
             printers += [
                 {
@@ -31,82 +35,107 @@ class Interface(DataSource):
                     'type': i['attributes']['printer_type'],
                 }
             ]
-        return printers
+        return self.custom_response(data=printers)
 
     def label_templates(self):
         """Show all label-templates"""
-        response = requests.get(path.join(self.pmb_url, 'v1', 'label_templates'))
+        try:
+            response = requests.get(path.join(self.pmb_url, 'v1', 'label_templates'))
+        except requests.exceptions.RequestException as error:
+            return self.custom_response(status_code=400, message=str(error))
+        if response.status_code != 200:
+            raise self.custom_response(
+                status_code=response.status_code, data=response.json()
+            )
         label_templates = []
         for i in response.json()['data']:
             label_templates += [{'id': i['id'], 'name': i['attributes']['name']}]
-        return label_templates
+        return self.custom_response(data=label_templates)
 
     def required_fields(self, label_template_name):
         """Show all required fields for a label template"""
-        _id = {label['name']: label['id'] for label in self.label_templates()}[
-            label_template_name
-        ]
-        response = requests.get(path.join(self.pmb_url, 'v1', 'label_templates', _id))
-        required_fields = []
-        for i in response.json()['data']['included']:
+        label_templates = {
+            label['name']: label['id'] for label in self.label_templates()['data']
+        }
+        _id = label_templates[label_template_name]
+        try:
+            response = requests.get(
+                path.join(self.pmb_url, 'v1', 'label_templates', _id)
+            )
+        except requests.exceptions.RequestException as error:
+            return self.custom_response(status_code=400, message=str(error))
+        required_fields = ['label_name']
+        for i in response.json()['included']:
             if i['type'] == 'bitmaps':
                 required_fields += [i['attributes']['field_name']]
-        return required_fields
+        return self.custom_response(data=required_fields)
 
-    def generate_barcodes(self, prefix, number):
+    def generate(self, prefix, number):
         """Generate barcodes with given prefix"""
-        barcoda_url = getenv('BARCODA_URL')
-        barcodes = []
-        for i in range(0, number):
-            response = requests.post(
-                path.join(barcoda_url, 'barcodes', prefix, 'new'), verify=False
+        count = min(number, self.generate_limit)
+        request = path.join(
+            self.baracoda_url, 'barcodes_group', str(prefix), f'new?count={count}'
+        )
+        try:
+            response = requests.post(request, verify=False)
+        except requests.exceptions.RequestException as error:
+            return self.custom_response(status_code=400, message=str(error))
+        if response.status_code != 201:
+            return self.custom_response(
+                status_code=response.status_code,
+                message='Baracoda error',
+                data=response,
             )
-            barcode = response.json()['barcode']
-            barcodes += [barcode]
-        return barcodes
+        try:
+            barcodes = response.json()['barcodes_group']['barcodes']
+            return self.custom_response(data=barcodes)
+        except requests.exceptions.RequestException as error:
+            return self.custom_response(status_code=400, message=str(error))
 
-    def label_schema(self, required_fields):
+    def _label_schema(self, label_template_name):
         """Marshmallow schema from list of required fields"""
+        required_fields_response = self.required_fields(label_template_name)
+        required_fields = required_fields_response['data']
         schema_dict = {'barcode': fields.Str(required=True)}
         for field in required_fields:
             schema_dict[field] = fields.Str(required=True)
+        schema_dict.pop('label_name')
         return Schema.from_dict(schema_dict)
 
-    def validate_label_data(self, label_data, label_template_name):
-        """Validate a label from a template name"""
-        schema = self.label_schema(self.required_fields(label_template_name))
-        for label in label_data:
-            return schema().validate(label)
-
     def print_labels(
-            self,
-            label_data,
-            printer_name,
-            label_template_name,
-            copies=1, dry=True
+        self, label_data, printer_name, label_template_name, copies=1, dry=True
     ):
         """Print labels"""
-        validation = self.validate_label_data(label_data, label_template_name)
-        if validation != {}:
-            return {'ValidationError': validation}
-        else:
-            job = {
-                'print_job': {
-                    'printer_name': printer_name,
-                    'label_template_name': label_template_name,
-                    'labels': label_data,
-                    'copies': copies,
-                }
-            }
-            url = path.join(self.pmb_url, 'v2', 'print_jobs')
-            if not dry:
-                response = requests.post(url, json=json.dumps(job))
-                return {'Response': response.json()}
-            else:
-                curl = (
-                    "curl -d '"
-                    + json.dumps(job, indent=4)
-                    + "' -H 'Content-Type: application/vnd.api+json' -X POST "
-                    + url
+        copies = min(copies, self.print_limit)
+        schema = self._label_schema(label_template_name)
+        for label in label_data:
+            validation = schema().validate(label)
+            if validation != {}:
+                return self.custom_response(
+                    status_code=400, message='Validation error', data=validation
                 )
-                return {'DryRun': curl}
+        job = {
+            'print_job': {
+                'printer_name': printer_name,
+                'label_template_name': label_template_name,
+                'labels': label_data,
+                'copies': copies,
+            }
+        }
+
+        url = path.join(self.pmb_url, 'v2', 'print_jobs')
+        try:
+            response = requests.post(
+                url,
+                data=json.dumps(job),
+                headers={
+                    'Content-Type': 'application/vnd.api+json',
+                    'accept': 'application/json',
+                },
+            )
+        except requests.exceptions.RequestException as error:
+            return self.custom_response(status_code=400, message=str(error))
+        if not dry:
+            return self.custom_response(status_code=response.status_code)
+        else:
+            return self.custom_response(message='Dry run')
