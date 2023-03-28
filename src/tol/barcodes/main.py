@@ -9,7 +9,7 @@ from marshmallow import Schema, fields
 
 import requests
 
-from ..core import DataSource
+from ..core import DataSource, unsupported
 
 
 class Interface(DataSource):
@@ -139,3 +139,11 @@ class Interface(DataSource):
             return self.custom_response(status_code=response.status_code)
         else:
             return self.custom_response(message='Dry run')
+
+    @unsupported
+    def get_by_id(self, *args, **kwargs):
+        pass
+
+    @unsupported
+    def get_list_page(self, *args, **kwargs):
+        pass

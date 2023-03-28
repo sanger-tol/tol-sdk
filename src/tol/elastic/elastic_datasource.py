@@ -10,14 +10,18 @@ from typing import Dict, Generator
 
 from elasticsearch import (Elasticsearch, helpers)
 
-from ..core import (DataSource, DataSourceError)
+from ..core import (
+    DataSource,
+    DataSourceError,
+    DataSourceFilter
+)
 
 
 class ElasticDataSource(DataSource):
 
     def __init__(self, config: Dict):
         # uri, user, password
-        super().__init__(config, expected=['uri', 'user', 'password'])
+        super().__init__(config, expected=['uri', 'user', 'password', 'index_prefix'])
         self._initialise_elasticsearch()
 
     def _initialise_elasticsearch(self):
@@ -99,3 +103,34 @@ class ElasticDataSource(DataSource):
         if no_of_errors > 0:
             raise DataSourceError(f'{no_of_errors} errors encountered '
                                   f'upserting {no_of_operations} objects')
+
+    def __get_index(self, object_type: str) -> str:
+        return f'{self.index_prefix}-{object_type}'
+
+    def get_by_id(
+        self,
+        object_type: str,
+        id_: str,
+        **kwargs
+    ):
+        index = self.__get_index(object_type)
+        return self.es.get(
+            id=id_,
+            index=index
+        )
+
+    def get_list_page(
+        self,
+        object_type: str,
+        page: int,
+        object_filters: DataSourceFilter = None,
+        **kwargs
+    ):
+        index = self.__get_index(object_type)
+        page_size = self.get_page_size()
+        from_ = page * page_size
+        return self.es.search(
+            from_=from_,
+            size=page_size,
+            index=index
+        )

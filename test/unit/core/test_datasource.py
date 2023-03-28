@@ -1,20 +1,43 @@
 # SPDX-FileCopyrightText: 2023 Genome Research Ltd.
 #
 # SPDX-License-Identifier: MIT
+
 from typing import Dict
 from unittest import TestCase
 
-from tol.core import (DataSource, DataSourceError)
+from tol.core import (
+    DataSource,
+    DataSourceError,
+    UnsupportedOperationException,
+    unsupported
+)
 
 
 class TestDataSourceExpected(DataSource):
     def __init__(self, config: Dict):
         super().__init__(config, expected=['field1', 'field2'])
 
+    @unsupported
+    def get_by_id(self, *args, **kwargs):
+        pass
+
+    @unsupported
+    def get_list_page(self, *args, **kwargs):
+        pass
+
 
 class TestDataSourceNoExpected(DataSource):
     def __init__(self, config: Dict):
         super().__init__(config, expected=[])
+
+    @unsupported
+    def get_by_id(self, *args, **kwargs):
+        pass
+
+    def get_list_page(self, *args, **kwargs):
+        return [{
+            'hello': 'world'
+        }]
 
 
 class TestDataSource(TestCase):
@@ -29,3 +52,37 @@ class TestDataSource(TestCase):
         TestDataSourceNoExpected({})
         TestDataSourceNoExpected({'field1': 'value1'})
         TestDataSourceNoExpected({'field1': 'value1', 'field2': 'value2'})
+
+    def test_unsupported_method_exception(self):
+        with self.assertRaises(UnsupportedOperationException):
+            TestDataSourceNoExpected({}).get_by_id()
+
+    def test_unsupported_method_doc(self):
+        method = TestDataSourceNoExpected({}).get_by_id
+        self.assertTrue(hasattr(method, '_unsupported'))
+        self.assertTrue(method._unsupported)
+
+    def test_supported_method_no_exception(self):
+        TestDataSourceNoExpected({}).get_list_page()
+
+    def test_supported_method_no_doc(self):
+        self.assertFalse(
+            hasattr(
+                TestDataSourceNoExpected({}).get_list_page,
+                '_unsupported'
+            )
+        )
+
+    def test_get_supported_methods(self):
+        # first has no supported methods
+        self.assertEqual(
+            TestDataSourceExpected(
+                {'field1': 'value1', 'field2': 'value2'}
+            ).supported_operations,
+            []
+        )
+        # second supports one
+        self.assertEqual(
+            TestDataSourceNoExpected({}).supported_operations,
+            ['get_list_page']
+        )

@@ -14,7 +14,7 @@ from irods.data_object import iRODSDataObject
 from irods.models import Collection, DataObject, DataObjectMeta
 from irods.session import iRODSSession
 
-from ..core import DataSource
+from ..core import DataSource, unsupported
 
 
 class IrodsDataSource(DataSource):
@@ -105,3 +105,11 @@ class IrodsDataSource(DataSource):
         results = filtered_query.get_results()
 
         return self._map_keys(self._format_results(results))
+
+    @unsupported
+    def get_by_id(self, *args, **kwargs):
+        pass
+
+    @unsupported
+    def get_list_page(self, *args, **kwargs):
+        pass
