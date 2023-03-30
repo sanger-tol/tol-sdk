@@ -13,7 +13,8 @@ import requests
 from .api_object import ApiObject
 from ..core import (
     DataSource,
-    DataSourceError
+    DataSourceError,
+    unsupported
 )
 
 
@@ -189,3 +190,7 @@ class ApiDataSource(DataSource):
             relationships_obj = \
                 self._convert_relationships_from_json_to_objects(obj_json['relationships'])
             obj.update_relationships_from_dict(relationships_obj)
+
+    @unsupported()
+    def upsert(self, object_type: str, *args, **kwargs) -> None:
+        pass

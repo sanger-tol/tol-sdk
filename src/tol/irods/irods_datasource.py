@@ -14,10 +14,10 @@ from irods.data_object import iRODSDataObject
 from irods.models import Collection, DataObject, DataObjectMeta
 from irods.session import iRODSSession
 
-from ..core import DataSource, unsupported
+from ..core import ReadOnlyDataSource, unsupported
 
 
-class IrodsDataSource(DataSource):
+class IrodsDataSource(ReadOnlyDataSource):
 
     def __init__(self, config: Dict):
         # uri, user, password
@@ -106,10 +106,14 @@ class IrodsDataSource(DataSource):
 
         return self._map_keys(self._format_results(results))
 
-    @unsupported
+    @unsupported()
     def get_by_id(self, *args, **kwargs):
         pass
 
-    @unsupported
+    @unsupported()
     def get_list_page(self, *args, **kwargs):
+        pass
+
+    @unsupported()
+    def get_list(self, object_type: str, *args, **kwargs) -> None:
         pass

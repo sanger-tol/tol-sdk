@@ -5,39 +5,52 @@
 from typing import Dict
 from unittest import TestCase
 
+import pytest
+
 from tol.core import (
-    DataSource,
     DataSourceError,
+    ReadOnlyDataSource,
     UnsupportedOperationException,
     unsupported
 )
 
 
-class TestDataSourceExpected(DataSource):
+class TestDataSourceExpected(ReadOnlyDataSource):
     def __init__(self, config: Dict):
         super().__init__(config, expected=['field1', 'field2'])
 
-    @unsupported
-    def get_by_id(self, *args, **kwargs):
+    @unsupported()
+    def get_by_id(self, object_type: str, *args, **kwargs):
         pass
 
-    @unsupported
-    def get_list_page(self, *args, **kwargs):
+    @unsupported()
+    def get_list_page(self, object_type: str, *args, **kwargs):
+        pass
+
+    @unsupported()
+    def get_list(self, object_type: str, *args, **kwargs) -> None:
         pass
 
 
-class TestDataSourceNoExpected(DataSource):
+ERROR_MESSAGE = "I don't like this."
+
+
+class TestDataSourceNoExpected(ReadOnlyDataSource):
     def __init__(self, config: Dict):
         super().__init__(config, expected=[])
 
-    @unsupported
-    def get_by_id(self, *args, **kwargs):
+    @unsupported(message=ERROR_MESSAGE)
+    def get_by_id(self, object_type: str, *args, **kwargs):
         pass
 
-    def get_list_page(self, *args, **kwargs):
+    def get_list_page(self, object_type: str, *args, **kwargs):
         return [{
             'hello': 'world'
         }]
+
+    @unsupported()
+    def get_list(self, object_type: str, *args, **kwargs) -> None:
+        pass
 
 
 class TestDataSource(TestCase):
@@ -54,8 +67,16 @@ class TestDataSource(TestCase):
         TestDataSourceNoExpected({'field1': 'value1', 'field2': 'value2'})
 
     def test_unsupported_method_exception(self):
-        with self.assertRaises(UnsupportedOperationException):
-            TestDataSourceNoExpected({}).get_by_id()
+        ds_1 = TestDataSourceExpected({'field1': 'value1', 'field2': 'value2'})
+        with pytest.raises(UnsupportedOperationException):
+            ds_1.get_list_page('test')
+
+        ds_2 = TestDataSourceNoExpected({})
+        with pytest.raises(
+            UnsupportedOperationException,
+            match=rf'.*{ERROR_MESSAGE}'
+        ):
+            ds_2.get_by_id('test')
 
     def test_unsupported_method_doc(self):
         method = TestDataSourceNoExpected({}).get_by_id
@@ -63,7 +84,7 @@ class TestDataSource(TestCase):
         self.assertTrue(method._unsupported)
 
     def test_supported_method_no_exception(self):
-        TestDataSourceNoExpected({}).get_list_page()
+        TestDataSourceNoExpected({}).get_list_page('test')
 
     def test_supported_method_no_doc(self):
         self.assertFalse(

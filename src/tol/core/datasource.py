@@ -11,6 +11,7 @@ from typing import Any, Callable, Dict, Iterable, List, Tuple
 from .data_object import DataDict, DataObject
 from .datasource_error import DataSourceError
 from .datasource_filter import DataSourceFilter
+from .datasource_session import DataSourceSession
 
 
 DataId = str
@@ -19,40 +20,92 @@ DataSourceConfig = Dict[str, Any]
 
 
 class UnsupportedOperationException(NotImplementedError):
-    def __init__(self, obj: DataSource, method: Callable):
-        super().__init__(
-            f'The operation {method.__name__} is '
-            f'unsupported on {obj.__class__.__name__}.'
+    def __init__(
+        self,
+        obj: DataSource,
+        method: Callable,
+        object_type: str,
+        message: str = None
+    ):
+        rendered_message = self.__render_message(
+            obj,
+            method,
+            object_type,
+            message
         )
+        super().__init__(rendered_message)
+
+    def __render_message(
+        self,
+        obj: DataSource,
+        method: Callable,
+        object_type: str,
+        message: str
+    ) -> str:
+        auto_message = (
+            f'The operation {method.__name__} for type {object_type} '
+            f'is unsupported on {obj.__class__.__name__}.'
+        )
+        if message is None:
+            return auto_message
+        else:
+            return f'{auto_message}\n\n{message}'
 
 
-def unsupported(method: Callable) -> Callable:
+def unsupported(message: str = None) -> Callable:
     """
     Indicates that an abstract operation on ABC DataSource is
     unsupported on the inherited class and will raise an
     UnsupportedOperationException if called.
-    """
-    method._unsupported = True
 
-    @wraps(method)
-    def wrapper(obj: DataSource, *args, **kwargs) -> None:
-        raise UnsupportedOperationException(
-            obj,
-            method
-        )
-    return wrapper
+    This decorator can be used with or without parentheses after,
+    the former supporting providing an optional message to
+    any UnsupportedOperationException resulting from an
+    operation invocation.
+
+    Usage:
+
+    @unsupported()
+    def get_by_id(self, *args, **kwargs):
+        pass
+
+    or (to raise an exception with a custom message)
+
+    @unsupported(message='This DataSource is readonly.')
+    def upsert(self, *args, **kwargs):
+        pass
+    """
+
+    def decorator(operation: Callable) -> Callable:
+        @wraps(operation)
+        def wrapper(obj: DataSource, object_type: str, *args, **kwargs) -> None:
+            raise UnsupportedOperationException(
+                obj,
+                operation,
+                object_type,
+                message=message
+            )
+        wrapper._unsupported = True
+        return wrapper
+    return decorator
 
 
 class DataSource(ABC):
     """
-    The central class for managing operations on heterogeneous data sources
+    The central class for managing operations on heterogeneous data sources.
+
+    All operations called directly on a DataSource instance will be executed
+    immediately.
+
+    To batch calls, use the session() method.
     """
 
     DEFAULT_PAGE_SIZE = 20
 
     __OPERATIONS = [
         'get_by_id',
-        'get_list_page'
+        'get_list_page',
+        'upsert'
     ]
 
     def __init__(self, config: DataSourceConfig, expected: List[str] = None):
@@ -66,6 +119,9 @@ class DataSource(ABC):
             operation for operation in self.__OPERATIONS
             if self.__operation_is_supported(operation)
         ]
+
+    def session(self) -> DataSourceSession:
+        return DataSourceSession(self)
 
     def __operation_is_supported(self, name) -> bool:
         operation = getattr(self, name)
@@ -108,10 +164,39 @@ class DataSource(ABC):
         page_size: int = None,
         object_filters: DataSourceFilter = None,
         **kwargs
-    ) -> List[DataObject]:
+    ) -> Tuple[List[DataObject], int]:
         """
-        Gets a page of DataObject instances, of specified object_type, of
-        the given page_size and page_number (starting from 1).
+        For a specified object_type, of the given page_size
+        and page_number (starting from 1), returns a tuple of:
+
+        - The list of DataObject instances
+        - The total number of DataObjects that matches the filter
+        """
+
+    @abstractmethod
+    def get_list(
+        self,
+        object_type: str,
+        object_filters: DataSourceFilter = None,
+        **kwargs
+    ) -> Iterable[DataObject]:
+        """
+        Gets a generator of DataObject instances
+        """
+
+    @abstractmethod
+    def upsert(
+        self,
+        object_type: str,
+        objects: Iterable[DataObject],
+        **kwargs
+    ) -> None:
+        """
+        Takes an iterable of DataObjects of the same object_type,
+        and for each, performs either:
+
+        - an insert (if they don't exist already)
+        - an update (if they do)
         """
 
     def get_page_size(self) -> int:
@@ -119,3 +204,13 @@ class DataSource(ABC):
             return self.page_size
         else:
             return self.DEFAULT_PAGE_SIZE
+
+
+class ReadOnlyDataSource(DataSource, ABC):
+    """
+    A DataSource that supports only get operations
+    """
+
+    @unsupported('This DataSource is readonly.')
+    def upsert(self, object_type: str, *args, **kwargs) -> None:
+        pass

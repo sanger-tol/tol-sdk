@@ -4,13 +4,8 @@
 
 from __future__ import annotations
 
-import typing
 from abc import ABC
 from typing import Any, Dict
-
-# only import DataSource for type hints
-if typing.TYPE_CHECKING:
-    from .datasource import DataSource
 
 
 DataDict = Dict[str, Any]
@@ -25,11 +20,9 @@ class DataObject(ABC):
     def __init__(
         self,
         object_type: str,
-        data_source: DataSource,
         data: DataDict
     ):
         self.__object_type = object_type
-        self.__data_source = data_source
         self.set_data(data)
 
     @property

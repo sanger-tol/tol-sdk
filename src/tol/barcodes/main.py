@@ -140,10 +140,18 @@ class Interface(DataSource):
         else:
             return self.custom_response(message='Dry run')
 
-    @unsupported
+    @unsupported()
     def get_by_id(self, *args, **kwargs):
         pass
 
-    @unsupported
+    @unsupported()
     def get_list_page(self, *args, **kwargs):
+        pass
+
+    @unsupported()
+    def upsert(self, object_type: str, *args, **kwargs) -> None:
+        pass
+
+    @unsupported()
+    def get_list(self, object_type: str, *args, **kwargs) -> None:
         pass

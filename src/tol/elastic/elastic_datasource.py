@@ -13,7 +13,8 @@ from elasticsearch import (Elasticsearch, helpers)
 from ..core import (
     DataSource,
     DataSourceError,
-    DataSourceFilter
+    DataSourceFilter,
+    unsupported
 )
 
 
@@ -134,3 +135,7 @@ class ElasticDataSource(DataSource):
             size=page_size,
             index=index
         )
+
+    @unsupported()
+    def get_list(self, object_type: str, *args, **kwargs) -> None:
+        pass
