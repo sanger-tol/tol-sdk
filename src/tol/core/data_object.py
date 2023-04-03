@@ -31,6 +31,14 @@ class DataObject(ABC):
             self.set_data(data)
 
     @property
+    def id(self) -> str:
+        return getattr(self, '_id', None)
+
+    @id.setter
+    def set_id(self, id_) -> None:
+        self._id = id_
+
+    @property
     def object_type(self) -> str:
         return self._object_type
 
@@ -79,8 +87,10 @@ class DataObject(ABC):
         }
 
     def __setattr__(self, name: str, value: Any) -> None:
-        self._field_keys.add(name)
-        return super().__setattr__(name, value)
+        if name != 'id':
+            self._field_keys.add(name)
+            return super().__setattr__(name, value)
+        object.__setattr__(self, '_id', value)
 
     def __is_attribute(self, name: str) -> bool:
         return (
