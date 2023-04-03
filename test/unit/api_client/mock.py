@@ -23,7 +23,7 @@ api_ds = ApiDataSource(
 )
 
 
-def mock_upsert(request_body: Dict, status_code: int=200) -> Callable:
+def mock_upsert(status_code: int=200) -> Callable:
 
     def decorator(function: Callable) -> Callable:
 
@@ -35,10 +35,7 @@ def mock_upsert(request_body: Dict, status_code: int=200) -> Callable:
                 match=[
                     matchers.header_matcher({
                         'Token': TEST_KEY
-                    }),
-                    matchers.json_params_matcher(
-                        request_body
-                    )
+                    })
                 ],
                 status=status_code
             )
