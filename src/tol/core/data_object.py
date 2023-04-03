@@ -6,7 +6,7 @@ from __future__ import annotations
 
 from abc import ABC
 from collections.abc import Iterable as IterableABC
-from typing import Any, Dict, Iterable
+from typing import Any, Dict, Iterable, List
 
 
 DataDict = Dict[str, Any]
@@ -18,25 +18,21 @@ class DataObject(ABC):
     on which a DataSource operates.
     """
 
+    __NON_FIELD_NAMES = [
+        'id',
+        'object_type',
+        '_object_type'
+    ]
+
     def __init__(
         self,
         object_type: str,
         data: DataDict = None
     ):
-        self.__set_non_field('_field_keys', set())
-        self.__set_non_field('_object_type', object_type)
+        self.id = None
+        self._object_type = object_type
         if data is not None:
             self.set_data(data)
-
-    @property
-    def id(self) -> str:
-        return getattr(self, '_id', None)
-
-    @id.setter
-    def set_id(self, id_) -> None:
-        # this needs to both be settable externally _and_
-        # bypass infinite recursion, like object_type
-        self.__set_non_field('_id', id_)
 
     @property
     def object_type(self) -> str:
@@ -57,7 +53,7 @@ class DataObject(ABC):
         """
         return {
             key: getattr(self, key)
-            for key in self._field_keys
+            for key in self.__get_field_names()
             if self.__is_attribute(key)
         }
 
@@ -70,7 +66,7 @@ class DataObject(ABC):
         """
         return {
             key: getattr(self, key)
-            for key in self._field_keys
+            for key in self.__get_field_names()
             if self.__is_to_one_relationship(key)
         }
 
@@ -82,18 +78,9 @@ class DataObject(ABC):
         """
         return {
             key: getattr(self, key)
-            for key in self._field_keys
+            for key in self.__get_field_names()
             if self.__is_to_many_relationship(key)
         }
-
-    def __setattr__(self, name: str, value: Any) -> None:
-        if name != 'id':
-            self._field_keys.add(name)
-            return super().__setattr__(name, value)
-        object.__setattr__(self, '_id', value)
-
-    def __set_non_field(self, name: str, value: Any) -> None:
-        object.__setattr__(self, name, value)
 
     def __is_attribute(self, name: str) -> bool:
         return (
@@ -111,3 +98,10 @@ class DataObject(ABC):
             isinstance(value, IterableABC)
             and not isinstance(value, str)
         )
+
+    def __get_field_names(self) -> List[str]:
+        return [
+            v for v in vars(self)
+            if not v.startswith('_')
+            and v not in self.__NON_FIELD_NAMES
+        ]
