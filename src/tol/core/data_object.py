@@ -5,7 +5,8 @@
 from __future__ import annotations
 
 from abc import ABC
-from typing import Any, Dict
+from collections.abc import Iterable as IterableABC
+from typing import Any, Dict, Iterable
 
 
 DataDict = Dict[str, Any]
@@ -20,14 +21,18 @@ class DataObject(ABC):
     def __init__(
         self,
         object_type: str,
-        data: DataDict
+        data: DataDict = None
     ):
-        self.__object_type = object_type
-        self.set_data(data)
+        # this ugliness is needed to bypass infinite recursion on
+        # __setattr__
+        object.__setattr__(self, '_field_keys', set())
+        object.__setattr__(self, '_object_type', object_type)
+        if data is not None:
+            self.set_data(data)
 
     @property
-    def object_type(self):
-        return self.__object_type
+    def object_type(self) -> str:
+        return self._object_type
 
     def set_data(self, data: DataDict) -> None:
         """
@@ -36,3 +41,60 @@ class DataObject(ABC):
         """
         for key, value in data.items():
             setattr(self, key, value)
+
+    @property
+    def attributes(self) -> Dict[str, Any]:
+        """
+        The bare attributes (non-relationships) of this DataObject
+        """
+        return {
+            key: getattr(self, key)
+            for key in self._field_keys
+            if self.__is_attribute(key)
+        }
+
+    @property
+    def to_one_relationships(self) -> Dict[str, DataObject]:
+        """
+        The to-one relationships of this DataObject, i.e. the
+        relationships for which this "points" at 1 single other
+        DataObject
+        """
+        return {
+            key: getattr(self, key)
+            for key in self._field_keys
+            if self.__is_to_one_relationship(key)
+        }
+
+    @property
+    def to_many_relationships(self) -> Dict[str, Iterable[DataObject]]:
+        """
+        The to-many relationships of this DataObject, i.e. the
+        relation DataObject instances that "point" to this instance
+        """
+        return {
+            key: getattr(self, key)
+            for key in self._field_keys
+            if self.__is_to_many_relationship(key)
+        }
+
+    def __setattr__(self, name: str, value: Any) -> None:
+        self._field_keys.add(name)
+        return super().__setattr__(name, value)
+
+    def __is_attribute(self, name: str) -> bool:
+        return (
+            not self.__is_to_one_relationship(name)
+            and not self.__is_to_many_relationship(name)
+        )
+
+    def __is_to_one_relationship(self, name: str) -> bool:
+        value = getattr(self, name)
+        return isinstance(value, DataObject)
+
+    def __is_to_many_relationship(self, name: str) -> bool:
+        value = getattr(self, name)
+        return (
+            isinstance(value, IterableABC)
+            and not isinstance(value, str)
+        )

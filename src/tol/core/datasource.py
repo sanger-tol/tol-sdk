@@ -105,6 +105,7 @@ class DataSource(ABC):
     __OPERATIONS = [
         'get_by_id',
         'get_list_page',
+        'get_list',
         'upsert'
     ]
 
@@ -200,10 +201,7 @@ class DataSource(ABC):
         """
 
     def get_page_size(self) -> int:
-        if hasattr(self, 'page_size'):
-            return self.page_size
-        else:
-            return self.DEFAULT_PAGE_SIZE
+        return getattr(self, 'page_size', self.DEFAULT_PAGE_SIZE)
 
 
 class ReadOnlyDataSource(DataSource, ABC):

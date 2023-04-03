@@ -28,7 +28,11 @@ class DataSourceSession:
 
     def upsert(self, objects: Iterable[DataObject]) -> None:
         """
-        This operation is deferred until after a commit.
+        This upsert operation differs from DataSource().upsert()
+        in a few ways:
+
+        - It is deferred until after a commit() call.
+        - Objects of mixed object_type can be given
         """
         self.__upserts = chain(
             self.__upserts,
@@ -65,8 +69,7 @@ class DataSourceSession:
     ) -> UpsertDict:
 
         object_type = data_object.object_type
-        if object_type in upsert_dict:
-            upsert_dict[object_type].append(data_object)
-        else:
-            upsert_dict[object_type] = [data_object]
+        objects = upsert_dict.get(object_type, [])
+        objects.append(data_object)
+        upsert_dict[object_type] = objects
         return upsert_dict
