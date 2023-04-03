@@ -23,8 +23,6 @@ class DataObject(ABC):
         object_type: str,
         data: DataDict = None
     ):
-        # this ugliness is needed to bypass infinite recursion on
-        # __setattr__
         self.__set_non_attribute('_field_keys', set())
         self.__set_non_attribute('_object_type', object_type)
         if data is not None:
