@@ -3,11 +3,12 @@
 # SPDX-License-Identifier: MIT
 
 from dataclasses import dataclass
-from typing import Any, Dict, Optional
+from typing import Any, Dict, List, Optional
 
 
 ExactFilter = Dict[str, Any]
 WildcardFilter = Dict[str, str]
+InListFilter = Dict[str, List[Any]]
 
 
 @dataclass
@@ -17,3 +18,4 @@ class DataSourceFilter:
     """
     exact: Optional[ExactFilter] = None
     wildcard: Optional[WildcardFilter] = None
+    in_list: Optional[InListFilter] = None

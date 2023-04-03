@@ -3,56 +3,68 @@
 # SPDX-License-Identifier: MIT
 
 import urllib.parse
-from typing import Dict, List
+from typing import Dict, Iterable, List
 
 import mysql.connector
 
-from ..core import DataSource
+from ..core import (
+    DataObject,
+    DataSourceError,
+    DataSourceFilter,
+    ReadOnlyDataSource,
+    unsupported
+)
 
 
-class MlwhDataSource(DataSource):
+class MlwhDataSource(ReadOnlyDataSource):
 
     def __init__(self, config: Dict):
         # uri
         super().__init__(config, expected=['uri'])
+        self._initialise_mlwh()
 
-        self.mlwh_connection = self._connect_to_mlwh(self.uri)
-
-    def _connect_to_mlwh(self, uri: str):
+    def _initialise_mlwh(self):
         # Connect to MLWH
-        mlwh_settings = urllib.parse.urlparse(uri)
-        con_mlwh = mysql.connector.connect(user=mlwh_settings.username,
-                                           password=mlwh_settings.password,
-                                           host=mlwh_settings.hostname,
-                                           port=mlwh_settings.port,
-                                           database=mlwh_settings.path[1:])
-        return con_mlwh
+        mlwh_settings = urllib.parse.urlparse(self.uri)
+        self.mlwh = mysql.connector.connect(user=mlwh_settings.username,
+                                            password=mlwh_settings.password,
+                                            host=mlwh_settings.hostname,
+                                            port=mlwh_settings.port,
+                                            database=mlwh_settings.path[1:])
+
+    def _get_column_mappings_iseq(self):
+        return {
+            'sample_ref': 'sample.name',
+            'public_name': 'sample.public_name',
+            'common_name': 'common_name',
+            'supplier_name': 'sample.supplier_name',
+            'accession_number': 'sample.accession_number',
+            'donor_id': 'sample.donor_id',
+            'taxon_id': 'sample.taxon_id',
+            'description': 'sample.description',
+            'instrument_model': 'run_lane_metrics.instrument_model',
+            'run_id': 'CONVERT(run_lane_metrics.id_run, char)',
+            'start_date': 'run_lane_metrics.run_pending',
+            'qc_date': 'run_lane_metrics.qc_complete',
+            'position': 'CONVERT(flowcell.position, char)',
+            'tag_index': 'CONVERT(flowcell.tag_index, char)',
+            'pipeline_id_lims': 'flowcell.pipeline_id_lims',
+            'tag_sequence': 'flowcell.tag_sequence',
+            'tag2_sequence': 'flowcell.tag2_sequence',
+            'run_status': 'run_status_dict.description',
+            'complete_date': 'run_status.date',
+            'study_id': 'study.id_study_lims',
+            'study_name': 'study.name',
+            'manual_qc': 'flowcell.manual_qc'
+        }
 
     def _get_iseq_query(self, clause: str):
+        mappings = self._get_column_mappings_iseq()
+        col_string = ','.join([f'{v} as {k}' for k, v in mappings.items()])
         sql = f"""
         SELECT DISTINCT
-        sample.name as sample_ref,
-        sample.public_name as public_name,
-        sample.common_name as common_name,
-        sample.supplier_name as supplier_name,
-        sample.accession_number as accession_number,
-        sample.donor_id as donor_id,
-        sample.taxon_id as taxon_id,
-        sample.description as description,
-        run_lane_metrics.instrument_model as instrument_model,
-        CONVERT(run_lane_metrics.id_run, char) as run_id,
-        run_lane_metrics.run_pending as start_date,
-        run_lane_metrics.qc_complete as qc_date,
-        CONVERT(flowcell.position, char) as position,
-        CONVERT(flowcell.tag_index, char) as tag_index,
-        flowcell.pipeline_id_lims as pipeline_id_lims,
-        flowcell.tag_sequence as tag_sequence,
-        flowcell.tag2_sequence as tag2_sequence,
-        run_status_dict.description as run_status,
-        run_status.date as complete_date,
-        study.id_study_lims as study_id,
-        study.name as study_name,
-        flowcell.manual_qc as manual_qc
+        {col_string},
+        'iseq' as platform_type
         FROM mlwarehouse.sample
         JOIN (mlwarehouse.iseq_flowcell as flowcell,
         mlwarehouse.iseq_run_status as run_status,
@@ -73,31 +85,39 @@ class MlwhDataSource(DataSource):
         """
         return sql
 
+    def _get_column_mappings_pacbio(self):
+        return {
+            'sample_ref': 'sample.name',
+            'supplier_name': 'sample.supplier_name',
+            'accession_name': 'sample.accession_number',
+            'public_name': 'sample.public_name',
+            'donor_id': 'sample.donor_id',
+            'taxon_id': 'sample.taxon_id',
+            'common_name': 'sample.common_name',
+            'description': 'sample.description',
+            'run_id': 'smrtcell.pac_bio_run_name',
+            'tag_index': 'smrtcell.tag_identifier',
+            'tag_sequence': 'smrtcell.tag_sequence',
+            'position': 'smrtcell.well_label',
+            'plate_barcode': 'smrtcell.plate_barcode',
+            'pipeline_id_lims': 'smrtcell.pipeline_id_lims',
+            'study_id': 'study.id_study_lims',
+            'study_name': 'study.name',
+            'start_date': 'metrics.run_start',
+            'complete_date': 'metrics.run_complete',
+            'run_status': 'metrics.run_status',
+            'p1_num': 'CONVERT(metrics.p1_num, char)',
+            'movie': 'metrics.movie_name',
+            'yield': 'CONVERT(metrics.hifi_read_bases, char)'
+        }
+
     def _get_pacbio_query(self, clause: str):
+        mappings = self._get_column_mappings_pacbio()
+        col_string = ','.join([f'{v} as {k}' for k, v in mappings.items()])
         sql = f"""
         SELECT DISTINCT
-        sample.name as sample_ref,
-        sample.supplier_name as supplier_name,
-        sample.accession_number as accession_number,
-        sample.public_name as public_name,
-        sample.donor_id as donor_id,
-        sample.taxon_id as taxon_id,
-        sample.common_name as common_name,
-        sample.description as description,
-        smrtcell.pac_bio_run_name as run_id,
-        smrtcell.tag_identifier as tag_index,
-        smrtcell.tag_sequence as tag_sequence,
-        smrtcell.well_label as position,
-        smrtcell.plate_barcode as plate_barcode,
-        smrtcell.pipeline_id_lims as pipeline_id_lims,
-        study.id_study_lims as study_id,
-        study.name as study_name,
-        metrics.run_start as start_date,
-        metrics.run_complete as complete_date,
-        metrics.run_status as run_status,
-        CONVERT(metrics.p1_num, char) as p1_num,
-        metrics.movie_name as movie,
-        CONVERT(metrics.hifi_read_bases, char) as yield
+        {col_string},
+        'pacbio' as platform_type
         FROM mlwarehouse.sample
         JOIN (mlwarehouse.pac_bio_run as smrtcell,
         mlwarehouse.pac_bio_run_well_metrics as metrics,
@@ -112,45 +132,58 @@ class MlwhDataSource(DataSource):
         """
         return sql
 
-    def get_iseq_runs_by_sample_refs(self, sample_refs: List[str]):
-        cur_mlwh = self.mlwh_connection.cursor(dictionary=True)
-        # Only pick up runs when the QC has been done
-        sample_refs_joined = "','".join(sample_refs)
-        sql = self._get_iseq_query(f"sample.name IN ('{sample_refs_joined}')")
-        print(sql)
-        cur_mlwh.execute(sql)
+    def _format_mlwh_row(self, object_type: str, row: Dict):
+        return DataObject(object_type, row)
 
+    def _join(self, values: List) -> str:
+        return "','".join(values)
+
+    def _conditions_string(self, platform_type: str, in_list: Dict):
+        if in_list is None:
+            return '1=1'  # Something to go with the where clause
+        sql_conditions = []
+        if platform_type == 'iseq':
+            mappings = self._get_column_mappings_iseq()
+        if platform_type == 'pacbio':
+            mappings = self._get_column_mappings_pacbio()
+        for k, v in in_list.items():
+            mapped_k = mappings[k]
+            sql_conditions.append(f"{mapped_k} IN ('{self._join(v)}')")
+        sql_conditions_string = ' AND '.join(sql_conditions)
+        return sql_conditions_string
+
+    def _execute_query(self, query):
+        cur_mlwh = self.mlwh.cursor(dictionary=True)
+        cur_mlwh.execute(query)
         for row in cur_mlwh.fetchall():
-            yield self._format_mlwh_row(row)
+            yield self._format_mlwh_row('run_data', row)
 
-    def get_iseq_runs_by_study_ids(self, study_ids: List[str]):
-        cur_mlwh = self.mlwh_connection.cursor(dictionary=True)
-        # Only pick up runs when the QC has been done
-        study_ids_joined = "','".join(study_ids)
-        sql = self._get_iseq_query(f"study.id_study_lims IN ('{study_ids_joined}')")
-        cur_mlwh.execute(sql)
+    @unsupported()
+    def get_by_id(self, *args, **kwargs):
+        pass
 
-        for row in cur_mlwh.fetchall():
-            yield self._format_mlwh_row(row)
+    def get_list(
+        self,
+        object_type: str,
+        object_filters: DataSourceFilter = None,
+        **kwargs
+    ) -> Iterable[DataObject]:
+        # Sort out the conditions
+        if object_type != 'run_data':
+            raise DataSourceError('Only objects of type run_data are supported')
+        if object_filters is None or \
+                not isinstance(object_filters.exact, dict) or \
+                'platform_type' not in object_filters.exact:
+            raise DataSourceError('Filter must contain platform_type exact filter')
+        if object_filters.exact['platform_type'] == 'iseq':
+            sql_conditions = self._conditions_string('iseq', object_filters.in_list)
+            query = self._get_iseq_query(sql_conditions)
+            return self._execute_query(query)
+        elif object_filters.exact['platform_type'] == 'pacbio':
+            sql_conditions = self._conditions_string('pacbio', object_filters.in_list)
+            query = self._get_pacbio_query(sql_conditions)
+            return self._execute_query(query)
 
-    def get_pacbio_runs_by_sample_refs(self, sample_refs: List[str]):
-        cur_mlwh = self.mlwh_connection.cursor(dictionary=True)
-        sample_refs_joined = "','".join(sample_refs)
-        sql = self._get_pacbio_query(f"sample.name IN ('{sample_refs_joined}')")
-        cur_mlwh.execute(sql)
-
-        for row in cur_mlwh.fetchall():
-            yield self._format_mlwh_row(row)
-
-    def get_pacbio_runs_by_study_ids(self, study_ids: List[str]):
-        cur_mlwh = self.mlwh_connection.cursor(dictionary=True)
-        # Only pick up runs when the QC has been done
-        study_ids_joined = "','".join(study_ids)
-        sql = self._get_pacbio_query(f"study.id_study_lims IN ('{study_ids_joined}')")
-        cur_mlwh.execute(sql)
-
-        for row in cur_mlwh.fetchall():
-            yield self._format_mlwh_row(row)
-
-    def _format_mlwh_row(self, row: Dict):
-        return row
+    @unsupported()
+    def get_list_page(self, *args, **kwargs):
+        pass
