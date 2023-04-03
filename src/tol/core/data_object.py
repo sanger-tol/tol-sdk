@@ -23,8 +23,8 @@ class DataObject(ABC):
         object_type: str,
         data: DataDict = None
     ):
-        self.__set_non_attribute('_field_keys', set())
-        self.__set_non_attribute('_object_type', object_type)
+        self.__set_non_field('_field_keys', set())
+        self.__set_non_field('_object_type', object_type)
         if data is not None:
             self.set_data(data)
 
@@ -36,7 +36,7 @@ class DataObject(ABC):
     def set_id(self, id_) -> None:
         # this needs to both be settable externally _and_
         # bypass infinite recursion, like object_type
-        self.__set_non_attribute('_id', id_)
+        self.__set_non_field('_id', id_)
 
     @property
     def object_type(self) -> str:
@@ -92,7 +92,7 @@ class DataObject(ABC):
             return super().__setattr__(name, value)
         object.__setattr__(self, '_id', value)
 
-    def __set_non_attribute(self, name: str, value: Any) -> None:
+    def __set_non_field(self, name: str, value: Any) -> None:
         object.__setattr__(self, name, value)
 
     def __is_attribute(self, name: str) -> bool:
