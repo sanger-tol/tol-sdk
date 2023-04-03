@@ -2,6 +2,7 @@
 #
 # SPDX-License-Identifier: MIT
 
+import json
 import math
 from itertools import chain
 from typing import Dict, List
@@ -14,6 +15,7 @@ from .api_object import ApiObject
 from ..core import (
     DataSource,
     DataSourceError,
+    DataSourceFilter,
     unsupported
 )
 
@@ -59,10 +61,10 @@ class ApiDataSource(DataSource):
         meta = json['meta'] if 'meta' in json else {'total': 1}
         return self.unpack(json), meta
 
-    def get_list(self, object_type: str, filter_: str = '',
+    def get_list(self, object_type: str, object_filters: DataSourceFilter = None,
                  sort_by: str = '', page_size: int = 100):
         # Get the first page, then we know the total size
-        args = {'filter': filter_,
+        args = {'filter': json.dumps(object_filters) if object_filters else {},
                 'sort_by': sort_by,
                 'page_size': page_size}
         first_page, meta = self.get_list_page(object_type, 1, **args)

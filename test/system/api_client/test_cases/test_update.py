@@ -19,14 +19,14 @@ class TestUpdate(BaseTestCase):
         ads = TestApiDataSource({'client': self.client,
                                  'url': 'none',
                                  'key': self.token_1})
-        cs = list(ads.get_list('c', filter_='{"exact": {"other_column":"fine"}}'))
+        cs = list(ads.get_list('c', object_filters={'exact': {'other_column': 'fine'}}))
         self.assertEqual(1, len(cs))
         c = cs[0]
         c.other_column = 'new'
         ads.update(c)
         self.assertEqual(1, ads.patch_count)
         # Check it returns new value
-        cs = list(ads.get_list('c', filter_='{"exact": {"other_column":"new"}}'))
+        cs = list(ads.get_list('c', object_filters={'exact': {'other_column': 'new'}}))
         self.assertEqual(1, len(cs))
         c = cs[0]
         self.assertEqual('new', c.other_column)

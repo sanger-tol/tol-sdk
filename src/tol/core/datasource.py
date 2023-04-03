@@ -151,9 +151,9 @@ class DataSource(ABC):
         object_type: str,
         object_ids: Iterable[DataId],
         **kwargs
-    ) -> List[DataObject]:
+    ) -> Iterable[DataObject]:
         """
-        Gets a List of DataObject instances, of specified object_type,
+        Gets an Iterable of DataObject instances, of specified object_type,
         with their id's equal to those given in the object_ids Iterable.
         """
 
@@ -165,12 +165,12 @@ class DataSource(ABC):
         page_size: int = None,
         object_filters: DataSourceFilter = None,
         **kwargs
-    ) -> Tuple[List[DataObject], int]:
+    ) -> Tuple[Iterable[DataObject], int]:
         """
         For a specified object_type, of the given page_size
         and page_number (starting from 1), returns a tuple of:
 
-        - The list of DataObject instances
+        - An Iterable of DataObject instances
         - The total number of DataObjects that matches the filter
         """
 

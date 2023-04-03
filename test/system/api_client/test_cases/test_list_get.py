@@ -98,7 +98,7 @@ class TestListGet(BaseTestCase):
         ads = TestApiDataSource({'client': self.client,
                                  'url': 'none',
                                  'key': self.token_1})
-        ret = ads.get_list('c', filter_='{"exact": {"nullable_column":"fine"}}')
+        ret = ads.get_list('c', object_filters={'exact': {'nullable_column': 'fine'}})
 
         self.assertEqual(1, len(ret))
         c = ret[0]
