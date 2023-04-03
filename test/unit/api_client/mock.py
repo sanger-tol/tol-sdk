@@ -3,9 +3,10 @@
 # SPDX-License-Identifier: MIT
 
 from functools import wraps
-from typing import Any, Callable
+from typing import Any, Callable, Dict
 
 import responses
+from responses import matchers
 
 from tol.api_client import ApiDataSource
 
@@ -22,17 +23,27 @@ api_ds = ApiDataSource(
 )
 
 
-def assert_upsert_body(request_body: Any) -> None:
-    assert len(responses.calls) == 1
-    call = responses.calls[0]
-    assert call.request.url == f'{TEST_URL}/upsert'
-    assert call.request is False  # change this!!!!
+def mock_upsert(request_body: Dict, status_code: int=200) -> Callable:
 
+    def decorator(function: Callable) -> Callable:
 
-def mock_upsert(function: Callable) -> Callable:
-
-    @responses.activate
-    @wraps(function)
-    def wrapper(self, *args, **kwargs) -> Any:
-        return function(self, *args, **kwargs)
-    return wrapper
+        @responses.activate
+        @wraps(function)
+        def wrapper(self, *args, **kwargs) -> Any:
+            upsert_mock = responses.post(
+                url=TEST_URL,
+                match=[
+                    matchers.header_matcher({
+                        'Token': TEST_KEY
+                    }),
+                    matchers.json_params_matcher(
+                        request_body
+                    )
+                ],
+                status=status_code
+            )
+            return function(self, upsert_mock, *args, **kwargs)
+        # prevent pytest viewing the upsert_mock as a fixture
+        del wrapper.__wrapped__
+        return wrapper
+    return decorator
