@@ -27,10 +27,6 @@ class ApiObject(DataObject):
                          json_obj.get('attributes', {}),
                          json_obj.get('relationships', {}))
 
-    @property
-    def id(self):  # noqa A003
-        return self._id
-
     def update_attributes_from_dict(self, json_attributes):
         self.attributes = {snakecase(k): v for k, v in json_attributes.items()}
         for k, v in self.attributes.items():

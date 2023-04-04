@@ -20,8 +20,7 @@ class DataObject(ABC):
 
     __NON_FIELD_NAMES = [
         'id',
-        'object_type',
-        '_object_type'
+        'object_type'
     ]
 
     def __init__(
