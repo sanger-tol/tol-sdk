@@ -44,7 +44,7 @@ class ElasticDataSource(DataSource):
         return ret
 
     def _add_updated(self, dict_: Dict) -> Dict:
-        return {**dict_, 'tol_updated_at': datetime.now()}
+        return {**dict_, 'tol_updated_at': datetime.now().isoformat()}
 
     def _add_checksum(self, dict_: Dict) -> Dict:
         dhash = hashlib.md5()
@@ -65,9 +65,9 @@ class ElasticDataSource(DataSource):
                            field_prefix: str):
         for object_ in objects:
             obj = self._convert_data_object_to_dict(object_)
+            obj = self._convert_dates(obj)
             obj = self._add_checksum(obj)
             obj = self._add_updated(obj)
-            obj = self._convert_dates(obj)
             obj = self._prefix_fields(obj, field_prefix)
             yield {
                 '_op_type': 'update',

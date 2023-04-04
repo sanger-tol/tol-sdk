@@ -22,7 +22,7 @@ class MockElasticDataSource(ElasticDataSource):
         self.helpers = mock.Mock()
 
     def _add_updated(self, dict_):
-        return {**dict_, 'tol_updated_at': dt}
+        return {**dict_, 'tol_updated_at': dt.isoformat()}
 
     def _add_checksum(self, dict_):
         return {**dict_, 'tol_checksum': 'abc123'}
@@ -34,7 +34,8 @@ class TestElasticDataSource(TestCase):
         eds = MockElasticDataSource(
             {'uri': 'test', 'user': 'user', 'password': 'password', 'index_prefix': 'test'}
         )
-        objects = [DataObject('run_data', {'id': 1, 'field1': 'value1', 'field2': 'value2'}),
+        objects = [DataObject('run_data', {'id': 1, 'field1': 'value1',
+                                           'field2': 'value2', 'datefield': dt}),
                    DataObject('run_data', {'id': 2, 'field1': 'value3', 'field2': 'value4'})]
         generator = eds._action_for_upsert('index', objects, id_func=lambda x: x.id,
                                            field_prefix='')
@@ -43,6 +44,7 @@ class TestElasticDataSource(TestCase):
                     '_index': 'index',
                     '_id': 1,
                     'doc': {'id': 1, 'field1': 'value1', 'field2': 'value2',
+                            'datefield': dt.isoformat(),
                             'tol_updated_at': dt.isoformat(),
                             'tol_checksum': 'abc123'}}
         self.assertEqual(expected, next(generator))
