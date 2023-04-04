@@ -122,15 +122,32 @@ class ElasticDataSource(DataSource):
         **kwargs
     ) -> Tuple[Iterable[DataObject], int]:
         index = self.__get_index(object_type)
+        query = self._build_elasticsearch_query(object_filters)
         page_size = self.get_page_size()
         from_ = page * page_size
         resp = self.es.search(
             from_=from_,
             size=page_size,
-            index=index
+            index=index,
+            query={'query': query}
         )
         return self._convert_dict_to_data_objects(resp['hits']['hits']), \
             resp['hits']['total']['value']
+
+    def _build_elasticsearch_query(self, object_filters: DataSourceFilter = None):
+        if object_filters is None:
+            return
+        query = {'bool': {'must': []}}
+        if object_filters.exact is not None:
+            for k, v in object_filters.exact.items():
+                query['bool']['must'].append({'match': {k: v}})
+        if object_filters.wildcard is not None:
+            for k, v in object_filters.wildcard.items():
+                query['bool']['must'].append({'wildcard': {k: {'value': f'{v}*', 'boost': 1.0}}})
+        if object_filters.in_list is not None:
+            for k, v in object_filters.in_list.items():
+                query['bool']['must'].append({'terms': {k: v, 'boost': 1.0}})
+        return query
 
     def get_list(
         self,
@@ -139,8 +156,10 @@ class ElasticDataSource(DataSource):
         **kwargs
     ) -> Iterable[DataObject]:
         index = self.__get_index(object_type)
+        query = self._build_elasticsearch_query(object_filters)
         generator = self.helpers.scan(self.es,
-                                      index=index)
+                                      index=index,
+                                      query={'query': query})
         return self._convert_dict_to_data_objects(generator)
 
     def _convert_dict_to_data_objects(self, objs: Dict) -> Iterable:

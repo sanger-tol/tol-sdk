@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: MIT
 
 import re
-from typing import Dict, Generator, List
+from typing import Dict, Generator, Iterable, List
 
 from cachetools import LFUCache
 
@@ -11,10 +11,20 @@ import irods
 from irods.collection import iRODSCollection
 from irods.column import Criterion, In
 from irods.data_object import iRODSDataObject
-from irods.models import Collection, DataObject, DataObjectMeta
+from irods.models import (
+    Collection,
+    DataObject as IDataObject,
+    DataObjectMeta
+)
 from irods.session import iRODSSession
 
-from ..core import ReadOnlyDataSource, unsupported
+from ..core import (
+    DataObject,
+    DataSourceError,
+    DataSourceFilter,
+    ReadOnlyDataSource,
+    unsupported
+)
 
 
 class IrodsDataSource(ReadOnlyDataSource):
@@ -47,7 +57,7 @@ class IrodsDataSource(ReadOnlyDataSource):
 
     def _format_results(self, results: Generator):
         for result in results:
-            collection_id = result[DataObject.collection_id]
+            collection_id = result[IDataObject.collection_id]
             collection_object = self._get_collection(collection_id)
             data_object = iRODSDataObject(self.irods.data_objects,
                                           parent=collection_object,
@@ -95,8 +105,8 @@ class IrodsDataSource(ReadOnlyDataSource):
                     new_obj[k] = v
             yield new_obj
 
-    def get_run_data(self, study_ids: List[str]):
-        query = self.irods.query(DataObject) \
+    def _get_run_data(self, study_ids: List[str]):
+        query = self.irods.query(IDataObject) \
             .add_keyword(irods.keywords.ZONE_KW, self.query_zone)
 
         # Hardcode this for now
@@ -114,6 +124,22 @@ class IrodsDataSource(ReadOnlyDataSource):
     def get_list_page(self, *args, **kwargs):
         pass
 
-    @unsupported()
-    def get_list(self, object_type: str, *args, **kwargs) -> None:
-        pass
+    def get_list(
+        self,
+        object_type: str,
+        object_filters: DataSourceFilter = None,
+        **kwargs
+    ) -> Iterable[DataObject]:
+        if object_type != 'run_data':
+            raise DataSourceError('Only objects of type "run_data" are handled by IrodsDataSource')
+        if object_filters is None or \
+                not isinstance(object_filters.in_list, dict) or \
+                'study_id' not in object_filters.in_list:
+            raise DataSourceError('Filter must contain study_id in_list filter')
+
+        generator = self._get_run_data(object_filters.in_list['study_id'])
+        return self._convert_dict_to_data_objects(generator)
+
+    def _convert_dict_to_data_objects(self, objs: Dict) -> Iterable:
+        for obj in objs:
+            yield DataObject('run_data', obj)

@@ -5,7 +5,11 @@
 from datetime import datetime
 from unittest import (TestCase, mock)
 
-from tol.core import DataObject, DataSourceError
+from tol.core import (
+    DataObject,
+    DataSourceError,
+    DataSourceFilter
+)
 from tol.elastic import ElasticDataSource
 
 
@@ -163,3 +167,36 @@ class TestElasticDataSource(TestCase):
         self.assertEqual({'field1': 'value3', 'field2': 'value4'}, second.attributes)
         with self.assertRaises(StopIteration):
             next(returned)
+
+    def test_build_query(self):
+        eds = MockElasticDataSource(
+            {'uri': 'test', 'user': 'user', 'password': 'password', 'index_prefix': 'test'}
+        )
+
+        self.assertIsNone(eds._build_elasticsearch_query(None))
+
+        # Exact filtering
+        object_filters = DataSourceFilter()
+        object_filters.exact = {'field1': 'string1', 'field2': 3}
+        expected = {'bool': {'must': [{'match': {'field1': 'string1'}},
+                                      {'match': {'field2': 3}}]}}
+        self.assertEqual(expected, eds._build_elasticsearch_query(object_filters))
+
+        # Wildcard filtering
+        object_filters = DataSourceFilter()
+        object_filters.wildcard = {'field1': 'string1', 'field2': 'string2'}
+        expected = {'bool': {'must': [
+            {'wildcard': {'field1': {'value': 'string1*', 'boost': 1.0}}},
+            {'wildcard': {'field2': {'value': 'string2*', 'boost': 1.0}}},
+        ]}}
+        self.assertEqual(expected, eds._build_elasticsearch_query(object_filters))
+
+        # In list filtering
+        object_filters = DataSourceFilter()
+        object_filters.in_list = {'field1': ['string1', 'string2'],
+                                  'field2': ['string3', 'string4']}
+        expected = {'bool': {'must': [
+            {'terms': {'field1': ['string1', 'string2'], 'boost': 1.0}},
+            {'terms': {'field2': ['string3', 'string4'], 'boost': 1.0}}
+        ]}}
+        self.assertEqual(expected, eds._build_elasticsearch_query(object_filters))
