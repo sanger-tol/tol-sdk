@@ -16,6 +16,7 @@ from ..core import (
     DataSource,
     DataSourceError,
     DataSourceFilter,
+    DataSourceSession,
     unsupported
 )
 
@@ -31,6 +32,9 @@ class ApiDataSource(DataSource):
         """
         super().__init__(config, expected=['url', 'key'])
         self.cache = LFUCache(100000)  # Might want to make this configurable at some point
+
+    def session(self) -> DataSourceSession:
+        return super().session(multi_type=True)
 
     def get_by_id(self, object_type: str, id_: int):
         url = f'{object_type}/{id_}'
