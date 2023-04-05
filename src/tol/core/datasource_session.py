@@ -65,7 +65,9 @@ class DataSourceSession:
             )
 
     def __perform_multi_type_upsert(self) -> None:
-        pass
+        self.__data_source.multi_type_upsert(
+            self.__upserts
+        )
 
     def __separate_upserts(self) -> UpsertDict:
         return reduce(
