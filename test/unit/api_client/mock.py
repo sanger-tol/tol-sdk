@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: MIT
 
 from functools import wraps
-from typing import Any, Callable, Dict
+from typing import Any, Callable
 
 import responses
 from responses import matchers
@@ -23,7 +23,7 @@ api_ds = ApiDataSource(
 )
 
 
-def mock_upsert(status_code: int=200) -> Callable:
+def mock_upsert(status_code: int = 200) -> Callable:
 
     def decorator(function: Callable) -> Callable:
 
