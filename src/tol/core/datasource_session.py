@@ -19,12 +19,17 @@ UpsertDict = Dict[str, List[DataObject]]
 
 
 class DataSourceSession:
-    def __init__(self, data_source: DataSource):
+    def __init__(
+        self,
+        data_source: DataSource,
+        multi_type: bool = False
+    ):
         self.__data_source: DataSource = data_source
         self.__upserts: Iterable[DataObject] = []
+        self.__multi_type = multi_type
 
     def commit(self) -> None:
-        self.__perform_upserts()
+        self.__perform_upsert()
 
     def upsert(self, objects: Iterable[DataObject]) -> None:
         """
@@ -45,13 +50,22 @@ class DataSourceSession:
     def __exit__(self, type_, value_, tb_) -> None:
         self.commit()
 
-    def __perform_upserts(self) -> None:
+    def __perform_upsert(self) -> None:
+        if self.__multi_type is True:
+            self.__perform_multi_type_upsert()
+        else:
+            self.__perform_single_type_upserts()
+
+    def __perform_single_type_upserts(self) -> None:
         separated_upserts = self.__separate_upserts()
         for object_type, objects in separated_upserts.items():
             self.__data_source.upsert(
                 object_type,
                 objects
             )
+
+    def __perform_multi_type_upsert(self) -> None:
+        pass
 
     def __separate_upserts(self) -> UpsertDict:
         return reduce(

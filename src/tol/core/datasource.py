@@ -118,8 +118,19 @@ class DataSource(ABC):
             if self.__operation_is_supported(operation)
         ]
 
-    def session(self) -> DataSourceSession:
-        return DataSourceSession(self)
+    def session(
+        self,
+        multi_type: bool = False
+    ) -> DataSourceSession:
+        """
+        Returns a DataSourceSession object for batching upserts.
+
+        Parameters:
+        - multi_type - whether to call mutli_type_upsert once, or
+                       call upsert for each iterable of each
+                       object_type
+        """
+        return DataSourceSession(self, multi_type)
 
     def __operation_is_supported(self, name) -> bool:
         operation = getattr(self, name)
