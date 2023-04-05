@@ -17,7 +17,7 @@ class TestApiDataSource:
     @mock_upsert()
     def test_one_upsert_one_call(self, upsert_mock):
         with api_ds.session() as sess:
-            objects = (
+            objects = [
                 DataObject(
                     'test',
                     {
@@ -25,14 +25,14 @@ class TestApiDataSource:
                     }
                 )
                 for i in range(100)
-            )
+            ]
             sess.upsert(objects)
         assert upsert_mock.call_count == 1
 
     @mock_upsert()
     def test_many_upsert_types_one_call(self, upsert_mock):
         with api_ds.session() as sess:
-            objects = (
+            objects = [
                 DataObject(
                     f'test_{i}',
                     {
@@ -40,6 +40,18 @@ class TestApiDataSource:
                     }
                 )
                 for i in range(100)
-            )
+            ]
             sess.upsert(objects)
         assert upsert_mock.call_count == 1
+
+    @mock_upsert()
+    def test_to_one_relationship(self, upsert_mock):
+        pass
+
+    @mock_upsert()
+    def test_to_many_relationship(self, upsert_mock):
+        pass
+
+    @mock_upsert()
+    def test_attributes_and_relationships(self, upsert_mock):
+        pass
