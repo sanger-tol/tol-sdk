@@ -2,11 +2,12 @@
 #
 # SPDX-License-Identifier: MIT
 
-from .mock import mock_upsert
+from .mock import api_ds, mock_upsert
 
 
 class TestApiDataSource:
-    @mock_upsert({})
-    def test_upsert_calls_unified_endpoint(self, upsert_mock):
-        print(upsert_mock)
-        assert False
+    @mock_upsert()
+    def test_no_upsert_no_call(self, upsert_mock):
+        with api_ds.session():
+            pass
+        assert upsert_mock.call_count == 0
