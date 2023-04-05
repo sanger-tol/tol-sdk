@@ -34,6 +34,10 @@ class ApiDataSource(DataSource):
         self.cache = LFUCache(100000)  # Might want to make this configurable at some point
 
     def session(self) -> DataSourceSession:
+        """
+        Functions like a generic DataSource session creation method, but
+        always has multi_type=True.
+        """
         return super().session(multi_type=True)
 
     def get_by_id(self, object_type: str, id_: int):
