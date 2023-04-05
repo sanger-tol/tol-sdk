@@ -25,6 +25,10 @@ class MockDataSource(DataSource):
     def get_list(self, object_type: str, *args, **kwargs):
         pass
 
+    @unsupported()
+    def multi_type_upsert(self, *args, **kwargs) -> None:
+        pass
+
 
 class TestDataSourceSession:
     def test_upsert_one_type(self):

@@ -196,3 +196,6 @@ class ApiDataSource(DataSource):
     @unsupported()
     def upsert(self, object_type: str, *args, **kwargs) -> None:
         pass
+
+    def multi_type_upsert(self, *args, **kwargs) -> None:
+        pass

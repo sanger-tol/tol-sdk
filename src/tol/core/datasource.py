@@ -102,7 +102,8 @@ class DataSource(ABC):
         'get_by_id',
         'get_list_page',
         'get_list',
-        'upsert'
+        'upsert',
+        'multi_type_upsert'
     ]
 
     def __init__(self, config: DataSourceConfig, expected: List[str] = None):
@@ -196,6 +197,20 @@ class DataSource(ABC):
         - an update (if they do)
         """
 
+    @abstractmethod
+    def multi_type_upsert(
+        self,
+        objects: Iterable[DataObject],
+        **kwargs
+    ) -> None:
+        """
+        Takes an iterable of DataObjects of any (and mixed) object_type,
+        and for each, performs either:
+
+        - an insert (if they don't exist already)
+        - an update (if they do)
+        """
+
     def get_page_size(self) -> int:
         return getattr(self, 'page_size', self.DEFAULT_PAGE_SIZE)
 
@@ -207,4 +222,8 @@ class ReadOnlyDataSource(DataSource, ABC):
 
     @unsupported('This DataSource is readonly.')
     def upsert(self, object_type: str, *args, **kwargs) -> None:
+        pass
+
+    @unsupported('This DataSource is readonly.')
+    def multi_type_upsert(self, *args, **kwargs) -> None:
         pass
