@@ -24,13 +24,11 @@ class UnsupportedOperationException(NotImplementedError):
         self,
         obj: DataSource,
         method: Callable,
-        object_type: str,
         message: str = None
     ):
         rendered_message = self.__render_message(
             obj,
             method,
-            object_type,
             message
         )
         super().__init__(rendered_message)
@@ -39,11 +37,10 @@ class UnsupportedOperationException(NotImplementedError):
         self,
         obj: DataSource,
         method: Callable,
-        object_type: str,
         message: str
     ) -> str:
         auto_message = (
-            f'The operation {method.__name__} for type {object_type} '
+            f'The operation {method.__name__} '
             f'is unsupported on {obj.__class__.__name__}.'
         )
         if message is None:
@@ -78,11 +75,10 @@ def unsupported(message: str = None) -> Callable:
 
     def decorator(operation: Callable) -> Callable:
         @wraps(operation)
-        def wrapper(obj: DataSource, object_type: str, *args, **kwargs) -> None:
+        def wrapper(obj: DataSource, *args, **kwargs) -> None:
             raise UnsupportedOperationException(
                 obj,
                 operation,
-                object_type,
                 message=message
             )
         wrapper._unsupported = True
