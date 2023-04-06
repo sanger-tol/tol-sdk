@@ -101,12 +101,18 @@ def operation(method: Callable) -> Callable:
 
 
 def setup_operations(ds_class: DataSource) -> DataSource:
+
+    def __member_is_operation(method: Callable) -> bool:
+        return getattr(method, '_operation', False) is True
+
     members = {
-        m: getattr(ds_class, m) for m in dir(ds_class)
+        m: getattr(ds_class, m)
+        for m in dir(ds_class)
+        if not m.startswith('_')
     }
     ds_class._operations = [
         m for m, v in members.items()
-        if getattr(v, '_operation', False) is True
+        if __member_is_operation(v)
     ]
     return ds_class
 
