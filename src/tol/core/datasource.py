@@ -88,7 +88,9 @@ def unsupported(message: str = None) -> Callable:
 
 def operation(method: Callable) -> Callable:
     """
-    Indicates a central operation on a DataSource
+    Indicates a central operation on a DataSource. Only to be used
+    on the base DataSource, for operations common to all (or
+    unsupported)
     """
 
     @wraps(method)
