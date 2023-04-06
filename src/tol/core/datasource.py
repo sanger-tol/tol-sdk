@@ -104,8 +104,8 @@ def operation(method: Callable) -> Callable:
 
 def setup_operations(ds_class: DataSource) -> DataSource:
 
-    def __member_is_operation(method: Callable) -> bool:
-        return getattr(method, '_operation', False) is True
+    def __member_is_operation(member: Any) -> bool:
+        return getattr(member, '_operation', False) is True
 
     members = {
         m: v
