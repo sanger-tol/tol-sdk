@@ -86,6 +86,32 @@ def unsupported(message: str = None) -> Callable:
     return decorator
 
 
+def operation(method: Callable) -> Callable:
+    """
+    Indicates a central operation on a DataSource
+    """
+
+    @wraps(method)
+    @abstractmethod
+    def wrapper(obj: DataSource, *args, **kwargs) -> None:
+        return method(obj, *args, **kwargs)
+
+    wrapper._operation = True
+    return wrapper
+
+
+def setup_operations(ds_class: DataSource) -> DataSource:
+    members = {
+        m: getattr(ds_class, m) for m in dir(ds_class)
+    }
+    ds_class._operations = [
+        m for m, v in members.items()
+        if getattr(v, '_operation', False) is True
+    ]
+    return ds_class
+
+
+@setup_operations
 class DataSource(ABC):
     """
     The central class for managing operations on heterogeneous data sources.
@@ -98,13 +124,7 @@ class DataSource(ABC):
 
     DEFAULT_PAGE_SIZE = 20
 
-    __OPERATIONS = [
-        'get_by_id',
-        'get_list_page',
-        'get_list',
-        'upsert',
-        'multi_type_upsert'
-    ]
+    _operations: List[str]
 
     def __init__(self, config: DataSourceConfig, expected: List[str] = None):
         self.__validate_config(config, expected)
@@ -114,7 +134,7 @@ class DataSource(ABC):
     @property
     def supported_operations(self) -> List[str]:
         return [
-            operation for operation in self.__OPERATIONS
+            operation for operation in self._operations
             if self.__operation_is_supported(operation)
         ]
 
@@ -153,7 +173,7 @@ class DataSource(ABC):
                     detail=f'{k} missing in config dict'
                 )
 
-    @abstractmethod
+    @operation
     def get_by_id(
         self,
         object_type: str,
@@ -165,7 +185,7 @@ class DataSource(ABC):
         with their id's equal to those given in the object_ids Iterable.
         """
 
-    @abstractmethod
+    @operation
     def get_list_page(
         self,
         object_type: str,
@@ -182,7 +202,7 @@ class DataSource(ABC):
         - The total number of DataObjects that matches the filter
         """
 
-    @abstractmethod
+    @operation
     def get_list(
         self,
         object_type: str,
@@ -193,7 +213,7 @@ class DataSource(ABC):
         Gets a generator of DataObject instances
         """
 
-    @abstractmethod
+    @operation
     def upsert(
         self,
         object_type: str,
@@ -208,7 +228,7 @@ class DataSource(ABC):
         - an update (if they do)
         """
 
-    @abstractmethod
+    @operation
     def multi_type_upsert(
         self,
         objects: Iterable[DataObject],

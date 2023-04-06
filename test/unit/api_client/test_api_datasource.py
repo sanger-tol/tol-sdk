@@ -46,7 +46,26 @@ class TestApiDataSource:
 
     @mock_upsert()
     def test_to_one_relationship(self, upsert_mock):
-        pass
+        species = DataObject(
+            'species',
+            {
+                'id': '9606',
+                'name': 'Homo sapiens'
+            }
+        )
+        specimen = DataObject(
+            'specimens',
+            {
+                'id': 'mHomSap9534'
+            }
+        )
+        specimen.species = species
+        with api_ds.session() as sess:
+            sess.upsert(specimen)
+        assert upsert_mock.call_count == 1
+        expected = []
+        observed = upsert_mock.calls[0].request.json()
+        assert expected == observed
 
     @mock_upsert()
     def test_to_many_relationship(self, upsert_mock):
