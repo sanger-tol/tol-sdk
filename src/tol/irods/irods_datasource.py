@@ -105,13 +105,12 @@ class IrodsDataSource(ReadOnlyDataSource):
                     new_obj[k] = v
             yield new_obj
 
-    def _get_run_data(self, study_ids: List[str]):
+    def _get_run_data(self, key_name, in_list: List[str]):
         query = self.irods.query(IDataObject) \
             .add_keyword(irods.keywords.ZONE_KW, self.query_zone)
 
-        # Hardcode this for now
-        filtered_query = query.filter(Criterion('=', DataObjectMeta.name, 'study_id')) \
-            .filter(In(DataObjectMeta.value, study_ids))
+        filtered_query = query.filter(Criterion('=', DataObjectMeta.name, key_name)) \
+            .filter(In(DataObjectMeta.value, in_list))
         results = filtered_query.get_results()
 
         return self._map_keys(self._format_results(results))
@@ -133,12 +132,25 @@ class IrodsDataSource(ReadOnlyDataSource):
         if object_type != 'run_data':
             raise DataSourceError('Only objects of type "run_data" are handled by IrodsDataSource')
         if object_filters is None or \
-                not isinstance(object_filters.in_list, dict) or \
-                'study_id' not in object_filters.in_list:
-            raise DataSourceError('Filter must contain study_id in_list filter')
+                not isinstance(object_filters.in_list, dict):
+            raise DataSourceError('Filter must contain an in_list filter')
 
-        generator = self._get_run_data(object_filters.in_list['study_id'])
-        return self._convert_dict_to_data_objects(generator)
+        if 'run_id' in object_filters.in_list:
+            if not isinstance(object_filters.exact, dict) or \
+                    'platform_type' not in object_filters.exact:
+                raise DataSourceError(
+                    'Filters on run_id must also contain platform_type exact filter')
+            key_names = {'iseq': 'id_run',
+                         'pacbio': 'run'}
+            generator = self._get_run_data(
+                key_names[object_filters.exact['platform_type']],
+                object_filters.in_list['run_id'])
+            return self._convert_dict_to_data_objects(generator)
+        elif 'study_id' in object_filters.in_list:
+            generator = self._get_run_data('study_id', object_filters.in_list['study_id'])
+            return self._convert_dict_to_data_objects(generator)
+
+        raise DataSourceError('Filter must contain run_id or study_id in_list filter')
 
     def _convert_dict_to_data_objects(self, objs: Dict) -> Iterable:
         for obj in objs:

@@ -179,9 +179,10 @@ class TestElasticDataSource(TestCase):
 
         # Exact filtering
         object_filters = DataSourceFilter()
-        object_filters.exact = {'field1': 'string1', 'field2': 3}
+        object_filters.exact = {'field1': 'string1', 'field2': 3, 'field3': None}
         expected = {'bool': {'must': [{'match': {'field1': 'string1'}},
-                                      {'match': {'field2': 3}}]}}
+                                      {'match': {'field2': 3}}],
+                             'must_not': [{'exists': {'field': 'field3'}}]}}
         self.assertEqual(expected, eds._build_elasticsearch_query(object_filters))
 
         # Wildcard filtering
@@ -189,8 +190,8 @@ class TestElasticDataSource(TestCase):
         object_filters.wildcard = {'field1': 'string1', 'field2': 'string2'}
         expected = {'bool': {'must': [
             {'wildcard': {'field1': {'value': 'string1*', 'boost': 1.0}}},
-            {'wildcard': {'field2': {'value': 'string2*', 'boost': 1.0}}},
-        ]}}
+            {'wildcard': {'field2': {'value': 'string2*', 'boost': 1.0}}}],
+            'must_not': []}}
         self.assertEqual(expected, eds._build_elasticsearch_query(object_filters))
 
         # In list filtering
@@ -199,6 +200,6 @@ class TestElasticDataSource(TestCase):
                                   'field2': ['string3', 'string4']}
         expected = {'bool': {'must': [
             {'terms': {'field1': ['string1', 'string2'], 'boost': 1.0}},
-            {'terms': {'field2': ['string3', 'string4'], 'boost': 1.0}}
-        ]}}
+            {'terms': {'field2': ['string3', 'string4'], 'boost': 1.0}}],
+            'must_not': []}}
         self.assertEqual(expected, eds._build_elasticsearch_query(object_filters))

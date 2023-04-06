@@ -137,10 +137,13 @@ class ElasticDataSource(DataSource):
     def _build_elasticsearch_query(self, object_filters: DataSourceFilter = None):
         if object_filters is None:
             return
-        query = {'bool': {'must': []}}
+        query = {'bool': {'must': [], 'must_not': []}}
         if object_filters.exact is not None:
             for k, v in object_filters.exact.items():
-                query['bool']['must'].append({'match': {k: v}})
+                if v is None:
+                    query['bool']['must_not'].append({'exists': {'field': k}})
+                else:
+                    query['bool']['must'].append({'match': {k: v}})
         if object_filters.wildcard is not None:
             for k, v in object_filters.wildcard.items():
                 query['bool']['must'].append({'wildcard': {k: {'value': f'{v}*', 'boost': 1.0}}})
