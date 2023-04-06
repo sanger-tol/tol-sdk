@@ -162,10 +162,7 @@ class DataSource(ABC):
 
     def __operation_is_supported(self, name) -> bool:
         operation = getattr(self, name)
-        return (
-            hasattr(operation, '_unsupported')
-            and operation._unsupported is True
-        ) is False
+        return getattr(operation, '_unsupported', False) is False
 
     def __validate_config(
         self,
