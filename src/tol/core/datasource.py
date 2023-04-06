@@ -108,8 +108,8 @@ def setup_operations(ds_class: DataSource) -> DataSource:
         return getattr(method, '_operation', False) is True
 
     members = {
-        m: getattr(ds_class, m)
-        for m in dir(ds_class)
+        m: v
+        for m, v in vars(ds_class).items()
         if not m.startswith('_')
     }
     ds_class._operations = [
