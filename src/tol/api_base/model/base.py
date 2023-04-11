@@ -755,6 +755,14 @@ class Base(db.Model):
         return filter_value
 
     @classmethod
+    def _filter_value_is_int(cls, filter_value):
+        try:
+            int(filter_value)
+            return True
+        except ValueError:
+            return False
+
+    @classmethod
     def _filter_value_is_float(cls, filter_value):
         try:
             float(filter_value)
@@ -775,7 +783,7 @@ class Base(db.Model):
     @classmethod
     def _validate_non_string_filter_value(cls, filter_value, python_type):
         filter_value = str(filter_value)
-        if python_type == int and not filter_value.isdigit():
+        if python_type == int and not cls._filter_value_is_int(filter_value):
             raise BadParameterException(
                 f"The filter value '{filter_value}' must be an integer."
             )

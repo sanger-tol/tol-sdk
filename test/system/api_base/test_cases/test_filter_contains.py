@@ -218,11 +218,11 @@ class TestFilterContains(BaseTestCase):
         self.assertEqual(len(response.json['data']), 1)
 
     def test_contains_on_float(self):
-        self.add_g(id=2185, float_column=2892.29, bool_column=True)
+        self.add_g(id=2185, float_column=-2892.29, bool_column=True)
         self.add_g(id=2186, float_column=5839, bool_column=False)  # will not match
 
         response = self.client.open(
-            '/api/v1/g?filter={"contains":{"float_column":289}}'
+            '/api/v1/g?filter={"contains":{"float_column":-289}}'
         )
         self.assert200(
             response,
@@ -255,7 +255,7 @@ class TestFilterContains(BaseTestCase):
                         'type': 'g',
                         'id': '2185',
                         'attributes': {
-                            'float_column': 2892.29,
+                            'float_column': -2892.29,
                             'bool_column': True,
                             'datetime_column': None,
                             'string_column': None
@@ -266,11 +266,11 @@ class TestFilterContains(BaseTestCase):
         )
 
     def test_contains_on_int(self):
-        self.add_g(id=68599, bool_column=True)
+        self.add_g(id=-68599, bool_column=True)
         self.add_g(id=2187, bool_column=False)  # will not match
 
         response = self.client.open(
-            '/api/v1/g?filter={"contains":{"id":85}}'
+            '/api/v1/g?filter={"contains":{"id":-685}}'
         )
         self.assert200(
             response,
@@ -301,7 +301,7 @@ class TestFilterContains(BaseTestCase):
                 'data': [
                     {
                         'type': 'g',
-                        'id': '68599',
+                        'id': '-68599',
                         'attributes': {
                             'float_column': None,
                             'bool_column': True,
