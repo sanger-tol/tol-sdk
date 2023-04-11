@@ -37,7 +37,8 @@ class _UpsertDict(dict):
         Functions like add(), but takes an iterable of data_objects and
         adds them sequentially.
         """
-        pass
+        for data_object in data_objects:
+            self.add(data_object)
 
 
 class DataSourceSession:
