@@ -93,11 +93,6 @@ class DataSourceSession:
         )
 
     def __separate_upserts(self) -> Dict[str, List[DataObject]]:
-        upsert_dict = reduce(
-            lambda upsert_dict, obj: (
-                upsert_dict.add(obj)
-            ),
-            self.__upserts,
-            _UpsertDict()
-        )
+        upsert_dict = _UpsertDict()
+        upsert_dict.add_bulk(self.__upserts)
         return dict(upsert_dict)
