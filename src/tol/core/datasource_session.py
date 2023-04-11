@@ -12,7 +12,7 @@ from typing import Dict, Iterable, List
 from .data_object import DataObject
 
 if typing.TYPE_CHECKING:
-    from tol.core.datasource import DataSource
+    from .datasource import DataSource
 
 
 class _UpsertDict(dict):
