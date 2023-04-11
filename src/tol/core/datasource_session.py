@@ -15,9 +15,6 @@ if typing.TYPE_CHECKING:
     from tol.core.datasource import DataSource
 
 
-UpsertDict = Dict[str, List[DataObject]]
-
-
 class _UpsertDict(dict):
     """
     A dictionary that supports an add method, taking a DataObject
@@ -83,23 +80,12 @@ class DataSourceSession:
             self.__upserts
         )
 
-    def __separate_upserts(self) -> UpsertDict:
-        return reduce(
+    def __separate_upserts(self) -> Dict[str, List[DataObject]]:
+        upsert_dict = reduce(
             lambda upsert_dict, obj: (
-                self.__accumulate_upsert(upsert_dict, obj)
+                upsert_dict.add(obj)
             ),
             self.__upserts,
-            {}
+            _UpsertDict()
         )
-
-    def __accumulate_upsert(
-        self,
-        upsert_dict: UpsertDict,
-        data_object: DataObject
-    ) -> UpsertDict:
-
-        object_type = data_object.object_type
-        objects = upsert_dict.get(object_type, [])
-        objects.append(data_object)
-        upsert_dict[object_type] = objects
-        return upsert_dict
+        return dict(upsert_dict)
