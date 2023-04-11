@@ -36,6 +36,27 @@ class TestUpsertDict:
         assert len(u_dict.keys()) == 1
         assert u_dict['test'] == d_objects
 
+    def test_add_one_object_for_many_types(self):
+        u_dict = _UpsertDict()
+        d_objects = [
+            DataObject(
+                f'test_{i}',
+                {
+                    'field': f'value_{i}'
+                }
+            )
+            for i in range(100)
+        ]
+        for d in d_objects:
+            u_dict.add(d)
+
+        expected = {
+            d.object_type: [d]
+            for d in d_objects
+        }
+
+        assert dict(u_dict) == expected
+
 
 class MockDataSource(DataSource):
     @unsupported()
