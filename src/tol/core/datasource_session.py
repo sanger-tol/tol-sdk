@@ -24,8 +24,12 @@ class _UpsertDict(dict):
     instance, that filters by object_type.
     """
 
-    def add(self, data_object: DataObject) -> None:
-        pass
+    def add(self, data_object: DataObject) -> _UpsertDict:
+        object_type = data_object.object_type
+        data_objects = self.get(object_type, [])
+        data_objects.append(data_object)
+        self[object_type] = data_objects
+        return self
 
 
 class DataSourceSession:
