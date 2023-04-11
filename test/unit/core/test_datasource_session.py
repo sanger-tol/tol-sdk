@@ -32,7 +32,7 @@ class TestUpsertDict:
         ]
         for d in d_objects:
             u_dict.add(d)
-        
+
         assert len(u_dict.keys()) == 1
         assert u_dict['test'] == d_objects
 
