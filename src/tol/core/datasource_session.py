@@ -18,6 +18,16 @@ if typing.TYPE_CHECKING:
 UpsertDict = Dict[str, List[DataObject]]
 
 
+class _UpsertDict(dict):
+    """
+    A dictionary that supports an add method, taking a DataObject
+    instance, that filters by object_type.
+    """
+
+    def add(self, data_object: DataObject) -> None:
+        pass
+
+
 class DataSourceSession:
     def __init__(
         self,

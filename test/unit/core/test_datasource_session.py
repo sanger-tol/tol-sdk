@@ -5,7 +5,19 @@
 from unittest.mock import MagicMock
 
 from tol.core import DataObject, DataSource, unsupported
-from tol.core.datasource_session import DataSourceSession
+from tol.core.datasource_session import DataSourceSession, _UpsertDict
+
+
+class TestUpsertDict:
+    def test_add_one_object(self):
+        u_dict = _UpsertDict()
+        d_object = DataObject(
+            'test'
+        )
+        u_dict.add(d_object)
+
+        assert len(u_dict.keys()) == 1
+        assert u_dict['test'] == [d_object]
 
 
 class MockDataSource(DataSource):
