@@ -21,7 +21,7 @@ class _UpsertDict(dict):
     instance, that filters by object_type.
     """
 
-    def add(self, data_object: DataObject) -> _UpsertDict:
+    def add(self, data_object: DataObject) -> None:
         """
         The given DataObject is added to the list of objects,
         grouped by object_type, with the common object_type as
@@ -31,7 +31,13 @@ class _UpsertDict(dict):
         data_objects = self.get(object_type, [])
         data_objects.append(data_object)
         self[object_type] = data_objects
-        return self
+
+    def add_bulk(self, data_objects: Iterable[DataObject]) -> None:
+        """
+        Functions like add(), but takes an iterable of data_objects and
+        adds them sequentially.
+        """
+        pass
 
 
 class DataSourceSession:

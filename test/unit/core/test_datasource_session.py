@@ -47,8 +47,7 @@ class TestUpsertDict:
             )
             for i in range(100)
         ]
-        for d in d_objects:
-            u_dict.add(d)
+        u_dict.add_bulk(d_objects)
 
         expected = {
             d.object_type: [d]
