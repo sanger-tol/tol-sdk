@@ -55,8 +55,8 @@ def unsupported(message: str = None) -> Callable:
     unsupported on the inherited class and will raise an
     UnsupportedOperationException if called.
 
-    This decorator can be used with or without parentheses after,
-    the former supporting providing an optional message to
+    This decorator must be used with parentheses after,
+    in which an optional message may be provided to
     any UnsupportedOperationException resulting from an
     operation invocation.
 
