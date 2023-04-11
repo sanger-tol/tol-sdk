@@ -22,6 +22,11 @@ class _UpsertDict(dict):
     """
 
     def add(self, data_object: DataObject) -> _UpsertDict:
+        """
+        The given DataObject is added to the list of objects,
+        grouped by object_type, with the common object_type as
+        the key in this dict.
+        """
         object_type = data_object.object_type
         data_objects = self.get(object_type, [])
         data_objects.append(data_object)
