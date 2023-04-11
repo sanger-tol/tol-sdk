@@ -5,7 +5,6 @@
 from __future__ import annotations
 
 import typing
-from functools import reduce
 from itertools import chain
 from typing import Dict, Iterable, List
 
