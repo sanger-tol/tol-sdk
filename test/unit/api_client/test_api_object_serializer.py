@@ -2,7 +2,7 @@
 #
 # SPDX-License-Identifier: MIT
 
-from tol.core import DataObject
+from tol.core import DataObject, data_object
 from tol.api_client.api_object_serializer import ApiDataObjectSerializer
 
 
@@ -59,6 +59,29 @@ class TestApiDataObjectSerializer:
         assert result == expected
 
     def test_to_one_reference(self):
+        a = DataObject('a')
+        b = DataObject('b')
+        b.a_entry = a
+        expected = [
+            {
+                'type': a,
+                '_uuid': a._request_internal_uuid
+            },
+            {
+                'type': b,
+                '_uuid': b._request_internal_uuid,
+                'relationships': {
+                    'one': {
+                        'a_entry': a._request_internal_uuid
+                    }
+                }
+            }
+        ]
+        result = serializer.dump([b])
+        assert expected == result
+
+    def test_to_one_reference_removes_duplicate(self):
+        # like above, but add BOTH b and a
         pass
 
     def test_to_one_reference_chain(self):
