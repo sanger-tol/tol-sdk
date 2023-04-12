@@ -95,8 +95,6 @@ class ApiDataSerializer:
         self,
         data_object: DataObject
     ) -> None:
-        if not data_object.to_one_relationships:
-            return
         for to_one_relation in data_object.to_one_relationships.values():
             self.__flatten_dump_add([to_one_relation])
 
@@ -104,8 +102,6 @@ class ApiDataSerializer:
         self,
         data_object: DataObject
     ) -> None:
-        if not data_object.to_many_relationships:
-            return
         for to_many_relations in data_object.to_many_relationships.values():
             self.__flatten_dump_add(to_many_relations)
 
