@@ -7,6 +7,7 @@ from typing import Any, Dict, List
 
 from ..core import DataObject
 
+# TODO need to convert all iterables to lists before!!!!
 
 class _ApiObjectSerializer:
     """
@@ -33,17 +34,41 @@ class _ApiObjectSerializer:
         ):
             return
         self.__dumped['relationships'] = {}
-        if self.__data_object.to_one_relationships:
-            self.__dumped['relationships']['one'] = self.__data_object.to_one_relationships
-        if self.__data_object.to_many_relationships:
-            self.__dumped['relationships']['many'] = self.__data_object.to_many_relationships
+        self.__add_to_one_relationships()
+        self.__add_to_many_relationships()
+
+    def __add_to_one_relationships(self) -> None:
+        if not self.__data_object.to_one_relationships:
+            return
+        to_one_uuids = {
+            k: d._request_internal_uuid
+            for k, d in self.__data_object.to_one_relationships.items()
+        }
+        self.__dumped['relationships']['one'] = to_one_uuids
+
+    def __add_to_many_relationship(
+        self,
+        key: str,
+        data_objects: List[DataObject]
+    ) -> None:
+        to_many_uuids = [
+            d._request_internal_uuid for d in data_objects
+        ]
+        self.__dumped['relationships']['many'][key] = to_many_uuids
+
+    def __add_to_many_relationships(self) -> None:
+        to_many = self.__data_object.to_many_relationships
+        if not to_many:
+            return
+        self.__dumped['relationships']['many'] = {}
+        for key, data_objects in to_many:
+            self.__add_to_many_relationship(key, data_objects)
 
     def __add_optional_fields(self) -> None:
         if self.__data_object.id is not None:
             self.__dumped['id'] = self.__data_object.id
         if self.__data_object.attributes:
             self.__dumped['attributes'] = self.__data_object.attributes
-
 
 
 class ApiDataSerializer:
