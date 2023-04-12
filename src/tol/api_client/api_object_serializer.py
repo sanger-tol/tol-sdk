@@ -45,23 +45,22 @@ class _ApiObjectSerializer:
         }
         self.__dumped['relationships']['one'] = to_one_uuids
 
-    def __add_to_many_relationship(
+    def __get_to_many_relationship_uuids(
         self,
-        key: str,
         data_objects: List[DataObject]
-    ) -> None:
-        to_many_uuids = [
+    ) -> List[str]:
+        return [
             d._request_internal_uuid for d in data_objects
         ]
-        self.__dumped['relationships']['many'][key] = to_many_uuids
 
     def __add_to_many_relationships(self) -> None:
         to_many = self.__data_object.to_many_relationships
         if not to_many:
             return
-        self.__dumped['relationships']['many'] = {}
-        for key, data_objects in to_many:
-            self.__add_to_many_relationship(key, data_objects)
+        self.__dumped['relationships']['many'] = {
+            key: self.__get_to_many_relationship_uuids(data_objects)
+            for key, data_objects in to_many.items()
+        }
 
     def __add_optional_fields(self) -> None:
         if self.__data_object.id is not None:
