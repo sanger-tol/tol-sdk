@@ -80,3 +80,13 @@ class ApiDataSerializer:
 
     def dump(self, data_objects: List[DataObject]) -> List[Dict[str, Any]]:
         self.__data_objects = data_objects
+        self.__flatten_data_objects()
+        return self.__get_serialized_list()
+
+    def __flatten_data_objects(self) -> None:
+        pass
+
+    def __get_serialized_list(self) -> List[Dict[str, Any]]:
+        return list(
+            self.__uuid_dump_map.values()
+        )
