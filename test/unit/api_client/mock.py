@@ -31,7 +31,7 @@ def mock_upsert(status_code: int = 200) -> Callable:
         @wraps(function)
         def wrapper(self, *args, **kwargs) -> Any:
             upsert_mock = responses.post(
-                url=TEST_URL,
+                url=f'{TEST_URL}/upsert',
                 match=[
                     matchers.header_matcher({
                         'Token': TEST_KEY

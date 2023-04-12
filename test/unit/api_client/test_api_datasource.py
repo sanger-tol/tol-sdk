@@ -61,7 +61,7 @@ class TestApiDataSource:
         )
         specimen.species = species
         with api_ds.session() as sess:
-            sess.upsert(specimen)
+            sess.upsert([specimen])
         assert upsert_mock.call_count == 1
         expected = [
             {

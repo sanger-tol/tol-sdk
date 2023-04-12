@@ -5,14 +5,16 @@
 import json
 import math
 from itertools import chain
-from typing import Dict, List
+from typing import Any, Dict, List
 
 from cachetools import LFUCache
 
 import requests
 
 from .api_object import ApiObject
+from .api_object_serializer import ApiDataSerializer
 from ..core import (
+    DataObject,
     DataSource,
     DataSourceError,
     DataSourceFilter,
@@ -205,5 +207,15 @@ class ApiDataSource(DataSource):
     def upsert(self, object_type: str, *args, **kwargs) -> None:
         pass
 
-    def upsert_multiple_type(self, *args, **kwargs) -> None:
-        pass
+    def upsert_multiple_type(self, data_objects: List[DataObject]) -> None:
+        serializer = ApiDataSerializer()
+        upsert_data = serializer.dump(data_objects)
+        self.__perform_upsert(upsert_data)
+
+    def __perform_upsert(self, upsert_data: List[Dict[str, Any]]) -> None:
+        r = requests.post(
+            f'{self.url}/upsert',
+            json=upsert_data,
+            headers={'Token': self.key}
+        )
+        r.raise_for_status()
