@@ -96,6 +96,8 @@ class ApiDataSerializer:
     ) -> None:
         if not data_object.to_one_relationships:
             return
+        for to_one_relation in data_object.to_one_relationships.values():
+            self.__flatten_dump_add([to_one_relation])
 
     def __add_to_many_relationships(
         self,
@@ -103,7 +105,8 @@ class ApiDataSerializer:
     ) -> None:
         if not data_object.to_many_relationships:
             return
-        
+        for to_many_relations in data_object.to_many_relationships.values():
+            self.__flatten_dump_add(to_many_relations)        
 
     def __add_data_object(self, data_object: DataObject) -> None:
         uuid = data_object._request_internal_uuid
