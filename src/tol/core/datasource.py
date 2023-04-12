@@ -234,7 +234,7 @@ class DataSource(ABC):
         """
 
     @operation
-    def multi_type_upsert(
+    def upsert_multip_type(
         self,
         objects: Iterable[DataObject],
         **kwargs
@@ -261,5 +261,5 @@ class ReadOnlyDataSource(DataSource, ABC):
         pass
 
     @unsupported('This DataSource is readonly.')
-    def multi_type_upsert(self, *args, **kwargs) -> None:
+    def upsert_multip_type(self, *args, **kwargs) -> None:
         pass

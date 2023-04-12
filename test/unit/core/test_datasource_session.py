@@ -75,7 +75,7 @@ class MockDataSource(DataSource):
         pass
 
     @unsupported()
-    def multi_type_upsert(self, *args, **kwargs) -> None:
+    def upsert_multip_type(self, *args, **kwargs) -> None:
         pass
 
 

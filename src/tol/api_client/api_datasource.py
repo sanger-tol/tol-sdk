@@ -205,5 +205,5 @@ class ApiDataSource(DataSource):
     def upsert(self, object_type: str, *args, **kwargs) -> None:
         pass
 
-    def multi_type_upsert(self, *args, **kwargs) -> None:
+    def upsert_multip_type(self, *args, **kwargs) -> None:
         pass

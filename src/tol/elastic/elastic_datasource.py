@@ -171,5 +171,5 @@ class ElasticDataSource(DataSource):
             yield DataObject('run-data', obj['_source'])
 
     @unsupported()
-    def multi_type_upsert(self, *args, **kwargs) -> None:
+    def upsert_multip_type(self, *args, **kwargs) -> None:
         pass
