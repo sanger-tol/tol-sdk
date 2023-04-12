@@ -2,7 +2,7 @@
 #
 # SPDX-License-Identifier: MIT
 
-from tol.core import DataObject, data_object
+from tol.core import DataObject
 from tol.api_client.api_object_serializer import ApiDataObjectSerializer
 
 
@@ -139,12 +139,46 @@ class TestApiDataObjectSerializer:
         ]
         # the first one does not have a previous
         del expected[0]['relationships']
-        result = serializer.dump(data_objects)
+        result = serializer.dump([data_objects[-1]])
         assert result == expected
         # TODO check everything is sorted by type
 
     def test_to_many_references(self):
-        pass
+        a = DataObject('a')
+        many_b = [
+            DataObject(
+                'b',
+                {
+                    'id_stuff': i
+                }
+            )
+            for i in range(348)
+        ]
+        a.many_b = many_b
+        uuids = [b._request_internal_uuid for b in many_b]
+        expected = [
+            {
+                'type': 'a',
+                '_uuid': a._request_internal_uuid,
+                'relationships': {
+                    'many': {
+                        'many_b': uuids
+                    }
+                }
+            },
+            *[
+                {
+                    'type': 'b',
+                    '_uuid': b._request_internal_uuid,
+                    'attributes': {
+                        'id_stuff': i
+                    }
+                }
+                for i, b in enumerate(many_b)
+            ]
+        ]
+        result = serializer.dump([a])
+        assert result == expected
 
     def test_both_to_one_to_many_references(self):
         pass
