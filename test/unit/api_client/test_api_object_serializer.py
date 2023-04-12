@@ -2,6 +2,7 @@
 #
 # SPDX-License-Identifier: MIT
 
+from tol.core import DataObject
 from tol.api_client.api_object_serializer import ApiDataObjectSerializer
 
 
@@ -10,7 +11,24 @@ serializer = ApiDataObjectSerializer()
 
 class TestApiDataObjectSerializer:
     def test_single_object(self):
-        pass
+        data_object = DataObject(
+            'test',
+            {
+                'test1': 'hype',
+                'another_test': 'waiting for this train'
+            }
+        )
+        expected = [
+            {
+                'type': 'test',
+                'attributes': {
+                    'test1': 'hype',
+                    'another_test': 'waiting for this train'
+                }
+            }
+        ]
+        result = serializer.dump([data_object])
+        assert result == expected
 
     def test_many_objects_same_type(self):
         pass
