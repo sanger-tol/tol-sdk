@@ -81,8 +81,27 @@ class TestApiDataObjectSerializer:
         assert expected == result
 
     def test_to_one_reference_removes_duplicate(self):
-        # like above, but add BOTH b and a
-        pass
+        a = DataObject('a')
+        b = DataObject('b')
+        b.a_entry = a
+        expected = [
+            {
+                'type': a,
+                '_uuid': a._request_internal_uuid
+            },
+            {
+                'type': b,
+                '_uuid': b._request_internal_uuid,
+                'relationships': {
+                    'one': {
+                        'a_entry': a._request_internal_uuid
+                    }
+                }
+            }
+        ]
+        # this time add them both, even though b already has a
+        result = serializer.dump([a, b])
+        assert expected == result
 
     def test_to_one_reference_chain(self):
         pass
