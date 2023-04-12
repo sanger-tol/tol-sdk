@@ -63,7 +63,21 @@ class TestApiDataSource:
         with api_ds.session() as sess:
             sess.upsert(specimen)
         assert upsert_mock.call_count == 1
-        expected = []
+        expected = [
+            {
+                'type': 'species',
+                '_uuid': species._request_internal_uuid,
+                'id': '9606',
+                'attributes': {
+                    'name': 'Homo sapiens'
+                }
+            },
+            {
+                'type': 'specimens',
+                '_uuid': specimen._request_internal_uuid,
+                'id': 'mHomSap9534'
+            }
+        ]
         observed = upsert_mock.calls[0].request.json()
         assert expected == observed
 
