@@ -387,6 +387,10 @@ class Base(db.Model):
         return query.select_from(enum_relation_model) \
                     .join(enum_relationship) \
                     .order_by(sort_by_column)
+    
+    @classmethod
+    def _create_relationship_joins(cls, query):
+        return query
 
     @classmethod
     def _sort_by_query(cls, query, sort_by):
@@ -409,7 +413,9 @@ class Base(db.Model):
     def _exact_filter_query(cls, query, exact_filters):
         exact_filter_terms = cls._get_exact_filter_terms(exact_filters)
         if exact_filter_terms is not None:
-            query = query.filter(and_(*exact_filter_terms))
+            query = query.filter(
+                and_(*exact_filter_terms)
+            )
         return query
 
     @classmethod
@@ -486,6 +492,7 @@ class Base(db.Model):
         sort_by=None
     ):
         exact_filters, contains_filters, range_filters = parse_filters(filter)
+        query = cls._create_relationship_joins(query)
         query = cls._exact_filter_query(query, exact_filters)
         query = cls._contains_filter_query(query, contains_filters)
         query = cls._range_filter_query(query, range_filters)
