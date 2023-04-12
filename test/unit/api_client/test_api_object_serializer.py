@@ -21,6 +21,7 @@ class TestApiDataObjectSerializer:
         expected = [
             {
                 'type': 'test',
+                '_uuid': data_object._request_internal_uuid,
                 'attributes': {
                     'test1': 'hype',
                     'another_test': 'waiting for this train'
@@ -30,8 +31,32 @@ class TestApiDataObjectSerializer:
         result = serializer.dump([data_object])
         assert result == expected
 
-    def test_many_objects_same_type(self):
-        pass
+    def test_many_objects_mutltiple_types(self):
+        data_objects = [
+            DataObject(
+                f'test_{i}',
+                {
+                    'the_id': i
+                }
+            )
+            for i in range(2389)
+        ]
+        uuids = [
+            d._request_internal_uuid
+            for d in data_objects
+        ]
+        expected = [
+            {
+                'type': f'test_{i}',
+                '_uuid': uuid,
+                'attributes': {
+                    'the_id': i
+                }
+            }
+            for i, uuid in enumerate(uuids)
+        ]
+        result = serializer.dump(data_objects)
+        assert result == expected
 
     def test_to_one_reference(self):
         pass
