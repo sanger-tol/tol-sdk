@@ -181,4 +181,47 @@ class TestApiDataObjectSerializer:
         assert result == expected
 
     def test_both_to_one_to_many_references(self):
-        pass
+        a = DataObject('a')
+        many_b = [
+            DataObject(
+                'b',
+                {
+                    'id_stuff': i
+                }
+            )
+            for i in range(348)
+        ]
+        c = DataObject('c')
+        a.many_b = many_b
+        a.one_c = c
+        uuids = [b._request_internal_uuid for b in many_b]
+        expected = [
+            {
+                'type': 'a',
+                '_uuid': a._request_internal_uuid,
+                'relationships': {
+                    'one': {
+                        'one_c': c._request_internal_uuid,
+                    },
+                    'many': {
+                        'many_b': uuids
+                    }
+                }
+            },
+            *[
+                {
+                    'type': 'b',
+                    '_uuid': b._request_internal_uuid,
+                    'attributes': {
+                        'id_stuff': i
+                    }
+                }
+                for i, b in enumerate(many_b)
+            ],
+            {
+                'type': 'c',
+                '_uuid': c._request_internal_uuid
+            }
+        ]
+        result = serializer.dump([a])
+        assert result == expected
