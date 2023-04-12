@@ -104,7 +104,44 @@ class TestApiDataObjectSerializer:
         assert expected == result
 
     def test_to_one_reference_chain(self):
-        pass
+        data_objects = [
+            DataObject(
+                f'test_{i}',
+                {
+                    'the_id': 1000000 - i
+                }
+            )
+            for i in range(2389)
+        ]
+        # build the to-one reference chain
+        for i, data_object in enumerate(data_objects):
+            if i == 0:
+                continue
+            previous = data_objects[i-1]
+            data_object.previous = previous
+        uuids = [d._request_internal_uuid for d in data_objects]
+        expected = [
+            {
+                'type': f'test_{i}',
+                '_uuid': uuid,
+                'attributes': {
+                    'the_id': 1000000 - i
+                },
+                'relationships': {
+                    'one': {
+                        'previous': (
+                            uuids[i-1] if i > 0 else None
+                        )
+                    }
+                }
+            }
+            for i, uuid in enumerate(uuids)
+        ]
+        # the first one does not have a previous
+        del expected[0]['relationships']
+        result = serializer.dump(data_objects)
+        assert result == expected
+        # TODO check everything is sorted by type
 
     def test_to_many_references(self):
         pass
