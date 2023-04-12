@@ -209,7 +209,7 @@ class ApiDataSource(DataSource):
 
     def upsert_multiple_type(self, data_objects: Iterable[DataObject]) -> None:
         final_list = list(data_objects)
-        if len(final_list) < 0:
+        if len(final_list) == 0:
             return
         serializer = ApiDataSerializer()
         upsert_data = serializer.dump(final_list)
