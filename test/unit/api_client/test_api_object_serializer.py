@@ -5,6 +5,7 @@
 from tol.api_client.api_object_serializer import ApiDataSerializer
 from tol.core import DataObject
 
+
 class TestApiDataObjectSerializer:
     def test_single_object(self):
         data_object = DataObject(
