@@ -2,7 +2,8 @@
 #
 # SPDX-License-Identifier: MIT
 
-import json, responses
+import json
+import responses
 
 from tol.core.data_object import DataObject
 
