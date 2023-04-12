@@ -7,6 +7,7 @@ from __future__ import annotations
 from abc import ABC
 from collections.abc import Iterable as IterableABC
 from typing import Any, Dict, Iterable, List
+from uuid import uuid4
 
 
 DataDict = Dict[str, Any]
@@ -30,6 +31,7 @@ class DataObject(ABC):
     ):
         self.id = None
         self._object_type = object_type
+        self.__request_internal_uuid = uuid4().hex
         if data is not None:
             self.set_data(data)
 
@@ -80,6 +82,15 @@ class DataObject(ABC):
             for key in self.__get_field_names()
             if self.__is_to_many_relationship(key)
         }
+
+    @property
+    def _request_internal_uuid(self) -> str:
+        """
+        A UUID for references by other DataObject instances, when
+        formatted as a flat list of DataObject dumps in an upsert
+        request.
+        """
+        return self.__request_internal_uuid
 
     def __is_attribute(self, name: str) -> bool:
         return (
