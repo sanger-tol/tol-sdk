@@ -76,15 +76,39 @@ class ApiDataSerializer:
     """
 
     def __init__(self):
+        # store against _request_internal_uuid so that duplicates are
+        # removed
         self.__uuid_dump_map: Dict[str, Dict[str, Any]] = {}
 
     def dump(self, data_objects: List[DataObject]) -> List[Dict[str, Any]]:
-        self.__data_objects = data_objects
-        self.__flatten_data_objects()
+        self.__flatten_dump_add(data_objects)
         return self.__get_serialized_list()
 
-    def __flatten_data_objects(self) -> None:
-        pass
+    def __flatten_dump_add(self, data_objects: List[DataObject]) -> None:
+        for data_object in data_objects:
+            self.__add_data_object(data_object)
+            self.__add_to_one_relationships(data_object)
+            self.__add_to_many_relationships(data_object)
+
+    def __add_to_one_relationships(
+        self,
+        data_object: DataObject
+    ) -> None:
+        if not data_object.to_one_relationships:
+            return
+
+    def __add_to_many_relationships(
+        self,
+        data_object: DataObject
+    ) -> None:
+        if not data_object.to_many_relationships:
+            return
+        
+
+    def __add_data_object(self, data_object: DataObject) -> None:
+        uuid = data_object._request_internal_uuid
+        dumped = _ApiObjectSerializer().dump(data_object)
+        self.__uuid_dump_map[uuid] = dumped
 
     def __get_serialized_list(self) -> List[Dict[str, Any]]:
         return list(
