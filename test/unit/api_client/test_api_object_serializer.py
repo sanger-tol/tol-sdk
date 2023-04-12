@@ -6,9 +6,6 @@ from tol.core import DataObject
 from tol.api_client.api_object_serializer import ApiDataSerializer
 
 
-serializer = ApiDataSerializer()
-
-
 class TestApiDataObjectSerializer:
     def test_single_object(self):
         data_object = DataObject(
@@ -28,7 +25,7 @@ class TestApiDataObjectSerializer:
                 }
             }
         ]
-        result = serializer.dump([data_object])
+        result = ApiDataSerializer().dump([data_object])
         assert result == expected
 
     def test_many_objects_mutltiple_types(self):
@@ -55,7 +52,7 @@ class TestApiDataObjectSerializer:
             }
             for i, uuid in enumerate(uuids)
         ]
-        result = serializer.dump(data_objects)
+        result = ApiDataSerializer().dump(data_objects)
         assert result == expected
 
     def test_to_one_reference(self):
@@ -80,7 +77,7 @@ class TestApiDataObjectSerializer:
                 }
             }
         ]
-        result = serializer.dump([b])
+        result = ApiDataSerializer().dump([b])
         assert expected == result
 
     def test_to_one_reference_removes_duplicate(self):
@@ -103,7 +100,7 @@ class TestApiDataObjectSerializer:
             }
         ]
         # this time add them both, even though b already has a
-        result = serializer.dump([a, b])
+        result = ApiDataSerializer().dump([a, b])
         assert expected == result
 
     def test_to_one_reference_chain(self):
@@ -142,7 +139,7 @@ class TestApiDataObjectSerializer:
         ]
         # the first one does not have a previous
         del expected[0]['relationships']
-        result = serializer.dump([data_objects[-1]])
+        result = ApiDataSerializer().dump([data_objects[-1]])
         assert result == expected
         # TODO check everything is sorted by type
 
@@ -180,7 +177,7 @@ class TestApiDataObjectSerializer:
                 for i, b in enumerate(many_b)
             ]
         ]
-        result = serializer.dump([a])
+        result = ApiDataSerializer().dump([a])
         assert result == expected
 
     def test_both_to_one_to_many_references(self):
@@ -226,5 +223,5 @@ class TestApiDataObjectSerializer:
                 '_uuid': c._request_internal_uuid
             }
         ]
-        result = serializer.dump([a])
+        result = ApiDataSerializer().dump([a])
         assert result == expected

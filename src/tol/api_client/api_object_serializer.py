@@ -7,7 +7,6 @@ from typing import Any, Dict, List
 
 from ..core import DataObject
 
-# TODO need to convert all iterables to lists before!!!!
 
 class _ApiObjectSerializer:
     """
@@ -73,12 +72,12 @@ class _ApiObjectSerializer:
 
 class ApiDataSerializer:
     """
-    Serializes a complex, nested list of DataObjects into
+    Serializes a complex, nested List of DataObjects into
     a flat list of raw data.
     """
 
-    def dump(self, objects: List[DataObject]) -> List[Dict[str, Any]]:
-        pass
+    def __init__(self):
+        self.__uuid_dump_map: Dict[str, Dict[str, Any]] = {}
 
-
-
+    def dump(self, data_objects: List[DataObject]) -> List[Dict[str, Any]]:
+        self.__data_objects = data_objects
