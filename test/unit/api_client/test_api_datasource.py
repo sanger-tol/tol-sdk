@@ -2,6 +2,8 @@
 #
 # SPDX-License-Identifier: MIT
 
+import json, responses
+
 from tol.core.data_object import DataObject
 
 from .mock import api_ds, mock_upsert
@@ -75,10 +77,16 @@ class TestApiDataSource:
             {
                 'type': 'specimens',
                 '_uuid': specimen._request_internal_uuid,
-                'id': 'mHomSap9534'
+                'id': 'mHomSap9534',
+                'relationships': {
+                    'one': {
+                        'species': species._request_internal_uuid
+                    }
+                }
             }
         ]
-        observed = upsert_mock.calls[0].request.json()
+        request = responses.calls[0].request
+        observed = json.loads(request.body.decode('utf-8'))
         assert expected == observed
 
     @mock_upsert()
