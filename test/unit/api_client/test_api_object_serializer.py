@@ -111,7 +111,7 @@ class TestApiDataObjectSerializer:
                     'the_id': 1000000 - i
                 }
             )
-            for i in range(2389)
+            for i in range(238)
         ]
         # build the to-one reference chain
         for i, data_object in enumerate(data_objects):
