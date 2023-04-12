@@ -3,10 +3,10 @@
 # SPDX-License-Identifier: MIT
 
 from tol.core import DataObject
-from tol.api_client.api_object_serializer import ApiDataObjectSerializer
+from tol.api_client.api_object_serializer import ApiDataSerializer
 
 
-serializer = ApiDataObjectSerializer()
+serializer = ApiDataSerializer()
 
 
 class TestApiDataObjectSerializer:
@@ -61,6 +61,8 @@ class TestApiDataObjectSerializer:
     def test_to_one_reference(self):
         a = DataObject('a')
         b = DataObject('b')
+        # add in a known id
+        b.id = 'test_id'
         b.a_entry = a
         expected = [
             {
@@ -69,6 +71,7 @@ class TestApiDataObjectSerializer:
             },
             {
                 'type': b,
+                'id': 'test_id',
                 '_uuid': b._request_internal_uuid,
                 'relationships': {
                     'one': {
