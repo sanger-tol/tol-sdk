@@ -63,11 +63,11 @@ class TestApiDataObjectSerializer:
         b.a_entry = a
         expected = [
             {
-                'type': a,
+                'type': 'a',
                 '_uuid': a._request_internal_uuid
             },
             {
-                'type': b,
+                'type': 'b',
                 'id': 'test_id',
                 '_uuid': b._request_internal_uuid,
                 'relationships': {
@@ -86,11 +86,11 @@ class TestApiDataObjectSerializer:
         b.a_entry = a
         expected = [
             {
-                'type': a,
+                'type': 'a',
                 '_uuid': a._request_internal_uuid
             },
             {
-                'type': b,
+                'type': 'b',
                 '_uuid': b._request_internal_uuid,
                 'relationships': {
                     'one': {
