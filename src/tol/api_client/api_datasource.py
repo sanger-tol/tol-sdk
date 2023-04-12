@@ -5,7 +5,7 @@
 import json
 import math
 from itertools import chain
-from typing import Any, Dict, List
+from typing import Any, Dict, Iterable, List
 
 from cachetools import LFUCache
 
@@ -207,9 +207,12 @@ class ApiDataSource(DataSource):
     def upsert(self, object_type: str, *args, **kwargs) -> None:
         pass
 
-    def upsert_multiple_type(self, data_objects: List[DataObject]) -> None:
+    def upsert_multiple_type(self, data_objects: Iterable[DataObject]) -> None:
+        final_list = list(data_objects)
+        if len(final_list) < 0:
+            return
         serializer = ApiDataSerializer()
-        upsert_data = serializer.dump(data_objects)
+        upsert_data = serializer.dump(final_list)
         self.__perform_upsert(upsert_data)
 
     def __perform_upsert(self, upsert_data: List[Dict[str, Any]]) -> None:
