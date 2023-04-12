@@ -90,11 +90,3 @@ class TestApiDataSource:
         request = responses.calls[0].request
         observed = json.loads(request.body.decode('utf-8'))
         assert expected == observed
-
-    @mock_upsert()
-    def test_to_many_relationship(self, upsert_mock):
-        pass
-
-    @mock_upsert()
-    def test_attributes_and_relationships(self, upsert_mock):
-        pass
