@@ -3,6 +3,7 @@
 # SPDX-License-Identifier: MIT
 
 from __future__ import annotations
+
 from typing import Any, Dict, List
 
 from ..core import DataObject
@@ -108,7 +109,7 @@ class ApiDataSerializer:
         for to_many_relations in data_object.to_many_relationships.values():
             self.__flatten_dump_add(
                 list(to_many_relations)
-            )        
+            )
 
     def __add_data_object(self, data_object: DataObject) -> None:
         uuid = data_object._request_internal_uuid

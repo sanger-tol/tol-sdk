@@ -2,9 +2,8 @@
 #
 # SPDX-License-Identifier: MIT
 
-from tol.core import DataObject
 from tol.api_client.api_object_serializer import ApiDataSerializer
-
+from tol.core import DataObject
 
 class TestApiDataObjectSerializer:
     def test_single_object(self):
@@ -121,7 +120,7 @@ class TestApiDataObjectSerializer:
         for i, data_object in enumerate(data_objects):
             if i == 0:
                 continue
-            previous = data_objects[i-1]
+            previous = data_objects[i - 1]
             data_object.previous = previous
         uuids = [d._request_internal_uuid for d in data_objects]
         unsorted = [
@@ -134,7 +133,7 @@ class TestApiDataObjectSerializer:
                 'relationships': {
                     'one': {
                         'previous': (
-                            uuids[i-1] if i > 0 else None
+                            uuids[i - 1] if i > 0 else None
                         )
                     }
                 }
