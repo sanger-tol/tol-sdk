@@ -111,10 +111,8 @@ class ApiDataSerializer:
         self.__uuid_dump_map[uuid] = dumped
 
     def __get_serialized_list(self) -> List[Dict[str, Any]]:
-        unsorted_list = list(
-            self.__uuid_dump_map.values()
-        )
+        unsorted = self.__uuid_dump_map.values()
         return sorted(
-            unsorted_list,
+            unsorted,
             key=lambda d: d['type']
         )
