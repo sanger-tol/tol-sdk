@@ -211,8 +211,7 @@ class ApiDataSource(DataSource):
         final_list = list(data_objects)
         if len(final_list) == 0:
             return
-        serializer = ApiDataSerializer()
-        upsert_data = serializer.dump(final_list)
+        upsert_data = ApiDataSerializer().dump(final_list)
         self.__perform_upsert(upsert_data)
 
     def __perform_upsert(self, upsert_data: List[Dict[str, Any]]) -> None:
