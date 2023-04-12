@@ -120,7 +120,7 @@ class TestApiDataObjectSerializer:
             previous = data_objects[i-1]
             data_object.previous = previous
         uuids = [d._request_internal_uuid for d in data_objects]
-        expected = [
+        unsorted = [
             {
                 'type': f'test_{i}',
                 '_uuid': uuid,
@@ -138,7 +138,12 @@ class TestApiDataObjectSerializer:
             for i, uuid in enumerate(uuids)
         ]
         # the first one does not have a previous
-        del expected[0]['relationships']
+        del unsorted[0]['relationships']
+        # sort by type
+        expected = sorted(
+            unsorted,
+            key=lambda d: d['type']
+        )
         result = ApiDataSerializer().dump([data_objects[-1]])
         assert result == expected
         # TODO check everything is sorted by type
