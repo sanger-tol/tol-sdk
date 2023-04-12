@@ -74,7 +74,7 @@ class DataSourceSession:
 
     def __perform_upsert(self) -> None:
         if self.__multi_type is True:
-            self.__perform_upsert_multip_type()
+            self.__perform_upsert_multiple_type()
         else:
             self.__perform_single_type_upserts()
 
@@ -86,8 +86,8 @@ class DataSourceSession:
                 objects
             )
 
-    def __perform_upsert_multip_type(self) -> None:
-        self.__data_source.upsert_multip_type(
+    def __perform_upsert_multiple_type(self) -> None:
+        self.__data_source.upsert_multiple_type(
             self.__upserts
         )
 

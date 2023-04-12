@@ -158,5 +158,5 @@ class Interface(DataSource):
         pass
 
     @unsupported()
-    def upsert_multip_type(self, *args, **kwargs) -> None:
+    def upsert_multiple_type(self, *args, **kwargs) -> None:
         pass
