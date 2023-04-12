@@ -114,6 +114,7 @@ class Interface(DataSource):
                 return self.custom_response(
                     status_code=400, message='Validation error', data=validation
                 )
+            label['label_name'] = 'main_label'
         job = {
             'print_job': {
                 'printer_name': printer_name,
