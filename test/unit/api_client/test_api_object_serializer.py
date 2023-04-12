@@ -42,7 +42,7 @@ class TestApiDataObjectSerializer:
             d._request_internal_uuid
             for d in data_objects
         ]
-        expected = [
+        unsorted = [
             {
                 'type': f'test_{i}',
                 '_uuid': uuid,
@@ -52,6 +52,10 @@ class TestApiDataObjectSerializer:
             }
             for i, uuid in enumerate(uuids)
         ]
+        expected = sorted(
+            unsorted,
+            key=lambda d: d['type']
+        )
         result = ApiDataSerializer().dump(data_objects)
         assert result == expected
 
