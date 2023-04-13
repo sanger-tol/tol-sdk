@@ -50,7 +50,7 @@ class TestFilterRelationship(BaseTestCase):
         self.add_e(id=595, b_id=393)
 
         response = self.client.open(
-            '/api/v1/e?filter={"exact":{"b.a.string_column":"match"}}'
+            '/api/v1/e?filter={"exact":{"a.a.string_column":"match"}}'
         )
         self.assert200(
             response,

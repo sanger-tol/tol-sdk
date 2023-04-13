@@ -27,6 +27,7 @@ from ..utils import (
     escape_psql_like_string,
     parse_filters,
     parse_range_filters,
+    parse_relationship_filter_joins,
     parse_sort_by
 )
 
@@ -487,7 +488,10 @@ class Base(db.Model):
         sort_by=None
     ):
         exact_filters, contains_filters, range_filters = parse_filters(filter)
-        query = cls._create_relationship_joins(query)
+        #exact_filters, contains_filters, range_filters, joins = parse_relationship_filter_joins(filters)
+        import logging
+        #logging.error(joins)
+        #query = cls._create_relationship_joins(parse_filters(filter))
         query = cls._exact_filter_query(query, exact_filters)
         query = cls._contains_filter_query(query, contains_filters)
         query = cls._range_filter_query(query, range_filters)
