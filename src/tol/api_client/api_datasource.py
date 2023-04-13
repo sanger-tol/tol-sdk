@@ -149,6 +149,7 @@ class ApiDataSource(DataSource):
         return self.get_by_id(type_, id_)
 
     def delete_by_id(self, object_type: str, id_: int):
+        # TODO port to the new operations (iterable of ids)
         url = f'/{object_type}/{id_}'
         response = self._delete(url)
         if response.status_code != 204:
@@ -158,9 +159,11 @@ class ApiDataSource(DataSource):
         return
 
     def delete(self, obj: ApiObject):
+        # TODO port to the new operations (iterable of ids)
         return self.delete_by_id(obj.object_type, obj.id)
 
     def create(self, obj: ApiObject):
+        # TODO port to the new operations (iterable of ids)
         url = f'/{obj.object_type}'
         obj_json = obj.to_json()
         if 'id' in obj_json:
@@ -177,6 +180,7 @@ class ApiDataSource(DataSource):
         return obj
 
     def update(self, obj: ApiObject):
+        # TODO port to the new operations (iterable of ids)
         url = f'/{obj.object_type}/{obj.id}'
         # We may have updated object's attributes/relationships since this was created
         self._update_attributes_from_object(obj)
