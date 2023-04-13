@@ -270,3 +270,5 @@ class TestApiDataObjectSerializer:
         assert result2 == expected
         result3 = ApiDataSerializer().dump([a, b])
         assert result3 == expected
+        result4 = ApiDataSerializer().dump([b, a])
+        assert result4 == expected
