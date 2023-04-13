@@ -18,10 +18,13 @@ class _ApiObjectSerializer:
 
     def dump(self, data_object: DataObject) -> Dict[str, Any]:
         self.__data_object = data_object
+        self.__create_dump()
+        return self.__dumped
+
+    def __create_dump(self) -> None:
         self.__add_mandatory_fields()
         self.__add_optional_fields()
         self.__add_relationships()
-        return self.__dumped
 
     def __add_mandatory_fields(self) -> None:
         self.__dumped['type'] = self.__data_object.object_type
