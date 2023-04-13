@@ -14,10 +14,8 @@ from ..core import DataObject
 class ApiObject(DataObject):
 
     def __init__(self, type_, id_, attributes={}, relationships={}):
-        super(ApiObject, self).__init__()
+        super(ApiObject, self).__init__(type_, attributes)
         self._id = id_
-        self._type = type_
-        self.update_attributes_from_dict(attributes)
         self.update_relationships_from_dict(relationships)
 
     @classmethod
