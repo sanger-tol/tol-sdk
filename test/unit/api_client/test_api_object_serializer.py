@@ -233,3 +233,37 @@ class TestApiDataObjectSerializer:
         ]
         result = ApiDataSerializer().dump([a])
         assert result == expected
+
+    def test_circular_reference(self):
+        a = DataObject('a')
+        b = DataObject('b')
+        a.b = b
+        b.many_a = [a]
+        expected = [
+            {
+                'type': 'a',
+                '_uuid': a._request_internal_uuid,
+                'relationships': {
+                    'one': {
+                        'b': b._request_internal_uuid
+                    }
+                }
+            },
+            {
+                'type': 'b',
+                '_uuid': b._request_internal_uuid,
+                'relationships': {
+                    'many': {
+                        'many_a': [
+                            a._request_internal_uuid
+                        ]
+                    }
+                }
+            }
+        ]
+        result1 = ApiDataSerializer().dump([a])
+        assert result1 == expected
+        result2 = ApiDataSerializer().dump([b])
+        assert result2 == expected
+        result3 = ApiDataSerializer().dump([a, b])
+        assert result3 == expected
