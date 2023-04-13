@@ -2,6 +2,8 @@
 #
 # SPDX-License-Identifier: MIT
 
+# THIS WILL BE DELETED AT SOME POINT. USE StsDataSource INSTEAD
+
 import os
 
 import requests

@@ -2,6 +2,9 @@
 #
 # SPDX-License-Identifier: MIT
 
+# DO NOT WRITE ANYTHING NEW THAT USES THESE FUNCTIONS AS THEY WILL BE DELETED AT SOME POINT
+
+
 from dateutil.parser import parse as dateutil_parse
 
 from . import sts_requests
