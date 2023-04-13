@@ -235,6 +235,9 @@ class TestApiDataObjectSerializer:
         assert result == expected
 
     def test_circular_reference(self):
+        """
+        A circular reference should not cause infinite recursion 
+        """
         a = DataObject('a')
         b = DataObject('b')
         a.b = b
