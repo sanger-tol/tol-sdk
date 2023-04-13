@@ -8,14 +8,14 @@ from caseconverter import (
     snakecase
 )
 
-from ..core import DataObject
 
-
-class ApiObject(DataObject):
+class ApiObject(object):
 
     def __init__(self, type_, id_, attributes={}, relationships={}):
-        super(ApiObject, self).__init__(type_, attributes)
+        super(ApiObject, self).__init__()
         self._id = id_
+        self._type = type_
+        self.update_attributes_from_dict(attributes)
         self.update_relationships_from_dict(relationships)
 
     @classmethod
@@ -24,6 +24,14 @@ class ApiObject(DataObject):
                          json_obj['id'],
                          json_obj.get('attributes', {}),
                          json_obj.get('relationships', {}))
+
+    @property
+    def type(self):  # noqa A003
+        return self._type
+
+    @property
+    def id(self):  # noqa A003
+        return self._id
 
     def update_attributes_from_dict(self, json_attributes):
         self.attributes = {snakecase(k): v for k, v in json_attributes.items()}
@@ -37,12 +45,12 @@ class ApiObject(DataObject):
 
     def to_short_json(self):
         return {'id': self._id,
-                'type': self.object_type}
+                'type': self.type}
 
     def to_json(self):
         return {
             'id': self._id,
-            'type': self.object_type,
+            'type': self.type,
             'attributes': {snakecase(k): v for k, v in self.attributes.items()},
             'relationships':
                 {snakecase(k): {'data': v.to_short_json()} for k, v in self.relationships.items()}
