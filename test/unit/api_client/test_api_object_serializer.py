@@ -150,7 +150,6 @@ class TestApiDataObjectSerializer:
         )
         result = ApiDataSerializer().dump([data_objects[-1]])
         assert result == expected
-        # TODO check everything is sorted by type
 
     def test_to_many_references(self):
         a = DataObject('a')
