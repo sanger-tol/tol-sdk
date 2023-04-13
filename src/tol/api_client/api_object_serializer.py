@@ -76,7 +76,7 @@ class _ApiObjectSerializer:
 class ApiDataSerializer:
     """
     Serializes a complex, nested List of DataObjects into
-    a flat list of raw data.
+    a flat list of raw data, ready for an upsert operation.
     """
 
     def __init__(self):
