@@ -87,9 +87,14 @@ class ApiDataSerializer:
 
     def __flatten_dump_add(self, data_objects: List[DataObject]) -> None:
         for data_object in data_objects:
+            if self.__object_already_processed(data_object):
+                continue
             self.__add_data_object(data_object)
             self.__add_to_one_relationships(data_object)
             self.__add_to_many_relationships(data_object)
+
+    def __object_already_processed(self, data_object: DataObject) -> bool:
+        return data_object._request_internal_uuid in self.__uuid_dump_map
 
     def __add_to_one_relationships(
         self,
