@@ -2,7 +2,7 @@
 #
 # SPDX-License-Identifier: MIT
 
-from tol.api_client import ApiObject
+from tol.core import DataObject
 from tol.core import DataSourceError
 
 from ..test_api_datasource import TestApiDataSource
@@ -52,7 +52,7 @@ class TestDelete(BaseTestCase):
                                  'url': 'none',
                                  'key': self.token_1})
 
-        g1 = ApiObject('g', None,
+        g1 = DataObject('g', None,
                        attributes={'string_column': 'test'})
 
         self.assertRaises(DataSourceError, ads.delete, g1)

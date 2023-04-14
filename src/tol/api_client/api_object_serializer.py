@@ -9,7 +9,7 @@ from typing import Any, Dict, List
 from ..core import DataObject
 
 
-class _ApiObjectSerializer:
+class ApiObjectSerializer:
     """
     Serializes an individual object (Private API)
     """
@@ -115,7 +115,7 @@ class ApiDataSerializer:
 
     def __add_data_object(self, data_object: DataObject) -> None:
         uuid = data_object._request_internal_uuid
-        dumped = _ApiObjectSerializer().dump(data_object)
+        dumped = ApiObjectSerializer().dump(data_object)
         self.__uuid_dump_map[uuid] = dumped
 
     def __get_serialized_list(self) -> List[Dict[str, Any]]:

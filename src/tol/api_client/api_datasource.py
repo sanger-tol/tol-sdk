@@ -11,8 +11,10 @@ from cachetools import LFUCache
 
 import requests
 
-from .api_object import ApiObject
-from .api_object_serializer import ApiDataSerializer
+from .api_object_serializer import (
+    ApiDataSerializer,
+    ApiObjectSerializer
+)
 from ..core import (
     DataObject,
     DataSource,
@@ -112,17 +114,20 @@ class ApiDataSource(DataSource):
         key = f'{type_}{id_}'
         if key in self.cache:
             cached_object = self.cache[key]
-            cached_object.update_attributes_from_dict(obj_dict['attributes'])
+            cached_object.set_data(obj_dict['attributes'])
             return cached_object
-        new_object = ApiObject(type_, id_)
-        self._update_object_from_json(new_object, obj_dict)
+        new_object = DataObject(
+            type_,
+            {
+                'id': id_
+            }
+        )
+        new_object.set_data(obj_dict)
         self._cache_object(new_object)
         return new_object
 
-    def _cache_object(self, obj):
-        id_ = obj.id
-        type_ = obj.type
-        key = f'{type_}{id_}'
+    def _cache_object(self, obj: DataObject):
+        key = f'{obj.object_type}{obj.id}'
         self.cache[key] = obj
 
     def _convert_relationships_from_json_to_objects(self, relationships: Dict):
@@ -134,11 +139,11 @@ class ApiDataSource(DataSource):
             # Ignore many end
         return ret
 
-    def _update_attributes_from_object(self, obj: ApiObject):
+    def _update_attributes_from_object(self, obj: DataObject):
         for k in obj.attributes.keys():
             obj.attributes[k] = getattr(obj, k)
 
-    def _update_relationships_from_object(self, obj: ApiObject):
+    def _update_relationships_from_object(self, obj: DataObject):
         for k in obj.relationships.keys():
             obj.relationships[k] = getattr(obj, k)
 
@@ -158,14 +163,14 @@ class ApiDataSource(DataSource):
                                   response.status_code)
         return
 
-    def delete(self, obj: ApiObject):
+    def delete(self, obj: DataObject):
         # TODO port to the new operations (iterable of ids)
-        return self.delete_by_id(obj.type, obj.id)
+        return self.delete_by_id(obj.object_type, obj.id)
 
-    def create(self, obj: ApiObject):
+    def create(self, obj: DataObject):
         # TODO port to the new operations (iterable of ids)
-        url = f'/{obj.type}'
-        obj_json = obj.to_json()
+        url = f'/{obj.object_type}'
+        obj_json = self.__dump_object_to_dict(obj)
         if 'id' in obj_json:
             del obj_json['id']
         json = {'data': obj_json}
@@ -175,17 +180,17 @@ class ApiDataSource(DataSource):
                                   response.text,
                                   response.status_code)
         json = response.json() if callable(response.json) else response.json
-        self._update_object_from_json(obj, json['data'])
+        obj.set_data(json['data'])
         self._cache_object(obj)
         return obj
 
-    def update(self, obj: ApiObject):
+    def update(self, obj: DataObject):
         # TODO port to the new operations (iterable of ids)
-        url = f'/{obj.type}/{obj.id}'
+        url = f'/{obj.object_type}/{obj.id}'
         # We may have updated object's attributes/relationships since this was created
         self._update_attributes_from_object(obj)
         self._update_relationships_from_object(obj)
-        obj_json = obj.to_json()
+        obj_json = self.__dump_object_to_dict(obj)
         if 'id' in obj_json:
             del obj_json['id']
         json = {'data': obj_json}
@@ -195,17 +200,9 @@ class ApiDataSource(DataSource):
                                   response.text,
                                   response.status_code)
         json = response.json() if callable(response.json) else response.json
-        self._update_object_from_json(obj, json['data'])
+        obj.set_data(json['data'])
         self._cache_object(obj)
         return obj
-
-    def _update_object_from_json(self, obj: ApiObject, obj_json: Dict):
-        obj._id = obj_json['id']
-        obj.update_attributes_from_dict(obj_json.get('attributes', {}))
-        if 'relationships' in obj_json:
-            relationships_obj = \
-                self._convert_relationships_from_json_to_objects(obj_json['relationships'])
-            obj.update_relationships_from_dict(relationships_obj)
 
     @unsupported()
     def upsert(self, object_type: str, *args, **kwargs) -> None:
@@ -213,6 +210,7 @@ class ApiDataSource(DataSource):
 
     def upsert_multiple_type(self, data_objects: Iterable[DataObject]) -> None:
         final_list = list(data_objects)
+        # TODO for performance reasons, move this below upsert_data creation
         if len(final_list) == 0:
             return
         upsert_data = ApiDataSerializer().dump(final_list)
@@ -225,3 +223,8 @@ class ApiDataSource(DataSource):
             headers={'Token': self.key}
         )
         r.raise_for_status()
+
+    def __dump_object_to_dict(self, data_object: DataObject) -> Dict[str, Any]:
+        dump = ApiObjectSerializer().dump(data_object)
+        del dump['_uuid']
+        return dump

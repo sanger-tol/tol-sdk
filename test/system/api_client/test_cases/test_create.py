@@ -2,7 +2,7 @@
 #
 # SPDX-License-Identifier: MIT
 
-from tol.api_client import ApiObject
+from tol.core import DataObject
 from tol.core import DataSourceError
 
 from ..test_api_datasource import TestApiDataSource
@@ -11,9 +11,13 @@ from ...api_base.test_case import BaseTestCase
 
 class TestCreate(BaseTestCase):
     def test_create(self):
-        c1 = ApiObject('c', None,
-                       attributes={'nullable_column': 'abc',
-                                   'other_column': 'def'})
+        c1 = DataObject(
+            'c',
+            {
+                'nullable_column': 'abc',
+                'other_column': 'def'
+            }
+        )
         self.assertIsNone(c1.id)
         ads = TestApiDataSource({'client': self.client,
                                  'url': 'none',
@@ -23,9 +27,9 @@ class TestCreate(BaseTestCase):
         self.assertEqual(1, ads.post_count)
 
     def test_create_with_relationship(self):
-        a1 = ApiObject('a', None,
+        a1 = DataObject('a', None,
                        attributes={'string_column': 'abc'})
-        b1 = ApiObject('b', None,
+        b1 = DataObject('b', None,
                        relationships={'a': a1})
         self.assertIsNone(a1.id)
         self.assertIsNone(b1.id)
@@ -40,9 +44,9 @@ class TestCreate(BaseTestCase):
         self.assertEqual(2, ads.post_count)
 
     def test_create_with_related_object_not_created(self):
-        a1 = ApiObject('a', None,
+        a1 = DataObject('a', None,
                        attributes={'string_column': 'abc'})
-        b1 = ApiObject('b', None,
+        b1 = DataObject('b', None,
                        relationships={'a': a1})
         self.assertIsNone(a1.id)
         self.assertIsNone(b1.id)

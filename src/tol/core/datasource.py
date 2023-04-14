@@ -231,6 +231,10 @@ class DataSource(ABC):
 
         - an insert (if they don't exist already)
         - an update (if they do)
+
+        If the objects are of different types, or their types are
+        unknown at runtime, use upsert_mutliple_type(). Many DataSource
+        instances will support only one of these two methods.
         """
 
     @operation

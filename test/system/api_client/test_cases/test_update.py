@@ -2,7 +2,7 @@
 #
 # SPDX-License-Identifier: MIT
 
-from tol.api_client import ApiObject
+from tol.core import DataObject
 from tol.core import DataSourceError
 
 from ..test_api_datasource import TestApiDataSource
@@ -38,7 +38,7 @@ class TestUpdate(BaseTestCase):
                                  'url': 'none',
                                  'key': self.token_1})
 
-        new_a = ApiObject('a', None,
+        new_a = DataObject('a', None,
                           attributes={'string_column': 'abc'})
         ads.create(new_a)
 
@@ -61,7 +61,7 @@ class TestUpdate(BaseTestCase):
                                  'url': 'none',
                                  'key': self.token_1})
 
-        new_a = ApiObject('a', None,
+        new_a = DataObject('a', None,
                           attributes={'string_column': 'abc'})
 
         # Get the b already in the database
