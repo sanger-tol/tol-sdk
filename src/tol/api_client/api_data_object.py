@@ -12,6 +12,10 @@ if typing.TYPE_CHECKING:
     from .api_datasource import ApiDataSource
 
 
+class BadRelationshipException(Exception):
+    pass
+
+
 class ApiDataObject(DataObject):
     def __init__(
         self,
