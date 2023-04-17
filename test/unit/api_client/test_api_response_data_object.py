@@ -13,6 +13,16 @@ class TestApiResponseDataObject:
         Not accessing any relationships -> no get methods
         are called on the provided datasource
         """
+        get_mock = MagicMock()
+        ds = self.__mock_datasource(get_mock)
+        ApiResponseDataObject(
+            'test',
+            {
+                'test': 'hype'
+            },
+            data_source=ds
+        )
+        get_mock.assert_not_called()
 
     def test_to_one_relationship(self):
         """
@@ -31,3 +41,12 @@ class TestApiResponseDataObject:
         N access to N different to-one relationships -> N
         method calls, one for each
         """
+
+    def __mock_datasource(self, mock_get_by_id: MagicMock) -> object:
+        return type(
+            '',
+            (object,),
+            {
+                'get_by_id': mock_get_by_id
+            }
+        )
