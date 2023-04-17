@@ -11,6 +11,7 @@ from cachetools import LFUCache
 
 import requests
 
+from .api_data_object import ApiDataObject
 from .api_object_serializer import (
     ApiDataSerializer,
     ApiObjectSerializer
@@ -44,10 +45,11 @@ class ApiDataSource(DataSource):
         """
         return super().session(multi_type=True)
 
-    def get_by_id(self, object_type: str, id_: int):
-        url = f'{object_type}/{id_}'
-        ret, _ = self.get_by_link(url)
-        return ret
+    def get_by_id(self, object_type: str, object_ids: Iterable[str]) -> List[ApiDataObject]:
+        return [
+            self.get_by_link(f'{object_type}/{object_id}')
+            for object_id in object_ids
+        ]
 
     def _get(self, path, params):
         return requests.get(f'{self.url}{path}', params=params)
