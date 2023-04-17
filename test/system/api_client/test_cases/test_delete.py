@@ -53,7 +53,7 @@ class TestDelete(BaseTestCase):
                                  'key': self.token_1})
 
         g1 = DataObject('g', None,
-                       attributes={'string_column': 'test'})
+                        attributes={'string_column': 'test'})
 
         self.assertRaises(DataSourceError, ads.delete, g1)
         self.assertEqual(1, ads.delete_count)

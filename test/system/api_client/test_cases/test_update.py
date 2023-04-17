@@ -39,7 +39,7 @@ class TestUpdate(BaseTestCase):
                                  'key': self.token_1})
 
         new_a = DataObject('a', None,
-                          attributes={'string_column': 'abc'})
+                           attributes={'string_column': 'abc'})
         ads.create(new_a)
 
         # Get the b already in the database
@@ -62,7 +62,7 @@ class TestUpdate(BaseTestCase):
                                  'key': self.token_1})
 
         new_a = DataObject('a', None,
-                          attributes={'string_column': 'abc'})
+                           attributes={'string_column': 'abc'})
 
         # Get the b already in the database
         bs = list(ads.get_list('b'))

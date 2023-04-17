@@ -28,9 +28,9 @@ class TestCreate(BaseTestCase):
 
     def test_create_with_relationship(self):
         a1 = DataObject('a', None,
-                       attributes={'string_column': 'abc'})
+                        attributes={'string_column': 'abc'})
         b1 = DataObject('b', None,
-                       relationships={'a': a1})
+                        relationships={'a': a1})
         self.assertIsNone(a1.id)
         self.assertIsNone(b1.id)
         ads = TestApiDataSource({'client': self.client,
@@ -45,9 +45,9 @@ class TestCreate(BaseTestCase):
 
     def test_create_with_related_object_not_created(self):
         a1 = DataObject('a', None,
-                       attributes={'string_column': 'abc'})
+                        attributes={'string_column': 'abc'})
         b1 = DataObject('b', None,
-                       relationships={'a': a1})
+                        relationships={'a': a1})
         self.assertIsNone(a1.id)
         self.assertIsNone(b1.id)
         ads = TestApiDataSource({'client': self.client,
