@@ -16,7 +16,7 @@ class BadRelationshipException(Exception):
     pass
 
 
-class ApiDataObject(DataObject):
+class ApiResponseDataObject(DataObject):
     def __init__(
         self,
         object_type: str,
