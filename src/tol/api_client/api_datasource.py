@@ -11,7 +11,10 @@ from cachetools import LFUCache
 
 import requests
 
-from .api_data_object import ApiResponseDataObject
+from .api_data_object import (
+    ApiResponseDataObject,
+    new_api_response_data_object
+)
 from .api_object_serializer import (
     ApiDataSerializer,
     ApiObjectSerializer
@@ -118,7 +121,7 @@ class ApiDataSource(DataSource):
             cached_object = self.cache[key]
             cached_object.set_data(obj_dict['attributes'])
             return cached_object
-        new_object = ApiResponseDataObject(
+        new_object = new_api_response_data_object(
             type_,
             data={
                 'id': id_

@@ -4,7 +4,10 @@
 
 from unittest.mock import MagicMock
 
-from tol.api_client.api_data_object import ApiResponseDataObject
+from tol.api_client.api_data_object import (
+    ApiResponseDataObject,
+    new_api_response_data_object
+)
 
 
 class TestApiResponseDataObject:
@@ -19,7 +22,7 @@ class TestApiResponseDataObject:
             'type': 'test',
             'id': '1234'
         }
-        ApiResponseDataObject(
+        new_api_response_data_object(
             ds,
             loaded,
             data={
@@ -35,7 +38,7 @@ class TestApiResponseDataObject:
         """
         get_mock = MagicMock()
         ds = self.__mock_datasource(get_mock)
-        mock_b = ApiResponseDataObject(
+        mock_b = new_api_response_data_object(
             ds,
             {
                 'type': 'B',
@@ -55,7 +58,7 @@ class TestApiResponseDataObject:
                 }
             }
         }
-        api_object = ApiResponseDataObject(
+        api_object = new_api_response_data_object(
             ds,
             loaded
         )
@@ -86,7 +89,7 @@ class TestApiResponseDataObject:
                 }
             }
         }
-        api_object = ApiResponseDataObject(
+        api_object = new_api_response_data_object(
             ds,
             loaded
         )
@@ -106,17 +109,19 @@ class TestApiResponseDataObject:
         ds = self.__mock_datasource(get_mock)
         relationships_loaded = {
             f'test_{i}': {
-                'type': str(i),
-                'id': '1234'
+                'data': {
+                    'type': str(i),
+                    'id': '1234'
+                }
             }
-            for i in range (44)
+            for i in range(44)
         }
         loaded = {
             'type': 'A',
             'id': '2913408',
             'relationships': relationships_loaded
         }
-        api_object = ApiResponseDataObject(
+        api_object = new_api_response_data_object(
             ds,
             loaded
         )
@@ -125,8 +130,8 @@ class TestApiResponseDataObject:
         assert get_mock.call_count == 44
         for i in range(44):
             get_mock.assert_any_call(
-                f'test_{i}',
-                ids=['1234']
+                str(i),
+                ['1234']
             )
 
     def __mock_datasource(self, mock_get_by_id: MagicMock) -> object:
