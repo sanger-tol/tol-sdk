@@ -20,8 +20,8 @@ class ApiDataObject(DataObject):
     def __init__(
         self,
         object_type: str,
-        data_source: ApiDataSource,
-        data: DataDict = None
+        data: DataDict = None,
+        data_source: ApiDataSource = None
     ):
         self.__data_source = data_source
         super().__init__(object_type, data)
