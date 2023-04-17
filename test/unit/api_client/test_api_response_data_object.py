@@ -35,11 +35,19 @@ class TestApiResponseDataObject:
         """
         get_mock = MagicMock()
         ds = self.__mock_datasource(get_mock)
+        mock_b = ApiResponseDataObject(
+            ds,
+            {
+                'type': 'B',
+                'id': '1234'
+            }
+        )
+        get_mock.return_value = []
         loaded = {
-            'type': 'test',
+            'type': 'A',
             'id': '2913408',
             'relationships': {
-                'test_B': {
+                'test_b': {
                     'data': {
                         'type': 'B',
                         'id': '1234'
@@ -51,11 +59,12 @@ class TestApiResponseDataObject:
             ds,
             loaded
         )
-        test_b = api_object.test_B
+        test_b = api_object.test_b
         get_mock.assert_called_once_with(
             'B',
             ['1234']
         )
+        assert mock_b == test_b
 
 
     def test_repeated_to_one_relationship(self):
