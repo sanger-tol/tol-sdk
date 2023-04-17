@@ -17,7 +17,6 @@ from .api_object_serializer import (
     ApiObjectSerializer
 )
 from ..core import (
-    DataObject,
     DataSource,
     DataSourceError,
     DataSourceFilter,
@@ -118,8 +117,9 @@ class ApiDataSource(DataSource):
             cached_object = self.cache[key]
             cached_object.set_data(obj_dict['attributes'])
             return cached_object
-        new_object = DataObject(
+        new_object = ApiDataObject(
             type_,
+            self,
             {
                 'id': id_
             }
@@ -128,7 +128,7 @@ class ApiDataSource(DataSource):
         self._cache_object(new_object)
         return new_object
 
-    def _cache_object(self, obj: DataObject):
+    def _cache_object(self, obj: ApiDataObject):
         key = f'{obj.object_type}{obj.id}'
         self.cache[key] = obj
 
@@ -141,11 +141,11 @@ class ApiDataSource(DataSource):
             # Ignore many end
         return ret
 
-    def _update_attributes_from_object(self, obj: DataObject):
+    def _update_attributes_from_object(self, obj: ApiDataObject):
         for k in obj.attributes.keys():
             obj.attributes[k] = getattr(obj, k)
 
-    def _update_relationships_from_object(self, obj: DataObject):
+    def _update_relationships_from_object(self, obj: ApiDataObject):
         for k in obj.relationships.keys():
             obj.relationships[k] = getattr(obj, k)
 
@@ -165,11 +165,11 @@ class ApiDataSource(DataSource):
                                   response.status_code)
         return
 
-    def delete(self, obj: DataObject):
+    def delete(self, obj: ApiDataObject):
         # TODO port to the new operations (iterable of ids)
         return self.delete_by_id(obj.object_type, obj.id)
 
-    def create(self, obj: DataObject):
+    def create(self, obj: ApiDataObject):
         # TODO port to the new operations (iterable of ids)
         url = f'/{obj.object_type}'
         obj_json = self.__dump_object_to_dict(obj)
@@ -186,7 +186,7 @@ class ApiDataSource(DataSource):
         self._cache_object(obj)
         return obj
 
-    def update(self, obj: DataObject):
+    def update(self, obj: ApiDataObject):
         # TODO port to the new operations (iterable of ids)
         url = f'/{obj.object_type}/{obj.id}'
         # We may have updated object's attributes/relationships since this was created
@@ -210,7 +210,7 @@ class ApiDataSource(DataSource):
     def upsert(self, object_type: str, *args, **kwargs) -> None:
         pass
 
-    def upsert_multiple_type(self, data_objects: Iterable[DataObject]) -> None:
+    def upsert_multiple_type(self, data_objects: Iterable[ApiDataObject]) -> None:
         final_list = list(data_objects)
         # TODO for performance reasons, move this below upsert_data creation
         if len(final_list) == 0:
@@ -226,7 +226,7 @@ class ApiDataSource(DataSource):
         )
         r.raise_for_status()
 
-    def __dump_object_to_dict(self, data_object: DataObject) -> Dict[str, Any]:
+    def __dump_object_to_dict(self, data_object: ApiDataObject) -> Dict[str, Any]:
         dump = ApiObjectSerializer().dump(data_object)
         del dump['_uuid']
         return dump
