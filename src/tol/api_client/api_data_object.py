@@ -27,11 +27,11 @@ class ApiResponseDataObject(DataObject):
     ):
         self.__data_source = data_source
         self.__json_api_response = json_api_response
-        self.__init_relationships()
+        self.__init_relationship_properties()
         object_type = json_api_response['type']
         super().__init__(object_type, data)
 
-    def __init_relationships(self) -> None:
+    def __init_relationship_properties(self) -> None:
         self.__relationships = self.__json_api_response.get(
             'relationships',
             {}
