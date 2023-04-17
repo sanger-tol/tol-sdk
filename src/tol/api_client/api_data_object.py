@@ -40,18 +40,30 @@ class ApiResponseDataObject(DataObject):
         if cached is not None:
             return cached
         else:
-            return self.__data_source.get_by_id(
+            fetched_value = self.__data_source.get_by_id(
                 object_type,
                 [object_id]
             )[0]
+            self.__add_cached_relation(object_type, object_id, fetched_value)
+            return fetched_value
+
+    def __add_cached_relation(
+        self,
+        object_type: str,
+        object_id: str,
+        add_object: ApiResponseDataObject
+    ) -> None:
+        if object_type not in self.__relationship_cache:
+            self.__relationship_cache[object_type] = {}
+        self.__relationship_cache[object_type][object_id] = add_object
 
     def __get_cached_relation(
         self,
-        relationship: str,
+        object_type: str,
         object_id: str
     ) -> ApiResponseDataObject:
         return self.__relationship_cache.get(
-            relationship,
+            object_type,
             {}
         ).get(object_id)
 
