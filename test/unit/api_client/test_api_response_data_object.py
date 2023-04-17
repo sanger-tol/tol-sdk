@@ -42,7 +42,7 @@ class TestApiResponseDataObject:
                 'id': '1234'
             }
         )
-        get_mock.return_value = []
+        get_mock.return_value = [mock_b]
         loaded = {
             'type': 'A',
             'id': '2913408',
@@ -72,6 +72,30 @@ class TestApiResponseDataObject:
         Repeated access of to-one relationship -> just
         one get method call (should be cached)
         """
+        get_mock = MagicMock()
+        ds = self.__mock_datasource(get_mock)
+        loaded = {
+            'type': 'A',
+            'id': '2913408',
+            'relationships': {
+                'test_b': {
+                    'data': {
+                        'type': 'B',
+                        'id': '1234'
+                    }
+                }
+            }
+        }
+        api_object = ApiResponseDataObject(
+            ds,
+            loaded
+        )
+        for _ in range(55):
+            _ = api_object.test_b
+        get_mock.assert_called_once_with(
+            'B',
+            ['1234']
+        )
 
     def test_several_different_to_one_relationships(self):
         """
