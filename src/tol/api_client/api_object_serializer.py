@@ -14,7 +14,7 @@ class ApiObjectSerializer:
     Serializes an individual object (Private API)
     """
     def __init__(self):
-        self.__dumped = {}
+        self.__dumped: Dict[str, Any] = {}
 
     def dump(self, data_object: DataObject) -> Dict[str, Any]:
         self.__data_object = data_object
