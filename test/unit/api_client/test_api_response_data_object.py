@@ -102,6 +102,32 @@ class TestApiResponseDataObject:
         N access to N different to-one relationships -> N
         method calls, one for each
         """
+        get_mock = MagicMock()
+        ds = self.__mock_datasource(get_mock)
+        relationships_loaded = {
+            f'test_{i}': {
+                'type': str(i),
+                'id': '1234'
+            }
+            for i in range (44)
+        }
+        loaded = {
+            'type': 'A',
+            'id': '2913408',
+            'relationships': relationships_loaded
+        }
+        api_object = ApiResponseDataObject(
+            ds,
+            loaded
+        )
+        for i in range(44):
+            getattr(api_object, f'test_{i}')
+        assert get_mock.call_count == 44
+        for i in range(44):
+            get_mock.assert_any_call(
+                f'test_{i}',
+                ids=['1234']
+            )
 
     def __mock_datasource(self, mock_get_by_id: MagicMock) -> object:
         return type(
