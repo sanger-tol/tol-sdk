@@ -15,12 +15,16 @@ class TestApiResponseDataObject:
         """
         get_mock = MagicMock()
         ds = self.__mock_datasource(get_mock)
+        loaded = {
+            'type': 'test',
+            'id': '1234'
+        }
         ApiResponseDataObject(
-            'test',
-            {
+            ds,
+            loaded,
+            data={
                 'test': 'hype'
             },
-            data_source=ds
         )
         get_mock.assert_not_called()
 
@@ -29,6 +33,30 @@ class TestApiResponseDataObject:
         Accessing one to-one relationship -> one get method
         call
         """
+        get_mock = MagicMock()
+        ds = self.__mock_datasource(get_mock)
+        loaded = {
+            'type': 'test',
+            'id': '2913408',
+            'relationships': {
+                'test_B': {
+                    'data': {
+                        'type': 'B',
+                        'id': '1234'
+                    }
+                }
+            }
+        }
+        api_object = ApiResponseDataObject(
+            ds,
+            loaded
+        )
+        test_b = api_object.test_B
+        get_mock.assert_called_once_with(
+            'B',
+            ['1234']
+        )
+
 
     def test_repeated_to_one_relationship(self):
         """
