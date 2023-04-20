@@ -1,12 +1,5 @@
 # SPDX-FileCopyrightText: 2022 Genome Research Ltd.
 #
 # SPDX-License-Identifier: MIT
-.idea
-*.egg-info
-build/
-__pycache__/
-.pytest_cache/
-venv/
-.env*
-dist/
-.DS_Store
+
+from .excel import *  # noqa
