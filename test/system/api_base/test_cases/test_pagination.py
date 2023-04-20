@@ -68,9 +68,9 @@ class TestPagination(BaseTestCase):
 
     def test_pagination_on_relationship(self):
         self.add_a(id=233)
-        self.add_b(id=30, a_id=233)
-        self.add_b(id=31, a_id=233)
-        self.add_b(id=32, a_id=233)
+        self.add_b(id_string='30', a_id=233)
+        self.add_b(id_string='31', a_id=233)
+        self.add_b(id_string='32', a_id=233)
         expected = {
             'meta': {
                 'page': 2,
@@ -79,7 +79,7 @@ class TestPagination(BaseTestCase):
                 'limit': 4,
                 'total': 3,
                 'types': {
-                    'id': 'int',
+                    'id_string': 'str',
                     'a_id': 'int'
                 }
             },
@@ -87,6 +87,9 @@ class TestPagination(BaseTestCase):
                 {
                     'type': 'b',
                     'id': '32',
+                    'attributes': {
+                        'id_string': '32'
+                    },
                     'relationships': {
                         'a': {
                             'links': {

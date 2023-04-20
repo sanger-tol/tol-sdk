@@ -34,6 +34,7 @@ class BaseSchema(SQLAlchemyAutoSchema, JsonapiSchema):
         @classmethod
         def setup_meta(cls):
             cls.type_ = cls.model.get_type()
+            cls.id_column = cls.model.get_id_column()
 
     OPTIONS_CLASS = CombinedOpts
 
@@ -148,7 +149,7 @@ class BaseSchema(SQLAlchemyAutoSchema, JsonapiSchema):
     def _create_one_to_many_relationship_field_by_name_non_enum(cls, name):
         return Relationship(
             f'/{cls.get_type()}/{{id}}/{name}',
-            related_url_kwargs={'id': '<id>'},
+            related_url_kwargs={'id': f'<{cls.get_id_column()}>'},
             many=True,
             type_=name,
             dump_default=lambda: []
@@ -218,6 +219,10 @@ class BaseSchema(SQLAlchemyAutoSchema, JsonapiSchema):
         return cls.Meta.type_
 
     @classmethod
+    def get_id_column(cls):
+        return cls.Meta.id_column
+
+    @classmethod
     def get_excluded_columns(cls, many=False):
         """Gets the excluded columns on both requests and responses"""
         excluded_columns = list(getattr(cls.Meta, 'exclude', []))
@@ -243,7 +248,7 @@ class BaseSchema(SQLAlchemyAutoSchema, JsonapiSchema):
         return [
             column for column
             in cls.Meta.model.get_column_names()
-            if column not in ['id', 'ext'] + cls.get_excluded_columns()
+            if column not in [cls.get_id_column(), 'ext'] + cls.get_excluded_columns()
         ]
 
     @classmethod
@@ -338,7 +343,8 @@ class BaseSchema(SQLAlchemyAutoSchema, JsonapiSchema):
         return self._model_instance_to_datum(data)
 
     def _model_instance_to_datum(self, model_instance):
-        return model_instance.to_dict(exclude_column_names=['ext'])
+        ret = model_instance.to_dict(exclude_column_names=['ext'])
+        return ret
 
     def _re_insert_ext_datum(self, datum, ext_data):
         datum['meta'] = {

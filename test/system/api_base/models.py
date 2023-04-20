@@ -29,9 +29,10 @@ class BModelRelationship(Base):
 
     class Meta:
         type_ = 'b'
+        id_column = 'id_string'
 
     __table_args__ = {'extend_existing': True}
-    id = db.Column(db.Integer, primary_key=True)  # noqa A003
+    id_string = db.Column(db.String, primary_key=True)
     a_id = db.Column(db.Integer, db.ForeignKey('test_a.id'), nullable=False)
     test_a = db.relationship(AModelRelationship, back_populates='test_b', foreign_keys=[a_id])
     test_e = db.relationship('EModelRelationship', back_populates='test_b')
@@ -72,7 +73,7 @@ class EModelRelationship(Base):
 
     __table_args__ = {'extend_existing': True}
     id = db.Column(db.Integer, primary_key=True)  # noqa A003
-    b_id = db.Column(db.Integer, db.ForeignKey('test_b.id'), nullable=False)
+    b_id = db.Column(db.String, db.ForeignKey('test_b.id_string'), nullable=False)
     test_b = db.relationship(BModelRelationship, back_populates='test_e', foreign_keys=[b_id])
 
 

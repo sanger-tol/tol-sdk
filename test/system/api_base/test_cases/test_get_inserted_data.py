@@ -8,12 +8,15 @@ from ..test_case import BaseTestCase
 class TestGetInsertedData(BaseTestCase):
     def test_get_inserted_b_200(self):
         self.add_a(id=90)
-        self.add_b(id=10, a_id=90)
+        self.add_b(id_string='10', a_id=90)
 
         expected = {
             'data': {
                 'type': 'b',
                 'id': '10',
+                'attributes': {
+                    'id_string': '10'
+                },
                 'relationships': {
                     'a': {
                         'data': {

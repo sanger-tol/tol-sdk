@@ -12,11 +12,11 @@ class TestRelationListGet(BaseTestCase):
         self.add_a(id=29)
 
         # add two B's on the first A
-        self.add_b(id=89, a_id=20)
-        self.add_b(id=290, a_id=20)
+        self.add_b(id_string='89', a_id=20)
+        self.add_b(id_string='290', a_id=20)
 
         # add one B on the second A
-        self.add_b(id=8080, a_id=29)
+        self.add_b(id_string='8080', a_id=29)
 
         # get the first A's B's
         response = self.client.open(
@@ -40,34 +40,17 @@ class TestRelationListGet(BaseTestCase):
                     'limit': 20,
                     'total': 2,
                     'types': {
-                        'id': 'int',
+                        'id_string': 'str',
                         'a_id': 'int'
                     }
                 },
                 'data': [
                     {
-                        'id': '89',
-                        'type': 'b',
-                        'relationships': {
-                            'a': {
-                                'data': {
-                                    'id': '20',
-                                    'type': 'a'
-                                },
-                                'links': {
-                                    'related': '/a/20'
-                                }
-                            },
-                            'e': {
-                                'links': {
-                                    'related': '/b/89/e'
-                                }
-                            }
-                        }
-                    },
-                    {
                         'id': '290',
                         'type': 'b',
+                        'attributes': {
+                            'id_string': '290'
+                        },
                         'relationships': {
                             'a': {
                                 'data': {
@@ -81,6 +64,29 @@ class TestRelationListGet(BaseTestCase):
                             'e': {
                                 'links': {
                                     'related': '/b/290/e'
+                                }
+                            }
+                        }
+                    },
+                    {
+                        'id': '89',
+                        'type': 'b',
+                        'attributes': {
+                            'id_string': '89'
+                        },
+                        'relationships': {
+                            'a': {
+                                'data': {
+                                    'id': '20',
+                                    'type': 'a'
+                                },
+                                'links': {
+                                    'related': '/a/20'
+                                }
+                            },
+                            'e': {
+                                'links': {
+                                    'related': '/b/89/e'
                                 }
                             }
                         }
@@ -111,7 +117,7 @@ class TestRelationListGet(BaseTestCase):
                     'limit': 20,
                     'total': 1,
                     'types': {
-                        'id': 'int',
+                        'id_string': 'str',
                         'a_id': 'int'
                     }
                 },
@@ -119,6 +125,9 @@ class TestRelationListGet(BaseTestCase):
                     {
                         'id': '8080',
                         'type': 'b',
+                        'attributes': {
+                            'id_string': '8080'
+                        },
                         'relationships': {
                             'a': {
                                 'data': {
@@ -143,7 +152,7 @@ class TestRelationListGet(BaseTestCase):
     def test_relation_list_get_no_stem_a_b_404(self):
         # add an irrelevant A and connected B
         self.add_a(id=99)
-        self.add_b(id=100, a_id=99)
+        self.add_b(id_string='100', a_id=99)
 
         # try to get the B's of a non-existent A
         response = self.client.open(
@@ -163,7 +172,7 @@ class TestRelationListGet(BaseTestCase):
 
         # add 59 B's
         for i in range(1, 60):
-            self.add_b(id=i, a_id=789)
+            self.add_b(id_string=f'{i}', a_id=789)
 
         # combine parameters on relation list get
         response = self.client.open(
@@ -182,13 +191,13 @@ class TestRelationListGet(BaseTestCase):
         self.add_a(id=298)
 
         # add 3 B's in no particular order
-        self.add_b(id=9090, a_id=298)
-        self.add_b(id=348, a_id=298)
-        self.add_b(id=200000, a_id=298)
+        self.add_b(id_string='9090', a_id=298)
+        self.add_b(id_string='348', a_id=298)
+        self.add_b(id_string='200000', a_id=298)
 
         # combine parameters on relation list get
         response = self.client.open(
-            '/api/v1/a/298/b?sort_by=-id',
+            '/api/v1/a/298/b?sort_by=-id_string',
             method='GET'
         )
         self.assert200(
@@ -207,34 +216,17 @@ class TestRelationListGet(BaseTestCase):
                     'limit': 20,
                     'total': 3,
                     'types': {
-                        'id': 'int',
+                        'id_string': 'str',
                         'a_id': 'int'
                     }
                 },
                 'data': [
                     {
-                        'id': '200000',
-                        'type': 'b',
-                        'relationships': {
-                            'a': {
-                                'data': {
-                                    'id': '298',
-                                    'type': 'a'
-                                },
-                                'links': {
-                                    'related': '/a/298'
-                                }
-                            },
-                            'e': {
-                                'links': {
-                                    'related': '/b/200000/e'
-                                }
-                            }
-                        }
-                    },
-                    {
                         'id': '9090',
                         'type': 'b',
+                        'attributes': {
+                            'id_string': '9090'
+                        },
                         'relationships': {
                             'a': {
                                 'data': {
@@ -255,6 +247,9 @@ class TestRelationListGet(BaseTestCase):
                     {
                         'id': '348',
                         'type': 'b',
+                        'attributes': {
+                            'id_string': '348'
+                        },
                         'relationships': {
                             'a': {
                                 'data': {
@@ -268,6 +263,29 @@ class TestRelationListGet(BaseTestCase):
                             'e': {
                                 'links': {
                                     'related': '/b/348/e'
+                                }
+                            }
+                        }
+                    },
+                    {
+                        'id': '200000',
+                        'type': 'b',
+                        'attributes': {
+                            'id_string': '200000'
+                        },
+                        'relationships': {
+                            'a': {
+                                'data': {
+                                    'id': '298',
+                                    'type': 'a'
+                                },
+                                'links': {
+                                    'related': '/a/298'
+                                }
+                            },
+                            'e': {
+                                'links': {
+                                    'related': '/b/200000/e'
                                 }
                             }
                         }

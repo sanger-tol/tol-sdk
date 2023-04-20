@@ -26,6 +26,7 @@ class TestCreate(BaseTestCase):
         a1 = ApiObject('a', None,
                        attributes={'string_column': 'abc'})
         b1 = ApiObject('b', None,
+                       attributes={'id_string': 'yo'},
                        relationships={'a': a1})
         self.assertIsNone(a1.id)
         self.assertIsNone(b1.id)

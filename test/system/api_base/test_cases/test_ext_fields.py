@@ -98,7 +98,7 @@ class TestExtraFieldsInRequestBody(BaseTestCase):
 
     def test_extra_fields_patch_b_400(self):
         self.add_a(id=50)
-        self.add_b(id=20, a_id=50)
+        self.add_b(id_string='20', a_id=50)
 
         response = self.client.open(
             '/api/v1/b/20',

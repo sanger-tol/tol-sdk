@@ -4,6 +4,8 @@
 
 from __future__ import absolute_import
 
+from marshmallow_jsonapi.fields import Str
+
 from tol.api_base.schema.base import BaseSchema, setup_schema
 
 from .models import AModelRelationship, BModelRelationship, CModelWithNullableColumn, \
@@ -21,6 +23,7 @@ class ASchema(BaseSchema):
 class BSchema(BaseSchema):
     class Meta(BaseSchema.BaseMeta):
         model = BModelRelationship
+    id = Str(attribute='id_string', dump_only=True)  # noqa A003
 
 
 @setup_schema

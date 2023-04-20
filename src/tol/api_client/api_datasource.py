@@ -139,6 +139,8 @@ class ApiDataSource(DataSource):
         return self.get_by_id(type_, id_)
 
     def delete_by_id(self, object_type: str, id_: int):
+        if id_ is None:
+            raise DataSourceError('Object ID must be given')
         url = f'/{object_type}/{id_}'
         response = self._delete(url)
         if response.status_code != 204:

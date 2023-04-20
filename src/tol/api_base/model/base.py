@@ -86,7 +86,7 @@ def setup_model(cls):
 
 class Base(db.Model):
     """The base model class:
-    - Its primary key must be called id.
+    - Its primary key must be called id, or 'id_column' set in the Meta.
     - Do not call anything other than an ExtColumn 'ext'.
     - The declared tablename will be the HTTP endpoint stem
         - It should be plural, e.g. centres
@@ -203,6 +203,7 @@ class Base(db.Model):
             in self.get_column_names()
             if column_name not in exclude_column_names
         }
+
         if not convert_enums:
             return dict_data
         return self._convert_foreign_key_ids_to_enum_names(dict_data)
@@ -210,6 +211,10 @@ class Base(db.Model):
     @classmethod
     def get_type(cls):
         return cls.Meta.type_
+
+    @classmethod
+    def get_id_column(cls):
+        return getattr(cls.Meta, 'id_column', 'id')
 
     @classmethod
     def _register_model(cls):
@@ -386,7 +391,7 @@ class Base(db.Model):
     @classmethod
     def _sort_by_query(cls, query, sort_by):
         if sort_by is None:
-            return query.order_by(cls.id)
+            return query.order_by(getattr(cls, cls.get_id_column()))
         (sort_by_attribute, ascending) = sort_by
         if sort_by_attribute in cls._get_related_enum_table_names():
             return cls._get_sort_by_enum(
@@ -525,7 +530,7 @@ class Base(db.Model):
     @classmethod
     def _check_related_model_by_id_exists(cls, relation_model, relation_id):
         related_instance = db.session.query(relation_model) \
-                                     .filter_by(id=relation_id) \
+                                     .filter_by(**{relation_model.get_id_column(): relation_id}) \
                                      .one_or_none()
         if related_instance is None:
             raise StemInstanceDoesNotExistException(
@@ -543,7 +548,7 @@ class Base(db.Model):
                 relation_model.get_type(),
                 relation_name
             )
-        return related_instance.id
+        return getattr(related_instance, relation_model.get_id_column())
 
     @staticmethod
     def rollback():
@@ -556,7 +561,7 @@ class Base(db.Model):
 
     @classmethod
     def find_by_id(cls, id_):
-        instance = cls.query().filter_by(id=id_).one_or_none()
+        instance = cls.query().filter_by(**{cls.get_id_column(): id_}).one_or_none()
         if instance is None:
             raise InstanceDoesNotExistException(
                 cls.get_type(),

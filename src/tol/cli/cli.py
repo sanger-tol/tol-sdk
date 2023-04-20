@@ -58,9 +58,9 @@ def up(ctx, ui, db, api):
     click.secho(command, fg='green')
     run(command)
     if api:
-        click.secho('API: ' + get_container_url(f'{service}-api'), fg='yellow')
+        click.secho('API: ' + ' '.join(get_container_urls(f'{service}-api')), fg='yellow')
     if ui:
-        click.secho('UI: ' + get_container_url(f'{service}-ui'), fg='yellow')
+        click.secho('UI: ' + ' '.join(get_container_urls(f'{service}-ui')), fg='yellow')
 
 
 # Log a ToL service
@@ -230,19 +230,21 @@ def run_capture(command):
     return s.stdout.decode('utf-8')
 
 
-def get_container_id(name):
+def get_container_ids(name_prefix):
+    ids = []
     output = run_capture('docker container ls')
     for line in output.split('\n'):
-        if re.search(name, line):
-            id_ = line.split()[0]
-    return id_
+        if re.search(name_prefix, line):
+            ids.append(line.split()[0])
+    return ids
 
 
-def get_container_url(name):
-    url = ''
-    container_id = get_container_id(name)
-    if container_id != '':
-        mapping = run_capture(f'docker container port {container_id}')
-        if mapping != '':
-            url = 'http://' + mapping.split()[2]
-    return url
+def get_container_urls(name_prefix):
+    urls = []
+    container_ids = get_container_ids(name_prefix)
+    for container_id in container_ids:
+        if container_id != '':
+            mapping = run_capture(f'docker container port {container_id}')
+            if mapping != '':
+                urls.append('http://' + mapping.split()[2])
+    return urls

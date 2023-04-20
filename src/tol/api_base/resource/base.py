@@ -166,13 +166,13 @@ def _document_detail_resource(cls):
     _document_detail_get(cls)
     _document_patch(cls)
     _document_delete(cls)
-    return api.route('/<int:id>')(cls)
+    return api.route('/<id>')(cls)
 
 
 def _document_relation_list_resource(cls, relation):
     api, _ = _get_api_swagger(cls)
     _document_relation_list_get(cls, relation)
-    return api.route(f'/<int:id>/{relation}')(cls)
+    return api.route(f'/<id>/{relation}')(cls)
 
 
 def _document_enum_detail_resource(cls):

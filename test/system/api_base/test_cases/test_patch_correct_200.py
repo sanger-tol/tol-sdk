@@ -12,7 +12,7 @@ class TestUpdatedCorrectly200(BaseTestCase):
         b_id = 218
         self.add_a(id=a_id)
         self.add_a(id=new_a_id)
-        self.add_b(id=b_id, a_id=a_id)
+        self.add_b(id_string=b_id, a_id=a_id)
 
         response = self.client.open(
             f'/api/v1/b/{b_id}',
@@ -43,6 +43,9 @@ class TestUpdatedCorrectly200(BaseTestCase):
                 'data': {
                     'id': str(b_id),
                     'type': 'b',
+                    'attributes': {
+                        'id_string': str(b_id)
+                    },
                     'relationships': {
                         'a': {
                             'data': {

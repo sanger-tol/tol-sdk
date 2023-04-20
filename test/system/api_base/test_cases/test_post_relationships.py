@@ -15,7 +15,9 @@ class TestPostRelationships(BaseTestCase):
             json={
                 'data': {
                     'type': 'b',
-                    'attributes': {},
+                    'attributes': {
+                        'id_string': 'hello'
+                    },
                     'relationships': {
                         'a': {
                             'data': {
@@ -39,6 +41,9 @@ class TestPostRelationships(BaseTestCase):
                 'data': {
                     'type': 'b',
                     'id': id_,
+                    'attributes': {
+                        'id_string': id_
+                    },
                     'relationships': {
                         'a': {
                             'links': {

@@ -30,7 +30,7 @@ class TestDelete(BaseTestCase):
 
     def test_delete_with_relationship(self):
         self.add_a(id=20, string_column='test')
-        self.add_b(id=89, a_id=20)
+        self.add_b(id_string='89', a_id=20)
         ads = TestApiDataSource({'client': self.client,
                                  'url': 'none',
                                  'key': self.token_1})
@@ -47,12 +47,23 @@ class TestDelete(BaseTestCase):
         bs = list(ads.get_list('b'))
         self.assertEqual(0, len(bs))
 
-    def test_delete_non_existing(self):
+    def test_delete_no_id(self):
         ads = TestApiDataSource({'client': self.client,
                                  'url': 'none',
                                  'key': self.token_1})
 
         g1 = ApiObject('g', None,
+                       attributes={'string_column': 'test'})
+
+        self.assertRaises(DataSourceError, ads.delete, g1)
+        self.assertEqual(0, ads.delete_count)
+
+    def test_delete_non_existing(self):
+        ads = TestApiDataSource({'client': self.client,
+                                 'url': 'none',
+                                 'key': self.token_1})
+
+        g1 = ApiObject('g', 999999,
                        attributes={'string_column': 'test'})
 
         self.assertRaises(DataSourceError, ads.delete, g1)
