@@ -37,7 +37,7 @@ class TestUpdate(BaseTestCase):
 
     def test_update_with_relationship(self):
         self.add_a(id=20, string_column='test')
-        self.add_b(id=89, a_id=20)
+        self.add_b(id_string=89, a_id=20)
         ads = TestOldApiDataSource(
             {
                 'client': self.client,
@@ -63,11 +63,11 @@ class TestUpdate(BaseTestCase):
         self.assertEqual(1, ads.patch_count)
 
         self.assertEqual('abc', b.a.string_column)
-        self.assertNotEqual('20', b.a.id)
+        self.assertNotEqual('20', b.a.id_string)
 
     def test_update_with_relationship_not_created(self):
         self.add_a(id=20, string_column='test')
-        self.add_b(id=89, a_id=20)
+        self.add_b(id_string=89, a_id=20)
         ads = TestOldApiDataSource(
             {
                 'client': self.client,
