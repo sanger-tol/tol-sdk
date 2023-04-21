@@ -40,7 +40,6 @@ class TestRelationListGet(BaseTestCase):
                     'limit': 20,
                     'total': 2,
                     'types': {
-                        'id_string': 'str',
                         'a_id': 'int'
                     }
                 },
@@ -48,9 +47,6 @@ class TestRelationListGet(BaseTestCase):
                     {
                         'id': '290',
                         'type': 'b',
-                        'attributes': {
-                            'id_string': '290'
-                        },
                         'relationships': {
                             'a': {
                                 'data': {
@@ -71,9 +67,6 @@ class TestRelationListGet(BaseTestCase):
                     {
                         'id': '89',
                         'type': 'b',
-                        'attributes': {
-                            'id_string': '89'
-                        },
                         'relationships': {
                             'a': {
                                 'data': {
@@ -117,7 +110,6 @@ class TestRelationListGet(BaseTestCase):
                     'limit': 20,
                     'total': 1,
                     'types': {
-                        'id_string': 'str',
                         'a_id': 'int'
                     }
                 },
@@ -125,9 +117,6 @@ class TestRelationListGet(BaseTestCase):
                     {
                         'id': '8080',
                         'type': 'b',
-                        'attributes': {
-                            'id_string': '8080'
-                        },
                         'relationships': {
                             'a': {
                                 'data': {
@@ -172,7 +161,7 @@ class TestRelationListGet(BaseTestCase):
 
         # add 59 B's
         for i in range(1, 60):
-            self.add_b(id_string=f'{i}', a_id=789)
+            self.add_b(id_string=str(i), a_id=789)
 
         # combine parameters on relation list get
         response = self.client.open(
@@ -197,7 +186,7 @@ class TestRelationListGet(BaseTestCase):
 
         # combine parameters on relation list get
         response = self.client.open(
-            '/api/v1/a/298/b?sort_by=-id_string',
+            '/api/v1/a/298/b?sort_by=-id',
             method='GET'
         )
         self.assert200(
@@ -216,7 +205,6 @@ class TestRelationListGet(BaseTestCase):
                     'limit': 20,
                     'total': 3,
                     'types': {
-                        'id_string': 'str',
                         'a_id': 'int'
                     }
                 },
@@ -224,9 +212,6 @@ class TestRelationListGet(BaseTestCase):
                     {
                         'id': '9090',
                         'type': 'b',
-                        'attributes': {
-                            'id_string': '9090'
-                        },
                         'relationships': {
                             'a': {
                                 'data': {
@@ -247,9 +232,6 @@ class TestRelationListGet(BaseTestCase):
                     {
                         'id': '348',
                         'type': 'b',
-                        'attributes': {
-                            'id_string': '348'
-                        },
                         'relationships': {
                             'a': {
                                 'data': {
@@ -270,9 +252,6 @@ class TestRelationListGet(BaseTestCase):
                     {
                         'id': '200000',
                         'type': 'b',
-                        'attributes': {
-                            'id_string': '200000'
-                        },
                         'relationships': {
                             'a': {
                                 'data': {

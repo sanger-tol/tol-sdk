@@ -229,6 +229,8 @@ class BaseSchema(SQLAlchemyAutoSchema, JsonapiSchema):
         excluded_columns += cls.Meta.model.get_foreign_key_column_names()
         if many and cls.has_log_details():
             excluded_columns.append('history')
+        if hasattr(cls.Meta.model.Meta, 'id_column'):
+            excluded_columns.append(cls.Meta.model.Meta.id_column)
         return excluded_columns
 
     @classmethod
