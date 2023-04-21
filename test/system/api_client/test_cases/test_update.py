@@ -2,10 +2,10 @@
 #
 # SPDX-License-Identifier: MIT
 
-from tol.api_client import ApiObject
+from tol.api_client import OldApiObject
 from tol.core import DataSourceError
 
-from ..test_api_datasource import TestApiDataSource
+from ..test_old_api_datasource import TestOldApiDataSource
 from ...api_base.test_case import BaseTestCase
 
 
@@ -16,9 +16,13 @@ class TestUpdate(BaseTestCase):
             'other_column': 'fine'
         }
         self.add_c(**c_1)
-        ads = TestApiDataSource({'client': self.client,
-                                 'url': 'none',
-                                 'key': self.token_1})
+        ads = TestOldApiDataSource(
+            {
+                'client': self.client,
+                'url': 'none',
+                'key': self.token_1
+            }
+        )
         cs = list(ads.get_list('c', object_filters={'exact': {'other_column': 'fine'}}))
         self.assertEqual(1, len(cs))
         c = cs[0]
@@ -33,13 +37,20 @@ class TestUpdate(BaseTestCase):
 
     def test_update_with_relationship(self):
         self.add_a(id=20, string_column='test')
-        self.add_b(id_string='89', a_id=20)
-        ads = TestApiDataSource({'client': self.client,
-                                 'url': 'none',
-                                 'key': self.token_1})
+        self.add_b(id=89, a_id=20)
+        ads = TestOldApiDataSource(
+            {
+                'client': self.client,
+                'url': 'none',
+                'key': self.token_1
+            }
+        )
 
-        new_a = ApiObject('a', None,
-                          attributes={'string_column': 'abc'})
+        new_a = OldApiObject(
+            'a',
+            None,
+            attributes={'string_column': 'abc'}
+        )
         ads.create(new_a)
 
         # Get the b already in the database
@@ -56,13 +67,20 @@ class TestUpdate(BaseTestCase):
 
     def test_update_with_relationship_not_created(self):
         self.add_a(id=20, string_column='test')
-        self.add_b(id_string='89', a_id=20)
-        ads = TestApiDataSource({'client': self.client,
-                                 'url': 'none',
-                                 'key': self.token_1})
+        self.add_b(id=89, a_id=20)
+        ads = TestOldApiDataSource(
+            {
+                'client': self.client,
+                'url': 'none',
+                'key': self.token_1
+            }
+        )
 
-        new_a = ApiObject('a', None,
-                          attributes={'string_column': 'abc'})
+        new_a = OldApiObject(
+            'a',
+            None,
+            attributes={'string_column': 'abc'}
+        )
 
         # Get the b already in the database
         bs = list(ads.get_list('b'))

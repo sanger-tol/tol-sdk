@@ -4,35 +4,45 @@
 
 from __future__ import annotations
 
-from abc import ABC
+from abc import ABC, abstractproperty
 from collections.abc import Iterable as IterableABC
-from typing import Any, Dict, Iterable
+from typing import Any, Dict, Iterable, List
+from uuid import uuid4
 
 
 DataDict = Dict[str, Any]
 
 
-class DataObject(ABC):
+class TypedObject(ABC):
+    @abstractproperty
+    def type(self) -> str:  # noqa
+        pass
+
+
+class DataObject(TypedObject):
     """
-    The abstract base class for the unit of data
-    on which a DataSource operates.
+    The unit of data on which a DataSource operates.
     """
+
+    __NON_FIELD_NAMES = [
+        'id',
+        'type'
+    ]
 
     def __init__(
         self,
         object_type: str,
         data: DataDict = None
     ):
-        # this ugliness is needed to bypass infinite recursion on
-        # __setattr__
-        object.__setattr__(self, '_field_keys', set())
-        object.__setattr__(self, '_object_type', object_type)
+        self.id: str = None
+        self.__object_type = object_type
+        self.__request_internal_uuid = uuid4().hex
         if data is not None:
             self.set_data(data)
 
     @property
-    def object_type(self) -> str:
-        return self._object_type
+    def type(self) -> str:  # noqa
+        return self.__object_type
 
     def set_data(self, data: DataDict) -> None:
         """
@@ -49,7 +59,7 @@ class DataObject(ABC):
         """
         return {
             key: getattr(self, key)
-            for key in self._field_keys
+            for key in self.__get_field_names()
             if self.__is_attribute(key)
         }
 
@@ -62,7 +72,7 @@ class DataObject(ABC):
         """
         return {
             key: getattr(self, key)
-            for key in self._field_keys
+            for key in self.__get_field_names()
             if self.__is_to_one_relationship(key)
         }
 
@@ -74,13 +84,18 @@ class DataObject(ABC):
         """
         return {
             key: getattr(self, key)
-            for key in self._field_keys
+            for key in self.__get_field_names()
             if self.__is_to_many_relationship(key)
         }
 
-    def __setattr__(self, name: str, value: Any) -> None:
-        self._field_keys.add(name)
-        return super().__setattr__(name, value)
+    @property
+    def _request_internal_uuid(self) -> str:
+        """
+        A UUID for references by other DataObject instances, when
+        formatted as a flat list of DataObject dumps in an upsert
+        request.
+        """
+        return self.__request_internal_uuid
 
     def __is_attribute(self, name: str) -> bool:
         return (
@@ -98,3 +113,10 @@ class DataObject(ABC):
             isinstance(value, IterableABC)
             and not isinstance(value, str)
         )
+
+    def __get_field_names(self) -> List[str]:
+        return [
+            v for v in vars(self)
+            if not v.startswith('_')
+            and v not in self.__NON_FIELD_NAMES
+        ]

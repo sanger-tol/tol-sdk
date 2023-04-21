@@ -24,13 +24,11 @@ class UnsupportedOperationException(NotImplementedError):
         self,
         obj: DataSource,
         method: Callable,
-        object_type: str,
         message: str = None
     ):
         rendered_message = self.__render_message(
             obj,
             method,
-            object_type,
             message
         )
         super().__init__(rendered_message)
@@ -39,11 +37,10 @@ class UnsupportedOperationException(NotImplementedError):
         self,
         obj: DataSource,
         method: Callable,
-        object_type: str,
         message: str
     ) -> str:
         auto_message = (
-            f'The operation {method.__name__} for type {object_type} '
+            f'The operation {method.__name__} '
             f'is unsupported on {obj.__class__.__name__}.'
         )
         if message is None:
@@ -58,8 +55,8 @@ def unsupported(message: str = None) -> Callable:
     unsupported on the inherited class and will raise an
     UnsupportedOperationException if called.
 
-    This decorator can be used with or without parentheses after,
-    the former supporting providing an optional message to
+    This decorator must be used with parentheses after,
+    in which an optional message may be provided to
     any UnsupportedOperationException resulting from an
     operation invocation.
 
@@ -78,11 +75,10 @@ def unsupported(message: str = None) -> Callable:
 
     def decorator(operation: Callable) -> Callable:
         @wraps(operation)
-        def wrapper(obj: DataSource, object_type: str, *args, **kwargs) -> None:
+        def wrapper(obj: DataSource, *args, **kwargs) -> None:
             raise UnsupportedOperationException(
                 obj,
                 operation,
-                object_type,
                 message=message
             )
         wrapper._unsupported = True
@@ -90,6 +86,40 @@ def unsupported(message: str = None) -> Callable:
     return decorator
 
 
+def operation(method: Callable) -> Callable:
+    """
+    Indicates a central operation on a DataSource. Only to be used
+    on the base DataSource, for operations common to all (or
+    unsupported)
+    """
+
+    @wraps(method)
+    @abstractmethod
+    def wrapper(obj: DataSource, *args, **kwargs) -> None:
+        return method(obj, *args, **kwargs)
+
+    wrapper._operation = True
+    return wrapper
+
+
+def setup_operations(ds_class: DataSource) -> DataSource:
+
+    def __member_is_operation(member: Any) -> bool:
+        return getattr(member, '_operation', False) is True
+
+    members = {
+        m: v
+        for m, v in vars(ds_class).items()
+        if not m.startswith('_')
+    }
+    ds_class._operations = [
+        m for m, v in members.items()
+        if __member_is_operation(v)
+    ]
+    return ds_class
+
+
+@setup_operations
 class DataSource(ABC):
     """
     The central class for managing operations on heterogeneous data sources.
@@ -102,12 +132,7 @@ class DataSource(ABC):
 
     DEFAULT_PAGE_SIZE = 20
 
-    __OPERATIONS = [
-        'get_by_id',
-        'get_list_page',
-        'get_list',
-        'upsert'
-    ]
+    _operations: List[str]
 
     def __init__(self, config: DataSourceConfig, expected: List[str] = None):
         self.__validate_config(config, expected)
@@ -117,19 +142,27 @@ class DataSource(ABC):
     @property
     def supported_operations(self) -> List[str]:
         return [
-            operation for operation in self.__OPERATIONS
+            operation for operation in self._operations
             if self.__operation_is_supported(operation)
         ]
 
-    def session(self) -> DataSourceSession:
-        return DataSourceSession(self)
+    def session(
+        self,
+        multi_type: bool = False
+    ) -> DataSourceSession:
+        """
+        Returns a DataSourceSession object for batching upserts.
+
+        Parameters:
+        - multi_type - whether to call mutli_type_upsert once, or
+                       call upsert for each iterable of each
+                       object_type
+        """
+        return DataSourceSession(self, multi_type)
 
     def __operation_is_supported(self, name) -> bool:
         operation = getattr(self, name)
-        return (
-            hasattr(operation, '_unsupported')
-            and operation._unsupported is True
-        ) is False
+        return getattr(operation, '_unsupported', False) is False
 
     def __validate_config(
         self,
@@ -145,7 +178,7 @@ class DataSource(ABC):
                     detail=f'{k} missing in config dict'
                 )
 
-    @abstractmethod
+    @operation
     def get_by_id(
         self,
         object_type: str,
@@ -157,7 +190,7 @@ class DataSource(ABC):
         with their id's equal to those given in the object_ids Iterable.
         """
 
-    @abstractmethod
+    @operation
     def get_list_page(
         self,
         object_type: str,
@@ -174,7 +207,7 @@ class DataSource(ABC):
         - The total number of DataObjects that matches the filter
         """
 
-    @abstractmethod
+    @operation
     def get_list(
         self,
         object_type: str,
@@ -185,7 +218,7 @@ class DataSource(ABC):
         Gets a generator of DataObject instances
         """
 
-    @abstractmethod
+    @operation
     def upsert(
         self,
         object_type: str,
@@ -194,6 +227,24 @@ class DataSource(ABC):
     ) -> None:
         """
         Takes an iterable of DataObjects of the same object_type,
+        and for each, performs either:
+
+        - an insert (if they don't exist already)
+        - an update (if they do)
+
+        If the objects are of different types, or their types are
+        unknown at runtime, use upsert_mutliple_type(). Many DataSource
+        instances will support only one of these two methods.
+        """
+
+    @operation
+    def upsert_multiple_type(
+        self,
+        objects: Iterable[DataObject],
+        **kwargs
+    ) -> None:
+        """
+        Takes an iterable of DataObjects of any (and mixed) object_type,
         and for each, performs either:
 
         - an insert (if they don't exist already)
@@ -211,4 +262,8 @@ class ReadOnlyDataSource(DataSource, ABC):
 
     @unsupported('This DataSource is readonly.')
     def upsert(self, object_type: str, *args, **kwargs) -> None:
+        pass
+
+    @unsupported('This DataSource is readonly.')
+    def upsert_multiple_type(self, *args, **kwargs) -> None:
         pass

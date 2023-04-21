@@ -3,13 +3,13 @@
 # SPDX-License-Identifier: MIT
 
 from tol.api_client import (
-    ApiDataSource
+    OldApiDataSource
 )
 
 
-class TestApiDataSource(ApiDataSource):
+class TestOldApiDataSource(OldApiDataSource):
     def __init__(self, config):
-        super(TestApiDataSource, self).__init__(config)
+        super(TestOldApiDataSource, self).__init__(config)
         self.get_count = 0
         self.post_count = 0
         self.patch_count = 0

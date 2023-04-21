@@ -17,7 +17,8 @@ from ..core import (
     DataObject,
     DataSource,
     DataSourceError,
-    DataSourceFilter
+    DataSourceFilter,
+    unsupported
 )
 
 
@@ -168,3 +169,7 @@ class ElasticDataSource(DataSource):
     def _convert_dict_to_data_objects(self, objs: Dict) -> Iterable:
         for obj in objs:
             yield DataObject('run-data', obj['_source'])
+
+    @unsupported()
+    def upsert_multiple_type(self, *args, **kwargs) -> None:
+        pass

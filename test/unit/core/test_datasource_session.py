@@ -4,7 +4,11 @@
 
 from unittest.mock import MagicMock
 
-from tol.core import DataObject, DataSource, unsupported
+from tol.core import (
+    DataObject,
+    DataSource,
+    unsupported
+)
 from tol.core.datasource_session import DataSourceSession
 
 
@@ -23,6 +27,10 @@ class MockDataSource(DataSource):
 
     @unsupported()
     def get_list(self, object_type: str, *args, **kwargs):
+        pass
+
+    @unsupported()
+    def upsert_multiple_type(self, *args, **kwargs) -> None:
         pass
 
 
@@ -67,7 +75,7 @@ class TestDataSourceSession:
         sess.upsert(objects)
         sess.commit()
         expected = [
-            (obj.object_type, [obj])
+            (obj.type, [obj])
             for obj in objects
         ]
         observed = [
@@ -95,7 +103,7 @@ class TestDataSourceSession:
         sess.commit()
         # should be treated as one
         expected = [
-            (obj.object_type, [obj, obj])
+            (obj.type, [obj, obj])
             for obj in objects
         ]
         observed = [
@@ -123,7 +131,7 @@ class TestDataSourceSession:
         # should have commited on leaving scope
         # should be treated as one
         expected = [
-            (obj.object_type, [obj, obj])
+            (obj.type, [obj, obj])
             for obj in objects
         ]
         observed = [
@@ -154,7 +162,7 @@ class TestDataSourceSession:
         # should have commited on leaving scope
         # should be treated as one
         expected = [
-            (obj.object_type, [obj, obj])
+            (obj.type, [obj, obj])
             for obj in reversed(objects_list)
         ]
         observed = [

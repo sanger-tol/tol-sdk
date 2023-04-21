@@ -9,10 +9,10 @@ from caseconverter import (
 )
 
 
-class ApiObject(object):
+class OldApiObject(object):
 
     def __init__(self, type_, id_, attributes={}, relationships={}):
-        super(ApiObject, self).__init__()
+        super(OldApiObject, self).__init__()
         self._id = id_
         self._type = type_
         self.update_attributes_from_dict(attributes)
@@ -20,10 +20,12 @@ class ApiObject(object):
 
     @classmethod
     def create(cls, json_obj: Dict):
-        return ApiObject(json_obj['type'],
-                         json_obj['id'],
-                         json_obj.get('attributes', {}),
-                         json_obj.get('relationships', {}))
+        return OldApiObject(
+            json_obj['type'],
+            json_obj['id'],
+            json_obj.get('attributes', {}),
+            json_obj.get('relationships', {})
+        )
 
     @property
     def type(self):  # noqa A003

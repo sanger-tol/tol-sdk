@@ -43,16 +43,19 @@ class TestElasticDataSource(TestCase):
                     'doc_as_upsert': True,
                     '_index': 'index',
                     '_id': 1,
-                    'doc': {'id': 1, 'field1': 'value1', 'field2': 'value2',
-                            'datefield': dt.isoformat(),
-                            'tol_updated_at': dt.isoformat(),
-                            'tol_checksum': 'abc123'}}
+                    'doc': {
+                        'field1': 'value1',
+                        'field2': 'value2',
+                        'datefield': dt.isoformat(),
+                        'tol_updated_at': dt.isoformat(),
+                        'tol_checksum': 'abc123'
+                    }}
         self.assertEqual(expected, next(generator))
         expected = {'_op_type': 'update',
                     'doc_as_upsert': True,
                     '_index': 'index',
                     '_id': 2,
-                    'doc': {'id': 2, 'field1': 'value3', 'field2': 'value4',
+                    'doc': {'field1': 'value3', 'field2': 'value4',
                             'tol_updated_at': dt.isoformat(),
                             'tol_checksum': 'abc123'}}
         self.assertEqual(expected, next(generator))

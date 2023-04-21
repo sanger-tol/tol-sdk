@@ -7,14 +7,14 @@ from typing import (Dict)
 import requests
 
 from ..api_client import (
-    ApiDataSource
+    OldApiDataSource
 )
 from ..core import (
     unsupported
 )
 
 
-class StsDataSource(ApiDataSource):
+class StsDataSource(OldApiDataSource):
     """
     This class extends ApiDataSource to expose native STS endpoints.
     From the ApiDataSource point of view this is read-only, however

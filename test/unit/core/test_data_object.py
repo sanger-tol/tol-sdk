@@ -55,7 +55,6 @@ class TestDataObject:
         ]
         specimen.assigned_samples = samples
         assert specimen.attributes == {
-            'id': 'test',
             'biospecimen_id': 'I do not know what these look like'
         }
         assert specimen.to_one_relationships == {

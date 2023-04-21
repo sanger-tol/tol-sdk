@@ -2,10 +2,10 @@
 #
 # SPDX-License-Identifier: MIT
 
-from tol.api_client import ApiObject
+from tol.api_client import OldApiObject
 from tol.core import DataSourceError
 
-from ..test_api_datasource import TestApiDataSource
+from ..test_old_api_datasource import TestOldApiDataSource
 from ...api_base.test_case import BaseTestCase
 
 
@@ -16,9 +16,13 @@ class TestDelete(BaseTestCase):
             'string_column': 'fine'
         }
         self.add_g(**g_1)
-        ads = TestApiDataSource({'client': self.client,
-                                 'url': 'none',
-                                 'key': self.token_1})
+        ads = TestOldApiDataSource(
+            {
+                'client': self.client,
+                'url': 'none',
+                'key': self.token_1
+            }
+        )
         gs = list(ads.get_list('g', object_filters={'exact': {'string_column': 'fine'}}))
         self.assertEqual(1, len(gs))
         g = gs[0]
@@ -30,10 +34,14 @@ class TestDelete(BaseTestCase):
 
     def test_delete_with_relationship(self):
         self.add_a(id=20, string_column='test')
-        self.add_b(id_string='89', a_id=20)
-        ads = TestApiDataSource({'client': self.client,
-                                 'url': 'none',
-                                 'key': self.token_1})
+        self.add_b(id=89, a_id=20)
+        ads = TestOldApiDataSource(
+            {
+                'client': self.client,
+                'url': 'none',
+                'key': self.token_1
+            }
+        )
 
         # Get the b already in the database
         bs = list(ads.get_list('b'))
@@ -47,13 +55,20 @@ class TestDelete(BaseTestCase):
         bs = list(ads.get_list('b'))
         self.assertEqual(0, len(bs))
 
-    def test_delete_no_id(self):
-        ads = TestApiDataSource({'client': self.client,
-                                 'url': 'none',
-                                 'key': self.token_1})
+    def test_delete_non_existing(self):
+        ads = TestOldApiDataSource(
+            {
+                'client': self.client,
+                'url': 'none',
+                'key': self.token_1
+            }
+        )
 
-        g1 = ApiObject('g', None,
-                       attributes={'string_column': 'test'})
+        g1 = OldApiObject(
+            'g',
+            None,
+            attributes={'string_column': 'test'}
+        )
 
         self.assertRaises(DataSourceError, ads.delete, g1)
         self.assertEqual(0, ads.delete_count)

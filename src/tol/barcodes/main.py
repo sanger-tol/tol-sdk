@@ -156,3 +156,7 @@ class Interface(DataSource):
     @unsupported()
     def get_list(self, object_type: str, *args, **kwargs) -> None:
         pass
+
+    @unsupported()
+    def upsert_multiple_type(self, *args, **kwargs) -> None:
+        pass

@@ -4,7 +4,7 @@
 
 import math
 
-from ..test_api_datasource import TestApiDataSource
+from ..test_old_api_datasource import TestOldApiDataSource
 from ...api_base.test_case import BaseTestCase
 
 
@@ -25,9 +25,13 @@ class TestListGet(BaseTestCase):
         self.add_c(**c_2)
         self.add_c(**c_3)
 
-        ads = TestApiDataSource({'client': self.client,
-                                 'url': 'none',
-                                 'key': self.token_1})
+        ads = TestOldApiDataSource(
+            {
+                'client': self.client,
+                'url': 'none',
+                'key': self.token_1
+            }
+        )
         ret = ads.get_list('c')
 
         self.assertEqual(3, len(ret))
@@ -63,9 +67,13 @@ class TestListGet(BaseTestCase):
         self.add_c(**c_2)
         self.add_c(**c_3)
 
-        ads = TestApiDataSource({'client': self.client,
-                                 'url': 'none',
-                                 'key': self.token_1})
+        ads = TestOldApiDataSource(
+            {
+                'client': self.client,
+                'url': 'none',
+                'key': self.token_1
+            }
+        )
         ret = ads.get_list('c', sort_by='nullable_column')
 
         self.assertEqual(3, len(ret))
@@ -95,9 +103,13 @@ class TestListGet(BaseTestCase):
         self.add_c(**c_2)
         self.add_c(**c_3)
 
-        ads = TestApiDataSource({'client': self.client,
-                                 'url': 'none',
-                                 'key': self.token_1})
+        ads = TestOldApiDataSource(
+            {
+                'client': self.client,
+                'url': 'none',
+                'key': self.token_1
+            }
+        )
         ret = ads.get_list('c', object_filters={'exact': {'nullable_column': 'fine'}})
 
         self.assertEqual(1, len(ret))
@@ -112,9 +124,13 @@ class TestListGet(BaseTestCase):
                 nullable_column='attack of the clones'
             )
 
-        ads = TestApiDataSource({'client': self.client,
-                                 'url': 'none',
-                                 'key': self.token_1})
+        ads = TestOldApiDataSource(
+            {
+                'client': self.client,
+                'url': 'none',
+                'key': self.token_1
+            }
+        )
         ret = ads.get_list('c')
 
         count = 0
@@ -131,9 +147,13 @@ class TestListGet(BaseTestCase):
                 nullable_column='attack of the clones'
             )
 
-        ads = TestApiDataSource({'client': self.client,
-                                 'url': 'none',
-                                 'key': self.token_1})
+        ads = TestOldApiDataSource(
+            {
+                'client': self.client,
+                'url': 'none',
+                'key': self.token_1
+            }
+        )
         ret = ads.get_list('c')
 
         count = 0
@@ -152,9 +172,13 @@ class TestListGet(BaseTestCase):
                 nullable_column='attack of the clones'
             )
 
-        ads = TestApiDataSource({'client': self.client,
-                                 'url': 'none',
-                                 'key': self.token_1})
+        ads = TestOldApiDataSource(
+            {
+                'client': self.client,
+                'url': 'none',
+                'key': self.token_1
+            }
+        )
         ret = ads.get_list('c', page_size=5)
 
         count = 0

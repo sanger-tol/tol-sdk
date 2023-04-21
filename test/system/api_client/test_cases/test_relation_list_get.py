@@ -2,7 +2,7 @@
 #
 # SPDX-License-Identifier: MIT
 
-from ..test_api_datasource import TestApiDataSource
+from ..test_old_api_datasource import TestOldApiDataSource
 from ...api_base.test_case import BaseTestCase
 
 
@@ -19,9 +19,13 @@ class TestListGet(BaseTestCase):
         # add one B on the second A
         self.add_b(id_string='8080', a_id=29)
 
-        ads = TestApiDataSource({'client': self.client,
-                                 'url': 'none',
-                                 'key': self.token_1})
+        ads = TestOldApiDataSource(
+            {
+                'client': self.client,
+                'url': 'none',
+                'key': self.token_1
+            }
+        )
         ret = ads.get_list('b')
 
         self.assertEqual(3, len(ret))
