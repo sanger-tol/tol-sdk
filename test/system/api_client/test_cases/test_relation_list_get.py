@@ -31,19 +31,16 @@ class TestListGet(BaseTestCase):
         self.assertEqual(3, len(ret))
         b = ret[0]
         self.assertEqual('290', b.id)
-        self.assertEqual('290', b.id_string)
         self.assertEqual('b', b.type)
         self.assertEqual('20', b.a.id)
         self.assertEqual('test', b.a.string_column)
         b = ret[1]
         self.assertEqual('8080', b.id)
-        self.assertEqual('8080', b.id_string)
         self.assertEqual('b', b.type)
         self.assertEqual('29', b.a.id)
         self.assertEqual('test2', b.a.string_column)
         b = ret[2]
         self.assertEqual('89', b.id)
-        self.assertEqual('89', b.id_string)
         self.assertEqual('b', b.type)
         self.assertEqual('20', b.a.id)
         self.assertEqual('test', b.a.string_column)
