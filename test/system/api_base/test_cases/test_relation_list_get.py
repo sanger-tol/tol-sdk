@@ -40,7 +40,8 @@ class TestRelationListGet(BaseTestCase):
                     'limit': 20,
                     'total': 2,
                     'types': {
-                        'a_id': 'int'
+                        'a_id': 'int',
+                        'id_string': 'str'
                     }
                 },
                 'data': [
@@ -110,7 +111,8 @@ class TestRelationListGet(BaseTestCase):
                     'limit': 20,
                     'total': 1,
                     'types': {
-                        'a_id': 'int'
+                        'a_id': 'int',
+                        'id_string': 'str'
                     }
                 },
                 'data': [
