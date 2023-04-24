@@ -9,7 +9,7 @@ from itertools import chain
 from typing import Dict, Iterable, List
 
 from .data_object import DataObject
-from .typed_object_dict import TypedObjectDict
+from .data_object_dict import DataObjectDict
 
 if typing.TYPE_CHECKING:
     from .datasource import DataSource
@@ -67,6 +67,6 @@ class DataSourceSession:
         )
 
     def __separate_upserts(self) -> Dict[str, List[DataObject]]:
-        upsert_dict = TypedObjectDict()
+        upsert_dict = DataObjectDict()
         upsert_dict.add_bulk(self.__upserts)
         return upsert_dict

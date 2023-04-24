@@ -9,9 +9,9 @@ from typing import Iterable
 from .data_object import DataObjectABC
 
 
-class TypedObjectDict(dict):
+class DataObjectDict(dict):
     """
-    A dictionary that supports an add method, taking a TypedObject
+    A dictionary that supports an add method, taking a DataObjectABC
     instance, that filters into lists of the same (object) type.
     """
 

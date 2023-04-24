@@ -4,13 +4,13 @@
 
 from tol.core import (
     DataObject,
-    TypedObjectDict
+    DataObjectDict
 )
 
 
 class TestTypedObjectDict:
     def test_add_one_object(self):
-        u_dict = TypedObjectDict()
+        u_dict = DataObjectDict()
         d_object = DataObject(
             'test'
         )
@@ -20,7 +20,7 @@ class TestTypedObjectDict:
         assert u_dict['test'] == [d_object]
 
     def test_add_many_objects_one_type(self):
-        u_dict = TypedObjectDict()
+        u_dict = DataObjectDict()
         d_objects = [
             DataObject(
                 'test',
@@ -37,7 +37,7 @@ class TestTypedObjectDict:
         assert u_dict['test'] == d_objects
 
     def test_add_one_object_for_many_types(self):
-        u_dict = TypedObjectDict()
+        u_dict = DataObjectDict()
         d_objects = [
             DataObject(
                 f'test_{i}',
