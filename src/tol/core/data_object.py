@@ -19,7 +19,7 @@ class DataObjectABC(ABC):
         pass
 
     @abstractproperty
-    def id(self) -> Optional[str]:
+    def id(self) -> Optional[str]:  # noqa
         pass
 
     @abstractproperty
