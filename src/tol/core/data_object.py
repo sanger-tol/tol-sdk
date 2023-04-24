@@ -69,8 +69,8 @@ class DataObject(DataObjectABC):
         return self.__id
 
     @id.setter
-    def id(self, __new_id: str) -> None:  # noqa
-        self.__id = __new_id
+    def id(self, new_id: str) -> None:  # noqa
+        self.__id = new_id
 
     def set_data(self, data: DataDict) -> None:
         """
