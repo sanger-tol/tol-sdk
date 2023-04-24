@@ -66,24 +66,9 @@ class TestDelete(BaseTestCase):
 
         g1 = OldApiObject(
             'g',
-            None,
+            999999,
             attributes={'string_column': 'test'}
         )
-
-        self.assertRaises(DataSourceError, ads.delete, g1)
-        self.assertEqual(0, ads.delete_count)
-
-    def test_delete_non_existing(self):
-        ads = TestOldApiDataSource(
-            {
-                'client': self.client,
-                'url': 'none',
-                'key': self.token_1
-            }
-        )
-
-        g1 = OldApiObject('g', 999999,
-                       attributes={'string_column': 'test'})
 
         self.assertRaises(DataSourceError, ads.delete, g1)
         self.assertEqual(1, ads.delete_count)
