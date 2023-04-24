@@ -43,9 +43,6 @@ class TestUpdatedCorrectly200(BaseTestCase):
                 'data': {
                     'id': str(b_id),
                     'type': 'b',
-                    'attributes': {
-                        'id_string': str(b_id)
-                    },
                     'relationships': {
                         'a': {
                             'data': {

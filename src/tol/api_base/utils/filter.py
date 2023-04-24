@@ -3,16 +3,33 @@
 # SPDX-License-Identifier: MIT
 
 import json
-from typing import Dict, Tuple
+from typing import Any, Dict, Tuple
 
 from ..error import BadParameterStringException
 
 
-def parse_filters(filter_string: str) -> Tuple[Dict, Dict, Dict]:
+def __map_filter_name(filter_name: str, name_map: Dict[str, str]) -> str:
+    return name_map.get(filter_name, filter_name)
+
+
+def __load_filter_string(filter_string: str, name_map: Dict[str, str]) -> Dict[str, Any]:
+    json_dict = json.loads(filter_string)
+    if name_map is None:
+        return json_dict
+    return {
+        __map_filter_name(filter_name): filter_value
+        for filter_name, filter_value in json_dict.items()
+    }
+
+
+def parse_filters(
+    filter_string: str,
+    name_map: Dict[str, str] = None
+) -> Tuple[Dict, Dict, Dict]:
     if filter_string is None or filter_string == '':
         return None, None, None
     try:
-        json_dict = json.loads(filter_string)
+        json_dict = __load_filter_string(filter_string, name_map)
         return json_dict.get('exact'), json_dict.get('contains'), json_dict.get('range')
     except (json.JSONDecodeError, AttributeError):
         raise BadParameterStringException(

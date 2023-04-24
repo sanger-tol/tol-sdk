@@ -362,11 +362,17 @@ class Base(db.Model):
 
     @classmethod
     def _get_sort_by_column(cls, sort_by_column_name, ascending):
-        sort_by_column = getattr(cls, sort_by_column_name, None)
-        if sort_by_column is None:
-            raise BadParameterException(
-                f'The field "{sort_by_column_name}" does not exist.'
-            )
+        if (
+            hasattr(cls.Meta, 'id_column')
+            and sort_by_column_name == 'id'
+        ):
+            sort_by_column = getattr(cls, cls.Meta.id_column)
+        else:
+            sort_by_column = getattr(cls, sort_by_column_name, None)
+            if sort_by_column is None:
+                raise BadParameterException(
+                    f'The field "{sort_by_column_name}" does not exist.'
+                )
         return sort_by_column if ascending else sort_by_column.desc()
 
     @classmethod
@@ -485,7 +491,11 @@ class Base(db.Model):
         filter=None,  # noqa
         sort_by=None
     ):
-        exact_filters, contains_filters, range_filters = parse_filters(filter)
+        name_map = {'id': cls.Meta.id_column} if hasattr(cls.Meta, 'id_column') else None
+        exact_filters, contains_filters, range_filters = parse_filters(
+            filter,
+            name_map=name_map
+        )
         query = cls._exact_filter_query(query, exact_filters)
         query = cls._contains_filter_query(query, contains_filters)
         query = cls._range_filter_query(query, range_filters)

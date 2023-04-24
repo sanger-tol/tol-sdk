@@ -150,41 +150,6 @@ class OldApiDataSource(DataSource):
     def delete(self, obj: OldApiObject):
         return self.delete_by_id(obj.type, obj.id)
 
-    def create(self, obj: OldApiObject):
-        url = f'/{obj.type}'
-        obj_json = obj.to_json()
-        if 'id' in obj_json:
-            del obj_json['id']
-        json = {'data': obj_json}
-        response = self._post(path=url, json=json)
-        if response.status_code != 201:
-            raise DataSourceError('Cannot create object',
-                                  response.text,
-                                  response.status_code)
-        json = response.json() if callable(response.json) else response.json
-        self._update_object_from_json(obj, json['data'])
-        self._cache_object(obj)
-        return obj
-
-    def update(self, obj: OldApiObject):
-        url = f'/{obj.type}/{obj.id}'
-        # We may have updated object's attributes/relationships since this was created
-        self._update_attributes_from_object(obj)
-        self._update_relationships_from_object(obj)
-        obj_json = obj.to_json()
-        if 'id' in obj_json:
-            del obj_json['id']
-        json = {'data': obj_json}
-        response = self._patch(path=url, json=json)
-        if response.status_code != 200:
-            raise DataSourceError('Cannot update object',
-                                  response.text,
-                                  response.status_code)
-        json = response.json() if callable(response.json) else response.json
-        self._update_object_from_json(obj, json['data'])
-        self._cache_object(obj)
-        return obj
-
     def _update_object_from_json(self, obj: OldApiObject, obj_json: Dict):
         obj._id = obj_json['id']
         obj.update_attributes_from_dict(obj_json.get('attributes', {}))

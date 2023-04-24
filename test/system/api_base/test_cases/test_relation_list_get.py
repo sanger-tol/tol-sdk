@@ -207,7 +207,8 @@ class TestRelationListGet(BaseTestCase):
                     'limit': 20,
                     'total': 3,
                     'types': {
-                        'a_id': 'int'
+                        'a_id': 'int',
+                        'id_string': 'str'
                     }
                 },
                 'data': [
