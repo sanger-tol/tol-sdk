@@ -4,6 +4,7 @@
 
 import json
 from datetime import datetime
+import logging
 
 import dateutil.parser
 
@@ -683,6 +684,19 @@ class Base(db.Model):
     @classmethod
     def _get_type_from_tablename(cls, tablename):
         return cls.tablename_type_dict[tablename]
+    
+    @classmethod
+    def _get_tablename_via_relationship_name(cls, relationship_name):
+        column = list(
+            cls.get_relationships()[relationship_name]._calculated_foreign_keys
+        )[0]
+        tablename = cls._get_target_table_from_column(column)
+        return tablename
+    
+    @classmethod
+    def _get_type_from_relationship(cls, relationship):
+        tablename = cls._get_tablename_via_relationship_name(relationship)
+        return cls._get_type_from_tablename(tablename)
 
     @classmethod
     def get_enum_relationship_details(cls):
@@ -726,16 +740,34 @@ class Base(db.Model):
             t_table for t_table in target_tables
             if cls.relation_is_enum(t_table)
         ]
+    
+    @classmethod
+    def get_relationships(cls):
+        relationships = inspect(cls).relationships.items()
+        relationship_names = [r for r in relationships]
+        # exclude relationships for which this model is the one end
+        return {
+            r[0]: r[1] for r in relationship_names
+        }
 
     @classmethod
     def get_one_to_many_relationship_names(cls):
         relationships = inspect(cls).relationships.items()
         relationship_names = [r[0] for r in relationships]
         # exclude relationships for which this model is the many end
-        return [
-            cls._get_type_from_tablename(r) for r in relationship_names
+        x = [
+            cls._get_type_from_relationship(r) for r in relationship_names
             if r not in cls._get_all_tablenames_many_to_one()
         ]
+        logging.error(x)
+        return x
+    
+    @classmethod
+    def get_many_to_one_relationships(cls):
+        return {
+            r[0]: r[1] for r in cls.get_relationships()
+            if r[0] in cls._get_all_tablenames_many_to_one()
+        }
 
     @classmethod
     def _get_target_tablename_column_from_foreign_key(cls, column_name):

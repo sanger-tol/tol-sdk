@@ -105,8 +105,6 @@ class BaseService:
 
     @classmethod
     def read_by_id(cls, id_, user_id=None):
-        import time
-        time.sleep(0)
         schema = cls.Meta.schema()
         model_instance = cls.Meta.model.find_by_id(id_)
         return schema.dump(model_instance), 200
