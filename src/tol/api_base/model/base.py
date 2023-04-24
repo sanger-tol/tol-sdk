@@ -687,6 +687,12 @@ class Base(db.Model):
     
     @classmethod
     def _get_tablename_via_relationship_name(cls, relationship_name):
+        logging.error('shoot')
+        logging.error(
+            str(cls.get_relationships()[relationship_name].target.name)
+        )
+        return str(cls.get_relationships()[relationship_name].target.name)
+
         column = list(
             cls.get_relationships()[relationship_name]._calculated_foreign_keys
         )[0]
@@ -753,11 +759,23 @@ class Base(db.Model):
     @classmethod
     def get_one_to_many_relationship_names(cls):
         relationships = inspect(cls).relationships.items()
+        logging.error(relationships)
         relationship_names = [r[0] for r in relationships]
+        many_to_one_types = [
+            cls.tablename_type_dict[tablename]
+            for tablename in cls._get_all_tablenames_many_to_one()
+        ]
         # exclude relationships for which this model is the many end
+        # x = [
+        #     cls._get_type_from_relationship(r) for r in relationship_names
+        #     if r in one_to_many
+        # ]
+        logging.error([
+            cls._get_type_from_relationship(r) for r in relationship_names
+        ])
         x = [
             cls._get_type_from_relationship(r) for r in relationship_names
-            if r not in cls._get_all_tablenames_many_to_one()
+            if r not in many_to_one_types
         ]
         logging.error(x)
         return x
