@@ -18,7 +18,7 @@ class TestApiDataObjectSerializer:
         expected = [
             {
                 'type': 'test',
-                '_uuid': data_object._request_internal_uuid,
+                '_uuid': data_object._internal_uuid,
                 'attributes': {
                     'test1': 'hype',
                     'another_test': 'waiting for this train'
@@ -39,7 +39,7 @@ class TestApiDataObjectSerializer:
             for i in range(2389)
         ]
         uuids = [
-            d._request_internal_uuid
+            d._internal_uuid
             for d in data_objects
         ]
         unsorted = [
@@ -68,15 +68,15 @@ class TestApiDataObjectSerializer:
         expected = [
             {
                 'type': 'a',
-                '_uuid': a._request_internal_uuid
+                '_uuid': a._internal_uuid
             },
             {
                 'type': 'b',
                 'id': 'test_id',
-                '_uuid': b._request_internal_uuid,
+                '_uuid': b._internal_uuid,
                 'relationships': {
                     'one': {
-                        'a_entry': a._request_internal_uuid
+                        'a_entry': a._internal_uuid
                     }
                 }
             }
@@ -91,14 +91,14 @@ class TestApiDataObjectSerializer:
         expected = [
             {
                 'type': 'a',
-                '_uuid': a._request_internal_uuid
+                '_uuid': a._internal_uuid
             },
             {
                 'type': 'b',
-                '_uuid': b._request_internal_uuid,
+                '_uuid': b._internal_uuid,
                 'relationships': {
                     'one': {
-                        'a_entry': a._request_internal_uuid
+                        'a_entry': a._internal_uuid
                     }
                 }
             }
@@ -123,7 +123,7 @@ class TestApiDataObjectSerializer:
                 continue
             previous = data_objects[i - 1]
             data_object.previous = previous
-        uuids = [d._request_internal_uuid for d in data_objects]
+        uuids = [d._internal_uuid for d in data_objects]
         unsorted = [
             {
                 'type': f'test_{i}',
@@ -163,11 +163,11 @@ class TestApiDataObjectSerializer:
             for i in range(348)
         ]
         a.many_b = many_b
-        uuids = [b._request_internal_uuid for b in many_b]
+        uuids = [b._internal_uuid for b in many_b]
         expected = [
             {
                 'type': 'a',
-                '_uuid': a._request_internal_uuid,
+                '_uuid': a._internal_uuid,
                 'relationships': {
                     'many': {
                         'many_b': uuids
@@ -177,7 +177,7 @@ class TestApiDataObjectSerializer:
             *[
                 {
                     'type': 'b',
-                    '_uuid': b._request_internal_uuid,
+                    '_uuid': b._internal_uuid,
                     'attributes': {
                         'id_stuff': i
                     }
@@ -202,14 +202,14 @@ class TestApiDataObjectSerializer:
         c = DataObject('c')
         a.many_b = many_b
         a.one_c = c
-        uuids = [b._request_internal_uuid for b in many_b]
+        uuids = [b._internal_uuid for b in many_b]
         expected = [
             {
                 'type': 'a',
-                '_uuid': a._request_internal_uuid,
+                '_uuid': a._internal_uuid,
                 'relationships': {
                     'one': {
-                        'one_c': c._request_internal_uuid,
+                        'one_c': c._internal_uuid,
                     },
                     'many': {
                         'many_b': uuids
@@ -219,7 +219,7 @@ class TestApiDataObjectSerializer:
             *[
                 {
                     'type': 'b',
-                    '_uuid': b._request_internal_uuid,
+                    '_uuid': b._internal_uuid,
                     'attributes': {
                         'id_stuff': i
                     }
@@ -228,7 +228,7 @@ class TestApiDataObjectSerializer:
             ],
             {
                 'type': 'c',
-                '_uuid': c._request_internal_uuid
+                '_uuid': c._internal_uuid
             }
         ]
         result = ApiDataSerializer().dump([a])
@@ -245,20 +245,20 @@ class TestApiDataObjectSerializer:
         expected = [
             {
                 'type': 'a',
-                '_uuid': a._request_internal_uuid,
+                '_uuid': a._internal_uuid,
                 'relationships': {
                     'one': {
-                        'b': b._request_internal_uuid
+                        'b': b._internal_uuid
                     }
                 }
             },
             {
                 'type': 'b',
-                '_uuid': b._request_internal_uuid,
+                '_uuid': b._internal_uuid,
                 'relationships': {
                     'many': {
                         'many_a': [
-                            a._request_internal_uuid
+                            a._internal_uuid
                         ]
                     }
                 }

@@ -6,20 +6,40 @@ from __future__ import annotations
 
 from abc import ABC, abstractproperty
 from collections.abc import Iterable as IterableABC
-from typing import Any, Dict, Iterable, List
+from typing import Any, Dict, Iterable, List, Optional
 from uuid import uuid4
 
 
 DataDict = Dict[str, Any]
 
 
-class TypedObject(ABC):
+class DataObjectABC(ABC):
     @abstractproperty
     def type(self) -> str:  # noqa
         pass
 
+    @abstractproperty
+    def id(self) -> Optional[str]:
+        pass
 
-class DataObject(TypedObject):
+    @abstractproperty
+    def attributes(self) -> Dict[str, Any]:
+        pass
+
+    @abstractproperty
+    def to_one_relationships(self) -> Dict[str, DataObjectABC]:
+        pass
+
+    @abstractproperty
+    def to_many_relationships(self) -> Dict[str, List[DataObjectABC]]:
+        pass
+
+    @abstractproperty
+    def _internal_uuid(self) -> str:
+        pass
+
+
+class DataObject(DataObjectABC):
     """
     The unit of data on which a DataSource operates.
     """
@@ -34,15 +54,23 @@ class DataObject(TypedObject):
         object_type: str,
         data: DataDict = None
     ):
-        self.id: str = None
+        self.__id: str = None
         self.__object_type = object_type
-        self.__request_internal_uuid = uuid4().hex
+        self.__internal_uuid = uuid4().hex
         if data is not None:
             self.set_data(data)
 
     @property
     def type(self) -> str:  # noqa
         return self.__object_type
+
+    @property
+    def id(self) -> str:  # noqa
+        return self.__id
+
+    @id.setter
+    def id(self, __new_id: str) -> None:
+        self.__id = __new_id
 
     def set_data(self, data: DataDict) -> None:
         """
@@ -89,13 +117,13 @@ class DataObject(TypedObject):
         }
 
     @property
-    def _request_internal_uuid(self) -> str:
+    def _internal_uuid(self) -> str:
         """
         A UUID for references by other DataObject instances, when
         formatted as a flat list of DataObject dumps in an upsert
         request.
         """
-        return self.__request_internal_uuid
+        return self.__internal_uuid
 
     def __is_attribute(self, name: str) -> bool:
         return (

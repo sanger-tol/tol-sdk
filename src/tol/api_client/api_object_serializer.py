@@ -28,7 +28,7 @@ class ApiObjectSerializer:
 
     def __add_mandatory_fields(self) -> None:
         self.__dumped['type'] = self.__data_object.type
-        self.__dumped['_uuid'] = self.__data_object._request_internal_uuid
+        self.__dumped['_uuid'] = self.__data_object._internal_uuid
 
     def __add_relationships(self) -> None:
         if not (
@@ -44,7 +44,7 @@ class ApiObjectSerializer:
         if not self.__data_object.to_one_relationships:
             return
         to_one_uuids = {
-            k: d._request_internal_uuid
+            k: d._internal_uuid
             for k, d in self.__data_object.to_one_relationships.items()
         }
         self.__dumped['relationships']['one'] = to_one_uuids
@@ -54,7 +54,7 @@ class ApiObjectSerializer:
         data_objects: List[DataObject]
     ) -> List[str]:
         return [
-            d._request_internal_uuid for d in data_objects
+            d._internal_uuid for d in data_objects
         ]
 
     def __add_to_many_relationships(self) -> None:
@@ -80,7 +80,7 @@ class ApiDataSerializer:
     """
 
     def __init__(self):
-        # store against _request_internal_uuid so that duplicates are
+        # store against _internal_uuid so that duplicates are
         # removed
         self.__uuid_dump_map: Dict[str, Dict[str, Any]] = {}
 
@@ -97,7 +97,7 @@ class ApiDataSerializer:
             self.__add_to_many_relationships(data_object)
 
     def __object_already_processed(self, data_object: DataObject) -> bool:
-        return data_object._request_internal_uuid in self.__uuid_dump_map
+        return data_object._internal_uuid in self.__uuid_dump_map
 
     def __add_to_one_relationships(
         self,
@@ -114,7 +114,7 @@ class ApiDataSerializer:
             self.__flatten_dump_add(to_many_relations)
 
     def __add_data_object(self, data_object: DataObject) -> None:
-        uuid = data_object._request_internal_uuid
+        uuid = data_object._internal_uuid
         dumped = ApiObjectSerializer().dump(data_object)
         self.__uuid_dump_map[uuid] = dumped
 

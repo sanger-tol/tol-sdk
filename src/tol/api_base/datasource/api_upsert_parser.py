@@ -47,7 +47,7 @@ class ApiUpsertObject(DataObject):
         return self.__to_many
 
     @property
-    def _request_internal_uuid(self) -> str:
+    def _internal_uuid(self) -> str:
         return self.__json_dict['_uuid']
 
     @property
@@ -115,7 +115,7 @@ class ApiUpsertParser:
     ) -> Dict[str, ApiUpsertObject]:
 
         return {
-            u._request_internal_uuid: u
+            u._internal_uuid: u
             for u in api_upsert_objects
         }
 

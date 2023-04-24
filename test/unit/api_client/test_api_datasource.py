@@ -70,7 +70,7 @@ class TestApiDataSource:
         expected = [
             {
                 'type': 'species',
-                '_uuid': species._request_internal_uuid,
+                '_uuid': species._internal_uuid,
                 'id': '9606',
                 'attributes': {
                     'name': 'Homo sapiens'
@@ -78,11 +78,11 @@ class TestApiDataSource:
             },
             {
                 'type': 'specimens',
-                '_uuid': specimen._request_internal_uuid,
+                '_uuid': specimen._internal_uuid,
                 'id': 'mHomSap9534',
                 'relationships': {
                     'one': {
-                        'species': species._request_internal_uuid
+                        'species': species._internal_uuid
                     }
                 }
             }

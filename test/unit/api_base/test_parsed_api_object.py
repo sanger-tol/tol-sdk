@@ -24,7 +24,7 @@ class TestApiUpsertObject:
         parsed = ApiUpsertObject(json_dict)
         assert parsed.id is None
         assert parsed.type == 'test'
-        assert parsed._request_internal_uuid == __uuid
+        assert parsed._internal_uuid == __uuid
         assert parsed.attributes == {
             'test1': 'me',
             'test2': 'you'
@@ -52,7 +52,7 @@ class TestApiUpsertObject:
         parsed = ApiUpsertObject(json_dict)
         assert parsed.id == 'laughlol'
         assert parsed.type == 'testdsf98f'
-        assert parsed._request_internal_uuid == __uuid
+        assert parsed._internal_uuid == __uuid
         assert parsed.attributes == {}
         assert parsed._to_one_uuids == one_uuids
         assert parsed._to_many_uuids == {}
@@ -78,7 +78,7 @@ class TestApiUpsertObject:
         parsed = ApiUpsertObject(json_dict)
         assert parsed.type == 'jadsfk'
         assert parsed.id is None
-        assert parsed._request_internal_uuid == __uuid
+        assert parsed._internal_uuid == __uuid
         assert parsed.attributes == {}
         assert parsed._to_one_uuids == {}
         assert parsed._to_many_uuids == many_uuids
@@ -114,7 +114,7 @@ class TestApiUpsertObject:
         parsed = ApiUpsertObject(json_dict)
         assert parsed.id == 'hype1234'
         assert parsed.type == 'test'
-        assert parsed._request_internal_uuid == __uuid
+        assert parsed._internal_uuid == __uuid
         assert parsed.attributes == {
             'test1': 'me',
             'test2': 'you'
