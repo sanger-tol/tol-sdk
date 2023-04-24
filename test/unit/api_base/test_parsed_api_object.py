@@ -93,9 +93,7 @@ class TestApiUpsertObject:
             'something': uuid4().hex
         }
         many_uuids = {
-            '1': [
-                uuid4().hex for _ in range(234)
-            ],
+            '1': [uuid4().hex for _ in range(234)],
             '5': [uuid4().hex]
         }
         json_dict = {
