@@ -11,9 +11,7 @@ from tol.core import (
 class TestTypedObjectDict:
     def test_add_one_object(self):
         u_dict = DataObjectDict()
-        d_object = DataObject(
-            'test'
-        )
+        d_object = DataObject('test')
         u_dict.add(d_object)
 
         assert len(u_dict.keys()) == 1
