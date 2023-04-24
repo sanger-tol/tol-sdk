@@ -127,7 +127,7 @@ class DataSource(ABC):
     All operations called directly on a DataSource instance will be executed
     immediately.
 
-    To batch calls, use the session() method.
+    To batch upsert calls, use the session() method.
     """
 
     DEFAULT_PAGE_SIZE = 20
