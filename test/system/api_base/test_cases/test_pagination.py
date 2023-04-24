@@ -87,9 +87,6 @@ class TestPagination(BaseTestCase):
                 {
                     'type': 'b',
                     'id': '32',
-                    'attributes': {
-                        'id_string': '32'
-                    },
                     'relationships': {
                         'a': {
                             'links': {

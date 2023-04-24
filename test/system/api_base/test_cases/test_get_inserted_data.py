@@ -14,9 +14,6 @@ class TestGetInsertedData(BaseTestCase):
             'data': {
                 'type': 'b',
                 'id': '10',
-                'attributes': {
-                    'id_string': '10'
-                },
                 'relationships': {
                     'a': {
                         'data': {
