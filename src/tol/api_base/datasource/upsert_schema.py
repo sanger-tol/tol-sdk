@@ -1,9 +1,10 @@
 # SPDX-FileCopyrightText: 2023 Genome Research Ltd.
 #
 # SPDX-License-Identifier: MIT
-from typing import Any, Dict, List
 
-from marshmallow import Schema, fields, post_load, pre_load
+from typing import Any, Dict, List, Set
+
+from marshmallow import Schema, fields, post_load
 
 from .api_upsert_object import ApiUpsertObject
 from ...core import DataObject
@@ -11,8 +12,8 @@ from ...core import DataObject
 
 class UpsertObjectSchema(Schema):
     _uuid = fields.String(required=True)
-    type = fields.String(required=True)
-    id = fields.String()
+    type = fields.String(required=True)  # noqa
+    id = fields.String()  # noqa
     attributes = fields.Dict()
 
     one = fields.Dict(
@@ -31,17 +32,15 @@ class UpsertObjectSchema(Schema):
 class UpsertSchema(Schema):
     data = fields.List(fields.Nested(UpsertObjectSchema))
 
-    @pre_load
-    def __get_uuid_list(
+    def __get_uuid_set(
         self,
-        upsert_data: Dict[str, List[Dict[str, Any]]],
-        **kwargs
-    ) -> Dict[str, List[Dict[str, Any]]]:
+        upsert_data: Dict[str, List[Dict[str, Any]]]
+    ) -> Set[str]:
         upsert_list = upsert_data.get('data', [])
-        self.__uuids = {
+        self.__uuid_set = {
             u.get('_uuid') for u in upsert_list
         }
-        self.__uuids.discard(None)
+        self.__uuid_set.discard(None)
         return upsert_data
 
     @post_load
