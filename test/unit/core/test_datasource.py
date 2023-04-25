@@ -48,7 +48,8 @@ class TestDataSourceNoExpected(ReadOnlyDataSource):
             'hello': 'world'
         }]
 
-    @unsupported()
+    # decorate without parentheses
+    @unsupported
     def get_list(self, object_type: str, *args, **kwargs) -> None:
         pass
 
