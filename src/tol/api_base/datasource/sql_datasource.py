@@ -7,8 +7,8 @@ from __future__ import annotations
 from typing import Iterable, Tuple
 
 from ...core import (
-    CoreDataObject,
     DataId,
+    DataObject,
     DataSource,
     DataSourceConfig,
     DataSourceFilter,
@@ -40,7 +40,7 @@ class SqlDataSource(DataSource):
         object_type: str,
         object_ids: Iterable[DataId],
         **kwargs
-    ) -> Iterable[CoreDataObject]:
+    ) -> Iterable[DataObject]:
         pass
 
     @unsupported
@@ -51,7 +51,7 @@ class SqlDataSource(DataSource):
         page_size: int = None,
         object_filters: DataSourceFilter = None,
         **kwargs
-    ) -> Tuple[Iterable[CoreDataObject], int]:
+    ) -> Tuple[Iterable[DataObject], int]:
         pass
 
     @unsupported
@@ -60,21 +60,21 @@ class SqlDataSource(DataSource):
         object_type: str,
         object_filters: DataSourceFilter = None,
         **kwargs
-    ) -> Iterable[CoreDataObject]:
+    ) -> Iterable[DataObject]:
         pass
 
     @unsupported
     def upsert(
         self,
         object_type: str,
-        objects: Iterable[CoreDataObject],
+        objects: Iterable[DataObject],
         **kwargs
     ) -> None:
         pass
 
     def upsert_multiple_type(
         self,
-        objects: Iterable[CoreDataObject],
+        objects: Iterable[DataObject],
         **kwargs
     ) -> None:
         """

@@ -6,7 +6,7 @@ from __future__ import annotations
 
 from typing import Any, Dict, Iterable, List
 
-from ..core import CoreDataObject
+from ..core import DataObject
 
 
 class ApiObjectSerializer:
@@ -16,7 +16,7 @@ class ApiObjectSerializer:
     def __init__(self):
         self.__dumped: Dict[str, Any] = {}
 
-    def dump(self, data_object: CoreDataObject) -> Dict[str, Any]:
+    def dump(self, data_object: DataObject) -> Dict[str, Any]:
         self.__data_object = data_object
         self.__create_dump()
         return self.__dumped
@@ -51,7 +51,7 @@ class ApiObjectSerializer:
 
     def __get_to_many_relationship_uuids(
         self,
-        data_objects: List[CoreDataObject]
+        data_objects: List[DataObject]
     ) -> List[str]:
         return [
             d._internal_uuid for d in data_objects
@@ -84,11 +84,11 @@ class ApiDataSerializer:
         # removed
         self.__uuid_dump_map: Dict[str, Dict[str, Any]] = {}
 
-    def dump(self, data_objects: Iterable[CoreDataObject]) -> List[Dict[str, Any]]:
+    def dump(self, data_objects: Iterable[DataObject]) -> List[Dict[str, Any]]:
         self.__flatten_dump_add(data_objects)
         return self.__get_serialized_list()
 
-    def __flatten_dump_add(self, data_objects: List[CoreDataObject]) -> None:
+    def __flatten_dump_add(self, data_objects: List[DataObject]) -> None:
         for data_object in data_objects:
             if self.__object_already_processed(data_object):
                 continue
@@ -96,24 +96,24 @@ class ApiDataSerializer:
             self.__add_to_one_relationships(data_object)
             self.__add_to_many_relationships(data_object)
 
-    def __object_already_processed(self, data_object: CoreDataObject) -> bool:
+    def __object_already_processed(self, data_object: DataObject) -> bool:
         return data_object._internal_uuid in self.__uuid_dump_map
 
     def __add_to_one_relationships(
         self,
-        data_object: CoreDataObject
+        data_object: DataObject
     ) -> None:
         for to_one_relation in data_object.to_one_relationships.values():
             self.__flatten_dump_add([to_one_relation])
 
     def __add_to_many_relationships(
         self,
-        data_object: CoreDataObject
+        data_object: DataObject
     ) -> None:
         for to_many_relations in data_object.to_many_relationships.values():
             self.__flatten_dump_add(to_many_relations)
 
-    def __add_data_object(self, data_object: CoreDataObject) -> None:
+    def __add_data_object(self, data_object: DataObject) -> None:
         uuid = data_object._internal_uuid
         dumped = ApiObjectSerializer().dump(data_object)
         self.__uuid_dump_map[uuid] = dumped

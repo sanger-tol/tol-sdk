@@ -8,7 +8,7 @@ from abc import ABC, abstractmethod
 from functools import wraps
 from typing import Any, Callable, Dict, Iterable, List, Tuple
 
-from .data_object import CoreDataObject, DataDict
+from .data_object import DataDict, DataObject
 from .datasource_error import DataSourceError
 from .datasource_filter import DataSourceFilter
 from .datasource_session import DataSourceSession
@@ -184,7 +184,7 @@ class DataSource(ABC):
         object_type: str,
         object_ids: Iterable[DataId],
         **kwargs
-    ) -> Iterable[CoreDataObject]:
+    ) -> Iterable[DataObject]:
         """
         Gets an Iterable of DataObject instances, of specified object_type,
         with their id's equal to those given in the object_ids Iterable.
@@ -198,7 +198,7 @@ class DataSource(ABC):
         page_size: int = None,
         object_filters: DataSourceFilter = None,
         **kwargs
-    ) -> Tuple[Iterable[CoreDataObject], int]:
+    ) -> Tuple[Iterable[DataObject], int]:
         """
         For a specified object_type, of the given page_size
         and page_number (starting from 1), returns a tuple of:
@@ -213,7 +213,7 @@ class DataSource(ABC):
         object_type: str,
         object_filters: DataSourceFilter = None,
         **kwargs
-    ) -> Iterable[CoreDataObject]:
+    ) -> Iterable[DataObject]:
         """
         Gets a generator of DataObject instances
         """
@@ -222,7 +222,7 @@ class DataSource(ABC):
     def upsert(
         self,
         object_type: str,
-        objects: Iterable[CoreDataObject],
+        objects: Iterable[DataObject],
         **kwargs
     ) -> None:
         """
@@ -240,7 +240,7 @@ class DataSource(ABC):
     @operation
     def upsert_multiple_type(
         self,
-        objects: Iterable[CoreDataObject],
+        objects: Iterable[DataObject],
         **kwargs
     ) -> None:
         """
