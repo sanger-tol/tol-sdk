@@ -783,7 +783,6 @@ class Base(db.Model):
             cls._get_type_from_relationship(r) for r in relationship_names
             if r not in many_to_one_types
         ]
-        logging.error(x)
         logging.error(cls._get_all_tablenames_many_to_one())
         return x
     
