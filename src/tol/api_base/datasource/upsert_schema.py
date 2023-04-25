@@ -5,7 +5,7 @@ from typing import Any, Dict, List
 
 from marshmallow import Schema, pre_load
 
-from ...api_base.datasource.api_upsert_object import ApiUpsertObject
+from .api_upsert_object import ApiUpsertObject
 from ...core import DataObject
 
 

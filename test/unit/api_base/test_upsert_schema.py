@@ -5,7 +5,7 @@
 from typing import Any, Dict, List
 from uuid import uuid4
 
-from tol.api_base.datasource.schema import UpsertSchema
+from tol.api_base.datasource.upsert_schema import UpsertSchema
 from tol.core import CoreDataObject
 
 
