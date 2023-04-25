@@ -25,7 +25,7 @@ class BadUnsupportedUsageException(Exception):
             '@unsupported() has been used improperly. When '
             'specifying an optional message, it must be '
             'specified as a keyword argument, e.g. '
-            '@unsupported(message=\'example\')'
+            "@unsupported(message='example')"
         )
 
 
@@ -102,7 +102,7 @@ def unsupported(
     if isinstance(operation, str):
         # the user gave message as an arg, not kwarg
         raise BadUnsupportedUsageException()
-    
+
     if operation is not None:
         return decorator(operation)
 
