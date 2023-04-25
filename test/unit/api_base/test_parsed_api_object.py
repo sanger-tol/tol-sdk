@@ -4,7 +4,7 @@
 
 from uuid import uuid4
 
-from tol.api_base.datasource.api_upsert_parser import ApiUpsertObject
+from tol.api_base.datasource.api_upsert_object import ApiUpsertObject
 
 
 class TestApiUpsertObject:
