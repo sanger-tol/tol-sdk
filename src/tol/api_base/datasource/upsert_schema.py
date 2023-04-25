@@ -52,6 +52,12 @@ class UpsertSchema(Schema):
     ) -> List[DataObject]:
         upsert_list = upsert_data.get('data', [])
         self.__uuid_map = self.__create_uuid_map
+        return self.__process_upsert_list(upsert_list)
+
+    def __process_upsert_list(
+        self,
+        upsert_list: List[Dict[str, Any]]
+    ) -> List[DataObject]:
         parsed_upserts = self.__parse_api_upsert_objects(upsert_list)
         for upsert_object in parsed_upserts:
             self.__process_api_upsert_object(upsert_object)
