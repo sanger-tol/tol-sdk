@@ -706,17 +706,7 @@ class Base(db.Model):
     
     @classmethod
     def _get_tablename_via_relationship_name(cls, relationship_name):
-        logging.error('shoot')
-        logging.error(
-            str(cls.get_relationships()[relationship_name].target.name)
-        )
         return str(cls.get_relationships()[relationship_name].target.name)
-
-        column = list(
-            cls.get_relationships()[relationship_name]._calculated_foreign_keys
-        )[0]
-        tablename = cls._get_target_table_from_column(column)
-        return tablename
     
     @classmethod
     def _get_type_from_relationship(cls, relationship):
