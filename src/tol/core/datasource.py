@@ -100,6 +100,7 @@ def unsupported(
         return wrapper
 
     if isinstance(operation, str):
+        # the user gave message as an arg, not kwarg
         raise BadUnsupportedUsageException()
     
     if operation is not None:
