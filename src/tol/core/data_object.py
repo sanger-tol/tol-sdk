@@ -22,27 +22,45 @@ class DataObject(ABC):
 
     @abstractproperty
     def type(self) -> str:  # noqa
-        pass
+        """
+        The type of this object (e.g. species/specimens/samples).
+        """
 
     @abstractproperty
     def id(self) -> Optional[str]:  # noqa
-        pass
+        """
+        A unique ID by which to identify this object within
+        its type.
+        """
 
     @abstractproperty
     def attributes(self) -> Dict[str, Any]:
-        pass
+        """
+        A dictionary of key:attribute pairs, where an attribute
+        is any entry on the object that is none of an ID, type,
+        or relationship.
+        """
 
     @abstractproperty
     def to_one_relationships(self) -> Dict[str, DataObject]:
-        pass
+        """
+        A dictionary of relationships, where this object refers to
+        precisely one other.
+        """
 
     @abstractproperty
     def to_many_relationships(self) -> Dict[str, List[DataObject]]:
-        pass
+        """
+        A dictionary of relationships, where many objects refer to
+        precisely this object.
+        """
 
     @abstractproperty
     def _internal_uuid(self) -> str:
-        pass
+        """
+        An internal UUID, serving to uniquely identify created objects
+        where the ID is either unknown or unknowable at creation.
+        """
 
 
 class CoreDataObject(DataObject):
@@ -91,9 +109,6 @@ class CoreDataObject(DataObject):
 
     @property
     def attributes(self) -> Dict[str, Any]:
-        """
-        The bare attributes (non-relationships) of this DataObject
-        """
         return {
             key: getattr(self, key)
             for key in self.__get_field_names()
@@ -102,11 +117,6 @@ class CoreDataObject(DataObject):
 
     @property
     def to_one_relationships(self) -> Dict[str, CoreDataObject]:
-        """
-        The to-one relationships of this DataObject, i.e. the
-        relationships for which this "points" at 1 single other
-        DataObject
-        """
         return {
             key: getattr(self, key)
             for key in self.__get_field_names()
@@ -115,10 +125,6 @@ class CoreDataObject(DataObject):
 
     @property
     def to_many_relationships(self) -> Dict[str, Iterable[CoreDataObject]]:
-        """
-        The to-many relationships of this DataObject, i.e. the
-        relation DataObject instances that "point" to this instance
-        """
         return {
             key: getattr(self, key)
             for key in self.__get_field_names()
@@ -127,11 +133,6 @@ class CoreDataObject(DataObject):
 
     @property
     def _internal_uuid(self) -> str:
-        """
-        A UUID for references by other DataObject instances, when
-        formatted as a flat list of DataObject dumps in an upsert
-        request.
-        """
         return self.__internal_uuid
 
     def __is_attribute(self, name: str) -> bool:
