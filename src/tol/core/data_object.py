@@ -65,9 +65,15 @@ class DataObject(ABC):
 
 class CoreDataObject(DataObject):
     """
-    The core unit of data on which a DataSource operates.
+    The core unit of data on which a DataSource operates, which
+    should prove sufficient for most use-cases. Simply set values
+    on an instance, and they will be interpreted as either:
 
-    Note there are other supported DataObject classes - any
+    - to-one relationships  - if the value is a single DataObject
+    - to-many relationships - if the value is any non-string Iterable
+    - attributes            - otherwise
+
+    Note there are other supported DataObject classes - any class
     that inherits from DataObject meets the criteria.
     """
 
