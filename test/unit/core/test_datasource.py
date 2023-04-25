@@ -13,6 +13,7 @@ from tol.core import (
     UnsupportedOperationException,
     unsupported
 )
+from tol.core.datasource import BadUnsupportedUsageException
 
 
 class TestDataSourceExpected(ReadOnlyDataSource):
@@ -108,3 +109,15 @@ class TestDataSource(TestCase):
             TestDataSourceNoExpected({}).supported_operations,
             ['get_list_page']
         )
+
+    def test_bad_unsupported_decoration(self):
+        """
+        Using @unsupported() incorrectly should raise
+        a BadUnsupportedUsageException, and not fail
+        with another cryptic error
+        """
+        with pytest.raises(BadUnsupportedUsageException):
+            class TestOverride(TestDataSourceNoExpected):
+                @unsupported('this should be a kwarg')
+                def get_by_id(self, *args):
+                    pass

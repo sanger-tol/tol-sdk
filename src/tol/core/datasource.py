@@ -19,6 +19,16 @@ DataSourceUpdate = Tuple[DataId, DataDict]
 DataSourceConfig = Dict[str, Any]
 
 
+class BadUnsupportedUsageException(Exception):
+    def __init__(self):
+        super().__init__(
+            '@unsupported() has been used improperly. When '
+            'specifying an optional message, it must be '
+            'specified as a keyword argument, e.g. '
+            '@unsupported(message=\'example\')'
+        )
+
+
 class UnsupportedOperationException(NotImplementedError):
     def __init__(
         self,
