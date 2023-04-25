@@ -98,6 +98,9 @@ def unsupported(
             )
         wrapper._unsupported = True
         return wrapper
+
+    if isinstance(operation, str):
+        raise BadUnsupportedUsageException()
     
     if operation is not None:
         return decorator(operation)
