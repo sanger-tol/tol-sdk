@@ -779,14 +779,6 @@ class Base(db.Model):
             cls.tablename_type_dict[tablename]
             for tablename in cls._get_all_tablenames_many_to_one()
         ]
-        # exclude relationships for which this model is the many end
-        # x = [
-        #     cls._get_type_from_relationship(r) for r in relationship_names
-        #     if r in one_to_many
-        # ]
-        logging.error([
-            cls._get_type_from_relationship(r) for r in relationship_names
-        ])
         x = [
             cls._get_type_from_relationship(r) for r in relationship_names
             if r not in many_to_one_types
