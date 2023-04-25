@@ -4,7 +4,6 @@
 
 import json
 from typing import Dict, Tuple
-import logging
 
 from ..error import BadParameterStringException
 

@@ -389,7 +389,7 @@ class Base(db.Model):
         return query.select_from(enum_relation_model) \
                     .join(enum_relationship) \
                     .order_by(sort_by_column)
-    
+
     @classmethod
     def _sort_by_query(cls, query, sort_by):
         if sort_by is None:
@@ -708,15 +708,6 @@ class Base(db.Model):
     @classmethod
     def _get_type_from_tablename(cls, tablename):
         return cls.tablename_type_dict[tablename]
-    
-    @classmethod
-    def _get_tablename_via_relationship_name(cls, relationship_name):
-        return str(cls.get_relationships()[relationship_name].target.name)
-    
-    @classmethod
-    def _get_type_from_relationship(cls, relationship):
-        tablename = cls._get_tablename_via_relationship_name(relationship)
-        return cls._get_type_from_tablename(tablename)
 
     @classmethod
     def get_enum_relationship_details(cls):
@@ -769,22 +760,6 @@ class Base(db.Model):
         return {
             r[0]: r[1] for r in relationship_names
         }
-
-    @classmethod
-    def get_one_to_many_relationship_names(cls):
-        relationships = inspect(cls).relationships.items()
-        logging.error(relationships)
-        relationship_names = [r[0] for r in relationships]
-        many_to_one_types = [
-            cls.tablename_type_dict[tablename]
-            for tablename in cls._get_all_tablenames_many_to_one()
-        ]
-        x = [
-            cls._get_type_from_relationship(r) for r in relationship_names
-            if r not in many_to_one_types
-        ]
-        logging.error(cls._get_all_tablenames_many_to_one())
-        return x
     
     @classmethod
     def get_many_to_one_relationships(cls):

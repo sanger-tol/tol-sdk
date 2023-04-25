@@ -19,7 +19,7 @@ class AModelRelationship(Base):
     # the variable below is necessary on every test model!
     __table_args__ = {'extend_existing': True}
     id = db.Column(db.Integer, primary_key=True)  # noqa A003
-    test_b_rel = db.relationship('BModelRelationship', back_populates='test_a_rel')
+    test_b = db.relationship('BModelRelationship', back_populates='test_a')
     string_column = db.Column(db.String, nullable=True)
 
 
@@ -34,7 +34,7 @@ class BModelRelationship(Base):
     __table_args__ = {'extend_existing': True}
     id_string = db.Column(db.String, primary_key=True)
     a_id = db.Column(db.Integer, db.ForeignKey('test_a.id'), nullable=False)
-    test_a_rel = db.relationship(AModelRelationship, back_populates='test_b_rel', foreign_keys=[a_id])
+    test_a = db.relationship(AModelRelationship, back_populates='test_b', foreign_keys=[a_id])
     test_e = db.relationship('EModelRelationship', back_populates='test_b')
 
 
