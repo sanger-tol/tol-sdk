@@ -3,17 +3,58 @@
 # SPDX-License-Identifier: MIT
 from typing import Any, Dict, List
 
-from marshmallow import Schema, pre_load
+from marshmallow import Schema, fields, post_load, pre_load
 
 from .api_upsert_object import ApiUpsertObject
 from ...core import DataObject
 
 
+class UpsertObjectSchema(Schema):
+    _uuid = fields.String(required=True)
+    type = fields.String(required=True)
+    id = fields.String()
+    attributes = fields.Dict()
+
+    one = fields.Dict(
+        keys=fields.String(),
+        values=fields.String()
+    )
+
+    many = fields.Dict(
+        keys=fields.String(),
+        values=fields.List(
+            fields.String()
+        )
+    )
+
+
 class UpsertSchema(Schema):
-    def load(self, upsert_data: Dict[str, List[Dict[str, Any]]]) -> List[DataObject]:
+    data = fields.List(fields.Nested(UpsertObjectSchema))
+
+    @pre_load
+    def __get_uuid_list(
+        self,
+        upsert_data: Dict[str, List[Dict[str, Any]]],
+        **kwargs
+    ) -> Dict[str, List[Dict[str, Any]]]:
         upsert_list = upsert_data.get('data', [])
+        self.__uuids = {
+            u.get('_uuid') for u in upsert_list
+        }
+        self.__uuids.discard(None)
+        return upsert_data
+
+    @post_load
+    def __parse(
+        self,
+        upsert_data: Dict[str, List[Dict[str, Any]]],
+        **kwargs
+    ) -> List[DataObject]:
+        upsert_list = upsert_data.get('data', [])
+        self.__uuid_map = self.__create_uuid_map
         parsed_upserts = self.__parse_api_upsert_objects(upsert_list)
-        self.__uuid_map = self.__create_uuid_map(parsed_upserts)
+        for upsert_object in parsed_upserts:
+            self.__process_api_upsert_object(upsert_object)
         return parsed_upserts
 
     def __parse_api_upsert_objects(
@@ -35,15 +76,6 @@ class UpsertSchema(Schema):
             u._internal_uuid: u
             for u in api_upsert_objects
         }
-
-    def __process_api_upsert_objects(
-        self,
-        api_upsert_objects: List[ApiUpsertObject]
-    ) -> List[ApiUpsertObject]:
-
-        for upsert_object in api_upsert_objects:
-            self.__process_api_upsert_object(upsert_object)
-        return api_upsert_objects
 
     def __process_api_upsert_object(
         self,

@@ -37,7 +37,7 @@ class TestUpsertSchema:
             }
         ]
         observed = self.__dump_data_objects_list(
-            parser.load([obj])
+            parser.load({'data': [obj]})
         )
         assert observed == expected
 
@@ -87,7 +87,11 @@ class TestUpsertSchema:
             }
         ]
         observed = self.__dump_data_objects_list(
-            parser.load([obj1, obj2])
+            parser.load(
+                {
+                    'data': [obj1, obj2]
+                }
+            )
         )
         assert observed == expected
 
@@ -112,7 +116,9 @@ class TestUpsertSchema:
                 }
             }
         }
-        parsed = UpsertSchema().load([obj2, obj1])
+        parsed = UpsertSchema().load({
+            'data': [obj2, obj1]
+        })
         # get obj1 out
         parsed_obj1s = [o for o in parsed if o.type == 'test']
         assert len(parsed_obj1s) == 1
@@ -240,14 +246,6 @@ class TestUpsertSchema:
             self.__dump_data_object(d)
             for d in data_objects
         ]
-
-
-
-class TestUpsertSchema:
-    """
-    Tests UpsertSchema, specifically the UUID consistency
-    validations
-    """
 
     def test_to_one_undefined_uuid(self):
         """
