@@ -2,7 +2,7 @@
 #
 # SPDX-License-Identifier: MIT
 
-from marshmallow import Schema
+from marshmallow import Schema, pre_load
 
 
 class UpsertSchema(Schema):
