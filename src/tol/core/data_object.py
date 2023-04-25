@@ -49,7 +49,7 @@ class CoreDataObject(DataObject):
     """
     The core unit of data on which a DataSource operates.
 
-    Note there are other supported DataObject classes - any 
+    Note there are other supported DataObject classes - any
     that inherits from DataObject meets the criteria.
     """
 

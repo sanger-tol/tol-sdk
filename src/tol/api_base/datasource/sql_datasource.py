@@ -7,8 +7,8 @@ from __future__ import annotations
 from typing import Iterable, Tuple
 
 from ...core import (
-    DataId,
     CoreDataObject,
+    DataId,
     DataSource,
     DataSourceConfig,
     DataSourceFilter,

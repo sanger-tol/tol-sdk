@@ -35,7 +35,7 @@ class TestElasticDataSource(TestCase):
             {'uri': 'test', 'user': 'user', 'password': 'password', 'index_prefix': 'test'}
         )
         objects = [CoreDataObject('run_data', {'id': 1, 'field1': 'value1',
-                                           'field2': 'value2', 'datefield': dt}),
+                                  'field2': 'value2', 'datefield': dt}),
                    CoreDataObject('run_data', {'id': 2, 'field1': 'value3', 'field2': 'value4'})]
         generator = eds._action_for_upsert('index', objects, id_func=lambda x: x.id,
                                            field_prefix='')

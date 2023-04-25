@@ -8,7 +8,7 @@ from abc import ABC, abstractmethod
 from functools import wraps
 from typing import Any, Callable, Dict, Iterable, List, Tuple
 
-from .data_object import DataDict, CoreDataObject
+from .data_object import CoreDataObject, DataDict
 from .datasource_error import DataSourceError
 from .datasource_filter import DataSourceFilter
 from .datasource_session import DataSourceSession

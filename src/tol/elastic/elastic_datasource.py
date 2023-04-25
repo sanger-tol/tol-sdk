@@ -10,11 +10,11 @@ from typing import Dict, Iterable, Tuple
 
 from caseconverter import kebabcase
 
-from elasticsearch import (Elasticsearch, helpers)
+from elasticsearch import Elasticsearch, helpers
 
 from ..core import (
-    DataId,
     CoreDataObject,
+    DataId,
     DataSource,
     DataSourceError,
     DataSourceFilter,
