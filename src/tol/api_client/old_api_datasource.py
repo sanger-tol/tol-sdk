@@ -158,10 +158,10 @@ class OldApiDataSource(DataSource):
                 self._convert_relationships_from_json_to_objects(obj_json['relationships'])
             obj.update_relationships_from_dict(relationships_obj)
 
-    @unsupported()
+    @unsupported
     def upsert(self, object_type: str, *args, **kwargs) -> None:
         pass
 
-    @unsupported()
+    @unsupported
     def upsert_multiple_type(self, *args, **kwargs) -> None:
         pass

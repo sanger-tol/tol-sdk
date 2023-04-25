@@ -49,20 +49,25 @@ class UnsupportedOperationException(NotImplementedError):
             return f'{auto_message}\n\n{message}'
 
 
-def unsupported(message: str = None) -> Callable:
+def unsupported(
+    operation=None,
+    *,
+    message: str = None
+) -> Callable:
     """
     Indicates that an abstract operation on ABC DataSource is
     unsupported on the inherited class and will raise an
     UnsupportedOperationException if called.
 
-    This decorator must be used with parentheses after,
-    in which an optional message may be provided to
+    This decorator can be used with (or without) parentheses
+    after, in the former, an optional message may be provided to
     any UnsupportedOperationException resulting from an
-    operation invocation.
+    operation invocation. This message MUST be specified as a
+    keyword argument!
 
     Usage:
 
-    @unsupported()
+    @unsupported
     def get_by_id(self, *args, **kwargs):
         pass
 
@@ -73,16 +78,20 @@ def unsupported(message: str = None) -> Callable:
         pass
     """
 
-    def decorator(operation: Callable) -> Callable:
-        @wraps(operation)
+    def decorator(function: Callable) -> Callable:
+        @wraps(function)
         def wrapper(obj: DataSource, *args, **kwargs) -> None:
             raise UnsupportedOperationException(
                 obj,
-                operation,
+                function,
                 message=message
             )
         wrapper._unsupported = True
         return wrapper
+    
+    if operation is not None:
+        return decorator(operation)
+
     return decorator
 
 
@@ -260,10 +269,10 @@ class ReadOnlyDataSource(DataSource, ABC):
     A DataSource that supports only get operations
     """
 
-    @unsupported('This DataSource is readonly.')
+    @unsupported(message='This DataSource is readonly.')
     def upsert(self, object_type: str, *args, **kwargs) -> None:
         pass
 
-    @unsupported('This DataSource is readonly.')
+    @unsupported(message='This DataSource is readonly.')
     def upsert_multiple_type(self, *args, **kwargs) -> None:
         pass

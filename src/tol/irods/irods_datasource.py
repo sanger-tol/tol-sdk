@@ -115,11 +115,11 @@ class IrodsDataSource(ReadOnlyDataSource):
 
         return self._map_keys(self._format_results(results))
 
-    @unsupported()
+    @unsupported
     def get_by_id(self, *args, **kwargs):
         pass
 
-    @unsupported()
+    @unsupported
     def get_list_page(self, *args, **kwargs):
         pass
 

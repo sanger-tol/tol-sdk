@@ -158,7 +158,7 @@ class MlwhDataSource(ReadOnlyDataSource):
         for row in cur_mlwh.fetchall():
             yield self._format_mlwh_row('run_data', row)
 
-    @unsupported()
+    @unsupported
     def get_by_id(self, *args, **kwargs):
         pass
 
@@ -184,6 +184,6 @@ class MlwhDataSource(ReadOnlyDataSource):
             query = self._get_pacbio_query(sql_conditions)
             return self._execute_query(query)
 
-    @unsupported()
+    @unsupported
     def get_list_page(self, *args, **kwargs):
         pass

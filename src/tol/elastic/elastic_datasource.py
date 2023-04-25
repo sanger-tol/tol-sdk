@@ -170,6 +170,6 @@ class ElasticDataSource(DataSource):
         for obj in objs:
             yield CoreDataObject('run-data', obj['_source'])
 
-    @unsupported()
+    @unsupported
     def upsert_multiple_type(self, *args, **kwargs) -> None:
         pass

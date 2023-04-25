@@ -82,6 +82,6 @@ class StsDataSource(OldApiDataSource):
             **kwargs
         )
 
-    @unsupported('StsDataSource is readonly when used as an ApiDataSource')
+    @unsupported(message='StsDataSource is readonly when used as an ApiDataSource')
     def upsert(self, object_type: str, *args, **kwargs) -> None:
         pass

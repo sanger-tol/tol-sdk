@@ -35,19 +35,19 @@ class ApiDataSource(DataSource):
         """
         return DataSourceSession(self, multi_type=True)
 
-    @unsupported()
+    @unsupported
     def get_by_id(self, object_type: str, *args, **kwargs):
         pass
 
-    @unsupported()
+    @unsupported
     def get_list(self, object_type: str, *args, **kwargs):
         pass
 
-    @unsupported()
+    @unsupported
     def get_list_page(self, object_type: str, *args, **kwargs):
         pass
 
-    @unsupported()
+    @unsupported
     def upsert(self, object_type: str, *args, **kwargs) -> None:
         pass
 
