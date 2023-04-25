@@ -14,6 +14,12 @@ DataDict = Dict[str, Any]
 
 
 class DataObject(ABC):
+    """
+    The ABC for the unit of data on which a DataSource instance
+    operates - representing the lingua franca of DataSources, and
+    declaring all abstract properties that are needed.
+    """
+
     @abstractproperty
     def type(self) -> str:  # noqa
         pass
