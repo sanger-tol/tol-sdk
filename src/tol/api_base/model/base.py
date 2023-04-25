@@ -751,7 +751,7 @@ class Base(db.Model):
             t_table for t_table in target_tables
             if cls.relation_is_enum(t_table)
         ]
-    
+
     @classmethod
     def get_one_to_many_relationship_names(cls):
         relationships = inspect(cls).relationships.items()
@@ -761,7 +761,7 @@ class Base(db.Model):
             cls._get_type_from_tablename(r) for r in relationship_names
             if r not in cls._get_all_tablenames_many_to_one()
         ]
-    
+
     @classmethod
     def get_relationships(cls):
         relationships = inspect(cls).relationships.items()
@@ -770,7 +770,7 @@ class Base(db.Model):
         return {
             r[0]: r[1] for r in relationship_names
         }
-    
+
     @classmethod
     def get_many_to_one_relationships(cls):
         return {
