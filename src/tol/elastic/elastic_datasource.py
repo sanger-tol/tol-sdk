@@ -14,7 +14,7 @@ from elasticsearch import (Elasticsearch, helpers)
 
 from ..core import (
     DataId,
-    DataObject,
+    CoreDataObject,
     DataSource,
     DataSourceError,
     DataSourceFilter,
@@ -33,7 +33,7 @@ class ElasticDataSource(DataSource):
         self.es = Elasticsearch(self.uri, http_auth=(self.user, self.password))
         self.helpers = helpers
 
-    def _convert_data_object_to_dict(self, data_object: DataObject) -> Dict:
+    def _convert_data_object_to_dict(self, data_object: CoreDataObject) -> Dict:
         return data_object.attributes
 
     def _prefix_fields(self, dict_: Dict, prefix: str) -> Dict:
@@ -62,7 +62,7 @@ class ElasticDataSource(DataSource):
                 ret[k] = v
         return ret
 
-    def _action_for_upsert(self, index: str, objects: Iterable[DataObject], id_func: Callable,
+    def _action_for_upsert(self, index: str, objects: Iterable[CoreDataObject], id_func: Callable,
                            field_prefix: str):
         for object_ in objects:
             obj = self._convert_data_object_to_dict(object_)
@@ -81,7 +81,7 @@ class ElasticDataSource(DataSource):
     def upsert(
         self,
         object_type: str,
-        objects: Iterable[DataObject],
+        objects: Iterable[CoreDataObject],
         chunk_size: int = 100,
         id_func=lambda x: x.id,
         field_prefix: str = ''
@@ -107,7 +107,7 @@ class ElasticDataSource(DataSource):
         object_type: str,
         object_ids: Iterable[DataId],
         **kwargs
-    ) -> Iterable[DataObject]:
+    ) -> Iterable[CoreDataObject]:
         index = self.__get_index(object_type)
         resp = self.es.mget(
             body={'ids': object_ids},
@@ -121,7 +121,7 @@ class ElasticDataSource(DataSource):
         page: int,
         object_filters: DataSourceFilter = None,
         **kwargs
-    ) -> Tuple[Iterable[DataObject], int]:
+    ) -> Tuple[Iterable[CoreDataObject], int]:
         index = self.__get_index(object_type)
         query = self._build_elasticsearch_query(object_filters)
         page_size = self.get_page_size()
@@ -158,7 +158,7 @@ class ElasticDataSource(DataSource):
         object_type: str,
         object_filters: DataSourceFilter = None,
         **kwargs
-    ) -> Iterable[DataObject]:
+    ) -> Iterable[CoreDataObject]:
         index = self.__get_index(object_type)
         query = self._build_elasticsearch_query(object_filters)
         generator = self.helpers.scan(self.es,
@@ -168,7 +168,7 @@ class ElasticDataSource(DataSource):
 
     def _convert_dict_to_data_objects(self, objs: Dict) -> Iterable:
         for obj in objs:
-            yield DataObject('run-data', obj['_source'])
+            yield CoreDataObject('run-data', obj['_source'])
 
     @unsupported()
     def upsert_multiple_type(self, *args, **kwargs) -> None:

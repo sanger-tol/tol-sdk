@@ -6,7 +6,7 @@ from __future__ import annotations
 
 from typing import Any, Dict, List, Optional
 
-from ...core import DataObjectABC
+from ...core import DataObject
 
 
 class UnknownUuidError(Exception):
@@ -16,7 +16,7 @@ class UnknownUuidError(Exception):
         )
 
 
-class ApiUpsertObject(DataObjectABC):
+class ApiUpsertObject(DataObject):
     """
     A DataObjectABC implementation from an API transfer dictionary.
     """
@@ -39,11 +39,11 @@ class ApiUpsertObject(DataObjectABC):
         return self.__json_dict.get('attributes', {})
 
     @property
-    def to_one_relationships(self) -> Dict[str, DataObjectABC]:
+    def to_one_relationships(self) -> Dict[str, DataObject]:
         return self.__to_one
 
     @property
-    def to_many_relationships(self) -> Dict[str, List[DataObjectABC]]:
+    def to_many_relationships(self) -> Dict[str, List[DataObject]]:
         return self.__to_many
 
     @property
@@ -66,7 +66,7 @@ class ApiUpsertObject(DataObjectABC):
     def add_to_many_relationship_object(
         self,
         relationship_name: str,
-        data_object: DataObjectABC
+        data_object: DataObject
     ) -> None:
         """
         For a to-many relationship of the given name, either:
@@ -81,7 +81,7 @@ class ApiUpsertObject(DataObjectABC):
     def add_to_one_relationship_object(
         self,
         relationship_name: str,
-        data_object: DataObjectABC
+        data_object: DataObject
     ) -> None:
         """
         Adds a to-one relationship of the given name.
@@ -94,7 +94,7 @@ class ApiUpsertParser:
     Parses the result of a dump of DataObjectABCs by ApiDataSerializer
     """
 
-    def parse(self, upsert_list: List[Dict[str, Any]]) -> List[DataObjectABC]:
+    def parse(self, upsert_list: List[Dict[str, Any]]) -> List[DataObject]:
         parsed_upserts = self.__parse_api_upsert_objects(upsert_list)
         self.__uuid_map = self.__create_uuid_map(parsed_upserts)
         return self.__process_api_upsert_objects(parsed_upserts)

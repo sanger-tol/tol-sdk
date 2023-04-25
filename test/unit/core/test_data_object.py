@@ -2,12 +2,12 @@
 #
 # SPDX-License-Identifier: MIT
 
-from tol.core import DataObject
+from tol.core import CoreDataObject
 
 
 class TestDataObject:
     def test_attributes(self):
-        obj = DataObject('test')
+        obj = CoreDataObject('test')
         obj.test1 = 'nice'
         obj.test2 = 'also nice'
         obj.completely_random = 'yet still nicer'
@@ -21,8 +21,8 @@ class TestDataObject:
         assert obj.to_many_relationships == {}
 
     def test_to_one_relationships(self):
-        greeting = DataObject('greeting')
-        person = DataObject('human')
+        greeting = CoreDataObject('greeting')
+        person = CoreDataObject('human')
         person.saying = greeting
         expected = {
             'saying': greeting
@@ -32,9 +32,9 @@ class TestDataObject:
         assert person.to_many_relationships == {}
 
     def test_to_many_relationships(self):
-        species = DataObject('species')
+        species = CoreDataObject('species')
         specimens = [
-            DataObject('specimen', {'id': i})
+            CoreDataObject('specimen', {'id': i})
             for i in range(50)
         ]
         species.specimens = specimens
@@ -46,12 +46,12 @@ class TestDataObject:
         assert species.to_many_relationships == expected
 
     def test_all(self):
-        specimen = DataObject('specimen', {'id': 'test'})
+        specimen = CoreDataObject('specimen', {'id': 'test'})
         specimen.biospecimen_id = 'I do not know what these look like'
-        species = DataObject('species')
+        species = CoreDataObject('species')
         specimen.species = species
         samples = [
-            DataObject('sample', {'id': i}) for i in range(32)
+            CoreDataObject('sample', {'id': i}) for i in range(32)
         ]
         specimen.assigned_samples = samples
         assert specimen.attributes == {

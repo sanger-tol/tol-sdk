@@ -6,7 +6,7 @@ from __future__ import annotations
 
 from typing import Iterable
 
-from .data_object import DataObjectABC
+from .data_object import DataObject
 
 
 class DataObjectDict(dict):
@@ -15,7 +15,7 @@ class DataObjectDict(dict):
     instance, that filters into lists of the same (object) type.
     """
 
-    def add(self, data_object: DataObjectABC) -> None:
+    def add(self, data_object: DataObject) -> None:
         """
         The given DataObject is added to the list of objects,
         grouped by object_type, with the common object_type as
@@ -26,7 +26,7 @@ class DataObjectDict(dict):
         data_objects.append(data_object)
         self[object_type] = data_objects
 
-    def add_bulk(self, data_objects: Iterable[DataObjectABC]) -> None:
+    def add_bulk(self, data_objects: Iterable[DataObject]) -> None:
         """
         Functions like add(), but takes an iterable of data_objects and
         adds them sequentially.

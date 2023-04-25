@@ -13,7 +13,7 @@ from uuid import uuid4
 DataDict = Dict[str, Any]
 
 
-class DataObjectABC(ABC):
+class DataObject(ABC):
     @abstractproperty
     def type(self) -> str:  # noqa
         pass
@@ -27,11 +27,11 @@ class DataObjectABC(ABC):
         pass
 
     @abstractproperty
-    def to_one_relationships(self) -> Dict[str, DataObjectABC]:
+    def to_one_relationships(self) -> Dict[str, DataObject]:
         pass
 
     @abstractproperty
-    def to_many_relationships(self) -> Dict[str, List[DataObjectABC]]:
+    def to_many_relationships(self) -> Dict[str, List[DataObject]]:
         pass
 
     @abstractproperty
@@ -39,9 +39,12 @@ class DataObjectABC(ABC):
         pass
 
 
-class DataObject(DataObjectABC):
+class CoreDataObject(DataObject):
     """
-    The unit of data on which a DataSource operates.
+    The core unit of data on which a DataSource operates.
+
+    Note there are other supported DataObject classes - any 
+    that inherits from DataObject meets the criteria.
     """
 
     __NON_FIELD_NAMES = [
@@ -65,7 +68,7 @@ class DataObject(DataObjectABC):
         return self.__object_type
 
     @property
-    def id(self) -> str:  # noqa
+    def id(self) -> Optional[str]:  # noqa
         return self.__id
 
     @id.setter
@@ -92,7 +95,7 @@ class DataObject(DataObjectABC):
         }
 
     @property
-    def to_one_relationships(self) -> Dict[str, DataObject]:
+    def to_one_relationships(self) -> Dict[str, CoreDataObject]:
         """
         The to-one relationships of this DataObject, i.e. the
         relationships for which this "points" at 1 single other
@@ -105,7 +108,7 @@ class DataObject(DataObjectABC):
         }
 
     @property
-    def to_many_relationships(self) -> Dict[str, Iterable[DataObject]]:
+    def to_many_relationships(self) -> Dict[str, Iterable[CoreDataObject]]:
         """
         The to-many relationships of this DataObject, i.e. the
         relation DataObject instances that "point" to this instance
@@ -133,7 +136,7 @@ class DataObject(DataObjectABC):
 
     def __is_to_one_relationship(self, name: str) -> bool:
         value = getattr(self, name)
-        return isinstance(value, DataObject)
+        return isinstance(value, CoreDataObject)
 
     def __is_to_many_relationship(self, name: str) -> bool:
         value = getattr(self, name)

@@ -6,7 +6,7 @@ from typing import Any, Dict, List
 from uuid import uuid4
 
 from tol.api_base.datasource import ApiUpsertParser
-from tol.core import DataObject
+from tol.core import CoreDataObject
 
 
 class TestApiUpsertParser:
@@ -222,7 +222,7 @@ class TestApiUpsertParser:
 
     def __dump_data_object(
         self,
-        data_object: DataObject
+        data_object: CoreDataObject
     ) -> Dict[str, Any]:
         return {
             'type': data_object.type,
@@ -234,7 +234,7 @@ class TestApiUpsertParser:
 
     def __dump_data_objects_list(
         self,
-        data_objects: List[DataObject]
+        data_objects: List[CoreDataObject]
     ) -> List[Dict[str, Any]]:
         return [
             self.__dump_data_object(d)

@@ -6,7 +6,7 @@ import json
 
 import responses
 
-from tol.core.data_object import DataObject
+from tol.core.data_object import CoreDataObject
 
 from .mock import api_ds, mock_upsert
 
@@ -22,7 +22,7 @@ class TestApiDataSource:
     def test_one_upsert_one_call(self, upsert_mock):
         with api_ds.session() as sess:
             objects = [
-                DataObject(
+                CoreDataObject(
                     'test',
                     {
                         'id': str(i)
@@ -37,7 +37,7 @@ class TestApiDataSource:
     def test_many_upsert_types_one_call(self, upsert_mock):
         with api_ds.session() as sess:
             objects = [
-                DataObject(
+                CoreDataObject(
                     f'test_{i}',
                     {
                         'field1': 'great fun :)'
@@ -50,14 +50,14 @@ class TestApiDataSource:
 
     @mock_upsert()
     def test_to_one_relationship(self, upsert_mock):
-        species = DataObject(
+        species = CoreDataObject(
             'species',
             {
                 'id': '9606',
                 'name': 'Homo sapiens'
             }
         )
-        specimen = DataObject(
+        specimen = CoreDataObject(
             'specimens',
             {
                 'id': 'mHomSap9534'

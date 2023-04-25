@@ -3,12 +3,12 @@
 # SPDX-License-Identifier: MIT
 
 from tol.api_client.api_object_serializer import ApiDataSerializer
-from tol.core import DataObject
+from tol.core import CoreDataObject
 
 
 class TestApiDataObjectSerializer:
     def test_single_object(self):
-        data_object = DataObject(
+        data_object = CoreDataObject(
             'test',
             {
                 'test1': 'hype',
@@ -30,7 +30,7 @@ class TestApiDataObjectSerializer:
 
     def test_many_objects_mutltiple_types(self):
         data_objects = [
-            DataObject(
+            CoreDataObject(
                 f'test_{i}',
                 {
                     'the_id': i
@@ -60,8 +60,8 @@ class TestApiDataObjectSerializer:
         assert result == expected
 
     def test_to_one_reference(self):
-        a = DataObject('a')
-        b = DataObject('b')
+        a = CoreDataObject('a')
+        b = CoreDataObject('b')
         # add in a known id
         b.id = 'test_id'
         b.a_entry = a
@@ -85,8 +85,8 @@ class TestApiDataObjectSerializer:
         assert expected == result
 
     def test_to_one_reference_removes_duplicate(self):
-        a = DataObject('a')
-        b = DataObject('b')
+        a = CoreDataObject('a')
+        b = CoreDataObject('b')
         b.a_entry = a
         expected = [
             {
@@ -109,7 +109,7 @@ class TestApiDataObjectSerializer:
 
     def test_to_one_reference_chain(self):
         data_objects = [
-            DataObject(
+            CoreDataObject(
                 f'test_{i}',
                 {
                     'the_id': 1000000 - i
@@ -152,9 +152,9 @@ class TestApiDataObjectSerializer:
         assert result == expected
 
     def test_to_many_references(self):
-        a = DataObject('a')
+        a = CoreDataObject('a')
         many_b = [
-            DataObject(
+            CoreDataObject(
                 'b',
                 {
                     'id_stuff': i
@@ -189,9 +189,9 @@ class TestApiDataObjectSerializer:
         assert result == expected
 
     def test_both_to_one_to_many_references(self):
-        a = DataObject('a')
+        a = CoreDataObject('a')
         many_b = [
-            DataObject(
+            CoreDataObject(
                 'b',
                 {
                     'id_stuff': i
@@ -199,7 +199,7 @@ class TestApiDataObjectSerializer:
             )
             for i in range(348)
         ]
-        c = DataObject('c')
+        c = CoreDataObject('c')
         a.many_b = many_b
         a.one_c = c
         uuids = [b._internal_uuid for b in many_b]
@@ -238,8 +238,8 @@ class TestApiDataObjectSerializer:
         """
         A circular reference should not cause infinite recursion
         """
-        a = DataObject('a')
-        b = DataObject('b')
+        a = CoreDataObject('a')
+        b = CoreDataObject('b')
         a.b = b
         b.many_a = [a]
         expected = [

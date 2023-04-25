@@ -8,7 +8,7 @@ import typing
 from itertools import chain
 from typing import Dict, Iterable, List
 
-from .data_object import DataObjectABC
+from .data_object import DataObject
 from .data_object_dict import DataObjectDict
 
 if typing.TYPE_CHECKING:
@@ -22,13 +22,13 @@ class DataSourceSession:
         multi_type: bool = False
     ):
         self.__data_source: DataSource = data_source
-        self.__upserts: Iterable[DataObjectABC] = []
+        self.__upserts: Iterable[DataObject] = []
         self.__multi_type = multi_type
 
     def commit(self) -> None:
         self.__perform_upsert()
 
-    def upsert(self, objects: Iterable[DataObjectABC]) -> None:
+    def upsert(self, objects: Iterable[DataObject]) -> None:
         """
         This upsert operation differs from DataSource().upsert()
         in a few ways:
@@ -66,7 +66,7 @@ class DataSourceSession:
             self.__upserts
         )
 
-    def __separate_upserts(self) -> Dict[str, List[DataObjectABC]]:
+    def __separate_upserts(self) -> Dict[str, List[DataObject]]:
         upsert_dict = DataObjectDict()
         upsert_dict.add_bulk(self.__upserts)
         return upsert_dict

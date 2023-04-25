@@ -19,7 +19,7 @@ from irods.models import (
 from irods.session import iRODSSession
 
 from ..core import (
-    DataObject,
+    CoreDataObject,
     DataSourceError,
     DataSourceFilter,
     ReadOnlyDataSource,
@@ -128,7 +128,7 @@ class IrodsDataSource(ReadOnlyDataSource):
         object_type: str,
         object_filters: DataSourceFilter = None,
         **kwargs
-    ) -> Iterable[DataObject]:
+    ) -> Iterable[CoreDataObject]:
         if object_type != 'run_data':
             raise DataSourceError('Only objects of type "run_data" are handled by IrodsDataSource')
         if object_filters is None or \
@@ -154,4 +154,4 @@ class IrodsDataSource(ReadOnlyDataSource):
 
     def _convert_dict_to_data_objects(self, objs: Dict) -> Iterable:
         for obj in objs:
-            yield DataObject('run_data', obj)
+            yield CoreDataObject('run_data', obj)

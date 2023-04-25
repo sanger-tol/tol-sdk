@@ -8,7 +8,7 @@ from typing import Dict, Iterable, List
 import mysql.connector
 
 from ..core import (
-    DataObject,
+    CoreDataObject,
     DataSourceError,
     DataSourceFilter,
     ReadOnlyDataSource,
@@ -133,7 +133,7 @@ class MlwhDataSource(ReadOnlyDataSource):
         return sql
 
     def _format_mlwh_row(self, object_type: str, row: Dict):
-        return DataObject(object_type, row)
+        return CoreDataObject(object_type, row)
 
     def _join(self, values: List) -> str:
         return "','".join(values)
@@ -167,7 +167,7 @@ class MlwhDataSource(ReadOnlyDataSource):
         object_type: str,
         object_filters: DataSourceFilter = None,
         **kwargs
-    ) -> Iterable[DataObject]:
+    ) -> Iterable[CoreDataObject]:
         # Sort out the conditions
         if object_type != 'run_data':
             raise DataSourceError('Only objects of type run_data are supported')

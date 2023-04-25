@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: MIT
 
 from tol.core import (
-    DataObject,
+    CoreDataObject,
     DataObjectDict
 )
 
@@ -11,7 +11,7 @@ from tol.core import (
 class TestTypedObjectDict:
     def test_add_one_object(self):
         u_dict = DataObjectDict()
-        d_object = DataObject('test')
+        d_object = CoreDataObject('test')
         u_dict.add(d_object)
 
         assert len(u_dict.keys()) == 1
@@ -20,7 +20,7 @@ class TestTypedObjectDict:
     def test_add_many_objects_one_type(self):
         u_dict = DataObjectDict()
         d_objects = [
-            DataObject(
+            CoreDataObject(
                 'test',
                 {
                     'field': f'value_{i}'
@@ -37,7 +37,7 @@ class TestTypedObjectDict:
     def test_add_one_object_for_many_types(self):
         u_dict = DataObjectDict()
         d_objects = [
-            DataObject(
+            CoreDataObject(
                 f'test_{i}',
                 {
                     'field': f'value_{i}'

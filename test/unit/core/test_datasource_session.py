@@ -5,7 +5,7 @@
 from unittest.mock import MagicMock
 
 from tol.core import (
-    DataObject,
+    CoreDataObject,
     DataSource,
     unsupported
 )
@@ -45,7 +45,7 @@ class TestDataSourceSession:
             }
         )()
         objects = [
-            DataObject('test', {'id': i})
+            CoreDataObject('test', {'id': i})
             for i in range(100)
         ]
         sess = DataSourceSession(mock_data_source)
@@ -68,7 +68,7 @@ class TestDataSourceSession:
             }
         )()
         objects = [
-            DataObject(str(i), {'id': i, 'test': 'test'})
+            CoreDataObject(str(i), {'id': i, 'test': 'test'})
             for i in range(100)
         ]
         sess = DataSourceSession(mock_data_source)
@@ -93,7 +93,7 @@ class TestDataSourceSession:
             }
         )()
         objects = [
-            DataObject(str(i), {'id': i, 'test': 'test'})
+            CoreDataObject(str(i), {'id': i, 'test': 'test'})
             for i in range(100)
         ]
         sess = DataSourceSession(mock_data_source)
@@ -121,7 +121,7 @@ class TestDataSourceSession:
             }
         )({})
         objects = [
-            DataObject(str(i), {'id': i, 'test': 'test'})
+            CoreDataObject(str(i), {'id': i, 'test': 'test'})
             for i in range(100)
         ]
         # do two separate upserts with the same objects twice
@@ -149,7 +149,7 @@ class TestDataSourceSession:
             }
         )({})
         objects_list = [
-            DataObject(str(i), {'id': i, 'test': 'test'})
+            CoreDataObject(str(i), {'id': i, 'test': 'test'})
             for i in range(100)
         ]
         objects_generator = (

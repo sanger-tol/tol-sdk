@@ -8,7 +8,7 @@ import requests
 
 from .api_object_serializer import ApiDataSerializer
 from ..core import (
-    DataObject,
+    CoreDataObject,
     DataSource,
     DataSourceSession,
     unsupported
@@ -53,7 +53,7 @@ class ApiDataSource(DataSource):
 
     def upsert_multiple_type(
         self,
-        data_objects: Iterable[DataObject],
+        data_objects: Iterable[CoreDataObject],
         **kwargs
     ) -> None:
         upsert_data = ApiDataSerializer().dump(data_objects)

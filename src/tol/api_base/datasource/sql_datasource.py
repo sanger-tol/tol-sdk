@@ -8,7 +8,7 @@ from typing import Iterable, Tuple
 
 from ...core import (
     DataId,
-    DataObject,
+    CoreDataObject,
     DataSource,
     DataSourceConfig,
     DataSourceFilter,
@@ -40,7 +40,7 @@ class SqlDataSource(DataSource):
         object_type: str,
         object_ids: Iterable[DataId],
         **kwargs
-    ) -> Iterable[DataObject]:
+    ) -> Iterable[CoreDataObject]:
         pass
 
     @unsupported
@@ -51,7 +51,7 @@ class SqlDataSource(DataSource):
         page_size: int = None,
         object_filters: DataSourceFilter = None,
         **kwargs
-    ) -> Tuple[Iterable[DataObject], int]:
+    ) -> Tuple[Iterable[CoreDataObject], int]:
         pass
 
     @unsupported
@@ -60,21 +60,21 @@ class SqlDataSource(DataSource):
         object_type: str,
         object_filters: DataSourceFilter = None,
         **kwargs
-    ) -> Iterable[DataObject]:
+    ) -> Iterable[CoreDataObject]:
         pass
 
     @unsupported
     def upsert(
         self,
         object_type: str,
-        objects: Iterable[DataObject],
+        objects: Iterable[CoreDataObject],
         **kwargs
     ) -> None:
         pass
 
     def upsert_multiple_type(
         self,
-        objects: Iterable[DataObject],
+        objects: Iterable[CoreDataObject],
         **kwargs
     ) -> None:
         """
