@@ -753,6 +753,16 @@ class Base(db.Model):
         ]
     
     @classmethod
+    def get_one_to_many_relationship_names(cls):
+        relationships = inspect(cls).relationships.items()
+        relationship_names = [r[0] for r in relationships]
+        # exclude relationships for which this model is the many end
+        return [
+            cls._get_type_from_tablename(r) for r in relationship_names
+            if r not in cls._get_all_tablenames_many_to_one()
+        ]
+    
+    @classmethod
     def get_relationships(cls):
         relationships = inspect(cls).relationships.items()
         relationship_names = [r for r in relationships]
