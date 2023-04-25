@@ -391,10 +391,6 @@ class Base(db.Model):
                     .order_by(sort_by_column)
     
     @classmethod
-    def _create_relationship_joins(cls, query):
-        return query
-
-    @classmethod
     def _sort_by_query(cls, query, sort_by):
         if sort_by is None:
             return query.order_by(getattr(cls, cls.get_id_column()))
@@ -483,6 +479,31 @@ class Base(db.Model):
             offset = (page - 1) * page_size
             query = query.offset(offset)
         return query.limit(page_size), page, page_size, offset, offset + page_size
+    
+    @classmethod
+    def _relationship_joins_query(cls, query, joins):
+        if joins:
+            #relationships = cls.get_many_to_one_relationships() # contains 1 (via key - relationship_name)
+            logging.error(cls.get_one_to_many_relationship_names())
+
+            for join in joins:
+                for relation in join:
+                    pass
+
+                '''
+                # required:
+                    # 1- relationship (test_a(rel))
+                    # 2- cls.relation_id (cls.a_id)
+                    # 3- relation_table_cls.id (test_a(cls).id)
+
+                query = query.join(
+                    relation,
+                    cls._get_foreign_key_from_relation_model(relation_cls)
+                    == relation_cls.id
+                )
+                ._user_defined_foreign_keys ._calculated_foreign_keys
+                '''
+        return query
 
     @classmethod
     def _postprocess_bulk_find(
@@ -494,14 +515,17 @@ class Base(db.Model):
         sort_by=None
     ):
         exact_filters, contains_filters, range_filters = parse_filters(filter)
-        #exact_filters, contains_filters, range_filters, joins = parse_relationship_filter_joins(filters)
-        import logging
-        #logging.error(joins)
-        #query = cls._create_relationship_joins(parse_filters(filter))
-        query = cls._exact_filter_query(query, exact_filters)
-        query = cls._contains_filter_query(query, contains_filters)
-        query = cls._range_filter_query(query, range_filters)
-        query = cls._sort_by_query(query, parse_sort_by(sort_by))
+        joins = parse_relationship_filter_joins([
+            exact_filters,
+            contains_filters,
+            range_filters
+        ])
+        query = cls._relationship_joins_query(query, joins)
+        if not joins: # temp
+            query = cls._exact_filter_query(query, exact_filters)
+            query = cls._contains_filter_query(query, contains_filters)
+            query = cls._range_filter_query(query, range_filters)
+            query = cls._sort_by_query(query, parse_sort_by(sort_by))
         total = query.count()
         query, page, page_size, offset, limit = cls._paginate_query(query, page, page_size)
         metadata = {
@@ -778,6 +802,7 @@ class Base(db.Model):
             if r not in many_to_one_types
         ]
         logging.error(x)
+        logging.error(cls._get_all_tablenames_many_to_one())
         return x
     
     @classmethod
