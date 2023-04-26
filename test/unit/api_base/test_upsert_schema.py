@@ -316,13 +316,59 @@ class TestUpsertSchema:
         with pytest.raises(ValidationError) as validation_error:
             UpsertSchema().load(dump)
 
-        assert validation_error.value.field_name == '' #TODO
+        assert validation_error.value.field_name == '' #TODO assert all UUIDS in message
 
     def test_both_undefined_several_uuids(self):
         """
         Several UUID references point nowhere, on both
         to-one and to-many relationships
         """
+        uuid_sample = uuid4().hex
+        uuid_specimen = uuid4().hex
+        uuid_species = uuid4().hex
+        uuid_bad_1 = uuid4().hex
+        uuid_bad_2 = uuid4().hex
+        uuid_bad_3 = uuid4().hex
+
+        dump = {
+            'data': [
+                {
+                    'type': 'species',
+                    '_uuid': uuid_species,
+                    'attributes': {
+                        'taxon_id': 9606,
+                        'scientific_name': 'Homo sapiens'
+                    }
+                },
+                {
+                    'type': 'samples',
+                    '_uuid': uuid_sample,
+                },
+                {
+                    'type': 'specimens',
+                    '_uuid': uuid_specimen,
+                    'attributes': {
+                        'tolid': 'mHomSap23'
+                    },
+                    'relationships': {
+                        'one': {
+                            'species': uuid_species,
+                            'badOne': uuid_bad_1
+                        },
+                        'many': {
+                            'samples': [
+                                uuid_bad_2,
+                                uuid_sample,
+                                uuid_bad_3
+                            ]
+                        }
+                    }
+                }
+            ]
+        }
+
+        with pytest.raises(ValidationError) as validation_error:
+            UpsertSchema().load(dump)
 
     def test_consistent_data(self):
         """
