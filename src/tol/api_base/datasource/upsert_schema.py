@@ -17,7 +17,8 @@ from .api_upsert_object import ApiUpsertObject
 from ...core import DataObject
 
 
-UpsertData = Dict[str, List[Dict[str, Any]]]
+UpsertDatum = Dict[str, Any]
+UpsertData = Dict[str, List[UpsertDatum]]
 
 
 class UpsertRelationshipSchema(Schema):
@@ -98,20 +99,20 @@ class UpsertSchema(Schema):
         ]
         return set(chain(*uuid_iterables))
 
-    def __get_claimed_uuids_on_datum(self, upsert_datum: Dict[str, Any]) -> List[str]:
+    def __get_claimed_uuids_on_datum(self, upsert_datum: UpsertDatum) -> List[str]:
         return [
             *self.__get_claimed_one_uuids(upsert_datum),
             *self.__get_claimed_many_uuids(upsert_datum)
         ]
 
-    def __get_claimed_many_uuids(self, upsert_datum: Dict[str, Any]) -> List[str]:
+    def __get_claimed_many_uuids(self, upsert_datum: UpsertDatum) -> List[str]:
         uuid_iterables = [
             __uuids for __uuids
             in upsert_datum.get('relationships', {}).get('many', {}).values()
         ]
         return list(chain(*uuid_iterables))
 
-    def __get_claimed_one_uuids(self, upsert_datum: Dict[str, Any]) -> List[str]:
+    def __get_claimed_one_uuids(self, upsert_datum: UpsertDatum) -> List[str]:
         return [
             __uuid for __uuid
             in upsert_datum.get('relationships', {}).get('one', {}).values()
@@ -127,12 +128,12 @@ class UpsertSchema(Schema):
 
     def __parse_api_upsert_objects(
         self,
-        upsert_list: List[Dict[str, Any]]
+        upsert_data: List[UpsertDatum]
     ) -> List[ApiUpsertObject]:
 
         return [
             ApiUpsertObject(json_dict)
-            for json_dict in upsert_list
+            for json_dict in upsert_data
         ]
 
     def __create_uuid_map(
