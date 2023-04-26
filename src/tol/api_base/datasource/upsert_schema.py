@@ -65,7 +65,7 @@ class UpsertSchema(Schema):
         upsert_data: UpsertData,
         **kwargs
     ) -> None:
-        missing_uuids = self.__get_missing_uuid_set(upsert_data)
+        missing_uuids = self.__get_missing_uuids(upsert_data)
         if missing_uuids:
             detail = f'The following UUIDs are undefined: "{missing_uuids}".'
             message = {
@@ -78,12 +78,12 @@ class UpsertSchema(Schema):
             }
             raise ValidationError(message)
 
-    def __get_missing_uuid_set(self, upsert_data: UpsertData) -> Set[str]:
-        existing_uuids = self.__get_existing_uuid_set(upsert_data)
-        claimed_uuids = self.__get_claimed_uuid_set(upsert_data)
+    def __get_missing_uuids(self, upsert_data: UpsertData) -> Set[str]:
+        existing_uuids = self.__get_existing_uuids(upsert_data)
+        claimed_uuids = self.__get_claimed_uuids(upsert_data)
         return claimed_uuids.difference(existing_uuids)
 
-    def __get_existing_uuid_set(self, upsert_data: UpsertData) -> Set[str]:
+    def __get_existing_uuids(self, upsert_data: UpsertData) -> Set[str]:
         upsert_list = upsert_data.get('data', [])
         uuid_set = {
             u['_uuid'] for u in upsert_list
@@ -91,7 +91,7 @@ class UpsertSchema(Schema):
         uuid_set.discard(None)
         return uuid_set
 
-    def __get_claimed_uuid_set(self, upsert_data: UpsertData) -> Set[str]:
+    def __get_claimed_uuids(self, upsert_data: UpsertData) -> Set[str]:
         uuid_iterables = [
             self.__get_claimed_uuids_on_datum(upsert_datum)
             for upsert_datum in upsert_data['data']
