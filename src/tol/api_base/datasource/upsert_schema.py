@@ -63,16 +63,27 @@ class UpsertSchema(Schema):
     ) -> None:
         pass
 
-    def __get_uuid_set(
-        self,
-        upsert_data: UpsertData
-    ) -> Set[str]:
+    def __get_existing_uuid_set(self, upsert_data: UpsertData) -> Set[str]:
         upsert_list = upsert_data.get('data', [])
         self.__uuid_set = {
             u.get('_uuid') for u in upsert_list
         }
         self.__uuid_set.discard(None)
         return upsert_data
+
+    def __get_claimed_uuid_set(self, upsert_data: UpsertData) -> Set[str]:
+        return Set(
+            [
+                *self.__get_claimed_one_uuids(upsert_data),
+                *self.__get_claimed_many_uuids(upsert_data)
+            ]
+        )
+
+    def __get_claimed_many_uuids(self, upsert_data: UpsertData) -> List[str]:
+        return []
+
+    def __get_claimed_one_uuids(self, upsert_data: UpsertData) -> List[str]:
+        return []
 
     def __process_upsert_list(
         self,

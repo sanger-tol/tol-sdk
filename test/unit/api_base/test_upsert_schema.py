@@ -280,7 +280,10 @@ class TestUpsertSchema:
         with pytest.raises(ValidationError) as validation_error:
             UpsertSchema().load(dump)
 
-        assert validation_error.value.field_name == '' #TODO
+        messages = validation_error.value.messages
+        assert len(messages) == 1
+        message = messages[0]
+        assert bad_uuid in message
         
 
     def test_to_many_undefined_uuid(self):
@@ -316,7 +319,10 @@ class TestUpsertSchema:
         with pytest.raises(ValidationError) as validation_error:
             UpsertSchema().load(dump)
 
-        assert validation_error.value.field_name == '' #TODO assert all UUIDS in message
+        messages = validation_error.value.messages
+        assert len(messages) == 1
+        message = messages[0]
+        assert bad_uuid in message
 
     def test_both_undefined_several_uuids(self):
         """
@@ -368,7 +374,14 @@ class TestUpsertSchema:
         }
 
         with pytest.raises(ValidationError) as validation_error:
-            UpsertSchema().load(dump)  #TODO test for UUID's that are bad
+            UpsertSchema().load(dump)
+
+        messages = validation_error.value.messages
+        assert len(messages) == 1
+        message = messages[0]
+        assert uuid_bad_1 in message
+        assert uuid_bad_2 in message
+        assert uuid_bad_3 in message
 
     def test_consistent_data(self):
         """
