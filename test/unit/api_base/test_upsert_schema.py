@@ -280,7 +280,7 @@ class TestUpsertSchema:
         with pytest.raises(ValidationError) as validation_error:
             UpsertSchema().load(dump)
 
-        messages = validation_error.value.messages
+        messages = validation_error.value.messages['errors']
         assert len(messages) == 1
         message = messages[0]
         assert bad_uuid in message
@@ -319,7 +319,7 @@ class TestUpsertSchema:
         with pytest.raises(ValidationError) as validation_error:
             UpsertSchema().load(dump)
 
-        messages = validation_error.value.messages
+        messages = validation_error.value.messages['errors']
         assert len(messages) == 1
         message = messages[0]
         assert bad_uuid in message
@@ -376,7 +376,7 @@ class TestUpsertSchema:
         with pytest.raises(ValidationError) as validation_error:
             UpsertSchema().load(dump)
 
-        messages = validation_error.value.messages
+        messages = validation_error.value.messages['errors']
         assert len(messages) == 1
         message = messages[0]
         assert uuid_bad_1 in message
