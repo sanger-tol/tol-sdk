@@ -280,13 +280,43 @@ class TestUpsertSchema:
         with pytest.raises(ValidationError) as validation_error:
             UpsertSchema().validate(dump)
 
-        assert validation_error.value.field_name == ''
+        assert validation_error.value.field_name == '' #TODO
         
 
     def test_to_many_undefined_uuid(self):
         """
         A to-many UUID reference that points nowhere.
         """
+        uuid_sample = uuid4().hex
+        uuid_specimen = uuid4().hex
+        bad_uuid = uuid4().hex
+        dump = {
+            'data': [
+                {
+                    'type': 'sample',
+                    '_uuid': uuid_sample
+                },
+                {
+                    'type': 'specimen',
+                    '_uuid': uuid_specimen,
+                    'attributes': {
+                        'fun': 'yes'
+                    },
+                    'relationships': {
+                        'many': {
+                            'samplesAreFUN!!!': [
+                                uuid_sample,
+                                bad_uuid
+                            ]
+                        }
+                    }
+                }
+            ]
+        }
+        with pytest.raises(ValidationError) as validation_error:
+            UpsertSchema().validate(dump)
+
+        assert validation_error.value.field_name == '' #TODO
 
     def test_both_undefined_several_uuids(self):
         """
