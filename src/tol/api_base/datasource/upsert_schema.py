@@ -85,11 +85,11 @@ class UpsertSchema(Schema):
 
     def __get_existing_uuid_set(self, upsert_data: UpsertData) -> Set[str]:
         upsert_list = upsert_data.get('data', [])
-        self.__uuid_set = {
-            u.get('_uuid') for u in upsert_list
+        uuid_set = {
+            u['_uuid'] for u in upsert_list
         }
-        self.__uuid_set.discard(None)
-        return upsert_data
+        uuid_set.discard(None)
+        return uuid_set
 
     def __get_claimed_uuid_set(self, upsert_data: UpsertData) -> Set[str]:
         uuid_iterables = [
