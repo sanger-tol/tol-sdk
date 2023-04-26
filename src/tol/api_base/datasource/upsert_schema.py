@@ -2,6 +2,7 @@
 #
 # SPDX-License-Identifier: MIT
 
+from itertools import chain
 from typing import Any, Dict, List, Set
 
 from marshmallow import (
@@ -42,7 +43,10 @@ class UpsertObjectSchema(Schema):
 
 
 class UpsertSchema(Schema):
-    data = fields.List(fields.Nested(UpsertObjectSchema))
+    data = fields.List(
+        fields.Nested(UpsertObjectSchema),
+        required=True
+    )
 
     @post_load
     def __parse_data_objects(
@@ -61,7 +65,23 @@ class UpsertSchema(Schema):
         upsert_data: UpsertData,
         **kwargs
     ) -> None:
-        pass
+        missing_uuids = self.__get_missing_uuid_set(upsert_data)
+        if missing_uuids:
+            detail = f'The following IDs are undefined: "{missing_uuids}".'
+            message = {
+                'errors': [
+                    {
+                        'title': 'Undefined Object UUIDs',
+                        'detail': detail
+                    }
+                ]
+            }
+            raise ValidationError(message)
+
+    def __get_missing_uuid_set(self, upsert_data: UpsertData) -> Set[str]:
+        existing_uuids = self.__get_existing_uuid_set(upsert_data)
+        claimed_uuids = self.__get_claimed_uuid_set(upsert_data)
+        return claimed_uuids.difference(existing_uuids)
 
     def __get_existing_uuid_set(self, upsert_data: UpsertData) -> Set[str]:
         upsert_list = upsert_data.get('data', [])
@@ -72,18 +92,30 @@ class UpsertSchema(Schema):
         return upsert_data
 
     def __get_claimed_uuid_set(self, upsert_data: UpsertData) -> Set[str]:
-        return Set(
-            [
-                *self.__get_claimed_one_uuids(upsert_data),
-                *self.__get_claimed_many_uuids(upsert_data)
-            ]
-        )
+        uuid_iterables = [
+            self.__get_claimed_uuids_on_datum(upsert_datum)
+            for upsert_datum in upsert_data['data']
+        ]
+        return set(chain(*uuid_iterables))
 
-    def __get_claimed_many_uuids(self, upsert_data: UpsertData) -> List[str]:
-        return []
+    def __get_claimed_uuids_on_datum(self, upsert_datum: Dict[str, Any]) -> List[str]:
+        return [
+            *self.__get_claimed_one_uuids(upsert_datum),
+            *self.__get_claimed_many_uuids(upsert_datum)
+        ]
 
-    def __get_claimed_one_uuids(self, upsert_data: UpsertData) -> List[str]:
-        return []
+    def __get_claimed_many_uuids(self, upsert_datum: Dict[str, Any]) -> List[str]:
+        uuid_iterables = [
+            __uuids for __uuids
+            in upsert_datum.get('relationships', {}).get('many', {}).values()
+        ]
+        return list(chain(*uuid_iterables))
+
+    def __get_claimed_one_uuids(self, upsert_datum: Dict[str, Any]) -> List[str]:
+        return [
+            __uuid for __uuid
+            in upsert_datum.get('relationships', {}).get('one', {}).values()
+        ]
 
     def __process_upsert_list(
         self,

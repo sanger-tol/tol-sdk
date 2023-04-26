@@ -282,7 +282,7 @@ class TestUpsertSchema:
 
         messages = validation_error.value.messages['errors']
         assert len(messages) == 1
-        message = messages[0]
+        message = messages[0]['detail']
         assert bad_uuid in message
         
 
@@ -321,7 +321,7 @@ class TestUpsertSchema:
 
         messages = validation_error.value.messages['errors']
         assert len(messages) == 1
-        message = messages[0]
+        message = messages[0]['detail']
         assert bad_uuid in message
 
     def test_both_undefined_several_uuids(self):
@@ -378,7 +378,7 @@ class TestUpsertSchema:
 
         messages = validation_error.value.messages['errors']
         assert len(messages) == 1
-        message = messages[0]
+        message = messages[0]['detail']
         assert uuid_bad_1 in message
         assert uuid_bad_2 in message
         assert uuid_bad_3 in message
