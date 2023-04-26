@@ -5,6 +5,9 @@
 from typing import Any, Dict, List
 from uuid import uuid4
 
+import pytest
+from marshmallow import ValidationError
+
 from tol.api_base.datasource.upsert_schema import UpsertSchema
 from tol.core import CoreDataObject
 
@@ -274,7 +277,10 @@ class TestUpsertSchema:
                 }
             ]
         }
-        UpsertSchema().validate(dump)
+        with pytest.raises(ValidationError) as validation_error:
+            UpsertSchema().validate(dump)
+
+        assert validation_error.value.field_name == ''
         
 
     def test_to_many_undefined_uuid(self):
