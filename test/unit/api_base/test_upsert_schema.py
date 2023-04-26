@@ -175,7 +175,7 @@ class TestUpsertSchema:
             for i, uuid in enumerate(uuids)
         ]
         all_objects = [obj, *manys]
-        parsed = UpsertSchema().load(all_objects)
+        parsed = UpsertSchema().load({'data': all_objects})
         assert len(parsed) == len(all_objects)
         parsed = sorted(parsed, key=lambda p: (p.type, p.id))
         parsed_obj_filters = [o for o in parsed if o.type == 'test']

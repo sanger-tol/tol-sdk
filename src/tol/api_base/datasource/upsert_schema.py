@@ -51,8 +51,9 @@ class UpsertSchema(Schema):
         **kwargs
     ) -> List[DataObject]:
         upsert_list = upsert_data.get('data', [])
-        self.__uuid_map = self.__create_uuid_map
-        return self.__process_upsert_list(upsert_list)
+        upsert_objects = self.__parse_api_upsert_objects(upsert_list)
+        self.__uuid_map = self.__create_uuid_map(upsert_objects)
+        return self.__process_upsert_list(upsert_objects)
 
     @validates_schema
     def __validate_relationship_uuids(
@@ -75,12 +76,11 @@ class UpsertSchema(Schema):
 
     def __process_upsert_list(
         self,
-        upsert_list: List[Dict[str, Any]]
+        upsert_objects: List[ApiUpsertObject]
     ) -> List[DataObject]:
-        parsed_upserts = self.__parse_api_upsert_objects(upsert_list)
-        for upsert_object in parsed_upserts:
+        for upsert_object in upsert_objects:
             self.__process_api_upsert_object(upsert_object)
-        return parsed_upserts
+        return upsert_objects
 
     def __parse_api_upsert_objects(
         self,
