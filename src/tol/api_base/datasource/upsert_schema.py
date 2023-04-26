@@ -4,18 +4,22 @@
 
 from typing import Any, Dict, List, Set
 
-from marshmallow import Schema, fields, post_load
+from marshmallow import (
+    Schema,
+    fields,
+    post_load,
+    validates_schema,
+    ValidationError
+)
 
 from .api_upsert_object import ApiUpsertObject
 from ...core import DataObject
 
 
-class UpsertObjectSchema(Schema):
-    _uuid = fields.String(required=True)
-    type = fields.String(required=True)  # noqa
-    id = fields.String()  # noqa
-    attributes = fields.Dict()
+UpsertData = Dict[str, List[Dict[str, Any]]]
 
+
+class UpsertRelationshipSchema(Schema):
     one = fields.Dict(
         keys=fields.String(),
         values=fields.String()
@@ -29,12 +33,38 @@ class UpsertObjectSchema(Schema):
     )
 
 
+class UpsertObjectSchema(Schema):
+    _uuid = fields.String(required=True)
+    type = fields.String(required=True)  # noqa
+    id = fields.String()  # noqa
+    attributes = fields.Dict()
+    relationships = fields.Nested(UpsertRelationshipSchema)
+
+
 class UpsertSchema(Schema):
     data = fields.List(fields.Nested(UpsertObjectSchema))
 
+    @post_load
+    def __parse_data_objects(
+        self,
+        upsert_data: UpsertData,
+        **kwargs
+    ) -> List[DataObject]:
+        upsert_list = upsert_data.get('data', [])
+        self.__uuid_map = self.__create_uuid_map
+        return self.__process_upsert_list(upsert_list)
+
+    @validates_schema
+    def __validate_relationship_uuids(
+        self,
+        upsert_data: UpsertData,
+        **kwargs
+    ) -> None:
+        pass
+
     def __get_uuid_set(
         self,
-        upsert_data: Dict[str, List[Dict[str, Any]]]
+        upsert_data: UpsertData
     ) -> Set[str]:
         upsert_list = upsert_data.get('data', [])
         self.__uuid_set = {
@@ -42,16 +72,6 @@ class UpsertSchema(Schema):
         }
         self.__uuid_set.discard(None)
         return upsert_data
-
-    @post_load
-    def __parse(
-        self,
-        upsert_data: Dict[str, List[Dict[str, Any]]],
-        **kwargs
-    ) -> List[DataObject]:
-        upsert_list = upsert_data.get('data', [])
-        self.__uuid_map = self.__create_uuid_map
-        return self.__process_upsert_list(upsert_list)
 
     def __process_upsert_list(
         self,
@@ -110,5 +130,5 @@ class UpsertSchema(Schema):
                 )
 
     def __get_object_by_uuid(self, __uuid: str) -> ApiUpsertObject:
-        api_upsert_object = self.__uuid_map.get(__uuid)
+        api_upsert_object = self.__uuid_map[__uuid]
         return api_upsert_object
