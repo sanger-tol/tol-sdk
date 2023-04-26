@@ -7,10 +7,10 @@ from typing import Any, Dict, List, Set
 
 from marshmallow import (
     Schema,
+    ValidationError,
     fields,
     post_load,
-    validates_schema,
-    ValidationError
+    validates_schema
 )
 
 from .api_upsert_object import ApiUpsertObject
@@ -106,17 +106,15 @@ class UpsertSchema(Schema):
         ]
 
     def __get_claimed_many_uuids(self, upsert_datum: UpsertDatum) -> List[str]:
-        uuid_iterables = [
-            __uuids for __uuids
-            in upsert_datum.get('relationships', {}).get('many', {}).values()
-        ]
+        uuid_iterables = list(
+            upsert_datum.get('relationships', {}).get('many', {}).values()
+        )
         return list(chain(*uuid_iterables))
 
     def __get_claimed_one_uuids(self, upsert_datum: UpsertDatum) -> List[str]:
-        return [
-            __uuid for __uuid
-            in upsert_datum.get('relationships', {}).get('one', {}).values()
-        ]
+        return list(
+            upsert_datum.get('relationships', {}).get('one', {}).values()
+        )
 
     def __process_upsert_list(
         self,

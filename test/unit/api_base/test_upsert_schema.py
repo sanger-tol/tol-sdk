@@ -5,8 +5,8 @@
 from typing import Any, Dict, List
 from uuid import uuid4
 
-import pytest
 from marshmallow import ValidationError
+import pytest
 
 from tol.api_base.datasource.upsert_schema import UpsertSchema
 from tol.core import CoreDataObject
@@ -284,7 +284,6 @@ class TestUpsertSchema:
         assert len(messages) == 1
         message = messages[0]['detail']
         assert bad_uuid in message
-        
 
     def test_to_many_undefined_uuid(self):
         """
