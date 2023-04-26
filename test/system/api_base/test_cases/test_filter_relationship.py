@@ -8,10 +8,10 @@ from ..test_case import BaseTestCase
 class TestFilterRelationship(BaseTestCase):
     def test_one_hop_relationship_filter(self):
         self.add_a(id=494, string_column='match')
-        self.add_b(id=393, a_id=494)
+        self.add_b(id_string=393, a_id=494)
 
         response = self.client.open(
-            '/api/v1/b?filter={"exact":{"a.string_column":"match"}}'
+            '/api/v1/b?filter={"exact":{"test_a.string_column":"match"}}'
         )
         self.assert200(
             response,
@@ -46,11 +46,11 @@ class TestFilterRelationship(BaseTestCase):
 
     def test_two_hop_relationship_filter(self):
         self.add_a(id=494, string_column='match')
-        self.add_b(id=393, a_id=494)
+        self.add_b(id_string=393, a_id=494)
         self.add_e(id=595, b_id=393)
 
         response = self.client.open(
-            '/api/v1/e?filter={"exact":{"b.a.string_column":"match"}}'
+            '/api/v1/e?filter={"exact":{"test_b.test_a.string_column":"match"}}'
         )
         self.assert200(
             response,

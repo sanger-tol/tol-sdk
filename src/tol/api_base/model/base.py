@@ -484,7 +484,8 @@ class Base(db.Model):
     def _relationship_joins_query(cls, query, joins):
         if joins:
             #relationships = cls.get_many_to_one_relationships() # contains 1 (via key - relationship_name)
-            logging.error(cls.get_one_to_many_relationship_names())
+            logging.error(cls._get_type_from_relationship_name('test_a'))
+            logging.error(cls.get_many_to_one_relationships())
 
             for join in joins:
                 for relation in join:
@@ -710,6 +711,16 @@ class Base(db.Model):
         return cls.tablename_type_dict[tablename]
 
     @classmethod
+    def _get_tablename_via_relationship_name(cls, relationship_name):
+        return str(cls.get_relationships()[relationship_name].target.name)
+    
+    @classmethod
+    def _get_type_from_relationship_name(cls, relationship_name):
+        return cls._get_type_from_tablename(
+            cls._get_tablename_via_relationship_name(relationship_name)
+        )
+
+    @classmethod
     def get_enum_relationship_details(cls):
         foreign_keys, target_table_types = cls._get_foreign_keys_and_target_tables()
         return [
@@ -751,31 +762,31 @@ class Base(db.Model):
             t_table for t_table in target_tables
             if cls.relation_is_enum(t_table)
         ]
-
-    @classmethod
-    def get_one_to_many_relationship_names(cls):
-        relationships = inspect(cls).relationships.items()
-        relationship_names = [r[0] for r in relationships]
-        # exclude relationships for which this model is the many end
-        return [
-            cls._get_type_from_tablename(r) for r in relationship_names
-            if r not in cls._get_all_tablenames_many_to_one()
-        ]
-
+    
     @classmethod
     def get_relationships(cls):
         relationships = inspect(cls).relationships.items()
         relationship_names = [r for r in relationships]
-        # exclude relationships for which this model is the one end
         return {
             r[0]: r[1] for r in relationship_names
         }
 
     @classmethod
+    def get_one_to_many_relationship_names(cls):
+        # exclude relationships for which this model is the many end
+        return [
+            cls._get_type_from_tablename(r)
+            for r in cls.get_relationships().keys()
+            if r not in cls._get_all_tablenames_many_to_one()
+        ]
+
+    @classmethod
     def get_many_to_one_relationships(cls):
+        # exclude relationships for which this model is the one end
         return {
-            r[0]: r[1] for r in cls.get_relationships()
-            if r[0] in cls._get_all_tablenames_many_to_one()
+            key: value
+            for key, value in cls.get_relationships().items()
+            if key in cls._get_all_tablenames_many_to_one()
         }
 
     @classmethod
