@@ -368,9 +368,46 @@ class TestUpsertSchema:
         }
 
         with pytest.raises(ValidationError) as validation_error:
-            UpsertSchema().load(dump)
+            UpsertSchema().load(dump)  #TODO test for UUID's that are bad
 
     def test_consistent_data(self):
         """
         Entirely consistent data
         """
+
+        uuid_samples = [uuid4().hex for _ in range(348)]
+        uuid_species = uuid4().hex
+        uuid_specimen = uuid4().hex
+
+        samples = [
+            {
+                'type': 'samples',
+                '_uuid': __uuid,
+                'attributes': {
+                    'calculate': f'the UUID is {__uuid}'
+                }
+            }
+            for __uuid in uuid_samples
+        ]
+        dump = {
+            'data': [
+                *samples,
+                {
+                    'type': 'specimens',
+                    '_uuid': uuid_specimen,
+                    'relationships': {
+                        'one': {
+                            'species': uuid_species
+                        },
+                        'many': {
+                            'samples': uuid_samples
+                        }
+                    }
+                },
+                {
+                    'type': 'species',
+                    '_uuid': uuid_species
+                }
+            ]
+        }
+        UpsertSchema().load(dump)
