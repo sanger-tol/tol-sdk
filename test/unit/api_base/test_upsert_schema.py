@@ -278,7 +278,7 @@ class TestUpsertSchema:
             ]
         }
         with pytest.raises(ValidationError) as validation_error:
-            UpsertSchema().validate(dump)
+            UpsertSchema().load(dump)
 
         assert validation_error.value.field_name == '' #TODO
         
@@ -314,7 +314,7 @@ class TestUpsertSchema:
             ]
         }
         with pytest.raises(ValidationError) as validation_error:
-            UpsertSchema().validate(dump)
+            UpsertSchema().load(dump)
 
         assert validation_error.value.field_name == '' #TODO
 
