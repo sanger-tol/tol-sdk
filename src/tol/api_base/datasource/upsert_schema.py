@@ -67,7 +67,7 @@ class UpsertSchema(Schema):
     ) -> None:
         missing_uuids = self.__get_missing_uuid_set(upsert_data)
         if missing_uuids:
-            detail = f'The following IDs are undefined: "{missing_uuids}".'
+            detail = f'The following UUIDs are undefined: "{missing_uuids}".'
             message = {
                 'errors': [
                     {
