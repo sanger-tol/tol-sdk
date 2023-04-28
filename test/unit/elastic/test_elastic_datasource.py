@@ -203,3 +203,30 @@ class TestElasticDataSource(TestCase):
             {'terms': {'field2': ['string3', 'string4'], 'boost': 1.0}}],
             'must_not': []}}
         self.assertEqual(expected, eds._build_elasticsearch_query(object_filters))
+
+    def test_get_aggregations(self):
+        eds = MockElasticDataSource(
+            {'uri': 'test', 'user': 'user', 'password': 'password', 'index_prefix': 'test'}
+        )
+        agg_result = {
+            'my-agg-name': {
+                'doc_count_error_upper_bound': 0,
+                'sum_other_doc_count': 0,
+                'buckets': []
+            }
+        }
+        eds.es.search.return_value = {
+            'aggregations': agg_result
+        }
+
+        aggregations = {
+            'my-agg-name': {
+                'terms': {
+                    'field': 'my-field'
+                }
+            }
+        }
+        returned = eds.get_aggregations('index',
+                                        aggregations=aggregations)
+        eds.es.search.assert_called_once()
+        self.assertEqual(agg_result, returned)

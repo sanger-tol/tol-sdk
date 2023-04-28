@@ -15,7 +15,7 @@ from tol.eln import (
 class TestEntities(TestCase):
 
     def test_flatten_entity(self):
-
+        self.maxDiff = None
         entity = {
             'field1': 'value1',
             'field2': 'value2',
@@ -25,7 +25,15 @@ class TestEntities(TestCase):
                       'subfield2': 'subvalue4'}],
             'list2': ['item1', 'item2', 'item3'],
             'dict': {'dictfield1': 'dictvalue1',
-                     'dictfield2': 'dictvalue2'}
+                     'dictfield2': 'dictvalue2'},
+            'subdict': {'key1': {'dictfield3': 'dictvalue3',
+                                 'dictfield4': 'dictvalue4'},
+                        'key2': {'dictfield5': 'dictvalue5',
+                                 'dictfield6': 'dictvalue6'},
+                        'sublist': [{'subfield3': 'subvalue3',
+                                     'subfield4': 'subvalue4'},
+                                    {'subfield5': 'subvalue5',
+                                     'subfield6': 'subvalue6'}]}
         }
 
         expected = {
@@ -39,7 +47,15 @@ class TestEntities(TestCase):
             'list2_1': 'item2',
             'list2_2': 'item3',
             'dict_dictfield1': 'dictvalue1',
-            'dict_dictfield2': 'dictvalue2'
+            'dict_dictfield2': 'dictvalue2',
+            'subdict_key1_dictfield3': 'dictvalue3',
+            'subdict_key1_dictfield4': 'dictvalue4',
+            'subdict_key2_dictfield5': 'dictvalue5',
+            'subdict_key2_dictfield6': 'dictvalue6',
+            'subdict_sublist_0_subfield3': 'subvalue3',
+            'subdict_sublist_0_subfield4': 'subvalue4',
+            'subdict_sublist_1_subfield5': 'subvalue5',
+            'subdict_sublist_1_subfield6': 'subvalue6',
         }
         self.assertEqual(expected, flatten_entity(entity))
 

@@ -5,24 +5,22 @@
 from .sanitise import sanitise_value
 
 
-def flatten_entity(entity):
+def flatten_entity(entity, level=None):
     flattened_entity = {}
-    for field, value in entity.items():
-        if type(value) is list:
-            for index, subentity in enumerate(value):
-                if type(subentity) is dict:
-                    for subfield, subvalue in subentity.items():
-                        new_name = field + '_' + str(index) + '_' + subfield
-                        flattened_entity[new_name] = subvalue
-                elif type(subentity) is str:
-                    new_name = field + '_' + str(index)
-                    flattened_entity[new_name] = subentity
-        elif type(value) is dict:
-            for subfield, subvalue in value.items():
-                new_name = field + '_' + subfield
-                flattened_entity[new_name] = subvalue
-        else:
-            flattened_entity[field] = value
+    prefix = f'{level}_' if level is not None else ''
+    if type(entity) is dict:
+        for field, value in entity.items():
+            extra_fields = flatten_entity(value, prefix + field)
+            flattened_entity = {**flattened_entity,
+                                **extra_fields}
+    elif type(entity) is list:
+        for index, subentity in enumerate(entity):
+            new_name = prefix + str(index)
+            extra_fields = flatten_entity(subentity, new_name)
+            flattened_entity = {**flattened_entity,
+                                **extra_fields}
+    else:
+        return {level: entity}
     return flattened_entity
 
 

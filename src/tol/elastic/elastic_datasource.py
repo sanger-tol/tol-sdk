@@ -129,7 +129,7 @@ class ElasticDataSource(DataSource):
             from_=from_,
             size=page_size,
             index=index,
-            query={'query': query}
+            query=query
         )
         return self._convert_dict_to_data_objects(resp['hits']['hits']), \
             resp['hits']['total']['value']
@@ -168,3 +168,19 @@ class ElasticDataSource(DataSource):
     def _convert_dict_to_data_objects(self, objs: Dict) -> Iterable:
         for obj in objs:
             yield DataObject('run-data', obj['_source'])
+
+    def get_aggregations(
+            self,
+            object_type: str,
+            aggregations: Dict,
+            object_filters: DataSourceFilter = None,
+    ) -> Dict:
+        index = self.__get_index(object_type)
+        query = self._build_elasticsearch_query(object_filters)
+        resp = self.es.search(
+            size=0,
+            index=index,
+            query=query,
+            aggregations=aggregations
+        )
+        return resp['aggregations']
