@@ -68,7 +68,7 @@ class DataSourceSession:
         data_object: DataObject
     ) -> UpsertDict:
 
-        object_type = data_object.object_type
+        object_type = data_object.type
         objects = upsert_dict.get(object_type, [])
         objects.append(data_object)
         upsert_dict[object_type] = objects

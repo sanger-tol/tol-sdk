@@ -37,3 +37,7 @@ class TestApiDataSource(ApiDataSource):
                                       headers={'Token': self.key})
         self.delete_count += 1
         return response
+
+    @property
+    def supported_types(self):
+        raise NotImplementedError()

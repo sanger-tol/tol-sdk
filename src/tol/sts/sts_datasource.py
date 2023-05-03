@@ -9,9 +9,6 @@ import requests
 from ..api_client import (
     ApiDataSource
 )
-from ..core import (
-    unsupported
-)
 
 
 class StsDataSource(ApiDataSource):
@@ -81,7 +78,3 @@ class StsDataSource(ApiDataSource):
             relative_url,
             **kwargs
         )
-
-    @unsupported('StsDataSource is readonly when used as an ApiDataSource')
-    def upsert(self, object_type: str, *args, **kwargs) -> None:
-        pass

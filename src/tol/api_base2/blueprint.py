@@ -1,0 +1,60 @@
+# SPDX-FileCopyrightText: 2023 Genome Research Ltd.
+#
+# SPDX-License-Identifier: MIT
+
+from flask import Blueprint, request
+
+from tol.core import DataSource
+
+from .controller import Controller
+from .exception import BaseRuntimeException
+from .misc import DataSourceDict, ListGetParamaters
+from .view import DefaultView
+
+
+class DataBlueprint(Blueprint):
+    """
+    A flask Blueprint for dynamically routing DataObject endpoints
+    defined in DataSource instances.
+    """
+
+    def __init__(self, url_prefix: str = '/data') -> None:
+        super().__init__(
+            'data_source_handler',
+            __name__,
+            url_prefix=url_prefix
+        )
+
+
+def data_blueprint(*data_sources: DataSource) -> DataBlueprint:
+    """
+    Given a tuple of DataSource instances, this provides a flask
+    Blueprint instance for routing the basic operations on said
+    DataSource instances as endpoints.
+    """
+
+    data_handler = DataBlueprint()
+    data_source_dict = DataSourceDict(*data_sources)
+
+    @data_handler.route('/<object_type>/<object_id>', methods=['GET'])
+    def get_detail(*, object_type: str, object_id: str):
+        data_source = data_source_dict[object_type]
+        view = DefaultView()
+        controller = Controller(data_source, view)
+        return controller.get_detail(object_type, object_id)
+
+    @data_handler.route('/<object_type>', methods=['GET'])
+    def get_list(*, object_type: str):
+        data_source = data_source_dict[object_type]
+        view = DefaultView()
+        controller = Controller(data_source, view)
+        request_args = ListGetParamaters(request.args)
+        return controller.get_list(object_type, request_args)
+
+    @data_handler.app_errorhandler(BaseRuntimeException)
+    def handle_error(error: BaseRuntimeException):
+        return {
+            'errors': error.errors
+        }, error.status_code
+
+    return data_handler

@@ -15,8 +15,7 @@ from .api_object import ApiObject
 from ..core import (
     DataSource,
     DataSourceError,
-    DataSourceFilter,
-    unsupported
+    DataSourceFilter
 )
 
 
@@ -195,6 +194,6 @@ class ApiDataSource(DataSource):
                 self._convert_relationships_from_json_to_objects(obj_json['relationships'])
             obj.update_relationships_from_dict(relationships_obj)
 
-    @unsupported()
-    def upsert(self, object_type: str, *args, **kwargs) -> None:
-        pass
+    @property
+    def supported_types(self):
+        raise NotImplementedError()

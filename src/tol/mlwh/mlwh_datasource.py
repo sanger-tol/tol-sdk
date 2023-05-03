@@ -8,7 +8,7 @@ from typing import Dict, Iterable, List
 import mysql.connector
 
 from ..core import (
-    DataObject,
+    CoreDataObject,
     DataSourceError,
     DataSourceFilter,
     ReadOnlyDataSource,
@@ -133,7 +133,7 @@ class MlwhDataSource(ReadOnlyDataSource):
         return sql
 
     def _format_mlwh_row(self, object_type: str, row: Dict):
-        return DataObject(object_type, row)
+        return CoreDataObject(object_type, data=row)
 
     def _join(self, values: List) -> str:
         return "','".join(values)
@@ -158,7 +158,7 @@ class MlwhDataSource(ReadOnlyDataSource):
         for row in cur_mlwh.fetchall():
             yield self._format_mlwh_row('run_data', row)
 
-    @unsupported()
+    @unsupported
     def get_by_id(self, *args, **kwargs):
         pass
 
@@ -167,7 +167,7 @@ class MlwhDataSource(ReadOnlyDataSource):
         object_type: str,
         object_filters: DataSourceFilter = None,
         **kwargs
-    ) -> Iterable[DataObject]:
+    ) -> Iterable[CoreDataObject]:
         # Sort out the conditions
         if object_type != 'run_data':
             raise DataSourceError('Only objects of type run_data are supported')
@@ -184,6 +184,10 @@ class MlwhDataSource(ReadOnlyDataSource):
             query = self._get_pacbio_query(sql_conditions)
             return self._execute_query(query)
 
-    @unsupported()
+    @unsupported
     def get_list_page(self, *args, **kwargs):
         pass
+
+    @property
+    def supported_types(self):
+        raise NotImplementedError()

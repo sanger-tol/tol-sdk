@@ -6,7 +6,7 @@ from datetime import datetime
 from unittest import (TestCase, mock)
 
 from tol.core import (
-    DataObject,
+    CoreDataObject,
     DataSourceError,
     DataSourceFilter
 )
@@ -34,16 +34,16 @@ class TestElasticDataSource(TestCase):
         eds = MockElasticDataSource(
             {'uri': 'test', 'user': 'user', 'password': 'password', 'index_prefix': 'test'}
         )
-        objects = [DataObject('run_data', {'id': 1, 'field1': 'value1',
-                                           'field2': 'value2', 'datefield': dt}),
-                   DataObject('run_data', {'id': 2, 'field1': 'value3', 'field2': 'value4'})]
+        objects = [CoreDataObject('run_data', {'id': 1, 'field1': 'value1',
+                                  'field2': 'value2', 'datefield': dt}),
+                   CoreDataObject('run_data', {'id': 2, 'field1': 'value3', 'field2': 'value4'})]
         generator = eds._action_for_upsert('index', objects, id_func=lambda x: x.id,
                                            field_prefix='')
         expected = {'_op_type': 'update',
                     'doc_as_upsert': True,
                     '_index': 'index',
                     '_id': 1,
-                    'doc': {'id': 1, 'field1': 'value1', 'field2': 'value2',
+                    'doc': {'field1': 'value1', 'field2': 'value2',
                             'datefield': dt.isoformat(),
                             'tol_updated_at': dt.isoformat(),
                             'tol_checksum': 'abc123'}}
@@ -52,7 +52,7 @@ class TestElasticDataSource(TestCase):
                     'doc_as_upsert': True,
                     '_index': 'index',
                     '_id': 2,
-                    'doc': {'id': 2, 'field1': 'value3', 'field2': 'value4',
+                    'doc': {'field1': 'value3', 'field2': 'value4',
                             'tol_updated_at': dt.isoformat(),
                             'tol_checksum': 'abc123'}}
         self.assertEqual(expected, next(generator))
@@ -64,8 +64,16 @@ class TestElasticDataSource(TestCase):
         eds = MockElasticDataSource(
             {'uri': 'test', 'user': 'user', 'password': 'password', 'index_prefix': 'test'}
         )
-        objects = [DataObject('run_data', {'field1': 'value1', 'field2': 'value2'}),
-                   DataObject('run_data', {'field1': 'value3', 'field2': 'value4'})]
+        objects = [
+            CoreDataObject(
+                'run_data',
+                data={'field1': 'value1', 'field2': 'value2'}
+            ),
+            CoreDataObject(
+                'run_data',
+                data={'field1': 'value3', 'field2': 'value4'}
+            )
+        ]
         generator = eds._action_for_upsert('index', objects, id_func=lambda x: x.field1,
                                            field_prefix='pre')
         expected = {'_op_type': 'update',

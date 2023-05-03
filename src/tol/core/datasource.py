@@ -4,14 +4,13 @@
 
 from __future__ import annotations
 
-from abc import ABC, abstractmethod
+from abc import ABC, abstractmethod, abstractproperty
 from functools import wraps
-from typing import Any, Callable, Dict, Iterable, List, Tuple
+from typing import Any, Callable, Dict, Iterable, List, Tuple, Type
 
 from .data_object import DataDict, DataObject
 from .datasource_error import DataSourceError
 from .datasource_filter import DataSourceFilter
-from .datasource_session import DataSourceSession
 
 
 DataId = str
@@ -19,18 +18,28 @@ DataSourceUpdate = Tuple[DataId, DataDict]
 DataSourceConfig = Dict[str, Any]
 
 
+class BadUnsupportedUsageException(Exception):
+    def __init__(self):
+        super().__init__(
+            '@unsupported() has been used improperly. When '
+            'specifying an optional message, it must be '
+            'specified as a keyword argument, e.g. '
+            "@unsupported(message='example')"
+        )
+
+
 class UnsupportedOperationException(NotImplementedError):
     def __init__(
         self,
-        obj: DataSource,
-        method: Callable,
+        data_source: DataSource,
         object_type: str,
+        method: Callable,
         message: str = None
     ):
         rendered_message = self.__render_message(
-            obj,
-            method,
+            data_source,
             object_type,
+            method,
             message
         )
         super().__init__(rendered_message)
@@ -38,13 +47,14 @@ class UnsupportedOperationException(NotImplementedError):
     def __render_message(
         self,
         obj: DataSource,
-        method: Callable,
         object_type: str,
+        method: Callable,
         message: str
     ) -> str:
         auto_message = (
-            f'The operation {method.__name__} for type {object_type} '
-            f'is unsupported on {obj.__class__.__name__}.'
+            f'The operation {method.__name__} is unsupported '
+            f'for objects of type {object_type} (on '
+            f'{obj.__class__.__name__}).'
         )
         if message is None:
             return auto_message
@@ -52,20 +62,25 @@ class UnsupportedOperationException(NotImplementedError):
             return f'{auto_message}\n\n{message}'
 
 
-def unsupported(message: str = None) -> Callable:
+def unsupported(
+    operation=None,
+    *,
+    message: str = None
+) -> Callable:
     """
     Indicates that an abstract operation on ABC DataSource is
     unsupported on the inherited class and will raise an
     UnsupportedOperationException if called.
 
-    This decorator can be used with or without parentheses after,
-    the former supporting providing an optional message to
+    This decorator can be used with (or without) parentheses
+    after, in the former, an optional message may be provided to
     any UnsupportedOperationException resulting from an
-    operation invocation.
+    operation invocation. This message MUST be specified as a
+    keyword argument!
 
     Usage:
 
-    @unsupported()
+    @unsupported
     def get_by_id(self, *args, **kwargs):
         pass
 
@@ -76,20 +91,62 @@ def unsupported(message: str = None) -> Callable:
         pass
     """
 
-    def decorator(operation: Callable) -> Callable:
-        @wraps(operation)
-        def wrapper(obj: DataSource, object_type: str, *args, **kwargs) -> None:
+    def decorator(function: Callable) -> Callable:
+        @wraps(function)
+        def wrapper(data_source: DataSource, object_type: str, *args, **kwargs) -> None:
             raise UnsupportedOperationException(
-                obj,
-                operation,
+                data_source,
                 object_type,
+                function,
                 message=message
             )
         wrapper._unsupported = True
         return wrapper
+
+    if isinstance(operation, str):
+        # the user gave message as an arg, not kwarg
+        raise BadUnsupportedUsageException()
+
+    if operation is not None:
+        return decorator(operation)
+
     return decorator
 
 
+def operation(method: Callable) -> Callable:
+    """
+    Indicates a central operation on a DataSource. Only to be used
+    on the base DataSource, for operations common to all (or
+    unsupported)
+    """
+
+    @wraps(method)
+    @abstractmethod
+    def wrapper(obj: DataSource, *args, **kwargs) -> None:
+        return method(obj, *args, **kwargs)
+
+    wrapper._operation = True
+    return wrapper
+
+
+def setup_operations(ds_class: Type[DataSource]) -> Type[DataSource]:
+
+    def __member_is_operation(member: Any) -> bool:
+        return getattr(member, '_operation', False) is True
+
+    members = {
+        m: v
+        for m, v in vars(ds_class).items()
+        if not m.startswith('_')
+    }
+    ds_class._operations = [
+        m for m, v in members.items()
+        if __member_is_operation(v)
+    ]
+    return ds_class
+
+
+@setup_operations
 class DataSource(ABC):
     """
     The central class for managing operations on heterogeneous data sources.
@@ -102,13 +159,6 @@ class DataSource(ABC):
 
     DEFAULT_PAGE_SIZE = 20
 
-    __OPERATIONS = [
-        'get_by_id',
-        'get_list_page',
-        'get_list',
-        'upsert'
-    ]
-
     def __init__(self, config: DataSourceConfig, expected: List[str] = None):
         self.__validate_config(config, expected)
         for k, v in config.items():
@@ -116,20 +166,25 @@ class DataSource(ABC):
 
     @property
     def supported_operations(self) -> List[str]:
+        """
+        The list of operations (e.g. get_by_id) supported by a DataSource instance.
+        """
         return [
-            operation for operation in self.__OPERATIONS
+            operation for operation in self._operations
             if self.__operation_is_supported(operation)
         ]
 
-    def session(self) -> DataSourceSession:
-        return DataSourceSession(self)
+    @abstractproperty
+    def supported_types(self) -> List[str]:
+        """
+        The list of types of DataObject supported by this DataSource instance.
+
+        This can either be a static list, or dynamically generated.
+        """
 
     def __operation_is_supported(self, name) -> bool:
         operation = getattr(self, name)
-        return (
-            hasattr(operation, '_unsupported')
-            and operation._unsupported is True
-        ) is False
+        return getattr(operation, '_unsupported', False) is not True
 
     def __validate_config(
         self,
@@ -145,7 +200,7 @@ class DataSource(ABC):
                     detail=f'{k} missing in config dict'
                 )
 
-    @abstractmethod
+    @operation
     def get_by_id(
         self,
         object_type: str,
@@ -157,7 +212,7 @@ class DataSource(ABC):
         with their id's equal to those given in the object_ids Iterable.
         """
 
-    @abstractmethod
+    @operation
     def get_list_page(
         self,
         object_type: str,
@@ -174,7 +229,7 @@ class DataSource(ABC):
         - The total number of DataObjects that matches the filter
         """
 
-    @abstractmethod
+    @operation
     def get_list(
         self,
         object_type: str,
@@ -185,21 +240,6 @@ class DataSource(ABC):
         Gets a generator of DataObject instances
         """
 
-    @abstractmethod
-    def upsert(
-        self,
-        object_type: str,
-        objects: Iterable[DataObject],
-        **kwargs
-    ) -> None:
-        """
-        Takes an iterable of DataObjects of the same object_type,
-        and for each, performs either:
-
-        - an insert (if they don't exist already)
-        - an update (if they do)
-        """
-
     def get_page_size(self) -> int:
         return getattr(self, 'page_size', self.DEFAULT_PAGE_SIZE)
 
@@ -208,7 +248,3 @@ class ReadOnlyDataSource(DataSource, ABC):
     """
     A DataSource that supports only get operations
     """
-
-    @unsupported('This DataSource is readonly.')
-    def upsert(self, object_type: str, *args, **kwargs) -> None:
-        pass

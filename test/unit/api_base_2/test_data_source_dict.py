@@ -1,0 +1,79 @@
+# SPDX-FileCopyrightText: 2022 Genome Research Ltd.
+#
+# SPDX-License-Identifier: MIT
+
+import pytest
+
+from tol.api_base2.exception import UnknownObjectTypeException
+from tol.api_base2.misc import DataSourceDict
+from tol.core import (
+    CoreDataObject,
+    ReadOnlyDataSource,
+    unsupported
+)
+
+
+class _TestDataSource1(ReadOnlyDataSource):
+    @unsupported
+    def get_list_page(self, *args, **kwargs):
+        pass
+
+    def get_by_id(self, object_type: str, object_id: str, *args, **kwargs):
+        return [
+            CoreDataObject(object_type, {'id': object_id})
+        ]
+
+    @unsupported
+    def get_list(self, *args, **kwargs):
+        pass
+
+    @property
+    def supported_types(self):
+        return ['test2', 'test1']
+
+
+class _TestDataSource2(ReadOnlyDataSource):
+    def get_list_page(self, object_type: str, *args, **kwargs):
+        return [
+            CoreDataObject(object_type, {'id': str(i)})
+            for i in range(20)
+        ]
+
+    @unsupported
+    def get_by_id(self, *args, **kwargs):
+        pass
+
+    @unsupported
+    def get_list(self, *args, **kwargs):
+        pass
+
+    @property
+    def supported_types(self):
+        return ['test_A', 'test_B']
+
+
+ds_1 = _TestDataSource1({})
+ds_2 = _TestDataSource2({})
+
+
+class TestDataSourceDict:
+    def test_known_type_keys(self):
+        """Use keys that are registered to one of the given DataSource"""
+        d = DataSourceDict(ds_1, ds_2)
+
+        assert d['test1'] == ds_1
+        assert d['test2'] == ds_1
+        assert d['test_A'] == ds_2
+        assert d['test_B'] == ds_2
+
+    def test_unkown_type_keys(self):
+        """
+        Keys that are not registered to any DataSource raise
+        UnknownObjectTypeException
+        """
+        d = DataSourceDict(ds_2, ds_1)
+
+        with pytest.raises(UnknownObjectTypeException):
+            d['this-is_']
+        with pytest.raises(UnknownObjectTypeException):
+            d['soooooo RANDOM!!!']

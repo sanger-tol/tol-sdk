@@ -13,6 +13,7 @@ from caseconverter import kebabcase
 from elasticsearch import (Elasticsearch, helpers)
 
 from ..core import (
+    CoreDataObject,
     DataId,
     DataObject,
     DataSource,
@@ -167,7 +168,7 @@ class ElasticDataSource(DataSource):
 
     def _convert_dict_to_data_objects(self, objs: Dict) -> Iterable:
         for obj in objs:
-            yield DataObject('run-data', obj['_source'])
+            yield CoreDataObject('run-data', data=obj['_source'])
 
     def get_aggregations(
             self,
@@ -184,3 +185,7 @@ class ElasticDataSource(DataSource):
             aggregations=aggregations
         )
         return resp['aggregations']
+
+    @property
+    def supported_types(self):
+        raise NotImplementedError()

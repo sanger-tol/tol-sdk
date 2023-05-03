@@ -4,26 +4,26 @@
 
 from unittest.mock import MagicMock
 
-from tol.core import DataObject, DataSource, unsupported
+from tol.core import CoreDataObject, DataSource, unsupported
 from tol.core.datasource_session import DataSourceSession
 
 
 class MockDataSource(DataSource):
-    @unsupported()
+    @unsupported
     def get_by_id(self, object_type: str, *args, **kwargs):
         pass
 
-    @unsupported()
+    @unsupported
     def get_list_page(self, object_type: str, *args, **kwargs):
         pass
 
-    @unsupported()
-    def upsert(self, object_type: str, *args, **kwargs):
-        pass
-
-    @unsupported()
+    @unsupported
     def get_list(self, object_type: str, *args, **kwargs):
         pass
+
+    @property
+    def supported_types(self):
+        raise NotImplementedError()
 
 
 class TestDataSourceSession:
@@ -37,7 +37,7 @@ class TestDataSourceSession:
             }
         )()
         objects = [
-            DataObject('test', {'id': i})
+            CoreDataObject('test', {'id': i})
             for i in range(100)
         ]
         sess = DataSourceSession(mock_data_source)
@@ -60,14 +60,14 @@ class TestDataSourceSession:
             }
         )()
         objects = [
-            DataObject(str(i), {'id': i, 'test': 'test'})
+            CoreDataObject(str(i), {'id': i, 'test': 'test'})
             for i in range(100)
         ]
         sess = DataSourceSession(mock_data_source)
         sess.upsert(objects)
         sess.commit()
         expected = [
-            (obj.object_type, [obj])
+            (obj.type, [obj])
             for obj in objects
         ]
         observed = [
@@ -85,7 +85,7 @@ class TestDataSourceSession:
             }
         )()
         objects = [
-            DataObject(str(i), {'id': i, 'test': 'test'})
+            CoreDataObject(str(i), {'id': i, 'test': 'test'})
             for i in range(100)
         ]
         sess = DataSourceSession(mock_data_source)
@@ -95,7 +95,7 @@ class TestDataSourceSession:
         sess.commit()
         # should be treated as one
         expected = [
-            (obj.object_type, [obj, obj])
+            (obj.type, [obj, obj])
             for obj in objects
         ]
         observed = [
@@ -113,17 +113,17 @@ class TestDataSourceSession:
             }
         )({})
         objects = [
-            DataObject(str(i), {'id': i, 'test': 'test'})
+            CoreDataObject(str(i), {'id': i, 'test': 'test'})
             for i in range(100)
         ]
         # do two separate upserts with the same objects twice
-        with mock_data_source.session() as sess:
+        with DataSourceSession(mock_data_source) as sess:
             sess.upsert(objects)
             sess.upsert(reversed(objects))
         # should have commited on leaving scope
         # should be treated as one
         expected = [
-            (obj.object_type, [obj, obj])
+            (obj.type, [obj, obj])
             for obj in objects
         ]
         observed = [
@@ -141,20 +141,20 @@ class TestDataSourceSession:
             }
         )({})
         objects_list = [
-            DataObject(str(i), {'id': i, 'test': 'test'})
+            CoreDataObject(str(i), {'id': i, 'test': 'test'})
             for i in range(100)
         ]
         objects_generator = (
             data_object for data_object in reversed(objects_list)
         )
         # do two separate upserts with the same objects twice
-        with mock_data_source.session() as sess:
+        with DataSourceSession(mock_data_source) as sess:
             sess.upsert(objects_generator)
             sess.upsert(objects_list)
         # should have commited on leaving scope
         # should be treated as one
         expected = [
-            (obj.object_type, [obj, obj])
+            (obj.type, [obj, obj])
             for obj in reversed(objects_list)
         ]
         observed = [

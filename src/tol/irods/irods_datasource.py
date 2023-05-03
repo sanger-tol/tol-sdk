@@ -19,6 +19,7 @@ from irods.models import (
 from irods.session import iRODSSession
 
 from ..core import (
+    CoreDataObject,
     DataObject,
     DataSourceError,
     DataSourceFilter,
@@ -115,11 +116,11 @@ class IrodsDataSource(ReadOnlyDataSource):
 
         return self._map_keys(self._format_results(results))
 
-    @unsupported()
+    @unsupported
     def get_by_id(self, *args, **kwargs):
         pass
 
-    @unsupported()
+    @unsupported
     def get_list_page(self, *args, **kwargs):
         pass
 
@@ -128,7 +129,7 @@ class IrodsDataSource(ReadOnlyDataSource):
         object_type: str,
         object_filters: DataSourceFilter = None,
         **kwargs
-    ) -> Iterable[DataObject]:
+    ) -> Iterable[CoreDataObject]:
         if object_type != 'run_data':
             raise DataSourceError('Only objects of type "run_data" are handled by IrodsDataSource')
         if object_filters is None or \
@@ -152,6 +153,12 @@ class IrodsDataSource(ReadOnlyDataSource):
 
         raise DataSourceError('Filter must contain run_id or study_id in_list filter')
 
-    def _convert_dict_to_data_objects(self, objs: Dict) -> Iterable:
-        for obj in objs:
-            yield DataObject('run_data', obj)
+    def _convert_dict_to_data_objects(self, objs: Dict) -> Iterable[DataObject]:
+        return (
+            CoreDataObject('run_data', data=obj)
+            for obj in objs
+        )
+
+    @property
+    def supported_types(self):
+        raise NotImplementedError()
