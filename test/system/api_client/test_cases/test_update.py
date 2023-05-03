@@ -3,7 +3,10 @@
 # SPDX-License-Identifier: MIT
 
 from tol.api_client import ApiObject
-from tol.core import DataSourceError
+from tol.core import (
+    DataSourceError,
+    DataSourceFilter
+)
 
 from ..test_api_datasource import TestApiDataSource
 from ...api_base.test_case import BaseTestCase
@@ -19,14 +22,17 @@ class TestUpdate(BaseTestCase):
         ads = TestApiDataSource({'client': self.client,
                                  'url': 'none',
                                  'key': self.token_1})
-        cs = list(ads.get_list('c', object_filters={'exact': {'other_column': 'fine'}}))
+        object_filters = DataSourceFilter()
+        object_filters.exact = {'other_column': 'fine'}
+        cs = list(ads.get_list('c', object_filters=object_filters))
         self.assertEqual(1, len(cs))
         c = cs[0]
         c.other_column = 'new'
         ads.update(c)
         self.assertEqual(1, ads.patch_count)
         # Check it returns new value
-        cs = list(ads.get_list('c', object_filters={'exact': {'other_column': 'new'}}))
+        object_filters.exact = {'other_column': 'new'}
+        cs = list(ads.get_list('c', object_filters=object_filters))
         self.assertEqual(1, len(cs))
         c = cs[0]
         self.assertEqual('new', c.other_column)

@@ -4,6 +4,7 @@
 
 import json
 import math
+from dataclasses import asdict
 from itertools import chain
 from typing import Dict, List
 
@@ -63,7 +64,7 @@ class ApiDataSource(DataSource):
     def get_list(self, object_type: str, object_filters: DataSourceFilter = None,
                  sort_by: str = '', page_size: int = 100):
         # Get the first page, then we know the total size
-        args = {'filter': json.dumps(object_filters) if object_filters else {},
+        args = {'filter': json.dumps(asdict(object_filters)) if object_filters else {},
                 'sort_by': sort_by,
                 'page_size': page_size}
         first_page, meta = self.get_list_page(object_type, 1, **args)

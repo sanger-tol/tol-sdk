@@ -4,6 +4,8 @@
 
 import math
 
+from tol.core import DataSourceFilter
+
 from ..test_api_datasource import TestApiDataSource
 from ...api_base.test_case import BaseTestCase
 
@@ -98,7 +100,9 @@ class TestListGet(BaseTestCase):
         ads = TestApiDataSource({'client': self.client,
                                  'url': 'none',
                                  'key': self.token_1})
-        ret = ads.get_list('c', object_filters={'exact': {'nullable_column': 'fine'}})
+        object_filters = DataSourceFilter()
+        object_filters.exact = {'nullable_column': 'fine'}
+        ret = ads.get_list('c', object_filters=object_filters)
 
         self.assertEqual(1, len(ret))
         c = ret[0]

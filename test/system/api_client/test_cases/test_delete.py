@@ -3,7 +3,10 @@
 # SPDX-License-Identifier: MIT
 
 from tol.api_client import ApiObject
-from tol.core import DataSourceError
+from tol.core import (
+    DataSourceError,
+    DataSourceFilter
+)
 
 from ..test_api_datasource import TestApiDataSource
 from ...api_base.test_case import BaseTestCase
@@ -19,13 +22,15 @@ class TestDelete(BaseTestCase):
         ads = TestApiDataSource({'client': self.client,
                                  'url': 'none',
                                  'key': self.token_1})
-        gs = list(ads.get_list('g', object_filters={'exact': {'string_column': 'fine'}}))
+        object_filters = DataSourceFilter()
+        object_filters.exact = {'string_column': 'fine'}
+        gs = list(ads.get_list('g', object_filters=object_filters))
         self.assertEqual(1, len(gs))
         g = gs[0]
         ads.delete(g)
         self.assertEqual(1, ads.delete_count)
         # Check it returns nothing in list_get
-        gs = list(ads.get_list('g', object_filters={'exact': {'string_column': 'fine'}}))
+        gs = list(ads.get_list('g', object_filters=object_filters))
         self.assertEqual(0, len(gs))
 
     def test_delete_with_relationship(self):
