@@ -48,7 +48,7 @@ class ElasticDataSource(DataSource):
         return {**dict_, 'tol_updated_at': datetime.now().isoformat()}
 
     def _add_checksum(self, dict_: Dict) -> Dict:
-        dhash = hashlib.md5()
+        dhash = hashlib.sha256()
         encoded = json.dumps(dict_, sort_keys=True).encode()
         dhash.update(encoded)
         return {**dict_, 'checksum': dhash.hexdigest()}

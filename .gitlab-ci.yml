@@ -10,5 +10,5 @@ variables:
 
 include:
   - project: 'tol/tol-core'
-    ref: v1.3.2
+    ref: v1.3.6
     file: '/gitlab/python-package.yml'

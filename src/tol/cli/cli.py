@@ -20,7 +20,8 @@ def cli(env_file):
 
 # Lint
 @cli.command()
-@click.option('--type', 'type_', default='python', type=click.Choice(['python', 'license']),
+@click.option('--type', 'type_', default='python',
+              type=click.Choice(['python', 'license']),
               help='type of lint')
 def lint(type_):
     # service = get_app()
@@ -32,6 +33,30 @@ def lint(type_):
     if type_ == 'python':
         linter = 'gitlab-registry.internal.sanger.ac.uk/tol/tol-core/lint:1.0.1'
         command = f'docker run --rm --volume $(pwd):/project {linter}'
+        click.secho(command, fg='green')
+        run(command)
+
+
+# Scan
+@cli.command()
+@click.option('--type', 'type_', default='sast',
+              type=click.Choice(['sast', 'dependencies']),
+              help='type of scan')
+def scan(type_):
+    token = os.getenv('SNYK_TOKEN')
+    if token is None:
+        click.secho('SNYK_TOKEN environment variable must be set', fg='red')
+        return
+    # service = get_app()
+    click.echo('Running scan...')
+    if type_ == 'sast':
+        command = 'docker run --env SNYK_TOKEN --rm --volume $(pwd):/app ' \
+            'snyk/snyk:python snyk code test'
+        click.secho(command, fg='green')
+        run(command)
+    if type_ == 'dependencies':
+        command = 'docker run --env SNYK_TOKEN --rm --volume $(pwd):/app ' \
+            'snyk/snyk:python snyk test'
         click.secho(command, fg='green')
         run(command)
 

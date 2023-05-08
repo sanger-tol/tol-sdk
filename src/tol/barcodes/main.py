@@ -77,7 +77,7 @@ class Interface(DataSource):
             self.baracoda_url, 'barcodes_group', str(prefix), f'new?count={count}'
         )
         try:
-            response = requests.post(request, verify=False)
+            response = requests.post(request)
         except requests.exceptions.RequestException as error:
             return self.custom_response(status_code=400, message=str(error))
         if response.status_code != 201:
