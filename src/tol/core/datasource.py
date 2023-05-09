@@ -6,7 +6,7 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod, abstractproperty
 from functools import wraps
-from typing import Any, Callable, Dict, Iterable, List, Tuple, Type
+from typing import Any, Callable, Dict, Iterable, List, Optional, Tuple, Type
 
 from .data_object import DataDict, DataObject
 from .datasource_error import DataSourceError
@@ -34,7 +34,7 @@ class UnsupportedOperationException(NotImplementedError):
         data_source: DataSource,
         object_type: str,
         method: Callable,
-        message: str = None
+        message: Optional[str] = None
     ):
         rendered_message = self.__render_message(
             data_source,
@@ -150,14 +150,10 @@ def setup_operations(ds_class: Type[DataSource]) -> Type[DataSource]:
 class DataSource(ABC):
     """
     The central class for managing operations on heterogeneous data sources.
-
-    All operations called directly on a DataSource instance will be executed
-    immediately.
-
-    To batch calls, use the session() method.
     """
 
     DEFAULT_PAGE_SIZE = 20
+    _operations: List[str]
 
     def __init__(self, config: DataSourceConfig, expected: List[str] = None):
         self.__validate_config(config, expected)
@@ -206,10 +202,11 @@ class DataSource(ABC):
         object_type: str,
         object_ids: Iterable[DataId],
         **kwargs
-    ) -> Iterable[DataObject]:
+    ) -> Iterable[Optional[DataObject]]:
         """
         Gets an Iterable of DataObject instances, of specified object_type,
-        with their id's equal to those given in the object_ids Iterable.
+        with their id's equal to those given in the object_ids Iterable (or
+        None if the id at that position is not found).
         """
 
     @operation

@@ -2,6 +2,8 @@
 #
 # SPDX-License-Identifier: MIT
 
+from typing import Optional
+
 from flask import Blueprint, request
 
 from tol.core import DataSource
@@ -18,7 +20,10 @@ class DataBlueprint(Blueprint):
     defined in DataSource instances.
     """
 
-    def __init__(self, url_prefix: str = '/data') -> None:
+    def __init__(
+        self,
+        url_prefix: Optional[str] = None
+    ) -> None:
         super().__init__(
             'data_source_handler',
             __name__,
@@ -26,14 +31,17 @@ class DataBlueprint(Blueprint):
         )
 
 
-def data_blueprint(*data_sources: DataSource) -> DataBlueprint:
+def data_blueprint(
+    *data_sources: DataSource,
+    url_prefix: str = '/data'
+) -> DataBlueprint:
     """
     Given a tuple of DataSource instances, this provides a flask
     Blueprint instance for routing the basic operations on said
     DataSource instances as endpoints.
     """
 
-    data_handler = DataBlueprint()
+    data_handler = DataBlueprint(url_prefix=url_prefix)
     data_source_dict = DataSourceDict(*data_sources)
 
     @data_handler.route('/<object_type>/<object_id>', methods=['GET'])

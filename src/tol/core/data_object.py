@@ -7,7 +7,6 @@ from __future__ import annotations
 from abc import ABC, abstractproperty
 from collections.abc import Iterable as IterableABC
 from typing import Any, Dict, Iterable, List, Optional
-from uuid import uuid4
 
 
 DataDict = Dict[str, Any]
@@ -55,13 +54,6 @@ class DataObject(ABC):
         precisely this object.
         """
 
-    @abstractproperty
-    def _internal_uuid(self) -> str:
-        """
-        An internal UUID, serving to uniquely identify created objects
-        where the ID is either unknown or unknowable at creation.
-        """
-
 
 class CoreDataObject(DataObject):
     """
@@ -85,17 +77,17 @@ class CoreDataObject(DataObject):
     def __init__(
         self,
         object_type: str,
-        data: DataDict = None
+        data: DataDict = None,
+        object_id: Optional[str] = None  # noqa
     ):
-        self.__id: str = None
-        self.__object_type = object_type
-        self.__internal_uuid = uuid4().hex
+        self.__id = object_id
+        self.__type = object_type
         if data is not None:
             self.set_data(data)
 
     @property
     def type(self) -> str:  # noqa
-        return self.__object_type
+        return self.__type
 
     @property
     def id(self) -> Optional[str]:  # noqa
@@ -136,10 +128,6 @@ class CoreDataObject(DataObject):
             for key in self.__get_field_names()
             if self.__is_to_many_relationship(key)
         }
-
-    @property
-    def _internal_uuid(self) -> str:
-        return self.__internal_uuid
 
     def __is_attribute(self, name: str) -> bool:
         return (
