@@ -240,6 +240,14 @@ class DataSource(ABC):
     def get_page_size(self) -> int:
         return getattr(self, 'page_size', self.DEFAULT_PAGE_SIZE)
 
+    @abstractmethod
+    def get_attribute_types(self, object_type: str) -> Dict:
+        """
+        The types (str, int, etc) of the attributes of an object_type.
+
+        This can either be a static list, or dynamically generated.
+        """
+
 
 class ReadOnlyDataSource(DataSource, ABC):
     """

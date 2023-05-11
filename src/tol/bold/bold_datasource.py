@@ -74,3 +74,6 @@ class BoldDataSource(ReadOnlyDataSource):
     @property
     def supported_types(self) -> List[str]:
         raise NotImplementedError()
+
+    def get_attribute_types(self, object_type: str) -> Dict:
+        raise NotImplementedError()

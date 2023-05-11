@@ -35,6 +35,9 @@ class _TestDataSourceExpected(ReadOnlyDataSource):
     def supported_types(self):
         raise NotImplementedError()
 
+    def get_attribute_types(self, object_type: str) -> Dict:
+        raise NotImplementedError()
+
 
 ERROR_MESSAGE = "I don't like this."
 
@@ -58,6 +61,9 @@ class _TestDataSourceNoExpected(ReadOnlyDataSource):
 
     @property
     def supported_types(self):
+        raise NotImplementedError()
+
+    def get_attribute_types(self, object_type: str) -> Dict:
         raise NotImplementedError()
 
 

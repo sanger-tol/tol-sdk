@@ -2,6 +2,8 @@
 #
 # SPDX-License-Identifier: MIT
 
+from typing import Dict
+
 import pytest
 
 from tol.api_base2.exception import UnknownObjectTypeException
@@ -31,6 +33,9 @@ class _TestDataSource1(ReadOnlyDataSource):
     def supported_types(self):
         return ['test2', 'test1']
 
+    def get_attribute_types(self, object_type: str) -> Dict:
+        raise NotImplementedError()
+
 
 class _TestDataSource2(ReadOnlyDataSource):
     def get_list_page(self, object_type: str, *args, **kwargs):
@@ -50,6 +55,9 @@ class _TestDataSource2(ReadOnlyDataSource):
     @property
     def supported_types(self):
         return ['test_A', 'test_B']
+
+    def get_attribute_types(self, object_type: str) -> Dict:
+        raise NotImplementedError()
 
 
 ds_1 = _TestDataSource1({})

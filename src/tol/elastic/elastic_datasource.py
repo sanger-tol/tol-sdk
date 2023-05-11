@@ -6,9 +6,13 @@ import hashlib
 import json
 from collections.abc import Callable
 from datetime import datetime
+from functools import cache
 from typing import Dict, Iterable, Tuple
 
-from caseconverter import kebabcase
+from caseconverter import (
+    kebabcase,
+    snakecase
+)
 
 from elasticsearch import (Elasticsearch, helpers)
 
@@ -102,6 +106,10 @@ class ElasticDataSource(DataSource):
     def __get_index(self, object_type: str) -> str:
         return f'{self.index_prefix}-{kebabcase(object_type)}'
 
+    def __get_object_type(self, index: str) -> str:
+        start = len(self.index_prefix) + 1
+        return snakecase(index[start:])
+
     def get_by_id(
         self,
         object_type: str,
@@ -125,7 +133,7 @@ class ElasticDataSource(DataSource):
         index = self.__get_index(object_type)
         query = self._build_elasticsearch_query(object_filters)
         page_size = self.get_page_size()
-        from_ = page * page_size
+        from_ = (page - 1) * page_size
         resp = self.es.search(
             from_=from_,
             size=page_size,
@@ -168,7 +176,8 @@ class ElasticDataSource(DataSource):
 
     def _convert_dict_to_data_objects(self, objs: Dict) -> Iterable:
         for obj in objs:
-            yield CoreDataObject('run-data', data=obj['_source'])
+            yield CoreDataObject('run-data', data={**obj['_source'],
+                                                   'id': obj['_id']})
 
     def get_aggregations(
             self,
@@ -188,4 +197,27 @@ class ElasticDataSource(DataSource):
 
     @property
     def supported_types(self):
-        raise NotImplementedError()
+        index_names = self.es.cat.indices(h='index', s='index').split()
+        return [self.__get_object_type(index_name)
+                for index_name in index_names
+                if index_name.startswith(self.index_prefix)]
+
+    def __map_type(self, type_: str) -> str:
+        if type_ == 'text':
+            return 'str'
+        if type_ == 'long':
+            return 'int'
+        return type_
+
+    @cache
+    def get_attribute_types(self, object_type: str) -> Dict:
+        index_name = self.__get_index(object_type)
+        mapping = self.es.indices.get_mapping(index_name)
+        if 'properties' not in mapping[index_name]['mappings']:
+            return {}
+        properties = mapping[index_name]['mappings']['properties']
+        return {
+            property_name: self.__map_type(properties[property_name]['type'])
+            for property_name in properties
+            if 'type' in properties[property_name]
+        }

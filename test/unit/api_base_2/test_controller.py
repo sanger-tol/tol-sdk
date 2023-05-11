@@ -2,7 +2,7 @@
 #
 # SPDX-License-Identifier: MIT
 
-from typing import Iterable
+from typing import Dict, Iterable
 
 import pytest
 
@@ -39,6 +39,9 @@ class _TestDataSource1(ReadOnlyDataSource):
     def supported_types(self):
         return ['test2', 'test1']
 
+    def get_attribute_types(self, object_type: str) -> Dict:
+        raise NotImplementedError()
+
 
 class _TestDataSource2(ReadOnlyDataSource):
     def get_list_page(self, object_type: str, *args, **kwargs):
@@ -58,6 +61,9 @@ class _TestDataSource2(ReadOnlyDataSource):
     @property
     def supported_types(self):
         return ['test_A', 'test_B']
+
+    def get_attribute_types(self, object_type: str) -> Dict:
+        return {}
 
 
 class _TestDataSource3(ReadOnlyDataSource):
@@ -94,6 +100,9 @@ class _TestDataSource3(ReadOnlyDataSource):
     def supported_types(self):
         return ['test_X']
 
+    def get_attribute_types(self, object_type: str) -> Dict:
+        return {}
+
 
 ds_1 = _TestDataSource1({})
 ds_2 = _TestDataSource2({})
@@ -103,6 +112,8 @@ ds_3 = _TestDataSource3({})
 class TestController:
     def test_good_object_type(self):
         expected = {
+            'meta': {'total': 20,
+                     'types': {}},
             'data': [
                 {
                     'type': 'test_B',
@@ -149,6 +160,8 @@ class TestController:
             'page_size': '10'
         })
         expected = {
+            'meta': {'total': 560,
+                     'types': {}},
             'data': [
                 {
                     'type': 'test_X',

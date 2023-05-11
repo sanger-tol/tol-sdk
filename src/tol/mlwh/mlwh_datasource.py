@@ -191,3 +191,6 @@ class MlwhDataSource(ReadOnlyDataSource):
     @property
     def supported_types(self):
         raise NotImplementedError()
+
+    def get_attribute_types(self, object_type: str) -> Dict:
+        raise NotImplementedError()

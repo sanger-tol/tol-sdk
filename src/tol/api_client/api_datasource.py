@@ -49,7 +49,8 @@ class ApiDataSource(DataSource):
                               headers={'Token': self.key})
 
     def _delete(self, path):
-        return requests.delete(f'{self.url}/{path}')
+        return requests.delete(f'{self.url}/{path}',
+                               headers={'Token': self.key})
 
     def get_by_link(self, link: str, params: Dict = {}):
         response = self._get(f'/{link}', params=params)
@@ -197,4 +198,7 @@ class ApiDataSource(DataSource):
 
     @property
     def supported_types(self):
+        raise NotImplementedError()
+
+    def get_attribute_types(self, object_type: str) -> Dict:
         raise NotImplementedError()

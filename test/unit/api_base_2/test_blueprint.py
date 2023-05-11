@@ -2,7 +2,7 @@
 #
 # SPDX-License-Identifier: MIT
 
-from typing import List
+from typing import Dict, List
 
 from flask import Flask
 
@@ -56,6 +56,10 @@ class ParrotDataSource(ReadOnlyDataSource):
             'cracker'
         ]
 
+    def get_attribute_types(self, object_type: str) -> Dict:
+        if object_type == 'cracker':
+            return {'parrot': 'str'}
+
 
 class EmptyDataSource(ReadOnlyDataSource):
     """Never finds anything."""
@@ -79,6 +83,9 @@ class EmptyDataSource(ReadOnlyDataSource):
             'know',
             'nothing'
         ]
+
+    def get_attribute_types(self, object_type: str) -> Dict:
+        raise NotImplementedError()
 
 
 class BlueprintTestCase(TestCase):
@@ -154,6 +161,8 @@ class TestBlueprint(BlueprintTestCase):
         self.assertEqual(
             response.json,
             {
+                'meta': {'total': 400,
+                         'types': {'parrot': 'str'}},
                 'data': expected_objects
             }
         )

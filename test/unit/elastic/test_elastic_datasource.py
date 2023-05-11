@@ -111,16 +111,18 @@ class TestElasticDataSource(TestCase):
             {'uri': 'test', 'user': 'user', 'password': 'password', 'index_prefix': 'test'}
         )
         eds.helpers.scan.return_value = [
-            {'_source': {'field1': 'value1', 'field2': 'value2'}},
-            {'_source': {'field1': 'value3', 'field2': 'value4'}}
+            {'_source': {'field1': 'value1', 'field2': 'value2'}, '_id': '1'},
+            {'_source': {'field1': 'value3', 'field2': 'value4'}, '_id': '2'}
         ]
 
         returned = eds.get_list('index')
         eds.helpers.scan.assert_called_once()
         first = next(returned)
         self.assertEqual({'field1': 'value1', 'field2': 'value2'}, first.attributes)
+        self.assertEqual('1', first.id)
         second = next(returned)
         self.assertEqual({'field1': 'value3', 'field2': 'value4'}, second.attributes)
+        self.assertEqual('2', second.id)
         with self.assertRaises(StopIteration):
             next(returned)
 
@@ -131,8 +133,8 @@ class TestElasticDataSource(TestCase):
         eds.es.search.return_value = {
             'hits': {
                 'hits': [
-                    {'_source': {'field1': 'value1', 'field2': 'value2'}},
-                    {'_source': {'field1': 'value3', 'field2': 'value4'}}
+                    {'_source': {'field1': 'value1', 'field2': 'value2'}, '_id': '1'},
+                    {'_source': {'field1': 'value3', 'field2': 'value4'}, '_id': '2'}
                 ],
                 'total': {
                     'value': 2
@@ -145,8 +147,10 @@ class TestElasticDataSource(TestCase):
         self.assertEqual(2, total)
         first = next(returned)
         self.assertEqual({'field1': 'value1', 'field2': 'value2'}, first.attributes)
+        self.assertEqual('1', first.id)
         second = next(returned)
         self.assertEqual({'field1': 'value3', 'field2': 'value4'}, second.attributes)
+        self.assertEqual('2', second.id)
         with self.assertRaises(StopIteration):
             next(returned)
 
@@ -173,8 +177,10 @@ class TestElasticDataSource(TestCase):
         eds.es.mget.assert_called_once()
         first = next(returned)
         self.assertEqual({'field1': 'value1', 'field2': 'value2'}, first.attributes)
+        self.assertEqual('1', first.id)
         second = next(returned)
         self.assertEqual({'field1': 'value3', 'field2': 'value4'}, second.attributes)
+        self.assertEqual('2', second.id)
         with self.assertRaises(StopIteration):
             next(returned)
 
@@ -238,3 +244,49 @@ class TestElasticDataSource(TestCase):
                                         aggregations=aggregations)
         eds.es.search.assert_called_once()
         self.assertEqual(agg_result, returned)
+
+    def test_get_supported_types(self):
+        eds = MockElasticDataSource(
+            {'uri': 'test', 'user': 'user', 'password': 'password', 'index_prefix': 'test'}
+        )
+        expected = ['index_1', 'index_2']
+        eds.es.cat.indices.return_value = 'test-index-1\ntest-index-2'
+
+        returned = eds.supported_types
+        eds.es.cat.indices.assert_called_once()
+        self.assertEqual(expected, returned)
+
+    def test_get_attribute_types(self):
+        eds = MockElasticDataSource(
+            {'uri': 'test', 'user': 'user', 'password': 'password', 'index_prefix': 'test'}
+        )
+        eds.es.cat.indices.return_value = 'test-index-name'
+        eds.es.indices.get_mapping.return_value = {
+            'test-index-name': {
+                'mappings': {
+                    'properties': {
+                        'field_1': {
+                            'type': 'text',
+                            'fields': {
+                                'keyword': {
+                                    'type': 'keyword',
+                                    'ignore_above': 256
+                                }
+                            }
+                        },
+                        'field_2': {
+                            'type': 'date'
+                        },
+                        'field_3': {
+                            'type': 'long'
+                        }
+                    }
+                }
+            }
+        }
+        expected = {'field_1': 'str',
+                    'field_2': 'date',
+                    'field_3': 'int'}
+        returned = eds.get_attribute_types('index_name')
+        eds.es.indices.get_mapping.assert_called_once()
+        self.assertEqual(expected, returned)

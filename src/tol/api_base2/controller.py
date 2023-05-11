@@ -59,13 +59,16 @@ class Controller:
         Gets a page of list results of specified type.
         """
         page_number = self.__get_page_number_or_1(query_args)
-        # TODO don't throw away the total DataObject count
-        data_objects, _ = self.__data_source.get_list_page(
+        data_objects, total = self.__data_source.get_list_page(
             object_type,
             page_number,
             page_size=query_args.page_size
         )
-        return self.__view.dump_bulk(data_objects)
+        document_meta = {
+            'total': total,
+            'types': self.__data_source.get_attribute_types(object_type)
+        }
+        return self.__view.dump_bulk(data_objects, document_meta=document_meta)
 
     def __get_detail_object(self, object_type: str, object_id: str) -> DataObject:
         data_objects = self.__data_source.get_by_id(object_type, [object_id])

@@ -2,6 +2,8 @@
 #
 # SPDX-License-Identifier: MIT
 
+from typing import Dict
+
 import tol.jira.jira_methods as jm
 from tol.jira.jira_auth import JiraAuth
 
@@ -69,3 +71,6 @@ class Jira(DataSource):
 
     def get_specimen_for_treeval(self, tolid):
         return self.get_specimens_for_treeval(1, 1, f'[tolid={tolid}]', 'tolid')[0]
+
+    def get_attribute_types(self, object_type: str) -> Dict:
+        raise NotImplementedError()
