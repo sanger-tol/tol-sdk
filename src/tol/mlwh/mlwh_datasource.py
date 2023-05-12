@@ -89,7 +89,7 @@ class MlwhDataSource(ReadOnlyDataSource):
         return {
             'sample_ref': 'sample.name',
             'supplier_name': 'sample.supplier_name',
-            'accession_name': 'sample.accession_number',
+            'accession_number': 'sample.accession_number',
             'public_name': 'sample.public_name',
             'donor_id': 'sample.donor_id',
             'taxon_id': 'sample.taxon_id',

@@ -171,6 +171,8 @@ class ElasticDataSource(DataSource):
         query = self._build_elasticsearch_query(object_filters)
         generator = self.helpers.scan(self.es,
                                       index=index,
+                                      scroll='10m',
+                                      size=500,
                                       query={'query': query})
         return self._convert_dict_to_data_objects(generator)
 
