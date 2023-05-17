@@ -76,12 +76,12 @@ class CoreDataObject(DataObject):
 
     def __init__(
         self,
-        object_type: str,
-        data: DataDict = None,
-        object_id: Optional[str] = None  # noqa
+        type_: str,
+        data: Optional[DataDict] = None,
+        id_: Optional[str] = None
     ):
-        self.__id = object_id
-        self.__type = object_type
+        self.__id = id_
+        self.__type = type_
         if data is not None:
             self.set_data(data)
 
