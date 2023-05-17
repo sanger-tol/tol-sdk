@@ -27,7 +27,7 @@ class Interface(DataSource):
         try:
             response = requests.get(path.join(self.pmb_url, 'v1', 'printers'))
         except requests.exceptions.RequestException as error:
-            return self.custom_response(status_code=400, message=str(error))
+            return self.custom_response(status_code=421, message=str(error))
         for i in response.json()['data']:
             printers += [
                 {
@@ -43,7 +43,7 @@ class Interface(DataSource):
         try:
             response = requests.get(path.join(self.pmb_url, 'v1', 'label_templates'))
         except requests.exceptions.RequestException as error:
-            return self.custom_response(status_code=400, message=str(error))
+            return self.custom_response(status_code=421, message=str(error))
         if response.status_code != 200:
             raise self.custom_response(
                 status_code=response.status_code, data=response.json()
@@ -64,7 +64,7 @@ class Interface(DataSource):
                 path.join(self.pmb_url, 'v1', 'label_templates', _id)
             )
         except requests.exceptions.RequestException as error:
-            return self.custom_response(status_code=400, message=str(error))
+            return self.custom_response(status_code=421, message=str(error))
         required_fields = ['label_name']
         for i in response.json()['included']:
             if i['type'] == 'bitmaps':
@@ -73,14 +73,18 @@ class Interface(DataSource):
 
     def generate(self, prefix, number):
         """Generate barcodes with given prefix"""
-        count = min(number, self.generate_limit)
+        if number > self.generate_limit:
+            return self.custom_response(
+                403,
+                message=f'Requested to generate more barcodes than limit of {self.generate_limit}'
+            )
         request = path.join(
-            self.baracoda_url, 'barcodes_group', str(prefix), f'new?count={count}'
+            self.baracoda_url, 'barcodes_group', str(prefix), f'new?count={number}'
         )
         try:
             response = requests.post(request)
         except requests.exceptions.RequestException as error:
-            return self.custom_response(status_code=400, message=str(error))
+            return self.custom_response(status_code=421, message=str(error))
         if response.status_code != 201:
             return self.custom_response(
                 status_code=response.status_code,
@@ -91,7 +95,7 @@ class Interface(DataSource):
             barcodes = response.json()['barcodes_group']['barcodes']
             return self.custom_response(data=barcodes)
         except requests.exceptions.RequestException as error:
-            return self.custom_response(status_code=400, message=str(error))
+            return self.custom_response(status_code=421, message=str(error))
 
     def _label_schema(self, label_template_name):
         """Marshmallow schema from list of required fields"""
@@ -107,15 +111,25 @@ class Interface(DataSource):
         self, label_data, printer_name, label_template_name, copies=1, dry=True
     ):
         """Print labels"""
+        if copies > self.print_limit:
+            return self.custom_response(
+                403,
+                message=f'Requested to print more barcodes than limit of {self.print_limit}'
+            )
+
         copies = min(copies, self.print_limit)
         schema = self._label_schema(label_template_name)
+
         for label in label_data:
             validation = schema().validate(label)
             if validation != {}:
                 return self.custom_response(
                     status_code=400, message='Validation error', data=validation
                 )
+
+        for label in label_data:
             label['label_name'] = 'main_label'
+
         job = {
             'print_job': {
                 'printer_name': printer_name,
@@ -126,21 +140,25 @@ class Interface(DataSource):
         }
 
         url = path.join(self.pmb_url, 'v2', 'print_jobs')
-        try:
-            response = requests.post(
-                url,
-                data=json.dumps(job),
-                headers={
-                    'Content-Type': 'application/vnd.api+json',
-                    'accept': 'application/json',
-                },
-            )
-        except requests.exceptions.RequestException as error:
-            return self.custom_response(status_code=400, message=str(error))
+
         if not dry:
-            return self.custom_response(status_code=response.status_code)
-        else:
-            return self.custom_response(message='Dry run')
+            try:
+                response = requests.post(
+                    url,
+                    data=json.dumps(job),
+                    headers={
+                        'Content-Type': 'application/vnd.api+json',
+                        'accept': 'application/json',
+                    },
+                )
+                return self.custom_response(
+                    status_code=response.status_code,
+                    message=response.text
+                )
+            except requests.exceptions.RequestException as error:
+                return self.custom_response(status_code=421, message=str(error))
+
+        return self.custom_response(message='Dry run')
 
     @unsupported
     def get_by_id(self, *args, **kwargs):

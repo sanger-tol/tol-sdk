@@ -92,7 +92,7 @@ def mock_everything(f):
                 'POST',
                 path.join(pmb_url, 'v2', 'print_jobs'),
                 status_code=200,
-                json='message',
+                text='SUCCESS',
             )
             f()
 
@@ -100,7 +100,7 @@ def mock_everything(f):
 
 
 @mock_everything
-def test_printers():
+def test_printers_success():
     barcodes = tol.barcodes.Interface(
         {
             'pmb_url': 'http://afake.address.ac.uk:9292',
@@ -118,7 +118,7 @@ def test_printers():
 
 
 @mock_everything
-def test_label_templates():
+def test_label_templates_success():
     barcodes = tol.barcodes.Interface(
         {
             'pmb_url': 'http://afake.address.ac.uk:9292',
@@ -136,7 +136,7 @@ def test_label_templates():
 
 
 @mock_everything
-def test_required_fields():
+def test_required_fields_success():
     barcodes = tol.barcodes.Interface(
         {
             'pmb_url': 'http://afake.address.ac.uk:9292',
@@ -154,7 +154,7 @@ def test_required_fields():
 
 
 @mock_everything
-def test_print_labels_fail():
+def test_print_labels_validation_error():
     barcodes = tol.barcodes.Interface(
         {
             'pmb_url': 'http://afake.address.ac.uk:9292',
@@ -184,7 +184,35 @@ def test_print_labels_fail():
 
 
 @mock_everything
-def test_print_labels_pass():
+def test_print_labels_success():
+    barcodes = tol.barcodes.Interface(
+        {
+            'pmb_url': 'http://afake.address.ac.uk:9292',
+            'baracoda_url': 'https://anotherfake.address.ac.uk',
+            'generate_limit': 500,
+            'print_limit': 500,
+        }
+    )
+    label_data = [
+        {
+            'barcode': 'COS00001',
+            'required_field_1': 'abc123',
+            'required_field_2': 'abc345',
+        },
+        {
+            'barcode': 'COS00002',
+            'required_field_1': 'abc124',
+            'required_field_2': 'abc346',
+        }
+    ]
+    response = barcodes.print_labels(
+        label_data, 'printer_a', 'label_template_b', dry=False
+    )
+    assert response == {'status_code': 200, 'message': 'SUCCESS', 'data': {}}
+
+
+@mock_everything
+def test_print_labels_limit_error():
     barcodes = tol.barcodes.Interface(
         {
             'pmb_url': 'http://afake.address.ac.uk:9292',
@@ -201,9 +229,13 @@ def test_print_labels_pass():
         }
     ]
     response = barcodes.print_labels(
-        label_data, 'printer_a', 'label_template_b', dry=False
+        label_data, 'printer_a', 'label_template_b', copies=501, dry=False
     )
-    assert response == {'status_code': 200, 'message': 'SUCCESS', 'data': {}}
+    assert response == {
+        'status_code': 403,
+        'message': 'Requested to print more barcodes than limit of 500',
+        'data': {}
+    }
 
 
 @mock_everything
@@ -263,7 +295,7 @@ def test_generate_pass_with_limit():
     )
     response = barcodes.generate('TEST', 3)
     assert response == {
-        'status_code': 200,
-        'message': 'SUCCESS',
-        'data': ['TEST-111110'],
+        'status_code': 403,
+        'message': 'Requested to generate more barcodes than limit of 1',
+        'data': {}
     }
