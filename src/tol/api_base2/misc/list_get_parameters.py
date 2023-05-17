@@ -26,15 +26,15 @@ class ListGetParamaters:
         return self.__parse_to_positive_int('page_size', page_size)
 
     @property
-    def page_number(self) -> Optional[int]:
+    def page(self) -> Optional[int]:
         """
         The optional number of the page of results.
         """
-        page_number = self.__request_args.get('page_number')
+        page_number = self.__request_args.get('page')
         if page_number is None:
             return None
 
-        return self.__parse_to_positive_int('page_number', page_number)
+        return self.__parse_to_positive_int('page', page_number)
 
     def __parse_to_positive_int(self, __key: str, __value: str) -> int:
         self.__validate_is_digits(__key, __value)

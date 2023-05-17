@@ -201,7 +201,7 @@ class TestElasticDataSource(TestCase):
 
         # Wildcard filtering
         object_filters = DataSourceFilter()
-        object_filters.wildcard = {'field1': 'string1', 'field2': 'string2'}
+        object_filters.contains = {'field1': 'string1', 'field2': 'string2'}
         expected = {'bool': {'must': [
             {'wildcard': {'field1': {'value': 'string1*', 'boost': 1.0}}},
             {'wildcard': {'field2': {'value': 'string2*', 'boost': 1.0}}}],

@@ -7,7 +7,7 @@ from typing import Any, Dict, List, Optional
 
 
 ExactFilter = Dict[str, Any]
-WildcardFilter = Dict[str, str]
+ContainsFilter = Dict[str, str]
 InListFilter = Dict[str, List[Any]]
 
 
@@ -17,5 +17,5 @@ class DataSourceFilter:
     Configures the filtering for a DataSource
     """
     exact: Optional[ExactFilter] = None
-    wildcard: Optional[WildcardFilter] = None
+    contains: Optional[ContainsFilter] = None
     in_list: Optional[InListFilter] = None

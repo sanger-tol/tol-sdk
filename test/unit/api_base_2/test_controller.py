@@ -81,7 +81,7 @@ class _TestDataSource3(ReadOnlyDataSource):
                 object_type,
                 {
                     'id': str(i + 1 + page_size * page_number),
-                    'page_number': page_number,
+                    'page': page_number,
                     'page_size': page_size
                 }
             )
@@ -156,7 +156,7 @@ class TestController:
 
         controller = Controller(ds_3, DefaultView())
         parsed = ListGetParamaters({
-            'page_number': '90',
+            'page': '90',
             'page_size': '10'
         })
         expected = {
@@ -167,7 +167,7 @@ class TestController:
                     'type': 'test_X',
                     'id': str(901 + i),
                     'attributes': {
-                        'page_number': 90,
+                        'page': 90,
                         'page_size': 10
                     }
                 }

@@ -77,7 +77,7 @@ class Controller:
         return data_objects[0]
 
     def __get_page_number_or_1(self, query_args: ListGetParamaters) -> int:
-        page_number = query_args.page_number
+        page_number = query_args.page
         if page_number is None:
             return 1
         return page_number

@@ -153,8 +153,8 @@ class ElasticDataSource(DataSource):
                     query['bool']['must_not'].append({'exists': {'field': k}})
                 else:
                     query['bool']['must'].append({'match': {k: v}})
-        if object_filters.wildcard is not None:
-            for k, v in object_filters.wildcard.items():
+        if object_filters.contains is not None:
+            for k, v in object_filters.contains.items():
                 query['bool']['must'].append({'wildcard': {k: {'value': f'{v}*', 'boost': 1.0}}})
         if object_filters.in_list is not None:
             for k, v in object_filters.in_list.items():
