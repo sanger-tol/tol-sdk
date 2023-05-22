@@ -4,13 +4,25 @@
 
 from typing import Dict, Iterable, List, Optional
 
-from ..core import DataObject, DataSource, unsupported
+from ..core import (
+    DataObject,
+    ReadOnlyDataSource,
+    DataSourceConfig,
+    unsupported
+)
 
-
-class BenchlingDataSource(DataSource):
+class BenchlingDataSource(ReadOnlyDataSource):
     """
     A (read-only) DataSource for getting objects in Benchling
     """
+
+    def __init__(self, config: DataSourceConfig) -> None:
+        super().__init__(
+            config,
+            [
+                'DB_URI'
+            ]
+        )
 
     @property
     def supported_types(self) -> List[str]:
