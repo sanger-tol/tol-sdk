@@ -87,7 +87,13 @@ class BenchlingDataSource(ReadOnlyDataSource):
                     )
                     for r_dict in result_dicts
                 ]
-                return data_objects
+                data_objects_dict = {
+                    d.id: d for d in data_objects
+                }
+                return [
+                    data_objects_dict.get(object_id)
+                    for object_id in object_ids
+                ]
 
     @unsupported
     def get_list(self, *args, **kwargs):
