@@ -47,8 +47,9 @@ class BenchlingDataSource(ReadOnlyDataSource):
     ) -> Iterable[Optional[DataObject]]:
         conn = self.__get_connection()
         with conn.cursor() as cur:
+            formatted_ids = "', '".join(object_ids)
             cur.execute(
-                """
+                f"""
                 SELECT c.barcode, c.name, subsam.name$, dna.name$, t.tolid, t.tubewell_id
 FROM pacbio_sequencing_submission2$raw AS pbsum
 LEFT JOIN container$raw AS c ON pbsum.sample_tube_id = c.id
@@ -61,6 +62,7 @@ WHERE c.archived$ = 'FALSE'
 	AND pbsum.archived$ = 'FALSE'
 	AND subsam.archived$ = 'FALSE'
 	AND dna.archived$ = 'FALSE'
+    AND c.barcode in ('{formatted_ids}')
                 """
             )
             return cur.fetchall()
