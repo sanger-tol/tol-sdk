@@ -2,9 +2,9 @@
 #
 # SPDX-License-Identifier: MIT
 
-from typing import Dict, List
+from typing import Dict, Iterable, List, Optional
 
-from ..core import DataSource, unsupported
+from ..core import DataObject, DataSource, unsupported
 
 
 class BenchlingDataSource(DataSource):
@@ -20,6 +20,14 @@ class BenchlingDataSource(DataSource):
 
     def get_attribute_types(self, object_type: str) -> Dict:
         return {}
+
+    def get_by_id(
+        self,
+        object_type: str,
+        object_ids: Iterable[str],
+        **kwargs
+    ) -> Iterable[Optional[DataObject]]:
+        return []
 
     @unsupported
     def get_list(self, *args, **kwargs):
