@@ -2,9 +2,9 @@
 #
 # SPDX-License-Identifier: MIT
 
-from typing import List
+from typing import Dict, List
 
-from ..core import DataSource
+from ..core import DataSource, unsupported
 
 
 class BenchlingDataSource(DataSource):
@@ -17,3 +17,14 @@ class BenchlingDataSource(DataSource):
         return [
             'sequencing_requests',
         ]
+
+    def get_attribute_types(self, object_type: str) -> Dict:
+        return {}
+
+    @unsupported
+    def get_list(self, *args, **kwargs):
+        pass
+
+    @unsupported
+    def get_list_page(self, *args, **kwargs):
+        pass
