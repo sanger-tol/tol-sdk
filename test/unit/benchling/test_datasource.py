@@ -2,6 +2,7 @@
 #
 # SPDX-License-Identifier: MIT
 
+import os
 from unittest import TestCase
 
 from tol.benchling.datasource import BenchlingDataSource
@@ -9,4 +10,6 @@ from tol.benchling.datasource import BenchlingDataSource
 
 class TestBenchlingDataSource(TestCase):
     def test_instantiation(self):
-        BenchlingDataSource({})
+        import logging
+        logging.error(os.environ)
+        #ds.get_by_id('test', [])
