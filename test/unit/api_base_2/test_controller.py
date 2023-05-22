@@ -15,6 +15,7 @@ from tol.api_base2.misc import ListGetParamaters
 from tol.api_base2.view import DefaultView
 from tol.core import (
     CoreDataObject,
+    DataSourceFilter,
     ReadOnlyDataSource,
     unsupported
 )
@@ -74,6 +75,8 @@ class _TestDataSource3(ReadOnlyDataSource):
         object_type: str,
         page_number: int,
         page_size: int = None,
+        object_filters: DataSourceFilter = None,
+        sort_by: str = None,
         **kwargs
     ):
         return [
@@ -82,7 +85,9 @@ class _TestDataSource3(ReadOnlyDataSource):
                 {
                     'id': str(i + 1 + page_size * page_number),
                     'page': page_number,
-                    'page_size': page_size
+                    'page_size': page_size,
+                    'filter': object_filters.exact['column1'],
+                    'sort_by': sort_by
                 }
             )
             for i in range(page_size)
@@ -157,7 +162,11 @@ class TestController:
         controller = Controller(ds_3, DefaultView())
         parsed = ListGetParamaters({
             'page': '90',
-            'page_size': '10'
+            'page_size': '10',
+            'filter': """
+                {"exact": {"column1": "value1"}}
+            """,
+            'sort_by': '-column1'
         })
         expected = {
             'meta': {'total': 560,
@@ -168,7 +177,10 @@ class TestController:
                     'id': str(901 + i),
                     'attributes': {
                         'page': 90,
-                        'page_size': 10
+                        'page_size': 10,
+                        'filter': 'value1',
+                        'sort_by': '-column1'
+
                     }
                 }
                 for i in range(10)

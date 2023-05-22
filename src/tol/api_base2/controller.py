@@ -62,7 +62,9 @@ class Controller:
         data_objects, total = self.__data_source.get_list_page(
             object_type,
             page_number,
-            page_size=query_args.page_size
+            page_size=query_args.page_size,
+            object_filters=query_args.filter,
+            sort_by=query_args.sort_by
         )
         document_meta = {
             'total': total,

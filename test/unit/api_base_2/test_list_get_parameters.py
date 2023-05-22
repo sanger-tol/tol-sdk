@@ -9,11 +9,13 @@ from tol.api_base2.misc import ListGetParamaters
 
 
 class TestListGetParameters:
-    def test_no_page_size_or_number(self):
+    def test_no_parameters(self):
         """No page size or page key specified returns None"""
         parsed = ListGetParamaters({'irrelevent': 'so?'})
         assert parsed.page_size is None
         assert parsed.page is None
+        assert parsed.filter is None
+        assert parsed.sort_by is None
 
     def test_good_page_size(self):
         """Just page size, confirm that an integer is returned"""
@@ -39,6 +41,35 @@ class TestListGetParameters:
             with pytest.raises(BadQueryArgError) as e:
                 ListGetParamaters({'page': __val}).page
             assert 'page' in str(e.value)
+            assert __val in str(e.value)
+
+    def test_good_filter(self):
+        """Just page number, confirm that an integer is returned"""
+        filter_string = """
+            {"exact": {"column1": "value1"}}
+        """
+        parsed = ListGetParamaters({'filter': filter_string})
+        assert parsed.filter.exact == {'column1': 'value1'}
+
+    def test_bad_filter(self):
+        """non-JSON raises Exception"""
+        for __val in ['0', 'sjdklsjd', '', ' ']:
+            with pytest.raises(BadQueryArgError) as e:
+                ListGetParamaters({'filter': __val}).filter
+            assert 'filter' in str(e.value)
+            assert __val in str(e.value)
+
+    def test_good_sort_by(self):
+        """Just page number, confirm that an integer is returned"""
+        parsed = ListGetParamaters({'sort_by': '-column1'})
+        assert parsed.sort_by == '-column1'
+
+    def test_bad_sort_by(self):
+        """non-positive integer page number raises Exception"""
+        for __val in ['0', '+sjdklsjd', '', ' ']:
+            with pytest.raises(BadQueryArgError) as e:
+                ListGetParamaters({'sort_by': __val}).sort_by
+            assert 'sort_by' in str(e.value)
             assert __val in str(e.value)
 
     def test_page_size_and_number(self):

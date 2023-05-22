@@ -27,6 +27,15 @@ class MockElasticDataSource(ElasticDataSource):
     def _add_checksum(self, dict_):
         return {**dict_, 'tol_checksum': 'abc123'}
 
+    def get_attribute_types(self, object_type: str):
+        if object_type == 'obj_type':
+            return {'field1': 'str',
+                    'field2': 'str',
+                    'datefield': 'date'}
+
+    def get_attribute_types_super(self, object_type: str):
+        return super().get_attribute_types(object_type)
+
 
 class TestElasticDataSource(TestCase):
 
@@ -34,9 +43,9 @@ class TestElasticDataSource(TestCase):
         eds = MockElasticDataSource(
             {'uri': 'test', 'user': 'user', 'password': 'password', 'index_prefix': 'test'}
         )
-        objects = [CoreDataObject('run_data', {'id': 1, 'field1': 'value1',
+        objects = [CoreDataObject('obj_type', {'id': 1, 'field1': 'value1',
                                   'field2': 'value2', 'datefield': dt}),
-                   CoreDataObject('run_data', {'id': 2, 'field1': 'value3', 'field2': 'value4'})]
+                   CoreDataObject('obj_type', {'id': 2, 'field1': 'value3', 'field2': 'value4'})]
         generator = eds._action_for_upsert('index', objects, id_func=lambda x: x.id,
                                            field_prefix='')
         expected = {'_op_type': 'update',
@@ -66,11 +75,11 @@ class TestElasticDataSource(TestCase):
         )
         objects = [
             CoreDataObject(
-                'run_data',
+                'obj_type',
                 data={'field1': 'value1', 'field2': 'value2'}
             ),
             CoreDataObject(
-                'run_data',
+                'obj_type',
                 data={'field1': 'value3', 'field2': 'value4'}
             )
         ]
@@ -189,24 +198,24 @@ class TestElasticDataSource(TestCase):
             {'uri': 'test', 'user': 'user', 'password': 'password', 'index_prefix': 'test'}
         )
 
-        self.assertIsNone(eds._build_elasticsearch_query(None))
+        self.assertIsNone(eds._build_elasticsearch_query('obj_type', None))
 
         # Exact filtering
         object_filters = DataSourceFilter()
         object_filters.exact = {'field1': 'string1', 'field2': 3, 'field3': None}
-        expected = {'bool': {'must': [{'match': {'field1': 'string1'}},
-                                      {'match': {'field2': 3}}],
+        expected = {'bool': {'must': [{'match': {'field1.keyword': 'string1'}},
+                                      {'match': {'field2.keyword': 3}}],
                              'must_not': [{'exists': {'field': 'field3'}}]}}
-        self.assertEqual(expected, eds._build_elasticsearch_query(object_filters))
+        self.assertEqual(expected, eds._build_elasticsearch_query('obj_type', object_filters))
 
         # Wildcard filtering
         object_filters = DataSourceFilter()
         object_filters.contains = {'field1': 'string1', 'field2': 'string2'}
         expected = {'bool': {'must': [
-            {'wildcard': {'field1': {'value': 'string1*', 'boost': 1.0}}},
-            {'wildcard': {'field2': {'value': 'string2*', 'boost': 1.0}}}],
+            {'wildcard': {'field1.keyword': {'value': 'string1*', 'boost': 1.0}}},
+            {'wildcard': {'field2.keyword': {'value': 'string2*', 'boost': 1.0}}}],
             'must_not': []}}
-        self.assertEqual(expected, eds._build_elasticsearch_query(object_filters))
+        self.assertEqual(expected, eds._build_elasticsearch_query('obj_type', object_filters))
 
         # In list filtering
         object_filters = DataSourceFilter()
@@ -216,7 +225,24 @@ class TestElasticDataSource(TestCase):
             {'terms': {'field1': ['string1', 'string2'], 'boost': 1.0}},
             {'terms': {'field2': ['string3', 'string4'], 'boost': 1.0}}],
             'must_not': []}}
-        self.assertEqual(expected, eds._build_elasticsearch_query(object_filters))
+        self.assertEqual(expected, eds._build_elasticsearch_query('obj_type', object_filters))
+
+    def test_build_sort(self):
+        eds = MockElasticDataSource(
+            {'uri': 'test', 'user': 'user', 'password': 'password', 'index_prefix': 'test'}
+        )
+
+        self.assertIsNone(eds._build_elasticsearch_sort('obj_type', None))
+
+        # Asc
+        sort_by = 'field1'
+        expected = [{'field1.keyword': 'asc'}]
+        self.assertEqual(expected, eds._build_elasticsearch_sort('obj_type', sort_by))
+
+        # Desc
+        sort_by = '-field1'
+        expected = [{'field1.keyword': 'desc'}]
+        self.assertEqual(expected, eds._build_elasticsearch_sort('obj_type', sort_by))
 
     def test_get_aggregations(self):
         eds = MockElasticDataSource(
@@ -287,6 +313,6 @@ class TestElasticDataSource(TestCase):
         expected = {'field_1': 'str',
                     'field_2': 'date',
                     'field_3': 'int'}
-        returned = eds.get_attribute_types('index_name')
+        returned = eds.get_attribute_types_super('index_name')
         eds.es.indices.get_mapping.assert_called_once()
         self.assertEqual(expected, returned)

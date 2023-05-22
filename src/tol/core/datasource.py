@@ -216,6 +216,7 @@ class DataSource(ABC):
         page_number: int,
         page_size: int = None,
         object_filters: DataSourceFilter = None,
+        sort_by: str = None,
         **kwargs
     ) -> Tuple[Iterable[DataObject], int]:
         """

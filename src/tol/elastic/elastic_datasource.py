@@ -110,6 +110,12 @@ class ElasticDataSource(DataSource):
         start = len(self.index_prefix) + 1
         return snakecase(index[start:])
 
+    def _field_or_keyword(self, object_type: str, name: str):
+        field_type = self.get_attribute_types(object_type)[name]
+        if field_type == 'str':
+            return f'{name}.keyword'
+        return name
+
     def get_by_id(
         self,
         object_type: str,
@@ -128,22 +134,26 @@ class ElasticDataSource(DataSource):
         object_type: str,
         page: int,
         object_filters: DataSourceFilter = None,
+        sort_by: str = None,
         **kwargs
     ) -> Tuple[Iterable[DataObject], int]:
         index = self.__get_index(object_type)
-        query = self._build_elasticsearch_query(object_filters)
+        query = self._build_elasticsearch_query(object_type, object_filters)
+        sort = self._build_elasticsearch_sort(object_type, sort_by)
         page_size = self.get_page_size()
         from_ = (page - 1) * page_size
         resp = self.es.search(
             from_=from_,
             size=page_size,
             index=index,
-            query=query
+            query=query,
+            sort=sort
         )
         return self._convert_dict_to_data_objects(resp['hits']['hits']), \
             resp['hits']['total']['value']
 
-    def _build_elasticsearch_query(self, object_filters: DataSourceFilter = None):
+    def _build_elasticsearch_query(self, object_type: str,
+                                   object_filters: DataSourceFilter = None):
         if object_filters is None:
             return
         query = {'bool': {'must': [], 'must_not': []}}
@@ -152,14 +162,29 @@ class ElasticDataSource(DataSource):
                 if v is None:
                     query['bool']['must_not'].append({'exists': {'field': k}})
                 else:
-                    query['bool']['must'].append({'match': {k: v}})
+                    search_field = self._field_or_keyword(object_type, k)
+                    query['bool']['must'].append({'match': {search_field: v}})
         if object_filters.contains is not None:
             for k, v in object_filters.contains.items():
-                query['bool']['must'].append({'wildcard': {k: {'value': f'{v}*', 'boost': 1.0}}})
+                search_field = self._field_or_keyword(object_type, k)
+                query['bool']['must'].append({'wildcard': {search_field:
+                                                           {'value': f'{v}*', 'boost': 1.0}}})
         if object_filters.in_list is not None:
             for k, v in object_filters.in_list.items():
                 query['bool']['must'].append({'terms': {k: v, 'boost': 1.0}})
         return query
+
+    def _build_elasticsearch_sort(self, object_type: str, sort_by: str):
+        if sort_by is None:
+            return
+        if sort_by.startswith('-'):
+            field = self._field_or_keyword(object_type, sort_by[1:])
+            order = 'desc'
+        else:
+            field = self._field_or_keyword(object_type, sort_by)
+            order = 'asc'
+        sort = [{field: order}]
+        return sort
 
     def get_list(
         self,
@@ -168,7 +193,7 @@ class ElasticDataSource(DataSource):
         **kwargs
     ) -> Iterable[DataObject]:
         index = self.__get_index(object_type)
-        query = self._build_elasticsearch_query(object_filters)
+        query = self._build_elasticsearch_query(object_type, object_filters)
         generator = self.helpers.scan(self.es,
                                       index=index,
                                       scroll='10m',
@@ -188,7 +213,7 @@ class ElasticDataSource(DataSource):
             object_filters: DataSourceFilter = None,
     ) -> Dict:
         index = self.__get_index(object_type)
-        query = self._build_elasticsearch_query(object_filters)
+        query = self._build_elasticsearch_query(object_type, object_filters)
         resp = self.es.search(
             size=0,
             index=index,

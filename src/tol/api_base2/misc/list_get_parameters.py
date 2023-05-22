@@ -2,9 +2,12 @@
 #
 # SPDX-License-Identifier: MIT
 
+import json
+import re
 from typing import Dict, Optional
 
 from ..exception import BadQueryArgError
+from ...core import DataSourceFilter
 
 
 class ListGetParamaters:
@@ -36,6 +39,28 @@ class ListGetParamaters:
 
         return self.__parse_to_positive_int('page', page_number)
 
+    @property
+    def filter(self) -> Optional[str]:  # noqa A003
+        """
+        The optional filter JSON string.
+        """
+        filter_string = self.__request_args.get('filter')
+        if filter_string is None:
+            return None
+
+        return self.__parse_to_datasource_filter('filter', filter_string)
+
+    @property
+    def sort_by(self) -> Optional[str]:
+        """
+        The optional column to sort by.
+        """
+        sort_by = self.__request_args.get('sort_by')
+        if sort_by is None:
+            return None
+
+        return self.__parse_to_sort_by_string('sort_by', sort_by)
+
     def __parse_to_positive_int(self, __key: str, __value: str) -> int:
         self.__validate_is_digits(__key, __value)
         int_value = int(__value)
@@ -53,4 +78,37 @@ class ListGetParamaters:
                 __key,
                 __value,
                 message=f'The {__key} must be a positive integer.'
+            )
+
+    def __parse_to_sort_by_string(self, __key: str, __value: str) -> str:
+        if not re.match(r'-?[a-z]', __value):
+            raise BadQueryArgError(
+                __key,
+                __value,
+                message=f'The {__key} must be a column name, with or without leading -.'
+            )
+        return __value
+
+    def __parse_to_datasource_filter(self, __key: str, __value: str) -> DataSourceFilter:
+        try:
+            filter_dict = json.loads(__value)
+            dsf = DataSourceFilter()
+            if type(filter_dict) is dict:
+                if 'exact' in filter_dict:
+                    dsf.exact = filter_dict['exact']
+                if 'contains' in filter_dict:
+                    dsf.contains = filter_dict['contains']
+                if 'in_list' in filter_dict:
+                    dsf.in_list = filter_dict['in_list']
+                return dsf
+            raise BadQueryArgError(
+                __key,
+                __value,
+                message=f'The {__key} must be valid JSON'
+            )
+        except json.JSONDecodeError:
+            raise BadQueryArgError(
+                __key,
+                __value,
+                message=f'The {__key} must be valid JSON'
             )
