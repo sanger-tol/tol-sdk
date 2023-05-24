@@ -132,6 +132,52 @@ class MlwhDataSource(ReadOnlyDataSource):
         """
         return sql
 
+    def _get_column_mappings_sequencing_request(self):
+        return {
+            'sample_ref': 'sample.friendly_name',
+            'supplier_name': 'mlwh_sample.supplier_name',
+            'accession_number': 'mlwh_sample.accession_number',
+            'public_name': 'mlwh_sample.public_name',
+            'donor_id': 'mlwh_sample.donor_id',
+            'taxon_id': 'mlwh_sample.taxon_id',
+            'common_name': 'mlwh_sample.common_name',
+            'description': 'mlwh_sample.description',
+            'study_id': 'mlwh_study.id_study_lims',
+            'study_uuid': 'study.uuid',
+            'order_date': "DATE_FORMAT(MIN(events.created_at), '%Y-%m-%dT%H:%i:%s')"
+        }
+
+    def _get_sequencing_request_query(self, clause: str):
+        mappings = self._get_column_mappings_sequencing_request()
+        col_string = ','.join([f'{v} as {k}' for k, v in mappings.items()])
+        sql = f"""
+        SELECT
+        {col_string}
+        FROM mlwh_events.events
+        JOIN mlwh_events.event_types
+        ON event_types.id = events.event_type_id
+        JOIN mlwh_events.roles AS sample_roles
+        ON events.id = sample_roles.event_id
+        AND sample_roles.role_type_id = 6
+        JOIN mlwh_events.subjects AS sample
+        ON sample_roles.subject_id = sample.id
+        JOIN mlwh_events.roles AS study_roles
+        ON events.id = study_roles.event_id
+        AND study_roles.role_type_id = 2
+        JOIN mlwh_events.subjects AS study
+        ON study_roles.subject_id = study.id
+        LEFT JOIN mlwarehouse.sample mlwh_sample
+        ON sample.friendly_name = mlwh_sample.name
+        AND mlwh_sample.id_lims = 'SQSCP'
+        JOIN mlwarehouse.study AS mlwh_study
+        ON UNHEX(REPLACE(mlwh_study.uuid_study_lims, '-', '')) = study.uuid
+        AND mlwh_study.id_lims = 'SQSCP'
+        WHERE {clause}
+        AND event_types.key = 'order_made'
+        GROUP BY sample.friendly_name
+        """
+        return sql
+
     def _format_mlwh_row(self, object_type: str, row: Dict):
         return CoreDataObject(object_type, data=row)
 
@@ -146,17 +192,19 @@ class MlwhDataSource(ReadOnlyDataSource):
             mappings = self._get_column_mappings_iseq()
         if platform_type == 'pacbio':
             mappings = self._get_column_mappings_pacbio()
+        if platform_type == 'sequencing_request':
+            mappings = self._get_column_mappings_sequencing_request()
         for k, v in in_list.items():
             mapped_k = mappings[k]
             sql_conditions.append(f"{mapped_k} IN ('{self._join(v)}')")
         sql_conditions_string = ' AND '.join(sql_conditions)
         return sql_conditions_string
 
-    def _execute_query(self, query):
+    def _execute_query(self, query, object_type):
         cur_mlwh = self.mlwh.cursor(dictionary=True)
         cur_mlwh.execute(query)
         for row in cur_mlwh.fetchall():
-            yield self._format_mlwh_row('run_data', row)
+            yield self._format_mlwh_row(object_type, row)
 
     @unsupported
     def get_by_id(self, *args, **kwargs):
@@ -169,28 +217,37 @@ class MlwhDataSource(ReadOnlyDataSource):
         **kwargs
     ) -> Iterable[CoreDataObject]:
         # Sort out the conditions
-        if object_type != 'run_data':
-            raise DataSourceError('Only objects of type run_data are supported')
-        if object_filters is None or \
-                not isinstance(object_filters.exact, dict) or \
-                'platform_type' not in object_filters.exact:
-            raise DataSourceError('Filter must contain platform_type exact filter')
-        if object_filters.exact['platform_type'] == 'iseq':
-            sql_conditions = self._conditions_string('iseq', object_filters.in_list)
-            query = self._get_iseq_query(sql_conditions)
-            return self._execute_query(query)
-        elif object_filters.exact['platform_type'] == 'pacbio':
-            sql_conditions = self._conditions_string('pacbio', object_filters.in_list)
-            query = self._get_pacbio_query(sql_conditions)
-            return self._execute_query(query)
+        if object_type == 'run_data':
+            if object_filters is None or \
+                    not isinstance(object_filters.exact, dict) or \
+                    'platform_type' not in object_filters.exact:
+                raise DataSourceError('Filter must contain platform_type exact filter')
+            if object_filters.exact['platform_type'] == 'iseq':
+                sql_conditions = self._conditions_string('iseq', object_filters.in_list)
+                query = self._get_iseq_query(sql_conditions)
+                return self._execute_query(query, 'run_data')
+            elif object_filters.exact['platform_type'] == 'pacbio':
+                sql_conditions = self._conditions_string('pacbio', object_filters.in_list)
+                query = self._get_pacbio_query(sql_conditions)
+                return self._execute_query(query, 'run_data')
+        elif object_type == 'sequencing_request':
+            sql_conditions = self._conditions_string('sequencing_request', object_filters.in_list)
+            query = self._get_sequencing_request_query(sql_conditions)
+            return self._execute_query(query, 'sequencing_request')
+        else:
+            raise DataSourceError('Only objects of type run_data or '
+                                  'sequencing_request are supported')
 
     @unsupported
     def get_list_page(self, *args, **kwargs):
         pass
 
     @property
-    def supported_types(self):
-        raise NotImplementedError()
+    def supported_types(self) -> List[str]:
+        return [
+            'sequencing_request',
+            'run_data'
+        ]
 
     def get_attribute_types(self, object_type: str) -> Dict:
         raise NotImplementedError()

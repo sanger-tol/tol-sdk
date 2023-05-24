@@ -45,14 +45,14 @@ class TestIrodsDataSource(TestCase):
 
         f = DataSourceFilter()
         with self.assertRaises(DataSourceError):
-            ids.get_list('run_data', object_filters=f)
+            ids.get_list('sequencing_file', object_filters=f)
 
         f.in_list = {'run_id': ['1234']}
         with self.assertRaises(DataSourceError):
-            ids.get_list('run_data', object_filters=f)
+            ids.get_list('sequencing_file', object_filters=f)
         f.exact = {'platform_type': 'iseq'}
 
-        returned = ids.get_list('run_data', object_filters=f)
+        returned = ids.get_list('sequencing_file', object_filters=f)
         first = next(returned)
         self.assertEqual({'run_id': '1234', 'position': '1', 'tag': '1', 'data_name': 'test.bam'},
                          first.attributes)
@@ -67,7 +67,7 @@ class TestIrodsDataSource(TestCase):
 
         f.in_list = {'study_id': ['1234']}
         f.exact = None
-        returned = ids.get_list('run_data', object_filters=f)
+        returned = ids.get_list('sequencing_file', object_filters=f)
         first = next(returned)
         self.assertEqual({'run_id': '1234', 'position': '1', 'tag': '1', 'data_name': 'test.bam'},
                          first.attributes)

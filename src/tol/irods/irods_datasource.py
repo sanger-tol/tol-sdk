@@ -89,7 +89,8 @@ class IrodsDataSource(ReadOnlyDataSource):
         mapping = {'id_run': 'run_id',  # Illumina
                    'run': 'run_id',  # PacBio
                    'lane': 'position',  # Illumina
-                   'well': 'position'}  # PacBio
+                   'well': 'position',
+                   'type': 'file_type'}  # PacBio
         for result in results:
             # Ignore those with target = 0
             if 'id_run' in result and 'target' in result:
@@ -130,8 +131,9 @@ class IrodsDataSource(ReadOnlyDataSource):
         object_filters: DataSourceFilter = None,
         **kwargs
     ) -> Iterable[CoreDataObject]:
-        if object_type != 'run_data':
-            raise DataSourceError('Only objects of type "run_data" are handled by IrodsDataSource')
+        if object_type != 'sequencing_file':
+            raise DataSourceError('Only objects of type "sequencing_file" '
+                                  'are handled by IrodsDataSource')
         if object_filters is None or \
                 not isinstance(object_filters.in_list, dict):
             raise DataSourceError('Filter must contain an in_list filter')
@@ -155,13 +157,13 @@ class IrodsDataSource(ReadOnlyDataSource):
 
     def _convert_dict_to_data_objects(self, objs: Dict) -> Iterable[DataObject]:
         return (
-            CoreDataObject('run_data', data=obj)
+            CoreDataObject('sequencing_file', data=obj)
             for obj in objs
         )
 
     @property
     def supported_types(self):
-        raise NotImplementedError()
+        return ['sequencing_file']
 
     def get_attribute_types(self, object_type: str) -> Dict:
         raise NotImplementedError()

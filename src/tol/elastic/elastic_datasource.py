@@ -234,6 +234,8 @@ class ElasticDataSource(DataSource):
             return 'str'
         if type_ == 'long':
             return 'int'
+        if type_ == 'date':
+            return 'datetime'
         return type_
 
     @cache
