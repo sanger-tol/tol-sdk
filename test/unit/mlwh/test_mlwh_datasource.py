@@ -103,9 +103,39 @@ class TestMlwhDataSource(TestCase):
         with self.assertRaises(DataSourceError):
             mds.get_list('run_data', datasource_filter)
 
-    def test_get_list_not_run_data(self):
+    def test_get_list_not_run_data_or_sequencing_request(self):
         mds = MockMlwhDataSource({
             'uri': 'mysql://user:pass@host:1234/db'
         })
         with self.assertRaises(DataSourceError):
             mds.get_list('something_else')
+
+    def test_get_list_sequencing_request(self):
+        mds = MockMlwhDataSource({
+            'uri': 'mysql://user:pass@host:1234/db'
+        })
+        in_list = {'study_id': ['one', 'two'],
+                   'sample_ref': ['three', 'four']}
+        datasource_filter = DataSourceFilter()
+        datasource_filter.in_list = in_list
+        datasource_filter.exact = {'platform_type': 'iseq'}
+        mocked_function = mds.mlwh.cursor.return_value.fetchall
+        mocked_function.return_value = [
+            {'sample_ref': '1', 'supplier_name': 'Supplier1', 'donor_id': 'Donor 1'},
+            {'sample_ref': '2', 'supplier_name': 'Supplier2', 'donor_id': 'Donor 2'},
+            {'sample_ref': '3', 'supplier_name': 'Supplier3', 'donor_id': 'Donor 3'}
+        ]
+        returned = mds.get_list('sequencing_request', datasource_filter)
+        first = next(returned)
+        self.assertEqual({'sample_ref': '1', 'supplier_name': 'Supplier1',
+                          'donor_id': 'Donor 1'}, first.attributes)
+        second = next(returned)
+        self.assertEqual({'sample_ref': '2', 'supplier_name': 'Supplier2',
+                          'donor_id': 'Donor 2'}, second.attributes)
+        third = next(returned)
+        self.assertEqual({'sample_ref': '3', 'supplier_name': 'Supplier3',
+                          'donor_id': 'Donor 3'}, third.attributes)
+        with self.assertRaises(StopIteration):
+            next(returned)
+
+        mocked_function.assert_called_once()
