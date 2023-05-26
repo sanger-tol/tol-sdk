@@ -92,14 +92,8 @@ class ListGetParamaters:
     def __parse_to_datasource_filter(self, __key: str, __value: str) -> DataSourceFilter:
         try:
             filter_dict = json.loads(__value)
-            dsf = DataSourceFilter()
             if type(filter_dict) is dict:
-                if 'exact' in filter_dict:
-                    dsf.exact = filter_dict['exact']
-                if 'contains' in filter_dict:
-                    dsf.contains = filter_dict['contains']
-                if 'in_list' in filter_dict:
-                    dsf.in_list = filter_dict['in_list']
+                dsf = DataSourceFilter(**filter_dict)
                 return dsf
             raise BadQueryArgError(
                 __key,
