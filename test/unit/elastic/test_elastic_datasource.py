@@ -227,6 +227,16 @@ class TestElasticDataSource(TestCase):
             'must_not': []}}
         self.assertEqual(expected, eds._build_elasticsearch_query('obj_type', object_filters))
 
+        # Range filtering
+        object_filters = DataSourceFilter()
+        object_filters.range = {'field1': {'from': 'string1', 'to': 'string2'},
+                                'datefield': {'from': '2022-01-01', 'to': '2023-01-01'}}
+        expected = {'bool': {'must': [
+            {'range': {'field1': {'gte': 'string1', 'lte': 'string2'}}},
+            {'range': {'datefield': {'gte': '2022-01-01', 'lte': '2023-01-01'}}}],
+            'must_not': []}}
+        self.assertEqual(expected, eds._build_elasticsearch_query('obj_type', object_filters))
+
     def test_build_sort(self):
         eds = MockElasticDataSource(
             {'uri': 'test', 'user': 'user', 'password': 'password', 'index_prefix': 'test'}
@@ -311,7 +321,7 @@ class TestElasticDataSource(TestCase):
             }
         }
         expected = {'field_1': 'str',
-                    'field_2': 'date',
+                    'field_2': 'datetime',
                     'field_3': 'int'}
         returned = eds.get_attribute_types_super('index_name')
         eds.es.indices.get_mapping.assert_called_once()
