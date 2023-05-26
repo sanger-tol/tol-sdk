@@ -164,6 +164,7 @@ class ElasticDataSource(DataSource):
                 else:
                     search_field = self._field_or_keyword(object_type, k)
                     query['bool']['must'].append({'match': {search_field: v}})
+
         if object_filters.contains is not None:
             for k, v in object_filters.contains.items():
                 search_field = self._field_or_keyword(object_type, k)
@@ -172,6 +173,12 @@ class ElasticDataSource(DataSource):
         if object_filters.in_list is not None:
             for k, v in object_filters.in_list.items():
                 query['bool']['must'].append({'terms': {k: v, 'boost': 1.0}})
+
+        if object_filters.range is not None:
+            for k, v in object_filters.range.items():
+                query['bool']['must'].append({'range': {k: {'gte': v['from'],
+                                                            'lte': v['to']}}})
+
         return query
 
     def _build_elasticsearch_sort(self, object_type: str, sort_by: str):
