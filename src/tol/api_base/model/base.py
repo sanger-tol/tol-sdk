@@ -718,12 +718,26 @@ class Base(db.Model):
 
     @classmethod
     def get_one_to_many_relationship_names(cls):
-        relationships = inspect(cls).relationships.items()
-        relationship_names = [r[0] for r in relationships]
+        related_tables = []
+        for relname, relobj in inspect(cls).relationships.items():
+            # local_remote_pairs are pairs of Column objects representing
+            # the local and remote half of each join in the relationship.
+            remote_tables = {
+                remote.table.name for _, remote in relobj.local_remote_pairs
+            }
+            if len(remote_tables) == 1:
+                related_tables.append(remote_tables.pop())
+            else:
+                raise BadParameterException(
+                    f'API expects relationship "{relname}" in model "{cls.__name__}"'
+                    f' to join to a single remote table, but found: {remote_tables}'
+                )
+
         # exclude relationships for which this model is the many end
         return [
-            cls._get_type_from_tablename(r) for r in relationship_names
-            if r not in cls._get_all_tablenames_many_to_one()
+            cls._get_type_from_tablename(tab)
+            for tab in related_tables
+            if tab not in cls._get_all_tablenames_many_to_one()
         ]
 
     @classmethod
