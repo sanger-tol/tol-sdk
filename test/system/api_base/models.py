@@ -35,7 +35,9 @@ class BModelRelationship(Base):
     id_string = db.Column(db.String, primary_key=True)
     a_id = db.Column(db.Integer, db.ForeignKey('test_a.id'), nullable=False)
     test_a = db.relationship(AModelRelationship, back_populates='test_b', foreign_keys=[a_id])
-    test_e = db.relationship('EModelRelationship', back_populates='test_b')
+
+    # Relationship to test if relationship != __tablename__ it still works
+    test_e_extra = db.relationship('EModelRelationship', back_populates='test_b')
 
 
 @setup_model
@@ -74,7 +76,9 @@ class EModelRelationship(Base):
     __table_args__ = {'extend_existing': True}
     id = db.Column(db.Integer, primary_key=True)  # noqa A003
     b_id = db.Column(db.String, db.ForeignKey('test_b.id_string'), nullable=False)
-    test_b = db.relationship(BModelRelationship, back_populates='test_e', foreign_keys=[b_id])
+    test_b = db.relationship(
+        BModelRelationship, back_populates='test_e_extra', foreign_keys=[b_id]
+    )
 
 
 @setup_model
