@@ -3,6 +3,7 @@
 # SPDX-License-Identifier: MIT
 
 import json
+from typing import Dict, List
 
 from benchling_api_client.models.naming_strategy import NamingStrategy
 
@@ -11,23 +12,27 @@ from benchling_sdk.benchling import Benchling
 from benchling_sdk.errors import BenchlingError
 from benchling_sdk.helpers.serialization_helpers import fields
 from benchling_sdk.models import (
-    CustomEntityBulkCreate, CustomEntityBulkUpdate)
+    CustomEntityBulkCreate,
+    CustomEntityBulkUpdate
+)
 
 from .entities import convert_sts_entity_to_eln_entity_fields
-from ..core import DataSource
+from ..core import (
+    DataSource,
+    unsupported
+)
 
 
-class Interface(DataSource):
+class ElnDataSource(DataSource):
 
-    def __init__(self, config, api_key='DEFAULT'):
+    def __init__(self, config):
         # url, api_key, registry_id, project_id, entities
-        super().__init__(config)
+        super().__init__(config, expected=['url', 'api_key', 'registry_id',
+                                           'project_id', 'entities'])
 
-        if api_key != 'DEFAULT':
-            self.api_key = api_key
-        self.benchling_interface = self.__get_benchling_interface(self.url, self.api_key)
+        self.benchling_interface = self._get_benchling_interface(self.url, self.api_key)
 
-    def __get_benchling_interface(self, url, api_key):
+    def _get_benchling_interface(self, url, api_key):
         return (Benchling(url=url, auth_method=ApiKeyAuth(api_key)))
 
     def __generate_response(self, task, entities, id_field):
@@ -108,3 +113,22 @@ class Interface(DataSource):
             return response
         except BenchlingError as error:
             raise Exception(400, error.json['error']['message'])
+
+    @unsupported()
+    def get_by_id(self, *args, **kwargs):
+        pass
+
+    @unsupported()
+    def get_list(self, *args, **kwargs):
+        pass
+
+    @unsupported()
+    def get_list_page(self, *args, **kwargs):
+        pass
+
+    def get_attribute_types(self, object_type: str) -> Dict:
+        raise NotImplementedError()
+
+    @property
+    def supported_types(self) -> List:
+        raise NotImplementedError()
