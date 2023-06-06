@@ -2,22 +2,21 @@
 #
 # SPDX-License-Identifier: MIT
 
-from typing import Dict
+from typing import Dict, List
 
 import tol.jira.jira_methods as jm
 from tol.jira.jira_auth import JiraAuth
 
-from ..core import DataSource
+from ..core import (
+    ReadOnlyDataSource,
+    unsupported
+)
 
 
-class Jira(DataSource):
+class JiraDataSource(ReadOnlyDataSource):
 
-    def __init__(self, config, api_token='DEFAULT'):
-        # url, api_token
-        super().__init__(config)
-
-        if api_token != 'DEFAULT':
-            self.api_token = api_token
+    def __init__(self, config):
+        super().__init__(config, expected=['url', 'api_token'])
 
     def get_specimens_for_treeval(self, page_number=1, page_size=1, filter_='', sort_by=''):
 
@@ -72,5 +71,21 @@ class Jira(DataSource):
     def get_specimen_for_treeval(self, tolid):
         return self.get_specimens_for_treeval(1, 1, f'[tolid={tolid}]', 'tolid')[0]
 
+    @unsupported()
+    def get_by_id(self, *args, **kwargs):
+        pass
+
+    @unsupported()
+    def get_list(self, *args, **kwargs):
+        pass
+
+    @unsupported()
+    def get_list_page(self, *args, **kwargs):
+        pass
+
     def get_attribute_types(self, object_type: str) -> Dict:
+        raise NotImplementedError()
+
+    @property
+    def supported_types(self) -> List:
         raise NotImplementedError()

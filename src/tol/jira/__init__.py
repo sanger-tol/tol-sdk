@@ -2,6 +2,6 @@
 #
 # SPDX-License-Identifier: MIT
 
-from .jira import *  # noqa
 from .jira_auth import *  # noqa
+from .jira_datasource import *  # noqa
 from .jira_methods import *  # noqa
