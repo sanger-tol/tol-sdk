@@ -63,11 +63,12 @@ class ApiDataSource(DataSource):
         return self.unpack(json), meta
 
     def get_list(self, object_type: str, object_filters: DataSourceFilter = None,
-                 sort_by: str = '', page_size: int = 100):
+                 sort_by: str = None, page_size: int = 100):
         # Get the first page, then we know the total size
         args = {'filter': json.dumps(asdict(object_filters)) if object_filters else {},
-                'sort_by': sort_by,
                 'page_size': page_size}
+        if sort_by is not None:
+            args['sort_by'] = sort_by
         first_page, meta = self.get_list_page(object_type, 1, **args)
         total_rows = meta['total']
         last_page = math.ceil(total_rows / page_size)
