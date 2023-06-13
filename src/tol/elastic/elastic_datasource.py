@@ -135,12 +135,14 @@ class ElasticDataSource(DataSource):
         page: int,
         object_filters: DataSourceFilter = None,
         sort_by: str = None,
+        page_size: int = None,
         **kwargs
     ) -> Tuple[Iterable[DataObject], int]:
         index = self.__get_index(object_type)
         query = self._build_elasticsearch_query(object_type, object_filters)
         sort = self._build_elasticsearch_sort(object_type, sort_by)
-        page_size = self.get_page_size()
+        if page_size is None:
+            page_size = self.get_page_size()
         from_ = (page - 1) * page_size
         resp = self.es.search(
             from_=from_,
