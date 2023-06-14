@@ -26,6 +26,38 @@ services:
       - DB_URI=postgresql://test-user:test-password@tol-sdk-python-db:5432/test-db
     depends_on:
       - tol-sdk-python-db
+      - tol-sdk-python-system-test-2
+    networks:
+      - api-base-test-network
+
+  # needed to test api_base v2 independently from v1 (due to dependencies)
+
+  # docker-compose build tol-sdk-python-unit-test-2 && docker-compose run tol-sdk-python-unit-test-2
+  tol-sdk-python-unit-test-2:
+    build:
+      context: .
+      dockerfile: Dockerfile2
+    command: pytest -v unit2
+
+  # docker-compose build tol-sdk-python-system-test-2 && docker-compose run tol-sdk-python-system-test-2
+  tol-sdk-python-system-test-2:
+    build:
+      context: .
+      dockerfile: Dockerfile2
+    command: pytest -v system2
+    environment:
+      - DB_URI=postgresql://test-user:test-password@tol-sdk-python-db-2:5432/test-db
+    depends_on:
+      - tol-sdk-python-db-2
+    networks:
+      - api-base-test-network
+
+  tol-sdk-python-db-2:
+    image: postgres:11
+    environment:
+      - POSTGRES_USER=test-user
+      - POSTGRES_PASSWORD=test-password
+      - POSTGRES_DB=test-db
     networks:
       - api-base-test-network
 

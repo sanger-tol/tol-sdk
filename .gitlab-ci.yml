@@ -12,3 +12,41 @@ include:
   - project: 'tol/tol-core'
     ref: v1.3.6
     file: '/gitlab/python-package.yml'
+
+
+# TODO remove
+unit-test-api-base-2:
+  image: python:3.10
+  extends: .unit-test-python
+  variables:
+    TEST_TYPE: unit2
+    TEST_BASE_DIR: dup-
+    TEST_DIR: '/../test' # hacky directory traversal :(
+  rules:
+    - if: $CI_COMMIT_REF_NAME == "qa"
+      when: never
+    - if: $CI_COMMIT_REF_NAME == "staging"
+      when: never
+    - if: $CI_COMMIT_REF_NAME == "production"
+      when: never
+    - if: $CI_PIPELINE_SOURCE == 'merge_request_event'
+      when: never
+
+
+system-test-api-base-2:
+  image: python:3.10
+  extends: .system-test-python
+  variables:
+    TEST_TYPE: system2
+    TEST_BASE_DIR: dup-
+    TEST_DIR: '/../test'
+  rules:
+    - if: $CI_COMMIT_REF_NAME == "qa"
+      when: never
+    - if: $CI_COMMIT_REF_NAME == "staging"
+      when: never
+    - if: $CI_COMMIT_REF_NAME == "production"
+      when: never
+    - if: $CI_PIPELINE_SOURCE == 'merge_request_event'
+      when: never
+

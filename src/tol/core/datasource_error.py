@@ -11,3 +11,6 @@ class DataSourceError(Exception):
         self.title = title
         self.detail = detail
         self.status_code = status_code
+
+    def __str__(self) -> str:
+        return f'{self.title} - "{self.detail}"'

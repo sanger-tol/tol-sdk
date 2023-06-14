@@ -1,0 +1,6 @@
+# SPDX-FileCopyrightText: 2021 Genome Research Ltd.
+#
+# SPDX-License-Identifier: MIT
+
+-r ./requirements-test.txt
+mock-alchemy

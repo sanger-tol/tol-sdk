@@ -3,11 +3,12 @@
 # SPDX-License-Identifier: MIT
 
 from abc import ABC, abstractmethod
-from typing import Any, Dict, Iterable, List, Union
+from typing import Any, Dict, Iterable, List, Optional, Union
 
 from ..core import DataObject
 
 
+DocumentMeta = Dict[str, Any]
 DumpDict = Dict[str, Any]
 DumpDictMany = List[DumpDict]
 ResponseDict = Dict[str, Union[DumpDict, DumpDictMany]]
@@ -23,7 +24,7 @@ class View(ABC):
     def dump(
         self,
         data_object: DataObject,
-        document_meta: Dict[str, Any] = None
+        document_meta: Optional[DocumentMeta] = None
     ) -> ResponseDict:
         """
         Create a JSON:API response for an individual DataObject result
@@ -33,7 +34,7 @@ class View(ABC):
     def dump_bulk(
         self,
         data_objects: Iterable[DataObject],
-        document_meta: Dict[str, Any] = None
+        document_meta: Optional[DocumentMeta] = None
     ) -> ResponseDict:
         """
         Create a JSON:API response for an Iterable of DataObject results
@@ -48,7 +49,7 @@ class DefaultView(View):
     def dump(
         self,
         data_object: DataObject,
-        document_meta: Dict[str, Any] = None
+        document_meta: Optional[DocumentMeta] = None
     ) -> ResponseDict:
         response = {
             'data': self.__dump_object(data_object)
@@ -60,7 +61,7 @@ class DefaultView(View):
     def dump_bulk(
         self,
         data_objects: Iterable[DataObject],
-        document_meta: Dict[str, Any] = None
+        document_meta: Optional[DocumentMeta] = None
     ) -> ResponseDict:
 
         dumped = [
