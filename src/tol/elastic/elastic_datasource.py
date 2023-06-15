@@ -7,7 +7,7 @@ import json
 from collections.abc import Callable
 from datetime import datetime
 from functools import cache
-from typing import Dict, Iterable, Tuple
+from typing import Any, Dict, Iterable, Tuple
 
 from caseconverter import (
     kebabcase,
@@ -57,6 +57,9 @@ class ElasticDataSource(DataSource):
         dhash.update(encoded)
         return {**dict_, 'checksum': dhash.hexdigest()}
 
+    def _add_uid(self, dict_: Dict, uid: Any) -> Dict:
+        return {**dict_, 'uid': f'{uid}'}
+
     def _convert_dates(self, dict_: Dict) -> Dict:
         ret = {}
         for k, v in dict_.items():
@@ -74,11 +77,13 @@ class ElasticDataSource(DataSource):
             obj = self._add_checksum(obj)
             obj = self._add_updated(obj)
             obj = self._prefix_fields(obj, field_prefix)
+            uid = id_func(object_)
+            obj = self._add_uid(obj, uid)
             yield {
                 '_op_type': 'update',
                 'doc_as_upsert': True,
                 '_index': index,
-                '_id': id_func(object_),
+                '_id': uid,
                 'doc': obj
             }
 
@@ -184,15 +189,16 @@ class ElasticDataSource(DataSource):
         return query
 
     def _build_elasticsearch_sort(self, object_type: str, sort_by: str):
+        default_sort = {'uid.keyword': 'asc'}
         if sort_by is None:
-            return
+            return [default_sort]
         if sort_by.startswith('-'):
             field = self._field_or_keyword(object_type, sort_by[1:])
             order = 'desc'
         else:
             field = self._field_or_keyword(object_type, sort_by)
             order = 'asc'
-        sort = [{field: order}]
+        sort = [{field: order}, default_sort]
         return sort
 
     def get_list(

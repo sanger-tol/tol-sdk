@@ -55,7 +55,8 @@ class TestElasticDataSource(TestCase):
                     'doc': {'field1': 'value1', 'field2': 'value2',
                             'datefield': dt.isoformat(),
                             'tol_updated_at': dt.isoformat(),
-                            'tol_checksum': 'abc123'}}
+                            'tol_checksum': 'abc123',
+                            'uid': '1'}}
         self.assertEqual(expected, next(generator))
         expected = {'_op_type': 'update',
                     'doc_as_upsert': True,
@@ -63,7 +64,8 @@ class TestElasticDataSource(TestCase):
                     '_id': 2,
                     'doc': {'field1': 'value3', 'field2': 'value4',
                             'tol_updated_at': dt.isoformat(),
-                            'tol_checksum': 'abc123'}}
+                            'tol_checksum': 'abc123',
+                            'uid': '2'}}
         self.assertEqual(expected, next(generator))
         eds.helpers.bulk.return_value = (2, 0)
         eds.upsert('index', objects, id_func=lambda x: x.field1)
@@ -91,7 +93,8 @@ class TestElasticDataSource(TestCase):
                     '_id': 'value1',
                     'doc': {'pre_field1': 'value1', 'pre_field2': 'value2',
                             'pre_tol_updated_at': dt.isoformat(),
-                            'pre_tol_checksum': 'abc123'}}
+                            'pre_tol_checksum': 'abc123',
+                            'uid': 'value1'}}
         self.assertEqual(expected, next(generator))
         expected = {'_op_type': 'update',
                     'doc_as_upsert': True,
@@ -99,7 +102,8 @@ class TestElasticDataSource(TestCase):
                     '_id': 'value3',
                     'doc': {'pre_field1': 'value3', 'pre_field2': 'value4',
                             'pre_tol_updated_at': dt.isoformat(),
-                            'pre_tol_checksum': 'abc123'}}
+                            'pre_tol_checksum': 'abc123',
+                            'uid': 'value3'}}
         self.assertEqual(expected, next(generator))
         eds.helpers.bulk.return_value = (2, 0)
         eds.upsert('index', objects, id_func=lambda x: x.field1)
@@ -241,17 +245,17 @@ class TestElasticDataSource(TestCase):
         eds = MockElasticDataSource(
             {'uri': 'test', 'user': 'user', 'password': 'password', 'index_prefix': 'test'}
         )
-
-        self.assertIsNone(eds._build_elasticsearch_sort('obj_type', None))
+        expected = [{'uid.keyword': 'asc'}]
+        self.assertEqual(expected, eds._build_elasticsearch_sort('obj_type', None))
 
         # Asc
         sort_by = 'field1'
-        expected = [{'field1.keyword': 'asc'}]
+        expected = [{'field1.keyword': 'asc'}, {'uid.keyword': 'asc'}]
         self.assertEqual(expected, eds._build_elasticsearch_sort('obj_type', sort_by))
 
         # Desc
         sort_by = '-field1'
-        expected = [{'field1.keyword': 'desc'}]
+        expected = [{'field1.keyword': 'desc'}, {'uid.keyword': 'asc'}]
         self.assertEqual(expected, eds._build_elasticsearch_sort('obj_type', sort_by))
 
     def test_get_aggregations(self):
