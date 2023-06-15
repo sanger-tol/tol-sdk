@@ -31,6 +31,7 @@ unit-test-api-base-2:
       when: never
     - if: $CI_PIPELINE_SOURCE == 'merge_request_event'
       when: never
+    - when: always
 
 
 system-test-api-base-2:
@@ -49,4 +50,5 @@ system-test-api-base-2:
       when: never
     - if: $CI_PIPELINE_SOURCE == 'merge_request_event'
       when: never
+    - when: always
 
