@@ -6,8 +6,9 @@ from typing import Callable, Dict, Iterable, List, Optional, Tuple
 
 from .converter import Converter, DefaultConverter, TypeFunction
 from .database import Database
-from .filter import DefaultDatabaseFilter
+from .filter import DatabaseFilter, DefaultDatabaseFilter
 from .model import Model
+from .sort import DatabaseSorter, DefaultDatabaseSorter
 from ..core import DataId, DataObject, DataSource, DataSourceFilter
 
 
@@ -61,13 +62,14 @@ class SqlDataSource(DataSource):
 
         tablename = self.__type_tablename_map[object_type]
         database_filter = DefaultDatabaseFilter(object_filters)
+        sorter = DefaultDatabaseSorter(sort_by) if sort_by is not None else None
         total_count = self.__db.count(tablename, filters=database_filter)
         models = self.__get_list_page_models(
             tablename,
             database_filter,
             page_number,
             page_size,
-            sort_by
+            sorter
         )
         converter = self.__converter_factory()
         return converter.convert(models), total_count
@@ -124,10 +126,10 @@ class SqlDataSource(DataSource):
     def __get_list_page_models(
         self,
         tablename: str,
-        filters: Optional[DataSourceFilter],
+        filters: Optional[DatabaseFilter],
         page_number: Optional[int],
         page_size: Optional[int],
-        sort_by: Optional[str]
+        sort_by: Optional[DatabaseSorter]
     ) -> Iterable[Model]:
         offset = self.__get_offset(page_number, page_size)
         return self.__db.get_list(
@@ -146,5 +148,5 @@ class SqlDataSource(DataSource):
 
         return (
             None if page_number is None or page_size is None
-            else page_number * page_size
+            else (page_number - 1) * page_size
         )

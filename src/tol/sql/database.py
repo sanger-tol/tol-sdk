@@ -10,6 +10,7 @@ from sqlalchemy.orm import Query, Session
 from .filter import DatabaseFilter
 from .model import Model
 from .session import SessionFactory
+from .sort import DatabaseSorter
 
 
 class Database(ABC):
@@ -29,7 +30,7 @@ class Database(ABC):
         self,
         tablename: str,
         filters: Optional[DatabaseFilter] = None,
-        sort_by: Optional[str] = None,
+        sort_by: Optional[DatabaseSorter] = None,
         offset: Optional[int] = None,
         limit: Optional[int] = None
     ) -> Iterable[Model]:
@@ -72,7 +73,7 @@ class DefaultDatabase(Database):
         self,
         tablename: str,
         filters: Optional[DatabaseFilter] = None,
-        sort_by: Optional[str] = None,
+        sort_by: Optional[DatabaseSorter] = None,
         offset: Optional[int] = None,
         limit: Optional[int] = None
     ) -> Iterable[Model]:
@@ -80,6 +81,8 @@ class DefaultDatabase(Database):
         query = query.limit(limit).offset(offset)
         if filters is not None:
             query = filters.filter(query, tablename, self.__tablename_model_dict)
+        if sort_by is not None:
+            query = sort_by.sort(query, tablename, self.__tablename_model_dict)
         results = query.all()
         session.close()
         return results

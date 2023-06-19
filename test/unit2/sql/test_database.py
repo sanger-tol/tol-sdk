@@ -20,6 +20,7 @@ class _TestModel(BaseModel):
     __tablename__ = 'test'
 
     id: Mapped[str] = mapped_column(primary_key=True)  # noqa A003
+    int_column: Mapped[int] = mapped_column()
 
 
 class TestDefaultDatabase:

@@ -184,7 +184,7 @@ class TestSqlDataSource:
 
         data_objects, count = ds.get_list_page(
             'tests',
-            9,
+            10,
             page_size=30
         )
         data_objects = list(data_objects)
@@ -192,7 +192,7 @@ class TestSqlDataSource:
         assert count == 10001
         assert len(data_objects) == 30
 
-        for i, data_object in enumerate(data_objects, start=270):  # 270=30*9
+        for i, data_object in enumerate(data_objects, start=270):  # 270=30*(10-1)
             assert data_object.id == str(i)
             assert data_object.type == 'tests'
             assert data_object.attributes == {

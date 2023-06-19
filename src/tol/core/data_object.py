@@ -114,7 +114,7 @@ class CoreDataObject(DataObject):
         }
 
     @property
-    def to_one_relationships(self) -> Dict[str, CoreDataObject]:
+    def to_one_relationships(self) -> Dict[str, DataObject]:
         return {
             key: getattr(self, key)
             for key in self.__get_field_names()
@@ -122,7 +122,7 @@ class CoreDataObject(DataObject):
         }
 
     @property
-    def to_many_relationships(self) -> Dict[str, Iterable[CoreDataObject]]:
+    def to_many_relationships(self) -> Dict[str, Iterable[DataObject]]:
         return {
             key: getattr(self, key)
             for key in self.__get_field_names()
@@ -137,7 +137,7 @@ class CoreDataObject(DataObject):
 
     def __is_to_one_relationship(self, name: str) -> bool:
         value = getattr(self, name)
-        return isinstance(value, CoreDataObject)
+        return isinstance(value, DataObject)
 
     def __is_to_many_relationship(self, name: str) -> bool:
         value = getattr(self, name)
