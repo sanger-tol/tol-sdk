@@ -18,6 +18,11 @@ class _MockModel:
         def desc():
             return False
 
+    @classmethod
+    def get_column(cls, _):
+        # only ever needs to return `int_column`
+        return cls.int_column
+
 
 class MockQuery:
     """Mocks a query, for sorting only."""

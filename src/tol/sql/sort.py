@@ -41,7 +41,7 @@ class DefaultDatabaseSorter(DatabaseSorter):
     ) -> Query:
 
         model = model_dict[tablename]
-        column = getattr(model, self.__term)
+        column = model.get_column(self.__term)
         if self.__desc:
             return query.order_by(column.desc())
         else:

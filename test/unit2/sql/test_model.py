@@ -4,9 +4,12 @@
 
 from __future__ import annotations
 
+import pytest
+
 from sqlalchemy import Boolean, Column, Integer, String
 
 from tol.sql import model_base
+from tol.sql.exception import BadColumnError
 
 
 BaseModel = model_base()
@@ -72,3 +75,26 @@ class TestDefaultModel:
             'boolean_column': True,
             'string_column': 'there are many like it'
         }
+
+    def test_get_column(self):
+        """Getting columns that exist"""
+
+        assert _Example.get_column('string_column').key == 'string_column'
+        assert _Example.get_column('boolean_column').key == 'boolean_column'
+        assert _Example.get_column(
+            _Example.get_id_column_name()
+        ).key == 'id'
+        assert _OverrideId.get_column(
+            _OverrideId.get_id_column_name()
+        ).key == 'id_other'
+
+    def test_get_column_non_existing(self):
+        """Getting columns that don't exist"""
+
+        with pytest.raises(BadColumnError) as e:
+            assert _Example.get_column('oh_so_fake')
+        assert 'oh_so_fake' in e.value.detail
+
+        with pytest.raises(BadColumnError) as e:
+            assert _OverrideId.get_column('yet_still_faker')
+        assert 'yet_still_faker' in e.value.detail

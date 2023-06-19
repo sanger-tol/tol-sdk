@@ -5,7 +5,9 @@
 from abc import ABC, ABCMeta, abstractclassmethod, abstractproperty
 from typing import Any, Dict, Optional, Type
 
-from sqlalchemy.orm import DeclarativeMeta, declarative_base
+from sqlalchemy.orm import DeclarativeMeta, MappedColumn, declarative_base
+
+from .exception import BadColumnError
 
 
 class Model(ABC):
@@ -26,6 +28,12 @@ class Model(ABC):
         """
         The name of the column that serves as the "id".
         Override this classmethod to change.
+        """
+
+    @abstractclassmethod
+    def get_column(cls, name: str) -> MappedColumn:  # noqa N805
+        """
+        Returns the (attribute) column for the given name.
         """
 
     @abstractproperty
@@ -69,6 +77,12 @@ def model_base() -> Type[Model]:
         @classmethod
         def get_id_column_name(cls) -> str:
             return 'id'
+
+        @classmethod
+        def get_column(cls, name: str) -> MappedColumn:
+            if name not in cls.__mapper__.attrs:
+                raise BadColumnError(cls, name)
+            return getattr(cls, name)
 
         @property
         def instance_id(self) -> Optional[str]:

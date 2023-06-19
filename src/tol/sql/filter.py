@@ -58,5 +58,6 @@ class DefaultDatabaseFilter(DatabaseFilter):
         if exact_filters is None:
             return query
         for k, v in exact_filters.items():
-            query = query.filter(getattr(base_model, k) == v)
+            exact_column = base_model.get_column(k)
+            query = query.filter(exact_column == v)
         return query

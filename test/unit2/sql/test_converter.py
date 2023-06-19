@@ -26,6 +26,10 @@ class _ExampleModel(Model):
     def get_id_column_name(cls) -> str:
         return 'id'
 
+    @classmethod
+    def get_column(cls, name: str):
+        pass
+
     @property
     def instance_id(self) -> Optional[str]:  # noqa
         return self.__id

@@ -42,6 +42,10 @@ class TestSqlDataSource:
             def instance_id(self) -> Optional[str]:
                 return '302'
 
+            @classmethod
+            def get_column(cls, name: str):
+                pass
+
             @property
             def instance_attributes(self) -> Dict[str, Any]:
                 return {
@@ -93,6 +97,10 @@ class TestSqlDataSource:
             @property
             def instance_id(self) -> Optional[str]:
                 return self.__instance_id
+
+            @classmethod
+            def get_column(cls, name: str):
+                pass
 
             @property
             def instance_attributes(self) -> Dict[str, Any]:
@@ -146,6 +154,10 @@ class TestSqlDataSource:
             @classmethod
             def get_id_column_name(cls) -> str:
                 return 'id'
+
+            @classmethod
+            def get_column(cls, name: str):
+                pass
 
             @property
             def instance_id(self) -> Optional[str]:

@@ -6,7 +6,7 @@ from __future__ import annotations
 
 from string import ascii_lowercase
 from typing import List
-from unittest.mock import MagicMock, PropertyMock, call
+from unittest.mock import MagicMock, call
 
 from tol.core import DataSourceFilter
 from tol.sql.filter import DefaultDatabaseFilter
@@ -88,16 +88,11 @@ class TestDefaultDatabaseFilter:
         ]
 
     def __get_mock_model(self) -> MagicMock:
-        """Creates a MagicMock with tautological properties"""
+        """
+        Creates a MagicMock for model that returns MockComparator for a
+        given get_colum call.
+        """
 
         model = MagicMock()
-        for c in ascii_lowercase:
-            # for each lowercase ASCII letter, add a tautologically named property
-            # to the class [e.g. model.a -> MockComparator('a'),
-            # model.b -> MockComparator('b'), etc.]
-            setattr(
-                type(model),
-                c,
-                PropertyMock(return_value=MockComparator(c))
-            )
+        type(model).get_column = lambda _, c: MockComparator(c)
         return model
