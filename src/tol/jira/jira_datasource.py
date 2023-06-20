@@ -83,6 +83,10 @@ class JiraDataSource(ReadOnlyDataSource):
     def get_list_page(self, *args, **kwargs):
         pass
 
+    @unsupported
+    def get_aggregations(self, *args, **kwargs):
+        pass
+
     def get_attribute_types(self, object_type: str) -> Dict:
         raise NotImplementedError()
 

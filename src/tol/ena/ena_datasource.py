@@ -10,7 +10,11 @@ from requests.auth import HTTPBasicAuth
 
 import tol.ena.ena_methods as em
 
-from ..core import DataSource, DataSourceError
+from ..core import (
+    DataSource,
+    DataSourceError,
+    unsupported
+)
 
 
 class EnaDataSource(DataSource):
@@ -97,3 +101,7 @@ class EnaDataSource(DataSource):
             return False, errors
         else:
             return True, assigned_samples
+
+    @unsupported
+    def get_aggregations(self, *args, **kwargs):
+        pass

@@ -64,6 +64,10 @@ class BoldDataSource(ReadOnlyDataSource):
         generator = self._get_specimens(object_filters.exact)
         return self._convert_dict_to_data_objects(generator)
 
+    @unsupported()
+    def get_aggregations(self, *args, **kwargs):
+        pass
+
     def _convert_dict_to_data_objects(self, objs: Dict) -> Iterable:
         # Each "v" is a BOLD record
         for value in objs.values():

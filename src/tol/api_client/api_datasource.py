@@ -16,7 +16,8 @@ from .api_object import ApiObject
 from ..core import (
     DataSource,
     DataSourceError,
-    DataSourceFilter
+    DataSourceFilter,
+    unsupported
 )
 
 
@@ -87,6 +88,10 @@ class ApiDataSource(DataSource):
     def get_list_page(self, object_type: str, page: int, **kwargs):
         url = f'{object_type}'
         return self.get_by_link(url, params={**kwargs, 'page': page})
+
+    @unsupported
+    def get_aggregations(self, *args, **kwargs):
+        pass
 
     def unpack(self, json):
         if type(json['data']) is list:

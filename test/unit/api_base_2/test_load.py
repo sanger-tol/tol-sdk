@@ -64,10 +64,7 @@ class TestLoadedDataObject:
         many_uuids = [
             f'uuid-{r.type}' for r in many_relations
         ]
-        uuid_object_dict = {
-            uuid: relation for uuid, relation
-            in zip(many_uuids, many_relations)
-        }
+        uuid_object_dict = dict(zip(many_uuids, many_relations))
         object_dump = {
             'type': 'nice',
             '_uuid': 'abc',
@@ -106,10 +103,7 @@ class TestLoadedDataObject:
         many_uuids = [
             f'uuid-{r.type}' for r in many_relations
         ]
-        uuid_dict_manys = {
-            uuid: relation for uuid, relation
-            in zip(many_uuids, many_relations)
-        }
+        uuid_dict_manys = dict(zip(many_uuids, many_relations))
         uuid_object_dict = {
             'train': hype_object,
             **uuid_dict_manys

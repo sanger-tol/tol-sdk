@@ -10,7 +10,12 @@ from tol.core import DataSource
 
 from .controller import Controller
 from .exception import BaseRuntimeException
-from .misc import DataSourceDict, ListGetParamaters
+from .misc import (
+    AggregationBody,
+    AggregationParameters,
+    DataSourceDict,
+    ListGetParamaters
+)
 from .view import DefaultView
 
 
@@ -58,6 +63,15 @@ def data_blueprint(
         controller = Controller(data_source, view)
         request_args = ListGetParamaters(request.args)
         return controller.get_list(object_type, request_args)
+
+    @data_handler.route('/<object_type>:aggregations', methods=['POST'])
+    def get_aggregations(*, object_type: str):
+        data_source = data_source_dict[object_type]
+        view = DefaultView()
+        controller = Controller(data_source, view)
+        request_args = AggregationParameters(request.args)
+        body = AggregationBody(request.json)
+        return controller.post_aggregations(object_type, request_args, body)
 
     @data_handler.app_errorhandler(BaseRuntimeException)
     def handle_error(error: BaseRuntimeException):

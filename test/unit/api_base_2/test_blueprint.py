@@ -10,6 +10,7 @@ from flask_testing import TestCase
 
 from tol.core import (
     CoreDataObject,
+    DataSourceFilter,
     ReadOnlyDataSource,
     unsupported
 )
@@ -47,6 +48,29 @@ class ParrotDataSource(ReadOnlyDataSource):
             for i in range(self.get_page_size())
         ], 400  # just a silly number, arbitrary
 
+    def get_aggregations(
+            self,
+            object_type: str,
+            aggregations: Dict,
+            object_filters: DataSourceFilter = None
+    ) -> Dict:
+        return {
+            'completed_over_time': {
+                'buckets': [
+                    {
+                        'key_as_string': '2015-04-01T00:00:00.000Z',
+                        'key': 1427846400000,
+                        'doc_count': 3
+                    },
+                    {
+                        'key_as_string': '2015-05-01T00:00:00.000Z',
+                        'key': 1430438400000,
+                        'doc_count': 0
+                    },
+                ]
+            }
+        }
+
     @property
     def supported_types(self):
         return [
@@ -75,6 +99,10 @@ class EmptyDataSource(ReadOnlyDataSource):
 
     @unsupported
     def get_list(self, *args, **kwargs):
+        pass
+
+    @unsupported
+    def get_aggregations(self, *args, **kwargs):
         pass
 
     @property
@@ -164,5 +192,39 @@ class TestBlueprint(BlueprintTestCase):
                 'meta': {'total': 400,
                          'types': {'parrot': 'str'}},
                 'data': expected_objects
+            }
+        )
+
+    def test_200_on_good_aggregations(self):
+        """A good aggregations POST returns 200 and correct data"""
+        body = {'aggregations': {}}  # We are mocking the result
+        response = self.client.open('/data/cracker:aggregations', method='POST', json=body)
+        print(response.text)
+        self.assert200(
+            response,
+            f'Response body is : {response.data.decode("utf-8")}'
+        )
+        expected_aggregations = {
+            'completed_over_time': {
+                'buckets': [
+                    {
+                        'key_as_string': '2015-04-01T00:00:00.000Z',
+                        'key': 1427846400000,
+                        'doc_count': 3
+                    },
+                    {
+                        'key_as_string': '2015-05-01T00:00:00.000Z',
+                        'key': 1430438400000,
+                        'doc_count': 0
+                    },
+                ]
+            }
+        }
+        self.assertEqual(
+            response.json,
+            {
+                'meta': {'aggregations': expected_aggregations,
+                         'types': {'parrot': 'str'}},
+                'data': []
             }
         )

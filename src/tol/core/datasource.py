@@ -238,6 +238,17 @@ class DataSource(ABC):
         Gets a generator of DataObject instances
         """
 
+    @operation
+    def get_aggregations(
+            self,
+            object_type: str,
+            aggregations: Dict,
+            object_filters: DataSourceFilter = None,
+    ) -> Dict:
+        """
+        Gets aggregations according to the Elastic aggregation specification
+        """
+
     def get_page_size(self) -> int:
         return getattr(self, 'page_size', self.DEFAULT_PAGE_SIZE)
 

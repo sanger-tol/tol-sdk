@@ -11,7 +11,11 @@ from tol.api_base2.exception import (
     ObjectNotFoundByIdException,
     UnsupportedOpertionError
 )
-from tol.api_base2.misc import ListGetParamaters
+from tol.api_base2.misc import (
+    AggregationBody,
+    AggregationParameters,
+    ListGetParamaters
+)
 from tol.api_base2.view import DefaultView
 from tol.core import (
     CoreDataObject,
@@ -36,6 +40,10 @@ class _TestDataSource1(ReadOnlyDataSource):
     def get_list(self, *args, **kwargs):
         pass
 
+    @unsupported
+    def get_aggregations(self, *args, **kwargs):
+        pass
+
     @property
     def supported_types(self):
         return ['test2', 'test1']
@@ -57,6 +65,10 @@ class _TestDataSource2(ReadOnlyDataSource):
 
     @unsupported
     def get_list(self, *args, **kwargs):
+        pass
+
+    @unsupported
+    def get_aggregations(self, *args, **kwargs):
         pass
 
     @property
@@ -101,6 +113,29 @@ class _TestDataSource3(ReadOnlyDataSource):
     def get_list(self, *args, **kwargs):
         pass
 
+    def get_aggregations(
+            self,
+            object_type: str,
+            aggregations: Dict,
+            object_filters: DataSourceFilter = None
+    ) -> Dict:
+        return {
+            'completed_over_time': {
+                'buckets': [
+                    {
+                        'key_as_string': '2015-04-01T00:00:00.000Z',
+                        'key': 1427846400000,
+                        'doc_count': 3
+                    },
+                    {
+                        'key_as_string': '2015-05-01T00:00:00.000Z',
+                        'key': 1430438400000,
+                        'doc_count': 0
+                    },
+                ]
+            }
+        }
+
     @property
     def supported_types(self):
         return ['test_X']
@@ -137,6 +172,8 @@ class TestController:
         # DataSource1
         with pytest.raises(UnsupportedOpertionError):
             Controller(ds_1, DefaultView()).get_list('test1', ListGetParamaters({}))
+        with pytest.raises(UnsupportedOpertionError):
+            Controller(ds_1, DefaultView()).post_aggregations('test1', AggregationParameters({}))
 
         # DataSource2
         with pytest.raises(UnsupportedOpertionError):
@@ -187,4 +224,44 @@ class TestController:
             ]
         }
         observed = controller.get_list('test_X', parsed)
+        assert expected == observed
+
+    def test_aggregations(self):
+        """Check that aggregations are working"""
+
+        controller = Controller(ds_3, DefaultView())
+        parsed = AggregationParameters({
+            'filter': """
+                {"exact": {"column1": "value1"}}
+            """
+        })
+        body = AggregationBody({
+            'aggregations': {
+                'completed_over_time': {
+                    'date_histogram': {
+                        'field': 'complete_date',
+                        'calendar_interval': 'month'
+                    }
+                }
+            }
+        })
+        expected = {
+            'meta': {
+                'aggregations': {'completed_over_time': {
+                    'buckets': [
+                        {
+                            'key_as_string': '2015-04-01T00:00:00.000Z',
+                            'key': 1427846400000,
+                            'doc_count': 3
+                        },
+                        {
+                            'key_as_string': '2015-05-01T00:00:00.000Z',
+                            'key': 1430438400000,
+                            'doc_count': 0
+                        },
+                    ]}},
+                'types': {}},
+            'data': []
+        }
+        observed = controller.post_aggregations('test_X', parsed, body)
         assert expected == observed

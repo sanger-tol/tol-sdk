@@ -172,6 +172,10 @@ class Interface(DataSource):
     def get_list(self, object_type: str, *args, **kwargs) -> None:
         pass
 
+    @unsupported
+    def get_aggregations(self, *args, **kwargs):
+        pass
+
     @property
     def supported_types(self):
         raise NotImplementedError()

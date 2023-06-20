@@ -9,7 +9,7 @@ from .database import Database
 from .filter import DatabaseFilter, DefaultDatabaseFilter
 from .model import Model
 from .sort import DatabaseSorter, DefaultDatabaseSorter
-from ..core import DataId, DataObject, DataSource, DataSourceFilter
+from ..core import DataId, DataObject, DataSource, DataSourceFilter, unsupported
 
 
 ConverterFactory = Callable[[], Converter]
@@ -150,3 +150,7 @@ class SqlDataSource(DataSource):
             None if page_number is None or page_size is None
             else (page_number - 1) * page_size
         )
+
+    @unsupported
+    def get_aggregations(self, *args, **kwargs):
+        pass

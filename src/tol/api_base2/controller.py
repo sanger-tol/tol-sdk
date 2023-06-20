@@ -10,7 +10,11 @@ from .exception import (
     ObjectNotFoundByIdException,
     UnsupportedOpertionError
 )
-from .misc import ListGetParamaters
+from .misc import (
+    AggregationBody,
+    AggregationParameters,
+    ListGetParamaters
+)
 from .view import ResponseDict, View
 from ..core import DataObject, DataSource
 
@@ -71,6 +75,27 @@ class Controller:
             'types': self.__data_source.get_attribute_types(object_type)
         }
         return self.__view.dump_bulk(data_objects, document_meta=document_meta)
+
+    @validate('get_aggregations', 'aggregations POST')
+    def post_aggregations(
+        self,
+        object_type: str,
+        query_args: AggregationParameters,
+        body: AggregationBody
+    ) -> ResponseDict:
+        """
+        Gets an aggregation on the specified object_type.
+        """
+        aggregation_results = self.__data_source.get_aggregations(
+            object_type,
+            object_filters=query_args.filter,
+            aggregations=body.aggregations
+        )
+        document_meta = {
+            'aggregations': aggregation_results,
+            'types': self.__data_source.get_attribute_types(object_type)
+        }
+        return self.__view.dump_bulk([], document_meta=document_meta)
 
     def __get_detail_object(self, object_type: str, object_id: str) -> DataObject:
         data_objects = self.__data_source.get_by_id(object_type, [object_id])

@@ -242,6 +242,10 @@ class MlwhDataSource(ReadOnlyDataSource):
     def get_list_page(self, *args, **kwargs):
         pass
 
+    @unsupported
+    def get_aggregations(self, *args, **kwargs):
+        pass
+
     @property
     def supported_types(self) -> List[str]:
         return [

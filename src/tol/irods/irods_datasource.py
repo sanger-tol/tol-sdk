@@ -161,6 +161,10 @@ class IrodsDataSource(ReadOnlyDataSource):
             for obj in objs
         )
 
+    @unsupported
+    def get_aggregations(self, *args, **kwargs):
+        pass
+
     @property
     def supported_types(self):
         return ['sequencing_file']

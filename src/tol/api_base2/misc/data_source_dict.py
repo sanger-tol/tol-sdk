@@ -42,11 +42,7 @@ class DataSourceDict(Mapping):
             self.__get_pairs_iterable(data_source)
             for data_source in self.__data_sources
         ]
-        return {
-            object_type: data_source
-            for object_type, data_source
-            in chain(*object_tuples)
-        }
+        return dict(chain(*object_tuples))
 
     def __get_pairs_iterable(
         self,

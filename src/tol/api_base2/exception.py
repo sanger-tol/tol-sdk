@@ -82,3 +82,28 @@ class BadQueryArgError(BaseRuntimeException):
         if message is None:
             return detail
         return f'{detail}\n\n{message}'
+
+
+class BadPostJsonError(BaseRuntimeException):
+    def __init__(
+        self,
+        __key: str,
+        message: Optional[str] = None
+    ) -> None:
+        errors = [{
+            'title': 'Bad POST JSON',
+            'detail': self.__get_detail(__key, message)
+        }]
+        super().__init__(errors, status_code=400)
+
+    def __get_detail(
+        self,
+        __key: str,
+        message: Optional[str]
+    ) -> str:
+        detail = (
+            f'The POSTed JSON must have a key "{__key}"'
+        )
+        if message is None:
+            return detail
+        return f'{detail}\n\n{message}'

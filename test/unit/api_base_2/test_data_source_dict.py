@@ -29,6 +29,10 @@ class _TestDataSource1(ReadOnlyDataSource):
     def get_list(self, *args, **kwargs):
         pass
 
+    @unsupported
+    def get_aggregations(self, *args, **kwargs):
+        pass
+
     @property
     def supported_types(self):
         return ['test2', 'test1']
@@ -50,6 +54,10 @@ class _TestDataSource2(ReadOnlyDataSource):
 
     @unsupported
     def get_list(self, *args, **kwargs):
+        pass
+
+    @unsupported
+    def get_aggregations(self, *args, **kwargs):
         pass
 
     @property

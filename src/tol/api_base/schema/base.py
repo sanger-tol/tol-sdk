@@ -131,9 +131,7 @@ class BaseSchema(SQLAlchemyAutoSchema, JsonapiSchema):
             for foreign_key_name in foreign_key_names
             if foreign_key_name not in enum_foreign_key_names
         ]
-        return {
-            field_name: field for (field_name, field) in pairs
-        }
+        return dict(pairs)
 
     @classmethod
     def _create_one_to_many_relationship_field_by_name_enum(cls, r_name):

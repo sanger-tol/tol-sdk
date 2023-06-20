@@ -2,12 +2,11 @@
 #
 # SPDX-License-Identifier: MIT
 
-import json
 import re
 from typing import Dict, Optional
 
+from .filter_utils import FilterUtils
 from ..exception import BadQueryArgError
-from ...core import DataSourceFilter
 
 
 class ListGetParamaters:
@@ -48,7 +47,7 @@ class ListGetParamaters:
         if filter_string is None:
             return None
 
-        return self.__parse_to_datasource_filter('filter', filter_string)
+        return FilterUtils.parse_to_datasource_filter('filter', filter_string)
 
     @property
     def sort_by(self) -> Optional[str]:
@@ -88,21 +87,3 @@ class ListGetParamaters:
                 message=f'The {__key} must be a column name, with or without leading -.'
             )
         return __value
-
-    def __parse_to_datasource_filter(self, __key: str, __value: str) -> DataSourceFilter:
-        try:
-            filter_dict = json.loads(__value)
-            if type(filter_dict) is dict:
-                dsf = DataSourceFilter(**filter_dict)
-                return dsf
-            raise BadQueryArgError(
-                __key,
-                __value,
-                message=f'The {__key} must be valid JSON'
-            )
-        except json.JSONDecodeError:
-            raise BadQueryArgError(
-                __key,
-                __value,
-                message=f'The {__key} must be valid JSON'
-            )
