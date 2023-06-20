@@ -17,14 +17,14 @@ class AggregationBody:
         self.__body_dict = body_dict
 
     @property
-    def aggregations(self) -> Dict:
+    def aggs(self) -> Dict:
         """
         The optional aggregations dict.
         """
-        body_dict = self.__body_dict.get('aggregations')
+        body_dict = self.__body_dict.get('aggs')
         if body_dict is None:
             raise BadPostJsonError(
-                'aggregations',
-                message='"aggregations" must be given'
+                'aggs',
+                message='"aggs" must be given'
             )
         return body_dict

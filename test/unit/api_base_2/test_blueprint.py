@@ -197,7 +197,7 @@ class TestBlueprint(BlueprintTestCase):
 
     def test_200_on_good_aggregations(self):
         """A good aggregations POST returns 200 and correct data"""
-        body = {'aggregations': {}}  # We are mocking the result
+        body = {'aggs': {}}  # We are mocking the result
         response = self.client.open('/data/cracker:aggregations', method='POST', json=body)
         print(response.text)
         self.assert200(

@@ -89,7 +89,7 @@ class Controller:
         aggregation_results = self.__data_source.get_aggregations(
             object_type,
             object_filters=query_args.filter,
-            aggregations=body.aggregations
+            aggregations=body.aggs
         )
         document_meta = {
             'aggregations': aggregation_results,

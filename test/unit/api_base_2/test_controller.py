@@ -236,7 +236,7 @@ class TestController:
             """
         })
         body = AggregationBody({
-            'aggregations': {
+            'aggs': {
                 'completed_over_time': {
                     'date_histogram': {
                         'field': 'complete_date',

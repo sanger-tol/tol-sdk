@@ -12,10 +12,10 @@ class TestAggregationBody:
     def test_no_aggregations(self):
         """No aggregations specified throws error"""
         with pytest.raises(BadPostJsonError):
-            AggregationBody({'irrelevent': 'so?'}).aggregations
+            AggregationBody({'irrelevent': 'so?'}).aggs
 
     def test_good_aggregations(self):
         """Just aggregations, confirm that an integer is returned"""
         agg = {'something': 'here'}
-        parsed = AggregationBody({'aggregations': agg})
-        assert parsed.aggregations == {'something': 'here'}
+        parsed = AggregationBody({'aggs': agg})
+        assert parsed.aggs == {'something': 'here'}
