@@ -27,7 +27,7 @@ def lint(type_):
     # service = get_app()
     click.echo('Running lint...')
     if type_ == 'license':
-        command = 'docker run --rm --volume $(pwd):/data fsfe/reuse lint'
+        command = 'docker run --rm --volume $(pwd):/data fsfe/reuse:1.1.2 lint'
         click.secho(command, fg='green')
         run(command)
     if type_ == 'python':
