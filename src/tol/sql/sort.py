@@ -5,7 +5,7 @@
 from abc import ABC, abstractmethod
 from typing import Dict, Type
 
-from sqlalchemy.orm import Query
+from sqlalchemy.orm import MappedColumn, Query
 
 from .model import Model
 
@@ -41,7 +41,17 @@ class DefaultDatabaseSorter(DatabaseSorter):
     ) -> Query:
 
         model = model_dict[tablename]
-        column = model.get_column(self.__term)
+        column = self.__get_column(model)
+        return self.__apply_sort(query, column)
+
+    def __get_column(self, model: Type[Model]) -> MappedColumn:
+        if self.__term == 'id':
+            id_key = model.get_id_column_name()
+            return model.get_column(id_key)
+        else:
+            return model.get_column(self.__term)
+
+    def __apply_sort(self, query: Query, column: MappedColumn) -> Query:
         if self.__desc:
             return query.order_by(column.desc())
         else:

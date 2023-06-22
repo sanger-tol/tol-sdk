@@ -7,6 +7,9 @@ from __future__ import annotations
 from typing import List
 from unittest.mock import call
 
+from sqlalchemy.orm import Mapped, mapped_column
+
+from tol.sql.model import model_base
 from tol.sql.sort import DefaultDatabaseSorter
 
 
@@ -22,6 +25,32 @@ class _MockModel:
     def get_column(cls, _):
         # only ever needs to return `int_column`
         return cls.int_column
+
+
+class _MockIdModel(model_base()):
+    """A mock model with default id"""
+
+    __tablename__ = 'lol'
+
+    id: Mapped[str] = mapped_column(primary_key=True)  # noqa
+
+
+class _MockIdRenamedModel:
+    """A mock model with renamed id"""
+
+    class id_renamed:  # noqa N801
+        @staticmethod
+        def desc():
+            return False
+
+    @classmethod
+    def get_column(cls, name):
+        assert name == 'id_renamed'
+        return cls.id_renamed
+
+    @classmethod
+    def get_id_column_name(cls) -> str:
+        return 'id_renamed'
 
 
 class MockQuery:
@@ -65,4 +94,35 @@ class TestDefaultSorter:
         )
         assert query.sort_calls == [
             call(_MockModel.int_column.desc())
+        ]
+
+    def test_by_id(self):
+        """
+        Sorting by "id" with the default column is correct
+        """
+
+        sorter = DefaultDatabaseSorter('id')
+        query = sorter.sort(
+            MockQuery(),
+            'test',
+            {'test': _MockIdModel},
+        )
+        assert query.sort_calls == [
+            call(_MockIdModel.id)
+        ]
+
+    def test_by_renamed_id(self):
+        """
+        Sorting by "id" with a renamed column is correct
+        """
+
+        sorter = DefaultDatabaseSorter('-id')
+        query = sorter.sort(
+            MockQuery(),
+            'test',
+            {'test': _MockIdRenamedModel},
+        )
+        # it hits id_renamed and not (the non-existent) id column
+        assert query.sort_calls == [
+            call(_MockIdRenamedModel.id_renamed.desc())
         ]

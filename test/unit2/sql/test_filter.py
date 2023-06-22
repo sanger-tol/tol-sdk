@@ -87,6 +87,69 @@ class TestDefaultDatabaseFilter:
             call(f'equal-{c}') for c in ascii_lowercase
         ]
 
+    def test_filter_default_id(self):
+        """
+        Filtering against "id" points to the correct column("id") if left as default
+        """
+
+        class _MockModel:
+            class _ye_ol_id:  # noqa
+                def __eq__(self, __o: object) -> str:
+                    return 'filtered very! succesfully on the default ID'
+
+            id = _ye_ol_id()  # noqa
+
+            @classmethod
+            def get_column(cls, name):
+                assert name == 'id'
+                return cls.id
+
+            @classmethod
+            def get_id_column_name(cls):
+                return 'id'
+
+        exact = {'id': 'hype_train'}
+        query = MockQuery()
+        ds_filter = DataSourceFilter(exact=exact)
+        db_filter = DefaultDatabaseFilter(ds_filter)
+        query = db_filter.filter(query, 'test', {'test': _MockModel})
+
+        assert query.filter_calls == [
+            call('filtered very! succesfully on the default ID')
+        ]
+
+    def test_filter_overriden_id(self):
+        """
+        Filtering against "id" points to the correct column if the name is overriden
+        in a model definition.
+        """
+
+        class _MockModel:
+            class _le_id_override:  # noqa
+                def __eq__(self, __o: object) -> str:
+                    return 'filtered very! succesfully on id_override'
+
+            id_override = _le_id_override()
+
+            @classmethod
+            def get_id_column_name(cls):
+                return 'id_override'
+
+            @classmethod
+            def get_column(cls, name):
+                assert name == 'id_override'
+                return cls.id_override
+
+        exact = {'id': 'hype_train'}
+        query = MockQuery()
+        ds_filter = DataSourceFilter(exact=exact)
+        db_filter = DefaultDatabaseFilter(ds_filter)
+        query = db_filter.filter(query, 'test', {'test': _MockModel})
+
+        assert query.filter_calls == [
+            call('filtered very! succesfully on id_override')
+        ]
+
     def __get_mock_model(self) -> MagicMock:
         """
         Creates a MagicMock for model that returns MockComparator for a

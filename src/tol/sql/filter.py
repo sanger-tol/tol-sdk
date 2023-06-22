@@ -5,7 +5,7 @@
 from abc import ABC, abstractmethod
 from typing import Dict, Optional, Type
 
-from sqlalchemy.orm import Query
+from sqlalchemy.orm import MappedColumn, Query
 
 from .model import Model
 from ..core import DataSourceFilter
@@ -58,6 +58,13 @@ class DefaultDatabaseFilter(DatabaseFilter):
         if exact_filters is None:
             return query
         for k, v in exact_filters.items():
-            exact_column = base_model.get_column(k)
+            exact_column = self.__get_column(base_model, k)
             query = query.filter(exact_column == v)
         return query
+
+    def __get_column(self, model: Type[Model], key: str) -> MappedColumn:
+        if key == 'id':
+            id_key = model.get_id_column_name()
+            return model.get_column(id_key)
+        else:
+            return model.get_column(key)
