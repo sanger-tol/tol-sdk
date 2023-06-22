@@ -6,7 +6,8 @@ from unittest import (TestCase, mock)
 
 from tol.core import (
     DataSourceError,
-    DataSourceFilter
+    DataSourceFilter,
+    core_data_object
 )
 from tol.mlwh import MlwhDataSource
 
@@ -38,6 +39,7 @@ class TestMlwhDataSource(TestCase):
         mds = MockMlwhDataSource({
             'uri': 'mysql://user:pass@host:1234/db'
         })
+        core_data_object(mds)
         in_list = {'study_id': ['one', 'two'],
                    'sample_ref': ['three', 'four']}
         datasource_filter = DataSourceFilter()
@@ -68,6 +70,7 @@ class TestMlwhDataSource(TestCase):
         mds = MockMlwhDataSource({
             'uri': 'mysql://user:pass@host:1234/db'
         })
+        core_data_object(mds)
         datasource_filter = DataSourceFilter()
         datasource_filter.exact = {'platform_type': 'pacbio'}
         mocked_function = mds.mlwh.cursor.return_value.fetchall
@@ -114,6 +117,7 @@ class TestMlwhDataSource(TestCase):
         mds = MockMlwhDataSource({
             'uri': 'mysql://user:pass@host:1234/db'
         })
+        core_data_object(mds)
         in_list = {'study_id': ['one', 'two'],
                    'sample_ref': ['three', 'four']}
         datasource_filter = DataSourceFilter()

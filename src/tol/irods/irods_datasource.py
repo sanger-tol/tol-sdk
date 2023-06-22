@@ -19,7 +19,6 @@ from irods.models import (
 from irods.session import iRODSSession
 
 from ..core import (
-    CoreDataObject,
     DataObject,
     DataSourceError,
     DataSourceFilter,
@@ -130,7 +129,7 @@ class IrodsDataSource(ReadOnlyDataSource):
         object_type: str,
         object_filters: DataSourceFilter = None,
         **kwargs
-    ) -> Iterable[CoreDataObject]:
+    ) -> Iterable[DataObject]:
         if object_type != 'sequencing_file':
             raise DataSourceError('Only objects of type "sequencing_file" '
                                   'are handled by IrodsDataSource')
@@ -157,7 +156,7 @@ class IrodsDataSource(ReadOnlyDataSource):
 
     def _convert_dict_to_data_objects(self, objs: Dict) -> Iterable[DataObject]:
         return (
-            CoreDataObject('sequencing_file', data=obj)
+            self.data_object_factory('sequencing_file', data=obj)
             for obj in objs
         )
 

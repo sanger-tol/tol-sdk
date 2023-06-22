@@ -6,13 +6,16 @@ from typing import Dict
 
 import pytest
 
-from tol.api_base2.exception import UnknownObjectTypeException
-from tol.api_base2.misc import DataSourceDict
 from tol.core import (
-    CoreDataObject,
     ReadOnlyDataSource,
+    core_data_object,
     unsupported
 )
+from tol.core.data_source_dict import DataSourceDict
+from tol.core.datasource_error import UnknownObjectTypeException
+
+
+CoreDataObject = core_data_object()  # noqa
 
 
 class _TestDataSource1(ReadOnlyDataSource):

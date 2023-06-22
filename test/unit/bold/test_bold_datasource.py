@@ -9,7 +9,8 @@ import responses
 from tol.bold import BoldDataSource
 from tol.core import (
     DataSourceError,
-    DataSourceFilter
+    DataSourceFilter,
+    core_data_object
 )
 
 
@@ -20,6 +21,7 @@ class TestBoldDataSource(TestCase):
         bds = BoldDataSource({
             'url': 'http://bold.local'
         })
+        core_data_object(bds)
 
         mock_response_from_bold = {
             'bold_records': {

@@ -2,12 +2,17 @@
 #
 # SPDX-License-Identifier: MIT
 
+from __future__ import annotations
+
+import typing
 from collections.abc import Mapping
 from itertools import chain
 from typing import Dict, Iterable, Tuple
 
-from ..exception import UnknownObjectTypeException
-from ...core import DataSource
+from .datasource_error import UnknownObjectTypeException
+
+if typing.TYPE_CHECKING:
+    from .datasource import DataSource
 
 
 class DataSourceDict(Mapping):

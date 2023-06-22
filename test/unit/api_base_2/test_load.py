@@ -3,7 +3,10 @@
 # SPDX-License-Identifier: MIT
 
 from tol.api_base2.load import LoadedDataObject, UpsertLoader
-from tol.core import CoreDataObject
+from tol.core import core_data_object
+
+
+CoreDataObject = core_data_object()  # noqa
 
 
 class TestLoadedDataObject:

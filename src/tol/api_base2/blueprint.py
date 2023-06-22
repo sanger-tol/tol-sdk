@@ -6,17 +6,17 @@ from typing import Optional
 
 from flask import Blueprint, request
 
-from tol.core import DataSource
-
 from .controller import Controller
 from .exception import BaseRuntimeException
 from .misc import (
     AggregationBody,
     AggregationParameters,
-    DataSourceDict,
     ListGetParamaters
 )
 from .view import DefaultView
+from ..core import DataSource
+from ..core.data_source_dict import DataSourceDict
+from ..core.datasource_error import DataSourceError
 
 
 class DataBlueprint(Blueprint):
@@ -74,9 +74,18 @@ def data_blueprint(
         return controller.post_aggregations(object_type, request_args, body)
 
     @data_handler.app_errorhandler(BaseRuntimeException)
-    def handle_error(error: BaseRuntimeException):
+    def handle_runtime_error(error: BaseRuntimeException):
         return {
             'errors': error.errors
+        }, error.status_code
+
+    @data_handler.app_errorhandler(DataSourceError)
+    def handle_datasource_error(error: DataSourceError):
+        return {
+            'errors': [{
+                'title': error.title,
+                'detail': error.detail
+            }]
         }, error.status_code
 
     return data_handler

@@ -29,15 +29,6 @@ class BaseRuntimeException(Exception):
         return self.__status_code
 
 
-class UnknownObjectTypeException(BaseRuntimeException):
-    def __init__(self, object_type: str) -> None:
-        errors = [{
-            'title': 'Unknown Object Type',
-            'detail': f'The object type "{object_type}" is unknown.'
-        }]
-        super().__init__(errors, status_code=404)
-
-
 class ObjectNotFoundByIdException(BaseRuntimeException):
     def __init__(self, object_type: str, id_: str) -> None:
         errors = [{

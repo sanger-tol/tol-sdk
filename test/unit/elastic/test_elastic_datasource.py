@@ -6,9 +6,9 @@ from datetime import datetime
 from unittest import (TestCase, mock)
 
 from tol.core import (
-    CoreDataObject,
     DataSourceError,
-    DataSourceFilter
+    DataSourceFilter,
+    core_data_object
 )
 from tol.elastic import ElasticDataSource
 
@@ -37,15 +37,38 @@ class MockElasticDataSource(ElasticDataSource):
         return super().get_attribute_types(object_type)
 
 
+def mock_elastic_data_source() -> ElasticDataSource:
+    eds = MockElasticDataSource(
+        {'uri': 'test', 'user': 'user', 'password': 'password', 'index_prefix': 'test'}
+    )
+    core_data_object_mock = core_data_object(eds)
+    return core_data_object_mock, eds
+
+
 class TestElasticDataSource(TestCase):
 
     def test_upsert(self):
-        eds = MockElasticDataSource(
-            {'uri': 'test', 'user': 'user', 'password': 'password', 'index_prefix': 'test'}
-        )
-        objects = [CoreDataObject('obj_type', {'id': 1, 'field1': 'value1',
-                                  'field2': 'value2', 'datefield': dt}),
-                   CoreDataObject('obj_type', {'id': 2, 'field1': 'value3', 'field2': 'value4'})]
+        core_data_object, eds = mock_elastic_data_source()
+
+        objects = [
+            core_data_object(
+                'obj_type',
+                {
+                    'id': 1,
+                    'field1': 'value1',
+                    'field2': 'value2',
+                    'datefield': dt
+                }
+            ),
+            core_data_object(
+                'obj_type',
+                {
+                    'id': 2,
+                    'field1': 'value3',
+                    'field2': 'value4'
+                }
+            )
+        ]
         generator = eds._action_for_upsert('index', objects, id_func=lambda x: x.id,
                                            field_prefix='')
         expected = {'_op_type': 'update',
@@ -72,9 +95,8 @@ class TestElasticDataSource(TestCase):
         eds.helpers.bulk.assert_called_once()
 
     def test_upsert_add_prefix_and_id(self):
-        eds = MockElasticDataSource(
-            {'uri': 'test', 'user': 'user', 'password': 'password', 'index_prefix': 'test'}
-        )
+        CoreDataObject, eds = mock_elastic_data_source()  # noqa
+
         objects = [
             CoreDataObject(
                 'obj_type',
@@ -110,9 +132,8 @@ class TestElasticDataSource(TestCase):
         eds.helpers.bulk.assert_called_once()
 
     def test_upsert_error(self):
-        eds = MockElasticDataSource(
-            {'uri': 'test', 'user': 'user', 'password': 'password', 'index_prefix': 'test'}
-        )
+        _, eds = mock_elastic_data_source()
+
         objects = [{'field1': 'value1', 'field2': 'value2'},
                    {'field1': 'value3', 'field2': 'value4'}]
         eds.helpers.bulk.return_value = (2, 1)
@@ -120,9 +141,8 @@ class TestElasticDataSource(TestCase):
             eds.upsert('index', objects, id_func=lambda x: x.field1)
 
     def test_get_list(self):
-        eds = MockElasticDataSource(
-            {'uri': 'test', 'user': 'user', 'password': 'password', 'index_prefix': 'test'}
-        )
+        _, eds = mock_elastic_data_source()
+
         eds.helpers.scan.return_value = [
             {'_source': {'field1': 'value1', 'field2': 'value2'}, '_id': '1'},
             {'_source': {'field1': 'value3', 'field2': 'value4'}, '_id': '2'}
@@ -140,9 +160,8 @@ class TestElasticDataSource(TestCase):
             next(returned)
 
     def test_get_list_page(self):
-        eds = MockElasticDataSource(
-            {'uri': 'test', 'user': 'user', 'password': 'password', 'index_prefix': 'test'}
-        )
+        _, eds = mock_elastic_data_source()
+
         eds.es.search.return_value = {
             'hits': {
                 'hits': [
@@ -168,9 +187,8 @@ class TestElasticDataSource(TestCase):
             next(returned)
 
     def test_get_by_id(self):
-        eds = MockElasticDataSource(
-            {'uri': 'test', 'user': 'user', 'password': 'password', 'index_prefix': 'test'}
-        )
+        _, eds = mock_elastic_data_source()
+
         eds.es.mget.return_value = {
             'docs': [
                 {
@@ -198,9 +216,7 @@ class TestElasticDataSource(TestCase):
             next(returned)
 
     def test_build_query(self):
-        eds = MockElasticDataSource(
-            {'uri': 'test', 'user': 'user', 'password': 'password', 'index_prefix': 'test'}
-        )
+        _, eds = mock_elastic_data_source()
 
         self.assertIsNone(eds._build_elasticsearch_query('obj_type', None))
 
@@ -242,9 +258,8 @@ class TestElasticDataSource(TestCase):
         self.assertEqual(expected, eds._build_elasticsearch_query('obj_type', object_filters))
 
     def test_build_sort(self):
-        eds = MockElasticDataSource(
-            {'uri': 'test', 'user': 'user', 'password': 'password', 'index_prefix': 'test'}
-        )
+        _, eds = mock_elastic_data_source()
+
         expected = [{'uid.keyword': 'asc'}]
         self.assertEqual(expected, eds._build_elasticsearch_sort('obj_type', None))
 
@@ -259,9 +274,8 @@ class TestElasticDataSource(TestCase):
         self.assertEqual(expected, eds._build_elasticsearch_sort('obj_type', sort_by))
 
     def test_get_aggregations(self):
-        eds = MockElasticDataSource(
-            {'uri': 'test', 'user': 'user', 'password': 'password', 'index_prefix': 'test'}
-        )
+        _, eds = mock_elastic_data_source()
+
         agg_result = {
             'my-agg-name': {
                 'doc_count_error_upper_bound': 0,
@@ -286,9 +300,8 @@ class TestElasticDataSource(TestCase):
         self.assertEqual(agg_result, returned)
 
     def test_get_supported_types(self):
-        eds = MockElasticDataSource(
-            {'uri': 'test', 'user': 'user', 'password': 'password', 'index_prefix': 'test'}
-        )
+        _, eds = mock_elastic_data_source()
+
         expected = ['index_1', 'index_2']
         eds.es.cat.indices.return_value = 'test-index-1\ntest-index-2'
 
@@ -297,9 +310,8 @@ class TestElasticDataSource(TestCase):
         self.assertEqual(expected, returned)
 
     def test_get_attribute_types(self):
-        eds = MockElasticDataSource(
-            {'uri': 'test', 'user': 'user', 'password': 'password', 'index_prefix': 'test'}
-        )
+        _, eds = mock_elastic_data_source()
+
         eds.es.cat.indices.return_value = 'test-index-name'
         eds.es.indices.get_mapping.return_value = {
             'test-index-name': {

@@ -5,7 +5,10 @@
 from typing import Iterable, List
 
 from tol.api_client.flatten import Flattener
-from tol.core import CoreDataObject, DataObject
+from tol.core import DataObject, core_data_object
+
+
+CoreDataObject = core_data_object()  # noqa
 
 
 class TestFlattener:

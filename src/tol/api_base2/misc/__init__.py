@@ -4,6 +4,5 @@
 
 from .aggregation_parameters import AggregationParameters  # noqa
 from .aggregation_body import AggregationBody  # noqa
-from .data_source_dict import DataSourceDict  # noqa
 from .filter_utils import FilterUtils  # noqa
 from .list_get_parameters import ListGetParamaters  # noqa

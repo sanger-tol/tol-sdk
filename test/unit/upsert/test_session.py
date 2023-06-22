@@ -6,12 +6,15 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from tol.core import CoreDataObject
+from tol.core import core_data_object
 from tol.upsert import Upserter
 from tol.upsert.session import (
     UpsertSession,
     UpsertSessionExhaustedException
 )
+
+
+CoreDataObject = core_data_object()  # noqa
 
 
 class TestUpsertSession:

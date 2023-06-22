@@ -8,7 +8,6 @@ from typing import Dict, Iterable, List
 import requests
 
 from ..core import (
-    CoreDataObject,
     DataObject,
     DataSourceError,
     DataSourceFilter,
@@ -73,7 +72,7 @@ class BoldDataSource(ReadOnlyDataSource):
         for value in objs.values():
             attributes = flatten_entity(value)
 
-            yield CoreDataObject('sample', data=attributes)
+            yield self.data_object_factory('sample', data=attributes)
 
     @property
     def supported_types(self) -> List[str]:

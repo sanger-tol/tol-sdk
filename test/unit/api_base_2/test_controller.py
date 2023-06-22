@@ -18,11 +18,14 @@ from tol.api_base2.misc import (
 )
 from tol.api_base2.view import DefaultView
 from tol.core import (
-    CoreDataObject,
     DataSourceFilter,
     ReadOnlyDataSource,
+    core_data_object,
     unsupported
 )
+
+
+CoreDataObject = core_data_object()  # noqa
 
 
 class _TestDataSource1(ReadOnlyDataSource):

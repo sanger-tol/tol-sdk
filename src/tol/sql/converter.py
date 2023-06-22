@@ -6,11 +6,12 @@ from abc import ABC, abstractmethod
 from typing import Callable, Iterable, Optional
 
 from .model import Model
-from .sql_data_object import SqlDataObject
 from ..core import DataObject
+from ..core.factory import DataObjectFactory
 
 
 TypeFunction = Callable[[Model], str]
+"""Takes a Model instance, and returns the corresponding DataObject type."""
 
 
 class Converter(ABC):
@@ -19,17 +20,25 @@ class Converter(ABC):
     """
 
     @abstractmethod
-    def convert(self, models: Iterable[Model]) -> Iterable[DataObject]:
+    def convert(
+        self,
+        models: Iterable[Optional[Model]]
+    ) -> Iterable[Optional[DataObject]]:
         pass
 
 
 class DefaultConverter(Converter):
 
-    def __init__(self, type_function: TypeFunction) -> None:
+    def __init__(
+        self,
+        data_object_factory: DataObjectFactory,
+        type_function: TypeFunction
+    ) -> None:
         """
         Takes a type_function Callable, which determines the type of the
         DataObject for a given Model instance.
         """
+        self.__data_object_factory = data_object_factory
         self.__type_function = type_function
 
     def convert(
@@ -48,7 +57,7 @@ class DefaultConverter(Converter):
             return None
 
         type_ = self.__type_function(model)
-        return SqlDataObject(
+        return self.__data_object_factory(
             type_,
             id_=model.instance_id,
             data=model.instance_attributes

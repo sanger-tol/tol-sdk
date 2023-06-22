@@ -11,6 +11,8 @@ from typing import Any, Callable, Dict, Iterable, List, Optional, Tuple, Type
 from .data_object import DataDict, DataObject
 from .datasource_error import DataSourceError
 from .datasource_filter import DataSourceFilter
+from .factory import DataObjectFactory
+from .relationship import RelationshipConfig
 
 
 DataId = str
@@ -156,6 +158,7 @@ class DataSource(ABC):
     _operations: List[str]
 
     def __init__(self, config: DataSourceConfig, expected: List[str] = None):
+        self.__data_object_factory: Optional[DataObjectFactory] = None
         self.__validate_config(config, expected)
         for k, v in config.items():
             setattr(self, k, v)
@@ -176,6 +179,13 @@ class DataSource(ABC):
         The list of types of DataObject supported by this DataSource instance.
 
         This can either be a static list, or dynamically generated.
+        """
+
+    @property
+    def relationship_config(self) -> Optional[Dict[str, RelationshipConfig]]:
+        """
+        The configuration of relationships (both to-one and to-many) between
+        the types of DataObject instances managed by this DataSource instance.
         """
 
     def __operation_is_supported(self, name) -> bool:
@@ -259,6 +269,21 @@ class DataSource(ABC):
 
         This can either be a static list, or dynamically generated.
         """
+
+    @property
+    def data_object_factory(self) -> Optional[DataObjectFactory]:
+        """A callable that returns a new DataObject for the given type."""
+
+        return self.__data_object_factory
+
+    @data_object_factory.setter
+    def data_object_factory(
+        self,
+        data_object_factory: DataObjectFactory
+    ) -> None:
+        """Sets the factory for creating new DataObject instances"""
+
+        self.__data_object_factory = data_object_factory
 
 
 class ReadOnlyDataSource(DataSource, ABC):

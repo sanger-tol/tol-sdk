@@ -6,7 +6,8 @@ from unittest import (TestCase, mock)
 
 from tol.core import (
     DataSourceError,
-    DataSourceFilter
+    DataSourceFilter,
+    core_data_object
 )
 from tol.irods import IrodsDataSource
 
@@ -31,6 +32,7 @@ class TestIrodsDataSource(TestCase):
             'query_zone': 'anotherZone',
             'extra_config': {'field1': 'value1'}
         })
+        core_data_object(ids)
 
         mocked_function = ids.irods.query.return_value.add_keyword.return_value \
             .filter.return_value.filter.return_value.get_results

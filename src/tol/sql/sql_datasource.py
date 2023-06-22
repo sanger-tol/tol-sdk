@@ -8,8 +8,10 @@ from .converter import Converter, DefaultConverter, TypeFunction
 from .database import Database
 from .filter import DatabaseFilter, DefaultDatabaseFilter
 from .model import Model
+from .relationship import SqlRelationshipConfig
 from .sort import DatabaseSorter, DefaultDatabaseSorter
 from ..core import DataId, DataObject, DataSource, DataSourceFilter, unsupported
+from ..core import RelationshipConfig
 
 
 ConverterFactory = Callable[[], Converter]
@@ -25,12 +27,17 @@ class SqlDataSource(DataSource):
         self,
         db: Database,
         type_tablename_map: Dict[str, str],
+        relationship_config: SqlRelationshipConfig,
         converter_factory: Optional[ConverterFactory] = None
     ) -> None:
 
         self.__db = db
         self.__type_tablename_map = type_tablename_map
         self.__supported_types = list(type_tablename_map.keys())
+        self.__type_function = self.__get_type_function()
+        self.__relationship_config = relationship_config.to_dict(
+            self.__type_function
+        )
         self.__set_converter_factory(converter_factory)
 
     def get_attribute_types(self, object_type: str) -> Dict[str, str]:
@@ -39,6 +46,10 @@ class SqlDataSource(DataSource):
     @property
     def supported_types(self) -> List[str]:
         return self.__supported_types
+
+    @property
+    def relationship_config(self) -> Optional[Dict[str, RelationshipConfig]]:
+        return self.__relationship_config
 
     def get_by_id(
         self,
@@ -113,15 +124,18 @@ class SqlDataSource(DataSource):
         else:
             self.__converter_factory = converter_factory
 
-    def __default_converter_factory(self) -> ConverterFactory:
+    def __get_type_function(self) -> TypeFunction:
         tablename_type_map = {
             v: k
             for k, v in self.__type_tablename_map.items()
         }
-        type_function: TypeFunction = lambda c: tablename_type_map[
-            c.get_table_name()
-        ]
-        return lambda: DefaultConverter(type_function)
+        return lambda c: tablename_type_map[c.get_table_name()]
+
+    def __default_converter_factory(self) -> ConverterFactory:
+        return lambda: DefaultConverter(
+            self.data_object_factory,
+            self.__type_function
+        )
 
     def __get_list_page_models(
         self,

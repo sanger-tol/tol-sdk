@@ -3,7 +3,10 @@
 # SPDX-License-Identifier: MIT
 
 from tol.api_base2.view import DefaultView
-from tol.core import CoreDataObject
+from tol.core import core_data_object
+
+
+CoreDataObject = core_data_object()  # noqa
 
 
 class TestDefaultView:

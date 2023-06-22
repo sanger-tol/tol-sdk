@@ -9,13 +9,16 @@ from flask import Flask
 from flask_testing import TestCase
 
 from tol.core import (
-    CoreDataObject,
     DataSourceFilter,
     ReadOnlyDataSource,
-    unsupported
+    core_data_object,
+    unsupported,
 )
 
 from .app import _test_application
+
+
+CoreDataObject = core_data_object()  # noqa
 
 
 class ParrotDataSource(ReadOnlyDataSource):

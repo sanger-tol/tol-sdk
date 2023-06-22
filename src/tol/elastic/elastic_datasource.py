@@ -17,7 +17,6 @@ from caseconverter import (
 from elasticsearch import (Elasticsearch, helpers)
 
 from ..core import (
-    CoreDataObject,
     DataId,
     DataObject,
     DataSource,
@@ -218,8 +217,13 @@ class ElasticDataSource(DataSource):
 
     def _convert_dict_to_data_objects(self, objs: Dict) -> Iterable:
         for obj in objs:
-            yield CoreDataObject('run-data', data={**obj['_source'],
-                                                   'id': obj['_id']})
+            yield self.data_object_factory(
+                'run-data',
+                data={
+                    **obj['_source'],
+                    'id': obj['_id']
+                }
+            )
 
     def get_aggregations(
             self,

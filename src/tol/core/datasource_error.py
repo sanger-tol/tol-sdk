@@ -14,3 +14,12 @@ class DataSourceError(Exception):
 
     def __str__(self) -> str:
         return f'{self.title} - "{self.detail}"'
+
+
+class UnknownObjectTypeException(DataSourceError):
+    def __init__(self, object_type: str) -> None:
+        super().__init__(
+            title='Unknown Object Type',
+            detail=f'The object type "{object_type}" is unknown.',
+            status_code=404
+        )

@@ -7,7 +7,10 @@ from tol.api_client.dump import (
     ObjectDumper,
     UpsertDumper
 )
-from tol.core import CoreDataObject, DataObject
+from tol.core import DataObject, core_data_object
+
+
+CoreDataObject = core_data_object()  # noqa
 
 
 class _ExampleObjectDumper(ObjectDumper):

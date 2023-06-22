@@ -2,7 +2,10 @@
 #
 # SPDX-License-Identifier: MIT
 
-from tol.core import CoreDataObject
+from tol.core import core_data_object
+
+
+CoreDataObject = core_data_object()  # noqa
 
 
 class TestDataObject:

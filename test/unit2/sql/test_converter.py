@@ -4,6 +4,7 @@
 
 from typing import Any, Dict, Optional
 
+from tol.core import DataObject
 from tol.sql.converter import DefaultConverter
 from tol.sql.model import Model
 
@@ -30,6 +31,14 @@ class _ExampleModel(Model):
     def get_column(cls, name: str):
         pass
 
+    @classmethod
+    def get_to_many_relationship_config(cls):
+        pass
+
+    @classmethod
+    def get_to_one_relationship_config(cls):
+        pass
+
     @property
     def instance_id(self) -> Optional[str]:  # noqa
         return self.__id
@@ -37,6 +46,37 @@ class _ExampleModel(Model):
     @property
     def instance_attributes(self) -> Dict[str, Any]:
         return self.__attributes
+
+
+class _ExampleDataObject(DataObject):
+    def __init__(self, type_, id_=None, data_=None):
+        self.__type = type_
+        self.__id = id_
+        self.__data = data_
+
+    @property
+    def id(self):  # noqa
+        return self.__id
+
+    @property
+    def attributes(self):
+        return self.__data
+
+    @property
+    def type(self):  # noqa
+        return self.__type
+
+    @property
+    def to_many_relationships(self):
+        return {}
+
+    @property
+    def to_one_relationships(self):
+        return {}
+
+
+def factory(type_, id_=None, data=None):
+    return _ExampleDataObject(type_, id_, data)
 
 
 class TestDefaultConverter:
@@ -49,6 +89,7 @@ class TestDefaultConverter:
         }
         example = _ExampleModel(attributes, id_='909')
         converter = DefaultConverter(
+            factory,
             lambda e: f'{e.get_table_name()}s'
         )
         observed = list(converter.convert([example]))
@@ -73,6 +114,7 @@ class TestDefaultConverter:
             for i in range(9)
         ]
         converter = DefaultConverter(
+            factory,
             lambda e: f'{e.get_table_name()}s are the best'
         )
         observed = list(converter.convert(examples))
@@ -92,6 +134,7 @@ class TestDefaultConverter:
 
         examples = [None]
         converter = DefaultConverter(
+            factory,
             lambda e: f'{e.get_table_name()}s are the best'
         )
         observed = converter.convert(examples)

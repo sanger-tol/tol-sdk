@@ -3,8 +3,9 @@
 # SPDX-License-Identifier: MIT
 
 from typing import Any, Dict, Iterable, Optional
+from unittest.mock import MagicMock
 
-from tol.core import DataSourceFilter
+from tol.core import DataSourceFilter, core_data_object
 from tol.sql import SqlDataSource
 from tol.sql.database import Database
 from tol.sql.model import Model
@@ -21,7 +22,8 @@ class TestSqlDataSource:
                 'A': 'test',
                 'B': 'test',
                 'C': 'test'
-            }
+            },
+            MagicMock()
         )
         assert ds.supported_types == ['easy', 'A', 'B', 'C']
 
@@ -53,6 +55,14 @@ class TestSqlDataSource:
                     'yes': True
                 }
 
+            @classmethod
+            def get_to_many_relationship_config(cls):
+                pass
+
+            @classmethod
+            def get_to_one_relationship_config(cls):
+                pass
+
         class _SingleRowDatabase(Database):
             def get_by_id(self, tablename: str, id_: Any) -> Optional[Model]:
                 return _MockModel() if id_ != '404' else None
@@ -63,7 +73,8 @@ class TestSqlDataSource:
             def count(self, tablename: str, filters: Optional[DataSourceFilter]) -> int:
                 raise NotImplementedError()
 
-        ds = SqlDataSource(_SingleRowDatabase(), {'tests': 'test'})
+        ds = SqlDataSource(_SingleRowDatabase(), {'tests': 'test'}, MagicMock())
+        core_data_object(ds)
 
         data_objects = list(ds.get_by_id('tests', ['302', '404']))
         assert len(data_objects) == 2
@@ -93,6 +104,14 @@ class TestSqlDataSource:
             @classmethod
             def get_id_column_name(cls) -> str:
                 return 'id'
+
+            @classmethod
+            def get_to_many_relationship_config(cls):
+                pass
+
+            @classmethod
+            def get_to_one_relationship_config(cls):
+                pass
 
             @property
             def instance_id(self) -> Optional[str]:
@@ -127,7 +146,8 @@ class TestSqlDataSource:
             def count(self, tablename: str, filters: Optional[DataSourceFilter]) -> int:
                 raise NotImplementedError()
 
-        ds = SqlDataSource(_AutoIncrementDatabase(), {'tests': 'test'})
+        ds = SqlDataSource(_AutoIncrementDatabase(), {'tests': 'test'}, MagicMock())
+        core_data_object(ds)
 
         data_objects = list(ds.get_list('tests'))
         assert len(data_objects) == 99
@@ -157,6 +177,14 @@ class TestSqlDataSource:
 
             @classmethod
             def get_column(cls, name: str):
+                pass
+
+            @classmethod
+            def get_to_many_relationship_config(cls):
+                pass
+
+            @classmethod
+            def get_to_one_relationship_config(cls):
                 pass
 
             @property
@@ -192,7 +220,8 @@ class TestSqlDataSource:
             ) -> int:
                 return 10001
 
-        ds = SqlDataSource(_AutoIncrementDatabase(), {'tests': 'test'})
+        ds = SqlDataSource(_AutoIncrementDatabase(), {'tests': 'test'}, MagicMock())
+        core_data_object(ds)
 
         data_objects, count = ds.get_list_page(
             'tests',

@@ -3,9 +3,16 @@
 # SPDX-License-Identifier: MIT
 
 from abc import ABC, ABCMeta, abstractclassmethod, abstractproperty
-from typing import Any, Dict, Optional, Type
+from typing import Any, Dict, List, Optional, Type
 
-from sqlalchemy.orm import DeclarativeMeta, MappedColumn, declarative_base
+from sqlalchemy import inspect
+from sqlalchemy.orm import (
+    ColumnProperty,
+    DeclarativeMeta,
+    MappedColumn,
+    RelationshipDirection,
+    declarative_base
+)
 
 from .exception import BadColumnError
 
@@ -32,8 +39,18 @@ class Model(ABC):
 
     @abstractclassmethod
     def get_column(cls, name: str) -> MappedColumn:  # noqa N805
+        """The (attribute) column for the given name."""
+
+    @abstractclassmethod
+    def get_to_one_relationship_config(cls) -> Dict[str, str]:  # noqa N805
         """
-        Returns the (attribute) column for the given name.
+        The mapping of keys to tablenames for to-one relationships
+        """
+
+    @abstractclassmethod
+    def get_to_many_relationship_config(cls) -> Dict[str, str]:  # noqa N805
+        """
+        The mapping of key to tablenames for to-many relationships
         """
 
     @abstractproperty
@@ -80,9 +97,27 @@ def model_base() -> Type[Model]:
 
         @classmethod
         def get_column(cls, name: str) -> MappedColumn:
-            if name not in cls.__mapper__.attrs:
+            if name not in inspect(cls).attrs:
                 raise BadColumnError(cls, name)
             return getattr(cls, name)
+
+        @classmethod
+        def get_to_many_relationship_config(cls) -> Dict[str, str]:
+            relationships = inspect(cls).relationships
+            return {
+                cls.__get_relationshship_name(r): cls.__get_relationship_target(r)
+                for r in relationships
+                if cls.__is_to_many_relationship(r)
+            }
+
+        @classmethod
+        def get_to_one_relationship_config(cls) -> Dict[str, str]:
+            relationships = inspect(cls).relationships
+            return {
+                cls.__get_relationshship_name(r): cls.__get_relationship_target(r)
+                for r in relationships
+                if cls.__is_to_one_relationship(r)
+            }
 
         @property
         def instance_id(self) -> Optional[str]:
@@ -92,11 +127,55 @@ def model_base() -> Type[Model]:
 
         @property
         def instance_attributes(self) -> Dict[str, Any]:
-            id_key = self.get_id_column_name()
             return {
-                k: getattr(self, v.key)
-                for k, v in self.__mapper__.attrs.items()
-                if k != id_key
+                k: getattr(self, k)
+                for k in self.__get_attribute_names()
             }
+
+        @classmethod
+        def __get_relationshship_name(cls, relationship) -> str:
+            return str(relationship).split('.')[-1]
+
+        @classmethod
+        def __get_relationship_target(cls, relationship) -> str:
+            return list(relationship.remote_side)[0].table.name
+
+        @classmethod
+        def __get_all_relationship_names(cls) -> List[str]:
+            mapper = inspect(cls)
+            return list(mapper.relationships.keys())
+
+        @classmethod
+        def __is_to_one_relationship(cls, relationship) -> bool:
+            return relationship.direction == RelationshipDirection.MANYTOONE
+
+        @classmethod
+        def __is_to_many_relationship(cls, relationship) -> bool:
+            return relationship.direction in (
+                RelationshipDirection.ONETOMANY,
+                RelationshipDirection.MANYTOMANY
+            )
+
+        @classmethod
+        def __get_foreign_keys(cls) -> List[str]:
+            attrs = inspect(cls).attrs
+            return [
+                k for k, v in attrs.items()
+                if isinstance(v, ColumnProperty)
+                and getattr(cls, k).foreign_keys
+            ]
+
+        @classmethod
+        def __get_attribute_names(cls) -> List[str]:
+            id_key = cls.get_id_column_name()
+            mapper = inspect(cls)
+            relationships = cls.__get_all_relationship_names()
+            foreign_keys = cls.__get_foreign_keys()
+            return [
+                k for k in mapper.attrs.keys()
+                if k != id_key
+                and k not in relationships
+                and k not in foreign_keys
+            ]
 
     return ModelBase
