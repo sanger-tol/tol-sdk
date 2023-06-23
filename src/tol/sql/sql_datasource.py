@@ -73,7 +73,7 @@ class SqlDataSource(DataSource):
 
         tablename = self.__type_tablename_map[object_type]
         database_filter = DefaultDatabaseFilter(object_filters)
-        sorter = DefaultDatabaseSorter(sort_by) if sort_by is not None else None
+        sorter = self.__get_default_sorter(sort_by)
         total_count = self.__db.count(tablename, filters=database_filter)
         models = self.__get_list_page_models(
             tablename,
@@ -91,14 +91,41 @@ class SqlDataSource(DataSource):
         object_filters: DataSourceFilter = None,
         sort_by: str = None
     ) -> Iterable[DataObject]:
-
-        models = self.__db.get_list(
-            self.__type_tablename_map[object_type],
-            filters=object_filters,
+        models = self.__generate_models_for_get_list(
+            object_type,
+            object_filters=object_filters,
             sort_by=sort_by
         )
         converter = self.__converter_factory()
         return converter.convert(models)
+
+    def __generate_models_for_get_list(
+        self,
+        object_type: str,
+        object_filters: DataSourceFilter = None,
+        sort_by: str = None
+    ) -> Iterable[Model]:
+        page = 1
+        tablename = self.__type_tablename_map[object_type]
+        database_filter = DefaultDatabaseFilter(object_filters)
+        database_sorter = self.__get_default_sorter(sort_by)
+        page_size = self.get_page_size()
+        while True:
+            models_iterable = self.__db.get_list(
+                tablename,
+                filters=database_filter,
+                sort_by=database_sorter,
+                offset=(page - 1) * page_size,
+                limit=page_size
+            )
+            models = list(models_iterable)
+            if len(models) == 0:
+                return
+            yield from models
+            page += 1
+
+    def __get_default_sorter(self, sort_by: str) -> DatabaseSorter:
+        return DefaultDatabaseSorter(sort_by) if sort_by is not None else None
 
     def __get_model_list_by_ids(
         self,
