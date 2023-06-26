@@ -82,8 +82,8 @@ class TestDefaultSqlRelationshipConfig:
     def test_no_relationships_empty(self):
         """None is returned if all models have no relationships"""
 
-        config = DefaultSqlRelationshipConfig(Irrelevant)
-        assert config.to_dict(lambda t: t.get_table_name()) is None
+        config = DefaultSqlRelationshipConfig([Irrelevant], lambda t: t.get_table_name())
+        assert config.to_dict() is None
 
     def test_type_function(self):
         """
@@ -91,14 +91,17 @@ class TestDefaultSqlRelationshipConfig:
         to "DataObject types" using it.
         """
 
-        config = DefaultSqlRelationshipConfig(Sample, Specimen, Species, Collector)
+        config = DefaultSqlRelationshipConfig(
+            [Sample, Specimen, Species, Collector],
+            lambda t: f'{t.get_table_name()}s are the best'
+        )
         expected = [
             'collectors are the best',
             'samples are the best',
             'speciess are the best',
             'specimens are the best'
         ]
-        observed = config.to_dict(lambda t: f'{t.get_table_name()}s are the best')
+        observed = config.to_dict()
 
         assert sorted(observed.keys()) == expected
 
@@ -111,28 +114,23 @@ class TestDefaultSqlRelationshipConfig:
         """Only models with either kind of relationships are included"""
 
         config = DefaultSqlRelationshipConfig(
-            Collector,
-            Species,
-            Irrelevant,
-            Sample,
-            Specimen
+            [Sample, Specimen, Species, Collector, Irrelevant],
+            lambda t: t.get_table_name()
         )
         # the Irrelevant model has no relationships, and is hence removed.
         expected = ['collector', 'sample', 'species', 'specimen']
-        observed = config.to_dict(lambda t: t.get_table_name())
+        observed = config.to_dict()
         assert sorted(observed.keys()) == expected
 
     def test_complex(self):
         """Test lots of models with lots of relationships"""
 
         config = DefaultSqlRelationshipConfig(
-            Sample,
-            Collector,
-            Specimen,
-            Species
+            [Sample, Specimen, Species, Collector],
+            lambda t: f'{t.get_table_name()}s'
         )
         # add an s on the end tablename->object_type
-        observed = config.to_dict(lambda t: f'{t.get_table_name()}s')
+        observed = config.to_dict()
 
         assert observed['samples'].to_one == {
             'this_specimen_is_mine': 'specimens'

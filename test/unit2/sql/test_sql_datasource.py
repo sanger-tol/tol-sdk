@@ -7,10 +7,45 @@ from unittest.mock import MagicMock
 
 from tol.core import DataSourceFilter, core_data_object
 from tol.sql import SqlDataSource
+from tol.sql.converter import Converter, TypeFunction
 from tol.sql.database import Database
 from tol.sql.filter import DatabaseFilter
 from tol.sql.model import Model
-from tol.sql.relationship import DefaultSqlRelationshipConfig
+
+
+class _MockDataObject:
+
+    def __init__(self, type_, id_, attrs) -> None:
+        self.__id = id_
+        self.__type = type_
+        self.__attrs = attrs
+
+    @property
+    def id(self):  # noqa A007
+        return self.__id
+
+    @property
+    def type(self): # noqa A007
+        return self.__type
+
+    @property
+    def attributes(self):
+        return self.__attrs
+
+
+class _MockBasicConverter(Converter):
+    def __init__(self, type_function: TypeFunction) -> None:
+        self.__type_function = type_function
+
+    def convert(self, models: Iterable[Model]):
+        return (
+            _MockDataObject(
+                type_=self.__type_function(m),
+                id_=m.instance_id,
+                attrs=m.instance_attributes
+            ) if m is not None else None
+            for m in models
+        )
 
 
 class TestSqlDataSource:
@@ -25,6 +60,9 @@ class TestSqlDataSource:
                 'B': 'test',
                 'C': 'test'
             },
+            MagicMock(),
+            None,
+            MagicMock(),
             MagicMock()
         )
         assert ds.supported_types == ['easy', 'A', 'B', 'C']
@@ -75,7 +113,15 @@ class TestSqlDataSource:
             def count(self, tablename: str, filters: Optional[DataSourceFilter]) -> int:
                 raise NotImplementedError()
 
-        ds = SqlDataSource(_SingleRowDatabase(), {'tests': 'test'}, MagicMock())
+        ds = SqlDataSource(
+            _SingleRowDatabase(),
+            {'tests': 'test'},
+            MagicMock(),
+            lambda _: _MockBasicConverter(lambda m: f'{m.get_table_name()}s'),
+            MagicMock(),
+            MagicMock()
+
+        )
         core_data_object(ds)
 
         data_objects = list(ds.get_by_id('tests', ['302', '404']))
@@ -152,7 +198,14 @@ class TestSqlDataSource:
             ) -> int:
                 return 10001
 
-        ds = SqlDataSource(_AutoIncrementDatabase(), {'tests': 'test'}, MagicMock())
+        ds = SqlDataSource(
+            _AutoIncrementDatabase(),
+            {'tests': 'test'},
+            MagicMock(),
+            lambda _: _MockBasicConverter(lambda m: f'{m.get_table_name()}s'),
+            MagicMock(),
+            MagicMock()
+        )
         core_data_object(ds)
 
         data_objects, count = ds.get_list_page(
@@ -213,9 +266,12 @@ class TestSqlDataSource:
         ds = SqlDataSource(
             mock_db,
             {'tests': 'test'},
-            DefaultSqlRelationshipConfig(),
-            converter_factory=lambda: _MockConverter()
+            MagicMock(),
+            lambda _: _MockConverter(),
+            MagicMock(),
+            MagicMock()
         )
+        core_data_object(ds)
 
         page_size = ds.get_page_size()
         iterator = ds.get_list('tests')
@@ -259,9 +315,12 @@ class TestSqlDataSource:
         ds = SqlDataSource(
             mock_db,
             {'tests': 'test'},
-            DefaultSqlRelationshipConfig(),
-            converter_factory=lambda: _MockConverter()
+            MagicMock(),
+            lambda _: _MockConverter(),
+            MagicMock(),
+            MagicMock()
         )
+        core_data_object(ds)
 
         page_size = ds.get_page_size()
         list_models = list(ds.get_list('tests'))

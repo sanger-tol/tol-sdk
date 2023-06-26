@@ -88,10 +88,7 @@ class TestDefaultConverter:
             'meaningLife': 42.0
         }
         example = _ExampleModel(attributes, id_='909')
-        converter = DefaultConverter(
-            factory,
-            lambda e: f'{e.get_table_name()}s'
-        )
+        converter = DefaultConverter(lambda e: f'{e.get_table_name()}s', factory)
         observed = list(converter.convert([example]))
 
         assert len(observed) == 1
@@ -114,8 +111,8 @@ class TestDefaultConverter:
             for i in range(9)
         ]
         converter = DefaultConverter(
-            factory,
-            lambda e: f'{e.get_table_name()}s are the best'
+            lambda e: f'{e.get_table_name()}s are the best',
+            factory
         )
         observed = list(converter.convert(examples))
 
@@ -134,8 +131,8 @@ class TestDefaultConverter:
 
         examples = [None]
         converter = DefaultConverter(
-            factory,
-            lambda e: f'{e.get_table_name()}s are the best'
+            lambda e: f'{e.get_table_name()}s are the best',
+            factory
         )
         observed = converter.convert(examples)
         assert list(observed) == [None]

@@ -4,3 +4,4 @@
 
 
 from .a import A  # noqa
+from .b import B  # noqa

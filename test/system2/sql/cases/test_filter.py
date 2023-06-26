@@ -49,3 +49,46 @@ class TestDefaultDatabaseFilter(DatabaseTestCase):
         for i, odd in enumerate(odds):
             assert odd.instance_id == str(i * 2 + 1)
             assert odd.instance_attributes == {'string_column': 'odd'}
+
+    def test_all_filters(self):
+        """
+        4 filters on 5 extant rows - each removes a different one - the db should fetch
+        the only row that matches all 4.
+        """
+
+        session = session_factory()
+        rows = [
+            models.B(id_override='2', int_column=1, another_string='match'),  # range
+            models.B(id_override='1', int_column=2, another_string='match'),  # contains
+            models.B(id_override='23', int_column=3, another_string='match'),
+            models.B(id_override='24', int_column=4, another_string='match'),  # list
+            models.B(id_override='25', int_column=5, another_string='NO MATCH!!!!')  # exact
+        ]
+        for row in rows:
+            session.add(row)
+        session.commit()
+        session.close()
+
+        db = DefaultDatabase(session_factory, models_list)
+
+        ds_filter = DataSourceFilter(
+            exact={'another_string': 'match'},
+            contains={'id': '2'},
+            in_list={
+                'id': ['1', '2', '23', '25', '81293']  # end with non present number just for fun
+            },
+            range={'int_column': {'from': 2, 'to': 100}}  # spill over on right side
+        )
+        db_filter = DefaultDatabaseFilter(ds_filter)
+
+        # there can be only one
+        count = db.count('b', filters=db_filter)
+        assert count == 1
+
+        # check it's the right one
+        fetched = list(db.get_list('b', filters=db_filter))[0]
+        assert fetched.instance_id == '23'
+        assert fetched.instance_attributes == {
+            'int_column': 3,
+            'another_string': 'match'
+        }

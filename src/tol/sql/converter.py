@@ -31,27 +31,26 @@ class DefaultConverter(Converter):
 
     def __init__(
         self,
-        data_object_factory: DataObjectFactory,
-        type_function: TypeFunction
+        type_function: TypeFunction,
+        data_object_factory: DataObjectFactory
     ) -> None:
         """
         Takes a type_function Callable, which determines the type of the
         DataObject for a given Model instance.
         """
-        self.__data_object_factory = data_object_factory
         self.__type_function = type_function
+        self.__data_object_factory = data_object_factory
 
     def convert(
         self,
         models: Iterable[Optional[Model]]
     ) -> Iterable[Optional[DataObject]]:
 
-        return (self.__convert_model(model) for model in models)
+        return (
+            self.__convert_model(model) for model in models
+        )
 
-    def __convert_model(
-        self,
-        model: Optional[Model]
-    ) -> Optional[DataObject]:
+    def __convert_model(self, model: Optional[Model]) -> Optional[DataObject]:
 
         if model is None:
             return None

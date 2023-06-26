@@ -4,17 +4,26 @@
 
 from typing import Callable, Dict, Iterable, List, Optional, Tuple
 
-from .converter import Converter, DefaultConverter, TypeFunction
+from .converter import Converter
 from .database import Database
-from .filter import DatabaseFilter, DefaultDatabaseFilter
+from .filter import DatabaseFilter
 from .model import Model
 from .relationship import SqlRelationshipConfig
-from .sort import DatabaseSorter, DefaultDatabaseSorter
-from ..core import DataId, DataObject, DataSource, DataSourceFilter, unsupported
-from ..core import RelationshipConfig
+from .sort import DatabaseSorter
+from ..core import (
+    DataId,
+    DataObject,
+    DataSource,
+    DataSourceFilter,
+    RelationshipConfig,
+    unsupported
+)
+from ..core.factory import DataObjectFactory
 
 
-ConverterFactory = Callable[[], Converter]
+ConverterFactory = Callable[[DataObjectFactory], Converter]
+FilterFactory = Callable[[DataSourceFilter], DatabaseFilter]
+SorterFactory = Callable[[str], DatabaseSorter]
 
 
 class SqlDataSource(DataSource):
@@ -28,17 +37,18 @@ class SqlDataSource(DataSource):
         db: Database,
         type_tablename_map: Dict[str, str],
         relationship_config: SqlRelationshipConfig,
-        converter_factory: Optional[ConverterFactory] = None
+        converter_factory: ConverterFactory,
+        filter_factory: FilterFactory,
+        sorter_factory: SorterFactory
     ) -> None:
 
         self.__db = db
         self.__type_tablename_map = type_tablename_map
         self.__supported_types = list(type_tablename_map.keys())
-        self.__type_function = self.__get_type_function()
-        self.__relationship_config = relationship_config.to_dict(
-            self.__type_function
-        )
-        self.__set_converter_factory(converter_factory)
+        self.__relationship_config = relationship_config.to_dict()
+        self.__converter_factory = converter_factory
+        self.__filter_factory = filter_factory
+        self.__sorter_factory = sorter_factory
 
     def get_attribute_types(self, object_type: str) -> Dict[str, str]:
         raise NotImplementedError()
@@ -59,21 +69,21 @@ class SqlDataSource(DataSource):
 
         # TODO maybe optimise on DB, and get multiple at once?
         models = self.__get_model_list_by_ids(object_type, object_ids)
-        converter = self.__converter_factory()
+        converter = self.__converter_factory(self.data_object_factory)
         return converter.convert(models)
 
     def get_list_page(
         self,
         object_type: str,
         page_number: int,
-        page_size: int = None,
-        object_filters: DataSourceFilter = None,
-        sort_by: str = None,
+        page_size: Optional[int] = None,
+        object_filters: Optional[DataSourceFilter] = None,
+        sort_by: Optional[str] = None,
     ) -> Tuple[Iterable[DataObject], int]:
 
         tablename = self.__type_tablename_map[object_type]
-        database_filter = DefaultDatabaseFilter(object_filters)
-        sorter = self.__get_default_sorter(sort_by)
+        database_filter = self.__filter_factory(object_filters)
+        sorter = self.__sorter_factory(sort_by)
         total_count = self.__db.count(tablename, filters=database_filter)
         models = self.__get_list_page_models(
             tablename,
@@ -82,33 +92,33 @@ class SqlDataSource(DataSource):
             page_size,
             sorter
         )
-        converter = self.__converter_factory()
+        converter = self.__converter_factory(self.data_object_factory)
         return converter.convert(models), total_count
 
     def get_list(
         self,
         object_type: str,
-        object_filters: DataSourceFilter = None,
-        sort_by: str = None
+        object_filters: Optional[DataSourceFilter] = None,
+        sort_by: Optional[str] = None
     ) -> Iterable[DataObject]:
         models = self.__generate_models_for_get_list(
             object_type,
             object_filters=object_filters,
             sort_by=sort_by
         )
-        converter = self.__converter_factory()
+        converter = self.__converter_factory(self.data_object_factory)
         return converter.convert(models)
 
     def __generate_models_for_get_list(
         self,
         object_type: str,
-        object_filters: DataSourceFilter = None,
-        sort_by: str = None
+        object_filters: Optional[DataSourceFilter] = None,
+        sort_by: Optional[str] = None
     ) -> Iterable[Model]:
         page = 1
         tablename = self.__type_tablename_map[object_type]
-        database_filter = DefaultDatabaseFilter(object_filters)
-        database_sorter = self.__get_default_sorter(sort_by)
+        database_filter = self.__filter_factory(object_filters)
+        database_sorter = self.__sorter_factory(sort_by)
         page_size = self.get_page_size()
         while True:
             models_iterable = self.__db.get_list(
@@ -124,9 +134,6 @@ class SqlDataSource(DataSource):
             yield from models
             page += 1
 
-    def __get_default_sorter(self, sort_by: str) -> DatabaseSorter:
-        return DefaultDatabaseSorter(sort_by) if sort_by is not None else None
-
     def __get_model_list_by_ids(
         self,
         object_type: str,
@@ -140,29 +147,6 @@ class SqlDataSource(DataSource):
             )
             for id_ in object_ids
         ]
-
-    def __set_converter_factory(
-        self,
-        converter_factory: Optional[ConverterFactory]
-    ) -> None:
-
-        if converter_factory is None:
-            self.__converter_factory = self.__default_converter_factory()
-        else:
-            self.__converter_factory = converter_factory
-
-    def __get_type_function(self) -> TypeFunction:
-        tablename_type_map = {
-            v: k
-            for k, v in self.__type_tablename_map.items()
-        }
-        return lambda c: tablename_type_map[c.get_table_name()]
-
-    def __default_converter_factory(self) -> ConverterFactory:
-        return lambda: DefaultConverter(
-            self.data_object_factory,
-            self.__type_function
-        )
 
     def __get_list_page_models(
         self,

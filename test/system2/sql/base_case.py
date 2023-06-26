@@ -20,7 +20,8 @@ session_factory = create_session_factory(db_uri)
 
 
 models_list = [
-    models.A
+    models.A,
+    models.B
 ]
 
 
