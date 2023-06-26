@@ -30,7 +30,7 @@ class SqlRelationshipConfig(ABC):
 
 class DefaultSqlRelationshipConfig(ABC):
 
-    def __init__(self, models: List[Model], type_function: TypeFunction) -> None:
+    def __init__(self, models: List[Type[Model]], type_function: TypeFunction) -> None:
         self.__models = models
         self.__models_dict = {
             m.get_table_name(): m for m in self.__models

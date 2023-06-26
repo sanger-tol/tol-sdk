@@ -23,7 +23,7 @@ from ..core.factory import DataObjectFactory
 
 ConverterFactory = Callable[[DataObjectFactory], Converter]
 FilterFactory = Callable[[DataSourceFilter], DatabaseFilter]
-SorterFactory = Callable[[str], DatabaseSorter]
+SorterFactory = Callable[[Optional[str]], DatabaseSorter]
 
 
 class SqlDataSource(DataSource):

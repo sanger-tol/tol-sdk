@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: MIT
 
 from abc import ABC, abstractmethod
-from typing import Dict, Type
+from typing import Dict, Optional, Type
 
 from sqlalchemy.orm import MappedColumn, Query
 
@@ -25,8 +25,11 @@ class DatabaseSorter(ABC):
 
 class DefaultDatabaseSorter(DatabaseSorter):
 
-    def __init__(self, sort_term: str) -> None:
-        if sort_term.startswith('-'):
+    def __init__(self, sort_term: Optional[str]) -> None:
+        if sort_term is None:
+            self.__desc = None
+            self.__term = None
+        elif sort_term.startswith('-'):
             self.__desc = True
             self.__term = sort_term[1:]
         else:
@@ -39,6 +42,9 @@ class DefaultDatabaseSorter(DatabaseSorter):
         tablename: str,
         model_dict: Dict[str, Type[Model]]
     ) -> Query:
+
+        if self.__term is None:
+            return query
 
         model = model_dict[tablename]
         column = self.__get_column(model)
