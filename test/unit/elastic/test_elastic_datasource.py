@@ -144,8 +144,10 @@ class TestElasticDataSource(TestCase):
         _, eds = mock_elastic_data_source()
 
         eds.helpers.scan.return_value = [
-            {'_source': {'field1': 'value1', 'field2': 'value2'}, '_id': '1'},
-            {'_source': {'field1': 'value3', 'field2': 'value4'}, '_id': '2'}
+            {'_source': {'field1': 'value1', 'field2': 'value2'},
+             '_id': '1', '_index': 'test-index'},
+            {'_source': {'field1': 'value3', 'field2': 'value4'},
+             '_id': '2', '_index': 'test-index'}
         ]
 
         returned = eds.get_list('index')
@@ -153,9 +155,11 @@ class TestElasticDataSource(TestCase):
         first = next(returned)
         self.assertEqual({'field1': 'value1', 'field2': 'value2'}, first.attributes)
         self.assertEqual('1', first.id)
+        self.assertEqual('index', first.type)
         second = next(returned)
         self.assertEqual({'field1': 'value3', 'field2': 'value4'}, second.attributes)
         self.assertEqual('2', second.id)
+        self.assertEqual('index', second.type)
         with self.assertRaises(StopIteration):
             next(returned)
 
@@ -165,8 +169,10 @@ class TestElasticDataSource(TestCase):
         eds.es.search.return_value = {
             'hits': {
                 'hits': [
-                    {'_source': {'field1': 'value1', 'field2': 'value2'}, '_id': '1'},
-                    {'_source': {'field1': 'value3', 'field2': 'value4'}, '_id': '2'}
+                    {'_source': {'field1': 'value1', 'field2': 'value2'},
+                     '_id': '1', '_index': 'test-index'},
+                    {'_source': {'field1': 'value3', 'field2': 'value4'},
+                     '_id': '2', '_index': 'test-index'}
                 ],
                 'total': {
                     'value': 2
@@ -180,9 +186,11 @@ class TestElasticDataSource(TestCase):
         first = next(returned)
         self.assertEqual({'field1': 'value1', 'field2': 'value2'}, first.attributes)
         self.assertEqual('1', first.id)
+        self.assertEqual('index', first.type)
         second = next(returned)
         self.assertEqual({'field1': 'value3', 'field2': 'value4'}, second.attributes)
         self.assertEqual('2', second.id)
+        self.assertEqual('index', second.type)
         with self.assertRaises(StopIteration):
             next(returned)
 
@@ -192,12 +200,12 @@ class TestElasticDataSource(TestCase):
         eds.es.mget.return_value = {
             'docs': [
                 {
-                    '_index': 'index',
+                    '_index': 'test-index',
                     '_id': '1',
                     '_source': {'field1': 'value1', 'field2': 'value2'}
                 },
                 {
-                    '_index': 'index',
+                    '_index': 'test-index',
                     '_id': '2',
                     '_source': {'field1': 'value3', 'field2': 'value4'}
                 }
@@ -209,9 +217,11 @@ class TestElasticDataSource(TestCase):
         first = next(returned)
         self.assertEqual({'field1': 'value1', 'field2': 'value2'}, first.attributes)
         self.assertEqual('1', first.id)
+        self.assertEqual('index', first.type)
         second = next(returned)
         self.assertEqual({'field1': 'value3', 'field2': 'value4'}, second.attributes)
         self.assertEqual('2', second.id)
+        self.assertEqual('index', second.type)
         with self.assertRaises(StopIteration):
             next(returned)
 
@@ -305,6 +315,11 @@ class TestElasticDataSource(TestCase):
         expected = ['index_1', 'index_2']
         eds.es.cat.indices.return_value = 'test-index-1\ntest-index-2'
 
+        returned = eds.supported_types
+        eds.es.cat.indices.assert_called_once()
+        self.assertEqual(expected, returned)
+
+        # Test it doesn't call to Elastic the next time
         returned = eds.supported_types
         eds.es.cat.indices.assert_called_once()
         self.assertEqual(expected, returned)

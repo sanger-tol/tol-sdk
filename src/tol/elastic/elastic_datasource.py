@@ -218,7 +218,7 @@ class ElasticDataSource(DataSource):
     def _convert_dict_to_data_objects(self, objs: Dict) -> Iterable:
         for obj in objs:
             yield self.data_object_factory(
-                'run-data',
+                self.__get_object_type(obj['_index']),
                 data={
                     **obj['_source'],
                     'id': obj['_id']
@@ -242,6 +242,7 @@ class ElasticDataSource(DataSource):
         return resp['aggregations']
 
     @property
+    @cache
     def supported_types(self):
         index_names = self.es.cat.indices(h='index', s='index').split()
         return [self.__get_object_type(index_name)
