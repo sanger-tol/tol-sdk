@@ -3,3 +3,4 @@
 # SPDX-License-Identifier: MIT
 
 from .blueprint import data_blueprint  # noqa
+from .system import system_blueprint  # noqa
