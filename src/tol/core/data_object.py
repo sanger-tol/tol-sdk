@@ -40,7 +40,7 @@ class DataObject(ABC):
         """
 
     @abstractproperty
-    def to_one_relationships(self) -> Dict[str, DataObject]:
+    def to_one_relationships(self) -> Dict[str, Optional[DataObject]]:
         """
         A dictionary of relationships, where this object refers to
         precisely one other.

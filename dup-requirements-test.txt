@@ -4,3 +4,4 @@
 
 -r ./requirements-test.txt
 mock-alchemy
+cachetools

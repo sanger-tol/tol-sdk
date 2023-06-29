@@ -12,7 +12,6 @@ from .data_object import DataDict, DataObject
 from .datasource_error import DataSourceError
 from .datasource_filter import DataSourceFilter
 from .factory import DataObjectFactory
-from .relationship import RelationshipConfig
 
 
 DataId = str
@@ -179,13 +178,6 @@ class DataSource(ABC):
         The list of types of DataObject supported by this DataSource instance.
 
         This can either be a static list, or dynamically generated.
-        """
-
-    @property
-    def relationship_config(self) -> Optional[Dict[str, RelationshipConfig]]:
-        """
-        The configuration of relationships (both to-one and to-many) between
-        the types of DataObject instances managed by this DataSource instance.
         """
 
     def __operation_is_supported(self, name) -> bool:

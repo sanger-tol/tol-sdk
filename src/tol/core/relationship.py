@@ -5,13 +5,33 @@
 from __future__ import annotations
 
 import typing
+from abc import ABC, abstractmethod
 from collections.abc import Mapping
 from dataclasses import dataclass
-from typing import Dict, Optional
+from typing import Dict, Iterable, Iterator, List, Optional
+
+from cachetools import LFUCache
 
 if typing.TYPE_CHECKING:
     from .data_object import DataObject
-    from .datasource import DataSource
+    from .factory import CoreDataObject
+
+
+class NotRelationalError(Exception):
+    """
+    Raised when trying to load exceptions on a DataObject hosted
+    by a DataSource that does not implement Relational.
+    """
+
+    def __init__(self, source: DataObject) -> None:
+        self.__message = (
+            f'The type "{source.type}" is hosted by a DataSource '
+            'that does not support relationships.'
+        )
+        super().__init__(self.__message)
+
+    def __str__(self) -> str:
+        return self.__message
 
 
 @dataclass
@@ -29,24 +49,135 @@ class RelationshipConfig:
     to_many: Optional[Dict[str, str]] = None
 
 
-class ToOneRelationshipDict(Mapping):
+class Relational(ABC):
     """
-    Lazily loads to-one relationship DataObject instances.
+    Augments a DataSource to support relationships between hosted
+    DataObject types.
     """
 
-    def __init__(
+    @property
+    @abstractmethod
+    def relationship_config(self) -> Dict[str, RelationshipConfig]:
+        """
+        The configuration of relationships (both to-one and to-many) between
+        the types of DataObject instances managed by this DataSource instance.
+        """
+
+    @abstractmethod
+    def get_to_one_relation(
         self,
-        parent: DataObject,
-        data_source_dict: Dict[str, DataSource]
-    ) -> None:
-        self.__parent = parent
-        self.__data_source_dict = data_source_dict
+        source: DataObject,
+        relationship_name: str
+    ) -> Optional[DataObject]:
+        """
+        Gets the to-one relation DataObject, given a source DataObject and the
+        name of the relationship within the config.
+        """
 
-    def __getitem__(self, __k: str) -> Optional[DataObject]:
-        pass
+    @abstractmethod
+    def get_to_many_relations(
+        self,
+        source: DataObject,
+        relationship_name: str
+    ) -> Iterable[DataObject]:
+        """
+        Gets the Iterable of to-many relation DataObject instances, given a source
+        DataObject and the name of the relationship within the config.
+        """
 
-    def __setitem__(self, *args, **kwargs) -> None:
-        raise NotImplementedError('This Dict is readonly.')
+
+class ToManyDict(Mapping):
+    """A Dict that loads items lazily and memoizes the result"""
+
+    def __init__(self, source: DataObject, host: Relational) -> None:
+        self.__dict = LFUCache(100000)
+        self.__source = source
+        self.__host = host
+        self.__keys = self.__get_keys()
+
+    def __getitem__(self, __k: str) -> Iterable[DataObject]:
+        if __k not in self.__keys:
+            raise KeyError()
+        if __k not in self.__dict:
+            return self.__get_many_objects(__k)
+        else:
+            return self.__dict[__k]
+
+    def __iter__(self) -> Iterator[str]:
+        return iter(self.__keys)
 
     def __len__(self) -> int:
-        pass
+        return len(self.__keys)
+
+    def __get_many_objects(self, __k: str) -> Iterable[DataObject]:
+        many_objects = self.__host.get_to_many_relations(
+            self.__source,
+            __k
+        )
+        self.__dict[__k] = many_objects
+        return many_objects
+
+    def __get_keys(self) -> List[str]:
+        config = self.__config
+        if config is None or config.to_many is None:
+            return []
+        return list(config.to_many.keys())
+
+    @property
+    def __config(self) -> Optional[RelationshipConfig]:
+        type_ = self.__source.type
+        return self.__host.relationship_config.get(type_)
+
+
+class ToOneDict(Mapping):
+    """
+    A dict that implements to-one relationships, and supports:
+
+    - lazy loading
+    - memoisation
+    - overwriting
+
+    This is only to be used by a CoreDataObject.
+    """
+
+    def __init__(self, source: CoreDataObject, host: Relational) -> None:
+        self.__dict = LFUCache(100000)
+        self.__source = source
+        self.__host = host
+        self.__keys = self.__get_keys()
+
+    def __getitem__(self, __k: str) -> Optional[DataObject]:
+        if __k not in self.__keys:
+            raise KeyError()
+        set_to_one_objects = self.__source._to_one_objects
+        if __k in set_to_one_objects:
+            return set_to_one_objects[__k]
+        return self.__get_or_cached(__k)
+
+    def __iter__(self) -> Iterator[str]:
+        return iter(self.__keys)
+
+    def __len__(self) -> int:
+        return len(self.__keys)
+
+    def __get_keys(self) -> List[str]:
+        config = self.__config
+        if config is None or config.to_one is None:
+            return []
+        return list(config.to_one.keys())
+
+    def __get_one_object(self, __k: str) -> Optional[DataObject]:
+        one_object = self.__host.get_to_one_relation(self.__source, __k)
+        self.__dict[__k] = one_object
+        return one_object
+
+    def __get_or_cached(self, __k: str) -> Optional[DataObject]:
+        if __k not in self.__dict:
+            return self.__get_one_object(__k)
+        else:
+            return self.__dict[__k]
+
+    @property
+    def __config(self) -> Optional[RelationshipConfig]:
+        type_ = self.__source.type
+        return self.__host.relationship_config.get(type_)

@@ -15,10 +15,10 @@ from ..core import (
     DataObject,
     DataSource,
     DataSourceFilter,
-    RelationshipConfig,
     unsupported
 )
 from ..core.factory import DataObjectFactory
+from ..core.relationship import RelationshipConfig
 
 
 ConverterFactory = Callable[[DataObjectFactory], Converter]
