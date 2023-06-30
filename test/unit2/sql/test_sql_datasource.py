@@ -375,7 +375,7 @@ class TestSqlDataSource:
 
         target_id = 'hype_train'
 
-        source_model = Source(id='test', target_id='hype_train')
+        source_model = Source(id='test', target_key=target_id)
         target_model = Target(funny_id_lol='hype_train')
 
         class _MockRelationship:
