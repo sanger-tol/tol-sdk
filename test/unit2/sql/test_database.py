@@ -228,8 +228,19 @@ class TestDefaultDatabase:
     def test_get_to_one_relation_not_found(self):
         """get_to_one_relation() when none is found"""
 
+        source = Source(id='nada', target_key='link')
+
         sqlalchemy_mock = UnifiedAlchemyMagicMock(
             data=[
+                # getting the source
+                (
+                    [
+                        mock.call.query(Source),
+                        mock.call.filter(Source.id == 'nada')
+                    ],
+                    [source]
+                ),
+                # getting the target
                 (
                     [
                         mock.call.query(Target),
@@ -247,18 +258,28 @@ class TestDefaultDatabase:
         )
         result = db.get_to_one_relation(
             'source',
-            'a_target_on_my_back',
-            'link'
+            'nada',
+            'a_target_on_my_back'
         )
         assert result is None
 
     def test_get_to_one_relation_one_found(self):
         """get_to_one_relation() when a result is found"""
 
+        source = Source(id='nada', target_key='link')
         expected = Target(funny_id_lol='link')
 
         sqlalchemy_mock = UnifiedAlchemyMagicMock(
             data=[
+                # getting the source
+                (
+                    [
+                        mock.call.query(Source),
+                        mock.call.filter(Source.id == 'nada')
+                    ],
+                    [source]
+                ),
+                # getting the target
                 (
                     [
                         mock.call.query(Target),
@@ -276,7 +297,7 @@ class TestDefaultDatabase:
         )
         result = db.get_to_one_relation(
             'source',
-            'a_target_on_my_back',
-            'link'
+            'nada',
+            'a_target_on_my_back'
         )
         assert result == expected
