@@ -2,6 +2,8 @@
 #
 # SPDX-License-Identifier: MIT
 
+from __future__ import annotations
+
 from typing import Any, Optional
 from unittest import mock
 
@@ -24,15 +26,27 @@ class _TestModel(BaseModel):
     int_column: Mapped[int] = mapped_column()
 
 
+class _eq_column:
+    def __init__(self, name: str) -> None:
+        self.__name = name
+
+    def __eq__(self, __o: str) -> tuple[str, str, str]:
+        return self.__name, '__eq__', __o
+
+
 class Source(Model):
+
+    id = _eq_column('id')
+    target_key = _eq_column('target_key')
+
     @classmethod
     def get_column(cls, name: str):
-        assert name == 'target_key'
-        return cls.target_key
+        assert name in ['id', 'target_key']
+        return getattr(cls, name)
 
     @classmethod
     def get_id_column_name(cls) -> str:
-        'id'
+        return 'id'
 
     @classmethod
     def get_table_name(cls) -> str:
@@ -57,7 +71,7 @@ class Source(Model):
         return None
 
 
-class Source(Model):
+class Target(Model):
     @classmethod
     def get_column(cls, name: str):
         assert name == 'target_key'
