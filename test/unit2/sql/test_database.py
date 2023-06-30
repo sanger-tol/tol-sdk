@@ -78,7 +78,7 @@ class Source(Model):
     @classmethod
     def get_to_one_relationship_config(cls) -> dict[str, str]:
         return {
-            'a_target_on_my_back': 'target'
+            'sources_my_own': 'source'
         }
 
     @property
