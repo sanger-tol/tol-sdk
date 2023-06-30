@@ -11,6 +11,7 @@ from sqlalchemy import ForeignKey
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from tol.core import DataSourceFilter, core_data_object
+from tol.core.relationship import RelationshipConfig
 from tol.sql import SqlDataSource
 from tol.sql.converter import Converter, TypeFunction
 from tol.sql.database import Database
@@ -360,14 +361,42 @@ class TestSqlDataSource:
         to_one_relation works when the relation foreign key is not populated
         """
 
+        class _FakeSourceObject:
+            @property
+            def type(self):  # noqa
+                return 'tests'
+
+            @property
+            def attributes(self):
+                return {}
+
+        class _MockRelationship:
+            def to_dict(self):
+                return {
+                    'tests': RelationshipConfig(
+                        to_one={'target_relationship': 'targets'}
+                    )
+                }
+
         ds = SqlDataSource(
-            MagicMock(),
+            MagicMock(),  # MagicMock always returns None
             {'tests': 'test', 'targets': 'target'},
             MagicMock(),
             MagicMock(),
             MagicMock(),
             MagicMock()
         )
-        core_data_object(ds)
 
-        Base = model_base()  # noqa
+        def __data_object_factory(m):
+            assert m is None
+            return None
+
+        ds.data_object_factory = __data_object_factory
+
+        observed = ds.get_to_one_relation(
+            _FakeSourceObject(),
+            'target_relationship'
+        )
+        assert observed is None
+
+
