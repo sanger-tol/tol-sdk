@@ -9,11 +9,11 @@ from flask import Flask
 from flask_testing import TestCase
 
 from tol.core import (
+    DataSource,
     DataSourceFilter,
-    ReadOnlyDataSource,
-    core_data_object,
-    unsupported,
+    core_data_object
 )
+from tol.core.abc import Aggregator, DetailGetter, PageGetter
 
 from .app import _test_application
 
@@ -21,12 +21,8 @@ from .app import _test_application
 CoreDataObject = core_data_object()  # noqa
 
 
-class ParrotDataSource(ReadOnlyDataSource):
+class ParrotDataSource(DataSource, DetailGetter, PageGetter, Aggregator):
     """Mimics what its told."""
-
-    @unsupported
-    def get_list(self, *args, **kwargs):
-        pass
 
     def get_by_id(self, object_type: str, object_ids, **kwargs):
         return [
@@ -88,7 +84,7 @@ class ParrotDataSource(ReadOnlyDataSource):
             return {'parrot': 'str'}
 
 
-class EmptyDataSource(ReadOnlyDataSource):
+class EmptyDataSource(DataSource, DetailGetter, PageGetter):
     """Never finds anything."""
 
     def get_by_id(self, _object_type: str, ids: List[str], *args, **kwargs):
@@ -99,14 +95,6 @@ class EmptyDataSource(ReadOnlyDataSource):
 
     def get_list_page(self, *args, **kwargs):
         return [], 0
-
-    @unsupported
-    def get_list(self, *args, **kwargs):
-        pass
-
-    @unsupported
-    def get_aggregations(self, *args, **kwargs):
-        pass
 
     @property
     def supported_types(self):
@@ -202,7 +190,6 @@ class TestBlueprint(BlueprintTestCase):
         """A good aggregations POST returns 200 and correct data"""
         body = {'aggs': {}}  # We are mocking the result
         response = self.client.open('/data/cracker:aggregations', method='POST', json=body)
-        print(response.text)
         self.assert200(
             response,
             f'Response body is : {response.data.decode("utf-8")}'

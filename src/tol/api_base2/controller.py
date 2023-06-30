@@ -4,7 +4,7 @@
 
 from __future__ import annotations
 
-from typing import Any, Callable
+from typing import Any, Callable, Type
 
 from .exception import (
     ObjectNotFoundByIdException,
@@ -17,16 +17,17 @@ from .misc import (
 )
 from .view import ResponseDict, View
 from ..core import DataObject, DataSource
+from ..core.abc import Aggregator, DetailGetter, PageGetter
 
 
-def validate(operation_name: str, api_full_name: str) -> Callable:
+def validate(operation_abc: Type, api_full_name: str) -> Callable:
     """
     Validates a Controller method's corresponding operation
     is supported by its DataSource
     """
     def decorator(method: Callable) -> Callable:
         def wrapper(controller: Controller, object_type: str, *args, **kwargs) -> Any:
-            if not controller.operation_is_supported(operation_name):
+            if not isinstance(controller.data_source, operation_abc):
                 raise UnsupportedOpertionError(object_type, api_full_name)
             return method(controller, object_type, *args, **kwargs)
         return wrapper
@@ -42,10 +43,11 @@ class Controller:
         self.__data_source = data_source
         self.__view = view
 
-    def operation_is_supported(self, operation: str) -> bool:
-        return operation in self.__data_source.supported_operations
+    @property
+    def data_source(self) -> DataSource:
+        return self.__data_source
 
-    @validate('get_by_id', 'detail GET')
+    @validate(DetailGetter, 'detail GET')
     def get_detail(self, object_type: str, object_id: str) -> ResponseDict:
         """
         Gets an individual object of specified type and id
@@ -53,7 +55,7 @@ class Controller:
         data_object = self.__get_detail_object(object_type, object_id)
         return self.__view.dump(data_object)
 
-    @validate('get_list_page', 'list GET')
+    @validate(PageGetter, 'list GET')
     def get_list(
         self,
         object_type: str,
@@ -76,7 +78,7 @@ class Controller:
         }
         return self.__view.dump_bulk(data_objects, document_meta=document_meta)
 
-    @validate('get_aggregations', 'aggregations POST')
+    @validate(Aggregator, 'aggregations POST')
     def post_aggregations(
         self,
         object_type: str,

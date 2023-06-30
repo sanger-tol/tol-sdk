@@ -17,10 +17,7 @@ from benchling_sdk.models import (
 )
 
 from .entities import convert_sts_entity_to_eln_entity_fields
-from ..core import (
-    DataSource,
-    unsupported
-)
+from ..core import DataSource
 
 
 class ElnDataSource(DataSource):
@@ -113,22 +110,6 @@ class ElnDataSource(DataSource):
             return response
         except BenchlingError as error:
             raise Exception(400, error.json['error']['message'])
-
-    @unsupported()
-    def get_by_id(self, *args, **kwargs):
-        pass
-
-    @unsupported()
-    def get_list(self, *args, **kwargs):
-        pass
-
-    @unsupported()
-    def get_list_page(self, *args, **kwargs):
-        pass
-
-    @unsupported
-    def get_aggregations(self, *args, **kwargs):
-        pass
 
     def get_attribute_types(self, object_type: str) -> Dict:
         raise NotImplementedError()

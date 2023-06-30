@@ -9,14 +9,13 @@ import mysql.connector
 
 from ..core import (
     DataObject,
+    DataSource,
     DataSourceError,
-    DataSourceFilter,
-    ReadOnlyDataSource,
-    unsupported
+    DataSourceFilter
 )
 
 
-class MlwhDataSource(ReadOnlyDataSource):
+class MlwhDataSource(DataSource):
 
     def __init__(self, config: Dict):
         # uri
@@ -206,10 +205,6 @@ class MlwhDataSource(ReadOnlyDataSource):
         for row in cur_mlwh.fetchall():
             yield self._format_mlwh_row(object_type, row)
 
-    @unsupported
-    def get_by_id(self, *args, **kwargs):
-        pass
-
     def get_list(
         self,
         object_type: str,
@@ -237,14 +232,6 @@ class MlwhDataSource(ReadOnlyDataSource):
         else:
             raise DataSourceError('Only objects of type run_data or '
                                   'sequencing_request are supported')
-
-    @unsupported
-    def get_list_page(self, *args, **kwargs):
-        pass
-
-    @unsupported
-    def get_aggregations(self, *args, **kwargs):
-        pass
 
     @property
     def supported_types(self) -> List[str]:

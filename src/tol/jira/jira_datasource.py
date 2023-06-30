@@ -5,15 +5,11 @@
 from typing import Dict, List
 
 import tol.jira.jira_methods as jm
+from tol.core import DataSource
 from tol.jira.jira_auth import JiraAuth
 
-from ..core import (
-    ReadOnlyDataSource,
-    unsupported
-)
 
-
-class JiraDataSource(ReadOnlyDataSource):
+class JiraDataSource(DataSource):
 
     def __init__(self, config):
         super().__init__(config, expected=['url', 'api_token'])
@@ -70,22 +66,6 @@ class JiraDataSource(ReadOnlyDataSource):
 
     def get_specimen_for_treeval(self, tolid):
         return self.get_specimens_for_treeval(1, 1, f'[tolid={tolid}]', 'tolid')[0]
-
-    @unsupported()
-    def get_by_id(self, *args, **kwargs):
-        pass
-
-    @unsupported()
-    def get_list(self, *args, **kwargs):
-        pass
-
-    @unsupported()
-    def get_list_page(self, *args, **kwargs):
-        pass
-
-    @unsupported
-    def get_aggregations(self, *args, **kwargs):
-        pass
 
     def get_attribute_types(self, object_type: str) -> Dict:
         raise NotImplementedError()

@@ -8,14 +8,10 @@ import typing
 from abc import ABC, abstractmethod
 from typing import Any, Dict, Iterable, List, Optional, Protocol, Type
 
+from .abc import Relational
 from .data_object import DataDict, DataObject
 from .data_source_dict import DataSourceDict
-from .relationship import (
-    NotRelationalError,
-    Relational,
-    ToManyDict,
-    ToOneDict
-)
+from .relationship import NotRelationalError, ToManyDict, ToOneDict
 
 if typing.TYPE_CHECKING:
     from .datasource import DataSource

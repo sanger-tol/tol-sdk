@@ -9,10 +9,9 @@ import pytest
 from tol.core import (
     DataObject,
     DataSource,
-    Relational,
-    core_data_object,
-    unsupported
+    core_data_object
 )
+from tol.core.abc import Relational
 from tol.core.relationship import NotRelationalError, RelationshipConfig
 
 
@@ -25,22 +24,6 @@ class _MockDataSource1(DataSource):
 
     def get_attribute_types(self, object_type: str):
         return {}
-
-    @unsupported
-    def get_by_id(*args, **kwargs):
-        pass
-
-    @unsupported
-    def get_list(*args, **kwargs):
-        pass
-
-    @unsupported
-    def get_list_page(*args, **kwargs):
-        pass
-
-    @unsupported
-    def get_aggregations(*args, **kwargs):
-        pass
 
 
 class _RelationalDataSource(DataSource, Relational):
@@ -112,22 +95,6 @@ class _RelationalDataSource(DataSource, Relational):
         )
 
     def get_attribute_types(self, object_type: str):
-        raise NotImplementedError()
-
-    @unsupported
-    def get_by_id(*args, **kwargs):
-        raise NotImplementedError()
-
-    @unsupported
-    def get_list(*args, **kwargs):
-        raise NotImplementedError()
-
-    @unsupported
-    def get_list_page(*args, **kwargs):
-        raise NotImplementedError()
-
-    @unsupported
-    def get_aggregations(*args, **kwargs):
         raise NotImplementedError()
 
 
