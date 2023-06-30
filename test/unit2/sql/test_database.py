@@ -2,15 +2,15 @@
 #
 # SPDX-License-Identifier: MIT
 
+from typing import Any, Optional
 from unittest import mock
 
 from mock_alchemy.mocking import UnifiedAlchemyMagicMock
 
-from sqlalchemy import ForeignKey
-from sqlalchemy.orm import Mapped, relationship, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column
 
 from tol.sql.database import DefaultDatabase
-from tol.sql.model import model_base
+from tol.sql.model import Model, model_base
 
 
 BaseModel = model_base()
@@ -24,27 +24,70 @@ class _TestModel(BaseModel):
     int_column: Mapped[int] = mapped_column()
 
 
-class Source(BaseModel):
-    __tablename__ = 'source'
+class Source(Model):
+    @classmethod
+    def get_column(cls, name: str):
+        assert name == 'target_key'
+        return cls.target_key
 
-    id: Mapped[str] = mapped_column(primary_key=True)
-    target_key: Mapped[str] = mapped_column(
-        ForeignKey('target.funny_id_lol')
-    )
-    a_target_on_my_back: Mapped['Target'] = relationship(
-        back_populates='targets'
-    )
+    @classmethod
+    def get_id_column_name(cls) -> str:
+        'id'
+
+    @classmethod
+    def get_table_name(cls) -> str:
+        return 'source'
+
+    @classmethod
+    def get_to_many_relationship_config(cls) -> dict[str, str]:
+        return {}
+
+    @classmethod
+    def get_to_one_relationship_config(cls) -> dict[str, str]:
+        return {
+            'a_target_on_my_back': 'target'
+        }
+
+    @property
+    def instance_attributes(self) -> dict[str, Any]:
+        return {}
+
+    @property
+    def instance_id(self) -> Optional[str]:
+        return None
 
 
-class Target(BaseModel):
-    __tablename__ = 'target'
+class Source(Model):
+    @classmethod
+    def get_column(cls, name: str):
+        assert name == 'target_key'
+        return cls.target_key
 
-    funny_id_lol: Mapped[str] = mapped_column(primary_key=True)
-    targets: Mapped['Source'] = relationship(
-        back_populates='a_target_on_my_back'
-    )
+    @classmethod
+    def get_id_column_name(cls) -> str:
+        'funny_id_lol'
 
+    @classmethod
+    def get_table_name(cls) -> str:
+        return 'target'
 
+    @classmethod
+    def get_to_many_relationship_config(cls) -> dict[str, str]:
+        return {}
+
+    @classmethod
+    def get_to_one_relationship_config(cls) -> dict[str, str]:
+        return {
+            'a_target_on_my_back': 'target'
+        }
+
+    @property
+    def instance_attributes(self) -> dict[str, Any]:
+        return {}
+
+    @property
+    def instance_id(self) -> Optional[str]:
+        return None
 
 class TestDefaultDatabase:
     def test_get_by_id_not_found(self):

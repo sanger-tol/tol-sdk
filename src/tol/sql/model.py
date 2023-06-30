@@ -48,14 +48,14 @@ class Model(ABC):
     @abstractmethod
     def get_to_one_relationship_config(cls) -> Dict[str, str]:
         """
-        The mapping of keys to tablenames for to-one relationships
+        The mapping of relationship names to tablenames for to-one relationships
         """
 
     @classmethod
     @abstractmethod
     def get_to_many_relationship_config(cls) -> Dict[str, str]:
         """
-        The mapping of key to tablenames for to-many relationships
+        The mapping of relationship names to tablenames for to-many relationships
         """
 
     @property

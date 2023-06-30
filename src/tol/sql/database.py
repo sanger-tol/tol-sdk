@@ -114,10 +114,15 @@ class DefaultDatabase(Database):
     def get_to_one_relation(
         self,
         tablename: str,
-        id: str,
+        instance_id: str,
         relationship_name: str
     ) -> Optional[Model]:
-        pass
+        source_model, session, query = self.__get_model_session_query(tablename)
+        id_column = getattr(source_model, source_model.get_id_column_name())
+        source = query.filter(id_column == instance_id).first()
+        target_id = source
+        session.close()
+        return result
 
     def __get_model_session_query(
         self,
