@@ -2,15 +2,20 @@
 #
 # SPDX-License-Identifier: MIT
 
+from __future__ import annotations
+
 from typing import Any, Dict, Iterable, Optional
 from unittest.mock import MagicMock
+
+from sqlalchemy import ForeignKey
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from tol.core import DataSourceFilter, core_data_object
 from tol.sql import SqlDataSource
 from tol.sql.converter import Converter, TypeFunction
 from tol.sql.database import Database
 from tol.sql.filter import DatabaseFilter
-from tol.sql.model import Model
+from tol.sql.model import Model, model_base
 
 
 class _MockDataObject:
@@ -52,6 +57,30 @@ class _MockIdentityConverter:
     """Just returns the given iterable"""
     def convert(self, models):
         return models
+
+
+ToOneBase = model_base()  # noqa
+
+
+class Source(ToOneBase):
+    __tablename__ = 'test'
+
+    id: Mapped[str] = mapped_column(primary_key=True)
+    target_key: Mapped[str] = mapped_column(
+        ForeignKey('target.funny_id_lol')
+    )
+    a_target_on_my_back: Mapped['Target'] = relationship(
+        back_populates='targets'
+    )
+
+
+class Target(ToOneBase):
+    __tablename__ = 'target'
+
+    funny_id_lol: Mapped[str] = mapped_column(primary_key=True)
+    targets: Mapped['Source'] = relationship(
+        back_populates='a_target_on_my_back'
+    )
 
 
 class TestSqlDataSource:
@@ -324,37 +353,21 @@ class TestSqlDataSource:
 
     def test_get_to_one_relation(self):
         """to_one_relation works when populated"""
+        #TODO do
 
     def test_get_to_one_relation_none(self):
-        """to_one_relation works when no relation is populated"""
-
-        class _MockDatabase:
-            def __init__(self) -> None:
-                self.__get_count = 0
-
-            def get_list(
-                self,
-                tablename: str,
-                filters: Optional[DatabaseFilter] = None,
-                sort_by: Optional[str] = None,
-                offset: Optional[int] = None,
-                limit: Optional[int] = None
-            ):
-                assert tablename == 'target'
-                if self.__get_count > 4:
-                    return []
-                else:
-                    self.__get_count += 1
-                    return range(offset, offset + limit)
-
-        mock_db = _MockDatabase()
+        """
+        to_one_relation works when the relation foreign key is not populated
+        """
 
         ds = SqlDataSource(
-            mock_db,
+            MagicMock(),
             {'tests': 'test', 'targets': 'target'},
             MagicMock(),
-            lambda _: _MockIdentityConverter(),
+            MagicMock(),
             MagicMock(),
             MagicMock()
         )
         core_data_object(ds)
+
+        Base = model_base()  # noqa
