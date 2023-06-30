@@ -28,12 +28,12 @@ class Model(ABC):
 
     @classmethod
     @abstractmethod
-    def get_table_name(cls) -> str:  # noqa
+    def get_table_name(cls) -> str:
         """The name of the Model"""
 
     @classmethod
     @abstractmethod
-    def get_id_column_name(cls) -> str:  # noqa
+    def get_id_column_name(cls) -> str:
         """
         The name of the column that serves as the "id".
         Override this classmethod to change.
@@ -41,19 +41,19 @@ class Model(ABC):
 
     @classmethod
     @abstractmethod
-    def get_column(cls, name: str) -> MappedColumn:  # noqa N805
+    def get_column(cls, name: str) -> MappedColumn:
         """The (attribute) column for the given name."""
 
     @classmethod
     @abstractmethod
-    def get_to_one_relationship_config(cls) -> Dict[str, str]:  # noqa N805
+    def get_to_one_relationship_config(cls) -> Dict[str, str]:
         """
         The mapping of keys to tablenames for to-one relationships
         """
 
     @classmethod
     @abstractmethod
-    def get_to_many_relationship_config(cls) -> Dict[str, str]:  # noqa N805
+    def get_to_many_relationship_config(cls) -> Dict[str, str]:
         """
         The mapping of key to tablenames for to-many relationships
         """
