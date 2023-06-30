@@ -72,10 +72,12 @@ class Source(Model):
 
 
 class Target(Model):
+    funny_id_lol = _eq_column('funny_id_lol')
+
     @classmethod
     def get_column(cls, name: str):
-        assert name == 'target_key'
-        return cls.target_key
+        assert name == 'funny_id_lol'
+        return cls.funny_id_lol
 
     @classmethod
     def get_id_column_name(cls) -> str:
@@ -87,13 +89,13 @@ class Target(Model):
 
     @classmethod
     def get_to_many_relationship_config(cls) -> dict[str, str]:
-        return {}
-
-    @classmethod
-    def get_to_one_relationship_config(cls) -> dict[str, str]:
         return {
             'sources_my_own': 'source'
         }
+
+    @classmethod
+    def get_to_one_relationship_config(cls) -> dict[str, str]:
+        return {}
 
     @property
     def instance_attributes(self) -> dict[str, Any]:
