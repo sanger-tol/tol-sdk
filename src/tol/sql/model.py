@@ -5,7 +5,7 @@
 from abc import ABC, ABCMeta, abstractmethod
 from typing import Any, Dict, List, Optional, Type
 
-from sqlalchemy import inspect
+from sqlalchemy import Select, inspect, select
 from sqlalchemy.orm import (
     ColumnProperty,
     DeclarativeMeta,
@@ -30,6 +30,18 @@ class Model(ABC):
     @abstractmethod
     def get_table_name(cls) -> str:
         """The name of the Model"""
+
+    @classmethod
+    @abstractmethod
+    def select(cls) -> Select:
+        """
+        Returns a Select object from sqlalchemy. Functionally equivalent
+        to calling
+    
+        ```
+        sqlalchemy.select(cls)
+        ```
+        """
 
     @classmethod
     @abstractmethod
@@ -97,6 +109,10 @@ def model_base() -> Type[Model]:
         @classmethod
         def get_table_name(cls) -> str:
             return cls.__tablename__
+
+        @classmethod
+        def select(cls) -> Select:
+            return select(cls)
 
         @classmethod
         def get_id_column_name(cls) -> str:
