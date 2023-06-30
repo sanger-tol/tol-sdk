@@ -26,7 +26,7 @@ class Database(ABC):
         """
 
     @abstractmethod
-    def get_list(
+    def get_page(
         self,
         tablename: str,
         filters: Optional[DatabaseFilter] = None,
@@ -50,6 +50,17 @@ class Database(ABC):
         tablename matching the given filters.
         """
 
+    @abstractmethod
+    def get_to_one_relation(
+        self,
+        tablename: str,
+        relationship_name: str,
+        value: str
+    ) -> Optional[Model]:
+        """
+        
+        """
+
 
 class DefaultDatabase(Database):
     """A reasonable-default implementation of the Database ABC."""
@@ -69,7 +80,7 @@ class DefaultDatabase(Database):
         session.close()
         return result
 
-    def get_list(
+    def get_page(
         self,
         tablename: str,
         filters: Optional[DatabaseFilter] = None,
@@ -98,6 +109,14 @@ class DefaultDatabase(Database):
         count = query.count()
         session.close()
         return count
+
+    def get_to_one_relation(
+        self,
+        tablename: str,
+        relationship_name: str,
+        value: str
+    ) -> Optional[Model]:
+        pass #TODO implement!!!
 
     def __get_model_session_query(
         self,

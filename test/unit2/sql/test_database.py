@@ -123,7 +123,7 @@ class TestDefaultDatabase:
             lambda: sqlalchemy_mock,
             [_TestModel]
         )
-        result = db.get_list(
+        result = db.get_page(
             'test',
             offset=300,
             limit=100
@@ -153,7 +153,7 @@ class TestDefaultDatabase:
             lambda: sqlalchemy_mock,
             [_TestModel]
         )
-        result = db.get_list(
+        result = db.get_page(
             'test',
             offset=300,
             limit=100

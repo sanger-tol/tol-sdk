@@ -137,7 +137,7 @@ class SqlDataSource(DataSource, DetailGetter, ListGetter, PageGetter, Relational
         database_sorter = self.__sorter_factory(sort_by)
         page_size = self.get_page_size()
         while True:
-            models_iterable = self.__db.get_list(
+            models_iterable = self.__db.get_page(
                 tablename,
                 filters=database_filter,
                 sort_by=database_sorter,
@@ -173,7 +173,7 @@ class SqlDataSource(DataSource, DetailGetter, ListGetter, PageGetter, Relational
         sort_by: Optional[DatabaseSorter]
     ) -> Iterable[Model]:
         offset = self.__get_offset(page_number, page_size)
-        return self.__db.get_list(
+        return self.__db.get_page(
             tablename,
             filters=filters,
             sort_by=sort_by,

@@ -143,11 +143,19 @@ class TestSqlDataSource:
             def get_by_id(self, tablename: str, id_: Any) -> Optional[Model]:
                 return _MockModel() if id_ != '404' else None
 
-            def get_list(self, *args):
+            def get_page(self, *args):
                 raise NotImplementedError()
 
             def count(self, tablename: str, filters: Optional[DataSourceFilter]) -> int:
                 raise NotImplementedError()
+
+            def get_to_one_relation(
+                self,
+                tablename: str,
+                relationship_name: str,
+                value: str
+            ) -> Optional[Model]:
+                pass
 
         ds = SqlDataSource(
             _SingleRowDatabase(),
@@ -213,7 +221,7 @@ class TestSqlDataSource:
             def get_by_id(self, tablename: str, id_: Any) -> Optional[Model]:
                 raise NotImplementedError()
 
-            def get_list(
+            def get_page(
                 self,
                 tablename: str,
                 filters: Optional[DataSourceFilter] = None,
@@ -233,6 +241,14 @@ class TestSqlDataSource:
                 filters: Optional[DataSourceFilter] = None
             ) -> int:
                 return 10001
+
+            def get_to_one_relation(
+                self,
+                tablename: str,
+                relationship_name: str,
+                value: str
+            ) -> Optional[Model]:
+                pass
 
         ds = SqlDataSource(
             _AutoIncrementDatabase(),
@@ -262,7 +278,9 @@ class TestSqlDataSource:
             }
 
     def test_get_list(self):
-        """uses (and hides) paged Database().get_list() behind the scenes"""
+        """
+        SqlDataSource().get_list() uses (and hides) paged Database().get_page() behind the scenes
+        """
 
         stop = 456
         """The number of results to return"""
@@ -275,7 +293,7 @@ class TestSqlDataSource:
             def get_count(self) -> int:
                 return self.__get_count
 
-            def get_list(
+            def get_page(
                 self,
                 tablename: str,
                 filters: Optional[DatabaseFilter] = None,
@@ -322,7 +340,7 @@ class TestSqlDataSource:
             def __init__(self) -> None:
                 self.__get_count = 0
 
-            def get_list(
+            def get_page(
                 self,
                 tablename: str,
                 filters: Optional[DatabaseFilter] = None,
@@ -354,7 +372,24 @@ class TestSqlDataSource:
 
     def test_get_to_one_relation(self):
         """to_one_relation works when populated"""
-        #TODO do
+
+        target_id = 'hype_train'
+
+        source_model = Source(id='test', target_id='hype_train')
+        target_model = Target(funny_id_lol='hype_train')
+
+        class _MockRelationship:
+            def to_dict(self):
+                return {
+                    'tests': RelationshipConfig(
+                        to_one={'target_relationship': 'targets'}
+                    )
+                }
+
+        class _MockDatabase:
+            def get_by_id(self, tablename, instance_id):
+                assert tablename == 'source'
+                
 
     def test_get_to_one_relation_none(self):
         """
@@ -398,5 +433,3 @@ class TestSqlDataSource:
             'target_relationship'
         )
         assert observed is None
-
-
