@@ -201,3 +201,9 @@ class TestDefaultDatabase:
         )
         result = db.count('test')
         assert result == 234
+
+    def test_get_to_one_relation_not_found(self):
+        """get_to_one_relation() when none is found"""
+
+    def test_get_to_one_relation_one_found(self):
+        """get_to_one_relation() when a result is found"""
