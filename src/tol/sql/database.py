@@ -54,11 +54,12 @@ class Database(ABC):
     def get_to_one_relation(
         self,
         tablename: str,
-        relationship_name: str,
-        value: str
+        id: str,
+        relationship_name: str
     ) -> Optional[Model]:
         """
-        
+        Gets the to-one relation of stated name for the row
+        of given tablename and id.
         """
 
 
@@ -113,10 +114,10 @@ class DefaultDatabase(Database):
     def get_to_one_relation(
         self,
         tablename: str,
-        relationship_name: str,
-        value: str
+        id: str,
+        relationship_name: str
     ) -> Optional[Model]:
-        pass #TODO implement!!!
+        pass
 
     def __get_model_session_query(
         self,
