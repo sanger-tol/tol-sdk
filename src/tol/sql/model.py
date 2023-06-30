@@ -2,7 +2,7 @@
 #
 # SPDX-License-Identifier: MIT
 
-from abc import ABC, ABCMeta, abstractclassmethod, abstractproperty
+from abc import ABC, ABCMeta, abstractmethod
 from typing import Any, Dict, List, Optional, Type
 
 from sqlalchemy import inspect
@@ -26,38 +26,45 @@ class Model(ABC):
     SqlDataSource.
     """
 
-    @abstractclassmethod
+    @classmethod
+    @abstractmethod
     def get_table_name(cls) -> str:  # noqa
         """The name of the Model"""
 
-    @abstractclassmethod
+    @classmethod
+    @abstractmethod
     def get_id_column_name(cls) -> str:  # noqa
         """
         The name of the column that serves as the "id".
         Override this classmethod to change.
         """
 
-    @abstractclassmethod
+    @classmethod
+    @abstractmethod
     def get_column(cls, name: str) -> MappedColumn:  # noqa N805
         """The (attribute) column for the given name."""
 
-    @abstractclassmethod
+    @classmethod
+    @abstractmethod
     def get_to_one_relationship_config(cls) -> Dict[str, str]:  # noqa N805
         """
         The mapping of keys to tablenames for to-one relationships
         """
 
-    @abstractclassmethod
+    @classmethod
+    @abstractmethod
     def get_to_many_relationship_config(cls) -> Dict[str, str]:  # noqa N805
         """
         The mapping of key to tablenames for to-many relationships
         """
 
-    @abstractproperty
+    @property
+    @abstractmethod
     def instance_id(self) -> Optional[str]:
         """The (potentially None) id of this model instance"""
 
-    @abstractproperty
+    @property
+    @abstractmethod
     def instance_attributes(self) -> Dict[str, Any]:
         """The Dict of attribute key to values"""
 
