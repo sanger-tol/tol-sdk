@@ -6,7 +6,8 @@ from unittest import mock
 
 from mock_alchemy.mocking import UnifiedAlchemyMagicMock
 
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy import ForeignKey
+from sqlalchemy.orm import Mapped, relationship, mapped_column
 
 from tol.sql.database import DefaultDatabase
 from tol.sql.model import model_base
@@ -21,6 +22,28 @@ class _TestModel(BaseModel):
 
     id: Mapped[str] = mapped_column(primary_key=True)  # noqa A003
     int_column: Mapped[int] = mapped_column()
+
+
+class Source(BaseModel):
+    __tablename__ = 'source'
+
+    id: Mapped[str] = mapped_column(primary_key=True)
+    target_key: Mapped[str] = mapped_column(
+        ForeignKey('target.funny_id_lol')
+    )
+    a_target_on_my_back: Mapped['Target'] = relationship(
+        back_populates='targets'
+    )
+
+
+class Target(BaseModel):
+    __tablename__ = 'target'
+
+    funny_id_lol: Mapped[str] = mapped_column(primary_key=True)
+    targets: Mapped['Source'] = relationship(
+        back_populates='a_target_on_my_back'
+    )
+
 
 
 class TestDefaultDatabase:
