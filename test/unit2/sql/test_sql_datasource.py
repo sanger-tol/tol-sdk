@@ -106,7 +106,7 @@ class TestSqlDataSource:
     def test_get_by_id(self):
         """get_by_id without a database. One found, one not"""
 
-        class _MockModel(Model):
+        class _MockModel:
 
             @classmethod
             def get_table_name(cls) -> str:
@@ -120,24 +120,12 @@ class TestSqlDataSource:
             def instance_id(self) -> Optional[str]:
                 return '302'
 
-            @classmethod
-            def get_column(cls, name: str):
-                pass
-
             @property
             def instance_attributes(self) -> Dict[str, Any]:
                 return {
                     'hype': 'Train',
                     'yes': True
                 }
-
-            @classmethod
-            def get_to_many_relationship_config(cls):
-                pass
-
-            @classmethod
-            def get_to_one_relationship_config(cls):
-                pass
 
         class _SingleRowDatabase(Database):
             def get_by_id(self, tablename: str, id_: Any) -> Optional[Model]:
@@ -184,7 +172,7 @@ class TestSqlDataSource:
     def test_get_list_page(self):
         """get_list_page without a database"""
 
-        class _MockModel(Model):
+        class _MockModel:
             def __init__(self, instance_id: str, attrs: Dict[str, Any]) -> None:
                 self.__instance_id = instance_id
                 self.__attrs = attrs
@@ -196,18 +184,6 @@ class TestSqlDataSource:
             @classmethod
             def get_id_column_name(cls) -> str:
                 return 'id'
-
-            @classmethod
-            def get_column(cls, name: str):
-                pass
-
-            @classmethod
-            def get_to_many_relationship_config(cls):
-                pass
-
-            @classmethod
-            def get_to_one_relationship_config(cls):
-                pass
 
             @property
             def instance_id(self) -> Optional[str]:
