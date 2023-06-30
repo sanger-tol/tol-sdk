@@ -16,7 +16,7 @@ from ..core import (
     DataSource,
     DataSourceFilter
 )
-from ..core.abc import DetailGetter, ListGetter, PageGetter
+from ..core.abc import DetailGetter, ListGetter, PageGetter, Relational
 from ..core.factory import DataObjectFactory
 from ..core.relationship import RelationshipConfig
 
@@ -26,7 +26,7 @@ FilterFactory = Callable[[DataSourceFilter], DatabaseFilter]
 SorterFactory = Callable[[Optional[str]], DatabaseSorter]
 
 
-class SqlDataSource(DataSource, DetailGetter, ListGetter, PageGetter):
+class SqlDataSource(DataSource, DetailGetter, ListGetter, PageGetter, Relational):
     """
     A DataSource for manipulating DataObject instances as
     defined by Sqlalchemy models on a DB connection.
@@ -108,6 +108,22 @@ class SqlDataSource(DataSource, DetailGetter, ListGetter, PageGetter):
         )
         converter = self.__converter_factory(self.data_object_factory)
         return converter.convert(models)
+
+    def get_to_many_relations(
+        self,
+        source: DataObject,
+        relationship_name: str
+    ) -> Iterable[DataObject]:
+        pass
+        #TODO implement
+
+    def get_to_one_relation(
+        self,
+        source: DataObject,
+        relationship_name: str
+    ) -> Optional[DataObject]:
+        pass
+        #TODO implement
 
     def __generate_models_for_get_list(
         self,
