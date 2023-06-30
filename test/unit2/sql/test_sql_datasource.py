@@ -48,6 +48,12 @@ class _MockBasicConverter(Converter):
         )
 
 
+class _MockIdentityConverter:
+    """Just returns the given iterable"""
+    def convert(self, models):
+        return models
+
+
 class TestSqlDataSource:
     def test_supported_types(self):
         """Render correctly from model_dict"""
@@ -256,18 +262,13 @@ class TestSqlDataSource:
                 else:
                     return range(offset, offset + limit)
 
-        class _MockConverter:
-            """Just returns the given iterable"""
-            def convert(self, models):
-                return models
-
         mock_db = _MockDatabase()
 
         ds = SqlDataSource(
             mock_db,
             {'tests': 'test'},
             MagicMock(),
-            lambda _: _MockConverter(),
+            lambda _: _MockIdentityConverter(),
             MagicMock(),
             MagicMock()
         )
@@ -305,18 +306,13 @@ class TestSqlDataSource:
                     self.__get_count += 1
                     return range(offset, offset + limit)
 
-        class _MockConverter:
-            """Just returns the given iterable"""
-            def convert(self, models):
-                return models
-
         mock_db = _MockDatabase()
 
         ds = SqlDataSource(
             mock_db,
             {'tests': 'test'},
             MagicMock(),
-            lambda _: _MockConverter(),
+            lambda _: _MockIdentityConverter(),
             MagicMock(),
             MagicMock()
         )
@@ -331,3 +327,34 @@ class TestSqlDataSource:
 
     def test_get_to_one_relation_none(self):
         """to_one_relation works when no relation is populated"""
+
+        class _MockDatabase:
+            def __init__(self) -> None:
+                self.__get_count = 0
+
+            def get_list(
+                self,
+                tablename: str,
+                filters: Optional[DatabaseFilter] = None,
+                sort_by: Optional[str] = None,
+                offset: Optional[int] = None,
+                limit: Optional[int] = None
+            ):
+                assert tablename == 'target'
+                if self.__get_count > 4:
+                    return []
+                else:
+                    self.__get_count += 1
+                    return range(offset, offset + limit)
+
+        mock_db = _MockDatabase()
+
+        ds = SqlDataSource(
+            mock_db,
+            {'tests': 'test', 'targets': 'target'},
+            MagicMock(),
+            lambda _: _MockIdentityConverter(),
+            MagicMock(),
+            MagicMock()
+        )
+        core_data_object(ds)
