@@ -325,3 +325,9 @@ class TestSqlDataSource:
         page_size = ds.get_page_size()
         list_models = list(ds.get_list('tests'))
         assert len(list_models) == page_size * 5
+
+    def test_get_to_one_relation(self):
+        """to_one_relation works when populated"""
+
+    def test_get_to_one_relation_none(self):
+        """to_one_relation works when no relation is populated"""
