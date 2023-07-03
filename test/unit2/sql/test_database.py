@@ -5,14 +5,14 @@
 from __future__ import annotations
 
 from typing import Any, Optional
-from unittest import mock
+from unittest.mock import MagicMock, call
 
 from mock_alchemy.mocking import UnifiedAlchemyMagicMock
 
 from sqlalchemy.orm import Mapped, mapped_column
 
 from tol.sql.database import DefaultDatabase
-from tol.sql.model import Model, model_base
+from tol.sql.model import model_base
 
 
 BaseModel = model_base()
@@ -34,7 +34,7 @@ class _eq_column:
         return self.__name, '__eq__', __o
 
 
-class Source(Model):
+class Source(MagicMock):
 
     id = _eq_column('id')
     target_key = _eq_column('target_key')
@@ -71,7 +71,7 @@ class Source(Model):
         return None
 
 
-class Target(Model):
+class Target(MagicMock):
     funny_id_lol = _eq_column('funny_id_lol')
 
     @classmethod
@@ -114,8 +114,8 @@ class TestDefaultDatabase:
                 (
                     # return no results for searching id == 404
                     [
-                        mock.call.query(_TestModel),
-                        mock.call.filter(_TestModel.id == '404')
+                        call.query(_TestModel),
+                        call.filter(_TestModel.id == '404')
                     ],
                     []
                 ),
@@ -139,8 +139,8 @@ class TestDefaultDatabase:
             data=[
                 (
                     [
-                        mock.call.query(_TestModel),
-                        mock.call.filter(_TestModel.id == '302')
+                        call.query(_TestModel),
+                        call.filter(_TestModel.id == '302')
                     ],
                     [expected]
                 )
@@ -172,8 +172,8 @@ class TestDefaultDatabase:
             data=[
                 (
                     [
-                        mock.call.query(_OverrideIdModel),
-                        mock.call.filter(_OverrideIdModel.id_other == '302')
+                        call.query(_OverrideIdModel),
+                        call.filter(_OverrideIdModel.id_other == '302')
                     ],
                     [expected]
                 )
@@ -193,9 +193,9 @@ class TestDefaultDatabase:
             data=[
                 (
                     [
-                        mock.call.query(_TestModel),
-                        mock.call.limit(100),
-                        mock.call.offset(300)
+                        call.query(_TestModel),
+                        call.limit(100),
+                        call.offset(300)
                     ],
                     []
                 )
@@ -223,9 +223,9 @@ class TestDefaultDatabase:
             data=[
                 (
                     [
-                        mock.call.query(_TestModel),
-                        mock.call.limit(100),
-                        mock.call.offset(300)
+                        call.query(_TestModel),
+                        call.limit(100),
+                        call.offset(300)
                     ],
                     expected
                 )
@@ -249,7 +249,7 @@ class TestDefaultDatabase:
             data=[
                 (
                     [
-                        mock.call.query(_TestModel)
+                        call.query(_TestModel)
                     ],
                     []  # no results
                 )
@@ -271,7 +271,7 @@ class TestDefaultDatabase:
             data=[
                 (
                     [
-                        mock.call.query(_TestModel)
+                        call.query(_TestModel)
                     ],
                     expected
                 )
@@ -294,16 +294,16 @@ class TestDefaultDatabase:
                 # getting the source
                 (
                     [
-                        mock.call.query(Source),
-                        mock.call.filter(Source.id == 'nada')
+                        call.query(Source),
+                        call.filter(Source.id == 'nada')
                     ],
                     [source]
                 ),
                 # getting the target
                 (
                     [
-                        mock.call.query(Target),
-                        mock.call.filter(
+                        call.query(Target),
+                        call.filter(
                             Target.funny_id_lol == 'link'
                         )
                     ],
@@ -333,16 +333,16 @@ class TestDefaultDatabase:
                 # getting the source
                 (
                     [
-                        mock.call.query(Source),
-                        mock.call.filter(Source.id == 'nada')
+                        call.query(Source),
+                        call.filter(Source.id == 'nada')
                     ],
                     [source]
                 ),
                 # getting the target
                 (
                     [
-                        mock.call.query(Target),
-                        mock.call.filter(
+                        call.query(Target),
+                        call.filter(
                             Target.funny_id_lol == 'link'
                         )
                     ],

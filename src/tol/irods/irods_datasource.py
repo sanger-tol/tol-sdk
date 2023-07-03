@@ -24,10 +24,10 @@ from ..core import (
     DataSourceError,
     DataSourceFilter
 )
-from ..core.abc import ListGetter
+from ..core.abc import ObjectGenerator
 
 
-class IrodsDataSource(DataSource, ListGetter):
+class IrodsDataSource(DataSource, ObjectGenerator):
 
     def __init__(self, config: Dict):
         # uri, user, password
@@ -55,7 +55,7 @@ class IrodsDataSource(DataSource, ListGetter):
             self.cache[collection_id] = c_obj
         return c_obj
 
-    def _format_results(self, results: Generator):
+    def _format_results(self, results: ObjectGenerator):
         for result in results:
             collection_id = result[IDataObject.collection_id]
             collection_object = self._get_collection(collection_id)
@@ -84,7 +84,7 @@ class IrodsDataSource(DataSource, ListGetter):
                 **metadata
             }
 
-    def _map_keys(self, results: Generator):
+    def _map_keys(self, results: ObjectGenerator):
         mapping = {'id_run': 'run_id',  # Illumina
                    'run': 'run_id',  # PacBio
                    'lane': 'position',  # Illumina

@@ -13,7 +13,7 @@ if typing.TYPE_CHECKING:
     from ..datasource_filter import DataSourceFilter
 
 
-class ListGetter(ABC):
+class ObjectGenerator(ABC):
     """
     Gets an Iterable of DataObject instances.
     """

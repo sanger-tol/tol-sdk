@@ -16,7 +16,7 @@ from ..core import (
     DataSource,
     DataSourceFilter
 )
-from ..core.abc import DetailGetter, ListGetter, PageGetter, Relational
+from ..core.abc import DetailGetter, ObjectGenerator, PageGetter, Relational
 from ..core.factory import DataObjectFactory
 from ..core.relationship import RelationshipConfig
 
@@ -26,7 +26,7 @@ FilterFactory = Callable[[DataSourceFilter], DatabaseFilter]
 SorterFactory = Callable[[Optional[str]], DatabaseSorter]
 
 
-class SqlDataSource(DataSource, DetailGetter, ListGetter, PageGetter, Relational):
+class SqlDataSource(DataSource, DetailGetter, ObjectGenerator, PageGetter, Relational):
     """
     A DataSource for manipulating DataObject instances as
     defined by Sqlalchemy models on a DB connection.

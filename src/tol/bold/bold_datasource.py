@@ -13,13 +13,13 @@ from ..core import (
     DataSourceError,
     DataSourceFilter
 )
-from ..core.abc import ListGetter
+from ..core.abc import ObjectGenerator
 from ..eln import (
     flatten_entity
 )
 
 
-class BoldDataSource(DataSource, ListGetter):
+class BoldDataSource(DataSource, ObjectGenerator):
     def __init__(self, config: Dict):
         # uri, user, password
         super().__init__(config, expected=['url'])
