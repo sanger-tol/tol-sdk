@@ -2,6 +2,13 @@
 #
 # SPDX-License-Identifier: MIT
 
+from __future__ import annotations
+
+import typing
+
+if typing.TYPE_CHECKING:
+    from .data_object import DataObject
+
 
 class DataSourceError(Exception):
     """Raise to indicate that an error has occured with a DataSource."""
@@ -30,5 +37,24 @@ class NoDataObjectFactoryError(DataSourceError):
         super().__init__(
             'DataSource Configuration error',
             detail,
+            status_code=500
+        )
+
+
+class NotRelationalError(DataSourceError):
+    """
+    Raised when trying to load exceptions on a DataObject hosted
+    by a DataSource that does not implement Relational.
+    """
+
+    def __init__(self, source: DataObject) -> None:
+        ds_name = type(source.host).__name__
+        message = (
+            f'The type "{source.type}" is hosted by a DataSource '
+            f'({ds_name}) that does not support relationships.'
+        )
+        super().__init__(
+            'DataSource Not Relational',
+            message,
             status_code=500
         )

@@ -4,7 +4,7 @@
 
 from typing import Any, Dict, List, Optional, Type
 
-from ..core.datasource import DataSource
+from ..core import DataSource
 
 
 class BaseRuntimeException(Exception):
@@ -53,14 +53,14 @@ class UninheritedOperationError(BaseRuntimeException):
     def __init__(
         self,
         data_source: DataSource,
-        abc_class: Type,
+        operator_class: Type,
         method: str
     ) -> None:
 
         self.__detail = (
             f'The DataSource {type(data_source).__name__} must '
-            f'inherit from {abc_class} to implement the '
-            f'{method} method.'
+            f'inherit from {operator_class.__name__} to implement '
+            f'the {method} method.'
         )
         errors = [{
             'title': 'Misconfigured DataSource',

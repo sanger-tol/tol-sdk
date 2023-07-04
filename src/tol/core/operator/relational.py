@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import typing
 from abc import ABC, abstractmethod
-from typing import Dict, Iterable, Optional
+from typing import Iterable, Optional
 
 if typing.TYPE_CHECKING:
     from ..data_object import DataObject
@@ -21,7 +21,7 @@ class Relational(ABC):
 
     @property
     @abstractmethod
-    def relationship_config(self) -> Dict[str, RelationshipConfig]:
+    def relationship_config(self) -> dict[str, RelationshipConfig]:
         """
         The configuration of relationships (both to-one and to-many) between
         the types of DataObject instances managed by this DataSource instance.

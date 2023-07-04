@@ -15,24 +15,6 @@ from .operator import Relational
 
 if typing.TYPE_CHECKING:
     from .data_object import DataObject
-    from .factory import CoreDataObject
-
-
-class NotRelationalError(Exception):
-    """
-    Raised when trying to load exceptions on a DataObject hosted
-    by a DataSource that does not implement Relational.
-    """
-
-    def __init__(self, source: DataObject) -> None:
-        self.__message = (
-            f'The type "{source.type}" is hosted by a DataSource '
-            'that does not support relationships.'
-        )
-        super().__init__(self.__message)
-
-    def __str__(self) -> str:
-        return self.__message
 
 
 @dataclass
@@ -53,10 +35,10 @@ class RelationshipConfig:
 class ToManyDict(Mapping):
     """A Dict that loads items lazily and memoizes the result"""
 
-    def __init__(self, source: DataObject, host: Relational) -> None:
+    def __init__(self, source: DataObject) -> None:
         self.__dict = LFUCache(100000)
         self.__source = source
-        self.__host = host
+        self.__host: Relational = source.host
         self.__keys = self.__get_keys()
 
     def __getitem__(self, __k: str) -> Iterable[DataObject]:
@@ -104,10 +86,10 @@ class ToOneDict(Mapping):
     This is only to be used by a CoreDataObject.
     """
 
-    def __init__(self, source: CoreDataObject, host: Relational) -> None:
+    def __init__(self, source: DataObject) -> None:
         self.__dict = LFUCache(100000)
         self.__source = source
-        self.__host = host
+        self.__host: Relational = source.host
         self.__keys = self.__get_keys()
 
     def __getitem__(self, __k: str) -> Optional[DataObject]:

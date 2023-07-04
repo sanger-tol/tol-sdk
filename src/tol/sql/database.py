@@ -26,7 +26,7 @@ class Database(ABC):
         """
 
     @abstractmethod
-    def get_list(
+    def get_page(
         self,
         tablename: str,
         filters: Optional[DatabaseFilter] = None,
@@ -69,7 +69,7 @@ class DefaultDatabase(Database):
         session.close()
         return result
 
-    def get_list(
+    def get_page(
         self,
         tablename: str,
         filters: Optional[DatabaseFilter] = None,

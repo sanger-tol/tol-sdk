@@ -11,8 +11,9 @@ from tol.core import (
     DataSource,
     core_data_object
 )
+from tol.core.datasource_error import NotRelationalError
 from tol.core.operator import Relational
-from tol.core.relationship import NotRelationalError, RelationshipConfig
+from tol.core.relationship import RelationshipConfig
 
 
 class _MockDataSource1(DataSource):

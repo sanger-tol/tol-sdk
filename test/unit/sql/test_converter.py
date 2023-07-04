@@ -74,6 +74,14 @@ class _ExampleDataObject(DataObject):
     def to_one_relationships(self):
         return {}
 
+    @property
+    def host(self) -> None:
+        raise NotImplementedError()
+
+    @property
+    def _to_one_objects(self) -> None:
+        raise NotImplementedError()
+
 
 def factory(type_, id_=None, data=None):
     return _ExampleDataObject(type_, id_, data)

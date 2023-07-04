@@ -107,7 +107,7 @@ class TestSqlDataSource:
             def get_by_id(self, tablename: str, id_: Any) -> Optional[Model]:
                 return _MockModel() if id_ != '404' else None
 
-            def get_list(self, *args):
+            def get_page(self, *args):
                 raise NotImplementedError()
 
             def count(self, tablename: str, filters: Optional[DataSourceFilter]) -> int:
@@ -177,7 +177,7 @@ class TestSqlDataSource:
             def get_by_id(self, tablename: str, id_: Any) -> Optional[Model]:
                 raise NotImplementedError()
 
-            def get_list(
+            def get_page(
                 self,
                 tablename: str,
                 filters: Optional[DataSourceFilter] = None,
@@ -239,7 +239,7 @@ class TestSqlDataSource:
             def get_count(self) -> int:
                 return self.__get_count
 
-            def get_list(
+            def get_page(
                 self,
                 tablename: str,
                 filters: Optional[DatabaseFilter] = None,
@@ -291,7 +291,7 @@ class TestSqlDataSource:
             def __init__(self) -> None:
                 self.__get_count = 0
 
-            def get_list(
+            def get_page(
                 self,
                 tablename: str,
                 filters: Optional[DatabaseFilter] = None,
