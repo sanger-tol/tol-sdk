@@ -2,7 +2,9 @@
 #
 # SPDX-License-Identifier: MIT
 
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Type
+
+from ..core.datasource import DataSource
 
 
 class BaseRuntimeException(Exception):
@@ -45,6 +47,29 @@ class UnsupportedOpertionError(BaseRuntimeException):
             'detail': f'Cannot perform "{operation}" on type "{object_type}".'
         }]
         super().__init__(errors, status_code=400)
+
+
+class UninheritedOperationError(BaseRuntimeException):
+    def __init__(
+        self,
+        data_source: DataSource,
+        abc_class: Type,
+        method: str
+    ) -> None:
+
+        self.__detail = (
+            f'The DataSource {type(data_source).__name__} must '
+            f'inherit from {abc_class} to implement the '
+            f'{method} method.'
+        )
+        errors = [{
+            'title': 'Misconfigured DataSource',
+            'detail': self.__detail
+        }]
+        super().__init__(errors, status_code=500)
+
+    def __str__(self) -> str:
+        return self.__detail
 
 
 class BadQueryArgError(BaseRuntimeException):

@@ -10,7 +10,7 @@ from marshmallow import Schema, fields
 
 import requests
 
-from ..core import DataSource, unsupported
+from ..core import DataSource
 
 
 class Interface(DataSource):
@@ -159,22 +159,6 @@ class Interface(DataSource):
                 return self.custom_response(status_code=421, message=str(error))
 
         return self.custom_response(message='Dry run')
-
-    @unsupported
-    def get_by_id(self, *args, **kwargs):
-        pass
-
-    @unsupported
-    def get_list_page(self, *args, **kwargs):
-        pass
-
-    @unsupported
-    def get_list(self, object_type: str, *args, **kwargs) -> None:
-        pass
-
-    @unsupported
-    def get_aggregations(self, *args, **kwargs):
-        pass
 
     @property
     def supported_types(self):

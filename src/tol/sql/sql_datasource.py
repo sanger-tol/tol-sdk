@@ -14,10 +14,10 @@ from ..core import (
     DataId,
     DataObject,
     DataSource,
-    DataSourceFilter,
-    unsupported
+    DataSourceFilter
 )
 from ..core.factory import DataObjectFactory
+from ..core.operator import DetailGetter, ListGetter, PageGetter
 from ..core.relationship import RelationshipConfig
 
 
@@ -26,7 +26,7 @@ FilterFactory = Callable[[DataSourceFilter], DatabaseFilter]
 SorterFactory = Callable[[Optional[str]], DatabaseSorter]
 
 
-class SqlDataSource(DataSource):
+class SqlDataSource(DataSource, DetailGetter, ListGetter, PageGetter):
     """
     A DataSource for manipulating DataObject instances as
     defined by Sqlalchemy models on a DB connection.
@@ -49,6 +49,7 @@ class SqlDataSource(DataSource):
         self.__converter_factory = converter_factory
         self.__filter_factory = filter_factory
         self.__sorter_factory = sorter_factory
+        super().__init__({})
 
     def get_attribute_types(self, object_type: str) -> Dict[str, str]:
         raise NotImplementedError()
@@ -175,7 +176,3 @@ class SqlDataSource(DataSource):
             None if page_number is None or page_size is None
             else (page_number - 1) * page_size
         )
-
-    @unsupported
-    def get_aggregations(self, *args, **kwargs):
-        pass

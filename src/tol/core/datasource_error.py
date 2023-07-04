@@ -23,3 +23,12 @@ class UnknownObjectTypeException(DataSourceError):
             detail=f'The object type "{object_type}" is unknown.',
             status_code=404
         )
+
+
+class NoDataObjectFactoryError(DataSourceError):
+    def __init__(self, detail: str) -> None:
+        super().__init__(
+            'DataSource Configuration error',
+            detail,
+            status_code=500
+        )

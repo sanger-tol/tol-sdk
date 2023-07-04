@@ -7,34 +7,23 @@ from typing import Dict
 import pytest
 
 from tol.core import (
-    ReadOnlyDataSource,
-    core_data_object,
-    unsupported
+    DataSource,
+    core_data_object
 )
 from tol.core.data_source_dict import DataSourceDict
 from tol.core.datasource_error import UnknownObjectTypeException
+from tol.core.operator import DetailGetter, PageGetter
 
 
 CoreDataObject = core_data_object()  # noqa
 
 
-class _TestDataSource1(ReadOnlyDataSource):
-    @unsupported
-    def get_list_page(self, *args, **kwargs):
-        pass
+class _TestDataSource1(DataSource, DetailGetter):
 
     def get_by_id(self, object_type: str, object_id: str, *args, **kwargs):
         return [
             CoreDataObject(object_type, {'id': object_id})
         ]
-
-    @unsupported
-    def get_list(self, *args, **kwargs):
-        pass
-
-    @unsupported
-    def get_aggregations(self, *args, **kwargs):
-        pass
 
     @property
     def supported_types(self):
@@ -44,24 +33,12 @@ class _TestDataSource1(ReadOnlyDataSource):
         raise NotImplementedError()
 
 
-class _TestDataSource2(ReadOnlyDataSource):
+class _TestDataSource2(DataSource, PageGetter):
     def get_list_page(self, object_type: str, *args, **kwargs):
         return [
             CoreDataObject(object_type, {'id': str(i)})
             for i in range(20)
         ]
-
-    @unsupported
-    def get_by_id(self, *args, **kwargs):
-        pass
-
-    @unsupported
-    def get_list(self, *args, **kwargs):
-        pass
-
-    @unsupported
-    def get_aggregations(self, *args, **kwargs):
-        pass
 
     @property
     def supported_types(self):

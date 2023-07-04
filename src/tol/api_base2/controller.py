@@ -4,10 +4,11 @@
 
 from __future__ import annotations
 
-from typing import Any, Callable
+from typing import Any, Callable, Type
 
 from .exception import (
     ObjectNotFoundByIdException,
+    UninheritedOperationError,
     UnsupportedOpertionError
 )
 from .misc import (
@@ -16,17 +17,56 @@ from .misc import (
     ListGetParamaters
 )
 from .view import ResponseDict, View
-from ..core import DataObject, DataSource
+from ..core import DataObject, OperableDataSource
+from ..core.operator import Aggregator, DetailGetter, Operator, PageGetter
 
 
-def validate(operation_name: str, api_full_name: str) -> Callable:
+def __is_supported(
+    operator_class: Type[Operator],
+    operator_method: str,
+    data_source: OperableDataSource,
+) -> bool:
     """
-    Validates a Controller method's corresponding operation
-    is supported by its DataSource
+    Returns `True` if the given `DataSource` instance implements
+    the specified `Operator` class.
+
+    If it doesn't, it first checks if the operator method is
+    defined on the `DataSource` instance, as this implies an
+    inheritance error, and raises an `UninheritedOperationError`
+    if so.
+
+    Finally, otherwise, returns `False`
+    """
+    if isinstance(data_source, operator_class):
+        return True
+    if hasattr(data_source, operator_method):
+        raise UninheritedOperationError(
+            data_source,
+            operator_class,
+            operator_method
+        )
+    return False
+
+
+def validate(
+    operator_class: Type[Operator],
+    operator_method: str,
+    api_full_name: str
+) -> Callable:
+    """
+    Validates:
+    - a Controller method's corresponding operation is supported by its DataSource:
+        - an UninheritedOperationError is raised if the method is implemented
+          but the mixin ABC is not inherited from.
+        - otherwise an UnsupportedOpertionError is raised.
     """
     def decorator(method: Callable) -> Callable:
         def wrapper(controller: Controller, object_type: str, *args, **kwargs) -> Any:
-            if not controller.operation_is_supported(operation_name):
+            if not __is_supported(
+                operator_class,
+                operator_method,
+                controller.data_source
+            ):
                 raise UnsupportedOpertionError(object_type, api_full_name)
             return method(controller, object_type, *args, **kwargs)
         return wrapper
@@ -38,14 +78,15 @@ class Controller:
     An MVC-esque Controller class, that fulfills requests.
     """
 
-    def __init__(self, data_source: DataSource, view: View) -> None:
+    def __init__(self, data_source: OperableDataSource, view: View) -> None:
         self.__data_source = data_source
         self.__view = view
 
-    def operation_is_supported(self, operation: str) -> bool:
-        return operation in self.__data_source.supported_operations
+    @property
+    def data_source(self) -> OperableDataSource:
+        return self.__data_source
 
-    @validate('get_by_id', 'detail GET')
+    @validate(DetailGetter, 'get_by_id', 'detail GET')
     def get_detail(self, object_type: str, object_id: str) -> ResponseDict:
         """
         Gets an individual object of specified type and id
@@ -53,7 +94,7 @@ class Controller:
         data_object = self.__get_detail_object(object_type, object_id)
         return self.__view.dump(data_object)
 
-    @validate('get_list_page', 'list GET')
+    @validate(PageGetter, 'get_list_page', 'list GET')
     def get_list(
         self,
         object_type: str,
@@ -76,7 +117,7 @@ class Controller:
         }
         return self.__view.dump_bulk(data_objects, document_meta=document_meta)
 
-    @validate('get_aggregations', 'aggregations POST')
+    @validate(Aggregator, 'get_aggregations', 'aggregations POST')
     def post_aggregations(
         self,
         object_type: str,
@@ -98,7 +139,7 @@ class Controller:
         return self.__view.dump_bulk([], document_meta=document_meta)
 
     def __get_detail_object(self, object_type: str, object_id: str) -> DataObject:
-        data_objects = self.__data_source.get_by_id(object_type, [object_id])
+        data_objects = list(self.__data_source.get_by_id(object_type, [object_id]))
         if len(data_objects) == 0 or data_objects[0] is None:
             raise ObjectNotFoundByIdException(object_type, object_id)
         return data_objects[0]

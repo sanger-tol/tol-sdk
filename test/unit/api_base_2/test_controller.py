@@ -3,12 +3,14 @@
 # SPDX-License-Identifier: MIT
 
 from typing import Dict, Iterable
+from unittest.mock import MagicMock
 
 import pytest
 
 from tol.api_base2.controller import Controller
 from tol.api_base2.exception import (
     ObjectNotFoundByIdException,
+    UninheritedOperationError,
     UnsupportedOpertionError
 )
 from tol.api_base2.misc import (
@@ -18,34 +20,23 @@ from tol.api_base2.misc import (
 )
 from tol.api_base2.view import DefaultView
 from tol.core import (
+    DataSource,
     DataSourceFilter,
-    ReadOnlyDataSource,
-    core_data_object,
-    unsupported
+    core_data_object
 )
+from tol.core.operator import Aggregator, DetailGetter, PageGetter
 
 
 CoreDataObject = core_data_object()  # noqa
 
 
-class _TestDataSource1(ReadOnlyDataSource):
-    @unsupported
-    def get_list_page(self, *args, **kwargs):
-        pass
+class _TestDataSource1(DataSource, DetailGetter):
 
     def get_by_id(self, object_type: str, object_ids: Iterable[str], *args, **kwargs):
         return [
             CoreDataObject(object_type, {'id': object_id})
             for object_id in object_ids
         ]
-
-    @unsupported
-    def get_list(self, *args, **kwargs):
-        pass
-
-    @unsupported
-    def get_aggregations(self, *args, **kwargs):
-        pass
 
     @property
     def supported_types(self):
@@ -55,24 +46,12 @@ class _TestDataSource1(ReadOnlyDataSource):
         raise NotImplementedError()
 
 
-class _TestDataSource2(ReadOnlyDataSource):
+class _TestDataSource2(DataSource, PageGetter):
     def get_list_page(self, object_type: str, *args, **kwargs):
         return [
             CoreDataObject(object_type, {'id': str(i)})
             for i in range(20)
         ], 20
-
-    @unsupported
-    def get_by_id(self, *args, **kwargs):
-        pass
-
-    @unsupported
-    def get_list(self, *args, **kwargs):
-        pass
-
-    @unsupported
-    def get_aggregations(self, *args, **kwargs):
-        pass
 
     @property
     def supported_types(self):
@@ -82,7 +61,7 @@ class _TestDataSource2(ReadOnlyDataSource):
         return {}
 
 
-class _TestDataSource3(ReadOnlyDataSource):
+class _TestDataSource3(DataSource, Aggregator, PageGetter):
     """Accounts for page number and size in results"""
 
     def get_list_page(
@@ -107,14 +86,6 @@ class _TestDataSource3(ReadOnlyDataSource):
             )
             for i in range(page_size)
         ], 560  # a very arbitrary number
-
-    @unsupported
-    def get_by_id(self, *args, **kwargs):
-        pass
-
-    @unsupported
-    def get_list(self, *args, **kwargs):
-        pass
 
     def get_aggregations(
             self,
@@ -168,19 +139,6 @@ class TestController:
         controller = Controller(ds_2, DefaultView())
         observed = controller.get_list('test_B', ListGetParamaters({}))
         assert observed == expected
-
-    def test_unsupported(self):
-        """Unsupported method for mapped DataSource"""
-
-        # DataSource1
-        with pytest.raises(UnsupportedOpertionError):
-            Controller(ds_1, DefaultView()).get_list('test1', ListGetParamaters({}))
-        with pytest.raises(UnsupportedOpertionError):
-            Controller(ds_1, DefaultView()).post_aggregations('test1', AggregationParameters({}))
-
-        # DataSource2
-        with pytest.raises(UnsupportedOpertionError):
-            Controller(ds_2, DefaultView()).get_detail('test_B', 'anything goes')
 
     def test_not_found(self):
         """DataSource().get_by_id() returning [None] (no elements) causes 404 error"""
@@ -268,3 +226,70 @@ class TestController:
         }
         observed = controller.post_aggregations('test_X', parsed, body)
         assert expected == observed
+
+    def test_unsupported_operation(self):
+        """
+        a DataSource that doesn't support the given operation raises
+        an Exception
+        """
+
+        class _BadDataSource(DataSource):
+            """Doesn't support anything"""
+
+            def __init__(self) -> None:
+                pass
+
+            def get_attribute_types(self, object_type: str) -> Dict:
+                raise NotImplementedError()
+
+            @property
+            def supported_types(self) -> list[str]:
+                return ['no']
+
+        bad_ds = _BadDataSource()
+        controller = Controller(bad_ds, DefaultView())
+
+        with pytest.raises(UnsupportedOpertionError):
+            controller.get_detail('test', 'hype')
+        with pytest.raises(UnsupportedOpertionError):
+            controller.get_list('test')
+        with pytest.raises(UnsupportedOpertionError):
+            controller.post_aggregations(
+                'test',
+                MagicMock(),
+                MagicMock()
+            )
+
+    def test_operation_implemented_no_abc(self):
+        """
+        Operation implemented without inheriting from the correct
+        ABC -> Exception
+        """
+
+        class _BadDataSource(DataSource):
+            """
+            Implements get_by_id without inheriting from DetailGetter
+            """
+
+            def __init__(self) -> None:
+                pass
+
+            def get_attribute_types(self, object_type: str) -> Dict:
+                raise NotImplementedError()
+
+            @property
+            def supported_types(self) -> list[str]:
+                return ['uh-oh']
+
+            def get_by_id(self, *args, **kwargs) -> None:
+                raise Exception("shouldn't have made it this far!")
+
+        bad_ds = _BadDataSource()
+        controller = Controller(bad_ds, DefaultView())
+
+        with pytest.raises(UninheritedOperationError) as e:
+            controller.get_detail('uh-oh', 'lol')
+
+        error_str = str(e.value)
+        assert '_BadDataSource' in error_str
+        assert 'get_by_id' in error_str

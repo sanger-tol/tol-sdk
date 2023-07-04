@@ -20,14 +20,14 @@ from irods.session import iRODSSession
 
 from ..core import (
     DataObject,
+    DataSource,
     DataSourceError,
-    DataSourceFilter,
-    ReadOnlyDataSource,
-    unsupported
+    DataSourceFilter
 )
+from ..core.operator import ListGetter
 
 
-class IrodsDataSource(ReadOnlyDataSource):
+class IrodsDataSource(DataSource, ListGetter):
 
     def __init__(self, config: Dict):
         # uri, user, password
@@ -116,14 +116,6 @@ class IrodsDataSource(ReadOnlyDataSource):
 
         return self._map_keys(self._format_results(results))
 
-    @unsupported
-    def get_by_id(self, *args, **kwargs):
-        pass
-
-    @unsupported
-    def get_list_page(self, *args, **kwargs):
-        pass
-
     def get_list(
         self,
         object_type: str,
@@ -159,10 +151,6 @@ class IrodsDataSource(ReadOnlyDataSource):
             self.data_object_factory('sequencing_file', data=obj)
             for obj in objs
         )
-
-    @unsupported
-    def get_aggregations(self, *args, **kwargs):
-        pass
 
     @property
     def supported_types(self):

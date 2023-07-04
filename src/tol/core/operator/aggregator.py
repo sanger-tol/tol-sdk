@@ -1,0 +1,29 @@
+# SPDX-FileCopyrightText: 2023 Genome Research Ltd.
+#
+# SPDX-License-Identifier: MIT
+
+from __future__ import annotations
+
+import typing
+from abc import ABC, abstractmethod
+from typing import Any, Optional
+
+if typing.TYPE_CHECKING:
+    from ..datasource_filter import DataSourceFilter
+
+
+class Aggregator(ABC):
+    """
+    Gets aggregations according to the Elastic aggregation specification
+    """
+
+    @abstractmethod
+    def get_aggregations(
+        self,
+        object_type: str,
+        aggregations: dict[str, Any],
+        object_filters: Optional[DataSourceFilter] = None
+    ) -> dict[str, Any]:
+        """
+        Gets aggregations according to the Elastic aggregation specification
+        """

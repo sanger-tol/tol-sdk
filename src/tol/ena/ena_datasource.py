@@ -12,8 +12,7 @@ import tol.ena.ena_methods as em
 
 from ..core import (
     DataSource,
-    DataSourceError,
-    unsupported
+    DataSourceError
 )
 
 
@@ -101,7 +100,3 @@ class EnaDataSource(DataSource):
             return False, errors
         else:
             return True, assigned_samples
-
-    @unsupported
-    def get_aggregations(self, *args, **kwargs):
-        pass

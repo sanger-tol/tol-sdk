@@ -23,9 +23,17 @@ from ..core import (
     DataSourceError,
     DataSourceFilter
 )
+from ..core.operator import Aggregator, DetailGetter, ListGetter, PageGetter, Upserter
 
 
-class ElasticDataSource(DataSource):
+class ElasticDataSource(
+    DataSource,
+    DetailGetter,
+    PageGetter,
+    ListGetter,
+    Aggregator,
+    Upserter
+):
 
     def __init__(self, config: Dict):
         # uri, user, password

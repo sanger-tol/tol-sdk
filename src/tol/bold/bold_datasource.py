@@ -9,17 +9,17 @@ import requests
 
 from ..core import (
     DataObject,
+    DataSource,
     DataSourceError,
-    DataSourceFilter,
-    ReadOnlyDataSource,
-    unsupported
+    DataSourceFilter
 )
+from ..core.operator import ListGetter
 from ..eln import (
     flatten_entity
 )
 
 
-class BoldDataSource(ReadOnlyDataSource):
+class BoldDataSource(DataSource, ListGetter):
     def __init__(self, config: Dict):
         # uri, user, password
         super().__init__(config, expected=['url'])
@@ -41,14 +41,6 @@ class BoldDataSource(ReadOnlyDataSource):
         else:
             raise DataSourceError('Error from BOLD database: ' + response.text)
 
-    @unsupported()
-    def get_by_id(self, *args, **kwargs):
-        pass
-
-    @unsupported()
-    def get_list_page(self, *args, **kwargs):
-        pass
-
     def get_list(
         self,
         object_type: str,
@@ -62,10 +54,6 @@ class BoldDataSource(ReadOnlyDataSource):
             raise DataSourceError('Filter must contain an in_list filter')
         generator = self._get_specimens(object_filters.exact)
         return self._convert_dict_to_data_objects(generator)
-
-    @unsupported()
-    def get_aggregations(self, *args, **kwargs):
-        pass
 
     def _convert_dict_to_data_objects(self, objs: Dict) -> Iterable:
         # Each "v" is a BOLD record
