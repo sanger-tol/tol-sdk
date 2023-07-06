@@ -17,6 +17,9 @@ if typing.TYPE_CHECKING:
     from .data_object import DataObject
 
 
+RelationshipDump = Dict[str, Dict[str, str]]
+
+
 @dataclass
 class RelationshipConfig:
     """
@@ -30,6 +33,23 @@ class RelationshipConfig:
 
     to_one: Optional[Dict[str, str]] = None
     to_many: Optional[Dict[str, str]] = None
+
+    def to_dict(self) -> Optional[RelationshipDump]:
+        if self.empty:
+            return None
+        return self.__build_dict()
+
+    @property
+    def empty(self) -> bool:
+        return self.to_one is None and self.to_many is None
+
+    def __build_dict(self) -> RelationshipDump:
+        __dict = {}
+        if self.to_one is not None:
+            __dict['one'] = self.to_one
+        if self.to_many is not None:
+            __dict['many'] = self.to_many
+        return __dict
 
 
 class ToManyDict(Mapping):

@@ -2,7 +2,8 @@
 #
 # SPDX-License-Identifier: MIT
 
-from typing import Optional
+from itertools import chain
+from typing import Callable
 
 from flask import Blueprint, request
 
@@ -17,6 +18,7 @@ from .view import DefaultView
 from ..core import DataSource
 from ..core.data_source_dict import DataSourceDict
 from ..core.datasource_error import DataSourceError
+from ..core.operator import Relational
 
 
 class DataBlueprint(Blueprint):
@@ -27,8 +29,9 @@ class DataBlueprint(Blueprint):
 
     def __init__(
         self,
-        url_prefix: Optional[str] = None
+        url_prefix: str
     ) -> None:
+
         super().__init__(
             'data_source_handler',
             __name__,
@@ -36,9 +39,60 @@ class DataBlueprint(Blueprint):
         )
 
 
+class ConfigBlueprint(Blueprint):
+    """
+    A flask `Blueprint`, to be nested under `DataBlueprint`, that
+    stores configuration information about the stored data as a
+    whole.
+    """
+
+    def __init__(self, url_prefix: str) -> None:
+        super().__init__(
+            'data_source_config',
+            __name__,
+            url_prefix=url_prefix
+        )
+
+
+ConfigFactory = Callable[[str, tuple[DataSource]], Blueprint]
+"""A `Callable` that returns a `ConfigBlueprint`"""
+
+
+def config_blueprint(
+    url_prefix: str,
+    data_sources: tuple[DataSource]
+) -> ConfigBlueprint:
+    """
+    Returns a `ConfigBlueprint` instance given:
+
+    - a `url_prefix`, on which to serve the endpoints
+    - `data_sources`, a `tuple` of `DataSource` instances behind the API
+    """
+
+    config_handler = ConfigBlueprint(url_prefix)
+
+    @config_handler.route('/relationships', methods=['GET'])
+    def get_relationships():
+        relationship_configs = chain(
+            *[
+                d.relationship_config.items()
+                for d in data_sources
+                if isinstance(d, Relational)
+            ]
+        )
+        return {
+            t: d.to_dict() for t, d in relationship_configs
+            if not d.empty
+        }
+
+    return config_handler
+
+
 def data_blueprint(
     *data_sources: DataSource,
-    url_prefix: str = '/data'
+    url_prefix: str = '/data',
+    config_prefix: str = '/_config',
+    config_factory: ConfigFactory = lambda p, d: config_blueprint(p, d)
 ) -> DataBlueprint:
     """
     Given a tuple of DataSource instances, this provides a flask
@@ -47,6 +101,10 @@ def data_blueprint(
     """
 
     data_handler = DataBlueprint(url_prefix=url_prefix)
+
+    config = config_factory(config_prefix, data_sources)
+    data_handler.register_blueprint(config)
+
     data_source_dict = DataSourceDict(*data_sources)
 
     @data_handler.route('/<object_type>/<object_id>', methods=['GET'])
