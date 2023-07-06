@@ -11,18 +11,14 @@ from sqlalchemy.exc import ProgrammingError
 
 from tol.sql import create_session_factory
 
-from . import models
+from .models import create_models_list, delete_models_list
 
 
 db_uri = os.environ['DB_URI']
 
 session_factory = create_session_factory(db_uri)
 
-
-models_list = [
-    models.A,
-    models.B
-]
+models_list = create_models_list
 
 
 class DatabaseTestCase(TestCase):
@@ -30,7 +26,7 @@ class DatabaseTestCase(TestCase):
 
     def setUp(self) -> None:
         engine = create_engine(db_uri)
-        for model in models_list:
+        for model in create_models_list:
             try:
                 model.__table__.create(engine)
             except ProgrammingError as e:
@@ -38,7 +34,7 @@ class DatabaseTestCase(TestCase):
 
     def tearDown(self) -> None:
         session = session_factory()
-        for model in models_list:
+        for model in delete_models_list:
             session.execute(
                 delete(model)
             )

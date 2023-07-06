@@ -19,12 +19,40 @@ class Converter(ABC):
     Converts Sqlalchemy model instances to DataObject instances.
     """
 
-    @abstractmethod
-    def convert(
+    def convert_iterable(
         self,
         models: Iterable[Optional[Model]]
     ) -> Iterable[Optional[DataObject]]:
-        pass
+        """
+        Uses the end-user defined `convert()` method to convert
+        an `Iterable` of `Optional[Model]` instances to an `Iterable`
+        of `Optional[DataObject]` instances.
+
+        If the input `Model` instance is `None`, then so is the
+        output `DataObject`.
+        """
+
+        return (
+            self.convert_optional(m) for m in models
+        )
+
+    def convert_optional(
+        self,
+        model: Optional[Model]
+    ) -> Optional[DataObject]:
+        """Uses `convert()`, but supports the input being `None`"""
+
+        if model is None:
+            return None
+        else:
+            return self.convert(model)
+
+    @abstractmethod
+    def convert(self, model: Model) -> DataObject:
+        """
+        Converts a Model instance to a DataObject instance. If the
+        input could be None, use `convert_optional()` instead.
+        """
 
 
 class DefaultConverter(Converter):
@@ -41,20 +69,7 @@ class DefaultConverter(Converter):
         self.__type_function = type_function
         self.__data_object_factory = data_object_factory
 
-    def convert(
-        self,
-        models: Iterable[Optional[Model]]
-    ) -> Iterable[Optional[DataObject]]:
-
-        return (
-            self.__convert_model(model) for model in models
-        )
-
-    def __convert_model(self, model: Optional[Model]) -> Optional[DataObject]:
-
-        if model is None:
-            return None
-
+    def convert(self, model: Model) -> DataObject:
         type_ = self.__type_function(model)
         return self.__data_object_factory(
             type_,

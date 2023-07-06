@@ -5,6 +5,7 @@
 from __future__ import annotations
 
 from typing import List
+from unittest.mock import MagicMock, PropertyMock
 
 import pytest
 
@@ -13,6 +14,7 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from tol.sql import model_base
 from tol.sql.exception import BadColumnError
+from tol.sql.model import InstanceToManyDict, InstanceToOneDict
 
 
 BaseModel = model_base()
@@ -227,3 +229,36 @@ class TestDefaultModel:
             'collectors': 'collector',
             'taken_samples': 'sample'
         }
+
+
+class TestRelationDict:
+    def test_key_error(self):
+        """Bad relationship name -> KeyError"""
+
+        model = MagicMock()
+        r = {
+            'dont': 'get me!!!',
+            'please': 'thank you'
+        }
+        model.get_to_one_relationship_config.return_value = r
+        model.get_to_many_relationship_config.return_value = r
+        to_one_dict = InstanceToOneDict(model)
+        with pytest.raises(KeyError):
+            to_one_dict['nonexistant']
+        to_many_dict = InstanceToManyDict(model)
+        with pytest.raises(KeyError):
+            to_many_dict['faaake']
+
+    def test_good_get(self):
+        """Good relationship name -> correct call"""
+
+        model = MagicMock()
+        r = {'get': 'irrelevant lol, the target is not fetched!'}
+        model.get_to_one_relationship_config.return_value = r
+        model.get_to_many_relationship_config.return_value = r
+        # it should try to access the attribute 'get' on our model
+        type(model).get = PropertyMock(return_value='hype train')
+        one_dict = InstanceToOneDict(model)
+        assert one_dict['get'] == 'hype train'
+        many_dict = InstanceToManyDict(model)
+        assert many_dict['get'] == 'hype train'

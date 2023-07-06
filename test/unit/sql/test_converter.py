@@ -2,7 +2,7 @@
 #
 # SPDX-License-Identifier: MIT
 
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Iterable, Optional
 
 from tol.core import DataObject
 from tol.sql.converter import DefaultConverter
@@ -37,6 +37,14 @@ class _ExampleModel(Model):
 
     @classmethod
     def get_to_one_relationship_config(cls):
+        pass
+
+    @property
+    def instance_to_one_relations(self) -> dict[str, Optional[Model]]:
+        pass
+
+    @property
+    def instance_to_many_relations(self) -> dict[str, Iterable[Model]]:
         pass
 
     @property
@@ -97,7 +105,7 @@ class TestDefaultConverter:
         }
         example = _ExampleModel(attributes, id_='909')
         converter = DefaultConverter(lambda e: f'{e.get_table_name()}s', factory)
-        observed = list(converter.convert([example]))
+        observed = list(converter.convert_iterable([example]))
 
         assert len(observed) == 1
         first = list(observed)[0]
@@ -122,7 +130,7 @@ class TestDefaultConverter:
             lambda e: f'{e.get_table_name()}s are the best',
             factory
         )
-        observed = list(converter.convert(examples))
+        observed = list(converter.convert_iterable(examples))
 
         assert len(observed) == 9
 
@@ -142,5 +150,5 @@ class TestDefaultConverter:
             lambda e: f'{e.get_table_name()}s are the best',
             factory
         )
-        observed = converter.convert(examples)
+        observed = converter.convert_iterable(examples)
         assert list(observed) == [None]

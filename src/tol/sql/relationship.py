@@ -4,12 +4,24 @@
 
 from __future__ import annotations
 
+import typing
 from abc import ABC, abstractmethod
-from typing import Dict, List, Optional, Type
+from collections.abc import Mapping
+from typing import (
+    Dict,
+    Generic,
+    Iterator,
+    List,
+    Optional,
+    Type,
+    TypeVar
+)
 
-from .converter import TypeFunction
-from .model import Model
 from ..core.relationship import RelationshipConfig
+
+if typing.TYPE_CHECKING:
+    from .converter import TypeFunction
+    from .model import Model
 
 
 class SqlRelationshipConfig(ABC):
@@ -67,3 +79,35 @@ class DefaultSqlRelationshipConfig(ABC):
             k: self.__type_function(self.__models_dict[v])
             for k, v in config.items()
         }
+
+
+V = TypeVar('V')
+
+
+class InstanceRelationDict(Mapping, Generic[V], ABC):
+    def __init__(self, source: Model) -> None:
+        self.__source = source
+
+    def __iter__(self) -> Iterator[str]:
+        return iter(self.config)
+
+    def __len__(self) -> int:
+        return len(self.config)
+
+    def __getitem__(self, __k: str) -> V:
+        if __k not in self.config:
+            raise KeyError()
+        return getattr(self.source, __k)
+
+    @property
+    def source(self) -> Model:
+        """The source model for this `dict`"""
+
+        return self.__source
+
+    @property
+    @abstractmethod
+    def config(self) -> dict[str, str]:
+        """
+        The relevant relationship config for this `dict`
+        """

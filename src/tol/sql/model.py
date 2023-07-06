@@ -2,8 +2,10 @@
 #
 # SPDX-License-Identifier: MIT
 
+from __future__ import annotations
+
 from abc import ABC, ABCMeta, abstractmethod
-from typing import Any, List, Optional, Type
+from typing import Any, Iterable, List, Optional, Type
 
 from sqlalchemy import inspect
 from sqlalchemy.orm import (
@@ -15,6 +17,7 @@ from sqlalchemy.orm import (
 )
 
 from .exception import BadColumnError
+from .relationship import InstanceRelationDict
 
 
 class Model(ABC):
@@ -41,21 +44,35 @@ class Model(ABC):
 
     @classmethod
     @abstractmethod
-    def get_column(cls, name: str) -> MappedColumn:  # noqa N805
+    def get_column(cls, name: str) -> MappedColumn:
         """The (attribute) column for the given name."""
 
     @classmethod
     @abstractmethod
-    def get_to_one_relationship_config(cls) -> dict[str, str]:  # noqa N805
+    def get_to_one_relationship_config(cls) -> dict[str, str]:
         """
         The mapping of relationship names to tablenames for to-one relationships
         """
 
     @classmethod
     @abstractmethod
-    def get_to_many_relationship_config(cls) -> dict[str, str]:  # noqa N805
+    def get_to_many_relationship_config(cls) -> dict[str, str]:
         """
         The mapping of relationship names to tablenames for to-many relationships
+        """
+
+    @property
+    @abstractmethod
+    def instance_to_one_relations(self) -> dict[str, Optional[Model]]:
+        """
+        The mapping of relationship names to to-one relation rows
+        """
+
+    @property
+    @abstractmethod
+    def instance_to_many_relations(self) -> dict[str, Iterable[Model]]:
+        """
+        The mapping of relationship names to to-many relation rows
         """
 
     @property
@@ -67,6 +84,30 @@ class Model(ABC):
     @abstractmethod
     def instance_attributes(self) -> dict[str, Any]:
         """The Dict of attribute key to values"""
+
+
+class InstanceToOneDict(
+    InstanceRelationDict[Optional[Model]]
+):
+    """
+    A useful concretion for the to-one instance relationship dict
+    """
+
+    @property
+    def config(self) -> dict[str, str]:
+        return self.source.get_to_one_relationship_config()
+
+
+class InstanceToManyDict(
+    InstanceRelationDict[Iterable[Model]]
+):
+    """
+    A useful concretion for the to-many instance relationship dict
+    """
+
+    @property
+    def config(self) -> dict[str, str]:
+        return self.source.get_to_many_relationship_config()
 
 
 def model_base() -> Type[Model]:
@@ -127,6 +168,16 @@ def model_base() -> Type[Model]:
             }
 
         @property
+        def instance_to_one_relations(self) -> dict[str, Optional[Model]]:
+            config = self.get_to_one_relationship_config()
+            return self.__get_attributes_map(config.keys())
+
+        @property
+        def instance_to_many_relations(self) -> dict[str, Iterable[Model]]:
+            config = self.get_to_many_relationship_config()
+            return self.__get_attributes_map(config.keys())
+
+        @property
         def instance_id(self) -> Optional[str]:
             id_key = self.get_id_column_name()
             id_val = getattr(self, id_key)
@@ -137,6 +188,15 @@ def model_base() -> Type[Model]:
             return {
                 k: getattr(self, k)
                 for k in self.__get_attribute_names()
+            }
+
+        def __get_attributes_map(
+            self,
+            names: Iterable[str]
+        ) -> dict[str, Any]:
+
+            return {
+                name: getattr(self, name) for name in names
             }
 
         @classmethod

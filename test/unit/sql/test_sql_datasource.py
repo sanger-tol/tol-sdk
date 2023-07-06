@@ -3,12 +3,11 @@
 # SPDX-License-Identifier: MIT
 
 from typing import Any, Dict, Iterable, Optional
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, PropertyMock
 
 from tol.core import DataSourceFilter, core_data_object
 from tol.sql import SqlDataSource
 from tol.sql.converter import Converter, TypeFunction
-from tol.sql.database import Database
 from tol.sql.filter import DatabaseFilter
 from tol.sql.model import Model
 
@@ -33,19 +32,33 @@ class _MockDataObject:
         return self.__attrs
 
 
+class _MockIdentityConverter(Converter):
+    """Just returns the given iterable"""
+    def convert(self, m):
+        return m
+
+
 class _MockBasicConverter(Converter):
     def __init__(self, type_function: TypeFunction) -> None:
         self.__type_function = type_function
 
-    def convert(self, models: Iterable[Model]):
-        return (
-            _MockDataObject(
-                type_=self.__type_function(m),
-                id_=m.instance_id,
-                attrs=m.instance_attributes
-            ) if m is not None else None
-            for m in models
+    def convert(self, m: Model) -> _MockDataObject:
+        return _MockDataObject(
+            type_=self.__type_function(m),
+            id_=m.instance_id,
+            attrs=m.instance_attributes
         )
+
+
+class _MockPrefixConverter(Converter):
+    """Converts to string and adds a prefix for each "Model"."""
+
+    def __init__(self, prefix: str) -> None:
+        self.__prefix = prefix
+
+    def convert(self, m: Any) -> str:
+        assert m is not None
+        return f'{self.__prefix}{m}'
 
 
 class TestSqlDataSource:
@@ -103,15 +116,17 @@ class TestSqlDataSource:
             def get_to_one_relationship_config(cls):
                 pass
 
-        class _SingleRowDatabase(Database):
+            @property
+            def instance_to_one_relations(self) -> dict[str, Optional[Model]]:
+                pass
+
+            @property
+            def instance_to_many_relations(self) -> dict[str, Iterable[Model]]:
+                pass
+
+        class _SingleRowDatabase:
             def get_by_id(self, tablename: str, id_: Any) -> Optional[Model]:
                 return _MockModel() if id_ != '404' else None
-
-            def get_page(self, *args):
-                raise NotImplementedError()
-
-            def count(self, tablename: str, filters: Optional[DataSourceFilter]) -> int:
-                raise NotImplementedError()
 
         ds = SqlDataSource(
             _SingleRowDatabase(),
@@ -173,10 +188,15 @@ class TestSqlDataSource:
             def instance_attributes(self) -> Dict[str, Any]:
                 return self.__attrs
 
-        class _AutoIncrementDatabase(Database):
-            def get_by_id(self, tablename: str, id_: Any) -> Optional[Model]:
-                raise NotImplementedError()
+            @property
+            def instance_to_one_relations(self) -> dict[str, Optional[Model]]:
+                pass
 
+            @property
+            def instance_to_many_relations(self) -> dict[str, Iterable[Model]]:
+                pass
+
+        class _AutoIncrementDatabase:
             def get_page(
                 self,
                 tablename: str,
@@ -256,18 +276,13 @@ class TestSqlDataSource:
                 else:
                     return range(offset, offset + limit)
 
-        class _MockConverter:
-            """Just returns the given iterable"""
-            def convert(self, models):
-                return models
-
         mock_db = _MockDatabase()
 
         ds = SqlDataSource(
             mock_db,
             {'tests': 'test'},
             MagicMock(),
-            lambda _: _MockConverter(),
+            lambda _: _MockIdentityConverter(),
             MagicMock(),
             MagicMock()
         )
@@ -305,18 +320,13 @@ class TestSqlDataSource:
                     self.__get_count += 1
                     return range(offset, offset + limit)
 
-        class _MockConverter:
-            """Just returns the given iterable"""
-            def convert(self, models):
-                return models
-
         mock_db = _MockDatabase()
 
         ds = SqlDataSource(
             mock_db,
             {'tests': 'test'},
             MagicMock(),
-            lambda _: _MockConverter(),
+            lambda _: _MockIdentityConverter(),
             MagicMock(),
             MagicMock()
         )
@@ -325,3 +335,143 @@ class TestSqlDataSource:
         page_size = ds.get_page_size()
         list_models = list(ds.get_list('tests'))
         assert len(list_models) == page_size * 5
+
+    def test_get_to_one_relation_none(self):
+        """no to-one relation of given key -> return None"""
+
+        class _MockDatabase:
+            def get_to_one_relation(self, *args):
+                return None
+
+        mock_db = _MockDatabase()
+
+        ds = SqlDataSource(
+            mock_db,
+            {'tests': 'test'},
+            MagicMock(),
+            lambda _: _MockIdentityConverter(),
+            MagicMock(),
+            MagicMock()
+        )
+        ds.data_object_factory = lambda *_: None
+
+        mock_object = self.__get_mock_data_object('tests', 'lol')
+
+        one_relation = ds.get_to_one_relation(
+            mock_object,
+            'no_matter'
+        )
+
+        assert one_relation is None
+
+    def test_get_to_one_relation_found(self):
+        """relation of given key exists -> convert and return"""
+
+        class _MockDatabase:
+            def get_to_one_relation(self, *args):
+                return 'I found one!!!!'
+
+        mock_db = _MockDatabase()
+
+        ds = SqlDataSource(
+            mock_db,
+            {'tests': 'test'},
+            MagicMock(),
+            lambda _: _MockPrefixConverter('look... '),
+            MagicMock(),
+            MagicMock()
+        )
+        ds.data_object_factory = lambda *_: None
+
+        mock_object = self.__get_mock_data_object('tests', 'lol')
+
+        one_relation = ds.get_to_one_relation(
+            mock_object,
+            'no_matter'
+        )
+        # result is concatenated with prefix
+        assert one_relation == 'look... I found one!!!!'
+
+    def test_get_to_many_relations_empty(self):
+        """no to-many relations of given key -> return empty"""
+
+        class _MockDatabase:
+            def get_to_many_relations(
+                self,
+                tablename: str,
+                instance_id: str,
+                relationship_name: str
+            ):
+                assert tablename == 'test'
+                assert instance_id == 'lol'
+                assert relationship_name == 'no_matter'
+                return []
+
+        mock_db = _MockDatabase()
+
+        ds = SqlDataSource(
+            mock_db,
+            {'tests': 'test'},
+            MagicMock(),
+            lambda _: _MockPrefixConverter('look... '),
+            MagicMock(),
+            MagicMock()
+        )
+        ds.data_object_factory = lambda *_: None
+
+        mock_object = self.__get_mock_data_object('tests', 'lol')
+
+        many_relations = ds.get_to_many_relations(
+            mock_object,
+            'no_matter'
+        )
+        assert list(many_relations) == []
+
+    def test_get_to_many_relations_found(self):
+        """relations of given key exist -> convert and return"""
+
+        prefix = 'hyped_up-'
+        inputs = [str(i) for i in range(2, 99, 4)]
+        expected = [f'{prefix}{i}' for i in inputs]
+
+        class _MockDatabase:
+            def get_to_many_relations(
+                self,
+                tablename: str,
+                instance_id: str,
+                relationship_name: str
+            ):
+                assert tablename == 'test'
+                assert instance_id == 'lol'
+                assert relationship_name == 'no_matter'
+
+                return inputs
+
+        mock_db = _MockDatabase()
+
+        ds = SqlDataSource(
+            mock_db,
+            {'tests': 'test'},
+            MagicMock(),
+            lambda _: _MockPrefixConverter(prefix),
+            MagicMock(),
+            MagicMock()
+        )
+        ds.data_object_factory = lambda *_: None
+
+        mock_object = self.__get_mock_data_object('tests', 'lol')
+
+        many_relations = ds.get_to_many_relations(
+            mock_object,
+            'no_matter'
+        )
+        assert list(many_relations) == expected
+
+    def __get_mock_data_object(self, type_: str, id_: str) -> MagicMock:
+        """Mocks a DataObject of given type and id"""
+
+        object_mock = MagicMock()
+        type(object_mock).type = PropertyMock(return_value=type_)
+        type(object_mock).id = PropertyMock(return_value=id_)
+
+        return object_mock

@@ -17,7 +17,7 @@ from ..core import (
     DataSourceFilter
 )
 from ..core.factory import DataObjectFactory
-from ..core.operator import DetailGetter, ListGetter, PageGetter
+from ..core.operator import DetailGetter, ListGetter, PageGetter, Relational
 from ..core.relationship import RelationshipConfig
 
 
@@ -26,7 +26,13 @@ FilterFactory = Callable[[DataSourceFilter], DatabaseFilter]
 SorterFactory = Callable[[Optional[str]], DatabaseSorter]
 
 
-class SqlDataSource(DataSource, DetailGetter, ListGetter, PageGetter):
+class SqlDataSource(
+    DataSource,
+    DetailGetter,
+    ListGetter,
+    PageGetter,
+    Relational
+):
     """
     A DataSource for manipulating DataObject instances as
     defined by Sqlalchemy models on a DB connection.
@@ -70,8 +76,8 @@ class SqlDataSource(DataSource, DetailGetter, ListGetter, PageGetter):
 
         # TODO maybe optimise on DB, and get multiple at once?
         models = self.__get_model_list_by_ids(object_type, object_ids)
-        converter = self.__converter_factory(self.data_object_factory)
-        return converter.convert(models)
+        converter = self.__get_converter()
+        return converter.convert_iterable(models)
 
     def get_list_page(
         self,
@@ -93,8 +99,8 @@ class SqlDataSource(DataSource, DetailGetter, ListGetter, PageGetter):
             page_size,
             sorter
         )
-        converter = self.__converter_factory(self.data_object_factory)
-        return converter.convert(models), total_count
+        converter = self.__get_converter()
+        return converter.convert_iterable(models), total_count
 
     def get_list(
         self,
@@ -107,8 +113,39 @@ class SqlDataSource(DataSource, DetailGetter, ListGetter, PageGetter):
             object_filters=object_filters,
             sort_by=sort_by
         )
-        converter = self.__converter_factory(self.data_object_factory)
-        return converter.convert(models)
+        converter = self.__get_converter()
+        return converter.convert_iterable(models)
+
+    def get_to_one_relation(
+        self,
+        source: DataObject,
+        relationship_name: str
+    ) -> Optional[DataObject]:
+
+        tablename = self.__type_tablename_map[source.type]
+        model = self.__db.get_to_one_relation(
+            tablename,
+            source.id,
+            relationship_name
+        )
+        return self.__get_converter().convert_optional(model)
+
+    def get_to_many_relations(
+        self,
+        source: DataObject,
+        relationship_name: str
+    ) -> Iterable[DataObject]:
+
+        tablename = self.__type_tablename_map[source.type]
+        models = self.__db.get_to_many_relations(
+            tablename,
+            source.id,
+            relationship_name
+        )
+        return self.__get_converter().convert_iterable(models)
+
+    def __get_converter(self) -> Converter:
+        return self.__converter_factory(self.data_object_factory)
 
     def __generate_models_for_get_list(
         self,
