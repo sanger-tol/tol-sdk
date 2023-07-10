@@ -2,23 +2,29 @@
 #
 # SPDX-License-Identifier: MIT
 
-from typing import Dict, List
+from typing import Dict, Iterable, List
 
 from flask import Flask
 
 from flask_testing import TestCase
 
 from tol.core import (
+    DataObject,
     DataSource,
     DataSourceFilter,
     core_data_object
 )
-from tol.core.operator import Aggregator, DetailGetter, PageGetter
+from tol.core.operator import (
+    Aggregator,
+    Deleter,
+    DetailGetter,
+    PageGetter,
+    Updater,
+    Upserter
+)
+from tol.core.operator.updater import DataObjectUpdate
 
 from .app import _test_application
-
-
-CoreDataObject = core_data_object()  # noqa
 
 
 class ParrotDataSource(DataSource, DetailGetter, PageGetter, Aggregator):
@@ -26,9 +32,9 @@ class ParrotDataSource(DataSource, DetailGetter, PageGetter, Aggregator):
 
     def get_by_id(self, object_type: str, object_ids, **kwargs):
         return [
-            CoreDataObject(
+            self.data_object_factory(
                 object_type,
-                {
+                data={
                     'id': object_ids[0],
                     'parrot': 'parrot'
                 }
@@ -37,9 +43,9 @@ class ParrotDataSource(DataSource, DetailGetter, PageGetter, Aggregator):
 
     def get_list_page(self, object_type: str, *args, **kwargs):
         return [
-            CoreDataObject(
+            self.data_object_factory(
                 object_type,
-                {
+                data={
                     'id': str(i + 1),
                     'parrot': 'parrot'
                 }
@@ -107,12 +113,30 @@ class EmptyDataSource(DataSource, DetailGetter, PageGetter):
         raise NotImplementedError()
 
 
+class WriteableDataSource(DataSource):
+    """Can be augmented with "write" `Operator` classes"""
+
+    def __init__(self):
+        pass
+
+    def get_attribute_types(self, object_type: str) -> Dict:
+        raise NotImplementedError()
+
+    @property
+    def supported_types(self) -> List[str]:
+        return ['write', 'only']
+
+
+parrot_ds = ParrotDataSource({})
+empty_ds = EmptyDataSource({})
+
+
+core_data_object(parrot_ds, empty_ds, WriteableDataSource)
+
+
 class BlueprintTestCase(TestCase):
     def create_app(self) -> Flask:
-        return _test_application(
-            ParrotDataSource({}),
-            EmptyDataSource({})
-        )
+        return _test_application(parrot_ds, empty_ds)
 
 
 class TestBlueprint(BlueprintTestCase):
@@ -217,4 +241,136 @@ class TestBlueprint(BlueprintTestCase):
                          'types': {'parrot': 'str'}},
                 'data': []
             }
+        )
+
+
+class TestBlueprintDelete(TestCase):
+    def create_app(self):
+        class DeleteThis(WriteableDataSource, Deleter):
+            def delete(
+                self,
+                object_type: str,
+                object_ids: Iterable[str]
+            ) -> None:
+
+                assert object_type == 'only'
+                assert list(object_ids) == ['20934l']
+
+        return _test_application(DeleteThis())
+
+    def test_200_good_delete(self):
+        """`Deleter().delete()` called correctly -> 200"""
+
+        response = self.client.open('/data/only/20934l', method='DELETE')
+        self.assert200(
+            response,
+            f'Response body is : {response.data.decode("utf-8")}'
+        )
+
+
+_updates = [
+    [
+        'hype',
+        {
+            '1sdkljsad': True,
+            'sdfi': 39845
+        }
+    ],
+    [
+        'train',
+        {
+            'locomoting': 'yess mate'
+        }
+    ]
+]
+
+
+class TestBlueprintUpdate(TestCase):
+
+    def create_app(self):
+        class UpdatingToTheEnd(WriteableDataSource, Updater):
+            def update(
+                self,
+                object_type: str,
+                updates: Iterable[tuple[str, DataObjectUpdate]]
+            ) -> None:
+
+                assert object_type == 'write'
+                assert updates == _updates
+
+        return _test_application(UpdatingToTheEnd())
+
+    def test_200_good_update(self):
+        """`Updater().update()` called correctly -> 200"""
+
+        response = self.client.open(
+            '/data/write',
+            method='PATCH',
+            json={'data': _updates}
+        )
+        self.assert200(
+            response,
+            f'Response body is : {response.data.decode("utf-8")}'
+        )
+
+
+class TestBlueprintUpsert(TestCase):
+
+    def create_app(self):
+        class NeverEverStopUpserting(WriteableDataSource, Upserter):
+            def upsert(
+                self,
+                object_type: str,
+                objects: Iterable[DataObject]
+            ) -> None:
+
+                # correct type
+                assert object_type == 'write'
+
+                # both objects are correct
+                list_objects = list(objects)
+
+                assert list_objects[0].type == object_type
+                assert list_objects[0].id == '123'
+                assert not list_objects[0].attributes
+                assert list_objects[0].host == self
+
+                assert list_objects[1].type == object_type
+                assert list_objects[1].id == 'abc'
+                assert list_objects[1].attributes == {
+                    'hype': 'train'
+                }
+                assert list_objects[1].host == self
+
+        # add a data object factory
+        ds_upsert = NeverEverStopUpserting()
+        core_data_object(ds_upsert)
+
+        return _test_application(ds_upsert)
+
+    def test_200_good_upsert(self):
+        """`Upserter().upsert()` called correctly -> 200"""
+        body = {
+            'data': [
+                {
+                    'type': 'write',
+                    'id': '123'
+                },
+                {
+                    'type': 'write',
+                    'id': 'abc',
+                    'attributes': {
+                        'hype': 'train'
+                    }
+                }
+            ]
+        }
+        response = self.client.open(
+            '/data/write:upsert',
+            method='POST',
+            json=body
+        )
+        self.assert200(
+            response,
+            f'Response body is : {response.data.decode("utf-8")}'
         )

@@ -12,8 +12,10 @@ from .exception import BaseRuntimeException
 from .misc import (
     AggregationBody,
     AggregationParameters,
+    JsonApiRequestBody,
     ListGetParamaters
 )
+from .parser import DefaultParser
 from .view import DefaultView
 from ..core import DataSource
 from ..core.data_source_dict import DataSourceDict
@@ -107,26 +109,45 @@ def data_blueprint(
 
     data_source_dict = DataSourceDict(*data_sources)
 
-    @data_handler.route('/<object_type>/<object_id>', methods=['GET'])
-    def get_detail(*, object_type: str, object_id: str):
+    def __new_controller(object_type: str) -> Controller:
         data_source = data_source_dict[object_type]
         view = DefaultView()
-        controller = Controller(data_source, view)
+        return Controller(data_source, view)
+
+    @data_handler.route('/<object_type>/<object_id>', methods=['GET'])
+    def get_detail(*, object_type: str, object_id: str):
+        controller = __new_controller(object_type)
         return controller.get_detail(object_type, object_id)
 
     @data_handler.route('/<object_type>', methods=['GET'])
     def get_list(*, object_type: str):
-        data_source = data_source_dict[object_type]
-        view = DefaultView()
-        controller = Controller(data_source, view)
+        controller = __new_controller(object_type)
         request_args = ListGetParamaters(request.args)
         return controller.get_list(object_type, request_args)
 
+    @data_handler.route('/<object_type>/<object_id>', methods=['DELETE'])
+    def delete_detail(*, object_type: str, object_id: str):
+        controller = __new_controller(object_type)
+        return controller.delete_detail(object_type, object_id)
+
+    @data_handler.route('/<object_type>', methods=['PATCH'])
+    def patch_list(*, object_type: str):
+        controller = __new_controller(object_type)
+        request_body = JsonApiRequestBody(request.json)
+        return controller.patch_list(object_type, request_body.data)
+
+    @data_handler.route('/<object_type>:upsert', methods=['POST'])
+    def post_upserts(*, object_type: str):
+        controller = __new_controller(object_type)
+        data_source = data_source_dict[object_type]
+        request_body = JsonApiRequestBody(request.json)
+        parser = DefaultParser(data_source.data_object_factory)
+        objects = parser.parse_iterable(request_body.data)
+        return controller.post_upserts(object_type, objects)
+
     @data_handler.route('/<object_type>:aggregations', methods=['POST'])
     def get_aggregations(*, object_type: str):
-        data_source = data_source_dict[object_type]
-        view = DefaultView()
-        controller = Controller(data_source, view)
+        controller = __new_controller(object_type)
         request_args = AggregationParameters(request.args)
         body = AggregationBody(request.json)
         return controller.post_aggregations(object_type, request_args, body)

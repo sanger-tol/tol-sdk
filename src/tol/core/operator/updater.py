@@ -5,10 +5,10 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import Any, Iterable, Tuple
+from typing import Any, Iterable
 
 
-DataObjectUpdate = dict[str, Any]
+DataObjectUpdate = tuple[str, dict[str, Any]]
 
 
 class Updater(ABC):
@@ -20,7 +20,7 @@ class Updater(ABC):
     def update(
         self,
         object_type: str,
-        objects: Iterable[Tuple[str, DataObjectUpdate]]
+        updates: Iterable[DataObjectUpdate]
     ) -> None:
         """
         Takes a type and an `Iterable` of ID-`DataObjectUpdate` pairs.

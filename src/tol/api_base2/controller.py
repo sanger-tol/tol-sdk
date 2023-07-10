@@ -4,7 +4,7 @@
 
 from __future__ import annotations
 
-from typing import Any, Callable, Type
+from typing import Any, Callable, Iterable, Type
 
 from .exception import (
     ObjectNotFoundByIdException,
@@ -18,7 +18,19 @@ from .misc import (
 )
 from .view import ResponseDict, View
 from ..core import DataObject, OperableDataSource
-from ..core.operator import Aggregator, DetailGetter, Operator, PageGetter
+from ..core.operator import (
+    Aggregator,
+    Deleter,
+    DetailGetter,
+    Operator,
+    PageGetter,
+    Updater,
+    Upserter
+)
+from ..core.operator.updater import DataObjectUpdate
+
+
+EmptySuccessResponse = dict[str, bool]
 
 
 def __is_supported(
@@ -116,6 +128,42 @@ class Controller:
             'types': self.__data_source.get_attribute_types(object_type)
         }
         return self.__view.dump_bulk(data_objects, document_meta=document_meta)
+
+    @validate(Deleter, 'delete', 'detail DELETE')
+    def delete_detail(
+        self,
+        object_type: str,
+        object_id: str
+    ) -> EmptySuccessResponse:
+        """Deletes the `DataObject` of specified type and id"""
+
+        self.data_source.delete(object_type, [object_id])
+        return {'success': True}
+
+    @validate(Updater, 'update', 'update PATCH')
+    def patch_list(
+        self,
+        object_type: str,
+        updates: Iterable[DataObjectUpdate]
+    ) -> EmptySuccessResponse:
+        """
+        Updates the objects (all of same type) using the given
+        `Iterable` of ID:update-dict pairs
+        """
+
+        self.data_source.update(object_type, updates)
+        return {'success': True}
+
+    @validate(Upserter, 'post_upserts', 'upserts POST')
+    def post_upserts(
+        self,
+        object_type: str,
+        objects: Iterable[DataObject]
+    ) -> EmptySuccessResponse:
+        """Upserts the given objects of specified type"""
+
+        self.data_source.upsert(object_type, objects)
+        return {'success': True}
 
     @validate(Aggregator, 'get_aggregations', 'aggregations POST')
     def post_aggregations(
