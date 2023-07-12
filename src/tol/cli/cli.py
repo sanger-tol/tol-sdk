@@ -93,7 +93,9 @@ def up(ctx, ui, db, api):
 @click.option('--ui/--no-ui', default=True, help='build the UI container')
 @click.option('--db/--no-db', default=True, help='build the DB container')
 @click.option('--api/--no-api', default=True, help='build the API container')
-def log(ui, db, api):
+@click.pass_context
+def log(ctx, ui, db, api):
+    env_file = ctx.parent.params['env_file']
     service = get_app()
     containers = []
     if ui:
@@ -102,7 +104,7 @@ def log(ui, db, api):
         containers.append(f'{service}-db')
     if api:
         containers.append(f'{service}-api')
-    command = 'docker compose logs --tail=0 --follow ' \
+    command = f'docker compose --env-file {env_file} logs --tail=0 --follow ' \
         + ' '.join(containers)
     click.secho(command, fg='green')
     run(command)
@@ -110,10 +112,12 @@ def log(ui, db, api):
 
 # Stop a ToL service
 @cli.command()
-def down():
+@click.pass_context
+def down(ctx):
+    env_file = ctx.parent.params['env_file']
     service = get_app()
     click.echo(f'Stopping {service}...')
-    command = 'docker compose down'
+    command = f'docker compose  --env-file {env_file} down'
     click.secho(command, fg='green')
     run(command)
 
