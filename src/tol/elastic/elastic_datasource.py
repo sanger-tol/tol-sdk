@@ -60,7 +60,7 @@ class ElasticDataSource(
 
     def _add_checksum(self, dict_: Dict) -> Dict:
         dhash = hashlib.sha256()
-        encoded = json.dumps(dict_, sort_keys=True).encode()
+        encoded = json.dumps(dict_, sort_keys=True, default=str).encode()
         dhash.update(encoded)
         return {**dict_, 'checksum': dhash.hexdigest()}
 

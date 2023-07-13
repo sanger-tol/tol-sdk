@@ -228,15 +228,16 @@ def test(ctx, type_):
 # Run flow
 @cli.command()
 @click.argument('filename', type=click.Path(exists=True))
+@click.option('--version', required=True, help='flows-base version', default='1.2.9')
 @click.pass_context
-def flow(ctx, filename):
+def flow(ctx, filename, version):
     env_file = ctx.parent.params['env_file']
     click.echo('Running flow...')
     flow_name = os.path.basename(filename)
     command = (
         f'docker run --env-file {env_file} -v '
         '$(pwd)/app/flows:/flows '
-        'gitlab-registry.internal.sanger.ac.uk/tol/tol-core/flows-base:1.2.7 python3 '
+        f'gitlab-registry.internal.sanger.ac.uk/tol/tol-core/flows-base:{version} python3 '
         f'/flows/{flow_name}'
     )
     click.secho(command, fg='green')
