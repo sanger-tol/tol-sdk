@@ -405,16 +405,32 @@ class TestDefaultDatabase:
         # (1 query + 1 filter + 1 one_or_none) * 2
         # 
         assert len(session_mock.calls) == 6
+
+        # first get the ModelA with correct ID
+        # 
         # query on correct table
-        assert session_mock.calls[0] == ('query', (_TestModel,), {})
+        assert session_mock.calls[0] == ('query', (ModelA,), {})
         # filter correct column
         assert session_mock.calls[1] == (
             'filter',
-            (_TestModel.id == '302',),
+            (ModelA.id == '20',),
             {}
         )
-        # finally one_or_none
+        # then one_or_none
         assert session_mock.calls[2] == ('one_or_none', (), {})
+
+        # second get the ModelB with matching `relation_id`
+        # 
+        # query on correct table
+        assert session_mock.calls[3] == ('query', (ModelB,), {})
+        # filter correct column
+        assert session_mock.calls[4] == (
+            'filter',
+            (ModelB.relation_id == 489,),
+            {}
+        )
+        # then one_or_none
+        assert session_mock.calls[5] == ('one_or_none', (), {})
 
     def test_get_to_many_relations(self):
         """`get_to_many_relations()` uses a filter on target table"""
