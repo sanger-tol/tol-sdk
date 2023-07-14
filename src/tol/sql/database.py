@@ -123,8 +123,8 @@ class DefaultDatabase(Database):
         limit: Optional[int] = None
     ) -> Iterable[Model]:
 
-        _, session, query = self.__get_model_session_query(tablename)
-        query = query.limit(limit).offset(offset)
+        model, session = self.__get_model_session(tablename)
+        query = session.query(model).limit(limit).offset(offset)
         if filters is not None:
             query = filters.filter(query, tablename, self.__tablename_model_dict)
         if sort_by is not None:
@@ -139,7 +139,8 @@ class DefaultDatabase(Database):
         filters: Optional[DatabaseFilter] = None
     ) -> int:
 
-        _, session, query = self.__get_model_session_query(tablename)
+        model, session = self.__get_model_session(tablename)
+        query = session.query(model)
         if filters is not None:
             query = filters.filter(query, tablename, self.__tablename_model_dict)
         count = query.count()
@@ -200,15 +201,14 @@ class DefaultDatabase(Database):
             for t, m in self.__tablename_model_dict.items()
         }
 
-    def __get_model_session_query(
+    def __get_model_session(
         self,
         tablename: str
-    ) -> Tuple[Type[Model], Session, Query]:
+    ) -> Tuple[Type[Model], Session]:
 
         model = self.__tablename_model_dict[tablename]
         session = self.__session_factory()
-        query = session.query(model)
-        return model, session, query
+        return model, session
 
     def __commit_session(
         self,
@@ -234,9 +234,13 @@ class DefaultDatabase(Database):
         must be manually closed.
         """
 
-        model, session, query = self.__get_model_session_query(tablename)
-        id_column = getattr(model, model.get_id_column_name())
-        result = query.filter(id_column == instance_id).one_or_none()
+        model, session = self.__get_model_session(tablename)
+        result = self.__get_instance_by_column(
+            tablename,
+            model.get_id_column_name(),
+            instance_id,
+            session
+        )
         return result, session
 
     def __get_instance_by_column(
