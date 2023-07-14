@@ -162,8 +162,11 @@ class DefaultDatabase(Database):
         relationship_name: str
     ) -> Optional[Model]:
 
+        model = self.__tablename_model_dict[tablename]
+        target_name = model.get_to_one_relationship_config()[relationship_name]
+        foreign_key_name = model.get_foreign_key_name(relationship_name)
         instance, session = self.__get_instance_by_id(tablename, instance_id)
-        result = instance.instance_to_one_relations[relationship_name]
+        foreign_value = getattr(instance, foreign_key_name)
         session.close()
         return result
 
