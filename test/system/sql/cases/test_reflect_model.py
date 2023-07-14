@@ -1,7 +1,5 @@
-from sqlalchemy import create_engine, MetaData, Table, Column, ForeignKey
+from sqlalchemy import create_engine, MetaData
 from sqlalchemy.ext.automap import automap_base
-from sqlalchemy.orm import Session, relationship
-import re
 import os
 
 ONLY = [
