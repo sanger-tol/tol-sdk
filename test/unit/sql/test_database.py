@@ -436,8 +436,25 @@ class TestDefaultDatabase:
         # then one_or_none
         assert session_mock.calls[5] == ('one_or_none', (), {})
 
-    def test_get_to_many_relations(self):
-        """`get_to_many_relations()` uses a filter on target table"""
+    def test_get_to_one_relation_implicit(self):
+        """
+        `get_to_one_relation()` works with an implicit relationship name,
+        i.e. the target table
+        """
+        #implement
+
+    def test_get_to_many_relations_named(self):
+        """
+        `get_to_many_relations()` uses a filter on target table, with an
+        explicitly named relationship
+        """
+        #implement
+
+    def test_get_to_many_relations_implicit(self):
+        """
+        `get_to_many_relations()` works with an implicit relationship name,
+        i.e. the target table
+        """
         #implement
 
     def test_attribute_types(self):
