@@ -1,4 +1,8 @@
-from sqlalchemy import create_engine, MetaData, select
+# SPDX-FileCopyrightText: 2023 Genome Research Ltd.
+#
+# SPDX-License-Identifier: MIT
+
+from sqlalchemy import create_engine, MetaData
 from sqlalchemy.ext.automap import automap_base
 import os
 
