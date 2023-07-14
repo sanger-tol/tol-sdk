@@ -357,6 +357,14 @@ class TestDefaultDatabase:
         # finally -> commit
         assert session_mock.calls[4] == ('commit', (), {})
 
+    def test_get_to_one_relation(self):
+        """`get_to_one_relation()` uses a filter on target table"""
+        #implement
+
+    def test_get_to_many_relations(self):
+        """`get_to_many_relations()` uses a filter on target table"""
+        #implement
+
     def test_attribute_types(self):
         """
         the `attribute_types` property inspects the models with caching
