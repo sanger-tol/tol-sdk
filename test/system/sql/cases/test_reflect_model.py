@@ -2,12 +2,14 @@
 #
 # SPDX-License-Identifier: MIT
 
-from sqlalchemy import create_engine, MetaData
-from sqlalchemy.ext.automap import automap_base
 import os
+
+from sqlalchemy import MetaData, create_engine
+from sqlalchemy.ext.automap import automap_base
 
 from .. import models
 from ..base_case import session_factory, DatabaseTestCase
+
 
 ONLY = [
     'a',
@@ -16,6 +18,7 @@ ONLY = [
     'r2',
     'r3'
 ]
+
 
 class TestReflect(DatabaseTestCase):
     def test_reflect(self):
