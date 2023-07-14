@@ -14,7 +14,7 @@ from tol.sql.converter import (
 from tol.sql.model import Model
 
 
-class _ExampleModel(Model):
+class _ExampleModel:
     def __init__(
         self,
         attributes: Dict[str, Any],
@@ -31,26 +31,6 @@ class _ExampleModel(Model):
     @classmethod
     def get_id_column_name(cls) -> str:
         return 'id'
-
-    @classmethod
-    def get_column(cls, name: str):
-        pass
-
-    @classmethod
-    def get_to_many_relationship_config(cls):
-        pass
-
-    @classmethod
-    def get_to_one_relationship_config(cls):
-        pass
-
-    @classmethod
-    def get_foreign_key_name(cls, relationship_name: str) -> str:
-        raise NotImplementedError()
-
-    @classmethod
-    def get_attribute_types(cls) -> dict[str, type]:
-        raise NotImplementedError()
 
     @property
     def instance_id(self) -> Optional[str]:  # noqa
