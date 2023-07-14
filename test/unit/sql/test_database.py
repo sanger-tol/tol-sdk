@@ -388,10 +388,11 @@ class TestDefaultDatabase:
         # finally -> commit
         assert session_mock.calls[4] == ('commit', (), {})
 
-    def test_get_to_one_relation(self):
+    def test_get_to_one_relation_named(self):
         """
         `get_to_one_relation()` uses a filter on target table, with
-        a non-primary key target column
+        a non-primary key target column, with an explicitly named
+        relationship
         """
 
         a_instance = ModelA(id='20', relation_id=489)
@@ -399,6 +400,9 @@ class TestDefaultDatabase:
         session_mock = _SessionMock(a_instance)
 
         db = DefaultDatabase(lambda: session_mock, [ModelA, ModelB])
+
+        # get the relation
+        db.get_to_one_relation('A', )
 
         # 6 = 
         # 3 + 3
