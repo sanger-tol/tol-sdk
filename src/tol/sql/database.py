@@ -162,11 +162,19 @@ class DefaultDatabase(Database):
         relationship_name: str
     ) -> Optional[Model]:
 
+        #TODO refactor this spaghetti
         model = self.__tablename_model_dict[tablename]
-        target_name = model.get_to_one_relationship_config()[relationship_name]
+        target_table_name = model.get_to_one_relationship_config()[relationship_name]
+        target_column_name = model.get_foreign_key_target(relationship_name)
         foreign_key_name = model.get_foreign_key_name(relationship_name)
         instance, session = self.__get_instance_by_id(tablename, instance_id)
         foreign_value = getattr(instance, foreign_key_name)
+        result = self.__get_instance_by_column(
+            target_table_name,
+            target_column_name,
+            foreign_value,
+            session
+        )
         session.close()
         return result
 
@@ -230,6 +238,19 @@ class DefaultDatabase(Database):
         id_column = getattr(model, model.get_id_column_name())
         result = query.filter(id_column == instance_id).one_or_none()
         return result, session
+
+    def __get_instance_by_column(
+        self,
+        tablename: str,
+        column_name: str,
+        value: Any,
+        session: Session
+    ):
+        """column needs to be unique"""
+
+        model = self.__tablename_model_dict[tablename]
+        column = getattr(model, column_name)
+        return session.query(model).filter(column == value).one_or_none()
 
     def __get_tablename_model_dict(
         self,
