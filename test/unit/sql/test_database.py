@@ -35,6 +35,10 @@ class _TestModel:
             setattr(self, k, v)
 
     @classmethod
+    def get_attribute_types(cls):
+        pass
+
+    @classmethod
     def get_table_name(cls):
         return 'test'
 
@@ -61,6 +65,10 @@ class _OverrideIdModel:
     @classmethod
     def get_table_name(cls) -> str:
         return 'test_override'
+
+    @classmethod
+    def get_attribute_types(cls):
+        pass
 
 
 class _SessionMock:
@@ -348,3 +356,53 @@ class TestDefaultDatabase:
         assert session_mock.calls[3] == ('delete', (model_mock,), {})
         # finally -> commit
         assert session_mock.calls[4] == ('commit', (), {})
+
+    def test_attribute_types(self):
+        """
+        the `attribute_types` property inspects the models with caching
+        """
+
+        model_a = MagicMock()
+        model_a.get_attribute_types.return_value = {
+            'string_column': str,
+            'int_column': int
+        }
+        model_a.get_table_name.return_value = 'A'
+
+        model_b = MagicMock()
+        model_b.get_attribute_types.return_value = {
+            'string_column': str,
+            'bool_column': bool
+        }
+        model_b.get_table_name.return_value = 'B'
+
+        db = DefaultDatabase(
+            MagicMock(),
+            [model_a, model_b]
+        )
+
+        # both mocks only called once
+        model_a.get_attribute_types.assert_called_once()
+        model_b.get_attribute_types.assert_called_once()
+
+        expected = {
+            'A': {
+                'string_column': str,
+                'int_column': int
+            },
+            'B': {
+                'string_column': str,
+                'bool_column': bool
+            }
+        }
+        observed = db.attribute_types
+
+        assert observed == expected
+
+        # fetch again for good measure
+        for _ in range(3):
+            db.attribute_types
+
+        # both mocks still only called once
+        model_a.get_attribute_types.assert_called_once()
+        model_b.get_attribute_types.assert_called_once()

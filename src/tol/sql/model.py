@@ -63,6 +63,13 @@ class Model(ABC):
 
     @classmethod
     @abstractmethod
+    def get_attribute_types(cls) -> dict[str, type]:
+        """
+        The mapping of attribute names to their datatype in python
+        """
+
+    @classmethod
+    @abstractmethod
     def get_foreign_key_name(cls, relationship_name: str) -> str:
         """
         The name of the foreign key column for the given relationship name
@@ -179,6 +186,14 @@ def model_base() -> Type[Model]:
             # TODO refactor `Database().get_to_one_relation()` to use this
             foreign_key = cls.__get_foreign_key(relationship_name)
             return foreign_key.name
+
+        @classmethod
+        def get_attribute_types(cls) -> dict[str, type]:
+            names = cls.__get_attribute_names()
+            columns = inspect(cls).columns
+            return {
+                k: columns[k].type.python_type for k in names
+            }
 
         @property
         def instance_to_one_relations(self) -> dict[str, Optional[Model]]:
