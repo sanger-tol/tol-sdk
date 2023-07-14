@@ -10,10 +10,41 @@ from unittest.mock import MagicMock
 
 import pytest
 
+from sqlalchemy import ForeignKey
 from sqlalchemy.exc import IntegrityError
+from sqlalchemy.orm import Mapped, mapped_column
 
 from tol.core import DataSourceError
 from tol.sql.database import DefaultDatabase
+from tol.sql.model import model_base
+
+
+base = model_base()
+
+
+class ModelA(base):
+    __tablename__ = 'A'
+
+    id: Mapped[str] = mapped_column(primary_key=True)
+
+    relation_id: Mapped[int] = mapped_column(
+        ForeignKey('B.filter_on_me')
+    )
+
+
+class ModelB(base):
+    __tablename__ = 'B'
+
+    id_override: Mapped[str] = mapped_column(primary_key=True)
+
+    filter_on_me: Mapped[int] = mapped_column(
+        nullable=False,
+        unique=True
+    )
+
+    @classmethod
+    def get_id_column_name(cls) -> str:
+        return 'id_override'
 
 
 class _Column:
@@ -358,8 +389,32 @@ class TestDefaultDatabase:
         assert session_mock.calls[4] == ('commit', (), {})
 
     def test_get_to_one_relation(self):
-        """`get_to_one_relation()` uses a filter on target table"""
-        #implement
+        """
+        `get_to_one_relation()` uses a filter on target table, with
+        a non-primary key target column
+        """
+
+        a_instance = ModelA(id='20', relation_id=489)
+
+        session_mock = _SessionMock(a_instance)
+
+        db = DefaultDatabase(lambda: session_mock, [ModelA, ModelB])
+
+        # 6 = 
+        # 3 + 3
+        # (1 query + 1 filter + 1 one_or_none) * 2
+        # 
+        assert len(session_mock.calls) == 6
+        # query on correct table
+        assert session_mock.calls[0] == ('query', (_TestModel,), {})
+        # filter correct column
+        assert session_mock.calls[1] == (
+            'filter',
+            (_TestModel.id == '302',),
+            {}
+        )
+        # finally one_or_none
+        assert session_mock.calls[2] == ('one_or_none', (), {})
 
     def test_get_to_many_relations(self):
         """`get_to_many_relations()` uses a filter on target table"""
