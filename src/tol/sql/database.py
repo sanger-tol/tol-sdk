@@ -163,16 +163,13 @@ class DefaultDatabase(Database):
         relationship_name: str
     ) -> Optional[Model]:
 
-        #TODO refactor this spaghetti
         model = self.__tablename_model_dict[tablename]
-        target_table_name = model.get_to_one_relationship_config()[relationship_name]
-        target_column_name = model.get_foreign_key_target(relationship_name)
         foreign_key_name = model.get_foreign_key_name(relationship_name)
         instance, session = self.__get_instance_by_id(tablename, instance_id)
         foreign_value = getattr(instance, foreign_key_name)
-        result = self.__get_instance_by_column(
-            target_table_name,
-            target_column_name,
+        result = self.__get_to_one_instance(
+            model,
+            relationship_name,
             foreign_value,
             session
         )
@@ -200,6 +197,23 @@ class DefaultDatabase(Database):
             t: m.get_attribute_types()
             for t, m in self.__tablename_model_dict.items()
         }
+
+    def __get_to_one_instance(
+        self,
+        model_class: type[Model],
+        relationship_name: str,
+        foreign_value: Any,
+        session: Session
+    ) -> Model:
+
+        target_table_name = model_class.get_to_one_relationship_config()[relationship_name]
+        target_column_name = model_class.get_foreign_key_target(relationship_name)
+        return self.__get_instance_by_column(
+            target_table_name,
+            target_column_name,
+            foreign_value,
+            session
+        )
 
     def __get_model_session(
         self,
