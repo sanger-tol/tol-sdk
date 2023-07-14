@@ -40,7 +40,6 @@ class TestReflect(DatabaseTestCase):
                 models.R3(id='thing_too', ur_r1_id='21')
             )
             sess.commit()
-            sess.close()
 
         with session_factory() as sess2:
             r1_class = Base.classes.r1
