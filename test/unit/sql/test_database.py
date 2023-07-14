@@ -439,7 +439,73 @@ class TestDefaultDatabase:
         `get_to_one_relation()` works with an implicit relationship name,
         i.e. the target table
         """
-        #implement
+
+        base = model_base()
+
+        class ModelA(base):
+            __tablename__ = 'A'
+
+            id: Mapped[str] = mapped_column(primary_key=True)
+
+            relation_id: Mapped[int] = mapped_column(
+                ForeignKey('B.filter_on_me')
+            )
+
+        class ModelB(base):
+            __tablename__ = 'B'
+
+            id_override: Mapped[str] = mapped_column(primary_key=True)
+
+            filter_on_me: Mapped[int] = mapped_column(
+                nullable=False,
+                unique=True
+            )
+
+            @classmethod
+            def get_id_column_name(cls) -> str:
+                return 'id_override'
+
+        a_instance = ModelA(id='20', relation_id=489)
+
+        session_mock = _SessionMock(a_instance)
+
+        db = DefaultDatabase(lambda: session_mock, [ModelA, ModelB])
+
+        # get the relation
+        db.get_to_one_relation('A', '20', 'B')
+
+        # 6 = 
+        # 3 + 3
+        # (1 query + 1 filter + 1 one_or_none) * 2
+        # 
+        assert len(session_mock.calls) == 6
+
+        # first get the ModelA with correct ID
+        # 
+        # query on correct table
+        assert session_mock.calls[0] == ('query', (ModelA,), {})
+        # filter correct column
+        assert session_mock.calls[1] == (
+            'filter',
+            (ModelA.id == '20',),
+            {}
+        )
+        # then one_or_none
+        assert session_mock.calls[2] == ('one_or_none', (), {})
+
+        # second get the ModelB with matching `relation_id`
+        # 
+        # query on correct table
+        assert session_mock.calls[3] == ('query', (ModelB,), {})
+        # filter correct column
+        assert session_mock.calls[4] == (
+            'filter',
+            (ModelB.relation_id == 489,),
+            {}
+        )
+        # then one_or_none
+        assert session_mock.calls[5] == ('one_or_none', (), {})
+
 
     def test_get_to_many_relations_named(self):
         """
