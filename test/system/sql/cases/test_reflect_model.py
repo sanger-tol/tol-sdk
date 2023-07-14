@@ -43,11 +43,9 @@ class TestReflect(DatabaseTestCase):
 
         with session_factory() as sess2:
             r1_class = Base.classes.r1
-            instance_21 = sess2.query(r1_class).filter(r1_class.id_override=='21').one_or_none()
-            print(instance_21)
+            instance_r1 = sess2.query(r1_class).filter(r1_class.id_override=='21').one_or_none()
+            assert instance_r1 is not None
 
             r3_class = Base.classes['r3']
             instances_r3 = sess2.query(r3_class).filter(r3_class.ur_r1_id=='21').all()
-            print(instances_r3)
-    
-        assert False
+            assert len(instances_r3) == 2
