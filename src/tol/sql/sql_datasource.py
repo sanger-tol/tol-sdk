@@ -4,7 +4,7 @@
 
 from typing import Callable, Dict, Iterable, List, Optional, Tuple
 
-from .converter import Converter
+from .converter import DataObjectConverter, ModelConverter
 from .database import Database
 from .filter import DatabaseFilter
 from .model import Model
@@ -17,21 +17,34 @@ from ..core import (
     DataSourceFilter
 )
 from ..core.factory import DataObjectFactory
-from ..core.operator import DetailGetter, ListGetter, PageGetter, Relational
+from ..core.operator import (
+    Deleter,
+    DetailGetter,
+    ListGetter,
+    PageGetter,
+    Relational,
+    Upserter
+)
 from ..core.relationship import RelationshipConfig
 
 
-ConverterFactory = Callable[[DataObjectFactory], Converter]
+ConverterFactory = Callable[
+    [DataObjectFactory],
+    ModelConverter
+]
+BackConverterFactory = Callable[[], DataObjectConverter]
 FilterFactory = Callable[[DataSourceFilter], DatabaseFilter]
 SorterFactory = Callable[[Optional[str]], DatabaseSorter]
 
 
 class SqlDataSource(
     DataSource,
+    Deleter,
     DetailGetter,
     ListGetter,
     PageGetter,
-    Relational
+    Relational,
+    Upserter
 ):
     """
     A DataSource for manipulating DataObject instances as
@@ -44,6 +57,7 @@ class SqlDataSource(
         type_tablename_map: Dict[str, str],
         relationship_config: SqlRelationshipConfig,
         converter_factory: ConverterFactory,
+        back_converter_factory: BackConverterFactory,
         filter_factory: FilterFactory,
         sorter_factory: SorterFactory
     ) -> None:
@@ -53,6 +67,7 @@ class SqlDataSource(
         self.__supported_types = list(type_tablename_map.keys())
         self.__relationship_config = relationship_config.to_dict()
         self.__converter_factory = converter_factory
+        self.__back_converter_factory = back_converter_factory
         self.__filter_factory = filter_factory
         self.__sorter_factory = sorter_factory
         super().__init__({})
@@ -116,6 +131,18 @@ class SqlDataSource(
         converter = self.__get_converter()
         return converter.convert_iterable(models)
 
+    def delete(self, object_type: str, object_ids: Iterable[str]) -> None:
+        tablename = self.__type_tablename_map[object_type]
+        for object_id in object_ids:
+            self.__db.delete(tablename, object_id)
+
+    def upsert(self, object_type: str, objects: Iterable[DataObject]) -> None:
+        # TODO optimise by batching?
+        back_converter = self.__back_converter_factory()
+        model_instances = back_converter.convert_iterable(objects)
+        for instance in model_instances:
+            self.__db.upsert(instance)
+
     def get_to_one_relation(
         self,
         source: DataObject,
@@ -144,7 +171,7 @@ class SqlDataSource(
         )
         return self.__get_converter().convert_iterable(models)
 
-    def __get_converter(self) -> Converter:
+    def __get_converter(self) -> ModelConverter:
         return self.__converter_factory(self.data_object_factory)
 
     def __generate_models_for_get_list(

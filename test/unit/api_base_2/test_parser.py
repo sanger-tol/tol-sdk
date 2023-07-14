@@ -2,10 +2,7 @@
 #
 # SPDX-License-Identifier: MIT
 
-from typing import Any, Optional
-
 from tol.api_base2.parser import DefaultParser
-from tol.core import DataObjectFactory
 
 
 class TestDefaultParser:
@@ -18,9 +15,13 @@ class TestDefaultParser:
             'type': 'test_lol',
             'id': 'hype'
         }
-        factory = self.__factory_assert('test_lol', expected_id='hype')
-        parser = DefaultParser(factory)
-        parser.parse(in_)
+        parser = DefaultParser()
+        parsed = parser.parse(in_)
+
+        assert parsed.id == 'hype'
+        assert parsed.type == 'test_lol'
+        assert not parsed.attributes
+        assert not parsed._to_one_objects
 
     def test_no_relationships(self):
         """
@@ -36,17 +37,15 @@ class TestDefaultParser:
                 'string': 'sdo8fd'
             }
         }
-        factory = self.__factory_assert(
-            'whatever',
-            expected_id='does_not_matter',
-            expected_attributes={
-                'float': 349.34,
-                'int': 32984,
-                'string': 'sdo8fd'
-            }
-        )
-        parser = DefaultParser(factory)
-        parser.parse(in_)
+        parsed = DefaultParser().parse(in_)
+
+        assert parsed.type == 'whatever'
+        assert parsed.id == 'does_not_matter'
+        assert parsed.attributes == {
+            'float': 349.34,
+            'int': 32984,
+            'string': 'sdo8fd'
+        }
 
     def test_full_resource(self):
         """
@@ -64,25 +63,33 @@ class TestDefaultParser:
                 'string': 'sdo8fd'
             },
             'relationships': {
-                'one': {
-                    'excellent_relationship': {
+                'excellent_relationship': {
+                    'data': {
                         'type': 'nice',
                         'id': 'idk'
                     }
                 }
             }
         }
-        factory = self.__factory_assert(
-            'whatever',
-            expected_id='does_not_matter',
-            expected_attributes={
-                'float': 349.34,
-                'int': 32984,
-                'string': 'sdo8fd'
-            }
-        )
-        parser = DefaultParser(factory)
-        parser.parse(in_)
+        parsed = DefaultParser().parse(in_)
+
+        assert parsed.type == 'whatever'
+        assert parsed.id == 'does_not_matter'
+        assert parsed.attributes == {
+            'float': 349.34,
+            'int': 32984,
+            'string': 'sdo8fd'
+        }
+
+        to_ones = parsed._to_one_objects
+        assert to_ones is not None
+        assert len(to_ones) == 1
+
+        the_one = to_ones['excellent_relationship']
+        assert the_one.type == 'nice'
+        assert the_one.id == 'idk'
+        assert not the_one.attributes
+        assert not the_one._to_one_objects
 
     def test_parse_iterable(self):
         """
@@ -96,7 +103,15 @@ class TestDefaultParser:
             },
             {
                 'type': 'test_too',
-                'id': '39845k'
+                'id': '39845k',
+                'relationships': {
+                    'he_is_the_one': {
+                        'data': {
+                            'type': 'neo',
+                            'id': '1999'
+                        }
+                    }
+                }
             },
             {
                 'type': 'test-the_third',
@@ -107,53 +122,81 @@ class TestDefaultParser:
             }
         ]
 
-        class _MockDataObject:
-            def __init__(
-                self,
-                type_: str,
-                id_: str,
-                data: Optional[dict[str, Any]]
-            ) -> None:
-
-                self.type_ = type_
-                self.id_ = id_
-                self.attributes = data
-
-        parser = DefaultParser(_MockDataObject)
+        parser = DefaultParser()
         parsed = list(parser.parse_iterable(in_))
 
-        assert parsed[0].type_ == 'test1'
-        assert parsed[0].id_ == 'skdj8'
+        assert parsed[0].type == 'test1'
+        assert parsed[0].id == 'skdj8'
         assert parsed[0].attributes is None
+        assert not parsed[0]._to_one_objects
 
-        assert parsed[1].type_ == 'test_too'
-        assert parsed[1].id_ == '39845k'
+        assert parsed[1].type == 'test_too'
+        assert parsed[1].id == '39845k'
         assert parsed[1].attributes is None
+        one_to_ones = parsed[1]._to_one_objects
+        assert one_to_ones is not None
+        assert len(one_to_ones) == 1
+        the_one = one_to_ones['he_is_the_one']
+        assert the_one.type == 'neo'
+        assert the_one.id == '1999'
+        assert not the_one.attributes
+        assert not the_one._to_one_objects
 
-        assert parsed[2].type_ == 'test-the_third'
-        assert parsed[2].id_ == 'asdf8f'
+        assert parsed[2].type == 'test-the_third'
+        assert parsed[2].id == 'asdf8f'
         assert parsed[2].attributes == {
             'an_attr': True
         }
+        assert not parsed[2]._to_one_objects
 
-    def __factory_assert(
-        self,
-        expected_type: str,
-        expected_id: Optional[str] = None,
-        expected_attributes: Optional[dict[str, Any]] = None
-    ) -> DataObjectFactory:
-        """
-        asserts that the args and kwargs given to the resulting
-        `DataObjectFactory` mock are expected
-        """
+    def test_both_relationships(self):
+        """Many relationships are ignored."""
+        data = {
+            'type': 'test_too',
+            'id': '39845k',
+            'relationships': {
+                'he_is_the_one': {
+                    'data': {
+                        'type': 'neo',
+                        'id': '1999'
+                    }
+                },
+                'entirely_too_many': {
+                    'data': [
+                        {
+                            'type': 'eep',
+                            'id': str(i)
+                        }
+                        for i in range(7)
+                    ]
+                },
+                'yet_another_one_relationship': {
+                    'data': {
+                        'type': 'lol',
+                        'id': 'also lol'
+                    }
+                }
+            }
+        }
 
-        def __inner(
-            type_: str,
-            id_: Optional[str] = None,
-            data: Optional[dict[str, Any]] = None
-        ) -> None:
-            assert type_ == expected_type
-            assert id_ == expected_id
-            assert data == expected_attributes
+        parsed = DefaultParser().parse(data)
 
-        return __inner
+        assert parsed.type == 'test_too'
+        assert parsed.id == '39845k'
+        assert not parsed.attributes
+
+        to_ones = parsed._to_one_objects
+        assert to_ones is not None
+        assert len(to_ones) == 2
+
+        first = to_ones['he_is_the_one']
+        assert first.type == 'neo'
+        assert first.id == '1999'
+        assert not first.attributes
+        assert not first._to_one_objects
+
+        first = to_ones['yet_another_one_relationship']
+        assert first.type == 'lol'
+        assert first.id == 'also lol'
+        assert not first.attributes
+        assert not first._to_one_objects

@@ -139,9 +139,8 @@ def data_blueprint(
     @data_handler.route('/<object_type>:upsert', methods=['POST'])
     def post_upserts(*, object_type: str):
         controller = __new_controller(object_type)
-        data_source = data_source_dict[object_type]
         request_body = JsonApiRequestBody(request.json)
-        parser = DefaultParser(data_source.data_object_factory)
+        parser = DefaultParser()
         objects = parser.parse_iterable(request_body.data)
         return controller.post_upserts(object_type, objects)
 

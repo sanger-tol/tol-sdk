@@ -2,8 +2,9 @@
 #
 # SPDX-License-Identifier: MIT
 
+from string import ascii_uppercase
 from typing import Any, Dict, Iterable, Optional
-from unittest.mock import MagicMock, PropertyMock
+from unittest.mock import MagicMock, PropertyMock, call
 
 from tol.core import DataSourceFilter, core_data_object
 from tol.sql import SqlDataSource
@@ -76,6 +77,7 @@ class TestSqlDataSource:
             MagicMock(),
             None,
             MagicMock(),
+            MagicMock(),
             MagicMock()
         )
         assert ds.supported_types == ['easy', 'A', 'B', 'C']
@@ -124,6 +126,10 @@ class TestSqlDataSource:
             def instance_to_many_relations(self) -> dict[str, Iterable[Model]]:
                 pass
 
+            @classmethod
+            def get_foreign_key_name(cls, relationship_name: str) -> str:
+                raise NotImplementedError()
+
         class _SingleRowDatabase:
             def get_by_id(self, tablename: str, id_: Any) -> Optional[Model]:
                 return _MockModel() if id_ != '404' else None
@@ -133,6 +139,7 @@ class TestSqlDataSource:
             {'tests': 'test'},
             MagicMock(),
             lambda _: _MockBasicConverter(lambda m: f'{m.get_table_name()}s'),
+            MagicMock(),
             MagicMock(),
             MagicMock()
 
@@ -180,6 +187,10 @@ class TestSqlDataSource:
             def get_to_one_relationship_config(cls):
                 pass
 
+            @classmethod
+            def get_foreign_key_name(cls, relationship_name: str) -> str:
+                raise NotImplementedError()
+
             @property
             def instance_id(self) -> Optional[str]:
                 return self.__instance_id
@@ -223,6 +234,7 @@ class TestSqlDataSource:
             {'tests': 'test'},
             MagicMock(),
             lambda _: _MockBasicConverter(lambda m: f'{m.get_table_name()}s'),
+            MagicMock(),
             MagicMock(),
             MagicMock()
         )
@@ -284,6 +296,7 @@ class TestSqlDataSource:
             MagicMock(),
             lambda _: _MockIdentityConverter(),
             MagicMock(),
+            MagicMock(),
             MagicMock()
         )
         core_data_object(ds)
@@ -328,6 +341,7 @@ class TestSqlDataSource:
             MagicMock(),
             lambda _: _MockIdentityConverter(),
             MagicMock(),
+            MagicMock(),
             MagicMock()
         )
         core_data_object(ds)
@@ -350,6 +364,7 @@ class TestSqlDataSource:
             {'tests': 'test'},
             MagicMock(),
             lambda _: _MockIdentityConverter(),
+            MagicMock(),
             MagicMock(),
             MagicMock()
         )
@@ -378,6 +393,7 @@ class TestSqlDataSource:
             {'tests': 'test'},
             MagicMock(),
             lambda _: _MockPrefixConverter('look... '),
+            MagicMock(),
             MagicMock(),
             MagicMock()
         )
@@ -414,6 +430,7 @@ class TestSqlDataSource:
             {'tests': 'test'},
             MagicMock(),
             lambda _: _MockPrefixConverter('look... '),
+            MagicMock(),
             MagicMock(),
             MagicMock()
         )
@@ -455,6 +472,7 @@ class TestSqlDataSource:
             MagicMock(),
             lambda _: _MockPrefixConverter(prefix),
             MagicMock(),
+            MagicMock(),
             MagicMock()
         )
         ds.data_object_factory = lambda *_: None
@@ -466,6 +484,51 @@ class TestSqlDataSource:
             'no_matter'
         )
         assert list(many_relations) == expected
+
+    def test_delete(self):
+        """
+        `SqlDataSource().delete()` calls `Database().delete()` correctly
+        """
+
+        mock_db = MagicMock()
+        ds = SqlDataSource(
+            mock_db,
+            {'tests': 'mapped_tablename'},
+            MagicMock(),
+            MagicMock(),
+            MagicMock(),
+            MagicMock(),
+            MagicMock()
+        )
+        ds.delete('tests', list(ascii_uppercase))
+
+        assert mock_db.delete.call_args_list == [
+            call('mapped_tablename', c) for c in ascii_uppercase
+        ]
+
+    def test_upsert(self):
+        """
+        `SqlDataSource().upsert()` calls `Database().upsert()` and
+        `BackConverter().convert() correctly`
+        """
+
+        mock_db = MagicMock()
+        mock_model = MagicMock()
+        mock_model.get_table_name.return_value = 'test'
+        mock_back_converter = MagicMock()
+        mock_back_converter.convert_iterable.return_value = [mock_model]
+        mock_object = self.__get_mock_data_object('tests', 'lol')
+        ds = SqlDataSource(
+            mock_db,
+            {'tests': 'mapped_tablename'},
+            MagicMock(),
+            None,
+            lambda: mock_back_converter,
+            MagicMock(),
+            MagicMock()
+        )
+        ds.upsert('tests', mock_object)
+        mock_db.upsert.assert_called_once_with(mock_model)
 
     def __get_mock_data_object(self, type_: str, id_: str) -> MagicMock:
         """Mocks a DataObject of given type and id"""

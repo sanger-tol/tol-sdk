@@ -5,12 +5,14 @@
 from abc import ABC, abstractmethod
 from typing import Any, Dict, Iterable, List, Optional, Tuple, Type
 
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Query, Session
 
 from .filter import DatabaseFilter
 from .model import Model
 from .session import SessionFactory
 from .sort import DatabaseSorter
+from ..core import DataSourceError
 
 
 class Database(ABC):
@@ -22,7 +24,7 @@ class Database(ABC):
         Gets a single instance by its instance-ID, or None if not found.
 
         Note that this "instance-ID" may not always be named "id" on the
-        Model class.
+        `Model` class.
         """
 
     @abstractmethod
@@ -35,7 +37,7 @@ class Database(ABC):
         limit: Optional[int] = None
     ) -> Iterable[Model]:
         """
-        Returns an Iterable of Model instances according
+        Returns an Iterable of `Model` instances according
         to the given filters, offset, and limit.
         """
 
@@ -46,9 +48,20 @@ class Database(ABC):
         filters: Optional[DatabaseFilter] = None
     ) -> int:
         """
-        Counts the total number of Model instances of the given
+        Counts the total number of `Model` instances of the given
         tablename matching the given filters.
         """
+
+    @abstractmethod
+    def delete(self, tablename: str, instance_id: Any) -> None:
+        """
+        Deletes the `Model` instance of specified tablename and
+        instance-ID.
+        """
+
+    @abstractmethod
+    def upsert(self, instance: Model) -> None:
+        """Performs an "upsert" on the given `Model` instance."""
 
     @abstractmethod
     def get_to_one_relation(
@@ -124,6 +137,15 @@ class DefaultDatabase(Database):
         session.close()
         return count
 
+    def delete(self, tablename: str, instance_id: Any) -> None:
+        instance, session = self.__get_instance_by_id(tablename, instance_id)
+        session.delete(instance)
+        self.__commit_session(session, instance, 'deletion')
+
+    def upsert(self, instance: Model) -> None:
+        session = self.__upsert_to_session(instance)
+        self.__commit_session(session, instance, 'upserting')
+
     def get_to_one_relation(
         self,
         tablename: str,
@@ -158,11 +180,25 @@ class DefaultDatabase(Database):
         query = session.query(model)
         return model, session, query
 
+    def __commit_session(
+        self,
+        session: Session,
+        instance: Model,
+        operation: str
+    ) -> None:
+
+        try:
+            session.commit()
+        except IntegrityError:
+            self.__raise_integrity_error(instance, operation)
+        finally:
+            session.close()
+
     def __get_instance_by_id(
         self,
         tablename: str,
         instance_id: str
-    ) -> Tuple[Model, Session]:
+    ) -> Tuple[Optional[Model], Session]:
         """
         Gets an instance by its tablename and id. Returns a session object that
         must be manually closed.
@@ -181,3 +217,34 @@ class DefaultDatabase(Database):
         return {
             m.get_table_name(): m for m in models
         }
+
+    def __upsert_to_session(self, instance: Model) -> Session:
+        old_instance, session = self.__get_instance_by_id(
+            instance.get_table_name(),
+            instance.instance_id
+        )
+        if old_instance is None:
+            session.add(instance)
+        else:
+            session.merge(instance)
+
+        return session
+
+    def __raise_integrity_error(
+        self,
+        instance: Model,
+        operation_name: str
+    ) -> None:
+        relationship_values = instance.get_to_many_relationship_config().values()
+        relationship_names = ', '.join(relationship_values)
+        raise DataSourceError(
+            title='Database Integrity Error',
+            detail=(
+                'An integrity error was encountered in the Database during '
+                f'{operation_name} of the row with tablename '
+                f'"{instance.get_table_name()}" and instance-ID '
+                f'"{instance.instance_id}". This is usually due '
+                f'to another instance pointing towards this one. '
+                f'Hint - check the following tables: "{relationship_names}".'
+            )
+        )

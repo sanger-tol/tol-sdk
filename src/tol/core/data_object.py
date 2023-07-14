@@ -77,5 +77,5 @@ class DataObject(ABC):
 
         N.B. - This is not equivalent to `to_one_relationships`, as that merges
         both set `DataObject` instances and fetched relations from the
-        `DataSource`.
+        `DataSource`. Most users will not need (or want) to use this property.
         """

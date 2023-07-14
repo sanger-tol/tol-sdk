@@ -125,3 +125,82 @@ class TestDefaultDatabase(DatabaseTestCase):
         # correct order
         for i, rel in enumerate(r3_relations, start=1):
             assert rel.instance_id == str(i)
+
+    def test_delete(self):
+        """Delete works when given a good tablename and instance-ID"""
+
+        # add an "A"
+        session = session_factory()
+        session.add(
+            models.A(id='what are you going to do, delete me?')
+        )
+        session.commit()
+        session.close()
+
+        # delete the "A" using a DefaultDatabase
+        db = DefaultDatabase(session_factory, models_list)
+        db.delete(
+            'a',
+            'what are you going to do, delete me?'
+        )
+
+        # confirm the "A" is deleted
+        session = session_factory()
+        existing_a_s = session.query(models.A).all()
+        session.close()
+        assert len(existing_a_s) == 0
+
+    def test_upsert_not_existing(self):
+        """Upsert on non-existant row causes an insert"""
+
+        # add an "A"
+        session = session_factory()
+        session.add(
+            models.A(
+                id='101',
+                string_column='update me!'
+            )
+        )
+        session.commit()
+        session.close()
+
+        # upsert a new version
+        db = DefaultDatabase(session_factory, models_list)
+        db.upsert(
+            models.A(
+                id='101',
+                string_column='consider yourself updated'
+            )
+        )
+
+        # confirm the "A" is updated
+        session = session_factory()
+        existing_a = session.query(models.A).one_or_none()
+        assert existing_a is not None
+        assert existing_a.id == '101'
+        assert existing_a.string_column == (
+            'consider yourself updated'
+        )
+        session.close()
+
+    def test_upsert_on_existing(self):
+        """Upsert on existing row causes an update"""
+
+        # upsert a new version
+        db = DefaultDatabase(session_factory, models_list)
+        db.upsert(
+            models.A(
+                id='303',
+                string_column='consider yourself inserted'
+            )
+        )
+
+        # confirm the "A" is inserted
+        session = session_factory()
+        existing_a = session.query(models.A).one_or_none()
+        assert existing_a is not None
+        assert existing_a.id == '303'
+        assert existing_a.string_column == (
+            'consider yourself inserted'
+        )
+        session.close()

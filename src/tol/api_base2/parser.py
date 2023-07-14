@@ -5,9 +5,11 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
+from collections.abc import Mapping
 from typing import Any, Iterable
 
-from ..core import DataObject, DataObjectFactory
+from .misc import PseudoObject
+from ..core import DataObject
 
 
 JsonApiResource = dict[str, Any]
@@ -41,18 +43,31 @@ class Parser(ABC):
 
 
 class DefaultParser(Parser):
-
-    def __init__(
-        self,
-        data_object_factory: DataObjectFactory
-    ) -> None:
-
-        self.__data_object_factory = data_object_factory
-
     def parse(self, transfer: JsonApiResource) -> DataObject:
-
-        return self.__data_object_factory(
+        return PseudoObject(
             transfer.get('type'),
             id_=transfer.get('id'),
-            data=transfer.get('attributes')
+            attributes=transfer.get('attributes'),
+            to_ones=self.__parse_to_ones(transfer)
+        )
+
+    def __parse_to_ones(
+        self,
+        transfer: JsonApiResource
+    ) -> dict[str, DataObject]:
+
+        return {
+            k: self.parse(v.get('data', {}))
+            for k, v in transfer.get('relationships', {}).items()
+            if self.__relationship_is_to_one(v)
+        }
+
+    def __relationship_is_to_one(
+        self,
+        relationship: dict[str, Any]
+    ) -> bool:
+
+        return isinstance(
+            relationship.get('data'),
+            Mapping
         )

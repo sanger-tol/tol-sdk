@@ -61,6 +61,13 @@ class Model(ABC):
         The mapping of relationship names to tablenames for to-many relationships
         """
 
+    @classmethod
+    @abstractmethod
+    def get_foreign_key_name(cls, relationship_name: str) -> str:
+        """
+        The name of the foreign key column for the given relationship name
+        """
+
     @property
     @abstractmethod
     def instance_to_one_relations(self) -> dict[str, Optional[Model]]:
@@ -167,6 +174,12 @@ def model_base() -> Type[Model]:
                 if cls.__is_to_one_relationship(r)
             }
 
+        @classmethod
+        def get_foreign_key_name(cls, relationship_name: str) -> str:
+            # TODO refactor `Database().get_to_one_relation()` to use this
+            foreign_key = cls.__get_foreign_key(relationship_name)
+            return foreign_key.name
+
         @property
         def instance_to_one_relations(self) -> dict[str, Optional[Model]]:
             config = self.get_to_one_relationship_config()
@@ -185,10 +198,21 @@ def model_base() -> Type[Model]:
 
         @property
         def instance_attributes(self) -> dict[str, Any]:
-            return {
-                k: getattr(self, k)
-                for k in self.__get_attribute_names()
-            }
+            names = self.__get_attribute_names()
+            return self.__get_attributes_map(names)
+
+        @classmethod
+        def __get_foreign_key(
+            cls,
+            relationship_name: str
+        ) -> MappedColumn:
+
+            relationships = inspect(cls).relationships
+            all_keys = relationships[relationship_name]._calculated_foreign_keys
+            if len(all_keys) != 1:
+                raise NotImplementedError('Composite keys are not supported.')
+            (foreign_key, ) = all_keys
+            return foreign_key
 
         def __get_attributes_map(
             self,

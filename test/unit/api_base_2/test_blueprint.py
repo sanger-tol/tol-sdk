@@ -333,14 +333,19 @@ class TestBlueprintUpsert(TestCase):
                 assert list_objects[0].type == object_type
                 assert list_objects[0].id == '123'
                 assert not list_objects[0].attributes
-                assert list_objects[0].host == self
+                # first object's to one relationship
+                ones = list_objects[0]._to_one_objects
+                assert len(ones) == 1
+                one_relation = ones['neverending_hype']
+                assert one_relation.type == 'hyped_up'
+                assert one_relation.id == '23498'
 
+                # second object
                 assert list_objects[1].type == object_type
                 assert list_objects[1].id == 'abc'
                 assert list_objects[1].attributes == {
                     'hype': 'train'
                 }
-                assert list_objects[1].host == self
 
         # add a data object factory
         ds_upsert = NeverEverStopUpserting()
@@ -354,7 +359,15 @@ class TestBlueprintUpsert(TestCase):
             'data': [
                 {
                     'type': 'write',
-                    'id': '123'
+                    'id': '123',
+                    'relationships': {
+                        'neverending_hype': {
+                            'data': {
+                                'type': 'hyped_up',
+                                'id': '23498'
+                            }
+                        }
+                    }
                 },
                 {
                     'type': 'write',

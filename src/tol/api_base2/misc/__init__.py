@@ -7,3 +7,4 @@ from .aggregation_body import AggregationBody  # noqa
 from .data_body import RequestBody, JsonApiRequestBody  # noqa
 from .filter_utils import FilterUtils  # noqa
 from .list_get_parameters import ListGetParamaters  # noqa
+from .pseudo import PseudoObject  # noqa

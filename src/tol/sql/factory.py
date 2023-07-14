@@ -4,7 +4,7 @@
 
 from typing import Dict, List, Type
 
-from .converter import DefaultConverter, TypeFunction
+from .converter import DefaultDataObjectConverter, DefaultModelConverter, TypeFunction
 from .database import Database, DefaultDatabase
 from .filter import DefaultDatabaseFilter
 from .model import Model
@@ -12,6 +12,7 @@ from .relationship import DefaultSqlRelationshipConfig
 from .session import create_session_factory
 from .sort import DefaultDatabaseSorter
 from .sql_datasource import (
+    BackConverterFactory,
     ConverterFactory,
     FilterFactory,
     SorterFactory,
@@ -19,10 +20,25 @@ from .sql_datasource import (
 )
 
 
-def __converter_factory(type_function: TypeFunction) -> ConverterFactory:
-    return lambda do_factory: DefaultConverter(
+def __model_converter_factory(
+    type_function: TypeFunction
+) -> ConverterFactory:
+    return lambda do_factory: DefaultModelConverter(
         type_function,
         do_factory
+    )
+
+
+def __back_converter_factory(
+    models: List[Type[Model]],
+    type_function: TypeFunction
+) -> BackConverterFactory:
+
+    models_dict = {
+        type_function(m): m for m in models
+    }
+    return lambda: DefaultDataObjectConverter(
+        models_dict
     )
 
 
@@ -71,7 +87,8 @@ def create_sql_datasource(
     - an (optional) callable that gets the DataObject type for a given Model class
     """
 
-    converter_factory = __converter_factory(type_function)
+    converter_factory = __model_converter_factory(type_function)
+    back_converter_factory = __back_converter_factory(models, type_function)
     sorter_factory = __sorter_factory()
     filter_factory = __filter_factory()
     type_tablename_dict = __type_tablename_dict(models, type_function)
@@ -83,6 +100,7 @@ def create_sql_datasource(
         type_tablename_dict,
         sql_relationship_config,
         converter_factory,
+        back_converter_factory,
         filter_factory,
         sorter_factory
     )

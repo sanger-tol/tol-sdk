@@ -222,6 +222,7 @@ class TestDefaultModel:
         All tablenames are present, for both to-one and to-many relationships,
         when both are configured.
         """
+
         assert Specimen.get_to_one_relationship_config() == {
             'species': 'species'
         }
@@ -229,6 +230,12 @@ class TestDefaultModel:
             'collectors': 'collector',
             'taken_samples': 'sample'
         }
+
+    def test_get_foreign_key_name(self):
+        """works for existing foreign key"""
+
+        observed = Collector.get_foreign_key_name('collected')
+        assert observed == 'collected_specimen_id'
 
 
 class TestRelationDict:
