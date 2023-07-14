@@ -189,6 +189,10 @@ def model_base() -> Type[Model]:
                 k: columns[k].type.python_type for k in names
             }
 
+        @classmethod
+        def get_foreign_key_target(cls, relationship_name: str) -> str:
+            return super().get_foreign_key_target(relationship_name)
+
         @property
         def instance_id(self) -> Optional[str]:
             id_key = self.get_id_column_name()
