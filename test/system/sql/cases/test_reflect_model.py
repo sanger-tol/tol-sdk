@@ -8,7 +8,7 @@ from sqlalchemy import MetaData, create_engine
 from sqlalchemy.ext.automap import automap_base
 
 from .. import models
-from ..base_case import session_factory, DatabaseTestCase
+from ..base_case import DatabaseTestCase, session_factory
 
 
 ONLY = [
