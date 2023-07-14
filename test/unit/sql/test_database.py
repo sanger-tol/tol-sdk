@@ -12,39 +12,11 @@ import pytest
 
 from sqlalchemy import ForeignKey
 from sqlalchemy.exc import IntegrityError
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from tol.core import DataSourceError
 from tol.sql.database import DefaultDatabase
 from tol.sql.model import model_base
-
-
-base = model_base()
-
-
-class ModelA(base):
-    __tablename__ = 'A'
-
-    id: Mapped[str] = mapped_column(primary_key=True)
-
-    relation_id: Mapped[int] = mapped_column(
-        ForeignKey('B.filter_on_me')
-    )
-
-
-class ModelB(base):
-    __tablename__ = 'B'
-
-    id_override: Mapped[str] = mapped_column(primary_key=True)
-
-    filter_on_me: Mapped[int] = mapped_column(
-        nullable=False,
-        unique=True
-    )
-
-    @classmethod
-    def get_id_column_name(cls) -> str:
-        return 'id_override'
 
 
 class _Column:
@@ -394,6 +366,32 @@ class TestDefaultDatabase:
         a non-primary key target column, with an explicitly named
         relationship
         """
+        base = model_base()
+
+        class ModelA(base):
+            __tablename__ = 'A'
+
+            id: Mapped[str] = mapped_column(primary_key=True)
+
+            relation_id: Mapped[int] = mapped_column(
+                ForeignKey('B.filter_on_me')
+            )
+
+            relation: Mapped['ModelB'] = relationship()
+
+        class ModelB(base):
+            __tablename__ = 'B'
+
+            id_override: Mapped[str] = mapped_column(primary_key=True)
+
+            filter_on_me: Mapped[int] = mapped_column(
+                nullable=False,
+                unique=True
+            )
+
+            @classmethod
+            def get_id_column_name(cls) -> str:
+                return 'id_override'
 
         a_instance = ModelA(id='20', relation_id=489)
 
@@ -402,7 +400,7 @@ class TestDefaultDatabase:
         db = DefaultDatabase(lambda: session_mock, [ModelA, ModelB])
 
         # get the relation
-        db.get_to_one_relation('A', )
+        db.get_to_one_relation('A', '20', 'relation')
 
         # 6 = 
         # 3 + 3
