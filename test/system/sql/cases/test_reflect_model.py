@@ -31,7 +31,7 @@ class TestReflect(DatabaseTestCase):
         # such as 'only' to limit what tables we look at...
         metadata.reflect(engine, only=ONLY)
         # we can then produce a set of mappings from this MetaData.
-        Base = automap_base(metadata=metadata)
+        Base = automap_base(metadata=metadata)  # noqa N806
 
         # calling prepare() just sets up mapped classes and relationships.
         Base.prepare()
@@ -50,9 +50,9 @@ class TestReflect(DatabaseTestCase):
 
         with session_factory() as sess2:
             r1_class = Base.classes.r1
-            instance_r1 = sess2.query(r1_class).filter(r1_class.id_override=='21').one_or_none()
+            instance_r1 = sess2.query(r1_class).filter(r1_class.id_override == '21').one_or_none()
             assert instance_r1 is not None
 
             r3_class = Base.classes['r3']
-            instances_r3 = sess2.query(r3_class).filter(r3_class.ur_r1_id=='21').all()
+            instances_r3 = sess2.query(r3_class).filter(r3_class.ur_r1_id == '21').all()
             assert len(instances_r3) == 2
