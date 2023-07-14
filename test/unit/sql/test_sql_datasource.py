@@ -127,14 +127,6 @@ class TestSqlDataSource:
             def get_attribute_types(cls) -> dict[str, type]:
                 raise NotImplementedError()
 
-            @property
-            def instance_to_one_relations(self) -> dict[str, Optional[Model]]:
-                pass
-
-            @property
-            def instance_to_many_relations(self) -> dict[str, Iterable[Model]]:
-                pass
-
             @classmethod
             def get_foreign_key_name(cls, relationship_name: str) -> str:
                 raise NotImplementedError()
@@ -215,14 +207,6 @@ class TestSqlDataSource:
             @property
             def instance_attributes(self) -> Dict[str, Any]:
                 return self.__attrs
-
-            @property
-            def instance_to_one_relations(self) -> dict[str, Optional[Model]]:
-                pass
-
-            @property
-            def instance_to_many_relations(self) -> dict[str, Iterable[Model]]:
-                pass
 
         class _AutoIncrementDatabase:
             def get_page(

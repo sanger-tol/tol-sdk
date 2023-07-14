@@ -53,14 +53,6 @@ class _ExampleModel(Model):
         raise NotImplementedError()
 
     @property
-    def instance_to_one_relations(self) -> dict[str, Optional[Model]]:
-        pass
-
-    @property
-    def instance_to_many_relations(self) -> dict[str, Iterable[Model]]:
-        pass
-
-    @property
     def instance_id(self) -> Optional[str]:  # noqa
         return self.__id
 

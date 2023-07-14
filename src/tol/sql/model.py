@@ -77,20 +77,6 @@ class Model(ABC):
 
     @property
     @abstractmethod
-    def instance_to_one_relations(self) -> dict[str, Optional[Model]]:
-        """
-        The mapping of relationship names to to-one relation rows
-        """
-
-    @property
-    @abstractmethod
-    def instance_to_many_relations(self) -> dict[str, Iterable[Model]]:
-        """
-        The mapping of relationship names to to-many relation rows
-        """
-
-    @property
-    @abstractmethod
     def instance_id(self) -> Optional[str]:
         """The (potentially None) id of this model instance"""
 
@@ -194,16 +180,6 @@ def model_base() -> Type[Model]:
             return {
                 k: columns[k].type.python_type for k in names
             }
-
-        @property
-        def instance_to_one_relations(self) -> dict[str, Optional[Model]]:
-            config = self.get_to_one_relationship_config()
-            return self.__get_attributes_map(config.keys())
-
-        @property
-        def instance_to_many_relations(self) -> dict[str, Iterable[Model]]:
-            config = self.get_to_many_relationship_config()
-            return self.__get_attributes_map(config.keys())
 
         @property
         def instance_id(self) -> Optional[str]:
