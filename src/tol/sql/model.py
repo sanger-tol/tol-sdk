@@ -75,6 +75,14 @@ class Model(ABC):
         The name of the foreign key column for the given relationship name
         """
 
+    @classmethod
+    @abstractmethod
+    def get_foreign_key_target(cls, relationship_name: str) -> str:
+        """
+        The name of the target column for the foreign key relationship
+        of given name
+        """
+
     @property
     @abstractmethod
     def instance_id(self) -> Optional[str]:
