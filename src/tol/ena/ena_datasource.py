@@ -74,12 +74,14 @@ class EnaDataSource(DataSource):
                 'project_name' not in object_filters.contains:
             raise DataSourceError('Filter must contain project_name contains filter')
 
-        #  output = self.get_request(f'/ena/browser/api/xml/{checklist_id}')
+        # output = self.get_request(f'/ena/browser/api/xml/{checklist_id}')
         output = self.get_request(f'/ena/browser/api/xml/search?result=sample&query=project_name%3D%22DTOL%22&limit=10&fields=all&includeLinks=false')
 
+        samples = em.convert_xml_to_list_of_sample_dict(output.text)
         # request_data_dict = json.loads(output.text)
-        return output.text
+        # return output.text
         # return CoreDataObject(object_type, data=request_data_dict)
+        return samples
 
 
     def get_xml_checklist(self, checklist_id: str) -> Dict[str, Tuple[str, str, object]]:
