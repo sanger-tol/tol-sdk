@@ -66,8 +66,13 @@ class TestSqlDataSource:
     def test_supported_types(self):
         """Render correctly from model_dict"""
 
+        test_db = MagicMock()
+        type(test_db).attribute_types = PropertyMock(
+            return_value={}
+        )
+
         ds = SqlDataSource(
-            None,
+            test_db,
             {
                 'easy': 'test',
                 'A': 'test',
@@ -118,6 +123,10 @@ class TestSqlDataSource:
             def get_to_one_relationship_config(cls):
                 pass
 
+            @classmethod
+            def get_attribute_types(cls) -> dict[str, type]:
+                raise NotImplementedError()
+
             @property
             def instance_to_one_relations(self) -> dict[str, Optional[Model]]:
                 pass
@@ -133,6 +142,10 @@ class TestSqlDataSource:
         class _SingleRowDatabase:
             def get_by_id(self, tablename: str, id_: Any) -> Optional[Model]:
                 return _MockModel() if id_ != '404' else None
+
+            @property
+            def attribute_types(self):
+                return {}
 
         ds = SqlDataSource(
             _SingleRowDatabase(),
@@ -191,6 +204,10 @@ class TestSqlDataSource:
             def get_foreign_key_name(cls, relationship_name: str) -> str:
                 raise NotImplementedError()
 
+            @classmethod
+            def get_attribute_types(cls) -> dict[str, type]:
+                raise NotImplementedError()
+
             @property
             def instance_id(self) -> Optional[str]:
                 return self.__instance_id
@@ -221,6 +238,10 @@ class TestSqlDataSource:
                     _MockModel(str(i), {'hype': f'{"A" * i} train'})
                     for i in range(offset, offset + limit)
                 )
+
+            @property
+            def attribute_types(self):
+                return {}
 
             def count(
                 self,
@@ -266,6 +287,10 @@ class TestSqlDataSource:
         class _MockDatabase:
             def __init__(self) -> None:
                 self.__get_count = 0
+
+            @property
+            def attribute_types(self):
+                return {}
 
             @property
             def get_count(self) -> int:
@@ -319,6 +344,10 @@ class TestSqlDataSource:
             def __init__(self) -> None:
                 self.__get_count = 0
 
+            @property
+            def attribute_types(self):
+                return {}
+
             def get_page(
                 self,
                 tablename: str,
@@ -357,6 +386,10 @@ class TestSqlDataSource:
             def get_to_one_relation(self, *args):
                 return None
 
+            @property
+            def attribute_types(self):
+                return {}
+
         mock_db = _MockDatabase()
 
         ds = SqlDataSource(
@@ -385,6 +418,10 @@ class TestSqlDataSource:
         class _MockDatabase:
             def get_to_one_relation(self, *args):
                 return 'I found one!!!!'
+
+            @property
+            def attribute_types(self):
+                return {}
 
         mock_db = _MockDatabase()
 
@@ -422,6 +459,10 @@ class TestSqlDataSource:
                 assert instance_id == 'lol'
                 assert relationship_name == 'no_matter'
                 return []
+
+            @property
+            def attribute_types(self):
+                return {}
 
         mock_db = _MockDatabase()
 
@@ -463,6 +504,10 @@ class TestSqlDataSource:
                 assert relationship_name == 'no_matter'
 
                 return inputs
+
+            @property
+            def attribute_types(self):
+                return {}
 
         mock_db = _MockDatabase()
 
@@ -529,6 +574,50 @@ class TestSqlDataSource:
         )
         ds.upsert('tests', mock_object)
         mock_db.upsert.assert_called_once_with(mock_model)
+
+    def test_get_attribute_types(self):
+        """
+        `SqlDataSource().get_attribute_types()` uses a cached fetch of
+        `Database().attribute_types`.
+        """
+
+        mock_db = MagicMock()
+        mock_attribute_types = PropertyMock(
+            return_value={
+                'A': {
+                    'test': int
+                },
+                'B': {
+                    'test_string': str,
+                    'boolean': bool
+                }
+            }
+        )
+        type(mock_db).attribute_types = mock_attribute_types
+
+        ds = SqlDataSource(
+            mock_db,
+            {'a': 'A', 'b': 'B'},
+            MagicMock(),
+            MagicMock(),
+            MagicMock(),
+            MagicMock(),
+            MagicMock()
+        )
+
+        # called once on instantiaton, never again
+        mock_attribute_types.assert_called_once()
+
+        # get 'a', still only called once
+        assert ds.get_attribute_types('a') == {'test': 'int'}
+        mock_attribute_types.assert_called_once()
+
+        # get 'b', still only called once
+        assert ds.get_attribute_types('b') == {
+            'test_string': 'str',
+            'boolean': 'bool'
+        }
+        mock_attribute_types.assert_called_once()
 
     def __get_mock_data_object(self, type_: str, id_: str) -> MagicMock:
         """Mocks a DataObject of given type and id"""

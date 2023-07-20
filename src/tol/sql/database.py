@@ -87,6 +87,14 @@ class Database(ABC):
         instances under the given relationship.
         """
 
+    @property
+    @abstractmethod
+    def attribute_types(self) -> dict[str, dict[str, type]]:
+        """
+        The mapping of attribute name to type for each model under
+        this `Database` instance.
+        """
+
 
 class DefaultDatabase(Database):
     """A reasonable-default implementation of the Database ABC."""
@@ -99,6 +107,7 @@ class DefaultDatabase(Database):
 
         self.__session_factory = session_factory
         self.__tablename_model_dict = self.__get_tablename_model_dict(models)
+        self.__attribute_types = self.__get_attribute_types()
 
     def get_by_id(self, tablename: str, instance_id: Any) -> Optional[Model]:
         result, session = self.__get_instance_by_id(tablename, instance_id)
@@ -169,6 +178,16 @@ class DefaultDatabase(Database):
         result = instance.instance_to_many_relations[relationship_name]
         session.close()
         return result
+
+    @property
+    def attribute_types(self) -> dict[str, dict[str, type]]:
+        return self.__attribute_types
+
+    def __get_attribute_types(self) -> dict[str, dict[str, type]]:
+        return {
+            t: m.get_attribute_types()
+            for t, m in self.__tablename_model_dict.items()
+        }
 
     def __get_model_session_query(
         self,

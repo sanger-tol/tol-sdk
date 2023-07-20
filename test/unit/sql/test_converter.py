@@ -48,6 +48,10 @@ class _ExampleModel(Model):
     def get_foreign_key_name(cls, relationship_name: str) -> str:
         raise NotImplementedError()
 
+    @classmethod
+    def get_attribute_types(cls) -> dict[str, type]:
+        raise NotImplementedError()
+
     @property
     def instance_to_one_relations(self) -> dict[str, Optional[Model]]:
         pass

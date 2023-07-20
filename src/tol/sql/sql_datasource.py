@@ -70,10 +70,11 @@ class SqlDataSource(
         self.__back_converter_factory = back_converter_factory
         self.__filter_factory = filter_factory
         self.__sorter_factory = sorter_factory
+        self.__all_attribute_types = self.__calculate_all_attribute_types()
         super().__init__({})
 
     def get_attribute_types(self, object_type: str) -> Dict[str, str]:
-        raise NotImplementedError()
+        return self.__all_attribute_types[object_type]
 
     @property
     def supported_types(self) -> List[str]:
@@ -170,6 +171,26 @@ class SqlDataSource(
             relationship_name
         )
         return self.__get_converter().convert_iterable(models)
+
+    def __calculate_all_attribute_types(self) -> dict[str, dict[str, str]]:
+        tablename_type_map = {
+            v: k for k, v in self.__type_tablename_map.items()
+        }
+
+        return {
+            tablename_type_map[k]: self.__calculate_attribute_types(v)
+            for k, v in self.__db.attribute_types.items()
+        }
+
+    def __calculate_attribute_types(
+        self,
+        types: dict[str, type]
+    ) -> dict[str, str]:
+
+        return {
+            k: v.__name__
+            for k, v in types.items()
+        }
 
     def __get_converter(self) -> ModelConverter:
         return self.__converter_factory(self.data_object_factory)

@@ -237,6 +237,18 @@ class TestDefaultModel:
         observed = Collector.get_foreign_key_name('collected')
         assert observed == 'collected_specimen_id'
 
+    def test_get_attribute_types(self):
+        """
+        `Model.get_attribute_types()` works for different types
+        """
+
+        expected = {
+            'string_column': str,
+            'boolean_column': bool
+        }
+        observed = _Example.get_attribute_types()
+        assert expected == observed
+
 
 class TestRelationDict:
     def test_key_error(self):
