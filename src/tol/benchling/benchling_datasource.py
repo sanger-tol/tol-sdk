@@ -81,6 +81,7 @@ class BenchlingDataSource(DataSource, ListGetter):
     ) -> Iterable[DataObject]:
         file_suffix = ''
         if object_filters is not None:
+<<<<<<< HEAD
             if isinstance(object_filters.exact, dict):
                 if 'sequencing_platform' in object_filters.exact:
                     file_suffix = ('_sequencing_platform_'
@@ -90,6 +91,14 @@ class BenchlingDataSource(DataSource, ListGetter):
             else:
                 raise DataSourceError('Filtering only on sequencing platform and extraction '
                                       'type currently supported on BenchlingDataSource')
+=======
+            if isinstance(object_filters.exact, dict) \
+                    and 'sequencing_platform' in object_filters.exact:
+                file_suffix = '_sequencing_platform_' + object_filters.exact['sequencing_platform']
+            else:
+                raise DataSourceError('Filtering only on sequencing_platform currently supported '
+                                      'on BenchlingDataSource')
+>>>>>>> 76ca09b (TOLP-4848 Allow Benchling subqueries for sequencing_request)
         try:
             sql = importlib.resources.files('tol.benchling.sql') \
                                      .joinpath(f'{object_type}{file_suffix}.sql') \
