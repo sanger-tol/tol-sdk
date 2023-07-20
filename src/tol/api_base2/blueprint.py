@@ -3,8 +3,9 @@
 # SPDX-License-Identifier: MIT
 
 from itertools import chain
-from typing import Callable
+from typing import Callable, Optional
 
+import flask
 from flask import Blueprint, request
 
 from .controller import Controller
@@ -12,6 +13,8 @@ from .exception import BaseRuntimeException
 from .misc import (
     AggregationBody,
     AggregationParameters,
+    AuthContext,
+    Authenticator,
     JsonApiRequestBody,
     ListGetParamaters
 )
@@ -90,11 +93,26 @@ def config_blueprint(
     return config_handler
 
 
+CtxGetter = Callable[[], AuthContext]
+"""
+A callable that fetches the global `AuthContext` instance
+"""
+
+
+def default_ctx_getter() -> AuthContext:
+    return flask.g.setdefault(
+        'auth_context',
+        default=AuthContext()
+    )
+
+
 def data_blueprint(
     *data_sources: DataSource,
     url_prefix: str = '/data',
     config_prefix: str = '/_config',
-    config_factory: ConfigFactory = lambda p, d: config_blueprint(p, d)
+    config_factory: ConfigFactory = lambda p, d: config_blueprint(p, d),
+    authenticator: Optional[Authenticator] = None,
+    context_getter: CtxGetter = default_ctx_getter
 ) -> DataBlueprint:
     """
     Given a tuple of DataSource instances, this provides a flask
@@ -103,6 +121,12 @@ def data_blueprint(
     """
 
     data_handler = DataBlueprint(url_prefix=url_prefix)
+
+    if authenticator is not None:
+        @data_handler.before_request
+        def authenticate() -> None:
+            auth_context = context_getter()
+            authenticator(auth_context)
 
     config = config_factory(config_prefix, data_sources)
     data_handler.register_blueprint(config)

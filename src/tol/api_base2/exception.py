@@ -123,3 +123,16 @@ class BadPostJsonError(BaseRuntimeException):
         if message is None:
             return detail
         return f'{detail}\n\n{message}'
+
+
+class UnauthenticatedError(BaseRuntimeException):
+    """
+    Raise on any error condition that warrants a
+    401: Unauthorized HTTP status code.
+    """
+    def __init__(self, detail: str) -> None:
+        errors = [{
+            'title': 'Unauthorized',
+            'detail': detail
+        }]
+        super().__init__(errors, status_code=401)
