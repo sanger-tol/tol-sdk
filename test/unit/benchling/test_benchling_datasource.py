@@ -41,7 +41,7 @@ class TestBenchlingDataSource(TestCase):
         with self.assertRaises(DataSourceError):
             bds.get_list('index')
 
-        # Filtering is unsupported
+        # Filtering is unsupported apart from on sequencing_platform
         f = DataSourceFilter()
         with self.assertRaises(DataSourceError):
             bds.get_list('sample', object_filters=f)
@@ -68,3 +68,10 @@ class TestBenchlingDataSource(TestCase):
                          third.attributes)
         with self.assertRaises(StopIteration):
             next(returned)
+
+        # Try a sequencing request which has sub-queries
+        # No subquery given
+        with self.assertRaises(DataSourceError):
+            bds.get_list('sequencing_request')
+        f.exact = {'sequencing_platform': 'pacbio'}
+        bds.get_list('sequencing_request', object_filters=f)
