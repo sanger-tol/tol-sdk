@@ -6,9 +6,14 @@ import datetime
 import logging
 import sys
 import uuid
+<<<<<<< HEAD
 from collections.abc import Mapping
 from functools import cache
 from typing import Dict, Iterable, Iterator
+=======
+from functools import cache
+from typing import Dict, Iterable
+>>>>>>> ae82d61 (TOLP-6055 sequencing data source to wrap around the previous publisher)
 
 from lab_share_lib.constants import RABBITMQ_HEADER_VALUE_ENCODER_TYPE_BINARY
 from lab_share_lib.rabbit.avro_encoder import AvroEncoderBinary
@@ -157,6 +162,7 @@ class SequencingDataSource(DataSource):
     def supported_types(self):
         return ['sequencing_sample']
 
+<<<<<<< HEAD
     @property
     @cache
     def attribute_types(self) -> Dict:
@@ -206,3 +212,8 @@ class SequencingDataSource(DataSource):
                 return iter(['sequencing_sample'])
 
         return AttributeTypesDict()
+=======
+    @cache
+    def get_attribute_types(self, object_type: str) -> Dict:
+        raise NotImplementedError()
+>>>>>>> ae82d61 (TOLP-6055 sequencing data source to wrap around the previous publisher)
