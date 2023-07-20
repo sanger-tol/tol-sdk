@@ -143,7 +143,7 @@ class MlwhDataSource(DataSource, ListGetter):
             'common_name': 'mlwh_sample.common_name',
             'description': 'mlwh_sample.description',
             'study_id': 'mlwh_study.id_study_lims',
-            'study_uuid': 'study.uuid',
+            # 'study_uuid': 'study.uuid',
             'order_date': "DATE_FORMAT(MIN(events.created_at), '%Y-%m-%dT%H:%i:%s')"
         }
 
