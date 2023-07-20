@@ -22,6 +22,20 @@ class Sample:
     library_type: str = None
     country_of_origin: str = None
     sample_collection_date_utc: datetime = None
+    cost_code: str = None
+    genome_size: str = None
+    accession_number: str = None
+    sheared_femto_fragment_size: str = None
+    post_spri_concentration: str = None
+    post_spri_volume: str = None
+    final_nano_drop_280: str = None
+    final_nano_drop_230: str = None
+    final_nano_drop: str = None
+    shearing_and_qc_comments: str = None
+    date_submitted_utc: datetime = None
+    priority_level: str = None
+    date_required_by: str = None
+    reason_for_priority: str = None
 
 
 @dataclass

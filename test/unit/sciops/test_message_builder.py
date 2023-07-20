@@ -41,7 +41,21 @@ class TestMessageBuilder(TestCase):
                     donor_id='TestSample1',
                     library_type='Library1',
                     country_of_origin='United Kingdom',
-                    sample_collection_date_utc=now
+                    sample_collection_date_utc=now,
+                    cost_code='costCode',
+                    genome_size='3',
+                    accession_number='A1234',
+                    sheared_femto_fragment_size='5',
+                    post_spri_concentration='10',
+                    post_spri_volume='20',
+                    final_nano_drop_280='5',
+                    final_nano_drop_230='6',
+                    final_nano_drop='7',
+                    shearing_and_qc_comments='Comments',
+                    date_submitted_utc=now,
+                    priority_level='Medium',
+                    date_required_by='Long Read',
+                    reason_for_priority='Reason for priority'
                 )
             ]
         )
@@ -68,6 +82,20 @@ class TestMessageBuilder(TestCase):
         self.assertEqual(samples[0]['libraryType'], 'Library1')
         self.assertEqual(samples[0]['countryOfOrigin'], 'United Kingdom')
         self.assertIsNotNone(samples[0]['sampleCollectionDateUtc'])
+        self.assertEqual(samples[0]['costCode'], 'costCode')
+        self.assertEqual(samples[0]['genomeSize'], '3')
+        self.assertEqual(samples[0]['accessionNumber'], 'A1234')
+        self.assertEqual(samples[0]['shearedFemtoFragmentSize'], '5')
+        self.assertEqual(samples[0]['postSPRIConcentration'], '10')
+        self.assertEqual(samples[0]['postSPRIVolume'], '20')
+        self.assertEqual(samples[0]['finalNanoDrop280'], '5')
+        self.assertEqual(samples[0]['finalNanoDrop230'], '6')
+        self.assertEqual(samples[0]['finalNanoDrop'], '7')
+        self.assertEqual(samples[0]['shearingAndQCComments'], 'Comments')
+        self.assertIsNotNone(samples[0]['dateSubmittedUTC'])
+        self.assertEqual(samples[0]['priorityLevel'], 'Medium')
+        self.assertEqual(samples[0]['dateRequiredBy'], 'Long Read')
+        self.assertEqual(samples[0]['reasonForPriority'], 'Reason for priority')
 
     def test_build_create_labware_message__sparse(self):
         """ Test the _build_create_labware_message method  with empty fields """
