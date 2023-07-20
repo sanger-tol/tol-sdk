@@ -1,5 +1,6 @@
 SELECT c.barcode as sample_ref,
 t.tolid as tolid,
+t.scientific_name,
 t.tubewell_id as tube_or_well_id,
 pbsum.submission_date,
 'pacbio' as sequencing_platform
