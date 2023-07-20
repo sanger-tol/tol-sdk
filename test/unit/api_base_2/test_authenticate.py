@@ -1,0 +1,230 @@
+# SPDX-FileCopyrightText: 2023 Genome Research Ltd.
+#
+# SPDX-License-Identifier: MIT
+
+from typing import Iterable
+from unittest.mock import MagicMock, PropertyMock
+
+from flask import Flask, g, request
+
+from flask_testing import TestCase
+
+import pytest
+
+from tol.api_base2 import data_blueprint
+from tol.api_base2.exception import UnauthenticatedError
+from tol.api_base2.misc import AuthContext, quick_and_dirty_auth
+from tol.core import DataSource
+from tol.core.operator import Deleter, DetailGetter
+
+
+class _MockDataSource(DataSource, DetailGetter, Deleter):
+    def get_by_id(self, object_type: str, object_ids, **kwargs):
+        assert len(object_ids) == 1
+
+        # get the global user ID
+        user_id = g.auth_context.user_id
+
+        mock_object = MagicMock()
+        type(mock_object).type = PropertyMock(
+            return_value=object_type
+        )
+        type(mock_object).id = PropertyMock(
+            return_value=object_ids[0]
+        )
+        type(mock_object).attributes = PropertyMock(
+            return_value={'user_id': user_id}
+        )
+
+        return [
+            mock_object
+        ]
+
+    def delete(self, object_type: str, object_ids: Iterable[str]) -> None:
+        pass
+
+    def get_attribute_types(self, object_type: str) -> dict:
+        return {}
+
+    @property
+    def supported_types(self) -> list[str]:
+        return ['lol']
+
+
+class TestAuthenticator(TestCase):
+    def mock_authenticate(self, ctx: AuthContext) -> None:
+        token = request.headers.get('token')
+        if token != 'hello_world':
+            raise UnauthenticatedError('say hi first!')
+        ctx.user_id = 'hi'
+
+    def create_app(self):
+        app = Flask(__name__)
+        blueprint = data_blueprint(
+            _MockDataSource({}),
+            authenticator=self.mock_authenticate
+        )
+        app.register_blueprint(blueprint)
+        return app
+
+    def test_no_token(self):
+        """no token -> 401"""
+        response = self.client.open('/data/lol/32')
+        self.assert401(
+            response,
+            f'Response body is : {response.data.decode("utf-8")}'
+        )
+
+    def test_invalid_token(self):
+        """token does not match a user -> 401"""
+
+        response = self.client.open(
+            '/data/lol/32',
+            headers={
+                'token': "lol won't work"
+            }
+        )
+        self.assert401(
+            response,
+            f'Response body is : {response.data.decode("utf-8")}'
+        )
+
+    def test_valid_token(self):
+        """
+        token does match a user:
+
+        - user_id is set
+        - return 200
+        """
+
+        response = self.client.open(
+            '/data/lol/32',
+            headers={
+                'token': 'hello_world'
+            }
+        )
+        self.assert200(
+            response,
+            f'Response body is : {response.data.decode("utf-8")}'
+        )
+        expected = {
+            'data': {
+                'type': 'lol',
+                'id': '32',
+                'attributes': {
+                    'user_id': 'hi'  # the set user id is returned
+                }
+            }
+        }
+        assert response.json == expected
+
+
+class TestQuickAndDirtyAuth:
+    """Test outside of a flask app"""
+
+    def test_no_token(self):
+        """provide no token -> 401"""
+
+        auth = quick_and_dirty_auth(
+            'all-powerful',
+            token_getter=lambda _: None,
+            method_getter=lambda: 'POST'
+        )
+        with pytest.raises(UnauthenticatedError):
+            auth(MagicMock())
+
+    def test_bad_token(self):
+        """provide invalid token -> 401"""
+
+        auth = quick_and_dirty_auth(
+            'all-powerful',
+            token_getter=lambda _: 'bad-token',
+            method_getter=lambda: 'POST'
+        )
+        with pytest.raises(UnauthenticatedError):
+            auth(MagicMock())
+
+    def test_good_token(self):
+        """provide good token -> no error"""
+
+        auth = quick_and_dirty_auth(
+            'all-powerful',
+            token_getter=lambda _: 'all-powerful',
+            method_getter=lambda: 'POST'
+        )
+        auth(MagicMock())
+
+
+class TestQuickAndDirtyAuthFlask(TestCase):
+    """Test `quick_and_dirty_auth` in app"""
+
+    def create_app(self):
+        app = Flask(__name__)
+        blueprint = data_blueprint(
+            _MockDataSource({}),
+            authenticator=quick_and_dirty_auth(
+                'test-token',
+                excluded_methods=['DELETE']  # can delete without token
+            ),
+        )
+        app.register_blueprint(blueprint)
+        return app
+
+    def test_no_token(self):
+        """no token -> 401"""
+
+        response = self.client.open(
+            '/data/lol/32'
+        )
+        self.assert401(
+            response,
+            f'Response body is : {response.data.decode("utf-8")}'
+        )
+
+    def test_bad_token(self):
+        """invalid token -> 401"""
+
+        response = self.client.open(
+            '/data/lol',
+            headers={'token': 'asdklsad8'}
+        )
+        self.assert401(
+            response,
+            f'Response body is : {response.data.decode("utf-8")}'
+        )
+
+    def test_excluded_method(self):
+        """method is excluded -> 200 regardless of (no) token"""
+
+        # no token at all
+        response = self.client.open(
+            '/data/lol/32',
+            method='DELETE'
+        )
+        self.assert200(
+            response,
+            f'Response body is : {response.data.decode("utf-8")}'
+        )
+
+        # invalid token
+        response = self.client.open(
+            '/data/lol/32',
+            method='DELETE',
+            headers={'token': 'BAAAADDD'}
+        )
+        self.assert200(
+            response,
+            f'Response body is : {response.data.decode("utf-8")}'
+        )
+
+    def test_good_token(self):
+        """good token -> 200"""
+
+        response = self.client.open(
+            '/data/lol/32',
+            headers={'token': 'test-token'}
+        )
+        self.assert200(
+            response,
+            f'Response body is : {response.data.decode("utf-8")}'
+        )

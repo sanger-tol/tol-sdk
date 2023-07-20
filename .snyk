@@ -11,3 +11,4 @@ exclude:
     - src/tol/api_base2/blueprint.py
     - src/tol/ena/ena_datasource.py
     - src/tol/ena/ena_methods.py
+    - test/**

@@ -4,6 +4,8 @@
 
 from .aggregation_parameters import AggregationParameters  # noqa
 from .aggregation_body import AggregationBody  # noqa
+from .authenticate import Authenticator, quick_and_dirty_auth  # noqa
+from .auth_context import AuthContext  # noqa
 from .data_body import RequestBody, JsonApiRequestBody  # noqa
 from .filter_utils import FilterUtils  # noqa
 from .list_get_parameters import ListGetParamaters  # noqa
