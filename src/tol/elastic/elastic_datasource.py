@@ -36,7 +36,6 @@ class ElasticDataSource(
 ):
 
     def __init__(self, config: Dict):
-        # uri, user, password
         super().__init__(config, expected=['uri', 'user', 'password', 'index_prefix'])
         self._initialise_elasticsearch()
 
