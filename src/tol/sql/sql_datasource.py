@@ -73,9 +73,14 @@ class SqlDataSource(
         self.__all_attribute_types = self.__calculate_all_attribute_types()
         super().__init__({})
 
+<<<<<<< HEAD
     @property
     def attribute_types(self) -> Dict[str, str]:
         return self.__all_attribute_types
+=======
+    def get_attribute_types(self, object_type: str) -> Dict[str, str]:
+        return self.__all_attribute_types[object_type]
+>>>>>>> 0a2a21a (TOLP-6079 Implement SqlDataSource.get_attribute_types())
 
     @property
     def supported_types(self) -> List[str]:
