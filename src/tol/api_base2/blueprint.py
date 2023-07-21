@@ -135,7 +135,7 @@ def data_blueprint(
 
     def __new_controller(object_type: str) -> Controller:
         data_source = data_source_dict[object_type]
-        view = DefaultView()
+        view = DefaultView(prefix=url_prefix)
         return Controller(data_source, view)
 
     @data_handler.route('/<object_type>/<object_id>', methods=['GET'])
