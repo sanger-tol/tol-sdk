@@ -131,7 +131,7 @@ parrot_ds = ParrotDataSource({})
 empty_ds = EmptyDataSource({})
 
 
-core_data_object(parrot_ds, empty_ds, WriteableDataSource)
+core_data_object(parrot_ds, empty_ds, WriteableDataSource())
 
 
 class BlueprintTestCase(TestCase):

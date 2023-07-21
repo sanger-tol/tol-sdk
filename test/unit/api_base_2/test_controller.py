@@ -27,14 +27,11 @@ from tol.core import (
 from tol.core.operator import Aggregator, DetailGetter, PageGetter
 
 
-CoreDataObject = core_data_object()  # noqa
-
-
 class _TestDataSource1(DataSource, DetailGetter):
 
     def get_by_id(self, object_type: str, object_ids: Iterable[str], *args, **kwargs):
         return [
-            CoreDataObject(object_type, {'id': object_id})
+            self.data_object_factory(object_type, {'id': object_id})
             for object_id in object_ids
         ]
 
@@ -49,7 +46,7 @@ class _TestDataSource1(DataSource, DetailGetter):
 class _TestDataSource2(DataSource, PageGetter):
     def get_list_page(self, object_type: str, *args, **kwargs):
         return [
-            CoreDataObject(object_type, {'id': str(i)})
+            self.data_object_factory(object_type, id_=str(i))
             for i in range(20)
         ], 20
 
@@ -74,10 +71,10 @@ class _TestDataSource3(DataSource, Aggregator, PageGetter):
         **kwargs
     ):
         return [
-            CoreDataObject(
+            self.data_object_factory(
                 object_type,
-                {
-                    'id': str(i + 1 + page_size * page_number),
+                id_=str(i + 1 + page_size * page_number),
+                data={
                     'page': page_number,
                     'page_size': page_size,
                     'filter': object_filters.exact['column1'],
@@ -121,6 +118,9 @@ class _TestDataSource3(DataSource, Aggregator, PageGetter):
 ds_1 = _TestDataSource1({})
 ds_2 = _TestDataSource2({})
 ds_3 = _TestDataSource3({})
+
+
+CoreDataObject = core_data_object(ds_1, ds_2, ds_3)
 
 
 class TestController:
