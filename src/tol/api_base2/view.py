@@ -4,10 +4,15 @@
 
 import urllib
 from abc import ABC, abstractmethod
+from itertools import chain
 from typing import Any, Dict, Iterable, List, Optional, Union
 
 from ..core import DataObject
 from ..core.operator import Relational
+<<<<<<< HEAD
+=======
+from ..core.relationship import RelationshipConfig
+>>>>>>> 834d922 (TOLP-6088 Add relationships to DefaultView dump methods)
 
 
 DocumentMeta = Dict[str, Any]
@@ -100,6 +105,7 @@ class DefaultView(View):
         dump: DumpDict
     ) -> DumpDict:
 
+<<<<<<< HEAD
         to_one_keys = self.__get_to_one_relationship_keys(data_object)
         to_many_keys = self.__get_to_many_relationship_keys(data_object)
         if not to_one_keys and not to_many_keys:
@@ -108,11 +114,21 @@ class DefaultView(View):
             to_one_keys,
             to_many_keys,
             data_object
+=======
+        keys = self.__get_relationship_keys(data_object)
+        if not keys:
+            return dump
+        dump['relationships'] = self.__get_relationship_dumps(
+            keys,
+            data_object.type,
+            data_object.id
+>>>>>>> 834d922 (TOLP-6088 Add relationships to DefaultView dump methods)
         )
         return dump
 
     def __get_relationship_dumps(
         self,
+<<<<<<< HEAD
         to_one_relationships: list[str],
         to_many_relationships: list[str],
         data_object: DataObject
@@ -128,19 +144,38 @@ class DefaultView(View):
         }
 
     def __dump_to_many_relationship(
+=======
+        relationships: list[str],
+        type_: str,
+        id_: str
+    ) -> AllRelationshipsDump:
+
+        return {
+            key: self.__dump_relationship(key, type_, id_)
+            for key in relationships
+        }
+
+    def __dump_relationship(
+>>>>>>> 834d922 (TOLP-6088 Add relationships to DefaultView dump methods)
         self,
         key: str,
         type_: str,
         id_: str
     ) -> RelationshipDump:
+<<<<<<< HEAD
         id_encoded = urllib.parse.quote(id_, safe='')
         link = f'{self.__prefix}/{type_}/{id_encoded}/{key}'
+=======
+
+        link = f'{self.__prefix}/{type_}/{id_}/{key}'
+>>>>>>> 834d922 (TOLP-6088 Add relationships to DefaultView dump methods)
         return {
             'links': {
                 'related': link
             }
         }
 
+<<<<<<< HEAD
     def __dump_to_one_relationship(
         self,
         key: str,
@@ -158,6 +193,9 @@ class DefaultView(View):
         return {}
 
     def __get_to_one_relationship_keys(
+=======
+    def __get_relationship_keys(
+>>>>>>> 834d922 (TOLP-6088 Add relationships to DefaultView dump methods)
         self,
         data_object: DataObject
     ) -> list[str]:
@@ -165,11 +203,16 @@ class DefaultView(View):
         host = data_object.host
         if not isinstance(host, Relational):
             return []
+<<<<<<< HEAD
         return self.__get_to_one_keys_from_host(
+=======
+        return self.__get_keys_from_host(
+>>>>>>> 834d922 (TOLP-6088 Add relationships to DefaultView dump methods)
             host,
             data_object.type
         )
 
+<<<<<<< HEAD
     def __get_to_many_relationship_keys(
         self,
         data_object: DataObject
@@ -184,11 +227,15 @@ class DefaultView(View):
         )
 
     def __get_to_one_keys_from_host(
+=======
+    def __get_keys_from_host(
+>>>>>>> 834d922 (TOLP-6088 Add relationships to DefaultView dump methods)
         self,
         host: Relational,
         type_: str
     ) -> list[str]:
 
+<<<<<<< HEAD
         if host.relationship_config is None:
             return []
         config = host.relationship_config.get(type_)
@@ -208,6 +255,24 @@ class DefaultView(View):
         if config is None:
             return []
         return self.__keys_or_empty(config.to_many)
+=======
+        config = host.relationship_config.get(type_)
+        if config is None:
+            return []
+        return self.__join_keys(config)
+
+    def __join_keys(
+        self,
+        config: RelationshipConfig
+    ) -> list[str]:
+
+        return list(
+            chain(
+                self.__keys_or_empty(config.to_one),
+                self.__keys_or_empty(config.to_many)
+            )
+        )
+>>>>>>> 834d922 (TOLP-6088 Add relationships to DefaultView dump methods)
 
     def __keys_or_empty(
         self,
