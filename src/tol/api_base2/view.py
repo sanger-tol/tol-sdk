@@ -4,6 +4,7 @@
 
 import urllib
 from abc import ABC, abstractmethod
+from itertools import chain
 from typing import Any, Dict, Iterable, List, Optional, Union
 
 from ..core import DataObject
