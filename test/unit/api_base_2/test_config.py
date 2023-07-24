@@ -5,7 +5,7 @@
 from flask_testing import TestCase
 
 from tol.core import DataSource
-from tol.core.operator import Relational
+from tol.core.operator import DetailGetter, Relational, Upserter
 from tol.core.relationship import RelationshipConfig
 
 from .app import _test_application
@@ -23,7 +23,7 @@ class Empty(DataSource):
         raise NotImplementedError()
 
 
-class FirstRelational(DataSource, Relational):
+class FirstRelational(DataSource, Upserter, Relational):
     @property
     def supported_types(self):
         return [
@@ -47,8 +47,11 @@ class FirstRelational(DataSource, Relational):
     def get_to_one_relation(*args, **kwargs):
         raise NotImplementedError()
 
+    def upsert(*args, **kwargs):
+        raise NotImplementedError()
 
-class SecondRelational(DataSource, Relational):
+
+class SecondRelational(DataSource, DetailGetter, Relational):
     @property
     def supported_types(self):
         return [
@@ -75,6 +78,9 @@ class SecondRelational(DataSource, Relational):
         raise NotImplementedError()
 
     def get_to_one_relation(*args, **kwargs):
+        raise NotImplementedError()
+
+    def get_by_id(*args, **kwargs):
         raise NotImplementedError()
 
 
@@ -141,4 +147,37 @@ class TestConfigPopulated(TestCase):
                     'five': 'a'
                 }
             }
+        }
+
+
+class TestOperatorConfig(TestCase):
+    def create_app(self):
+        return _test_application(
+            FirstRelational({}),
+            SecondRelational({})
+        )
+
+    def test_operator_config(self):
+        """GET `/data/_config/operations"""
+
+        response = self.client.open('/data/_config/operations')
+        self.assert200(
+            response,
+            f'Response body is : {response.data.decode("utf-8")}'
+        )
+
+        expected_1 = {
+            'noauth': ['upsert']
+        }
+        expected_2 = {
+            'noauth': ['detailGet']
+        }
+
+        assert response.json == {
+            'to_me': expected_1,
+            'to_you': expected_1,
+            'a': expected_2,
+            'b': expected_2,
+            'c': expected_2,
+            'd': expected_2
         }
