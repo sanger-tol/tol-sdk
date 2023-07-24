@@ -127,12 +127,15 @@ def config_blueprint(
             if not d.empty
         }
 
+<<<<<<< HEAD
     @config_handler.route('/attribute_types', methods=['GET'])
     def get_attribute_types():
         types_list = [d.attribute_types for d in data_sources]
         chain_map = ChainMap(*types_list)
         return dict(chain_map)
 
+=======
+>>>>>>> 27d5fca (TOLP-6089 /data/_config/operations endpoint for ApiDataSource)
     @config_handler.route('/operations', methods=['GET'])
     def get_operations():
         return operator_config.to_dict()
