@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: MIT
 
 from itertools import chain
-from typing import Callable, Optional
+from typing import Callable, Optional, Protocol
 
 import flask
 from flask import Blueprint, request
@@ -15,8 +15,10 @@ from .misc import (
     AggregationParameters,
     AuthContext,
     Authenticator,
+    DefaultOperatorConfig,
     JsonApiRequestBody,
-    ListGetParamaters
+    ListGetParamaters,
+    OperatorConfig
 )
 from .parser import DefaultParser
 from .view import DefaultView
@@ -63,9 +65,22 @@ ConfigFactory = Callable[[str, tuple[DataSource]], Blueprint]
 """A `Callable` that returns a `ConfigBlueprint`"""
 
 
+class OperatorConfigFactory(Protocol):
+    """
+    Takes a variable number of `DataSource` instances. Returns
+    an `OperatorConfig` instance.
+    """
+    def __call__(
+        self,
+        *datasources: DataSource
+    ) -> OperatorConfig:
+        ...
+
+
 def config_blueprint(
     url_prefix: str,
-    data_sources: tuple[DataSource]
+    data_sources: tuple[DataSource],
+    operator_factory: OperatorConfigFactory = lambda *d: DefaultOperatorConfig(*d)
 ) -> ConfigBlueprint:
     """
     Returns a `ConfigBlueprint` instance given:
@@ -75,6 +90,7 @@ def config_blueprint(
     """
 
     config_handler = ConfigBlueprint(url_prefix)
+    operator_config = operator_factory(*data_sources)
 
     @config_handler.route('/relationships', methods=['GET'])
     def get_relationships():
@@ -89,6 +105,10 @@ def config_blueprint(
             t: d.to_dict() for t, d in relationship_configs
             if not d.empty
         }
+
+    @config_handler.route('/operations', methods=['GET'])
+    def get_operations():
+        return operator_config.to_dict()
 
     return config_handler
 
