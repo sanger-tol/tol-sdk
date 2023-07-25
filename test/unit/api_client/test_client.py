@@ -16,7 +16,7 @@ class TestDefaultApiClient:
     def test_get_detail_existing(self):
         """
         `DefaultApiClient().get_detail()` calls out correctly with
-        a GET method.
+        a GET method, given an override data prefix.
         """
 
         expected = {
