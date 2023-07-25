@@ -67,11 +67,13 @@ class TestDefaultApiClient:
 
         assert observed is None
 
+    @responses.activate
     def test_get_page_empty(self):
         """
         `DefaultApiClient().get_page()` accepts an empty list.
         """
 
+    @responses.activate
     def test_get_page_populated(self):
         """
         `DefaultApiClient().get_page()` accepts a pouplated list.
