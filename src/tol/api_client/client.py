@@ -45,7 +45,8 @@ class DefaultApiClient(ApiClient):
         data_prefix: str = '/data',
         config_prefix: str = '/_config'
     ) -> None:
-        super().__init__()
+
+        pass
 
     def get_detail(self, type_: str, id_: str) -> ObjectDump:
         pass
