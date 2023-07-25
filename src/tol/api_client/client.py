@@ -15,7 +15,11 @@ class ApiClient(ABC):
     """Makes requests to a remote API"""
 
     @abstractmethod
-    def get_detail(self, type_: str, id_: str) -> ObjectDump:
+    def get_detail(
+        self,
+        type_: str,
+        id_: str
+    ) -> Optional[ObjectDump]:
         """
         Gets the dict-dump of a `DataObject` with the
         specified type and ID.
@@ -48,7 +52,11 @@ class DefaultApiClient(ApiClient):
 
         pass
 
-    def get_detail(self, type_: str, id_: str) -> ObjectDump:
+    def get_detail(
+        self,
+        type_: str,
+        id_: str
+    ) -> Optional[ObjectDump]:
         pass
 
     def get_page(
