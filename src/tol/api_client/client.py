@@ -38,6 +38,9 @@ class ApiClient(ABC):
 
 class DefaultApiClient(ApiClient):
 
+    def __init__(self, url: str, token: str) -> None:
+        super().__init__()
+
     def get_detail(self, type_: str, id_: str) -> ObjectDump:
         pass
 
