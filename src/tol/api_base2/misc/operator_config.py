@@ -35,17 +35,16 @@ class OperatorConfig(ABC):
         """
 
 
-OPERATOR_MAP: dict[str, type] = {
-    'aggregate': Aggregator,
-    'delete': Deleter,
-    'detailGet': DetailGetter,
-    'listGet': PageGetter,
-    'update': Updater,
-    'upsert': Upserter
-}
-
-
 class DefaultOperatorConfig(OperatorConfig):
+
+    __OPERATOR_MAP: dict[str, type] = {
+        'aggregate': Aggregator,
+        'delete': Deleter,
+        'detailGet': DetailGetter,
+        'listGet': PageGetter,
+        'update': Updater,
+        'upsert': Upserter
+    }
 
     def __init__(self, *datasources: DataSource) -> None:
         self.__datasources = datasources
@@ -89,7 +88,7 @@ class DefaultOperatorConfig(OperatorConfig):
     ) -> OperatorDict:
 
         operators = [
-            k for k, v in OPERATOR_MAP.items()
+            k for k, v in self.__OPERATOR_MAP.items()
             if isinstance(datasource, v)
         ]
 
