@@ -26,6 +26,12 @@ from ..core.operator import (
 
 class ApiDataSource(DataSource, Upserter):
 
+    url: str
+    """The base-URL of the API"""
+
+    key: str
+    """The user-token for the API"""
+
     def __init__(self, config: Dict):
         """Initialises an API base data source.
 
