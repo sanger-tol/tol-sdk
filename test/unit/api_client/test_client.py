@@ -13,6 +13,7 @@ class TestDefaultApiClient:
     `responses`.
     """
 
+    @responses.activate
     def test_get_detail_existing(self):
         """
         `DefaultApiClient().get_detail()` calls out correctly with
