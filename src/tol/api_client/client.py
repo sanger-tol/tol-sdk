@@ -47,7 +47,8 @@ class DefaultApiClient(ApiClient):
         url: str,
         token: str,
         data_prefix: str = '/data',
-        config_prefix: str = '/_config'
+        config_prefix: str = '/_config',
+        header_name: str = 'Token'
     ) -> None:
 
         pass

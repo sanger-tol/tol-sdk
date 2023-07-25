@@ -19,6 +19,14 @@ class TestDefaultApiClient:
         a GET method.
         """
 
+    @responses.activate
+    @responses.add(
+        responses.GET,
+        'http://api.lan/api/v1/data/',
+        headers={
+            
+        }
+    )
     def test_get_detail_not_found(self):
         """
         `DefaultApiClient().get_detail()` returns `None` on a 404
