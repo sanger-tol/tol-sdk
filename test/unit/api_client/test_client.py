@@ -20,17 +20,25 @@ class TestDefaultApiClient:
         """
 
     @responses.activate
-    @responses.add(
-        responses.GET,
-        'http://api.lan/api/v1/data/',
-        headers={
-            
-        }
-    )
     def test_get_detail_not_found(self):
         """
         `DefaultApiClient().get_detail()` returns `None` on a 404
         """
+
+        responses.get(
+            'http://api.lan/api/v1/data/test/idk',
+            headers={
+                'Token': 'test-token'
+            },
+            status=404
+        )
+
+        client = DefaultApiClient(
+            'http://api.lan/api/v1',
+            'test-token'
+        )
+        observed = client.get_detail('test', 'idk')
+        assert observed is None
 
     def test_get_page_empty(self):
         """
