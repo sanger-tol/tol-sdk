@@ -38,6 +38,7 @@ class TestDefaultApiClient:
             'test-token'
         )
         observed = client.get_detail('test', 'idk')
+
         assert observed is None
 
     def test_get_page_empty(self):
