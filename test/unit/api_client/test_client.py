@@ -15,21 +15,21 @@ class TestDefaultApiClient:
 
     def test_get_detail_existing(self):
         """
-        `DefaultApiClient.get_detail()` calls out correctly with
+        `DefaultApiClient().get_detail()` calls out correctly with
         a GET method.
         """
 
     def test_get_detail_not_found(self):
         """
-        `DefaultApiClient.get_detail()` returns `None` on a 404
+        `DefaultApiClient().get_detail()` returns `None` on a 404
         """
 
     def test_get_page_empty(self):
         """
-        `DefaultApiClient.get_page()` accepts an empty list.
+        `DefaultApiClient().get_page()` accepts an empty list.
         """
 
     def test_get_page_populated(self):
         """
-        `DefaultApiClient.get_page()` accepts a pouplated list.
+        `DefaultApiClient().get_page()` accepts a pouplated list.
         """
