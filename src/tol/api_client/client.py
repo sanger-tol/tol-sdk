@@ -15,11 +15,7 @@ class ApiClient(ABC):
     """Makes requests to a remote API"""
 
     @abstractmethod
-    def get_detail(
-        self,
-        type_: str,
-        id_: str
-    ) -> ObjectDump:
+    def get_detail(self, type_: str, id_: str) -> ObjectDump:
         """
         Gets the dict-dump of a `DataObject` with the
         specified type and ID.
@@ -38,3 +34,20 @@ class ApiClient(ABC):
         Gets the page of results, sorted as specified,
         matching the given filters.
         """
+
+
+class DefaultApiClient(ApiClient):
+
+    def get_detail(self, type_: str, id_: str) -> ObjectDump:
+        pass
+
+    def get_page(
+        self,
+        type_: str,
+        page_number: int,
+        page_size: Optional[int],
+        filters: Optional[dict[str, Any]],
+        sort_by: Optional[str]
+    ) -> list[ObjectDump]:
+
+        pass
