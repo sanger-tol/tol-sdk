@@ -4,6 +4,8 @@
 
 #TODO add adversarial tests between ApiDataSource and api_base2
 
+import urllib.parse
+
 import responses
 
 from tol.api_client.client import DefaultApiClient
@@ -76,18 +78,17 @@ class TestDefaultApiClient:
         """
 
         responses.get(
-            'http://api.lan/api/v1/data/test',
+            'http://api.lan/api/v1/data/test?page=1&page_size=2',
             headers={
                 'Token': 'test-token'
             },
-            status=404
         )
 
         client = DefaultApiClient(
             'http://api.lan/api/v1',
             'test-token'
         )
-        observed = client.get_page('test', )
+        observed = client.get_page('test', 1, 2)
 
         assert observed is None
 
@@ -95,4 +96,13 @@ class TestDefaultApiClient:
     def test_get_page_populated(self):
         """
         `DefaultApiClient().get_page()` accepts a pouplated list.
+        """
+
+    @responses.activate
+    def test_get_page_kwargs(self):
+        """
+        The kwargs for `DefaultApiClient().get_page()` work:
+
+        - sort_by
+        - filters
         """
