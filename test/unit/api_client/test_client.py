@@ -2,6 +2,8 @@
 #
 # SPDX-License-Identifier: MIT
 
+#TODO add adversarial tests between ApiDataSource and api_base2
+
 import responses
 
 from tol.api_client.client import DefaultApiClient
@@ -72,6 +74,22 @@ class TestDefaultApiClient:
         """
         `DefaultApiClient().get_page()` accepts an empty list.
         """
+
+        responses.get(
+            'http://api.lan/api/v1/data/test',
+            headers={
+                'Token': 'test-token'
+            },
+            status=404
+        )
+
+        client = DefaultApiClient(
+            'http://api.lan/api/v1',
+            'test-token'
+        )
+        observed = client.get_page('test', )
+
+        assert observed is None
 
     @responses.activate
     def test_get_page_populated(self):
