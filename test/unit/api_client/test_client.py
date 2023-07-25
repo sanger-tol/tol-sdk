@@ -12,3 +12,24 @@ class TestDefaultApiClient:
     Tests `DefaultApiClient`, with outward calls mocked using
     `responses`.
     """
+
+    def test_get_detail_existing(self):
+        """
+        `DefaultApiClient.get_detail()` calls out correctly with
+        a GET method.
+        """
+
+    def test_get_detail_not_found(self):
+        """
+        `DefaultApiClient.get_detail()` returns `None` on a 404
+        """
+
+    def test_get_list_empty(self):
+        """
+        `DefaultApiClient.get_list()` accepts an empty list.
+        """
+
+    def test_get_list_populated(self):
+        """
+        `DefaultApiClient.get_list()` accepts a pouplated list.
+        """
