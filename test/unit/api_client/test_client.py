@@ -24,12 +24,12 @@ class TestDefaultApiClient:
         `DefaultApiClient.get_detail()` returns `None` on a 404
         """
 
-    def test_get_list_empty(self):
+    def test_get_page_empty(self):
         """
-        `DefaultApiClient.get_list()` accepts an empty list.
+        `DefaultApiClient.get_page()` accepts an empty list.
         """
 
-    def test_get_list_populated(self):
+    def test_get_page_populated(self):
         """
-        `DefaultApiClient.get_list()` accepts a pouplated list.
+        `DefaultApiClient.get_page()` accepts a pouplated list.
         """
