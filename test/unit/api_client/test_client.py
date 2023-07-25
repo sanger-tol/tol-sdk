@@ -46,6 +46,32 @@ class TestDefaultApiClient:
         `DefaultApiClient().get_page()` accepts an empty list.
         """
 
+        expected = {
+            'data': {
+                'type': 'test',
+                'id': 'found'
+            }
+        }
+
+        responses.get(
+            'http://api.lan/api/v1/data_override/test/found',
+            headers={
+                'Token': 'test-token'
+            },
+            json=expected
+        )
+
+        client = DefaultApiClient(
+            'http://api.lan/api/v1',
+            'test-token',
+            # override the blueprint prefix
+            data_prefix='data_override'
+        )
+        observed = client.get_detail('test', 'found')
+
+        assert observed == expected
+
+
     def test_get_page_populated(self):
         """
         `DefaultApiClient().get_page()` accepts a pouplated list.
