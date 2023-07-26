@@ -2,6 +2,7 @@
 #
 # SPDX-License-Identifier: MIT
 
+import json
 from abc import ABC, abstractmethod
 from typing import Any, Optional
 
@@ -82,4 +83,16 @@ class DefaultApiClient(ApiClient):
         sort_by: Optional[str] = None
     ) -> list[ObjectDump]:
 
-        pass
+        url = f'{self.__data_url}/{type_}'
+        r = requests.get(
+            url,
+            headers=self.__headers,
+            params={
+                'page': page_number,
+                'page_size': page_size,
+                'filter': json.dumps(filters),
+                'sort_by': sort_by
+            }
+        )
+        r.raise_for_status()
+        return r.json()['data']
