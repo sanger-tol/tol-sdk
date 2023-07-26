@@ -15,6 +15,8 @@ class TestDefaultApiClient:
     """
     Tests `DefaultApiClient`, with outward calls mocked using
     `responses`.
+
+    All tests confirm that a url is built correctly.
     """
 
     @responses.activate
