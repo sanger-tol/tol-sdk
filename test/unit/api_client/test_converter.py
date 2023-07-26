@@ -9,3 +9,6 @@ class TestDefaultObjectParser:
     """
     Tests `DefaultObjectParser`
     """
+
+    def test_convert(self):
+        """the user-defined `DefaultObjectParser().convert`"""
