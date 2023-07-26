@@ -65,8 +65,8 @@ class DefaultApiClient(ApiClient):
         type_: str,
         page_number: int,
         page_size: int,
-        filters: Optional[dict[str, Any]],
-        sort_by: Optional[str]
+        filters: Optional[dict[str, Any]] = None,
+        sort_by: Optional[str] = None
     ) -> list[ObjectDump]:
 
         pass

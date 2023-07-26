@@ -4,7 +4,7 @@
 
 #TODO add adversarial tests between ApiDataSource and api_base2
 
-import urllib.parse
+import json
 
 import responses
 
@@ -77,21 +77,6 @@ class TestDefaultApiClient:
         `DefaultApiClient().get_page()` accepts an empty list.
         """
 
-        responses.get(
-            'http://api.lan/api/v1/data/test?page=1&page_size=2',
-            headers={
-                'Token': 'test-token'
-            },
-        )
-
-        client = DefaultApiClient(
-            'http://api.lan/api/v1',
-            'test-token'
-        )
-        observed = client.get_page('test', 1, 2)
-
-        assert observed is None
-
     @responses.activate
     def test_get_page_populated(self):
         """
@@ -106,3 +91,30 @@ class TestDefaultApiClient:
         - sort_by
         - filters
         """
+
+        filter_dict = {
+            'contains': {
+                'a': 'test'
+            },
+            'exact': {
+                'b': 'yes',
+                'c': 'no'
+            }
+        }
+        filter_ = json.dumps(filter_dict)
+        query = f'page=1&page_size=2?sort_by=test-&filter={filter_}'
+
+        responses.get(
+            f'http://api.lan/api/v1/data/test?{query}',
+            headers={
+                'Token': 'test-token'
+            },
+        )
+
+        client = DefaultApiClient(
+            'http://api.lan/api/v1',
+            'test-token'
+        )
+        observed = client.get_page('test', 1, 2)
+
+        assert observed is None
