@@ -70,6 +70,7 @@ class DefaultApiClient(ApiClient):
         )
         if r.status_code == 404:
             return None
+        r.raise_for_status()
         return r.json()['data']
 
     def get_page(

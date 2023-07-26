@@ -25,10 +25,8 @@ class TestDefaultApiClient:
         """
 
         expected = {
-            'data': {
-                'type': 'test',
-                'id': 'found'
-            }
+            'type': 'test',
+            'id': 'found'
         }
 
         responses.get(
@@ -36,14 +34,16 @@ class TestDefaultApiClient:
             headers={
                 'Token': 'test-token'
             },
-            json=expected
+            json={
+                'data': expected
+            }
         )
 
         client = DefaultApiClient(
             'http://api.lan/api/v1',
             'test-token',
             # override the blueprint prefix
-            data_prefix='data_override'
+            data_prefix='/data_override'
         )
         observed = client.get_detail('test', 'found')
 
