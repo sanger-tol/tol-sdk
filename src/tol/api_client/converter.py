@@ -2,13 +2,13 @@
 #
 # SPDX-License-Identifier: MIT
 
-import typing
 from abc import ABC
+from typing import Any
 
 from ..core import Converter, DataObject, DataObjectFactory
 
-if typing.TYPE_CHECKING:
-    from .client import ObjectDump
+
+ObjectDump = dict[str, Any]
 
 
 class ObjectParser(Converter[ObjectDump, DataObject], ABC):

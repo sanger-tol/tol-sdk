@@ -8,8 +8,7 @@ from typing import Any, Optional
 
 import requests
 
-
-ObjectDump = dict[str, Any]
+from .converter import ObjectDump
 
 
 class ApiClient(ABC):
