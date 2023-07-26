@@ -62,7 +62,15 @@ class DefaultApiClient(ApiClient):
         type_: str,
         id_: str
     ) -> Optional[ObjectDump]:
-        pass
+
+        url = f'{self.__data_url}/{type_}/{id_}'
+        r = requests.get(
+            url,
+            headers=self.__headers
+        )
+        if r.status_code == 404:
+            return None
+        return r.json()['data']
 
     def get_page(
         self,
