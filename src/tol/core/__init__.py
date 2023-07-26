@@ -2,6 +2,7 @@
 #
 # SPDX-License-Identifier: MIT
 
+from .converter import Converter  # noqa
 from .datasource import *  # noqa
 from .datasource_error import DataSourceError  # noqa
 from .datasource_filter import DataSourceFilter  # noqa
