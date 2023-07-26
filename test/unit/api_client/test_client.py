@@ -77,6 +77,22 @@ class TestDefaultApiClient:
         `DefaultApiClient().get_page()` accepts an empty list.
         """
 
+        responses.get(
+            'http://api.lan/api/v1/data/test',
+            headers={
+                'Token': 'test-token'
+            },
+            json={'data': []}
+        )
+
+        client = DefaultApiClient(
+            'http://api.lan/api/v1',
+            'test-token'
+        )
+        observed = client.get_page('test', 1, 1)
+
+        assert observed == []
+
     @responses.activate
     def test_get_page_populated(self):
         """
