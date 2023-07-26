@@ -26,10 +26,10 @@ class TestDefaultObjectParser:
 
         mock_object = Mock()
 
-        def __mock_factory(type_, id_ = None, attributes = None):
+        def __mock_factory(type_, id_ = None, data = None):
             assert type_ == 'no_fun'
             assert id_ == '890'
-            assert attributes == {
+            assert data == {
                 'a': 'bc',
                 'bool': True
             }

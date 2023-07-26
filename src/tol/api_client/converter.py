@@ -23,5 +23,9 @@ class DefaultObjectParser(ObjectParser):
 
         self.__data_object_factory = data_object_factory
 
-    def convert(self, input_: ObjectDump) -> DataObject:
-        return super().convert(input_)
+    def convert(self, dump: ObjectDump) -> DataObject:
+        return self.__data_object_factory(
+            dump['type'],
+            id_=dump.get('id'),
+            data=dump.get('attributes')
+        )
