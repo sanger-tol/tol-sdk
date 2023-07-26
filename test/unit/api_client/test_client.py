@@ -148,7 +148,8 @@ class TestDefaultApiClient:
             f'http://api.lan/api/v1/data/test?{query}',
             headers={
                 'Token': 'test-token'
-            }
+            },
+            json={'data': []}
         )
 
         client = DefaultApiClient(
