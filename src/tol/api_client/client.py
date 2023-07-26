@@ -87,12 +87,31 @@ class DefaultApiClient(ApiClient):
         r = requests.get(
             url,
             headers=self.__headers,
-            params={
-                'page': page_number,
-                'page_size': page_size,
-                'filter': json.dumps(filters),
-                'sort_by': sort_by
-            }
+            params=self.__get_params(
+                page_number,
+                page_size,
+                filters,
+                sort_by
+            )
         )
         r.raise_for_status()
         return r.json()['data']
+
+    def __get_params(
+        self,
+        page_number: int,
+        page_size: int,
+        filters: Optional[dict[str, Any]],
+        sort_by: Optional[str]
+    ) -> dict[str, Any]:
+
+        params = {
+            'page': page_number,
+            'page_size': page_size,
+        }
+        if filter is not None:
+            params['filter'] = json.dumps(filters)
+        if sort_by is not None:
+            params['sort_by'] = sort_by
+
+        return params
