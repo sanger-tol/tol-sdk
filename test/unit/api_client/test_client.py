@@ -142,7 +142,7 @@ class TestDefaultApiClient:
             }
         }
         filter_ = json.dumps(filter_dict)
-        query = f'page=1&page_size=2?sort_by=test-&filter={filter_}'
+        query = f'page=1&page_size=2&sort_by=test-&filter={filter_}'
 
         responses.get(
             f'http://api.lan/api/v1/data/test?{query}',
