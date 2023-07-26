@@ -108,13 +108,19 @@ class TestDefaultApiClient:
             f'http://api.lan/api/v1/data/test?{query}',
             headers={
                 'Token': 'test-token'
-            },
+            }
         )
 
         client = DefaultApiClient(
             'http://api.lan/api/v1',
             'test-token'
         )
-        observed = client.get_page('test', 1, 2)
 
-        assert observed is None
+        # should hit the patched response
+        client.get_page(
+            'test',
+            1,
+            2,
+            filters=filter_dict,
+            sort_by='test-'
+        )
