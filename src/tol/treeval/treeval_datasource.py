@@ -30,21 +30,17 @@ from ..core import (
     DataSourceError,
     DataSourceFilter
 )
-from ..core.operator import Aggregator, DetailGetter, ListGetter, PageGetter, Upserter
+from ..core.operator import PageGetter
 
 
 class TreevalDataSource(
     DataSource,
-    # DetailGetter,
     PageGetter,
-    # ListGetter,
-    # Aggregator,
-    # Upserter
 ):
 
     def __init__(self, config: Dict):
         # uri, user, password
-        super().__init__(config, expected=['JIRA_URL', 'JIRA_PAT'])
+        super().__init__(config, expected=['url', 'api_token'])
         # self._initialise_elasticsearch()
 
     # def _initialise_elasticsearch(self):
@@ -56,8 +52,8 @@ class TreevalDataSource(
 
     def _execute_jira_query(self, query):
         response = requests.post(
-            url = f"https://{self.JIRA_URL}/rest/api/latest/search",
-            headers={'Authorization': 'Bearer ' + self.JIRA_PAT, 'Content-Type': 'application/json'},
+            url = f"https://{self.url}/rest/api/latest/search",
+            headers={'Authorization': 'Bearer ' + self.api_token, 'Content-Type': 'application/json'},
             data = query
         )
 
@@ -69,29 +65,40 @@ class TreevalDataSource(
 
     def _parse_jira_output(self, response_text):
 
-        # issues = []
-        # for jira_issue_json in response_text['issues']:
-        #     issue = {'Key':jira_issue_json['key']}
-        #     issues.append(issue)
-
         issues = map(self._get_values_from_issue, response_text['issues'])
-        # issues_list = list(issues)
-        df = pd.DataFrame(issues)
 
-        return df
+        return pd.DataFrame(issues)
 
     def _get_values_from_issue(self,issue):
         key = issue['key']
         fields = issue['fields']
         updated = str(fields['updated'])
-        jbrowse_link = fields['customfield_12200']
+        treeval_val = fields['customfield_12200']
         species_name = self._parse_species_name(fields['customfield_11676'])
         tolid = self._parse_species_id(fields['summary'])
+        assignee = fields['assignee']
 
-        
+        if assignee:
+            display_name = assignee['displayName']
+        else:
+            display_name = "Unassigned"
 
-        return {'tolid':tolid,'species_name':species_name,'jira_issue':key, 'jira_issue_link':f'https://{self.JIRA_URL}/browse/{key}', 'jira_issue_last_updated':updated,'jbrowse_link':jbrowse_link, "jbrowse_status":"test ax" }
-        # return {'jira_issue':key}
+        jbrowse_status_value = None
+        jbrowse_link = None
+        if treeval_val:
+            if treeval_val.startswith("http"):
+                jbrowse_link = treeval_val
+                jbrowse_status_value = "jBrowse"
+
+        return {'tolid': tolid,
+                'species_name': species_name,
+                'jira_issue': key, 
+                'jira_issue_link': f'https://{self.url}/browse/{key}', 
+                'jira_issue_last_updated': updated, 
+                'jbrowse_link': jbrowse_link, 
+                'assignee': display_name, 
+                'jbrowse_status': jbrowse_status_value 
+                }
 
     def _parse_species_name(self,species_name):
         if species_name:
@@ -104,7 +111,6 @@ class TreevalDataSource(
             return species_name
         else:
             return ''
-
 
     def _parse_species_id(self,summary):
         species_id = str(summary)
@@ -124,19 +130,55 @@ class TreevalDataSource(
             return ''
 
 
-    def _apply_filter_to_specimens(self,specimens):
-        if
+    def _apply_filter_to_specimens(self,object_filters,specimens):
 
+        if 'tolid' in object_filters:
+            # raise DataSourceError(title=specimens['tolid'])
+            specimens = specimens[specimens['tolid'].str.contains(object_filters['tolid'])]
 
+        if 'species_name' in object_filters:
+            specimens = specimens[specimens['species_name'].str.contains(object_filters['species_name'])]
 
+        if 'jira_issue' in object_filters:
+            specimens = specimens[specimens['jira_issue'].str.contains(object_filters['jira_issue'])]
 
+        if 'jira_issue_link' in object_filters:
+            specimens = specimens[specimens['jira_issue_link'].str.contains(object_filters['jira_issue_link'])]
+
+        if 'jira_issue_last_updated' in object_filters:
+            specimens = specimens[specimens['jira_issue_last_updated'].str.contains(object_filters['jira_issue_last_updated'])]
+
+        if 'jbrowse_link' in object_filters:
+            specimens = specimens[specimens['jbrowse_link'].str.contains(object_filters['jbrowse_link'])]
+
+        if 'assignee' in object_filters:
+            specimens = specimens[specimens['assignee'].str.contains(object_filters['assignee'])]
+
+        if 'jbrowse_status' in object_filters:
+            specimens = specimens[specimens['jbrowse_status'].str.contains(object_filters['jbrowse_status'])]
+
+        # for key, val in object_filters.contains.items():
+        #     specimens.loc[specimens[key] == val]
 
         return specimens
 
 
-    def _apply_sort_to_specimens(self,specimens):
-        return specimens
+    def _apply_sort_to_specimens(self,sort_by,specimens):
 
+        if sort_by is None:
+            column_name = 'jira_issue_last_updated'
+            sort_direction = False
+        else:
+            if sort_by.startswith('-'):
+                column_name = sort_by[1:]
+                sort_direction = False
+            else:
+                column_name = sort_by
+                sort_direction = True
+        
+        specimens = specimens.sort_values(by=[column_name], ascending=sort_direction)
+
+        return specimens
 
     def get_list_page(
         self,
@@ -147,6 +189,43 @@ class TreevalDataSource(
         page_size: int = None,
         **kwargs
     ) -> Tuple[Iterable[DataObject], int]:
+
+        query = self._build_jira_query()
+        response = self._execute_jira_query(query)
+
+        # Convert raw jira output data to visible outputs.
+        specimens = self._parse_jira_output(response)
+
+        #object_filters needs to be dict - currently string
+        object_filters_dict = json.loads(object_filters)
+        # Filter
+        if object_filters_dict and len(object_filters_dict.keys()) > 0:
+            # raise DataSourceError(title=object_filters_dict)
+            contains_filter = object_filters_dict["exact"]
+            specimens = self._apply_filter_to_specimens(contains_filter, specimens)
+
+        # Sort
+        specimens = self._apply_sort_to_specimens(sort_by, specimens)
+
+        full_len = len(specimens)
+
+        if not page_size:
+            page_size = 50
+
+        if not page:
+            page = 1
+
+        end_val = int(page) * int(page_size)
+        start_val = end_val - int(page_size)
+
+        if len(specimens) < end_val:        
+            end_val = len(specimens)
+
+        # Filter to current page
+        specimens = specimens.iloc[start_val:end_val,]
+        
+        return (specimens.to_dict("records"), full_len)
+
         # index = self.__get_index(object_type)
         # query = self._build_elasticsearch_query(object_type, object_filters)
         # sort = self._build_elasticsearch_sort(object_type, sort_by)
@@ -163,49 +242,11 @@ class TreevalDataSource(
         # return self._convert_dict_to_data_objects(resp['hits']['hits']), \
         #     resp['hits']['total']['value']
 
-        query = self._build_jira_query()
+    def get_specimens_for_treeval(self, page_number, page_size, filter_, sort_by):
 
-        response = self._execute_jira_query(query)
+        specimens_page, total_specimen_count = self.get_list_page(object_type="specimen", page=page_number, object_filters=filter_, sort_by=sort_by, page_size=page_size)
 
-        # Convert raw jira output data to visible outputs.
-        specimens = self._parse_jira_output(response)
-
-        filter_params = {}
-        sort_params = {}
-
-        # Filter
-        filtered_specimens = self._apply_filter_to_specimens(filter_params, specimens)
-
-        # Sort
-        sorted_specimens = self._apply_sort_to_specimens(sort_params, filtered_specimens)
-
-        # Filter to current page
-        page_specimens = sorted_specimens
-
-        # Add columns to facilitate grid rendering
-            #         if entry['jbrowse_link'] == "" or entry['jbrowse_link'] == "NA":
-            #    entry['jbrowse_status'] = ""
-            # else:
-            #     entry['jbrowse_status'] = "jBrowse"
-        
-        return page_specimens
-
-    def get_specimens_for_treeval(self, page_number=1, page_size=1, filter_='', sort_by=''):
-
-    #     #
-    #     (_, contains_filters, _) = parse_filters(filter_)
-    # return (
-    #     exact_filters
-    #     if exact_filters is not None
-    #     else {}
-    # )
-
-    #     specimen_filters.contains = {'field1': 'string1', 'field2': 'string2'}
-
-        datasource_filter = filter_
-        datasource_sort = sort_by
-
-        return self.get_list_page("specimen", page_number, datasource_filter, datasource_sort, page_size)
+        return {'total': total_specimen_count, 'data': specimens_page} 
 
     def get_specimen_for_treeval(self, tolid):
         return self.get_specimens_for_treeval(1, 1, f'[tolid={tolid}]', 'tolid')[0]
