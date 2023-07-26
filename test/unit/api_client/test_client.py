@@ -99,6 +99,30 @@ class TestDefaultApiClient:
         `DefaultApiClient().get_page()` accepts a pouplated list.
         """
 
+        expected = [
+            {
+                'type': 'test',
+                'id': str(i + 1)
+            }
+            for i in range(5)
+        ]
+
+        responses.get(
+            'http://api.lan/api/v1/data/test',
+            headers={
+                'Token': 'test-token'
+            },
+            json={'data': expected}
+        )
+
+        client = DefaultApiClient(
+            'http://api.lan/api/v1',
+            'test-token'
+        )
+        observed = client.get_page('test', 1, 10)
+
+        assert observed == expected
+
     @responses.activate
     def test_get_page_kwargs(self):
         """
