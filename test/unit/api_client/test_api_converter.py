@@ -24,6 +24,8 @@ class TestDefaultObjectParser:
             }
         }
 
+        mock_object = Mock()
+
         def __mock_factory(type_, id_ = None, attributes = None):
             assert type_ == 'no_fun'
             assert id_ == '890'
@@ -31,7 +33,9 @@ class TestDefaultObjectParser:
                 'a': 'bc',
                 'bool': True
             }
-            return Mock()
+            return mock_object
 
         parser = DefaultObjectParser(__mock_factory)
-        parser.convert(in_)
+        out_ = parser.convert(in_)
+
+        assert out_ == mock_object
