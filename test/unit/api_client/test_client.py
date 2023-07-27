@@ -7,6 +7,7 @@
 import json
 
 import responses
+import responses.matchers as matchers
 
 from tol.api_client.client import DefaultApiClient
 
@@ -132,6 +133,8 @@ class TestDefaultApiClient:
 
         - sort_by
         - filters
+
+        (Also a custom Token header name)
         """
 
         filter_dict = {
@@ -148,9 +151,11 @@ class TestDefaultApiClient:
 
         responses.get(
             f'http://api.lan/api/v1/data/test?{query}',
-            headers={
-                'Token': 'test-token'
-            },
+            match=[
+                matchers.header_matcher({
+                    'Token': 'test-token'
+                })
+            ],
             json={'data': []}
         )
 
