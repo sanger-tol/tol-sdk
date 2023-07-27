@@ -161,7 +161,7 @@ class TestDefaultApiClient:
             f'http://api.lan/api/v1/data/test?{query}',
             match=[
                 matchers.header_matcher({
-                    'Token': 'test-token'
+                    'Custom-Override-Token': 'test-token'
                 })
             ],
             json={'data': []}
