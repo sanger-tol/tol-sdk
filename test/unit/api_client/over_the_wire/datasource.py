@@ -2,7 +2,7 @@
 #
 # SPDX-License-Identifier: MIT
 
-from unittest.mock import create_autospec
+from unittest.mock import create_autospec, Mock
 
 from tol.core import DataSource
 from tol.core.operator import (
@@ -27,5 +27,5 @@ class _AllDataSource(
     pass
 
 
-def mock_datasource(base_class: type = _AllDataSource):
+def mock_datasource(base_class: type = _AllDataSource) -> Mock:
     return create_autospec(base_class)
