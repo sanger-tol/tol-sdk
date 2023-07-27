@@ -86,7 +86,7 @@ class DefaultApiClient(ApiClient):
         r = requests.get(
             url,
             headers=self.__headers,
-            params=self.__get_params(
+            params=self.__get_list_params(
                 page_number,
                 page_size,
                 filters,
@@ -96,7 +96,7 @@ class DefaultApiClient(ApiClient):
         r.raise_for_status()
         return r.json()['data']
 
-    def __get_params(
+    def __get_list_params(
         self,
         page_number: int,
         page_size: int,
