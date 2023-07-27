@@ -2,10 +2,8 @@
 #
 # SPDX-License-Identifier: MIT
 
-from typing import Iterable
 from unittest.mock import create_autospec
 
-from tol.api_base2 import data_blueprint
 from tol.core import DataSource
 from tol.core.operator import (
     Aggregator,
@@ -29,6 +27,5 @@ class _AllDataSource(
     pass
 
 
-create_autospec(_AllDataSource)
-
-
+def mock_datasource(base_class: type = _AllDataSource):
+    return create_autospec(base_class)
