@@ -72,10 +72,7 @@ class DefaultApiClient(ApiClient):
     ) -> Optional[ObjectDump]:
 
         url = f'{self.__data_url}/{type_}/{id_}'
-        r = requests.get(
-            url,
-            headers=self.__headers
-        )
+        r = requests.get(url, headers=self.__headers)
         if r.status_code == 404:
             return None
         r.raise_for_status()
@@ -106,10 +103,7 @@ class DefaultApiClient(ApiClient):
 
     def get_operations_config(self) -> AllOperationsDict:
         url = f'{self.__config_url}/operations'
-        r = requests.get(
-            url,
-            headers=self.__headers
-        )
+        r = requests.get(url, headers=self.__headers)
         r.raise_for_status()
         return r.json()
 
