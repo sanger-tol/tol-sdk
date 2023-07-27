@@ -167,3 +167,10 @@ class TestDefaultApiClient:
             filters=filter_dict,
             sort_by='test-'
         )
+
+    @responses.activate
+    def test_get_operations_config(self):
+        """
+        The operations config URL is built (and called)
+        correctly
+        """
