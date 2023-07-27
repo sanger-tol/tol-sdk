@@ -34,9 +34,11 @@ class TestDefaultApiClient:
 
         responses.get(
             'http://api.lan/api/v1/data_override/test/found',
-            headers={
-                'Token': 'test-token'
-            },
+            match=[
+                matchers.header_matcher({
+                    'Token': 'test-token'
+                })
+            ],
             json={
                 'data': expected
             }
@@ -60,9 +62,11 @@ class TestDefaultApiClient:
 
         responses.get(
             'http://api.lan/api/v1/data/test/idk',
-            headers={
-                'Token': 'test-token'
-            },
+            match=[
+                matchers.header_matcher({
+                    'Token': 'test-token'
+                })
+            ],
             status=404
         )
 
@@ -82,9 +86,11 @@ class TestDefaultApiClient:
 
         responses.get(
             'http://api.lan/api/v1/data/test',
-            headers={
-                'Token': 'test-token'
-            },
+            match=[
+                matchers.header_matcher({
+                    'Token': 'test-token'
+                })
+            ],
             json={'data': []}
         )
 
@@ -112,9 +118,11 @@ class TestDefaultApiClient:
 
         responses.get(
             'http://api.lan/api/v1/data/test',
-            headers={
-                'Token': 'test-token'
-            },
+            match=[
+                matchers.header_matcher({
+                    'Token': 'test-token'
+                })
+            ],
             json={'data': expected}
         )
 
