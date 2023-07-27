@@ -169,7 +169,8 @@ class TestDefaultApiClient:
 
         client = DefaultApiClient(
             'http://api.lan/api/v1',
-            'test-token'
+            'test-token',
+            header_name='Custom-Override-Token'
         )
 
         # should hit the patched response
