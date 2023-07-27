@@ -19,7 +19,7 @@ class TestDefaultApiClient:
     All tests confirm that a url is built correctly.
     """
 
-    @responses.activate
+    @responses.activate(assert_all_requests_are_fired=True)
     def test_get_detail_existing(self):
         """
         `DefaultApiClient().get_detail()` calls out correctly with
@@ -51,7 +51,7 @@ class TestDefaultApiClient:
 
         assert observed == expected
 
-    @responses.activate
+    @responses.activate(assert_all_requests_are_fired=True)
     def test_get_detail_not_found(self):
         """
         `DefaultApiClient().get_detail()` returns `None` on a 404
@@ -73,7 +73,7 @@ class TestDefaultApiClient:
 
         assert observed is None
 
-    @responses.activate
+    @responses.activate(assert_all_requests_are_fired=True)
     def test_get_page_empty(self):
         """
         `DefaultApiClient().get_page()` accepts an empty list.
@@ -95,7 +95,7 @@ class TestDefaultApiClient:
 
         assert observed == []
 
-    @responses.activate
+    @responses.activate(assert_all_requests_are_fired=True)
     def test_get_page_populated(self):
         """
         `DefaultApiClient().get_page()` accepts a pouplated list.
@@ -125,7 +125,7 @@ class TestDefaultApiClient:
 
         assert observed == expected
 
-    @responses.activate
+    @responses.activate(assert_all_requests_are_fired=True)
     def test_get_page_kwargs(self):
         """
         The kwargs for `DefaultApiClient().get_page()` work:
@@ -168,7 +168,7 @@ class TestDefaultApiClient:
             sort_by='test-'
         )
 
-    @responses.activate
+    @responses.activate(assert_all_requests_are_fired=True)
     def test_get_operations_config(self):
         """
         The operations config URL is built (and called)
