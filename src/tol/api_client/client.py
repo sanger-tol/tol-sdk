@@ -104,6 +104,9 @@ class DefaultApiClient(ApiClient):
         r.raise_for_status()
         return r.json()['data']
 
+    def get_operations_config(self) -> AllOperationsDict:
+        pass
+
     def __get_list_params(
         self,
         page_number: int,
