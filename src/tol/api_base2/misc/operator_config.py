@@ -18,6 +18,7 @@ from ...core.operator import (
 
 
 OperatorDict = dict[str, list[str]]
+AllOperationsDict = dict[str, OperatorDict]
 
 
 class OperatorConfig(ABC):
@@ -28,7 +29,7 @@ class OperatorConfig(ABC):
     """
 
     @abstractmethod
-    def to_dict(self) -> dict[str, OperatorDict]:
+    def to_dict(self) -> AllOperationsDict:
         """
         Returns a `dict` representation of the supported operators
         for each type of `DataObject`.
@@ -50,10 +51,10 @@ class DefaultOperatorConfig(OperatorConfig):
         self.__datasources = datasources
         self.__dumped_dict = self.__get_dict()
 
-    def to_dict(self) -> dict[str, OperatorDict]:
+    def to_dict(self) -> AllOperationsDict:
         return self.__dumped_dict
 
-    def __get_dict(self) -> dict[str, OperatorDict]:
+    def __get_dict(self) -> AllOperationsDict:
         pairs = self.__get_pairs()
         return dict(pairs)
 

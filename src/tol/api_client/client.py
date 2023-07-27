@@ -9,6 +9,7 @@ from typing import Any, Optional
 import requests
 
 from .converter import ObjectDump
+from ..api_base2.misc import AllOperationsDict
 
 
 class ApiClient(ABC):
@@ -37,6 +38,13 @@ class ApiClient(ABC):
         """
         Gets the page of results, sorted as specified,
         matching the given filters.
+        """
+
+    @abstractmethod
+    def get_operations_config(self) -> AllOperationsDict:
+        """
+        Gets the supported operations for each type of
+        `DataObject` supported by the API.
         """
 
 
