@@ -105,7 +105,13 @@ class DefaultApiClient(ApiClient):
         return r.json()['data']
 
     def get_operations_config(self) -> AllOperationsDict:
-        pass
+        url = f'{self.__config_url}/operations'
+        r = requests.get(
+            url,
+            headers=self.__headers
+        )
+        r.raise_for_status()
+        return r.json()
 
     def __get_list_params(
         self,
