@@ -174,3 +174,28 @@ class TestDefaultApiClient:
         The operations config URL is built (and called)
         correctly
         """
+
+        expected = {
+            'a': {
+                'noauth': 'detailGet'
+            },
+            'b': {
+                'auth': 'delete',
+                'noauth': 'upsert'
+            }
+        }
+
+        responses.get(
+            'http://api.lan/data_lol/_my_configs/operations',
+            json=expected
+        )
+
+        client = DefaultApiClient(
+            'http://api.lan',
+            'test-token',
+            data_prefix='/data_lol',
+            config_prefix='/_my_configs'
+        )
+        observed = client.get_operations_config()
+
+        assert observed == expected
