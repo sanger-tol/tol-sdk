@@ -31,9 +31,9 @@ class ApiClient(ABC):
         self,
         type_: str,
         page_number: int,
-        page_size: Optional[int],
-        filters: Optional[dict[str, Any]],
-        sort_by: Optional[str]
+        page_size: Optional[int] = None,
+        filters: Optional[dict[str, Any]] = None,
+        sort_by: Optional[str] = None
     ) -> list[ObjectDump]:
         """
         Gets the page of results, sorted as specified,
