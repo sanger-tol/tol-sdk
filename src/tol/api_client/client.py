@@ -119,7 +119,7 @@ class DefaultApiClient(ApiClient):
             'page': page_number,
             'page_size': page_size,
         }
-        if filter is not None:
+        if filters is not None:
             params['filter'] = json.dumps(filters)
         if sort_by is not None:
             params['sort_by'] = sort_by
