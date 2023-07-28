@@ -31,7 +31,7 @@ class ApiClient(ABC):
         self,
         type_: str,
         page_number: int,
-        page_size: Optional[int] = None,
+        page_size: int,
         filters: Optional[dict[str, Any]] = None,
         sort_by: Optional[str] = None
     ) -> list[ObjectDump]:
