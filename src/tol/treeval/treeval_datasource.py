@@ -83,8 +83,8 @@ class TreevalDataSource(
         else:
             display_name = "Unassigned"
 
-        jbrowse_status_value = None
-        jbrowse_link = None
+        jbrowse_status_value = ""
+        jbrowse_link = ""
         if treeval_val:
             if treeval_val.startswith("http"):
                 jbrowse_link = treeval_val
