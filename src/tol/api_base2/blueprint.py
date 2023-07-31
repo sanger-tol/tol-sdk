@@ -15,10 +15,10 @@ from .misc import (
     AggregationParameters,
     AuthContext,
     Authenticator,
-    DefaultOperatorConfig,
+    DefaultOperationsConfig,
     JsonApiRequestBody,
     ListGetParamaters,
-    OperatorConfig
+    OperationsConfig
 )
 from .parser import DefaultParser
 from .view import DefaultView
@@ -73,14 +73,14 @@ class OperatorConfigFactory(Protocol):
     def __call__(
         self,
         *datasources: DataSource
-    ) -> OperatorConfig:
+    ) -> OperationsConfig:
         ...
 
 
 def config_blueprint(
     url_prefix: str,
     data_sources: tuple[DataSource],
-    operator_factory: OperatorConfigFactory = lambda *d: DefaultOperatorConfig(*d)
+    operator_factory: OperatorConfigFactory = lambda *d: DefaultOperationsConfig(*d)
 ) -> ConfigBlueprint:
     """
     Returns a `ConfigBlueprint` instance given:

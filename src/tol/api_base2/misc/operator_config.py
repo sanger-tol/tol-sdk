@@ -21,7 +21,7 @@ OperatorDict = dict[str, list[str]]
 AllOperationsDict = dict[str, OperatorDict]
 
 
-class OperatorConfig(ABC):
+class OperationsConfig(ABC):
     """
     Determines which operator methods are supported on
     each of the supported types for a collection of
@@ -31,12 +31,12 @@ class OperatorConfig(ABC):
     @abstractmethod
     def to_dict(self) -> AllOperationsDict:
         """
-        Returns a `dict` representation of the supported operators
+        Returns a `dict` representation of the supported operations
         for each type of `DataObject`.
         """
 
 
-class DefaultOperatorConfig(OperatorConfig):
+class DefaultOperationsConfig(OperationsConfig):
 
     __OPERATOR_MAP: dict[str, type] = {
         'aggregate': Aggregator,

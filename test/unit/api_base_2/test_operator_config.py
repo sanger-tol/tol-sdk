@@ -2,7 +2,7 @@
 #
 # SPDX-License-Identifier: MIT
 
-from tol.api_base2.misc import DefaultOperatorConfig
+from tol.api_base2.misc import DefaultOperationsConfig
 from tol.core import DataSource
 from tol.core.operator import (
     Aggregator,
@@ -92,7 +92,7 @@ class TestDefaultOperatorConfig:
             '6': expected_2
         }
 
-        config = DefaultOperatorConfig(ds_1, ds_2)
+        config = DefaultOperationsConfig(ds_1, ds_2)
         observed = config.to_dict()
 
         assert observed == expected
