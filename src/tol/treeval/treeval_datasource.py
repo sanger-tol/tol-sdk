@@ -3,10 +3,11 @@
 # SPDX-License-Identifier: MIT
 
 # curl -D- -X POST -H "Authorization: Bearer MDM4MTc2MDc3MDUxOgkkaGWwUAMdfaiLiIeS6idd0K9j" -H "Content-Type: application/json" --data '{"jql":"status = curation and project in (RC,GRIT)","maxResults":1}' https://jira.sanger.ac.uk/rest/api/latest/search
-
+import logging
 import requests
 import pandas as pd
 import json
+import re
 # import hashlib
 # import json
 # from collections.abc import Callable
@@ -41,14 +42,31 @@ class TreevalDataSource(
     def __init__(self, config: Dict):
         # uri, user, password
         super().__init__(config, expected=['url', 'api_token'])
+
         # self._initialise_elasticsearch()
 
     # def _initialise_elasticsearch(self):
     #     self.es = Elasticsearch(self.uri, http_auth=(self.user, self.password))
     #     self.helpers = helpers
 # ,"fields":["key","fields"]
+
+
+    def get_jira_image(self, path):
+        response = requests.get(
+            url = path,
+            headers={'Authorization': 'Bearer ' + self.api_token, 'Content-Type': 'application/json'},
+            stream=True
+        )
+
+        if (response.status_code != 200):
+            raise DataSourceError(title='Cannot connect to JIRA',
+                                  detail=f"(status code '{str(response.status_code)}')'")
+
+        return response.raw
+
+
     def _build_jira_query(self):
-        return '{"jql":"status = curation and project in (RC,GRIT)","maxResults":1000,"expand":["changelog"]}'
+        return '{"jql":"status = curation and project in (RC,GRIT)","maxResults":1000,"fields":["key","fields","updated", "customfield_12200", "customfield_11676", "summary", "assignee", "attachment", "description"]}'
 
     def _execute_jira_query(self, query):
         response = requests.post(
@@ -61,6 +79,7 @@ class TreevalDataSource(
             raise DataSourceError(title='Cannot connect to JIRA',
                                   detail=f"(status code '{str(response.status_code)}')'")
 
+
         return response.json()
 
     def _parse_jira_output(self, response_text):
@@ -69,6 +88,32 @@ class TreevalDataSource(
 
         return pd.DataFrame(issues)
 
+
+    def _parse_description_for_stats(self,description):
+
+        scaffold_l90 = "-"
+        contig_l90 = "-"
+        expected_chromosomes = "-"
+
+        scaffold_L90_regex = re.compile(r'SCAFFOLD[ \t\n\r\f\v]N90 = [0-9]+, L90 = ([0-9]+)')
+        contig_L90_regex = re.compile(r'CONTIG[ \t\n\r\f\v]N90 = [0-9]+, L90 = ([0-9]+)')
+        expected_chromosomes_regex = re.compile(r'there are ([0-9]+) chromosomes according to GoaT')
+
+        sl90 = scaffold_L90_regex.search(description)
+        cl90 = contig_L90_regex.search(description)
+        ec = expected_chromosomes_regex.search(description)
+
+        if sl90:
+            scaffold_l90 = sl90.groups(1)
+
+        if cl90:
+            contig_l90 = cl90.groups(1)
+
+        if ec:
+            expected_chromosomes = ec.groups(1)
+
+        return scaffold_l90, contig_l90, expected_chromosomes
+
     def _get_values_from_issue(self,issue):
         key = issue['key']
         fields = issue['fields']
@@ -76,12 +121,9 @@ class TreevalDataSource(
         treeval_val = fields['customfield_12200']
         species_name = self._parse_species_name(fields['customfield_11676'])
         tolid = self._parse_species_id(fields['summary'])
-        assignee = fields['assignee']
-
-        if assignee:
-            display_name = assignee['displayName']
-        else:
-            display_name = "Unassigned"
+        
+        # Treeval link
+        treeval_val = fields['customfield_12200']
 
         jbrowse_status_value = ""
         jbrowse_link = ""
@@ -90,14 +132,48 @@ class TreevalDataSource(
                 jbrowse_link = treeval_val
                 jbrowse_status_value = "jBrowse"
 
+        # Stats from description
+        description = str(fields['description'])
+        scaffold_l90,contig_l90,expected_chromosomes = self._parse_description_for_stats(description)
+
+        # Assignee
+        assignee = fields['assignee']
+
+        if assignee:
+            display_name = assignee['displayName']
+        else:
+            display_name = "Unassigned"
+
+        # Plots attached to tickets
+        jira_attachments = fields['attachment']
+
+        hic_plot_attachment = ""
+        kmer_plot_attachment = ""
+
+        for jira_attachment in jira_attachments:
+            attachment_url = str(jira_attachment["content"])
+            if attachment_url.endswith("scaffolds_FINAL.css.spectra-cn.ln.png"):
+                hic_plot_attachment = attachment_url
+            elif attachment_url.endswith("scaffolds_FINAL_FullMap.png"):
+                kmer_plot_attachment = attachment_url
+
         return {'tolid': tolid,
                 'species_name': species_name,
                 'jira_issue': key, 
-                'jira_issue_link': f'https://{self.url}/browse/{key}', 
+                'jira_issue_url': f'https://{self.url}/browse/{key}', 
                 'jira_issue_last_updated': updated, 
-                'jbrowse_link': jbrowse_link, 
+                'jbrowse_url': jbrowse_link, 
                 'assignee': display_name, 
-                'jbrowse_status': jbrowse_status_value 
+                'jbrowse_status': jbrowse_status_value,
+                'goat_url': "",
+                'higlass_url': "",
+                'btk_url': "",
+                'tolqc_url': "",
+                'hic_plot': hic_plot_attachment,
+                'kmer_plot': kmer_plot_attachment,
+                'scaffold_l90': scaffold_l90,
+                'contig_l90': contig_l90,
+                'expected_chromosomes': expected_chromosomes
                 }
 
     def _parse_species_name(self,species_name):
@@ -201,7 +277,7 @@ class TreevalDataSource(
         # Filter
         if object_filters_dict and len(object_filters_dict.keys()) > 0:
             # raise DataSourceError(title=object_filters_dict)
-            contains_filter = object_filters_dict["exact"]
+            contains_filter = object_filters_dict["contains"]
             specimens = self._apply_filter_to_specimens(contains_filter, specimens)
 
         # Sort
