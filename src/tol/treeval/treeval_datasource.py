@@ -48,6 +48,7 @@ class TreevalDataSource(
             raise DataSourceError(title='Cannot connect to JIRA',
                                   detail=f"(status code '{str(response.status_code)}')'")
 
+
         return response.json()
 
     def _parse_jira_output(self, response_text):
