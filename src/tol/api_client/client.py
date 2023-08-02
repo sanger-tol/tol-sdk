@@ -13,6 +13,7 @@ from ..api_base2.misc import AllOperationsDict
 
 
 RelationshipConfigDict = dict[str, dict[str, str]]
+AllRelationshipsDict = dict[str, RelationshipConfigDict]
 
 
 class ApiClient(ABC):
@@ -51,7 +52,7 @@ class ApiClient(ABC):
         """
 
     @abstractmethod
-    def get_relationship_config(self) -> RelationshipConfigDict:
+    def get_relationship_config(self) -> AllRelationshipsDict:
         """
         Gets the relationships between related types of
         `DataObject` supported by the API.
