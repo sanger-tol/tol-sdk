@@ -148,11 +148,7 @@ class TestDefaultView:
 
         obj_mock = mock_data_object(
             'test',
-<<<<<<< HEAD
             id_='lol/abc',
-=======
-            id_='lol',
->>>>>>> 834d922 (TOLP-6088 Add relationships to DefaultView dump methods)
             host=_MockDataSource({})
         )
 
