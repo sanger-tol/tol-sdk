@@ -140,6 +140,46 @@ class TestElasticDataSource(TestCase):
         with self.assertRaises(DataSourceError):
             eds.upsert('index', objects, id_func=lambda x: x.field1)
 
+    def test_update(self):
+        core_data_object, eds = mock_elastic_data_source()
+
+        update1 = {'field1': 'value1',
+                   'field2': 'value2'}
+        update2 = {'field1': 'value3',
+                   'field2': 'value4'}
+        updates = [(None, update1),
+                   (None, update2)]
+
+        update_body = eds._action_for_update('test_obj_type',
+                                             update1,
+                                             field_prefix='',
+                                             candidate_key=['field1'])
+        print(update_body)
+        expected = {
+            'query': {
+                'bool': {
+                    'must': [{
+                        'match': {'field1.keyword': 'value1'}
+                    }],
+                    'must_not': []
+                }
+            },
+            'script': {
+                'source': "ctx._source.putAll(params['upsertWith']);",
+                'lang': 'painless',
+                'params': {
+                    'upsertWith': {
+                        'field1': 'value1',
+                        'field2': 'value2'
+                    }
+                }
+            }
+        }
+        self.assertEqual(expected, update_body)
+        eds.es.update_by_query.return_value = (2, 0)
+        eds.update('obj_type', updates, candidate_key=['field1'])
+        self.assertEqual(eds.es.update_by_query.call_count, 2)
+
     def test_get_list(self):
         _, eds = mock_elastic_data_source()
 

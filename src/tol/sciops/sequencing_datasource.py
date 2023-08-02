@@ -158,4 +158,36 @@ class SequencingDataSource(DataSource):
 
     @cache
     def get_attribute_types(self, object_type: str) -> Dict:
-        raise NotImplementedError()
+        if object_type == 'sequencing_sample':
+            return {
+                'barcode': 'str',
+                'sample_uuid': 'str',
+                'study_uuid': 'str',
+                'sanger_sample_id': 'str',
+                'location': 'str',
+                'supplier_sample_name': 'str',
+                'volume': 'str',
+                'concentration': 'str',
+                'public_name': 'str',
+                'taxon_id': 'str',
+                'common_name': 'str',
+                'donor_id': 'str',
+                'library_type': 'str',
+                'country_of_origin': 'str',
+                'sample_collection_date_utc': 'datetime',
+                'cost_code': 'str',
+                'genome_size': 'str',
+                'accession_number': 'str',
+                'sheared_femto_fragment_size': 'str',
+                'post_spri_concentration': 'str',
+                'post_spri_volume': 'str',
+                'final_nano_drop_280': 'str',
+                'final_nano_drop_230': 'str',
+                'final_nano_drop': 'str',
+                'shearing_and_qc_comments': 'str',
+                'date_submitted_utc': 'datetime',
+                'priority_level': 'str',
+                'date_required_by': 'str',
+                'reason_for_priority': 'str'
+            }
+        raise DataSourceError(f'{object_type} objects are not supported')

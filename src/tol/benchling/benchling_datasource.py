@@ -42,7 +42,7 @@ class BenchlingDataSource(DataSource, ListGetter):
     def __get_primary_keys(self):
         return {
             'sample': 'sts_id',
-            'sequencing_request': 'sample_ref'
+            'sequencing_request': 'sanger_sample_id'
         }
 
     def _get_connection(self) -> connection:

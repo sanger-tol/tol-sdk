@@ -43,12 +43,12 @@ class DefaultDatabaseSorter(DatabaseSorter):
         model_dict: Dict[str, Type[Model]]
     ) -> Query:
 
-        if self.__term is None:
-            return query
-
         model = model_dict[tablename]
+        if self.__term is None:
+            return self.__apply_default_sort(query, model)
+
         column = self.__get_column(model)
-        return self.__apply_sort(query, column)
+        return self.__apply_default_sort(self.__apply_sort(query, column), model)
 
     def __get_column(self, model: Type[Model]) -> MappedColumn:
         if self.__term == 'id':
@@ -62,3 +62,11 @@ class DefaultDatabaseSorter(DatabaseSorter):
             return query.order_by(column.desc())
         else:
             return query.order_by(column)
+
+    def __apply_default_sort(self, query: Query, model: Type[Model]):
+        if self.__term != 'id':
+            # Add a default sort by id after the other sort
+            id_key = model.get_id_column_name()
+            id_column = model.get_column(id_key)
+            return query.order_by(id_column)
+        return query

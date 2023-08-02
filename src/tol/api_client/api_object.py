@@ -2,6 +2,7 @@
 #
 # SPDX-License-Identifier: MIT
 
+from datetime import datetime, time
 from typing import Dict
 
 from caseconverter import (
@@ -47,11 +48,18 @@ class ApiObject(object):
         return {'id': self._id,
                 'type': self.type}
 
+    def __sanitise(self, o):
+        if isinstance(o, datetime):
+            return o.isoformat()
+        if isinstance(o, time):
+            return o.isoformat()
+        return o
+
     def to_json(self):
         return {
             'id': self._id,
             'type': self.type,
-            'attributes': {snakecase(k): v for k, v in self.attributes.items()},
+            'attributes': {snakecase(k): self.__sanitise(v) for k, v in self.attributes.items()},
             'relationships':
                 {snakecase(k): {'data': v.to_short_json()} for k, v in self.relationships.items()}
         }
