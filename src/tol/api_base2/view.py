@@ -3,12 +3,10 @@
 # SPDX-License-Identifier: MIT
 
 from abc import ABC, abstractmethod
-from itertools import chain
 from typing import Any, Dict, Iterable, List, Optional, Union
 
 from ..core import DataObject
 from ..core.operator import Relational
-from ..core.relationship import RelationshipConfig
 
 
 DocumentMeta = Dict[str, Any]
@@ -101,29 +99,34 @@ class DefaultView(View):
         dump: DumpDict
     ) -> DumpDict:
 
-        keys = self.__get_relationship_keys(data_object)
-        if not keys:
+        to_one_keys = self.__get_to_one_relationship_keys(data_object)
+        to_many_keys = self.__get_to_many_relationship_keys(data_object)
+        if not to_one_keys and not to_many_keys:
             return dump
         dump['relationships'] = self.__get_relationship_dumps(
-            keys,
-            data_object.type,
-            data_object.id
+            to_one_keys,
+            to_many_keys,
+            data_object
         )
         return dump
 
     def __get_relationship_dumps(
         self,
-        relationships: list[str],
-        type_: str,
-        id_: str
+        to_one_relationships: list[str],
+        to_many_relationships: list[str],
+        data_object: DataObject
     ) -> AllRelationshipsDump:
 
         return {
-            key: self.__dump_relationship(key, type_, id_)
-            for key in relationships
+            key: self.__dump_to_one_relationship(key, data_object)
+            for key in to_one_relationships
+        } | {
+            key: self.__dump_to_many_relationship(key, data_object.type,
+                                                  data_object.id)
+            for key in to_many_relationships
         }
 
-    def __dump_relationship(
+    def __dump_to_many_relationship(
         self,
         key: str,
         type_: str,
@@ -137,7 +140,22 @@ class DefaultView(View):
             }
         }
 
-    def __get_relationship_keys(
+    def __dump_to_one_relationship(
+        self,
+        key: str,
+        data_object: DataObject
+    ) -> RelationshipDump:
+        related_object = data_object.host.get_to_one_relation(data_object, key)
+        if related_object is not None:
+            return {
+                'data': {
+                    'type': data_object.host.relationship_config[data_object.type].to_one[key],
+                    'id': related_object.id
+                }
+            }
+        return {}
+
+    def __get_to_one_relationship_keys(
         self,
         data_object: DataObject
     ) -> list[str]:
@@ -145,33 +163,49 @@ class DefaultView(View):
         host = data_object.host
         if not isinstance(host, Relational):
             return []
-        return self.__get_keys_from_host(
+        return self.__get_to_one_keys_from_host(
             host,
             data_object.type
         )
 
-    def __get_keys_from_host(
+    def __get_to_many_relationship_keys(
+        self,
+        data_object: DataObject
+    ) -> list[str]:
+
+        host = data_object.host
+        if not isinstance(host, Relational):
+            return []
+        return self.__get_to_many_keys_from_host(
+            host,
+            data_object.type
+        )
+
+    def __get_to_one_keys_from_host(
         self,
         host: Relational,
         type_: str
     ) -> list[str]:
 
+        if host.relationship_config is None:
+            return []
         config = host.relationship_config.get(type_)
         if config is None:
             return []
-        return self.__join_keys(config)
+        return self.__keys_or_empty(config.to_one)
 
-    def __join_keys(
+    def __get_to_many_keys_from_host(
         self,
-        config: RelationshipConfig
+        host: Relational,
+        type_: str
     ) -> list[str]:
 
-        return list(
-            chain(
-                self.__keys_or_empty(config.to_one),
-                self.__keys_or_empty(config.to_many)
-            )
-        )
+        if host.relationship_config is None:
+            return []
+        config = host.relationship_config.get(type_)
+        if config is None:
+            return []
+        return self.__keys_or_empty(config.to_many)
 
     def __keys_or_empty(
         self,

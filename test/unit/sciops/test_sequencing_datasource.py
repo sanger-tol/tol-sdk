@@ -123,7 +123,7 @@ class TestSequencingDataSource(TestCase):
 
         samples = [
             core_data_object(
-                'sample',
+                'sequencing_sample',
                 data={
                     'barcode': '1',
                     'sample_uuid': str(uuid.uuid4()),
@@ -133,7 +133,7 @@ class TestSequencingDataSource(TestCase):
                 }
             ),
             core_data_object(
-                'sample',
+                'sequencing_sample',
                 data={
                     'barcode': '1',
                     'sample_uuid': str(uuid.uuid4()),
@@ -143,7 +143,7 @@ class TestSequencingDataSource(TestCase):
                 }
             ),
             core_data_object(
-                'sample',
+                'sequencing_sample',
                 data={
                     'barcode': '2',
                     'sample_uuid': str(uuid.uuid4()),
@@ -173,7 +173,7 @@ class TestSequencingDataSource(TestCase):
 
         samples = [
             core_data_object(
-                'sample',
+                'sequencing_sample',
                 data={
                     'barcode': '1',
                     'sample_uuid': str(uuid.uuid4()),
@@ -207,7 +207,7 @@ class TestSequencingDataSource(TestCase):
                 }
             ),
             core_data_object(
-                'sample',
+                'sequencing_sample',
                 data={
                     'barcode': '1',
                     'sample_uuid': str(uuid.uuid4()),
@@ -242,7 +242,7 @@ class TestSequencingDataSource(TestCase):
             )
         ]
 
-        result = sds.add_plate('sample', objects=samples, barcode='1',
+        result = sds.add_plate('sequencing_sample', objects=samples, barcode='1',
                                labware_type=labware_type, labware_uuid=labware_uuid)
         self.assertTrue(result)
 
@@ -254,7 +254,7 @@ class TestSequencingDataSource(TestCase):
 
         samples = [
             core_data_object(
-                'sample',
+                'sequencing_sample',
                 data={
                     'barcode': '1',
                     'sample_uuid': str(uuid.uuid4()),
@@ -264,7 +264,7 @@ class TestSequencingDataSource(TestCase):
                 }
             ),
             core_data_object(
-                'sample',
+                'sequencing_sample',
                 data={
                     'barcode': '2',
                     'sample_uuid': str(uuid.uuid4()),
@@ -276,5 +276,5 @@ class TestSequencingDataSource(TestCase):
         ]
 
         with self.assertRaises(ValueError):
-            sds.add_plate('messages', objects=samples, barcode='1',
+            sds.add_plate('sequencing_sample', objects=samples, barcode='1',
                           labware_type=labware_type, labware_uuid=labware_uuid)

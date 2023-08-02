@@ -23,7 +23,15 @@ from ..core import (
     DataSourceError,
     DataSourceFilter
 )
-from ..core.operator import Aggregator, DetailGetter, ListGetter, PageGetter, Upserter
+from ..core.operator import (
+    Aggregator,
+    DetailGetter,
+    ListGetter,
+    PageGetter,
+    Updater,
+    Upserter
+)
+from ..core.operator.updater import DataObjectUpdate
 
 
 class ElasticDataSource(
@@ -32,6 +40,7 @@ class ElasticDataSource(
     PageGetter,
     ListGetter,
     Aggregator,
+    Updater,
     Upserter
 ):
 
@@ -113,6 +122,50 @@ class ElasticDataSource(
         if no_of_errors > 0:
             raise DataSourceError(f'{no_of_errors} errors encountered '
                                   f'upserting {no_of_operations} objects')
+
+    def update(
+        self,
+        object_type: str,
+        updates: Iterable[DataObjectUpdate],
+        field_prefix: str = '',
+        candidate_key: Iterable[str] = []
+    ) -> None:
+        # This tries to find an object in the DataSource that matches
+        # the candidate key. If found it will perform the update
+        index = self.__get_index(object_type)
+        for (_, update) in updates:
+            self.es.update_by_query(
+                index,
+                body=self._action_for_update(index,
+                                             update,
+                                             field_prefix,
+                                             candidate_key)
+
+            )
+
+    def _action_for_update(self, index: str, update: Dict,
+                           field_prefix: str, candidate_key: Iterable[str]):
+        u = self._convert_dates(update)
+        u = self._add_checksum(u)
+        u = self._add_updated(u)
+        u = self._prefix_fields(u, field_prefix)
+        f = DataSourceFilter()
+        f.exact = {}
+        for key in candidate_key:
+            f.exact[key] = u[key]
+        query = self._build_elasticsearch_query(
+            self.__get_object_type(index),
+            object_filters=f)
+        return {
+            'query': query,
+            'script': {
+                'source': "ctx._source.putAll(params['upsertWith']);",
+                'lang': 'painless',
+                'params': {
+                    'upsertWith': update
+                }
+            },
+        }
 
     def __get_index(self, object_type: str) -> str:
         return f'{self.index_prefix}-{kebabcase(object_type)}'

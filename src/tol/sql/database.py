@@ -124,11 +124,11 @@ class DefaultDatabase(Database):
     ) -> Iterable[Model]:
 
         _, session, query = self.__get_model_session_query(tablename)
-        query = query.limit(limit).offset(offset)
         if filters is not None:
             query = filters.filter(query, tablename, self.__tablename_model_dict)
         if sort_by is not None:
             query = sort_by.sort(query, tablename, self.__tablename_model_dict)
+        query = query.limit(limit).offset(offset)
         results = query.all()
         session.close()
         return results

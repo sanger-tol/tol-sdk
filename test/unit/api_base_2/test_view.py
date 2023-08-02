@@ -11,7 +11,10 @@ from flask_testing import TestCase
 
 from tol.api_base2 import data_blueprint
 from tol.api_base2.view import DefaultView
-from tol.core import DataSource
+from tol.core import (
+    DataObject,
+    DataSource
+)
 from tol.core.operator import DetailGetter, Relational
 from tol.core.relationship import RelationshipConfig
 
@@ -70,7 +73,11 @@ class _MockDataSource(DataSource, DetailGetter, Relational):
             'awful': RelationshipConfig()  # empty config
         }
 
-    def get_to_one_relation(*args, **kwargs):
+    def get_to_one_relation(self, data_object: DataObject, key: str):
+        if key == 'first':
+            return mock_data_object('yes', '1234')
+        if key == 'second':
+            return mock_data_object('another', '5678')
         raise NotImplementedError()
 
     def get_to_many_relations(*args, **kwargs):
@@ -154,13 +161,15 @@ class TestDefaultView:
                 'id': 'lol',
                 'relationships': {
                     'first': {
-                        'links': {
-                            'related': '/random/test/lol/first'
+                        'data': {
+                            'type': 'yes',
+                            'id': '1234'
                         }
                     },
                     'second': {
-                        'links': {
-                            'related': '/random/test/lol/second'
+                        'data': {
+                            'type': 'another',
+                            'id': '5678'
                         }
                     },
                     'ex': {
@@ -292,13 +301,15 @@ class TestDefaultViewInBlueprint(TestCase):
                 'id': 'hype',
                 'relationships': {
                     'first': {
-                        'links': {
-                            'related': '/super_data/test/hype/first'
+                        'data': {
+                            'type': 'yes',
+                            'id': '1234'
                         }
                     },
                     'second': {
-                        'links': {
-                            'related': '/super_data/test/hype/second'
+                        'data': {
+                            'type': 'another',
+                            'id': '5678'
                         }
                     },
                     'ex': {

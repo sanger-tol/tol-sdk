@@ -21,10 +21,21 @@ class _MockModel:
         def desc():
             return False
 
+    class identifier_column:  # noqa N801
+        @staticmethod
+        def asc():
+            return True
+
     @classmethod
-    def get_column(cls, _):
-        # only ever needs to return `int_column`
-        return cls.int_column
+    def get_column(cls, column_name):
+        if column_name == 'int_column':
+            return cls.int_column
+        if column_name == 'identifier_column':
+            return cls.identifier_column
+
+    @classmethod
+    def get_id_column_name(cls) -> str:
+        return 'identifier_column'
 
 
 class _MockIdModel(model_base()):
@@ -80,7 +91,8 @@ class TestDefaultSorter:
             {'test': _MockModel},
         )
         assert query.sort_calls == [
-            call(_MockModel.int_column)
+            call(_MockModel.int_column),
+            call(_MockModel.identifier_column)
         ]
 
     def test_descending(self):
@@ -93,7 +105,8 @@ class TestDefaultSorter:
             {'test': _MockModel},
         )
         assert query.sort_calls == [
-            call(_MockModel.int_column.desc())
+            call(_MockModel.int_column.desc()),
+            call(_MockModel.identifier_column)
         ]
 
     def test_by_id(self):
