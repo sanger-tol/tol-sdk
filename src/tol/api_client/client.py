@@ -119,7 +119,10 @@ class DefaultApiClient(ApiClient):
         return r.json()
 
     def get_relationship_config(self) -> RelationshipConfigDict:
-        return super().get_relationship_config()
+        url = f'{self.__config_url}/relationships'
+        r = requests.get(url, headers=self.__headers)
+        r.raise_for_status()
+        return r.json()
 
     def __get_list_params(
         self,
