@@ -213,3 +213,38 @@ class TestDefaultApiClient:
         observed = client.get_operations_config()
 
         assert observed == expected
+
+    @responses.activate(assert_all_requests_are_fired=True)
+    def test_get_relationship_config(self):
+        """
+        The relationship config URL is built (and called)
+        correctly
+        """
+
+        expected = {
+            'a': {
+                'one': {
+                    'neo': 'b'
+                }
+            },
+            'b': {
+                'many': {
+                    'agent': 'a'
+                }
+            }
+        }
+
+        responses.get(
+            'http://api.lan/data_hype/_config_mine/relationships',
+            json=expected
+        )
+
+        client = DefaultApiClient(
+            'http://api.lan',
+            'test-token',
+            data_prefix='/data_hype',
+            config_prefix='/_config_mine'
+        )
+        observed = client.get_relationship_config()
+
+        assert observed == expected
