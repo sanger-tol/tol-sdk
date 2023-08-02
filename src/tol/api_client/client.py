@@ -12,6 +12,9 @@ from .converter import ObjectDump
 from ..api_base2.misc import AllOperationsDict
 
 
+RelationshipConfigDict = dict[str, dict[str, str]]
+
+
 class ApiClient(ABC):
     """Makes requests to a remote API"""
 
@@ -44,6 +47,13 @@ class ApiClient(ABC):
     def get_operations_config(self) -> AllOperationsDict:
         """
         Gets the supported operations for each type of
+        `DataObject` supported by the API.
+        """
+
+    @abstractmethod
+    def get_relationship_config(self) -> RelationshipConfigDict:
+        """
+        Gets the relationships between related types of
         `DataObject` supported by the API.
         """
 
@@ -106,6 +116,9 @@ class DefaultApiClient(ApiClient):
         r = requests.get(url, headers=self.__headers)
         r.raise_for_status()
         return r.json()
+
+    def get_relationship_config(self) -> RelationshipConfigDict:
+        return super().get_relationship_config()
 
     def __get_list_params(
         self,
