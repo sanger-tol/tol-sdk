@@ -48,6 +48,7 @@ class TreevalDataSource(
             raise DataSourceError(title='Cannot connect to JIRA',
                                   detail=f"(status code '{str(response.status_code)}')'")
 
+
         return response.json()
 
     def _parse_jira_output(self, response_text):
@@ -343,6 +344,31 @@ class TreevalDataSource(
                 {tolqc_clade}/{tolqc_species_name}/'
         else:
             tolqc_link = ''
+
+        # Stats from description
+        description = str(fields['description'])
+        scaffold_l90,contig_l90,expected_chromosomes = self._parse_description_for_stats(description)
+
+        # Assignee
+        assignee = fields['assignee']
+
+        if assignee:
+            display_name = assignee['displayName']
+        else:
+            display_name = "Unassigned"
+
+        # Plots attached to tickets
+        jira_attachments = fields['attachment']
+
+        hic_plot_attachment = ""
+        kmer_plot_attachment = ""
+
+        for jira_attachment in jira_attachments:
+            attachment_url = str(jira_attachment["content"])
+            if attachment_url.endswith("scaffolds_FINAL.css.spectra-cn.ln.png"):
+                hic_plot_attachment = attachment_url
+            elif attachment_url.endswith("scaffolds_FINAL_FullMap.png"):
+                kmer_plot_attachment = attachment_url
 
         return {'tolid': tolid,
                 'species_name': species_name,
