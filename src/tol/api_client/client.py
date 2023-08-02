@@ -72,9 +72,7 @@ class DefaultApiClient(ApiClient):
 
         self.__data_url = f'{url}{data_prefix}'
         self.__config_url = f'{self.__data_url}{config_prefix}'
-        self.__headers = {
-            header_name: token
-        }
+        self.__headers = {header_name: token}
 
     def get_detail(
         self,
