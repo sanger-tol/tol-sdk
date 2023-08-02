@@ -204,6 +204,7 @@ class ApiDataSource(DataSource, Upserter):
                 self._convert_relationships_from_json_to_objects(obj_json['relationships'])
             obj.update_relationships_from_dict(relationships_obj)
 
+<<<<<<< HEAD
     def __sanitise(self, o):
         if isinstance(o, datetime):
             return o.isoformat()
@@ -215,16 +216,22 @@ class ApiDataSource(DataSource, Upserter):
         return {k: self.__sanitise(v) for k, v in attributes.items()}
 
     # This currently only deals with attributes. Need it to cope with relationships as well
+=======
+>>>>>>> 02a979d (TOLP-6064 Apply default sort field (the ID column))
     def upsert(
         self,
         object_type: str,
         objects: Iterable[DataObject]
     ) -> None:
         url = f'/{object_type}:upsert'
+<<<<<<< HEAD
         json = {'data': [{'type': obj.type,
                           'id': obj.id,
                           'attributes': self.__sanitise_attributes(obj.attributes)}
                          for obj in objects]}
+=======
+        json = {'data': [obj.to_json() for obj in objects]}
+>>>>>>> 02a979d (TOLP-6064 Apply default sort field (the ID column))
         response = self._post(path=url, json=json)
         if response.status_code != 200:
             raise DataSourceError('Cannot upsert objects',
