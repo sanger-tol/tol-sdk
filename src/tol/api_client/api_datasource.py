@@ -2,8 +2,13 @@
 #
 # SPDX-License-Identifier: MIT
 
-from tol.core import DataSource
-from tol.core.operator import (
+from typing import Callable
+
+from .client import ApiClient, DefaultApiClient
+from .dumper import Dumper, DefaultDumper
+from .parser import Parser, DefaultParser
+from ..core import DataObjectFactory, DataSource
+from ..core.operator import (
     Deleter,
     DetailGetter,
     ListGetter,
@@ -12,6 +17,18 @@ from tol.core.operator import (
     Updater,
     Upserter
 )
+
+
+ApiClientFactory = Callable[[tuple[str, str]], ApiClient]
+"""Takes a URL and token, returns an instance of `ApiClient`"""
+
+
+DumperFactory = Callable[[], Dumper]
+"""Returns a `Dumper` instance"""
+
+
+ParserFactory = Callable[[DataObjectFactory], Parser]
+"""Takes a `DataObjectFactory` callable, returns a `Parser`"""
 
 
 class ApiDataSource(
