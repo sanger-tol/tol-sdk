@@ -2,7 +2,7 @@
 #
 # SPDX-License-Identifier: MIT
 
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, call
 
 from tol.api_client.parser import DefaultParser
 
@@ -59,15 +59,15 @@ class TestDefaultParser:
         def __factory(type_, id_, data: dict = {}):
             # a kind of pseudo JSON:API dump
 
-            one = data.pop('relation')
-            return {
+            factoried = {
                 'type': type_,
-                'id': id_,
-                'attributes': data,
-                'relationships': {
-                    'override': one
-                }
+                'id': id_
             }
+            if 'relation' in data:
+                factoried['override'] = data.pop('relation')
+            factoried['attributes'] = data
+
+            return factoried
 
         factory.side_effect = __factory
         parser = DefaultParser(factory)
@@ -104,12 +104,11 @@ class TestDefaultParser:
             }
         }
 
-        parser.convert(in_)
+        observed = parser.convert(in_)
 
-        observed = factory.assert_called_once_with(
-            'hello',
-            'parser',
-            data=attributes
-        )
+        assert factory.call_args_list == [
+            call('hello', 'parser', data=attributes),
+            call('one', '1', data=None)
+        ]
 
         assert observed == expected
