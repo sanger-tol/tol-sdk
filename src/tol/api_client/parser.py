@@ -4,7 +4,7 @@
 
 from abc import ABC
 from collections.abc import Mapping
-from typing import Any
+from typing import Any, Optional
 
 from ..api_base2.parser import JsonApiResource
 from ..core.converter import Converter
@@ -27,17 +27,21 @@ class DefaultParser(Parser):
         self.__factory = data_object_factory
 
     def convert(self, dump: JsonApiResource) -> DataObject:
-        type_ = dump['type']
-        id_ = dump.get('id')
+        return self.__factory(
+            dump['type'],
+            dump.get('id'),
+            data=self.__get_data(dump)
+        )
+
+    def __get_data(
+        self,
+        dump: JsonApiResource
+    ) -> Optional[dict[str, Any]]:
+
         attributes = dump.get('attributes', {})
         to_one_objects = self.__get_to_one_objects(dump)
         merged_data = attributes | to_one_objects
-
-        return self.__factory(
-            type_,
-            id_,
-            data=merged_data if merged_data else None
-        )
+        return merged_data if merged_data else None
 
     def __get_to_one_objects(
         self,
