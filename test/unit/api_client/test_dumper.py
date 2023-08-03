@@ -38,10 +38,15 @@ class TestDefaultDumper:
         }
         expected = {
             'type': 'hello',
-            'id': 'world'
+            'id': 'world',
+            'attributes': attributes
         }
 
-        mock_object = self.__mock_object('hello', 'world')
+        mock_object = self.__mock_object(
+            'hello',
+            'world',
+            attribute=attributes
+        )
         dumper = DefaultDumper()
         observed = dumper.convert(mock_object)
 
