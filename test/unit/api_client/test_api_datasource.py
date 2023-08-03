@@ -83,3 +83,6 @@ class TestApiDataSource:
         observed = api_ds.supported_types
 
         assert observed == expected
+
+    def test_get_by_id(self):
+        """A mixture of found and not founds"""
