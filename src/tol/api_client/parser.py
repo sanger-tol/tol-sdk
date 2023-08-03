@@ -31,11 +31,12 @@ class DefaultParser(Parser):
         id_ = dump.get('id')
         attributes = dump.get('attributes', {})
         to_one_objects = self.__get_to_one_objects(dump)
+        merged_data = attributes | to_one_objects
 
         return self.__factory(
             type_,
             id_,
-            data=attributes | to_one_objects
+            data=merged_data if merged_data else None
         )
 
     def __get_to_one_objects(
