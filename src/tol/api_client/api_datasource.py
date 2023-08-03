@@ -27,3 +27,12 @@ class ApiDataSource(
     """
     Communicates with a remote API.
     """
+
+    def __init__(
+        self,
+        url: str,
+        key: str
+    ) -> None:
+
+        self.__url = url
+        self.__key = key
