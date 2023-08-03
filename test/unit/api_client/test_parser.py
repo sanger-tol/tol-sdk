@@ -53,3 +53,61 @@ class TestDefaultParser:
 
     def test_all(self):
         """Attributes and relationships"""
+
+        factory = MagicMock()
+
+        def __factory(type_, id_, data: dict = {}):
+            # a kind of pseudo JSON:API dump
+
+            one = data.pop('relation')
+            return {
+                'type': type_,
+                'id': id_,
+                'attributes': data,
+                'relationships': {
+                    'override': one
+                }
+            }
+
+        factory.side_effect = __factory
+        parser = DefaultParser(factory)
+
+        attributes = {
+            'yes?': False,
+            'why not?!': 'no'
+        }
+        in_ = {
+            'type': 'hello',
+            'id': 'parser',
+            'attributes': attributes,
+            'relationships': {
+                'relation': {
+                    'data': {
+                        'type': 'one',
+                        'id': '1'
+                    }
+                }
+            }
+        }
+
+        expected = {
+            'type': 'hello',
+            'id': 'parser',
+            'attributes': attributes,
+            'relationships': {
+                'override': {
+                    'data': {
+                        'type': 'one',
+                        'id': '1'
+                    }
+                }
+            }
+        }
+
+        parser.convert(in_)
+
+        observed = factory.assert_called_once_with(
+            'type',
+            'hello',
+            data=attributes
+        )
