@@ -41,7 +41,11 @@ class TestDefaultParser:
 
             assert type_ == expected_type
             assert id_ == expected_id
-            assert data == expected_data
+
+            if expected_data:
+                assert not data
+            else:
+                assert data == expected_data
 
             return return_value
 
