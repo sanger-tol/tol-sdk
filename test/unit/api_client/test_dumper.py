@@ -17,6 +17,17 @@ class TestDefaultDumper:
     def test_empty(self):
         """No attributes or relationships"""
 
+        expected = {
+            'type': 'hello',
+            'id': 'world'
+        }
+
+        mock_object = self.__mock_object('helo', 'world')
+        dumper = DefaultDumper()
+        observed = dumper.convert(mock_object)
+
+        assert observed == expected
+
     def test_attributes(self):
         """No relationships"""
 
