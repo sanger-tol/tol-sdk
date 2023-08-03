@@ -43,7 +43,10 @@ class DefaultParser(Parser):
         dump: JsonApiResource
     ) -> dict[str, DataObject]:
 
-        relationships = dump.get('relationships', {})
+        relationships = {
+            k: v.get('data') for k, v
+            in dump.get('relationships', {}).items()
+        }
 
         return {
             k: self.convert(v)
