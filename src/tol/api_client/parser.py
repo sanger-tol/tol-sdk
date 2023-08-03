@@ -23,3 +23,6 @@ class DefaultParser(Parser):
         data_object_factory: DataObjectFactory
     ) -> None:
         super().__init__()
+
+    def convert(self, dump: JsonApiResource) -> DataObject:
+        return super().convert(dump)
