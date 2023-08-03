@@ -9,3 +9,12 @@ class TestDefaultParser:
     """
     Various tests for `DefaultParser`
     """
+
+    def test_empty(self):
+        """No attributes or relationships"""
+
+    def test_attributes(self):
+        """No relationships"""
+
+    def test_all(self):
+        """Attributes and relationships"""
