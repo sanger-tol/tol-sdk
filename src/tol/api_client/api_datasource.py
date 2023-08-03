@@ -19,7 +19,7 @@ from ..core.operator import (
 )
 
 
-ApiClientFactory = Callable[[tuple[str, str]], ApiClient]
+ClientFactory = Callable[[str, str], ApiClient]
 """Takes a URL and token, returns an instance of `ApiClient`"""
 
 
@@ -48,8 +48,14 @@ class ApiDataSource(
     def __init__(
         self,
         url: str,
-        key: str
+        key: str,
+        client_factory: ClientFactory = lambda u, k: DefaultApiClient(u, k),
+        dumper_factory: DumperFactory = lambda: DefaultDumper(),
+        parser_factory: ParserFactory = lambda f: DefaultParser(f)
     ) -> None:
 
         self.__url = url
         self.__key = key
+        self.__client_factory = client_factory
+        self.__dumper_factory = dumper_factory
+        self.__parser_factory = parser_factory
