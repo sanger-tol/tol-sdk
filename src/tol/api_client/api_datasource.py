@@ -4,7 +4,7 @@
 
 from typing import Callable, Iterable, Optional
 
-from .client import ApiClient, DefaultApiClient
+from .client import AllRelationshipsDict, ApiClient, DefaultApiClient
 from .dumper import Dumper, DefaultDumper
 from .parser import Parser, DefaultParser
 from ..core import (
@@ -81,7 +81,9 @@ class ApiDataSource(
 
     @property
     def relationship_config(self) -> dict[str, RelationshipConfig]:
-        return super().relationship_config
+        client = self.__get_client()
+        dump = client.get_relationship_config()
+        return self.__parse_relationship_config(dump)
 
     def get_attribute_types(self, object_type: str) -> dict:
         raise NotImplementedError()
@@ -124,3 +126,19 @@ class ApiDataSource(
         relationship_name: str
     ) -> Iterable[DataObject]:
         return super().get_to_many_relations(source, relationship_name)
+
+    def __get_client(self) -> ApiClient:
+        return self.__client_factory(
+            self.__url,
+            self.__key
+        )
+
+    def __parse_relationship_config(
+        self,
+        dump: AllRelationshipsDict
+    ) -> dict[str, RelationshipConfig]:
+
+        return {
+            k: RelationshipConfig(**v)
+            for k, v in dump.items()
+        }
