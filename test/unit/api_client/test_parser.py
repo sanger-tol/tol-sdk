@@ -16,6 +16,8 @@ class TestDefaultParser:
     def test_empty(self):
         """No attributes or relationships"""
 
+        
+
     def test_attributes(self):
         """No relationships"""
 
@@ -26,9 +28,9 @@ class TestDefaultParser:
         self,
         expected_type: str,
         expected_id: str,
-        expected_attributes: Optional[dict[str, Any]] = {},
-        expected_to_one_objects: Optional[dict[str, DataObject]] = {},
-        return_value: Any = None
+        expected_attributes: dict[str, Any] = {},
+        expected_to_one_objects: dict[str, DataObject] = {},
+        return_value: Optional[Any] = None
     ) -> DataObjectFactory:
 
         expected_data = expected_attributes | expected_to_one_objects
