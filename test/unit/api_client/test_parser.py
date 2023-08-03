@@ -63,9 +63,10 @@ class TestDefaultParser:
                 'type': type_,
                 'id': id_
             }
-            if 'relation' in data:
-                factoried['override'] = data.pop('relation')
-            factoried['attributes'] = data
+            if data is not None:
+                if 'relation' in data:
+                    factoried['override'] = data.pop('relation')
+                factoried['attributes'] = data
 
             return factoried
 
@@ -107,8 +108,8 @@ class TestDefaultParser:
         observed = parser.convert(in_)
 
         assert factory.call_args_list == [
-            call('hello', 'parser', data=attributes),
-            call('one', '1', data=None)
+            call('one', '1', data=None),
+            call('hello', 'parser', data=attributes)
         ]
 
         assert observed == expected
