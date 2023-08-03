@@ -45,7 +45,7 @@ class TestDefaultDumper:
         mock_object = self.__mock_object(
             'hello',
             'world',
-            attribute=attributes
+            attributes=attributes
         )
         dumper = DefaultDumper()
         observed = dumper.convert(mock_object)
