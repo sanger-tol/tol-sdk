@@ -4,3 +4,8 @@
 
 from tol.api_client.dumper import DefaultDumper
 
+
+class TestDefaultDumper:
+    """
+    Various tests for `DefaultDumper`
+    """
