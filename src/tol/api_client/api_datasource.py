@@ -23,12 +23,27 @@ ClientFactory = Callable[[str, str], ApiClient]
 """Takes a URL and token, returns an instance of `ApiClient`"""
 
 
+def default_client_factory(url: str, key: str) -> DefaultApiClient:
+    return DefaultApiClient(url, key)
+
+
 DumperFactory = Callable[[], Dumper]
 """Returns a `Dumper` instance"""
 
 
+def default_dumper_factory() -> DefaultDumper:
+    return DefaultDumper()
+
+
 ParserFactory = Callable[[DataObjectFactory], Parser]
 """Takes a `DataObjectFactory` callable, returns a `Parser`"""
+
+
+def default_parser_factory(
+    data_object_factory: DataObjectFactory
+) -> DefaultParser:
+
+    return DefaultParser(data_object_factory)
 
 
 class ApiDataSource(
@@ -49,9 +64,9 @@ class ApiDataSource(
         self,
         url: str,
         key: str,
-        client_factory: ClientFactory = lambda u, k: DefaultApiClient(u, k),
-        dumper_factory: DumperFactory = lambda: DefaultDumper(),
-        parser_factory: ParserFactory = lambda f: DefaultParser(f)
+        client_factory: ClientFactory = default_client_factory,
+        dumper_factory: DumperFactory = default_dumper_factory,
+        parser_factory: ParserFactory = default_parser_factory
     ) -> None:
 
         self.__url = url
