@@ -88,7 +88,7 @@ class TestApiDataSource:
     def test_get_by_id(self):
         """A mixture of found and not founds"""
 
-        ids = ['200, 301, 404']  # last is not found
+        ids = ['200', '301', '404']  # last is not found
 
         def __get_detail(
             type_: str,
