@@ -2,7 +2,6 @@
 #
 # SPDX-License-Identifier: MIT
 
-from re import M
 from typing import Any
 from unittest.mock import Mock, PropertyMock
 
