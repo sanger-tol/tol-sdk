@@ -2,7 +2,7 @@
 #
 # SPDX-License-Identifier: MIT
 
-from abc import ABC, abstractmethod
+from abc import ABC
 
 from ..api_base2.parser import JsonApiResource
 from ..core.converter import Converter
