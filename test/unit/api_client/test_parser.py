@@ -65,7 +65,12 @@ class TestDefaultParser:
             }
             if data is not None:
                 if 'relation' in data:
-                    factoried['override'] = data.pop('relation')
+                    factoried['relationships'] = {}
+                    factoried[
+                        'relationships'
+                    ]['override'] = {
+                        'data': data.pop('relation')
+                    }
                 factoried['attributes'] = data
 
             return factoried
