@@ -2,5 +2,15 @@
 #
 # SPDX-License-Identifier: MIT
 
-from ..core.converter import Converter
+from abc import ABC, abstractmethod
 
+from ..api_base2.parser import JsonApiResource
+from ..core.converter import Converter
+from ..core import DataObject
+
+
+class Dumper(Converter[DataObject, JsonApiResource], ABC):
+    """
+    Serializes `DataObject` instances to `JsonApiResource`
+    dumps.
+    """
