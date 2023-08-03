@@ -30,5 +30,26 @@ class TestDefaultParser:
     def test_attributes(self):
         """No relationships"""
 
+        factory = MagicMock()
+        parser = DefaultParser(factory)
+
+        attributes = {
+            'yes?': False,
+            'why not?!': 'no'
+        }
+        in_ = {
+            'type': 'hello',
+            'id': 'parser',
+            'attributes': attributes
+        }
+
+        parser.convert(in_)
+
+        factory.assert_called_once_with(
+            'type',
+            'hello',
+            data=attributes
+        )
+
     def test_all(self):
         """Attributes and relationships"""
