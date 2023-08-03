@@ -77,7 +77,9 @@ class ApiDataSource(
 
     @property
     def supported_types(self) -> list[str]:
-        return super().supported_types
+        client = self.__get_client()
+        dump = client.get_operations_config()
+        return list(dump.keys())
 
     @property
     def relationship_config(self) -> dict[str, RelationshipConfig]:
