@@ -6,7 +6,6 @@ from typing import Any
 from unittest.mock import Mock, PropertyMock
 
 from tol.api_client.dumper import DefaultDumper
-from tol.core import DataObject
 
 
 class TestDefaultDumper:
@@ -95,7 +94,7 @@ class TestDefaultDumper:
         type_: str,
         id_: str,
         attributes: dict[str, Any] = {},
-        to_one_objects: dict[str, DataObject] = {}
+        to_one_objects: dict[str, Mock] = {}
     ) -> Mock:
 
         mock_object = Mock()
