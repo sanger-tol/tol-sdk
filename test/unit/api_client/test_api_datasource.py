@@ -2,6 +2,7 @@
 #
 # SPDX-License-Identifier: MIT
 
+from typing import Any, Optional
 from unittest.mock import Mock
 
 from tol.api_client import ApiDataSource
@@ -86,3 +87,51 @@ class TestApiDataSource:
 
     def test_get_by_id(self):
         """A mixture of found and not founds"""
+
+        ids = ['200, 301, 404']  # last is not found
+
+        def __get_detail(
+            type_: str,
+            id_: str
+        ) -> Optional[dict[str, Any]]:
+
+            if id_ == '404':
+                return None
+            return {
+                'type': type_,
+                'id': id_,
+                'attributes': {'mix': f'stuff_{type_}_{id_}'}
+            }
+
+        client = Mock()
+        client.get_detail.side_effect = __get_detail
+
+        parser = Mock()
+        # parser doesn't do anything
+        parser.convert_iterable.side_effect = lambda it: it
+
+        api_ds = ApiDataSource(
+            'http://excellent.lan',
+            'lol this is a key',
+            client_factory=lambda __u, __k: client,
+            parser_factory=lambda __f: parser
+        )
+
+        expected = [
+            {
+                'type': 'http',
+                'id': '200',
+                'attributes': {'mix': 'stuff_http_200'}
+            },
+            {
+                'type': 'http',
+                'id': '301',
+                'attributes': {'mix': 'stuff_http_301'}
+            },
+            None  # not found
+        ]
+        observed = list(
+            api_ds.get_by_id('http', ids)
+        )
+
+        assert observed == expected
