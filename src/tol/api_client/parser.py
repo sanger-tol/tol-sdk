@@ -7,8 +7,8 @@ from collections.abc import Mapping
 from typing import Any, Optional
 
 from ..api_base2.parser import JsonApiResource
-from ..core.converter import Converter
 from ..core import DataObject, DataObjectFactory
+from ..core.converter import Converter
 
 
 class Parser(Converter[JsonApiResource, DataObject], ABC):
