@@ -2,6 +2,7 @@
 #
 # SPDX-License-Identifier: MIT
 
+from re import M
 from typing import Any
 from unittest.mock import Mock, PropertyMock
 
@@ -54,6 +55,41 @@ class TestDefaultDumper:
 
     def test_all(self):
         """Attributes and relationships"""
+
+        attributes = {
+            'int': 309430,
+            'float': 32432.4,
+            'string': 'yes'
+        }
+        to_one_objects = {
+            str(i): self.__mock_object(f'type_{i}', str(i))
+            for i in range(4)
+        }
+        to_one_expected = {
+            str(i): {
+                'data': {
+                    'type': f'type_{i}',
+                    'id': str(i)
+                }
+            } for i in range(4)
+        }
+        expected = {
+            'type': 'hello',
+            'id': 'world',
+            'attributes': attributes,
+            'relationships': to_one_expected
+        }
+
+        mock_object = self.__mock_object(
+            'hello',
+            'world',
+            attributes=attributes,
+            to_one_objects=to_one_objects
+        )
+        dumper = DefaultDumper()
+        observed = dumper.convert(mock_object)
+
+        assert observed == expected
 
     def __mock_object(
         self,
