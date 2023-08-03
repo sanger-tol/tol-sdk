@@ -9,13 +9,10 @@ from .dumper import Dumper, DefaultDumper
 from .parser import Parser, DefaultParser
 from ..core import DataObjectFactory, DataSource
 from ..core.operator import (
-    Deleter,
     DetailGetter,
     ListGetter,
     PageGetter,
-    Relational,
-    Updater,
-    Upserter
+    Relational
 )
 
 
@@ -48,13 +45,10 @@ def default_parser_factory(
 
 class ApiDataSource(
     DataSource,
-    Deleter,
     DetailGetter,
     ListGetter,
     PageGetter,
-    Relational,
-    Updater,
-    Upserter
+    Relational
 ):
     """
     Communicates with a remote API.
