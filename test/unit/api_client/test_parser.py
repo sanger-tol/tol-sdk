@@ -111,3 +111,5 @@ class TestDefaultParser:
             'hello',
             data=attributes
         )
+
+        assert observed == expected
