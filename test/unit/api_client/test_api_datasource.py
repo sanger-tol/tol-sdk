@@ -29,6 +29,8 @@ class TestApiDataSource:
         }
 
         def __client_factory(url: str, key: str) -> Mock:
+            """confirm the url and key are given"""
+
             assert url == 'http://fake.lan'
             assert key == 'key'
 
@@ -57,5 +59,27 @@ class TestApiDataSource:
             )
         }
         observed = api_ds.relationship_config
+
+        assert observed == expected
+
+    def test_supported_types(self):
+        client = Mock()
+        client.get_operations_config.return_value = {
+            'a': {
+                'noauth': ['upsert', 'delete']
+            },
+            'b': {
+                'noauth': ['detailGet', 'pageGet']
+            }
+        }
+
+        api_ds = ApiDataSource(
+            'http://excellent.lan',
+            'lol this is a key',
+            client_factory=lambda __u, __k: client
+        )
+
+        expected = ['a', 'b']
+        observed = api_ds.supported_types
 
         assert observed == expected
