@@ -108,3 +108,4 @@ class TestDefaultDumper:
         type(mock_object)._to_one_objects = PropertyMock(
             return_value=to_one_objects
         )
+        return mock_object
