@@ -139,6 +139,9 @@ class ApiDataSource(
     ) -> dict[str, RelationshipConfig]:
 
         return {
-            k: RelationshipConfig(**v)
+            k: RelationshipConfig(
+                to_one=v.get('to_one'),
+                to_many=v.get('to_many')
+            )
             for k, v in dump.items()
         }
