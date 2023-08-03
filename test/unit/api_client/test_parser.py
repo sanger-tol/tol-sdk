@@ -25,7 +25,7 @@ class TestDefaultParser:
 
         parser.convert(in_)
 
-        factory.assert_called_once_with('type', 'hello', data=None)
+        factory.assert_called_once_with('hello', 'parser', data=None)
 
     def test_attributes(self):
         """No relationships"""
@@ -46,8 +46,8 @@ class TestDefaultParser:
         parser.convert(in_)
 
         factory.assert_called_once_with(
-            'type',
             'hello',
+            'parser',
             data=attributes
         )
 
@@ -107,8 +107,8 @@ class TestDefaultParser:
         parser.convert(in_)
 
         observed = factory.assert_called_once_with(
-            'type',
             'hello',
+            'parser',
             data=attributes
         )
 
