@@ -7,6 +7,7 @@ from typing import Callable, Iterable, Optional
 from .client import AllRelationshipsDict, ApiClient, DefaultApiClient
 from .dumper import Dumper, DefaultDumper
 from .parser import Parser, DefaultParser
+from ..api_base2.parser import JsonApiResource
 from ..core import (
     DataObject,
     DataObjectFactory,
@@ -96,7 +97,12 @@ class ApiDataSource(
         object_ids: Iterable[str]
     ) -> Iterable[Optional[DataObject]]:
 
-        return super().get_by_id(object_type, object_ids)
+        parser = self.__get_parser()
+        results = self.__generate_detail(
+            object_type,
+            object_ids
+        )
+        return parser.convert_iterable(results)
 
     def get_list(
         self,
@@ -135,6 +141,11 @@ class ApiDataSource(
             self.__key
         )
 
+    def __get_parser(self) -> Parser:
+        return self.__parser_factory(
+            self.__data_object_factory
+        )
+
     def __parse_relationship_config(
         self,
         dump: AllRelationshipsDict
@@ -147,3 +158,15 @@ class ApiDataSource(
             )
             for k, v in dump.items()
         }
+
+    def __generate_detail(
+        self,
+        object_type: str,
+        object_ids: Iterable[str]
+    ) -> Iterable[JsonApiResource]:
+
+        client = self.__get_client()
+        return (
+            client.get_detail(object_type, id_)
+            for id_ in object_ids
+        )

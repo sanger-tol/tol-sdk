@@ -116,6 +116,7 @@ class TestApiDataSource:
             client_factory=lambda __u, __k: client,
             parser_factory=lambda __f: parser
         )
+        api_ds.data_object_factory = lambda a: a
 
         expected = [
             {
