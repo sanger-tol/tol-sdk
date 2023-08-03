@@ -143,7 +143,7 @@ class ApiDataSource(
 
     def __get_parser(self) -> Parser:
         return self.__parser_factory(
-            self.__data_object_factory
+            self.data_object_factory
         )
 
     def __parse_relationship_config(
