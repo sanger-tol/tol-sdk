@@ -14,3 +14,8 @@ class Dumper(Converter[DataObject, JsonApiResource], ABC):
     Serializes `DataObject` instances to `JsonApiResource`
     dumps.
     """
+
+
+class DefaultDumper(Dumper):
+    def convert(self, input_: DataObject) -> JsonApiResource:
+        pass
