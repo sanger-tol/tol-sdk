@@ -36,7 +36,7 @@ class TestDefaultParser:
         def __factory(
             type_: str,
             id_: str,
-            data: Optional[dict[str, Any]] = {}
+            data: Optional[dict[str, Any]] = None
         ) -> Any:
 
             assert type_ == expected_type
