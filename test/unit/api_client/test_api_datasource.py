@@ -136,3 +136,12 @@ class TestApiDataSource:
         )
 
         assert observed == expected
+
+    def test_get_to_one_relation(self):
+        """
+        Test `ApiDataSource().get_to_one_relation()`, with:
+
+        - bad relationship name
+        - none found
+        - one found
+        """
