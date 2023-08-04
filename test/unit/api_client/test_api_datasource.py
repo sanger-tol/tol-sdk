@@ -3,9 +3,12 @@
 # SPDX-License-Identifier: MIT
 
 from typing import Any, Optional
-from unittest.mock import Mock
+from unittest.mock import Mock, PropertyMock
+
+import pytest
 
 from tol.api_client import ApiDataSource
+from tol.core import DataSource, DataSourceError
 from tol.core.relationship import RelationshipConfig
 
 
@@ -145,3 +148,47 @@ class TestApiDataSource:
         - none found
         - one found
         """
+
+        client = Mock()
+        client.get_relationship_config.return_value = {
+            'a': {
+                'to_one': {
+                    'test_to_one': 'b'
+                }
+            }
+        }
+
+        parser = Mock()
+        # parser doesn't do anything
+        parser.convert_optional.side_effect = lambda o: o
+
+        api_ds = ApiDataSource(
+            'http://excellent.lan',
+            'lol this is a key',
+            client_factory=lambda __u, __k: client,
+            parser_factory=lambda __f: parser
+        )
+        api_ds.data_object_factory = lambda a: a
+
+        mock_obj = self.__mock_object('a', 'test_id')
+
+        # bad relationship name
+        with pytest.raises(DataSourceError):
+            api_ds.get_to_one_relation(mock_obj, 'bad')
+
+    def __mock_object(
+        self,
+        type_: str,
+        host: DataSource,
+        id_: Optional[str] = None,
+        attributes: dict[str, Any] = {}
+    ) -> Mock:
+
+        mock_obj = Mock()
+        mock_class = type(mock_obj)
+
+        mock_class.type = PropertyMock(return_value=type_)  # noqa
+        mock_class.id = PropertyMock(return_value=id_)  # noqa
+        mock_class.attributes = PropertyMock(return_value=attributes)
+
+        return mock_obj
