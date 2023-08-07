@@ -78,6 +78,7 @@ class ApiDataSource(
 
     @property
     def supported_types(self) -> list[str]:
+        # TODO cache and cache invalidation
         client = self.__get_client()
         dump = client.get_operations_config()
         return list(dump.keys())
