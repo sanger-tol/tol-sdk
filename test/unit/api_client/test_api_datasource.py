@@ -185,7 +185,11 @@ class TestApiDataSource:
         with pytest.raises(DataSourceError):
             api_ds.get_to_one_relation(mock_obj, 'bad')
 
-        not_found_obj = api_ds.get
+        not_found_obj = api_ds.get_to_one_relation(
+            mock_obj,
+            'to_one'
+        )
+        assert not_found_obj is None
 
     def __mock_object(
         self,
@@ -201,5 +205,6 @@ class TestApiDataSource:
         mock_class.type = PropertyMock(return_value=type_)  # noqa
         mock_class.id = PropertyMock(return_value=id_)  # noqa
         mock_class.attributes = PropertyMock(return_value=attributes)
+        mock_class.host = PropertyMock(return_value=host)
 
         return mock_obj
