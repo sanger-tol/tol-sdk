@@ -85,6 +85,7 @@ class ApiDataSource(
 
     @property
     def relationship_config(self) -> dict[str, RelationshipConfig]:
+        # TODO cache and cache invalidation
         client = self.__get_client()
         dump = client.get_relationship_config()
         return self.__parse_relationship_config(dump)
