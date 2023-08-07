@@ -149,6 +149,14 @@ class TestApiDataSource:
         - one found
         """
 
+        def __get_detail(type_: str, id_: str) -> Mock:
+            if id_ != 'found':
+                return None
+            return {
+                'type': type_,
+                'id': id_
+            }
+
         client = Mock()
         client.get_relationship_config.return_value = {
             'a': {
@@ -157,6 +165,7 @@ class TestApiDataSource:
                 }
             }
         }
+        client.get_detail.side_effect = __get_detail
 
         parser = Mock()
         # parser doesn't do anything
@@ -170,11 +179,13 @@ class TestApiDataSource:
         )
         api_ds.data_object_factory = lambda a: a
 
-        mock_obj = self.__mock_object('a', 'test_id')
+        mock_obj = self.__mock_object('a', api_ds, id_='test_id')
 
         # bad relationship name
         with pytest.raises(DataSourceError):
             api_ds.get_to_one_relation(mock_obj, 'bad')
+
+        not_found_obj = api_ds.get
 
     def __mock_object(
         self,
