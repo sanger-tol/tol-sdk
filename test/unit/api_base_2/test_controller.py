@@ -24,7 +24,12 @@ from tol.core import (
     DataSourceFilter,
     core_data_object
 )
-from tol.core.operator import Aggregator, DetailGetter, PageGetter
+from tol.core.operator import (
+    Aggregator,
+    DetailGetter,
+    PageGetter,
+    Relational
+)
 
 
 class _TestDataSource1(DataSource, DetailGetter):
@@ -293,3 +298,12 @@ class TestController:
         error_str = str(e.value)
         assert '_BadDataSource' in error_str
         assert 'get_by_id' in error_str
+
+    def test_get_to_one_relation(self):
+        """
+        Tests `Relational().get_to_one_relation()` with:
+
+        - a non-existing relationship name
+        - an unpopulated to-one relationship name
+        - a "found" to-one relation
+        """
