@@ -324,6 +324,12 @@ class TestController:
             __relationship_name: str
         ) -> Optional[Mock]:
 
+            if source.id == 'base not found':
+                raise ObjectNotFoundByIdException(
+                    source.type,
+                    source.id
+                )
+
             return (
                 mock_obj if source.id == 'found' else None
             )
