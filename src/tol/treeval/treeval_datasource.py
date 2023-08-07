@@ -2,27 +2,13 @@
 #
 # SPDX-License-Identifier: MIT
 
-# curl -D- -X POST -H "Authorization: Bearer MDM4MTc2MDc3MDUxOgkkaGWwUAMdfaiLiIeS6idd0K9j" -H "Content-Type: application/json" --data '{"jql":"status = curation and project in (RC,GRIT)","maxResults":1}' https://jira.sanger.ac.uk/rest/api/latest/search
-import logging
 import requests
 import pandas as pd
 import json
 import re
-# import hashlib
-# import json
-# from collections.abc import Callable
-# from datetime import datetime
+
 from functools import cache
 from typing import Any, Dict, Iterable, Tuple
-
-# from caseconverter import (
-#     kebabcase,
-#     snakecase
-# )
-
-# from elasticsearch import (Elasticsearch, helpers)
-
-from ..api_base.utils import parse_filters
 
 from ..core import (
     DataId,
@@ -43,14 +29,6 @@ class TreevalDataSource(
         # uri, user, password
         super().__init__(config, expected=['url', 'api_token'])
 
-        # self._initialise_elasticsearch()
-
-    # def _initialise_elasticsearch(self):
-    #     self.es = Elasticsearch(self.uri, http_auth=(self.user, self.password))
-    #     self.helpers = helpers
-# ,"fields":["key","fields"]
-
-
     def get_jira_image(self, path):
         response = requests.get(
             url = path,
@@ -62,11 +40,12 @@ class TreevalDataSource(
             raise DataSourceError(title='Cannot connect to JIRA',
                                   detail=f"(status code '{str(response.status_code)}')'")
 
+
         return response.raw
 
 
     def _build_jira_query(self):
-        return '{"jql":"status = curation and project in (RC,GRIT)","maxResults":1000,"fields":["key","fields","updated", "customfield_12200", "customfield_11676", "summary", "assignee", "attachment", "description"]}'
+        return '{"jql":"status = curation and project in (RC,GRIT)","maxResults":1000,"fields":["key","fields","updated", "customfield_12200", "customfield_11676", "customfield_11677", "summary", "assignee", "attachment", "description"]}'
 
     def _execute_jira_query(self, query):
         response = requests.post(
@@ -117,20 +96,42 @@ class TreevalDataSource(
     def _get_values_from_issue(self,issue):
         key = issue['key']
         fields = issue['fields']
-        updated = str(fields['updated'])
+        updated = pd.Timestamp(fields['updated'])
         treeval_val = fields['customfield_12200']
         species_name = self._parse_species_name(fields['customfield_11676'])
         tolid = self._parse_species_id(fields['summary'])
         
+        con_filname = fields['customfield_11677']
+        file_struct = con_filname.split("/")
+
+        tolqc_project = file_struct[5]
+
+        if tolqc_project == "meier":
+            tolqc_clade = file_struct[8]
+
+        elif tolqc_project == "badass":
+            tolqc_project = "lawniczak"
+            tolqc_clade = "badass"
+        else:
+            tolqc_clade = file_struct[7]
+
+        species_name_parts = species_name.split(" ")
+        if len(species_name_parts) > 1:
+            tolqc_species_name = f"{species_name_parts[0]}_{species_name_parts[1]}"
+        else:
+            tolqc_species_name = ""
+
+
         # Treeval link
         treeval_val = fields['customfield_12200']
 
-        jbrowse_status_value = ""
-        jbrowse_link = ""
-        if treeval_val:
-            if treeval_val.startswith("http"):
-                jbrowse_link = treeval_val
-                jbrowse_status_value = "jBrowse"
+        treeval_data = json.loads(treeval_val)
+        # jbrowse_status_value = ""
+        # jbrowse_link = ""
+        # if treeval_val:
+        #     if treeval_val.startswith("http"):
+        #         jbrowse_link = treeval_val
+        #         jbrowse_status_value = "jBrowse"
 
         # Stats from description
         description = str(fields['description'])
@@ -153,22 +154,60 @@ class TreevalDataSource(
         for jira_attachment in jira_attachments:
             attachment_url = str(jira_attachment["content"])
             if attachment_url.endswith("scaffolds_FINAL.css.spectra-cn.ln.png"):
-                hic_plot_attachment = attachment_url
-            elif attachment_url.endswith("scaffolds_FINAL_FullMap.png"):
                 kmer_plot_attachment = attachment_url
+            elif attachment_url.endswith("scaffolds_FINAL_FullMap.png"):
+                hic_plot_attachment = attachment_url
+
+            if treeval_data["jbrowse"]:
+                jbrowse_link = 'http://jbrowse.tol-dev.sanger.ac.uk/jbrowse2/?config=config.json&assembly=' + treeval_data["jbrowse"] + '&session=spec-{"views":[{"assembly":"' + treeval_data["jbrowse"] + '","loc":"' + treeval_data["jb_scaffold"] + '","type": "LinearGenomeView","tracks":["' + treeval_data["jbrowse"] + '-ReferenceSequenceTrack"]}]}'
+            else:
+                jbrowse_link = ""
+
+            btk_pr = treeval_data["btk_pr"]
+            if btk_pr:
+                btk_pr_link = f"https://grit-btk.tol.sanger.ac.uk/view/{btk_pr}/dataset/{btk_pr}.ascc/blob"
+            else:
+                btk_pr_link = ""
+
+            btk_hp = treeval_data["btk_hp"]
+            if btk_hp:
+                btk_hp_link = f"https://grit-btk.tol.sanger.ac.uk/view/{btk_hp}/dataset/{btk_hp}.ascc/blob"
+            else:
+                btk_hp_link = ""
+
+            btk_mt = treeval_data["btk_mt"]
+            if btk_mt:
+                btk_mt_link = f"https://grit-btk.tol.sanger.ac.uk/view/{btk_mt}/dataset/{btk_mt}.ascc/blob"
+            else:
+                btk_mt_link = ""
+
+            taxon_id = treeval_data["taxon_id"]
+            if taxon_id:
+                goat_link = f"https://goat.genomehubs.org/record?recordId={taxon_id}&result=taxon&taxonomy=ncbi"
+            else:
+                goat_link = ""
+
+            added_to_curation_date = treeval_data["start"]
+
+            if tolqc_project not in ("tol-nematodes","genomeark"):
+                tolqc_link = f"https://tolqc.cog.sanger.ac.uk/{tolqc_project}/{tolqc_clade}/{tolqc_species_name}/"
+            else:
+                tolqc_link = ""
 
         return {'tolid': tolid,
                 'species_name': species_name,
                 'jira_issue': key, 
                 'jira_issue_url': f'https://{self.url}/browse/{key}', 
                 'jira_issue_last_updated': updated, 
+                'added_to_curation': added_to_curation_date, 
                 'jbrowse_url': jbrowse_link, 
-                'assignee': display_name, 
-                'jbrowse_status': jbrowse_status_value,
-                'goat_url': "",
+                'assignee': display_name,
+                'goat_url': goat_link,
                 'higlass_url': "",
-                'btk_url': "",
-                'tolqc_url': "",
+                'btk_pri_url': btk_pr_link,
+                'btk_hap_url': btk_hp_link,
+                'btk_mit_url': btk_mt_link,
+                'tolqc_url': tolqc_link,
                 'hic_plot': hic_plot_attachment,
                 'kmer_plot': kmer_plot_attachment,
                 'scaffold_l90': scaffold_l90,
@@ -199,14 +238,14 @@ class TreevalDataSource(
             species_id = species_id.replace(' ASG assembly', '')
             species_id = species_id.replace(' VGP assembly', '')
             species_id = species_id.replace(' external assembly', '')
+            species_id = species_id.replace(' TOL assembly', '')
             species_id = species_id.replace(' assembly', '')
 
             return species_id
         else:
             return ''
 
-
-    def _apply_filter_to_specimens(self,object_filters,specimens):
+    def _apply_contains_filter_to_specimens(self,object_filters,specimens):
 
         if 'tolid' in object_filters:
             # raise DataSourceError(title=specimens['tolid'])
@@ -220,9 +259,6 @@ class TreevalDataSource(
 
         if 'jira_issue_link' in object_filters:
             specimens = specimens[specimens['jira_issue_link'].str.contains(object_filters['jira_issue_link'])]
-
-        if 'jira_issue_last_updated' in object_filters:
-            specimens = specimens[specimens['jira_issue_last_updated'].str.contains(object_filters['jira_issue_last_updated'])]
 
         if 'jbrowse_link' in object_filters:
             specimens = specimens[specimens['jbrowse_link'].str.contains(object_filters['jbrowse_link'])]
@@ -238,11 +274,25 @@ class TreevalDataSource(
 
         return specimens
 
+    def _apply_range_filter_to_specimens(self,object_filters,specimens):
+
+        # {"range":{"jira_issue_last_updated":{"from":"2023-07-30T23:00:00.000Z","to":"2023-09-01T22:59:59.999Z"}}}
+        if 'jira_issue_last_updated' in object_filters:
+            last_updated_range = object_filters['jira_issue_last_updated']
+            specimens = specimens[(specimens['jira_issue_last_updated']>pd.Timestamp(last_updated_range["from"])) & (specimens["added_to_curation_date"]<pd.Timestamp(last_updated_range["to"]))]
+
+        if 'added_to_curation' in object_filters:
+            added_to_curation_range = object_filters['added_to_curation']
+            specimens = specimens[(specimens['added_to_curation']>pd.Timestamp(added_to_curation_range["from"])) & (specimens["added_to_curation"]<pd.Timestamp(added_to_curation_range["to"]))]
+
+
+
+        return specimens
 
     def _apply_sort_to_specimens(self,sort_by,specimens):
 
         if sort_by is None:
-            column_name = 'jira_issue_last_updated'
+            column_name = 'added_to_curation'
             sort_direction = False
         else:
             if sort_by.startswith('-'):
@@ -274,11 +324,15 @@ class TreevalDataSource(
 
         #object_filters needs to be dict - currently string
         object_filters_dict = json.loads(object_filters)
+
         # Filter
         if object_filters_dict and len(object_filters_dict.keys()) > 0:
-            # raise DataSourceError(title=object_filters_dict)
-            contains_filter = object_filters_dict["contains"]
-            specimens = self._apply_filter_to_specimens(contains_filter, specimens)
+
+            if "contains" in object_filters_dict.keys():
+                specimens = self._apply_contains_filter_to_specimens(object_filters_dict["contains"], specimens)
+
+            if "range" in object_filters_dict.keys():
+                specimens = self._apply_range_filter_to_specimens(object_filters_dict["range"], specimens)
 
         # Sort
         specimens = self._apply_sort_to_specimens(sort_by, specimens)
@@ -302,22 +356,6 @@ class TreevalDataSource(
         
         return (specimens.to_dict("records"), full_len)
 
-        # index = self.__get_index(object_type)
-        # query = self._build_elasticsearch_query(object_type, object_filters)
-        # sort = self._build_elasticsearch_sort(object_type, sort_by)
-        # if page_size is None:
-        #     page_size = self.get_page_size()
-        # from_ = (page - 1) * page_size
-        # resp = self.es.search(
-        #     from_=from_,
-        #     size=page_size,
-        #     index=index,
-        #     query=query,
-        #     sort=sort
-        # )
-        # return self._convert_dict_to_data_objects(resp['hits']['hits']), \
-        #     resp['hits']['total']['value']
-
     def get_specimens_for_treeval(self, page_number, page_size, filter_, sort_by):
 
         specimens_page, total_specimen_count = self.get_list_page(object_type="specimen", page=page_number, object_filters=filter_, sort_by=sort_by, page_size=page_size)
@@ -327,179 +365,20 @@ class TreevalDataSource(
     def get_specimen_for_treeval(self, tolid):
         return self.get_specimens_for_treeval(1, 1, f'[tolid={tolid}]', 'tolid')[0]
 
-    # def _convert_data_object_to_dict(self, data_object: DataObject) -> Dict:
-    #     return data_object.attributes
+    def get_by_id():
+        raise NotImplementedError()
 
-    # def _prefix_fields(self, dict_: Dict, prefix: str) -> Dict:
-    #     if prefix == '':
-    #         return dict_
-    #     ret = {}
-    #     for k, v in dict_.items():
-    #         ret[prefix + '_' + k] = v
-    #     return ret
+    def get_list():
+        raise NotImplementedError()
 
-    # def _add_updated(self, dict_: Dict) -> Dict:
-    #     return {**dict_, 'tol_updated_at': datetime.now().isoformat()}
+    def get_aggregations():
+        raise NotImplementedError()
 
-    # def _add_checksum(self, dict_: Dict) -> Dict:
-    #     dhash = hashlib.sha256()
-    #     encoded = json.dumps(dict_, sort_keys=True, default=str).encode()
-    #     dhash.update(encoded)
-    #     return {**dict_, 'checksum': dhash.hexdigest()}
-
-    # def _add_uid(self, dict_: Dict, uid: Any) -> Dict:
-    #     return {**dict_, 'uid': f'{uid}'}
-
-    # def _convert_dates(self, dict_: Dict) -> Dict:
-    #     ret = {}
-    #     for k, v in dict_.items():
-    #         if isinstance(v, datetime):
-    #             ret[k] = v.isoformat()
-    #         else:
-    #             ret[k] = v
-    #     return ret
-
-    # def __get_index(self, object_type: str) -> str:
-    #     return f'{self.index_prefix}-{kebabcase(object_type)}'
-
-    # def __get_object_type(self, index: str) -> str:
-    #     start = len(self.index_prefix) + 1
-    #     return snakecase(index[start:])
-
-    # def _field_or_keyword(self, object_type: str, name: str):
-    #     field_type = self.get_attribute_types(object_type)[name]
-    #     if field_type == 'str':
-    #         return f'{name}.keyword'
-    #     return name
-
-    # def get_by_id(
-    #     self,
-    #     object_type: str,
-    #     object_ids: Iterable[DataId],
-    #     **kwargs
-    # ) -> Iterable[DataObject]:
-    #     index = self.__get_index(object_type)
-    #     resp = self.es.mget(
-    #         body={'ids': object_ids},
-    #         index=index
-    #     )
-    #     return self._convert_dict_to_data_objects(resp['docs'])
-
-
-
-
-
-
-
-    # def _build_elasticsearch_query(self, object_type: str,
-    #                                object_filters: DataSourceFilter = None):
-    #     if object_filters is None:
-    #         return
-    #     query = {'bool': {'must': [], 'must_not': []}}
-    #     if object_filters.exact is not None:
-    #         for k, v in object_filters.exact.items():
-    #             if v is None:
-    #                 query['bool']['must_not'].append({'exists': {'field': k}})
-    #             else:
-    #                 search_field = self._field_or_keyword(object_type, k)
-    #                 query['bool']['must'].append({'match': {search_field: v}})
-
-    #     if object_filters.contains is not None:
-    #         for k, v in object_filters.contains.items():
-    #             search_field = self._field_or_keyword(object_type, k)
-    #             query['bool']['must'].append({'wildcard': {search_field:
-    #                                                        {'value': f'{v}*', 'boost': 1.0}}})
-    #     if object_filters.in_list is not None:
-    #         for k, v in object_filters.in_list.items():
-    #             query['bool']['must'].append({'terms': {k: v, 'boost': 1.0}})
-
-    #     if object_filters.range is not None:
-    #         for k, v in object_filters.range.items():
-    #             query['bool']['must'].append({'range': {k: {'gte': v['from'],
-    #                                                         'lte': v['to']}}})
-
-    #     return query
-
-    # def _build_elasticsearch_sort(self, object_type: str, sort_by: str):
-    #     default_sort = {'uid.keyword': 'asc'}
-    #     if sort_by is None:
-    #         return [default_sort]
-    #     if sort_by.startswith('-'):
-    #         field = self._field_or_keyword(object_type, sort_by[1:])
-    #         order = 'desc'
-    #     else:
-    #         field = self._field_or_keyword(object_type, sort_by)
-    #         order = 'asc'
-    #     sort = [{field: order}, default_sort]
-    #     return sort
-
-    # def get_list(
-    #     self,
-    #     object_type: str,
-    #     object_filters: DataSourceFilter = None,
-    #     **kwargs
-    # ) -> Iterable[DataObject]:
-    #     index = self.__get_index(object_type)
-    #     query = self._build_elasticsearch_query(object_type, object_filters)
-    #     generator = self.helpers.scan(self.es,
-    #                                   index=index,
-    #                                   scroll='10m',
-    #                                   size=500,
-    #                                   query={'query': query})
-    #     return self._convert_dict_to_data_objects(generator)
-
-    # def _convert_dict_to_data_objects(self, objs: Dict) -> Iterable:
-    #     for obj in objs:
-    #         yield self.data_object_factory(
-    #             self.__get_object_type(obj['_index']),
-    #             data={
-    #                 **obj['_source'],
-    #                 'id': obj['_id']
-    #             }
-    #         )
-
-    # def get_aggregations(
-    #         self,
-    #         object_type: str,
-    #         aggregations: Dict,
-    #         object_filters: DataSourceFilter = None,
-    # ) -> Dict:
-    #     index = self.__get_index(object_type)
-    #     query = self._build_elasticsearch_query(object_type, object_filters)
-    #     resp = self.es.search(
-    #         size=0,
-    #         index=index,
-    #         query=query,
-    #         aggregations=aggregations
-    #     )
-    #     return resp['aggregations']
+    @cache
+    def get_attribute_types(self, object_type: str) -> Dict:
+        raise NotImplementedError()
 
     @property
     @cache
     def supported_types(self):
-        index_names = self.es.cat.indices(h='index', s='index').split()
-        return [self.__get_object_type(index_name)
-                for index_name in index_names
-                if index_name.startswith(self.index_prefix)]
-
-    # def __map_type(self, type_: str) -> str:
-    #     if type_ == 'text':
-    #         return 'str'
-    #     if type_ == 'long':
-    #         return 'int'
-    #     if type_ == 'date':
-    #         return 'datetime'
-    #     return type_
-
-    @cache
-    def get_attribute_types(self, object_type: str) -> Dict:
-        index_name = self.__get_index(object_type)
-        mapping = self.es.indices.get_mapping(index_name)
-        if 'properties' not in mapping[index_name]['mappings']:
-            return {}
-        properties = mapping[index_name]['mappings']['properties']
-        return {
-            property_name: self.__map_type(properties[property_name]['type'])
-            for property_name in properties
-            if 'type' in properties[property_name]
-        }
+        raise NotImplementedError()
