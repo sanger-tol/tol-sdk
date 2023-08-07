@@ -2,8 +2,13 @@
 #
 # SPDX-License-Identifier: MIT
 
-from typing import Any, Dict, Iterable, Optional
-from unittest.mock import MagicMock, Mock, PropertyMock, create_autospec
+from typing import Dict, Iterable, Optional
+from unittest.mock import (
+    MagicMock,
+    Mock,
+    PropertyMock,
+    create_autospec
+)
 
 import pytest
 
@@ -18,7 +23,7 @@ from tol.api_base2.misc import (
     AggregationParameters,
     ListGetParamaters
 )
-from tol.api_base2.view import DefaultView
+from tol.api_base2.view import DefaultView, View
 from tol.core import (
     DataObject,
     DataSource,
@@ -331,3 +336,10 @@ class TestController:
             }
         )
         mock_ds.get_to_one_relation.side_effect = __get
+
+        mock_view = create_autospec(View, spec_set=True)
+
+        controller = Controller(mock_ds, mock_view)
+
+        # non existing relationship
+        

@@ -186,6 +186,14 @@ class Controller:
         }
         return self.__view.dump_bulk([], document_meta=document_meta)
 
+    def get_to_one_relation(
+        self,
+        object_type: str,
+        object_id: str,
+        relationship_name: str
+    ) -> ResponseDict:
+        pass
+
     def __get_detail_object(self, object_type: str, object_id: str) -> DataObject:
         data_objects = list(self.__data_source.get_by_id(object_type, [object_id]))
         if len(data_objects) == 0 or data_objects[0] is None:
