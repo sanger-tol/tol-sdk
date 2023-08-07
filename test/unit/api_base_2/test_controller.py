@@ -2,8 +2,8 @@
 #
 # SPDX-License-Identifier: MIT
 
-from typing import Dict, Iterable
-from unittest.mock import MagicMock
+from typing import Any, Dict, Iterable, Optional
+from unittest.mock import MagicMock, Mock, PropertyMock, create_autospec
 
 import pytest
 
@@ -20,6 +20,7 @@ from tol.api_base2.misc import (
 )
 from tol.api_base2.view import DefaultView
 from tol.core import (
+    DataObject,
     DataSource,
     DataSourceFilter,
     core_data_object
@@ -308,4 +309,25 @@ class TestController:
         - a "found" to-one relation
         """
 
+        mock_obj = MagicMock()
 
+        def __get(
+            source: DataObject,
+            __relationship_name: str
+        ) -> Optional[Mock]:
+
+            return (
+                mock_obj if source.id == 'found' else None
+            )
+
+        mock_ds = create_autospec(Relational, spec_set=True)
+        type(mock_ds).relationship_config = PropertyMock(
+            return_value={
+                'a': {
+                    'to_one': {
+                        'one': 'b'
+                    }
+                }
+            }
+        )
+        mock_ds.get_to_one_relation.side_effect = __get
