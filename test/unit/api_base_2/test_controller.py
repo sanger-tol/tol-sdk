@@ -15,6 +15,7 @@ import pytest
 from tol.api_base2.controller import Controller
 from tol.api_base2.exception import (
     ObjectNotFoundByIdException,
+    RelationNotFoundException,
     UninheritedOperationError,
     UnsupportedOpertionError
 )
@@ -30,6 +31,7 @@ from tol.core import (
     DataSourceFilter,
     core_data_object
 )
+from tol.core.datasource_error import DataSourceError
 from tol.core.operator import (
     Aggregator,
     DetailGetter,
@@ -310,6 +312,7 @@ class TestController:
         Tests `Controller().get_to_one_relation()` with:
 
         - a non-existing relationship name
+        - base instance not found by ID
         - an unpopulated to-one relationship name
         - a "found" to-one relation
         """
@@ -342,4 +345,21 @@ class TestController:
         controller = Controller(mock_ds, mock_view)
 
         # non existing relationship
-        
+        with pytest.raises(DataSourceError):
+            controller.get_to_one_relation(
+                'a',
+                'no matter',
+                'absolutely_fake'
+            )
+
+        # relation not found
+        with pytest.raises(RelationNotFoundException) as e:
+            controller.get_to_one_relation(
+                'a',
+                'one',
+                'this will not be found'
+            )
+        detail = e.value.errors[0]['detail']
+        assert 'a' in detail
+        assert 'one' in detail
+        assert 'this will not be found' in detail

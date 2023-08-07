@@ -136,3 +136,30 @@ class UnauthenticatedError(BaseRuntimeException):
             'detail': detail
         }]
         super().__init__(errors, status_code=401)
+
+
+class RelationNotFoundException(BaseRuntimeException):
+    """
+    404 on a to-one relation detail GET, where the base
+    instance is found, but the relationship is not
+    populated.
+    """
+
+    def __init__(
+        base_type: str,
+        base_id: str,
+        relationship_name: str
+    ) -> None:
+
+        detail = (
+            f'The object with type "{base_type}" '
+            f'and ID "{base_id}" does not have a populated '
+            f'value for the relationship "{relationship_name}"'
+        )
+
+        errors = [{
+            'title': 'Relation Not Found',
+            'detail': detail
+        }]
+
+        super().__init__(errors, 404)
