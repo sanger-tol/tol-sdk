@@ -6,6 +6,7 @@ import requests
 import pandas as pd
 import json
 import re
+from datetime import datetime
 
 from functools import cache
 from typing import Any, Dict, Iterable, Tuple
@@ -125,6 +126,9 @@ class TreevalDataSource(
         # Treeval link
         treeval_val = fields['customfield_12200']
 
+        if not treeval_val:
+            treeval_val = '{"jbrowse": "","jb_scaffold": "","start": "","btk_pr": "","btk_hp": "","btk_mt": "","taxon_id": 232653}'
+
         treeval_data = json.loads(treeval_val)
         # jbrowse_status_value = ""
         # jbrowse_link = ""
@@ -187,7 +191,10 @@ class TreevalDataSource(
             else:
                 goat_link = ""
 
+            # if treeval_data["start"] != "":
             added_to_curation_date = treeval_data["start"]
+            # else:
+            #     added_to_curation_date = datetime.now()
 
             if tolqc_project not in ("tol-nematodes","genomeark"):
                 tolqc_link = f"https://tolqc.cog.sanger.ac.uk/{tolqc_project}/{tolqc_clade}/{tolqc_species_name}/"
@@ -279,7 +286,7 @@ class TreevalDataSource(
         # {"range":{"jira_issue_last_updated":{"from":"2023-07-30T23:00:00.000Z","to":"2023-09-01T22:59:59.999Z"}}}
         if 'jira_issue_last_updated' in object_filters:
             last_updated_range = object_filters['jira_issue_last_updated']
-            specimens = specimens[(specimens['jira_issue_last_updated']>pd.Timestamp(last_updated_range["from"])) & (specimens["added_to_curation_date"]<pd.Timestamp(last_updated_range["to"]))]
+            specimens = specimens[(specimens['jira_issue_last_updated']>pd.Timestamp(last_updated_range["from"])) & (specimens["jira_issue_last_updated"]<pd.Timestamp(last_updated_range["to"]))]
 
         if 'added_to_curation' in object_filters:
             added_to_curation_range = object_filters['added_to_curation']
