@@ -11,14 +11,10 @@ from flask_testing import TestCase
 
 from tol.api_base2 import data_blueprint
 from tol.api_base2.view import DefaultView
-<<<<<<< HEAD
 from tol.core import (
     DataObject,
     DataSource
 )
-=======
-from tol.core import DataSource
->>>>>>> 834d922 (TOLP-6088 Add relationships to DefaultView dump methods)
 from tol.core.operator import DetailGetter, Relational
 from tol.core.relationship import RelationshipConfig
 
@@ -64,15 +60,8 @@ class _MockDataSource(DataSource, DetailGetter, Relational):
             'awful'  # config but no `to_one` or `to_many`
         ]
 
-<<<<<<< HEAD
     @property
     def attribute_types(self):
-=======
-    def get_attribute_types(
-        self,
-        object_type: str
-    ) -> dict:
->>>>>>> 834d922 (TOLP-6088 Add relationships to DefaultView dump methods)
         raise NotImplementedError()
 
     @property
@@ -82,15 +71,11 @@ class _MockDataSource(DataSource, DetailGetter, Relational):
             'awful': RelationshipConfig()  # empty config
         }
 
-<<<<<<< HEAD
     def get_to_one_relation(self, data_object: DataObject, key: str):
         if key == 'first':
             return mock_data_object('yes', '1234', attributes={'att1': 'val1'})
         if key == 'second':
             return mock_data_object('another', '5678')
-=======
-    def get_to_one_relation(*args, **kwargs):
->>>>>>> 834d922 (TOLP-6088 Add relationships to DefaultView dump methods)
         raise NotImplementedError()
 
     def get_to_many_relations(*args, **kwargs):
@@ -175,7 +160,6 @@ class TestDefaultView:
         expected = {
             'data': {
                 'type': 'test',
-<<<<<<< HEAD
                 'id': 'lol/abc',
                 'relationships': {
                     'first': {
@@ -190,36 +174,16 @@ class TestDefaultView:
                             'type': 'another',
                             'id': '5678',
                             'attributes': {}
-=======
-                'id': 'lol',
-                'relationships': {
-                    'first': {
-                        'links': {
-                            'related': '/random/test/lol/first'
-                        }
-                    },
-                    'second': {
-                        'links': {
-                            'related': '/random/test/lol/second'
->>>>>>> 834d922 (TOLP-6088 Add relationships to DefaultView dump methods)
                         }
                     },
                     'ex': {
                         'links': {
-<<<<<<< HEAD
                             'related': '/random/test/lol%2Fabc/ex'
-=======
-                            'related': '/random/test/lol/ex'
->>>>>>> 834d922 (TOLP-6088 Add relationships to DefaultView dump methods)
                         }
                     },
                     'nihil': {
                         'links': {
-<<<<<<< HEAD
                             'related': '/random/test/lol%2Fabc/nihil'
-=======
-                            'related': '/random/test/lol/nihil'
->>>>>>> 834d922 (TOLP-6088 Add relationships to DefaultView dump methods)
                         }
                     },
                 }
@@ -341,7 +305,6 @@ class TestDefaultViewInBlueprint(TestCase):
                 'id': 'hype',
                 'relationships': {
                     'first': {
-<<<<<<< HEAD
                         'data': {
                             'type': 'yes',
                             'id': '1234',
@@ -353,15 +316,6 @@ class TestDefaultViewInBlueprint(TestCase):
                             'type': 'another',
                             'id': '5678',
                             'attributes': {}
-=======
-                        'links': {
-                            'related': '/super_data/test/hype/first'
-                        }
-                    },
-                    'second': {
-                        'links': {
-                            'related': '/super_data/test/hype/second'
->>>>>>> 834d922 (TOLP-6088 Add relationships to DefaultView dump methods)
                         }
                     },
                     'ex': {

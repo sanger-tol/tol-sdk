@@ -9,6 +9,15 @@ from typing import Dict, Iterable, Tuple
 
 import pandas as pd
 import requests
+<<<<<<< HEAD
+=======
+import json
+import re
+from datetime import datetime
+
+from functools import cache
+from typing import Any, Dict, Iterable, Tuple
+>>>>>>> fd805ee (Fixes to dates)
 
 from ..core import (
     DataObject,
@@ -312,7 +321,10 @@ class TreevalDataSource(
             else:
                 goat_link = ""
 
+            # if treeval_data["start"] != "":
             added_to_curation_date = treeval_data["start"]
+            # else:
+            #     added_to_curation_date = datetime.now()
 
             if tolqc_project not in ("tol-nematodes","genomeark"):
                 tolqc_link = f"https://tolqc.cog.sanger.ac.uk/{tolqc_project}/{tolqc_clade}/{tolqc_species_name}/"
