@@ -399,7 +399,10 @@ class TreevalDataSource(
             else:
                 goat_link = ""
 
+            # if treeval_data["start"] != "":
             added_to_curation_date = treeval_data["start"]
+            # else:
+            #     added_to_curation_date = datetime.now()
 
             if tolqc_project not in ("tol-nematodes","genomeark"):
                 tolqc_link = f"https://tolqc.cog.sanger.ac.uk/{tolqc_project}/{tolqc_clade}/{tolqc_species_name}/"
