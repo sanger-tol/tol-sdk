@@ -1,11 +1,8 @@
 {
     "python.testing.pytestArgs": [
-        "test/unit",
-        "--ignore",
-        "test/system"
+        "--ignore=test/system"
     ],
     "python.testing.unittestEnabled": false,
     "python.testing.pytestEnabled": true,
-    "python.testing.pytestPath": "venv/bin/pytest",
     "python.terminal.activateEnvironment": true
 }
