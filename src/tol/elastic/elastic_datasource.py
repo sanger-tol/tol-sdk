@@ -7,7 +7,7 @@ import json
 from collections.abc import Callable
 from datetime import datetime
 from functools import cache
-from typing import Any, Dict, Iterable, Tuple
+from typing import Any, Dict, Iterable, Optional, Tuple
 
 from caseconverter import (
     kebabcase,
@@ -28,10 +28,14 @@ from ..core.operator import (
     DetailGetter,
     ListGetter,
     PageGetter,
+    Relational,
     Updater,
     Upserter
 )
 from ..core.operator.updater import DataObjectUpdate
+from ..core.relationship import (
+    RelationshipConfig
+)
 
 
 class ElasticDataSource(
@@ -40,12 +44,17 @@ class ElasticDataSource(
     PageGetter,
     ListGetter,
     Aggregator,
+    Relational,
     Updater,
     Upserter
 ):
 
     def __init__(self, config: Dict):
         super().__init__(config, expected=['uri', 'user', 'password', 'index_prefix'])
+        """
+        relationship_cfg is also supported if we want to handle relationships
+        Only FKs pointing to IDs are currently supported
+        """
         self._initialise_elasticsearch()
 
     def _initialise_elasticsearch(self):
@@ -330,3 +339,42 @@ class ElasticDataSource(
             for property_name in properties
             if 'type' in properties[property_name]
         }
+
+    @property
+    def relationship_config(self) -> dict[str, RelationshipConfig]:
+        return self.relationship_cfg
+
+    def get_to_one_relation(
+        self,
+        source: DataObject,
+        relationship_name: str
+    ) -> Optional[DataObject]:
+        if self.relationship_config is None:
+            raise DataSourceError('There are no relationships defined')
+        relationship_config = self.relationship_config[source.type]
+        related_object_type = relationship_config.to_one[relationship_name]
+        related_object_fk_attribute = relationship_config.foreign_keys[relationship_name]
+        related_object_id = getattr(source, related_object_fk_attribute)
+        related_objects = list(self.get_by_id(related_object_type, [related_object_id]))
+        if len(related_objects) == 1:
+            return related_objects[0]
+        if len(related_objects) == 0:
+            return None
+        raise DataSourceError('Found many related objects where we were expecting one or none')
+
+    def get_to_many_relations(
+        self,
+        source: DataObject,
+        relationship_name: str
+    ) -> Iterable[DataObject]:
+        if self.relationship_config is None:
+            raise DataSourceError('There are no relationships defined')
+        relationship_config = self.relationship_config[source.type]
+        related_object_type = relationship_config.to_many[relationship_name]
+        related_object_fk_attribute = relationship_config.foreign_keys[relationship_name]
+
+        # Get all the related objects that point to this source object
+        f = DataSourceFilter()
+        f.exact = {related_object_fk_attribute: source.id}
+        related_objects = self.get_list(related_object_type, object_filters=f)
+        return related_objects

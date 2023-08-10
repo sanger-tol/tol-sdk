@@ -28,11 +28,14 @@ class RelationshipConfig:
 
     The keys of each Optional[Dict] are the names of a relationship,
     and the values are the type of DataObject instances to which they
-    are directed.
+    are directed. For foreign keys, the values are the name of the
+    attribute in this class (to_one) or the foreign class (to_many)
+    that implements the relationship.
     """
 
     to_one: Optional[Dict[str, str]] = None
     to_many: Optional[Dict[str, str]] = None
+    foreign_keys: Optional[Dict[str, str]] = None
 
     def to_dict(self) -> Optional[RelationshipDump]:
         if self.empty:
@@ -49,6 +52,8 @@ class RelationshipConfig:
             __dict['one'] = self.to_one
         if self.to_many is not None:
             __dict['many'] = self.to_many
+        if self.foreign_keys is not None:
+            __dict['foreign_keys'] = self.foreign_keys
         return __dict
 
 

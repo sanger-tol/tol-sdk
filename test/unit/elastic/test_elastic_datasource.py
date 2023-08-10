@@ -10,6 +10,7 @@ from tol.core import (
     DataSourceFilter,
     core_data_object
 )
+from tol.core.relationship import RelationshipConfig
 from tol.elastic import ElasticDataSource
 
 
@@ -154,7 +155,6 @@ class TestElasticDataSource(TestCase):
                                              update1,
                                              field_prefix='',
                                              candidate_key=['field1'])
-        print(update_body)
         expected = {
             'query': {
                 'bool': {
@@ -397,3 +397,87 @@ class TestElasticDataSource(TestCase):
         returned = eds.get_attribute_types_super('index_name')
         eds.es.indices.get_mapping.assert_called_once()
         self.assertEqual(expected, returned)
+
+    def test_get_to_one_relationships(self):
+        core_data_object, eds = mock_elastic_data_source()
+        rc = RelationshipConfig()
+        rc.to_one = {'relname': 'reltype'}
+        rc.foreign_keys = {'relname': 'relfk'}
+        eds.relationship_cfg = {'obj_type': rc}
+        source_object = core_data_object(
+            'obj_type',
+            data={'relfk': '1234'}
+        )
+        eds.es.cat.indices.return_value = 'test-obj-type'
+        eds.es.mget.return_value = {
+            'docs': [
+                {
+                    '_index': 'test-obj-type',
+                    '_id': '1234',
+                    '_source': {'field1': 'value1'}
+                }
+            ]
+        }
+
+        related_object = source_object.to_one_relationships['relname']
+        eds.es.cat.indices.assert_called_once()
+        eds.es.mget.assert_called_once()
+        self.assertEqual(related_object.id, '1234')
+        self.assertEqual(related_object.field1, 'value1')
+
+        # More than one returned (shouldn't happen)
+        eds.es.mget.return_value = {
+            'docs': [
+                {
+                    '_index': 'test-obj-type',
+                    '_id': '1234',
+                    '_source': {'field1': 'value1'}
+                },
+                {
+                    '_index': 'test-obj-type',
+                    '_id': '5678',
+                    '_source': {'field1': 'value2'}
+                }
+            ]
+        }
+        with self.assertRaises(DataSourceError):
+            related_object = source_object.to_one_relationships['relname']
+
+        # None returned
+        eds.es.mget.return_value = {
+            'docs': [
+            ]
+        }
+        related_object = source_object.to_one_relationships['relname']
+        self.assertIsNone(related_object)
+
+    def test_get_to_many_relationships(self):
+        core_data_object, eds = mock_elastic_data_source()
+        rc = RelationshipConfig()
+        rc.to_many = {'relname': 'reltype'}
+        rc.foreign_keys = {'relname': 'relfk'}
+        eds.relationship_cfg = {'obj_type': rc}
+        source_object = core_data_object(
+            'obj_type'
+        )
+        eds.es.cat.indices.return_value = 'test-obj-type'
+        eds.helpers.scan.return_value = [
+            {'_source': {'field1': 'value1', 'field2': 'value2'},
+             '_id': '1', '_index': 'test-reltype'},
+            {'_source': {'field1': 'value3', 'field2': 'value4'},
+             '_id': '2', '_index': 'test-reltype'}
+        ]
+
+        related_objects = source_object.to_many_relationships['relname']
+        eds.es.cat.indices.assert_called_once()
+        eds.helpers.scan.assert_called_once()
+        first = next(related_objects)
+        self.assertEqual({'field1': 'value1', 'field2': 'value2'}, first.attributes)
+        self.assertEqual('1', first.id)
+        self.assertEqual('reltype', first.type)
+        second = next(related_objects)
+        self.assertEqual({'field1': 'value3', 'field2': 'value4'}, second.attributes)
+        self.assertEqual('2', second.id)
+        self.assertEqual('reltype', second.type)
+        with self.assertRaises(StopIteration):
+            next(related_objects)
