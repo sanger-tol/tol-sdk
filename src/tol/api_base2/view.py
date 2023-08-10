@@ -151,12 +151,8 @@ class DefaultView(View):
             return {
                 'data': {
                     'type': data_object.host.relationship_config[data_object.type].to_one[key],
-<<<<<<< HEAD
                     'id': related_object.id,
                     'attributes': related_object.attributes
-=======
-                    'id': related_object.id
->>>>>>> 02a979d (TOLP-6064 Apply default sort field (the ID column))
                 }
             }
         return {}
