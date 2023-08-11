@@ -2,6 +2,7 @@
 #
 # SPDX-License-Identifier: MIT
 
+import urllib
 from abc import ABC, abstractmethod
 from typing import Any, Dict, Iterable, List, Optional, Union
 
@@ -132,8 +133,8 @@ class DefaultView(View):
         type_: str,
         id_: str
     ) -> RelationshipDump:
-
-        link = f'{self.__prefix}/{type_}/{id_}/{key}'
+        id_encoded = urllib.parse.quote(id_, safe='')
+        link = f'{self.__prefix}/{type_}/{id_encoded}/{key}'
         return {
             'links': {
                 'related': link
