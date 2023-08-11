@@ -165,8 +165,9 @@ class TestBlueprint(BlueprintTestCase):
         assert 'completely_fake' in response.data.decode('utf-8')
 
     def test_200_on_good_detail_get(self):
-        """A good detail GET returns 200 and correct data"""
-        response = self.client.open('/data/polly/909', method='GET')
+        """A good detail GET returns 200 and correct data, including decoding"""
+        response = self.client.open('/data/polly/909%2f111', method='GET')
+        print(response.request.url)
         self.assert200(
             response,
             f'Response body is : {response.data.decode("utf-8")}'
@@ -176,7 +177,7 @@ class TestBlueprint(BlueprintTestCase):
             {
                 'data': {
                     'type': 'polly',
-                    'id': '909',
+                    'id': '909/111',
                     'attributes': {
                         'parrot': 'parrot'
                     }

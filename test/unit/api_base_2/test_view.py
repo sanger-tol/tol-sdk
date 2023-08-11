@@ -150,7 +150,7 @@ class TestDefaultView:
 
         obj_mock = mock_data_object(
             'test',
-            id_='lol',
+            id_='lol/abc',
             host=_MockDataSource({})
         )
 
@@ -158,7 +158,7 @@ class TestDefaultView:
         expected = {
             'data': {
                 'type': 'test',
-                'id': 'lol',
+                'id': 'lol/abc',
                 'relationships': {
                     'first': {
                         'data': {
@@ -174,12 +174,12 @@ class TestDefaultView:
                     },
                     'ex': {
                         'links': {
-                            'related': '/random/test/lol/ex'
+                            'related': '/random/test/lol%2Fabc/ex'
                         }
                     },
                     'nihil': {
                         'links': {
-                            'related': '/random/test/lol/nihil'
+                            'related': '/random/test/lol%2Fabc/nihil'
                         }
                     },
                 }

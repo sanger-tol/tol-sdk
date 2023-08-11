@@ -2,6 +2,7 @@
 #
 # SPDX-License-Identifier: MIT
 
+import urllib
 from itertools import chain
 from typing import Callable, Optional, Protocol
 
@@ -158,10 +159,11 @@ def data_blueprint(
         view = DefaultView(prefix=url_prefix)
         return Controller(data_source, view)
 
-    @data_handler.route('/<object_type>/<object_id>', methods=['GET'])
+    @data_handler.route('/<object_type>/<path:object_id>', methods=['GET'])  # Allow slashes
     def get_detail(*, object_type: str, object_id: str):
         controller = __new_controller(object_type)
-        return controller.get_detail(object_type, object_id)
+        object_id_unencoded = urllib.parse.unquote(object_id)
+        return controller.get_detail(object_type, object_id_unencoded)
 
     @data_handler.route('/<object_type>', methods=['GET'])
     def get_list(*, object_type: str):
@@ -169,10 +171,11 @@ def data_blueprint(
         request_args = ListGetParamaters(request.args)
         return controller.get_list(object_type, request_args)
 
-    @data_handler.route('/<object_type>/<object_id>', methods=['DELETE'])
+    @data_handler.route('/<object_type>/<path:object_id>', methods=['DELETE'])
     def delete_detail(*, object_type: str, object_id: str):
         controller = __new_controller(object_type)
-        return controller.delete_detail(object_type, object_id)
+        object_id_unencoded = urllib.parse.unquote(object_id)
+        return controller.delete_detail(object_type, object_id_unencoded)
 
     @data_handler.route('/<object_type>', methods=['PATCH'])
     def patch_list(*, object_type: str):

@@ -59,7 +59,7 @@ class ApiDataSource(DataSource, Upserter):
     def get_by_link(self, link: str, params: Dict = {}):
         response = self._get(f'/{link}', params=params)
         if response.status_code != 200:
-            raise DataSourceError('Cannot find object(s)',
+            raise DataSourceError(f'Cannot find object(s): {link} {params}',
                                   response.text,
                                   response.status_code)
         json = response.json() if callable(response.json) else response.json
