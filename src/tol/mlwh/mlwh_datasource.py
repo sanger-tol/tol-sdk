@@ -101,6 +101,7 @@ class MlwhDataSource(DataSource, ListGetter):
             'position': 'smrtcell.well_label',
             'plate_barcode': 'smrtcell.plate_barcode',
             'pipeline_id_lims': 'smrtcell.pipeline_id_lims',
+            'plate_number': 'smrtcell.plate_number',
             'study_id': 'study.id_study_lims',
             'study_name': 'study.name',
             'start_date': 'metrics.run_start',
@@ -125,6 +126,7 @@ class MlwhDataSource(DataSource, ListGetter):
         ON (smrtcell.id_sample_tmp = sample.id_sample_tmp
         AND smrtcell.id_pac_bio_run_lims = metrics.pac_bio_run_name
         AND smrtcell.well_label = metrics.well_label
+        AND IFNULL(smrtcell.plate_number, 'NULL') = IFNULL(metrics.plate_number, 'NULL')
         AND smrtcell.id_study_tmp = study.id_study_tmp)
         WHERE {clause}
         AND metrics.run_complete is not null
