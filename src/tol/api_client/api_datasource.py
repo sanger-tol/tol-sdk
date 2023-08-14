@@ -4,6 +4,7 @@
 
 import json
 import math
+import urllib
 from dataclasses import asdict
 from itertools import chain
 from typing import Dict, Iterable, List
@@ -37,7 +38,8 @@ class ApiDataSource(DataSource, Upserter):
         self.cache = LFUCache(100000)  # Might want to make this configurable at some point
 
     def get_by_id(self, object_type: str, id_: int):
-        url = f'{object_type}/{id_}'
+        id_encoded = urllib.parse.quote(str(id_), safe='')
+        url = f'{object_type}/{id_encoded}'
         ret, _ = self.get_by_link(url)
         return ret
 
