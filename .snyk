@@ -9,6 +9,7 @@ patch: {}
 exclude:
   global:
     - src/tol/api_base2/blueprint.py
+    - src/tol/api_base2/system.py
     - src/tol/ena/ena_datasource.py
     - src/tol/ena/ena_methods.py
     - test/**

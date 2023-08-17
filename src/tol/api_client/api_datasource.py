@@ -6,6 +6,7 @@ import json
 import math
 import urllib
 from dataclasses import asdict
+from datetime import datetime, time
 from itertools import chain
 from typing import Dict, Iterable, List
 
@@ -203,13 +204,27 @@ class ApiDataSource(DataSource, Upserter):
                 self._convert_relationships_from_json_to_objects(obj_json['relationships'])
             obj.update_relationships_from_dict(relationships_obj)
 
+    def __sanitise(self, o):
+        if isinstance(o, datetime):
+            return o.isoformat()
+        if isinstance(o, time):
+            return o.isoformat()
+        return o
+
+    def __sanitise_attributes(self, attributes):
+        return {k: self.__sanitise(v) for k, v in attributes.items()}
+
+    # This currently only deals with attributes. Need it to cope with relationships as well
     def upsert(
         self,
         object_type: str,
         objects: Iterable[DataObject]
     ) -> None:
         url = f'/{object_type}:upsert'
-        json = {'data': [obj.to_json() for obj in objects]}
+        json = {'data': [{'type': obj.type,
+                          'id': obj.id,
+                          'attributes': self.__sanitise_attributes(obj.attributes)}
+                         for obj in objects]}
         response = self._post(path=url, json=json)
         if response.status_code != 200:
             raise DataSourceError('Cannot upsert objects',
