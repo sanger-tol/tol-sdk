@@ -50,7 +50,8 @@ class ElasticDataSource(
 ):
 
     def __init__(self, config: Dict):
-        super().__init__(config, expected=['uri', 'user', 'password', 'index_prefix'])
+        super().__init__(config, expected=['uri', 'user', 'password',
+                                           'index_prefix', 'relationship_cfg'])
         """
         relationship_cfg is also supported if we want to handle relationships
         Only FKs pointing to IDs are currently supported
@@ -157,11 +158,11 @@ class ElasticDataSource(
         u = self._convert_dates(update)
         u = self._add_checksum(u)
         u = self._add_updated(u)
-        u = self._prefix_fields(u, field_prefix)
         f = DataSourceFilter()
         f.exact = {}
         for key in candidate_key:
             f.exact[key] = u[key]
+        u = self._prefix_fields(u, field_prefix)
         query = self._build_elasticsearch_query(
             self.__get_object_type(index),
             object_filters=f)
@@ -184,9 +185,18 @@ class ElasticDataSource(
         return snakecase(index[start:])
 
     def _field_or_keyword(self, object_type: str, name: str):
-        field_type = self.get_attribute_types(object_type)[name]
-        if field_type == 'str':
-            return f'{name}.keyword'
+        # An attribute of the object
+        if name in self.get_attribute_types(object_type):
+            field_type = self.get_attribute_types(object_type)[name]
+            if field_type == 'str':
+                return f'{name}.keyword'
+        # A foreign key - could be in any object pointing to this one so we trawl through
+        # It might be better to split the name on the dot and recursively go through
+        # the objects pointed to
+        for _, rc in self.relationship_config.items():
+            if rc.foreign_keys is not None:
+                if name in rc.foreign_keys.values():
+                    return f'{name}.keyword'
         return name
 
     def get_by_id(
@@ -286,13 +296,32 @@ class ElasticDataSource(
 
     def _convert_dict_to_data_objects(self, objs: Dict) -> Iterable:
         for obj in objs:
-            yield self.data_object_factory(
-                self.__get_object_type(obj['_index']),
-                data={
-                    **obj['_source'],
-                    'id': obj['_id']
-                }
-            )
+            type_ = self.__get_object_type(obj['_index'])
+            id_ = obj['_id']
+            data = obj['_source']
+            yield self._convert_data_dict_to_data_object(type_, id_, data)
+
+    def _convert_data_dict_to_data_object(self, type_, id_, data):
+        attributes = {
+            k: v for k, v in data.items()
+            if k in self.get_attribute_types(type_).keys()
+        }
+        to_one_relationships = {
+            k: self._convert_data_dict_to_data_object(
+                self.relationship_config[type_].to_one[k],
+                v['id'],
+                v)
+            for k, v in data.items()
+            if type_ in self.relationship_config
+            and self.relationship_config[type_].to_one is not None
+            and k in self.relationship_config[type_].to_one.keys()
+            and type(v) is dict  # i.e. not a list
+        }
+        return self.data_object_factory(
+            type_,
+            id_=id_,
+            data={**attributes, **to_one_relationships}
+        )
 
     def get_aggregations(
             self,
@@ -344,6 +373,7 @@ class ElasticDataSource(
     def relationship_config(self) -> dict[str, RelationshipConfig]:
         return self.relationship_cfg
 
+    # This only uses the "inline" related object at the moment
     def get_to_one_relation(
         self,
         source: DataObject,
@@ -351,16 +381,13 @@ class ElasticDataSource(
     ) -> Optional[DataObject]:
         if self.relationship_config is None:
             raise DataSourceError('There are no relationships defined')
-        relationship_config = self.relationship_config[source.type]
-        related_object_type = relationship_config.to_one[relationship_name]
-        related_object_fk_attribute = relationship_config.foreign_keys[relationship_name]
-        related_object_id = getattr(source, related_object_fk_attribute)
-        related_objects = list(self.get_by_id(related_object_type, [related_object_id]))
-        if len(related_objects) == 1:
-            return related_objects[0]
-        if len(related_objects) == 0:
-            return None
-        raise DataSourceError('Found many related objects where we were expecting one or none')
+        if source.type in self.relationship_config:
+            try:
+                related_object_inline = getattr(source, relationship_name)
+                return related_object_inline
+            except AttributeError:
+                return None
+        return None
 
     def get_to_many_relations(
         self,
