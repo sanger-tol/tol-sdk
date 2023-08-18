@@ -46,7 +46,7 @@ class TreevalDataSource(
 
 
     def _build_jira_query(self):
-        return '{"jql":"status = curation and project in (RC,GRIT)","maxResults":1000,"fields":["key","fields","updated", "customfield_12200", "customfield_11676", "customfield_11677", "summary", "assignee", "attachment", "description"]}'
+        return '{"jql":"status = curation and project in (RC,GRIT)","maxResults":1000,"fields":["key", "priority", "fields", "updated", "customfield_12200", "customfield_11676", "customfield_11677", "summary", "assignee", "attachment", "description", "customfield_11643", "customfield_11605"]}'
 
     def _execute_jira_query(self, query):
         response = requests.post(
@@ -73,15 +73,12 @@ class TreevalDataSource(
 
         scaffold_l90 = "-"
         contig_l90 = "-"
-        expected_chromosomes = "-"
 
         scaffold_L90_regex = re.compile(r'SCAFFOLD[ \t\n\r\f\v]N90 = [0-9]+, L90 = ([0-9]+)')
         contig_L90_regex = re.compile(r'CONTIG[ \t\n\r\f\v]N90 = [0-9]+, L90 = ([0-9]+)')
-        expected_chromosomes_regex = re.compile(r'there are ([0-9]+) chromosomes according to GoaT')
 
         sl90 = scaffold_L90_regex.search(description)
         cl90 = contig_L90_regex.search(description)
-        ec = expected_chromosomes_regex.search(description)
 
         if sl90:
             scaffold_l90 = sl90.groups(1)
@@ -89,22 +86,28 @@ class TreevalDataSource(
         if cl90:
             contig_l90 = cl90.groups(1)
 
-        if ec:
-            expected_chromosomes = ec.groups(1)
-
-        return scaffold_l90, contig_l90, expected_chromosomes
+        return scaffold_l90, contig_l90
 
     def _get_values_from_issue(self,issue):
+
         key = issue['key']
+
         fields = issue['fields']
+        priority = fields['priority']
         updated = pd.Timestamp(fields['updated'])
-        treeval_val = fields['customfield_12200']
         species_name = self._parse_species_name(fields['customfield_11676'])
+
+
+
         tolid = self._parse_species_id(fields['summary'])
+        tolid_assem = fields['customfield_11643']
         
+        expected_karyotype = fields['customfield_11605']
+        if not expected_karyotype:
+            expected_karyotype = "-"
+
         con_filname = fields['customfield_11677']
         file_struct = con_filname.split("/")
-
         tolqc_project = file_struct[5]
 
         if tolqc_project == "meier":
@@ -122,24 +125,17 @@ class TreevalDataSource(
         else:
             tolqc_species_name = ""
 
-
         # Treeval link
         treeval_val = fields['customfield_12200']
 
-        if not treeval_val:
-            treeval_val = '{"jbrowse": "","jb_scaffold": "","start": "","btk_pr": "","btk_hp": "","btk_mt": "","taxon_id": 232653}'
+        if not treeval_val or "jb_scaffold" not in treeval_val:
+            treeval_val = '{"jbrowse": "","jb_scaffold": "","start": "","btk_pr": "","btk_hp": "","higlass": "","taxon_id": ""}'
 
         treeval_data = json.loads(treeval_val)
-        # jbrowse_status_value = ""
-        # jbrowse_link = ""
-        # if treeval_val:
-        #     if treeval_val.startswith("http"):
-        #         jbrowse_link = treeval_val
-        #         jbrowse_status_value = "jBrowse"
 
         # Stats from description
         description = str(fields['description'])
-        scaffold_l90,contig_l90,expected_chromosomes = self._parse_description_for_stats(description)
+        scaffold_l90,contig_l90 = self._parse_description_for_stats(description)
 
         # Assignee
         assignee = fields['assignee']
@@ -149,60 +145,71 @@ class TreevalDataSource(
         else:
             display_name = "Unassigned"
 
-        # Plots attached to tickets
-        jira_attachments = fields['attachment']
+        hic_plot_path = ""
+        if "hic_plot" in treeval_data.keys():
+            if treeval_data["hic_plot"] == "Y":
+                hic_plot_path = f"https://treeval.cog.sanger.ac.uk/pretextsnapshot_{tolid_assem}.png"
 
-        hic_plot_attachment = ""
-        kmer_plot_attachment = ""
+        kmer_plot_path = ""
+        if "kmer_plot" in treeval_data.keys():
+            if treeval_data["kmer_plot"] == "Y":
+                kmer_plot_path = f""
 
-        for jira_attachment in jira_attachments:
-            attachment_url = str(jira_attachment["content"])
-            if attachment_url.endswith("scaffolds_FINAL.css.spectra-cn.ln.png"):
-                kmer_plot_attachment = attachment_url
-            elif attachment_url.endswith("scaffolds_FINAL_FullMap.png"):
-                hic_plot_attachment = attachment_url
-
+        if "jbrowse" in treeval_data.keys():
             if treeval_data["jbrowse"]:
                 jbrowse_link = 'http://jbrowse.tol-dev.sanger.ac.uk/jbrowse2/?config=config.json&assembly=' + treeval_data["jbrowse"] + '&session=spec-{"views":[{"assembly":"' + treeval_data["jbrowse"] + '","loc":"' + treeval_data["jb_scaffold"] + '","type": "LinearGenomeView","tracks":["' + treeval_data["jbrowse"] + '-ReferenceSequenceTrack"]}]}'
             else:
                 jbrowse_link = ""
+        else:
+            jbrowse_link = ""      
 
+        if "btk_pr" in treeval_data.keys():
             btk_pr = treeval_data["btk_pr"]
             if btk_pr:
-                btk_pr_link = f"https://grit-btk.tol.sanger.ac.uk/view/{btk_pr}/dataset/{btk_pr}.ascc/blob"
+                btk_pr_link = f"https://grit-btk.tol.sanger.ac.uk/view/{btk_pr}/dataset/{btk_pr}.fa.ascc/blob"
             else:
                 btk_pr_link = ""
+        else:
+            btk_pr_link = ""        
 
+        if "btk_hp" in treeval_data.keys():
             btk_hp = treeval_data["btk_hp"]
             if btk_hp:
-                btk_hp_link = f"https://grit-btk.tol.sanger.ac.uk/view/{btk_hp}/dataset/{btk_hp}.ascc/blob"
+                btk_hp_link = f"https://grit-btk.tol.sanger.ac.uk/view/{btk_hp}/dataset/{btk_hp}.fa.ascc/blob"
             else:
                 btk_hp_link = ""
+        else:
+            btk_hp_link = ""
 
-            btk_mt = treeval_data["btk_mt"]
-            if btk_mt:
-                btk_mt_link = f"https://grit-btk.tol.sanger.ac.uk/view/{btk_mt}/dataset/{btk_mt}.ascc/blob"
-            else:
-                btk_mt_link = ""
-
+        if "taxon_id" in treeval_data.keys():
             taxon_id = treeval_data["taxon_id"]
             if taxon_id:
                 goat_link = f"https://goat.genomehubs.org/record?recordId={taxon_id}&result=taxon&taxonomy=ncbi"
             else:
                 goat_link = ""
+        else:
+            goat_link = ""
 
-            # if treeval_data["start"] != "":
-            added_to_curation_date = treeval_data["start"]
-            # else:
-            #     added_to_curation_date = datetime.now()
-
-            if tolqc_project not in ("tol-nematodes","genomeark"):
-                tolqc_link = f"https://tolqc.cog.sanger.ac.uk/{tolqc_project}/{tolqc_clade}/{tolqc_species_name}/"
+        if "higlass" in treeval_data.keys():
+            higlass_id = treeval_data["higlass"]
+            if higlass_id:
+                higlass_link = f"https://grit-higlass.tol.sanger.ac.uk/l/?d={higlass_id}"
             else:
-                tolqc_link = ""
+                higlass_link = ""
+        else:
+            higlass_link = ""
+
+        if treeval_data["start"] != "":
+            added_to_curation_date = pd.Timestamp(treeval_data["start"])
+
+        if tolqc_project not in ("tol-nematodes","genomeark"):
+            tolqc_link = f"https://tolqc.cog.sanger.ac.uk/{tolqc_project}/{tolqc_clade}/{tolqc_species_name}/"
+        else:
+            tolqc_link = ""
 
         return {'tolid': tolid,
                 'species_name': species_name,
+                'priority': str(priority["id"]),
                 'jira_issue': key, 
                 'jira_issue_url': f'https://{self.url}/browse/{key}', 
                 'jira_issue_last_updated': updated, 
@@ -210,16 +217,15 @@ class TreevalDataSource(
                 'jbrowse_url': jbrowse_link, 
                 'assignee': display_name,
                 'goat_url': goat_link,
-                'higlass_url': "",
+                'higlass_url': higlass_link,
                 'btk_pri_url': btk_pr_link,
                 'btk_hap_url': btk_hp_link,
-                'btk_mit_url': btk_mt_link,
                 'tolqc_url': tolqc_link,
-                'hic_plot': hic_plot_attachment,
-                'kmer_plot': kmer_plot_attachment,
+                'hic_plot': hic_plot_path,
+                'kmer_plot': kmer_plot_path,
                 'scaffold_l90': scaffold_l90,
                 'contig_l90': contig_l90,
-                'expected_chromosomes': expected_chromosomes
+                'expected_karyotype': str(expected_karyotype)
                 }
 
     def _parse_species_name(self,species_name):
