@@ -269,7 +269,7 @@ class TreevalDataSource(
 
         # Stats from description
         description = str(fields['description'])
-        scaffold_l90,contig_l90,expected_chromosomes = self._parse_description_for_stats(description)
+        scaffold_l90,contig_l90 = self._parse_description_for_stats(description)
 
         # Assignee
         assignee = fields['assignee']
@@ -279,57 +279,67 @@ class TreevalDataSource(
         else:
             display_name = "Unassigned"
 
-        # Plots attached to tickets
-        jira_attachments = fields['attachment']
+        hic_plot_path = ""
+        if "hic_plot" in treeval_data.keys():
+            if treeval_data["hic_plot"] == "Y":
+                hic_plot_path = f"https://treeval.cog.sanger.ac.uk/pretextsnapshot_{tolid_assem}.png"
 
-        hic_plot_attachment = ""
-        kmer_plot_attachment = ""
+        kmer_plot_path = ""
+        if "kmer_plot" in treeval_data.keys():
+            if treeval_data["kmer_plot"] == "Y":
+                kmer_plot_path = f""
 
-        for jira_attachment in jira_attachments:
-            attachment_url = str(jira_attachment["content"])
-            if attachment_url.endswith("scaffolds_FINAL.css.spectra-cn.ln.png"):
-                kmer_plot_attachment = attachment_url
-            elif attachment_url.endswith("scaffolds_FINAL_FullMap.png"):
-                hic_plot_attachment = attachment_url
-
+        if "jbrowse" in treeval_data.keys():
             if treeval_data["jbrowse"]:
                 jbrowse_link = 'http://jbrowse.tol-dev.sanger.ac.uk/jbrowse2/?config=config.json&assembly=' + treeval_data["jbrowse"] + '&session=spec-{"views":[{"assembly":"' + treeval_data["jbrowse"] + '","loc":"' + treeval_data["jb_scaffold"] + '","type": "LinearGenomeView","tracks":["' + treeval_data["jbrowse"] + '-ReferenceSequenceTrack"]}]}'
             else:
                 jbrowse_link = ""
+        else:
+            jbrowse_link = ""      
 
+        if "btk_pr" in treeval_data.keys():
             btk_pr = treeval_data["btk_pr"]
             if btk_pr:
-                btk_pr_link = f"https://grit-btk.tol.sanger.ac.uk/view/{btk_pr}/dataset/{btk_pr}.ascc/blob"
+                btk_pr_link = f"https://grit-btk.tol.sanger.ac.uk/view/{btk_pr}/dataset/{btk_pr}.fa.ascc/blob"
             else:
                 btk_pr_link = ""
+        else:
+            btk_pr_link = ""        
 
+        if "btk_hp" in treeval_data.keys():
             btk_hp = treeval_data["btk_hp"]
             if btk_hp:
-                btk_hp_link = f"https://grit-btk.tol.sanger.ac.uk/view/{btk_hp}/dataset/{btk_hp}.ascc/blob"
+                btk_hp_link = f"https://grit-btk.tol.sanger.ac.uk/view/{btk_hp}/dataset/{btk_hp}.fa.ascc/blob"
             else:
                 btk_hp_link = ""
+        else:
+            btk_hp_link = ""
 
-            btk_mt = treeval_data["btk_mt"]
-            if btk_mt:
-                btk_mt_link = f"https://grit-btk.tol.sanger.ac.uk/view/{btk_mt}/dataset/{btk_mt}.ascc/blob"
-            else:
-                btk_mt_link = ""
-
+        if "taxon_id" in treeval_data.keys():
             taxon_id = treeval_data["taxon_id"]
             if taxon_id:
                 goat_link = f"https://goat.genomehubs.org/record?recordId={taxon_id}&result=taxon&taxonomy=ncbi"
             else:
                 goat_link = ""
+        else:
+            goat_link = ""
 
-            # if treeval_data["start"] != "":
-            added_to_curation_date = treeval_data["start"]
-            # else:
-            #     added_to_curation_date = datetime.now()
-
-            if tolqc_project not in ("tol-nematodes","genomeark"):
-                tolqc_link = f"https://tolqc.cog.sanger.ac.uk/{tolqc_project}/{tolqc_clade}/{tolqc_species_name}/"
+        if "higlass" in treeval_data.keys():
+            higlass_id = treeval_data["higlass"]
+            if higlass_id:
+                higlass_link = f"https://grit-higlass.tol.sanger.ac.uk/l/?d={higlass_id}"
             else:
-                tolqc_link = ""
+                higlass_link = ""
+        else:
+            higlass_link = ""
+
+        if treeval_data["start"] != "":
+            added_to_curation_date = pd.Timestamp(treeval_data["start"])
+
+        if tolqc_project not in ("tol-nematodes","genomeark"):
+            tolqc_link = f"https://tolqc.cog.sanger.ac.uk/{tolqc_project}/{tolqc_clade}/{tolqc_species_name}/"
+        else:
+            tolqc_link = ""
 
         return {'tolid': tolid,
                 'species_name': species_name,
