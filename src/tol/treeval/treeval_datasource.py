@@ -48,7 +48,6 @@ class TreevalDataSource(
             raise DataSourceError(title='Cannot connect to JIRA',
                                   detail=f"(status code '{str(response.status_code)}')'")
 
-
         return response.json()
 
     def _parse_jira_output(self, response_text):
@@ -355,7 +354,7 @@ class TreevalDataSource(
         if assignee:
             display_name = assignee['displayName']
         else:
-            display_name = "Unassigned"
+            display_name = 'Unassigned'
 
         # Plots attached to tickets
         jira_attachments = fields['attachment']
@@ -395,7 +394,8 @@ class TreevalDataSource(
 
             taxon_id = treeval_data["taxon_id"]
             if taxon_id:
-                goat_link = f"https://goat.genomehubs.org/record?recordId={taxon_id}&result=taxon&taxonomy=ncbi"
+                goat_link = f'https://goat.genomehubs.org/record?recordId={taxon_id}\
+                    &result=taxon&taxonomy=ncbi'
             else:
                 goat_link = ""
 
