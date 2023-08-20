@@ -8,6 +8,7 @@ from functools import cache
 from typing import Dict, Iterable, Tuple
 
 import pandas as pd
+
 import requests
 
 from ..core import (
