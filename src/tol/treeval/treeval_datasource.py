@@ -13,11 +13,17 @@ import requests
 =======
 import json
 import re
-from datetime import datetime
-
 from functools import cache
+<<<<<<< HEAD
 from typing import Any, Dict, Iterable, Tuple
 >>>>>>> fd805ee (Fixes to dates)
+=======
+from typing import Dict, Iterable, Tuple
+
+import pandas as pd
+
+import requests
+>>>>>>> 24a91b9 (tol lint)
 
 from ..core import (
     DataObject,
@@ -55,7 +61,6 @@ class TreevalDataSource(
         if (response.status_code != 200):
             raise DataSourceError(title='Cannot connect to JIRA',
                                   detail=f"(status code '{str(response.status_code)}')'")
-
 
         return response.json()
 
@@ -277,69 +282,80 @@ class TreevalDataSource(
         if assignee:
             display_name = assignee['displayName']
         else:
-            display_name = "Unassigned"
+            display_name = 'Unassigned'
 
-        hic_plot_path = ""
-        if "hic_plot" in treeval_data.keys():
-            if treeval_data["hic_plot"] == "Y":
-                hic_plot_path = f"https://treeval.cog.sanger.ac.uk/pretextsnapshot_{tolid_assem}.png"
+        hic_plot_path = ''
+        if 'hic_plot' in treeval_data.keys():
+            if treeval_data['hic_plot'] == 'Y':
+                hic_plot_path = \
+                    f'https://treeval.cog.sanger.ac.uk/pretextsnapshot_{tolid_assem}.png'
 
-        kmer_plot_path = ""
-        if "kmer_plot" in treeval_data.keys():
-            if treeval_data["kmer_plot"] == "Y":
-                kmer_plot_path = f""
+        kmer_plot_path = ''
+        if 'kmer_plot' in treeval_data.keys():
+            if treeval_data['kmer_plot'] == 'Y':
+                kmer_plot_path = ''
 
-        if "jbrowse" in treeval_data.keys():
-            if treeval_data["jbrowse"]:
-                jbrowse_link = 'http://jbrowse.tol-dev.sanger.ac.uk/jbrowse2/?config=config.json&assembly=' + treeval_data["jbrowse"] + '&session=spec-{"views":[{"assembly":"' + treeval_data["jbrowse"] + '","loc":"' + treeval_data["jb_scaffold"] + '","type": "LinearGenomeView","tracks":["' + treeval_data["jbrowse"] + '-ReferenceSequenceTrack"]}]}'
+        if 'jbrowse' in treeval_data.keys():
+            if treeval_data['jbrowse']:
+                jbrowse_link = \
+                    'http://jbrowse.tol-dev.sanger.ac.uk/\
+                        jbrowse2/?config=config.json&assembly='\
+                        + treeval_data['jbrowse'] + '&session=spec-{"views":[{"assembly":"' \
+                        + treeval_data['jbrowse'] + '","loc":"' + treeval_data['jb_scaffold'] \
+                        + '","type": "LinearGenomeView","tracks":["' \
+                        + treeval_data['jbrowse'] + '-ReferenceSequenceTrack"]}]}'
             else:
-                jbrowse_link = ""
+                jbrowse_link = ''
         else:
-            jbrowse_link = ""      
+            jbrowse_link = ''
 
-        if "btk_pr" in treeval_data.keys():
-            btk_pr = treeval_data["btk_pr"]
+        if 'btk_pr' in treeval_data.keys():
+            btk_pr = treeval_data['btk_pr']
             if btk_pr:
-                btk_pr_link = f"https://grit-btk.tol.sanger.ac.uk/view/{btk_pr}/dataset/{btk_pr}.fa.ascc/blob"
+                btk_pr_link = f'https://grit-btk.tol.sanger.ac.uk/view/{btk_pr}\
+                    /dataset/{btk_pr}.fa.ascc/blob'
             else:
-                btk_pr_link = ""
+                btk_pr_link = ''
         else:
-            btk_pr_link = ""        
+            btk_pr_link = ''
 
-        if "btk_hp" in treeval_data.keys():
-            btk_hp = treeval_data["btk_hp"]
+        if 'btk_hp' in treeval_data.keys():
+            btk_hp = treeval_data['btk_hp']
             if btk_hp:
-                btk_hp_link = f"https://grit-btk.tol.sanger.ac.uk/view/{btk_hp}/dataset/{btk_hp}.fa.ascc/blob"
+                btk_hp_link = f'https://grit-btk.tol.sanger.ac.uk/view/{btk_hp}\
+                    /dataset/{btk_hp}.fa.ascc/blob'
             else:
-                btk_hp_link = ""
+                btk_hp_link = ''
         else:
-            btk_hp_link = ""
+            btk_hp_link = ''
 
-        if "taxon_id" in treeval_data.keys():
-            taxon_id = treeval_data["taxon_id"]
+        if 'taxon_id' in treeval_data.keys():
+            taxon_id = treeval_data['taxon_id']
             if taxon_id:
-                goat_link = f"https://goat.genomehubs.org/record?recordId={taxon_id}&result=taxon&taxonomy=ncbi"
+                goat_link = f'https://goat.genomehubs.org/record?recordId={taxon_id}\
+                    &result=taxon&taxonomy=ncbi'
             else:
-                goat_link = ""
+                goat_link = ''
         else:
-            goat_link = ""
+            goat_link = ''
 
-        if "higlass" in treeval_data.keys():
-            higlass_id = treeval_data["higlass"]
+        if 'higlass' in treeval_data.keys():
+            higlass_id = treeval_data['higlass']
             if higlass_id:
-                higlass_link = f"https://grit-higlass.tol.sanger.ac.uk/l/?d={higlass_id}"
+                higlass_link = f'https://grit-higlass.tol.sanger.ac.uk/l/?d={higlass_id}'
             else:
-                higlass_link = ""
+                higlass_link = ''
         else:
-            higlass_link = ""
+            higlass_link = ''
 
-        if treeval_data["start"] != "":
-            added_to_curation_date = pd.Timestamp(treeval_data["start"])
+        if treeval_data['start'] != '':
+            added_to_curation_date = pd.Timestamp(treeval_data['start'])
 
-        if tolqc_project not in ("tol-nematodes","genomeark"):
-            tolqc_link = f"https://tolqc.cog.sanger.ac.uk/{tolqc_project}/{tolqc_clade}/{tolqc_species_name}/"
+        if tolqc_project not in ('tol-nematodes', 'genomeark'):
+            tolqc_link = f'https://tolqc.cog.sanger.ac.uk/{tolqc_project}/\
+                {tolqc_clade}/{tolqc_species_name}/'
         else:
-            tolqc_link = ""
+            tolqc_link = ''
 
         return {'tolid': tolid,
                 'species_name': species_name,
