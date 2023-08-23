@@ -143,7 +143,6 @@ class TreevalDataSource(
                 kmer_plot_path = \
                     f'https://treeval.cog.sanger.ac.uk/kmerspectra_{tolid_assem}.png'
 
-
         if 'jbrowse' in treeval_data.keys():
             if treeval_data['jbrowse']:
 
