@@ -144,13 +144,16 @@ class TreevalDataSource(
 
         if 'jbrowse' in treeval_data.keys():
             if treeval_data['jbrowse']:
-                jbrowse_link = \
-                    'http://jbrowse.tol-dev.sanger.ac.uk/\
-                        jbrowse2/?config=config.json&assembly='\
-                        + treeval_data['jbrowse'] + '&session=spec-{"views":[{"assembly":"' \
-                        + treeval_data['jbrowse'] + '","loc":"' + treeval_data['jb_scaffold'] \
-                        + '","type": "LinearGenomeView","tracks":["' \
-                        + treeval_data['jbrowse'] + '-ReferenceSequenceTrack"]}]}'
+
+                tolid = treeval_data['jbrowse']
+                scaff = treeval_data['jb_scaffold']
+
+                jbrowse_link = ("http://jbrowse.tol-dev.sanger.ac.uk/jbrowse2/?config=config.json"
+                + "&assembly=" + tolid + "&session=spec-{%22views%22:[{%22assembly%22:%22" 
+                + tolid + "%22,%22loc%22:%22" + scaff 
+                + "%22,%22type%22:%22LinearGenomeView%22,%22tracks%22:[%22" 
+                + tolid + "-ReferenceSequenceTrack%22]}]}")
+
             else:
                 jbrowse_link = ''
         else:
@@ -197,6 +200,9 @@ class TreevalDataSource(
 
         if treeval_data['start'] != '':
             added_to_curation_date = pd.Timestamp(treeval_data['start'])
+        else:
+            added_to_curation_date = pd.Timestamp("1970-01-01T00:00:00.000+0100")
+
 
         if tolqc_project not in ('tol-nematodes', 'genomeark'):
             tolqc_link = f'https://tolqc.cog.sanger.ac.uk/{tolqc_project}/\
