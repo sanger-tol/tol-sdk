@@ -17,7 +17,9 @@ def create_session_factory(db_uri: str) -> SessionFactory:
     Session object (each time), given the URI of a database.
     """
 
-    engine = create_engine(db_uri)
+    engine = create_engine(db_uri,
+                           pool_recycle=1800,
+                           pool_pre_ping=True)
 
     session_maker = sessionmaker(
         bind=engine,
