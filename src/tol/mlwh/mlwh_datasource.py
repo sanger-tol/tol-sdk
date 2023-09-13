@@ -180,6 +180,31 @@ class MlwhDataSource(DataSource, ListGetter):
         """
         return sql
 
+    def _get_column_mappings_long_read_qc_result(self):
+        return {
+            'id': 'id_long_read_qc_result_tmp',
+            'labware_barcode': 'labware_barcode',
+            'sample_id': 'sample_id',
+            'assay_type': 'assay_type_key',
+            'units': 'units',
+            'value': 'value',
+            'recorded_at': 'recorded_at',
+            'qc_status': 'qc_status',
+            'qc_status_decision_by': 'qc_status_decision_by'
+        }
+
+    def _get_long_read_qc_result_query(self, clause: str):
+        mappings = self._get_column_mappings_long_read_qc_result()
+        col_string = ','.join([f'{v} as {k}' for k, v in mappings.items()])
+        sql = f"""
+        SELECT
+        {col_string}
+        FROM long_read_qc_result
+        WHERE {clause}
+        ORDER BY id_long_read_qc_result_tmp, recorded_at
+        """
+        return sql
+
     def _format_mlwh_row(self, object_type: str, row: Dict):
         return self.data_object_factory(object_type, data=row)
 
@@ -232,13 +257,18 @@ class MlwhDataSource(DataSource, ListGetter):
             sql_conditions = self._conditions_string('sequencing_request', object_filters.in_list)
             query = self._get_sequencing_request_query(sql_conditions)
             return self._execute_query(query, 'sequencing_request')
+        elif object_type == 'long_read_qc_result':
+            sql_conditions = self._conditions_string('long_read_qc_result', object_filters.in_list)
+            query = self._get_long_read_qc_result_query(sql_conditions)
+            return self._execute_query(query, 'long_read_qc_result')
         else:
-            raise DataSourceError('Only objects of type run_data or '
+            raise DataSourceError('Only objects of type long_read_qc_result, run_data or '
                                   'sequencing_request are supported')
 
     @property
     def supported_types(self) -> List[str]:
         return [
+            'long_read_qc_result',
             'sequencing_request',
             'run_data'
         ]

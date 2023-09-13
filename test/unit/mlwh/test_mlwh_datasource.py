@@ -143,3 +143,31 @@ class TestMlwhDataSource(TestCase):
             next(returned)
 
         mocked_function.assert_called_once()
+
+    def test_get_list_long_read_qc_data(self):
+        mds = MockMlwhDataSource({
+            'uri': 'mysql://user:pass@host:1234/db'
+        })
+        core_data_object(mds)
+        datasource_filter = DataSourceFilter()
+        datasource_filter.in_list = None
+        mocked_function = mds.mlwh.cursor.return_value.fetchall
+        mocked_function.return_value = [
+            {'id': 1, 'sample_id': '1', 'assay_type': 'test1', 'value': 'value1'},
+            {'id': 2, 'sample_id': '1', 'assay_type': 'test2', 'value': 'value2'},
+            {'id': 3, 'sample_id': '2', 'assay_type': 'test1', 'value': 'value3'},
+        ]
+        returned = mds.get_list('long_read_qc_result', datasource_filter)
+        first = next(returned)
+        self.assertEqual({'sample_id': '1', 'assay_type': 'test1',
+                          'value': 'value1'}, first.attributes)
+        second = next(returned)
+        self.assertEqual({'sample_id': '1', 'assay_type': 'test2',
+                          'value': 'value2'}, second.attributes)
+        third = next(returned)
+        self.assertEqual({'sample_id': '2', 'assay_type': 'test1',
+                          'value': 'value3'}, third.attributes)
+        with self.assertRaises(StopIteration):
+            next(returned)
+
+        mocked_function.assert_called_once()
