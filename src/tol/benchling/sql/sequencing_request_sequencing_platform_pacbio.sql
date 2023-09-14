@@ -22,30 +22,31 @@ Output: Table with cols:
 2) taxon_id: [character] Tissue metadata. Origin: STS
 3) eln_submission_sample_id: [character] Foreign key to other entities and results in Benchling. Origin: BWH
 4) eln_file_registry_id: [character] id in Benchling Registry. Origin: BWH
-5) eln_dna_extract_id: [character] Original DNA extract entity name. Origin: BWH
-6) eln_submission_sample_name: [character] Entity name. Origin: BWH
-7) dna_fluidx_id: [character] Container barcode of the DNA fluidx tube. Origin: BWH
-8) tolid: [character] Container barcode of the DNA fluidx tube. Origin: BWH
-9) sanger_sample_id: [character] Sanger Sample ID or Sanger UUID of the PacBio submission. 
-10) plate_name: [character] Name of submission plate.
-11) pipeline: [character] name of the submission pipeline.
-12) library_type: [character] Library type.
-13) retention_instructions: [character] sample retention instructions
-14) gb_yield_of_ccs_data_required: [double precision] CCS yield data required in GB.
-15) number_of_smrt_cells_required: [double precision]
-16) sheared_femto_fragment_size_bp: [double precision]
-17) post_spri_concentration_ngul: [double precision]
-18) post_spri_volume_ul: [jsonb]
-19) nanodrop_260280: [double precision] 
-20) nanodrop_260230: [double precision]
-21) nanodrop_concentration_ngul: [double precision]
-22) sample_prep_additional_requirements: [character]
-23) include_5mc_cells_in_cpg_motifs: [character]
-24) cc5_output_includes_kinetics_information: [character]
-25) priority: [character]
-26) eln_submission_date: [Date]
-27) sequencing_platform: [character] Sequencing platform: pacbio.
-28) source: [character] Data source: v1, v2, legacy_bnt or v1_pooled
+5) eln_dna_extract_id: [character] Original DNA extract entity name. For pooled samples, the first DNA extract pooled. Origin: BWH
+6) eln_pooled_sample_id: [character] DNA pooled sample id. Present only if the submitted sample was pooled. Origin: BWH
+7) eln_submission_sample_name: [character] Entity name. Origin: BWH
+8) dna_fluidx_id: [character] Container barcode of the DNA fluidx tube. Origin: BWH
+9) tolid: [character] Container barcode of the DNA fluidx tube. Origin: BWH
+10) sanger_sample_id: [character] Sanger Sample ID or Sanger UUID of the PacBio submission. 
+11) plate_name: [character] Name of submission plate.
+12) pipeline: [character] name of the submission pipeline.
+13) library_type: [character] Library type.
+14) retention_instructions: [character] sample retention instructions
+15) gb_yield_of_ccs_data_required: [double precision] CCS yield data required in GB.
+16) number_of_smrt_cells_required: [double precision]
+17) sheared_femto_fragment_size_bp: [double precision]
+18) post_spri_concentration_ngul: [double precision]
+19) post_spri_volume_ul: [jsonb]
+20) nanodrop_260280: [double precision] 
+21) nanodrop_260230: [double precision]
+22) nanodrop_concentration_ngul: [double precision]
+23) sample_prep_additional_requirements: [character]
+24) include_5mc_cells_in_cpg_motifs: [character]
+25) cc5_output_includes_kinetics_information: [character]
+26) priority: [character]
+27) eln_submission_date: [Date]
+28) sequencing_platform: [character] Sequencing platform: pacbio.
+29) source: [character] Data source: v1, v2, legacy_bnt or v1_pooled
 
 NOTES: 
 
@@ -68,6 +69,7 @@ WITH pacbio_submissions_v1 AS (
 		subsam.id AS eln_submission_sample_id,
 		subsam.file_registry_id$ AS eln_file_registry_id,
 		subsam.original_dna_extract AS eln_dna_extract_id,
+		NULL::varchar AS eln_pooled_sample_id,
 		subsam.name$ AS eln_submission_sample_name,
 		c_dna.barcode AS dna_fluidx_id,
 		t.tolid, 
@@ -125,7 +127,8 @@ pacbio_legacy_submissions AS (
 		t.taxon_id,
 		subsam.id AS eln_submission_sample_id,
 		subsam.file_registry_id$ AS eln_file_registry_id,
-		subsam.originaL_dna_extract AS eln_dna_extract_id,
+		subsam.original_dna_extract AS eln_dna_extract_id,
+		NULL::varchar AS eln_pooled_sample_id,
 		subsam.name$ AS eln_submission_sample_name,
 		c_dna.barcode AS dna_fluidx_id,
 		t.tolid,
@@ -184,6 +187,7 @@ pacbio_submissions_v2 AS (
 		subsam.id AS eln_submission_sample_id,
 		subsam.file_registry_id$ AS eln_file_registry_id,
 		subsam.originaL_dna_extract AS eln_dna_extract_id,
+		NULL::varchar AS eln_pooled_sample_id,
 		subsam.name$ AS eln_submission_sample_name,
 		c_dna.barcode AS dna_fluidx_id,
 		t.tolid,
@@ -241,7 +245,8 @@ pacbio_submissions_pooled_v1 AS (
 		t.taxon_id,
 		subsam.id AS eln_submission_sample_id,
 		subsam.file_registry_id$ AS eln_file_registry_id,
-		subsam.pooled_sample AS eln_dna_extract_id,
+		pool.samples ->> 0  AS eln_dna_extract_id,
+	 	subsam.pooled_sample AS eln_pooled_sample_id,
 		subsam.name$ AS eln_submission_sample_name,
 		c_pool.barcode AS dna_fluidx_id,
 		t.tolid, 
@@ -291,6 +296,63 @@ pacbio_submissions_pooled_v1 AS (
 		AND tube.type IS NULL  -- Selecting non-Voucher containers
 	    AND (c_pool.archive_purpose$ != ('Made in error') OR c_pool.archive_purpose$ IS NULL) -- Excluding containers made by mistake
 		AND pool.id IS NOT NULL
+),
+pacbio_submissions_pooled_v2 AS (
+
+	SELECT DISTINCT	
+		t.sts_id,
+		t.taxon_id,
+		subsam.id AS eln_submission_sample_id,
+		subsam.file_registry_id$ AS eln_file_registry_id,
+		pool.samples ->> 0 AS eln_dna_extract_id,
+		subsam.pooled_sample AS eln_pooled_sample_id,
+		subsam.name$ AS eln_submission_sample_name,
+		c_pool.barcode AS pooled_sample_fluidx_id,
+		t.tolid,
+		c_pool.name AS sanger_sample_id,
+		plt.name AS plate_name,
+		pbsubm_p.pipeline,
+		pbsubm_p.library_type,
+		pbsubm_p.retention_instructions,
+		pbsubm_p.gb_yield_of_ccs_data_required,
+		pbsubm_p.number_of_smrt_cells_required,
+		pbsubm_p.sheared_femto_fragment_size_bp,
+		pbsubm_p.post_spri_concentration_ngul,
+		pbsubm_p.post_spri_volume_ul,
+		pbsubm_p.nanodrop_260280, 
+		pbsubm_p.nanodrop_260230,
+		pbsubm_p.nanodrop_concentration_ngul,
+		pbsubm_p.sample_prep_additional_requirements,
+		pbsubm_p.include_5mc_cells_in_cpg_motifs,
+		pbsubm_p.cc5_output_includes_kinetics_information,
+		pbsubm_p.priority,
+		DATE(pbsubm_p.created_at$) AS eln_submission_date, 
+		'pacbio'::varchar AS sequencing_platform,
+		'v2'::varchar AS source
+	FROM pacbio_submission_plate_output$raw AS pbsubm_p
+	LEFT JOIN submission_samples$raw AS subsam 
+		ON pbsubm_p.sample_name = subsam.id
+	LEFT JOIN pooled_samples$raw AS pool 
+		ON subsam.pooled_sample = pool.id
+	LEFT JOIN dna_extract$raw AS dna -- Chunk to add Tissue metadata
+		ON pool.samples ->> 0 = dna.id
+	LEFT JOIN tissue_prep$raw AS tp 
+		ON dna.tissue_prep = tp.id
+	LEFT JOIN tissue$raw AS t 
+		ON tp.tissue = t.id -- End of Tissue metadata Chunk
+	LEFT JOIN container_content$raw AS cc_pool -- Chunk to add DNA fluidx id
+		ON pool.id = cc_pool.entity_id
+	LEFT JOIN container$raw AS c_pool 
+		ON cc_pool.container_id = c_pool.id
+	LEFT JOIN tube$raw AS tube 
+		ON c_pool.id = tube.id -- End of DNA fluidx id Chunk
+	LEFT JOIN plate$raw AS plt 
+		ON c_pool.plate_id = plt.id
+	WHERE pbsubm_p.archived$ = FALSE -- Excluding archived submission containers
+		-- Filters to add DNA extract fluidx tubes
+		AND tube.type IS NULL  -- Selecting non-Voucher containers
+	    AND (c_pool.archive_purpose$ != ('Made in error') OR c_pool.archive_purpose$ IS NULL) -- Excluding containers made by mistake
+		AND pool.id IS NOT NULL
 )
 SELECT *
 FROM pacbio_submissions_v1
@@ -303,4 +365,7 @@ FROM pacbio_legacy_submissions
 UNION
 SELECT *
 FROM pacbio_submissions_pooled_v1
+UNION
+SELECT *
+FROM pacbio_submissions_pooled_v2
 ORDER BY source DESC
