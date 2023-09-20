@@ -4,13 +4,13 @@
 
 from typing import Dict, List, Type
 
-from .converter import DefaultDataObjectConverter, DefaultModelConverter, TypeFunction
 from .database import Database, DefaultDatabase
 from .filter import DefaultDatabaseFilter
 from .model import Model
 from .relationship import DefaultSqlRelationshipConfig
 from .session import create_session_factory
 from .sort import DefaultDatabaseSorter
+from .sql_converter import DefaultDataObjectConverter, DefaultModelConverter, TypeFunction
 from .sql_datasource import (
     BackConverterFactory,
     ConverterFactory,

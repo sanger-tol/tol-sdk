@@ -5,13 +5,15 @@
 from typing import Any, Dict, Iterable, Optional
 from unittest.mock import MagicMock, PropertyMock
 
-from tol.core import DataObject
-from tol.sql.converter import (
+from tol.core import (
     Converter,
+    DataObject
+)
+from tol.sql.model import Model
+from tol.sql.sql_converter import (
     DefaultDataObjectConverter,
     DefaultModelConverter
 )
-from tol.sql.model import Model
 
 
 class _ExampleModel(Model):

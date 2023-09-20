@@ -8,9 +8,9 @@ from unittest.mock import MagicMock, PropertyMock, call
 
 from tol.core import DataSourceFilter, core_data_object
 from tol.sql import SqlDataSource
-from tol.sql.converter import Converter, TypeFunction
 from tol.sql.filter import DatabaseFilter
 from tol.sql.model import Model
+from tol.sql.sql_converter import Converter, TypeFunction
 
 
 class _MockDataObject:
