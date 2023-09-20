@@ -34,6 +34,10 @@ class ApiObject(object):
     def id(self):  # noqa A003
         return self._id
 
+    @property
+    def to_one_relationships(self):  # noqa A003
+        return self.relationships
+
     def update_attributes_from_dict(self, json_attributes):
         self.attributes = {snakecase(k): v for k, v in json_attributes.items()}
         for k, v in self.attributes.items():

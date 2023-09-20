@@ -6,7 +6,7 @@ import os
 
 from tol.core import core_data_object
 from tol.sql import create_sql_datasource
-from tol.sql.converter import TypeFunction
+from tol.sql.sql_converter import TypeFunction
 
 from .. import models
 from ..base_case import DatabaseTestCase, models_list, session_factory

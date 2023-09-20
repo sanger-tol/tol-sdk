@@ -4,12 +4,12 @@
 
 from typing import Callable, Dict, Iterable, List, Optional, Tuple
 
-from .converter import DataObjectConverter, ModelConverter
 from .database import Database
 from .filter import DatabaseFilter
 from .model import Model
 from .relationship import SqlRelationshipConfig
 from .sort import DatabaseSorter
+from .sql_converter import DataObjectConverter, ModelConverter
 from ..core import (
     DataId,
     DataObject,

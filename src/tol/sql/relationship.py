@@ -20,7 +20,7 @@ from typing import (
 from ..core.relationship import RelationshipConfig
 
 if typing.TYPE_CHECKING:
-    from .converter import TypeFunction
+    from .sql_converter import TypeFunction
     from .model import Model
 
 
