@@ -62,6 +62,24 @@ class ConfigBlueprint(Blueprint):
         )
 
 
+class CustomBlueprint(Blueprint):
+    """
+    A flask Blueprint for custom endpoints needing to use
+    DataSources.
+    """
+
+    def __init__(
+        self,
+        url_prefix: str
+    ) -> None:
+
+        super().__init__(
+            'custom_handler',
+            __name__,
+            url_prefix=url_prefix
+        )
+
+
 ConfigFactory = Callable[[str, tuple[DataSource]], Blueprint]
 """A `Callable` that returns a `ConfigBlueprint`"""
 
@@ -214,3 +232,24 @@ def data_blueprint(
         }, error.status_code
 
     return data_handler
+
+
+def custom_blueprint(
+    url_prefix: str = '/custom',
+    authenticator: Optional[Authenticator] = None,
+    context_getter: CtxGetter = default_ctx_getter
+) -> DataBlueprint:
+    """
+    Given a tuple of DataSource instances, this provides a flask
+    Blueprint instance for adding custom endpoint to.
+    """
+
+    custom_handler = CustomBlueprint(url_prefix=url_prefix)
+
+    if authenticator is not None:
+        @custom_handler.before_request
+        def authenticate() -> None:
+            auth_context = context_getter()
+            authenticator(auth_context)
+
+    return custom_handler
