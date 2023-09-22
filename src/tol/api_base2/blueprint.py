@@ -70,11 +70,12 @@ class CustomBlueprint(Blueprint):
 
     def __init__(
         self,
-        url_prefix: str
+        url_prefix: str,
+        name: str = __name__
     ) -> None:
 
         super().__init__(
-            'custom_handler',
+            name,
             __name__,
             url_prefix=url_prefix
         )
@@ -236,6 +237,7 @@ def data_blueprint(
 
 def custom_blueprint(
     url_prefix: str = '/custom',
+    name: str = 'custom',
     authenticator: Optional[Authenticator] = None,
     context_getter: CtxGetter = default_ctx_getter
 ) -> DataBlueprint:
@@ -244,7 +246,7 @@ def custom_blueprint(
     Blueprint instance for adding custom endpoint to.
     """
 
-    custom_handler = CustomBlueprint(url_prefix=url_prefix)
+    custom_handler = CustomBlueprint(name=name, url_prefix=url_prefix)
 
     if authenticator is not None:
         @custom_handler.before_request
