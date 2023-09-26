@@ -161,7 +161,7 @@ class ElasticDataSource(
         f = DataSourceFilter()
         f.exact = {}
         for key in candidate_key:
-            f.exact[key] = u[key]
+            f.exact[key] = u.pop(key)  # Don't want key in the upsert as it cannot change anyway
         u = self._prefix_fields(u, field_prefix)
         query = self._build_elasticsearch_query(
             self.__get_object_type(index),
@@ -172,7 +172,7 @@ class ElasticDataSource(
                 'source': "ctx._source.putAll(params['upsertWith']);",
                 'lang': 'painless',
                 'params': {
-                    'upsertWith': update
+                    'upsertWith': u
                 }
             },
         }
@@ -257,13 +257,13 @@ class ElasticDataSource(
                                                            {'value': f'{v}*', 'boost': 1.0}}})
         if object_filters.in_list is not None:
             for k, v in object_filters.in_list.items():
-                query['bool']['must'].append({'terms': {k: v, 'boost': 1.0}})
+                search_field = self._field_or_keyword(object_type, k)
+                query['bool']['must'].append({'terms': {search_field: v, 'boost': 1.0}})
 
         if object_filters.range is not None:
             for k, v in object_filters.range.items():
                 query['bool']['must'].append({'range': {k: {'gte': v['from'],
                                                             'lte': v['to']}}})
-
         return query
 
     def _build_elasticsearch_sort(self, object_type: str, sort_by: str):

@@ -174,8 +174,9 @@ class TestElasticDataSource(TestCase):
                 'lang': 'painless',
                 'params': {
                     'upsertWith': {
-                        'field1': 'value1',
-                        'field2': 'value2'
+                        'field2': 'value2',
+                        'tol_checksum': 'abc123',
+                        'tol_updated_at': dt.isoformat()
                     }
                 }
             }
@@ -297,8 +298,8 @@ class TestElasticDataSource(TestCase):
         object_filters.in_list = {'field1': ['string1', 'string2'],
                                   'field2': ['string3', 'string4']}
         expected = {'bool': {'must': [
-            {'terms': {'field1': ['string1', 'string2'], 'boost': 1.0}},
-            {'terms': {'field2': ['string3', 'string4'], 'boost': 1.0}}],
+            {'terms': {'field1.keyword': ['string1', 'string2'], 'boost': 1.0}},
+            {'terms': {'field2.keyword': ['string3', 'string4'], 'boost': 1.0}}],
             'must_not': []}}
         self.assertEqual(expected, eds._build_elasticsearch_query('obj_type', object_filters))
 

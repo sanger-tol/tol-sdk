@@ -75,7 +75,7 @@ class _MockDataSource(DataSource, DetailGetter, Relational):
 
     def get_to_one_relation(self, data_object: DataObject, key: str):
         if key == 'first':
-            return mock_data_object('yes', '1234')
+            return mock_data_object('yes', '1234', attributes={'att1': 'val1'})
         if key == 'second':
             return mock_data_object('another', '5678')
         raise NotImplementedError()
@@ -163,13 +163,15 @@ class TestDefaultView:
                     'first': {
                         'data': {
                             'type': 'yes',
-                            'id': '1234'
+                            'id': '1234',
+                            'attributes': {'att1': 'val1'}
                         }
                     },
                     'second': {
                         'data': {
                             'type': 'another',
-                            'id': '5678'
+                            'id': '5678',
+                            'attributes': {}
                         }
                     },
                     'ex': {
@@ -303,13 +305,15 @@ class TestDefaultViewInBlueprint(TestCase):
                     'first': {
                         'data': {
                             'type': 'yes',
-                            'id': '1234'
+                            'id': '1234',
+                            'attributes': {'att1': 'val1'}
                         }
                     },
                     'second': {
                         'data': {
                             'type': 'another',
-                            'id': '5678'
+                            'id': '5678',
+                            'attributes': {}
                         }
                     },
                     'ex': {

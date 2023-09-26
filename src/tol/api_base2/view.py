@@ -151,7 +151,8 @@ class DefaultView(View):
             return {
                 'data': {
                     'type': data_object.host.relationship_config[data_object.type].to_one[key],
-                    'id': related_object.id
+                    'id': related_object.id,
+                    'attributes': related_object.attributes
                 }
             }
         return {}
