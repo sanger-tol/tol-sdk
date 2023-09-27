@@ -309,7 +309,7 @@ pacbio_submissions_pooled_v2 AS (
 		subsam.name$ AS eln_submission_sample_name,
 		c_pool.barcode AS pooled_sample_fluidx_id,
 		t.tolid,
-		c_pool.name AS sanger_sample_id,
+		con.name AS sanger_sample_id,
 		plt.name AS plate_name,
 		pbsubm_p.pipeline,
 		pbsubm_p.library_type,
@@ -328,7 +328,7 @@ pacbio_submissions_pooled_v2 AS (
 		pbsubm_p.priority,
 		DATE(pbsubm_p.created_at$) AS eln_submission_date, 
 		'pacbio'::varchar AS sequencing_platform,
-		'v2'::varchar AS source
+		'v2_pooled'::varchar AS source
 	FROM pacbio_submission_plate_output$raw AS pbsubm_p
 	LEFT JOIN submission_samples$raw AS subsam 
 		ON pbsubm_p.sample_name = subsam.id
@@ -346,13 +346,13 @@ pacbio_submissions_pooled_v2 AS (
 		ON cc_pool.container_id = c_pool.id
 	LEFT JOIN tube$raw AS tube 
 		ON c_pool.id = tube.id -- End of DNA fluidx id Chunk
+	LEFT JOIN container$raw AS con -- To add sanger uuid
+		ON pbsubm_p.sanger_uuid ->> 0 = con.id
 	LEFT JOIN plate$raw AS plt 
 		ON c_pool.plate_id = plt.id
 	WHERE pbsubm_p.archived$ = FALSE -- Excluding archived submission containers
-		-- Filters to add DNA extract fluidx tubes
-		AND tube.type IS NULL  -- Selecting non-Voucher containers
 	    AND (c_pool.archive_purpose$ != ('Made in error') OR c_pool.archive_purpose$ IS NULL) -- Excluding containers made by mistake
-		AND pool.id IS NOT NULL
+	
 )
 SELECT *
 FROM pacbio_submissions_v1
