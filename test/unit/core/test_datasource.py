@@ -20,7 +20,8 @@ class _TestDataSourceExpected(DataSource):
     def supported_types(self):
         raise NotImplementedError()
 
-    def get_attribute_types(self, object_type: str) -> Dict:
+    @property
+    def attribute_types(self):
         raise NotImplementedError()
 
 
@@ -40,7 +41,8 @@ class _TestDataSourceNoExpected(DataSource, PageGetter):
     def supported_types(self):
         raise NotImplementedError()
 
-    def get_attribute_types(self, object_type: str) -> Dict:
+    @property
+    def attribute_types(self):
         raise NotImplementedError()
 
 

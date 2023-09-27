@@ -24,7 +24,8 @@ class _MockDataSource1(
     def supported_types(self):
         return ['a', 'b', 'c']
 
-    def get_attribute_types(self, object_type: str):
+    @property
+    def attribute_types(self):
         raise NotImplementedError()
 
     def get_aggregations(*args, **kwargs):
@@ -47,7 +48,8 @@ class _MockDataSource2(
     def supported_types(self):
         return ['4', '5', '6']
 
-    def get_attribute_types(self, object_type: str):
+    @property
+    def attribute_types(self):
         raise NotImplementedError()
 
     def delete(*args, **kwargs):

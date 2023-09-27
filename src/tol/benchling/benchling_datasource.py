@@ -103,5 +103,8 @@ class BenchlingDataSource(DataSource, ListGetter):
     def supported_types(self) -> List[str]:
         return self.__get_primary_keys().keys()
 
-    def get_attribute_types(self, object_type: str) -> Dict:
-        return {}
+    @property
+    def attribute_types(self):
+        return {
+            t: {} for t in self.supported_types
+        }
