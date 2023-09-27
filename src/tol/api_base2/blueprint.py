@@ -3,6 +3,7 @@
 # SPDX-License-Identifier: MIT
 
 import urllib
+from collections import ChainMap
 from itertools import chain
 from typing import Callable, Optional, Protocol
 
@@ -125,6 +126,12 @@ def config_blueprint(
             t: d.to_dict() for t, d in relationship_configs
             if not d.empty
         }
+
+    @config_handler.route('/attribute_types', methods=['GET'])
+    def get_attribute_types():
+        types_list = [d.attribute_types for d in data_sources]
+        chain_map = ChainMap(*types_list)
+        return dict(chain_map)
 
     @config_handler.route('/operations', methods=['GET'])
     def get_operations():

@@ -60,10 +60,8 @@ class _MockDataSource(DataSource, DetailGetter, Relational):
             'awful'  # config but no `to_one` or `to_many`
         ]
 
-    def get_attribute_types(
-        self,
-        object_type: str
-    ) -> dict:
+    @property
+    def attribute_types(self):
         raise NotImplementedError()
 
     @property

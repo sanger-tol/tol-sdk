@@ -6,8 +6,9 @@ import datetime
 import logging
 import sys
 import uuid
+from collections.abc import Mapping
 from functools import cache
-from typing import Dict, Iterable
+from typing import Dict, Iterable, Iterator
 
 from lab_share_lib.constants import RABBITMQ_HEADER_VALUE_ENCODER_TYPE_BINARY
 from lab_share_lib.rabbit.avro_encoder import AvroEncoderBinary
@@ -156,38 +157,52 @@ class SequencingDataSource(DataSource):
     def supported_types(self):
         return ['sequencing_sample']
 
+    @property
     @cache
-    def get_attribute_types(self, object_type: str) -> Dict:
-        if object_type == 'sequencing_sample':
-            return {
-                'barcode': 'str',
-                'sample_uuid': 'str',
-                'study_uuid': 'str',
-                'sanger_sample_id': 'str',
-                'location': 'str',
-                'supplier_sample_name': 'str',
-                'volume': 'str',
-                'concentration': 'str',
-                'public_name': 'str',
-                'taxon_id': 'str',
-                'common_name': 'str',
-                'donor_id': 'str',
-                'library_type': 'str',
-                'country_of_origin': 'str',
-                'sample_collection_date_utc': 'datetime',
-                'cost_code': 'str',
-                'genome_size': 'str',
-                'accession_number': 'str',
-                'sheared_femto_fragment_size': 'str',
-                'post_spri_concentration': 'str',
-                'post_spri_volume': 'str',
-                'final_nano_drop_280': 'str',
-                'final_nano_drop_230': 'str',
-                'final_nano_drop': 'str',
-                'shearing_and_qc_comments': 'str',
-                'date_submitted_utc': 'datetime',
-                'priority_level': 'str',
-                'date_required_by': 'str',
-                'reason_for_priority': 'str'
-            }
-        raise DataSourceError(f'{object_type} objects are not supported')
+    def attribute_types(self) -> Dict:
+
+        class AttributeTypesDict(Mapping[str, dict[str, str]]):
+            def __getitem__(self, __k: str) -> dict[str, str]:
+                if __k != 'sequencing_sample':
+                    raise DataSourceError(
+                        f'{__k} objects are not supported'
+                    )
+                return {
+                    'barcode': 'str',
+                    'sample_uuid': 'str',
+                    'study_uuid': 'str',
+                    'sanger_sample_id': 'str',
+                    'location': 'str',
+                    'supplier_sample_name': 'str',
+                    'volume': 'str',
+                    'concentration': 'str',
+                    'public_name': 'str',
+                    'taxon_id': 'str',
+                    'common_name': 'str',
+                    'donor_id': 'str',
+                    'library_type': 'str',
+                    'country_of_origin': 'str',
+                    'sample_collection_date_utc': 'datetime',
+                    'cost_code': 'str',
+                    'genome_size': 'str',
+                    'accession_number': 'str',
+                    'sheared_femto_fragment_size': 'str',
+                    'post_spri_concentration': 'str',
+                    'post_spri_volume': 'str',
+                    'final_nano_drop_280': 'str',
+                    'final_nano_drop_230': 'str',
+                    'final_nano_drop': 'str',
+                    'shearing_and_qc_comments': 'str',
+                    'date_submitted_utc': 'datetime',
+                    'priority_level': 'str',
+                    'date_required_by': 'str',
+                    'reason_for_priority': 'str'
+                }
+
+            def __len__(self) -> int:
+                return 1
+
+            def __iter__(self) -> Iterator[str]:
+                return iter(['sequencing_sample'])
+
+        return AttributeTypesDict()

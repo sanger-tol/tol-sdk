@@ -356,8 +356,7 @@ class ElasticDataSource(
             return 'datetime'
         return type_
 
-    @cache
-    def get_attribute_types(self, object_type: str) -> Dict:
+    def __get_attribute_types_for_object_type(self, object_type: str) -> Dict:
         index_name = self.__get_index(object_type)
         mapping = self.es.indices.get_mapping(index_name)
         if 'properties' not in mapping[index_name]['mappings']:
@@ -367,6 +366,14 @@ class ElasticDataSource(
             property_name: self.__map_type(properties[property_name]['type'])
             for property_name in properties
             if 'type' in properties[property_name]
+        }
+
+    @property
+    @cache
+    def attribute_types(self) -> dict[str, dict[str, str]]:
+        return {
+            t: self.__get_attribute_types_for_object_type(t)
+            for t in self.supported_types
         }
 
     @property

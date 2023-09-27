@@ -4,7 +4,6 @@
 
 import json
 from os import path
-from typing import Dict
 
 from marshmallow import Schema, fields
 
@@ -164,5 +163,6 @@ class Interface(DataSource):
     def supported_types(self):
         raise NotImplementedError()
 
-    def get_attribute_types(self, object_type: str) -> Dict:
+    @property
+    def attribute_types(self):
         raise NotImplementedError()

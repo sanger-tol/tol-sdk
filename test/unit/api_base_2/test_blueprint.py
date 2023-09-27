@@ -85,9 +85,13 @@ class ParrotDataSource(DataSource, DetailGetter, PageGetter, Aggregator):
             'cracker'
         ]
 
-    def get_attribute_types(self, object_type: str) -> Dict:
-        if object_type == 'cracker':
-            return {'parrot': 'str'}
+    @property
+    def attribute_types(self):
+        return {
+            'cracker': {
+                'parrot': 'str'
+            }
+        }
 
 
 class EmptyDataSource(DataSource, DetailGetter, PageGetter):
@@ -109,7 +113,8 @@ class EmptyDataSource(DataSource, DetailGetter, PageGetter):
             'nothing'
         ]
 
-    def get_attribute_types(self, object_type: str) -> Dict:
+    @property
+    def attribute_types(self):
         raise NotImplementedError()
 
 
@@ -119,7 +124,8 @@ class WriteableDataSource(DataSource):
     def __init__(self):
         pass
 
-    def get_attribute_types(self, object_type: str) -> Dict:
+    @property
+    def attribute_types(self) -> Dict:
         raise NotImplementedError()
 
     @property

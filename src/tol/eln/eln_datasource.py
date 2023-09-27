@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: MIT
 
 import json
-from typing import Dict, List
+from typing import List
 
 from benchling_api_client.models.naming_strategy import NamingStrategy
 
@@ -111,7 +111,8 @@ class ElnDataSource(DataSource):
         except BenchlingError as error:
             raise Exception(400, error.json['error']['message'])
 
-    def get_attribute_types(self, object_type: str) -> Dict:
+    @property
+    def attribute_types(self):
         raise NotImplementedError()
 
     @property

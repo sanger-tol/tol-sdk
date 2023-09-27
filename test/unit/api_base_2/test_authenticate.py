@@ -43,7 +43,8 @@ class _MockDataSource(DataSource, DetailGetter, Deleter):
     def delete(self, object_type: str, object_ids: Iterable[str]) -> None:
         pass
 
-    def get_attribute_types(self, object_type: str) -> dict:
+    @property
+    def attribute_types(self) -> dict:
         return {}
 
     @property

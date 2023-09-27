@@ -39,7 +39,8 @@ class _TestDataSource1(DataSource, DetailGetter):
     def supported_types(self):
         return ['test2', 'test1']
 
-    def get_attribute_types(self, object_type: str) -> Dict:
+    @property
+    def attribute_types(self):
         raise NotImplementedError()
 
 
@@ -54,8 +55,12 @@ class _TestDataSource2(DataSource, PageGetter):
     def supported_types(self):
         return ['test_A', 'test_B']
 
-    def get_attribute_types(self, object_type: str) -> Dict:
-        return {}
+    @property
+    def attribute_types(self) -> Dict:
+        return {
+            'test_A': {},
+            'test_B': {}
+        }
 
 
 class _TestDataSource3(DataSource, Aggregator, PageGetter):
@@ -111,8 +116,9 @@ class _TestDataSource3(DataSource, Aggregator, PageGetter):
     def supported_types(self):
         return ['test_X']
 
-    def get_attribute_types(self, object_type: str) -> Dict:
-        return {}
+    @property
+    def attribute_types(self):
+        return {'test_X': {}}
 
 
 ds_1 = _TestDataSource1({})
@@ -239,7 +245,8 @@ class TestController:
             def __init__(self) -> None:
                 pass
 
-            def get_attribute_types(self, object_type: str) -> Dict:
+            @property
+            def attribute_types(self):
                 raise NotImplementedError()
 
             @property
@@ -274,7 +281,8 @@ class TestController:
             def __init__(self) -> None:
                 pass
 
-            def get_attribute_types(self, object_type: str) -> Dict:
+            @property
+            def attribute_types(self):
                 raise NotImplementedError()
 
             @property

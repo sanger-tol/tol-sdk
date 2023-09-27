@@ -2,8 +2,6 @@
 #
 # SPDX-License-Identifier: MIT
 
-from typing import Dict
-
 import pytest
 
 from tol.core import (
@@ -29,7 +27,8 @@ class _TestDataSource1(DataSource, DetailGetter):
     def supported_types(self):
         return ['test2', 'test1']
 
-    def get_attribute_types(self, object_type: str) -> Dict:
+    @property
+    def attribute_types(self):
         raise NotImplementedError()
 
 
@@ -44,7 +43,8 @@ class _TestDataSource2(DataSource, PageGetter):
     def supported_types(self):
         return ['test_A', 'test_B']
 
-    def get_attribute_types(self, object_type: str) -> Dict:
+    @property
+    def attribute_types(self):
         raise NotImplementedError()
 
 

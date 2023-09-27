@@ -19,8 +19,17 @@ class Empty(DataSource):
             'nothing'
         ]
 
-    def get_attribute_types(self, object_type: str) -> dict:
-        raise NotImplementedError()
+    @property
+    def attribute_types(self):
+        return {
+            'know': {
+                'a': 'int',
+                'b': 'str'
+            },
+            'nothing': {
+                'indeed': 'bool'
+            }
+        }
 
 
 class FirstRelational(DataSource, Upserter, Relational):
@@ -38,8 +47,17 @@ class FirstRelational(DataSource, Upserter, Relational):
             'to_you': RelationshipConfig(to_many={'paul': 'to_me'})
         }
 
-    def get_attribute_types(self, object_type: str) -> dict:
-        raise NotImplementedError()
+    @property
+    def attribute_types(self):
+        return {
+            'to_me': {
+                'lol': 'str'
+            },
+            'to_you': {
+                'yes': 'boolean',
+                'whattt': 'int'
+            }
+        }
 
     def get_to_many_relations(*args, **kwargs):
         raise NotImplementedError()
@@ -71,7 +89,8 @@ class SecondRelational(DataSource, DetailGetter, Relational):
             'd': RelationshipConfig()
         }
 
-    def get_attribute_types(self, object_type: str) -> dict:
+    @property
+    def attribute_types(self):
         raise NotImplementedError()
 
     def get_to_many_relations(*args, **kwargs):
@@ -180,4 +199,36 @@ class TestOperatorConfig(TestCase):
             'b': expected_2,
             'c': expected_2,
             'd': expected_2
+        }
+
+
+class TestAttributeTypesConfig(TestCase):
+    def create_app(self):
+        return _test_application(
+            FirstRelational({}),
+            Empty({})
+        )
+
+    def test_attribute_types_config(self):
+        response = self.client.open('/data/_config/attribute_types')
+        self.assert200(
+            response,
+            f'Response body is : {response.data.decode("utf-8")}'
+        )
+
+        assert response.json == {
+            'to_me': {
+                'lol': 'str'
+            },
+            'to_you': {
+                'yes': 'boolean',
+                'whattt': 'int'
+            },
+            'know': {
+                'a': 'int',
+                'b': 'str'
+            },
+            'nothing': {
+                'indeed': 'bool'
+            }
         }
