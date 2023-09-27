@@ -48,6 +48,7 @@ WITH hic_submissions AS (
 		ON tp.tissue = t.id
 	WHERE hic.archived$ = 'FALSE'
 		AND ssid.sanger_sample_id IS NOT NULL
+		AND ssid.sanger_sample_id != ''
 
 ),
 hic_legacy_submissions AS (
