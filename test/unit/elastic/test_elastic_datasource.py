@@ -277,6 +277,16 @@ class TestElasticDataSource(TestCase):
 
         self.assertIsNone(eds._build_elasticsearch_query('obj_type', None))
 
+        # Exact with relationship
+        rc = RelationshipConfig()
+        rc.to_one = {'relationship': 'relationship_type'}
+        eds.relationship_cfg = {'obj_type': rc}
+        object_filters = DataSourceFilter()
+        object_filters.exact = {'relationship.field1': 'string1'}
+        expected = {'bool': {'must': [{'match': {'relationship.field1.keyword': 'string1'}}],
+                             'must_not': []}}
+        self.assertEqual(expected, eds._build_elasticsearch_query('obj_type', object_filters))
+
         # Exact filtering
         object_filters = DataSourceFilter()
         object_filters.exact = {'field1': 'string1', 'field2': 3, 'field3': None}

@@ -188,16 +188,22 @@ class ElasticDataSource(
 
     def _field_or_keyword(self, object_type: str, name: str):
         # An attribute of the object
-        if name in self.get_attribute_types(object_type):
-            field_type = self.get_attribute_types(object_type)[name]
+        if name in self.attribute_types[object_type]:
+            field_type = self.attribute_types[object_type][name]
             if field_type == 'str':
                 return f'{name}.keyword'
-        # A foreign key - could be in any object pointing to this one so we trawl through
-        # It might be better to split the name on the dot and recursively go through
-        # the objects pointed to
-        for _, rc in self.relationship_config.items():
-            if rc.foreign_keys is not None:
-                if name in rc.foreign_keys.values():
+        if '.' in name:
+            relationship_name, attribute = name.split('.')[0], name.split('.')[1]
+            relationship_object_type = next(iter(self.relationship_config))
+            to_one = self.relationship_config[relationship_object_type].to_one
+            if to_one is None:
+                to_one = {}
+            to_many = self.relationship_config[relationship_object_type].to_many
+            if to_many is None:
+                to_many = {}
+            if relationship_name in to_one or relationship_name in to_many:
+                attribute_type = self.attribute_types[relationship_object_type][attribute]
+                if attribute_type == 'str':
                     return f'{name}.keyword'
         return name
 
