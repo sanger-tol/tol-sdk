@@ -32,10 +32,12 @@ class MockElasticDataSource(ElasticDataSource):
     def attribute_types(self):
         return {
             'obj_type': {
+                'uid': 'str',
                 'field1': 'str',
                 'field2': 'str',
                 'datefield': 'date'},
             'reltype': {
+                'uid': 'str',
                 'field3': 'str',
                 'field4': 'str',
                 'datefield': 'date'
@@ -279,11 +281,11 @@ class TestElasticDataSource(TestCase):
 
         # Exact with relationship
         rc = RelationshipConfig()
-        rc.to_one = {'relationship': 'relationship_type'}
+        rc.to_one = {'relationship': 'reltype'}
         eds.relationship_cfg = {'obj_type': rc}
         object_filters = DataSourceFilter()
-        object_filters.exact = {'relationship.field1': 'string1'}
-        expected = {'bool': {'must': [{'match': {'relationship.field1.keyword': 'string1'}}],
+        object_filters.exact = {'relationship.field3': 'string1'}
+        expected = {'bool': {'must': [{'match': {'relationship.field3.keyword': 'string1'}}],
                              'must_not': []}}
         self.assertEqual(expected, eds._build_elasticsearch_query('obj_type', object_filters))
 
@@ -496,10 +498,12 @@ class TestElasticDataSource(TestCase):
 
     def test_get_to_many_relationships(self):
         core_data_object, eds = mock_elastic_data_source()
-        rc = RelationshipConfig()
-        rc.to_many = {'relname': 'reltype'}
-        rc.foreign_keys = {'relname': 'relfk.id'}
-        eds.relationship_cfg = {'obj_type': rc}
+        rc1 = RelationshipConfig()
+        rc1.to_many = {'relname': 'reltype'}
+        rc1.foreign_keys = {'relname': 'relfk.id'}
+        rc2 = RelationshipConfig()
+        rc2.to_one = {'relfk': 'obj_type'}
+        eds.relationship_cfg = {'obj_type': rc1, 'reltype': rc2}
         source_object = core_data_object(
             'obj_type',
             {'id': '1'}
