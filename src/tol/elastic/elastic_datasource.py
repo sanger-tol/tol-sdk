@@ -14,6 +14,8 @@ from caseconverter import (
     snakecase
 )
 
+from dateutil import parser
+
 from elasticsearch import (Elasticsearch, helpers)
 
 from ..core import (
@@ -303,8 +305,8 @@ class ElasticDataSource(
 
     def _convert_data_dict_to_data_object(self, type_, id_, data):
         attributes = {
-            k: v for k, v in data.items()
-            if k in self.get_attribute_types(type_).keys()
+            k: self.__make_dates(type_, k, v) for k, v in data.items()
+            if k in self.attribute_types[type_].keys()
         }
         to_one_relationships = {
             k: self._convert_data_dict_to_data_object(
@@ -322,6 +324,12 @@ class ElasticDataSource(
             id_=id_,
             data={**attributes, **to_one_relationships}
         )
+
+    def __make_dates(self, object_type, attribute_name, value):
+        if self.attribute_types[object_type][attribute_name] == 'datetime' and \
+                type(value) == str:
+            return parser.parse(value)
+        return value
 
     def get_aggregations(
             self,
@@ -356,7 +364,7 @@ class ElasticDataSource(
             return 'datetime'
         return type_
 
-    def __get_attribute_types_for_object_type(self, object_type: str) -> Dict:
+    def _get_attribute_types_for_object_type(self, object_type: str) -> Dict:
         index_name = self.__get_index(object_type)
         mapping = self.es.indices.get_mapping(index_name)
         if 'properties' not in mapping[index_name]['mappings']:
@@ -372,7 +380,7 @@ class ElasticDataSource(
     @cache
     def attribute_types(self) -> dict[str, dict[str, str]]:
         return {
-            t: self.__get_attribute_types_for_object_type(t)
+            t: self._get_attribute_types_for_object_type(t)
             for t in self.supported_types
         }
 

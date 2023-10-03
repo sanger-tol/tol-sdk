@@ -2,31 +2,82 @@
 #
 # SPDX-License-Identifier: MIT
 
-from typing import (Dict)
+from typing import (Dict, Iterable, List)
 
 import requests
 
-from ..api_client import (
-    ApiDataSource
+from ..core import (
+    DataObject,
+    DataSource,
+    DataSourceError
+)
+from ..core.operator import (
+    Upserter
 )
 
 
-class StsDataSource(ApiDataSource):
+class StsDataSource(DataSource, Upserter):
     """
-    This class extends ApiDataSource to expose native STS endpoints.
-    From the ApiDataSource point of view this is read-only, however
-    native endpoints are read-write.
+    This is a very simple DataSource that provides access to certain writeable
+    endpoints in STS via the standard DataSource methods (upsert, etc.)
+    There is also direct access to any endpoint via the native_***() methods
     """
     def __init__(self, config: Dict):
-        """Initialises an STS data source.
+        super().__init__(config, expected=['url', 'key'])
 
-        We expect the following keys in the config:
-        url -- the URL of the instance (including path with API prefix)
-        key -- the API key to use for authentication
+    @property
+    def supported_types(self) -> List[str]:
+        return ['sequencing_request']
+
+    @property
+    def attribute_types(self) -> dict[str, dict[str, str]]:
+        return {'sequencing_request': {
+            'platform': 'str',
+            'fluidx_id': 'str',
+            'submission_date': 'datetime'
+        }}
+
+    def __encode_date(self, d):
+        return d.strftime('%Y-%m-%d %H:%M:%S')
+
+    def __post_sequencing_requests(self, sequencing_requests: Iterable[DataObject]):
         """
-        super().__init__(config)
-        self.native_url = self.url
-        self.url = f'{self.native_url}/api-base'  # This is where all the API Base endpoints are
+        We are expecting a list of DataObjects with:
+        id
+        platform
+        fluidx_id
+        submission_date
+        """
+        for sr in sequencing_requests:
+            payload = {'platform': sr.platform,
+                       'fluidx_id': sr.fluidx_id,
+                       'sample_ref': sr.id,
+                       'submit_date': self.__encode_date(sr.submission_date)}
+            r = self.native_post(
+                '/sequencing-requests',
+                json=payload
+            )
+            if r.ok:
+                print(f'OK: {sr.id}')
+            else:
+                print(
+                    f'A sample failed with code {r.status_code}, '
+                    f'and response {r.json()}, '
+                    f'containing data: {payload}'
+                )
+
+    def upsert(
+        self,
+        object_type: str,
+        objects: Iterable[DataObject]
+    ) -> None:
+        if object_type == 'sequencing_request':
+            self.__post_sequencing_requests(objects)
+        else:
+            raise DataSourceError('Only objects of type sequencing_request are handled '
+                                  'by StsDataSource')
+
+    # Everything below here is to do with allowing native endpoint requests
 
     def __override_method(self, method, relative_url, headers=None, **kwargs):
         if headers is None:
@@ -39,7 +90,7 @@ class StsDataSource(ApiDataSource):
                 **headers
             }
         return method(
-            f'{self.native_url}/{relative_url}',
+            f'{self.url}/{relative_url}',
             headers=new_headers,
             **kwargs
         )
