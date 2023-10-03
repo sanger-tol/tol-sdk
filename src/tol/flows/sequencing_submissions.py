@@ -234,35 +234,6 @@ def post_ep_samples_to_sts(submissions):
 
 
 @task(max_retries=3, retry_delay=timedelta(seconds=60))
-def post_sequencing_requests_to_sts(submissions, platform):
-    updated_count = 0
-    for submission in submissions:
-        submission_date = submission['submission_date']
-        if submission_date is None:
-            get_prefect_logger().warning(submission['fluidx_id']
-                                         + ' does not have a submission date')
-            submission_date = '1970-01-01 00:00:00'
-        payload = {'platform': platform,
-                   'fluidx_id': submission['fluidx_id'],
-                   'sample_ref': submission['sanger_sample_id'],
-                   'submit_date': submission_date}
-        r = sts_requests.post(
-            '/sequencing-requests',
-            json=payload
-        )
-        if r.ok:
-            updated_count += 1
-        else:
-            get_prefect_logger().warning(
-                f'A sample failed with code {r.status_code}, '
-                f'and response {r.json()}, '
-                f'containing data: {payload}'
-            )
-    get_prefect_logger().info('Total number of sequencing requests posted: ' + str(updated_count))
-    return True
-
-
-@task(max_retries=3, retry_delay=timedelta(seconds=60))
 def get_lastrun_datetime(key):
     lastrun_datetime = get_datetime_setting(key)
     if lastrun_datetime is None:

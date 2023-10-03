@@ -28,18 +28,19 @@ class MockElasticDataSource(ElasticDataSource):
     def _add_checksum(self, dict_):
         return {**dict_, 'tol_checksum': 'abc123'}
 
-    def get_attribute_types(self, object_type: str):
-        if object_type == 'obj_type':
-            return {'field1': 'str',
-                    'field2': 'str',
-                    'datefield': 'date'}
-        if object_type == 'reltype':
-            return {'field3': 'str',
-                    'field4': 'str',
-                    'datefield': 'date'}
-
-    def get_attribute_types_super(self, object_type: str):
-        return super().get_attribute_types(object_type)
+    @property
+    def attribute_types(self):
+        return {
+            'obj_type': {
+                'field1': 'str',
+                'field2': 'str',
+                'datefield': 'date'},
+            'reltype': {
+                'field3': 'str',
+                'field4': 'str',
+                'datefield': 'date'
+            }
+        }
 
 
 def mock_elastic_data_source() -> ElasticDataSource:
@@ -400,7 +401,7 @@ class TestElasticDataSource(TestCase):
         expected = {'field_1': 'str',
                     'field_2': 'datetime',
                     'field_3': 'int'}
-        returned = eds.get_attribute_types_super('index_name')
+        returned = eds._get_attribute_types_for_object_type('index_name')
         eds.es.indices.get_mapping.assert_called_once()
         self.assertEqual(expected, returned)
 
