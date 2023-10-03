@@ -193,18 +193,14 @@ class ElasticDataSource(
             if field_type == 'str':
                 return f'{name}.keyword'
         if '.' in name:
+            rc = self.relationship_config[object_type]
             relationship_name, attribute = name.split('.')[0], name.split('.')[1]
-            relationship_object_type = next(iter(self.relationship_config))
-            to_one = self.relationship_config[relationship_object_type].to_one
-            if to_one is None:
-                to_one = {}
-            to_many = self.relationship_config[relationship_object_type].to_many
-            if to_many is None:
-                to_many = {}
-            if relationship_name in to_one or relationship_name in to_many:
-                attribute_type = self.attribute_types[relationship_object_type][attribute]
-                if attribute_type == 'str':
-                    return f'{name}.keyword'
+            if attribute == 'id':
+                attribute = 'uid'
+            relationship_object_type = rc.to_one[relationship_name]
+            attribute_type = self.attribute_types[relationship_object_type][attribute]
+            if attribute_type == 'str':
+                return f'{name}.keyword'
         return name
 
     def get_by_id(
