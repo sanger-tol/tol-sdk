@@ -5,7 +5,7 @@
 from __future__ import annotations
 
 from abc import ABC, ABCMeta, abstractmethod
-from typing import Any, Iterable, List, Optional, Type
+from typing import Any, Iterable, Optional, Type
 
 from sqlalchemy import inspect
 from sqlalchemy.orm import (
@@ -74,6 +74,17 @@ class Model(ABC):
         """
         The name of the foreign key column for the given relationship name
         """
+
+    @classmethod
+    def get_excluded_column_names(cls) -> list[str]:
+        """
+        The list of column names that both exist on the model, but
+        shouldn't be automatically added to `Model().instance_attributes`.
+        """
+
+        return [
+            cls.get_id_column_name()
+        ]
 
     @property
     @abstractmethod
@@ -247,7 +258,7 @@ def model_base() -> Type[Model]:
             return list(relationship.remote_side)[0].table.name
 
         @classmethod
-        def __get_all_relationship_names(cls) -> List[str]:
+        def __get_all_relationship_names(cls) -> list[str]:
             mapper = inspect(cls)
             return list(mapper.relationships.keys())
 
@@ -263,7 +274,7 @@ def model_base() -> Type[Model]:
             )
 
         @classmethod
-        def __get_foreign_keys(cls) -> List[str]:
+        def __get_foreign_keys(cls) -> list[str]:
             attrs = inspect(cls).attrs
             return [
                 k for k, v in attrs.items()
@@ -272,14 +283,14 @@ def model_base() -> Type[Model]:
             ]
 
         @classmethod
-        def __get_attribute_names(cls) -> List[str]:
-            id_key = cls.get_id_column_name()
+        def __get_attribute_names(cls) -> list[str]:
+            excluded = cls.get_excluded_column_names()
             mapper = inspect(cls)
             relationships = cls.__get_all_relationship_names()
             foreign_keys = cls.__get_foreign_keys()
             return [
                 k for k in mapper.attrs.keys()
-                if k != id_key
+                if k not in excluded
                 and k not in relationships
                 and k not in foreign_keys
             ]
