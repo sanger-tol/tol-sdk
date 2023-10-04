@@ -13,7 +13,7 @@ from .base import Base, db
 class LogMixin(object):
     @declared_attr
     def created_at(self):
-        return db.Column(db.DateTime, nullable=False, default=db.func.now())
+        return db.Column(db.DateTime(timezone=True), nullable=False, default=db.func.now())
 
     @declared_attr
     def created_by(self):
@@ -21,7 +21,7 @@ class LogMixin(object):
 
     @declared_attr
     def last_modified_at(self):
-        return db.Column(db.DateTime, nullable=False, default=db.func.now())
+        return db.Column(db.DateTime(timezone=True), nullable=False, default=db.func.now())
 
     @declared_attr
     def last_modified_by(self):
