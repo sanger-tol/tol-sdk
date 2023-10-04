@@ -42,7 +42,8 @@ class BenchlingDataSource(DataSource, ListGetter):
     def __get_primary_keys(self):
         return {
             'sample': 'sts_id',
-            'sequencing_request': 'sanger_sample_id'
+            'sequencing_request': 'sanger_sample_id',
+            'extraction': 'primary_identifier'
         }
 
     def _get_connection(self) -> connection:
@@ -80,14 +81,14 @@ class BenchlingDataSource(DataSource, ListGetter):
     ) -> Iterable[DataObject]:
         file_suffix = ''
         if object_filters is not None:
-            if isinstance(object_filters, dict):
+            if isinstance(object_filters.exact, dict):
                 if 'sequencing_platform' in object_filters.exact:
                     file_suffix = ('_sequencing_platform_'
                                    + object_filters.exact['sequencing_platform'])
                 elif 'extraction_type' in object_filters.exact:
                     file_suffix = '_extraction_type_' + object_filters.exact['extraction_type']
             else:
-                raise DataSourceError('Filtering only on sequencing_platform and extraction '
+                raise DataSourceError('Filtering only on sequencing platform and extraction '
                                       'type currently supported on BenchlingDataSource')
         try:
             sql = importlib.resources.files('tol.benchling.sql') \

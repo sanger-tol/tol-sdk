@@ -40,6 +40,7 @@ SELECT DISTINCT
 	COALESCE(DATE(rna.created_on), DATE(rna.created_at$)) AS rna_extraction_date, -- Homogenising BnT and Benchling dates
 	rna.name$ AS eln_rna_extract_name,
 	con.barcode AS rna_fluidx_id,
+	con.barcode AS primary_identifier,
 	rna.bt_id AS rna_bnt_id,
 	'rna'::varchar AS extraction_type
 FROM rna_sample$raw AS rna

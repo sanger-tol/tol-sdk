@@ -49,6 +49,7 @@ SELECT DISTINCT
 	DATE(dnap.created_at$) AS dnapool_extraction_date, -- Homogenising BnT and Benchling dates
 	dnap.name$ AS eln_dnapool_extract_name,
 	con.barcode AS dnapool_fluidx_id,
+	con.barcode AS primary_identifier,
 	dnap.samples AS source_dna_extract_id,
 	'pooled_dna'::varchar AS extraction_type
 FROM pooled_samples$raw AS dnap
