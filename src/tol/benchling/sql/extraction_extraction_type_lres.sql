@@ -25,6 +25,7 @@ SELECT DISTINCT
 	t.tolid,
 	tp.name$ AS eln_tissue_prep_name,
 	ssid.sanger_sample_id,
+	ssid.sanger_sample_id AS primary_identifier,
 	c.barcode AS tissuepre_fluidx_id,
 	DATE(tpsub.submitted_submission_date) AS submission_date,
 	'lres'::varchar AS extraction_type

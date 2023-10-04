@@ -45,6 +45,7 @@ SELECT DISTINCT
 	COALESCE(DATE(dna.created_on), DATE(dna.created_at$)) AS dna_extraction_date, -- Homogenising BnT and Benchling dates
 	dna.name$ AS eln_dna_extract_name,
 	con.barcode AS dna_fluidx_id,
+	con.barcode AS primary_identifier,
 	dna.bt_id AS dna_bnt_id,
 	'dna'::varchar AS extraction_type
 FROM dna_extract$raw AS dna
