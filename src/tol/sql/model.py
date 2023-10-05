@@ -7,7 +7,7 @@ from __future__ import annotations
 from abc import ABC, ABCMeta, abstractmethod
 from typing import Any, Iterable, Optional, Type
 
-from sqlalchemy import inspect
+from sqlalchemy import JSON, inspect
 from sqlalchemy.orm import (
     ColumnProperty,
     DeclarativeMeta,
@@ -143,7 +143,13 @@ def model_base() -> Type[Model]:
     class ModelMeta(DeclarativeMeta, ABCMeta):
         pass
 
-    DeclarativeBase = declarative_base(metaclass=ModelMeta)  # noqa N806
+    DeclarativeBase = declarative_base(  # noqa N806
+        metaclass=ModelMeta,
+        type_annotation_map={
+            dict: JSON,
+            dict[str, Any]: JSON
+        }
+    )
 
     class ModelBase(DeclarativeBase, Model, ABC):
         """

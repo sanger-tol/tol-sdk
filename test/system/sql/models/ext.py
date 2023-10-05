@@ -2,8 +2,8 @@
 #
 # SPDX-License-Identifier: MIT
 
-from sqlalchemy import Column, JSON
-from sqlalchemy.dialects.postgresql import JSONB
+from typing import Any
+
 from sqlalchemy.orm import Mapped, mapped_column
 
 from tol.sql import ext
@@ -19,14 +19,10 @@ class ExtDefault(BaseModel):
     id: Mapped[str] = mapped_column(primary_key=True)  # noqa A003
     string_column: Mapped[str] = mapped_column(nullable=True)
 
-    # adding this in twice is really hacky :( but sadly necessary!
-    ext = Column(JSON)
+    ext: Mapped[dict] = mapped_column(nullable=True)
 
 
-@ext(
-    column_name='ext_lol',
-    column_factory=lambda: Column(JSONB, nullable=True)
-)
+@ext(target='ext_lol')
 class ExtOverride(BaseModel):
     """
     Has a different ext `column_name` and a nullable JSON type.
@@ -37,5 +33,4 @@ class ExtOverride(BaseModel):
     id: Mapped[str] = mapped_column(primary_key=True)  # noqa A003
     string_column: Mapped[str] = mapped_column(nullable=True)
 
-    # adding this in twice is really hacky :( but sadly necessary!
-    ext_lol = Column(JSONB, nullable=True)
+    ext_lol: Mapped[dict[str, Any]] = mapped_column(nullable=True)
