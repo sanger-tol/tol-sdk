@@ -299,8 +299,8 @@ class TreevalDataSource(
         if 'btk_pr' in treeval_data.keys():
             btk_pr = treeval_data['btk_pr']
             if btk_pr:
-                btk_pr_link = f'https://grit-btk.tol.sanger.ac.uk/view/{btk_pr}\
-                    /dataset/{btk_pr}.fa.ascc/blob'
+                btk_pr_link = (f'https://grit-btk.tol.sanger.ac.uk/view/{btk_pr}'
+                               + f'/dataset/{btk_pr}.fa.ascc/blob')
             else:
                 btk_pr_link = ''
         else:
@@ -309,8 +309,8 @@ class TreevalDataSource(
         if 'btk_hp' in treeval_data.keys():
             btk_hp = treeval_data['btk_hp']
             if btk_hp:
-                btk_hp_link = f'https://grit-btk.tol.sanger.ac.uk/view/{btk_hp}\
-                    /dataset/{btk_hp}.fa.ascc/blob'
+                btk_hp_link = (f'https://grit-btk.tol.sanger.ac.uk/view/{btk_hp}'
+                               + f'/dataset/{btk_hp}.fa.ascc/blob')
             else:
                 btk_hp_link = ''
         else:
@@ -319,8 +319,8 @@ class TreevalDataSource(
         if 'taxon_id' in treeval_data.keys():
             taxon_id = treeval_data['taxon_id']
             if taxon_id:
-                goat_link = f'https://goat.genomehubs.org/record?recordId={taxon_id}\
-                    &result=taxon&taxonomy=ncbi'
+                goat_link = (f'https://goat.genomehubs.org/record?recordId={taxon_id}'
+                             + '&result=taxon&taxonomy=ncbi')
             else:
                 goat_link = ''
         else:
@@ -339,8 +339,8 @@ class TreevalDataSource(
             added_to_curation_date = pd.Timestamp(treeval_data['start'])
 
         if tolqc_project not in ('tol-nematodes', 'genomeark'):
-            tolqc_link = f'https://tolqc.cog.sanger.ac.uk/{tolqc_project}/\
-                {tolqc_clade}/{tolqc_species_name}/'
+            tolqc_link = (f'https://tolqc.cog.sanger.ac.uk/{tolqc_project}/'
+                          + f'{tolqc_clade}/{tolqc_species_name}/')
         else:
             tolqc_link = ''
 
