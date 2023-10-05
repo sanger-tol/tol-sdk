@@ -33,7 +33,8 @@ class TreevalDataSource(
         return '{"jql":"status = curation and project in (RC,GRIT)","maxResults":1000,\
             "fields":["key", "priority", "fields", "updated", "customfield_12200",\
                  "customfield_11676", "customfield_11677", "summary", "assignee",\
-                     "attachment", "description", "customfield_11643", "customfield_11605"]}'
+                     "attachment", "description", "customfield_11643", "customfield_11605",\
+                     "customfield_12800", "customfield_12802"]}'
 
     def _execute_jira_query(self, query):
         response = requests.post(
@@ -54,6 +55,40 @@ class TreevalDataSource(
         issues = map(self._get_values_from_issue, response_text['issues'])
 
         return pd.DataFrame(issues)
+
+    def _parse_decontamination_report(self, decon_data):
+        tot_removed = ''
+        tot_removed_pc = ''
+        count_removed = ''
+        count_removed_pc = ''
+        largest_removed = ''
+        is_abnormal = 'false'
+
+        tot_removed_regex = \
+            re.compile(r'Total length of scaffolds removed: ([0-9,]+) \(([0-9\.]+) %\)')
+        count_removed_regex = re.compile(r'Scaffolds removed: ([0-9,]+) \(([0-9\.]+) %\)')
+        largest_removed_regex = re.compile(r'Largest scaffold removed: \(([0-9,]+)\)')
+
+        tot_rem = tot_removed_regex.search(decon_data)
+        count_rem = count_removed_regex.search(decon_data)
+        largest_rem = largest_removed_regex.search(decon_data)
+
+        if tot_rem:
+            tot_removed = tot_rem.group(1)
+            tot_removed_pc = tot_rem.group(2)
+
+        if count_rem:
+            count_removed = count_rem.group(1)
+            count_removed_pc = count_rem.group(2)
+
+        if largest_rem:
+            largest_removed = largest_rem.group(1)
+
+        if 'Abnormal contamination report' in decon_data:
+            is_abnormal = 'true'
+
+        return tot_removed, tot_removed_pc, count_removed,\
+            count_removed_pc, largest_removed, is_abnormal
 
     def _parse_description_for_stats(self, description):
 
@@ -110,7 +145,7 @@ class TreevalDataSource(
             tolqc_species_name = ''
 
         # Treeval link
-        treeval_val = fields['customfield_12200']
+        treeval_val = fields['customfield_12800']
 
         if not treeval_val or 'jb_scaffold' not in treeval_val:
             treeval_val = \
@@ -122,6 +157,11 @@ class TreevalDataSource(
         # Stats from description
         description = str(fields['description'])
         scaffold_l90, contig_l90 = self._parse_description_for_stats(description)
+
+        # Parse decontamination
+        decon_data = str(fields['customfield_12802'])
+        tot_removed, tot_removed_pc, count_removed, count_removed_pc,\
+            largest_removed, is_abnormal = self._parse_decontamination_report(decon_data)
 
         # Assignee
         assignee = fields['assignee']
@@ -148,8 +188,15 @@ class TreevalDataSource(
 
                 tolid = treeval_data['jbrowse']
                 scaff = treeval_data['jb_scaffold']
+                server = treeval_data['jb_server']
 
-                jbrowse_link = ('http://jbrowse.tol-dev.sanger.ac.uk/jbrowse2/?config=config.json'
+                if server == 'dev':
+                    server_url = 'tol-dev'
+                else:
+                    server_url = 'tol'
+
+                jbrowse_link = ('http://jbrowse.' + server_url
+                                + '.sanger.ac.uk/jbrowse2/?config=config.json'
                                 + '&assembly=' + tolid + '&session=spec-'
                                 + '{%22views%22:[{%22assembly%22:%22'
                                 + tolid + '%22,%22loc%22:%22' + scaff
@@ -164,8 +211,8 @@ class TreevalDataSource(
         if 'btk_pr' in treeval_data.keys():
             btk_pr = treeval_data['btk_pr']
             if btk_pr:
-                btk_pr_link = f'https://grit-btk.tol.sanger.ac.uk/view/{btk_pr}\
-                    /dataset/{btk_pr}.fa.ascc/blob'
+                btk_pr_link = (f'https://grit-btk.tol.sanger.ac.uk/view/{btk_pr}'
+                               + f'/dataset/{btk_pr}.fa.ascc/blob')
             else:
                 btk_pr_link = ''
         else:
@@ -174,8 +221,8 @@ class TreevalDataSource(
         if 'btk_hp' in treeval_data.keys():
             btk_hp = treeval_data['btk_hp']
             if btk_hp:
-                btk_hp_link = f'https://grit-btk.tol.sanger.ac.uk/view/{btk_hp}\
-                    /dataset/{btk_hp}.fa.ascc/blob'
+                btk_hp_link = (f'https://grit-btk.tol.sanger.ac.uk/view/{btk_hp}'
+                               + f'/dataset/{btk_hp}.fa.ascc/blob')
             else:
                 btk_hp_link = ''
         else:
@@ -184,8 +231,8 @@ class TreevalDataSource(
         if 'taxon_id' in treeval_data.keys():
             taxon_id = treeval_data['taxon_id']
             if taxon_id:
-                goat_link = f'https://goat.genomehubs.org/record?recordId={taxon_id}\
-                    &result=taxon&taxonomy=ncbi'
+                goat_link = (f'https://goat.genomehubs.org/record?recordId={taxon_id}'
+                             + '&result=taxon&taxonomy=ncbi')
             else:
                 goat_link = ''
         else:
@@ -206,11 +253,12 @@ class TreevalDataSource(
             added_to_curation_date = pd.Timestamp('1970-01-01T00:00:00.000+0100')
 
         if tolqc_project not in ('tol-nematodes', 'genomeark'):
-            tolqc_link = f'https://tolqc.cog.sanger.ac.uk/{tolqc_project}/\
-                {tolqc_clade}/{tolqc_species_name}/'
+            tolqc_link = (f'https://tolqc.cog.sanger.ac.uk/{tolqc_project}/'
+                          + f'{tolqc_clade}/{tolqc_species_name}/')
         else:
             tolqc_link = ''
 
+        # if higlass_link:
         return {'tolid': tolid,
                 'species_name': species_name,
                 'priority': str(priority['id']),
@@ -229,7 +277,13 @@ class TreevalDataSource(
                 'kmer_plot': kmer_plot_path,
                 'scaffold_l90': scaffold_l90,
                 'contig_l90': contig_l90,
-                'expected_karyotype': str(expected_karyotype)
+                'expected_karyotype': str(expected_karyotype),
+                'total_scaffolds_removed': str(tot_removed),
+                'total_scaffolds_removed_pc': str(tot_removed_pc),
+                'scaffolds_removed_count': str(count_removed),
+                'scaffolds_removed_count_pc': str(count_removed_pc),
+                'largest_scaffold_removed': largest_removed,
+                'contamination_is_abnormal': is_abnormal
                 }
 
     def _parse_species_name(self, species_name):
@@ -315,8 +369,7 @@ class TreevalDataSource(
     def _apply_sort_to_specimens(self, sort_by, specimens):
 
         if sort_by is None:
-            column_name = 'added_to_curation'
-            sort_direction = False
+            specimens = specimens.sort_values(by=['added_to_curation'], ascending=[False])
         else:
             if sort_by.startswith('-'):
                 column_name = sort_by[1:]
@@ -325,7 +378,8 @@ class TreevalDataSource(
                 column_name = sort_by
                 sort_direction = True
 
-        specimens = specimens.sort_values(by=[column_name], ascending=sort_direction)
+            specimens = specimens.sort_values(by=[column_name, 'added_to_curation'],
+                                              ascending=[sort_direction, False])
 
         return specimens
 
@@ -361,6 +415,9 @@ class TreevalDataSource(
 
         # Sort
         specimens = self._apply_sort_to_specimens(sort_by, specimens)
+
+        # specimens = specimens[specimens['jbrowse_url']
+        #                         .str.contains('sanger')]
 
         full_len = len(specimens)
 
