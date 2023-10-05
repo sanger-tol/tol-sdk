@@ -2,6 +2,8 @@
 #
 # SPDX-License-Identifier: MIT
 
+from typing import Any
+
 from sqlalchemy.orm import Mapped, mapped_column
 
 from tol.sql import ext
@@ -35,7 +37,7 @@ class TestExtColumn:
     def test_override(self):
         """overriding of name"""
 
-        @ext(column_name='absolute')
+        @ext(target='absolute')
         class _TestModel(BaseModel):
             __tablename__ = '2'
 
@@ -58,14 +60,17 @@ class TestExtColumn:
             'hype': 'train',
             'yes': False
         }
-        mock_type = lambda: ext_data  # noqa E731
 
-        @ext(column_factory=mock_type)
+        @ext
         class _TestModel(BaseModel):
             __tablename__ = '3'
 
             id: Mapped[str] = mapped_column(primary_key=True)  # noqa
             already_there: Mapped[str] = mapped_column()
+
+            @property
+            def ext(self) -> dict[str, Any]:
+                return ext_data
 
         m = _TestModel(id='101', already_there='I love this!!!')
         attrs = m.instance_attributes

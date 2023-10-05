@@ -7,9 +7,6 @@ from __future__ import annotations
 import typing
 from typing import Any, Callable
 
-from sqlalchemy import Column, JSON
-from sqlalchemy.orm import declared_attr
-
 if typing.TYPE_CHECKING:
     from .model import Model
 
@@ -17,29 +14,18 @@ if typing.TYPE_CHECKING:
 def ext(
     cls: type[Model] | None = None,
     *,
-    column_name: str = 'ext',
-    column_factory: Callable[[], Column] = lambda: Column(JSON)
+    target: str = 'ext'
 ) -> Callable[[type[Model]], type[Model]] | type[Model]:
     """
-    This cannot be used to correctly create a table containing an ext column
-
-    A decorator that adds an "ext" column to a `Model`.
-
     This column supports a (for now ReadOnly) dynamic "promotion"
-    of entries within its JSON object to top-level entries in the
-    property `Model().instance_attributes`.
+    of entries, from a `target` column that produces a `dict` value,
+    to top-level entries in the property `Model().instance_attributes`.
 
     Can be decorated either with or without parentheses, the latter of
-    which supports overriding the `column_name` and `column_factory`.
+    which supports overriding the name of the `target` column.
     """
 
     if cls is not None:
-        @declared_attr
-        def ext_column(self):
-            return column_factory()
-
-        ext_column.__name__ = column_name
-        setattr(cls, column_name, ext_column)
 
         def exclude_wrapper(
             cls_fn: Callable[[], list[str]]
@@ -49,7 +35,7 @@ def ext(
                 excluded = cls_fn()
                 return [
                     *excluded,
-                    column_name
+                    target
                 ]
 
             return inner
@@ -62,7 +48,7 @@ def ext(
 
             @property
             def inner(self: Model) -> dict[str, Any]:
-                ext_attrs = getattr(self, column_name)
+                ext_attrs = getattr(self, target)
                 return {
                     **(ext_attrs if ext_attrs else {}),
                     **_property.fget(self)
@@ -77,10 +63,6 @@ def ext(
         return cls
 
     def decorator(cls: type[Model]) -> type[Model]:
-        return ext(
-            cls,
-            column_name=column_name,
-            column_factory=column_factory
-        )
+        return ext(cls, target=target)
 
     return decorator
