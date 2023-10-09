@@ -346,7 +346,8 @@ class TreevalDataSource(
 
         # Stats from description
         description = str(fields['description'])
-        scaffold_l90,contig_l90,expected_chromosomes = self._parse_description_for_stats(description)
+        scaffold_l90, contig_l90, expected_chromosomes = \
+            self._parse_description_for_stats(description)
 
         # Assignee
         assignee = fields['assignee']
@@ -355,59 +356,6 @@ class TreevalDataSource(
             display_name = assignee['displayName']
         else:
             display_name = 'Unassigned'
-
-        # Plots attached to tickets
-        jira_attachments = fields['attachment']
-
-        hic_plot_attachment = ""
-        kmer_plot_attachment = ""
-
-        for jira_attachment in jira_attachments:
-            attachment_url = str(jira_attachment["content"])
-            if attachment_url.endswith("scaffolds_FINAL.css.spectra-cn.ln.png"):
-                kmer_plot_attachment = attachment_url
-            elif attachment_url.endswith("scaffolds_FINAL_FullMap.png"):
-                hic_plot_attachment = attachment_url
-
-            if treeval_data["jbrowse"]:
-                jbrowse_link = 'http://jbrowse.tol-dev.sanger.ac.uk/jbrowse2/?config=config.json&assembly=' + treeval_data["jbrowse"] + '&session=spec-{"views":[{"assembly":"' + treeval_data["jbrowse"] + '","loc":"' + treeval_data["jb_scaffold"] + '","type": "LinearGenomeView","tracks":["' + treeval_data["jbrowse"] + '-ReferenceSequenceTrack"]}]}'
-            else:
-                jbrowse_link = ""
-
-            btk_pr = treeval_data["btk_pr"]
-            if btk_pr:
-                btk_pr_link = f"https://grit-btk.tol.sanger.ac.uk/view/{btk_pr}/dataset/{btk_pr}.ascc/blob"
-            else:
-                btk_pr_link = ""
-
-            btk_hp = treeval_data["btk_hp"]
-            if btk_hp:
-                btk_hp_link = f"https://grit-btk.tol.sanger.ac.uk/view/{btk_hp}/dataset/{btk_hp}.ascc/blob"
-            else:
-                btk_hp_link = ""
-
-            btk_mt = treeval_data["btk_mt"]
-            if btk_mt:
-                btk_mt_link = f"https://grit-btk.tol.sanger.ac.uk/view/{btk_mt}/dataset/{btk_mt}.ascc/blob"
-            else:
-                btk_mt_link = ""
-
-            taxon_id = treeval_data["taxon_id"]
-            if taxon_id:
-                goat_link = f'https://goat.genomehubs.org/record?recordId={taxon_id}\
-                    &result=taxon&taxonomy=ncbi'
-            else:
-                goat_link = ""
-
-            # if treeval_data["start"] != "":
-            added_to_curation_date = treeval_data["start"]
-            # else:
-            #     added_to_curation_date = datetime.now()
-
-            if tolqc_project not in ("tol-nematodes","genomeark"):
-                tolqc_link = f"https://tolqc.cog.sanger.ac.uk/{tolqc_project}/{tolqc_clade}/{tolqc_species_name}/"
-            else:
-                tolqc_link = ""
 
         return {'tolid': tolid,
                 'species_name': species_name,
