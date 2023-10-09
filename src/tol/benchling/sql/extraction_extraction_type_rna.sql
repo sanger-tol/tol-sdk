@@ -15,7 +15,7 @@ Output: Table with cols:
 5) eln_file_registry_id: [character] id in Benchling Registry.
 6) eln_rna_extract_id: [character] Primary key. 
 7) tolid: [character] Container barcode of the DNA fluidx tube. 
-8) rna_extraction_date: [date] Extraction date. This field coalesces created_at$ and created_on fields. Created_on is for bnt legacy data.
+8) completion_date: [date] Extraction date. This field coalesces created_at$ and created_on fields. Created_on is for bnt legacy data.
 9) eln_rna_extract_name: [character] Entity name. 
 10) rna_fluidx_id: [character] Container barcode of the DNA fluidx tube. 
 11) rna_bnt_id: [character] Batches and Tracking legacy id.
@@ -37,7 +37,7 @@ SELECT DISTINCT
 	rna.file_registry_id$ AS eln_file_registry_id,
 	rna.id AS eln_rna_extract_id,
 	t.tolid,
-	COALESCE(DATE(rna.created_on), DATE(rna.created_at$)) AS rna_extraction_date, -- Homogenising BnT and Benchling dates
+	COALESCE(DATE(rna.created_on), DATE(rna.created_at$)) AS completion_date, -- Homogenising BnT and Benchling dates
 	rna.name$ AS eln_rna_extract_name,
 	con.barcode AS rna_fluidx_id,
 	con.barcode AS primary_identifier,
@@ -63,4 +63,4 @@ WHERE tube.type IS NULL -- Excluding vouchers
 	AND (rna.archive_purpose$ != ('Made in error') OR rna.archive_purpose$ IS NULL)
 	AND (con.archive_purpose$ != ('Made in error') OR con.archive_purpose$ IS NULL)
 	AND con.barcode NOT LIKE '%P%' -- Delete well rows.
-ORDER BY rna_extraction_date DESC;
+ORDER BY completion_date DESC;

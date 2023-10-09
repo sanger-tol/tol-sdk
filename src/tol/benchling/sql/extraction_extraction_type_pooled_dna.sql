@@ -20,7 +20,7 @@ Output: Table with cols:
 5) eln_file_registry_id: [character] id in Benchling Registry.
 6) eln_pooled_sample_id: [character] Primary key. 
 7) tolid: [character] Container barcode of the DNA fluidx tube. 
-8) dnapool_extraction_date: [date] Extraction date. This field coalesces created_at$ and created_on fields. Created_on is for bnt legacy data.
+8) completion_date: [date] Extraction date. This field coalesces created_at$ and created_on fields. Created_on is for bnt legacy data.
 9) eln_dnapool_extract_name: [character] Entity name. 
 10) dnapool_fluidx_id: [character] Container barcode of the DNA fluidx tube. 
 11) source_dna_extracts: [jsonb] List of ids for pooled dna extracts.
@@ -46,7 +46,7 @@ SELECT DISTINCT
 	dnap.file_registry_id$ AS eln_file_registry_id,
 	dnap.id AS eln_pooled_sample_id,
 	t.tolid,
-	DATE(dnap.created_at$) AS dnapool_extraction_date, -- Homogenising BnT and Benchling dates
+	DATE(dnap.created_at$) AS completion_date, -- Homogenising BnT and Benchling dates
 	dnap.name$ AS eln_dnapool_extract_name,
 	con.barcode AS dnapool_fluidx_id,
 	con.barcode AS primary_identifier,
@@ -73,4 +73,4 @@ WHERE tube.type IS NULL -- Excluding vouchers
 	AND (dnap.archive_purpose$ != ('Made in error') OR dnap.archive_purpose$ IS NULL)
 	AND (con.archive_purpose$ != ('Made in error') OR con.archive_purpose$ IS NULL)
 	AND con.barcode NOT LIKE 'CON%'
-ORDER BY dnapool_extraction_date DESC;
+ORDER BY completion_date DESC;

@@ -10,7 +10,7 @@ Output: Table with cols:
 5) tolid: [character] ToLID
 6) sanger_sample_id: [character] Sanger Sample ID or Sanger UUID of the HiC submission. 
 7) tissue_prep_fluidx_id: [character] Container barcode of the tissue prep fluidx tube. Origin: BWH
-8) eln_submission_date: [Date] Date of submission. For legacy data: merging of created_on and created_at$.
+8) completion_date: [Date] Date of submission. For legacy data: merging of created_on and created_at$.
 9) sequencing_platform: [character] Sequencing platform: HIC
 10) source: [character] Data source: v1, legacy_bnt
 
@@ -31,7 +31,7 @@ WITH hic_submissions AS (
 		t.tolid,
 		ssid.sanger_sample_id, 
 		c.barcode AS tissue_prep_fluidx_id,
-		hic.submitted_submission_date AS eln_submission_date, 
+		hic.submitted_submission_date AS completion_date, 
 		'hic'::varchar AS sequencing_platform,
 		'v1'::varchar AS source
 	FROM hic_submission_workflow2$raw AS hic
@@ -61,7 +61,7 @@ hic_legacy_submissions AS (
 		t.tolid,
 		ssid.sanger_sample_id,
 		c.barcode AS tissue_fluidx_id,
-		COALESCE(DATE(tp.created_on), DATE(tp.created_at$)) AS eln_submission_date,
+		COALESCE(DATE(tp.created_on), DATE(tp.created_at$)) AS completion_date,
 		'hic'::varchar AS sequencing_platform,
 		'legacy_bnt'::varchar AS source--,
 -- 		tp.bt_id

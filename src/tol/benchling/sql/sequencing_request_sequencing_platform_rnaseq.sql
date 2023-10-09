@@ -15,7 +15,7 @@ Output: Table with cols:
 5) tolid: [character] ToLID
 6) sanger_sample_id: [character] Sanger Sample ID or Sanger UUID of the HiC submission. 
 7) tissue_prep_fluidx_id: [character] Container barcode of the tissue prep fluidx tube. Origin: BWH
-8) eln_submission_date: [Date] Date of submission. For legacy data: created_on.
+8) completion_date: [Date] Date of submission. For legacy data: created_on.
 9) sequencing_platform: [character] Sequencing platform: RNASEQ
 10) source: [character] Data source: v1, legacy_bnt
 
@@ -35,7 +35,7 @@ WITH rnaseq_submissions AS (
 		t.tolid,
 		ssid.sanger_sample_id, 
 		c.barcode AS rna_fluidx_id,
-		rnaseq_out.submitted_submission_date AS eln_submission_date, 
+		rnaseq_out.submitted_submission_date AS completion_date, 
 		'rnaseq'::varchar AS sequencing_platform,
 		'v1'::varchar AS source
 	FROM rnaseq_sumbission$raw AS rnaseq
@@ -69,7 +69,7 @@ rnaseq_legacy_submissions AS (
 		t.tolid,
 		ssid.sanger_sample_id, 
 		c.barcode AS fluidx_id,
-		rna.created_on AS eln_submission_date, 
+		rna.created_on AS completion_date, 
 		'rnaseq'::varchar AS sequencing_platform,
 		'legacy_bnt'::varchar AS source--,
 -- 		rna.bt_id
