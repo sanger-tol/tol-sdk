@@ -10,7 +10,7 @@ from functools import cache
 from typing import Any, Dict, Iterable, Optional, Tuple
 
 from caseconverter import (
-    kebabcase, 
+    kebabcase,
     snakecase
 )
 

@@ -8,22 +8,8 @@ from functools import cache
 from typing import Dict, Iterable, Tuple
 
 import pandas as pd
-import requests
-<<<<<<< HEAD
-=======
-import json
-import re
-from functools import cache
-<<<<<<< HEAD
-from typing import Any, Dict, Iterable, Tuple
->>>>>>> fd805ee (Fixes to dates)
-=======
-from typing import Dict, Iterable, Tuple
-
-import pandas as pd
 
 import requests
->>>>>>> 24a91b9 (tol lint)
 
 from ..core import (
     DataObject,
@@ -274,7 +260,7 @@ class TreevalDataSource(
 
         # Stats from description
         description = str(fields['description'])
-        scaffold_l90,contig_l90 = self._parse_description_for_stats(description)
+        scaffold_l90, contig_l90 = self._parse_description_for_stats(description)
 
         # Assignee
         assignee = fields['assignee']
