@@ -44,7 +44,7 @@ Output: Table with cols:
 24) include_5mc_cells_in_cpg_motifs: [character]
 25) cc5_output_includes_kinetics_information: [character]
 26) priority: [character]
-27) eln_submission_date: [Date]
+27) completion_date: [Date]
 28) sequencing_platform: [character] Sequencing platform: pacbio.
 29) source: [character] Data source: v1, v2, legacy_bnt or v1_pooled
 
@@ -90,7 +90,7 @@ WITH pacbio_submissions_v1 AS (
 		NULL::varchar AS include_5mc_cells_in_cpg_motifs,
 		NULL::varchar AS cc5_output_includes_kinetics_information,
 		NULL::varchar AS priority,
-		pbsum.submission_date AS eln_submission_date, 
+		pbsum.submission_date AS completion_date, 
 		'pacbio'::varchar AS sequencing_platform,
 		'v1'::varchar AS source
 	FROM pacbio_sequencing_submission2$raw AS pbsum
@@ -149,7 +149,7 @@ pacbio_legacy_submissions AS (
 		NULL::varchar AS include_5mc_cells_in_cpg_motifs,
 		NULL::varchar AS cc5_output_includes_kinetics_information,
 		NULL::varchar AS priority,
-		subsam.created_at$ AS eln_submission_date, 
+		subsam.created_at$ AS completion_date, 
 		'pacbio'::varchar AS sequencing_platform,
 		'legacy_bnt'::varchar AS source
 	FROM submission_samples$raw AS subsam
@@ -208,7 +208,7 @@ pacbio_submissions_v2 AS (
 		pbsubm_p.include_5mc_cells_in_cpg_motifs,
 		pbsubm_p.cc5_output_includes_kinetics_information,
 		pbsubm_p.priority,
-		pbsubm_p.created_at$ AS eln_submission_date, 
+		pbsubm_p.created_at$ AS completion_date, 
 		'pacbio'::varchar AS sequencing_platform,
 		'v2'::varchar AS source
 	FROM pacbio_submission_plate_output$raw AS pbsubm_p
@@ -267,7 +267,7 @@ pacbio_submissions_pooled_v1 AS (
 		NULL::varchar AS include_5mc_cells_in_cpg_motifs,
 		NULL::varchar AS cc5_output_includes_kinetics_information,
 		NULL::varchar AS priority,
-		pbsum.submission_date AS eln_submission_date, 
+		pbsum.submission_date AS completion_date, 
 		'pacbio'::varchar AS sequencing_platform,
 		'v1_pooled'::varchar AS source
 	FROM pacbio_sequencing_submission2$raw AS pbsum
@@ -326,7 +326,7 @@ pacbio_submissions_pooled_v2 AS (
 		pbsubm_p.include_5mc_cells_in_cpg_motifs,
 		pbsubm_p.cc5_output_includes_kinetics_information,
 		pbsubm_p.priority,
-		DATE(pbsubm_p.created_at$) AS eln_submission_date, 
+		DATE(pbsubm_p.created_at$) AS completion_date, 
 		'pacbio'::varchar AS sequencing_platform,
 		'v2_pooled'::varchar AS source
 	FROM pacbio_submission_plate_output$raw AS pbsubm_p
@@ -349,10 +349,10 @@ pacbio_submissions_pooled_v2 AS (
 	LEFT JOIN container$raw AS con -- To add sanger uuid
 		ON pbsubm_p.sanger_uuid ->> 0 = con.id
 	LEFT JOIN plate$raw AS plt 
-		ON c_pool.plate_id = plt.id
+		ON con.plate_id = plt.id
 	WHERE pbsubm_p.archived$ = FALSE -- Excluding archived submission containers
 	    AND (c_pool.archive_purpose$ != ('Made in error') OR c_pool.archive_purpose$ IS NULL) -- Excluding containers made by mistake
-	
+		AND c_pool.barcode IS NOT NULL
 )
 SELECT *
 FROM pacbio_submissions_v1

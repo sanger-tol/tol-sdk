@@ -27,7 +27,7 @@ SELECT DISTINCT
 	ssid.sanger_sample_id,
 	ssid.sanger_sample_id AS primary_identifier,
 	c.barcode AS tissuepre_fluidx_id,
-	DATE(tpsub.submitted_submission_date) AS submission_date,
+	DATE(tpsub.submitted_submission_date) AS completion_date,
 	'lres'::varchar AS extraction_type
 FROM tissue_prep$raw AS tp
 LEFT JOIN tissue$raw AS t
