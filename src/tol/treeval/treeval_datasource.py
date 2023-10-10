@@ -171,18 +171,21 @@ class TreevalDataSource(
         else:
             display_name = 'Unassigned'
 
+        # Hi-C Contact Map image
         hic_plot_path = ''
         if 'hic_plot' in treeval_data.keys():
             if treeval_data['hic_plot'] == 'Y':
                 hic_plot_path = \
                     f'https://treeval.cog.sanger.ac.uk/pretextsnapshot_{tolid_assem}.png'
 
+        # K-mer spectra image
         kmer_plot_path = ''
         if 'kmer_plot' in treeval_data.keys():
             if treeval_data['kmer_plot'] == 'Y':
                 kmer_plot_path = \
                     f'https://treeval.cog.sanger.ac.uk/kmerspectra_{tolid_assem}.png'
 
+        # jBrowse link
         if 'jbrowse' in treeval_data.keys():
             if treeval_data['jbrowse']:
 
@@ -208,6 +211,7 @@ class TreevalDataSource(
         else:
             jbrowse_link = ''
 
+        # BTK primary link
         if 'btk_pr' in treeval_data.keys():
             btk_pr = treeval_data['btk_pr']
             if btk_pr:
@@ -218,6 +222,7 @@ class TreevalDataSource(
         else:
             btk_pr_link = ''
 
+        # BTK haplotigs link
         if 'btk_hp' in treeval_data.keys():
             btk_hp = treeval_data['btk_hp']
             if btk_hp:
@@ -228,6 +233,7 @@ class TreevalDataSource(
         else:
             btk_hp_link = ''
 
+        # GoaT link
         if 'taxon_id' in treeval_data.keys():
             taxon_id = treeval_data['taxon_id']
             if taxon_id:
@@ -238,6 +244,7 @@ class TreevalDataSource(
         else:
             goat_link = ''
 
+        # HiGlass link
         if 'higlass' in treeval_data.keys():
             higlass_id = treeval_data['higlass']
             if higlass_id:
@@ -247,115 +254,18 @@ class TreevalDataSource(
         else:
             higlass_link = ''
 
+        # Start date
         if treeval_data['start'] != '':
             added_to_curation_date = pd.Timestamp(treeval_data['start'])
         else:
             added_to_curation_date = pd.Timestamp('1970-01-01T00:00:00.000+0100')
 
+        # ToLQC link
         if tolqc_project not in ('tol-nematodes', 'genomeark'):
             tolqc_link = (f'https://tolqc.cog.sanger.ac.uk/{tolqc_project}/'
                           + f'{tolqc_clade}/{tolqc_species_name}/')
         else:
             tolqc_link = ''
-
-        # Stats from description
-        description = str(fields['description'])
-        scaffold_l90, contig_l90 = self._parse_description_for_stats(description)
-
-        # Assignee
-        assignee = fields['assignee']
-
-        if assignee:
-            display_name = assignee['displayName']
-        else:
-            display_name = 'Unassigned'
-
-        hic_plot_path = ''
-        if 'hic_plot' in treeval_data.keys():
-            if treeval_data['hic_plot'] == 'Y':
-                hic_plot_path = \
-                    f'https://treeval.cog.sanger.ac.uk/pretextsnapshot_{tolid_assem}.png'
-
-        kmer_plot_path = ''
-        if 'kmer_plot' in treeval_data.keys():
-            if treeval_data['kmer_plot'] == 'Y':
-                kmer_plot_path = \
-                    f'https://treeval.cog.sanger.ac.uk/kmerspectra_{tolid_assem}.png'
-
-        if 'jbrowse' in treeval_data.keys():
-            if treeval_data['jbrowse']:
-                jbrowse_link = \
-                    'http://jbrowse.tol-dev.sanger.ac.uk/\
-                        jbrowse2/?config=config.json&assembly='\
-                        + treeval_data['jbrowse'] + '&session=spec-{"views":[{"assembly":"' \
-                        + treeval_data['jbrowse'] + '","loc":"' + treeval_data['jb_scaffold'] \
-                        + '","type": "LinearGenomeView","tracks":["' \
-                        + treeval_data['jbrowse'] + '-ReferenceSequenceTrack"]}]}'
-            else:
-                jbrowse_link = ''
-        else:
-            jbrowse_link = ''
-
-        if 'btk_pr' in treeval_data.keys():
-            btk_pr = treeval_data['btk_pr']
-            if btk_pr:
-                btk_pr_link = (f'https://grit-btk.tol.sanger.ac.uk/view/{btk_pr}'
-                               + f'/dataset/{btk_pr}.fa.ascc/blob')
-            else:
-                btk_pr_link = ''
-        else:
-            btk_pr_link = ''
-
-        if 'btk_hp' in treeval_data.keys():
-            btk_hp = treeval_data['btk_hp']
-            if btk_hp:
-                btk_hp_link = (f'https://grit-btk.tol.sanger.ac.uk/view/{btk_hp}'
-                               + f'/dataset/{btk_hp}.fa.ascc/blob')
-            else:
-                btk_hp_link = ''
-        else:
-            btk_hp_link = ''
-
-        if 'taxon_id' in treeval_data.keys():
-            taxon_id = treeval_data['taxon_id']
-            if taxon_id:
-                goat_link = (f'https://goat.genomehubs.org/record?recordId={taxon_id}'
-                             + '&result=taxon&taxonomy=ncbi')
-            else:
-                goat_link = ''
-        else:
-            goat_link = ''
-
-        if 'higlass' in treeval_data.keys():
-            higlass_id = treeval_data['higlass']
-            if higlass_id:
-                higlass_link = f'https://grit-higlass.tol.sanger.ac.uk/l/?d={higlass_id}'
-            else:
-                higlass_link = ''
-        else:
-            higlass_link = ''
-
-        if treeval_data['start'] != '':
-            added_to_curation_date = pd.Timestamp(treeval_data['start'])
-
-        if tolqc_project not in ('tol-nematodes', 'genomeark'):
-            tolqc_link = (f'https://tolqc.cog.sanger.ac.uk/{tolqc_project}/'
-                          + f'{tolqc_clade}/{tolqc_species_name}/')
-        else:
-            tolqc_link = ''
-
-        # Stats from description
-        description = str(fields['description'])
-        scaffold_l90, contig_l90, expected_chromosomes = \
-            self._parse_description_for_stats(description)
-
-        # Assignee
-        assignee = fields['assignee']
-
-        if assignee:
-            display_name = assignee['displayName']
-        else:
-            display_name = 'Unassigned'
 
         return {'tolid': tolid,
                 'species_name': species_name,
