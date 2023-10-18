@@ -300,10 +300,11 @@ class ElasticDataSource(
 
     def _convert_dict_to_data_objects(self, objs: Dict) -> Iterable:
         for obj in objs:
-            type_ = self.__get_object_type(obj['_index'])
-            id_ = obj['_id']
-            data = obj['_source']
-            yield self._convert_data_dict_to_data_object(type_, id_, data)
+            if '_source' in obj:
+                type_ = self.__get_object_type(obj['_index'])
+                id_ = obj['_id']
+                data = obj['_source']
+                yield self._convert_data_dict_to_data_object(type_, id_, data)
 
     def _convert_data_dict_to_data_object(self, type_, id_, data):
         attributes = {
@@ -320,6 +321,7 @@ class ElasticDataSource(
             and self.relationship_config[type_].to_one is not None
             and k in self.relationship_config[type_].to_one.keys()
             and type(v) is dict  # i.e. not a list
+            and 'id' in v
         }
         return self.data_object_factory(
             type_,
