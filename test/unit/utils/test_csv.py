@@ -29,3 +29,22 @@ class TestCSV(TestCase):
         file = open(f'{dir_name}/test.csv', 'rb')
         json = convert_csv_to_json(file)
         self.assertEqual(expected, json)
+
+    def test_convert_csv_to_json_usecols(self):
+        expected = [
+            {
+                'order': 'Sapindales',
+                'genus': 'Acer',
+                'species': 'acuminatum'
+            },
+            {
+                'order': 'Sapindales',
+                'genus': None,
+                'species': 'albopurpurascens'
+            }
+        ]
+
+        dir_name = os.path.dirname(__file__)
+        file = open(f'{dir_name}/test.csv', 'rb')
+        json = convert_csv_to_json(file, usecols=['order', 'genus', 'species'])
+        self.assertEqual(expected, json)
