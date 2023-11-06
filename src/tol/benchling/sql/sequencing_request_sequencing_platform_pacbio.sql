@@ -242,6 +242,8 @@ pacbio_submissions_v2 AS (
 		AND (c_dna.archive_purpose$ != ('Made in error') OR c_dna.archive_purpose$ IS NULL) -- Excluding containers made by mistake
 		AND c_dna.barcode LIKE 'F%' -- Selecting only valid FluidX IDs
 		AND proj.name = 'ToL Core Lab' -- Selecting ToL Core Lab sbmissions only
+		AND pbsubm_p.archived$ = FALSE
+
 		
 ),
 pacbio_submissions_pooled_v1 AS (
@@ -361,6 +363,7 @@ pacbio_submissions_pooled_v2 AS (
 		ON subsam.project_id$ = proj.id
 	WHERE subsam.pooled_sample IS NOT NULL
 		AND proj.name = 'ToL Core Lab'
+		AND pbsubm_p.archived$ = FALSE
 	
 )
 SELECT *
