@@ -13,13 +13,18 @@ Output: Table with cols:
 3) eln_tissue_id: [character] Benchling id for the tissue the extractions is derived from.
 4) eln_tissue_prep_id: [character] Benchling id for the tissue prep the extractions is derived from.
 5) eln_file_registry_id: [character] id in Benchling Registry.
-6) eln_rna_extract_id: [character] Primary key. 
-7) tolid: [character] Container barcode of the DNA fluidx tube. 
+6) extraction_id: [character] Primary key. 
+7) programme_id: [character] ToLID. Origin: BWH
 8) completion_date: [date] Extraction date. This field coalesces created_at$ and created_on fields. Created_on is for bnt legacy data.
-9) eln_rna_extract_name: [character] Entity name. 
-10) rna_fluidx_id: [character] Container barcode of the DNA fluidx tube. 
-11) rna_bnt_id: [character] Batches and Tracking legacy id.
-12) extraction_type: rna
+9) extraction_name: [character] Entity name. 
+10) fluidx_id: [character] Container barcode of the DNA fluidx tube. 
+11) extraction_qc_result: [character] QC result: Yes = Extraction passed; No = Extraction failed. 
+12) yield_ng: [double] DNA yield after extraction. 
+13) volume_ul: [double] volume of DNA available in the fluidx tube.
+14) shelf: [character] Physical locationo of the DNA extraction. Freezer shelf.
+15) rack: [character] Physical locationo of the DNA extraction. Rack barcode.
+16) bnt_id: [character] Batches and Tracking legacy id.
+17) extraction_type: rna
 
 NOTES: 
 
@@ -35,15 +40,19 @@ SELECT DISTINCT
 	t.id AS eln_tissue_id,
 	tp.id AS eln_tissue_prep_id,
 	rna.file_registry_id$ AS eln_file_registry_id,
-	rna.id AS eln_rna_extract_id,
-	t.tolid,
+	rna.id AS extraction_id,
+	t.programme_id,
 	COALESCE(DATE(rna.created_on), DATE(rna.created_at$)) AS completion_date, -- Homogenising BnT and Benchling dates
-	rna.name$ AS eln_rna_extract_name,
-	con.barcode AS rna_fluidx_id,
-	con.barcode AS primary_identifier,
-	rna.bt_id AS rna_bnt_id,
+	rna.name$ AS extraction_name,
+	con.barcode AS fluidx_id,
+	rnadc.qc_passfail AS rna_qc_passfail,
+	rnay.yield AS rna_yield,
+	con.volume_si * 1000000 AS volume_ul,
+	loc.name AS shelf,
+	box.barcode AS rack,
+	rna.bt_id AS bnt_id,
 	'rna'::varchar AS extraction_type
-FROM rna_sample$raw AS rna
+FROM rna_extract$raw AS rna
 LEFT JOIN container_content$raw AS cc 
 	ON cc.entity_id = rna.id
 LEFT JOIN container$raw AS con 
@@ -58,8 +67,17 @@ LEFT JOIN tube$raw AS tube
 	ON cc.container_id = tube.id 
 LEFT JOIN folder AS f 
 	ON rna.folder_id$ = f.id
+LEFT JOIN project$raw AS proj
+	ON rna.project_id$ = proj.id
+LEFT JOIN yield_v2$raw AS rnay 
+	ON rna.id = rnay.sample_id 
+LEFT JOIN box$raw AS box -- Location chunk
+	ON con.box_id = box.id 
+LEFT JOIN location$raw AS loc
+	ON loc.id = box.location_id -- End of location chunk
 WHERE tube.type IS NULL -- Excluding vouchers
-	AND (f.name IN ('Routine Throuput', 'RNA', 'Core Lab Entities', 'Benchling MS Project Move', 'R&D') OR f.name IS NULL)
+	AND proj.name = 'ToL Core Lab'
+	AND f.name IN ('Routine Throuput', 'RNA', 'Core Lab Entities', 'Benchling MS Project Move', 'R&D', 'ToL Core Restricted Entities')
 	AND (rna.archive_purpose$ != ('Made in error') OR rna.archive_purpose$ IS NULL)
 	AND (con.archive_purpose$ != ('Made in error') OR con.archive_purpose$ IS NULL)
 	AND con.barcode NOT LIKE '%P%' -- Delete well rows.

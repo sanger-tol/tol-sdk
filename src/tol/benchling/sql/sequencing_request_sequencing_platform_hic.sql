@@ -5,11 +5,11 @@ Output: Table with cols:
 
 1) sts_id: [integer] Tissue metadata. Origin: STS
 2) taxon_id: [character] Tissue metadata. Origin: STS
-3) eln_tissue_prep_id: [character] Foreign key to other entities and results in Benchling. Origin: BWH
+3) tissue_prep_id: [character] Foreign key to other entities and results in Benchling. Origin: BWH
 4) eln_file_registry_id: [character] id in Benchling Registry. Origin: BWH
-5) tolid: [character] ToLID
+5) programme_id: [character] ToLID.
 6) sanger_sample_id: [character] Sanger Sample ID or Sanger UUID of the HiC submission. 
-7) tissue_prep_fluidx_id: [character] Container barcode of the tissue prep fluidx tube. Origin: BWH
+7) fluidx_id: [character] Container barcode of the tissue prep fluidx tube. Origin: BWH
 8) completion_date: [Date] Date of submission. For legacy data: merging of created_on and created_at$.
 9) sequencing_platform: [character] Sequencing platform: HIC
 10) source: [character] Data source: v1, legacy_bnt
@@ -26,13 +26,14 @@ WITH hic_submissions AS (
 	SELECT DISTINCT
 		t.sts_id,
 		t.taxon_id,
-		tp.id AS eln_tissue_prep_id,
+		tp.id AS tissue_prep_id,
 		tp.file_registry_id$ AS eln_file_registry,
-		t.tolid,
+		t.programme_id,
 		ssid.sanger_sample_id, 
-		c.barcode AS tissue_prep_fluidx_id,
+		c.barcode AS fluidx_id,
 		hic.submitted_submission_date AS completion_date, 
 		'hic'::varchar AS sequencing_platform,
+		tp.bt_id,
 		'v1'::varchar AS source
 	FROM hic_submission_workflow2$raw AS hic
 	LEFT JOIN container_content$raw AS cc 
@@ -44,7 +45,6 @@ WITH hic_submissions AS (
 	LEFT JOIN tissue_prep$raw AS tp 
 		ON cc.entity_id = tp.id
 	LEFT JOIN tissue$raw AS t 
-		
 		ON tp.tissue = t.id
 	WHERE hic.archived$ = 'FALSE'
 		AND ssid.sanger_sample_id IS NOT NULL
@@ -56,15 +56,15 @@ hic_legacy_submissions AS (
 	SELECT DISTINCT
 		t.sts_id,
 		t.taxon_id,
-		tp.id AS eln_tissue_prep_id,
+		tp.id AS tissue_prep_id,
 		tp.file_registry_id$ AS eln_file_registry,
-		t.tolid,
+		t.programme_id,
 		ssid.sanger_sample_id,
-		c.barcode AS tissue_fluidx_id,
+		c.barcode AS fluidx_id,
 		COALESCE(DATE(tp.created_on), DATE(tp.created_at$)) AS completion_date,
 		'hic'::varchar AS sequencing_platform,
-		'legacy_bnt'::varchar AS source--,
--- 		tp.bt_id
+		tp.bt_id,
+		'legacy_bnt'::varchar AS source
 	FROM sanger_sample_id$raw AS ssid
 	LEFT JOIN container_content$raw AS cc 
 		ON ssid.sample_tube = cc.container_id

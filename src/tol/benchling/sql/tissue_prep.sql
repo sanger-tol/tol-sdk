@@ -26,7 +26,7 @@ Columns in output table:
 3) eln_tissue_id: [character] Benchling id for the tissue the tissue prep is derived from.
 4) eln_tissue_prep_id: [character] Tissue prep primary key in Benchling.
 5) eln_file_registry_id: [character] id in Benchling Registry.
-6) tolid: [character] tolid
+6) programme_id: [character] ToLID. Origin: BWH
 7) eln_tissue_prep_name: [character]
 8) sampleprep_date: [Date] date of sample preparation.
 9) tissue_prep_fluidx_id: [character] fluidx id of the tissue prep container
@@ -45,12 +45,12 @@ WITH tissue_preps AS (
 		t.taxon_id,
 		t.id AS eln_tissue_id,
 		tp.id AS eln_tissue_prep_id,
-		t.tolid,
+		t.programme_id,
 		tp.name$ AS eln_tissue_prep_name,
 		DATE(tp.created_at$) AS sampleprep_date,
 		con.barcode AS tissue_prep_fluidx_id,
 		con.volume_si * 1000000 AS weight_mg,
-		wrkf_tp.downstream_protocol_tube ->> 0 AS dowstream_protocol,
+		wrkf_tp.downstream_protocol_tube AS dowstream_protocol,
 		tube.tissue_prep_type,
 		tube.sciops_protocol_required,
 		t.lab_work_category AS labwork_category_sts,
@@ -64,9 +64,12 @@ WITH tissue_preps AS (
 		ON wrkf_tp.tissue_prep_tube_id = con.id
 	LEFT JOIN tube$raw AS tube
 		ON con.id = tube.id
-	LEFT JOIN project$raw AS project 
-		ON tp.project_id$ = project.id
-	WHERE project.name IN ('Core Lab Entities', 'R&D', 'Routine Throughput', 'Benchling MS Project Move')
+	LEFT JOIN project$raw AS proj
+		ON tp.project_id$ = proj.id
+	LEFT JOIN folder$raw AS f
+		ON t.folder_id$ = f.id
+	WHERE proj.name = 'ToL Core Lab'
+		AND f.name IN ('Core Lab Entities', 'R&D', 'Routine Throughput', 'Benchling MS Project Move', 'ToL Core Restricted Entities')
 		AND (tp.archive_purpose$ != ('Made in error') OR tp.archive_purpose$ IS NULL)
 		AND (con.archive_purpose$ != ('Made in error') OR con.archive_purpose$ IS NULL)
 
@@ -78,7 +81,7 @@ legacy_tissue_preps AS (
 		t.taxon_id,
 		t.id AS eln_tissue_id,
 		tp.id AS eln_tissue_prep_id,
-		t.tolid,
+		t.programme_id,
 		tp.name$ AS eln_tissue_prep_name,
 		DATE(tp.created_at$) AS sampleprep_date,
 		con.barcode AS tissue_prep_fluidx_id,
@@ -87,7 +90,7 @@ legacy_tissue_preps AS (
 		tube.tissue_prep_type,
 		tube.sciops_protocol_required,
 		t.lab_work_category AS labwork_category_sts,
-		tp.bt_id AS tissue_prep_bnt_id	
+		tp.bt_id AS tissue_prep_bnt_id
 	FROM tissue_prep$raw AS tp
 	LEFT JOIN tissue$raw AS t
 		ON tp.tissue = t.id
@@ -99,10 +102,13 @@ legacy_tissue_preps AS (
 		ON cc.container_id = con.id
 	LEFT JOIN tube$raw AS tube
 		ON con.id = tube.id
-	LEFT JOIN project$raw AS project 
-		ON tp.project_id$ = project.id
+	LEFT JOIN project$raw AS proj
+		ON tp.project_id$ = proj.id
+	LEFT JOIN folder$raw AS f
+		ON t.folder_id$ = f.id
 	WHERE tp.bt_id IS NOT NULL
-		AND project.name IN ('Core Lab Entities', 'R&D', 'Routine Throughput', 'Benchling MS Project Move')
+		AND proj.name = 'ToL Core Lab'
+		AND f.name IN ('Core Lab Entities', 'R&D', 'Routine Throughput', 'Benchling MS Project Move', 'ToL Core Restricted Entities')
 		AND (tp.archive_purpose$ != ('Made in error') OR tp.archive_purpose$ IS NULL)
 		AND (con.archive_purpose$ != ('Made in error') OR con.archive_purpose$ IS NULL)
 		

@@ -22,7 +22,7 @@ Columns in output table:
 4) eln_file_registry_id: [character] id in Benchling Registry. Origin: BWH
 5) eln_tissue_name: [character] Entity name. Origin: BWH
 6) sts_id: [character] Origin: Foreign key to STS
-7) tolid: [character] Origin: STS
+7) programme_id: [character] ToLID. Origin: STS
 8) tissue_fluidx_id: [character] Origin: STS. Original name: tubewell_id. 
 9) scientific_name: [character] Origin: STS
 10) taxon_group_phyla: [character] Origin: STS
@@ -62,7 +62,7 @@ SELECT
 	t.file_registry_id$ AS eln_file_registry_id,
 	t.sts_id,
 	t.name$ AS eln_tissue_name,
-	t.tolid,
+	t.programme_id,
 	t.tubewell_id AS tissue_fluidx_id,
 	t.scientific_name,
 	t.taxon_group_phyla,
@@ -81,7 +81,7 @@ SELECT
 	t.sample_set_id, 
 	t.project,
 	t.date_sample_received_at_sanger,
-	t.date_assigned_to_tol_lab,
+	t.date_assigned_to_lab,
 	t.lab_work_category,
 	t.assigned_by,
 	t.rd_sample,
@@ -94,7 +94,10 @@ SELECT
 	t.tube_position,
 	t.remaining_weight
 FROM tissue$raw AS t
-LEFT JOIN project$raw AS project
-	ON t.project_id$ = project.id
-WHERE project.name IN ('Core Lab Entities', 'R&D', 'Routine Throughput', 'Benchling MS Project Move') -- Filtering by ToL Core Lab projects
+LEFT JOIN project$raw AS proj
+	ON t.project_id$ = proj.id
+LEFT JOIN folder$raw AS f
+	ON t.folder_id$ = f.id
+WHERE proj.name = 'ToL Core Lab'
+	AND f.name IN ('Core Lab Entities', 'R&D', 'Routine Throughput', 'Benchling MS Project Move', 'ToL Core Restricted Entities') -- Filtering by ToL Core Lab folders
 	AND t.archived$ = FALSE -- Avoid including archived tissues. No tissue should be archived except when made in error.

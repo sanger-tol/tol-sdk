@@ -3,26 +3,20 @@ SQL Query: RNAseq Submissions Benchling Warehouse
 
 Output: Table with cols: 
 
-1) sanger_sample_id
-2) tolid
-3) fluidx_id: Fluidx ID of the original RNA extract the submission comes from. 
-4) submission_type: Submission type code: RNASEQ
-
 1) sts_id: [integer] Tissue metadata. Origin: STS
 2) taxon_id: [character] Tissue metadata. Origin: STS
-3) eln_rna_extract_id: [character] Foreign key to other entities and results in Benchling. Origin: BWH
+3) extraction_id: [character] Foreign key to other entities and results in Benchling. Origin: BWH
 4) eln_file_registry_id: [character] id in Benchling Registry. Origin: BWH
-5) tolid: [character] ToLID
+5) programme_id: [character] ToLID.
 6) sanger_sample_id: [character] Sanger Sample ID or Sanger UUID of the HiC submission. 
-7) tissue_prep_fluidx_id: [character] Container barcode of the tissue prep fluidx tube. Origin: BWH
+7) fluidx_id: [character] Container barcode of the tissue prep fluidx tube. Origin: BWH
 8) completion_date: [Date] Date of submission. For legacy data: created_on.
 9) sequencing_platform: [character] Sequencing platform: RNASEQ
-10) source: [character] Data source: v1, legacy_bnt
+10) source: [character] Data source: legacy_bnt, v1
 
 NOTES: 
 
 1) Data Model: Result Assays attached to container level.
-2) Some invalid Fluidx IDs are excluded in the WHERE clause. 
 */
 
 WITH rnaseq_submissions AS (
@@ -30,18 +24,19 @@ WITH rnaseq_submissions AS (
 	SELECT DISTINCT 
 		t.sts_id,
 		t.taxon_id,
-		rna.id AS eln_rna_extract_id,
+		rna.id AS extraction_id,
 		rna.file_registry_id$ AS eln_file_registry,
-		t.tolid,
+		t.programme_id,
 		ssid.sanger_sample_id, 
-		c.barcode AS rna_fluidx_id,
+		c.barcode AS fluidx_id,
 		rnaseq_out.submitted_submission_date AS completion_date, 
 		'rnaseq'::varchar AS sequencing_platform,
+		rna.bt_id,
 		'v1'::varchar AS source
 	FROM rnaseq_sumbission$raw AS rnaseq
 	LEFT JOIN sanger_sample_id$raw AS ssid 
 		ON rnaseq.same_tube_id = ssid.sample_tube
-	LEFT JOIN rna_sample$raw AS rna 
+	LEFT JOIN rna_extract$raw AS rna 
 		ON rnaseq.sample_id = rna.id
 	LEFT JOIN tissue_prep AS tp
 		ON rna.tissue_prep = tp.id
@@ -64,21 +59,21 @@ rnaseq_legacy_submissions AS (
 	SELECT DISTINCT 
 		t.sts_id,
 		t.taxon_id,
-		rna.id AS eln_rna_extract_id,
+		rna.id AS extraction_id,
 		rna.file_registry_id$ AS eln_file_registry,
-		t.tolid,
+		t.programme_id,
 		ssid.sanger_sample_id, 
 		c.barcode AS fluidx_id,
 		rna.created_on AS completion_date, 
 		'rnaseq'::varchar AS sequencing_platform,
-		'legacy_bnt'::varchar AS source--,
--- 		rna.bt_id
+		rna.bt_id,
+		'legacy_bnt'::varchar AS source
 	FROM sanger_sample_id$raw AS ssid
 	LEFT JOIN container_content$raw AS cc 
 		ON ssid.sample_tube = cc.container_id
 	LEFT JOIN container$raw AS c 
 		ON cc.container_id = c.id
-	LEFT JOIN rna_sample$raw AS rna 
+	LEFT JOIN rna_extract$raw AS rna 
 		ON cc.entity_id = rna.id
 	LEFT JOIN tissue_prep AS tp
 		ON rna.tissue_prep = tp.id

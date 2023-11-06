@@ -20,13 +20,13 @@ Output: Table with cols:
 
 1) sts_id: [integer] Tissue metadata. Origin: STS
 2) taxon_id: [character] Tissue metadata. Origin: STS
-3) eln_submission_sample_id: [character] Foreign key to other entities and results in Benchling. Origin: BWH
+3) submission_sample_id: [character] Foreign key to other entities and results in Benchling. Origin: BWH
 4) eln_file_registry_id: [character] id in Benchling Registry. Origin: BWH
-5) eln_dna_extract_id: [character] Original DNA extract entity name. For pooled samples, the first DNA extract pooled. Origin: BWH
-6) eln_pooled_sample_id: [character] DNA pooled sample id. Present only if the submitted sample was pooled. Origin: BWH
-7) eln_submission_sample_name: [character] Entity name. Origin: BWH
-8) dna_fluidx_id: [character] Container barcode of the DNA fluidx tube. Origin: BWH
-9) tolid: [character] Container barcode of the DNA fluidx tube. Origin: BWH
+5) extraction_id: [character] Original DNA extract entity name. For pooled samples, the first DNA extract pooled. Origin: BWH
+6) pooled_sample_id: [character] DNA pooled sample id. Present only if the submitted sample was pooled. Origin: BWH
+7) submission_sample_name: [character] Entity name. Origin: BWH
+8) fluidx_id: [character] Container barcode of the DNA fluidx tube. Origin: BWH
+9) programme_id: [character] ToLID. Origin: BWH
 10) sanger_sample_id: [character] Sanger Sample ID or Sanger UUID of the PacBio submission. 
 11) plate_name: [character] Name of submission plate.
 12) pipeline: [character] name of the submission pipeline.
@@ -66,13 +66,12 @@ WITH pacbio_submissions_v1 AS (
 	SELECT DISTINCT
 		t.sts_id,
 		t.taxon_id,
-		subsam.id AS eln_submission_sample_id,
+		subsam.id AS submission_sample_id,
 		subsam.file_registry_id$ AS eln_file_registry_id,
-		subsam.original_dna_extract AS eln_dna_extract_id,
-		NULL::varchar AS eln_pooled_sample_id,
-		subsam.name$ AS eln_submission_sample_name,
-		c_dna.barcode AS dna_fluidx_id,
-		t.tolid, 
+		subsam.original_dna_extract AS extraction_id,
+		subsam.name$ AS submission_sample_name,
+		c_dna.barcode AS fluidx_id,
+		t.programme_id, 
 		con.name AS sanger_sample_id, 
 		NULL::varchar AS plate_name,
 		NULL::varchar AS pipeline,
@@ -112,12 +111,15 @@ WITH pacbio_submissions_v1 AS (
 		ON cc_dna.container_id = c_dna.id
 	LEFT JOIN tube$raw AS tube 
 		ON c_dna.id = tube.id -- End of DNA fluidx id Chunk
+	LEFT JOIN project$raw AS proj
+		ON subsam.project_id$ = proj.id
 	WHERE pbsum.archived$ = FALSE -- Excluding archived submission containers
 		-- Filters to add DNA extract fluidx tubes
 		AND tube.type IS NULL  -- Selecting non-Voucher containers
 		AND c_dna.volume_si * 1000000 != 10 -- Excluding vouchers without Voucher type in tube.type
 	    AND (c_dna.archive_purpose$ != ('Made in error') OR c_dna.archive_purpose$ IS NULL) -- Excluding containers made by mistake
 		AND c_dna.barcode LIKE 'F%' -- Selecting only valid FluidX IDs
+		AND proj.name = 'ToL Core Lab' -- Selecting ToL Core Lab sbmissions only
 
 ),
 pacbio_legacy_submissions AS (
@@ -125,13 +127,12 @@ pacbio_legacy_submissions AS (
 	SELECT DISTINCT
 		t.sts_id,
 		t.taxon_id,
-		subsam.id AS eln_submission_sample_id,
+		subsam.id AS submission_sample_id,
 		subsam.file_registry_id$ AS eln_file_registry_id,
-		subsam.original_dna_extract AS eln_dna_extract_id,
-		NULL::varchar AS eln_pooled_sample_id,
-		subsam.name$ AS eln_submission_sample_name,
-		c_dna.barcode AS dna_fluidx_id,
-		t.tolid,
+		subsam.original_dna_extract AS extraction_id,
+		subsam.name$ AS submission_sample_name,
+		c_dna.barcode AS fluidx_id,
+		t.programme_id,
 		con.name AS sanger_sample_id,
 		NULL::varchar AS plate_name,
 		NULL::varchar AS pipeline,
@@ -169,6 +170,8 @@ pacbio_legacy_submissions AS (
 		ON cc_dna.container_id = c_dna.id
 	LEFT JOIN tube$raw AS tube 
 		ON c_dna.id = tube.id -- End of DNA fluidx id Chunk
+	LEFT JOIN project$raw AS proj
+		ON subsam.project_id$ = proj.id
 	WHERE subsam.bt_id IS NOT NULL -- Selecting submisions migrated from B&T only
 		AND con.barcode NOT LIKE 'F%' -- Excluding samples not submitted. Select only Sanger Sample IDs
 		AND con.archived$ = FALSE -- Excluding submission-containers made by mistake
@@ -177,6 +180,7 @@ pacbio_legacy_submissions AS (
 		AND c_dna.volume_si * 1000000 != 10 -- Excluding vouchers without Voucher type in tube.type
 	    AND (c_dna.archive_purpose$ != ('Made in error') OR c_dna.archive_purpose$ IS NULL) -- Excluding containers made by mistake
 		AND c_dna.barcode LIKE 'F%' -- Selecting only valid FluidX IDs
+		AND proj.name = 'ToL Core Lab' -- Selecting ToL Core Lab sbmissions only
 
 ),
 pacbio_submissions_v2 AS (
@@ -184,13 +188,12 @@ pacbio_submissions_v2 AS (
 	SELECT DISTINCT	
 		t.sts_id,
 		t.taxon_id,
-		subsam.id AS eln_submission_sample_id,
+		subsam.id AS submission_sample_id,
 		subsam.file_registry_id$ AS eln_file_registry_id,
-		subsam.originaL_dna_extract AS eln_dna_extract_id,
-		NULL::varchar AS eln_pooled_sample_id,
-		subsam.name$ AS eln_submission_sample_name,
-		c_dna.barcode AS dna_fluidx_id,
-		t.tolid,
+		subsam.originaL_dna_extract AS extraction_id,
+		subsam.name$ AS submission_sample_name,
+		c_dna.barcode AS fluidx_id,
+		t.programme_id,
 		con.name AS sanger_sample_id,
 		plt.name AS plate_name,
 		pbsubm_p.pipeline,
@@ -230,12 +233,15 @@ pacbio_submissions_v2 AS (
 		ON cc_dna.container_id = c_dna.id
 	LEFT JOIN tube$raw AS tube 
 		ON c_dna.id = tube.id -- End of DNA fluidx id Chunk
+	LEFT JOIN project$raw AS proj
+		ON subsam.project_id$ = proj.id
 	WHERE con.archived$ = FALSE -- Excluding archived submission containers
 		-- Filters to add DNA extract fluidx tubes
 		AND tube.type IS NULL -- Selecting non-Voucher containers
 		AND c_dna.volume_si * 1000000 != 10 -- Excluding vouchers without Voucher type in tube.type
 		AND (c_dna.archive_purpose$ != ('Made in error') OR c_dna.archive_purpose$ IS NULL) -- Excluding containers made by mistake
 		AND c_dna.barcode LIKE 'F%' -- Selecting only valid FluidX IDs
+		AND proj.name = 'ToL Core Lab' -- Selecting ToL Core Lab sbmissions only
 		
 ),
 pacbio_submissions_pooled_v1 AS (
@@ -243,13 +249,12 @@ pacbio_submissions_pooled_v1 AS (
 	SELECT DISTINCT
 		t.sts_id,
 		t.taxon_id,
-		subsam.id AS eln_submission_sample_id,
+		subsam.id AS submission_sample_id,
 		subsam.file_registry_id$ AS eln_file_registry_id,
-		pool.samples ->> 0  AS eln_dna_extract_id,
-	 	subsam.pooled_sample AS eln_pooled_sample_id,
+		subsam.pooled_sample  AS extraction_id,
 		subsam.name$ AS eln_submission_sample_name,
-		c_pool.barcode AS dna_fluidx_id,
-		t.tolid, 
+		c_pool.barcode AS fluidx_id,
+		t.programme_id, 
 		con.name AS sanger_sample_id, 
 		NULL::varchar AS plate_name,
 		NULL::varchar AS pipeline,
@@ -291,11 +296,14 @@ pacbio_submissions_pooled_v1 AS (
 		ON cc_pool.container_id = c_pool.id
 	LEFT JOIN tube$raw AS tube 
 		ON c_pool.id = tube.id -- End of DNA fluidx id Chunk
+	LEFT JOIN project$raw AS proj
+		ON subsam.project_id$ = proj.id
 	WHERE pbsum.archived$ = FALSE -- Excluding archived submission containers
 		-- Filters to add DNA extract fluidx tubes
 		AND tube.type IS NULL  -- Selecting non-Voucher containers
 	    AND (c_pool.archive_purpose$ != ('Made in error') OR c_pool.archive_purpose$ IS NULL) -- Excluding containers made by mistake
 		AND pool.id IS NOT NULL
+		AND proj.name = 'ToL Core Lab' -- Selecting ToL Core Lab sbmissions only
 ),
 pacbio_submissions_pooled_v2 AS (
 
@@ -304,11 +312,10 @@ pacbio_submissions_pooled_v2 AS (
 		t.taxon_id,
 		subsam.id AS eln_submission_sample_id,
 		subsam.file_registry_id$ AS eln_file_registry_id,
-		pool.samples ->> 0 AS eln_dna_extract_id,
-		subsam.pooled_sample AS eln_pooled_sample_id,
-		subsam.name$ AS eln_submission_sample_name,
-		c_pool.barcode AS pooled_sample_fluidx_id,
-		t.tolid,
+		subsam.pooled_sample AS extraction_id,
+		subsam.name$ AS submission_sample_name,
+		c_pool.barcode AS fluidx_id,
+		t.programme_id,
 		con.name AS sanger_sample_id,
 		plt.name AS plate_name,
 		pbsubm_p.pipeline,
@@ -350,22 +357,24 @@ pacbio_submissions_pooled_v2 AS (
 		ON pbsubm_p.sanger_uuid ->> 0 = con.id
 	LEFT JOIN plate$raw AS plt 
 		ON con.plate_id = plt.id
-	WHERE pbsubm_p.archived$ = FALSE -- Excluding archived submission containers
-	    AND (c_pool.archive_purpose$ != ('Made in error') OR c_pool.archive_purpose$ IS NULL) -- Excluding containers made by mistake
-		AND c_pool.barcode IS NOT NULL
+	LEFT JOIN project$raw AS proj
+		ON subsam.project_id$ = proj.id
+	WHERE subsam.pooled_sample IS NOT NULL
+		AND proj.name = 'ToL Core Lab'
+	
 )
 SELECT *
 FROM pacbio_submissions_v1
-UNION
+UNION  
 SELECT *
 FROM pacbio_submissions_v2
-UNION
+UNION 
 SELECT *
 FROM pacbio_legacy_submissions
-UNION
+UNION 
 SELECT *
 FROM pacbio_submissions_pooled_v1
-UNION
+UNION 
 SELECT *
 FROM pacbio_submissions_pooled_v2
 ORDER BY source DESC

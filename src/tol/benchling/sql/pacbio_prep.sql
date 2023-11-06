@@ -35,7 +35,7 @@ SELECT DISTINCT ON (subsam.name$, con.barcode)
 	dna.id AS eln_dna_extract_id,
 	subsam.file_registry_id$ AS eln_file_registry_id,
 	subsam.id AS eln_submission_sample_id,
-	t.tolid,
+	t.programme_id,
 	COALESCE(DATE(subsam.created_on), DATE(subsam.created_at$)) AS preparation_date,
 	subsam.name$ AS eln_submission_sample_name,
 	con.barcode AS submission_sample_container,
@@ -69,9 +69,12 @@ LEFT JOIN pacbio_yield_v2$raw AS pbyield
 	ON subsam.id = pbyield.sample_id -- End of chunk for results
 LEFT JOIN pacbio_preparation_from_gdna$raw AS pbgdna -- Just for the category field
 	ON dna.id = pbgdna.dna_extract ->> 0
-LEFT JOIN folder$raw AS f 
+LEFT JOIN folder AS f 
 	ON subsam.folder_id$ = f.id
-WHERE (f.name IN ('Routine Throuput', 'PacBio prep', 'Core Lab Entities', 'Benchling MS Project Move') OR f.name IS NULL)
+LEFT JOIN project$raw AS proj
+	ON subsam.project_id$ = proj.id
+WHERE proj.name = 'ToL Core Lab'
+	AND (f.name IN ('Routine Throuput', 'PacBio prep', 'Core Lab Entities', 'Benchling MS Project Move') OR f.name IS NULL)
 	AND (subsam.archive_purpose$ != ('Made in error') OR subsam.archive_purpose$ IS NULL)
 	AND (con.archive_purpose$ != ('Made in error') OR con.archive_purpose$ IS NULL) --not necessary anymore
 	AND subsam.pooled_sample IS NULL -- Exluding pooled samples

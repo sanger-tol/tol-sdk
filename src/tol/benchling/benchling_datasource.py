@@ -43,7 +43,7 @@ class BenchlingDataSource(DataSource, ListGetter):
         return {
             'sample': 'sts_id',
             'sequencing_request': 'sanger_sample_id',
-            'extraction': 'primary_identifier'
+            'extraction': 'extraction_id'
         }
 
     def _get_connection(self) -> connection:
