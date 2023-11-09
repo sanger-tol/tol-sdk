@@ -2,74 +2,71 @@
 #
 # SPDX-License-Identifier: MIT
 
-from unittest import (TestCase, mock)
+from unittest import (
+    TestCase,
+    mock
+)
 
 from tol.benchling import BenchlingDataSource
 from tol.core import (
-    DataSourceError,
-    DataSourceFilter,
     core_data_object
 )
 
 
 class MockBenchlingDataSource(BenchlingDataSource):
-    def _get_connection(self):
-        return mock.MagicMock()
+    def _get_benchling_interface(self, url, api_key):
+        return mock.Mock()
+
+    def _get_entity_schemas(self):
+        return {
+            'test_entity_type': {
+                'field_name': {
+                    'name': 'Test Field',
+                    'type': 'str'
+                },
+                'field_name2': {
+                    'name': 'Test Field 2',
+                    'type': 'int'
+                }
+            }
+        }
+
+
+def mock_benchling_data_source() -> BenchlingDataSource:
+    bds = MockBenchlingDataSource({
+        'url': 'http://test/benchling',
+        'api_key': '1234',
+        'registry_id': '5678',
+        'project_id': '6789'
+    })
+    core_data_object_mock = core_data_object(bds)
+    return core_data_object_mock, bds
 
 
 class TestBenchlingDataSource(TestCase):
 
-    def test_get_list(self):
-        bds = MockBenchlingDataSource(
-            {'username': '',
-             'password': '',
-             'database': '',
-             'hostname': '',
-             'port': '',
-             'schema': ''})
-        core_data_object(bds)
+    def test_attribute_types(self):
+        _, bds = mock_benchling_data_source()
+        expected = {
+            'test_entity_type': {
+                'field_name': 'str',
+                'field_name2': 'int'
+            }
+        }
+        self.assertEqual(expected, bds.attribute_types)
+        self.assertEqual(['test_entity_type'], bds.supported_types)
 
-        mocked_context_manager = bds.connection.cursor.return_value.__enter__
-        mocked_function = mocked_context_manager.return_value.fetchall
-        mocked_function.return_value = [
-            {'sts_id': '1234', 'priority': '1', 'rack_id': '9876', 'project': 'PROJ1'},
-            {'sts_id': '2345', 'position': '2', 'rack_id': '8765', 'project': 'PROJ2'},
-            {'sts_id': '3456', 'position': None, 'rack_id': '7654', 'project': 'PROJ3'}
-        ]
+    def test_update(self):
+        _, bds = mock_benchling_data_source()
 
-        # Unsupported object type
-        with self.assertRaises(DataSourceError):
-            bds.get_list('index')
-
-        # Filtering is unsupported apart from on sequencing_platform and extraction_type
-        f = DataSourceFilter()
-        with self.assertRaises(DataSourceError):
-            bds.get_list('sample', object_filters=f)
-
-        returned = bds.get_list('sample')
-        mocked_function.assert_called_once()
-        first = next(returned)
-        self.assertEqual('1234', first.id)
-        self.assertEqual('sample', first.type)
-        self.assertEqual({'sts_id': '1234', 'priority': '1',
-                          'rack_id': '9876', 'project': 'PROJ1'},
-                         first.attributes)
-        second = next(returned)
-        self.assertEqual('2345', second.id)
-        self.assertEqual('sample', second.type)
-        self.assertEqual({'sts_id': '2345', 'position': '2',
-                          'rack_id': '8765', 'project': 'PROJ2'},
-                         second.attributes)
-        third = next(returned)
-        self.assertEqual('3456', third.id)
-        self.assertEqual('sample', third.type)
-        self.assertEqual({'sts_id': '3456', 'position': None,
-                          'rack_id': '7654', 'project': 'PROJ3'},
-                         third.attributes)
-        with self.assertRaises(StopIteration):
-            next(returned)
-
-        # Try a sequencing request which has sub-queries
-        # No subquery given
-        with self.assertRaises(DataSourceError):
-            bds.get_list('sequencing_request')
+        update1 = {'field_name': 'value1',
+                   'field_name2': 2}
+        update2 = {'field_name': 'value3',
+                   'field_name2': 4}
+        updates = [('123', update1),
+                   ('456', update2)]
+        status = mock.Mock()
+        status.status.return_value = 'FAILED'
+        bds.benchling_interface.tasks.wait_for_task.return_value = status
+        bds.update('test_entity_type', updates)
+        self.assertEqual(bds.benchling_interface.custom_entities.bulk_update.call_count, 1)

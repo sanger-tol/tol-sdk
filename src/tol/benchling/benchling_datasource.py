@@ -2,113 +2,140 @@
 #
 # SPDX-License-Identifier: MIT
 
-import importlib.resources
-from typing import Dict, Iterable, List
+from typing import Iterable, List
 
-import psycopg2
-import psycopg2.extras
-from psycopg2.extensions import connection
+from benchling_sdk.auth.api_key_auth import ApiKeyAuth
+from benchling_sdk.benchling import Benchling
+from benchling_sdk.errors import BenchlingError
+from benchling_sdk.helpers.serialization_helpers import fields
+from benchling_sdk.models import (
+    CustomEntityBulkUpdate
+)
+
+from caseconverter import snakecase
+
+from more_itertools import batched
 
 from ..core import (
-    DataObject,
     DataSource,
     DataSourceConfig,
-    DataSourceError,
-    DataSourceFilter
+    DataSourceError
 )
-from ..core.operator import ListGetter
+from ..core.operator import Updater
+from ..core.operator.updater import DataObjectUpdate
+
+TYPE_MAPPING = {
+    'text': 'str',
+    'integer': 'int',
+    'date': 'datetime',
+    'float': 'float',
+    'dropdown': 'str',
+    'entity_link': 'str',
+    'storage_link': 'str',
+    'blob_link': 'str',
+    'dna_sequence_link': 'str'
+}
 
 
-class BenchlingDataSource(DataSource, ListGetter):
+class BenchlingDataSource(DataSource, Updater):
     """
-    A (read-only) DataSource for getting objects in Benchling
+    A DataSource for writing objects to Benchling
     The queries are maintained in this SDK as SQL files
     """
 
     def __init__(self, config: DataSourceConfig) -> None:
-        super().__init__(
-            config,
-            [
-                'username',
-                'password',
-                'database',
-                'hostname',
-                'port',
-                'schema'
-            ]
+        super().__init__(config, expected=[
+            'url',
+            'api_key',
+            'registry_id',
+            'project_id'
+        ])
+
+        self.benchling_interface = self._get_benchling_interface(self.url, self.api_key)
+        self.entities = self._get_entity_schemas()
+
+    def _get_benchling_interface(self, url, api_key):
+        return (Benchling(url=url, auth_method=ApiKeyAuth(api_key)))
+
+    def _get_entity_schemas(self):
+        pages = self.benchling_interface.schemas.list_entity_schemas(
+            # registry_id=self.registry_id
         )
-        self.connection = self._get_connection()
+        entities = {}
+        for page in pages:
+            for schema in page:
+                if schema.registry_id == self.registry_id \
+                        and schema.archive_record is None:
+                    schema_name = snakecase(schema.name)
+                    if schema_name not in entities:
+                        entities[schema_name] = {}
+                    for field in schema.field_definitions:
+                        if field.archive_record is None:
+                            entities[schema_name][snakecase(field.name)] = {
+                                'name': field.name,
+                                'type': TYPE_MAPPING.get(field.type.value, 'str')
+                            }
+        return entities
 
-    def __get_primary_keys(self):
-        return {
-            'sample': 'sts_id',
-            'sequencing_request': 'sanger_sample_id',
-            'extraction': 'extraction_id'
-        }
-
-    def _get_connection(self) -> connection:
-        return psycopg2.connect(
-            user=self.username,
-            password=self.password,
-            database=self.database,
-            port=self.port,
-            host=self.hostname,
-            options=f'-c search_path={self.schema},public'
-        )
-
-    def __run_query(self, sql: str) -> Iterable[DataObject]:
-        with self.connection.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
-            cur.execute(sql)
-            results = cur.fetchall()
-            return results
-
-    def __convert_results_to_data_objects(self, objs: Dict,
-                                          object_type: str, id_col: str) -> Iterable:
-        for obj in objs:
-            yield self.data_object_factory(
-                object_type,
-                data={
-                    **obj,
-                    'id': obj[id_col]
-                }
-            )
-
-    def get_list(
+    def update(
         self,
         object_type: str,
-        object_filters: DataSourceFilter = None,
-        **kwargs
-    ) -> Iterable[DataObject]:
-        file_suffix = ''
-        if object_filters is not None:
-            if isinstance(object_filters.exact, dict):
-                if 'sequencing_platform' in object_filters.exact:
-                    file_suffix = ('_sequencing_platform_'
-                                   + object_filters.exact['sequencing_platform'])
-                elif 'extraction_type' in object_filters.exact:
-                    file_suffix = '_extraction_type_' + object_filters.exact['extraction_type']
-            else:
-                raise DataSourceError('Filtering only on sequencing platform and extraction '
-                                      'type currently supported on BenchlingDataSource')
-        try:
-            sql = importlib.resources.files('tol.benchling.sql') \
-                                     .joinpath(f'{object_type}{file_suffix}.sql') \
-                                     .read_text()
-            results = self.__run_query(sql)
-            return self.__convert_results_to_data_objects(
-                results,
-                object_type,
-                self.__get_primary_keys()[object_type])
-        except FileNotFoundError:
-            raise DataSourceError(f'Query file not found for object type: {object_type} '
-                                  'with given filter')
-
-    @property
-    def supported_types(self) -> List[str]:
-        return self.__get_primary_keys().keys()
+        updates: Iterable[DataObjectUpdate]
+    ) -> None:
+        # We have to do the updates in pages in Benchling
+        for update_page in list(batched(updates, 20)):
+            request = []
+            for update_id, update_dict in update_page:
+                entity_fields = {
+                    self.entities[object_type][name]['name']: {'value': value}
+                    for name, value in update_dict.items()
+                }
+                custom_fields = {}
+                update_entity = CustomEntityBulkUpdate(
+                    id=update_id,
+                    fields=fields(entity_fields),
+                    custom_fields=fields(custom_fields)
+                )
+                request.append(update_entity)
+            try:
+                response = self.benchling_interface.custom_entities.bulk_update(request)
+                task = self.benchling_interface.tasks.wait_for_task(
+                    response.task_id, interval_wait_seconds=3)
+            except BenchlingError as error:
+                raise DataSourceError(
+                    'Error creating update task',
+                    error.json['error']['message'],
+                    status_code=400)
+            try:
+                if task.status == 'FAILED':
+                    # If we are here, the batch has failed. We can try
+                    # to update one-by-one
+                    if len(update_page) > 1:
+                        ret = []
+                        for update_id, update_dict in update_page:
+                            ret.extend(self.update(object_type, [(update_id, update_dict)]))
+                        return ret
+                    else:
+                        ret = [{'id': update_id, 'status': 'FAILED'}
+                               for update_id, _ in update_page]
+                        return ret
+                else:
+                    # The whole batch passed
+                    ret = [{'id': update_id, 'status': 'PASSED'} for update_id, _ in update_page]
+                    return ret
+            except BenchlingError as error:
+                raise DataSourceError(error.json['error']['message'], status_code=400)
 
     @property
     def attribute_types(self):
         return {
-            t: {} for t in self.supported_types
+            k1: {
+                k2: v2['type']
+                for k2, v2 in v1.items()
+            }
+            for k1, v1 in self.entities.items()
         }
+
+    @property
+    def supported_types(self) -> List:
+        return list(self.entities.keys())
