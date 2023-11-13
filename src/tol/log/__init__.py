@@ -3,4 +3,4 @@
 # SPDX-License-Identifier: MIT
 
 from .elastic import elastic_logger  # noqa
-from .logger import Logger  # noqa
+from .logger import Logger, UserIdGetter  # noqa

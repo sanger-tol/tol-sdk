@@ -4,7 +4,12 @@
 
 from unittest.mock import Mock, PropertyMock
 
-from tol.log import elastic_logger
+from tol.core import DataSource
+from tol.log import (
+    Logger,
+    UserIdGetter,
+    elastic_logger
+)
 
 
 class TestElasticLogger:
@@ -14,17 +19,31 @@ class TestElasticLogger:
         """Tests arguments are passed in correctly"""
 
         mock_ds_class = Mock()
-        expected = Mock()
-        mock_ds_class.return_value = expected
+        mock_ds = Mock()
+        mock_ds_class.return_value = mock_ds
 
-        observed = elastic_logger(
+        mock_logger = Mock()
+
+        def __logger_factory(
+            ds: DataSource,
+            app_name: str,
+            _
+        ) -> Logger:
+
+            assert ds == mock_ds
+            assert app_name == 'my-app'
+
+            return mock_logger
+
+        observed_logger = elastic_logger(
             'a fun URI that is really great',
             'me',
             'please',
             'my-app',
-            elastic_factory=lambda c: mock_ds_class(c)
+            elastic_factory=lambda c: mock_ds_class(c),
+            logger_factory=__logger_factory
         )
-        assert expected == observed
+        assert observed_logger == mock_logger
 
         expected_config = {
             'uri': 'a fun URI that is really great',
