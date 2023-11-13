@@ -21,6 +21,7 @@ class TestElasticLogger:
             'a fun URI that is really great',
             'me',
             'please',
+            'my-app',
             elastic_factory=lambda c: mock_ds_class(c)
         )
         assert expected == observed
@@ -48,6 +49,7 @@ class TestElasticLogger:
             'a fun URI that is really great',
             'me',
             'please',
+            'my-app',
             elastic_factory=lambda c: mock_ds_class(c)
         )
         type(mock_ds_class).data_object_factory.setter.assert_called_once()
