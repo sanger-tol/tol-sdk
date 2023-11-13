@@ -35,3 +35,9 @@ class TestElasticLogger:
         mock_ds_class.assert_called_once_with(
             expected_config
         )
+
+    def test_data_object_factory(self):
+        """
+        The `ElasticDataSource().data_object_factory` has a non-`None`
+        value, and can hence create `DataObject` instances.
+        """
