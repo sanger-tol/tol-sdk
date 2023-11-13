@@ -6,12 +6,14 @@ from __future__ import annotations
 
 import typing
 from datetime import datetime
+from functools import wraps
 from typing import Callable, Optional
 from uuid import uuid4
 
+from ..core.operator import Deleter, Updater, Upserter
+
 if typing.TYPE_CHECKING:
     from ..core import DataSource
-    from ..core.operator import Upserter
 
 
 class Logger:
@@ -22,6 +24,12 @@ class Logger:
     To prevent infinite recursion, `Logger().register()` must not
     have been previously called on this `DataSource` instance.
     """
+
+    __METHOD_OPERATOR_MAPPING = {
+        'delete': Deleter,
+        'update': Updater,
+        'upsert': Upserter
+    }
 
     def __init__(
         self,
@@ -41,3 +49,25 @@ class Logger:
         For now, just the `user_id` and `datetime` of
         the request.
         """
+
+        for name, operator in self.__METHOD_OPERATOR_MAPPING.keys():
+            if isinstance(logged, operator):
+                self.__decorate_operation(logged, name)
+
+    def __decorate_operation(
+        self,
+        logged: DataSource,
+        operation: str
+    ) -> None:
+
+        method = getattr(logged, operation)
+
+        def decorator(func: Callable):
+
+            @wraps(func)
+            def wrapper(obj, object_type, *args, **kwargs):
+                return func(obj, object_type, *args, **kwargs)
+
+            return wrapper
+
+        setattr(logged, operation, decorator(method))
