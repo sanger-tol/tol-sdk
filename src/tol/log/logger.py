@@ -10,6 +10,9 @@ if typing.TYPE_CHECKING:
     from ..core.operator import Upserter
 
 
+IdGetter = Callable[[], Optional[str]]
+
+
 class Logger:
     """
     Logs access requests using a given `DataSource` instance
@@ -23,7 +26,7 @@ class Logger:
         self,
         logging_datasource: Upserter,
         uuid_generator: Callable[[], str] = None,
-        user_id_getter: Callable[[], Optional[str]] = None
+        user_id_getter: IdGetter = None
     ) -> None:
         pass
 
