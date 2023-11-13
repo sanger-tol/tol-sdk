@@ -2,7 +2,7 @@
 #
 # SPDX-License-Identifier: MIT
 
-from unittest.mock import MagicMock, Mock, PropertyMock
+from unittest.mock import Mock
 
 from tol.core import DataSource
 from tol.log import (
@@ -65,15 +65,14 @@ class TestElasticLogger:
         value, and can hence create `DataObject` instances.
         """
 
-        mock_ds_class = MagicMock()
-        mock_do_factory = PropertyMock()
-        type(mock_ds_class).data_object_factory = mock_do_factory
+        mock_ds_class = Mock()
+        mock_do_factory = Mock()
         elastic_logger(
             'a fun URI that is really great',
             'me',
             'please',
             'my-app',
-            elastic_factory=lambda _: mock_ds_class
+            elastic_factory=lambda _: mock_ds_class,
+            do_factory_setter=lambda d: mock_do_factory(d)
         )
-        mock_do_factory.assert_called_once()
-        assert False
+        mock_do_factory.assert_called_once_with(mock_ds_class)
