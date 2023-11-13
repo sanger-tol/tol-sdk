@@ -2,7 +2,7 @@
 #
 # SPDX-License-Identifier: MIT
 
-from unittest.mock import Mock
+from unittest.mock import Mock, PropertyMock
 
 from tol.log import elastic_logger
 
@@ -41,3 +41,13 @@ class TestElasticLogger:
         The `ElasticDataSource().data_object_factory` has a non-`None`
         value, and can hence create `DataObject` instances.
         """
+
+        mock_ds_class = Mock()
+        type(mock_ds_class).data_object_factory = PropertyMock()
+        elastic_logger(
+            'a fun URI that is really great',
+            'me',
+            'please',
+            factory=lambda c: mock_ds_class(c)
+        )
+        type(mock_ds_class).data_object_factory.setter.assert_called_once()
