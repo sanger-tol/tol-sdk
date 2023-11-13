@@ -79,7 +79,7 @@ class TestLogger:
             uuid_generator=lambda: 'test-uuid'
         )
 
-        mock_updater = create_autospec(Deleter)
+        mock_updater = create_autospec(Updater)
         logger.register(mock_updater)
 
         # call the `update()` method
@@ -106,7 +106,7 @@ class TestLogger:
             uuid_generator=lambda: 'test-uuid'
         )
 
-        mock_upserter = create_autospec(Deleter)
+        mock_upserter = create_autospec(Upserter)
         logger.register(mock_upserter)
 
         # call the `upsert()` method
