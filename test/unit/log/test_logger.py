@@ -4,8 +4,17 @@
 
 from unittest.mock import Mock, create_autospec
 
+from tol.core import DataSource, core_data_object
 from tol.core.operator import Deleter, Updater, Upserter
 from tol.log import Logger
+
+
+class _UpsertDataSource(DataSource, Upserter):
+    """Has all required ABC's for a logging DataSource"""
+
+    def __init__(self):
+        super().__init__({})
+        core_data_object(self)
 
 
 class _Modifier(Deleter, Updater, Upserter):
@@ -18,7 +27,7 @@ class TestLogger:
     def test_none_user_id(self):
         """got `user_id` is `None` -> don't log"""
 
-        mock_upserter = create_autospec(Upserter)
+        mock_upserter = create_autospec(_UpsertDataSource)
         logger = Logger(
             mock_upserter,
             'fun_app',
@@ -43,7 +52,7 @@ class TestLogger:
     def test_delete_log(self):
         """`user_id` is set and not `None` -> log delete"""
 
-        mock_upserter = create_autospec(Upserter)
+        mock_upserter = create_autospec(_UpsertDataSource)
         logger = Logger(
             mock_upserter,
             'fun_app',
@@ -71,7 +80,7 @@ class TestLogger:
     def test_update_log(self):
         """`user_id` is set and not `None` -> log update"""
 
-        mock_upserter = create_autospec(Upserter)
+        mock_upserter = create_autospec(_UpsertDataSource)
         logger = Logger(
             mock_upserter,
             'fun_app',
@@ -99,7 +108,7 @@ class TestLogger:
     def test_upsert_log(self):
         """`user_id` is set and not `None` -> log upsert"""
 
-        mock_upserter_logger = create_autospec(Upserter)
+        mock_upserter_logger = create_autospec(_UpsertDataSource)
         logger = Logger(
             mock_upserter_logger,
             'fun_app',
