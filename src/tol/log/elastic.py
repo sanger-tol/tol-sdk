@@ -26,6 +26,26 @@ LoggerFactory = Callable[
 ]
 
 
+def __create_elastic_datasource(
+    uri: str,
+    user: str,
+    password: str,
+    elastic_factory: ElasticFactory,
+) -> ElasticDataSource:
+
+    elastic_ds = elastic_factory(
+        {
+            'uri': uri,
+            'user': user,
+            'password': password,
+            'index_prefix': '',
+            'relationship_cfg': {}
+        }
+    )
+    core_data_object(elastic_ds)
+    return elastic_ds
+
+
 def elastic_logger(
     uri: str,
     user: str,
@@ -40,16 +60,12 @@ def elastic_logger(
     `ElasticDataSource`.
     """
 
-    elastic_ds = elastic_factory(
-        {
-            'uri': uri,
-            'user': user,
-            'password': password,
-            'index_prefix': '',
-            'relationship_cfg': {}
-        }
+    elastic_ds = __create_elastic_datasource(
+        uri,
+        user,
+        password,
+        elastic_factory
     )
-    core_data_object(elastic_ds)
 
     return logger_factory(
         elastic_ds,
