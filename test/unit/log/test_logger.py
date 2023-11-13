@@ -64,9 +64,56 @@ class TestLogger:
         assert log_object_type == 'log-fun_app'
         assert data_object.type == 'test'
         assert data_object.datetime == 'datetime lol'
+        assert data_object.user_id == 'a-fun-user-ID'
 
     def test_update_log(self):
         """`user_id` is set and not `None` -> log update"""
 
+        mock_upserter = create_autospec(Upserter)
+        logger = Logger(
+            mock_upserter,
+            'fun_app',
+            lambda: 'a-fun-user-ID',
+            datetime_now=lambda: 'datetime lol',
+            uuid_generator=lambda: 'test-uuid'
+        )
+
+        mock_updater = create_autospec(Deleter)
+        logger.register(mock_updater)
+
+        # call the `update()` method
+        mock_updater.update('test', ['thing_A'])
+
+        # assert called once, with correct arguments
+        mock_upserter.upsert.assert_called_once()
+        ((log_object_type, (data_object,)), _) = mock_upserter.upsert.call_args_list
+        assert log_object_type == 'log-fun_app'
+        assert data_object.type == 'test'
+        assert data_object.datetime == 'datetime lol'
+        assert data_object.user_id == 'a-fun-user-ID'
+
     def test_upsert_log(self):
         """`user_id` is set and not `None` -> log upsert"""
+
+        mock_upserter_logger = create_autospec(Upserter)
+        logger = Logger(
+            mock_upserter_logger,
+            'fun_app',
+            lambda: 'a-fun-user-ID',
+            datetime_now=lambda: 'datetime lol',
+            uuid_generator=lambda: 'test-uuid'
+        )
+
+        mock_upserter = create_autospec(Deleter)
+        logger.register(mock_upserter)
+
+        # call the `upsert()` method
+        mock_upserter.upsert('test', ['thing_A'])
+
+        # assert called once, with correct arguments
+        mock_upserter_logger.upsert.assert_called_once()
+        ((log_object_type, (data_object,)), _) = mock_upserter_logger.upsert.call_args_list
+        assert log_object_type == 'log-fun_app'
+        assert data_object.type == 'test'
+        assert data_object.datetime == 'datetime lol'
+        assert data_object.user_id == 'a-fun-user-ID'
