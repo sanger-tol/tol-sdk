@@ -4,7 +4,7 @@
 
 from unittest.mock import Mock, create_autospec
 
-from tol.core import DataSource, DataObject
+from tol.core import DataSource
 from tol.core.operator import Deleter, Updater, Upserter
 from tol.log import Logger
 
@@ -49,7 +49,14 @@ class TestLogger:
         """`user_id` is set and not `None` -> log delete"""
 
         mock_upserter = create_autospec(_UpsertDataSource)
-        mock_upserter.upsert.side_effect = self.__assert_correct_object
+        mock_upserter.data_object_factory.side_effect = self.__assert_correct_object(
+            'log-fun_app',
+            'test',
+            'test-uuid',
+            'datetime lol',
+            'a-fun-user-ID',
+            'delete'
+        )
         logger = Logger(
             mock_upserter,
             'fun_app',
@@ -71,7 +78,14 @@ class TestLogger:
         """`user_id` is set and not `None` -> log update"""
 
         mock_upserter = create_autospec(_UpsertDataSource)
-        mock_upserter.upsert.side_effect = self.__assert_correct_object
+        mock_upserter.data_object_factory.side_effect = self.__assert_correct_object(
+            'log-fun_app',
+            'test',
+            'test-uuid',
+            'datetime lol',
+            'a-fun-user-ID',
+            'update'
+        )
         logger = Logger(
             mock_upserter,
             'fun_app',
@@ -84,7 +98,7 @@ class TestLogger:
         logger.register(mock_updater)
 
         # call the `update()` method
-        mock_updater.update('test', ['thing_A'])
+        mock_updater.update('test', [Mock()])
 
         # assert called once, with correct arguments
         mock_upserter.upsert.assert_called_once()
@@ -93,7 +107,14 @@ class TestLogger:
         """`user_id` is set and not `None` -> log upsert"""
 
         mock_upserter_logger = create_autospec(_UpsertDataSource)
-        mock_upserter_logger.upsert.side_effect = self.__assert_correct_object
+        mock_upserter_logger.data_object_factory.side_effect = self.__assert_correct_object(
+            'log-fun_app',
+            'test',
+            'test-uuid',
+            'datetime lol',
+            'a-fun-user-ID',
+            'upsert'
+        )
         logger = Logger(
             mock_upserter_logger,
             'fun_app',
@@ -106,15 +127,18 @@ class TestLogger:
         logger.register(mock_upserter)
 
         # call the `upsert()` method
-        mock_upserter.upsert('test', ['thing_A'])
+        mock_upserter.upsert('test', [Mock()])
 
         # assert called once, with correct arguments
         mock_upserter_logger.upsert.assert_called_once()
+        print (mock_upserter_logger.upsert.call_args_list)
+        assert False
 
     def __assert_correct_object(
+        self,
         type_: str,
         _object_type_: str,
-        id_: str,
+        _id_: str,
         datetime_: str,
         user_id_: str,
         operation_: str
@@ -124,13 +148,11 @@ class TestLogger:
         is correct.
         """
 
-        def inner(object_type: str, objects: list[DataObject]) -> None:
+        def inner(object_type: str, id_: str = None, data: dict = None) -> None:
             assert object_type == type_
 
-            (data_object,) = objects
-
-            assert data_object.id == id_
-            assert data_object.attributes == {
+            assert _id_ == id_
+            assert data == {
                 '_object_type': _object_type_,
                 'datetime': datetime_,
                 'user_id': user_id_,
