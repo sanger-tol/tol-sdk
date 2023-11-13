@@ -4,15 +4,16 @@
 
 from __future__ import annotations
 
-import typing
 from datetime import datetime
 from typing import Callable, Optional, Union
 from uuid import uuid4
 
+from ..core import DataObject, DataSource
 from ..core.operator import Deleter, Updater, Upserter
 
-if typing.TYPE_CHECKING:
-    from ..core import DataObject, DataSource
+
+LoggingDataSource = Union[DataSource, Upserter]
+UserIdGetter = Callable[[], Optional[str]]
 
 
 class Logger:
@@ -32,9 +33,9 @@ class Logger:
 
     def __init__(
         self,
-        logging_datasource: Union[DataSource, Upserter],
+        logging_datasource: LoggingDataSource,
         app_name: str,
-        user_id_getter: Callable[[], Optional[str]],
+        user_id_getter: UserIdGetter,
         datetime_now: Callable[[], str] = lambda: str(datetime.now()),
         uuid_generator: Callable[[], str] = lambda: uuid4().hex
     ) -> None:
