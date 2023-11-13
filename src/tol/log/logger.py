@@ -95,7 +95,8 @@ class Logger:
 
             def wrapper(obj, object_type, *args, **kwargs):
                 return_val = func(obj, object_type, *args, **kwargs)
-                self.__log_operation(object_type, operation)
+                if self.__user_id_getter() is not None:
+                    self.__log_operation(object_type, operation)
                 return return_val
 
             return wrapper
