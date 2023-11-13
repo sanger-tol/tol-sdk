@@ -23,15 +23,17 @@ class TestElasticLogger:
         mock_ds_class.return_value = mock_ds
 
         mock_logger = Mock()
+        mock_user_id_getter = Mock()
 
         def __logger_factory(
             ds: DataSource,
             app_name: str,
-            _
+            user_id_getter: UserIdGetter
         ) -> Logger:
 
             assert ds == mock_ds
             assert app_name == 'my-app'
+            assert user_id_getter == mock_user_id_getter
 
             return mock_logger
 
@@ -41,7 +43,8 @@ class TestElasticLogger:
             'please',
             'my-app',
             elastic_factory=lambda c: mock_ds_class(c),
-            logger_factory=__logger_factory
+            logger_factory=__logger_factory,
+            user_id_getter=mock_user_id_getter
         )
         assert observed_logger == mock_logger
 
