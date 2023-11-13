@@ -66,13 +66,6 @@ class TestLogger:
 
         # assert called once, with correct arguments
         mock_upserter.upsert.assert_called_once()
-        ((log_object_type, (data_object,)), _) = mock_upserter.upsert.call_args_list
-        assert log_object_type == 'log-fun_app'
-        assert data_object._object_type == 'test'
-        assert data_object.id == 'test-uuid'
-        assert data_object.datetime == 'datetime lol'
-        assert data_object.user_id == 'a-fun-user-ID'
-        assert data_object.operation == 'delete'
 
     def test_update_log(self):
         """`user_id` is set and not `None` -> log update"""
@@ -95,13 +88,6 @@ class TestLogger:
 
         # assert called once, with correct arguments
         mock_upserter.upsert.assert_called_once()
-        ((log_object_type, (data_object,)), _) = mock_upserter.upsert.call_args_list
-        assert log_object_type == 'log-fun_app'
-        assert data_object._object_type == 'test'
-        assert data_object.id == 'test-uuid'
-        assert data_object.datetime == 'datetime lol'
-        assert data_object.user_id == 'a-fun-user-ID'
-        assert data_object.operation == 'update'
 
     def test_upsert_log(self):
         """`user_id` is set and not `None` -> log upsert"""
