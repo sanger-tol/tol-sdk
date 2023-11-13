@@ -136,7 +136,7 @@ class TestLogger:
         self,
         type_: str,
         _object_type_: str,
-        _id_: str,
+        _log_id: str,
         datetime_: str,
         user_id_: str,
         operation_: str
@@ -148,13 +148,13 @@ class TestLogger:
 
         def inner(
             log_object_type: str,
-            log_id: str = None,
+            id_: str = None,
             data: dict = None
         ) -> None:
 
             assert log_object_type == type_
 
-            assert _id_ == log_id
+            assert _log_id == id_
             assert data == {
                 '_object_type': _object_type_,
                 'datetime': datetime_,
