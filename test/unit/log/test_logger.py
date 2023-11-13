@@ -63,6 +63,7 @@ class TestLogger:
         ((log_object_type, (data_object,)), _) = mock_upserter.upsert.call_args_list
         assert log_object_type == 'log-fun_app'
         assert data_object.type == 'test'
+        assert data_object.id == 'a-fun-user-ID'
         assert data_object.datetime == 'datetime lol'
         assert data_object.user_id == 'a-fun-user-ID'
         assert data_object.operation == 'delete'
@@ -90,6 +91,7 @@ class TestLogger:
         ((log_object_type, (data_object,)), _) = mock_upserter.upsert.call_args_list
         assert log_object_type == 'log-fun_app'
         assert data_object.type == 'test'
+        assert data_object.id == 'a-fun-user-ID'
         assert data_object.datetime == 'datetime lol'
         assert data_object.user_id == 'a-fun-user-ID'
         assert data_object.operation == 'update'
@@ -117,6 +119,7 @@ class TestLogger:
         ((log_object_type, (data_object,)), _) = mock_upserter_logger.upsert.call_args_list
         assert log_object_type == 'log-fun_app'
         assert data_object.type == 'test'
+        assert data_object.id == 'a-fun-user-ID'
         assert data_object.datetime == 'datetime lol'
         assert data_object.user_id == 'a-fun-user-ID'
         assert data_object.operation == 'upsert'
