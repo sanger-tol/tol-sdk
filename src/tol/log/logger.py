@@ -3,6 +3,7 @@
 # SPDX-License-Identifier: MIT
 
 import typing
+from typing import Callable
 
 if typing.TYPE_CHECKING:
     from ..core.operator import Upserter
@@ -16,5 +17,10 @@ class Logger:
     have been previously called on this `DataSource` instance.
     """
 
-    def __init__(self, logging_datasource: Upserter) -> None:
+    def __init__(
+        self,
+        logging_datasource: Upserter,
+        uuid_generator: Callable[[], str] = None,
+        user_id_getter: Callable[[], str] = None
+    ) -> None:
         pass
