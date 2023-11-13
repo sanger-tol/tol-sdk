@@ -66,9 +66,7 @@ class Logger:
                 [log_object]
             )
         except Exception as e:
-            print(
-                f'Unknown logging error: {e}'
-            )
+            print(f'Unknown logging error: {e}')
 
     def __create_log_object(self, object_type: str, operation: str) -> DataObject:
         log_data = {
