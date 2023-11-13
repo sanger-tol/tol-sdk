@@ -25,10 +25,13 @@ def elastic_logger(
     `ElasticDataSource`.
     """
 
-    elastic_ds = ElasticDataSource(
+    elastic_ds = factory(
         {
             'uri': uri,
             'user': user,
-            'password': password
+            'password': password,
+            'index_prefix': '',
+            'relationship_cfg': {}
         }
     )
+    return elastic_ds

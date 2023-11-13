@@ -14,12 +14,16 @@ class TestElasticLogger:
         """Tests arguments are passed in correctly"""
 
         mock_ds_class = Mock()
-        elastic_logger(
+        expected = Mock()
+        mock_ds_class.return_value = expected
+
+        observed = elastic_logger(
             'a fun URI that is really great',
             'me',
             'please',
             factory=lambda c: mock_ds_class(c)
         )
+        assert expected == observed
 
         mock_ds_class.assert_called_once_with(
             'a fun URI that is really great',
