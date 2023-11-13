@@ -131,8 +131,6 @@ class TestLogger:
 
         # assert called once, with correct arguments
         mock_upserter_logger.upsert.assert_called_once()
-        print (mock_upserter_logger.upsert.call_args_list)
-        assert False
 
     def __assert_correct_object(
         self,

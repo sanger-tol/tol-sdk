@@ -91,8 +91,8 @@ class Logger:
 
         def decorator(func: Callable):
 
-            def wrapper(obj, object_type, *args, **kwargs):
-                return_val = func(obj, object_type, *args, **kwargs)
+            def wrapper(object_type, *args, **kwargs):
+                return_val = func(object_type, *args, **kwargs)
                 if self.__user_id_getter() is not None:
                     self.__log_operation(object_type, operation)
                 return return_val
