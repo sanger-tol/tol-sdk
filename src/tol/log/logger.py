@@ -50,7 +50,7 @@ class Logger:
         the request.
         """
 
-        for name, operator in self.__METHOD_OPERATOR_MAPPING.keys():
+        for name, operator in self.__METHOD_OPERATOR_MAPPING.items():
             if isinstance(logged, operator):
                 self.__decorate_operation(logged, name)
 
@@ -64,7 +64,6 @@ class Logger:
 
         def decorator(func: Callable):
 
-            @wraps(func)
             def wrapper(obj, object_type, *args, **kwargs):
                 return func(obj, object_type, *args, **kwargs)
 
