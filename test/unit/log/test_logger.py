@@ -4,17 +4,13 @@
 
 from unittest.mock import Mock, create_autospec
 
-from tol.core import DataSource, core_data_object
+from tol.core import DataSource, DataObject
 from tol.core.operator import Deleter, Updater, Upserter
 from tol.log import Logger
 
 
 class _UpsertDataSource(DataSource, Upserter):
     """Has all required ABC's for a logging DataSource"""
-
-    def __init__(self):
-        super().__init__({})
-        core_data_object(self)
 
 
 class _Modifier(Deleter, Updater, Upserter):
@@ -53,6 +49,7 @@ class TestLogger:
         """`user_id` is set and not `None` -> log delete"""
 
         mock_upserter = create_autospec(_UpsertDataSource)
+        mock_upserter.upsert.side_effect = self.__assert_correct_object
         logger = Logger(
             mock_upserter,
             'fun_app',
@@ -81,6 +78,7 @@ class TestLogger:
         """`user_id` is set and not `None` -> log update"""
 
         mock_upserter = create_autospec(_UpsertDataSource)
+        mock_upserter.upsert.side_effect = self.__assert_correct_object
         logger = Logger(
             mock_upserter,
             'fun_app',
@@ -109,6 +107,7 @@ class TestLogger:
         """`user_id` is set and not `None` -> log upsert"""
 
         mock_upserter_logger = create_autospec(_UpsertDataSource)
+        mock_upserter_logger.upsert.side_effect = self.__assert_correct_object
         logger = Logger(
             mock_upserter_logger,
             'fun_app',
@@ -125,10 +124,31 @@ class TestLogger:
 
         # assert called once, with correct arguments
         mock_upserter_logger.upsert.assert_called_once()
-        ((log_object_type, (data_object,)), _) = mock_upserter_logger.upsert.call_args_list
-        assert log_object_type == 'log-fun_app'
-        assert data_object._object_type == 'test'
-        assert data_object.id == 'test-uuid'
-        assert data_object.datetime == 'datetime lol'
-        assert data_object.user_id == 'a-fun-user-ID'
-        assert data_object.operation == 'upsert'
+
+    def __assert_correct_object(
+        type_: str,
+        _object_type_: str,
+        id_: str,
+        datetime_: str,
+        user_id_: str,
+        operation_: str
+    ) -> None:
+        """
+        Asserts that the data object given to the logging datasource's upsert
+        is correct.
+        """
+
+        def inner(object_type: str, objects: list[DataObject]) -> None:
+            assert object_type == type_
+
+            (data_object,) = objects
+
+            assert data_object.id == id_
+            assert data_object.attributes == {
+                '_object_type': _object_type_,
+                'datetime': datetime_,
+                'user_id': user_id_,
+                'operation': operation_
+            }
+
+        return inner
