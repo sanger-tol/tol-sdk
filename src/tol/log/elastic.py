@@ -12,6 +12,8 @@ from ..core import core_data_object
 from ..elastic import ElasticDataSource
 
 
+DOFactorySetter = Callable[[], Any]
+"""The setter of `DataSource().data_object_factory`"""
 ElasticFactory = Callable[
     [dict[str, Any]],
     ElasticDataSource
@@ -31,6 +33,7 @@ def __create_elastic_datasource(
     user: str,
     password: str,
     elastic_factory: ElasticFactory,
+    do_factory_setter: DOFactorySetter
 ) -> ElasticDataSource:
 
     elastic_ds = elastic_factory(
@@ -42,7 +45,7 @@ def __create_elastic_datasource(
             'relationship_cfg': {}
         }
     )
-    core_data_object(elastic_ds)
+    do_factory_setter(elastic_ds)
     return elastic_ds
 
 
@@ -53,7 +56,8 @@ def elastic_logger(
     app_name: str,
     user_id_getter: UserIdGetter = lambda: default_ctx_getter().user_id,
     elastic_factory: ElasticFactory = lambda c: ElasticDataSource(c),
-    logger_factory: LoggerFactory = lambda d, n, g: Logger(d, n, g)
+    logger_factory: LoggerFactory = lambda d, n, g: Logger(d, n, g),
+    do_factory_setter: DOFactorySetter = lambda d: core_data_object(d)
 ) -> Logger:
     """
     Instantiates `Logger` using a bespoke instance of
@@ -64,7 +68,8 @@ def elastic_logger(
         uri,
         user,
         password,
-        elastic_factory
+        elastic_factory,
+        do_factory_setter
     )
 
     return logger_factory(
