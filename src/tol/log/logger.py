@@ -5,7 +5,7 @@
 import typing
 
 if typing.TYPE_CHECKING:
-    from ..core import DataSource
+    from ..core.operator import Upserter
 
 
 class Logger:
@@ -16,5 +16,5 @@ class Logger:
     have been previously called on this `DataSource` instance.
     """
 
-    def __init__(self, logging_datasource: DataSource) -> None:
+    def __init__(self, logging_datasource: Upserter) -> None:
         pass
