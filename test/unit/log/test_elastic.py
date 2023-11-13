@@ -25,10 +25,13 @@ class TestElasticLogger:
         )
         assert expected == observed
 
+        expected_config = {
+            'uri': 'a fun URI that is really great',
+            'user': 'me',
+            'password': 'please',
+            'index_prefix': '',
+            'relationship_cfg': {}
+        }
         mock_ds_class.assert_called_once_with(
-            'a fun URI that is really great',
-            'me',
-            'please',
-            '',
-            {}
+            expected_config
         )
