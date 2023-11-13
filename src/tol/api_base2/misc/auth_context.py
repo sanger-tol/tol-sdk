@@ -2,7 +2,9 @@
 #
 # SPDX-License-Identifier: MIT
 
-from typing import Optional
+from typing import Callable, Optional
+
+import flask
 
 
 class AuthContext:
@@ -29,3 +31,16 @@ class AuthContext:
     @user_id.setter
     def user_id(self, val: str) -> None:
         self.__user_id = val
+
+
+CtxGetter = Callable[[], AuthContext]
+"""
+A callable that fetches the global `AuthContext` instance
+"""
+
+
+def default_ctx_getter() -> AuthContext:
+    return flask.g.setdefault(
+        'auth_context',
+        default=AuthContext()
+    )
