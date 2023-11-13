@@ -18,7 +18,7 @@ class Logger:
     Logs access requests using a given `DataSource` instance
     that implements `Upserter`.
 
-    To prevent infinite recursion, `Logger().log()` must not
+    To prevent infinite recursion, `Logger().add()` must not
     have been previously called on this `DataSource` instance.
     """
 
@@ -30,7 +30,7 @@ class Logger:
     ) -> None:
         pass
 
-    def log(self, logged: DataSource) -> None:
+    def add(self, logged: DataSource) -> None:
         """
         Adds logging to the various operation methods
         supported by the `logged` `DataSource` instance.
