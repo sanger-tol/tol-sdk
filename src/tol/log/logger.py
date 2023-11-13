@@ -2,6 +2,11 @@
 #
 # SPDX-License-Identifier: MIT
 
+import typing
+
+if typing.TYPE_CHECKING:
+    from ..core import DataSource
+
 
 class Logger:
     """
@@ -10,3 +15,6 @@ class Logger:
     To prevent infinite recursion, `Logger().log()` must not
     have been previously called on this `DataSource` instance.
     """
+
+    def __init__(self, logging_datasource: DataSource) -> None:
+        pass
