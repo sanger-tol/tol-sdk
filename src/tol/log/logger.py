@@ -6,12 +6,14 @@ import typing
 from typing import Callable
 
 if typing.TYPE_CHECKING:
+    from ..core import DataSource
     from ..core.operator import Upserter
 
 
 class Logger:
     """
-    Logs access requests using a given `DataSource` instance.
+    Logs access requests using a given `DataSource` instance
+    that implements `Upserter`.
 
     To prevent infinite recursion, `Logger().log()` must not
     have been previously called on this `DataSource` instance.
@@ -24,3 +26,12 @@ class Logger:
         user_id_getter: Callable[[], str] = None
     ) -> None:
         pass
+
+    def log(self, logged: DataSource) -> None:
+        """
+        Adds logging to the various operation methods
+        supported by the `logged` `DataSource` instance.
+
+        For now, just the `user_id` and `datetime` of
+        the request.
+        """
