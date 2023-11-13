@@ -146,10 +146,15 @@ class TestLogger:
         is correct.
         """
 
-        def inner(object_type: str, id_: str = None, data: dict = None) -> None:
-            assert object_type == type_
+        def inner(
+            log_object_type: str,
+            log_id: str = None,
+            data: dict = None
+        ) -> None:
 
-            assert _id_ == id_
+            assert log_object_type == type_
+
+            assert _id_ == log_id
             assert data == {
                 '_object_type': _object_type_,
                 'datetime': datetime_,
