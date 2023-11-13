@@ -21,6 +21,7 @@ class TestLogger:
         mock_upserter = create_autospec(Upserter)
         logger = Logger(
             mock_upserter,
+            'fun_app',
             lambda: None,
             uuid_generator=lambda: 'test-uuid'
         )
@@ -41,6 +42,28 @@ class TestLogger:
 
     def test_delete_log(self):
         """`user_id` is set and not `None` -> log delete"""
+
+        mock_upserter = create_autospec(Upserter)
+        logger = Logger(
+            mock_upserter,
+            'fun_app',
+            lambda: 'a-fun-user-ID',
+            datetime_now=lambda: 'datetime lol',
+            uuid_generator=lambda: 'test-uuid'
+        )
+
+        mock_deleter = create_autospec(Deleter)
+        logger.register(mock_deleter)
+
+        # call the `delete()` method
+        mock_deleter.delete('test', ['thing_A'])
+
+        # assert called once, with correct arguments
+        mock_upserter.upsert.assert_called_once()
+        ((log_object_type, (data_object,)), _) = mock_upserter.upsert.call_args_list
+        assert log_object_type == 'log-fun_app'
+        assert data_object.type == 'test'
+        assert data_object.datetime == 'datetime lol'
 
     def test_update_log(self):
         """`user_id` is set and not `None` -> log update"""

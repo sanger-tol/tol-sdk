@@ -5,6 +5,7 @@
 from __future__ import annotations
 
 import typing
+from datetime import datetime
 from typing import Callable, Optional
 from uuid import uuid4
 
@@ -25,7 +26,9 @@ class Logger:
     def __init__(
         self,
         logging_datasource: Upserter,
+        app_name: str,
         user_id_getter: Callable[[], Optional[str]],
+        datetime_now: Callable[[], str] = lambda: str(datetime.now()),
         uuid_generator: Callable[[], str] = lambda: uuid4().hex
     ) -> None:
         pass
