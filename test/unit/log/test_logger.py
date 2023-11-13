@@ -65,6 +65,7 @@ class TestLogger:
         assert data_object.type == 'test'
         assert data_object.datetime == 'datetime lol'
         assert data_object.user_id == 'a-fun-user-ID'
+        assert data_object.operation == 'delete'
 
     def test_update_log(self):
         """`user_id` is set and not `None` -> log update"""
@@ -91,6 +92,7 @@ class TestLogger:
         assert data_object.type == 'test'
         assert data_object.datetime == 'datetime lol'
         assert data_object.user_id == 'a-fun-user-ID'
+        assert data_object.operation == 'update'
 
     def test_upsert_log(self):
         """`user_id` is set and not `None` -> log upsert"""
@@ -117,3 +119,4 @@ class TestLogger:
         assert data_object.type == 'test'
         assert data_object.datetime == 'datetime lol'
         assert data_object.user_id == 'a-fun-user-ID'
+        assert data_object.operation == 'upsert'
