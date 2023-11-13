@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: MIT
 
 import typing
-from typing import Callable
+from typing import Callable, Optional
 
 if typing.TYPE_CHECKING:
     from ..core import DataSource
@@ -23,7 +23,7 @@ class Logger:
         self,
         logging_datasource: Upserter,
         uuid_generator: Callable[[], str] = None,
-        user_id_getter: Callable[[], str] = None
+        user_id_getter: Callable[[], Optional[str]] = None
     ) -> None:
         pass
 
