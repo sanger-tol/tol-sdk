@@ -54,6 +54,7 @@ def elastic_logger(
     user: str,
     password: str,
     app_name: str,
+    # the below (keyword) arguments are optional and used mainly for testing
     user_id_getter: UserIdGetter = lambda: default_ctx_getter().user_id,
     elastic_factory: ElasticFactory = lambda c: ElasticDataSource(c),
     logger_factory: LoggerFactory = lambda d, n, g: Logger(d, n, g),
