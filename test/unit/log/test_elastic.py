@@ -66,13 +66,13 @@ class TestElasticLogger:
         """
 
         mock_ds_class = Mock()
-        mock_do_factory = Mock()
+        mock_do_factory_setter = Mock()
         elastic_logger(
             'a fun URI that is really great',
             'me',
             'please',
             'my-app',
             elastic_factory=lambda _: mock_ds_class,
-            do_factory_setter=lambda d: mock_do_factory(d)
+            do_factory_setter=lambda d: mock_do_factory_setter(d)
         )
-        mock_do_factory.assert_called_once_with(mock_ds_class)
+        mock_do_factory_setter.assert_called_once_with(mock_ds_class)
