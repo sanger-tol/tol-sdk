@@ -6,6 +6,7 @@
 variables:
   DOCKER_IMAGE: $CI_REGISTRY/tol/tol-core/build-base:1.0.0
   DIND_IMAGE: $CI_REGISTRY/tol/tol-core/dind:1.0.0
+  GOOGLE_CLIENT_SECRETS: $GOOGLE_CLIENT_SECRETS_DEV
 
 
 include:

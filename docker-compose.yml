@@ -24,6 +24,7 @@ services:
     command: pytest -v system
     environment:
       - DB_URI=postgresql://test-user:test-password@tol-sdk-python-db:5432/test-db
+      - GOOGLE_CLIENT_SECRETS
     depends_on:
       - tol-sdk-python-db
     networks:
