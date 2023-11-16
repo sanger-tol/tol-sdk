@@ -53,14 +53,23 @@ class Database(ABC):
         """
 
     @abstractmethod
-    def delete(self, tablename: str, instance_id: Any) -> None:
+    def delete(
+        self,
+        tablename: str,
+        instance_id: Any,
+        user_id: Optional[str] = None
+    ) -> None:
         """
         Deletes the `Model` instance of specified tablename and
         instance-ID.
         """
 
     @abstractmethod
-    def upsert(self, instance: Model) -> None:
+    def upsert(
+        self,
+        instance: Model,
+        user_id: Optional[str] = None
+    ) -> None:
         """Performs an "upsert" on the given `Model` instance."""
 
     @abstractmethod
@@ -146,14 +155,35 @@ class DefaultDatabase(Database):
         session.close()
         return count
 
-    def delete(self, tablename: str, instance_id: Any) -> None:
+    def delete(
+        self,
+        tablename: str,
+        instance_id: Any,
+        user_id: Optional[str] = None
+    ) -> None:
         instance, session = self.__get_instance_by_id(tablename, instance_id)
         session.delete(instance)
-        self.__commit_session(session, instance, 'deletion')
+        self.__commit_session(
+            session,
+            instance,
+            'deletion',
+            user_id=user_id,
+            is_delete=True
+        )
 
-    def upsert(self, instance: Model) -> None:
+    def upsert(
+        self,
+        instance: Model,
+        user_id: Optional[str] = None
+    ) -> None:
+
         session = self.__upsert_to_session(instance)
-        self.__commit_session(session, instance, 'upserting')
+        self.__commit_session(
+            session,
+            instance,
+            'upserting',
+            user_id=user_id
+        )
 
     def get_to_one_relation(
         self,
@@ -203,15 +233,28 @@ class DefaultDatabase(Database):
         self,
         session: Session,
         instance: Model,
-        operation: str
+        operation: str,
+        user_id: Optional[str] = None,
+        is_delete: bool = False
     ) -> None:
 
         try:
+            if not is_delete:
+                self.__before_commit(instance, session, user_id)
             session.commit()
         except IntegrityError:
             self.__raise_integrity_error(instance, operation)
         finally:
             session.close()
+
+    def __before_commit(
+        self,
+        instance: Model,
+        session: Session,
+        user_id: Optional[str]
+    ) -> None:
+        instance.before_commit(user_id=user_id)
+        session.merge(instance)
 
     def __get_instance_by_id(
         self,

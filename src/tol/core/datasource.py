@@ -5,7 +5,7 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import Any, Dict, List, Optional, Tuple, TypeVar
+from typing import Any, Callable, Dict, List, Optional, Tuple, TypeVar
 
 from .data_object import DataDict
 from .datasource_error import DataSourceError, NoDataObjectFactoryError
@@ -16,6 +16,7 @@ from .operator import Operator
 DataId = str
 DataSourceUpdate = Tuple[DataId, DataDict]
 DataSourceConfig = Dict[str, Any]
+UserIdGetter = Callable[[], str]
 
 
 class DataSource(ABC):

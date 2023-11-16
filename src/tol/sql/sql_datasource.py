@@ -14,7 +14,8 @@ from ..core import (
     DataId,
     DataObject,
     DataSource,
-    DataSourceFilter
+    DataSourceFilter,
+    UserIdGetter
 )
 from ..core.factory import DataObjectFactory
 from ..core.operator import (
@@ -59,7 +60,8 @@ class SqlDataSource(
         converter_factory: ConverterFactory,
         back_converter_factory: BackConverterFactory,
         filter_factory: FilterFactory,
-        sorter_factory: SorterFactory
+        sorter_factory: SorterFactory,
+        user_id_getter: Optional[UserIdGetter] = None
     ) -> None:
 
         self.__db = db
@@ -71,6 +73,8 @@ class SqlDataSource(
         self.__filter_factory = filter_factory
         self.__sorter_factory = sorter_factory
         self.__all_attribute_types = self.__calculate_all_attribute_types()
+        self.__set_user_id_getter(user_id_getter)
+
         super().__init__({})
 
     @property
@@ -135,15 +139,17 @@ class SqlDataSource(
 
     def delete(self, object_type: str, object_ids: Iterable[str]) -> None:
         tablename = self.__type_tablename_map[object_type]
+        user_id = self.__user_id_getter()
         for object_id in object_ids:
-            self.__db.delete(tablename, object_id)
+            self.__db.delete(tablename, object_id, user_id=user_id)
 
     def upsert(self, object_type: str, objects: Iterable[DataObject]) -> None:
         # TODO optimise by batching?
         back_converter = self.__back_converter_factory()
         model_instances = back_converter.convert_iterable(objects)
+        user_id = self.__user_id_getter()
         for instance in model_instances:
-            self.__db.upsert(instance)
+            self.__db.upsert(instance, user_id=user_id)
 
     def get_to_one_relation(
         self,
@@ -261,4 +267,13 @@ class SqlDataSource(
         return (
             None if page_number is None or page_size is None
             else (page_number - 1) * page_size
+        )
+
+    def __set_user_id_getter(
+        self,
+        user_id_getter: UserIdGetter
+    ) -> None:
+
+        self.__user_id_getter = (
+            (lambda: None) if user_id_getter is None else user_id_getter
         )

@@ -3,16 +3,18 @@
 # SPDX-License-Identifier: MIT
 
 
-from .a import A  # noqa
-from .b import B  # noqa
-from .r1 import R1  # noqa
-from .r2 import R2  # noqa
-from .r3 import R3  # noqa
-from .ext import ExtDefault, ExtOverride  # noqa
+from .a import A
+from .b import B
+from .c import C
+from .ext import ExtDefault, ExtOverride
+from .r1 import R1
+from .r2 import R2
+from .r3 import R3
 
 delete_models_list = [
     A,
     B,
+    C,
     R3,  # must come before R1, as it points to it
     R1,
     R2,

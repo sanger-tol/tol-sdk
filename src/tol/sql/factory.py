@@ -2,7 +2,7 @@
 #
 # SPDX-License-Identifier: MIT
 
-from typing import Dict, List, Type
+from typing import Callable, Dict, List, Type
 
 from .database import Database, DefaultDatabase
 from .filter import DefaultDatabaseFilter
@@ -18,6 +18,13 @@ from .sql_datasource import (
     SorterFactory,
     SqlDataSource
 )
+from ..api_base2.misc.auth_context import default_ctx_getter
+
+
+DatabaseFactory = Callable[
+    [List[Type[Model]], str],
+    Database
+]
 
 
 def __model_converter_factory(
@@ -77,7 +84,14 @@ def __database(
 def create_sql_datasource(
     models: List[Type[Model]],
     db_uri: str,
-    type_function: TypeFunction = lambda m: m.get_table_name()
+    behind_api: bool = False,
+
+    # arguments below are optional and used mainly for testing
+    type_function: TypeFunction = lambda m: m.get_table_name(),
+    api_user_id_getter: Callable[[], str] = lambda: default_ctx_getter().user_id,
+    database_factory: DatabaseFactory = __database,
+    model_factory: BackConverterFactory = __back_converter_factory,
+    do_factory: ConverterFactory = __model_converter_factory
 ) -> SqlDataSource:
     """
     Creates an SqlDataSource instance using:
@@ -87,13 +101,15 @@ def create_sql_datasource(
     - an (optional) callable that gets the DataObject type for a given Model class
     """
 
-    converter_factory = __model_converter_factory(type_function)
-    back_converter_factory = __back_converter_factory(models, type_function)
+    converter_factory = do_factory(type_function)
+    back_converter_factory = model_factory(models, type_function)
     sorter_factory = __sorter_factory()
     filter_factory = __filter_factory()
     type_tablename_dict = __type_tablename_dict(models, type_function)
     sql_relationship_config = DefaultSqlRelationshipConfig(models, type_function)
-    db = __database(models, db_uri)
+    db = database_factory(models, db_uri)
+
+    user_id_getter = api_user_id_getter if behind_api else None
 
     return SqlDataSource(
         db,
@@ -102,5 +118,6 @@ def create_sql_datasource(
         converter_factory,
         back_converter_factory,
         filter_factory,
-        sorter_factory
+        sorter_factory,
+        user_id_getter=user_id_getter
     )

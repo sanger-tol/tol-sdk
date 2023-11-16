@@ -4,10 +4,10 @@
 
 from string import ascii_uppercase
 from typing import Any, Dict, Iterable, Optional
-from unittest.mock import MagicMock, PropertyMock, call
+from unittest.mock import MagicMock, Mock, PropertyMock, call
 
 from tol.core import DataSourceFilter, core_data_object
-from tol.sql import SqlDataSource
+from tol.sql import SqlDataSource, create_sql_datasource
 from tol.sql.filter import DatabaseFilter
 from tol.sql.model import Model
 from tol.sql.sql_converter import Converter, TypeFunction
@@ -548,7 +548,7 @@ class TestSqlDataSource:
         ds.delete('tests', list(ascii_uppercase))
 
         assert mock_db.delete.call_args_list == [
-            call('mapped_tablename', c) for c in ascii_uppercase
+            call('mapped_tablename', c, user_id=None) for c in ascii_uppercase
         ]
 
     def test_upsert(self):
@@ -573,7 +573,7 @@ class TestSqlDataSource:
             MagicMock()
         )
         ds.upsert('tests', mock_object)
-        mock_db.upsert.assert_called_once_with(mock_model)
+        mock_db.upsert.assert_called_once_with(mock_model, user_id=None)
 
     def test_get_attribute_types(self):
         """
@@ -618,6 +618,70 @@ class TestSqlDataSource:
             'boolean': 'bool'
         }
         mock_attribute_types.assert_called_once()
+
+    def test_user_id_delete(self):
+        """user_id is set on delete"""
+
+        mock_db = Mock()
+        type(mock_db).attribute_types = PropertyMock(
+            return_value={'test': {}}
+        )
+
+        mock_model = Mock()
+        mock_model.get_table_name.return_value = 'test'
+        mock_model.get_to_one_relationship_config.return_value = {}
+        mock_model.get_to_many_relationship_config.return_value = {}
+
+        sql_ds = create_sql_datasource(
+            [mock_model],
+            '',
+            behind_api=True,
+            api_user_id_getter=lambda: 'a user ID',
+            database_factory=lambda __a, __b: mock_db
+        )
+
+        sql_ds.delete('test', ['test_ID'])
+
+        mock_db.delete.assert_called_once_with(
+            'test',
+            'test_ID',
+            user_id='a user ID'
+        )
+
+    def test_user_id_upsert(self):
+        """user_id is set on upsert"""
+
+        mock_db = Mock()
+        type(mock_db).attribute_types = PropertyMock(
+            return_value={'test': {}}
+        )
+
+        mock_model = Mock()
+        mock_model.get_table_name.return_value = 'test'
+        mock_model.get_to_one_relationship_config.return_value = {}
+        mock_model.get_to_many_relationship_config.return_value = {}
+
+        mock_model_instance = Mock()
+        mock_model_factory = Mock()
+        mock_model_factory.convert_iterable.return_value = [mock_model_instance]
+
+        sql_ds = create_sql_datasource(
+            [mock_model],
+            '',
+            behind_api=True,
+            api_user_id_getter=lambda: 'a user ID',
+            database_factory=lambda __a, __b: mock_db,
+            model_factory=lambda __a, __b: lambda: mock_model_factory
+        )
+
+        mock_obj = self.__get_mock_data_object('test', '1')
+
+        sql_ds.upsert('test', [mock_obj])
+
+        mock_db.upsert.assert_called_once_with(
+            mock_model_instance,
+            user_id='a user ID'
+        )
 
     def __get_mock_data_object(self, type_: str, id_: str) -> MagicMock:
         """Mocks a DataObject of given type and id"""

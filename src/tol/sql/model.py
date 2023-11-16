@@ -5,19 +5,24 @@
 from __future__ import annotations
 
 from abc import ABC, ABCMeta, abstractmethod
+from datetime import datetime
 from typing import Any, Iterable, Optional, Type
 
 from sqlalchemy import JSON, inspect
 from sqlalchemy.orm import (
     ColumnProperty,
     DeclarativeMeta,
+    Mapped,
     MappedColumn,
     RelationshipDirection,
-    declarative_base
+    declarative_base,
+    declared_attr,
+    mapped_column
 )
 
 from .exception import BadColumnError
 from .relationship import InstanceRelationDict
+from ..core import DataSourceError
 
 
 class Model(ABC):
@@ -73,6 +78,11 @@ class Model(ABC):
     def get_foreign_key_name(cls, relationship_name: str) -> str:
         """
         The name of the foreign key column for the given relationship name
+        """
+
+    def before_commit(self, user_id: Optional[str] = None) -> None:
+        """
+        The method that is called by a `Database` instance before a commit
         """
 
     @classmethod
@@ -135,7 +145,16 @@ class InstanceToManyDict(
         return self.source.get_to_many_relationship_config()
 
 
-def model_base() -> Type[Model]:
+class DefaultModel(Model, ABC):
+    Log: Model
+    """
+    An inherited class that logs changes to its fields:
+    - when
+    - by whom
+    """
+
+
+def model_base() -> Type[DefaultModel]:
     """
     Creates a new base for Model classes that implement the Model ABC.
     """
@@ -151,7 +170,7 @@ def model_base() -> Type[Model]:
         }
     )
 
-    class ModelBase(DeclarativeBase, Model, ABC):
+    class ModelBase(DeclarativeBase, DefaultModel, ABC):
         """
         An ABC that implements the Model ABC, using reasonable defaults.
 
@@ -300,5 +319,47 @@ def model_base() -> Type[Model]:
                 and k not in relationships
                 and k not in foreign_keys
             ]
+
+    class LogBase(ModelBase):
+        """
+        Logs changes to its columns. (by whom/when)
+        """
+
+        __abstract__ = True
+
+        @declared_attr
+        def modified_at(self) -> Mapped[datetime]:
+            return mapped_column(nullable=True)
+
+        @declared_attr
+        def modified_by(self) -> Mapped[str]:
+            return mapped_column(nullable=True)
+
+        def before_commit(
+            self,
+            *,
+            user_id: Optional[str]
+        ) -> None:
+
+            if user_id is None:
+                self.__raise_unknown_user()
+            self.__update_log_fields(user_id)
+
+        def __update_log_fields(
+            self,
+            user_id: str
+        ) -> None:
+
+            self.modified_by = user_id
+            self.modified_at = datetime.now()
+
+        def __raise_unknown_user(self) -> None:
+            raise DataSourceError(
+                title='Unauthenticated',
+                detail='No user identified for this change.',
+                status_code=401
+            )
+
+    ModelBase.Log = LogBase
 
     return ModelBase

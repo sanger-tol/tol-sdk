@@ -7,7 +7,6 @@ from collections import ChainMap
 from itertools import chain
 from typing import Callable, Optional, Protocol
 
-import flask
 from flask import Blueprint, request
 
 from .controller import Controller
@@ -15,12 +14,15 @@ from .exception import BaseRuntimeException
 from .misc import (
     AggregationBody,
     AggregationParameters,
-    AuthContext,
     Authenticator,
     DefaultOperatorConfig,
     JsonApiRequestBody,
     ListGetParamaters,
     OperatorConfig
+)
+from .misc.auth_context import (
+    CtxGetter,
+    default_ctx_getter
 )
 from .parser import DefaultParser
 from .view import DefaultView
@@ -138,19 +140,6 @@ def config_blueprint(
         return operator_config.to_dict()
 
     return config_handler
-
-
-CtxGetter = Callable[[], AuthContext]
-"""
-A callable that fetches the global `AuthContext` instance
-"""
-
-
-def default_ctx_getter() -> AuthContext:
-    return flask.g.setdefault(
-        'auth_context',
-        default=AuthContext()
-    )
 
 
 def data_blueprint(
