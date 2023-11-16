@@ -14,6 +14,7 @@ from .exception import (
 from .misc import (
     AggregationBody,
     AggregationParameters,
+    JsonApiRequestBody,
     ListGetParamaters
 )
 from .view import ResponseDict, View
@@ -22,6 +23,7 @@ from ..core.operator import (
     Aggregator,
     Deleter,
     DetailGetter,
+    ListGetter,
     Operator,
     PageGetter,
     Updater,
@@ -128,6 +130,26 @@ class Controller:
             'types': self.__data_source.get_attribute_types(object_type)
         }
         return self.__view.dump_bulk(data_objects, document_meta=document_meta)
+
+    @validate(ListGetter, 'post_list_export', 'list POST')
+    def post_list_export(
+        self,
+        object_type: str,
+        query_args: ListGetParamaters,
+        body: JsonApiRequestBody
+    ) -> ResponseDict:
+        """
+        Gets all the list results of the specified type.
+        """
+        page_number = self.__get_page_number_or_1(query_args)
+        data_objects, _ = self.__data_source.get_list_page(
+            object_type,
+            page_number,
+            page_size=query_args.page_size,
+            object_filters=query_args.filter,
+            sort_by=query_args.sort_by
+        )
+        return self.__view.dump_bulk_excel(data_objects, body.data)
 
     @validate(Deleter, 'delete', 'detail DELETE')
     def delete_detail(

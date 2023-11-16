@@ -6,9 +6,12 @@ import urllib
 from abc import ABC, abstractmethod
 from typing import Any, Dict, Iterable, List, Optional, Union
 
+from flask import make_response
+
+from tol.excel import convert_data_objects_to_excel
+
 from ..core import DataObject
 from ..core.operator import Relational
-
 
 DocumentMeta = Dict[str, Any]
 DumpDict = Dict[str, Any]
@@ -40,6 +43,15 @@ class View(ABC):
     ) -> ResponseDict:
         """
         Create a JSON:API response for an Iterable of DataObject results
+        """
+
+    @abstractmethod
+    def dump_bulk_excel(
+        self,
+        data_objects: Iterable[DataObject]
+    ) -> ResponseDict:
+        """
+        Create an vnd.ms-excel response for an Iterable of DataObject results
         """
 
 
@@ -82,6 +94,17 @@ class DefaultView(View):
         }
         if document_meta is not None:
             response['meta'] = document_meta
+        return response
+
+    def dump_bulk_excel(
+            self,
+            data_objects: Iterable[DataObject],
+            body: object
+    ) -> ResponseDict:
+        output_stream = convert_data_objects_to_excel(data_objects, body, 'Sheet1')
+        response = make_response(output_stream.getvalue())
+        response.headers['Content-Disposition'] = 'attachment; filename=download_table.xlsx'
+        response.headers['Content-type'] = 'application/vnd.ms-excel'
         return response
 
     def __dump_object(self, data_object: DataObject) -> DumpDict:

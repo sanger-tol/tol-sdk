@@ -186,6 +186,14 @@ def data_blueprint(
         request_args = ListGetParamaters(request.args)
         return controller.get_list(object_type, request_args)
 
+    @data_handler.route('/<object_type>:export', methods=['POST'])
+    def post_list_export(*, object_type: str):
+        controller = __new_controller(object_type)
+        request_args = ListGetParamaters(request.args)
+        body = JsonApiRequestBody(request.json)
+        response = controller.post_list_export(object_type, request_args, body)
+        return response, 200, {'Content-Type': 'application/vnd.ms-excel'}
+
     @data_handler.route('/<object_type>/<path:object_id>', methods=['DELETE'])
     def delete_detail(*, object_type: str, object_id: str):
         controller = __new_controller(object_type)
