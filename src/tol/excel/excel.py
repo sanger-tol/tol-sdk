@@ -30,6 +30,9 @@ def convert_data_objects_to_excel(data_objects, body, sheet_name):
         # Find the data object attribute matching the column name and extract the value
         for column in column_order:
             attr_value = data_object.attributes.get(column, '')
+            if not attr_value and column in data_object.to_one_relationships:
+                attr_value = data_object.to_one_relationships[column].id
+
             data[column] = attr_value
 
         # Append to data frame
