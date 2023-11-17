@@ -31,13 +31,21 @@ class StsDataSource(DataSource, Upserter):
 
     @property
     def attribute_types(self) -> dict[str, dict[str, str]]:
-        return {'sequencing_request': {
-            'platform': 'str',
-            'fluidx_id': 'str',
-            'submission_date': 'datetime'
-        }}
+        return {
+            'sequencing_request': {
+                'platform': 'str',
+                'fluidx_id': 'str',
+                'submission_date': 'datetime'
+            },
+            'extraction': {
+                'sample_id': 'str',
+                'fluidx_id': 'str',
+                'extraction_type': 'str',
+                'extraction_date': 'datetime'
+            }
+        }
 
-    def __encode_date(self, d):
+    def _encode_date(self, d):
         return d.strftime('%Y-%m-%d %H:%M:%S')
 
     def __post_sequencing_requests(self, sequencing_requests: Iterable[DataObject]):
@@ -52,13 +60,41 @@ class StsDataSource(DataSource, Upserter):
             payload = {'platform': sr.platform,
                        'fluidx_id': sr.fluidx_id,
                        'sample_ref': sr.id,
-                       'submit_date': self.__encode_date(sr.submission_date)}
+                       'submit_date': self._encode_date(sr.submission_date)}
             r = self.native_post(
                 '/sequencing-requests',
                 json=payload
             )
             if r.ok:
                 print(f'OK: {sr.id}')
+            else:
+                print(
+                    f'A sample failed with code {r.status_code}, '
+                    f'and response {r.json()}, '
+                    f'containing data: {payload}'
+                )
+
+    def __post_extractions(self, extractions: Iterable[DataObject]):
+        """
+        We are expecting a list of DataObjects with:
+        id (the ELN id)
+        fluidx_id
+        sample_id
+        extraction_type (uppercase)
+        extraction_date
+        """
+        for extraction in extractions:
+            payload = {'eln_id': extraction.id,
+                       'sample_id': extraction.sample_id,
+                       'fluidx_id': extraction.fluidx_id,
+                       'type': extraction.extraction_type,
+                       'extraction_date': self._encode_date(extraction.extraction_date)}
+            r = self.native_post(
+                f'/ep_samples/{extraction.fluidx_id}',
+                json=payload
+            )
+            if r.ok:
+                print(f'OK: {extraction.id}')
             else:
                 print(
                     f'A sample failed with code {r.status_code}, '
@@ -73,9 +109,11 @@ class StsDataSource(DataSource, Upserter):
     ) -> None:
         if object_type == 'sequencing_request':
             self.__post_sequencing_requests(objects)
+        elif object_type == 'extraction':
+            self.__post_extractions(objects)
         else:
-            raise DataSourceError('Only objects of type sequencing_request are handled '
-                                  'by StsDataSource')
+            raise DataSourceError('Only objects of type sequencing_request and extraction '
+                                  'are handled by StsDataSource')
 
     # Everything below here is to do with allowing native endpoint requests
 
