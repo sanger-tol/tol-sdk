@@ -277,7 +277,8 @@ class TestElasticDataSource(TestCase):
     def test_build_query(self):
         _, eds = mock_elastic_data_source()
 
-        self.assertIsNone(eds._build_elasticsearch_query('obj_type', None))
+        expected = {'bool': {'must': [], 'must_not': []}}
+        self.assertEqual(expected, eds._build_elasticsearch_query('obj_type', None))
 
         # Exact with relationship
         rc = RelationshipConfig()
@@ -367,6 +368,66 @@ class TestElasticDataSource(TestCase):
                                         aggregations=aggregations)
         eds.es.search.assert_called_once()
         self.assertEqual(agg_result, returned)
+
+    def test_get_count(self):
+        _, eds = mock_elastic_data_source()
+
+        eds.es.count.return_value = {
+            'count': 12345
+        }
+
+        returned = eds.get_count('obj_type')
+        eds.es.count.assert_called_once()
+        self.assertEqual(12345, returned)
+
+    def test_get_counts(self):
+        _, eds = mock_elastic_data_source()
+
+        first_ret = {
+            'aggregations': {
+                'counts': {
+                    'after_key': {
+                        'test-obj-type': '1234'
+                    },
+                    'buckets': [
+                        {
+                            'key': {
+                                'test-obj-type': '1111'
+                            },
+                            'doc_count': 20
+                        },
+                        {
+                            'key': {
+                                'test-obj-type': '1112'
+                            },
+                            'doc_count': 18
+                        }
+                    ]
+                }
+            }
+        }
+
+        second_ret = {
+            'aggregations': {
+                'counts': {
+                    'buckets': []
+                }
+            }
+        }
+
+        eds.es.search.side_effect = [
+            first_ret,
+            second_ret
+        ]
+
+        returned = eds.get_counts('obj_type', group_by='field1')
+        first = next(returned)
+        self.assertEqual({'1111': 20}, first)
+        second = next(returned)
+        self.assertEqual({'1112': 18}, second)
+        with self.assertRaises(StopIteration):
+            next(returned)
+        self.assertEqual(eds.es.search.call_count, 2)
 
     def test_get_supported_types(self):
         _, eds = mock_elastic_data_source()

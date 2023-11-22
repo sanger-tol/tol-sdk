@@ -21,6 +21,7 @@ from .view import ResponseDict, View
 from ..core import DataObject, OperableDataSource
 from ..core.operator import (
     Aggregator,
+    Counter,
     Deleter,
     DetailGetter,
     ListGetter,
@@ -150,6 +151,24 @@ class Controller:
             sort_by=query_args.sort_by
         )
         return self.__view.dump_bulk_excel(data_objects, body.data)
+
+    @validate(Counter, 'get_count', 'count GET')
+    def get_count(
+        self,
+        object_type: str,
+        query_args: ListGetParamaters
+    ) -> ResponseDict:
+        """
+        Gets a count of specified object type, respecting filters.
+        """
+        total = self.__data_source.get_count(
+            object_type,
+            object_filters=query_args.filter,
+        )
+        document_meta = {
+            'total': total
+        }
+        return self.__view.dump_bulk([], document_meta=document_meta)
 
     @validate(Deleter, 'delete', 'detail DELETE')
     def delete_detail(

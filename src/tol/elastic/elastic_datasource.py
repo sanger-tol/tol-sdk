@@ -27,7 +27,9 @@ from ..core import (
 )
 from ..core.operator import (
     Aggregator,
+    Counter,
     DetailGetter,
+    GroupCounter,
     ListGetter,
     PageGetter,
     Relational,
@@ -48,7 +50,9 @@ class ElasticDataSource(
     Aggregator,
     Relational,
     Updater,
-    Upserter
+    Upserter,
+    Counter,
+    GroupCounter
 ):
 
     def __init__(self, config: Dict):
@@ -243,9 +247,9 @@ class ElasticDataSource(
 
     def _build_elasticsearch_query(self, object_type: str,
                                    object_filters: DataSourceFilter = None):
-        if object_filters is None:
-            return
         query = {'bool': {'must': [], 'must_not': []}}
+        if object_filters is None:
+            return query
         if object_filters.exact is not None:
             for k, v in object_filters.exact.items():
                 if v is None:
@@ -350,6 +354,80 @@ class ElasticDataSource(
             aggregations=aggregations
         )
         return resp['aggregations']
+
+    def get_counts(
+        self,
+        object_type: str,
+        group_by: str,
+        object_filters: DataSourceFilter = None,
+    ) -> dict[Any, int]:
+        after_key = None
+        while True:
+            after_key, buckets = self.__get_counts_page(
+                object_type,
+                group_by,
+                object_filters=object_filters,
+                after_key=after_key)
+            if len(buckets) == 0:
+                break
+            for field_value, cnt in buckets.items():
+                yield {field_value: cnt}
+
+    def __get_counts_page(
+        self,
+        object_type: str,
+        group_by: str,
+        after_key: str = None,
+        object_filters: DataSourceFilter = None,
+    ):
+        # This will return a potentially large set of results, so we need
+        # to page through them
+        index = self.__get_index(object_type)
+        aggregation = {
+            'counts': {
+                'composite': {
+                    'sources': [{
+                        index: {
+                            'terms': {
+                                'field': group_by
+                            }
+                        }
+                    }]
+                },
+            }
+        }
+
+        if after_key is not None:
+            aggregation['counts']['composite']['after'] = {
+                index: after_key
+            }
+
+        agg_page = self.get_aggregations(
+            object_type,
+            aggregations=aggregation,
+            object_filters=object_filters)
+        after_key, buckets = self.__get_data_from_count_aggregation(agg_page, index)
+        return after_key, buckets
+
+    def __get_data_from_count_aggregation(self, aggregation_result, key):
+        after_key = None
+        if 'after_key' in aggregation_result['counts']:
+            after_key = aggregation_result['counts']['after_key'][key]
+        buckets = aggregation_result['counts']['buckets']
+        return after_key, {v['key'][key]: v['doc_count'] for v in buckets}
+
+    def get_count(
+        self,
+        object_type: str,
+        object_filters: DataSourceFilter = None
+    ) -> int:
+        index = self.__get_index(object_type)
+        query = self._build_elasticsearch_query(object_type, object_filters)
+        resp = self.es.count(
+            index=index,
+            body={'query': query}  # This is named 'query' in later versions of Elastic
+        )
+        return resp['count']
 
     @property
     @cache

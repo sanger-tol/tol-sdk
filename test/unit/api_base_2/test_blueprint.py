@@ -16,6 +16,7 @@ from tol.core import (
 )
 from tol.core.operator import (
     Aggregator,
+    Counter,
     Deleter,
     DetailGetter,
     PageGetter,
@@ -27,7 +28,7 @@ from tol.core.operator.updater import DataObjectUpdate
 from .app import _test_application
 
 
-class ParrotDataSource(DataSource, DetailGetter, PageGetter, Aggregator):
+class ParrotDataSource(DataSource, DetailGetter, PageGetter, Aggregator, Counter):
     """Mimics what its told."""
 
     def get_by_id(self, object_type: str, object_ids, **kwargs):
@@ -52,6 +53,9 @@ class ParrotDataSource(DataSource, DetailGetter, PageGetter, Aggregator):
             )
             for i in range(self.get_page_size())
         ], 400  # just a silly number, arbitrary
+
+    def get_count(self, object_type: str, *args, **kwargs):
+        return 9876  # just a silly number, arbitrary
 
     def get_aggregations(
             self,
@@ -246,6 +250,21 @@ class TestBlueprint(BlueprintTestCase):
             {
                 'meta': {'aggregations': expected_aggregations,
                          'types': {'parrot': 'str'}},
+                'data': []
+            }
+        )
+
+    def test_200_on_good_count(self):
+        """A good count GET returns 200 and correct data"""
+        response = self.client.open('/data/cracker:count', method='GET')
+        self.assert200(
+            response,
+            f'Response body is : {response.data.decode("utf-8")}'
+        )
+        self.assertEqual(
+            response.json,
+            {
+                'meta': {'total': 9876},
                 'data': []
             }
         )
