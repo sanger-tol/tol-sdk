@@ -29,7 +29,7 @@ def quick_and_dirty_auth(
     token_getter: TokenGetter = lambda h: request.headers.get(h),
     token_header: str = 'token',
     method_getter: MethodGetter = lambda: request.method,
-    excluded_methods: list[str] = ['GET']
+    excluded_methods: list[str] = ['GET', 'PATCH']
 ) -> Authenticator:
     """
     Compares the "token" header to a given
