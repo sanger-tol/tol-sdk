@@ -11,7 +11,7 @@ from .converter import (
     JsonApiConverter
 )
 from .filter import ApiFilter
-from .validate import validate
+from .validate import validate, validate_id
 from ..api_base2.misc.operator_config import OperatorDict
 from ..core import DataObject, DataSource, DataSourceFilter
 from ..core.operator import (
@@ -19,8 +19,10 @@ from ..core.operator import (
     DetailGetter,
     ListGetter,
     PageGetter,
+    Relational,
     Upserter
 )
+from ..core.relationship import RelationshipConfig
 
 
 ClientFactory = Callable[[], JsonApiClient]
@@ -37,6 +39,7 @@ class ApiDataSource(
     DetailGetter,
     PageGetter,
     ListGetter,
+    Relational,
     Upserter
 ):
     """
@@ -70,6 +73,13 @@ class ApiDataSource(
     def supported_types(self) -> list[str]:
         return list(
             self.attribute_types.keys()
+        )
+
+    @property
+    def relationship_config(self) -> dict[str, RelationshipConfig]:
+        transfer = self.__client_factory().config_relationships()
+        return self.__jc_factory().convert_relationship_config(
+            transfer
         )
 
     @validate('detailGet')
@@ -160,6 +170,83 @@ class ApiDataSource(
             list(objects)
         )
         self.__client_factory().upsert(object_type, transfer)
+
+    @validate('relational', direct_object=True)
+    @validate_id
+    def get_recursive_relation(
+        self,
+        source: DataObject,
+        relationship_hops: list[str]
+    ) -> Optional[DataObject]:
+
+        self.validate_to_one_recurse(source.type, relationship_hops)
+        transfer = self.__client_factory().get_to_one_relation_recursive(
+            source.type,
+            source.id,
+            relationship_hops
+        )
+        if transfer is None:
+            return None
+        return self.__jc_factory().convert(transfer)
+
+    @validate('relational', direct_object=True)
+    @validate_id
+    def get_to_one_relation(
+        self,
+        source: DataObject,
+        relationship_name: str
+    ) -> Optional[DataObject]:
+
+        return self.get_recursive_relation(
+            source,
+            [relationship_name]
+        )
+
+    @validate('relational', direct_object=True)
+    @validate_id
+    def get_to_many_relations_page(
+        self,
+        source: DataObject,
+        relationship_name: str,
+        page: int,
+        page_size: int
+    ) -> Iterable[DataObject]:
+
+        transfer = self.__client_factory().get_to_many_relations_page(
+            source.type,
+            source.id,
+            relationship_name,
+            page,
+            page_size
+        )
+        return self.__jc_factory().convert_list(transfer)
+
+    @validate('relational', direct_object=True)
+    @validate_id
+    def get_to_many_relations(
+        self,
+        source: DataObject,
+        relationship_name: str
+    ) -> Iterable[DataObject]:
+
+        page_number = 1
+        page_size = self.get_page_size()
+
+        while True:
+            next_page = list(
+                self.get_to_many_relations_page(
+                    source,
+                    relationship_name,
+                    page_number,
+                    page_size
+                )
+            )
+
+            if not next_page:
+                return
+
+            yield from next_page
+            page_number += 1
 
     @property
     def supported_operations(self) -> dict[str, list[str]]:

@@ -4,12 +4,22 @@
 
 from typing import Any, Optional, Union
 
-from tol.core import DataObject, DataObjectFactory
+from ..core import DataObject, DataObjectFactory
+from ..core.relationship import RelationshipConfig
+
 
 JsonApiObject = dict[str, Any]
 JsonApiTransfer = dict[
     str,
     Union[JsonApiObject, list[JsonApiObject]]
+]
+JsonRelationship = dict[
+    str,  # "one" or "many"
+    dict[str, str]  # relationship_name:target_type
+]
+JsonRelationshipConfig = dict[
+    str,  # the object_type
+    JsonRelationship
 ]
 
 
@@ -52,6 +62,32 @@ class JsonApiConverter():
             self.__convert_json_object(json_obj)
             for json_obj in json_obj_list
         ], total_count
+
+    def convert_relationship_config(
+        self,
+        config_transfer: JsonRelationshipConfig
+    ) -> dict[str, RelationshipConfig]:
+        """
+        Converts a `JsonRelationshipConfig` dict, returned from
+        an `api_base2` config blueprint, to a form `ApiDataSource`
+        can understand.
+        """
+
+        return {
+            type_: self.__convert_relationship(rel)
+            for type_, rel
+            in config_transfer.items()
+        }
+
+    def __convert_relationship(
+        self,
+        rel: JsonRelationship
+    ) -> RelationshipConfig:
+
+        return RelationshipConfig(
+            to_one=rel.get('one'),
+            to_many=rel.get('many')
+        )
 
     def __convert_json_object(self, obj: JsonApiObject) -> DataObject:
         # TODO implement relationships recursively

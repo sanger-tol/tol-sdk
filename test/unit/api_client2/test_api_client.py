@@ -187,3 +187,139 @@ class TestJsonApiClient:
 
         observed = client.config_attribute_types()
         assert observed == expected
+
+    @responses.activate
+    def test_get_to_one_relation_recursive_200(self):
+        """
+        `Client().get_to_one_relation_recursive()` with a found
+        result + token
+        """
+
+        expected = {
+            'data': {
+                'type': 'g',
+                'id': 'a fun ID'
+            }
+        }
+
+        client = JsonApiClient(FAKE_API_URL, token='yes')
+        expected_url = (
+            f'{FAKE_API_URL}/data/a:to-one/good_id/b/c/d/e/f/g'
+        )
+
+        responses.get(
+            expected_url,
+            json=expected,
+            match=[
+                header_matcher({'token': 'yes'}),
+            ]
+        )
+
+        observed = client.get_to_one_relation_recursive(
+            'a',
+            'good_id',
+            ['b', 'c', 'd', 'e', 'f', 'g']
+        )
+
+        assert observed == expected
+
+    @responses.activate
+    def test_get_to_one_relation_recursive_404(self):
+        """
+        `Client().get_to_one_relation_recursive()` but not found
+        result + no token
+        """
+
+        client = JsonApiClient(FAKE_API_URL)
+        expected_url = (
+            f'{FAKE_API_URL}/data/a:to-one/good_id/b/c/d/e/f/g'
+        )
+
+        responses.get(expected_url, status=404)
+
+        observed = client.get_to_one_relation_recursive(
+            'a',
+            'good_id',
+            ['b', 'c', 'd', 'e', 'f', 'g']
+        )
+
+        assert observed is None
+
+    @responses.activate
+    def test_get_to_many_relations_page(self):
+        """
+        `Client().get_to_many_relations_page()` + token
+        """
+
+        expected = {
+            'data': [
+                {
+                    'type': 'b',
+                    'id': 'an id that is related'
+                }
+            ]
+        }
+
+        client = JsonApiClient(FAKE_API_URL, token='no :(')
+        expected_url = (
+            f'{FAKE_API_URL}/data/a:to-many/good_ideer/b_plural'
+        )
+
+        responses.get(
+            expected_url,
+            json=expected,
+            match=(
+                query_param_matcher(
+                    {
+                        'page': '9348',
+                        'page_size': '1'
+                    },
+                    strict_match=True
+                ),
+                header_matcher({'token': 'no :('})
+            )
+        )
+
+        observed = client.get_to_many_relations_page(
+            'a',
+            'good_ideer',
+            'b_plural',
+            9348,
+            1
+        )
+
+        assert observed == expected
+
+    @responses.activate
+    def test_config_relationships(self):
+        """
+        `Client().config_relationships()` with token
+        """
+
+        expected = {
+            'a': {
+                'one': {
+                    'bee movie': 'b'
+                },
+                'many': {
+                    'high seas': 'c'
+                }
+            }
+        }
+
+        client = JsonApiClient(FAKE_API_URL, token='no :(')
+        expected_url = (
+            f'{FAKE_API_URL}/data/_config/relationships'
+        )
+
+        responses.get(
+            expected_url,
+            json=expected,
+            match=[
+                header_matcher({'token': 'no :('})
+            ]
+        )
+
+        observed = client.config_relationships()
+
+        assert observed == expected

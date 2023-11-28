@@ -3,6 +3,7 @@
 # SPDX-License-Identifier: MIT
 
 from typing import Dict, Iterable, List
+from unittest.mock import Mock, PropertyMock, create_autospec
 
 from flask import Flask
 
@@ -20,6 +21,7 @@ from tol.core.operator import (
     Deleter,
     DetailGetter,
     PageGetter,
+    Relational,
     Updater,
     Upserter
 )
@@ -412,4 +414,142 @@ class TestBlueprintUpsert(TestCase):
         self.assert200(
             response,
             f'Response body is : {response.data.decode("utf-8")}'
+        )
+
+
+class TestBlueprintRelational(TestCase):
+
+    def create_app(self):
+
+        class _RelationalDS(DataSource, Relational):
+            """Inherits both `DataSource` and `Relational`"""
+
+        self.__mock_object = Mock()
+        type(self.__mock_object).type = 'test_type'
+        type(self.__mock_object).id = 'neverending-hype'
+        type(self.__mock_object).attributes = {
+            'yes': True,
+            'int': False,
+            'lol': 349508
+        }
+
+        def __get_recursive_relation(
+            __s: DataObject,
+            hops: list[str]
+        ) -> DataObject:
+
+            return None if hops[0] == 'not_found' else self.__mock_object
+
+        def __get_many_page(
+            __s: DataObject,
+            __r_name: str,
+            __page: int,
+            __page_size: int
+        ) -> Iterable[DataObject]:
+
+            return [self.__mock_object]
+
+        self.__mock_ds = create_autospec(_RelationalDS)
+        type(self.__mock_ds).supported_types = PropertyMock(
+            return_value=['test_type']
+        )
+        self.__mock_ds.get_recursive_relation.side_effect = (
+            __get_recursive_relation
+        )
+        self.__mock_ds.get_to_many_relations_page.side_effect = (
+            __get_many_page
+        )
+        type(self.__mock_ds).data_object_factory = PropertyMock(
+            return_value=lambda *_: self.__mock_object
+        )
+
+        return _test_application(self.__mock_ds)
+
+    def test_get_recursive_relation(self):
+        """
+        Tests `Relational().get_recursive_relation()`,
+        behind a blueprint, at the correct endpoint.
+        """
+
+        expected = {
+            'data': {
+                'type': 'test_type',
+                'id': 'neverending-hype',
+                'attributes': {
+                    'yes': True,
+                    'int': False,
+                    'lol': 349508
+                }
+            }
+        }
+
+        endpoint = (
+            '/data/test_type:to-one/neverending-hype/a/b/c/d'
+        )
+        response = self.client.open(endpoint, method='GET')
+        self.assert200(
+            response,
+            f'Response body is : {response.data.decode("utf-8")}'
+        )
+
+        assert response.json == expected
+
+        self.__mock_ds.get_recursive_relation.assert_called_once_with(
+            self.__mock_object,
+            ['a', 'b', 'c', 'd']
+        )
+
+    def test_get_recursive_relation_404(self):
+        """
+        Tests `Relational().get_recursive_relation()`,
+        behind a blueprint, at the correct endpoint, with
+        a 404 not found.
+        """
+
+        # include the magic phrase "not_found" as a hop
+        endpoint = (
+            '/data/test_type:to-one/neverending-hype/not_found/a/d'
+        )
+        response = self.client.open(endpoint, method='GET')
+        self.assert404(
+            response,
+            f'Response body is : {response.data.decode("utf-8")}'
+        )
+
+    def test_get_to_many_relations_page(self):
+        """
+        Tests page getter of to-many relation objects endpoint
+        """
+
+        expected = {
+            'data': [
+                {
+                    'type': 'test_type',
+                    'id': 'neverending-hype',
+                    'attributes': {
+                        'yes': True,
+                        'int': False,
+                        'lol': 349508
+                    }
+                }
+            ]
+        }
+
+        endpoint = (
+            '/data/test_type:to-many/irrelevant-id/a-nice-to-many?'
+            'page=3849&page_size=1'
+        )
+        response = self.client.open(endpoint, method='GET')
+        self.assert200(
+            response,
+            f'Response body is : {response.data.decode("utf-8")}'
+        )
+
+        assert response.json == expected
+
+        self.__mock_ds.get_to_many_relations_page.assert_called_once_with(
+            self.__mock_object,
+            'a-nice-to-many',
+            3849,
+            1
         )

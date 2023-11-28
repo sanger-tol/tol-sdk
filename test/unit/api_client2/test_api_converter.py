@@ -71,6 +71,42 @@ class TestJsonApiConverter:
         assert out_.id is None
         assert not out_.attributes
 
+    def test_convert_relationship_config(self):
+        """
+        `JsonApiConverter().convert_relationship_config()`
+        with a complex input.
+        """
+
+        in_ = {
+            'a': {
+                'one': {
+                    'bee movie': 'b'
+                },
+                'many': {
+                    'high seas': 'c',
+                    'overboard': 'planks'
+                }
+            },
+            'planks': {
+                'many': {
+                    'ahoy': 'me_mateys'
+                }
+            }
+        }
+
+        converter = JsonApiConverter(None)
+
+        out_ = converter.convert_relationship_config(in_)
+
+        assert list(out_.keys()) == ['a', 'planks']
+        assert out_['a'].to_one == {'bee movie': 'b'}
+        assert out_['a'].to_many == {
+            'high seas': 'c',
+            'overboard': 'planks'
+        }
+        assert not out_['planks'].to_one
+        assert out_['planks'].to_many == {'ahoy': 'me_mateys'}
+
     def test_relationships(self):
         """
         A resource with relationships. Tests:

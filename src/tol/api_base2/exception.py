@@ -40,6 +40,17 @@ class ObjectNotFoundByIdException(BaseRuntimeException):
         super().__init__(errors, status_code=404)
 
 
+class RecursiveRelationNotFoundException(BaseRuntimeException):
+    def __init__(self) -> None:
+        errors = [{
+            'title': 'Relation Not Found',
+            'detail': (
+                'The specified to-one relation object was not found'
+            )
+        }]
+        super().__init__(errors, status_code=404)
+
+
 class UnsupportedOpertionError(BaseRuntimeException):
     def __init__(self, object_type: str, operation: str) -> None:
         errors = [{

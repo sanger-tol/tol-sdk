@@ -3,12 +3,15 @@
 # SPDX-License-Identifier: MIT
 
 from typing import Optional
-from unittest.mock import Mock, call
+from unittest.mock import Mock, PropertyMock, call, create_autospec
 
 import pytest
 
 from tol.api_client2 import ApiDataSource
-from tol.core import DataSourceError
+from tol.api_client2.client import JsonApiClient
+from tol.api_client2.converter import JsonApiConverter
+from tol.core import DataObject, DataSourceError
+from tol.core.relationship import RelationshipConfig
 
 
 class TestApiDataSource:
@@ -404,3 +407,358 @@ class TestApiDataSource:
         assert mock_json_converter.convert_list.call_args_list == convert_calls
 
         assert observed == expected
+
+    def test_get_recursive_relation(self):
+        """`ApiDataSource().get_recursive_relation()`"""
+
+        expected = Mock()
+
+        source = Mock()
+        type(source).type = PropertyMock(return_value='a')
+        type(source).id = PropertyMock(return_value='id_MINE')
+
+        mock_client = create_autospec(JsonApiClient)
+        mock_client.config_attribute_types.return_value = {
+            c: {} for c in 'abcd'
+        }
+        mock_client.config_operations.return_value = {
+            c: {'noauth': ['relational']}
+            for c in 'abcd'
+        }
+        mock_client.get_to_one_relation_recursive.return_value = (
+            expected
+        )
+
+        mock_jc = create_autospec(JsonApiConverter)
+        mock_jc.convert.return_value = expected
+        mock_jc.convert_relationship_config.return_value = {
+            c: RelationshipConfig(
+                to_one={f'test_{c.upper()}': 'abcd'[i + 1]}
+            )
+            for i, c in enumerate('abcd')
+            if c != 'd'
+        }
+
+        api_ds = ApiDataSource(
+            lambda: mock_client,
+            lambda: mock_jc,
+            None,
+            None
+        )
+
+        observed = api_ds.get_recursive_relation(
+            source,
+            ['test_A', 'test_B']
+        )
+
+        mock_client.get_to_one_relation_recursive.assert_called_once_with(
+            'a',
+            'id_MINE',
+            ['test_A', 'test_B']
+        )
+        mock_jc.convert.assert_called_once_with(expected)
+        assert observed == expected
+
+    def test_get_to_one_relation(self):
+        """
+        `ApiDataSource().get_to_one_relation()` calls
+        `.get_recursive_relation()` internally with one hop.
+        """
+
+        mock_ds = create_autospec(ApiDataSource)
+        type(mock_ds).supported_types = ['a']
+        type(mock_ds).supported_operations = {
+            'a': ['relational']
+        }
+        type(mock_ds).relationship_config = {
+            'a': RelationshipConfig(to_one={'test_relation': 'y'})
+        }
+
+        mock_object = Mock()
+        type(mock_object).type = 'a'
+        type(mock_object).id = 'id'
+
+        # call OG method on class, with mock instance (self)
+        ApiDataSource.get_to_one_relation(
+            mock_ds,
+            mock_object,
+            'test_relation'
+        )
+
+        mock_ds.get_recursive_relation.assert_called_once_with(
+            mock_object,
+            ['test_relation']
+        )
+
+    def test_relationship_config(self):
+        """
+        `ApiDataSource().relationship_config` gets config from client
+        and converts it using its `JsonApiConverter` factory
+        """
+
+        mock_config = Mock()
+
+        expected = Mock()
+
+        mock_client = create_autospec(JsonApiClient)
+        mock_client.config_relationships.return_value = mock_config
+
+        mock_jc = create_autospec(JsonApiConverter)
+        mock_jc.convert_relationship_config.return_value = expected
+
+        api_ds = ApiDataSource(
+            lambda: mock_client,
+            lambda: mock_jc,
+            None,
+            None
+        )
+
+        observed = api_ds.relationship_config
+
+        mock_client.config_relationships.assert_called_once_with()
+        mock_jc.convert_relationship_config.assert_called_once_with(
+            mock_config
+        )
+        assert observed == expected
+
+    def test_get_to_many_relations(self):
+        """
+        `ApiDataSource().get_to_many_relations()` generates from
+        repeated calls to `.get_to_many_relations_page(), and stops
+        on the first empty page.`
+        """
+
+        mock_ds = create_autospec(ApiDataSource)
+
+        expected = [Mock() for _ in range(4)]
+
+        def __many_page(
+            source: DataObject,
+            relationship_name: str,
+            page: int,
+            page_size: int
+        ) -> list[DataObject]:
+
+            return (
+                [expected[page - 1]] if page <= 4
+                else []
+            )
+
+        type(mock_ds).supported_types = ['a']
+        type(mock_ds).supported_operations = {
+            'a': ['relational']
+        }
+        type(mock_ds).relationship_config = {
+            'a': RelationshipConfig(to_many={'plentiful': 'y'})
+        }
+        mock_ds.get_page_size.return_value = 1
+        mock_ds.get_to_many_relations_page.side_effect = __many_page
+
+        mock_object = Mock()
+        type(mock_object).type = 'a'
+        type(mock_object).id = 'id'
+
+        # one more call than pages, as the last is empty
+        expected_calls = [
+            call(mock_object, 'plentiful', i, 1)
+            for i in range(1, 6)
+        ]
+
+        # call OG method on class, with mock instance (self)
+        observed = list(
+            ApiDataSource.get_to_many_relations(
+                mock_ds,
+                mock_object,
+                'plentiful'
+            )
+        )
+
+        assert mock_ds.get_to_many_relations_page.call_args_list == (
+            expected_calls
+        )
+        assert observed == expected
+
+    def test_get_to_many_relations_page(self):
+        """
+        `ApiDataSource().get_to_many_relations_page()` uses the
+        factories for `JsonApiClient` and `JsonApiConverter` as
+        expected.
+        """
+
+        expected = [Mock() for _ in range(3)]
+
+        mock_obj = Mock()
+        type(mock_obj).type = PropertyMock(return_value='hype')
+        type(mock_obj).id = PropertyMock(
+            return_value='neverending_hype'
+        )
+
+        mock_client = create_autospec(JsonApiClient)
+        mock_client.get_to_many_relations_page.return_value = expected
+        mock_client.config_attribute_types.return_value = {
+            'hype': {}
+        }
+        mock_client.config_operations.return_value = {
+            'hype': {'auth': ['relational']}
+        }
+
+        mock_jc = create_autospec(JsonApiConverter)
+        mock_jc.convert_list.return_value = expected
+        mock_jc.convert_relationship_config.return_value = {
+            'hype': RelationshipConfig(
+                to_one={'does_it_end': 'nope'}
+            )
+        }
+
+        api_ds = ApiDataSource(
+            lambda: mock_client,
+            lambda: mock_jc,
+            None,
+            None
+        )
+
+        observed = list(
+            api_ds.get_to_many_relations_page(
+                mock_obj,
+                'does_it_end',
+                3940584,
+                2394
+            )
+        )
+
+        mock_client.get_to_many_relations_page.assert_called_once_with(
+            'hype',
+            'neverending_hype',
+            'does_it_end',
+            3940584,
+            2394
+        )
+        mock_jc.convert_list.assert_called_once_with(expected)
+        assert observed == expected
+
+    def test_relational_methods_without_id(self):
+        """
+        All relational methods refuse a source `DataObject` instance
+        with a `None` value for `.id`
+        """
+
+        mock_obj = Mock()
+        type(mock_obj).type = PropertyMock(return_value='hype')
+        # crucially - the id is `None`!
+        type(mock_obj).id = PropertyMock(return_value=None)
+
+        mock_client = create_autospec(JsonApiClient)
+        mock_client.config_attribute_types.return_value = {
+            'hype': {}
+        }
+        mock_client.config_operations.return_value = {
+            'hype': {'auth': ['relational']}
+        }
+
+        mock_jc = create_autospec(JsonApiConverter)
+        mock_jc.convert_relationship_config.return_value = {
+            'hype': RelationshipConfig(
+                to_one={'does_it_end': 'nope'},
+                to_many={'it_does_not_end': 'yes'}
+            )
+        }
+
+        api_ds = ApiDataSource(
+            lambda: mock_client,
+            lambda: mock_jc,
+            None,
+            None
+        )
+
+        with pytest.raises(DataSourceError):
+            api_ds.get_to_one_relation(mock_obj, 'does_it_end')
+        with pytest.raises(DataSourceError):
+            api_ds.get_recursive_relation(mock_obj, ['does_it_end'])
+        with pytest.raises(DataSourceError):
+            api_ds.get_to_many_relations(mock_obj, 'it_does_not_end')
+        with pytest.raises(DataSourceError):
+            api_ds.get_to_many_relations_page(
+                mock_obj,
+                'it_does_not_end',
+                390483094,
+                4059
+            )
+
+    def test_get_recursive_relation_none(self):
+        """
+        `ApiDataSource().get_recursive_relation()` is given `None`
+        by its client -> returns `None` and doesn't convert
+        """
+
+        mock_obj = Mock()
+        type(mock_obj).type = PropertyMock(return_value='a')
+        type(mock_obj).id = PropertyMock(return_value='id')
+
+        mock_client = create_autospec(JsonApiClient)
+        mock_client.get_to_one_relation_recursive.return_value = None
+        mock_client.config_attribute_types.return_value = {
+            'a': {}
+        }
+        mock_client.config_operations.return_value = {
+            'a': {'noauth': ['relational']}
+        }
+
+        mock_jc = create_autospec(JsonApiConverter)
+        mock_jc.convert_relationship_config.return_value = {
+            'a': RelationshipConfig(
+                to_one={'does_it_end': 'nope'}
+            )
+        }
+
+        api_ds = ApiDataSource(
+            lambda: mock_client,
+            lambda: mock_jc,
+            None,
+            None
+        )
+
+        observed = api_ds.get_recursive_relation(
+            mock_obj,
+            ['does_it_end']
+        )
+
+        mock_jc.convert.assert_not_called()
+        assert observed is None
+
+    def test_get_to_one_relation_none(self):
+        """
+        `ApiDataSource().get_to_one_relation()` is given `None` by its
+        client -> returns `None` and doesn't convert
+        """
+
+        mock_obj = Mock()
+        type(mock_obj).type = PropertyMock(return_value='a')
+        type(mock_obj).id = PropertyMock(return_value='id')
+
+        mock_client = create_autospec(JsonApiClient)
+        mock_client.get_to_one_relation_recursive.return_value = None
+        mock_client.config_attribute_types.return_value = {
+            'a': {}
+        }
+        mock_client.config_operations.return_value = {
+            'a': {'noauth': ['relational']}
+        }
+
+        mock_jc = create_autospec(JsonApiConverter)
+        mock_jc.convert_relationship_config.return_value = {
+            'a': RelationshipConfig(
+                to_one={'does_it_end': 'nope'}
+            )
+        }
+
+        api_ds = ApiDataSource(
+            lambda: mock_client,
+            lambda: mock_jc,
+            None,
+            None
+        )
+
+        observed = api_ds.get_to_one_relation(mock_obj, 'does_it_end')
+
+        mock_jc.convert.assert_not_called()
+        assert observed is None

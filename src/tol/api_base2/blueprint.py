@@ -18,7 +18,8 @@ from .misc import (
     DefaultOperatorConfig,
     JsonApiRequestBody,
     ListGetParamaters,
-    OperatorConfig
+    OperatorConfig,
+    RelataionshipHopsParser
 )
 from .misc.auth_context import (
     CtxGetter,
@@ -146,6 +147,7 @@ def data_blueprint(
     *data_sources: DataSource,
     url_prefix: str = '/data',
     config_prefix: str = '/_config',
+
     config_factory: ConfigFactory = lambda p, d: config_blueprint(p, d),
     authenticator: Optional[Authenticator] = None,
     context_getter: CtxGetter = default_ctx_getter
@@ -226,6 +228,46 @@ def data_blueprint(
         request_args = AggregationParameters(request.args)
         body = AggregationBody(request.json)
         return controller.post_aggregations(object_type, request_args, body)
+
+    @data_handler.route(
+        '/<object_type>:to-one/<object_id>/<path:hops_suffix>',
+        methods=['GET']
+    )
+    def get_to_one_relation(
+        *,
+        object_type: str,
+        object_id: str,
+        hops_suffix: str
+    ):
+        controller = __new_controller(object_type)
+        source = data_source_dict[object_type].data_object_factory(
+            object_type,
+            object_id
+        )
+        hops = RelataionshipHopsParser(hops_suffix).relationship_hops
+        return controller.get_recursive_relation(source, hops)
+
+    @data_handler.route(
+        '/<object_type>:to-many/<object_id>/<relationship_name>',
+        methods=['GET']
+    )
+    def get_to_many_relations(
+        *,
+        object_type: str,
+        object_id: str,
+        relationship_name: str
+    ):
+        controller = __new_controller(object_type)
+        source = data_source_dict[object_type].data_object_factory(
+            object_type,
+            object_id
+        )
+        params = ListGetParamaters(request.args)
+        return controller.get_many_relations_page(
+            source,
+            relationship_name,
+            params
+        )
 
     @data_handler.app_errorhandler(BaseRuntimeException)
     def handle_runtime_error(error: BaseRuntimeException):

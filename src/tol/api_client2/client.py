@@ -6,7 +6,7 @@ from typing import Any, Optional
 
 import requests
 
-from .converter import JsonApiTransfer
+from .converter import JsonApiTransfer, JsonRelationshipConfig
 from ..api_base2.misc.operator_config import OperatorDict
 
 
@@ -34,7 +34,7 @@ class JsonApiClient:
         self,
         object_type: str,
         object_id: str
-    ) -> JsonApiTransfer:
+    ) -> Optional[JsonApiTransfer]:
         """
         Gets a single JSON:API transfer for the object of specified
         `object_type` and `object_id`, or returns None if not found.
@@ -42,11 +42,7 @@ class JsonApiClient:
 
         url = self.__detail_url(object_type, object_id)
         headers = self.__merge_headers()
-        r = requests.get(url, headers=headers)
-        if r.status_code == 404:
-            return None
-        r.raise_for_status()
-        return r.json()
+        return self.__fetch_detail(url, headers=headers)
 
     def get_list_page(
         self,
@@ -69,9 +65,7 @@ class JsonApiClient:
             sort_by=sort_string
         )
         headers = self.__merge_headers()
-        r = requests.get(url, params=params, headers=headers)
-        r.raise_for_status()
-        return r.json()
+        return self.__fetch_list(url, params=params, headers=headers)
 
     def delete(self, object_type: str, object_id: str) -> None:
         """
@@ -97,6 +91,50 @@ class JsonApiClient:
         r = requests.post(url, headers=headers, json=transfer)
         r.raise_for_status()
 
+    def get_to_one_relation_recursive(
+        self,
+        object_type: str,
+        object_id: str,
+        relationship_hops: list[str]
+    ) -> Optional[JsonApiTransfer]:
+        """
+        Fetches the nested to-one relation, on the source
+        specified by the `object_type` and `object_id`,
+        defined by the given `relationship_hops`.
+        """
+
+        url = self.__to_one_relation_url(
+            object_type,
+            object_id,
+            relationship_hops
+        )
+        headers = self.__merge_headers()
+        return self.__fetch_detail(url, headers=headers)
+
+    def get_to_many_relations_page(
+        self,
+        object_type: str,
+        object_id: str,
+        relationship_name: str,
+        page: int,
+        page_size: int
+    ) -> JsonApiTransfer:
+        """
+        Fetches a page of to-many results for the given
+        `relationship_name`, on the object specified by
+        `object_type` and `object_id`.
+        """
+
+        url = self.__to_many_relation_url(
+            object_type,
+            object_id,
+            relationship_name
+        )
+        params = {'page': page, 'page_size': page_size}
+        headers = self.__merge_headers()
+
+        return self.__fetch_list(url, params=params, headers=headers)
+
     def config_operations(self) -> dict[str, OperatorDict]:
         """
         Fetches the supported `Operator` config for each
@@ -115,9 +153,42 @@ class JsonApiClient:
         url = self.__config_attr_types_url()
         return self.__fetch_config(url)
 
+    def config_relationships(self) -> JsonRelationshipConfig:
+        """
+        Fetches the `relationship_config` transfer for each
+        `object_type` published by `api_base2`.
+        """
+
+        url = self.__config_rel_url()
+        return self.__fetch_config(url)
+
     def __fetch_config(self, url: str) -> Any:
         headers = self.__merge_headers()
         r = requests.get(url, headers=headers)
+        r.raise_for_status()
+        return r.json()
+
+    def __fetch_detail(
+        self,
+        url: str,
+        params: Optional[dict[str, Any]] = None,
+        headers: Optional[dict[str, str]] = None
+    ) -> Optional[JsonApiTransfer]:
+
+        r = requests.get(url, params=params, headers=headers)
+        if r.status_code == 404:
+            return None
+        r.raise_for_status()
+        return r.json()
+
+    def __fetch_list(
+        self,
+        url: str,
+        params: Optional[dict[str, Any]] = None,
+        headers: Optional[dict[str, str]] = None
+    ) -> JsonApiTransfer:
+
+        r = requests.get(url, params=params, headers=headers)
         r.raise_for_status()
         return r.json()
 
@@ -130,11 +201,39 @@ class JsonApiClient:
     def __upsert_url(self, object_type: str) -> str:
         return f'{self.__list_url(object_type)}:upsert'
 
+    def __to_one_relation_url(
+        self,
+        object_type: str,
+        object_id: str,
+        relationship_hops: list[str]
+    ) -> str:
+
+        hop_string = '/'.join(relationship_hops)
+        base_url = (
+            f'{self.__data_url}/{object_type}:to-one/{object_id}'
+        )
+        return f'{base_url}/{hop_string}'
+
+    def __to_many_relation_url(
+        self,
+        object_type: str,
+        object_id: str,
+        relationship_name: str
+    ) -> str:
+
+        base_url = (
+            f'{self.__data_url}/{object_type}:to-many/{object_id}'
+        )
+        return f'{base_url}/{relationship_name}'
+
     def __config_operations_url(self) -> str:
         return f'{self.__config_url}/operations'
 
     def __config_attr_types_url(self) -> str:
         return f'{self.__config_url}/attribute_types'
+
+    def __config_rel_url(self) -> str:
+        return f'{self.__config_url}/relationships'
 
     def __no_none_value_dict(self, **kwargs) -> dict[str, Any]:
         return {

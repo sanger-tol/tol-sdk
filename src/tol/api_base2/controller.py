@@ -4,10 +4,11 @@
 
 from __future__ import annotations
 
-from typing import Any, Callable, Iterable, Type
+from typing import Any, Callable, Iterable, Optional, Type
 
 from .exception import (
     ObjectNotFoundByIdException,
+    RecursiveRelationNotFoundException,
     UninheritedOperationError,
     UnsupportedOpertionError
 )
@@ -27,6 +28,7 @@ from ..core.operator import (
     ListGetter,
     Operator,
     PageGetter,
+    Relational,
     Updater,
     Upserter
 )
@@ -227,6 +229,49 @@ class Controller:
         }
         return self.__view.dump_bulk([], document_meta=document_meta)
 
+    @validate(
+        Relational,
+        'get_recursive_relation',
+        'recursive to-one relation GET'
+    )
+    def get_recursive_relation(
+        self,
+        data_object: DataObject,
+        relationship_hops: list[str]
+    ) -> ResponseDict:
+        """
+        Gets a nested to-one relation by recursive hops
+        """
+
+        related_object = self.__get_to_one_relation(
+            data_object,
+            relationship_hops
+        )
+        if related_object is None:
+            raise RecursiveRelationNotFoundException()
+        return self.__view.dump(related_object)
+
+    @validate(
+        Relational,
+        'get_to_many_relations_page',
+        'to-many relations GET'
+    )
+    def get_many_relations_page(
+        self,
+        data_object: DataObject,
+        relationship_name: str,
+        query_args: ListGetParamaters
+    ) -> ResponseDict:
+        """Gets a page of to-many relation results"""
+
+        page = self.data_source.get_to_many_relations_page(
+            data_object,
+            relationship_name,
+            query_args.page,
+            query_args.page_size
+        )
+        return self.__view.dump_bulk(page)
+
     def __get_detail_object(self, object_type: str, object_id: str) -> DataObject:
         data_objects = list(self.__data_source.get_by_id(object_type, [object_id]))
         if len(data_objects) == 0 or data_objects[0] is None:
@@ -238,3 +283,18 @@ class Controller:
         if page_number is None:
             return 1
         return page_number
+
+    def __get_to_one_relation(
+        self,
+        source: DataObject,
+        relationship_hops: list[str]
+    ) -> Optional[DataObject]:
+
+        self.__data_source.validate_to_one_recurse(
+            source.type,
+            relationship_hops
+        )
+        return self.__data_source.get_recursive_relation(
+            source,
+            relationship_hops
+        )

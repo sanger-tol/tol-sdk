@@ -3,13 +3,14 @@
 # SPDX-License-Identifier: MIT
 
 from typing import Dict, Iterable
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, Mock, PropertyMock, create_autospec
 
 import pytest
 
 from tol.api_base2.controller import Controller
 from tol.api_base2.exception import (
     ObjectNotFoundByIdException,
+    RecursiveRelationNotFoundException,
     UninheritedOperationError,
     UnsupportedOpertionError
 )
@@ -18,13 +19,19 @@ from tol.api_base2.misc import (
     AggregationParameters,
     ListGetParamaters
 )
-from tol.api_base2.view import DefaultView
+from tol.api_base2.view import DefaultView, View
 from tol.core import (
     DataSource,
     DataSourceFilter,
     core_data_object
 )
-from tol.core.operator import Aggregator, DetailGetter, PageGetter
+from tol.core.data_object import DataObject
+from tol.core.operator import (
+    Aggregator,
+    DetailGetter,
+    PageGetter,
+    Relational
+)
 
 
 class _TestDataSource1(DataSource, DetailGetter):
@@ -301,3 +308,103 @@ class TestController:
         error_str = str(e.value)
         assert '_BadDataSource' in error_str
         assert 'get_by_id' in error_str
+
+    def test_get_recursive_relation(self):
+        """
+        `Controller().get_recursive_relation()` with found object.
+        """
+
+        mock_object = create_autospec(DataObject)
+        type(mock_object).type = PropertyMock(return_value='test')
+
+        expected = Mock()
+
+        mock_view = create_autospec(View)
+        mock_view.dump.return_value = expected
+
+        mock_ds = create_autospec(Relational)
+        mock_ds.get_recursive_relation.return_value = expected
+
+        controller = Controller(mock_ds, mock_view)
+        observed = controller.get_recursive_relation(
+            mock_object,
+            ['a', 'b']
+        )
+
+        mock_ds.validate_to_one_recurse.assert_called_once_with(
+            'test',
+            ['a', 'b']
+        )
+        mock_ds.get_recursive_relation.assert_called_once_with(
+            mock_object,
+            ['a', 'b']
+        )
+        mock_view.dump.assert_called_once_with(expected)
+
+        assert observed == expected
+
+    def test_get_recursive_relation_not_found(self):
+        """
+        `Controller().get_recursive_relation()` doesn't find object
+        -> raises `RecursiveRelationNotFoundException`.
+        """
+
+        mock_object = create_autospec(DataObject)
+        type(mock_object).type = PropertyMock(return_value='test')
+
+        mock_view = create_autospec(View)
+
+        mock_ds = create_autospec(Relational)
+        mock_ds.get_recursive_relation.return_value = None
+
+        controller = Controller(mock_ds, mock_view)
+
+        with pytest.raises(RecursiveRelationNotFoundException):
+            controller.get_recursive_relation(
+                mock_object,
+                ['a', 'b']
+            )
+
+        mock_ds.validate_to_one_recurse.assert_called_once_with(
+            'test',
+            ['a', 'b']
+        )
+        mock_ds.get_recursive_relation.assert_called_once_with(
+            mock_object,
+            ['a', 'b']
+        )
+        mock_view.dump.assert_not_called()
+
+    def test_get_many_relations_page(self):
+        """`Controller().get_many_relations_page()`"""
+
+        expected = [Mock() for _ in range(3)]
+
+        mock_object = create_autospec(DataObject)
+        type(mock_object).type = PropertyMock(return_value='test')
+
+        mock_view = create_autospec(View)
+        mock_view.dump_bulk.side_effect = lambda i: i
+
+        mock_params = Mock()
+        type(mock_params).page = PropertyMock(return_value=3)
+        type(mock_params).page_size = PropertyMock(return_value=5)
+
+        mock_ds = create_autospec(Relational)
+        mock_ds.get_to_many_relations_page.return_value = expected
+
+        controller = Controller(mock_ds, mock_view)
+
+        controller.get_many_relations_page(
+            mock_object,
+            'test_relation',
+            mock_params
+        )
+
+        mock_ds.get_to_many_relations_page.assert_called_once_with(
+            mock_object,
+            'test_relation',
+            3,
+            5
+        )
+        mock_view.dump_bulk.assert_called_once_with(expected)
