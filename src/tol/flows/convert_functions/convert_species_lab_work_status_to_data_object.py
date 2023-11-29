@@ -9,7 +9,7 @@ def convert_species_lab_work_status_to_data_object(species_lab_work_statuses, ta
         attribute_name = species_lab_work_status.status.lower() + '_date'
         ret = CoreDataObject(
             'species',
-            data={'id': species_lab_work_status.species.id,
-                  attribute_name: species_lab_work_status.updated_at}
+            id_=species_lab_work_status.species.id,
+            attributes={attribute_name: species_lab_work_status.updated_at}
         )
         yield ret

@@ -22,6 +22,8 @@ class MockElasticDataSource(ElasticDataSource):
         self.es = mock.Mock()
         self.helpers = mock.Mock()
 
+        self.es.cat.indices.return_value = 'test_obj_type test_reltype'
+
     def _add_updated(self, dict_):
         return {**dict_, 'tol_updated_at': dt.isoformat()}
 
@@ -62,8 +64,8 @@ class TestElasticDataSource(TestCase):
         objects = [
             core_data_object(
                 'obj_type',
-                {
-                    'id': 1,
+                id_=1,
+                attributes={
                     'field1': 'value1',
                     'field2': 'value2',
                     'datefield': dt
@@ -71,8 +73,8 @@ class TestElasticDataSource(TestCase):
             ),
             core_data_object(
                 'obj_type',
-                {
-                    'id': 2,
+                id_=2,
+                attributes={
                     'field1': 'value3',
                     'field2': 'value4'
                 }
@@ -109,11 +111,11 @@ class TestElasticDataSource(TestCase):
         objects = [
             CoreDataObject(
                 'obj_type',
-                data={'field1': 'value1', 'field2': 'value2'}
+                attributes={'field1': 'value1', 'field2': 'value2'}
             ),
             CoreDataObject(
                 'obj_type',
-                data={'field1': 'value3', 'field2': 'value4'}
+                attributes={'field1': 'value3', 'field2': 'value4'}
             )
         ]
         generator = eds._action_for_upsert('index', objects, id_func=lambda x: x.field1,

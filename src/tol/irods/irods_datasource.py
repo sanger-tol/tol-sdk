@@ -148,14 +148,10 @@ class IrodsDataSource(DataSource, ListGetter):
 
     def _convert_dict_to_data_objects(self, objs: Dict) -> Iterable[DataObject]:
         return (
-            self.data_object_factory('sequencing_file', data=obj)
+            self.data_object_factory('sequencing_file', attributes=obj)
             for obj in objs
         )
 
     @property
     def supported_types(self):
         return ['sequencing_file']
-
-    @property
-    def attribute_types(self):
-        raise NotImplementedError()

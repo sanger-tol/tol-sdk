@@ -46,7 +46,7 @@ def mock_data_object(
     type(obj_mock).attributes = PropertyMock(
         return_value=attributes
     )
-    type(obj_mock).host = PropertyMock(return_value=host)
+    type(obj_mock)._host = PropertyMock(return_value=host)
 
     return obj_mock
 

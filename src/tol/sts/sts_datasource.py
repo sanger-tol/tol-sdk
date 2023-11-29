@@ -27,7 +27,7 @@ class StsDataSource(DataSource, Upserter):
 
     @property
     def supported_types(self) -> List[str]:
-        return ['sequencing_request']
+        return ['sequencing_request', 'extraction']
 
     @property
     def attribute_types(self) -> dict[str, dict[str, str]]:

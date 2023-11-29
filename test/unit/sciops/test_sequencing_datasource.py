@@ -124,7 +124,7 @@ class TestSequencingDataSource(TestCase):
         samples = [
             core_data_object(
                 'sequencing_sample',
-                data={
+                attributes={
                     'barcode': '1',
                     'sample_uuid': str(uuid.uuid4()),
                     'study_uuid': str(uuid.uuid4()),
@@ -134,7 +134,7 @@ class TestSequencingDataSource(TestCase):
             ),
             core_data_object(
                 'sequencing_sample',
-                data={
+                attributes={
                     'barcode': '1',
                     'sample_uuid': str(uuid.uuid4()),
                     'study_uuid': str(uuid.uuid4()),
@@ -144,7 +144,7 @@ class TestSequencingDataSource(TestCase):
             ),
             core_data_object(
                 'sequencing_sample',
-                data={
+                attributes={
                     'barcode': '2',
                     'sample_uuid': str(uuid.uuid4()),
                     'study_uuid': str(uuid.uuid4()),
@@ -174,7 +174,7 @@ class TestSequencingDataSource(TestCase):
         samples = [
             core_data_object(
                 'sequencing_sample',
-                data={
+                attributes={
                     'barcode': '1',
                     'sample_uuid': str(uuid.uuid4()),
                     'study_uuid': str(uuid.uuid4()),
@@ -208,7 +208,7 @@ class TestSequencingDataSource(TestCase):
             ),
             core_data_object(
                 'sequencing_sample',
-                data={
+                attributes={
                     'barcode': '1',
                     'sample_uuid': str(uuid.uuid4()),
                     'study_uuid': str(uuid.uuid4()),
@@ -255,7 +255,7 @@ class TestSequencingDataSource(TestCase):
         samples = [
             core_data_object(
                 'sequencing_sample',
-                data={
+                attributes={
                     'barcode': '1',
                     'sample_uuid': str(uuid.uuid4()),
                     'study_uuid': str(uuid.uuid4()),
@@ -265,7 +265,7 @@ class TestSequencingDataSource(TestCase):
             ),
             core_data_object(
                 'sequencing_sample',
-                data={
+                attributes={
                     'barcode': '2',
                     'sample_uuid': str(uuid.uuid4()),
                     'study_uuid': str(uuid.uuid4()),

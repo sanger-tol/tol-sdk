@@ -67,10 +67,8 @@ class BenchlingWarehouseDataSource(DataSource, ListGetter):
         for obj in objs:
             yield self.data_object_factory(
                 object_type,
-                data={
-                    **obj,
-                    'id': obj[id_col]
-                }
+                id_=obj[id_col],
+                attributes=obj
             )
 
     def get_list(

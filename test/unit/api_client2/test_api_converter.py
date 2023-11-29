@@ -15,13 +15,13 @@ from tol.core import DataObject
 def _get_mock_data_object(
     type_: str,
     id_: Optional[str],
-    data: dict[str, Any] = {}
+    attributes: dict[str, Any] = {}
 ) -> DataObject:
 
     data_object = Mock()
     data_object.type = type_
     data_object.id = id_
-    data_object.attributes = data
+    data_object.attributes = attributes
 
     return data_object
 
@@ -128,7 +128,7 @@ class TestDataObjectConverter:
             _get_mock_data_object(
                 'B',
                 str(i),
-                data={
+                attributes={
                     'happy_days': i
                 }
             )

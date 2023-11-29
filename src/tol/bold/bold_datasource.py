@@ -60,7 +60,7 @@ class BoldDataSource(DataSource, ListGetter):
         for value in objs.values():
             attributes = flatten_entity(value)
 
-            yield self.data_object_factory('sample', data=attributes)
+            yield self.data_object_factory('sample', attributes=attributes)
 
     @property
     def supported_types(self) -> List[str]:

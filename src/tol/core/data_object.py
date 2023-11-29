@@ -64,7 +64,7 @@ class DataObject(ABC):
 
     @property
     @abstractmethod
-    def host(self) -> DataSource:
+    def _host(self) -> DataSource:
         """
         The DataSource instance that manages DataObject instances of this type
         """

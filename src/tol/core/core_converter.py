@@ -67,6 +67,6 @@ class DefaultDataObjectToDataObjectConverter(DataObjectToDataObjectConverter):
             ret = CoreDataObject(
                 id_=data_object.id,
                 type_=data_object.type,
-                data={**data_object.attributes}
+                attributes=data_object.attributes
             )
             yield ret

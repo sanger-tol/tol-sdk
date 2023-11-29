@@ -4,6 +4,7 @@
 
 from __future__ import annotations
 
+import logging
 import typing
 from abc import ABC
 from typing import (
@@ -11,20 +12,24 @@ from typing import (
     Callable,
     Dict,
     Iterable,
-    List,
     Optional,
     Protocol,
-    Type
+    Type,
+    Union
 )
 
 from .data_object import DataDict, DataObject
 from .data_source_dict import DataSourceDict
-from .datasource_error import NotRelationalError
+from .datasource_error import DataSourceError, NotRelationalError
 from .operator import Relational
-from .relationship import ToManyDict, ToOneDict
+from .relationship import RelationshipConfig, ToManyDict, ToOneDict
 
 if typing.TYPE_CHECKING:
     from .datasource import DataSource
+
+
+ToOne = dict[str, Optional[DataObject]]
+ToMany = dict[str, Iterable[DataObject]]
 
 
 class DataObjectFactory(Protocol):
@@ -36,8 +41,11 @@ class DataObjectFactory(Protocol):
     def __call__(
         self,
         type_: str,
+
         id_: Optional[str] = None,
-        data: Optional[Dict[str, Any]] = None
+        attributes: Dict[str, Any] = {},
+        to_one: ToOne = {},
+        to_many: ToMany = {}
     ) -> DataObject:
         ...
 
@@ -76,6 +84,21 @@ to-many relationship names to its `Iterable[DataObject]`
 """
 
 
+def _local_name(__name: str) -> bool:
+    __PROPERTY_NAMES = [  # noqa N806
+        'id',
+        'type',
+        'attributes',
+        'to_one_relationships',
+        'to_many_relationships'
+    ]
+
+    return (
+        __name.startswith('_')
+        or __name in __PROPERTY_NAMES
+    )
+
+
 def core_data_object(
     *data_sources: DataSource,
     one_dict_factory: OneDictFactory = lambda o: ToOneDict(o),
@@ -105,21 +128,61 @@ def core_data_object(
         that inherits from DataObject meets the criteria.
         """
 
-        __NON_FIELD_NAMES = [
-            'id',
-            'type'
-        ]
-
         def __init__(
             self,
             type_: str,
-            data: Optional[DataDict] = None,
-            id_: Optional[str] = None
+            id_: Optional[str] = None,
+            attributes: DataDict = {},
+            to_one: ToOne = {},
+            to_many: ToMany = {}
         ):
+
             self.__id = id_
             self.__type = type_
-            if data is not None:
-                self.__set_data(data)
+            self.__attributes = attributes
+            self.__to_one_objects = to_one
+
+            if to_many:
+                logging.warning(
+                    'Setting of to_many relations is unsupported'
+                )
+
+        def __str__(self) -> str:
+            dump = f'type="{self.type}"'
+
+            if self.id is not None:
+                dump += f', id="{self.id}"'
+
+            return f'CoreDataObject({dump})'
+
+        def __getattribute__(self, __name: str) -> Any:
+
+            if _local_name(__name):
+                return object.__getattribute__(self, __name)
+
+            if __name in self.__to_one_names:
+                if __name in self._to_one_objects:
+                    return self._to_one_objects[__name]
+                return self.to_one_relationships.get(__name)
+
+            if __name in self.__to_many_names:
+                return self.to_many_relationships.get(__name, [])
+
+            return self.__attributes.get(__name)
+
+        def __setattr__(self, __name: str, __value: Any) -> None:
+            if _local_name(__name):
+                object.__setattr__(self, __name, __value)
+            elif __name in self.__to_one_names:
+                self._to_one_objects[__name] = __value
+            elif __name in self.__to_many_names:
+                raise DataSourceError(
+                    title='Read-only To-Many',
+                    detail='To-many relations are readonly',
+                    status_code=400
+                )
+            else:
+                self.__attributes[__name] = __value
 
         @property
         def type(self) -> str:  # noqa
@@ -135,11 +198,7 @@ def core_data_object(
 
         @property
         def attributes(self) -> Dict[str, Any]:
-            return {
-                key: getattr(self, key)
-                for key in self.__get_field_names()
-                if not self.__is_data_object(key)
-            }
+            return self.__attributes
 
         @property
         def to_one_relationships(self) -> Dict[str, Optional[DataObject]]:
@@ -155,45 +214,57 @@ def core_data_object(
 
         @property
         def _to_one_objects(self) -> Dict[str, DataObject]:
-            field_names = self.__get_field_names()
-            return {
-                k: getattr(self, k) for k in field_names
-                if self.__is_data_object(k)
-            }
+            return self.__to_one_objects
 
         @property
         def __relational(self) -> bool:
             """Whether the hosting DataSource is relational or not"""
 
-            return isinstance(self.host, Relational)
-
-        def __set_data(self, data: DataDict) -> None:
-            """Sets the data as given to the constructor."""
-            for key, value in data.items():
-                setattr(self, key, value)
-
-        def __is_data_object(self, name: str) -> bool:
-            value = getattr(self, name)
-            return isinstance(value, DataObject)
-
-        def __get_field_names(self) -> List[str]:
-            return [
-                v for v in vars(self)
-                if not v.startswith('_')
-                and v not in self.__NON_FIELD_NAMES
-            ]
+            return isinstance(self._host, Relational)
 
         @property
-        def host(self) -> DataSource:
+        def __relationship_config(self) -> Optional[RelationshipConfig]:
+            return self._host.relationship_config.get(self.type)
+
+        @property
+        def __to_one_names(self) -> list[str]:
+            if not self.__relational:
+                return []
+            cfg = self.__relationship_config
+            return (
+                [] if cfg is None or cfg.to_one is None
+                else list(cfg.to_one.keys())
+            )
+
+        @property
+        def __to_many_names(self) -> list[str]:
+            if not self.__relational:
+                return []
+            cfg = self.__relationship_config
+            return (
+                [] if cfg is None or cfg.to_many is None
+                else list(cfg.to_many.keys())
+            )
+
+        @property
+        def _host(self) -> Union[DataSource, Relational]:
             return data_source_dict[self.type]
 
     def core_data_object_factory(
         type_: str,
         id_: Optional[str] = None,
-        data: Optional[Dict[str, Any]] = None
+        attributes: Dict[str, Any] = {},
+        to_one: ToOne = {},
+        to_many: ToMany = {}
     ) -> DataObject:
 
-        return CoreDataObject(type_, id_=id_, data=data)
+        return CoreDataObject(
+            type_,
+            id_=id_,
+            attributes=attributes,
+            to_one=to_one,
+            to_many=to_many
+        )
 
     for ds in data_sources:
         ds.data_object_factory = core_data_object_factory

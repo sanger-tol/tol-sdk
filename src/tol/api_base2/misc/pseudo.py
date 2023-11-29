@@ -55,7 +55,7 @@ class PseudoObject(DataObject):
         raise PseudoObjectError(self)
 
     @property
-    def host(self) -> None:
+    def _host(self) -> None:
         raise PseudoObjectError(self)
 
     @property

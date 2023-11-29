@@ -95,7 +95,7 @@ class JsonApiConverter():
         return self.__data_object_factory(
             obj['type'],
             obj.get('id'),
-            data=obj.get('attributes')
+            attributes=obj.get('attributes')
         )
 
 

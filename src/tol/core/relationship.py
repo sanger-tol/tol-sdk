@@ -63,7 +63,7 @@ class ToManyDict(Mapping):
     def __init__(self, source: DataObject) -> None:
         self.__dict = LFUCache(100000)
         self.__source = source
-        self.__host: Relational = source.host
+        self.__host: Relational = source._host
         self.__keys = self.__get_keys()
 
     def __getitem__(self, __k: str) -> Iterable[DataObject]:
@@ -114,7 +114,7 @@ class ToOneDict(Mapping):
     def __init__(self, source: DataObject) -> None:
         self.__dict = LFUCache(100000)
         self.__source = source
-        self.__host: Relational = source.host
+        self.__host: Relational = source._host
         self.__keys = self.__get_keys()
 
     def __getitem__(self, __k: str) -> Optional[DataObject]:

@@ -48,7 +48,7 @@ class DefaultModelConverter(ModelConverter):
         return self.__data_object_factory(
             type_,
             id_=model.instance_id,
-            data=model.instance_attributes
+            attributes=model.instance_attributes
         )
 
 

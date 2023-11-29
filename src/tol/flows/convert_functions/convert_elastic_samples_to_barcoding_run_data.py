@@ -8,7 +8,9 @@ def convert_elastic_samples_to_barcoding_run_data(samples, target_datasource):
         CoreDataObject = target_datasource.data_object_factory  # noqa N806
         ret = CoreDataObject(
             'barcoding_run_data',
-            data={'col_date': sample.col_date,
-                  'taxon_id': sample.id}
+            attributes={
+                'col_date': sample.col_date,
+                'taxon_id': sample.id
+            }
         )
         yield ret

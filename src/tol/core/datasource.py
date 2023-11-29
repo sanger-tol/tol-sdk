@@ -71,7 +71,6 @@ class DataSource(ABC):
         return self.attribute_types[object_type]
 
     @property
-    @abstractmethod
     def attribute_types(self) -> dict[str, dict[str, str]]:
         """
         The `dict` mapping supported types to the (python) types of
@@ -79,6 +78,8 @@ class DataSource(ABC):
 
         This can either be a static `dict`, or dynamically generated.
         """
+
+        return {}
 
     @property
     def data_object_factory(self) -> Optional[DataObjectFactory]:

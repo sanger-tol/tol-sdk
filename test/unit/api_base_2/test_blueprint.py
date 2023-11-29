@@ -37,8 +37,8 @@ class ParrotDataSource(DataSource, DetailGetter, PageGetter, Aggregator, Counter
         return [
             self.data_object_factory(
                 object_type,
-                data={
-                    'id': object_ids[0],
+                id_=object_ids[0],
+                attributes={
                     'parrot': 'parrot'
                 }
             )
@@ -48,8 +48,8 @@ class ParrotDataSource(DataSource, DetailGetter, PageGetter, Aggregator, Counter
         return [
             self.data_object_factory(
                 object_type,
-                data={
-                    'id': str(i + 1),
+                id_=str(i + 1),
+                attributes={
                     'parrot': 'parrot'
                 }
             )

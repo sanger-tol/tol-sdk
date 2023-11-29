@@ -42,9 +42,10 @@ class DataLoader():
         CoreDataObject = self._audit.data_object_factory # noqa N806
         audit_obj = CoreDataObject(
             'data_load_event',
-            data={'id': self._loader_name, f'{start_or_end}_time': new_datetime,
-                  'source_object_type': self._source_object_type,
-                  'destination_object_type': self._destination_object_type}
+            id_=self._loader_name,
+            attributes={'{start_or_end}_time': new_datetime,
+                        'source_object_type': self._source_object_type,
+                        'destination_object_type': self._destination_object_type}
         )
         self._audit.upsert('data_load_event', [audit_obj])
 

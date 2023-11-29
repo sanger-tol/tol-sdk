@@ -77,7 +77,7 @@ class _RelationalDataSource(DataSource, Relational):
             self.data_object_factory(
                 'c',
                 id_=id_,
-                data={'funny': 'A' * int(id_)}
+                attributes={'funny': 'A' * int(id_)}
             )
             for id_ in self.__c_ids
         ]
@@ -93,14 +93,10 @@ class _RelationalDataSource(DataSource, Relational):
         return self.data_object_factory(
             'b',
             id_=self.__b_id,
-            data={
+            attributes={
                 'absolutely': 'not'
             }
         )
-
-    @property
-    def attribute_types(self):
-        raise NotImplementedError()
 
 
 class TestCoreDataObject:
@@ -224,7 +220,7 @@ class TestCoreDataObject:
         assert rel.one_count == 1
 
         # overwrite the relationship
-        new_b = cdo('b', id_='new', data={'funny??': 'NOO'})
+        new_b = cdo('b', id_='new', attributes={'funny??': 'NOO'})
         source.just_one_B = new_b
         # get it again (should have the new value)
         assert one['just_one_B'] == new_b

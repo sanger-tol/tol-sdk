@@ -259,7 +259,11 @@ class MlwhDataSource(DataSource, ListGetter):
         )
 
     def _format_mlwh_row(self, object_type: str, row: Dict):
-        return self.data_object_factory(object_type, data=row)
+        return self.data_object_factory(
+            object_type,
+            id_=row.pop('id', None),
+            attributes=row
+        )
 
     def _join(self, values: List) -> str:
         return "','".join(values)
@@ -335,7 +339,3 @@ class MlwhDataSource(DataSource, ListGetter):
     @property
     def supported_types(self) -> List[str]:
         return ['long_read_qc_result', 'sequencing_request', 'run_data']
-
-    @property
-    def attribute_types(self):
-        raise NotImplementedError()

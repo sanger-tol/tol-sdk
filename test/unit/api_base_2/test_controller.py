@@ -86,7 +86,7 @@ class _TestDataSource3(DataSource, Aggregator, PageGetter):
             self.data_object_factory(
                 object_type,
                 id_=str(i + 1 + page_size * page_number),
-                data={
+                attributes={
                     'page': page_number,
                     'page_size': page_size,
                     'filter': object_filters.exact['column1'],

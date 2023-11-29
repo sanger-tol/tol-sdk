@@ -307,8 +307,8 @@ class ElasticDataSource(
             if '_source' in obj:
                 type_ = self.__get_object_type(obj['_index'])
                 id_ = obj['_id']
-                data = obj['_source']
-                yield self._convert_data_dict_to_data_object(type_, id_, data)
+                attributes = obj['_source']
+                yield self._convert_data_dict_to_data_object(type_, id_, attributes)
 
     def _convert_data_dict_to_data_object(self, type_, id_, data):
         attributes = {
@@ -330,7 +330,8 @@ class ElasticDataSource(
         return self.data_object_factory(
             type_,
             id_=id_,
-            data={**attributes, **to_one_relationships}
+            attributes=attributes,
+            to_one=to_one_relationships
         )
 
     def __make_dates(self, object_type, attribute_name, value):
@@ -479,11 +480,7 @@ class ElasticDataSource(
         if self.relationship_config is None:
             raise DataSourceError('There are no relationships defined')
         if source.type in self.relationship_config:
-            try:
-                related_object_inline = getattr(source, relationship_name)
-                return related_object_inline
-            except AttributeError:
-                return None
+            return source._to_one_objects.get(relationship_name)
         return None
 
     def get_to_many_relations(

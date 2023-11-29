@@ -48,7 +48,7 @@ class NotRelationalError(DataSourceError):
     """
 
     def __init__(self, source: DataObject) -> None:
-        ds_name = type(source.host).__name__
+        ds_name = type(source._host).__name__
         message = (
             f'The type "{source.type}" is hosted by a DataSource '
             f'({ds_name}) that does not support relationships.'

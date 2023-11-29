@@ -169,11 +169,11 @@ class DefaultView(View):
         key: str,
         data_object: DataObject
     ) -> RelationshipDump:
-        related_object = data_object.host.get_to_one_relation(data_object, key)
+        related_object = data_object._host.get_to_one_relation(data_object, key)
         if related_object is not None:
             return {
                 'data': {
-                    'type': data_object.host.relationship_config[data_object.type].to_one[key],
+                    'type': data_object._host.relationship_config[data_object.type].to_one[key],
                     'id': related_object.id,
                     'attributes': related_object.attributes
                 }
@@ -185,7 +185,7 @@ class DefaultView(View):
         data_object: DataObject
     ) -> list[str]:
 
-        host = data_object.host
+        host = data_object._host
         if not isinstance(host, Relational):
             return []
         return self.__get_to_one_keys_from_host(
@@ -198,7 +198,7 @@ class DefaultView(View):
         data_object: DataObject
     ) -> list[str]:
 
-        host = data_object.host
+        host = data_object._host
         if not isinstance(host, Relational):
             return []
         return self.__get_to_many_keys_from_host(

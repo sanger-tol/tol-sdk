@@ -98,7 +98,7 @@ class _ExampleDataObject(DataObject):
         return {}
 
     @property
-    def host(self) -> None:
+    def _host(self) -> None:
         raise NotImplementedError()
 
     @property
@@ -106,8 +106,8 @@ class _ExampleDataObject(DataObject):
         raise NotImplementedError()
 
 
-def factory(type_, id_=None, data=None):
-    return _ExampleDataObject(type_, id_, data)
+def factory(type_, id_=None, attributes=None):
+    return _ExampleDataObject(type_, id_, attributes)
 
 
 class _IsEvenConverter(Converter[int, bool]):

@@ -52,9 +52,7 @@ class TestCreateApiDatasource:
         mock_do_factory.assert_called_once_with(
             'test',
             'hype',
-            data={
-                'yes': False
-            }
+            attributes={'yes': False}
         )
         assert observed == [mock_data_object]
 
@@ -107,9 +105,7 @@ class TestCreateApiDatasource:
         mock_do_factory.assert_called_once_with(
             'test',
             '200',
-            data={
-                'yes': False
-            }
+            attributes={'yes': False}
         )
         assert observed == [None, mock_data_object]
 

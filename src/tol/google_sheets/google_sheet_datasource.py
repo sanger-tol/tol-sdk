@@ -74,7 +74,8 @@ class GoogleSheetDataSource(
                       in self.mappings[object_type]['columns'].items()}
         return CoreDataObject(
             object_type,
-            data=attributes
+            id_=attributes.pop('id', None),
+            attributes=attributes
         )
 
     def _apply_filter(self, f: DataSourceFilter, rows: List, object_type: str):

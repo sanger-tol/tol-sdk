@@ -28,13 +28,13 @@ class TestDataObjectToDataObjectConverter(DataObjectToDataObjectConverter):
             ret = CoreDataObject(
                 id_=f'{data_object.id}_test',
                 type_='destination_type',
-                data={**data_object.attributes, 'other_attribute': 'other_value'}
+                attributes={**data_object.attributes, 'other_attribute': 'other_value'}
             )
             yield ret
             ret = CoreDataObject(
                 id_=f'{data_object.id}_test2',
                 type_='destination_type',
-                data={**data_object.attributes, 'other_attribute2': 'other_value2'}
+                attributes={**data_object.attributes, 'other_attribute2': 'other_value2'}
             )
             yield ret
 
@@ -50,7 +50,11 @@ class _MockDataSource(DataSource, ListGetter, Upserter):
             mock_objects = [{'id': 'test', 'attribute': 'att1'},
                             {'id': 'test2', 'attribute': 'att2'}]
         for obj in mock_objects:
-            yield self.data_object_factory(type_=object_type, data=obj)
+            yield self.data_object_factory(
+                type_=object_type,
+                id_=obj.pop('id'),
+                attributes=obj
+            )
 
     def upsert(self, object_type, objs, field_prefix=None):
         self.upserted = objs
@@ -58,11 +62,11 @@ class _MockDataSource(DataSource, ListGetter, Upserter):
 
     @property
     def supported_types(self):
-        return ['source_type', 'destination_type']
-
-    @property
-    def attribute_types(self):
-        raise NotImplementedError()
+        return [
+            'source_type',
+            'destination_type',
+            'data_load_event'
+        ]
 
 
 class TestDataLoader(TestCase):
@@ -71,9 +75,7 @@ class TestDataLoader(TestCase):
         source = _MockDataSource(config={})
         destination = _MockDataSource(config={})
         audit = _MockDataSource(config={})
-        core_data_object(source)
-        core_data_object(destination)
-        core_data_object(audit)
+        core_data_object(source, destination, audit)
 
         loader = DataLoader(
             source=source,

@@ -36,8 +36,8 @@ class TestStsDataSource(TestCase):
 
         extraction1 = core_data_object(
             'extraction',
-            data={
-                'id': 'eln_123',
+            id_='eln_123',
+            attributes={
                 'sample_id': 'SAMP123456',
                 'fluidx_id': 'FD12345678',
                 'extraction_type': 'DNA',
@@ -64,8 +64,8 @@ class TestStsDataSource(TestCase):
 
         sr1 = core_data_object(
             'sequencing_request',
-            data={
-                'id': 'REF1234',
+            id_='REF1234',
+            attributes={
                 'fluidx_id': 'FD12345678',
                 'platform': 'PACBIO',
                 'submission_date': dt

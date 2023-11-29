@@ -8,7 +8,7 @@ def convert_treeofsex_species_to_data_object(species, target_datasource):
         CoreDataObject = target_datasource.data_object_factory  # noqa N806
         ret = CoreDataObject(
             'treeofsex_species',
-            data={
+            attributes={
                 'higher_taxanomic_group': s['Higher taxonomic group'],
                 'order': s['Order'],
                 'family': s['Family'],
