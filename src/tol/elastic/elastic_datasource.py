@@ -100,6 +100,18 @@ class ElasticDataSource(
                 ret[k] = v
         return ret
 
+    def _stringify_ids(self, dict_: Dict) -> Dict:
+        ret = {}
+        for k, v in dict_.items():
+            if isinstance(v, dict):
+                if 'id' in v:
+                    v['id'] = str(v['id'])
+                ret[k] = self._stringify_ids(v)
+            else:
+                ret[k] = v
+
+        return ret
+
     def _action_for_upsert(self, index: str, objects: Iterable[DataObject], id_func: Callable,
                            field_prefix: str):
         for object_ in objects:
@@ -108,6 +120,7 @@ class ElasticDataSource(
             obj = self._add_checksum(obj)
             obj = self._add_updated(obj)
             obj = self._prefix_fields(obj, field_prefix)
+            obj = self._stringify_ids(obj)
             uid = id_func(object_)
             obj = self._add_uid(obj, uid)
             yield {
