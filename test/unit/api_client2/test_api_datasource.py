@@ -383,7 +383,7 @@ class TestApiDataSource:
         mock_client.get_list_page.side_effect = __get_lp
 
         mock_json_converter = Mock()
-        mock_json_converter.convert_list.side_effect = lambda l: (l, None)
+        mock_json_converter.convert_list.side_effect = lambda o: (o, None)
 
         mock_api_filter = Mock()
         mock_api_filter.dumps.return_value = 'akdfuom'
@@ -542,7 +542,7 @@ class TestApiDataSource:
             return (
                 [expected[page - 1]] if page <= 4
                 else []
-            )
+            ), None
 
         type(mock_ds).supported_types = ['a']
         type(mock_ds).supported_operations = {

@@ -9,9 +9,11 @@ from typing import Iterable
 from ...core import DataSource
 from ...core.operator import (
     Aggregator,
+    Counter,
     Deleter,
     DetailGetter,
     PageGetter,
+    Relational,
     Updater,
     Upserter
 )
@@ -19,9 +21,11 @@ from ...core.operator import (
 
 OPERATOR_MAP: dict[str, type] = {
     'aggregate': Aggregator,
+    'count': Counter,
     'delete': Deleter,
     'detailGet': DetailGetter,
     'listGet': PageGetter,
+    'relational': Relational,
     'update': Updater,
     'upsert': Upserter
 }

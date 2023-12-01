@@ -2,6 +2,7 @@
 #
 # SPDX-License-Identifier: MIT
 
+from functools import cache
 from itertools import chain
 from typing import Callable, Iterable, Optional
 
@@ -65,17 +66,20 @@ class ApiDataSource(
         super().__init__({})
 
     @property
+    @cache
     def attribute_types(self) -> dict[str, dict[str, str]]:
         client = self.__client_factory()
         return client.config_attribute_types()
 
     @property
+    @cache
     def supported_types(self) -> list[str]:
         return list(
             self.attribute_types.keys()
         )
 
     @property
+    @cache
     def relationship_config(self) -> dict[str, RelationshipConfig]:
         transfer = self.__client_factory().config_relationships()
         return self.__jc_factory().convert_relationship_config(
@@ -233,15 +237,14 @@ class ApiDataSource(
         page_size = self.get_page_size()
 
         while True:
-            next_page = list(
-                self.get_to_many_relations_page(
-                    source,
-                    relationship_name,
-                    page_number,
-                    page_size
-                )
+            page, _ = self.get_to_many_relations_page(
+                source,
+                relationship_name,
+                page_number,
+                page_size
             )
 
+            next_page = list(page)
             if not next_page:
                 return
 
@@ -249,6 +252,7 @@ class ApiDataSource(
             page_number += 1
 
     @property
+    @cache
     def supported_operations(self) -> dict[str, list[str]]:
         """
         The list of `Operator` ABC's implemented for each

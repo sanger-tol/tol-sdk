@@ -186,10 +186,10 @@ class TestOperatorConfig(TestCase):
         )
 
         expected_1 = {
-            'noauth': ['upsert']
+            'noauth': ['relational', 'upsert']
         }
         expected_2 = {
-            'noauth': ['detailGet']
+            'noauth': ['detailGet', 'relational']
         }
 
         assert response.json == {
