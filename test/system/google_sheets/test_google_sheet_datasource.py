@@ -2,6 +2,7 @@
 #
 # SPDX-License-Identifier: MIT
 
+import json
 import os
 from unittest import (
     TestCase
@@ -17,7 +18,7 @@ from tol.google_sheets import (
 
 def google_sheet_data_source() -> GoogleSheetDataSource:
     gsds = GoogleSheetDataSource({
-        'client_secrets': os.getenv('GOOGLE_CLIENT_SECRETS'),
+        'client_secrets': json.loads(os.getenv('GOOGLE_CLIENT_SECRETS')),
         'sheet_key': '1R4HX5n_kLzS9ci7c2rsrLHucjOvq0Nq3lKDq8yyBbvI',
         'mappings': {
             'object1': {

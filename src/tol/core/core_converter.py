@@ -3,10 +3,7 @@
 # SPDX-License-Identifier: MIT
 
 from abc import ABC, abstractmethod
-from typing import Generic, Iterable, List, Optional, TypeVar
-
-from .data_object import DataObject
-from .datasource import DataSource
+from typing import Generic, Iterable, Optional, TypeVar
 
 
 In = TypeVar('In')
@@ -51,22 +48,3 @@ class Converter(ABC, Generic[In, Out]):
 
         If the input could be `None`, use `convert_optional()` instead.
         """
-
-
-class DataObjectToDataObjectConverter(Converter[DataObject, DataObject], ABC):
-    """
-    Converts one DataObject to another.
-    """
-
-
-class DefaultDataObjectToDataObjectConverter(DataObjectToDataObjectConverter):
-
-    def convert(self, data_objects: List[DataObject], target_datasource: DataSource) -> DataObject:
-        CoreDataObject = target_datasource.data_object_factory # noqa N806
-        for data_object in data_objects:
-            ret = CoreDataObject(
-                id_=data_object.id,
-                type_=data_object.type,
-                attributes=data_object.attributes
-            )
-            yield ret

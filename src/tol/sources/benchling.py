@@ -1,0 +1,22 @@
+# SPDX-FileCopyrightText: 2023 Genome Research Ltd.
+#
+# SPDX-License-Identifier: MIT
+
+import os
+
+from tol.benchling import (
+    BenchlingDataSource
+)
+from tol.core import (
+    core_data_object
+)
+
+
+def benchling():
+    benchling = BenchlingDataSource({
+        'api_key': os.getenv('BENCHLING_API_KEY'),
+        'url': os.getenv('BENCHLING_URL'),
+        'registry_id': os.getenv('BENCHLING_REGISTRY_ID'),
+        'project_id': os.getenv('BENCHLING_PROJECT_ID')})
+    core_data_object(benchling)
+    return benchling

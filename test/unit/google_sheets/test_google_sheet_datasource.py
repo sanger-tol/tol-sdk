@@ -47,7 +47,7 @@ class MockGoogleSheetDataSource(GoogleSheetDataSource):
 
 def mock_google_sheet_data_source() -> GoogleSheetDataSource:
     gsds = MockGoogleSheetDataSource({
-        'client_secrets': 'MOCK',
+        'client_secrets': {},
         'sheet_key': 'MOCK',
         'mappings': {
             'object1': {

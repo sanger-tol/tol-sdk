@@ -403,7 +403,7 @@ class ElasticDataSource(
                     'sources': [{
                         index: {
                             'terms': {
-                                'field': group_by
+                                'field': self._field_or_keyword(object_type, group_by)
                             }
                         }
                     }]

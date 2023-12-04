@@ -2,7 +2,6 @@
 #
 # SPDX-License-Identifier: MIT
 
-import json
 from functools import cache
 from typing import Dict, Iterable, List
 
@@ -53,7 +52,7 @@ class GoogleSheetDataSource(
         self.data = {}
 
     def _initialise_google_sheet(self):
-        gc = gspread.service_account_from_dict(json.loads(self.client_secrets))
+        gc = gspread.service_account_from_dict(self.client_secrets)
         self.sheet = gc.open_by_key(self.sheet_key)
 
     def _initialise_data(self, object_type):
