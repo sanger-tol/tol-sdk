@@ -59,14 +59,19 @@ class _ConverterFactory:
 
 def _get_client_factory(
     api_url: str,
-    token: Optional[str]
+    token: Optional[str],
+    data_prefix: str
 ) -> Callable[[], JsonApiClient]:
     """
     A resonable default for creating
     a `JsonApiClient` instance
     """
 
-    return lambda: JsonApiClient(api_url, token=token)
+    return lambda: JsonApiClient(
+        api_url,
+        token=token,
+        data_prefix=data_prefix
+    )
 
 
 def _filter_factory() -> DefaultApiFilter:
@@ -75,7 +80,9 @@ def _filter_factory() -> DefaultApiFilter:
 
 def create_api_datasource(
     api_url: str,
-    token: Optional[str] = None
+    token: Optional[str] = None,
+
+    data_prefix: str = '/data'
 ) -> ApiDataSource:
     """
     Instantiates `ApiDataSource` using the given:
@@ -86,7 +93,8 @@ def create_api_datasource(
 
     client_factory = _get_client_factory(
         api_url,
-        token=token
+        token=token,
+        data_prefix=data_prefix
     )
     manager = _ConverterFactory()
 

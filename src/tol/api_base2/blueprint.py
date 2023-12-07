@@ -15,10 +15,8 @@ from .misc import (
     AggregationBody,
     AggregationParameters,
     Authenticator,
-    DefaultOperatorConfig,
     JsonApiRequestBody,
     ListGetParamaters,
-    OperatorConfig,
     RelataionshipHopsParser
 )
 from .misc.auth_context import (
@@ -27,10 +25,13 @@ from .misc.auth_context import (
 )
 from .parser import DefaultParser
 from .view import DefaultView
-from ..core import DataSource
+from ..core import DataSource, DataSourceError
 from ..core.data_source_dict import DataSourceDict
-from ..core.datasource_error import DataSourceError
 from ..core.operator import Relational
+from ..core.operator.operator_config import (
+    DefaultOperatorConfig,
+    OperatorConfig
+)
 
 
 class DataBlueprint(Blueprint):

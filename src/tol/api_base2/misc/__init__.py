@@ -9,6 +9,5 @@ from .auth_context import AuthContext  # noqa
 from .data_body import RequestBody, JsonApiRequestBody  # noqa
 from .filter_utils import FilterUtils  # noqa
 from .list_get_parameters import ListGetParamaters  # noqa
-from .operator_config import DefaultOperatorConfig, OperatorConfig  # noqa
 from .pseudo import PseudoObject  # noqa
 from .relation_url import RelataionshipHopsParser  # noqa

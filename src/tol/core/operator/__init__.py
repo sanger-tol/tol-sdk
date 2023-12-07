@@ -11,6 +11,7 @@ from .detail_getter import DetailGetter
 from .group_counter import GroupCounter
 from .inserter import Inserter
 from .list_getter import ListGetter
+from .operator_config import OperatorDict  # noqa
 from .page_getter import PageGetter
 from .relational import Relational
 from .updater import Updater

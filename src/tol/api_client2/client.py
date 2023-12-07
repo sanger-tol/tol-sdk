@@ -7,7 +7,7 @@ from typing import Any, Optional
 import requests
 
 from .converter import JsonApiTransfer, JsonRelationshipConfig
-from ..api_base2.misc.operator_config import OperatorDict
+from ..core.operator import OperatorDict
 
 
 class JsonApiClient:

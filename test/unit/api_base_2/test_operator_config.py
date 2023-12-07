@@ -2,7 +2,6 @@
 #
 # SPDX-License-Identifier: MIT
 
-from tol.api_base2.misc import DefaultOperatorConfig
 from tol.core import DataSource
 from tol.core.operator import (
     Aggregator,
@@ -12,6 +11,7 @@ from tol.core.operator import (
     Updater,
     Upserter
 )
+from tol.core.operator.operator_config import DefaultOperatorConfig
 
 
 class _MockDataSource1(

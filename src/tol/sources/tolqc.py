@@ -14,8 +14,9 @@ from tol.core import (
 
 def tolqc():
     tolqc = create_api_datasource(
-        os.getenv('TOLQC_URL') + os.getenv('TOLQC_API_PATH'),
-        os.getenv('TOLQC_API_KEY')
+        api_url=os.getenv('TOLQC_URL') + os.getenv('TOLQC_API_PATH'),
+        token=os.getenv('TOLQC_API_KEY'),
+        data_prefix=''
     )
     core_data_object(tolqc)
     return tolqc

@@ -2,21 +2,24 @@
 #
 # SPDX-License-Identifier: MIT
 
+from __future__ import annotations
+
+import typing
 from abc import ABC, abstractmethod
 from itertools import chain
 from typing import Iterable
 
-from ...core import DataSource
-from ...core.operator import (
-    Aggregator,
-    Counter,
-    Deleter,
-    DetailGetter,
-    PageGetter,
-    Relational,
-    Updater,
-    Upserter
-)
+from .aggregator import Aggregator
+from .counter import Counter
+from .deleter import Deleter
+from .detail_getter import DetailGetter
+from .page_getter import PageGetter
+from .relational import Relational
+from .updater import Updater
+from .upserter import Upserter
+
+if typing.TYPE_CHECKING:
+    from ...core import DataSource
 
 
 OPERATOR_MAP: dict[str, type] = {

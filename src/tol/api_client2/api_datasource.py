@@ -13,12 +13,12 @@ from .converter import (
 )
 from .filter import ApiFilter
 from .validate import validate, validate_id
-from ..api_base2.misc.operator_config import OperatorDict
 from ..core import DataObject, DataSource, DataSourceFilter
 from ..core.operator import (
     Deleter,
     DetailGetter,
     ListGetter,
+    OperatorDict,
     PageGetter,
     Relational,
     Upserter

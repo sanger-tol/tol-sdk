@@ -14,8 +14,9 @@ from tol.core import (
 
 def portaldb():
     portaldb = create_api_datasource(
-        os.getenv('PORTAL_URL') + os.getenv('PORTAL_API_PATH') + '/local',
-        os.getenv('PORTAL_API_KEY')
+        api_url=os.getenv('PORTAL_URL') + os.getenv('PORTAL_API_PATH') + '/local',
+        token=os.getenv('PORTAL_API_KEY'),
+        data_prefix=''
     )
     core_data_object(portaldb)
     return portaldb
