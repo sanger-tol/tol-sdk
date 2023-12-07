@@ -48,3 +48,29 @@ class Converter(ABC, Generic[In, Out]):
 
         If the input could be `None`, use `convert_optional()` instead.
         """
+
+
+class AsyncConverter(ABC, Generic[In, Out]):
+    """An asynchronous version of `Converter`"""
+
+    @abstractmethod
+    async def async_convert(self, input_: In) -> Out:
+        """input_ must not be null."""
+
+    async def async_convert_optional(self, input_: Optional[In]) -> Optional[Out]:
+        """input_ can be `None`, in which case `None` is returned"""
+
+        return await self.async_convert(input_) if input_ is not None else None
+
+    async def async_convert_iterable(
+        self,
+        input_: Iterable[Optional[In]]
+    ) -> Iterable[Optional[Out]]:
+        """
+        Converts an `Iterable`, converting or returning `None` element-wise,
+        using `AsyncConverter().async_convert_optional()`
+        """
+
+        return [
+            await self.async_convert_optional(i) for i in input_
+        ]

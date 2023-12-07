@@ -9,6 +9,7 @@ from .counter import Counter
 from .deleter import Deleter
 from .detail_getter import DetailGetter
 from .group_counter import GroupCounter
+from .inserter import Inserter
 from .list_getter import ListGetter
 from .page_getter import PageGetter
 from .relational import Relational
@@ -22,6 +23,7 @@ Operator = Union[
     Deleter,
     DetailGetter,
     GroupCounter,
+    Inserter,
     ListGetter,
     PageGetter,
     Relational,
