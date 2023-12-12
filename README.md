@@ -8,6 +8,29 @@ SPDX-License-Identifier: MIT
 
 A Python SDK for ToL services. This is very much a work in progress and is not ready for anyone outside ToL Platforms to use it yet.
 
+## Running unit tests using VSCode
+
+Create a virtual environment and activate:
+
+```bash
+python3 venv venv
+source venv/bin/activate
+```
+
+Install the _ToL SDK_:
+
+```bash
+python3 -m pip install '.[all]'
+```
+
+Install the testing requirements
+
+```bash
+python3 -m pip install -r requirements-test.txt
+```
+
+The testing explorer should now be functional. It can be found using the _test tube_ icon on the left.
+
 ## Sciops Integration SDK
 
 ### Environment Variables

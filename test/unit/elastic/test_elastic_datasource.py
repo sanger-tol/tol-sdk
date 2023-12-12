@@ -3,9 +3,11 @@
 # SPDX-License-Identifier: MIT
 
 from datetime import datetime
+from typing import Callable
 from unittest import (TestCase, mock)
 
 from tol.core import (
+    DataObject,
     DataSourceError,
     DataSourceFilter,
     core_data_object
@@ -47,7 +49,7 @@ class MockElasticDataSource(ElasticDataSource):
         }
 
 
-def mock_elastic_data_source() -> ElasticDataSource:
+def mock_elastic_data_source() -> tuple[Callable, ElasticDataSource]:
     eds = MockElasticDataSource(
         {'uri': 'test', 'user': 'user', 'password': 'password',
          'index_prefix': 'test', 'relationship_cfg': {}}
@@ -596,3 +598,43 @@ class TestElasticDataSource(TestCase):
         self.assertEqual('reltype', second.type)
         with self.assertRaises(StopIteration):
             next(related_objects)
+
+    def test_get_to_one_relation(self):
+        """
+        `ElasticDataSource().get_to_one_relation()` looks in
+        `DataObject()._to_one_objects` and either:
+
+        - key is present -> return the object in there
+        - key is absent -> fetch the source object, and get it from there
+        """
+
+        mock_ds = mock.create_autospec(ElasticDataSource, spec_set=True)
+        mock_ds.get_by_id.return_value = None
+        type(mock_ds).relationship_config = mock.PropertyMock(
+            return_value={
+                'a': RelationshipConfig(
+                    to_one={'lol': 'b'}
+                )
+            }
+        )
+
+        # key is present
+        expected = mock.Mock()
+        mock_obj = mock.create_autospec(DataObject, spec_set=True)
+        type(mock_obj).type = mock.PropertyMock(return_value='a')
+        type(mock_obj)._to_one_objects = {'lol': expected}
+        mock_obj.id = 'hype train'
+        observed = ElasticDataSource.get_to_one_relation(mock_ds, mock_obj, 'lol')
+        mock_ds.get_by_id.assert_not_called()
+        assert observed == expected
+
+        # key is absent
+        expected = mock.Mock()
+        # reset `mock_obj._to_one_objects`
+        mock_obj._to_one_objects = {}
+        mock_inter = mock.create_autospec(DataObject, spec_set=True)
+        mock_inter._to_one_objects = {'lol': expected}
+        mock_ds.get_by_id.return_value = [mock_inter]
+        observed = ElasticDataSource.get_to_one_relation(mock_ds, mock_obj, 'lol')
+        mock_ds.get_by_id.assert_called_once_with('a', ['hype train'])
+        assert observed == expected

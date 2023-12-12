@@ -3,3 +3,7 @@ Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
 Files: src/tol/benchling/sql/*
 Copyright: 2023 Genome Research Ltd.
 License: MIT
+
+Files: .vscode/*
+Copyright: 2023 Genome Research Ltd.
+License: MIT

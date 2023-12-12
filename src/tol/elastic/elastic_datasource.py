@@ -7,7 +7,7 @@ import json
 from collections.abc import Callable
 from datetime import datetime
 from functools import cache
-from typing import Any, Dict, Iterable, Optional, Tuple
+from typing import Any, Dict, Iterable, Mapping, Optional, Tuple
 
 from caseconverter import (
     kebabcase,
@@ -328,23 +328,52 @@ class ElasticDataSource(
             k: self.__make_dates(type_, k, v) for k, v in data.items()
             if k in self.attribute_types[type_].keys()
         }
-        to_one_relationships = {
-            k: self._convert_data_dict_to_data_object(
-                self.relationship_config[type_].to_one[k],
-                v['id'],
-                v)
-            for k, v in data.items()
-            if type_ in self.relationship_config
-            and self.relationship_config[type_].to_one is not None
-            and k in self.relationship_config[type_].to_one.keys()
-            and type(v) is dict  # i.e. not a list
-            and 'id' in v
-        }
+        to_one = self.__make_to_one_relations(type_, data)
         return self.data_object_factory(
             type_,
             id_=id_,
             attributes=attributes,
-            to_one=to_one_relationships
+            to_one=to_one
+        )
+
+    def __make_to_one_relations(
+        self,
+        type_: str,
+        data: dict[str, Any]
+    ) -> dict[str, Optional[DataObject]]:
+
+        if type_ not in self.relationship_config:
+            return {}
+
+        if self.relationship_config[type_].to_one is None:
+            return {}
+
+        return {
+            k: self.__make_to_one_relation(data.get(k), v)
+            for k, v in self.relationship_config[type_].to_one.items()
+        }
+
+    def __make_to_one_relation(
+        self,
+        relation_data: Optional[dict[str, Any]],
+        type_: str
+    ) -> Optional[DataObject]:
+
+        if (
+            relation_data is None
+            or not isinstance(relation_data, Mapping)
+        ):
+            return None
+
+        id_ = relation_data.get('id')
+
+        if id_ is None:
+            return None
+
+        return self._convert_data_dict_to_data_object(
+            type_,
+            id_,
+            relation_data
         )
 
     def __make_dates(self, object_type, attribute_name, value):
@@ -484,17 +513,24 @@ class ElasticDataSource(
     def relationship_config(self) -> dict[str, RelationshipConfig]:
         return self.relationship_cfg
 
-    # This only uses the "inline" related object at the moment
     def get_to_one_relation(
         self,
         source: DataObject,
         relationship_name: str
     ) -> Optional[DataObject]:
-        if self.relationship_config is None:
-            raise DataSourceError('There are no relationships defined')
-        if source.type in self.relationship_config:
+
+        self.__validate_to_one_relation(source)
+
+        if relationship_name in source._to_one_objects:
             return source._to_one_objects.get(relationship_name)
-        return None
+
+        to_one = self.relationship_config[source.type].to_one
+
+        if relationship_name not in to_one:
+            raise DataSourceError('Bad relationship name')
+
+        new_source = self.get_by_id(source.type, [source.id])[0]
+        return new_source._to_one_objects.get(relationship_name)
 
     def get_to_many_relations(
         self,
@@ -512,3 +548,10 @@ class ElasticDataSource(
         f.exact = {related_object_fk_attribute: source.id}
         related_objects = self.get_list(related_object_type, object_filters=f)
         return related_objects
+
+    def __validate_to_one_relation(self, source: DataObject) -> None:
+        if self.relationship_config is None:
+            raise DataSourceError('There are no relationships defined')
+
+        if source.type not in self.relationship_config:
+            raise DataSourceError('This type has no relationships')
