@@ -2,9 +2,10 @@
 #
 # SPDX-License-Identifier: MIT
 
+from datetime import date, datetime
 from typing import Any, Optional, Union
 
-from ..core import DataObject, DataObjectFactory
+from ..core import DataObject, DataSource
 from ..core.relationship import RelationshipConfig
 
 
@@ -32,11 +33,11 @@ class JsonApiConverter():
 
     def __init__(
         self,
-        data_object_factory: DataObjectFactory,
+        data_source: DataSource,
         data_key: str = 'data'
     ) -> None:
 
-        self.__data_object_factory = data_object_factory
+        self.__data_source = data_source
         self.__data_key = data_key
 
     def convert(self, input_: JsonApiTransfer) -> DataObject:
@@ -92,11 +93,50 @@ class JsonApiConverter():
     def __convert_json_object(self, obj: JsonApiObject) -> DataObject:
         # TODO implement relationships recursively
 
-        return self.__data_object_factory(
-            obj['type'],
-            obj.get('id'),
-            attributes=obj.get('attributes')
+        type_ = obj['type']
+
+        attributes = self.__convert_attributes(
+            type_,
+            obj.get('attributes')
         )
+
+        return self.__data_source.data_object_factory(
+            type_,
+            obj.get('id'),
+            attributes=attributes
+        )
+
+    def __convert_attributes(
+        self,
+        type_: str,
+        attributes: Optional[dict[str, Any]]
+    ) -> dict[str, Any]:
+
+        if not attributes:
+            return {}
+
+        datetime_keys = self.__get_datetime_keys(type_)
+
+        return {
+            k: datetime.fromisoformat(v) if k in datetime_keys else v
+            for k, v in attributes.items()
+        }
+
+    def __get_datetime_keys(self, type_: str) -> list[str]:
+        attribute_types = self.__data_source.attribute_types.get(
+            type_,
+            {}
+        )
+
+        return [
+            k for k, v in attribute_types.items()
+            if self.__value_is_datetime(v)
+        ]
+
+    def __value_is_datetime(self, __v: str) -> bool:
+        lower_ = __v.lower()
+
+        return 'date' in lower_ or 'time' in lower_
 
 
 class DataObjectConverter():
@@ -149,6 +189,23 @@ class DataObjectConverter():
             json_obj['id'] = obj.id
 
         if obj.attributes:
-            json_obj['attributes'] = obj.attributes
+            json_obj['attributes'] = self.__convert_attributes(
+                obj.attributes
+            )
 
         return json_obj
+
+    def __convert_attributes(
+        self,
+        attributes: dict[str, Any]
+    ) -> dict[str, Any]:
+
+        return {
+            k: self.__convert_value(v)
+            for k, v in attributes.items()
+        }
+
+    def __convert_value(self, __v: Any) -> Any:
+        if isinstance(__v, (date, datetime)):
+            return __v.isoformat()
+        return __v

@@ -2,14 +2,15 @@
 #
 # SPDX-License-Identifier: MIT
 
+from datetime import datetime
 from typing import Any, Optional
-from unittest.mock import Mock
+from unittest.mock import Mock, create_autospec
 
 from tol.api_client2.converter import (
     DataObjectConverter,
     JsonApiConverter
 )
-from tol.core import DataObject
+from tol.core import DataObject, DataSource
 
 
 def _get_mock_data_object(
@@ -24,6 +25,19 @@ def _get_mock_data_object(
     data_object.attributes = attributes
 
     return data_object
+
+
+def _get_mock_data_source(
+    attribute_types: dict[str, dict[str, Any]] = {}
+) -> DataSource:
+
+    mock_ds = create_autospec(DataSource, spec_set=True)
+
+    mock_ds.attribute_types = attribute_types
+    mock_ds.supported_types = list(attribute_types.keys())
+    mock_ds.data_object_factory = _get_mock_data_object
+
+    return mock_ds
 
 
 class TestJsonApiConverter:
@@ -43,7 +57,7 @@ class TestJsonApiConverter:
             ]
         }
 
-        converter = JsonApiConverter(_get_mock_data_object)
+        converter = JsonApiConverter(_get_mock_data_source())
         (out_, _) = converter.convert_list(in_)
 
         assert len(out_) == 4
@@ -62,7 +76,7 @@ class TestJsonApiConverter:
             }
         }
         converter = JsonApiConverter(
-            _get_mock_data_object,
+            _get_mock_data_source(),
             data_key='data_lol'
         )
         out_ = converter.convert(in_)
@@ -106,6 +120,52 @@ class TestJsonApiConverter:
         }
         assert not out_['planks'].to_one
         assert out_['planks'].to_many == {'ahoy': 'me_mateys'}
+
+    def test_datetime(self):
+        """
+        All `datetime` attributes, as defined in
+        `ApiDataSource().attribute_types`, are parsed.
+        """
+
+        now = str(datetime.now())
+
+        in_ = {
+            'data': {
+                'type': 'test',
+                'id': 'lol',
+                'attributes': {
+                    'a': now,
+                    'b': now,
+                    'c': now,
+                    'd': now
+                }
+            }
+        }
+
+        attribute_types = {
+            'test': {
+                'a': 'datetime',
+                'b': 'Date',
+                'c': 'tImE',
+                # below should not parse as `datetime`
+                'd': 'str'
+            }
+        }
+
+        mock_ds = _get_mock_data_source(
+            attribute_types=attribute_types
+        )
+
+        converter = JsonApiConverter(mock_ds)
+
+        observed = converter.convert(in_)
+
+        for c in 'abc':
+            assert isinstance(
+                observed.attributes[c],
+                datetime
+            )
+        assert isinstance(observed.attributes['d'], str)
 
     def test_relationships(self):
         """
@@ -167,6 +227,33 @@ class TestDataObjectConverter:
         observed = converter.convert(mock_obj)
 
         assert observed == expected
+
+    def test_datetime(self):
+        """
+        All `datetime` attributes are formatted to `str`.
+
+        No remaining attributes should be `datetime` valued.
+        """
+
+        mock_obj = _get_mock_data_object(
+            'test',
+            'lol',
+            attributes={
+                'a': datetime.now(),
+                'b': datetime.now(),
+                'c': True,
+                'd': 'sdsa90d',
+                'e': 394
+            }
+        )
+        converter = DataObjectConverter()
+        observed = converter.convert(mock_obj)
+
+        attributes = observed['data']['attributes']
+        assert list(attributes.keys()) == list('abcde')
+
+        for c in 'abcde':
+            assert not isinstance(attributes[c], datetime)
 
     def test_relationships(self):
         """

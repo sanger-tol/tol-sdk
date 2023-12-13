@@ -53,8 +53,7 @@ class _ConverterFactory:
         Returns an instantiated `JsonApiConverter`.
         """
 
-        do_factory = self.__data_source.data_object_factory
-        return JsonApiConverter(do_factory)
+        return JsonApiConverter(self.__data_source)
 
 
 def _get_client_factory(
