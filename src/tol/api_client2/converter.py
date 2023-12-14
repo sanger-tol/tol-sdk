@@ -5,6 +5,8 @@
 from datetime import date, datetime
 from typing import Any, Optional, Union
 
+from dateutil.parser import parse as dateutil_parse
+
 from ..core import DataObject, DataSource
 from ..core.relationship import RelationshipConfig
 
@@ -118,7 +120,11 @@ class JsonApiConverter():
         datetime_keys = self.__get_datetime_keys(type_)
 
         return {
-            k: datetime.fromisoformat(v) if k in datetime_keys else v
+            k: (
+                dateutil_parse(v)
+                if k in datetime_keys and v is not None
+                else v
+            )
             for k, v in attributes.items()
         }
 

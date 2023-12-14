@@ -142,6 +142,10 @@ def core_data_object(
             self.__attributes = attributes
             self.__to_one_objects = to_one
 
+            if self.__relational:
+                self.__to_one_relations = one_dict_factory(self)
+                self.__to_many_relations = many_dict_factory(self)
+
             if to_many:
                 logging.warning(
                     'Setting of to_many relations is unsupported'
@@ -204,13 +208,13 @@ def core_data_object(
         def to_one_relationships(self) -> Dict[str, Optional[DataObject]]:
             if not self.__relational:
                 raise NotRelationalError(self)
-            return one_dict_factory(self)
+            return self.__to_one_relations
 
         @property
         def to_many_relationships(self) -> Dict[str, Iterable[DataObject]]:
             if not self.__relational:
                 raise NotRelationalError(self)
-            return many_dict_factory(self)
+            return self.__to_many_relations
 
         @property
         def _to_one_objects(self) -> Dict[str, DataObject]:

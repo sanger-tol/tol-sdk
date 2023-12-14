@@ -47,8 +47,8 @@ class BoldDataSource(DataSource, ListGetter):
         object_filters: DataSourceFilter = None,
         **kwargs
     ) -> Iterable[DataObject]:
-        if object_type != 'samples':
-            raise DataSourceError('Only objects of type "samples" are handled by BoldDataSource')
+        if object_type != 'sample':
+            raise DataSourceError('Only objects of type "sample" are handled by BoldDataSource')
         if object_filters is None or \
                 not isinstance(object_filters.exact, dict):
             raise DataSourceError('Filter must contain an in_list filter')
@@ -64,8 +64,4 @@ class BoldDataSource(DataSource, ListGetter):
 
     @property
     def supported_types(self) -> List[str]:
-        raise NotImplementedError()
-
-    @property
-    def attribute_types(self):
-        raise NotImplementedError()
+        return ['sample']

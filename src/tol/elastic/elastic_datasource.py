@@ -529,7 +529,7 @@ class ElasticDataSource(
         if relationship_name not in to_one:
             raise DataSourceError('Bad relationship name')
 
-        new_source = self.get_by_id(source.type, [source.id])[0]
+        new_source: DataObject = list(self.get_by_id(source.type, [source.id]))[0]
         return new_source._to_one_objects.get(relationship_name)
 
     def get_to_many_relations(

@@ -5,6 +5,7 @@
 import os
 
 from tol.api_client2 import (
+    ApiDataSource,
     create_api_datasource
 )
 from tol.core import (
@@ -12,7 +13,7 @@ from tol.core import (
 )
 
 
-def portal():
+def portal() -> ApiDataSource:
     portal = create_api_datasource(
         api_url=os.getenv('PORTAL_URL') + os.getenv('PORTAL_API_PATH'),
         token=os.getenv('PORTAL_API_KEY'),

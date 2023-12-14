@@ -79,14 +79,14 @@ class TestBoldDataSource(TestCase):
 
         f = DataSourceFilter()
         with self.assertRaises(DataSourceError):
-            bds.get_list('samples', object_filters=f)
+            bds.get_list('sample', object_filters=f)
 
         f.in_list = {'container': ['ABC']}
         with self.assertRaises(DataSourceError):
-            bds.get_list('samples', object_filters=f)
+            bds.get_list('sample', object_filters=f)
         f.exact = {'container': 'ABC'}
 
-        returned = bds.get_list('samples', object_filters=f)
+        returned = bds.get_list('sample', object_filters=f)
         first = next(returned)
         self.assertEqual({'record_id': '12345678',
                           'processid': 'ABC001-19',
