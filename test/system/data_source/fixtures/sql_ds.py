@@ -10,7 +10,7 @@ from sqlalchemy import create_engine, delete
 from sqlalchemy.exc import ProgrammingError
 from sqlalchemy.orm import Mapped, mapped_column
 
-from tol.core import DataSource
+from tol.core import DataSource, core_data_object
 from tol.sql import (
     create_session_factory,
     create_sql_datasource,
@@ -85,3 +85,4 @@ class SqlFixture(DataSourceFixture):
 
 
 sql = SqlFixture()
+core_data_object(sql)

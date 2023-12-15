@@ -10,19 +10,25 @@ from tol.api_client2.converter import (
     DataObjectConverter,
     JsonApiConverter
 )
+from tol.api_client2.parser import DefaultParser
+from tol.api_client2.view import DefaultView
 from tol.core import DataObject, DataSource
+from tol.core.data_source_dict import DataSourceDict
 
 
 def _get_mock_data_object(
     type_: str,
     id_: Optional[str],
-    attributes: dict[str, Any] = {}
+    attributes: dict[str, Any] = {},
+    to_one: dict[str, Any] = {}
 ) -> DataObject:
 
     data_object = Mock()
+
     data_object.type = type_
     data_object.id = id_
     data_object.attributes = attributes
+    data_object._to_one_objects = to_one
 
     return data_object
 
@@ -38,6 +44,15 @@ def _get_mock_data_source(
     mock_ds.data_object_factory = _get_mock_data_object
 
     return mock_ds
+
+
+def _get_mock_ds_dict(
+    attribute_types: dict[str, dict[str, Any]] = {}
+) -> dict[str, DataSource]:
+
+    return DataSourceDict(
+        _get_mock_data_source(attribute_types=attribute_types)
+    )
 
 
 class TestJsonApiConverter:
@@ -57,7 +72,8 @@ class TestJsonApiConverter:
             ]
         }
 
-        converter = JsonApiConverter(_get_mock_data_source())
+        parser = DefaultParser(_get_mock_ds_dict({'A': {}}))
+        converter = JsonApiConverter(parser)
         (out_, _) = converter.convert_list(in_)
 
         assert len(out_) == 4
@@ -75,8 +91,11 @@ class TestJsonApiConverter:
                 'type': 'hype'
             }
         }
+        parser = DefaultParser(
+            _get_mock_ds_dict({'hype': {}})
+        )
         converter = JsonApiConverter(
-            _get_mock_data_source(),
+            parser,
             data_key='data_lol'
         )
         out_ = converter.convert(in_)
@@ -152,11 +171,11 @@ class TestJsonApiConverter:
             }
         }
 
-        mock_ds = _get_mock_data_source(
-            attribute_types=attribute_types
+        parser = DefaultParser(
+            _get_mock_ds_dict(attribute_types=attribute_types)
         )
 
-        converter = JsonApiConverter(mock_ds)
+        converter = JsonApiConverter(parser)
 
         observed = converter.convert(in_)
 
@@ -166,16 +185,6 @@ class TestJsonApiConverter:
                 datetime
             )
         assert isinstance(observed.attributes['d'], str)
-
-    def test_relationships(self):
-        """
-        A resource with relationships. Tests:
-        - relationships
-        - different `data_key` kwarg
-        - `convert()`
-        """
-
-        # TODO deliver
 
 
 class TestDataObjectConverter:
@@ -196,7 +205,7 @@ class TestDataObjectConverter:
         ]
 
         expected = {
-            'data_too': [
+            'data': [
                 {
                     'type': 'B',
                     'id': str(i),
@@ -208,23 +217,8 @@ class TestDataObjectConverter:
             ]
         }
 
-        converter = DataObjectConverter(data_key='data_too')
+        converter = DataObjectConverter(DefaultView())
         observed = converter.convert_list(mock_objs)
-
-        assert observed == expected
-
-    def test_no_optional(self):
-        """Optional fields not specified"""
-
-        expected = {
-            'data_free': {
-                'type': 'hype'
-            }
-        }
-
-        mock_obj = _get_mock_data_object('hype', None)
-        converter = DataObjectConverter(data_key='data_free')
-        observed = converter.convert(mock_obj)
 
         assert observed == expected
 
@@ -246,7 +240,7 @@ class TestDataObjectConverter:
                 'e': 394
             }
         )
-        converter = DataObjectConverter()
+        converter = DataObjectConverter(DefaultView())
         observed = converter.convert(mock_obj)
 
         attributes = observed['data']['attributes']
@@ -254,13 +248,3 @@ class TestDataObjectConverter:
 
         for c in 'abcde':
             assert not isinstance(attributes[c], datetime)
-
-    def test_relationships(self):
-        """
-        A resource with relationships. Tests:
-        - relationships
-        - different `data_key` kwarg
-        - `convert()`
-        """
-
-        # TODO deliver

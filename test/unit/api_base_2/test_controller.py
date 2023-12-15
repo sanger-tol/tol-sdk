@@ -8,18 +8,18 @@ from unittest.mock import MagicMock, Mock, PropertyMock, create_autospec
 import pytest
 
 from tol.api_base2.controller import Controller
-from tol.api_base2.exception import (
-    ObjectNotFoundByIdException,
-    RecursiveRelationNotFoundException,
-    UninheritedOperationError,
-    UnsupportedOpertionError
-)
 from tol.api_base2.misc import (
     AggregationBody,
     AggregationParameters,
     ListGetParamaters
 )
-from tol.api_base2.view import DefaultView, View
+from tol.api_client2.exception import (
+    ObjectNotFoundByIdException,
+    RecursiveRelationNotFoundException,
+    UninheritedOperationError,
+    UnsupportedOpertionError
+)
+from tol.api_client2.view import DefaultView, View
 from tol.core import (
     DataSource,
     DataSourceFilter,

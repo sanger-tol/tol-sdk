@@ -5,12 +5,11 @@
 import urllib
 from collections import ChainMap
 from itertools import chain
-from typing import Callable, Optional, Protocol
+from typing import Optional
 
 from flask import Blueprint, request
 
 from .controller import Controller
-from .exception import BaseRuntimeException
 from .misc import (
     AggregationBody,
     AggregationParameters,
@@ -23,15 +22,13 @@ from .misc.auth_context import (
     CtxGetter,
     default_ctx_getter
 )
-from .parser import DefaultParser
-from .view import DefaultView
+from ..api_client2.exception import BaseRuntimeException
+from ..api_client2.parser import DefaultParser
+from ..api_client2.view import DefaultView
 from ..core import DataSource, DataSourceError
 from ..core.data_source_dict import DataSourceDict
 from ..core.operator import Relational
-from ..core.operator.operator_config import (
-    DefaultOperatorConfig,
-    OperatorConfig
-)
+from ..core.operator.operator_config import DefaultOperatorConfig, OperatorConfig
 
 
 class DataBlueprint(Blueprint):
@@ -86,26 +83,10 @@ class CustomBlueprint(Blueprint):
         )
 
 
-ConfigFactory = Callable[[str, tuple[DataSource]], Blueprint]
-"""A `Callable` that returns a `ConfigBlueprint`"""
-
-
-class OperatorConfigFactory(Protocol):
-    """
-    Takes a variable number of `DataSource` instances. Returns
-    an `OperatorConfig` instance.
-    """
-    def __call__(
-        self,
-        *datasources: DataSource
-    ) -> OperatorConfig:
-        ...
-
-
-def config_blueprint(
+def _config_blueprint(
     url_prefix: str,
     data_sources: tuple[DataSource],
-    operator_factory: OperatorConfigFactory = lambda *d: DefaultOperatorConfig(*d)
+    operator_config: OperatorConfig
 ) -> ConfigBlueprint:
     """
     Returns a `ConfigBlueprint` instance given:
@@ -115,7 +96,6 @@ def config_blueprint(
     """
 
     config_handler = ConfigBlueprint(url_prefix)
-    operator_config = operator_factory(*data_sources)
 
     @config_handler.route('/relationships', methods=['GET'])
     def get_relationships():
@@ -144,19 +124,16 @@ def config_blueprint(
     return config_handler
 
 
-def data_blueprint(
-    *data_sources: DataSource,
-    url_prefix: str = '/data',
-    config_prefix: str = '/_config',
-
-    config_factory: ConfigFactory = lambda p, d: config_blueprint(p, d),
+def _core_blueprint(
+    data_source_dict: dict[str, DataSource],
+    url_prefix: str,
+    context_getter: CtxGetter,
     authenticator: Optional[Authenticator] = None,
-    context_getter: CtxGetter = default_ctx_getter
 ) -> DataBlueprint:
     """
-    Given a tuple of DataSource instances, this provides a flask
-    Blueprint instance for routing the basic operations on said
-    DataSource instances as endpoints.
+    Creates the "core" blueprint, responsible for managing
+    (non-metadata) endpoints of the `DataSource` instances
+    in the given `dict`.
     """
 
     data_handler = DataBlueprint(url_prefix=url_prefix)
@@ -166,11 +143,6 @@ def data_blueprint(
         def authenticate() -> None:
             auth_context = context_getter()
             authenticator(auth_context)
-
-    config = config_factory(config_prefix, data_sources)
-    data_handler.register_blueprint(config)
-
-    data_source_dict = DataSourceDict(*data_sources)
 
     def __new_controller(object_type: str) -> Controller:
         data_source = data_source_dict[object_type]
@@ -219,7 +191,7 @@ def data_blueprint(
     def post_upserts(*, object_type: str):
         controller = __new_controller(object_type)
         request_body = JsonApiRequestBody(request.json)
-        parser = DefaultParser()
+        parser = DefaultParser(data_source_dict)
         objects = parser.parse_iterable(request_body.data)
         return controller.post_upserts(object_type, objects)
 
@@ -286,6 +258,34 @@ def data_blueprint(
         }, error.status_code
 
     return data_handler
+
+
+def data_blueprint(
+    *data_sources: DataSource,
+    url_prefix: str = '/data',
+    config_prefix: str = '/_config',
+    authenticator: Optional[Authenticator] = None
+) -> DataBlueprint:
+    """
+    Given a tuple of DataSource instances, this provides a flask
+    Blueprint instance for routing the basic operations on said
+    DataSource instances as endpoints.
+    """
+
+    config_bp = _config_blueprint(
+        config_prefix,
+        data_sources,
+        DefaultOperatorConfig(*data_sources)
+    )
+    core_bp = _core_blueprint(
+        DataSourceDict(*data_sources),
+        url_prefix,
+        default_ctx_getter,
+        authenticator=authenticator
+    )
+    core_bp.register_blueprint(config_bp)
+
+    return core_bp
 
 
 def custom_blueprint(

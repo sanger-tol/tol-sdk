@@ -6,7 +6,7 @@ import json
 from abc import ABC, abstractmethod
 from typing import Any, Optional, Union
 
-from ..exception import BaseRuntimeException
+from ...api_client2.exception import BaseRuntimeException
 
 
 Data = Union[

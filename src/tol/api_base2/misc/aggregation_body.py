@@ -4,7 +4,7 @@
 
 from typing import Dict
 
-from ..exception import BadPostJsonError
+from ...api_client2.exception import BadPostJsonError
 
 
 class AggregationBody:

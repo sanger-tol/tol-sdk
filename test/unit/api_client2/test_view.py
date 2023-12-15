@@ -9,8 +9,8 @@ from flask import Flask
 
 from flask_testing import TestCase
 
-from tol.api_base2 import data_blueprint
-from tol.api_base2.view import DefaultView
+from tol.api_base2.blueprint import _core_blueprint
+from tol.api_client2.view import DefaultView
 from tol.core import (
     DataObject,
     DataSource
@@ -278,9 +278,10 @@ class TestDefaultViewInBlueprint(TestCase):
 
     def create_app(self):
         app = Flask(__name__)
-        blueprint = data_blueprint(
-            _MockDataSource({}),
-            url_prefix='/super_data'
+        blueprint = _core_blueprint(
+            {'test': _MockDataSource({})},
+            '/super_data',
+            lambda: None
         )
         app.register_blueprint(blueprint)
         return app

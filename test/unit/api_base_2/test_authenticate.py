@@ -2,28 +2,34 @@
 #
 # SPDX-License-Identifier: MIT
 
-from typing import Iterable
-from unittest.mock import MagicMock, PropertyMock
+from typing import Any, Iterable
+from unittest.mock import MagicMock, Mock, PropertyMock
 
-from flask import Flask, g, request
+from flask import Flask, request
 
 from flask_testing import TestCase
 
 import pytest
 
-from tol.api_base2 import data_blueprint
-from tol.api_base2.exception import UnauthenticatedError
+from tol.api_base2.blueprint import _core_blueprint
 from tol.api_base2.misc import AuthContext, quick_and_dirty_auth
+from tol.api_base2.misc.auth_context import default_ctx_getter
+from tol.api_client2.exception import UnauthenticatedError
 from tol.core import DataSource
 from tol.core.operator import Deleter, DetailGetter
 
 
 class _MockDataSource(DataSource, DetailGetter, Deleter):
+
+    def __init__(self, config: dict[str, Any], ctx_getter=None):
+        self.__ctx_getter = ctx_getter
+        super().__init__(config, [])
+
     def get_by_id(self, object_type: str, object_ids, **kwargs):
         assert len(object_ids) == 1
 
         # get the global user ID
-        user_id = g.auth_context.user_id
+        user_id = self.__ctx_getter().user_id
 
         mock_object = MagicMock()
         type(mock_object).type = PropertyMock(
@@ -53,16 +59,23 @@ class _MockDataSource(DataSource, DetailGetter, Deleter):
 
 
 class TestAuthenticator(TestCase):
-    def mock_authenticate(self, ctx: AuthContext) -> None:
+    def mock_authenticate(self, __ctx: AuthContext) -> None:
         token = request.headers.get('token')
         if token != 'hello_world':
             raise UnauthenticatedError('say hi first!')
-        ctx.user_id = 'hi'
+
+    def mock_ctx_get(self):
+        ctx = Mock()
+        self.__user_id_prop = PropertyMock(return_value='hi')
+        type(ctx).user_id = self.__user_id_prop
+        return ctx
 
     def create_app(self):
         app = Flask(__name__)
-        blueprint = data_blueprint(
-            _MockDataSource({}),
+        blueprint = _core_blueprint(
+            {'lol': _MockDataSource({}, ctx_getter=self.mock_ctx_get)},
+            '/data',
+            self.mock_ctx_get,
             authenticator=self.mock_authenticate
         )
         app.register_blueprint(blueprint)
@@ -161,8 +174,10 @@ class TestQuickAndDirtyAuthFlask(TestCase):
 
     def create_app(self):
         app = Flask(__name__)
-        blueprint = data_blueprint(
-            _MockDataSource({}),
+        blueprint = _core_blueprint(
+            {'lol': _MockDataSource({}, ctx_getter=default_ctx_getter)},
+            '/data',
+            default_ctx_getter,
             authenticator=quick_and_dirty_auth(
                 'test-token',
                 excluded_methods=['DELETE']  # can delete without token

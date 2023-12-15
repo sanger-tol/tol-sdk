@@ -2,7 +2,8 @@
 #
 # SPDX-License-Identifier: MIT
 
-from typing import Callable, Optional
+from collections.abc import Mapping
+from typing import Callable, Iterator, Optional
 
 from .api_datasource import (
     ApiDataSource,
@@ -15,7 +16,25 @@ from .converter import (
     JsonApiConverter
 )
 from .filter import DefaultApiFilter
+from .parser import DefaultParser
+from .view import DefaultView
 from ..core import DataSource
+
+
+class _ApiDSDict(Mapping):
+    def __init__(self, api_ds: ApiDataSource) -> None:
+        self.__ds = api_ds
+
+    def __getitem__(self, __k: str) -> ApiDataSource:
+        if __k not in self.__ds.supported_types:
+            raise KeyError()
+        return self.__ds
+
+    def __iter__(self) -> Iterator[str]:
+        return iter(self.__ds.supported_types)
+
+    def __len__(self) -> int:
+        return len(self.__ds.supported_types)
 
 
 class _ConverterFactory:
@@ -26,7 +45,8 @@ class _ConverterFactory:
     - `JsonApiConverter`
     """
 
-    def __init__(self) -> None:
+    def __init__(self, prefix: str) -> None:
+        self.__prefix = prefix
         self.__data_source: Optional[DataSource] = None
 
     @property
@@ -46,14 +66,20 @@ class _ConverterFactory:
         Returns an instantiated `DataObjectConverter`.
         """
 
-        return DataObjectConverter()
+        view = DefaultView(prefix=self.__prefix)
+        return DataObjectConverter(view)
 
     def json_converter_factory(self) -> JsonConverterFactory:
         """
         Returns an instantiated `JsonApiConverter`.
         """
 
-        return JsonApiConverter(self.__data_source)
+        parser = DefaultParser(self.__ds_dict)
+        return JsonApiConverter(parser)
+
+    @property
+    def __ds_dict(self) -> dict[str, DataSource]:
+        return _ApiDSDict(self.data_source)
 
 
 def _get_client_factory(
@@ -95,7 +121,7 @@ def create_api_datasource(
         token=token,
         data_prefix=data_prefix
     )
-    manager = _ConverterFactory()
+    manager = _ConverterFactory(data_prefix)
 
     api_ds = ApiDataSource(
         client_factory,

@@ -119,20 +119,12 @@ class EmptyDataSource(DataSource, DetailGetter, PageGetter):
             'nothing'
         ]
 
-    @property
-    def attribute_types(self):
-        raise NotImplementedError()
-
 
 class WriteableDataSource(DataSource):
     """Can be augmented with "write" `Operator` classes"""
 
     def __init__(self):
         pass
-
-    @property
-    def attribute_types(self) -> Dict:
-        raise NotImplementedError()
 
     @property
     def supported_types(self) -> List[str]:
@@ -346,6 +338,11 @@ class TestBlueprintUpsert(TestCase):
 
     def create_app(self):
         class NeverEverStopUpserting(WriteableDataSource, Upserter):
+
+            @property
+            def supported_types(self) -> List[str]:
+                return ['write', 'only', 'hyped_up']
+
             def upsert(
                 self,
                 object_type: str,

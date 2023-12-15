@@ -4,8 +4,8 @@
 
 import pytest
 
-from tol.api_base2.exception import BadPostJsonError
 from tol.api_base2.misc import AggregationBody
+from tol.api_client2.exception import BadPostJsonError
 
 
 class TestAggregationBody:

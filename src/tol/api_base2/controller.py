@@ -6,19 +6,21 @@ from __future__ import annotations
 
 from typing import Any, Callable, Iterable, Optional, Type
 
-from .exception import (
-    ObjectNotFoundByIdException,
-    RecursiveRelationNotFoundException,
-    UninheritedOperationError,
-    UnsupportedOpertionError
-)
+from flask import make_response
+
 from .misc import (
     AggregationBody,
     AggregationParameters,
     JsonApiRequestBody,
     ListGetParamaters
 )
-from .view import ResponseDict, View
+from ..api_client2.exception import (
+    ObjectNotFoundByIdException,
+    RecursiveRelationNotFoundException,
+    UninheritedOperationError,
+    UnsupportedOpertionError
+)
+from ..api_client2.view import ResponseDict, View
 from ..core import DataObject, OperableDataSource
 from ..core.operator import (
     Aggregator,
@@ -33,6 +35,7 @@ from ..core.operator import (
     Upserter
 )
 from ..core.operator.updater import DataObjectUpdate
+from ..excel import convert_data_objects_to_excel
 
 
 EmptySuccessResponse = dict[str, bool]
@@ -144,6 +147,7 @@ class Controller:
         """
         Gets all the list results of the specified type.
         """
+
         page_number = self.__get_page_number_or_1(query_args)
         data_objects, _ = self.__data_source.get_list_page(
             object_type,
@@ -152,7 +156,12 @@ class Controller:
             object_filters=query_args.filter,
             sort_by=query_args.sort_by
         )
-        return self.__view.dump_bulk_excel(data_objects, body.data)
+
+        output_stream = convert_data_objects_to_excel(data_objects, body, 'Sheet1')
+        response = make_response(output_stream.getvalue())
+        response.headers['Content-Disposition'] = 'attachment; filename=download_table.xlsx'
+        response.headers['Content-type'] = 'application/vnd.ms-excel'
+        return response
 
     @validate(Counter, 'get_count', 'count GET')
     def get_count(

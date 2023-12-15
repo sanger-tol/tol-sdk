@@ -1,0 +1,128 @@
+# SPDX-FileCopyrightText: 2023 Genome Research Ltd.
+#
+# SPDX-License-Identifier: MIT
+
+from __future__ import annotations
+
+import typing
+from abc import ABC, abstractmethod
+from collections.abc import Mapping
+from typing import Any, Iterable, Optional
+
+from dateutil.parser import parse as dateutil_parse
+
+from ..core import DataObject
+
+if typing.TYPE_CHECKING:
+    from ..core import DataSource
+
+
+JsonApiResource = dict[str, Any]
+JsonApiDoc = dict[str, list[JsonApiResource]]
+
+
+class Parser(ABC):
+    """
+    Parses JSON:API transfer resource `dict`s to `DataObject`
+    instances
+    """
+
+    def parse_iterable(
+        self,
+        transfers: Iterable[JsonApiResource]
+    ) -> Iterable[DataObject]:
+        """
+        Parses an `Iterable` of JSON:API transfer resources
+        """
+
+        return (
+            self.parse(t) for t in transfers
+        )
+
+    @abstractmethod
+    def parse(self, transfer: JsonApiResource) -> DataObject:
+        """
+        Parses an individual JSON:API transfer resource to a
+        `DataObject` instance
+        """
+
+
+class DefaultParser(Parser):
+
+    def __init__(self, data_source_dict: dict[str, DataSource]) -> None:
+        self.__dict = data_source_dict
+
+    def parse(self, transfer: JsonApiResource) -> DataObject:
+        type_ = transfer['type']
+        ds = self.__get_data_source(type_)
+        raw_attributes = transfer.get('attributes')
+
+        attributes = self.__convert_attributes(type_, raw_attributes)
+
+        return ds.data_object_factory(
+            transfer.get('type'),
+            id_=transfer.get('id'),
+            attributes=attributes,
+            to_one=self.__parse_to_ones(transfer)
+        )
+
+    def __get_data_source(self, type_: str) -> DataSource:
+        return self.__dict[type_]
+
+    def __parse_to_ones(
+        self,
+        transfer: JsonApiResource
+    ) -> dict[str, DataObject]:
+
+        return {
+            k: self.parse(v.get('data', {}))
+            for k, v in transfer.get('relationships', {}).items()
+            if self.__relationship_is_to_one(v)
+        }
+
+    def __relationship_is_to_one(
+        self,
+        relationship: dict[str, Any]
+    ) -> bool:
+
+        return isinstance(
+            relationship.get('data'),
+            Mapping
+        )
+
+    def __convert_attributes(
+        self,
+        type_: str,
+        attributes: Optional[dict[str, Any]]
+    ) -> dict[str, Any]:
+
+        if not attributes:
+            return {}
+
+        datetime_keys = self.__get_datetime_keys(type_)
+
+        return {
+            k: (
+                dateutil_parse(v)
+                if k in datetime_keys and v is not None
+                else v
+            )
+            for k, v in attributes.items()
+        }
+
+    def __get_datetime_keys(self, type_: str) -> list[str]:
+        ds = self.__get_data_source(type_)
+        attribute_types = ds.attribute_types.get(
+            type_,
+            {}
+        )
+
+        return [
+            k for k, v in attribute_types.items()
+            if self.__value_is_datetime(v)
+        ]
+
+    def __value_is_datetime(self, __v: str) -> bool:
+        lower_ = __v.lower()
+
+        return 'date' in lower_ or 'time' in lower_

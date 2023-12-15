@@ -5,6 +5,7 @@
 import os
 from uuid import uuid4
 
+from tol.core import core_data_object
 from tol.elastic import ElasticDataSource
 
 from .base import DataSourceFixture
@@ -43,3 +44,4 @@ class ElasticFixture(DataSourceFixture):
 
 
 elastic = ElasticFixture()
+core_data_object(elastic)

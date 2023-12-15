@@ -7,7 +7,7 @@ from typing import Callable, Optional
 from flask import request
 
 from .auth_context import AuthContext
-from ..exception import UnauthenticatedError
+from ...api_client2.exception import UnauthenticatedError
 
 
 Authenticator = Callable[[AuthContext], None]

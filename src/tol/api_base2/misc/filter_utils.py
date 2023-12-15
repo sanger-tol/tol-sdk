@@ -4,7 +4,7 @@
 
 import json
 
-from ..exception import BadQueryArgError
+from ...api_client2.exception import BadQueryArgError
 from ...core import DataSourceFilter
 
 

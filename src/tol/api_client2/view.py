@@ -4,11 +4,8 @@
 
 import urllib
 from abc import ABC, abstractmethod
+from datetime import date, datetime
 from typing import Any, Dict, Iterable, List, Optional, Union
-
-from flask import make_response
-
-from tol.excel import convert_data_objects_to_excel
 
 from ..core import DataObject
 from ..core.operator import Relational
@@ -45,15 +42,6 @@ class View(ABC):
         Create a JSON:API response for an Iterable of DataObject results
         """
 
-    @abstractmethod
-    def dump_bulk_excel(
-        self,
-        data_objects: Iterable[DataObject]
-    ) -> ResponseDict:
-        """
-        Create an vnd.ms-excel response for an Iterable of DataObject results
-        """
-
 
 RelationshipDump = dict[str, dict[str, str]]
 AllRelationshipsDump = dict[str, RelationshipDump]
@@ -72,6 +60,7 @@ class DefaultView(View):
         data_object: DataObject,
         document_meta: Optional[DocumentMeta] = None
     ) -> ResponseDict:
+
         response = {
             'data': self.__dump_object(data_object)
         }
@@ -96,24 +85,15 @@ class DefaultView(View):
             response['meta'] = document_meta
         return response
 
-    def dump_bulk_excel(
-            self,
-            data_objects: Iterable[DataObject],
-            body: object
-    ) -> ResponseDict:
-        output_stream = convert_data_objects_to_excel(data_objects, body, 'Sheet1')
-        response = make_response(output_stream.getvalue())
-        response.headers['Content-Disposition'] = 'attachment; filename=download_table.xlsx'
-        response.headers['Content-type'] = 'application/vnd.ms-excel'
-        return response
-
     def __dump_object(self, data_object: DataObject) -> DumpDict:
         dump = {
             'type': data_object.type,
             'id': data_object.id
         }
         if data_object.attributes:
-            dump['attributes'] = data_object.attributes
+            dump['attributes'] = self.__convert_attributes(
+                data_object.attributes
+            )
         dump = self.__add_relationships(data_object, dump)
         return dump
 
@@ -156,6 +136,7 @@ class DefaultView(View):
         type_: str,
         id_: str
     ) -> RelationshipDump:
+
         id_encoded = urllib.parse.quote(id_, safe='')
         link = f'{self.__prefix}/{type_}/{id_encoded}/{key}'
         return {
@@ -169,11 +150,13 @@ class DefaultView(View):
         key: str,
         data_object: DataObject
     ) -> RelationshipDump:
+
         related_object = data_object._host.get_to_one_relation(data_object, key)
         if related_object is not None:
+            type_ = data_object._host.relationship_config[data_object.type].to_one[key]
             return {
                 'data': {
-                    'type': data_object._host.relationship_config[data_object.type].to_one[key],
+                    'type': type_,
                     'id': related_object.id,
                     'attributes': related_object.attributes
                 }
@@ -240,3 +223,18 @@ class DefaultView(View):
         return (
             config.keys() if config is not None else []
         )
+
+    def __convert_attributes(
+        self,
+        attributes: dict[str, Any]
+    ) -> dict[str, Any]:
+
+        return {
+            k: self.__convert_value(v)
+            for k, v in attributes.items()
+        }
+
+    def __convert_value(self, __v: Any) -> Any:
+        if isinstance(__v, (date, datetime)):
+            return __v.isoformat()
+        return __v

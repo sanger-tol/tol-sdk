@@ -6,7 +6,7 @@ import re
 from typing import Dict, Optional
 
 from .filter_utils import FilterUtils
-from ..exception import BadQueryArgError
+from ...api_client2.exception import BadQueryArgError
 
 
 class ListGetParamaters:

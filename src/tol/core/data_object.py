@@ -6,9 +6,10 @@ from __future__ import annotations
 
 import typing
 from abc import ABC, abstractmethod
-from typing import Any, Iterable, Optional
+from typing import Any, Iterable, Optional, Union
 
 if typing.TYPE_CHECKING:
+    from .operator import Relational
     from .datasource import DataSource
 
 
@@ -64,7 +65,7 @@ class DataObject(ABC):
 
     @property
     @abstractmethod
-    def _host(self) -> DataSource:
+    def _host(self) -> Union[DataSource, Relational]:
         """
         The DataSource instance that manages DataObject instances of this type
         """

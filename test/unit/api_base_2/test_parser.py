@@ -2,7 +2,11 @@
 #
 # SPDX-License-Identifier: MIT
 
-from tol.api_base2.parser import DefaultParser
+from typing import Any, Optional
+from unittest.mock import Mock, PropertyMock, create_autospec
+
+from tol.api_client2.parser import DefaultParser
+from tol.core import DataObject, DataSource
 
 
 class TestDefaultParser:
@@ -15,7 +19,9 @@ class TestDefaultParser:
             'type': 'test_lol',
             'id': 'hype'
         }
-        parser = DefaultParser()
+        parser = DefaultParser(
+            {'test_lol': self.__mock_data_source()}
+        )
         parsed = parser.parse(in_)
 
         assert parsed.id == 'hype'
@@ -37,7 +43,10 @@ class TestDefaultParser:
                 'string': 'sdo8fd'
             }
         }
-        parsed = DefaultParser().parse(in_)
+        parser = DefaultParser(
+            {'whatever': self.__mock_data_source()}
+        )
+        parsed = parser.parse(in_)
 
         assert parsed.type == 'whatever'
         assert parsed.id == 'does_not_matter'
@@ -71,7 +80,14 @@ class TestDefaultParser:
                 }
             }
         }
-        parsed = DefaultParser().parse(in_)
+        ds = self.__mock_data_source()
+        parser = DefaultParser(
+            {
+                'nice': ds,
+                'whatever': ds
+            }
+        )
+        parsed = parser.parse(in_)
 
         assert parsed.type == 'whatever'
         assert parsed.id == 'does_not_matter'
@@ -122,17 +138,25 @@ class TestDefaultParser:
             }
         ]
 
-        parser = DefaultParser()
+        mock_ds = self.__mock_data_source()
+        parser = DefaultParser(
+            {
+                'test1': mock_ds,
+                'test_too': mock_ds,
+                'test-the_third': mock_ds,
+                'neo': mock_ds
+            }
+        )
         parsed = list(parser.parse_iterable(in_))
 
         assert parsed[0].type == 'test1'
         assert parsed[0].id == 'skdj8'
-        assert parsed[0].attributes is None
+        assert not parsed[0].attributes
         assert not parsed[0]._to_one_objects
 
         assert parsed[1].type == 'test_too'
         assert parsed[1].id == '39845k'
-        assert parsed[1].attributes is None
+        assert not parsed[1].attributes
         one_to_ones = parsed[1]._to_one_objects
         assert one_to_ones is not None
         assert len(one_to_ones) == 1
@@ -179,7 +203,16 @@ class TestDefaultParser:
             }
         }
 
-        parsed = DefaultParser().parse(data)
+        mock_ds = self.__mock_data_source()
+        parser = DefaultParser(
+            {
+                'test_too': mock_ds,
+                'epp': mock_ds,
+                'lol': mock_ds,
+                'neo': mock_ds
+            }
+        )
+        parsed = parser.parse(data)
 
         assert parsed.type == 'test_too'
         assert parsed.id == '39845k'
@@ -200,3 +233,32 @@ class TestDefaultParser:
         assert first.id == 'also lol'
         assert not first.attributes
         assert not first._to_one_objects
+
+    def __mock_data_source(self) -> Mock:
+        mock_ds = create_autospec(DataSource, spec_set=True)
+
+        type(mock_ds).data_object_factory = PropertyMock(
+            return_value=self.__mock_factory
+        )
+
+        return mock_ds
+
+    def __mock_factory(
+        self,
+        type_: str,
+        id_: Optional[str] = None,
+        attributes: dict[str, Any] = {},
+        to_one: dict[str, Any] = {},
+        to_many: dict[str, Any] = {}
+    ) -> Mock:
+
+        mock_obj = create_autospec(DataObject, spec_set=True)
+
+        type(mock_obj).type = PropertyMock(return_value=type_)
+        type(mock_obj).id = PropertyMock(return_value=id_)
+        type(mock_obj).attributes = PropertyMock(return_value=attributes)
+        type(mock_obj)._to_one_objects = PropertyMock(return_value=to_one)
+
+        assert not to_many
+
+        return mock_obj

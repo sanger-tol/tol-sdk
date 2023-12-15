@@ -4,8 +4,8 @@
 
 import pytest
 
-from tol.api_base2.exception import BadQueryArgError
 from tol.api_base2.misc import ListGetParamaters
+from tol.api_client2.exception import BadQueryArgError
 
 
 class TestListGetParameters:
