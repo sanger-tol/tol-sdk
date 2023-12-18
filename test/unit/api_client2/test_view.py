@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: MIT
 
 from typing import Any, Optional
-from unittest.mock import MagicMock, PropertyMock
+from unittest.mock import MagicMock, PropertyMock, create_autospec
 
 from flask import Flask
 
@@ -16,7 +16,7 @@ from tol.core import (
     DataSource
 )
 from tol.core.operator import DetailGetter, Relational
-from tol.core.relationship import RelationshipConfig
+from tol.core.relationship import RelationshipConfig, ToOneDict
 
 # the relationship config
 rc = RelationshipConfig(
@@ -34,7 +34,7 @@ rc = RelationshipConfig(
 def mock_data_object(
     type_: str,
     id_: Optional[str] = None,
-    attributes: dict[str, Any] = {},
+    attributes: dict[str, Any] = None,
     host: Optional[DataSource] = None
 ) -> MagicMock:
 
@@ -51,7 +51,33 @@ def mock_data_object(
     return obj_mock
 
 
-class _MockDataSource(DataSource, DetailGetter, Relational):
+def mock_relational_do(
+    type_: str,
+    id_: Optional[str] = None,
+    attributes: dict[str, Any] = None,
+    host: Optional[DataSource] = None,
+    _to_one_objects: dict[str, MagicMock] = {}
+) -> MagicMock:
+
+    obj_mock = mock_data_object(
+        type_,
+        id_=id_,
+        attributes=attributes,
+        host=host
+    )
+
+    type(obj_mock)._to_one_objects = PropertyMock(
+        return_value=_to_one_objects
+    )
+    one_ = ToOneDict(obj_mock)
+    type(obj_mock).to_one_relationships = PropertyMock(
+        return_value=one_
+    )
+
+    return obj_mock
+
+
+class _MockRelational(DataSource, DetailGetter, Relational):
     @property
     def supported_types(self) -> list[str]:
         return [
@@ -73,9 +99,14 @@ class _MockDataSource(DataSource, DetailGetter, Relational):
 
     def get_to_one_relation(self, data_object: DataObject, key: str):
         if key == 'first':
-            return mock_data_object('yes', '1234', attributes={'att1': 'val1'})
+            return mock_relational_do(
+                'yes',
+                '1234',
+                attributes={'att1': 'val1'},
+                host=self
+            )
         if key == 'second':
-            return mock_data_object('another', '5678')
+            return mock_relational_do('another', '5678', host=self)
         raise NotImplementedError()
 
     def get_to_many_relations(*args, **kwargs):
@@ -84,7 +115,7 @@ class _MockDataSource(DataSource, DetailGetter, Relational):
     def get_by_id(self, object_type: str, object_ids):
         assert len(object_ids) == 1
         return [
-            mock_data_object(
+            mock_relational_do(
                 object_type,
                 id_=object_ids[0],
                 host=self
@@ -102,7 +133,8 @@ class TestDefaultView:
             id_='9606',
             attributes={
                 'int': 45980
-            }
+            },
+            host=create_autospec(DataSource)
         )
         dump = DefaultView().dump(obj)
         expected = {
@@ -126,7 +158,7 @@ class TestDefaultView:
                 id_=str(i),
                 attributes={'string': f'field_{i}'}
             )
-            for i in range(349)
+            for i in range(5)
         ]
         dump = DefaultView().dump_bulk(objs)
         expected = {
@@ -138,18 +170,29 @@ class TestDefaultView:
                         'string': f'field_{i}'
                     }
                 }
-                for i in range(349)
+                for i in range(5)
             ]
         }
         assert dump == expected
 
     def test_relationships(self):
-        """Dump with relationships"""
+        """
+        Dump with relationships. Doesn't include non set to_one objects
+        """
 
-        obj_mock = mock_data_object(
+        host = _MockRelational({})
+
+        related_obj_mock = mock_relational_do(
+            'another',
+            id_='5678',
+            host=host
+        )
+
+        obj_mock = mock_relational_do(
             'test',
             id_='lol/abc',
-            host=_MockDataSource({})
+            host=host,
+            _to_one_objects={'second': related_obj_mock}
         )
 
         # the expected dumped output
@@ -158,18 +201,10 @@ class TestDefaultView:
                 'type': 'test',
                 'id': 'lol/abc',
                 'relationships': {
-                    'first': {
-                        'data': {
-                            'type': 'yes',
-                            'id': '1234',
-                            'attributes': {'att1': 'val1'}
-                        }
-                    },
                     'second': {
                         'data': {
                             'type': 'another',
-                            'id': '5678',
-                            'attributes': {}
+                            'id': '5678'
                         }
                     },
                     'ex': {
@@ -186,6 +221,47 @@ class TestDefaultView:
             }
         }
         dump = DefaultView(prefix='/random').dump(obj_mock)
+        assert dump == expected
+
+    def test_hop_limit(self):
+        """The `hop_limit` arg is obeyed if specified"""
+
+        host = _MockRelational({})
+
+        related_obj_mock = mock_relational_do(
+            'another',
+            id_='5678',
+            host=host
+        )
+
+        obj_mock = mock_relational_do(
+            'test',
+            id_='lol/abc',
+            host=host,
+            _to_one_objects={'second': related_obj_mock}
+        )
+
+        # the expected dumped output - doesn't include any to-ones
+        expected = {
+            'data': {
+                'type': 'test',
+                'id': 'lol/abc',
+                'relationships': {
+                    'ex': {
+                        'links': {
+                            'related': '/random/test/lol%2Fabc/ex'
+                        }
+                    },
+                    'nihil': {
+                        'links': {
+                            'related': '/random/test/lol%2Fabc/nihil'
+                        }
+                    },
+                }
+            }
+        }
+        view = DefaultView(prefix='/random', hop_limit=0)
+        dump = view.dump(obj_mock)
         assert dump == expected
 
     def test_meta(self):
@@ -247,10 +323,10 @@ class TestDefaultView:
         no `RelationshipConfig` is defined for the given type
         """
 
-        mock_obj = mock_data_object(
+        mock_obj = mock_relational_do(
             'bad',
             id_='lol',
-            host=_MockDataSource({})
+            host=_MockRelational({})
         )
         view = DefaultView()
         observed = view.dump(mock_obj)
@@ -261,10 +337,10 @@ class TestDefaultView:
         the `RelationshipConfig` for the given type is empty
         """
 
-        mock_obj = mock_data_object(
+        mock_obj = mock_relational_do(
             'awful',
             id_='lol',
-            host=_MockDataSource({})
+            host=_MockRelational({})
         )
         view = DefaultView()
         observed = view.dump(mock_obj)
@@ -279,7 +355,7 @@ class TestDefaultViewInBlueprint(TestCase):
     def create_app(self):
         app = Flask(__name__)
         blueprint = _core_blueprint(
-            {'test': _MockDataSource({})},
+            {'test': _MockRelational({})},
             '/super_data',
             lambda: None
         )
@@ -311,8 +387,7 @@ class TestDefaultViewInBlueprint(TestCase):
                     'second': {
                         'data': {
                             'type': 'another',
-                            'id': '5678',
-                            'attributes': {}
+                            'id': '5678'
                         }
                     },
                     'ex': {

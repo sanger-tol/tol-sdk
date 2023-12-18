@@ -52,8 +52,30 @@ class DefaultView(View):
     Provides a default implementation of the View ABC.
     """
 
-    def __init__(self, prefix: str = '') -> None:
+    def __init__(
+        self,
+        prefix: str = '',
+        include_all_to_ones: bool = False,
+        hop_limit: Optional[int] = None
+    ) -> None:
+
+        """
+        Args:
+
+        - prefix                - the URL prefix on which the
+                                  data blueprint is served
+        - include_all_to_ones   - whether to fetch all absent
+                                  to-one relation objects,
+                                  using the "host" `Relational`
+                                  instance
+        - hop_limit             - the maximum recursion limit
+                                  on including related to-one
+                                  objects. Default no limit
+        """
+
         self.__prefix = prefix
+        self.__all_to_ones = include_all_to_ones
+        self.__hop_limit = hop_limit
 
     def dump(
         self,
@@ -62,7 +84,7 @@ class DefaultView(View):
     ) -> ResponseDict:
 
         response = {
-            'data': self.__dump_object(data_object)
+            'data': self.__dump_object(data_object, 0)
         }
         if document_meta is not None:
             response['meta'] = document_meta
@@ -75,7 +97,7 @@ class DefaultView(View):
     ) -> ResponseDict:
 
         dumped = [
-            self.__dump_object(data_object)
+            self.__dump_object(data_object, 0)
             for data_object in data_objects
         ]
         response = {
@@ -85,7 +107,12 @@ class DefaultView(View):
             response['meta'] = document_meta
         return response
 
-    def __dump_object(self, data_object: DataObject) -> DumpDict:
+    def __dump_object(
+        self,
+        data_object: DataObject,
+        depth: int
+    ) -> DumpDict:
+
         dump = {
             'type': data_object.type,
             'id': data_object.id
@@ -94,23 +121,29 @@ class DefaultView(View):
             dump['attributes'] = self.__convert_attributes(
                 data_object.attributes
             )
-        dump = self.__add_relationships(data_object, dump)
+        dump = self.__add_relationships(data_object, dump, depth)
         return dump
 
     def __add_relationships(
         self,
         data_object: DataObject,
-        dump: DumpDict
+        dump: DumpDict,
+        depth: int
     ) -> DumpDict:
 
-        to_one_keys = self.__get_to_one_relationship_keys(data_object)
-        to_many_keys = self.__get_to_many_relationship_keys(data_object)
+        host = data_object._host
+        if not isinstance(host, Relational):
+            return dump
+
+        to_one_keys = self.__get_to_one_keys(host, data_object.type)
+        to_many_keys = self.__get_to_many_keys(host, data_object.type)
         if not to_one_keys and not to_many_keys:
             return dump
         dump['relationships'] = self.__get_relationship_dumps(
             to_one_keys,
             to_many_keys,
-            data_object
+            data_object,
+            depth
         )
         return dump
 
@@ -118,16 +151,20 @@ class DefaultView(View):
         self,
         to_one_relationships: list[str],
         to_many_relationships: list[str],
-        data_object: DataObject
+        data_object: DataObject,
+        depth: int
     ) -> AllRelationshipsDump:
 
-        return {
-            key: self.__dump_to_one_relationship(key, data_object)
+        dump = {
+            key: self.__dump_to_one_relationship(key, data_object, depth)
             for key in to_one_relationships
         } | {
             key: self.__dump_to_many_relationship(key, data_object.type,
                                                   data_object.id)
             for key in to_many_relationships
+        }
+        return {
+            k: v for k, v in dump.items() if v
         }
 
     def __dump_to_many_relationship(
@@ -148,51 +185,53 @@ class DefaultView(View):
     def __dump_to_one_relationship(
         self,
         key: str,
-        data_object: DataObject
-    ) -> RelationshipDump:
+        data_object: DataObject,
+        depth: int
+    ) -> Optional[RelationshipDump]:
 
-        related_object = data_object._host.get_to_one_relation(data_object, key)
+        if self.__hop_limit is not None and depth >= self.__hop_limit:
+            return
+
+        related_object = self.__get_related_to_one(data_object, key)
         if related_object is not None:
-            type_ = data_object._host.relationship_config[data_object.type].to_one[key]
             return {
-                'data': {
-                    'type': type_,
-                    'id': related_object.id,
-                    'attributes': related_object.attributes
-                }
+                'data': self.__dump_object(related_object, depth + 1)
             }
-        return {}
 
-    def __get_to_one_relationship_keys(
+    def __get_related_to_one(
         self,
-        data_object: DataObject
-    ) -> list[str]:
+        data_object: DataObject,
+        key: str
+    ) -> Optional[DataObject]:
 
-        host = data_object._host
-        if not isinstance(host, Relational):
-            return []
-        return self.__get_to_one_keys_from_host(
-            host,
-            data_object.type
+        relations = (
+            data_object.to_one_relationships
+            if self.__all_to_ones
+            else data_object._to_one_objects
         )
+        return relations.get(key)
 
-    def __get_to_many_relationship_keys(
-        self,
-        data_object: DataObject
-    ) -> list[str]:
-
-        host = data_object._host
-        if not isinstance(host, Relational):
-            return []
-        return self.__get_to_many_keys_from_host(
-            host,
-            data_object.type
-        )
-
-    def __get_to_one_keys_from_host(
+    def __get_to_one_keys(
         self,
         host: Relational,
         type_: str
+    ) -> list[str]:
+
+        return self.__get_target_keys(host, type_, 'to_one')
+
+    def __get_to_many_keys(
+        self,
+        host: Relational,
+        type_: str
+    ) -> list[str]:
+
+        return self.__get_target_keys(host, type_, 'to_many')
+
+    def __get_target_keys(
+        self,
+        host: Relational,
+        type_: str,
+        target_name: str
     ) -> list[str]:
 
         if host.relationship_config is None:
@@ -200,20 +239,8 @@ class DefaultView(View):
         config = host.relationship_config.get(type_)
         if config is None:
             return []
-        return self.__keys_or_empty(config.to_one)
-
-    def __get_to_many_keys_from_host(
-        self,
-        host: Relational,
-        type_: str
-    ) -> list[str]:
-
-        if host.relationship_config is None:
-            return []
-        config = host.relationship_config.get(type_)
-        if config is None:
-            return []
-        return self.__keys_or_empty(config.to_many)
+        target = getattr(config, target_name)
+        return self.__keys_or_empty(target)
 
     def __keys_or_empty(
         self,

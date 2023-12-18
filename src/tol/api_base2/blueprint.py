@@ -146,7 +146,11 @@ def _core_blueprint(
 
     def __new_controller(object_type: str) -> Controller:
         data_source = data_source_dict[object_type]
-        view = DefaultView(prefix=url_prefix)
+        view = DefaultView(
+            prefix=url_prefix,
+            include_all_to_ones=True,
+            hop_limit=1
+        )
         return Controller(data_source, view)
 
     @data_handler.route('/<object_type>/<path:object_id>', methods=['GET'])  # Allow slashes
