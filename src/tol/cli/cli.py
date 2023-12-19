@@ -287,5 +287,12 @@ def get_container_urls(name_prefix):
         if container_id != '':
             mapping = run_capture(f'docker container port {container_id}')
             if mapping != '':
-                urls.append('http://' + mapping.split()[2])
+                # ignore the debug port for API container
+                split_ = mapping.split()
+                port_index = (
+                    split_.index('80/tcp')
+                    if '80/tcp' in split_
+                    else 0
+                )
+                urls.append('http://' + split_[port_index + 2])
     return urls
