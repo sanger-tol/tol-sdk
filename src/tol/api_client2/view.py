@@ -174,7 +174,7 @@ class DefaultView(View):
         id_: str
     ) -> RelationshipDump:
 
-        id_encoded = urllib.parse.quote(id_, safe='')
+        id_encoded = urllib.parse.quote(str(id_), safe='')
         link = f'{self.__prefix}/{type_}/{id_encoded}/{key}'
         return {
             'links': {
