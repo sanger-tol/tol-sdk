@@ -19,7 +19,8 @@ class ElasticFixture(DataSourceFixture):
 
     def __create_index_prefix(self) -> str:
         uuid_ = uuid4().hex
-        return f'user-data-tol-test-{uuid_}'
+        base_prefix = os.environ['ELASTIC_INDEX_PREFIX']
+        return f'{base_prefix}-test-{uuid_}'
 
     @property
     def name(self) -> str:

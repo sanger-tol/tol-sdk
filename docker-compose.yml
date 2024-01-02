@@ -28,6 +28,7 @@ services:
       - ELASTIC_URI
       - ELASTIC_USER
       - ELASTIC_PASSWORD
+      - ELASTIC_INDEX_PREFIX
     depends_on:
       - tol-sdk-python-db
     networks:
