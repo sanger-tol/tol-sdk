@@ -4,10 +4,10 @@
 
 import os
 
-from tol.core import (
+from ..core import (
     core_data_object
 )
-from tol.mlwh import (
+from ..mlwh import (
     MlwhDataSource
 )
 

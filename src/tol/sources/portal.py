@@ -4,11 +4,11 @@
 
 import os
 
-from tol.api_client2 import (
+from ..api_client2 import (
     ApiDataSource,
     create_api_datasource
 )
-from tol.core import (
+from ..core import (
     core_data_object
 )
 

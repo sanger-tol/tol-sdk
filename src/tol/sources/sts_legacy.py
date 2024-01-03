@@ -4,10 +4,10 @@
 
 import os
 
-from tol.core import (
+from ..core import (
     core_data_object
 )
-from tol.sts import (
+from ..sts import (
     StsDataSource
 )
 

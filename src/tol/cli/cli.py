@@ -239,7 +239,7 @@ def test(ctx, type_):
 # Run flow
 @cli.command()
 @click.argument('filename', type=click.Path(exists=True))
-@click.option('--version', required=True, help='flows-base version', default='1.2.9')
+@click.option('--version', required=True, help='flows-base version', default='1.2.27')
 @click.pass_context
 def flow(ctx, filename, version):
     env_file = ctx.parent.params['env_file']

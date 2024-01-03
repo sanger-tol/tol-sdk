@@ -71,7 +71,7 @@ class DefaultDataLoader():
         audit_obj = CoreDataObject(
             'data_load_event',
             id_=self._loader_name,
-            attributes={'{start_or_end}_time': new_datetime,
+            attributes={f'{start_or_end}_time': new_datetime,
                         'source_object_type': self._source_object_type,
                         'destination_object_type': self._destination_object_type}
         )

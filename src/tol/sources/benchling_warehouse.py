@@ -4,10 +4,10 @@
 
 import os
 
-from tol.benchling import (
+from ..benchling import (
     BenchlingWarehouseDataSource
 )
-from tol.core import (
+from ..core import (
     core_data_object
 )
 

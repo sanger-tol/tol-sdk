@@ -4,11 +4,11 @@
 
 import os
 
-from tol.core import (
+from ..core import (
     core_data_object
 )
-from tol.core.relationship import RelationshipConfig
-from tol.elastic import (
+from ..core.relationship import RelationshipConfig
+from ..elastic import (
     ElasticDataSource
 )
 

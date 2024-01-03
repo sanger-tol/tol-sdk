@@ -5,10 +5,10 @@
 import json
 import os
 
-from tol.core import (
+from ..core import (
     core_data_object
 )
-from tol.google_sheets import (
+from ..google_sheets import (
     GoogleSheetDataSource
 )
 
