@@ -5,6 +5,7 @@
 import os
 import re
 import subprocess
+from uuid import uuid4
 
 import click
 
@@ -212,6 +213,7 @@ def merge(ctx):
 def test(ctx, type_):
     env_file = ctx.parent.params['env_file']
     service = get_app()
+
     click.echo('Running tests...')
     if type_ == 'unit':
         docker_compose_entry = f'{service}-python-unit-test'
@@ -223,10 +225,12 @@ def test(ctx, type_):
     if type_ == 'system':
         docker_compose_entry = f'{service}-python-system-test'
         db_entry = f'{service}-python-db'
+        uuid_prefix = uuid4().hex
         command = (
             f'docker compose build {docker_compose_entry} && '
             f'docker compose --env-file {env_file} up -d {db_entry} && '
-            f'docker compose --env-file {env_file} run {docker_compose_entry} '
+            f'UUID_PREFIX={uuid_prefix} docker compose --env-file {env_file} '
+            f'run --build {docker_compose_entry} '
             f'sh -c "[ -d system ] && pytest -v system || echo \'No system tests found\'"'
         )
     if type_ == 'integration':

@@ -32,11 +32,3 @@ class DataSourceFixture(ABC):
 
         Can be used for cleanup between tests.
         """
-
-    @abstractmethod
-    def tear_down(self) -> None:
-        """
-        Called by pytest when finished with this fixture.
-
-        Do NOT call manually.
-        """

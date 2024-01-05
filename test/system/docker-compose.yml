@@ -1,0 +1,61 @@
+# SPDX-FileCopyrightText: 2021 Genome Research Ltd.
+#
+# SPDX-License-Identifier: MIT
+
+version: '3.1'
+
+services:
+
+  db:
+    image: postgres:12
+    environment:
+      - POSTGRES_USER=test-user
+      - POSTGRES_PASSWORD=test-password
+      - POSTGRES_DB=test-db
+    networks:
+      - test-network
+    
+  system-test:
+    image: ${BUILT_IMAGE}
+    command: pytest -v system
+    environment:
+      - DB_URI=postgresql://test-user:test-password@db:5432/test-db
+      - GOOGLE_CLIENT_SECRETS=${GOOGLE_CLIENT_SECRETS}
+      - UUID_PREFIX=${UUID_PREFIX}
+      - ELASTIC_URI=${ELASTIC_URI}
+      - ELASTIC_USER=${ELASTIC_USER}
+      - ELASTIC_PASSWORD=${ELASTIC_PASSWORD}
+      - ELASTIC_INDEX_PREFIX=${ELASTIC_INDEX_PREFIX}
+    depends_on:
+      - db
+      - system-test-api-elastic
+      - system-test-api-sql
+    networks:
+      - test-network
+
+  system-test-api-elastic:
+    image: ${BUILT_IMAGE}
+    command: flask --app elastic run --host 0.0.0.0
+    working_dir: /test/system/data_source/services
+    environment:
+      - UUID_PREFIX=${UUID_PREFIX}
+      - ELASTIC_URI=${ELASTIC_URI}
+      - ELASTIC_USER=${ELASTIC_USER}
+      - ELASTIC_PASSWORD=${ELASTIC_PASSWORD}
+      - ELASTIC_INDEX_PREFIX=${ELASTIC_INDEX_PREFIX}
+    networks:
+      - test-network
+
+  system-test-api-sql:
+    image: ${BUILT_IMAGE}
+    command: flask --app sql run --host 0.0.0.0
+    working_dir: /test/system/data_source/services
+    environment:
+      - DB_URI=postgresql://test-user:test-password@db:5432/test-db
+    networks:
+      - test-network
+    depends_on:
+      - db
+
+networks:
+  test-network:

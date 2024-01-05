@@ -83,7 +83,7 @@ class TestDefaultSqlRelationshipConfig:
         """None is returned if all models have no relationships"""
 
         config = DefaultSqlRelationshipConfig([Irrelevant], lambda t: t.get_table_name())
-        assert config.to_dict() is None
+        assert config.to_dict() == {}
 
     def test_type_function(self):
         """

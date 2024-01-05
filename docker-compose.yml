@@ -25,14 +25,47 @@ services:
     environment:
       - DB_URI=postgresql://test-user:test-password@tol-sdk-python-db:5432/test-db
       - GOOGLE_CLIENT_SECRETS
+      - UUID_PREFIX=${UUID_PREFIX}
       - ELASTIC_URI
       - ELASTIC_USER
       - ELASTIC_PASSWORD
       - ELASTIC_INDEX_PREFIX
     depends_on:
       - tol-sdk-python-db
+      - system-test-api-elastic
+      - system-test-api-sql
     networks:
       - api-base-test-network
+
+  system-test-api-elastic:
+    build: .
+    command: flask --app elastic run --host 0.0.0.0 --debugger
+    working_dir: /test/system/data_source/services
+    environment:
+      - UUID_PREFIX=${UUID_PREFIX}
+      - ELASTIC_URI
+      - ELASTIC_USER
+      - ELASTIC_PASSWORD
+      - FLASK_DEBUG=1
+      - ELASTIC_INDEX_PREFIX
+    networks:
+      - api-base-test-network
+    ports:
+      - '9023:5000'
+
+  system-test-api-sql:
+    build: .
+    command: sh -c 'sleep 2s && flask --app sql run --host 0.0.0.0 --debugger'
+    working_dir: /test/system/data_source/services
+    environment:
+      - DB_URI=postgresql://test-user:test-password@tol-sdk-python-db:5432/test-db
+      - FLASK_DEBUG=1
+    networks:
+      - api-base-test-network
+    depends_on:
+      - tol-sdk-python-db
+    ports:
+      - '9021:5000'
 
 networks:
   api-base-test-network:

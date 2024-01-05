@@ -49,15 +49,14 @@ class DefaultSqlRelationshipConfig(ABC):
         }
         self.__type_function = type_function
 
-    def to_dict(self) -> Optional[Dict[str, RelationshipConfig]]:
+    def to_dict(self) -> Dict[str, RelationshipConfig]:
 
         configs = (
             self.__config_from_model(model) for model in self.__models
         )
-        dict_config = {
+        return {
             k: v for k, v in configs if v is not None
         }
-        return dict_config if dict_config else None
 
     def __config_from_model(self, model: Type[Model]) -> Optional[RelationshipConfig]:
 

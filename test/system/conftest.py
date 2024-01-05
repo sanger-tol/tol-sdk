@@ -2,7 +2,7 @@
 #
 # SPDX-License-Identifier: MIT
 
-from .data_source.fixtures import all_fixtures
+from .data_source.fixtures.elastic_ds import elastic
 
 
 def pytest_sessionfinish(session, exitstatus):
@@ -11,5 +11,4 @@ def pytest_sessionfinish(session, exitstatus):
     returning the exit status to the system.
     """
 
-    for fixture in all_fixtures:
-        fixture.tear_down()
+    elastic.teardown()

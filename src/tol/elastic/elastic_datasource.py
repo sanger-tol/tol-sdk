@@ -322,6 +322,8 @@ class ElasticDataSource(
                 id_ = obj['_id']
                 attributes = obj['_source']
                 yield self._convert_data_dict_to_data_object(type_, id_, attributes)
+            else:
+                yield None
 
     def _convert_data_dict_to_data_object(self, type_, id_, data):
         attributes = {

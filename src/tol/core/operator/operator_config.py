@@ -55,12 +55,12 @@ class OperatorConfig(ABC):
 class DefaultOperatorConfig(OperatorConfig):
     def __init__(self, *datasources: DataSource) -> None:
         self.__datasources = datasources
-        self.__dumped_dict = self.__get_dict()
+        self.__dumped_dict = self._get_dict()
 
     def to_dict(self) -> dict[str, OperatorDict]:
         return self.__dumped_dict
 
-    def __get_dict(self) -> dict[str, OperatorDict]:
+    def _get_dict(self) -> dict[str, OperatorDict]:
         pairs = self.__get_pairs()
         return dict(pairs)
 

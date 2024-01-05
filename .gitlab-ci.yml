@@ -7,9 +7,90 @@ variables:
   DOCKER_IMAGE: $CI_REGISTRY/tol/tol-core/build-base:1.0.0
   DIND_IMAGE: $CI_REGISTRY/tol/tol-core/dind:1.0.0
   GOOGLE_CLIENT_SECRETS: $GOOGLE_CLIENT_SECRETS_DEV
-
+  BUILT_IMAGE: $CI_REGISTRY_IMAGE/tol-sdk-test-image:$CI_COMMIT_SHA
+  UUID_PREFIX: $CI_JOB_ID
 
 include:
   - project: 'tol/tol-core'
     ref: v1.3.11
-    file: '/gitlab/python-package.yml'
+    file: '/gitlab/main.yml'
+
+
+# Linting is already set in main.yml
+
+stages:
+  - lint
+  - scan
+  - build
+  - unit test
+  - system test
+  - deploy
+
+
+build-test-image:
+  extends: .build-template
+  variables:
+    DOCKERFILE: Dockerfile
+    PART: '.'
+    DOCKER_HOST: "tcp://docker:2375"
+    DOCKER_TLS_CERTDIR: ''
+  script:
+    - docker build --pull --cache-from $BUILT_IMAGE -t $BUILT_IMAGE -f $DOCKERFILE $PART
+    - docker push $BUILT_IMAGE
+
+
+unit-test-python-package:
+  extends: .unit-test-python-package
+  image: $BUILT_IMAGE
+  rules:
+    - if: $CI_COMMIT_REF_NAME == "qa"
+      when: never
+    - if: $CI_COMMIT_REF_NAME == "staging"
+      when: never
+    - if: $CI_COMMIT_REF_NAME == "production"
+      when: never
+    - if: $CI_PIPELINE_SOURCE == 'merge_request_event'
+      when: never
+    - exists:
+      - "**/test/unit/**/*"
+
+system-test-python-package:
+  extends: .test-python
+  image: $DOCKER_IMAGE
+  stage: system test
+  services:
+    - name: $DIND_IMAGE
+      alias: docker
+  environment:
+    name: system-test
+  variables:
+    TEST_TYPE: system
+    POSTGRES_DB: system_test
+    POSTGRES_USER: system_test
+    POSTGRES_PASSWORD: system_test
+    POSTGRES_HOST_AUTH_METHOD: trust
+    DB_URI: postgresql://system_test:system_test@db:5432/system_test
+    API_PATH: /api
+    DOCKER_HOST: "tcp://docker:2375"
+    DOCKER_TLS_CERTDIR: ''
+  before_script:
+    - cd test/system
+    - docker-compose up -d db
+    - sleep 5s
+    - docker-compose up -d system-test-api-sql system-test-api-elastic
+  script:
+    - docker-compose run system-test
+  rules:
+    - if: $CI_COMMIT_REF_NAME == "qa"
+      when: never
+    - if: $CI_COMMIT_REF_NAME == "staging"
+      when: never
+    - if: $CI_COMMIT_REF_NAME == "production"
+      when: never
+    - if: $CI_PIPELINE_SOURCE == 'merge_request_event'
+      when: never
+    - exists:
+      - "**/test/system/**/*"
+
+deploy-package:
+  extends: .deploy-python-package
