@@ -44,7 +44,7 @@ build-test-image:
       when: never
     - if: $CI_COMMIT_REF_NAME == "production"
       when: never
-
+    - when: always
 
 unit-test-python-package:
   extends: .unit-test-python-package
