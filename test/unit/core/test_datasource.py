@@ -7,7 +7,7 @@ from unittest import TestCase
 
 import pytest
 
-from tol.core import DataSource, DataSourceError
+from tol.core import DataSource, DataSourceError, DefaultAttributeMetadata
 from tol.core.datasource_error import NoDataObjectFactoryError
 from tol.core.operator import PageGetter
 
@@ -46,6 +46,49 @@ class _TestDataSourceNoExpected(DataSource, PageGetter):
         raise NotImplementedError()
 
 
+class _TestAttributeMetadata(DefaultAttributeMetadata):
+    def format_string(self, input_string: str) -> str:
+        return input_string.upper()
+
+    def is_attribute_available_on_relationships(self, object_type, attribute_name):
+        if object_type == 'object_type1':
+            return True
+        return False
+
+    def get_cardinality(self, object_type, attribute_name):
+        if object_type == 'object_type1':
+            return 1000
+        return 5
+
+    def get_attribute_description(self, object_type, attribute_name):
+        return f'Interesting {attribute_name}'
+
+
+class _TestDataSourceAttributes(DataSource):
+    def __init__(self, config: Dict):
+        super().__init__(
+            config,
+            expected=[],
+            attribute_metadata=_TestAttributeMetadata)
+
+    @property
+    def supported_types(self):
+        return ['object_type1', 'object_type2']
+
+    @property
+    def attribute_types(self):
+        return {
+            'object_type1': {
+                'attribute1': 'str',
+                'attribute2': 'int'
+            },
+            'object_type2': {
+                'attribute3': 'str',
+                'attribute4': 'datetime'
+            }
+        }
+
+
 class TestDataSource(TestCase):
     def test_expected_parameters(self):
         with self.assertRaises(DataSourceError):
@@ -69,3 +112,44 @@ class TestDataSource(TestCase):
 
         with pytest.raises(NoDataObjectFactoryError):
             _TestDataSourceNoExpected({}).data_object_factory
+
+    def test_attributes(self):
+        ds = _TestDataSourceAttributes({})
+        print(ds.attribute_metadata)
+        self.assertEqual(
+            ds.attribute_metadata,
+            {
+                'object_type1': {
+                    'attribute1': {
+                        'python_type': 'str',
+                        'display_name': 'ATTRIBUTE1',
+                        'description': 'Interesting attribute1',
+                        'cardinality': 1000,
+                        'available_on_relationships': True
+                    },
+                    'attribute2': {
+                        'python_type': 'int',
+                        'display_name': 'ATTRIBUTE2',
+                        'description': 'Interesting attribute2',
+                        'cardinality': 1000,
+                        'available_on_relationships': True
+                    }
+                },
+                'object_type2': {
+                    'attribute3': {
+                        'python_type': 'str',
+                        'display_name': 'ATTRIBUTE3',
+                        'description': 'Interesting attribute3',
+                        'cardinality': 5,
+                        'available_on_relationships': False
+                    },
+                    'attribute4': {
+                        'python_type': 'datetime',
+                        'display_name': 'ATTRIBUTE4',
+                        'description': 'Interesting attribute4',
+                        'cardinality': 5,
+                        'available_on_relationships': False
+                    }
+                }
+            }
+        )

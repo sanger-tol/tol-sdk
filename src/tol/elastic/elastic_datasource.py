@@ -19,11 +19,13 @@ from dateutil import parser
 from elasticsearch import (Elasticsearch, helpers)
 
 from ..core import (
+    AttributeMetadata,
     DataId,
     DataObject,
     DataSource,
     DataSourceError,
-    DataSourceFilter
+    DataSourceFilter,
+    DefaultAttributeMetadata
 )
 from ..core.operator import (
     Aggregator,
@@ -55,9 +57,12 @@ class ElasticDataSource(
     GroupCounter
 ):
 
-    def __init__(self, config: Dict):
-        super().__init__(config, expected=['uri', 'user', 'password',
-                                           'index_prefix', 'relationship_cfg'])
+    def __init__(self, config: Dict,
+                 attribute_metadata: AttributeMetadata = DefaultAttributeMetadata):
+        super().__init__(config,
+                         expected=['uri', 'user', 'password',
+                                   'index_prefix', 'relationship_cfg'],
+                         attribute_metadata=attribute_metadata)
         """
         relationship_cfg is also supported if we want to handle relationships
         Only FKs pointing to IDs are currently supported

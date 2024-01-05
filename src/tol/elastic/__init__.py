@@ -2,4 +2,5 @@
 #
 # SPDX-License-Identifier: MIT
 
+from .elastic_attribute_metadata import *  # noqa
 from .elastic_datasource import *  # noqa

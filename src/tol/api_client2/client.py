@@ -153,6 +153,15 @@ class JsonApiClient:
         url = self.__config_attr_types_url()
         return self.__fetch_config(url)
 
+    def config_attribute_metadata(self) -> dict[str, dict[str, dict[str, str | bool]]]:
+        """
+        Fetches the `attribute_metadata` config for each
+        `object_type` published by `api_base2`.
+        """
+
+        url = self.__config_attribute_metadata_url()
+        return self.__fetch_config(url)
+
     def config_relationships(self) -> JsonRelationshipConfig:
         """
         Fetches the `relationship_config` transfer for each
@@ -231,6 +240,9 @@ class JsonApiClient:
 
     def __config_attr_types_url(self) -> str:
         return f'{self.__config_url}/attribute_types'
+
+    def __config_attribute_metadata_url(self) -> str:
+        return f'{self.__config_url}/attribute_metadata'
 
     def __config_rel_url(self) -> str:
         return f'{self.__config_url}/relationships'

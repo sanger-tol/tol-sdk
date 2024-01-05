@@ -2,6 +2,7 @@
 #
 # SPDX-License-Identifier: MIT
 
+from .attribute_metadata import *  # noqa F401
 from .core_converter import Converter  # noqa F401
 from .datasource import *  # noqa F401
 from .datasource_error import DataSourceError  # noqa F401

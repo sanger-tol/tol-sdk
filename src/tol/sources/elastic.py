@@ -9,6 +9,7 @@ from ..core import (
 )
 from ..core.relationship import RelationshipConfig
 from ..elastic import (
+    ElasticAttributeMetadata,
     ElasticDataSource
 )
 
@@ -101,10 +102,22 @@ def elastic():
                            'tolid': rc_tolid,
                            'specimen': rc_specimen,
                            'species': rc_species}
-    elastic = ElasticDataSource({'uri': os.getenv('ELASTIC_URI'),
-                                 'user': os.getenv('ELASTIC_USER'),
-                                 'password': os.getenv('ELASTIC_PASSWORD'),
-                                 'index_prefix': os.getenv('ELASTIC_INDEX_PREFIX'),
-                                 'relationship_cfg': relationship_config})
+
+    class _ToLElasticAttributeMetadata(ElasticAttributeMetadata):
+        attribute_meta = {
+            'species': {
+                'sts_order_group': {'available_on_relationships': True},
+                'sts_scientific_name': {'available_on_relationships': True},
+                'sts_taxon_group': {'available_on_relationships': True},
+            }
+        }
+
+    elastic = ElasticDataSource({
+        'uri': os.getenv('ELASTIC_URI'),
+        'user': os.getenv('ELASTIC_USER'),
+        'password': os.getenv('ELASTIC_PASSWORD'),
+        'index_prefix': os.getenv('ELASTIC_INDEX_PREFIX'),
+        'relationship_cfg': relationship_config},
+        attribute_metadata=_ToLElasticAttributeMetadata)
     core_data_object(elastic)
     return elastic

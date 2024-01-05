@@ -13,7 +13,10 @@ from tol.core import (
     core_data_object
 )
 from tol.core.relationship import RelationshipConfig
-from tol.elastic import ElasticDataSource
+from tol.elastic import (
+    ElasticAttributeMetadata,
+    ElasticDataSource
+)
 
 
 dt = datetime.fromtimestamp(1234567890)
@@ -50,10 +53,17 @@ class MockElasticDataSource(ElasticDataSource):
 
 
 def mock_elastic_data_source() -> tuple[Callable, ElasticDataSource]:
-    eds = MockElasticDataSource(
-        {'uri': 'test', 'user': 'user', 'password': 'password',
-         'index_prefix': 'test', 'relationship_cfg': {}}
-    )
+    class _TestAttributeMetadata(ElasticAttributeMetadata):
+        attribute_meta = {
+            'obj_type': {'field1': {'available_on_relationships': True}},
+        }
+    eds = MockElasticDataSource({
+        'uri': 'test',
+        'user': 'user',
+        'password': 'password',
+        'index_prefix': 'test',
+        'relationship_cfg': {}
+    }, attribute_metadata=_TestAttributeMetadata)
     core_data_object_mock = core_data_object(eds)
     return core_data_object_mock, eds
 

@@ -73,6 +73,12 @@ class ApiDataSource(
 
     @property
     @cache
+    def attribute_metadata(self) -> dict[str, dict[str, dict[str, str | bool]]]:
+        client = self.__client_factory()
+        return client.config_attribute_metadata()
+
+    @property
+    @cache
     def supported_types(self) -> list[str]:
         return list(
             self.attribute_types.keys()

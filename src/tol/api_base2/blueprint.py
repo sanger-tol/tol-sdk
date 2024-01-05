@@ -117,6 +117,12 @@ def _config_blueprint(
         chain_map = ChainMap(*types_list)
         return dict(chain_map)
 
+    @config_handler.route('/attribute_metadata', methods=['GET'])
+    def get_attribute_metadata():
+        types_list = [d.attribute_metadata for d in data_sources]
+        chain_map = ChainMap(*types_list)
+        return dict(chain_map)
+
     @config_handler.route('/operations', methods=['GET'])
     def get_operations():
         return operator_config.to_dict()

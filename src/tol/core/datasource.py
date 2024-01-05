@@ -7,6 +7,10 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 from typing import Any, Callable, Dict, List, Optional, Tuple, TypeVar
 
+from .attribute_metadata import (
+    AttributeMetadata,
+    DefaultAttributeMetadata
+)
 from .data_object import DataDict
 from .datasource_error import DataSourceError, NoDataObjectFactoryError
 from .factory import DataObjectFactory
@@ -26,8 +30,13 @@ class DataSource(ABC):
 
     DEFAULT_PAGE_SIZE = 20
 
-    def __init__(self, config: DataSourceConfig, expected: List[str] = None):
+    def __init__(
+            self,
+            config: DataSourceConfig,
+            expected: List[str] = None,
+            attribute_metadata: AttributeMetadata = DefaultAttributeMetadata):
         self.__data_object_factory: Optional[DataObjectFactory] = None
+        self.__attribute_metadata = attribute_metadata
         self.__validate_config(config, expected)
         for k, v in config.items():
             setattr(self, k, v)
@@ -66,7 +75,7 @@ class DataSource(ABC):
         The types (str, int, etc) of the attributes of an object_type.
 
         This can either be a static list, or dynamically generated.
-        """
+v        """
 
         return self.attribute_types[object_type]
 
@@ -80,6 +89,31 @@ class DataSource(ABC):
         """
 
         return {}
+
+    @property
+    def attribute_metadata(self) -> dict[str, dict[str, dict[str, Optional[str | bool]]]]:
+        """
+        Information about the attributes:
+            python_type
+            display_name
+            available_on_relationships
+        """
+        ret = {}
+        am = self.__attribute_metadata()
+        for object_type, attribute in self.attribute_types.items():
+            ret[object_type] = {}
+            for attribute_name, attribute_type in attribute.items():
+                ret[object_type][attribute_name] = {
+                    'python_type': attribute_type,
+                    'display_name': am.format_string(attribute_name),
+                    'description': am.get_attribute_description(object_type, attribute_name),
+                    'cardinality': am.get_cardinality(object_type, attribute_name),
+                    'available_on_relationships':
+                        am.is_attribute_available_on_relationships(
+                            object_type,
+                            attribute_name)
+                }
+        return ret
 
     @property
     def data_object_factory(self) -> Optional[DataObjectFactory]:
