@@ -37,14 +37,23 @@ def lint(type_):
         click.secho(command, fg='green')
         run(command)
     if type_ == 'ui':
-        ui_linter = 'gitlab-registry.internal.sanger.ac.uk/tol/tol-core/ui-lint:1.0.5'
+        ui_linter = 'gitlab-registry.internal.sanger.ac.uk/tol/tol-core/ui-lint:1.0.9'
         command = f'docker run --rm --volume $(pwd):/src {ui_linter}'
         click.secho(command, fg='green')
         run(command)
     if type_ == 'ui-fix':
-        ui_linter = 'gitlab-registry.internal.sanger.ac.uk/tol/tol-core/ui-lint:1.0.5 '
+        ui_linter = 'gitlab-registry.internal.sanger.ac.uk/tol/tol-core/ui-lint:1.0.9 '
         command_1 = f'docker run --rm --volume $(pwd):/src {ui_linter}'
-        command_2 = 'npx eslint -c /project/.eslintrc --ext .js,.jsx,.ts,.tsx --fix /src/*-ui/**/*'
+        command_2 = 'npx eslint \
+            -c /project/.eslintrc \
+            --ext .js,.jsx,.ts,.tsx \
+            --fix \
+            --ignore-pattern "**/public" \
+            --ignore-pattern "**/*.license" \
+            --ignore-pattern "**/Dockerfile" \
+            --ignore-pattern "**/*.dev" \
+            --ignore-pattern "**/*.scss" \
+            /src/*-ui/**/*'
         click.secho((command_1 + command_2), fg='green')
         run(command_1 + command_2)
 
