@@ -8,7 +8,7 @@ from .aggregator import Aggregator
 from .counter import Counter
 from .deleter import Deleter
 from .detail_getter import DetailGetter
-from .group_counter import GroupCounter
+from .group_statter import GroupStatter
 from .inserter import Inserter
 from .list_getter import ListGetter
 from .operator_config import OperatorDict  # noqa
@@ -23,7 +23,7 @@ Operator = Union[
     Counter,
     Deleter,
     DetailGetter,
-    GroupCounter,
+    GroupStatter,
     Inserter,
     ListGetter,
     PageGetter,

@@ -42,12 +42,12 @@ class MockElasticDataSource(ElasticDataSource):
                 'uid': 'str',
                 'field1': 'str',
                 'field2': 'str',
-                'datefield': 'date'},
+                'datefield': 'datetime'},
             'reltype': {
                 'uid': 'str',
                 'field3': 'str',
                 'field4': 'str',
-                'datefield': 'date'
+                'datefield': 'datetime'
             }
         }
 
@@ -394,7 +394,7 @@ class TestElasticDataSource(TestCase):
         eds.es.count.assert_called_once()
         self.assertEqual(12345, returned)
 
-    def test_get_counts(self):
+    def test_get_stats(self):
         _, eds = mock_elastic_data_source()
 
         first_ret = {
@@ -408,13 +408,37 @@ class TestElasticDataSource(TestCase):
                             'key': {
                                 'test-obj-type': '1111'
                             },
-                            'doc_count': 20
+                            'doc_count': 20,
+                            'datefield_min': {
+                                'value': 1000000000000
+                            },
+                            'datefield_max': {
+                                'value': 1500000000000
+                            },
+                            'field2_min': {
+                                'value': 'A'
+                            },
+                            'field2_max': {
+                                'value': 'Z'
+                            }
                         },
                         {
                             'key': {
                                 'test-obj-type': '1112'
                             },
-                            'doc_count': 18
+                            'doc_count': 18,
+                            'datefield_min': {
+                                'value': None
+                            },
+                            'datefield_max': {
+                                'value': None
+                            },
+                            'field2_min': {
+                                'value': None
+                            },
+                            'field2_max': {
+                                'value': None
+                            }
                         }
                     ]
                 }
@@ -434,11 +458,22 @@ class TestElasticDataSource(TestCase):
             second_ret
         ]
 
-        returned = eds.get_counts('obj_type', group_by='field1')
+        returned = eds.get_stats('obj_type',
+                                 group_by='field1',
+                                 stats_fields=['field2', 'datefield'],
+                                 stats=['min', 'max'])
         first = next(returned)
-        self.assertEqual({'1111': 20}, first)
+        self.assertEqual({'1111': {'count': 20,
+                                   'datefield_min': datetime.fromtimestamp(1000000000),
+                                   'datefield_max': datetime.fromtimestamp(1500000000),
+                                   'field2_min': 'A',
+                                   'field2_max': 'Z'}}, first)
         second = next(returned)
-        self.assertEqual({'1112': 18}, second)
+        self.assertEqual({'1112': {'count': 18,
+                                   'datefield_min': None,
+                                   'datefield_max': None,
+                                   'field2_min': None,
+                                   'field2_max': None}}, second)
         with self.assertRaises(StopIteration):
             next(returned)
         self.assertEqual(eds.es.search.call_count, 2)

@@ -82,7 +82,7 @@ class DefaultDataLoader():
         return converted_objects
 
 
-class GroupCounterDataLoader(DefaultDataLoader):
+class GroupStatterDataLoader(DefaultDataLoader):
 
     def get_default_converter(self):
         # This will convert:
@@ -92,18 +92,24 @@ class GroupCounterDataLoader(DefaultDataLoader):
         # and attribute source_object_type_count: 17
         data_loader = self
 
-        class DefaultGroupCountToDataObjectConverter(DataObjectToDataObjectConverter):
+        class DefaultGroupStatToDataObjectConverter(DataObjectToDataObjectConverter):
             def convert(self, data_object: DataObject) -> Iterable[DataObject]:
                 CoreDataObject = self._data_object_factory # noqa N806
-                # expecting: {'id123': count}
+                # expecting: {'id123': {'count': count}}
                 for k, v in data_object.items():
+                    source_object_type = data_loader._source_object_type
+                    attributes = {f'{source_object_type}_count': v['count']}
+                    for stats_field in data_loader._group_statter_stats_fields:
+                        for stat in data_loader._group_statter_stats:
+                            attributes[f'{source_object_type}_{stats_field}_{stat}'] = \
+                                v[f'{stats_field}_{stat}']
                     ret1 = CoreDataObject(
                         id_=k,
                         type_=data_loader._destination_object_type,
-                        attributes={f'{data_loader._source_object_type}_count': v}
+                        attributes=attributes
                     )
                 return iter([ret1])
-        return DefaultGroupCountToDataObjectConverter
+        return DefaultGroupStatToDataObjectConverter
 
     def __init__(self, source: DataSource, destination: DataSource,
                  dependencies: List[Type['DataLoader']],
@@ -112,7 +118,9 @@ class GroupCounterDataLoader(DefaultDataLoader):
                  audit: DataSource = None,
                  convert_class: DataObjectToDataObjectConverter = None,
                  object_filters: DataSourceFilter = None,
-                 group_counter_group_by: str = None):
+                 group_statter_group_by: str = None,
+                 group_statter_stats_fields: List[str] = [],
+                 group_statter_stats: List[str] = ['min', 'max']):
         if convert_class is None:
             convert_class = self.get_default_converter()
         super().__init__(
@@ -122,11 +130,15 @@ class GroupCounterDataLoader(DefaultDataLoader):
             loader_name=loader_name, audit=audit,
             convert_class=convert_class,
             object_filters=object_filters)
-        self._group_counter_group_by = group_counter_group_by
+        self._group_statter_group_by = group_statter_group_by
+        self._group_statter_stats_fields = group_statter_stats_fields
+        self._group_statter_stats = group_statter_stats
 
     def _get_source_objects(self) -> Iterable:
-        source_objs = self._source.get_counts(
+        source_objs = self._source.get_stats(
             self._source_object_type,
-            group_by=self._group_counter_group_by,
+            group_by=self._group_statter_group_by,
+            stats_fields=self._group_statter_stats_fields,
+            stats=self._group_statter_stats,
             object_filters=self._object_filters)
         return source_objs

@@ -7,7 +7,7 @@ import json
 from collections.abc import Callable
 from datetime import datetime
 from functools import cache
-from typing import Any, Dict, Iterable, Mapping, Optional, Tuple
+from typing import Any, Dict, Iterable, List, Mapping, Optional, Tuple
 
 from caseconverter import (
     kebabcase,
@@ -31,7 +31,7 @@ from ..core.operator import (
     Aggregator,
     Counter,
     DetailGetter,
-    GroupCounter,
+    GroupStatter,
     ListGetter,
     PageGetter,
     Relational,
@@ -54,7 +54,7 @@ class ElasticDataSource(
     Updater,
     Upserter,
     Counter,
-    GroupCounter
+    GroupStatter
 ):
 
     def __init__(self, config: Dict,
@@ -405,10 +405,12 @@ class ElasticDataSource(
         )
         return resp['aggregations']
 
-    def get_counts(
+    def get_stats(
         self,
         object_type: str,
         group_by: str,
+        stats_fields: List[str] = [],
+        stats: List[str] = [],
         object_filters: DataSourceFilter = None,
     ) -> dict[Any, int]:
         after_key = None
@@ -416,17 +418,21 @@ class ElasticDataSource(
             after_key, buckets = self.__get_counts_page(
                 object_type,
                 group_by,
+                stats_fields=stats_fields,
+                stats=stats,
                 object_filters=object_filters,
                 after_key=after_key)
             if len(buckets) == 0:
                 break
-            for field_value, cnt in buckets.items():
-                yield {field_value: cnt}
+            for field_value, stats_values in buckets.items():
+                yield {field_value: stats_values}
 
     def __get_counts_page(
         self,
         object_type: str,
         group_by: str,
+        stats_fields: List[str] = [],
+        stats: List[str] = [],
         after_key: str = None,
         object_filters: DataSourceFilter = None,
     ):
@@ -446,6 +452,12 @@ class ElasticDataSource(
                 },
             }
         }
+        if stats_fields is not None:
+            aggregation['counts']['aggregations'] = {}
+            for stats_field in stats_fields:
+                for stat in stats:
+                    aggregation['counts']['aggregations'][f'{stats_field}_{stat}'] = \
+                        {stat: {'field': self._field_or_keyword(object_type, stats_field)}}
 
         if after_key is not None:
             aggregation['counts']['composite']['after'] = {
@@ -456,15 +468,32 @@ class ElasticDataSource(
             object_type,
             aggregations=aggregation,
             object_filters=object_filters)
-        after_key, buckets = self.__get_data_from_count_aggregation(agg_page, index)
+        after_key, buckets = self.__get_data_from_stats_aggregation(
+            agg_page,
+            index,
+            stats_fields,
+            stats
+        )
         return after_key, buckets
 
-    def __get_data_from_count_aggregation(self, aggregation_result, key):
+    def __get_data_from_stats_aggregation(self, aggregation_result, key, stats_fields, stats):
         after_key = None
         if 'after_key' in aggregation_result['counts']:
             after_key = aggregation_result['counts']['after_key'][key]
         buckets = aggregation_result['counts']['buckets']
-        return after_key, {v['key'][key]: v['doc_count'] for v in buckets}
+        all_stats = {}
+        for v in buckets:
+            stats_values = {'count': v['doc_count']}
+            for stats_field in stats_fields:
+                for stat in stats:
+                    stat_value = v[f'{stats_field}_{stat}']['value']
+                    python_type = self.attribute_types[self.__get_object_type(key)][stats_field]
+                    if python_type == 'datetime' and stat_value is not None:
+                        stat_value = datetime.fromtimestamp(stat_value / 1000)
+                    stats_values[f'{stats_field}_{stat}'] = stat_value
+            all_stats[v['key'][key]] = stats_values
+
+        return after_key, all_stats
 
     def get_count(
         self,

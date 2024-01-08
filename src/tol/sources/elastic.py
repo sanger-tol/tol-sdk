@@ -27,14 +27,19 @@ def elastic():
     rc_run_data.to_one = {'mlwh_sequencing_request': 'sequencing_request',
                           'mlwh_specimen': 'specimen',
                           'mlwh_species': 'species',
+                          'mlwh_tolid': 'tolid',
                           'tolqc_sequencing_request': 'sequencing_request',
                           'tolqc_specimen': 'specimen',
-                          'tolqc_species': 'species'}
+                          'tolqc_species': 'species',
+                          'tolqc_tolid': 'tolid'}
 
     rc_sequencing_request = RelationshipConfig()
     rc_sequencing_request.to_one = {'benchling_extraction': 'extraction',
                                     'benchling_sample': 'sample',
-                                    'benchling_species': 'species'}
+                                    'benchling_species': 'species',
+                                    'benchling_tolid': 'tolid',
+                                    'mlwh_species': 'species',
+                                    'mlwh_tolid': 'tolid'}
     rc_sequencing_request.to_many = {
         'mlwh_run_datas': 'run_data',
         'tolqc_run_datas': 'run_data'
@@ -46,7 +51,8 @@ def elastic():
 
     rc_extraction = RelationshipConfig()
     rc_extraction.to_one = {'benchling_sample': 'sample',
-                            'benchling_species': 'species'}
+                            'benchling_species': 'species',
+                            'benchling_tolid': 'tolid'}
     rc_extraction.to_many = {
         'benchling_sequencing_requests': 'sequencing_request'
     }
@@ -58,7 +64,9 @@ def elastic():
     rc_sample.to_one = {'sts_specimen': 'specimen',
                         'benchling_specimen': 'specimen',
                         'sts_species': 'species',
-                        'benchling_species': 'species'}
+                        'benchling_species': 'species',
+                        'sts_tolid': 'tolid',
+                        'benchling_tolid': 'tolid'}
     rc_sample.to_many = {
         'sts_barcoding_run_datas': 'barcoding_run_data',
         'benchling_sequencing_requests': 'sequencing_request'
@@ -106,9 +114,15 @@ def elastic():
     class _ToLElasticAttributeMetadata(ElasticAttributeMetadata):
         attribute_meta = {
             'species': {
-                'sts_order_group': {'available_on_relationships': True},
                 'sts_scientific_name': {'available_on_relationships': True},
+                'sts_genus': {'available_on_relationships': True},
+                'sts_family': {'available_on_relationships': True},
                 'sts_taxon_group': {'available_on_relationships': True},
+                'sts_order_group': {'available_on_relationships': True}
+            },
+            'sample': {
+                'sts_biosample_accession': {'available_on_relationships': True},
+                'sts_biospecimen_accession': {'available_on_relationships': True}
             }
         }
 

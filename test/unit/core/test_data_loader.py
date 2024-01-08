@@ -2,7 +2,7 @@
 #
 # SPDX-License-Identifier: MIT
 
-from typing import Dict, Iterable
+from typing import Dict, Iterable, List
 from unittest import (TestCase)
 
 from tol.core import (
@@ -12,7 +12,7 @@ from tol.core import (
     DataSourceFilter,
     DefaultDataLoader,
     DefaultDataObjectToDataObjectConverter,
-    GroupCounterDataLoader,
+    GroupStatterDataLoader,
     core_data_object
 )
 from tol.core.operator import (
@@ -56,10 +56,16 @@ class _MockDataSource(DataSource, ListGetter, Upserter):
                 attributes=obj
             )
 
-    def get_counts(self, object_type: str, group_by: str,
-                   object_filters: DataSourceFilter):
-        mock_objects = [{'value1': 3},
-                        {'value2': 17}]
+    def get_stats(self, object_type: str, group_by: str,
+                  stats_fields: List[str] = [],
+                  stats: List[str] = [],
+                  object_filters: DataSourceFilter = None):
+        mock_objects = [{'value1': {'count': 3,
+                                    'field1_min': 'A',
+                                    'field1_max': 'Z'}},
+                        {'value2': {'count': 17,
+                                    'field1_min': None,
+                                    'field1_max': None}}]
         for obj in mock_objects:
             yield obj
 
@@ -163,21 +169,23 @@ class TestDataLoader(TestCase):
             self.assertEqual('source_type', obj.source_object_type)
             self.assertEqual('destination_type', obj.destination_object_type)
 
-    def test_load_group_counts(self):
+    def test_load_group_stats(self):
 
         source = _MockDataSource(config={})
         destination = _MockDataSource(config={})
         audit = _MockDataSource(config={})
         core_data_object(source, destination, audit)
 
-        loader = GroupCounterDataLoader(
+        loader = GroupStatterDataLoader(
             source=source,
             destination=destination,
             audit=audit,
             source_object_type='source_type',
             destination_object_type='destination_type',
             dependencies=[],
-            group_counter_group_by='test',
+            group_statter_group_by='test',
+            group_statter_stats_fields=['field1'],
+            group_statter_stats=['min', 'max'],
             loader_name='test_loader'
         )
 
@@ -187,11 +195,15 @@ class TestDataLoader(TestCase):
         self.assertEqual('value1', obj1.id)
         self.assertEqual('destination_type', obj1.type)
         self.assertEqual(3, obj1.source_type_count)
+        self.assertEqual('A', obj1.source_type_field1_min)
+        self.assertEqual('Z', obj1.source_type_field1_max)
 
         obj2 = next(destination.upserted)
         self.assertEqual('value2', obj2.id)
         self.assertEqual('destination_type', obj2.type)
         self.assertEqual(17, obj2.source_type_count)
+        self.assertIsNone(obj2.source_type_field1_min)
+        self.assertIsNone(obj2.source_type_field1_max)
 
         with self.assertRaises(StopIteration):
             next(destination.upserted)

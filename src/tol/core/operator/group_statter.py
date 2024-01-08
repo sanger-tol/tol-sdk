@@ -6,18 +6,20 @@ from __future__ import annotations
 
 import typing
 from abc import ABC, abstractmethod
-from typing import Any, Optional
+from typing import Any, List, Optional
 
 if typing.TYPE_CHECKING:
     from ..datasource_filter import DataSourceFilter
 
 
-class GroupCounter(ABC):
+class GroupStatter(ABC):
     @abstractmethod
-    def get_counts(
+    def get_stats(
         self,
         object_type: str,
         group_by: str,
+        stats_fields: List[str] = [],
+        stats: List[str] = ['min', 'max'],
         object_filters: Optional[DataSourceFilter] = None
     ) -> dict[Any, int]:
         """

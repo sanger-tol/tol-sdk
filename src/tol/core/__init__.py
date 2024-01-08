@@ -10,7 +10,7 @@ from .datasource_filter import DataSourceFilter  # noqa F401
 from .data_loader import (  # noqa F401
     DataLoader,
     DefaultDataLoader,
-    GroupCounterDataLoader
+    GroupStatterDataLoader
 )
 from .data_object import DataObject  # noqa F401
 from .data_object_converter import (  # noqa F401
