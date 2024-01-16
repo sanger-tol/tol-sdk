@@ -173,7 +173,8 @@ class ElasticDataSource(
                 body=self._action_for_update(index,
                                              update,
                                              field_prefix,
-                                             candidate_key)
+                                             candidate_key),
+                wait_for_completion=False
 
             )
 
@@ -415,7 +416,7 @@ class ElasticDataSource(
     ) -> dict[Any, int]:
         after_key = None
         while True:
-            after_key, buckets = self.__get_counts_page(
+            after_key, buckets = self.__get_stats_page(
                 object_type,
                 group_by,
                 stats_fields=stats_fields,
@@ -427,7 +428,7 @@ class ElasticDataSource(
             for field_value, stats_values in buckets.items():
                 yield {field_value: stats_values}
 
-    def __get_counts_page(
+    def __get_stats_page(
         self,
         object_type: str,
         group_by: str,
