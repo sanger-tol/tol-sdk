@@ -29,3 +29,17 @@ class DetailGetter(ABC):
         with their id's equal to those given in the object_ids Iterable (or
         None if the id at that position is not found).
         """
+
+    def get_one(
+        self,
+        object_type: str,
+        object_id: str
+    ) -> Optional[DataObject]:
+        """
+        Gets the individual `DataObject` instance, of specified object_type
+        and object_id, or returns `None` if not found.
+        """
+
+        return list(
+            self.get_by_id(object_type, [object_id])
+        )[0]
