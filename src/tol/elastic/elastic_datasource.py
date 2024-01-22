@@ -219,7 +219,7 @@ class ElasticDataSource(
             rc = self.relationship_config[object_type]
             relationship_name, attribute = name.split('.')[0], name.split('.')[1]
             if attribute == 'id':
-                attribute = 'uid'
+                return f'{name}.keyword'
             relationship_object_type = rc.to_one[relationship_name]
             attribute_type = self.attribute_types[relationship_object_type][attribute]
             if attribute_type == 'str':
@@ -248,6 +248,7 @@ class ElasticDataSource(
         page_size: int = None,
         **kwargs
     ) -> Tuple[Iterable[DataObject], int]:
+
         index = self.__get_index(object_type)
         query = self._build_elasticsearch_query(object_type, object_filters)
         sort = self._build_elasticsearch_sort(object_type, sort_by)
@@ -293,18 +294,45 @@ class ElasticDataSource(
                                                             'lte': v['to']}}})
         return query
 
-    def _build_elasticsearch_sort(self, object_type: str, sort_by: str):
+    def _build_elasticsearch_sort(
+        self,
+        object_type: str,
+        sort_by: str
+    ) -> list[dict[str, str]]:
         default_sort = {'uid.keyword': 'asc'}
         if sort_by is None:
             return [default_sort]
+        if sort_by == 'id-':
+            return self.__build_uid_sort(True)
+        if sort_by == 'id':
+            return self.__build_uid_sort(False)
+        return [
+            self.__build_sort(object_type, sort_by),
+            default_sort
+        ]
+
+    def __build_uid_sort(
+        self,
+        desc: bool
+    ) -> list[dict[str, str]]:
+
+        order = 'desc' if desc else 'asc'
+        return [{'uid.keyword': order}]
+
+    def __build_sort(
+        self,
+        object_type: str,
+        sort_by: str
+    ) -> dict[str, str]:
+
         if sort_by.startswith('-'):
             field = self._field_or_keyword(object_type, sort_by[1:])
             order = 'desc'
         else:
             field = self._field_or_keyword(object_type, sort_by)
             order = 'asc'
-        sort = [{field: order}, default_sort]
-        return sort
+
+        return {field: order}
 
     def get_list(
         self,
@@ -536,6 +564,7 @@ class ElasticDataSource(
             property_name: self.__map_type(properties[property_name]['type'])
             for property_name in properties
             if 'type' in properties[property_name]
+            and 'type' != 'uid'
         }
 
     @property

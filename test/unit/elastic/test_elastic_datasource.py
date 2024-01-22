@@ -39,12 +39,10 @@ class MockElasticDataSource(ElasticDataSource):
     def attribute_types(self):
         return {
             'obj_type': {
-                'uid': 'str',
                 'field1': 'str',
                 'field2': 'str',
                 'datefield': 'datetime'},
             'reltype': {
-                'uid': 'str',
                 'field3': 'str',
                 'field4': 'str',
                 'datefield': 'datetime'
@@ -66,6 +64,79 @@ def mock_elastic_data_source() -> tuple[Callable, ElasticDataSource]:
     }, attribute_metadata=_TestAttributeMetadata)
     core_data_object_mock = core_data_object(eds)
     return core_data_object_mock, eds
+
+
+class TestUidSubstitution:
+    """
+    `uid` is a private attribute, put in place as a
+    workaround of the limitations of ElasticSearch,
+    regarding document `id` fields.
+
+    `ElasticDataSource` must internally use `uid`, but
+    expose this as `id` proper.
+    """
+
+    def test_sort_by_id(self):
+        """
+        `ElasticDataSource().get_list_page()` converts
+        sort_by directives containing `id` to `uid`
+        internally.
+        """
+
+        self.__test_uid_sort('id-', 'desc')
+        self.__test_uid_sort('id', 'asc')
+
+    def test_get_by_id(self):
+        """
+        `ElasticDataSource().get_by_id()` removes `uid`
+        from elastic transfers
+        """
+
+        _, mock_ds = mock_elastic_data_source()
+
+        mock_ds.es.mget.return_value = {
+            'docs': [
+                {
+                    '_index': 'test_obj_type',
+                    '_id': 'lol',
+                    '_source': {
+                        'field1': 'train',
+                        'uid': 'yes',
+                    }
+                }
+            ]
+        }
+
+        (obj,) = list(
+            mock_ds.get_by_id('obj_type', ['lol'])
+        )
+        print(obj)
+
+        assert 'uid' not in obj.attributes
+
+    def __test_uid_sort(self, sort_by: str, order: str) -> None:
+
+        _, mock_ds = mock_elastic_data_source()
+
+        expected_sort = [{'uid.keyword': order}]
+
+        mock_ds.es.search.return_value = {
+            'hits': {
+                'hits': [],
+                'total': {'value': 0}
+            }
+        }
+
+        mock_ds.get_list_page(
+            'obj_type',
+            1,
+            sort_by=sort_by
+        )
+
+        mock_ds.es.search.assert_called_once()
+
+        (_, kwargs) = mock_ds.es.search.call_args_list[0]
+        assert kwargs['sort'] == expected_sort
 
 
 class TestElasticDataSource(TestCase):
