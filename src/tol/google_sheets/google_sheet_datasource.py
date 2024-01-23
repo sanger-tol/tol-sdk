@@ -55,16 +55,45 @@ class GoogleSheetDataSource(
         gc = gspread.service_account_from_dict(self.client_secrets)
         self.sheet = gc.open_by_key(self.sheet_key)
 
+    # self.data[object_type] = {'Column Name': ['value1', 'value2']}
     def _initialise_data(self, object_type):
         worksheet = self.sheet.worksheet(self.mappings[object_type]['worksheet_name'])
-        self.data[object_type] = worksheet.get_all_records(
-            head=self.mappings[object_type]['header_row'],
-            default_blank=None
-        )
-        # We need to delete all the rows that are before the 'data_start_row'
-        row_to_start_from = self.mappings[object_type]['data_start_row'] - \
-            self.mappings[object_type]['header_row'] - 1
-        self.data[object_type] = self.data[object_type][row_to_start_from:]
+        self.data[object_type] = self._get_worksheet_vals(object_type, worksheet)
+
+    def _get_header_mappings(self, object_type):
+        ret = {}
+        for attribute_name, metadata in self.mappings[object_type]['columns'].items():
+            ret[metadata['heading']] = attribute_name
+        return ret
+
+    def __convert_type(self, object_type, header, value):
+        header_mappings = self._get_header_mappings(object_type)
+        target_type = self.mappings[object_type]['columns'][header_mappings[header]]['type']
+        try:
+            if value == '':
+                return None
+            if target_type == 'int':
+                return int(value)
+            if target_type == 'float':
+                return float(value)
+        except ValueError:
+            return None
+        return value
+
+    def _get_worksheet_vals(self, object_type, worksheet):
+        vals = worksheet.get_values()
+        header_row = self.mappings[object_type]['header_row']
+        data_start_row = self.mappings[object_type]['data_start_row']
+        headers = vals[header_row - 1]
+        row_data = vals[data_start_row - 1:]
+        ret = []
+        for row in row_data:
+            item = {}
+            for i, header in enumerate(headers):
+                if header in self._get_header_mappings(object_type).keys():
+                    item[header] = self.__convert_type(object_type, header, row[i])
+            ret.append(item)
+        return ret
 
     def _convert_row_to_data_object(self, object_type, row):
         CoreDataObject = self.data_object_factory  # noqa N806
