@@ -77,7 +77,9 @@ def elastic():
     }
 
     rc_tolid = RelationshipConfig()
-    rc_tolid.to_one = {'informatics_specimen': 'specimen'}
+    rc_tolid.to_one = {'informatics_specimen': 'specimen',
+                       'tolid_specimen': 'specimen',
+                       'tolid_species': 'species'}
 
     rc_specimen = RelationshipConfig()
     rc_specimen.to_many = {
@@ -119,6 +121,10 @@ def elastic():
                 'sts_family': {'available_on_relationships': True},
                 'sts_taxon_group': {'available_on_relationships': True},
                 'sts_order_group': {'available_on_relationships': True}
+            },
+            'tolid': {
+                'informatics_status': {'available_on_relationships': True},
+                'informatics_status_summary': {'available_on_relationships': True}
             },
             'sample': {
                 'sts_biosample_accession': {'available_on_relationships': True},
