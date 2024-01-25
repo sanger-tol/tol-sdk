@@ -128,7 +128,9 @@ def elastic():
             },
             'sample': {
                 'sts_biosample_accession': {'available_on_relationships': True},
-                'sts_biospecimen_accession': {'available_on_relationships': True}
+                'sts_biospecimen_accession': {'available_on_relationships': True},
+                'sts_project': {'available_on_relationships': True},
+                'sts_priority': {'available_on_relationships': True}
             }
         }
 
