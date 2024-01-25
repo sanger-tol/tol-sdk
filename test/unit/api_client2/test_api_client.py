@@ -71,7 +71,7 @@ class TestJsonApiClient:
 
         client = JsonApiClient(FAKE_API_URL, token='uplz')
 
-        sort_ = 'id-'
+        sort_ = '-id'
         filter_ = 'this is totally random and unrealistic!!'
 
         expected = {'data': [{'1': 1}, {'2': 2}]}

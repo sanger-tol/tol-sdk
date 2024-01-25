@@ -83,7 +83,7 @@ class TestUidSubstitution:
         internally.
         """
 
-        self.__test_uid_sort('id-', 'desc')
+        self.__test_uid_sort('-id', 'desc')
         self.__test_uid_sort('id', 'asc')
 
     def test_get_by_id(self):

@@ -302,7 +302,7 @@ class ElasticDataSource(
         default_sort = {'uid.keyword': 'asc'}
         if sort_by is None:
             return [default_sort]
-        if sort_by == 'id-':
+        if sort_by == '-id':
             return self.__build_uid_sort(True)
         if sort_by == 'id':
             return self.__build_uid_sort(False)
