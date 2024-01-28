@@ -103,8 +103,8 @@ class BadQueryArgError(BaseRuntimeException):
         message: Optional[str]
     ) -> str:
         detail = (
-            f'The query-string argument with key "{__key}" and value '
-            f'{__value} is invalid.'
+            f'The query-string argument with key "{__key}" '
+            f'is invalid.'
         )
         if message is None:
             return detail
