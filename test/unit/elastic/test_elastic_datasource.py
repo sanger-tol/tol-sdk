@@ -14,7 +14,6 @@ from tol.core import (
 )
 from tol.core.relationship import RelationshipConfig
 from tol.elastic import (
-    ElasticAttributeMetadata,
     ElasticDataSource
 )
 
@@ -51,17 +50,13 @@ class MockElasticDataSource(ElasticDataSource):
 
 
 def mock_elastic_data_source() -> tuple[Callable, ElasticDataSource]:
-    class _TestAttributeMetadata(ElasticAttributeMetadata):
-        attribute_meta = {
-            'obj_type': {'field1': {'available_on_relationships': True}},
-        }
     eds = MockElasticDataSource({
         'uri': 'test',
         'user': 'user',
         'password': 'password',
         'index_prefix': 'test',
         'relationship_cfg': {}
-    }, attribute_metadata=_TestAttributeMetadata)
+    })
     core_data_object_mock = core_data_object(eds)
     return core_data_object_mock, eds
 
@@ -407,8 +402,8 @@ class TestElasticDataSource(TestCase):
         object_filters.range = {'field1': {'from': 'string1', 'to': 'string2'},
                                 'datefield': {'from': '2022-01-01', 'to': '2023-01-01'}}
         expected = {'bool': {'must': [
-            {'range': {'field1': {'gte': 'string1', 'lte': 'string2'}}},
-            {'range': {'datefield': {'gte': '2022-01-01', 'lte': '2023-01-01'}}}],
+            {'range': {'field1.keyword': {'gte': 'string1', 'lt': 'string2'}}},
+            {'range': {'datefield': {'gte': '2022-01-01', 'lt': '2023-01-01'}}}],
             'must_not': []}}
         self.assertEqual(expected, eds._build_elasticsearch_query('obj_type', object_filters))
 

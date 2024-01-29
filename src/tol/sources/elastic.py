@@ -4,12 +4,13 @@
 
 import os
 
+from .portal_attributes import portal_attributes
 from ..core import (
     core_data_object
 )
+from ..core.data_source_attribute_metadata import data_source_attribute_metadata
 from ..core.relationship import RelationshipConfig
 from ..elastic import (
-    ElasticAttributeMetadata,
     ElasticDataSource
 )
 
@@ -113,24 +114,9 @@ def elastic():
                            'specimen': rc_specimen,
                            'species': rc_species}
 
-    class _ToLElasticAttributeMetadata(ElasticAttributeMetadata):
-        attribute_meta = {
-            'species': {
-                'sts_scientific_name': {'available_on_relationships': True},
-                'sts_genus': {'available_on_relationships': True},
-                'sts_family': {'available_on_relationships': True},
-                'sts_taxon_group': {'available_on_relationships': True},
-                'sts_order_group': {'available_on_relationships': True}
-            },
-            'tolid': {
-                'informatics_status': {'available_on_relationships': True},
-                'informatics_status_summary': {'available_on_relationships': True}
-            },
-            'sample': {
-                'sts_biosample_accession': {'available_on_relationships': True},
-                'sts_biospecimen_accession': {'available_on_relationships': True}
-            }
-        }
+    amd = data_source_attribute_metadata(
+        portal_attributes()
+    )
 
     elastic = ElasticDataSource({
         'uri': os.getenv('ELASTIC_URI'),
@@ -138,6 +124,6 @@ def elastic():
         'password': os.getenv('ELASTIC_PASSWORD'),
         'index_prefix': os.getenv('ELASTIC_INDEX_PREFIX'),
         'relationship_cfg': relationship_config},
-        attribute_metadata=_ToLElasticAttributeMetadata)
+        attribute_metadata=amd)
     core_data_object(elastic)
     return elastic

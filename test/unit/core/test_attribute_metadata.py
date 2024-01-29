@@ -10,19 +10,19 @@ from tol.core import (
 
 
 class TestAttributeMetadata(TestCase):
-    def test_formatting(self):
+    def test_get_display_name(self):
         am = DefaultAttributeMetadata()
-        self.assertEqual('ID', am.format_string('id'))
-        self.assertEqual('ToLQC Status', am.format_string('tolqc_status'))
-        self.assertEqual('Random Words', am.format_string('random_words'))
+        self.assertEqual('ID', am.get_display_name('object_type', 'id'))
+        self.assertEqual('ToLQC Status', am.get_display_name('object_type', 'tolqc_status'))
+        self.assertEqual('Random Words', am.get_display_name('object_type', 'random_words'))
 
     def test_get_description(self):
         am = DefaultAttributeMetadata()
-        self.assertIsNone(am.get_attribute_description('object_type', 'attribute_name'))
+        self.assertIsNone(am.get_description('object_type', 'attribute_name'))
 
     def test_is_attribute_available_on_relationships(self):
         am = DefaultAttributeMetadata()
-        self.assertTrue(am.is_attribute_available_on_relationships(
+        self.assertTrue(am.is_available_on_relationships(
             'object_type', 'attribute_name'
         ))
 

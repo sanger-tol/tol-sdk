@@ -47,10 +47,15 @@ class _TestDataSourceNoExpected(DataSource, PageGetter):
 
 
 class _TestAttributeMetadata(DefaultAttributeMetadata):
-    def format_string(self, input_string: str) -> str:
+    def get_display_name(self, object_type: str, input_string: str) -> str:
         return input_string.upper()
 
-    def is_attribute_available_on_relationships(self, object_type, attribute_name):
+    def is_available_on_relationships(self, object_type, attribute_name):
+        if object_type == 'object_type1':
+            return True
+        return False
+
+    def is_authoritative(self, object_type, attribute_name):
         if object_type == 'object_type1':
             return True
         return False
@@ -60,7 +65,7 @@ class _TestAttributeMetadata(DefaultAttributeMetadata):
             return 1000
         return 5
 
-    def get_attribute_description(self, object_type, attribute_name):
+    def get_description(self, object_type, attribute_name):
         return f'Interesting {attribute_name}'
 
 
@@ -115,7 +120,6 @@ class TestDataSource(TestCase):
 
     def test_attributes(self):
         ds = _TestDataSourceAttributes({})
-        print(ds.attribute_metadata)
         self.assertEqual(
             ds.attribute_metadata,
             {
@@ -125,14 +129,16 @@ class TestDataSource(TestCase):
                         'display_name': 'ATTRIBUTE1',
                         'description': 'Interesting attribute1',
                         'cardinality': 1000,
-                        'available_on_relationships': True
+                        'available_on_relationships': True,
+                        'authoritative': True
                     },
                     'attribute2': {
                         'python_type': 'int',
                         'display_name': 'ATTRIBUTE2',
                         'description': 'Interesting attribute2',
                         'cardinality': 1000,
-                        'available_on_relationships': True
+                        'available_on_relationships': True,
+                        'authoritative': True
                     }
                 },
                 'object_type2': {
@@ -141,14 +147,16 @@ class TestDataSource(TestCase):
                         'display_name': 'ATTRIBUTE3',
                         'description': 'Interesting attribute3',
                         'cardinality': 5,
-                        'available_on_relationships': False
+                        'available_on_relationships': False,
+                        'authoritative': False
                     },
                     'attribute4': {
                         'python_type': 'datetime',
                         'display_name': 'ATTRIBUTE4',
                         'description': 'Interesting attribute4',
                         'cardinality': 5,
-                        'available_on_relationships': False
+                        'available_on_relationships': False,
+                        'authoritative': False
                     }
                 }
             }

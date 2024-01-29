@@ -290,8 +290,9 @@ class ElasticDataSource(
 
         if object_filters.range is not None:
             for k, v in object_filters.range.items():
-                query['bool']['must'].append({'range': {k: {'gte': v['from'],
-                                                            'lte': v['to']}}})
+                search_field = self._field_or_keyword(object_type, k)
+                query['bool']['must'].append({'range': {search_field: {'gte': v['from'],
+                                                                       'lt': v['to']}}})
         return query
 
     def _build_elasticsearch_sort(

@@ -2,19 +2,24 @@
 #
 # SPDX-License-Identifier: MIT
 
+from __future__ import annotations
+
 from abc import ABC, abstractmethod
 from typing import Optional
 
 
 class AttributeMetadata(ABC):
     @abstractmethod
-    def format_string(self, input_string: str) -> str:
+    def get_display_name(
+            self,
+            object_type: str,
+            attribute_name: str) -> str:
         """
-        Format a string into another string
+        Gets the attribute display name
         """
 
     @abstractmethod
-    def is_attribute_available_on_relationships(
+    def is_available_on_relationships(
             self,
             object_type: str,
             attribute_name: str) -> bool:
@@ -36,7 +41,7 @@ class AttributeMetadata(ABC):
         """
 
     @abstractmethod
-    def get_attribute_description(
+    def get_description(
             self,
             object_type: str,
             attribute_name: str) -> Optional[str]:
@@ -47,8 +52,11 @@ class AttributeMetadata(ABC):
 
 
 class DefaultAttributeMetadata(AttributeMetadata):
-    def format_string(self, input_string: str) -> str:
-        parts = input_string.split('_')
+    def get_display_name(
+            self,
+            object_type: str,
+            attribute_name: str) -> str:
+        parts = attribute_name.split('_')
         words = []
         for part in parts:
             words.append(self.__normalise_word(part))
@@ -71,7 +79,7 @@ class DefaultAttributeMetadata(AttributeMetadata):
             return replacements[word]
         return word.capitalize()
 
-    def is_attribute_available_on_relationships(
+    def is_available_on_relationships(
             self,
             object_type: str,
             attribute_name: str) -> bool:
@@ -79,6 +87,16 @@ class DefaultAttributeMetadata(AttributeMetadata):
         Is the attribute available on a to_one related object?
         This is not always the case, for example in elastic, only
         enriched attributes will be available.
+        """
+        return True
+
+    def is_authoritative(
+            self,
+            object_type: str,
+            attribute_name: str) -> bool:
+        """
+        Is the attribute authoritative (i.e. there are other options for this
+        piece of data but this one is the most trusted)
         """
         return True
 
@@ -93,7 +111,7 @@ class DefaultAttributeMetadata(AttributeMetadata):
         """
         return None
 
-    def get_attribute_description(
+    def get_description(
             self,
             object_type: str,
             attribute_name: str) -> Optional[str]:

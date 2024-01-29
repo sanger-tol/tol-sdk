@@ -2,8 +2,11 @@
 #
 # SPDX-License-Identifier: MIT
 
+from datetime import datetime
 from functools import cache
 from typing import Dict, Iterable, List
+
+from dateutil.parser import parse as dateutil_parse
 
 import gspread
 
@@ -55,7 +58,7 @@ class GoogleSheetDataSource(
         gc = gspread.service_account_from_dict(self.client_secrets)
         self.sheet = gc.open_by_key(self.sheet_key)
 
-    # self.data[object_type] = {'Column Name': ['value1', 'value2']}
+    @cache
     def _initialise_data(self, object_type):
         worksheet = self.sheet.worksheet(self.mappings[object_type]['worksheet_name'])
         self.data[object_type] = self._get_worksheet_vals(object_type, worksheet)
@@ -100,6 +103,17 @@ class GoogleSheetDataSource(
         attributes = {attribute_name: row[column_def['heading']]
                       for attribute_name, column_def
                       in self.mappings[object_type]['columns'].items()}
+        # Sort out Booleans
+        for attribute_name, attribute_value in attributes.items():
+            if self.mappings[object_type]['columns'][attribute_name]['type'] == 'boolean' and \
+                    attribute_value is not None:
+                attributes[attribute_name] = True \
+                    if attribute_value in [1, '1', 'Y', 'Yes', 'YES'] else False
+        # Sort out datetimes
+        for attribute_name, attribute_value in attributes.items():
+            if self.mappings[object_type]['columns'][attribute_name]['type'] == 'datetime' and \
+                    attribute_value is not None and not isinstance(attribute_value, datetime):
+                attributes[attribute_name] = dateutil_parse(attribute_value)
         return CoreDataObject(
             object_type,
             id_=attributes.pop('id', None),
@@ -145,7 +159,9 @@ class GoogleSheetDataSource(
         self._initialise_data(object_type)
         rows = self._apply_filter(object_filters, self.data[object_type], object_type)
         for row in rows:
-            yield self._convert_row_to_data_object(object_type, row)
+            obj = self._convert_row_to_data_object(object_type, row)
+            if obj.id is not None:
+                yield obj
 
     @property
     @cache

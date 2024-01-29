@@ -105,11 +105,12 @@ v        """
             for attribute_name, attribute_type in attribute.items():
                 ret[object_type][attribute_name] = {
                     'python_type': attribute_type,
-                    'display_name': am.format_string(attribute_name),
-                    'description': am.get_attribute_description(object_type, attribute_name),
+                    'display_name': am.get_display_name(object_type, attribute_name),
+                    'description': am.get_description(object_type, attribute_name),
                     'cardinality': am.get_cardinality(object_type, attribute_name),
+                    'authoritative': am.is_authoritative(object_type, attribute_name),
                     'available_on_relationships':
-                        am.is_attribute_available_on_relationships(
+                        am.is_available_on_relationships(
                             object_type,
                             attribute_name)
                 }
