@@ -12,7 +12,7 @@ variables:
 
 include:
   - project: 'tol/tol-core'
-    ref: v1.3.11
+    ref: v1.3.15
     file: '/gitlab/main.yml'
 
 
@@ -28,15 +28,13 @@ stages:
 
 
 build-test-image:
-  extends: .build-template
+  extends: .build
   variables:
     DOCKERFILE: Dockerfile
     PART: '.'
     DOCKER_HOST: "tcp://docker:2375"
     DOCKER_TLS_CERTDIR: ''
-  script:
-    - docker build --pull --cache-from $BUILT_IMAGE -t $BUILT_IMAGE -f $DOCKERFILE $PART
-    - docker push $BUILT_IMAGE
+    NAME: tol-sdk-test-image
   rules:
     - if: $CI_COMMIT_REF_NAME == "qa"
       when: never
