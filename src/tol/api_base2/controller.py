@@ -157,7 +157,7 @@ class Controller:
             sort_by=query_args.sort_by
         )
 
-        output_stream = convert_data_objects_to_excel(data_objects, body, 'Sheet1')
+        output_stream = convert_data_objects_to_excel(data_objects, body.data, 'Sheet1')
         response = make_response(output_stream.getvalue())
         response.headers['Content-Disposition'] = 'attachment; filename=download_table.xlsx'
         response.headers['Content-type'] = 'application/vnd.ms-excel'

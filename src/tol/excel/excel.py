@@ -21,26 +21,38 @@ def convert_data_objects_to_excel(data_objects, body, sheet_name):
     writer = pd.ExcelWriter(output_stream, engine='xlsxwriter')
 
     # Extract the visible columns and their order for the excel column headers
-    column_order = [field['dataField'] for field in body if not field['hidden']]
+    column_order = [field['display_name'] for field in body if not field['hidden']]
     df = pd.DataFrame(columns=column_order)
 
     for data_object in data_objects:
         data = {}
 
-        # Find the data object attribute matching the column name and extract the value
-        for column in column_order:
-            attr_value = data_object.attributes.get(column, '')
-            if not attr_value and column in data_object.to_one_relationships:
-                attr_value = data_object.to_one_relationships[column].id
+        for field in body:
+            if not field['hidden']:
+                display_name = field['display_name']
+                key = field['key']
 
-            data[column] = attr_value
+                if '.' in key:
+                    relationship, relationship_attribute = key.split('.')
+                else:
+                    relationship, relationship_attribute = None, None
+
+                attr_value = ''
+
+                if key in data_object.attributes:
+                    attr_value = data_object.attributes.get(key, '')
+                elif (data_object.to_one_relationships is not None
+                      and relationship in data_object.to_one_relationships):
+                    to_one_relationship = data_object.to_one_relationships[relationship]
+                    attr_value = getattr(to_one_relationship, relationship_attribute)
+
+                data[display_name] = attr_value
 
         # Append to data frame
-        df = df.append(data, ignore_index=True)
+        df = pd.concat([df, pd.DataFrame([data])], ignore_index=True)
 
     # Convert the data frame to Excel
     df.to_excel(excel_writer=writer, index=False, sheet_name=sheet_name)
-    writer.save()
     writer.close()
 
     return output_stream
