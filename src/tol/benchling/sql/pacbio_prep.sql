@@ -58,9 +58,9 @@ LEFT JOIN nanodrop_measurements_v2$raw AS nanod
 LEFT JOIN qubit_measurements_v2$raw AS qbit 
 	ON subsam.id = qbit.sample_id
 LEFT JOIN shearing_step$raw AS shear_v1 -- Chunk for uniting Shear_Step from Data Models 1 and 2
-		ON con.id = shear_v1.sample_submission_tube
-	LEFT JOIN shearing_step_v2$raw AS shear_v2 
-		ON subsam.id = shear_v2.sample_id -- End Chunk for uniting Shear_Step from Data Models 1 and 2
+	ON con.id = shear_v1.sample_submission_tube
+LEFT JOIN shearing_step_v2$raw AS shear_v2 
+	ON subsam.id = shear_v2.sample_id -- End Chunk for uniting Shear_Step from Data Models 1 and 2
 LEFT JOIN sanger_tol.femto_pacbio_prep_v2$raw AS femtopb 
 	ON subsam.id = femtopb.sample_id
 LEFT JOIN spri_info_v2$raw AS spri 
@@ -69,12 +69,12 @@ LEFT JOIN pacbio_yield_v2$raw AS pbyield
 	ON subsam.id = pbyield.sample_id -- End of chunk for results
 LEFT JOIN pacbio_preparation_from_gdna$raw AS pbgdna -- Just for the category field
 	ON dna.id = pbgdna.dna_extract ->> 0
-LEFT JOIN folder AS f 
+LEFT JOIN folder$raw AS f 
 	ON subsam.folder_id$ = f.id
 LEFT JOIN project$raw AS proj
 	ON subsam.project_id$ = proj.id
 WHERE proj.name = 'ToL Core Lab'
-	AND (f.name IN ('Routine Throuput', 'PacBio prep', 'Core Lab Entities', 'Benchling MS Project Move') OR f.name IS NULL)
+	AND (f.name IN ('Routine Throughput', 'PacBio prep', 'Core Lab Entities', 'Benchling MS Project Move') OR f.name IS NULL)
 	AND (subsam.archive_purpose$ != ('Made in error') OR subsam.archive_purpose$ IS NULL)
 	AND (con.archive_purpose$ != ('Made in error') OR con.archive_purpose$ IS NULL) --not necessary anymore
 	AND subsam.pooled_sample IS NULL -- Exluding pooled samples

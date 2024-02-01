@@ -76,7 +76,7 @@ LEFT JOIN tissue$raw AS t
 	ON t.id = tp.tissue -- End of Chunk: Using first pooled dna extract to link tissue metadata
 LEFT JOIN tube$raw AS tube 
 	ON cc.container_id = tube.id 
-LEFT JOIN folder AS f 
+LEFT JOIN folder$raw AS f 
 	ON dnap.folder_id$ = f.id
 LEFT JOIN dna_decision_making_v2$raw AS dnadc  -- Results chunk
 	ON dnap.id = dnadc.sample_id
@@ -90,9 +90,8 @@ LEFT JOIN location$raw AS loc
 	ON loc.id = box.location_id -- End of location chunk
 WHERE tube.type IS NULL -- Excluding vouchers
 	AND con.volume_si * 1000000 != 10
-	AND (f.name IN ('Routine Throuput', 'DNA', 'Core Lab Entities', 'Benchling MS Project Move', 'R&D') OR f.name IS NULL)
+	AND (f.name IN ('Routine Throughput', 'DNA', 'Core Lab Entities', 'Benchling MS Project Move') OR f.name IS NULL)
 	AND (dnap.archive_purpose$ != ('Made in error') OR dnap.archive_purpose$ IS NULL)
 	AND (con.archive_purpose$ != ('Made in error') OR con.archive_purpose$ IS NULL)
 	AND con.barcode NOT LIKE 'CON%'
-	AND con.barcode NOT LIKE 'DTOL%'
 ORDER BY completion_date DESC;

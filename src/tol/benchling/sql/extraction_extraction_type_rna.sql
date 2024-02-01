@@ -65,7 +65,7 @@ LEFT JOIN tissue$raw AS t
 	ON t.id = tp.tissue
 LEFT JOIN tube$raw AS tube 
 	ON cc.container_id = tube.id 
-LEFT JOIN folder AS f 
+LEFT JOIN folder$raw AS f 
 	ON rna.folder_id$ = f.id
 LEFT JOIN project$raw AS proj
 	ON rna.project_id$ = proj.id
@@ -77,8 +77,8 @@ LEFT JOIN location$raw AS loc
 	ON loc.id = box.location_id -- End of location chunk
 WHERE tube.type IS NULL -- Excluding vouchers
 	AND proj.name = 'ToL Core Lab'
-	AND f.name IN ('Routine Throuput', 'RNA', 'Core Lab Entities', 'Benchling MS Project Move', 'R&D', 'ToL Core Restricted Entities')
+	AND f.name IN ('Routine Throughput', 'RNA', 'Core Lab Entities', 'Benchling MS Project Move', 'R&D', 'ToL Core Restricted Entities')
 	AND (rna.archive_purpose$ != ('Made in error') OR rna.archive_purpose$ IS NULL)
 	AND (con.archive_purpose$ != ('Made in error') OR con.archive_purpose$ IS NULL)
-	AND con.barcode NOT LIKE '%P%' -- Delete well rows.
+	AND con.plate_id IS NULL -- Delete well rows.
 ORDER BY completion_date DESC;

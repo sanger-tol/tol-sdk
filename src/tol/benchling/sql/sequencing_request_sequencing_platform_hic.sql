@@ -46,9 +46,12 @@ WITH hic_submissions AS (
 		ON cc.entity_id = tp.id
 	LEFT JOIN tissue$raw AS t 
 		ON tp.tissue = t.id
+	LEFT JOIN project$raw AS proj 
+		ON tp.project_id$ = proj.id
 	WHERE hic.archived$ = 'FALSE'
 		AND ssid.sanger_sample_id IS NOT NULL
 		AND ssid.sanger_sample_id != ''
+		AND proj.name = 'ToL Core Lab'
 
 ),
 hic_legacy_submissions AS (

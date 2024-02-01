@@ -99,5 +99,5 @@ LEFT JOIN project$raw AS proj
 LEFT JOIN folder$raw AS f
 	ON t.folder_id$ = f.id
 WHERE proj.name = 'ToL Core Lab'
-	AND f.name IN ('Core Lab Entities', 'R&D', 'Routine Throughput', 'Benchling MS Project Move', 'ToL Core Restricted Entities') -- Filtering by ToL Core Lab folders
+	AND f.name IN ('Core Lab Entities', 'Routine Throughput', 'Benchling MS Project Move', 'ToL Core Restricted Entities') -- Filtering by ToL Core Lab folders
 	AND t.archived$ = FALSE -- Avoid including archived tissues. No tissue should be archived except when made in error.

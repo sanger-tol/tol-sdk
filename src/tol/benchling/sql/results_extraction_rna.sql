@@ -77,11 +77,11 @@ LEFT JOIN tissue$raw AS t
 	ON t.id = tp.tissue
 LEFT JOIN tube$raw AS tube 
 	ON cc.container_id = tube.id 
-LEFT JOIN folder AS f 
+LEFT JOIN folder$raw AS f 
 	ON rna.folder_id$ = f.id
 WHERE tube.type IS NULL -- Excluding vouchers
-	AND (f.name IN ('Routine Throuput', 'RNA', 'Core Lab Entities', 'Benchling MS Project Move', 'R&D') OR f.name IS NULL)
+	AND (f.name IN ('Routine Throughput', 'RNA', 'Core Lab Entities', 'Benchling MS Project Move') OR f.name IS NULL)
 	AND (rna.archive_purpose$ != ('Made in error') OR rna.archive_purpose$ IS NULL)
 	AND (con.archive_purpose$ != ('Made in error') OR con.archive_purpose$ IS NULL)
-	AND con.barcode NOT LIKE '%Plate%' -- Delete well rows.
+	AND con.plate_id IS NULL -- Delete well rows.
 ORDER BY rna_extraction_date DESC;

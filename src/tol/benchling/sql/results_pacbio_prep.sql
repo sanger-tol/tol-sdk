@@ -108,7 +108,7 @@ LEFT JOIN pacbio_preparation_from_gdna$raw AS pbgdna -- Just for the category fi
 	ON dna.id = pbgdna.dna_extract ->> 0
 LEFT JOIN folder$raw AS f 
 	ON subsam.folder_id$ = f.id
-WHERE (f.name IN ('Routine Throuput', 'PacBio prep', 'Core Lab Entities', 'Benchling MS Project Move') OR f.name IS NULL)
+WHERE (f.name IN ('Routine Throughput', 'PacBio prep', 'Core Lab Entities', 'Benchling MS Project Move') OR f.name IS NULL)
 	AND (subsam.archive_purpose$ != ('Made in error') OR subsam.archive_purpose$ IS NULL)
 	AND (con.archive_purpose$ != ('Made in error') OR con.archive_purpose$ IS NULL) --not necessary anymore
 	AND subsam.pooled_sample IS NULL -- Exluding pooled samples

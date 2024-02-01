@@ -28,7 +28,7 @@ WITH rnaseq_submissions AS (
 		rna.file_registry_id$ AS eln_file_registry,
 		t.programme_id,
 		ssid.sanger_sample_id, 
-		c.barcode AS fluidx_id,
+		con.barcode AS fluidx_id,
 		rnaseq_out.submitted_submission_date AS completion_date, 
 		'rnaseq'::varchar AS sequencing_platform,
 		rna.bt_id,
@@ -44,14 +44,21 @@ WITH rnaseq_submissions AS (
 		ON tp.tissue = t.id
 	LEFT JOIN container_content$raw AS cc 
 		ON rna.id = cc.entity_id
-	LEFT JOIN container$raw AS c 
-		ON cc.container_id = c.id
+	LEFT JOIN container$raw AS con 
+		ON cc.container_id = con.id
 	LEFT JOIN rnaseq_sumbission_output$raw AS rnaseq_out
 		ON rnaseq.id = rnaseq_out.workflow_task_id$
+	LEFT JOIN folder$raw AS f 
+			ON rna.folder_id$ = f.id
+		LEFT JOIN project$raw AS proj
+			ON rna.project_id$ = proj.id
 	WHERE rnaseq.archived$ = FALSE
-		-- Selecting only valid FluidX IDs
-		AND c.barcode LIKE 'F%'
+		-- Selects Fluidx only and excludes well:plate ids
+		AND con.plate_id IS NULL
 	  	AND ssid.sanger_sample_id IS NOT NULL
+		AND proj.name = 'ToL Core Lab'
+		AND f.name IN ('Routine Throughput', 'RNA', 'Submissions', 'Core Lab Entities', 'Benchling MS Project Move')
+
 
 ),
 rnaseq_legacy_submissions AS (
@@ -79,9 +86,16 @@ rnaseq_legacy_submissions AS (
 		ON rna.tissue_prep = tp.id
 	LEFT JOIN tissue$raw AS t
 		ON tp.tissue = t.id
+	LEFT JOIN folder$raw AS f 
+		ON rna.folder_id$ = f.id
+	LEFT JOIN project$raw AS proj
+		ON rna.project_id$ = proj.id
 	-- Selecting submisions migrated from B&T only
 	WHERE rna.bt_id IS NOT NULL
 		AND ssid.archived$ = FALSE
+		AND proj.name = 'ToL Core Lab'
+		AND f.name IN ('Routine Throughput', 'RNA', 'Submissions', 'Core Lab Entities', 'Benchling MS Project Move')
+
 	
 )
 SELECT *

@@ -108,7 +108,7 @@ legacy_tissue_preps AS (
 		ON t.folder_id$ = f.id
 	WHERE tp.bt_id IS NOT NULL
 		AND proj.name = 'ToL Core Lab'
-		AND f.name IN ('Core Lab Entities', 'R&D', 'Routine Throughput', 'Benchling MS Project Move', 'ToL Core Restricted Entities')
+		AND f.name IN ('Core Lab Entities', 'Routine Throughput', 'Benchling MS Project Move', 'ToL Core Restricted Entities')
 		AND (tp.archive_purpose$ != ('Made in error') OR tp.archive_purpose$ IS NULL)
 		AND (con.archive_purpose$ != ('Made in error') OR con.archive_purpose$ IS NULL)
 		

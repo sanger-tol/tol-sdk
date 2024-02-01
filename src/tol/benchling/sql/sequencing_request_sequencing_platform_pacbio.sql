@@ -75,7 +75,7 @@ WITH pacbio_submissions_v1 AS (
 		con.name AS sanger_sample_id, 
 		NULL::varchar AS plate_name,
 		NULL::varchar AS pipeline,
-		NULL::varchar AS library_type,
+		pbsum.sequencing_type_please_fill AS library_type,
 		NULL::varchar AS retention_instructions,
 		NULL::float8 AS gb_yield_of_ccs_data_required,
 		NULL::float8 AS number_of_smrt_cells_required,
@@ -113,6 +113,8 @@ WITH pacbio_submissions_v1 AS (
 		ON c_dna.id = tube.id -- End of DNA fluidx id Chunk
 	LEFT JOIN project$raw AS proj
 		ON subsam.project_id$ = proj.id
+	 LEFT JOIN folder$raw AS f 
+        ON subsam.folder_id$ = f.id
 	WHERE pbsum.archived$ = FALSE -- Excluding archived submission containers
 		-- Filters to add DNA extract fluidx tubes
 		AND tube.type IS NULL  -- Selecting non-Voucher containers
@@ -120,6 +122,7 @@ WITH pacbio_submissions_v1 AS (
 	    AND (c_dna.archive_purpose$ != ('Made in error') OR c_dna.archive_purpose$ IS NULL) -- Excluding containers made by mistake
 		AND c_dna.barcode LIKE 'F%' -- Selecting only valid FluidX IDs
 		AND proj.name = 'ToL Core Lab' -- Selecting ToL Core Lab sbmissions only
+		AND f.name IN ('Routine Throuput', 'PacBio prep', 'Submissions', 'Core Lab Entities', 'Benchling MS Project Move')
 
 ),
 pacbio_legacy_submissions AS (
@@ -235,14 +238,17 @@ pacbio_submissions_v2 AS (
 		ON c_dna.id = tube.id -- End of DNA fluidx id Chunk
 	LEFT JOIN project$raw AS proj
 		ON subsam.project_id$ = proj.id
+	LEFT JOIN folder$raw AS f 
+		ON subsam.folder_id$ = f.id
 	WHERE con.archived$ = FALSE -- Excluding archived submission containers
+		AND pbsubm_p.archived$ = FALSE -- Exclusing archived submissions
 		-- Filters to add DNA extract fluidx tubes
 		AND tube.type IS NULL -- Selecting non-Voucher containers
 		AND c_dna.volume_si * 1000000 != 10 -- Excluding vouchers without Voucher type in tube.type
 		AND (c_dna.archive_purpose$ != ('Made in error') OR c_dna.archive_purpose$ IS NULL) -- Excluding containers made by mistake
 		AND c_dna.barcode LIKE 'F%' -- Selecting only valid FluidX IDs
 		AND proj.name = 'ToL Core Lab' -- Selecting ToL Core Lab sbmissions only
-		AND pbsubm_p.archived$ = FALSE
+		AND f.name IN ('Routine Throughput', 'PacBio prep', 'Submissions', 'Core Lab Entities', 'Benchling MS Project Move')
 
 		
 ),
@@ -260,7 +266,7 @@ pacbio_submissions_pooled_v1 AS (
 		con.name AS sanger_sample_id, 
 		NULL::varchar AS plate_name,
 		NULL::varchar AS pipeline,
-		NULL::varchar AS library_type,
+		pbsum.sequencing_type_please_fill AS library_type,
 		NULL::varchar AS retention_instructions,
 		NULL::float8 AS gb_yield_of_ccs_data_required,
 		NULL::float8 AS number_of_smrt_cells_required,
@@ -300,12 +306,15 @@ pacbio_submissions_pooled_v1 AS (
 		ON c_pool.id = tube.id -- End of DNA fluidx id Chunk
 	LEFT JOIN project$raw AS proj
 		ON subsam.project_id$ = proj.id
+	LEFT JOIN folder$raw AS f 
+		ON subsam.folder_id$ = f.id
 	WHERE pbsum.archived$ = FALSE -- Excluding archived submission containers
 		-- Filters to add DNA extract fluidx tubes
 		AND tube.type IS NULL  -- Selecting non-Voucher containers
 	    AND (c_pool.archive_purpose$ != ('Made in error') OR c_pool.archive_purpose$ IS NULL) -- Excluding containers made by mistake
-		AND pool.id IS NOT NULL
+		AND subsam.pooled_sample IS NOT NULL
 		AND proj.name = 'ToL Core Lab' -- Selecting ToL Core Lab sbmissions only
+		AND f.name IN ('Routine Throughput', 'PacBio prep', 'Submissions', 'Core Lab Entities', 'Benchling MS Project Move')
 ),
 pacbio_submissions_pooled_v2 AS (
 
@@ -361,8 +370,11 @@ pacbio_submissions_pooled_v2 AS (
 		ON con.plate_id = plt.id
 	LEFT JOIN project$raw AS proj
 		ON subsam.project_id$ = proj.id
+	LEFT JOIN folder$raw AS f 
+		ON subsam.folder_id$ = f.id
 	WHERE subsam.pooled_sample IS NOT NULL
 		AND proj.name = 'ToL Core Lab'
+		AND f.name IN ('Routine Throughput', 'PacBio prep', 'Submissions', 'Core Lab Entities', 'Benchling MS Project Move')
 		AND pbsubm_p.archived$ = FALSE
 	
 )
