@@ -253,7 +253,7 @@ class TestElasticDataSource(TestCase):
                 }
             },
             'script': {
-                'source': "ctx._source.putAll(params['upsertWith']);",
+                'source': eds._update_script,
                 'lang': 'painless',
                 'params': {
                     'upsertWith': {
@@ -402,8 +402,8 @@ class TestElasticDataSource(TestCase):
         object_filters.range = {'field1': {'from': 'string1', 'to': 'string2'},
                                 'datefield': {'from': '2022-01-01', 'to': '2023-01-01'}}
         expected = {'bool': {'must': [
-            {'range': {'field1.keyword': {'gte': 'string1', 'lt': 'string2'}}},
-            {'range': {'datefield': {'gte': '2022-01-01', 'lt': '2023-01-01'}}}],
+            {'range': {'field1.keyword': {'gte': 'string1', 'lte': 'string2'}}},
+            {'range': {'datefield': {'gte': '2022-01-01', 'lte': '2023-01-01'}}}],
             'must_not': []}}
         self.assertEqual(expected, eds._build_elasticsearch_query('obj_type', object_filters))
 

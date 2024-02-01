@@ -178,6 +178,29 @@ class ElasticDataSource(
 
             )
 
+    @property
+    def _update_script(self):
+        s = """
+            for (param in params['upsertWith'].entrySet()) {
+                if (ctx._source[param.key] instanceof Map) {
+                    for (newParam in param.value.entrySet()) {
+                        ctx._source[param.key][newParam.key] = newParam.value;
+                    }
+                    continue
+                }
+                if (ctx._source[param.key] instanceof ArrayList) {
+                    for (newParam in param.value) {
+                        if(! ctx._source[param.key].contains(newParam)) {
+                            ctx._source[param.key].add(newParam)
+                        }
+                    }
+                    continue
+                }
+                ctx._source[param.key] = param.value;
+            }
+        """
+        return s.replace('\n', ' ')
+
     def _action_for_update(self, index: str, update: Dict,
                            field_prefix: str, candidate_key: Iterable[str]):
         u = self._convert_dates(update)
@@ -194,7 +217,7 @@ class ElasticDataSource(
         return {
             'query': query,
             'script': {
-                'source': "ctx._source.putAll(params['upsertWith']);",
+                'source': self._update_script,
                 'lang': 'painless',
                 'params': {
                     'upsertWith': u
@@ -292,7 +315,7 @@ class ElasticDataSource(
             for k, v in object_filters.range.items():
                 search_field = self._field_or_keyword(object_type, k)
                 query['bool']['must'].append({'range': {search_field: {'gte': v['from'],
-                                                                       'lt': v['to']}}})
+                                                                       'lte': v['to']}}})
         return query
 
     def _build_elasticsearch_sort(
