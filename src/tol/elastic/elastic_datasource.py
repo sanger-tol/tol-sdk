@@ -316,6 +316,39 @@ class ElasticDataSource(
                 search_field = self._field_or_keyword(object_type, k)
                 query['bool']['must'].append({'range': {search_field: {'gte': v['from'],
                                                                        'lte': v['to']}}})
+        if object_filters.and_ is not None:
+            for k, v in object_filters.and_.items():
+                search_field = self._field_or_keyword(object_type, k)
+                if type(v) is list:
+                    for constraint in v:
+                        search_value = constraint.get('value')
+                        op = constraint.get('op')
+                        if op in ['gt', 'gte', 'lt', 'lte']:
+                            query['bool']['must'].append({
+                                'range': {search_field: {op: search_value}}
+                            })
+                        if op in ['eq']:
+                            query['bool']['must'].append({
+                                'match': {search_field: search_value}
+                            })
+                        if op in ['neq']:
+                            query['bool']['must_not'].append({
+                                'match': {search_field: search_value}
+                            })
+                        if op in ['contains']:
+                            query['bool']['must'].append({
+                                'wildcard': {
+                                    search_field: {'value': f'{search_value}*', 'boost': 1.0}
+                                }
+                            })
+                        if op in ['exists']:
+                            query['bool']['must'].append({'exists': {'field': search_field}})
+                        if op in ['not_exists']:
+                            query['bool']['must_not'].append({'exists': {'field': search_field}})
+                        if op in ['in_list']:
+                            query['bool']['must'].append({
+                                'terms': {search_field: search_value, 'boost': 1.0}
+                            })
         return query
 
     def _build_elasticsearch_sort(

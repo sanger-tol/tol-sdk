@@ -40,6 +40,11 @@ class MockElasticDataSource(ElasticDataSource):
             'obj_type': {
                 'field1': 'str',
                 'field2': 'str',
+                'field3': 'int',
+                'field4': 'str',
+                'field5': 'str',
+                'field6': 'int',
+                'field7': 'str',
                 'datefield': 'datetime'},
             'reltype': {
                 'field3': 'str',
@@ -405,6 +410,49 @@ class TestElasticDataSource(TestCase):
             {'range': {'field1.keyword': {'gte': 'string1', 'lte': 'string2'}}},
             {'range': {'datefield': {'gte': '2022-01-01', 'lte': '2023-01-01'}}}],
             'must_not': []}}
+        self.assertEqual(expected, eds._build_elasticsearch_query('obj_type', object_filters))
+
+        # And filtering
+        object_filters = DataSourceFilter()
+        object_filters.and_ = {
+            'field1': [
+                {'op': 'exists'}
+            ],
+            'field2': [
+                {'op': 'not_exists'}
+            ],
+            'field3': [
+                {'op': 'lt', 'value': 16},
+                {'op': 'gte', 'value': 2}
+            ],
+            'field4': [
+                {'op': 'contains', 'value': 'abc'}
+            ],
+            'field5': [
+                {'op': 'in_list', 'value': ['one', 'two']}
+            ],
+            'field6': [
+                {'op': 'eq', 'value': 5}
+            ],
+            'field7': [
+                {'op': 'neq', 'value': 'haberdashery'}
+            ],
+            'datefield': [
+                {'op': 'gt', 'value': '2022-01-01'},
+                {'op': 'lte', 'value': '2023-01-01'}
+            ]
+        }
+        expected = {'bool': {'must': [{'exists': {'field': 'field1.keyword'}},
+                                      {'range': {'field3': {'lt': 16}}},
+                                      {'range': {'field3': {'gte': 2}}},
+                                      {'wildcard': {'field4.keyword': {
+                                          'value': 'abc*', 'boost': 1.0}}},
+                                      {'terms': {'field5.keyword': ['one', 'two'], 'boost': 1.0}},
+                                      {'match': {'field6': 5}},
+                                      {'range': {'datefield': {'gt': '2022-01-01'}}},
+                                      {'range': {'datefield': {'lte': '2023-01-01'}}}],
+                             'must_not': [{'exists': {'field': 'field2.keyword'}},
+                                          {'match': {'field7.keyword': 'haberdashery'}}]}}
         self.assertEqual(expected, eds._build_elasticsearch_query('obj_type', object_filters))
 
     def test_build_sort(self):

@@ -31,7 +31,7 @@ default_dict_dumper: DictDumper = lambda d: dumps(
 
 class DefaultApiFilter(ApiFilter):
 
-    __KEYS = ['exact', 'contains', 'in_list', 'range']
+    __KEYS = ['exact', 'contains', 'in_list', 'range', 'and_']
 
     def __init__(
         self,
