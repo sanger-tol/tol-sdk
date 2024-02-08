@@ -17,12 +17,13 @@ from ..core import (
     DataSourceError,
     DataSourceFilter
 )
-from ..core.operator import PageGetter
+from ..core.operator import PageGetter, Relational
 
 
 class TreevalDataSource(
     DataSource,
     PageGetter,
+    Relational,
 ):
 
     def __init__(self, config: Dict):
@@ -446,20 +447,20 @@ class TreevalDataSource(
 
         return (specimens.to_dict('records'), full_len)
 
-    def get_specimens_for_treeval(self, page_number, page_size, filter_, sort_by):
+    # def get_specimens_for_treeval(self, page_number, page_size, filter_, sort_by):
 
-        specimens_page, total_specimen_count = self.get_list_page(
-            object_type='specimen',
-            page=page_number,
-            object_filters=filter_,
-            sort_by=sort_by,
-            page_size=page_size
-        )
+    #     specimens_page, total_specimen_count = self.get_list_page(
+    #         object_type='specimen',
+    #         page=page_number,
+    #         object_filters=filter_,
+    #         sort_by=sort_by,
+    #         page_size=page_size
+    #     )
 
-        return {'total': total_specimen_count, 'data': specimens_page}
+    #     return {'total': total_specimen_count, 'data': specimens_page}
 
-    def get_specimen_for_treeval(self, tolid):
-        return self.get_specimens_for_treeval(1, 1, f'[tolid={tolid}]', 'tolid')[0]
+    # def get_specimen_for_treeval(self, tolid):
+    #     return self.get_specimens_for_treeval(1, 1, f'[tolid={tolid}]', 'tolid')[0]
 
     def get_by_id():
         raise NotImplementedError()
@@ -471,10 +472,42 @@ class TreevalDataSource(
         raise NotImplementedError()
 
     @property
-    def attribute_types(self):
-        raise NotImplementedError()
+    def attribute_types(self) -> dict[str, dict[str, str]]:
+        return {
+            'specimens': {
+                'tolid': 'str',
+                'species_name': 'str',
+                'priority': 'str',
+                'jira_issue': 'str',
+                'jira_issue_url': 'str',
+                'jira_issue_last_updated': 'str',
+                'added_to_curation': 'str',
+                'jbrowse_url': 'str',
+                'assignee': 'str',
+                'goat_url': 'str',
+                'higlass_url': 'str',
+                'btk_pri_url': 'str',
+                'btk_hap_url': 'str',
+                'tolqc_url': 'str',
+                'hic_plot': 'str',
+                'kmer_plot': 'str',
+                'scaffold_l90': 'str',
+                'contig_l90': 'str',
+                'expected_karyotype': 'str',
+                'total_scaffolds_removed': 'str',
+                'total_scaffolds_removed_pc': 'str',
+                'scaffolds_removed_count': 'str',
+                'scaffolds_removed_count_pc': 'str',
+                'largest_scaffold_removed': 'str',
+                'contamination_is_abnormal': 'str'
+            }
+        }
 
     @property
     @cache
-    def supported_types(self):
-        raise NotImplementedError()
+    def supported_types(self) -> tuple(str, dict[str, str]):
+        return ['specimens', {'field':'type'}]
+
+    @property
+    def relationship_config(self):
+        return { }
