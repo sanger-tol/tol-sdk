@@ -506,8 +506,8 @@ class TreevalDataSource(
     @property
     @cache
     def supported_types(self) -> tuple(str, dict[str, str]):
-        return ['specimens', {'field':'type'}]
+        return ['specimens', {'field': 'type'}]
 
     @property
     def relationship_config(self):
-        return { }
+        return {}
