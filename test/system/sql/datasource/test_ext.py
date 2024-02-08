@@ -5,15 +5,14 @@
 from tol.sql.database import DefaultDatabase
 
 from .. import models
-from ..base_case import DatabaseTestCase, models_list, session_factory
 
 
-class TestDatabaseExt(DatabaseTestCase):
+class TestDatabaseExt:
     """
     Tests a real database with ext column.
     """
 
-    def test_json_default_name(self):
+    def test_json_default_name(self, session_factory, models_list):
         """JSON-type, default (`ext`) name"""
         with session_factory() as sess:
             sess.add(
@@ -47,7 +46,7 @@ class TestDatabaseExt(DatabaseTestCase):
             'string_column': 'neverending'
         }
 
-    def test_jsonb_override_name_nullable(self):
+    def test_jsonb_override_name_nullable(self, session_factory, models_list):
         """JSONB-type, override name, nullable"""
 
         with session_factory() as sess:

@@ -17,6 +17,7 @@ class DataObjectToDataObjectConverter(ABC):
     the method signatures (convert() can return None, a DataObject or an
     Iterable of DataObjects)
     """
+
     def __init__(
         self,
         data_object_factory: DataObjectFactory

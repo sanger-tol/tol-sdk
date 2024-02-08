@@ -71,6 +71,7 @@ class TestDefaultOperatorConfig:
         """`DefaultOperatorConfig().to_dict()`"""
 
         expected_1 = {
+            'auth': [],
             'noauth': [
                 'aggregate',
                 'detailGet',
@@ -78,11 +79,12 @@ class TestDefaultOperatorConfig:
             ]
         }
         expected_2 = {
-            'noauth': [
+            'auth': [
                 'delete',
                 'update',
                 'upsert'
-            ]
+            ],
+            'noauth': []
         }
 
         expected = {

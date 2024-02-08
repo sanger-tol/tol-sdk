@@ -7,12 +7,11 @@ from tol.sql.database import DefaultDatabase
 from tol.sql.filter import DefaultDatabaseFilter
 
 from .. import models
-from ..base_case import DatabaseTestCase, models_list, session_factory
 
 
-class TestDefaultDatabaseFilter(DatabaseTestCase):
+class TestDefaultDatabaseFilter:
 
-    def test_exact_filter(self):
+    def test_exact_filter(self, session_factory, models_list):
         """Exact filtering only returns the correct rows"""
 
         # add the models
@@ -50,7 +49,7 @@ class TestDefaultDatabaseFilter(DatabaseTestCase):
             assert odd.instance_id == str(i * 2 + 1)
             assert odd.instance_attributes == {'string_column': 'odd'}
 
-    def test_all_filters(self):
+    def test_all_filters(self, session_factory, models_list):
         """
         4 filters on 5 extant rows - each removes a different one - the db should fetch
         the only row that matches all 4.

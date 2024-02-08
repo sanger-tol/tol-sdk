@@ -356,8 +356,7 @@ class TestDefaultViewInBlueprint(TestCase):
         app = Flask(__name__)
         blueprint = _core_blueprint(
             {'test': _MockRelational({})},
-            '/super_data',
-            lambda: None
+            '/super_data'
         )
         app.register_blueprint(blueprint)
         return app

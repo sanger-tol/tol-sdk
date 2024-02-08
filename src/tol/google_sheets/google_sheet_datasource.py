@@ -46,6 +46,7 @@ class GoogleSheetDataSource(
         }
     }
     """
+
     def __init__(self, config: Dict):
         super().__init__(config, expected=[
             'client_secrets',

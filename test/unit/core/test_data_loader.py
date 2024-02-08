@@ -24,7 +24,7 @@ from tol.core.operator import (
 class TestDataObjectToDataObjectConverter(DataObjectToDataObjectConverter):
 
     def convert(self, data_object: DataObject) -> Iterable[DataObject]:
-        CoreDataObject = self._data_object_factory # noqa N806
+        CoreDataObject = self._data_object_factory  # noqa N806
         # if data_object relations data = data else data.attributes
         ret1 = CoreDataObject(
             id_=f'{data_object.id}_test',

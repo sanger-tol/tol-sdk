@@ -8,12 +8,12 @@ from .sanitise import sanitise_value
 def flatten_entity(entity, level=None):
     flattened_entity = {}
     prefix = f'{level}_' if level is not None else ''
-    if type(entity) is dict:
+    if isinstance(entity, dict):
         for field, value in entity.items():
             extra_fields = flatten_entity(value, prefix + field)
             flattened_entity = {**flattened_entity,
                                 **extra_fields}
-    elif type(entity) is list:
+    elif isinstance(entity, list):
         for index, subentity in enumerate(entity):
             new_name = prefix + str(index)
             extra_fields = flatten_entity(subentity, new_name)

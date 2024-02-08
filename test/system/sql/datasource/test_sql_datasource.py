@@ -9,14 +9,13 @@ from tol.sql import create_sql_datasource
 from tol.sql.sql_converter import TypeFunction
 
 from .. import models
-from ..base_case import DatabaseTestCase, models_list, session_factory
 
 
 DB_URI = os.environ['DB_URI']
 
 
-class TestCreateSqlDataSource(DatabaseTestCase):
-    def test_get_by_id(self):
+class TestCreateSqlDataSource:
+    def test_get_by_id(self, session_factory, models_list):
         """With many corresponding models, both found and not found"""
 
         # add the objects
@@ -54,7 +53,7 @@ class TestCreateSqlDataSource(DatabaseTestCase):
                 'string_column': f'the code is {id_}'
             }
 
-    def test_get_list_page(self):
+    def test_get_list_page(self, session_factory, models_list):
         """Get a page of results, check the results and count"""
 
         # add the rows

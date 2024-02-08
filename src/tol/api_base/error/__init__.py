@@ -2,4 +2,4 @@
 #
 # SPDX-License-Identifier: MIT
 
-from .error import * # noqa
+from .error import *  # noqa

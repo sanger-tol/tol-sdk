@@ -36,7 +36,7 @@ class TestCoreDataObject:
             return_value=['test_type']
         )
 
-        CoreDataObject = core_data_object(mock_ds) # noqa N806
+        CoreDataObject = core_data_object(mock_ds)  # noqa N806
         obj = CoreDataObject('test_type')
 
         assert 'type="test_type"' in str(obj)
@@ -49,7 +49,7 @@ class TestCoreDataObject:
             return_value=['type_too']
         )
 
-        CoreDataObject = core_data_object(mock_ds) # noqa N806
+        CoreDataObject = core_data_object(mock_ds)  # noqa N806
         obj = CoreDataObject('type_too', id_='lol')
 
         assert 'type="type_too"' in str(obj)
@@ -79,7 +79,7 @@ class TestCoreDataObject:
             return_value={c: c for c in attributes.keys()}
         )
 
-        CoreDataObject = core_data_object(mock_ds) # noqa N806
+        CoreDataObject = core_data_object(mock_ds)  # noqa N806
         obj = CoreDataObject(
             'test_type',
             id_='hype',
@@ -113,7 +113,7 @@ class TestCoreDataObject:
 
         mock_to_one = Mock()
 
-        CoreDataObject = core_data_object(mock_ds) # noqa N806
+        CoreDataObject = core_data_object(mock_ds)  # noqa N806
         obj = CoreDataObject(
             'test_type',
             id_='hype',
@@ -160,7 +160,7 @@ class TestCoreDataObject:
         mock_ds.get_to_one_relation.return_value = mock_to_one
         mock_ds.get_to_many_relations.return_value = mock_to_manys
 
-        CoreDataObject = core_data_object(mock_ds) # noqa N806
+        CoreDataObject = core_data_object(mock_ds)  # noqa N806
         obj = CoreDataObject('test_type')
 
         assert obj.id is None
@@ -194,7 +194,7 @@ class TestCoreDataObject:
             return_value={}
         )
 
-        CoreDataObject = core_data_object(mock_ds) # noqa N806
+        CoreDataObject = core_data_object(mock_ds)  # noqa N806
         obj = CoreDataObject(
             'test_type',
             attributes={'yes': True}
@@ -241,7 +241,7 @@ class TestCoreDataObject:
             )
         }
 
-        CoreDataObject = core_data_object(mock_ds) # noqa N806
+        CoreDataObject = core_data_object(mock_ds)  # noqa N806
         obj = CoreDataObject(
             'test_type',
             to_one={'enemy_mine': mock_obj}
@@ -279,7 +279,7 @@ class TestCoreDataObject:
             )
         }
 
-        CoreDataObject = core_data_object(mock_ds) # noqa N806
+        CoreDataObject = core_data_object(mock_ds)  # noqa N806
         obj = CoreDataObject('test_type')
 
         with pytest.raises(DataSourceError):

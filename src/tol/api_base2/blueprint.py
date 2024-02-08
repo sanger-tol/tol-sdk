@@ -5,7 +5,6 @@
 import urllib
 from collections import ChainMap
 from itertools import chain
-from typing import Optional
 
 from flask import Blueprint, request
 
@@ -13,14 +12,9 @@ from .controller import Controller
 from .misc import (
     AggregationBody,
     AggregationParameters,
-    Authenticator,
     JsonApiRequestBody,
     ListGetParamaters,
     RelataionshipHopsParser
-)
-from .misc.auth_context import (
-    CtxGetter,
-    default_ctx_getter
 )
 from ..api_client2.exception import BaseRuntimeException
 from ..api_client2.parser import DefaultParser
@@ -132,9 +126,7 @@ def _config_blueprint(
 
 def _core_blueprint(
     data_source_dict: dict[str, DataSource],
-    url_prefix: str,
-    context_getter: CtxGetter,
-    authenticator: Optional[Authenticator] = None,
+    url_prefix: str
 ) -> DataBlueprint:
     """
     Creates the "core" blueprint, responsible for managing
@@ -143,12 +135,6 @@ def _core_blueprint(
     """
 
     data_handler = DataBlueprint(url_prefix=url_prefix)
-
-    if authenticator is not None:
-        @data_handler.before_request
-        def authenticate() -> None:
-            auth_context = context_getter()
-            authenticator(auth_context)
 
     def __new_controller(object_type: str) -> Controller:
         data_source = data_source_dict[object_type]
@@ -273,14 +259,8 @@ def _core_blueprint(
 def data_blueprint(
     *data_sources: DataSource,
     url_prefix: str = '/data',
-    config_prefix: str = '/_config',
-    authenticator: Optional[Authenticator] = None
+    config_prefix: str = '/_config'
 ) -> DataBlueprint:
-    """
-    Given a tuple of DataSource instances, this provides a flask
-    Blueprint instance for routing the basic operations on said
-    DataSource instances as endpoints.
-    """
 
     config_bp = _config_blueprint(
         config_prefix,
@@ -289,9 +269,7 @@ def data_blueprint(
     )
     core_bp = _core_blueprint(
         DataSourceDict(*data_sources),
-        url_prefix,
-        default_ctx_getter,
-        authenticator=authenticator
+        url_prefix
     )
     core_bp.register_blueprint(config_bp)
 
@@ -300,9 +278,7 @@ def data_blueprint(
 
 def custom_blueprint(
     url_prefix: str = '/custom',
-    name: str = 'custom',
-    authenticator: Optional[Authenticator] = None,
-    context_getter: CtxGetter = default_ctx_getter
+    name: str = 'custom'
 ) -> DataBlueprint:
     """
     Given a tuple of DataSource instances, this provides a flask
@@ -310,11 +286,5 @@ def custom_blueprint(
     """
 
     custom_handler = CustomBlueprint(name=name, url_prefix=url_prefix)
-
-    if authenticator is not None:
-        @custom_handler.before_request
-        def authenticate() -> None:
-            auth_context = context_getter()
-            authenticator(auth_context)
 
     return custom_handler

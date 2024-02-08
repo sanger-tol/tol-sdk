@@ -67,7 +67,7 @@ class DefaultDataLoader():
         if self._audit is None:
             return
         new_datetime = datetime.now(pytz.UTC)
-        CoreDataObject = self._audit.data_object_factory # noqa N806
+        CoreDataObject = self._audit.data_object_factory  # noqa N806
         audit_obj = CoreDataObject(
             'data_load_event',
             id_=self._loader_name,
@@ -94,7 +94,7 @@ class GroupStatterDataLoader(DefaultDataLoader):
 
         class DefaultGroupStatToDataObjectConverter(DataObjectToDataObjectConverter):
             def convert(self, data_object: DataObject) -> Iterable[DataObject]:
-                CoreDataObject = self._data_object_factory # noqa N806
+                CoreDataObject = self._data_object_factory  # noqa N806
                 # expecting: {'id123': {'count': count}}
                 for k, v in data_object.items():
                     source_object_type = data_loader._source_object_type

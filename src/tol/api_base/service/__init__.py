@@ -8,4 +8,4 @@ from .user import *  # noqa
 from .role import *  # noqa
 from .auth import *  # noqa
 from .state import *  # noqa
-from .environment import * # noqa
+from .environment import *  # noqa

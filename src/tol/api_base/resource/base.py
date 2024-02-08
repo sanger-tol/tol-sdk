@@ -14,7 +14,7 @@ LIST_GET_PARAMS_DICT = {
     'page': {
         'in': 'query',
         'type': 'integer',
-        'description': 'The page of the results. Default is 1 if \'page_size\' is set.' # noqa
+        'description': 'The page of the results. Default is 1 if \'page_size\' is set.'  # noqa
     },
     'page_size': {
         'in': 'query',

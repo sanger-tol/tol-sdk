@@ -71,5 +71,6 @@ class FeedbackProcessor(MessageProcessor):
 
 class NoOpProcessor(MessageProcessor):
     """ No operation dummy feedback processor for testing """
+
     def process_message(self, headers, body):
         return True

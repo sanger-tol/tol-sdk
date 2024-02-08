@@ -26,16 +26,21 @@ class R1(BaseModel):
     __tablename__ = 'r1'
 
     id_override: Mapped[str] = mapped_column(primary_key=True)
+
     r2_foreign_key: Mapped[str] = mapped_column(
         ForeignKey('r2.id'),
         nullable=True
     )
-
     r2_d2: Mapped['R2'] = relationship(
         back_populates='mine_r1s'
     )
+
     r3_plz: Mapped[List['R3']] = relationship(
         back_populates='funny_r1'
+    )
+
+    users: Mapped[list['User']] = relationship(  # noqa F821
+        back_populates='this_r1'
     )
 
     @classmethod

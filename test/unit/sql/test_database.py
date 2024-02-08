@@ -73,6 +73,7 @@ class _OverrideIdModel:
 
 class _SessionMock:
     """Mocks an SqlAlchemy session"""
+
     def __init__(self, return_value: Any) -> None:
         self.__return_value = return_value
         self.__calls: list[

@@ -13,7 +13,7 @@ class FilterUtils:
     def parse_to_datasource_filter(cls, __key: str, __value: str) -> DataSourceFilter:
         try:
             filter_dict = json.loads(__value)
-            if type(filter_dict) is dict:
+            if isinstance(filter_dict, dict):
                 dsf = DataSourceFilter(**filter_dict)
                 return dsf
             raise BadQueryArgError(

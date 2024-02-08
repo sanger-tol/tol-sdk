@@ -22,13 +22,17 @@ if typing.TYPE_CHECKING:
     from ...core import DataSource
 
 
-OPERATOR_MAP: dict[str, type] = {
+READ_OPERATOR_MAP: dict[str, type] = {
     'aggregate': Aggregator,
     'count': Counter,
-    'delete': Deleter,
     'detailGet': DetailGetter,
     'listGet': PageGetter,
     'relational': Relational,
+}
+
+
+WRITE_OPERATOR_MAP: dict[str, type] = {
+    'delete': Deleter,
     'update': Updater,
     'upsert': Upserter
 }
@@ -94,11 +98,16 @@ class DefaultOperatorConfig(OperatorConfig):
         datasource: DataSource
     ) -> OperatorDict:
 
-        operators = [
-            k for k, v in OPERATOR_MAP.items()
+        write_operators = [
+            k for k, v in WRITE_OPERATOR_MAP.items()
+            if isinstance(datasource, v)
+        ]
+        read_operators = [
+            k for k, v in READ_OPERATOR_MAP.items()
             if isinstance(datasource, v)
         ]
 
         return {
-            'noauth': operators
+            'noauth': read_operators,
+            'auth': write_operators
         }

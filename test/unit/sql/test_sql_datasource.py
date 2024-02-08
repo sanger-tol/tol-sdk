@@ -25,7 +25,7 @@ class _MockDataObject:
         return self.__id
 
     @property
-    def type(self): # noqa A007
+    def type(self):  # noqa A007
         return self.__type
 
     @property
@@ -35,6 +35,7 @@ class _MockDataObject:
 
 class _MockIdentityConverter(Converter):
     """Just returns the given iterable"""
+
     def convert(self, m):
         return m
 

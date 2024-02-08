@@ -471,7 +471,7 @@ class ElasticDataSource(
 
     def __make_dates(self, object_type, attribute_name, value):
         if self.attribute_types[object_type][attribute_name] == 'datetime' and \
-                type(value) == str:
+                isinstance(value, str):
             return parser.parse(value)
         return value
 

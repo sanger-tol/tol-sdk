@@ -10,6 +10,7 @@ from .ext import ExtDefault, ExtOverride
 from .r1 import R1
 from .r2 import R2
 from .r3 import R3
+from .user_mixin import TestUserMixin  # noqa F401
 
 delete_models_list = [
     A,

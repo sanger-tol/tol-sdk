@@ -96,7 +96,7 @@ class ApiDataSource(DataSource, Upserter):
         return self.get_by_link(url, params={**kwargs, 'page': page})
 
     def unpack(self, json):
-        if type(json['data']) is list:
+        if isinstance(json['data'], list):
             ret = []
             for obj in json['data']:
                 ret.append(self.new_or_from_cache(obj))

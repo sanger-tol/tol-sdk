@@ -76,7 +76,7 @@ class TestStsSpeciesToElasticSpeciesConverter(TestCase):
             data_object_factory=destination.data_object_factory
         )
 
-        CoreDataObject = source.data_object_factory # noqa N806
+        CoreDataObject = source.data_object_factory  # noqa N806
         sequencing_material_status = CoreDataObject(
             id_='test1',
             type_='sequencing_material_status',
