@@ -72,13 +72,18 @@ class TestAuthenticator(TestCase):
 
     def create_app(self):
         app = Flask(__name__)
+        app.testing = True
+
         blueprint = _core_blueprint(
             {'lol': _MockDataSource({}, ctx_getter=self.mock_ctx_get)},
-            '/data',
-            self.mock_ctx_get,
-            authenticator=self.mock_authenticate
+            '/data'
         )
         app.register_blueprint(blueprint)
+
+        @app.before_request
+        def authenticate() -> None:
+            auth_context = self.mock_ctx_get()
+            self.mock_authenticate(auth_context)
         return app
 
     def test_no_token(self):
@@ -174,16 +179,24 @@ class TestQuickAndDirtyAuthFlask(TestCase):
 
     def create_app(self):
         app = Flask(__name__)
+        app.testing = True
+
         blueprint = _core_blueprint(
             {'lol': _MockDataSource({}, ctx_getter=default_ctx_getter)},
-            '/data',
-            default_ctx_getter,
-            authenticator=quick_and_dirty_auth(
-                'test-token',
-                excluded_methods=['DELETE']  # can delete without token
-            ),
+            '/data'
         )
         app.register_blueprint(blueprint)
+
+        authenticator = quick_and_dirty_auth(
+            'test-token',
+            excluded_methods=['DELETE']
+        )
+
+        @app.before_request
+        def authenticate() -> None:
+            auth_context = default_ctx_getter()
+            authenticator(auth_context)
+
         return app
 
     def test_no_token(self):

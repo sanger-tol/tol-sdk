@@ -64,8 +64,7 @@ class _DataSourceDict(Mapping):
 
 data_bp = _core_blueprint(
     _DataSourceDict(),
-    '/data',
-    lambda: None
+    '/data'
 )
 
 

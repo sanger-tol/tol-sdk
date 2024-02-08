@@ -32,6 +32,9 @@ class Model(ABC):
     The properties can be implemented in many different ways, but
     are necessary on every child class that is exposed to
     SqlDataSource.
+
+    Relationships that start with an underscore (e.g. `User._tokens`)
+    will be ignored by these methods.
     """
 
     @classmethod
@@ -202,19 +205,27 @@ def model_base() -> Type[DefaultModel]:
         @classmethod
         def get_to_many_relationship_config(cls) -> dict[str, str]:
             relationships = inspect(cls).relationships
-            return {
+            all_ = {
                 cls.__get_relationshship_name(r): cls.__get_relationship_target(r)
                 for r in relationships
                 if cls.__is_to_many_relationship(r)
+            }
+            return {
+                k: v for k, v in all_.items()
+                if not k.startswith('_')
             }
 
         @classmethod
         def get_to_one_relationship_config(cls) -> dict[str, str]:
             relationships = inspect(cls).relationships
-            return {
+            all_ = {
                 cls.__get_relationshship_name(r): cls.__get_relationship_target(r)
                 for r in relationships
                 if cls.__is_to_one_relationship(r)
+            }
+            return {
+                k: v for k, v in all_.items()
+                if not k.startswith('_')
             }
 
         @classmethod

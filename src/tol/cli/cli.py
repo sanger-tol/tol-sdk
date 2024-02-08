@@ -106,7 +106,8 @@ def up(ctx, ui, db, api):
     if api:
         click.secho('API: ' + ' '.join(get_container_urls(f'{service}-api')), fg='yellow')
     if ui:
-        click.secho('UI: ' + ' '.join(get_container_urls(f'{service}-ui')), fg='yellow')
+        click.secho('UI: ' + ' '.join(get_container_urls(f'{service}-ui', protocol='https')),
+                    fg='yellow')
 
 
 # Log a ToL service
@@ -181,7 +182,7 @@ def upgrade(ctx):
     service = get_app()
     click.echo('Running alembic upgrade...')
     command = f'docker compose build {service}-api && docker compose --env-file {env_file} ' \
-        + f'run {service}-alembic alembic upgrade head'
+        + f'run --rm {service}-alembic alembic upgrade head'
     click.secho(command, fg='green')
     run(command)
 
@@ -195,7 +196,7 @@ def migration(ctx, message):
     service = get_app()
     click.echo('Creating alembic migration...')
     command = f'docker compose build {service}-api && docker compose --env-file {env_file} ' \
-        + f'run {service}-alembic alembic revision -m "{message}"'
+        + f'run --rm {service}-alembic alembic revision -m "{message}"'
     click.secho(command, fg='green')
     run(command)
 
@@ -293,12 +294,12 @@ def get_container_ids(name_prefix):
     return ids
 
 
-def get_container_urls(name_prefix):
+def get_container_urls(name_prefix, protocol='http'):
     urls = []
     container_ids = get_container_ids(name_prefix)
     for container_id in container_ids:
         if container_id != '':
             mapping = run_capture(f'docker container port {container_id}')
             if mapping != '':
-                urls.append('http://' + mapping.split()[2])
+                urls.append(f'{protocol}://' + mapping.split()[2])
     return urls

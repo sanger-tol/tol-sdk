@@ -17,7 +17,7 @@ from tol.core import (
 class TestDataObjectToDataObjectConverter(DataObjectToDataObjectConverter):
 
     def convert(self, data_object: DataObject) -> Iterable[DataObject]:
-        CoreDataObject = self._data_object_factory # noqa N806
+        CoreDataObject = self._data_object_factory  # noqa N806
         # if data_object relations data = data else data.attributes
         ret1 = CoreDataObject(
             id_=f'{data_object.id}_test',
@@ -53,7 +53,7 @@ class TestDataObjectConverter(TestCase):
             data_object_factory=destination.data_object_factory
         )
 
-        CoreDataObject = source.data_object_factory # noqa N806
+        CoreDataObject = source.data_object_factory  # noqa N806
         # if data_object relations data = data else data.attributes
         obj1 = CoreDataObject(
             id_='test1',
@@ -98,7 +98,7 @@ class TestDataObjectConverter(TestCase):
         converter = TestDataObjectToDataObjectConverter(
             data_object_factory=destination.data_object_factory
         )
-        CoreDataObject = source.data_object_factory # noqa N806
+        CoreDataObject = source.data_object_factory  # noqa N806
         # if data_object relations data = data else data.attributes
         obj1 = CoreDataObject(
             id_='test1',

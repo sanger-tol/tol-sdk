@@ -5,18 +5,17 @@
 from tol.sql.database import DefaultDatabase
 
 from .. import models
-from ..base_case import DatabaseTestCase, models_list, session_factory
 
 
-class TestDefaultDatabase(DatabaseTestCase):
-    def test_count_none(self):
+class TestDefaultDatabase:
+    def test_count_none(self, session_factory, models_list):
         """No rows -> count = 0"""
 
         db = DefaultDatabase(session_factory, models_list)
         count = db.count('a')
         assert count == 0
 
-    def test_count_with_added(self):
+    def test_count_with_added(self, session_factory, models_list):
         # add the models
         session = session_factory()
         for i in range(7):
@@ -30,7 +29,7 @@ class TestDefaultDatabase(DatabaseTestCase):
         count = db.count('a')
         assert count == 7
 
-    def test_get_to_one_relation_none(self):
+    def test_get_to_one_relation_none(self, session_factory, models_list):
         """instance_to_one_relations with no instance set"""
 
         # add an R1 without a to-one R2
@@ -48,7 +47,7 @@ class TestDefaultDatabase(DatabaseTestCase):
         )
         assert r2_relation is None
 
-    def test_get_to_one_relation_set(self):
+    def test_get_to_one_relation_set(self, session_factory, models_list):
         """instance_to_one_relations with one instance set"""
         # add an R1 alongside a to-one R2
         session = session_factory()
@@ -72,7 +71,7 @@ class TestDefaultDatabase(DatabaseTestCase):
         assert r2_relation is not None
         assert r2_relation.instance_id == 'lol'
 
-    def test_get_to_many_relations_empty(self):
+    def test_get_to_many_relations_empty(self, session_factory, models_list):
         """instance_to_many_relations with empty result"""
 
         # add an R1 without any R3's
@@ -90,7 +89,7 @@ class TestDefaultDatabase(DatabaseTestCase):
         )
         assert list(r3_relations) == []
 
-    def test_get_to_many_relations_set(self):
+    def test_get_to_many_relations_set(self, session_factory, models_list):
         """
         get_to_many_relations with a populated result.
 
@@ -126,7 +125,7 @@ class TestDefaultDatabase(DatabaseTestCase):
         for i, rel in enumerate(r3_relations, start=1):
             assert rel.instance_id == str(i)
 
-    def test_delete(self):
+    def test_delete(self, session_factory, models_list):
         """Delete works when given a good tablename and instance-ID"""
 
         # add an "A"
@@ -150,7 +149,7 @@ class TestDefaultDatabase(DatabaseTestCase):
         session.close()
         assert len(existing_a_s) == 0
 
-    def test_upsert_not_existing(self):
+    def test_upsert_not_existing(self, session_factory, models_list):
         """Upsert on non-existant row causes an insert"""
 
         # add an "A"
@@ -183,7 +182,7 @@ class TestDefaultDatabase(DatabaseTestCase):
         )
         session.close()
 
-    def test_upsert_on_existing(self):
+    def test_upsert_on_existing(self, session_factory, models_list):
         """Upsert on existing row causes an update"""
 
         # upsert a new version

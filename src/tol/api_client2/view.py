@@ -58,7 +58,6 @@ class DefaultView(View):
         include_all_to_ones: bool = False,
         hop_limit: Optional[int] = None
     ) -> None:
-
         """
         Args:
 

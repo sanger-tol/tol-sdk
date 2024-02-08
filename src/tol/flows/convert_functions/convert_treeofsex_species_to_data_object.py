@@ -19,7 +19,7 @@ def convert_treeofsex_species_to_data_object(species, target_datasource):
                 'common_name': s['common name'],
                 'hybrid': s['Hybrid'],
                 'source_hybrid': s['source: Hybrid'],
-                'the_plant_list_v1_1': s['ThePlantListV1.1 (1=accepted at species level,-1=recognized synonym,0=other)'], # noqa E501
+                'the_plant_list_v1_1': s['ThePlantListV1.1 (1=accepted at species level,-1=recognized synonym,0=other)'],  # noqa E501
                 'name_in_the_plant_list_v1_1': s['Name in ThePlantListV1.1'],
                 'sexual_system': s['Sexual system'],
                 'source_sexual_system': s['source: Sexual System'],
@@ -44,7 +44,7 @@ def convert_treeofsex_species_to_data_object(species, target_datasource):
                 'source_karyotype': s['source: karyotype'],
                 'molecular_basis': s['molecular basis (dosage,Y dominant,W dominant)'],
                 'source_molecular_basis': s['source: molecular basis'],
-                'genotypic': s['genotypic (male heterogametic,female heterogametic,GSD,polygenic)'], # noqa E501
+                'genotypic': s['genotypic (male heterogametic,female heterogametic,GSD,polygenic)'],  # noqa E501
                 'source_genotypic': s['source: genotypic'],
                 'notes': s['notes,comments'],
                 'email': s['entry email'],

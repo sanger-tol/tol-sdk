@@ -22,6 +22,7 @@ class StsDataSource(DataSource, Upserter):
     endpoints in STS via the standard DataSource methods (upsert, etc.)
     There is also direct access to any endpoint via the native_***() methods
     """
+
     def __init__(self, config: Dict):
         super().__init__(config, expected=['url', 'key'])
 

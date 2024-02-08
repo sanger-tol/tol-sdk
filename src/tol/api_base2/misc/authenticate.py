@@ -10,12 +10,13 @@ from .auth_context import AuthContext
 from ...api_client2.exception import UnauthenticatedError
 
 
-Authenticator = Callable[[AuthContext], None]
+Authenticator = Callable[[AuthContext, Optional[str]], None]
 """
 A `Callable` that should authenticate the user by:
 
 - adding user details, such as `user_id`, to the
-  given request-global `AuthContext`
+  given request-global `AuthContext`, given a
+  `str` token (or `None`)
 - raising an `UnauthenticatedError` if invalid
 """
 
@@ -26,6 +27,8 @@ MethodGetter = Callable[[], str]
 
 def quick_and_dirty_auth(
     omnipotent_token: str,
+
+    omnipotent_user_id: str = '666666',
     token_getter: TokenGetter = lambda h: request.headers.get(h),
     token_header: str = 'token',
     method_getter: MethodGetter = lambda: request.method,
@@ -44,7 +47,7 @@ def quick_and_dirty_auth(
     DO NOT use this function, if it can be avoided!
     """
 
-    def __authenticator(_: AuthContext) -> None:
+    def __authenticator(ctx: AuthContext) -> None:
         method = method_getter()
         if method in excluded_methods:
             return
@@ -58,5 +61,7 @@ def quick_and_dirty_auth(
             raise UnauthenticatedError(
                 'The token provided is invalid.'
             )
+
+        ctx.user_id = omnipotent_user_id
 
     return __authenticator

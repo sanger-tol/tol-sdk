@@ -6,12 +6,11 @@ from tol.sql.database import DefaultDatabase
 from tol.sql.sort import DefaultDatabaseSorter
 
 from .. import models
-from ..base_case import DatabaseTestCase, models_list, session_factory
 
 
-class TestDefaultDatabaseSorter(DatabaseTestCase):
+class TestDefaultDatabaseSorter:
 
-    def test_sort_ascending(self):
+    def test_sort_ascending(self, session_factory, models_list):
 
         # add the models
         session = session_factory()
@@ -35,7 +34,7 @@ class TestDefaultDatabaseSorter(DatabaseTestCase):
         string_columns = [int(a.string_column) for a in a_list]
         assert string_columns == list(range(14, 21))
 
-    def test_sort_descending(self):
+    def test_sort_descending(self, session_factory, models_list):
 
         # add the models
         session = session_factory()

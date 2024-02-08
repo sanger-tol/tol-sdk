@@ -35,7 +35,7 @@ class TestElasticSequencingRequestToStsSequencingRequestConverter(TestCase):
             data_object_factory=destination.data_object_factory
         )
 
-        CoreDataObject = source.data_object_factory # noqa N806
+        CoreDataObject = source.data_object_factory  # noqa N806
         # if data_object relations data = data else data.attributes
         obj1 = CoreDataObject(
             id_='test1',

@@ -141,6 +141,7 @@ class UnauthenticatedError(BaseRuntimeException):
     Raise on any error condition that warrants a
     401: Unauthorized HTTP status code.
     """
+
     def __init__(self, detail: str) -> None:
         errors = [{
             'title': 'Unauthorized',

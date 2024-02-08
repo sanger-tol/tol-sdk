@@ -87,7 +87,7 @@ class TreevalDataSource(
         if 'Abnormal contamination report' in decon_data:
             is_abnormal = 'true'
 
-        return tot_removed, tot_removed_pc, count_removed,\
+        return tot_removed, tot_removed_pc, count_removed, \
             count_removed_pc, largest_removed, is_abnormal
 
     def _parse_description_for_stats(self, description):
@@ -160,7 +160,7 @@ class TreevalDataSource(
 
         # Parse decontamination
         decon_data = str(fields['customfield_12802'])
-        tot_removed, tot_removed_pc, count_removed, count_removed_pc,\
+        tot_removed, tot_removed_pc, count_removed, count_removed_pc, \
             largest_removed, is_abnormal = self._parse_decontamination_report(decon_data)
 
         # Assignee

@@ -5,15 +5,14 @@
 from tol.sql.database import DefaultDatabase
 
 from .. import models
-from ..base_case import DatabaseTestCase, models_list, session_factory
 
 
-class TestLogBase(DatabaseTestCase):
+class TestLogBase:
     """
     Tests `LogBase` using a real `Database` instance.
     """
 
-    def test_first_upsert(self):
+    def test_first_upsert(self, session_factory, models_list):
         """
         `modified_at` and `modified_by` are set on first
         `Database().upsert()`
@@ -31,7 +30,7 @@ class TestLogBase(DatabaseTestCase):
         assert fetched.modified_at is not None
         assert fetched.modified_by == '101'
 
-    def test_second_upsert(self):
+    def test_second_upsert(self, session_factory, models_list):
         """
         `Database().upsert()` sets `modified_at` and `modified_by`
         on a previously existing `LogBase` instance
@@ -62,7 +61,7 @@ class TestLogBase(DatabaseTestCase):
         assert fetched_second.modified_at is not None
         assert fetched_second.modified_by == '202'
 
-    def test_delete(self):
+    def test_delete(self, session_factory, models_list):
         """`Database().delete()` is possible for a `LogBase` instance"""
 
         db = DefaultDatabase(session_factory, models_list)
