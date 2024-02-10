@@ -162,3 +162,73 @@ class TestEndToEnd:
         )
 
         assert len(ninth) == 2
+
+    @against(elastic)
+    def test_group_statter(self, data_source: OperableDataSource):
+        """
+        Upsert 3 `DataObject` instances, and get them as a list with filters
+        """
+
+        ids = ['hype', 'train', 'max']
+
+        # none of them are present yet
+        first = list(
+            data_source.get_by_id('root', ids)
+        )
+
+        assert first == [None, None, None]
+
+        data_objects = [
+            data_source.data_object_factory(
+                'root',
+                id_,
+                attributes={'str_column': f'test_{id_}',
+                            'int_column': i,
+                            'datetime_column': datetime(2024, 1, i + 1, 0, 0, 0),
+                            'bool_column': True if i % 2 == 0 else False,
+                            'list_column': ['a', 'b', 'c'] if i == 0 else ['x', 'y', 'z']}
+            )
+            for i, id_ in enumerate(ids)
+        ]
+
+        data_source.upsert('root', data_objects)
+        time.sleep(5)  # Let Elastic settle down after the upsert
+
+        stats = list(data_source.get_stats(
+            object_type='root',
+            group_by='bool_column',
+            stats_fields=['int_column', 'datetime_column'],
+            stats=['min', 'max', 'sum'],
+            object_filters=None
+        ))
+        assert len(stats) == 2
+        false_stats = next(iter(stats[0].values()))
+        assert false_stats['count'] == 1
+        assert false_stats['int_column_min'] == 1
+        assert false_stats['int_column_max'] == 1
+        assert false_stats['int_column_sum'] == 1
+        assert false_stats['datetime_column_min'] == datetime(2024, 1, 2, 0, 0, 0)
+        assert false_stats['datetime_column_max'] == datetime(2024, 1, 2, 0, 0, 0)
+        # Sum makes no sense for datetimes
+        true_stats = next(iter(stats[1].values()))
+        assert true_stats['count'] == 3
+        assert true_stats['int_column_min'] == 0
+        assert true_stats['int_column_max'] == 42
+        assert true_stats['int_column_sum'] == 44
+        assert true_stats['datetime_column_min'] == datetime(2020, 1, 1, 0, 0, 0)
+        assert true_stats['datetime_column_max'] == datetime(2024, 1, 3, 0, 0, 0)
+
+        stats = list(data_source.get_stats(
+            object_type='root',
+            group_by='bool_column',
+            stats_fields=['list_column'],
+            stats=['union'],
+            object_filters=None
+        ))
+        assert len(stats) == 2
+        false_stats = next(iter(stats[0].values()))
+        assert false_stats['count'] == 1
+        assert false_stats['list_column_union'] == ['x', 'y', 'z']
+        true_stats = next(iter(stats[1].values()))
+        assert true_stats['count'] == 3
+        assert true_stats['list_column_union'] == ['a', 'b', 'c', 'x', 'y', 'z']
