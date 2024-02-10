@@ -542,14 +542,16 @@ class ElasticDataSource(
             aggregation['counts']['aggregations'] = {}
             for stats_field in stats_fields:
                 for stat in stats:
-                    aggregation['counts']['aggregations'][f'{stats_field}_{stat}'] = \
-                        {stat: {'field': self._field_or_keyword(object_type, stats_field)}}
+                    agg = {stat: {'field': self._field_or_keyword(object_type, stats_field)}}
+                    if stat == 'union':
+                        # This is a bespoke aggregation
+                        agg = self.__get_union_aggregation(object_type, stats_field)
+                    aggregation['counts']['aggregations'][f'{stats_field}_{stat}'] = agg
 
         if after_key is not None:
             aggregation['counts']['composite']['after'] = {
                 index: after_key
             }
-
         agg_page = self.get_aggregations(
             object_type,
             aggregations=aggregation,
@@ -580,6 +582,44 @@ class ElasticDataSource(
             all_stats[v['key'][key]] = stats_values
 
         return after_key, all_stats
+
+    def __get_union_aggregation(self, object_type, field):
+        """
+        This function is building up a union of all elements of a list in
+        the aggregated field
+        init_script: This is what is run at the start of each bucket
+        map_script: This builds up a list, PER SHARD, of the elements in all
+        records in the bucket
+        combine_script: This just returns the per-shard list in our case
+        reduce_script: This combines the per-shard lists into the final list
+        See information on scripted metrics for Elastic for more details
+        """
+        field_or_keyword = self._field_or_keyword(object_type, field)
+        agg = {
+            'scripted_metric': {
+                'init_script': 'state.list = []',
+                'map_script': f"""
+                    for (element in doc['{field_or_keyword}']) {{
+                        if (!state.list.contains(element)) {{
+                            state.list.add(element)
+                        }}
+                    }}
+                """,
+                'combine_script': 'return state.list',
+                'reduce_script': """
+                    ArrayList ret = [];
+                    for (a in states) {
+                        for (element in a) {
+                            if (!ret.contains(element)) {
+                                ret.add(element)
+                            }
+                        }
+                    }
+                    return ret;
+                """
+            }
+        }
+        return agg
 
     def get_count(
         self,

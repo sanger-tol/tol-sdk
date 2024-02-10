@@ -79,7 +79,7 @@ class ElasticFixture(DataSourceFixture):
             attributes={
                 'str_column': 'abc',
                 'int_column': 42,
-                'datetime_column': datetime.now(),
+                'datetime_column': datetime(2020, 1, 1, 0, 0, 0),
                 'bool_column': True
             }
         )

@@ -508,7 +508,7 @@ class TestElasticDataSource(TestCase):
         eds.es.count.assert_called_once()
         self.assertEqual(12345, returned)
 
-    def test_get_stats(self):
+    def test_get_stats_standard(self):
         _, eds = mock_elastic_data_source()
 
         first_ret = {
@@ -588,6 +588,66 @@ class TestElasticDataSource(TestCase):
                                    'datefield_max': None,
                                    'field2_min': None,
                                    'field2_max': None}}, second)
+        with self.assertRaises(StopIteration):
+            next(returned)
+        self.assertEqual(eds.es.search.call_count, 2)
+
+    def test_get_stats_union(self):
+        _, eds = mock_elastic_data_source()
+
+        first_ret = {
+            'aggregations': {
+                'counts': {
+                    'after_key': {
+                        'test-obj-type': '1234'
+                    },
+                    'buckets': [
+                        {
+                            'key': {
+                                'test-obj-type': '1111'
+                            },
+                            'doc_count': 20,
+                            'field4_union': {
+                                'value': ['val1', 'val2', 'val3']
+                            }
+                        },
+                        {
+                            'key': {
+                                'test-obj-type': '1112'
+                            },
+                            'doc_count': 18,
+                            'field4_union': {
+                                'value': None
+                            }
+                        }
+                    ]
+                }
+            }
+        }
+
+        second_ret = {
+            'aggregations': {
+                'counts': {
+                    'buckets': []
+                }
+            }
+        }
+
+        eds.es.search.side_effect = [
+            first_ret,
+            second_ret
+        ]
+
+        returned = eds.get_stats('obj_type',
+                                 group_by='field1',
+                                 stats_fields=['field4'],
+                                 stats=['union'])
+        first = next(returned)
+        self.assertEqual({'1111': {'count': 20,
+                                   'field4_union': ['val1', 'val2', 'val3']}}, first)
+        second = next(returned)
+        self.assertEqual({'1112': {'count': 18,
+                                   'field4_union': None}}, second)
         with self.assertRaises(StopIteration):
             next(returned)
         self.assertEqual(eds.es.search.call_count, 2)
