@@ -341,31 +341,29 @@ class ElasticDataSource(
                 if type(v) is list:
                     for constraint in v:
                         search_value = constraint.get('value')
+                        negated = constraint.get('negate', False)
+                        elastic_section = 'must_not' if negated else 'must'
                         op = constraint.get('op')
                         if op in ['gt', 'gte', 'lt', 'lte']:
-                            query['bool']['must'].append({
+                            query['bool'][elastic_section].append({
                                 'range': {search_field: {op: search_value}}
                             })
                         if op in ['eq']:
-                            query['bool']['must'].append({
-                                'match': {search_field: search_value}
-                            })
-                        if op in ['neq']:
-                            query['bool']['must_not'].append({
+                            query['bool'][elastic_section].append({
                                 'match': {search_field: search_value}
                             })
                         if op in ['contains']:
-                            query['bool']['must'].append({
+                            query['bool'][elastic_section].append({
                                 'wildcard': {
                                     search_field: {'value': f'{search_value}*', 'boost': 1.0}
                                 }
                             })
                         if op in ['exists']:
-                            query['bool']['must'].append({'exists': {'field': search_field}})
-                        if op in ['not_exists']:
-                            query['bool']['must_not'].append({'exists': {'field': search_field}})
+                            query['bool'][elastic_section].append({
+                                'exists': {'field': search_field}
+                            })
                         if op in ['in_list']:
-                            query['bool']['must'].append({
+                            query['bool'][elastic_section].append({
                                 'terms': {search_field: search_value, 'boost': 1.0}
                             })
         return query

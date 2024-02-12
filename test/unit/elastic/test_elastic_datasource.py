@@ -467,7 +467,7 @@ class TestElasticDataSource(TestCase):
                 {'op': 'exists'}
             ],
             'field2': [
-                {'op': 'not_exists'}
+                {'op': 'exists', 'negate': True}
             ],
             'field3': [
                 {'op': 'lt', 'value': 16},
@@ -483,7 +483,7 @@ class TestElasticDataSource(TestCase):
                 {'op': 'eq', 'value': 5}
             ],
             'field7': [
-                {'op': 'neq', 'value': 'haberdashery'}
+                {'op': 'eq', 'value': 'haberdashery', 'negate': True}
             ],
             'datefield': [
                 {'op': 'gt', 'value': '2022-01-01'},
