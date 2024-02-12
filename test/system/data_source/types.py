@@ -11,6 +11,7 @@ from tol.sql import model_base
 
 TEST_OBJECT_TYPES = (
     'root',
+    'related',
 )
 
 
