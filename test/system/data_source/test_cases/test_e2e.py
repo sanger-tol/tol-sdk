@@ -107,7 +107,7 @@ class TestEndToEnd:
 
         # Not exists filter
         f = DataSourceFilter()
-        f.and_ = {'str_column': [{'op': 'not_exists'}]}
+        f.and_ = {'str_column': [{'op': 'exists', 'negate': True}]}
         fourth = list(
             data_source.get_list('root', object_filters=f)
         )
@@ -137,7 +137,7 @@ class TestEndToEnd:
         # Int not equal
         f = DataSourceFilter()
         f.and_ = {'int_column': [
-            {'op': 'neq', 'value': 2}
+            {'op': 'eq', 'value': 2, 'negate': True}
         ]}
         seventh = list(
             data_source.get_list('root', object_filters=f)
@@ -154,35 +154,65 @@ class TestEndToEnd:
         )
         assert len(eighth) == 1
 
-        # Int in_list
+        # Str not contains
         f = DataSourceFilter()
-        f.and_ = {'int_column': [
-            {'op': 'in_list', 'value': [0, 2]}
+        f.and_ = {'str_column': [
+            {'op': 'contains', 'value': 'test_tra', 'negate': True}
         ]}
         ninth = list(
             data_source.get_list('root', object_filters=f)
         )
-        assert len(ninth) == 2
+        assert len(ninth) == 3
 
-        # Relationship field
+        # Int in_list
         f = DataSourceFilter()
-        f.and_ = {'related_object.str_column': [
-            {'op': 'in_list', 'value': ['related_1', 'related_2']}
+        f.and_ = {'int_column': [
+            {'op': 'in_list', 'value': [0, 2]}
         ]}
         tenth = list(
             data_source.get_list('root', object_filters=f)
         )
         assert len(tenth) == 2
 
+        # Int not in_list
+        f = DataSourceFilter()
+        f.and_ = {'int_column': [
+            {'op': 'in_list', 'value': [0, 1, 2], 'negate': True}
+        ]}
+        eleventh = list(
+            data_source.get_list('root', object_filters=f)
+        )
+        assert len(eleventh) == 1
+
+        # Relationship field
+        f = DataSourceFilter()
+        f.and_ = {'related_object.str_column': [
+            {'op': 'in_list', 'value': ['related_1', 'related_2']}
+        ]}
+        twelfth = list(
+            data_source.get_list('root', object_filters=f)
+        )
+        assert len(twelfth) == 2
+
         # List field equals
         f = DataSourceFilter()
         f.and_ = {'list_column': [
             {'op': 'eq', 'value': 2}
         ]}
-        eleventh = list(
+        thirteenth = list(
             data_source.get_list('root', object_filters=f)
         )
-        assert len(eleventh) == 2
+        assert len(thirteenth) == 2
+
+        # List field equals
+        f = DataSourceFilter()
+        f.and_ = {'list_column': [
+            {'op': 'eq', 'value': 2, 'negate': True}
+        ]}
+        fourteenth = list(
+            data_source.get_list('root', object_filters=f)
+        )
+        assert len(fourteenth) == 2
 
     @against(elastic)  # list and dict columns not implemented on SqlDataSource
     def test_upsert(self, data_source: OperableDataSource):
