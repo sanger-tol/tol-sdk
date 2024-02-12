@@ -1,0 +1,60 @@
+# SPDX-FileCopyrightText: 2023 Genome Research Ltd.
+#
+# SPDX-License-Identifier: MIT
+
+from typing import Iterable
+
+from ...core import (
+    DataObject,
+    DataObjectToDataObjectConverter
+)
+
+
+class TolqcDataToElasticRunDataConverter(DataObjectToDataObjectConverter):
+
+    def __get_id(self, obj):
+        run_id = getattr(obj.run, 'run_id', 'NONE')
+        position = getattr(obj.run, 'element', 'NONE')
+        tag_index = getattr(obj, 'tag_index', 'NONE')
+        plate_number = getattr(obj, 'plate_number', 'NONE')
+
+        return f'{run_id}_{position}_{tag_index}_{plate_number}'
+
+    def convert(self, data_object: DataObject) -> Iterable[DataObject]:
+
+        target_attributes = {}
+
+        target_attributes['tag_index'] = data_object.tag_index
+        target_attributes['tag_sequence'] = data_object.tag1_id
+        target_attributes['tag2_sequence'] = data_object.tag2_id
+        target_attributes['manual_qc'] = data_object.lims_qc
+        target_attributes['auto_qc'] = data_object.auto_qc
+        target_attributes['qc'] = data_object.qc
+
+        if data_object.run is not None:
+            target_attributes['run'] = data_object.run.id
+            target_attributes['position'] = data_object.run.element
+            target_attributes['run_start'] = data_object.run.start
+            target_attributes['run_complete'] = data_object.run.complete
+
+            if data_object.run.platform is not None:
+                target_attributes['instrument_model'] = data_object.run.platform.model
+
+        if data_object.sample is not None:
+            target_attributes['sequencing_request'] = {'id': data_object.sample.id}
+            if data_object.sample.specimen is not None:
+                target_attributes['tolid'] = {'id': data_object.sample.specimen.id}
+                target_attributes['specimen'] = {'id': data_object.sample.specimen.supplied_name}
+                if data_object.sample.specimen.accession is not None:
+                    target_attributes['biospecimen_id'] = data_object.sample.specimen.accession.id
+                if data_object.sample.specimen.species is not None:
+                    target_attributes['species'] = {
+                        'id': data_object.sample.specimen.species.taxon_id}
+
+        ret = self._data_object_factory(
+            'run_data',
+            self.__get_id(data_object),
+            attributes=target_attributes
+        )
+
+        return iter([ret])

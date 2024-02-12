@@ -119,6 +119,7 @@ class MlwhDataSource(DataSource, ListGetter):
             'run_id': 'well_metrics.movie_name',
             'lims_run_id': 'well_metrics.pac_bio_run_name',
             'well_label': 'well_metrics.well_label',
+            'plate_number': 'well_metrics.plate_number',
             'run_start': 'well_metrics.run_start',
             'run_complete': 'well_metrics.run_complete',
             'lims_qc': (
