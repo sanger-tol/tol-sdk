@@ -165,24 +165,48 @@ class TestElasticDataSource(TestCase):
         ]
         generator = eds._action_for_upsert('index', objects, id_func=lambda x: x.id,
                                            field_prefix='')
-        expected = {'_op_type': 'update',
-                    'doc_as_upsert': True,
-                    '_index': 'index',
-                    '_id': 1,
-                    'doc': {'field1': 'value1', 'field2': 'value2',
-                            'datefield': dt.isoformat(),
-                            'tol_updated_at': dt.isoformat(),
-                            'tol_checksum': 'abc123',
-                            'uid': '1'}}
+        expected = {
+            '_op_type': 'update',
+            'scripted_upsert': True,
+            'upsert': {},
+            '_index': 'index',
+            '_id': 1,
+            'script': {
+                'source': eds._upsert_script,
+                'lang': 'painless',
+                'params': {
+                    'upsertWith': {
+                        'field1': 'value1',
+                        'field2': 'value2',
+                        'datefield': dt.isoformat(),
+                        'tol_updated_at': dt.isoformat(),
+                        'tol_checksum': 'abc123',
+                        'uid': '1'
+                    }
+                }
+            }
+        }
         self.assertEqual(expected, next(generator))
-        expected = {'_op_type': 'update',
-                    'doc_as_upsert': True,
-                    '_index': 'index',
-                    '_id': 2,
-                    'doc': {'field1': 'value3', 'field2': 'value4',
-                            'tol_updated_at': dt.isoformat(),
-                            'tol_checksum': 'abc123',
-                            'uid': '2'}}
+        expected = {
+            '_op_type': 'update',
+            'scripted_upsert': True,
+            'upsert': {},
+            '_index': 'index',
+            '_id': 2,
+            'script': {
+                'source': eds._upsert_script,
+                'lang': 'painless',
+                'params': {
+                    'upsertWith': {
+                        'field1': 'value3',
+                        'field2': 'value4',
+                        'tol_updated_at': dt.isoformat(),
+                        'tol_checksum': 'abc123',
+                        'uid': '2'
+                    }
+                }
+            }
+        }
         self.assertEqual(expected, next(generator))
         eds.helpers.bulk.return_value = (2, 0)
         eds.upsert('index', objects, id_func=lambda x: x.field1)
@@ -203,23 +227,47 @@ class TestElasticDataSource(TestCase):
         ]
         generator = eds._action_for_upsert('index', objects, id_func=lambda x: x.field1,
                                            field_prefix='pre')
-        expected = {'_op_type': 'update',
-                    'doc_as_upsert': True,
-                    '_index': 'index',
-                    '_id': 'value1',
-                    'doc': {'pre_field1': 'value1', 'pre_field2': 'value2',
-                            'pre_tol_updated_at': dt.isoformat(),
-                            'pre_tol_checksum': 'abc123',
-                            'uid': 'value1'}}
+        expected = {
+            '_op_type': 'update',
+            'scripted_upsert': True,
+            'upsert': {},
+            '_index': 'index',
+            '_id': 'value1',
+            'script': {
+                'source': eds._upsert_script,
+                'lang': 'painless',
+                'params': {
+                    'upsertWith': {
+                        'pre_field1': 'value1',
+                        'pre_field2': 'value2',
+                        'pre_tol_updated_at': dt.isoformat(),
+                        'pre_tol_checksum': 'abc123',
+                        'uid': 'value1'
+                    }
+                }
+            }
+        }
         self.assertEqual(expected, next(generator))
-        expected = {'_op_type': 'update',
-                    'doc_as_upsert': True,
-                    '_index': 'index',
-                    '_id': 'value3',
-                    'doc': {'pre_field1': 'value3', 'pre_field2': 'value4',
-                            'pre_tol_updated_at': dt.isoformat(),
-                            'pre_tol_checksum': 'abc123',
-                            'uid': 'value3'}}
+        expected = {
+            '_op_type': 'update',
+            'scripted_upsert': True,
+            'upsert': {},
+            '_index': 'index',
+            '_id': 'value3',
+            'script': {
+                'source': eds._upsert_script,
+                'lang': 'painless',
+                'params': {
+                    'upsertWith': {
+                        'pre_field1': 'value3',
+                        'pre_field2': 'value4',
+                        'pre_tol_updated_at': dt.isoformat(),
+                        'pre_tol_checksum': 'abc123',
+                        'uid': 'value3'
+                    }
+                }
+            }
+        }
         self.assertEqual(expected, next(generator))
         eds.helpers.bulk.return_value = (2, 0)
         eds.upsert('index', objects, id_func=lambda x: x.field1)

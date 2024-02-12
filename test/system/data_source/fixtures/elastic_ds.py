@@ -47,7 +47,6 @@ class ElasticFixture(DataSourceFixture):
 
         indices = self.__get_indices_names()
         elastic_ds = self.get_ds_instance()
-
         elastic_ds.es.indices.create(
             index=indices,
             ignore=[400]
@@ -69,21 +68,34 @@ class ElasticFixture(DataSourceFixture):
         Ensures that `ElasticDataSource().attribute_types`
         is fully populated by upserting an archetypal
         `DataObject` instance for each.
+        We do this directly in ElasticSearch to avoid
+        a chicken-and-egg situation
         """
 
         elastic_ds = self.get_ds_instance()
-
-        root_obj = elastic_ds.data_object_factory(
-            'root',
-            id_='#YOLO',
-            attributes={
+        elastic_ds.es.index(
+            index=get_prefix() + '-root',
+            id='#YOLO',
+            document={
                 'str_column': 'abc',
                 'int_column': 42,
                 'datetime_column': datetime(2020, 1, 1, 0, 0, 0),
-                'bool_column': True
+                'bool_column': True,
+                'related_object': {'id': '#REL'},
+                'list_column': ['item']
             }
         )
-        elastic_ds.upsert('root', [root_obj])
+        elastic_ds.es.index(
+            index=get_prefix() + '-related',
+            id='#REL',
+            document={
+                'str_column': 'abc',
+                'int_column': 42,
+                'datetime_column': datetime(2020, 1, 1, 0, 0, 0),
+                'bool_column': True,
+                'list_column': ['item']
+            }
+        )
 
 
 elastic = ElasticFixture()

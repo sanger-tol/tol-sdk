@@ -130,10 +130,17 @@ class ElasticDataSource(
             obj = self._add_uid(obj, uid)
             yield {
                 '_op_type': 'update',
-                'doc_as_upsert': True,
+                'scripted_upsert': True,
+                'upsert': {},
                 '_index': index,
                 '_id': uid,
-                'doc': obj
+                'script': {
+                    'source': self._upsert_script,
+                    'lang': 'painless',
+                    'params': {
+                        'upsertWith': obj
+                    }
+                }
             }
 
     def upsert(
@@ -175,29 +182,41 @@ class ElasticDataSource(
                                              field_prefix,
                                              candidate_key),
                 wait_for_completion=False
-
             )
 
     @property
     def _update_script(self):
         s = """
             for (param in params['upsertWith'].entrySet()) {
-                if (ctx._source[param.key] instanceof Map) {
-                    for (newParam in param.value.entrySet()) {
-                        ctx._source[param.key][newParam.key] = newParam.value;
-                    }
-                    continue
-                }
-                if (ctx._source[param.key] instanceof ArrayList) {
-                    for (newParam in param.value) {
-                        if(! ctx._source[param.key].contains(newParam)) {
-                            ctx._source[param.key].add(newParam)
+                if (param.value != null) {
+                    if (ctx._source[param.key] instanceof Map) {
+                        for (newParam in param.value.entrySet()) {
+                            ctx._source[param.key][newParam.key] = newParam.value;
                         }
+                        continue
                     }
-                    continue
+                    if (ctx._source[param.key] instanceof ArrayList) {
+                        for (newParam in param.value) {
+                            if(! ctx._source[param.key].contains(newParam)) {
+                                ctx._source[param.key].add(newParam)
+                            }
+                        }
+                        continue
+                    }
                 }
                 ctx._source[param.key] = param.value;
             }
+        """
+        return s.replace('\n', ' ')
+
+    @property
+    def _upsert_script(self):
+        s = f"""
+            if ( ctx.op == 'create' ) {{
+                ctx._source = params['upsertWith']
+            }} else {{
+                {self._update_script}
+            }}
         """
         return s.replace('\n', ' ')
 

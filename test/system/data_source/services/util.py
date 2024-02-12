@@ -4,6 +4,7 @@
 
 import os
 
+from tol.core.relationship import RelationshipConfig
 from tol.elastic import ElasticDataSource
 
 
@@ -17,12 +18,17 @@ def elastic_datasource(
     class_: ElasticDataSource = ElasticDataSource
 ) -> ElasticDataSource:
 
+    rc_root = RelationshipConfig()
+    rc_root.to_one = {
+        'related_object': 'related'
+    }
+
     return class_(
         {
             'uri': os.environ['ELASTIC_URI'],
             'user': os.environ['ELASTIC_USER'],
             'password': os.environ['ELASTIC_PASSWORD'],
             'index_prefix': get_prefix(),
-            'relationship_cfg': {}
+            'relationship_cfg': {'root': rc_root}
         }
     )
