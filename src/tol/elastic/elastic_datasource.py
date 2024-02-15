@@ -67,7 +67,24 @@ class ElasticDataSource(
         relationship_cfg is also supported if we want to handle relationships
         Only FKs pointing to IDs are currently supported
         """
+
         self._initialise_elasticsearch()
+        self.__lazy = False
+
+    @property
+    def lazy_fetch(self) -> bool:
+        """
+        If `True`, enriched fields will be consulted.
+
+        If `False`, enriched fields will be ignored, and the relation object
+        directly fetched by ID, every time.
+        """
+
+        return self.__lazy
+
+    @lazy_fetch.setter
+    def lazy_fetch(self, new_val: bool) -> None:
+        self.__lazy = new_val
 
     def _initialise_elasticsearch(self):
         self.es = Elasticsearch(self.uri, http_auth=(self.user, self.password))
@@ -701,7 +718,7 @@ class ElasticDataSource(
 
         self.__validate_to_one_relation(source)
 
-        if relationship_name in source._to_one_objects:
+        if self.lazy_fetch and relationship_name in source._to_one_objects:
             return source._to_one_objects.get(relationship_name)
 
         to_one = self.relationship_config[source.type].to_one
@@ -709,8 +726,14 @@ class ElasticDataSource(
         if relationship_name not in to_one:
             raise DataSourceError('Bad relationship name')
 
-        new_source: DataObject = list(self.get_by_id(source.type, [source.id]))[0]
-        return new_source._to_one_objects.get(relationship_name)
+        new_source: DataObject = self.get_one(source.type, source.id)
+
+        if self.lazy_fetch:
+            return new_source._to_one_objects.get(relationship_name)
+
+        target_type = to_one[relationship_name]
+        target_id = new_source._to_one_objects.get(relationship_name).id
+        return self.get_one(target_type, target_id)
 
     def get_to_many_relations(
         self,

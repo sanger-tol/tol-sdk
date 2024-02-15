@@ -66,6 +66,13 @@ def mock_elastic_data_source() -> tuple[Callable, ElasticDataSource]:
     return core_data_object_mock, eds
 
 
+def mock_lazy_elastic_data_source() -> tuple[Callable, ElasticDataSource]:
+    cdo, eds = mock_elastic_data_source()
+    eds.lazy_fetch = True
+
+    return cdo, eds
+
+
 class TestUidSubstitution:
     """
     `uid` is a private attribute, put in place as a
@@ -828,8 +835,8 @@ class TestElasticDataSource(TestCase):
         related_object = source_object.to_one_relationships['relname']
         self.assertIsNone(related_object)
 
-    def test_get_to_many_relationships(self):
-        core_data_object, eds = mock_elastic_data_source()
+    def test_get_to_many_relationships_lazy(self):
+        core_data_object, eds = mock_lazy_elastic_data_source()
         rc1 = RelationshipConfig()
         rc1.to_many = {'relname': 'reltype'}
         rc1.foreign_keys = {'relname': 'relfk.id'}
@@ -866,9 +873,9 @@ class TestElasticDataSource(TestCase):
         with self.assertRaises(StopIteration):
             next(related_objects)
 
-    def test_get_to_one_relation(self):
+    def test_lazy_get_to_one_relation(self):
         """
-        `ElasticDataSource().get_to_one_relation()` looks in
+        In lazy mode, `ElasticDataSource().get_to_one_relation()` looks in
         `DataObject()._to_one_objects` and either:
 
         - key is present -> return the object in there
@@ -884,6 +891,7 @@ class TestElasticDataSource(TestCase):
                 )
             }
         )
+        type(mock_ds).lazy_fetch = mock.PropertyMock(return_value=True)
 
         # key is present
         expected = mock.Mock()
@@ -892,7 +900,7 @@ class TestElasticDataSource(TestCase):
         type(mock_obj)._to_one_objects = {'lol': expected}
         mock_obj.id = 'hype train'
         observed = ElasticDataSource.get_to_one_relation(mock_ds, mock_obj, 'lol')
-        mock_ds.get_by_id.assert_not_called()
+        mock_ds.get_one.assert_not_called()
         assert observed == expected
 
         # key is absent
@@ -901,7 +909,45 @@ class TestElasticDataSource(TestCase):
         mock_obj._to_one_objects = {}
         mock_inter = mock.create_autospec(DataObject, spec_set=True)
         mock_inter._to_one_objects = {'lol': expected}
-        mock_ds.get_by_id.return_value = [mock_inter]
+        mock_ds.get_one.return_value = mock_inter
         observed = ElasticDataSource.get_to_one_relation(mock_ds, mock_obj, 'lol')
-        mock_ds.get_by_id.assert_called_once_with('a', ['hype train'])
+        mock_ds.get_one.assert_called_once_with('a', 'hype train')
         assert observed == expected
+
+    def test_eager_get_to_one_relation(self):
+        """
+        In eager mode, `ElasticDataSource().get_to_one_relation()` always
+        fetches relation objects directly. Uses `._to_one_objects` only to find
+        the `target_id`.
+        """
+
+        mock_ds = mock.create_autospec(ElasticDataSource, spec_set=True)
+        mock_ds.relationship_config = {
+            'a': RelationshipConfig(
+                to_one={'lol': 'b'}
+            )
+        }
+        mock_ds.lazy_fetch = False
+
+        mock_inter = mock.create_autospec(DataObject, spec_set=True)
+        mock_inter2 = mock.create_autospec(DataObject, spec_set=True)
+        mock_inter2.id = 'yo'
+        mock_inter2.type = 'b'
+        mock_inter._to_one_objects = {
+            'lol': mock_inter2
+        }
+
+        def __side_effect_one(type_: str, __id: str) -> DataObject:
+            return mock_inter if type_ == 'a' else mock_inter2
+
+        mock_ds.get_one.side_effect = __side_effect_one
+
+        mock_obj = mock.create_autospec(DataObject, spec_set=True)
+        mock_obj.type = 'a'
+        mock_obj.id = 'hype train'
+        observed = ElasticDataSource.get_to_one_relation(mock_ds, mock_obj, 'lol')
+        assert mock_ds.get_one.call_args_list == [
+            mock.call('a', 'hype train'),
+            mock.call('b', 'yo')
+        ]
+        assert observed == mock_inter2
