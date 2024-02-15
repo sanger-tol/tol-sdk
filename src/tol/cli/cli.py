@@ -153,6 +153,7 @@ def prune():
     run(command)
     command = 'docker volume prune -f'
     click.secho(command, fg='green')
+    run(command)
 
 
 # Restore a database from backup
