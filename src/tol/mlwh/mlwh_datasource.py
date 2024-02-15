@@ -36,6 +36,11 @@ class MlwhDataSource(DataSource, ListGetter):
 
     def _get_column_mappings_iseq(self):
         return {
+            'name_root': (
+                # Trim file suffix, i.e. ".cram"
+                'REGEXP_REPLACE(irods.irods_data_relative_path'
+                ", '\\.[[:alnum:]]+$', '')"
+            ),
             'study_id': 'study.id_study_lims',
             'sample_ref': 'sample.name',
             'supplier_name': 'sample.supplier_name',
@@ -90,18 +95,27 @@ class MlwhDataSource(DataSource, ListGetter):
             JOIN iseq_product_metrics AS product_metrics
               ON components.id_iseq_pr_tmp
                  = product_metrics.id_iseq_pr_metrics_tmp
-            LEFT JOIN seq_product_irods_locations AS irods
+            JOIN seq_product_irods_locations AS irods
               ON product_metrics.id_iseq_product = irods.id_product
             WHERE {clause}
               AND run_lane_metrics.qc_complete IS NOT NULL
               AND product_metrics.num_reads IS NOT NULL
               AND study.id_lims = 'SQSCP'
-              ORDER BY run_lane_metrics.id_run
+            ORDER BY run_lane_metrics.id_run
             """,
         )
 
     def _get_column_mappings_pacbio(self):
         return {
+            'name_root': (
+                'CASE WHEN run.tag2_identifier'
+                ' THEN CONCAT(well_metrics.movie_name'
+                ", '#', run.tag_identifier, '#', run.tag2_identifier)"
+                ' WHEN run.tag_identifier'
+                ' THEN CONCAT(well_metrics.movie_name'
+                ", '#', run.tag_identifier)"
+                ' ELSE well_metrics.movie_name END'
+            ),
             'study_id': 'study.id_study_lims',
             'sample_ref': 'sample.name',
             'supplier_name': 'sample.supplier_name',
@@ -261,9 +275,7 @@ class MlwhDataSource(DataSource, ListGetter):
 
     def _format_mlwh_row(self, object_type: str, row: Dict):
         return self.data_object_factory(
-            object_type,
-            id_=row.pop('id', None),
-            attributes=row
+            object_type, id_=row.pop('id', None), attributes=row
         )
 
     def _join(self, values: List) -> str:
