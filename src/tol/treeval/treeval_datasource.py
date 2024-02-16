@@ -5,7 +5,7 @@
 import json
 import re
 from functools import cache
-from typing import Dict, Iterable, Tuple
+from typing import Dict, Iterable, Tuple, Optional
 
 import pandas as pd
 
@@ -409,18 +409,34 @@ class TreevalDataSource(
         specimens = self._parse_jira_output(response)
 
         # object_filters needs to be dict - currently string
-        object_filters_dict = json.loads(object_filters)
+        # object_filters_dict = json.loads(object_filters)
+
+
+
+
+
+
+        # object_filters_dict = object_filters
 
         # Filter
-        if object_filters_dict and len(object_filters_dict.keys()) > 0:
+        if object_filters is not None:
 
-            if 'contains' in object_filters_dict.keys():
-                specimens = self._apply_contains_filter_to_specimens(
-                    object_filters_dict['contains'], specimens)
+            if object_filters.exact is not None:
+                specimens = self._apply_contains_filter_to_specimens(object_filters.exact,specimens)
 
-            if 'range' in object_filters_dict.keys():
-                specimens = self._apply_range_filter_to_specimens(
-                    object_filters_dict['range'], specimens)
+            if object_filters.range is not None:
+                specimens = self._apply_contains_filter_to_specimens(object_filters.range,specimens)
+
+        # Filter
+        # if object_filters_dict and len(object_filters_dict.keys()) > 0:
+
+        #     if 'contains' in object_filters_dict.keys():
+        #         specimens = self._apply_contains_filter_to_specimens(
+        #             object_filters_dict['contains'], specimens)
+
+        #     if 'range' in object_filters_dict.keys():
+        #         specimens = self._apply_range_filter_to_specimens(
+        #             object_filters_dict['range'], specimens)
 
         # Sort
         specimens = self._apply_sort_to_specimens(sort_by, specimens)
@@ -429,6 +445,12 @@ class TreevalDataSource(
         #                         .str.contains('sanger')]
 
         full_len = len(specimens)
+
+        # full_len = self.data_object_factory(
+        #     "specimens_full_length",
+        #     id_=id_,
+        #     attributes={"value":len(specimens)}
+        #     )
 
         if not page_size:
             page_size = 50
@@ -445,7 +467,27 @@ class TreevalDataSource(
         # Filter to current page
         specimens = specimens.iloc[start_val:end_val, ]
 
-        return (specimens.to_dict('records'), full_len)
+
+        specimens_dict = specimens.to_dict('records', )
+        specimens_response = []
+        for id_, specimen in enumerate(specimens_dict):
+            specimen_obj = self.data_object_factory(
+                                "specimens",
+                                id_=id_,
+                                attributes=specimen
+                            )
+            specimens_response.append(specimen_obj)
+
+
+        # return self.data_object_factory(
+        #     type_,
+        #     id_=id_,
+        # #     attributes=attributes
+        # )
+
+        return (specimens_response, full_len)
+        
+        # return specimens.to_dict('records', )
 
     # def get_specimens_for_treeval(self, page_number, page_size, filter_, sort_by):
 
@@ -472,7 +514,7 @@ class TreevalDataSource(
         raise NotImplementedError()
 
     @property
-    def attribute_types(self) -> dict[str, dict[str, str]]:
+    def attribute_types(self):
         return {
             'specimens': {
                 'tolid': 'str',
@@ -503,11 +545,55 @@ class TreevalDataSource(
             }
         }
 
+    # @property
+    # def attribute_metadata(self) -> dict(str, dict(str, str)):
+    #     return {
+    #         'specimens': {
+    #             'tolid': 'str',
+    #             'species_name': 'str',
+    #             'priority': 'str',
+    #             'jira_issue': 'str',
+    #             'jira_issue_url': 'str',
+    #             'jira_issue_last_updated': 'str',
+    #             'added_to_curation': 'str',
+    #             'jbrowse_url': 'str',
+    #             'assignee': 'str',
+    #             'goat_url': 'str',
+    #             'higlass_url': 'str',
+    #             'btk_pri_url': 'str',
+    #             'btk_hap_url': 'str',
+    #             'tolqc_url': 'str',
+    #             'hic_plot': 'str',
+    #             'kmer_plot': 'str',
+    #             'scaffold_l90': 'str',
+    #             'contig_l90': 'str',
+    #             'expected_karyotype': 'str',
+    #             'total_scaffolds_removed': 'str',
+    #             'total_scaffolds_removed_pc': 'str',
+    #             'scaffolds_removed_count': 'str',
+    #             'scaffolds_removed_count_pc': 'str',
+    #             'largest_scaffold_removed': 'str',
+    #             'contamination_is_abnormal': 'str'
+    #         }
+    #     }
+
     @property
     @cache
-    def supported_types(self) -> tuple(str, dict[str, str]):
-        return ['specimens', {'field': 'type'}]
+    def supported_types(self) -> list[str]:
+        return ['specimens']
 
     @property
     def relationship_config(self):
         return {}
+
+    def get_to_one_relation(self,
+                    source: DataObject,
+                    relationship_name: str
+                ) -> Optional[DataObject]:
+        return None
+
+    def get_to_many_relations(self,
+                    source: DataObject,
+                    relationship_name: str
+                ) -> Iterable[DataObject]:
+        return []
