@@ -580,8 +580,10 @@ class ElasticDataSource(
                     if stat == 'union':
                         # This is a bespoke aggregation
                         agg = self.__get_union_aggregation(object_type, stats_field)
+                    elif self.attribute_types[object_type][stats_field] == 'str' \
+                            and stat in ['min', 'max']:
+                        agg = self.__get_string_aggregation(object_type, stats_field, stat)
                     aggregation['counts']['aggregations'][f'{stats_field}_{stat}'] = agg
-
         if after_key is not None:
             aggregation['counts']['composite']['after'] = {
                 index: after_key
@@ -649,6 +651,49 @@ class ElasticDataSource(
                             }
                         }
                     }
+                    return ret;
+                """
+            }
+        }
+        return agg
+
+    def __get_string_aggregation(self, object_type, field, stat):
+        """
+        This function is calculating the min and max of a string
+
+        """
+        field_or_keyword = self._field_or_keyword(object_type, field)
+        comparator = '>'
+        if stat == 'min':
+            comparator = '<'
+        agg = {
+            'scripted_metric': {
+                'init_script': 'state.stat = null',
+                'map_script': f"""
+                    for (ss in doc['{field_or_keyword}']) {{
+                        if (state.stat == null) {{
+                            state.stat = ss; continue
+                        }}
+                        if (ss.compareTo(state.stat) {comparator} 0) {{
+                            state.stat = ss
+                        }}
+                    }}
+                    """,
+                'combine_script': 'return state.stat',
+                'reduce_script': f"""
+                    String ret = null;
+                    for (a in states) {{
+                        if (a == null) {{
+                            continue
+                        }}
+                        if (ret == null) {{
+                            ret = a;
+                            continue
+                        }}
+                        if (a.compareTo(ret) {comparator} 0) {{
+                            ret = a
+                        }}
+                    }}
                     return ret;
                 """
             }

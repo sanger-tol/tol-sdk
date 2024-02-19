@@ -585,3 +585,21 @@ class TestEndToEnd:
         true_stats = next(iter(stats[1].values()))
         assert true_stats['count'] == 2
         assert true_stats['list_column_union'] == ['a', 'b', 'c', 'x', 'y', 'z']
+
+        # String min and max
+        stats = list(data_source.get_stats(
+            object_type='root',
+            group_by='bool_column',
+            stats_fields=['str_column'],
+            stats=['min', 'max'],
+            object_filters=f
+        ))
+        assert len(stats) == 2
+        false_stats = next(iter(stats[0].values()))
+        assert false_stats['count'] == 1
+        assert false_stats['str_column_min'] == 'test_train'
+        assert false_stats['str_column_max'] == 'test_train'
+        true_stats = next(iter(stats[1].values()))
+        assert true_stats['count'] == 2
+        assert true_stats['str_column_min'] == 'test_hype'
+        assert true_stats['str_column_max'] == 'test_max'
