@@ -25,7 +25,9 @@ def elastic():
     }
 
     rc_run_data = RelationshipConfig()
-    rc_run_data.to_one = {'mlwh_sequencing_request': 'sequencing_request',
+    rc_run_data.to_one = {'benchling_extraction': 'extraction',
+                          'benchling_sample': 'sample',
+                          'mlwh_sequencing_request': 'sequencing_request',
                           'mlwh_specimen': 'specimen',
                           'mlwh_species': 'species',
                           'mlwh_tolid': 'tolid',
