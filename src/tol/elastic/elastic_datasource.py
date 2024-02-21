@@ -361,6 +361,18 @@ class ElasticDataSource(
                         negated = constraint.get('negate', False)
                         elastic_section = 'must_not' if negated else 'must'
                         op = constraint.get('op')
+                        if 'field' in constraint:
+                            other_field = self._field_or_keyword(
+                                object_type, constraint['field']
+                            )
+                            query['bool']['filter'] = \
+                                self._get_field_comparison_filter(
+                                    search_field,
+                                    other_field,
+                                    op,
+                                    negated
+                            )
+                            continue
                         if op in ['gt', 'gte', 'lt', 'lte']:
                             query['bool'][elastic_section].append({
                                 'range': {search_field: {op: search_value}}
@@ -384,6 +396,41 @@ class ElasticDataSource(
                                 'terms': {search_field: search_value, 'boost': 1.0}
                             })
         return query
+
+    def _get_field_comparison_filter(self, field1: str, field2: str, op: str, negated: bool) -> \
+            Dict[str, Dict[str, str]]:
+        op_mappings = {
+            'eq': '==',
+            'lt': '<',
+            'lte': '<=',
+            'gt': '>',
+            'gte': '>='
+        }
+        negated_mappings = {  # What to return if negated
+            True: 'true',
+            False: 'false'
+        }
+        # return {negated_mappings[not negated]}
+        return {
+            'script': {
+                'script': {
+                    'source': f"""
+                        if (doc[params['field1']].size() > 0
+                            && doc[params['field2']].size() > 0) {{
+                            if (doc[params['field1']].value.compareTo(doc[params['field2']].value)
+                                {op_mappings[op]} 0) {{
+                                return {negated_mappings[not negated]}
+                            }}
+                        }}
+                        return {negated_mappings[negated]};
+                    """,
+                    'params': {
+                        'field1': field1,
+                        'field2': field2
+                    }
+                }
+            }
+        }
 
     def _build_elasticsearch_sort(
         self,
