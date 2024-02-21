@@ -13,6 +13,7 @@ from . import sts_requests
 def get_setting(setting_key):
     r = sts_requests.get(f'/settings/{setting_key}')
     if r.status_code != 200:
+        print(r.status_code)
         return None
     return r.json()['data']['value']
 

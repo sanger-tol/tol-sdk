@@ -254,17 +254,14 @@ def test(ctx, type_):
 # Run flow
 @cli.command()
 @click.argument('filename', type=click.Path(exists=True))
-@click.option('--version', required=True, help='flows-base version', default='1.2.27')
 @click.pass_context
-def flow(ctx, filename, version):
+def flow(ctx, filename):
+    entry = f'{get_app()}-flow'
     env_file = ctx.parent.params['env_file']
     click.echo('Running flow...')
-    flow_name = os.path.basename(filename)
     command = (
-        f'docker run --env-file {env_file} -v '
-        '$(pwd)/app/flows:/flows '
-        f'gitlab-registry.internal.sanger.ac.uk/tol/tol-core/flows-base:{version} python3 '
-        f'/flows/{flow_name}'
+        f'docker compose --env-file {env_file} run --rm --build '
+        f'{entry} python3 /opt/prefect/flows/{filename}'
     )
     click.secho(command, fg='green')
     run(command)
