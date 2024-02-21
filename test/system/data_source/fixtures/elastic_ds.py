@@ -81,7 +81,10 @@ class ElasticFixture(DataSourceFixture):
                 'int_column': 42,
                 'datetime_column': datetime(2020, 1, 1, 0, 0, 0),
                 'bool_column': True,
-                'related_object': {'id': '#REL'},
+                'related_object': {
+                    'id': '#REL',
+                    'int_column': 42,
+                    'datetime_column': datetime(2021, 1, 1, 0, 0, 0)},
                 'list_column': ['item']
             }
         )

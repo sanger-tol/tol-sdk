@@ -204,7 +204,7 @@ class TestEndToEnd:
         )
         assert len(thirteenth) == 2
 
-        # List field equals
+        # List field not equals
         f = DataSourceFilter()
         f.and_ = {'list_column': [
             {'op': 'eq', 'value': 2, 'negate': True}
@@ -213,6 +213,36 @@ class TestEndToEnd:
             data_source.get_list('root', object_filters=f)
         )
         assert len(fourteenth) == 2
+
+        # Field to field string comparison
+        f = DataSourceFilter()
+        f.and_ = {'str_column': [
+            {'op': 'lt', 'field': 'related_object.str_column', 'negate': True}
+        ]}
+        fifteenth = list(
+            data_source.get_list('root', object_filters=f)
+        )
+        assert len(fifteenth) == 4  # 3 plus the archetype
+
+        # Field to field int comparison
+        f = DataSourceFilter()
+        f.and_ = {'int_column': [
+            {'op': 'eq', 'field': 'related_object.int_column'}
+        ]}
+        sixteenth = list(
+            data_source.get_list('root', object_filters=f)
+        )
+        assert len(sixteenth) == 1  # The archetype
+
+        # Field to field datetime comparison
+        f = DataSourceFilter()
+        f.and_ = {'related_object.datetime_column': [
+            {'op': 'gt', 'field': 'datetime_column'}
+        ]}
+        seventeenth = list(
+            data_source.get_list('root', object_filters=f)
+        )
+        assert len(seventeenth) == 1  # The archetype
 
     @against(elastic)  # list and dict columns not implemented on SqlDataSource
     def test_upsert(self, data_source: OperableDataSource):

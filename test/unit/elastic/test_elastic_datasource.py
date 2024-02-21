@@ -471,7 +471,8 @@ class TestElasticDataSource(TestCase):
         object_filters = DataSourceFilter()
         object_filters.and_ = {
             'field1': [
-                {'op': 'exists'}
+                {'op': 'exists'},
+                {'op': 'lt', 'field': 'field2'}
             ],
             'field2': [
                 {'op': 'exists', 'negate': True}
@@ -497,17 +498,27 @@ class TestElasticDataSource(TestCase):
                 {'op': 'lte', 'value': '2023-01-01'}
             ]
         }
-        expected = {'bool': {'must': [{'exists': {'field': 'field1.keyword'}},
-                                      {'range': {'field3': {'lt': 16}}},
-                                      {'range': {'field3': {'gte': 2}}},
-                                      {'wildcard': {'field4.keyword': {
-                                          'value': 'abc*', 'boost': 1.0}}},
-                                      {'terms': {'field5.keyword': ['one', 'two'], 'boost': 1.0}},
-                                      {'match': {'field6': 5}},
-                                      {'range': {'datefield': {'gt': '2022-01-01'}}},
-                                      {'range': {'datefield': {'lte': '2023-01-01'}}}],
-                             'must_not': [{'exists': {'field': 'field2.keyword'}},
-                                          {'match': {'field7.keyword': 'haberdashery'}}]}}
+        expected = {
+            'bool': {
+                'must': [
+                    {'exists': {'field': 'field1.keyword'}},
+                    {'range': {'field3': {'lt': 16}}},
+                    {'range': {'field3': {'gte': 2}}},
+                    {'wildcard': {'field4.keyword': {'value': 'abc*', 'boost': 1.0}}},
+                    {'terms': {'field5.keyword': ['one', 'two'], 'boost': 1.0}},
+                    {'match': {'field6': 5}},
+                    {'range': {'datefield': {'gt': '2022-01-01'}}},
+                    {'range': {'datefield': {'lte': '2023-01-01'}}}
+                ],
+                'must_not': [
+                    {'exists': {'field': 'field2.keyword'}},
+                    {'match': {'field7.keyword': 'haberdashery'}}
+                ],
+                'filter': eds._get_field_comparison_filter(
+                    'field1.keyword', 'field2.keyword', 'lt', False
+                )
+            }
+        }
         self.assertEqual(expected, eds._build_elasticsearch_query('obj_type', object_filters))
 
     def test_build_sort(self):
