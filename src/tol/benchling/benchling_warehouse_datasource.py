@@ -43,7 +43,8 @@ class BenchlingWarehouseDataSource(DataSource, ListGetter):
         return {
             'sample': 'sts_id',
             'sequencing_request': 'sanger_sample_id',
-            'extraction': 'extraction_id'
+            'extraction': 'extraction_id',
+            'tissue_prep': 'eln_tissue_prep_id'
         }
 
     def _get_connection(self) -> connection:
