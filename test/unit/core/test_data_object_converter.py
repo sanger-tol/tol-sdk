@@ -4,8 +4,10 @@
 
 from typing import Iterable
 from unittest import (TestCase)
+from unittest.mock import PropertyMock, create_autospec
 
 from tol.core import (
+    DataLoader,
     DataObject,
     DataObjectToDataObjectConverter,
     DataSource,
@@ -49,9 +51,14 @@ class TestDataObjectConverter(TestCase):
         destination = _MockDataSource(config={})
         core_data_object(source)
         core_data_object(destination)
+        mock_dl = create_autospec(DataLoader)
+        type(mock_dl)._destination_object_type = PropertyMock(
+            return_value='destination_type'
+        )
         converter = DefaultDataObjectToDataObjectConverter(
             data_object_factory=destination.data_object_factory
         )
+        converter.data_loader = mock_dl
 
         CoreDataObject = source.data_object_factory  # noqa N806
         # if data_object relations data = data else data.attributes
@@ -69,7 +76,7 @@ class TestDataObjectConverter(TestCase):
         converteds = converter.convert(obj1)
         ret1 = next(converteds)
         self.assertEqual(obj1.id, ret1.id)
-        self.assertEqual(obj1.type, ret1.type)
+        self.assertEqual('destination_type', ret1.type)
         self.assertEqual(obj1.attributes, ret1.attributes)
 
         with self.assertRaises(StopIteration):
@@ -78,12 +85,12 @@ class TestDataObjectConverter(TestCase):
         converteds = converter.convert_iterable([obj1, obj2])
         ret1 = next(converteds)
         self.assertEqual(obj1.id, ret1.id)
-        self.assertEqual(obj1.type, ret1.type)
+        self.assertEqual('destination_type', ret1.type)
         self.assertEqual(obj1.attributes, ret1.attributes)
 
         ret2 = next(converteds)
         self.assertEqual(obj2.id, ret2.id)
-        self.assertEqual(obj2.type, ret2.type)
+        self.assertEqual('destination_type', ret2.type)
         self.assertEqual(obj2.attributes, ret2.attributes)
 
         with self.assertRaises(StopIteration):
