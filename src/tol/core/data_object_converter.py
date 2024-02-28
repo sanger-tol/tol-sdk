@@ -8,7 +8,7 @@ from typing import Iterable
 from more_itertools import flatten
 
 from .data_object import DataObject
-from ..core.factory import DataObjectFactory
+from .factory import DataObjectFactory
 
 
 class DataObjectToDataObjectConverter(ABC):
@@ -56,7 +56,7 @@ class DefaultDataObjectToDataObjectConverter(DataObjectToDataObjectConverter):
         if data_object.id is not None:
             ret = self._data_object_factory(
                 id_=data_object.id,
-                type_=data_object.type,
+                type_=self.data_loader._destination_object_type,
                 attributes={**data_object.attributes}
             )
             return iter([ret])

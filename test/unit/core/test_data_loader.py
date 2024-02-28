@@ -95,7 +95,7 @@ class TestDataLoader(TestCase):
             destination=destination,
             audit=audit,
             source_object_type='source_type',
-            destination_object_type='source_type',
+            destination_object_type='destination_type',
             dependencies=[],
             convert_class=DefaultDataObjectToDataObjectConverter,
             loader_name='test_loader'
@@ -105,12 +105,12 @@ class TestDataLoader(TestCase):
 
         obj1 = next(destination.upserted)
         self.assertEqual('test', obj1.id)
-        self.assertEqual('source_type', obj1.type)
+        self.assertEqual('destination_type', obj1.type)
         self.assertEqual('att1', obj1.attribute)
 
         obj2 = next(destination.upserted)
         self.assertEqual('test2', obj2.id)
-        self.assertEqual('source_type', obj2.type)
+        self.assertEqual('destination_type', obj2.type)
         self.assertEqual('att2', obj2.attribute)
 
         with self.assertRaises(StopIteration):
@@ -120,7 +120,7 @@ class TestDataLoader(TestCase):
             self.assertEqual('test_loader', obj.id)
             self.assertEqual('data_load_event', obj.type)
             self.assertEqual('source_type', obj.source_object_type)
-            self.assertEqual('source_type', obj.destination_object_type)
+            self.assertEqual('destination_type', obj.destination_object_type)
 
     def test_load_with_filter_and_convert(self):
 

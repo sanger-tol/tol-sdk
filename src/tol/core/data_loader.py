@@ -38,6 +38,7 @@ class DefaultDataLoader():
         self._converter = convert_class(
             data_object_factory=destination.data_object_factory
         )
+        self._converter.data_loader = self  # Set here to avoid circular import
         self._source_object_type = source_object_type
         self._destination_object_type = destination_object_type
         self._loader_name = loader_name
