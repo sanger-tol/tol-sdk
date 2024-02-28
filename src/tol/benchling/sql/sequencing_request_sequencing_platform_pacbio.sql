@@ -122,7 +122,7 @@ WITH pacbio_submissions_v1 AS (
 	    AND (c_dna.archive_purpose$ != ('Made in error') OR c_dna.archive_purpose$ IS NULL) -- Excluding containers made by mistake
 		AND c_dna.barcode LIKE 'F%' -- Selecting only valid FluidX IDs
 		AND proj.name = 'ToL Core Lab' -- Selecting ToL Core Lab sbmissions only
-		AND f.name IN ('Routine Throuput', 'PacBio prep', 'Submissions', 'Core Lab Entities', 'Benchling MS Project Move')
+		AND f.name IN ('Routine Throughput', 'PacBio prep', 'Submissions', 'Core Lab Entities', 'Benchling MS Project Move')
 
 ),
 pacbio_legacy_submissions AS (
@@ -248,7 +248,7 @@ pacbio_submissions_v2 AS (
 		AND (c_dna.archive_purpose$ != ('Made in error') OR c_dna.archive_purpose$ IS NULL) -- Excluding containers made by mistake
 		AND c_dna.barcode LIKE 'F%' -- Selecting only valid FluidX IDs
 		AND proj.name = 'ToL Core Lab' -- Selecting ToL Core Lab sbmissions only
-		AND f.name IN ('Routine Throughput', 'PacBio prep', 'Submissions', 'Core Lab Entities', 'Benchling MS Project Move')
+		AND f.name IN ('Routine Throughput', 'PacBio prep', 'Submissions', 'Core Lab Entities', 'Benchling MS Project Move', 'R&D Sample Processing Requests')
 
 		
 ),
@@ -374,7 +374,7 @@ pacbio_submissions_pooled_v2 AS (
 		ON subsam.folder_id$ = f.id
 	WHERE subsam.pooled_sample IS NOT NULL
 		AND proj.name = 'ToL Core Lab'
-		AND f.name IN ('Routine Throughput', 'PacBio prep', 'Submissions', 'Core Lab Entities', 'Benchling MS Project Move')
+		AND f.name IN ('Routine Throughput', 'PacBio prep', 'Submissions', 'Core Lab Entities', 'Benchling MS Project Move', 'R&D Sample Processing Requests')
 		AND pbsubm_p.archived$ = FALSE
 	
 )
