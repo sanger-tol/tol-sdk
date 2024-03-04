@@ -24,7 +24,7 @@ class _MockDataSource(DataSource):
 
 
 class TestBenchlingTissuePrepToElasticTissuePrepConverter(TestCase):
-    def test_default_convert(self):
+    def test_convert(self):
 
         source = _MockDataSource(config={})
         destination = _MockDataSource(config={})
