@@ -581,12 +581,12 @@ class TestElasticDataSource(TestCase):
             'aggregations': {
                 'counts': {
                     'after_key': {
-                        'test-obj-type': '1234'
+                        'field1': '1234'
                     },
                     'buckets': [
                         {
                             'key': {
-                                'test-obj-type': '1111'
+                                'field1': '1111'
                             },
                             'doc_count': 20,
                             'datefield_min': {
@@ -604,7 +604,7 @@ class TestElasticDataSource(TestCase):
                         },
                         {
                             'key': {
-                                'test-obj-type': '1112'
+                                'field1': '1112'
                             },
                             'doc_count': 18,
                             'datefield_min': {
@@ -643,17 +643,27 @@ class TestElasticDataSource(TestCase):
                                  stats_fields=['field2', 'datefield'],
                                  stats=['min', 'max'])
         first = next(returned)
-        self.assertEqual({'1111': {'count': 20,
-                                   'datefield_min': datetime.fromtimestamp(1000000000),
-                                   'datefield_max': datetime.fromtimestamp(1500000000),
-                                   'field2_min': 'A',
-                                   'field2_max': 'Z'}}, first)
+        self.assertEqual({
+            'key': {'field1': '1111'},
+            'stats': {
+                'count': 20,
+                'datefield_min': datetime.fromtimestamp(1000000000),
+                'datefield_max': datetime.fromtimestamp(1500000000),
+                'field2_min': 'A',
+                'field2_max': 'Z'
+            }
+        }, first)
         second = next(returned)
-        self.assertEqual({'1112': {'count': 18,
-                                   'datefield_min': None,
-                                   'datefield_max': None,
-                                   'field2_min': None,
-                                   'field2_max': None}}, second)
+        self.assertEqual({
+            'key': {'field1': '1112'},
+            'stats': {
+                'count': 18,
+                'datefield_min': None,
+                'datefield_max': None,
+                'field2_min': None,
+                'field2_max': None
+            }
+        }, second)
         with self.assertRaises(StopIteration):
             next(returned)
         self.assertEqual(eds.es.search.call_count, 2)
@@ -665,12 +675,12 @@ class TestElasticDataSource(TestCase):
             'aggregations': {
                 'counts': {
                     'after_key': {
-                        'test-obj-type': '1234'
+                        'field1': '1234'
                     },
                     'buckets': [
                         {
                             'key': {
-                                'test-obj-type': '1111'
+                                'field1': '1111'
                             },
                             'doc_count': 20,
                             'field4_union': {
@@ -679,7 +689,7 @@ class TestElasticDataSource(TestCase):
                         },
                         {
                             'key': {
-                                'test-obj-type': '1112'
+                                'field1': '1112'
                             },
                             'doc_count': 18,
                             'field4_union': {
@@ -709,11 +719,21 @@ class TestElasticDataSource(TestCase):
                                  stats_fields=['field4'],
                                  stats=['union'])
         first = next(returned)
-        self.assertEqual({'1111': {'count': 20,
-                                   'field4_union': ['val1', 'val2', 'val3']}}, first)
+        self.assertEqual({
+            'key': {'field1': '1111'},
+            'stats': {
+                'count': 20,
+                'field4_union': ['val1', 'val2', 'val3']
+            }
+        }, first)
         second = next(returned)
-        self.assertEqual({'1112': {'count': 18,
-                                   'field4_union': None}}, second)
+        self.assertEqual({
+            'key': {'field1': '1112'},
+            'stats': {
+                'count': 18,
+                'field4_union': None
+            }
+        }, second)
         with self.assertRaises(StopIteration):
             next(returned)
         self.assertEqual(eds.es.search.call_count, 2)

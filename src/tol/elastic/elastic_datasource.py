@@ -575,7 +575,7 @@ class ElasticDataSource(
     def get_stats(
         self,
         object_type: str,
-        group_by: str,
+        group_by: List[str],
         stats_fields: List[str] = [],
         stats: List[str] = [],
         object_filters: DataSourceFilter = None,
@@ -591,13 +591,12 @@ class ElasticDataSource(
                 after_key=after_key)
             if len(buckets) == 0:
                 break
-            for field_value, stats_values in buckets.items():
-                yield {field_value: stats_values}
+            yield from buckets
 
     def __get_stats_page(
         self,
         object_type: str,
-        group_by: str,
+        group_by: List[str],
         stats_fields: List[str] = [],
         stats: List[str] = [],
         after_key: str = None,
@@ -605,17 +604,16 @@ class ElasticDataSource(
     ):
         # This will return a potentially large set of results, so we need
         # to page through them
-        index = self.__get_index(object_type)
         aggregation = {
             'counts': {
                 'composite': {
                     'sources': [{
-                        index: {
+                        field: {
                             'terms': {
-                                'field': self._field_or_keyword(object_type, group_by)
+                                'field': self._field_or_keyword(object_type, field)
                             }
                         }
-                    }]
+                    } for field in group_by]
                 },
             }
         }
@@ -632,37 +630,47 @@ class ElasticDataSource(
                         agg = self.__get_string_aggregation(object_type, stats_field, stat)
                     aggregation['counts']['aggregations'][f'{stats_field}_{stat}'] = agg
         if after_key is not None:
-            aggregation['counts']['composite']['after'] = {
-                index: after_key
-            }
+            aggregation['counts']['composite']['after'] = after_key
         agg_page = self.get_aggregations(
             object_type,
             aggregations=aggregation,
             object_filters=object_filters)
         after_key, buckets = self.__get_data_from_stats_aggregation(
             agg_page,
-            index,
+            object_type,
             stats_fields,
             stats
         )
         return after_key, buckets
 
-    def __get_data_from_stats_aggregation(self, aggregation_result, key, stats_fields, stats):
+    def __get_data_from_stats_aggregation(
+            self,
+            aggregation_result,
+            object_type,
+            stats_fields,
+            stats
+    ):
+        # The after_key is sent back in one request and we use it as-is in the next request
         after_key = None
         if 'after_key' in aggregation_result['counts']:
-            after_key = aggregation_result['counts']['after_key'][key]
+            after_key = aggregation_result['counts']['after_key']
         buckets = aggregation_result['counts']['buckets']
-        all_stats = {}
+        # all_stats looks like:
+        # [{'key': {'first_group_by': 'value_of_first_group_by'}
+        #           'second_group_by': 'value_of_second_group_by'},
+        #   'stats': {'count': 123,
+        #             'stats_field_stat': 345}}]
+        all_stats = []
         for v in buckets:
             stats_values = {'count': v['doc_count']}
             for stats_field in stats_fields:
                 for stat in stats:
                     stat_value = v[f'{stats_field}_{stat}']['value']
-                    python_type = self.attribute_types[self.__get_object_type(key)][stats_field]
+                    python_type = self.attribute_types[object_type][stats_field]
                     if python_type == 'datetime' and stat_value is not None:
                         stat_value = datetime.fromtimestamp(stat_value / 1000)
                     stats_values[f'{stats_field}_{stat}'] = stat_value
-            all_stats[v['key'][key]] = stats_values
+            all_stats.append({'key': v['key'], 'stats': stats_values})
 
         return after_key, all_stats
 
