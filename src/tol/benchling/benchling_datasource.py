@@ -113,16 +113,17 @@ class BenchlingDataSource(DataSource, Updater):
                     if len(update_page) > 1:
                         ret = []
                         for update_id, update_dict in update_page:
-                            ret.extend(self.update(object_type, [(update_id, update_dict)]))
-                        return ret
+                            self.update(object_type, [(update_id, update_dict)])
                     else:
-                        ret = [{'id': update_id, 'status': 'FAILED'}
+                        ret = [{'id': update_id, 'status': 'FAILED', 'message': task.message,
+                                'errors': task.errors.to_dict(), 'update': update_page}
                                for update_id, _ in update_page]
-                        return ret
+                        print(ret, flush=True)
                 else:
                     # The whole batch passed
-                    ret = [{'id': update_id, 'status': 'PASSED'} for update_id, _ in update_page]
-                    return ret
+                    pass
+                    # ret = [{'id': update_id, 'status': 'PASSED'} for update_id, _ in update_page]
+                    # print(ret, flush=True)
             except BenchlingError as error:
                 raise DataSourceError(error.json['error']['message'], status_code=400)
 
