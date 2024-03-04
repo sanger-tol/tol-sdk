@@ -6,6 +6,8 @@ from abc import ABC, abstractmethod
 from datetime import datetime
 from typing import Iterable, List, Type
 
+from more_itertools import peekable
+
 import pytz
 
 from .data_object import DataObject
@@ -87,25 +89,59 @@ class GroupStatterDataLoader(DefaultDataLoader):
 
     def get_default_converter(self):
         # This will convert:
-        # {'ID123': 17}
+        # [{'key': {'field1': 'ID123', 'subfield': 'CAT'}
+        #   'stats': {'count': 123, 'other_stat': 345}},
+        #  {'key': {'field1': 'ID123', 'subfield': 'DOG'}
+        #   'stats': {'count': 456, 'other_stat': 678}}
+        # ]
         # to a CoreDataObject of type destination_object_type
         # with id: ID123
-        # and attribute source_object_type_count: 17
+        # and attributes {'count_cat': 123,
+        #                 'count_dog': 456,
+        #                 'other_stat_cat': 345,
+        #                 'other_stat_dog': 678}}
         data_loader = self
 
         class DefaultGroupStatToDataObjectConverter(DataObjectToDataObjectConverter):
+            def convert_iterable(
+                self,
+                inputs: Iterable[DataObject]
+            ) -> Iterable[DataObject]:
+                peekable_inputs = peekable(inputs)
+                additional_attributes = {}
+                for input_ in peekable_inputs:
+                    data_object = next(self.convert(input_))  # There will be one
+                    # We might have some attributes here from before
+                    for attr_name, attr_value in additional_attributes.items():
+                        setattr(data_object, attr_name, attr_value)
+                    next_stat = peekable_inputs.peek(None)
+                    if next_stat is not None and \
+                            next_stat['key'][data_loader._group_statter_group_by[0]] \
+                            == data_object.id:
+                        # We have more stats coming for this ID
+                        additional_attributes = data_object.attributes
+                    else:
+                        additional_attributes = {}
+                        yield data_object
+
             def convert(self, data_object: DataObject) -> Iterable[DataObject]:
+                # It's not a DataObject, sorry!
                 CoreDataObject = self._data_object_factory  # noqa N806
-                # expecting: {'id123': {'count': count}}
-                for k, v in data_object.items():
-                    source_object_type = data_loader._source_object_type
-                    attributes = {f'{source_object_type}_count': v['count']}
-                    for stats_field in data_loader._group_statter_stats_fields:
-                        for stat in data_loader._group_statter_stats:
-                            attributes[f'{source_object_type}_{stats_field}_{stat}'] = \
-                                v[f'{stats_field}_{stat}']
+                source_object_type = data_loader._source_object_type
+                # This gets the string to append
+                append_string = '_'.join(data_object['key'][k]
+                                         for k in data_loader._group_statter_group_by[1::])
+                if append_string != '':
+                    append_string = f'{append_string}_'
+                attributes = {}
+                attributes[f'{source_object_type}_{append_string}count'] \
+                    = data_object['stats']['count']
+                for stats_field in data_loader._group_statter_stats_fields:
+                    for stat in data_loader._group_statter_stats:
+                        attributes[f'{source_object_type}_{append_string}{stats_field}_{stat}'] = \
+                            data_object['stats'][f'{stats_field}_{stat}']
                     ret1 = CoreDataObject(
-                        id_=k,
+                        id_=data_object['key'][data_loader._group_statter_group_by[0]],
                         type_=data_loader._destination_object_type,
                         attributes=attributes
                     )

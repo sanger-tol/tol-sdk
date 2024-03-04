@@ -16,6 +16,7 @@ from tol.core import (
     core_data_object
 )
 from tol.core.operator import (
+    GroupStatter,
     ListGetter,
     Upserter
 )
@@ -39,7 +40,7 @@ class TestDataObjectToDataObjectConverter(DataObjectToDataObjectConverter):
         return iter([ret1, ret2])
 
 
-class _MockDataSource(DataSource, ListGetter, Upserter):
+class _MockDataSource(DataSource, GroupStatter, ListGetter, Upserter):
     def __init__(self, config: Dict):
         super().__init__(config)
 
@@ -56,18 +57,65 @@ class _MockDataSource(DataSource, ListGetter, Upserter):
                 attributes=obj
             )
 
-    def get_stats(self, object_type: str, group_by: str,
+    def get_stats(self, object_type: str, group_by: List[str],
                   stats_fields: List[str] = [],
                   stats: List[str] = [],
                   object_filters: DataSourceFilter = None):
-        mock_objects = [{'value1': {'count': 3,
-                                    'field1_min': 'A',
-                                    'field1_max': 'Z'}},
-                        {'value2': {'count': 17,
-                                    'field1_min': None,
-                                    'field1_max': None}}]
-        for obj in mock_objects:
-            yield obj
+        if len(group_by) == 1:
+            mock_objects = [
+                {
+                    'key': {'group_by_field': 'value1'},
+                    'stats': {
+                        'count': 3,
+                        'field1_min': 'A',
+                        'field1_max': 'Z'
+                    }
+                }, {
+                    'key': {'group_by_field': 'value2'},
+                    'stats': {
+                        'count': 17,
+                        'field1_min': None,
+                        'field1_max': None
+                    }
+                }
+            ]
+        else:
+            mock_objects = [
+                {
+                    'key': {'group_by_field1': 'value1',
+                            'group_by_field2': 'valueX'},
+                    'stats': {
+                        'count': 3,
+                        'field1_min': 'A',
+                        'field1_max': 'Z'
+                    }
+                }, {
+                    'key': {'group_by_field1': 'value1',
+                            'group_by_field2': 'valueY'},
+                    'stats': {
+                        'count': 17,
+                        'field1_min': None,
+                        'field1_max': None
+                    }
+                }, {
+                    'key': {'group_by_field1': 'value2',
+                            'group_by_field2': 'valueX'},
+                    'stats': {
+                        'count': 4,
+                        'field1_min': 'P',
+                        'field1_max': 'Q'
+                    }
+                }, {
+                    'key': {'group_by_field1': 'value2',
+                            'group_by_field2': 'valueY'},
+                    'stats': {
+                        'count': 200,
+                        'field1_min': None,
+                        'field1_max': None
+                    }
+                }
+            ]
+        yield from mock_objects
 
     def upsert(self, object_type, objs, field_prefix=None):
         self.upserted = objs
@@ -169,7 +217,7 @@ class TestDataLoader(TestCase):
             self.assertEqual('source_type', obj.source_object_type)
             self.assertEqual('destination_type', obj.destination_object_type)
 
-    def test_load_group_stats(self):
+    def test_load_group_stats_one_group_by(self):
 
         source = _MockDataSource(config={})
         destination = _MockDataSource(config={})
@@ -183,7 +231,7 @@ class TestDataLoader(TestCase):
             source_object_type='source_type',
             destination_object_type='destination_type',
             dependencies=[],
-            group_statter_group_by='test',
+            group_statter_group_by=['group_by_field'],
             group_statter_stats_fields=['field1'],
             group_statter_stats=['min', 'max'],
             loader_name='test_loader'
@@ -204,6 +252,51 @@ class TestDataLoader(TestCase):
         self.assertEqual(17, obj2.source_type_count)
         self.assertIsNone(obj2.source_type_field1_min)
         self.assertIsNone(obj2.source_type_field1_max)
+
+        with self.assertRaises(StopIteration):
+            next(destination.upserted)
+
+    def test_load_group_stats_two_group_bys(self):
+
+        source = _MockDataSource(config={})
+        destination = _MockDataSource(config={})
+        audit = _MockDataSource(config={})
+        core_data_object(source, destination, audit)
+
+        loader = GroupStatterDataLoader(
+            source=source,
+            destination=destination,
+            audit=audit,
+            source_object_type='source_type',
+            destination_object_type='destination_type',
+            dependencies=[],
+            group_statter_group_by=['group_by_field1', 'group_by_field2'],
+            group_statter_stats_fields=['field1'],
+            group_statter_stats=['min', 'max'],
+            loader_name='test_loader'
+        )
+
+        loader.load()
+
+        obj1 = next(destination.upserted)
+        self.assertEqual('value1', obj1.id)
+        self.assertEqual('destination_type', obj1.type)
+        self.assertEqual(3, obj1.source_type_valueX_count)
+        self.assertEqual('A', obj1.source_type_valueX_field1_min)
+        self.assertEqual('Z', obj1.source_type_valueX_field1_max)
+        self.assertEqual(17, obj1.source_type_valueY_count)
+        self.assertIsNone(obj1.source_type_valueY_field1_min)
+        self.assertIsNone(obj1.source_type_valueY_field1_max)
+
+        obj2 = next(destination.upserted)
+        self.assertEqual('value2', obj2.id)
+        self.assertEqual('destination_type', obj2.type)
+        self.assertEqual(4, obj2.source_type_valueX_count)
+        self.assertEqual('P', obj2.source_type_valueX_field1_min)
+        self.assertEqual('Q', obj2.source_type_valueX_field1_max)
+        self.assertEqual(200, obj2.source_type_valueY_count)
+        self.assertIsNone(obj2.source_type_valueY_field1_min)
+        self.assertIsNone(obj2.source_type_valueY_field1_max)
 
         with self.assertRaises(StopIteration):
             next(destination.upserted)

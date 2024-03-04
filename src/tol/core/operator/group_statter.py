@@ -17,7 +17,7 @@ class GroupStatter(ABC):
     def get_stats(
         self,
         object_type: str,
-        group_by: str,
+        group_by: List[str],
         stats_fields: List[str] = [],
         stats: List[str] = ['min', 'max'],
         object_filters: Optional[DataSourceFilter] = None
