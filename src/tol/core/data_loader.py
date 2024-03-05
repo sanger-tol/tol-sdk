@@ -131,6 +131,7 @@ class GroupStatterDataLoader(DefaultDataLoader):
                 # This gets the string to append
                 append_string = '_'.join(data_object['key'][k]
                                          for k in data_loader._group_statter_group_by[1::])
+                append_string = append_string.lower()
                 if append_string != '':
                     append_string = f'{append_string}_'
                 attributes = {}
@@ -138,7 +139,7 @@ class GroupStatterDataLoader(DefaultDataLoader):
                     = data_object['stats']['count']
                 for stats_field in data_loader._group_statter_stats_fields:
                     for stat in data_loader._group_statter_stats:
-                        attributes[f'{source_object_type}_{append_string}{stats_field}_{stat}'] = \
+                        attributes[f'{source_object_type}_{stats_field}_{append_string}{stat}'] = \
                             data_object['stats'][f'{stats_field}_{stat}']
                     ret1 = CoreDataObject(
                         id_=data_object['key'][data_loader._group_statter_group_by[0]],
