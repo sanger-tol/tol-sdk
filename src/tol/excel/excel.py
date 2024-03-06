@@ -15,6 +15,14 @@ def convert_excel_to_json(file, sheet_name):
     return excel_data.to_dict(orient='records')
 
 
+def convert_excel_to_valid_json_string(file, sheet_name) -> str:
+    """Converts all (date)times to strings"""
+
+    excel_data = pd.read_excel(file, sheet_name=sheet_name)
+    excel_data.replace({np.nan: None}, inplace=True)
+    return excel_data.to_json(orient='records', date_format='iso')
+
+
 def convert_data_objects_to_excel(data_objects, body, sheet_name):
     # Create a binary stream to where Excel data will be written to
     output_stream = io.BytesIO()
