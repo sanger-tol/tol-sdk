@@ -2,6 +2,7 @@
 #
 # SPDX-License-Identifier: MIT
 
+from .cast import *  # noqa
 from .ext import ext  # noqa
 from .factory import create_sql_datasource  # noqa
 from .model import model_base  # noqa
