@@ -47,6 +47,7 @@ class TestEndToEnd:
         ]
 
         data_source.upsert('root', data_objects)
+        time.sleep(2)  # Let Elastic settle down after the upsert
 
         # they should all be present now
         second = list(
@@ -251,14 +252,15 @@ class TestEndToEnd:
         """
         obj1 = data_source.data_object_factory(
             'root',
-            1,
+            '1',
             attributes={}
         )
         data_source.upsert('root', [obj1])
+        time.sleep(2)  # Let Elastic settle down after the upsert
 
         # they should all be present now
         first = list(
-            data_source.get_by_id('root', [1])
+            data_source.get_by_id('root', ['1'])
         )
         assert len(first) == 1
         ret = first[0]
@@ -271,7 +273,7 @@ class TestEndToEnd:
 
         obj1 = data_source.data_object_factory(
             'root',
-            1,
+            '1',
             attributes={'str_column': 'test_2',
                         'int_column': 2,
                         'datetime_column': datetime(2024, 1, 2),
@@ -283,9 +285,10 @@ class TestEndToEnd:
                         'list_column': ['item1', 'item2']}
         )
         data_source.upsert('root', [obj1])
+        time.sleep(2)  # Let Elastic settle down after the upsert
 
         second = list(
-            data_source.get_by_id('root', [1])
+            data_source.get_by_id('root', ['1'])
         )
         assert len(second) == 1
         ret = second[0]
@@ -303,7 +306,7 @@ class TestEndToEnd:
 
         obj1 = data_source.data_object_factory(
             'root',
-            1,
+            '1',
             attributes={'int_column': 3,
                         'datetime_column': datetime(2024, 1, 3),
                         'bool_column': True,
@@ -316,9 +319,10 @@ class TestEndToEnd:
                         'list_column': ['item1', 'item3']}
         )
         data_source.upsert('root', [obj1])
+        time.sleep(2)  # Let Elastic settle down after the upsert
 
         third = list(
-            data_source.get_by_id('root', [1])
+            data_source.get_by_id('root', ['1'])
         )
         assert len(third) == 1
         ret = third[0]
@@ -336,13 +340,14 @@ class TestEndToEnd:
 
         obj1 = data_source.data_object_factory(
             'root',
-            1,
+            '1',
             attributes={}
         )
         data_source.upsert('root', [obj1])
+        time.sleep(2)  # Let Elastic settle down after the upsert
 
         fourth = list(
-            data_source.get_by_id('root', [1])
+            data_source.get_by_id('root', ['1'])
         )
         assert len(fourth) == 1
         ret = fourth[0]
@@ -360,7 +365,7 @@ class TestEndToEnd:
 
         obj1 = data_source.data_object_factory(
             'root',
-            1,
+            '1',
             attributes={'str_column': None,
                         'int_column': None,
                         'datetime_column': None,
@@ -369,9 +374,10 @@ class TestEndToEnd:
                         'list_column': None}
         )
         data_source.upsert('root', [obj1])
+        time.sleep(2)  # Let Elastic settle down after the upsert
 
         fifth = list(
-            data_source.get_by_id('root', [1])
+            data_source.get_by_id('root', ['1'])
         )
         assert len(fifth) == 1
         ret = fifth[0]
@@ -389,17 +395,19 @@ class TestEndToEnd:
         """
         obj1 = data_source.data_object_factory(
             'root',
-            1,
+            '1',
             attributes={'str_column': 'test_2'}
         )
         data_source.upsert('root', [obj1])
         time.sleep(2)
         # they should all be present now
         first = list(
-            data_source.get_by_id('root', [1])
+            data_source.get_by_id('root', ['1'])
         )
         assert len(first) == 1
         ret = first[0]
+        print(ret)
+        print(ret.attributes)
         assert ret.str_column == 'test_2'
         assert ret.int_column is None
         assert ret.datetime_column is None
@@ -423,7 +431,7 @@ class TestEndToEnd:
                            candidate_key=['str_column'])
         time.sleep(2)
         second = list(
-            data_source.get_by_id('root', [1])
+            data_source.get_by_id('root', ['1'])
         )
         assert len(second) == 1
         ret = second[0]
@@ -456,7 +464,7 @@ class TestEndToEnd:
                            candidate_key=['int_column'])
         time.sleep(2)
         third = list(
-            data_source.get_by_id('root', [1])
+            data_source.get_by_id('root', ['1'])
         )
         assert len(third) == 1
         ret = third[0]
@@ -477,7 +485,7 @@ class TestEndToEnd:
                            candidate_key=['int_column'])
         time.sleep(2)
         fourth = list(
-            data_source.get_by_id('root', [1])
+            data_source.get_by_id('root', ['1'])
         )
         assert len(fourth) == 1
         ret = fourth[0]
@@ -505,7 +513,7 @@ class TestEndToEnd:
                            candidate_key=['int_column'])
         time.sleep(5)
         fifth = list(
-            data_source.get_by_id('root', [1])
+            data_source.get_by_id('root', ['1'])
         )
         assert len(fifth) == 1
         ret = fifth[0]
@@ -675,3 +683,57 @@ class TestEndToEnd:
         assert true_stats['count'] == 1
         assert true_stats['datetime_column_min'] == datetime(2020, 1, 1, 0, 0, 0)
         assert true_stats['datetime_column_max'] == datetime(2020, 1, 1, 0, 0, 0)
+
+    @against(elastic)
+    def test_runtime_fields(self, data_source: OperableDataSource):
+        """
+        Upsert a `DataObject` instance, and then query a runtime field
+        """
+        data_objects = [
+            data_source.data_object_factory(
+                'root',
+                str(id_),
+                attributes={
+                    'str_column': f'test_{id_}',
+                    'bool_column': True if id_ % 2 == 0 else False
+                }
+            )
+            for id_ in range(10)
+        ]
+        data_source.upsert('root', data_objects)
+        time.sleep(2)
+
+        # Get by ID
+        first = list(data_source.get_by_id('root', ['1', '2']))
+        assert len(first) == 2
+        ret = first[0]
+        assert ret.runtime_column is True
+        ret = first[1]
+        assert ret.runtime_column is False
+
+        # Get list by runtime field query
+        f = DataSourceFilter()
+        f.and_ = {'runtime_column': [{'op': 'eq', 'value': True}]}
+        second = list(data_source.get_list('root', object_filters=f))
+        assert len(second) == 5
+
+        # Get list page by runtime field query
+        third, _ = data_source.get_list_page(
+            'root',
+            1,
+            object_filters=f,
+            page_size=20
+        )
+        assert len(list(third)) == 5
+
+        # Get list and check runtime field
+        f = DataSourceFilter()
+        f.and_ = {'bool_column': [{'op': 'eq', 'value': True}]}
+        fourth = list(data_source.get_list('root', object_filters=f))
+        assert len(fourth) == 6  # 5 plus archetype
+        assert fourth[0].runtime_column is False
+        assert fourth[1].runtime_column is False
+        assert fourth[2].runtime_column is False
+        assert fourth[3].runtime_column is False
+        assert fourth[4].runtime_column is False
+        assert fourth[5].runtime_column is False

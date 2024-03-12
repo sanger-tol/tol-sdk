@@ -6,8 +6,9 @@ import hashlib
 import json
 from collections.abc import Callable
 from datetime import datetime
-from functools import cache
 from typing import Any, Dict, Iterable, List, Mapping, Optional, Tuple
+
+from cachetools.func import ttl_cache
 
 from caseconverter import (
     kebabcase,
@@ -17,6 +18,8 @@ from caseconverter import (
 from dateutil import parser
 
 from elasticsearch import (Elasticsearch, helpers)
+
+from more_itertools import seekable
 
 from ..core import (
     AttributeMetadata,
@@ -61,13 +64,13 @@ class ElasticDataSource(
                  attribute_metadata: AttributeMetadata = DefaultAttributeMetadata):
         super().__init__(config,
                          expected=['uri', 'user', 'password',
-                                   'index_prefix', 'relationship_cfg'],
+                                   'index_prefix', 'relationship_cfg',
+                                   'runtime_fields'],
                          attribute_metadata=attribute_metadata)
         """
         relationship_cfg is also supported if we want to handle relationships
         Only FKs pointing to IDs are currently supported
         """
-
         self._initialise_elasticsearch()
         self.__lazy = False
 
@@ -291,12 +294,19 @@ class ElasticDataSource(
         object_ids: Iterable[DataId],
         **kwargs
     ) -> Iterable[DataObject]:
-        index = self.__get_index(object_type)
-        resp = self.es.mget(
-            body={'ids': object_ids},
-            index=index
-        )
-        return self._convert_dict_to_data_objects(resp['docs'])
+        f = DataSourceFilter()
+        f.and_ = {'_id': [{'op': 'in_list', 'value': object_ids}]}
+        # get_by_id is expected to return objects in the order they were asked for
+        # or None if not found, hence the following rearrangement.
+        seekable_objects = seekable(self.get_list(object_type, object_filters=f))
+        for id_ in object_ids:
+            seekable_objects.seek(0)
+            for obj in seekable_objects:
+                if obj.id == id_:
+                    yield obj
+                    break
+            else:
+                yield None
 
     def get_list_page(
         self,
@@ -311,6 +321,10 @@ class ElasticDataSource(
         index = self.__get_index(object_type)
         query = self._build_elasticsearch_query(object_type, object_filters)
         sort = self._build_elasticsearch_sort(object_type, sort_by)
+        fields = list(self.runtime_fields[object_type].keys()) \
+            if object_type in self.runtime_fields else None
+        runtime_mappings = self.runtime_fields[object_type] \
+            if object_type in self.runtime_fields else None
         if page_size is None:
             page_size = self.get_page_size()
         from_ = (page - 1) * page_size
@@ -319,7 +333,9 @@ class ElasticDataSource(
             size=page_size,
             index=index,
             query=query,
-            sort=sort
+            sort=sort,
+            fields=fields,
+            runtime_mappings=runtime_mappings
         )
         return self._convert_dict_to_data_objects(resp['hits']['hits']), \
             resp['hits']['total']['value']
@@ -480,11 +496,17 @@ class ElasticDataSource(
     ) -> Iterable[DataObject]:
         index = self.__get_index(object_type)
         query = self._build_elasticsearch_query(object_type, object_filters)
+        fields = list(self.runtime_fields[object_type].keys()) \
+            if object_type in self.runtime_fields else None
+        runtime_mappings = self.runtime_fields[object_type] \
+            if object_type in self.runtime_fields else None
         generator = self.helpers.scan(self.es,
                                       index=index,
                                       scroll='10m',
                                       size=500,
-                                      query={'query': query})
+                                      query={'query': query},
+                                      fields=fields,
+                                      runtime_mappings=runtime_mappings)
         return self._convert_dict_to_data_objects(generator)
 
     def _convert_dict_to_data_objects(self, objs: Dict) -> Iterable:
@@ -493,20 +515,30 @@ class ElasticDataSource(
                 type_ = self.__get_object_type(obj['_index'])
                 id_ = obj['_id']
                 attributes = obj['_source']
-                yield self._convert_data_dict_to_data_object(type_, id_, attributes)
+                runtime_attributes = obj['fields'] if 'fields' in obj else {}
+                yield self._convert_data_dict_to_data_object(
+                    type_,
+                    id_,
+                    attributes,
+                    runtime_attributes
+                )
             else:
                 yield None
 
-    def _convert_data_dict_to_data_object(self, type_, id_, data):
+    def _convert_data_dict_to_data_object(self, type_, id_, data, runtime_data):
         attributes = {
             k: self.__make_dates(type_, k, v) for k, v in data.items()
+            if k in self.attribute_types[type_].keys()
+        }
+        runtime_attributes = {
+            k: self.__make_dates(type_, k, v[0]) for k, v in runtime_data.items()
             if k in self.attribute_types[type_].keys()
         }
         to_one = self.__make_to_one_relations(type_, data)
         return self.data_object_factory(
             type_,
             id_=id_,
-            attributes=attributes,
+            attributes=attributes | runtime_attributes,
             to_one=to_one
         )
 
@@ -547,7 +579,8 @@ class ElasticDataSource(
         return self._convert_data_dict_to_data_object(
             type_,
             id_,
-            relation_data
+            relation_data,
+            {}  # This can be empty because runtime_fields are not applicable for enriched objects
         )
 
     def __make_dates(self, object_type, attribute_name, value):
@@ -769,7 +802,7 @@ class ElasticDataSource(
         return resp['count']
 
     @property
-    @cache
+    @ttl_cache(ttl=3600)
     def supported_types(self):
         index_names = self.es.cat.indices(h='index', s='index').split()
         return [self.__get_object_type(index_name)
@@ -791,15 +824,20 @@ class ElasticDataSource(
         if 'properties' not in mapping[index_name]['mappings']:
             return {}
         properties = mapping[index_name]['mappings']['properties']
-        return {
+        standard_types = {
             property_name: self.__map_type(properties[property_name]['type'])
             for property_name in properties
             if 'type' in properties[property_name]
             and 'type' != 'uid'
         }
+        runtime_types = {
+            name: self.__map_type(self.runtime_fields[object_type][name]['type'])
+            for name in self.runtime_fields[object_type].keys()
+        } if object_type in self.runtime_fields else {}
+        return standard_types | runtime_types
 
     @property
-    @cache
+    @ttl_cache(ttl=3600)
     def attribute_types(self) -> dict[str, dict[str, str]]:
         return {
             t: self._get_attribute_types_for_object_type(t)
