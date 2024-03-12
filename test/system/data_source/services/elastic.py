@@ -24,7 +24,8 @@ TEST_ATTRIBUTE_TYPES = {
         'str_column': 'str',
         'int_column': 'int',
         'datetime_column': 'datetime',
-        'bool_column': 'bool'
+        'bool_column': 'bool',
+        'runtime_column': 'bool'
     },
     'related': {
         'str_column': 'str',

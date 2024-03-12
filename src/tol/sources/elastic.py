@@ -138,6 +138,33 @@ def elastic():
                            'species': rc_species,
                            'tissue_prep': rc_tissue_prep}
 
+    runtime_fields = {
+        'species': {
+            'calc_coverage': {
+                'type': 'double',
+                'script': """
+                    if (doc['mlwh_run_data_mlwh_hifi_read_bases_sum'].size() > 0
+                        && doc['sts_genome_size'].size() > 0) {
+                        emit(doc['mlwh_run_data_mlwh_hifi_read_bases_sum'].value /
+                             doc['sts_genome_size'].value)
+                    }
+                """
+            }
+        },
+        'tolid': {
+            'calc_coverage': {
+                'type': 'double',
+                'script': """
+                    if (doc['mlwh_run_data_mlwh_hifi_read_bases_sum'].size() > 0
+                        && doc['tolid_species.sts_genome_size'].size() > 0) {
+                        emit(doc['mlwh_run_data_mlwh_hifi_read_bases_sum'].value /
+                             doc['tolid_species.sts_genome_size'].value)
+                    }
+                """
+            }
+        }
+    }
+
     amd = data_source_attribute_metadata(
         portal_attributes()
     )
@@ -147,7 +174,8 @@ def elastic():
         'user': os.getenv('ELASTIC_USER'),
         'password': os.getenv('ELASTIC_PASSWORD'),
         'index_prefix': os.getenv('ELASTIC_INDEX_PREFIX'),
-        'relationship_cfg': relationship_config},
+        'relationship_cfg': relationship_config,
+        'runtime_fields': runtime_fields},
         attribute_metadata=amd)
     core_data_object(elastic)
     return elastic

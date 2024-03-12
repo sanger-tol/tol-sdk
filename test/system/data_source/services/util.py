@@ -29,6 +29,18 @@ def elastic_datasource(
             'user': os.environ['ELASTIC_USER'],
             'password': os.environ['ELASTIC_PASSWORD'],
             'index_prefix': get_prefix(),
-            'relationship_cfg': {'root': rc_root}
+            'relationship_cfg': {'root': rc_root},
+            'runtime_fields': {
+                'root': {
+                    'runtime_column': {
+                        'type': 'boolean',
+                        'script': """
+                            if (doc['bool_column'].size()>0) {
+                                emit(!doc['bool_column'].value)
+                            }
+                        """
+                    }
+                }
+            }
         }
     )

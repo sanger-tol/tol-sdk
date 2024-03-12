@@ -60,7 +60,15 @@ def mock_elastic_data_source() -> tuple[Callable, ElasticDataSource]:
         'user': 'user',
         'password': 'password',
         'index_prefix': 'test',
-        'relationship_cfg': {}
+        'relationship_cfg': {},
+        'runtime_fields': {
+            'obj_type': {
+                'field7': {
+                    'type': 'keyword',
+                    'script': 'emit("Hello")'
+                }
+            }
+        }
     })
     core_data_object_mock = core_data_object(eds)
     return core_data_object_mock, eds
@@ -101,23 +109,20 @@ class TestUidSubstitution:
 
         _, mock_ds = mock_elastic_data_source()
 
-        mock_ds.es.mget.return_value = {
-            'docs': [
-                {
-                    '_index': 'test_obj_type',
-                    '_id': 'lol',
-                    '_source': {
-                        'field1': 'train',
-                        'uid': 'yes',
-                    }
+        mock_ds.helpers.scan.return_value = [
+            {
+                '_index': 'test_obj_type',
+                '_id': 'lol',
+                '_source': {
+                    'field1': 'train',
+                    'uid': 'yes',
                 }
-            ]
-        }
+            }
+        ]
 
         (obj,) = list(
             mock_ds.get_by_id('obj_type', ['lol'])
         )
-        print(obj)
 
         assert 'uid' not in obj.attributes
 
@@ -334,19 +339,23 @@ class TestElasticDataSource(TestCase):
 
         eds.helpers.scan.return_value = [
             {'_source': {'field1': 'value1', 'field2': 'value2'},
+             'fields': {'field7': ['Hello']},
              '_id': '1', '_index': 'test-obj-type'},
             {'_source': {'field1': 'value3', 'field2': 'value4'},
+             'fields': {'field7': ['Hello']},
              '_id': '2', '_index': 'test-obj-type'}
         ]
 
         returned = eds.get_list('obj_type')
         eds.helpers.scan.assert_called_once()
         first = next(returned)
-        self.assertEqual({'field1': 'value1', 'field2': 'value2'}, first.attributes)
+        self.assertEqual({'field1': 'value1', 'field2': 'value2', 'field7': 'Hello'},
+                         first.attributes)
         self.assertEqual('1', first.id)
         self.assertEqual('obj_type', first.type)
         second = next(returned)
-        self.assertEqual({'field1': 'value3', 'field2': 'value4'}, second.attributes)
+        self.assertEqual({'field1': 'value3', 'field2': 'value4', 'field7': 'Hello'},
+                         second.attributes)
         self.assertEqual('2', second.id)
         self.assertEqual('obj_type', second.type)
         with self.assertRaises(StopIteration):
@@ -359,8 +368,10 @@ class TestElasticDataSource(TestCase):
             'hits': {
                 'hits': [
                     {'_source': {'field1': 'value1', 'field2': 'value2'},
+                     'fields': {'field7': ['Hello']},
                      '_id': '1', '_index': 'test-obj-type'},
                     {'_source': {'field1': 'value3', 'field2': 'value4'},
+                     'fields': {'field7': ['Hello']},
                      '_id': '2', '_index': 'test-obj-type'}
                 ],
                 'total': {
@@ -373,11 +384,13 @@ class TestElasticDataSource(TestCase):
         eds.es.search.assert_called_once()
         self.assertEqual(2, total)
         first = next(returned)
-        self.assertEqual({'field1': 'value1', 'field2': 'value2'}, first.attributes)
+        self.assertEqual({'field1': 'value1', 'field2': 'value2', 'field7': 'Hello'},
+                         first.attributes)
         self.assertEqual('1', first.id)
         self.assertEqual('obj_type', first.type)
         second = next(returned)
-        self.assertEqual({'field1': 'value3', 'field2': 'value4'}, second.attributes)
+        self.assertEqual({'field1': 'value3', 'field2': 'value4', 'field7': 'Hello'},
+                         second.attributes)
         self.assertEqual('2', second.id)
         self.assertEqual('obj_type', second.type)
         with self.assertRaises(StopIteration):
@@ -386,33 +399,35 @@ class TestElasticDataSource(TestCase):
     def test_get_by_id(self):
         _, eds = mock_elastic_data_source()
 
-        eds.es.mget.return_value = {
-            'docs': [
-                {
-                    '_index': 'test-obj-type',
-                    '_id': '1',
-                    '_source': {'field1': 'value1', 'field2': 'value2'}
-                },
-                {
-                    '_index': 'test-obj-type',
-                    '_id': '2',
-                    '_source': {'field1': 'value3', 'field2': 'value4'}
-                }
-            ]
-        }
+        eds.helpers.scan.return_value = [
+            {
+                '_index': 'test-obj-type',
+                '_id': '1',
+                '_source': {'field1': 'value1', 'field2': 'value2'},
+                'fields': {'field7': ['Hello']}
+            },
+            {
+                '_index': 'test-obj-type',
+                '_id': '2',
+                '_source': {'field1': 'value3', 'field2': 'value4'},
+                'fields': {'field7': ['Hello']},
+            }
+        ]
 
-        returned = eds.get_by_id('obj_type', ['1', '2'])
-        eds.es.mget.assert_called_once()
+        returned = eds.get_by_id('obj_type', ['2', '1'])
         first = next(returned)
-        self.assertEqual({'field1': 'value1', 'field2': 'value2'}, first.attributes)
-        self.assertEqual('1', first.id)
+        self.assertEqual({'field1': 'value3', 'field2': 'value4', 'field7': 'Hello'},
+                         first.attributes)
+        self.assertEqual('2', first.id)
         self.assertEqual('obj_type', first.type)
         second = next(returned)
-        self.assertEqual({'field1': 'value3', 'field2': 'value4'}, second.attributes)
-        self.assertEqual('2', second.id)
+        self.assertEqual({'field1': 'value1', 'field2': 'value2', 'field7': 'Hello'},
+                         second.attributes)
+        self.assertEqual('1', second.id)
         self.assertEqual('obj_type', second.type)
         with self.assertRaises(StopIteration):
             next(returned)
+        eds.helpers.scan.assert_called_once()
 
     def test_build_query(self):
         _, eds = mock_elastic_data_source()
@@ -792,18 +807,16 @@ class TestElasticDataSource(TestCase):
         rc = RelationshipConfig()
         rc.to_one = {'relname': 'reltype'}
         eds.relationship_cfg = {'obj_type': rc}
-        eds.es.mget.return_value = {
-            'docs': [
-                {
-                    '_index': 'test-obj-type',
-                    '_id': '1234',
-                    '_source': {'field1': 'value1',
-                                'relname': {'id': '5678',
-                                            'field3': 'value3',
-                                            'field4': 'value4'}}
-                }
-            ]
-        }
+        eds.helpers.scan.return_value = [
+            {
+                '_index': 'test-obj-type',
+                '_id': '1234',
+                '_source': {'field1': 'value1',
+                            'relname': {'id': '5678',
+                                        'field3': 'value3',
+                                        'field4': 'value4'}}
+            }
+        ]
         eds.es.cat.indices.return_value = 'test-obj-type\ntest-reltype'
         source_objects = eds.get_by_id('obj_type', ['1234'])
         source_object = next(source_objects)
@@ -814,21 +827,24 @@ class TestElasticDataSource(TestCase):
         self.assertEqual(related_object.field3, 'value3')
 
         # More than one returned (shouldn't happen)
-        eds.es.mget.return_value = {
-            'docs': [
-                {
-                    '_index': 'test-obj-type',
-                    '_id': '1234',
-                    '_source': {'field1': 'value1',
-                                'relname': [{'id': '5678',
-                                             'field3': 'value3',
-                                             'field4': 'value4'},
-                                            {'id': '6789',
-                                             'field3': 'value5',
-                                             'field4': 'value6'}]}
+        eds.helpers.scan.return_value = [
+            {
+                '_index': 'test-obj-type',
+                '_id': '1234',
+                '_source': {
+                    'field1': 'value1',
+                    'relname': [{
+                        'id': '5678',
+                        'field3': 'value3',
+                        'field4': 'value4'
+                    }, {
+                        'id': '6789',
+                        'field3': 'value5',
+                        'field4': 'value6'
+                    }]
                 }
-            ]
-        }
+            }
+        ]
 
         source_objects = eds.get_by_id('obj_type', ['1234'])
         source_object = next(source_objects)
@@ -836,31 +852,27 @@ class TestElasticDataSource(TestCase):
         self.assertIsNone(related_object)
 
         # None returned
-        eds.es.mget.return_value = {
-            'docs': [
-                {
-                    '_index': 'test-obj-type',
-                    '_id': '1234',
-                    '_source': {'field1': 'value1',
-                                'relname': None}
-                }
-            ]
-        }
+        eds.helpers.scan.return_value = [
+            {
+                '_index': 'test-obj-type',
+                '_id': '1234',
+                '_source': {'field1': 'value1',
+                            'relname': None}
+            }
+        ]
         source_objects = eds.get_by_id('obj_type', ['1234'])
         source_object = next(source_objects)
         related_object = source_object.to_one_relationships['relname']
         self.assertIsNone(related_object)
 
         # Relationship name missing
-        eds.es.mget.return_value = {
-            'docs': [
-                {
-                    '_index': 'test-obj-type',
-                    '_id': '1234',
-                    '_source': {'field1': 'value1'}
-                }
-            ]
-        }
+        eds.helpers.scan.return_value = [
+            {
+                '_index': 'test-obj-type',
+                '_id': '1234',
+                '_source': {'field1': 'value1'}
+            }
+        ]
         source_objects = eds.get_by_id('obj_type', ['1234'])
         source_object = next(source_objects)
         related_object = source_object.to_one_relationships['relname']
