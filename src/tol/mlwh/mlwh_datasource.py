@@ -109,9 +109,9 @@ class MlwhDataSource(DataSource, ListGetter):
         return {
             'name_root': (
                 'CASE WHEN run.tag2_identifier'
-                ' THEN CONCAT(well_metrics.movie_name'
+                ' IS NOT NULL THEN CONCAT(well_metrics.movie_name'
                 ", '#', run.tag_identifier, '#', run.tag2_identifier)"
-                ' WHEN run.tag_identifier'
+                ' WHEN run.tag_identifier IS NOT NULL'
                 ' THEN CONCAT(well_metrics.movie_name'
                 ", '#', run.tag_identifier)"
                 ' ELSE well_metrics.movie_name END'
