@@ -11,12 +11,30 @@ from typing import Iterable, Optional
 if typing.TYPE_CHECKING:
     from ..data_object import DataObject
 
+from more_itertools import chunked
+
 
 class DetailGetter(ABC):
     """
     Gets an Iterable of (Optional) DataObject instances given an
     Iterable of ID strings.
     """
+    page_size = 20
+
+    def get_by_ids(
+        self,
+        object_type: str,
+        object_ids: Iterable[str]
+    ) -> Iterable[Optional[DataObject]]:
+        """
+        Gets an Iterable of DataObject instances, of specified object_type,
+        with their id's equal to those given in the object_ids Iterable (or
+        None if the id at that position is not found).
+        This splits up the request to get_by_id into sensible size
+        batches, so we can safely pass a long list to this method
+        """
+        for chunk in chunked(object_ids, self.page_size):
+            yield from self.get_by_id(object_type, chunk)
 
     @abstractmethod
     def get_by_id(

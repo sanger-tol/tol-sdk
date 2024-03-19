@@ -32,7 +32,7 @@ class TestEndToEnd:
 
         # none of them are present yet
         first = list(
-            data_source.get_by_id('root', ids)
+            data_source.get_by_ids('root', ids)
         )
 
         assert first == [None, None, None]
@@ -51,7 +51,7 @@ class TestEndToEnd:
 
         # they should all be present now
         second = list(
-            data_source.get_by_id('root', ids)
+            data_source.get_by_ids('root', ids)
         )
 
         assert len(second) == 3
@@ -70,7 +70,7 @@ class TestEndToEnd:
 
         # none of them are present yet
         first = list(
-            data_source.get_by_id('root', ids)
+            data_source.get_by_ids('root', ids)
         )
 
         assert first == [None, None, None]
@@ -260,7 +260,7 @@ class TestEndToEnd:
 
         # they should all be present now
         first = list(
-            data_source.get_by_id('root', ['1'])
+            data_source.get_by_ids('root', ['1'])
         )
         assert len(first) == 1
         ret = first[0]
@@ -288,7 +288,7 @@ class TestEndToEnd:
         time.sleep(2)  # Let Elastic settle down after the upsert
 
         second = list(
-            data_source.get_by_id('root', ['1'])
+            data_source.get_by_ids('root', ['1'])
         )
         assert len(second) == 1
         ret = second[0]
@@ -322,7 +322,7 @@ class TestEndToEnd:
         time.sleep(2)  # Let Elastic settle down after the upsert
 
         third = list(
-            data_source.get_by_id('root', ['1'])
+            data_source.get_by_ids('root', ['1'])
         )
         assert len(third) == 1
         ret = third[0]
@@ -347,7 +347,7 @@ class TestEndToEnd:
         time.sleep(2)  # Let Elastic settle down after the upsert
 
         fourth = list(
-            data_source.get_by_id('root', ['1'])
+            data_source.get_by_ids('root', ['1'])
         )
         assert len(fourth) == 1
         ret = fourth[0]
@@ -377,7 +377,7 @@ class TestEndToEnd:
         time.sleep(2)  # Let Elastic settle down after the upsert
 
         fifth = list(
-            data_source.get_by_id('root', ['1'])
+            data_source.get_by_ids('root', ['1'])
         )
         assert len(fifth) == 1
         ret = fifth[0]
@@ -402,7 +402,7 @@ class TestEndToEnd:
         time.sleep(2)
         # they should all be present now
         first = list(
-            data_source.get_by_id('root', ['1'])
+            data_source.get_by_ids('root', ['1'])
         )
         assert len(first) == 1
         ret = first[0]
@@ -431,7 +431,7 @@ class TestEndToEnd:
                            candidate_key=['str_column'])
         time.sleep(2)
         second = list(
-            data_source.get_by_id('root', ['1'])
+            data_source.get_by_ids('root', ['1'])
         )
         assert len(second) == 1
         ret = second[0]
@@ -464,7 +464,7 @@ class TestEndToEnd:
                            candidate_key=['int_column'])
         time.sleep(2)
         third = list(
-            data_source.get_by_id('root', ['1'])
+            data_source.get_by_ids('root', ['1'])
         )
         assert len(third) == 1
         ret = third[0]
@@ -485,7 +485,7 @@ class TestEndToEnd:
                            candidate_key=['int_column'])
         time.sleep(2)
         fourth = list(
-            data_source.get_by_id('root', ['1'])
+            data_source.get_by_ids('root', ['1'])
         )
         assert len(fourth) == 1
         ret = fourth[0]
@@ -513,7 +513,7 @@ class TestEndToEnd:
                            candidate_key=['int_column'])
         time.sleep(5)
         fifth = list(
-            data_source.get_by_id('root', ['1'])
+            data_source.get_by_ids('root', ['1'])
         )
         assert len(fifth) == 1
         ret = fifth[0]
@@ -562,7 +562,7 @@ class TestEndToEnd:
 
         # none of them are present yet
         first = list(
-            data_source.get_by_id('root', ids)
+            data_source.get_by_ids('root', ids)
         )
 
         assert first == [None, None, None]
@@ -704,7 +704,7 @@ class TestEndToEnd:
         time.sleep(2)
 
         # Get by ID
-        first = list(data_source.get_by_id('root', ['1', '2']))
+        first = list(data_source.get_by_ids('root', ['1', '2']))
         assert len(first) == 2
         ret = first[0]
         assert ret.runtime_column is True

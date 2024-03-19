@@ -9,9 +9,10 @@ from more_itertools import flatten
 
 from .data_object import DataObject
 from .factory import DataObjectFactory
+from .operator.updater import DataObjectUpdate
 
 
-class DataObjectToDataObjectConverter(ABC):
+class DataObjectToDataObjectOrUpdateConverter(ABC):
     """
     This is (currently) not inheriting from Converter as we are changing
     the method signatures (convert() can return None, a DataObject or an
@@ -29,12 +30,12 @@ class DataObjectToDataObjectConverter(ABC):
 
     def convert_iterable(
         self,
-        inputs: Iterable[DataObject]
+        inputs: Iterable[DataObject | DataObjectUpdate]
     ) -> Iterable[DataObject]:
         return flatten((self.convert(i) for i in inputs))
 
     @abstractmethod
-    def convert(self, input_: DataObject) -> Iterable[DataObject]:
+    def convert(self, input_: DataObject) -> Iterable[DataObject | DataObjectUpdate]:
         """
         Converts an input representation to an output representation.
         output can be:
@@ -44,7 +45,7 @@ class DataObjectToDataObjectConverter(ABC):
         """
 
 
-class DefaultDataObjectToDataObjectConverter(DataObjectToDataObjectConverter):
+class DefaultDataObjectToDataObjectConverter(DataObjectToDataObjectOrUpdateConverter):
 
     def convert(self, data_object: DataObject) -> Iterable[DataObject]:
         """

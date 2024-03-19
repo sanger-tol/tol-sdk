@@ -6,12 +6,12 @@ from typing import Iterable
 
 from ...core import (
     DataObject,
-    DataObjectToDataObjectConverter
+    DataObjectToDataObjectOrUpdateConverter
 )
 
 
 class TolqcSpeciesToElasticSpeciesConverter(
-        DataObjectToDataObjectConverter):
+        DataObjectToDataObjectOrUpdateConverter):
 
     ATTRIBUTE_MAPPING = {
         'taxon_family': 'family',

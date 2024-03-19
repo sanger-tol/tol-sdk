@@ -6,11 +6,11 @@ from typing import Iterable
 
 from ...core import (
     DataObject,
-    DataObjectToDataObjectConverter
+    DataObjectToDataObjectOrUpdateConverter
 )
 
 
-class TolqcDataToElasticRunDataConverter(DataObjectToDataObjectConverter):
+class TolqcDataToElasticRunDataConverter(DataObjectToDataObjectOrUpdateConverter):
 
     def __get_id(self, obj):
         run_id = getattr(obj.run, 'run_id', 'NONE')

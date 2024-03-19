@@ -6,12 +6,12 @@ from typing import Iterable
 
 from ...core import (
     DataObject,
-    DataObjectToDataObjectConverter
+    DataObjectToDataObjectOrUpdateConverter
 )
 
 
 class ElasticSequencingRequestLrpacbioConverter(
-        DataObjectToDataObjectConverter):
+        DataObjectToDataObjectOrUpdateConverter):
 
     def _clean_attribute(self, value):
         if isinstance(value, str):
