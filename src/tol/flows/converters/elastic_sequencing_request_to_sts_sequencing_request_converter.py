@@ -7,12 +7,12 @@ from typing import Iterable
 
 from ...core import (
     DataObject,
-    DataObjectToDataObjectConverter
+    DataObjectToDataObjectOrUpdateConverter
 )
 
 
 class ElasticSequencingRequestToStsSequencingRequestConverter(
-        DataObjectToDataObjectConverter):
+        DataObjectToDataObjectOrUpdateConverter):
 
     def convert(self, data_object: DataObject) -> Iterable[DataObject]:
         submission_date = datetime.fromtimestamp(0)

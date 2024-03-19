@@ -4,21 +4,21 @@
 
 from abc import ABC, abstractmethod
 from datetime import datetime
-from typing import Iterable, List, Type
+from typing import Iterable, List, Optional, Type
 
 from more_itertools import peekable
 
 import pytz
 
 from .data_object import DataObject
-from .data_object_converter import DataObjectToDataObjectConverter
+from .data_object_converter import DataObjectToDataObjectOrUpdateConverter
 from .datasource import DataSource
 from .datasource_filter import DataSourceFilter
 
 
 class DataLoader(ABC):
     @abstractmethod
-    def load(self, field_prefix: str = None, dry_run: bool = False):
+    def load(self, field_prefix: str = None, dry_run: bool = False, **kwargs):
         """
         Loads a set of object from one DataSource to another
         """
@@ -29,9 +29,9 @@ class DefaultDataLoader():
                  dependencies: List[Type['DataLoader']],
                  source_object_type: str, destination_object_type: str,
                  loader_name: str,
-                 audit: DataSource = None,
-                 convert_class: DataObjectToDataObjectConverter = None,
-                 object_filters: DataSourceFilter = None):
+                 audit: Optional[DataSource] = None,
+                 convert_class: Optional[DataObjectToDataObjectOrUpdateConverter] = None,
+                 object_filters: Optional[DataSourceFilter] = None):
 
         self._source = source
         self._destination = destination
@@ -46,19 +46,40 @@ class DefaultDataLoader():
         self._loader_name = loader_name
         self._object_filters = object_filters
 
-    def load(self, field_prefix: str = None, dry_run: bool = False):
+    def load(
+            self,
+            field_prefix: str = None,
+            dry_run: bool = False,
+            candidate_key: Optional[List[str]] = ['id']):
         if not dry_run:
             self._record_time('start')
 
         source_objs = self._get_source_objects()
         converted_objs = self._convert_objects(source_objs, self._converter)
-        if not dry_run:
-            self._destination.upsert(self._destination_object_type, converted_objs,
-                                     field_prefix=field_prefix)
-            self._record_time('end')
+        if candidate_key == ['id']:
+            if not dry_run:
+                self._destination.upsert(
+                    object_type=self._destination_object_type,
+                    objects=converted_objs,
+                    field_prefix=field_prefix
+                )
+            else:
+                for converted_obj in converted_objs:
+                    print(f'{converted_obj.id}: {converted_obj.attributes}')
         else:
-            for converted_obj in converted_objs:
-                print(f'{converted_obj.id}: {converted_obj.attributes}')
+            if not dry_run:
+                self._destination.update(
+                    object_type=self._destination_object_type,
+                    updates=converted_objs,
+                    candidate_key=candidate_key,
+                    field_prefix=field_prefix
+                )
+            else:
+                for _, converted_obj in converted_objs:
+                    print(converted_obj)
+
+        if not dry_run:
+            self._record_time('end')
 
     def _get_source_objects(self) -> Iterable:
         source_objs = self._source.get_list(
@@ -102,7 +123,7 @@ class GroupStatterDataLoader(DefaultDataLoader):
         #                 'other_stat_dog': 678}}
         data_loader = self
 
-        class DefaultGroupStatToDataObjectConverter(DataObjectToDataObjectConverter):
+        class DefaultGroupStatToDataObjectConverter(DataObjectToDataObjectOrUpdateConverter):
             def convert_iterable(
                 self,
                 inputs: Iterable[DataObject]
@@ -154,11 +175,11 @@ class GroupStatterDataLoader(DefaultDataLoader):
                  source_object_type: str, destination_object_type: str,
                  loader_name: str,
                  audit: DataSource = None,
-                 convert_class: DataObjectToDataObjectConverter = None,
-                 object_filters: DataSourceFilter = None,
-                 group_statter_group_by: str = None,
-                 group_statter_stats_fields: List[str] = [],
-                 group_statter_stats: List[str] = ['min', 'max']):
+                 convert_class: Optional[DataObjectToDataObjectOrUpdateConverter] = None,
+                 object_filters: Optional[DataSourceFilter] = None,
+                 group_statter_group_by: Optional[str] = None,
+                 group_statter_stats_fields: Optional[List[str]] = [],
+                 group_statter_stats: Optional[List[str]] = ['min', 'max']):
         if convert_class is None:
             convert_class = self.get_default_converter()
         super().__init__(
@@ -179,4 +200,27 @@ class GroupStatterDataLoader(DefaultDataLoader):
             stats_fields=self._group_statter_stats_fields,
             stats=self._group_statter_stats,
             object_filters=self._object_filters)
+        return source_objs
+
+
+class IdsDataLoader(DefaultDataLoader):
+    def __init__(self, source: DataSource, destination: DataSource,
+                 dependencies: List[Type['DataLoader']],
+                 source_object_type: str, destination_object_type: str,
+                 loader_name: str,
+                 audit: Optional[DataSource] = None,
+                 convert_class: Optional[DataObjectToDataObjectOrUpdateConverter] = None,
+                 object_ids: Optional[Iterable[str]] = None):
+        super().__init__(
+            source=source, destination=destination,
+            dependencies=dependencies, source_object_type=source_object_type,
+            destination_object_type=destination_object_type,
+            loader_name=loader_name, audit=audit,
+            convert_class=convert_class)
+        self._object_ids = object_ids
+
+    def _get_source_objects(self) -> Iterable:
+        source_objs = self._source.get_by_ids(
+            self._source_object_type,
+            self._object_ids)
         return source_objs

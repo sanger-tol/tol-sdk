@@ -2,17 +2,18 @@
 #
 # SPDX-License-Identifier: MIT
 
-from typing import Dict, Iterable, List
+from typing import Dict, Iterable, List, Optional
 from unittest import (TestCase)
 
 from tol.core import (
     DataObject,
-    DataObjectToDataObjectConverter,
+    DataObjectToDataObjectOrUpdateConverter,
     DataSource,
     DataSourceFilter,
     DefaultDataLoader,
     DefaultDataObjectToDataObjectConverter,
     GroupStatterDataLoader,
+    IdsDataLoader,
     core_data_object
 )
 from tol.core.operator import (
@@ -22,7 +23,7 @@ from tol.core.operator import (
 )
 
 
-class TestDataObjectToDataObjectConverter(DataObjectToDataObjectConverter):
+class TestDataObjectToDataObjectConverter(DataObjectToDataObjectOrUpdateConverter):
 
     def convert(self, data_object: DataObject) -> Iterable[DataObject]:
         CoreDataObject = self._data_object_factory  # noqa N806
@@ -50,6 +51,20 @@ class _MockDataSource(DataSource, GroupStatter, ListGetter, Upserter):
         else:
             mock_objects = [{'id': 'test', 'attribute': 'att1'},
                             {'id': 'test2', 'attribute': 'att2'}]
+        for obj in mock_objects:
+            yield self.data_object_factory(
+                type_=object_type,
+                id_=obj.pop('id'),
+                attributes=obj
+            )
+
+    def get_by_ids(
+            self, object_type: str,
+            object_ids: Iterable[str]) -> Iterable[Optional[DataObject]]:
+        mock_objects = [
+            {'id': 'test', 'attribute': 'att1'},
+            {'id': 'test2', 'attribute': 'att2'}
+        ]
         for obj in mock_objects:
             yield self.data_object_factory(
                 type_=object_type,
@@ -117,8 +132,8 @@ class _MockDataSource(DataSource, GroupStatter, ListGetter, Upserter):
             ]
         yield from mock_objects
 
-    def upsert(self, object_type, objs, field_prefix=None):
-        self.upserted = objs
+    def upsert(self, object_type, objects, field_prefix=None):
+        self.upserted = objects
         self.upserted_object_type = object_type
 
     @property
@@ -132,7 +147,6 @@ class _MockDataSource(DataSource, GroupStatter, ListGetter, Upserter):
 
 class TestDataLoader(TestCase):
     def test_load_default_convert(self):
-
         source = _MockDataSource(config={})
         destination = _MockDataSource(config={})
         audit = _MockDataSource(config={})
@@ -171,7 +185,6 @@ class TestDataLoader(TestCase):
             self.assertEqual('destination_type', obj.destination_object_type)
 
     def test_load_with_filter_and_convert(self):
-
         source = _MockDataSource(config={})
         destination = _MockDataSource(config={})
         audit = _MockDataSource(config={})
@@ -207,6 +220,47 @@ class TestDataLoader(TestCase):
         self.assertEqual('destination_type', obj2.type)
         self.assertEqual('att1', obj2.attribute)
         self.assertEqual('other_value2', obj2.other_attribute2)
+
+        with self.assertRaises(StopIteration):
+            next(destination.upserted)
+
+        for obj in audit.upserted:
+            self.assertEqual('test_loader', obj.id)
+            self.assertEqual('data_load_event', obj.type)
+            self.assertEqual('source_type', obj.source_object_type)
+            self.assertEqual('destination_type', obj.destination_object_type)
+
+    def test_load_ids_and_convert(self):
+        source = _MockDataSource(config={})
+        destination = _MockDataSource(config={})
+        audit = _MockDataSource(config={})
+        core_data_object(source)
+        core_data_object(destination)
+        core_data_object(audit)
+
+        loader = IdsDataLoader(
+            source=source,
+            destination=destination,
+            audit=audit,
+            source_object_type='source_type',
+            destination_object_type='destination_type',
+            dependencies=[],
+            loader_name='test_loader',
+            object_ids=['test', 'test2'],
+            convert_class=DefaultDataObjectToDataObjectConverter
+        )
+
+        loader.load()
+
+        obj1 = next(destination.upserted)
+        self.assertEqual('test', obj1.id)
+        self.assertEqual('destination_type', obj1.type)
+        self.assertEqual('att1', obj1.attribute)
+
+        obj2 = next(destination.upserted)
+        self.assertEqual('test2', obj2.id)
+        self.assertEqual('destination_type', obj2.type)
+        self.assertEqual('att2', obj2.attribute)
 
         with self.assertRaises(StopIteration):
             next(destination.upserted)

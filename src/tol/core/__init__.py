@@ -11,11 +11,12 @@ from .datasource_filter import DataSourceFilter  # noqa F401
 from .data_loader import (  # noqa F401
     DataLoader,
     DefaultDataLoader,
+    IdsDataLoader,
     GroupStatterDataLoader
 )
 from .data_object import DataObject  # noqa F401
 from .data_object_converter import (  # noqa F401
-    DataObjectToDataObjectConverter,
+    DataObjectToDataObjectOrUpdateConverter,
     DefaultDataObjectToDataObjectConverter
 )
 from .factory import core_data_object  # noqa F401

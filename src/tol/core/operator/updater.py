@@ -20,7 +20,8 @@ class Updater(ABC):
     def update(
         self,
         object_type: str,
-        updates: Iterable[DataObjectUpdate]
+        updates: Iterable[DataObjectUpdate],
+        **kwargs
     ) -> None:
         """
         Takes a type and an `Iterable` of ID-`DataObjectUpdate` pairs.

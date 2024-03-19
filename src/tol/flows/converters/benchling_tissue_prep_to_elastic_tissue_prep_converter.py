@@ -6,12 +6,12 @@ from typing import Iterable
 
 from ...core import (
     DataObject,
-    DataObjectToDataObjectConverter
+    DataObjectToDataObjectOrUpdateConverter
 )
 
 
 class BenchlingTissuePrepToElasticTissuePrepConverter(
-        DataObjectToDataObjectConverter):
+        DataObjectToDataObjectOrUpdateConverter):
     def convert(self, data_object: DataObject) -> Iterable[DataObject]:
         ret = self._data_object_factory(
             'tissue_prep',

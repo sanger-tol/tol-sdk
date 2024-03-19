@@ -9,14 +9,14 @@ from unittest.mock import PropertyMock, create_autospec
 from tol.core import (
     DataLoader,
     DataObject,
-    DataObjectToDataObjectConverter,
+    DataObjectToDataObjectOrUpdateConverter,
     DataSource,
     DefaultDataObjectToDataObjectConverter,
     core_data_object
 )
 
 
-class TestDataObjectToDataObjectConverter(DataObjectToDataObjectConverter):
+class TestDataObjectToDataObjectConverter(DataObjectToDataObjectOrUpdateConverter):
 
     def convert(self, data_object: DataObject) -> Iterable[DataObject]:
         CoreDataObject = self._data_object_factory  # noqa N806
