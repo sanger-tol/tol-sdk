@@ -371,12 +371,11 @@ class ElasticDataSource(
         if object_filters.and_ is not None:
             for k, v in object_filters.and_.items():
                 search_field = self._field_or_keyword(object_type, k)
-                if type(v) is list:
-                    for constraint in v:
+                if type(v) is dict:
+                    for op, constraint in v.items():
                         search_value = constraint.get('value')
                         negated = constraint.get('negate', False)
                         elastic_section = 'must_not' if negated else 'must'
-                        op = constraint.get('op')
                         if 'field' in constraint:
                             other_field = self._field_or_keyword(
                                 object_type, constraint['field']
