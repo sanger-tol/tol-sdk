@@ -60,6 +60,27 @@ class TestEndToEnd:
             assert obj.id == id_
             assert obj.str_column == f'test_{id_}'
 
+        third = list(
+            data_source.get_by_ids('root', ['train'])
+        )
+        assert len(third) == 1
+        assert third[0].id == 'train'
+        assert third[0].str_column == 'test_train'
+
+        # Test that get_one() also works!
+        obj = data_source.get_one('root', 'max')
+        assert obj.id == 'max'
+        assert obj.str_column == 'test_max'
+
+        fourth = list(
+            data_source.get_by_ids('root', ['hokey', 'train', 'kokey'])
+        )
+        assert len(fourth) == 3
+        assert fourth[0] is None
+        assert fourth[1].id == 'train'
+        assert fourth[1].str_column == 'test_train'
+        assert fourth[2] is None
+
     @against(elastic, api_elastic)  # and_ filter not yet implemented on SqlDataSource
     def test_upsert_and_list_get(self, data_source: OperableDataSource):
         """
