@@ -485,33 +485,33 @@ class TestElasticDataSource(TestCase):
         # And filtering
         object_filters = DataSourceFilter()
         object_filters.and_ = {
-            'field1': [
-                {'op': 'exists'},
-                {'op': 'lt', 'field': 'field2'}
-            ],
-            'field2': [
-                {'op': 'exists', 'negate': True}
-            ],
-            'field3': [
-                {'op': 'lt', 'value': 16},
-                {'op': 'gte', 'value': 2}
-            ],
-            'field4': [
-                {'op': 'contains', 'value': 'abc'}
-            ],
-            'field5': [
-                {'op': 'in_list', 'value': ['one', 'two']}
-            ],
-            'field6': [
-                {'op': 'eq', 'value': 5}
-            ],
-            'field7': [
-                {'op': 'eq', 'value': 'haberdashery', 'negate': True}
-            ],
-            'datefield': [
-                {'op': 'gt', 'value': '2022-01-01'},
-                {'op': 'lte', 'value': '2023-01-01'}
-            ]
+            'field1': {
+                'exists': {},
+                'lt': {'field': 'field2'}
+            },
+            'field2': {
+                'exists': {'negate': True}
+            },
+            'field3': {
+                'lt': {'value': 16},
+                'gte': {'value': 2}
+            },
+            'field4': {
+                'contains': {'value': 'abc'}
+            },
+            'field5': {
+                'in_list': {'value': ['one', 'two']}
+            },
+            'field6': {
+                'eq': {'value': 5}
+            },
+            'field7': {
+                'eq': {'value': 'haberdashery', 'negate': True}
+            },
+            'datefield': {
+                'gt': {'value': '2022-01-01'},
+                'lte': {'value': '2023-01-01'}
+            }
         }
         expected = {
             'bool': {

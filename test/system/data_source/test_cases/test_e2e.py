@@ -100,7 +100,7 @@ class TestEndToEnd:
 
         # Exists filter
         f = DataSourceFilter()
-        f.and_ = {'str_column': [{'op': 'exists'}]}
+        f.and_ = {'str_column': {'exists': {}}}
         third = list(
             data_source.get_list('root', object_filters=f)
         )
@@ -108,7 +108,7 @@ class TestEndToEnd:
 
         # Not exists filter
         f = DataSourceFilter()
-        f.and_ = {'str_column': [{'op': 'exists', 'negate': True}]}
+        f.and_ = {'str_column': {'exists': {'negate': True}}}
         fourth = list(
             data_source.get_list('root', object_filters=f)
         )
@@ -116,10 +116,12 @@ class TestEndToEnd:
 
         # Date range
         f = DataSourceFilter()
-        f.and_ = {'datetime_column': [
-            {'op': 'gte', 'value': '2024-01-02'},
-            {'op': 'lt', 'value': '2024-01-03'}
-        ]}
+        f.and_ = {
+            'datetime_column': {
+                'gte': {'value': '2024-01-02'},
+                'lt': {'value': '2024-01-03'}
+            }
+        }
         fifth = list(
             data_source.get_list('root', object_filters=f)
         )
@@ -127,9 +129,11 @@ class TestEndToEnd:
 
         # Boolean equal
         f = DataSourceFilter()
-        f.and_ = {'bool_column': [
-            {'op': 'eq', 'value': True}
-        ]}
+        f.and_ = {
+            'bool_column': {
+                'eq': {'value': True}
+            }
+        }
         sixth = list(
             data_source.get_list('root', object_filters=f)
         )
@@ -137,9 +141,11 @@ class TestEndToEnd:
 
         # Int not equal
         f = DataSourceFilter()
-        f.and_ = {'int_column': [
-            {'op': 'eq', 'value': 2, 'negate': True}
-        ]}
+        f.and_ = {
+            'int_column': {
+                'eq': {'value': 2, 'negate': True}
+            }
+        }
         seventh = list(
             data_source.get_list('root', object_filters=f)
         )
@@ -147,9 +153,11 @@ class TestEndToEnd:
 
         # Str contains
         f = DataSourceFilter()
-        f.and_ = {'str_column': [
-            {'op': 'contains', 'value': 'test_tra'}
-        ]}
+        f.and_ = {
+            'str_column': {
+                'contains': {'value': 'test_tra'}
+            }
+        }
         eighth = list(
             data_source.get_list('root', object_filters=f)
         )
@@ -157,9 +165,11 @@ class TestEndToEnd:
 
         # Str not contains
         f = DataSourceFilter()
-        f.and_ = {'str_column': [
-            {'op': 'contains', 'value': 'test_tra', 'negate': True}
-        ]}
+        f.and_ = {
+            'str_column': {
+                'contains': {'value': 'test_tra', 'negate': True}
+            }
+        }
         ninth = list(
             data_source.get_list('root', object_filters=f)
         )
@@ -167,9 +177,11 @@ class TestEndToEnd:
 
         # Int in_list
         f = DataSourceFilter()
-        f.and_ = {'int_column': [
-            {'op': 'in_list', 'value': [0, 2]}
-        ]}
+        f.and_ = {
+            'int_column': {
+                'in_list': {'value': [0, 2]}
+            }
+        }
         tenth = list(
             data_source.get_list('root', object_filters=f)
         )
@@ -177,9 +189,11 @@ class TestEndToEnd:
 
         # Int not in_list
         f = DataSourceFilter()
-        f.and_ = {'int_column': [
-            {'op': 'in_list', 'value': [0, 1, 2], 'negate': True}
-        ]}
+        f.and_ = {
+            'int_column': {
+                'in_list': {'value': [0, 1, 2], 'negate': True}
+            }
+        }
         eleventh = list(
             data_source.get_list('root', object_filters=f)
         )
@@ -187,9 +201,11 @@ class TestEndToEnd:
 
         # Relationship field
         f = DataSourceFilter()
-        f.and_ = {'related_object.str_column': [
-            {'op': 'in_list', 'value': ['related_1', 'related_2']}
-        ]}
+        f.and_ = {
+            'related_object.str_column': {
+                'in_list': {'value': ['related_1', 'related_2']}
+            }
+        }
         twelfth = list(
             data_source.get_list('root', object_filters=f)
         )
@@ -197,9 +213,11 @@ class TestEndToEnd:
 
         # List field equals
         f = DataSourceFilter()
-        f.and_ = {'list_column': [
-            {'op': 'eq', 'value': 2}
-        ]}
+        f.and_ = {
+            'list_column': {
+                'eq': {'value': 2}
+            }
+        }
         thirteenth = list(
             data_source.get_list('root', object_filters=f)
         )
@@ -207,9 +225,11 @@ class TestEndToEnd:
 
         # List field not equals
         f = DataSourceFilter()
-        f.and_ = {'list_column': [
-            {'op': 'eq', 'value': 2, 'negate': True}
-        ]}
+        f.and_ = {
+            'list_column': {
+                'eq': {'value': 2, 'negate': True}
+            }
+        }
         fourteenth = list(
             data_source.get_list('root', object_filters=f)
         )
@@ -217,9 +237,11 @@ class TestEndToEnd:
 
         # Field to field string comparison
         f = DataSourceFilter()
-        f.and_ = {'str_column': [
-            {'op': 'lt', 'field': 'related_object.str_column', 'negate': True}
-        ]}
+        f.and_ = {
+            'str_column': {
+                'lt': {'field': 'related_object.str_column', 'negate': True}
+            }
+        }
         fifteenth = list(
             data_source.get_list('root', object_filters=f)
         )
@@ -227,9 +249,11 @@ class TestEndToEnd:
 
         # Field to field int comparison
         f = DataSourceFilter()
-        f.and_ = {'int_column': [
-            {'op': 'eq', 'field': 'related_object.int_column'}
-        ]}
+        f.and_ = {
+            'int_column': {
+                'eq': {'field': 'related_object.int_column'}
+            }
+        }
         sixteenth = list(
             data_source.get_list('root', object_filters=f)
         )
@@ -237,9 +261,11 @@ class TestEndToEnd:
 
         # Field to field datetime comparison
         f = DataSourceFilter()
-        f.and_ = {'related_object.datetime_column': [
-            {'op': 'gt', 'field': 'datetime_column'}
-        ]}
+        f.and_ = {
+            'related_object.datetime_column': {
+                'gt': {'field': 'datetime_column'}
+            }
+        }
         seventeenth = list(
             data_source.get_list('root', object_filters=f)
         )
@@ -544,10 +570,11 @@ class TestEndToEnd:
         assert cnt == 11  # The archetype plus the new 10
 
         f = DataSourceFilter()
-        f.and_ = {'str_column': [{
-            'op': 'in_list',
-            'value': ['test_4', 'test_6', 'test_7']
-        }]}
+        f.and_ = {
+            'str_column': {
+                'in_list': {'value': ['test_4', 'test_6', 'test_7']}
+            }
+        }
 
         cnt = data_source.get_count('root', object_filters=f)
         assert cnt == 3
@@ -608,7 +635,7 @@ class TestEndToEnd:
         assert true_stats['datetime_column_max'] == datetime(2024, 1, 3, 0, 0, 0)
 
         f = DataSourceFilter()
-        f.and_ = {'datetime_column': [{'op': 'gte', 'value': datetime(2021, 1, 1, 0, 0, 0)}]}
+        f.and_ = {'datetime_column': {'gte': {'value': datetime(2021, 1, 1, 0, 0, 0)}}}
         stats = list(data_source.get_stats(
             object_type='root',
             group_by=['bool_column'],
@@ -713,7 +740,7 @@ class TestEndToEnd:
 
         # Get list by runtime field query
         f = DataSourceFilter()
-        f.and_ = {'runtime_column': [{'op': 'eq', 'value': True}]}
+        f.and_ = {'runtime_column': {'eq': {'value': True}}}
         second = list(data_source.get_list('root', object_filters=f))
         assert len(second) == 5
 
@@ -728,7 +755,7 @@ class TestEndToEnd:
 
         # Get list and check runtime field
         f = DataSourceFilter()
-        f.and_ = {'bool_column': [{'op': 'eq', 'value': True}]}
+        f.and_ = {'bool_column': {'eq': {'value': True}}}
         fourth = list(data_source.get_list('root', object_filters=f))
         assert len(fourth) == 6  # 5 plus archetype
         assert fourth[0].runtime_column is False
