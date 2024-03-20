@@ -279,6 +279,40 @@ class TestSqlDataSource:
                 'hype': f'{"A" * i} train'
             }
 
+    def test_get_count(self):
+        """uses Database().count() behind the scenes"""
+
+        class _MockDatabase:
+            def __init__(self) -> None:
+                self.__get_count = 123
+
+            @property
+            def attribute_types(self):
+                return {}
+
+            def count(
+                self,
+                tablename: str,
+                filters: Optional[DatabaseFilter] = None
+            ) -> int:
+                return self.__get_count
+
+        mock_db = _MockDatabase()
+
+        ds = SqlDataSource(
+            mock_db,
+            {'tests': 'test'},
+            MagicMock(),
+            lambda _: _MockIdentityConverter(),
+            MagicMock(),
+            MagicMock(),
+            MagicMock()
+        )
+        core_data_object(ds)
+
+        cnt = ds.get_count('tests')
+        assert cnt == 123
+
     def test_get_list(self):
         """uses (and hides) paged Database().get_list() behind the scenes"""
 
