@@ -19,6 +19,7 @@ from ..core import (
 )
 from ..core.factory import DataObjectFactory
 from ..core.operator import (
+    Counter,
     Deleter,
     DetailGetter,
     ListGetter,
@@ -39,6 +40,7 @@ SorterFactory = Callable[[Optional[str]], DatabaseSorter]
 
 
 class SqlDataSource(
+    Counter,
     DataSource,
     Deleter,
     DetailGetter,
@@ -88,6 +90,19 @@ class SqlDataSource(
     @property
     def relationship_config(self) -> Optional[Dict[str, RelationshipConfig]]:
         return self.__relationship_config
+
+    def get_count(
+        self,
+        object_type: str,
+        object_filters: Optional[DataSourceFilter] = None
+    ) -> int:
+        """
+        Counts the number of results that are matched by the (optional) filter
+        """
+        tablename = self.__type_tablename_map[object_type]
+        database_filter = self.__filter_factory(object_filters)
+        total_count = self.__db.count(tablename, filters=database_filter)
+        return total_count
 
     def get_by_id(
         self,
