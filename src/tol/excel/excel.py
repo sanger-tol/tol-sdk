@@ -52,7 +52,7 @@ def convert_data_objects_to_excel(data_objects, body, sheet_name):
                 elif (data_object.to_one_relationships is not None
                       and relationship in data_object.to_one_relationships):
                     to_one_relationship = data_object.to_one_relationships[relationship]
-                    attr_value = getattr(to_one_relationship, relationship_attribute)
+                    attr_value = getattr(to_one_relationship, relationship_attribute, '')
 
                 data[display_name] = attr_value
 
