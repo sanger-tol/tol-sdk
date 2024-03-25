@@ -31,6 +31,15 @@ class AuthError(Exception):
         ]
 
 
+class ForbiddenError(AuthError):
+    def __init__(self) -> None:
+        super().__init__(
+            status_code=403,
+            title='Forbidden',
+            detail="The user's role is not permitted to complete this action."
+        )
+
+
 class StateNotFoundError(AuthError):
     def __init__(self) -> None:
         super().__init__(

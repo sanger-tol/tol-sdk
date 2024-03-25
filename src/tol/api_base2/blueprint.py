@@ -5,9 +5,12 @@
 import urllib
 from collections import ChainMap
 from itertools import chain
+from typing import Optional
 
 from flask import Blueprint, request
 
+from .auth import AuthInspector
+from .auth.error import AuthError
 from .controller import Controller
 from .misc import (
     AggregationBody,
@@ -126,7 +129,8 @@ def _config_blueprint(
 
 def _core_blueprint(
     data_source_dict: dict[str, DataSource],
-    url_prefix: str
+    url_prefix: str,
+    auth_inspector: Optional[AuthInspector] = None
 ) -> DataBlueprint:
     """
     Creates the "core" blueprint, responsible for managing
@@ -143,7 +147,11 @@ def _core_blueprint(
             include_all_to_ones=True,
             hop_limit=1
         )
-        return Controller(data_source, view)
+        return Controller(
+            data_source,
+            view,
+            auth_inspector=auth_inspector
+        )
 
     @data_handler.route('/<object_type>/<path:object_id>', methods=['GET'])  # Allow slashes
     def get_detail(*, object_type: str, object_id: str):
@@ -253,13 +261,20 @@ def _core_blueprint(
             }]
         }, error.status_code
 
+    @data_handler.app_errorhandler(AuthError)
+    def handle_auth_error(error: AuthError):
+        return {
+            'errors': error.errors
+        }, error.status_code
+
     return data_handler
 
 
 def data_blueprint(
     *data_sources: DataSource,
     url_prefix: str = '/data',
-    config_prefix: str = '/_config'
+    config_prefix: str = '/_config',
+    auth_inspector: Optional[AuthInspector] = None
 ) -> DataBlueprint:
 
     config_bp = _config_blueprint(
@@ -269,7 +284,8 @@ def data_blueprint(
     )
     core_bp = _core_blueprint(
         DataSourceDict(*data_sources),
-        url_prefix
+        url_prefix,
+        auth_inspector=auth_inspector
     )
     core_bp.register_blueprint(config_bp)
 
@@ -281,8 +297,7 @@ def custom_blueprint(
     name: str = 'custom'
 ) -> DataBlueprint:
     """
-    Given a tuple of DataSource instances, this provides a flask
-    Blueprint instance for adding custom endpoint to.
+    Provides a flask `Blueprint` instance for adding custom endpoints to.
     """
 
     custom_handler = CustomBlueprint(name=name, url_prefix=url_prefix)
