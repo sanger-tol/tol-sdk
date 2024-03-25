@@ -8,6 +8,7 @@ from typing import Any, Callable, Iterable, Optional, Type
 
 from flask import make_response
 
+from .auth import AuthInspector
 from .misc import (
     AggregationBody,
     AggregationParameters,
@@ -29,6 +30,7 @@ from ..core.operator import (
     DetailGetter,
     ListGetter,
     Operator,
+    OperatorMethod,
     PageGetter,
     Relational,
     Updater,
@@ -70,8 +72,8 @@ def __is_supported(
 
 def validate(
     operator_class: Type[Operator],
-    operator_method: str,
-    api_full_name: str
+    object_method_name: str,
+    operator_method: OperatorMethod
 ) -> Callable:
     """
     Validates:
@@ -84,10 +86,14 @@ def validate(
         def wrapper(controller: Controller, object_type: str, *args, **kwargs) -> Any:
             if not __is_supported(
                 operator_class,
-                operator_method,
+                object_method_name,
                 controller.data_source
             ):
-                raise UnsupportedOpertionError(object_type, api_full_name)
+                raise UnsupportedOpertionError(
+                    object_type,
+                    str(operator_method)
+                )
+            controller.inspect_auth(object_type, operator_method)
             return method(controller, object_type, *args, **kwargs)
         return wrapper
     return decorator
@@ -98,15 +104,26 @@ class Controller:
     An MVC-esque Controller class, that fulfills requests.
     """
 
-    def __init__(self, data_source: OperableDataSource, view: View) -> None:
+    def __init__(
+        self,
+        data_source: OperableDataSource,
+        view: View,
+        auth_inspector: Optional[AuthInspector] = None
+    ) -> None:
+
         self.__data_source = data_source
         self.__view = view
+        self.__inspector = auth_inspector
 
     @property
     def data_source(self) -> OperableDataSource:
         return self.__data_source
 
-    @validate(DetailGetter, 'get_by_id', 'detail GET')
+    def inspect_auth(self, object_type: str, operation: OperatorMethod) -> None:
+        if self.__inspector is not None:
+            self.__inspector(object_type, operation)
+
+    @validate(DetailGetter, 'get_by_id', OperatorMethod.DETAIL)
     def get_detail(self, object_type: str, object_id: str) -> ResponseDict:
         """
         Gets an individual object of specified type and id
@@ -114,7 +131,7 @@ class Controller:
         data_object = self.__get_detail_object(object_type, object_id)
         return self.__view.dump(data_object)
 
-    @validate(PageGetter, 'get_list_page', 'list GET')
+    @validate(PageGetter, 'get_list_page', OperatorMethod.PAGE)
     def get_list(
         self,
         object_type: str,
@@ -137,7 +154,7 @@ class Controller:
         }
         return self.__view.dump_bulk(data_objects, document_meta=document_meta)
 
-    @validate(ListGetter, 'post_list_export', 'list POST')
+    @validate(ListGetter, 'post_list_export', OperatorMethod.EXPORT)
     def post_list_export(
         self,
         object_type: str,
@@ -163,7 +180,7 @@ class Controller:
         response.headers['Content-type'] = 'application/vnd.ms-excel'
         return response
 
-    @validate(Counter, 'get_count', 'count GET')
+    @validate(Counter, 'get_count', OperatorMethod.COUNT)
     def get_count(
         self,
         object_type: str,
@@ -181,7 +198,7 @@ class Controller:
         }
         return self.__view.dump_bulk([], document_meta=document_meta)
 
-    @validate(Deleter, 'delete', 'detail DELETE')
+    @validate(Deleter, 'delete', OperatorMethod.DELETE)
     def delete_detail(
         self,
         object_type: str,
@@ -192,7 +209,7 @@ class Controller:
         self.data_source.delete(object_type, [object_id])
         return {'success': True}
 
-    @validate(Updater, 'update', 'update PATCH')
+    @validate(Updater, 'update', OperatorMethod.UPDATE)
     def patch_list(
         self,
         object_type: str,
@@ -206,7 +223,7 @@ class Controller:
         self.data_source.update(object_type, updates)
         return {'success': True}
 
-    @validate(Upserter, 'post_upserts', 'upserts POST')
+    @validate(Upserter, 'post_upserts', OperatorMethod.UPSERT)
     def post_upserts(
         self,
         object_type: str,
@@ -217,7 +234,7 @@ class Controller:
         self.data_source.upsert(object_type, objects)
         return {'success': True}
 
-    @validate(Aggregator, 'get_aggregations', 'aggregations POST')
+    @validate(Aggregator, 'get_aggregations', OperatorMethod.AGGREGATE)
     def post_aggregations(
         self,
         object_type: str,
@@ -241,7 +258,7 @@ class Controller:
     @validate(
         Relational,
         'get_recursive_relation',
-        'recursive to-one relation GET'
+        OperatorMethod.TO_ONE
     )
     def get_recursive_relation(
         self,
@@ -263,7 +280,7 @@ class Controller:
     @validate(
         Relational,
         'get_to_many_relations_page',
-        'to-many relations GET'
+        OperatorMethod.TO_MANY
     )
     def get_many_relations_page(
         self,
