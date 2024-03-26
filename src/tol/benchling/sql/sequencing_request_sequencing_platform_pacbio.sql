@@ -27,26 +27,27 @@ Output: Table with cols:
 7) submission_sample_name: [character] Entity name. Origin: BWH
 8) fluidx_id: [character] Container barcode of the DNA fluidx tube. Origin: BWH
 9) programme_id: [character] ToLID. Origin: BWH
-10) sanger_sample_id: [character] Sanger Sample ID or Sanger UUID of the PacBio submission. 
-11) plate_name: [character] Name of submission plate.
-12) pipeline: [character] name of the submission pipeline.
-13) library_type: [character] Library type.
-14) retention_instructions: [character] sample retention instructions
-15) gb_yield_of_ccs_data_required: [double precision] CCS yield data required in GB.
-16) number_of_smrt_cells_required: [double precision]
-17) sheared_femto_fragment_size_bp: [double precision]
-18) post_spri_concentration_ngul: [double precision]
-19) post_spri_volume_ul: [jsonb]
-20) nanodrop_260280: [double precision] 
-21) nanodrop_260230: [double precision]
-22) nanodrop_concentration_ngul: [double precision]
-23) sample_prep_additional_requirements: [character]
-24) include_5mc_cells_in_cpg_motifs: [character]
-25) cc5_output_includes_kinetics_information: [character]
-26) priority: [character]
-27) completion_date: [Date]
-28) sequencing_platform: [character] Sequencing platform: pacbio.
-29) source: [character] Data source: v1, v2, legacy_bnt or v1_pooled
+10) specimen_id: [character] Specimen ID. Origin: STS
+11) sanger_sample_id: [character] Sanger Sample ID or Sanger UUID of the PacBio submission. 
+12) plate_name: [character] Name of submission plate.
+13) pipeline: [character] name of the submission pipeline.
+14) library_type: [character] Library type.
+15) retention_instructions: [character] sample retention instructions
+16) gb_yield_of_ccs_data_required: [double precision] CCS yield data required in GB.
+17) number_of_smrt_cells_required: [double precision]
+18) sheared_femto_fragment_size_bp: [double precision]
+19) post_spri_concentration_ngul: [double precision]
+20) post_spri_volume_ul: [jsonb]
+21) nanodrop_260280: [double precision] 
+22) nanodrop_260230: [double precision]
+23) nanodrop_concentration_ngul: [double precision]
+24) sample_prep_additional_requirements: [character]
+25) include_5mc_cells_in_cpg_motifs: [character]
+26) cc5_output_includes_kinetics_information: [character]
+27) priority: [character]
+28) completion_date: [Date]
+29) sequencing_platform: [character] Sequencing platform: pacbio.
+30) source: [character] Data source: v1, v2, legacy_bnt or v1_pooled
 
 NOTES: 
 
@@ -72,6 +73,7 @@ WITH pacbio_submissions_v1 AS (
 		subsam.name$ AS submission_sample_name,
 		c_dna.barcode AS fluidx_id,
 		t.programme_id, 
+		t.specimen_id, 
 		con.name AS sanger_sample_id, 
 		NULL::varchar AS plate_name,
 		NULL::varchar AS pipeline,
@@ -136,6 +138,7 @@ pacbio_legacy_submissions AS (
 		subsam.name$ AS submission_sample_name,
 		c_dna.barcode AS fluidx_id,
 		t.programme_id,
+		t.specimen_id,
 		con.name AS sanger_sample_id,
 		NULL::varchar AS plate_name,
 		NULL::varchar AS pipeline,
@@ -197,6 +200,7 @@ pacbio_submissions_v2 AS (
 		subsam.name$ AS submission_sample_name,
 		c_dna.barcode AS fluidx_id,
 		t.programme_id,
+		t.specimen_id,
 		con.name AS sanger_sample_id,
 		plt.name AS plate_name,
 		pbsubm_p.pipeline,
@@ -263,6 +267,7 @@ pacbio_submissions_pooled_v1 AS (
 		subsam.name$ AS eln_submission_sample_name,
 		c_pool.barcode AS fluidx_id,
 		t.programme_id, 
+		t.specimen_id, 
 		con.name AS sanger_sample_id, 
 		NULL::varchar AS plate_name,
 		NULL::varchar AS pipeline,
@@ -327,6 +332,7 @@ pacbio_submissions_pooled_v2 AS (
 		subsam.name$ AS submission_sample_name,
 		c_pool.barcode AS fluidx_id,
 		t.programme_id,
+		t.specimen_id,
 		con.name AS sanger_sample_id,
 		plt.name AS plate_name,
 		pbsubm_p.pipeline,

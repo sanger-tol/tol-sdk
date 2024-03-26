@@ -41,6 +41,7 @@ def elastic():
                                     'benchling_sample': 'sample',
                                     'benchling_species': 'species',
                                     'benchling_tolid': 'tolid',
+                                    'benchling_specimen': 'specimen',
                                     'mlwh_species': 'species',
                                     'mlwh_tolid': 'tolid'}
     rc_sequencing_request.to_many = {
@@ -55,6 +56,7 @@ def elastic():
     rc_extraction = RelationshipConfig()
     rc_extraction.to_one = {'benchling_sample': 'sample',
                             'benchling_species': 'species',
+                            'benchling_specimen': 'specimen',
                             'benchling_tolid': 'tolid',
                             'benchling_tissue_prep': 'tissue_prep'}
     rc_extraction.to_many = {
@@ -93,13 +95,17 @@ def elastic():
 
     rc_specimen = RelationshipConfig()
     rc_specimen.to_many = {
+        'benchling_extractions': 'extraction',
         'benchling_samples': 'sample',
+        'benchling_sequencing_request': 'sequencing_request',
         'sts_samples': 'sample',
         'bioscan_barcoding_run_datas': 'barcoding_run_data',
         'sts_barcoding_run_datas': 'barcoding_run_data'
     }
     rc_specimen.foreign_keys = {
+        'benchling_extractions': 'benchling_specimen.id',
         'benchling_samples': 'benchling_specimen.id',
+        'benchling_sequencing_request': 'benchling_specimen.id',
         'sts_samples': 'sts_specimen.id',
         'bioscan_barcoding_run_data': 'bioscan_specimen.id',
         'sts_barcoding_run_data': 'sts_specimen.id'
@@ -120,12 +126,15 @@ def elastic():
     rc_tissue_prep = RelationshipConfig()
     rc_tissue_prep.to_one = {'benchling_species': 'species',
                              'benchling_sample': 'sample',
+                             'benchling_specimen': 'specimen',
                              'benchling_tolid': 'tolid'}
     rc_tissue_prep.to_many = {
-        'benchling_extractions': 'extraction'
+        'benchling_extractions': 'extraction',
+        'benchling_tissue_preps': 'tissue_prep'
     }
     rc_tissue_prep.foreign_keys = {
-        'benchling_extractions': 'benchling_tissue_prep.id'
+        'benchling_extractions': 'benchling_tissue_prep.id',
+        'benchling_tissue_preps': 'benchling_tissue_prep.id'
     }
 
     relationship_config = {'run_data': rc_run_data,
@@ -147,6 +156,18 @@ def elastic():
                         && doc['sts_genome_size'].size() > 0) {
                         emit(doc['mlwh_run_data_mlwh_hifi_read_bases_sum'].value /
                              doc['sts_genome_size'].value)
+                    }
+                """
+            }
+        },
+        'specimen': {
+            'calc_coverage_post_run': {
+                'type': 'double',
+                'script': """
+                    if (doc['mlwh_run_data_mlwh_hifi_read_bases_sum'].size() > 0
+                        && doc['sts_estimated_genome_size'].size() > 0) {
+                        emit(doc['mlwh_run_data_mlwh_hifi_read_bases_sum'].value /
+                             doc['sts_estimated_genome_size'].value)
                     }
                 """
             }

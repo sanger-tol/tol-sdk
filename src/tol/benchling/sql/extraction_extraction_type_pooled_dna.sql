@@ -20,17 +20,18 @@ Output: Table with cols:
 5) eln_file_registry_id: [character] id in Benchling Registry.
 6) extraction_id: [character] Primary key. 
 7) programme_id: [character] ToLID. Origin: BWH
-8) completion_date: [date] Extraction date. This field coalesces created_at$ and created_on fields. Created_on is for bnt legacy data.
-9) extraction_name: [character] Entity name. 
-10) fluidx_id: [character] Container barcode of the DNA fluidx tube. 
-11) extraction_qc_result: [character] QC result: Yes = Extraction passed; No = Extraction failed. 
-12) yield_ng: [double] DNA yield after extraction. 
-13) femto_description:[character] Categorical description of the femto pulse profile. 
-14) volume_ul: [double] volume of DNA available in the fluidx tube.
-15) shelf: [character] Physical locationo of the DNA extraction. Freezer shelf.
-16) rack: [character] Physical locationo of the DNA extraction. Rack barcode.
-17) source_extractions_id: [jsonb] List of ids for pooled dna extracts.
-18) extraction_type: [character] pooled_dna.
+8) specimen_id: [character] Specimen ID. Origin: STS
+9) completion_date: [date] Extraction date. This field coalesces created_at$ and created_on fields. Created_on is for bnt legacy data.
+10) extraction_name: [character] Entity name. 
+11) fluidx_id: [character] Container barcode of the DNA fluidx tube. 
+12) extraction_qc_result: [character] QC result: Yes = Extraction passed; No = Extraction failed. 
+13) yield_ng: [double] DNA yield after extraction. 
+14) femto_description:[character] Categorical description of the femto pulse profile. 
+15) volume_ul: [double] volume of DNA available in the fluidx tube.
+16) shelf: [character] Physical locationo of the DNA extraction. Freezer shelf.
+17) rack: [character] Physical locationo of the DNA extraction. Rack barcode.
+18) source_extractions_id: [jsonb] List of ids for pooled dna extracts.
+19) extraction_type: [character] pooled_dna.
 
 NOTES: 
 
@@ -52,6 +53,7 @@ SELECT DISTINCT
 	dnap.file_registry_id$ AS eln_file_registry_id,
 	dnap.id AS extraction_id,
 	t.programme_id,
+	t.specimen_id,
 	DATE(dnap.created_at$) AS completion_date, -- Homogenising BnT and Benchling dates
 	dnap.name$ AS extraction_name,
 	con.barcode AS fluidx_id,

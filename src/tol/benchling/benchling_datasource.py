@@ -6,7 +6,7 @@ from typing import Iterable, List
 
 from benchling_sdk.auth.api_key_auth import ApiKeyAuth
 from benchling_sdk.benchling import Benchling
-from benchling_sdk.errors import BenchlingError
+from benchling_sdk.errors import BenchlingError, WaitForTaskExpiredError
 from benchling_sdk.helpers.serialization_helpers import fields
 from benchling_sdk.models import (
     CustomEntityBulkUpdate
@@ -85,6 +85,7 @@ class BenchlingDataSource(DataSource, Updater):
         # We have to do the updates in pages in Benchling
         for update_page in list(batched(updates, 20)):
             request = []
+            error_info = {}
             for update_id, update_dict in update_page:
                 entity_fields = {
                     self.entities[object_type][name]['name']: {'value': value}
@@ -97,10 +98,25 @@ class BenchlingDataSource(DataSource, Updater):
                     custom_fields=fields(custom_fields)
                 )
                 request.append(update_entity)
+                error_info['fields'] = entity_fields
+                error_info['id'] = update_id
             try:
                 response = self.benchling_interface.custom_entities.bulk_update(request)
-                task = self.benchling_interface.tasks.wait_for_task(
-                    response.task_id, interval_wait_seconds=3)
+                # Try this 3 times before failing
+                for i in range(3):
+                    try:
+                        task = self.benchling_interface.tasks.wait_for_task(
+                            response.task_id, interval_wait_seconds=5)
+                    except WaitForTaskExpiredError:
+                        print('Time out waiting for task', flush=True)
+                        if i == 2:
+                            raise DataSourceError(
+                                'Time out in communication with Benchling '
+                                '(waiting for task response)',
+                                '',
+                                status_code=400)
+                    else:
+                        break
             except BenchlingError as error:
                 raise DataSourceError(
                     'Error creating update task',
@@ -116,7 +132,8 @@ class BenchlingDataSource(DataSource, Updater):
                             self.update(object_type, [(update_id, update_dict)])
                     else:
                         ret = [{'id': update_id, 'status': 'FAILED', 'message': task.message,
-                                'errors': task.errors.to_dict(), 'update': update_page}
+                                'errors': task.errors.to_dict(), 'update': update_page,
+                                'error_info': error_info}
                                for update_id, _ in update_page]
                         print(ret, flush=True)
                 else:

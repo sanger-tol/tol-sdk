@@ -204,6 +204,7 @@ class MlwhDataSource(DataSource, ListGetter):
             'supplier_name': 'mlwh_sample.supplier_name',
             'accession_number': 'mlwh_sample.accession_number',
             'public_name': 'mlwh_sample.public_name',
+            'supplier_name': 'mlwh_sample.supplier_name',
             'donor_id': 'mlwh_sample.donor_id',
             'taxon_id': 'mlwh_sample.taxon_id',
             'common_name': 'mlwh_sample.common_name',

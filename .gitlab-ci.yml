@@ -12,7 +12,7 @@ variables:
 
 include:
   - project: 'tol/tol-core'
-    ref: v1.3.15
+    ref: v1.3.17
     file: '/gitlab/main.yml'
 
 
