@@ -27,6 +27,7 @@ Columns in output table:
 4) eln_tissue_prep_id: [character] Tissue prep primary key in Benchling.
 5) eln_file_registry_id: [character] id in Benchling Registry.
 6) programme_id: [character] ToLID. Origin: BWH
+6) specimen_id: [character] Specimen ID. Origin: STS
 7) eln_tissue_prep_name: [character]
 8) sampleprep_date: [Date] date of sample preparation.
 9) tissue_prep_fluidx_id: [character] fluidx id of the tissue prep container
@@ -46,6 +47,7 @@ WITH tissue_preps AS (
 		t.id AS eln_tissue_id,
 		tp.id AS eln_tissue_prep_id,
 		t.programme_id,
+		t.specimen_id,
 		tp.name$ AS eln_tissue_prep_name,
 		DATE(tp.created_at$) AS sampleprep_date,
 		con.barcode AS tissue_prep_fluidx_id,
@@ -82,6 +84,7 @@ legacy_tissue_preps AS (
 		t.id AS eln_tissue_id,
 		tp.id AS eln_tissue_prep_id,
 		t.programme_id,
+		t.specimen_id,
 		tp.name$ AS eln_tissue_prep_name,
 		DATE(tp.created_at$) AS sampleprep_date,
 		con.barcode AS tissue_prep_fluidx_id,

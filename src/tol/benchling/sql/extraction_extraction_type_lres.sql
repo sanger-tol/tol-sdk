@@ -6,8 +6,9 @@ Output: Table with cols:
 
 1) sanger_sample_id
 2) programme_id
-3) fluidx_id: Fluidx ID of the tissue prep submitted. 
-4) submission_type: Submission type code: PACBIO
+3) specimen_id
+4) fluidx_id: Fluidx ID of the tissue prep submitted. 
+5) submission_type: Submission type code: PACBIO
 
 NOTES: 
 
@@ -23,6 +24,7 @@ SELECT DISTINCT
 	t.id AS eln_tissue_id,
 	tp.id AS eln_tissue_prep_id,
 	t.programme_id,
+	t.specimen_id,
 	tp.name$ AS eln_tissue_prep_name,
 	ssid.sanger_sample_id,
 	ssid.sanger_sample_id AS extraction_id,

@@ -8,11 +8,13 @@ Output: Table with cols:
 3) tissue_prep_id: [character] Foreign key to other entities and results in Benchling. Origin: BWH
 4) eln_file_registry_id: [character] id in Benchling Registry. Origin: BWH
 5) programme_id: [character] ToLID.
-6) sanger_sample_id: [character] Sanger Sample ID or Sanger UUID of the HiC submission. 
-7) fluidx_id: [character] Container barcode of the tissue prep fluidx tube. Origin: BWH
-8) completion_date: [Date] Date of submission. For legacy data: merging of created_on and created_at$.
-9) sequencing_platform: [character] Sequencing platform: HIC
-10) source: [character] Data source: v1, legacy_bnt
+6) specimen_id: [character] Origin: STS
+7) sanger_sample_id: [character] Sanger Sample ID or Sanger UUID of the HiC submission. 
+8) fluidx_id: [character] Container barcode of the tissue prep fluidx tube. Origin: BWH
+9) completion_date: [Date] Date of submission. For legacy data: merging of created_on and created_at$.
+10) sequencing_platform: [character] Sequencing platform: HIC
+11) bt_id: [character] B&T ID (legacy)
+12) source: [character] Data source: v1, legacy_bnt
 
 NOTES: 
 
@@ -29,6 +31,7 @@ WITH hic_submissions AS (
 		tp.id AS tissue_prep_id,
 		tp.file_registry_id$ AS eln_file_registry,
 		t.programme_id,
+		t.specimen_id,
 		ssid.sanger_sample_id, 
 		c.barcode AS fluidx_id,
 		hic.submitted_submission_date AS completion_date, 
@@ -62,6 +65,7 @@ hic_legacy_submissions AS (
 		tp.id AS tissue_prep_id,
 		tp.file_registry_id$ AS eln_file_registry,
 		t.programme_id,
+		t.specimen_id,
 		ssid.sanger_sample_id,
 		c.barcode AS fluidx_id,
 		COALESCE(DATE(tp.created_on), DATE(tp.created_at$)) AS completion_date,
