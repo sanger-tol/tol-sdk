@@ -10,7 +10,12 @@ from flask.testing import FlaskClient
 import pytest
 
 from tol.api_base2 import data_blueprint
-from tol.api_base2.auth import AuthError, AuthInspector, require_auth
+from tol.api_base2.auth import (
+    AuthError,
+    AuthInspector,
+    basic_auth_inspector,
+    require_auth
+)
 from tol.api_base2.auth.error import ForbiddenError
 from tol.api_base2.misc import AuthContext
 from tol.core import DataObject, DataSource
@@ -149,7 +154,7 @@ def client(app: Flask) -> FlaskClient:
 
 class TestAuthInspector:
     """
-    The given `AuthInspector` function raises an 403 error on insufficient
+    The given `AuthInspector` function raises a 403 error on insufficient
     permissions, and does not obstruct otherwise.
     """
 
@@ -164,3 +169,105 @@ class TestAuthInspector:
 
         res = client.get('/data/a/999999')
         assert res.status_code == 200
+
+
+@pytest.fixture
+def basic_role() -> str:
+    return 'fun-times'
+
+
+@pytest.fixture(scope='function')
+def auth_ctx() -> AuthContext:
+    ctx: AuthContext = create_autospec(AuthContext, spec_set=True)
+    ctx.user_id = 101
+
+    return ctx
+
+
+@pytest.fixture(scope='function')
+def basic_inspector(
+    basic_role: str,
+    auth_ctx: AuthContext
+) -> AuthInspector:
+
+    return basic_auth_inspector(
+        basic_role,
+        ctx_getter=lambda: auth_ctx
+    )
+
+
+class TestBasicAuthInspector:
+    """
+    `basic_auth_inspector` always permits read-only access, and raises a
+    `ForbiddenError` if not authenticated with the `basic_role` otherwise.
+    """
+
+    def test_readonly(
+        self,
+        basic_inspector: AuthInspector,
+        auth_ctx: AuthContext
+    ):
+        """
+        all readonly methods don't raise `ForbiddenError`, even without
+        any roles.
+        """
+
+        auth_ctx.roles = []
+
+        basic_inspector(
+            'does-not-matter',
+            OperatorMethod.COUNT
+        )
+
+    def test_readonly_with_good_role(
+        self,
+        basic_role: str,
+        basic_inspector: AuthInspector,
+        auth_ctx: AuthContext
+    ):
+        """
+        all readonly methods don't raise `ForbiddenError`, even when
+        a good role is specified.
+        """
+
+        auth_ctx.roles = [basic_role]
+
+        basic_inspector(
+            'does-not-matter',
+            OperatorMethod.AGGREGATE
+        )
+
+    def test_write_bad_roles(
+        self,
+        basic_inspector: AuthInspector,
+        auth_ctx: AuthContext
+    ):
+        """
+        a protected write method, with irrelevant roles that aren't the basic one,
+        raises a `ForbiddenError`.
+        """
+
+        auth_ctx.roles = ['hype', 'train']
+
+        with pytest.raises(ForbiddenError):
+            basic_inspector(
+                'no-delete----only-read',
+                OperatorMethod.DELETE
+            )
+
+    def test_write_good_role(
+        self,
+        basic_role: str,
+        basic_inspector: AuthInspector,
+        auth_ctx: AuthContext
+    ):
+        """
+        a protected write method, with the correct `basic_role`, is permitted.
+        """
+
+        auth_ctx.roles = [basic_role]
+
+        basic_inspector(
+            'does-not-matter',
+            OperatorMethod.UPSERT
+        )
