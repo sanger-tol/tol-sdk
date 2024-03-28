@@ -71,3 +71,42 @@ def require_auth(
         return decorator(arg_)
 
     return decorator
+
+
+NO_AUTH = [
+    OperatorMethod.COUNT,
+    OperatorMethod.DETAIL,
+    OperatorMethod.EXPORT,
+    OperatorMethod.PAGE,
+    OperatorMethod.TO_MANY,
+    OperatorMethod.TO_ONE,
+]
+
+
+def basic_auth_inspector(
+    basic_role: str = 'basic',
+
+    ctx_getter: CtxGetter = default_ctx_getter
+) -> AuthInspector:
+    """
+    An `AuthInspector` factory, returning an instance
+    that ignores `object_type` and:
+
+    - permits unauthenticated access to read-only methods
+    - requires the `basic_role` on an authenticated user
+      otherwise
+    """
+
+    def auth_inspector(
+        __object_type: str,
+        method: OperatorMethod
+    ) -> None:
+
+        if method in NO_AUTH:
+            return
+
+        roles = ctx_getter().roles
+        if basic_role not in roles:
+            raise ForbiddenError()
+
+    return auth_inspector
