@@ -87,9 +87,10 @@ class DbAuthManager(AuthManager):
         token: str,
     ) -> None:
 
-        user_id = self.__get_user_id_for_token(token)
+        user_id, role_names = self.__get_user_details_for_token(token)
         if user_id is not None:
             ctx.user_id = user_id
+            ctx.roles = role_names
 
     def revoke_token(self, token: str) -> None:
         self.__delete_token(token)
@@ -123,20 +124,21 @@ class DbAuthManager(AuthManager):
 
         return r.json()[self.__oidc_id_target]
 
-    def __get_user_id_for_token(
+    def __get_user_details_for_token(
         self,
         token: str
-    ) -> Optional[str]:
+    ) -> tuple[Optional[str], list[str]]:
 
         token_model = self.__models.token_class
 
         with self.__session_factory() as sess:
             instance = token_model.get(sess, token)
 
-            return (
-                None if instance is None
-                else str(instance.user_id)
-            )
+            if instance is None:
+                return None, []
+            else:
+                user = instance.user
+                return str(user.id), user.role_names
 
     def __get_or_create_user_id(
         self,

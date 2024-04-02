@@ -31,6 +31,7 @@ class AuthUser(ABC):
     oidc_id: str
 
     _tokens: list[AuthToken]
+    _roles: list[AuthRole]
 
     @classmethod
     @abstractmethod
@@ -44,6 +45,13 @@ class AuthUser(ABC):
         given `oidc_id`, if it doesn't already exist.
 
         Returns the found row if it does.
+        """
+
+    @property
+    @abstractmethod
+    def role_names(self) -> list[str]:
+        """
+        A `list[str]` of roles assigned to this user.
         """
 
 
@@ -82,6 +90,7 @@ class AuthToken(ABC):
     """Stores a token against a user."""
 
     user_id: str
+    user: Optional[AuthUser]
 
     @classmethod
     @abstractmethod
@@ -120,6 +129,19 @@ class AuthToken(ABC):
         """Deletes expired tokens."""
 
 
+class AuthRole:
+    """A role, any number of which can be assigned to a user."""
+
+    name: str
+
+
+class AuthRoleBinding:
+    """An assignment of a role to a user."""
+
+    user_id: str
+    role_id: str
+
+
 class ModelTuple(NamedTuple):
     """
     Contains the `ModelClass` variables required
@@ -129,6 +151,8 @@ class ModelTuple(NamedTuple):
     state_class: type[AuthState]
     user_class: type[AuthUser]
     token_class: type[AuthToken]
+    role_class: type[AuthRole]
+    role_binding_class: type[AuthRoleBinding]
 
 
 def create_models(
@@ -212,6 +236,9 @@ def create_models(
         _tokens: Mapped[list['Token']] = relationship(
             back_populates='user'
         )
+        _role_bindings: Mapped[list['RoleBinding']] = relationship(
+            back_populates='user'
+        )
 
         @classmethod
         def __one_or_none(
@@ -258,6 +285,13 @@ def create_models(
                 sess,
                 oidc_id
             )
+
+        @property
+        def role_names(self) -> list[str]:
+            names = [
+                b.role.name for b in self._role_bindings
+            ]
+            return sorted(names)
 
     class Token(AuthToken, model_base):
 
@@ -352,8 +386,54 @@ def create_models(
         def __str_datetime(self, val: datetime) -> str:
             return val.strftime('%Y-%m-%dT%H:%M:%S.%f')
 
+    class Role(AuthRole, model_base):
+
+        __tablename__ = 'role'
+
+        id: Mapped[int] = mapped_column(  # noqa A003
+            primary_key=True,
+            autoincrement=True
+        )
+
+        name: Mapped[str] = mapped_column(
+            unique=True
+        )
+
+        _role_bindings: Mapped[list['RoleBinding']] = relationship(
+            back_populates='role'
+        )
+
+    class RoleBinding(AuthRoleBinding, model_base):
+
+        __tablename__ = 'role_binding'
+
+        id: Mapped[int] = mapped_column(  # noqa A003
+            primary_key=True,
+            autoincrement=True
+        )
+
+        user_id: Mapped[int] = mapped_column(
+            ForeignKey(User.id)
+        )
+        role_id: Mapped[int] = mapped_column(
+            ForeignKey(Role.id)
+        )
+
+        user = relationship(
+            'User',
+            back_populates='_role_bindings',
+            foreign_keys=[user_id]
+        )
+        role = relationship(
+            'Role',
+            back_populates='_role_bindings',
+            foreign_keys=[role_id]
+        )
+
     return ModelTuple(
         state_class=State,
         token_class=Token,
-        user_class=User
+        user_class=User,
+        role_class=Role,
+        role_binding_class=RoleBinding
     )

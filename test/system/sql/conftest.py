@@ -13,13 +13,13 @@ from pytest import fixture
 from sqlalchemy import create_engine, delete
 
 from tol.api_base2 import data_blueprint
-from tol.api_base2.auth import OidcConfig
+from tol.api_base2.auth import OidcConfig, require_auth
 from tol.core import DataSource
 from tol.core.operator import DetailGetter
 from tol.sql import create_session_factory
 from tol.sql.auth import (
     DbAuthBlueprint,
-    db_auth_blueprint
+    db_auth_blueprint,
 )
 from tol.sql.session import SessionFactory
 
@@ -137,6 +137,11 @@ def app(
 
     app.register_blueprint(auth_bp)
     app.register_blueprint(data_bp)
+
+    @app.get('/hi')
+    @require_auth(role='admin')
+    def hi_admin():
+        return {'hello': 'world'}, 200
 
     auth_bp.register_authenticator(
         app,
