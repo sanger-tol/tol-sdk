@@ -2,6 +2,7 @@
 #
 # SPDX-License-Identifier: MIT
 
+import time
 from typing import Iterable, List
 
 from benchling_sdk.auth.api_key_auth import ApiKeyAuth
@@ -115,6 +116,7 @@ class BenchlingDataSource(DataSource, Updater):
                                 '(waiting for task response)',
                                 '',
                                 status_code=400)
+                        time.sleep(60 * (i + 1))
                     else:
                         break
             except BenchlingError as error:
