@@ -22,7 +22,8 @@ class _MockDataSourceRelational(DataSource, Relational):
 
     @property
     def supported_types(self):
-        return ['data', 'run', 'sample', 'platform', 'species', 'specimen', 'accession']
+        return ['data', 'run', 'sample', 'platform', 'species', 'specimen',
+                'accession', 'library', 'library_type']
 
     @property
     def attribute_types(self):
@@ -33,7 +34,8 @@ class _MockDataSourceRelational(DataSource, Relational):
         rc_data = RelationshipConfig()
         rc_data.to_one = {
             'run': 'run',
-            'sample': 'sample'
+            'sample': 'sample',
+            'library': 'library'
         }
         rc_run = RelationshipConfig()
         rc_run.to_one = {
@@ -51,10 +53,16 @@ class _MockDataSourceRelational(DataSource, Relational):
             'species': 'species'
         }
 
+        rc_library = RelationshipConfig()
+        rc_library.to_one = {
+            'library_type': 'library_type'
+        }
+
         return {'data': rc_data,
                 'run': rc_run,
                 'sample': rc_sample,
-                'specimen': rc_specimen}
+                'specimen': rc_specimen,
+                'library': rc_library}
 
     def get_to_one_relation(
         self,
@@ -128,6 +136,20 @@ class _MockDataSourceRelational(DataSource, Relational):
                 id_='specimen3_id',
                 type_='specimen',
                 attributes={}
+            )
+        if relationship_name == 'library':
+            return source._host.data_object_factory(
+                id_='library_id',
+                type_='library',
+                attributes={}
+            )
+        if relationship_name == 'library_type':
+            return source._host.data_object_factory(
+                id_='library_type_id',
+                type_='library_type',
+                attributes={
+                    'reporting_category': 'rnaseq'
+                }
             )
 
     def get_to_many_relations(
@@ -308,6 +330,7 @@ class TestTolqcDataToElasticRunDataConverter(TestCase):
         self.assertEqual('NONE_NONE_data1_tag_index_None', ret1.id)
         self.assertEqual('run_data', ret1.type)
         self.assertEqual(ret1.attributes, {
+            'reporting_category': 'rnaseq',
             'tag_index': 'data1_tag_index',
             'manual_qc': 'data1_manual_qc',
             'tag_sequence': None,
@@ -324,6 +347,7 @@ class TestTolqcDataToElasticRunDataConverter(TestCase):
         ret2 = next(converteds)
         self.assertEqual('run_data', ret2.type)
         self.assertEqual(ret2.attributes, {
+            'reporting_category': 'rnaseq',
             'tag_index': 'data2_tag_index',
             'manual_qc': 'data2_manual_qc',
             'run_start': 'time1',
@@ -344,6 +368,7 @@ class TestTolqcDataToElasticRunDataConverter(TestCase):
         ret3 = next(converteds)
         self.assertEqual('run_data', ret3.type)
         self.assertEqual(ret3.attributes, {
+            'reporting_category': 'rnaseq',
             'tag_index': 'data3_tag_index',
             'manual_qc': 'data3_manual_qc',
             'instrument_model': 'model1',
@@ -365,6 +390,7 @@ class TestTolqcDataToElasticRunDataConverter(TestCase):
         ret4 = next(converteds)
         self.assertEqual('run_data', ret4.type)
         self.assertEqual(ret4.attributes, {
+            'reporting_category': 'rnaseq',
             'tag_index': 'data4_tag_index',
             'manual_qc': 'data4_manual_qc',
             'sequencing_request': {'id': 'sample1_id'},
@@ -382,6 +408,7 @@ class TestTolqcDataToElasticRunDataConverter(TestCase):
         ret5 = next(converteds)
         self.assertEqual('run_data', ret5.type)
         self.assertEqual(ret5.attributes, {
+            'reporting_category': 'rnaseq',
             'tag_index': 'data5_tag_index',
             'manual_qc': 'data5_manual_qc',
             'tag_sequence': None,
@@ -401,6 +428,7 @@ class TestTolqcDataToElasticRunDataConverter(TestCase):
         ret6 = next(converteds)
         self.assertEqual('run_data', ret6.type)
         self.assertEqual(ret6.attributes, {
+            'reporting_category': 'rnaseq',
             'tag_index': 'data6_tag_index',
             'manual_qc': 'data6_manual_qc',
             'auto_qc': None,
@@ -421,6 +449,7 @@ class TestTolqcDataToElasticRunDataConverter(TestCase):
         ret7 = next(converteds)
         self.assertEqual('run_data', ret7.type)
         self.assertEqual(ret7.attributes, {
+            'reporting_category': 'rnaseq',
             'tag_index': 'data7_tag_index',
             'manual_qc': 'data7_manual_qc',
             'auto_qc': None,

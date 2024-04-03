@@ -31,6 +31,10 @@ class TolqcDataToElasticRunDataConverter(DataObjectToDataObjectOrUpdateConverter
         target_attributes['auto_qc'] = data_object.auto_qc
         target_attributes['qc'] = data_object.qc
 
+        if data_object.library is not None:
+            target_attributes['reporting_category'] = \
+                data_object.library.library_type.reporting_category
+
         if data_object.run is not None:
             target_attributes['run'] = data_object.run.id
             target_attributes['position'] = data_object.run.element
