@@ -186,7 +186,8 @@ class TestTolqcDataToElasticRunDataConverter(TestCase):
         obj1 = CoreDataObject(
             id_='data1_id',
             type_='data',
-            attributes={'tag_index': 'data1_tag_index',
+            attributes={'name_root': 'id1',
+                        'tag_index': 'data1_tag_index',
                         'lims_qc': 'data1_manual_qc'}
         )
 
@@ -327,7 +328,7 @@ class TestTolqcDataToElasticRunDataConverter(TestCase):
         converteds = converter.convert(obj1)
         ret1 = next(converteds)
         print(f'the returned data object is {ret1.attributes}')
-        self.assertEqual('NONE_NONE_data1_tag_index_None', ret1.id)
+        self.assertEqual('id1', ret1.id)
         self.assertEqual('run_data', ret1.type)
         self.assertEqual(ret1.attributes, {
             'reporting_category': 'rnaseq',
