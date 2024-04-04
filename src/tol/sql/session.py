@@ -4,6 +4,8 @@
 
 from typing import Callable
 
+import flask
+
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session, sessionmaker
 
@@ -28,3 +30,29 @@ def create_session_factory(db_uri: str) -> SessionFactory:
     )
 
     return lambda: session_maker()
+
+
+def create_flask_session_factory(
+    db_uri: str,
+
+    key: str = '_request_session'
+) -> SessionFactory:
+    """
+    Creates a session factory that returns a singleton per
+    flask request.
+    """
+
+    __factory = create_session_factory(db_uri)
+
+    def session_factory() -> Session:
+        existing_session = flask.g.get(key)
+
+        if existing_session is not None:
+            return existing_session
+        else:
+            return flask.g.setdefault(
+                key,
+                __factory()
+            )
+
+    return session_factory
