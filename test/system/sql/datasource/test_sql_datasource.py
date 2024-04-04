@@ -17,6 +17,11 @@ from .. import models
 
 @pytest.fixture
 def fake_app() -> Flask:
+    """
+    Needed because an instance of `SqlDataSource` must
+    always be behind a flask API.
+    """
+
     fake_app = Flask(__name__)
     fake_app.testing = True
 
@@ -91,7 +96,7 @@ class TestCreateSqlDataSource:
         # setup the data object factory
         core_data_object(sql_ds)
 
-        with fake_app.request_context():
+        with fake_app.app_context():
             # iterate through pages of 2
             for i in range(3):
                 data_objects, count = sql_ds.get_list_page(
