@@ -17,6 +17,7 @@ from tol.api_base2.auth import OidcConfig, require_auth
 from tol.core import DataSource
 from tol.core.operator import DetailGetter
 from tol.sql import create_session_factory
+from tol.sql import session
 from tol.sql.auth import (
     DbAuthBlueprint,
     db_auth_blueprint,
@@ -97,7 +98,9 @@ def session_factory(db_uri: str, full_models_list: list[type[Any]]):
     __set_up(db_uri)
 
     singleton_session = create_session_factory(db_uri)()
-    session_factory = lambda: singleton_session
+
+    def session_factory() -> session:
+        return singleton_session
 
     yield session_factory
 
