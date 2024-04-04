@@ -91,17 +91,18 @@ def models_list(full_models_list):
     ]
 
 
-@fixture
+@fixture(scope='function')
 def session_factory(db_uri: str, full_models_list: list[type[Any]]):
 
     __set_up(db_uri)
 
-    __session_factory = create_session_factory(db_uri)
+    singleton_session = create_session_factory(db_uri)()
+    session_factory = lambda: singleton_session
 
-    yield __session_factory
+    yield session_factory
 
     __tear_down(
-        __session_factory,
+        session_factory,
         reversed(full_models_list)
     )
 
