@@ -4,6 +4,10 @@
 
 import os
 
+from flask import Flask
+
+import pytest
+
 from tol.core import core_data_object
 from tol.sql import create_sql_datasource
 from tol.sql.sql_converter import TypeFunction
@@ -11,11 +15,19 @@ from tol.sql.sql_converter import TypeFunction
 from .. import models
 
 
+@pytest.fixture
+def fake_app() -> Flask:
+    fake_app = Flask(__name__)
+    fake_app.testing = True
+
+    return fake_app
+
+
 DB_URI = os.environ['DB_URI']
 
 
 class TestCreateSqlDataSource:
-    def test_get_by_id(self, session_factory, models_list):
+    def test_get_by_id(self, session_factory, models_list, fake_app: Flask):
         """With many corresponding models, both found and not found"""
 
         # add the objects
@@ -36,10 +48,11 @@ class TestCreateSqlDataSource:
 
         search_ids = [*ids, '404']  # add an ID that isn't in the DB
 
-        # fetch by the id's
-        data_objects = list(
-            sql_ds.get_by_id('a', search_ids)
-        )
+        with fake_app.app_context():
+            # fetch by the id's
+            data_objects = list(
+                sql_ds.get_by_id('a', search_ids)
+            )
 
         # 5 data objects, last is None
         assert len(data_objects) == 5
@@ -53,7 +66,7 @@ class TestCreateSqlDataSource:
                 'string_column': f'the code is {id_}'
             }
 
-    def test_get_list_page(self, session_factory, models_list):
+    def test_get_list_page(self, session_factory, models_list, fake_app: Flask):
         """Get a page of results, check the results and count"""
 
         # add the rows
@@ -78,38 +91,39 @@ class TestCreateSqlDataSource:
         # setup the data object factory
         core_data_object(sql_ds)
 
-        # iterate through pages of 2
-        for i in range(3):
-            data_objects, count = sql_ds.get_list_page(
-                'type-a',
-                i + 1,  # page number starts from 1
-                page_size=2
-            )
-            # count should always be 7
-            assert count == 7
-            # right pair of objects
-            [first, second] = list(data_objects)
-            for j, data_object in enumerate([first, second], start=i * 2):
-                assert data_object.type == 'type-a'
-                assert data_object.id == str(65 + j)
-                assert data_object.attributes == {
-                    'string_column': chr(65 + j)
-                }
+        with fake_app.request_context():
+            # iterate through pages of 2
+            for i in range(3):
+                data_objects, count = sql_ds.get_list_page(
+                    'type-a',
+                    i + 1,  # page number starts from 1
+                    page_size=2
+                )
+                # count should always be 7
+                assert count == 7
+                # right pair of objects
+                [first, second] = list(data_objects)
+                for j, data_object in enumerate([first, second], start=i * 2):
+                    assert data_object.type == 'type-a'
+                    assert data_object.id == str(65 + j)
+                    assert data_object.attributes == {
+                        'string_column': chr(65 + j)
+                    }
 
-        # final page should have just 1 item
-        data_objects, count = sql_ds.get_list_page('type-a', 4, page_size=2)
-        # count the same
-        assert count == 7
-        # right object, and only one
-        [final] = list(data_objects)
-        assert final.type == 'type-a'
-        assert final.id == '71'
-        assert final.attributes == {'string_column': 'G'}
-
-        # check the next few pages are empty
-        for i in range(5, 9):
-            data_objects, count = sql_ds.get_list_page('type-a', i, page_size=2)
-            # count still the same
+            # final page should have just 1 item
+            data_objects, count = sql_ds.get_list_page('type-a', 4, page_size=2)
+            # count the same
             assert count == 7
-            # empty page
-            assert len(list(data_objects)) == 0
+            # right object, and only one
+            [final] = list(data_objects)
+            assert final.type == 'type-a'
+            assert final.id == '71'
+            assert final.attributes == {'string_column': 'G'}
+
+            # check the next few pages are empty
+            for i in range(5, 9):
+                data_objects, count = sql_ds.get_list_page('type-a', i, page_size=2)
+                # count still the same
+                assert count == 7
+                # empty page
+                assert len(list(data_objects)) == 0
