@@ -2,7 +2,7 @@
 #
 # SPDX-License-Identifier: MIT
 
-from typing import Callable, Dict, List, Type
+from typing import Callable, Dict, List, Optional, Type
 
 from .database import Database, DefaultDatabase
 from .filter import DefaultDatabaseFilter
@@ -81,6 +81,13 @@ def __database(
     return DefaultDatabase(session_factory, models)
 
 
+def __user_id_getter() -> Optional[str]:
+    ctx = default_ctx_getter()
+    if not ctx.authenticated:
+        return None
+    return ctx.user_id
+
+
 def create_sql_datasource(
     models: List[Type[Model]],
     db_uri: str,
@@ -88,7 +95,7 @@ def create_sql_datasource(
 
     # arguments below are optional and used mainly for testing
     type_function: TypeFunction = lambda m: m.get_table_name(),
-    api_user_id_getter: Callable[[], str] = lambda: default_ctx_getter().user_id,
+    api_user_id_getter: Callable[[], str] = __user_id_getter,
     database_factory: DatabaseFactory = __database,
     model_factory: BackConverterFactory = __back_converter_factory,
     do_factory: ConverterFactory = __model_converter_factory

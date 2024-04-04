@@ -63,7 +63,7 @@ class SqlDataSource(
         back_converter_factory: BackConverterFactory,
         filter_factory: FilterFactory,
         sorter_factory: SorterFactory,
-        user_id_getter: Optional[UserIdGetter] = None
+        user_id_getter: UserIdGetter = lambda: None
     ) -> None:
 
         self.__db = db
@@ -75,7 +75,7 @@ class SqlDataSource(
         self.__filter_factory = filter_factory
         self.__sorter_factory = sorter_factory
         self.__all_attribute_types = self.__calculate_all_attribute_types()
-        self.__set_user_id_getter(user_id_getter)
+        self.__user_id_getter = user_id_getter
 
         super().__init__({})
 
@@ -282,13 +282,4 @@ class SqlDataSource(
         return (
             None if page_number is None or page_size is None
             else (page_number - 1) * page_size
-        )
-
-    def __set_user_id_getter(
-        self,
-        user_id_getter: UserIdGetter
-    ) -> None:
-
-        self.__user_id_getter = (
-            (lambda: None) if user_id_getter is None else user_id_getter
         )
