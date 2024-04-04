@@ -120,7 +120,6 @@ class DefaultDatabase(Database):
 
     def get_by_id(self, tablename: str, instance_id: Any) -> Optional[Model]:
         result, session = self.__get_instance_by_id(tablename, instance_id)
-        session.close()
         return result
 
     def get_page(
@@ -132,14 +131,13 @@ class DefaultDatabase(Database):
         limit: Optional[int] = None
     ) -> Iterable[Model]:
 
-        _, session, query = self.__get_model_session_query(tablename)
+        _, _, query = self.__get_model_session_query(tablename)
         if filters is not None:
             query = filters.filter(query, tablename, self.__tablename_model_dict)
         if sort_by is not None:
             query = sort_by.sort(query, tablename, self.__tablename_model_dict)
         query = query.limit(limit).offset(offset)
         results = query.all()
-        session.close()
         return results
 
     def count(
@@ -148,11 +146,10 @@ class DefaultDatabase(Database):
         filters: Optional[DatabaseFilter] = None
     ) -> int:
 
-        _, session, query = self.__get_model_session_query(tablename)
+        _, _, query = self.__get_model_session_query(tablename)
         if filters is not None:
             query = filters.filter(query, tablename, self.__tablename_model_dict)
         count = query.count()
-        session.close()
         return count
 
     def delete(
@@ -194,7 +191,6 @@ class DefaultDatabase(Database):
 
         instance, session = self.__get_instance_by_id(tablename, instance_id)
         result = instance.instance_to_one_relations[relationship_name]
-        session.close()
         return result
 
     def get_to_many_relations(
@@ -206,7 +202,6 @@ class DefaultDatabase(Database):
 
         instance, session = self.__get_instance_by_id(tablename, instance_id)
         result = instance.instance_to_many_relations[relationship_name]
-        session.close()
         return result
 
     @property
@@ -244,8 +239,6 @@ class DefaultDatabase(Database):
             session.commit()
         except IntegrityError:
             self.__raise_integrity_error(instance, operation)
-        finally:
-            session.close()
 
     def __before_commit(
         self,
