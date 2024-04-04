@@ -119,7 +119,7 @@ class DefaultDatabase(Database):
         self.__attribute_types = self.__get_attribute_types()
 
     def get_by_id(self, tablename: str, instance_id: Any) -> Optional[Model]:
-        result, session = self.__get_instance_by_id(tablename, instance_id)
+        result = self.__get_instance_by_id(tablename, instance_id)
         return result
 
     def get_page(
@@ -131,7 +131,7 @@ class DefaultDatabase(Database):
         limit: Optional[int] = None
     ) -> Iterable[Model]:
 
-        _, _, query = self.__get_model_session_query(tablename)
+        _, query = self.__get_model_query(tablename)
         if filters is not None:
             query = filters.filter(query, tablename, self.__tablename_model_dict)
         if sort_by is not None:
@@ -146,7 +146,7 @@ class DefaultDatabase(Database):
         filters: Optional[DatabaseFilter] = None
     ) -> int:
 
-        _, _, query = self.__get_model_session_query(tablename)
+        _, query = self.__get_model_query(tablename)
         if filters is not None:
             query = filters.filter(query, tablename, self.__tablename_model_dict)
         count = query.count()
@@ -158,7 +158,8 @@ class DefaultDatabase(Database):
         instance_id: Any,
         user_id: Optional[str] = None
     ) -> None:
-        instance, session = self.__get_instance_by_id(tablename, instance_id)
+        instance = self.__get_instance_by_id(tablename, instance_id)
+        session = self.__session_factory()
         session.delete(instance)
         self.__commit_session(
             session,
@@ -189,7 +190,7 @@ class DefaultDatabase(Database):
         relationship_name: str
     ) -> Optional[Model]:
 
-        instance, session = self.__get_instance_by_id(tablename, instance_id)
+        instance = self.__get_instance_by_id(tablename, instance_id)
         result = instance.instance_to_one_relations[relationship_name]
         return result
 
@@ -200,7 +201,7 @@ class DefaultDatabase(Database):
         relationship_name: str
     ) -> Iterable[Model]:
 
-        instance, session = self.__get_instance_by_id(tablename, instance_id)
+        instance = self.__get_instance_by_id(tablename, instance_id)
         result = instance.instance_to_many_relations[relationship_name]
         return result
 
@@ -214,15 +215,15 @@ class DefaultDatabase(Database):
             for t, m in self.__tablename_model_dict.items()
         }
 
-    def __get_model_session_query(
+    def __get_model_query(
         self,
         tablename: str
-    ) -> Tuple[Type[Model], Session, Query]:
+    ) -> Tuple[Type[Model], Query]:
 
         model = self.__tablename_model_dict[tablename]
         session = self.__session_factory()
         query = session.query(model)
-        return model, session, query
+        return model, query
 
     def __commit_session(
         self,
@@ -253,16 +254,16 @@ class DefaultDatabase(Database):
         self,
         tablename: str,
         instance_id: str
-    ) -> Tuple[Optional[Model], Session]:
+    ) -> Optional[Model]:
         """
         Gets an instance by its tablename and id. Returns a session object that
         must be manually closed.
         """
 
-        model, session, query = self.__get_model_session_query(tablename)
+        model, query = self.__get_model_query(tablename)
         id_column = getattr(model, model.get_id_column_name())
         result = query.filter(id_column == instance_id).one_or_none()
-        return result, session
+        return result
 
     def __get_tablename_model_dict(
         self,
@@ -274,10 +275,11 @@ class DefaultDatabase(Database):
         }
 
     def __upsert_to_session(self, instance: Model) -> Session:
-        old_instance, session = self.__get_instance_by_id(
+        old_instance = self.__get_instance_by_id(
             instance.get_table_name(),
             instance.instance_id
         )
+        session = self.__session_factory()
         if old_instance is None:
             session.add(instance)
         else:
