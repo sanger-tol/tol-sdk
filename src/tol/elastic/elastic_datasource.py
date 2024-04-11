@@ -793,11 +793,20 @@ class ElasticDataSource(
     ) -> int:
         index = self.__get_index(object_type)
         query = self._build_elasticsearch_query(object_type, object_filters)
-        resp = self.es.count(
+        fields = list(self.runtime_fields[object_type].keys()) \
+            if object_type in self.runtime_fields else None
+        runtime_mappings = self.runtime_fields[object_type] \
+            if object_type in self.runtime_fields else None
+        # We are not using es.count so that we can use runtime fields
+        resp = self.es.search(
             index=index,
-            body={'query': query}  # This is named 'query' in later versions of Elastic
+            track_total_hits=True,
+            size=0,
+            query=query,
+            fields=fields,
+            runtime_mappings=runtime_mappings
         )
-        return resp['count']
+        return resp['hits']['total']['value']
 
     @property
     @ttl_cache(ttl=3600)
