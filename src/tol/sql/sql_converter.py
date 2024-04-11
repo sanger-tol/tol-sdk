@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: MIT
 
 from abc import ABC
-from typing import Callable, TypeVar
+from typing import Any, Callable, TypeVar
 
 from .model import Model
 from ..core import DataObject
@@ -87,10 +87,14 @@ class DefaultDataObjectConverter(DataObjectConverter):
         self,
         id_: str,
         model_class: type[Model]
-    ) -> dict[str, str]:
+    ) -> dict[str, Any]:
 
         id_column_name = model_class.get_id_column_name()
-        return {id_column_name: id_}
+
+        # Cast id column value to its python type
+        id_val = getattr(model_class, id_column_name).type.python_type(id_)
+
+        return {id_column_name: id_val}
 
     def __get_foreign_key_dict(
         self,
