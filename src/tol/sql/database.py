@@ -2,6 +2,10 @@
 #
 # SPDX-License-Identifier: MIT
 
+import inspect
+import logging
+import re
+
 from abc import ABC, abstractmethod
 from typing import Any, Dict, Iterable, List, Optional, Tuple, Type
 
@@ -13,6 +17,18 @@ from .model import Model
 from .session import SessionFactory
 from .sort import DatabaseSorter
 from ..core import DataSourceError
+
+
+
+def report_stack():
+    stack = inspect.stack()
+    log = "stack: \n"
+    for i, frame in enumerate(stack[1:]):
+        if frame.function == 'dispatch_request':
+            break
+        file = re.sub(r'.*tol-sdk/src/tol/', '', frame.filename)
+        log = log + f'{" " * i}  {frame.function}  {file}:{frame.lineno}\n'
+    logging.debug(log)
 
 
 class Database(ABC):
@@ -256,14 +272,14 @@ class DefaultDatabase(Database):
         instance_id: str
     ) -> Optional[Model]:
         """
-        Gets an instance by its tablename and id. Returns a session object that
-        must be manually closed.
+        Gets an instance by its tablename and id.
         """
 
-        model, query = self.__get_model_query(tablename)
-        id_column = getattr(model, model.get_id_column_name())
-        result = query.filter(id_column == instance_id).one_or_none()
-        return result
+        session = self.__session_factory()
+        model = self.__tablename_model_dict[tablename]
+
+        # Session.get calls are cached in the Session
+        return session.get(model, instance_id)
 
     def __get_tablename_model_dict(
         self,

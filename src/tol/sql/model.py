@@ -4,6 +4,8 @@
 
 from __future__ import annotations
 
+import logging
+
 from abc import ABC, ABCMeta, abstractmethod
 from datetime import datetime
 from typing import Any, Iterable, Optional, Type
@@ -49,6 +51,13 @@ class Model(ABC):
         The name of the column that serves as the "id".
         Override this classmethod to change.
         """
+
+    # @classmethod
+    # @abstractmethod
+    # def get_id_column_type(cls) -> Type:  # noqa
+    #     """
+    #     The Python type of the "id" column.
+    #     """
 
     @classmethod
     @abstractmethod
@@ -196,6 +205,11 @@ def model_base() -> Type[DefaultModel]:
         def get_id_column_name(cls) -> str:
             return 'id'
 
+        # @classmethod
+        # def get_id_column_type(cls) -> str:
+        #     id_column_name = model_class.get_id_column_name()
+        #     return model_class.__table__.columns[id_column_name].type.python_type
+
         @classmethod
         def get_column(cls, name: str) -> MappedColumn:
             if name not in inspect(cls).attrs:
@@ -245,6 +259,7 @@ def model_base() -> Type[DefaultModel]:
         @property
         def instance_to_one_relations(self) -> dict[str, Optional[Model]]:
             config = self.get_to_one_relationship_config()
+            logging.debug(f'Fetching attributes for [{config.keys()}]')
             return self.__get_attributes_map(config.keys())
 
         @property
