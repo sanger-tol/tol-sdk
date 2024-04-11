@@ -295,7 +295,7 @@ def create_models(
 
     class Token(AuthToken, model_base):
 
-        __tablename__ = 'oidc_token'
+        __tablename__ = 'token'
 
         id: Mapped[int] = mapped_column(  # noqa A003
             primary_key=True

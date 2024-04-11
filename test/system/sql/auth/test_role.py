@@ -36,7 +36,7 @@ def role_binding_model(full_models_list):
 def token_model(full_models_list):
     matches = [
         m for m in full_models_list
-        if m.__tablename__ == 'oidc_token'
+        if m.__tablename__ == 'token'
     ]
     return matches[0]
 

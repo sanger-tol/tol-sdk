@@ -22,7 +22,7 @@ from tol.api_base2.misc import default_ctx_getter
 def token_model(full_models_list):
     matches = [
         m for m in full_models_list
-        if m.__tablename__ == 'oidc_token'
+        if m.__tablename__ == 'token'
     ]
     return matches[0]
 
