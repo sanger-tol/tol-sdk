@@ -4,7 +4,6 @@
 
 from __future__ import annotations
 
-import logging
 import typing
 from collections.abc import Mapping
 from dataclasses import dataclass
@@ -144,7 +143,6 @@ class ToOneDict(Mapping):
         return one_object
 
     def __get_or_cached(self, __k: str) -> Optional[DataObject]:
-        logging.debug(f'Looking for {__k = } in cache')
         if __k not in self.__dict:
             return self.__get_one_object(__k)
         else:

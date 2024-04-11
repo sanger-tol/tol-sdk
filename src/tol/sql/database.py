@@ -2,10 +2,6 @@
 #
 # SPDX-License-Identifier: MIT
 
-import inspect
-import logging
-import re
-
 from abc import ABC, abstractmethod
 from typing import Any, Dict, Iterable, List, Optional, Tuple, Type
 
@@ -17,18 +13,6 @@ from .model import Model
 from .session import SessionFactory
 from .sort import DatabaseSorter
 from ..core import DataSourceError
-
-
-
-def report_stack():
-    stack = inspect.stack()
-    log = "stack: \n"
-    for i, frame in enumerate(stack[1:]):
-        if frame.function == 'dispatch_request':
-            break
-        file = re.sub(r'.*tol-sdk/src/tol/', '', frame.filename)
-        log = log + f'{" " * i}  {frame.function}  {file}:{frame.lineno}\n'
-    logging.debug(log)
 
 
 class Database(ABC):
