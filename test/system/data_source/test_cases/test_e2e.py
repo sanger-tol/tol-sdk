@@ -580,7 +580,8 @@ class TestEndToEnd:
             data_source.data_object_factory(
                 'root',
                 id_,
-                attributes={'str_column': f'test_{id_}'}
+                attributes={'str_column': f'test_{id_}',
+                            'bool_column': True if id_ % 2 == 0 else False}
             )
             for id_ in range(10)
         ]
@@ -590,6 +591,7 @@ class TestEndToEnd:
         cnt = data_source.get_count('root')
         assert cnt == 11  # The archetype plus the new 10
 
+        # Count with filter
         f = DataSourceFilter()
         f.and_ = {
             'str_column': {
@@ -599,6 +601,13 @@ class TestEndToEnd:
 
         cnt = data_source.get_count('root', object_filters=f)
         assert cnt == 3
+
+        # Count with filter on runtime field
+        f = DataSourceFilter()
+        f.and_ = {'runtime_column': {'eq': {'value': True}}}
+
+        cnt = data_source.get_count('root', object_filters=f)
+        assert cnt == 5
 
     @against(elastic)
     def test_group_statter(self, data_source: OperableDataSource):

@@ -581,12 +581,16 @@ class TestElasticDataSource(TestCase):
     def test_get_count(self):
         _, eds = mock_elastic_data_source()
 
-        eds.es.count.return_value = {
-            'count': 12345
+        eds.es.search.return_value = {
+            'hits': {
+                'total': {
+                    'value': 12345
+                }
+            }
         }
 
         returned = eds.get_count('obj_type')
-        eds.es.count.assert_called_once()
+        eds.es.search.assert_called_once()
         self.assertEqual(12345, returned)
 
     def test_get_stats_standard(self):
