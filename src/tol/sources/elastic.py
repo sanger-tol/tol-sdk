@@ -162,12 +162,12 @@ def elastic():
             'calc_done_date': {
                 'type': 'date',
                 'script': """
-                    if (doc['mlwh_run_data_mlwh_run_complete_illumina_min'].size() > 0
+                    if (doc['mlwh_run_data_mlwh_run_complete_rnaseq_min'].size() > 0
                         && doc['informatics_tolid_informatics_status_summary_min.keyword'].size()
                             > 0
                         && doc['informatics_tolid_informatics_status_summary_min.keyword'].value
                             == '1 submitted') {
-                            emit(doc['mlwh_run_data_mlwh_run_complete_illumina_min']
+                            emit(doc['mlwh_run_data_mlwh_run_complete_rnaseq_min']
                                 .value.toEpochMilli())
                     }
                 """
