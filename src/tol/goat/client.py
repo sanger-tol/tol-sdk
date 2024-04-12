@@ -52,6 +52,7 @@ class GoatApiClient:
         params = {
             'query': f'tax_name({obj_ids_str})',
             'result': 'taxon',
+            'size': len(object_ids),
             'includeEstimates': 'false',
             'summaryValues': 'count',
             'taxonomy': 'ncbi',
