@@ -25,37 +25,42 @@ def cli(env_file):
               type=click.Choice(['python', 'license', 'ui', 'ui-fix']),
               help='type of lint')
 def lint(type_):
-    # service = get_app()
+    service = get_app()
     click.echo('Running lint...')
     if type_ == 'license':
-        command = 'docker run --rm --volume $(pwd):/data fsfe/reuse:1.1.2 lint'
-        click.secho(command, fg='green')
-        run(command)
+        command_base = 'docker run --rm --volume $(pwd):/data fsfe/reuse:1.1.2 lint'
+        click.secho(command_base, fg='green')
+        run(command_base)
     if type_ == 'python':
         linter = 'gitlab-registry.internal.sanger.ac.uk/tol/tol-core/lint:1.0.3'
-        command = f'docker run --rm --volume $(pwd):/project {linter}'
-        click.secho(command, fg='green')
-        run(command)
+        command_base = f'docker run --rm --volume $(pwd):/project {linter}'
+        click.secho(command_base, fg='green')
+        run(command_base)
     if type_ == 'ui':
-        ui_linter = 'gitlab-registry.internal.sanger.ac.uk/tol/tol-core/ui-lint:1.0.9'
-        command = f'docker run --rm --volume $(pwd):/src {ui_linter}'
+        #TODO node_modules/ caching in ToL Core
+        ui_linter = 'node:18.18'
+        ui_dir = f'{service}-ui'
+        node_cache = f'{service}-node_modules'
+        command_base = f'docker run --rm -v $(pwd)/{ui_dir}/app:/src -w /src -v {node_cache}:/src/node_modules {ui_linter}'
+        command_ext = (
+            'yarn install '
+            '&& '
+            'npx eslint '
+            '--ignore-pattern "**/public" '
+            '--ignore-pattern "**/*.license" '
+            '--ignore-pattern "**/Dockerfile" '
+            '--ignore-pattern "**/*.dev" '
+            '--ignore-pattern "**/*.scss" '
+            '.'
+        )
+        command = f"{command_base} sh -c '{command_ext}'"
         click.secho(command, fg='green')
         run(command)
     if type_ == 'ui-fix':
-        ui_linter = 'gitlab-registry.internal.sanger.ac.uk/tol/tol-core/ui-lint:1.0.9 '
-        command_1 = f'docker run --rm --volume $(pwd):/src {ui_linter}'
-        command_2 = 'npx eslint \
-            -c /project/.eslintrc \
-            --ext .js,.jsx,.ts,.tsx \
-            --fix \
-            --ignore-pattern "**/public" \
-            --ignore-pattern "**/*.license" \
-            --ignore-pattern "**/Dockerfile" \
-            --ignore-pattern "**/*.dev" \
-            --ignore-pattern "**/*.scss" \
-            /src/*-ui/**/*'
-        click.secho((command_1 + command_2), fg='green')
-        run(command_1 + command_2)
+        ui_linter = 'gitlab-registry.internal.sanger.ac.uk/tol/tol-core/ui-lint:1.0.10 '
+        command_base = f'docker run --rm --volume $(pwd):/src {ui_linter}'
+        click.secho((command_base), fg='green')
+        run(command_base)
 
 
 # Scan
