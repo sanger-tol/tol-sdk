@@ -17,7 +17,8 @@ from .misc import (
     AggregationParameters,
     JsonApiRequestBody,
     ListGetParamaters,
-    RelataionshipHopsParser
+    RelataionshipHopsParser,
+    StatsParameters
 )
 from ..api_client2.exception import BaseRuntimeException
 from ..api_client2.parser import DefaultParser
@@ -178,6 +179,12 @@ def _core_blueprint(
         controller = __new_controller(object_type)
         request_args = ListGetParamaters(request.args)
         return controller.get_count(object_type, request_args)
+
+    @data_handler.route('/<object_type>:stats', methods=['GET'])
+    def get_stats(*, object_type: str):
+        controller = __new_controller(object_type)
+        request_args = StatsParameters(request.args)
+        return controller.get_stats(object_type, request_args)
 
     @data_handler.route('/<object_type>/<path:object_id>', methods=['DELETE'])
     def delete_detail(*, object_type: str, object_id: str):

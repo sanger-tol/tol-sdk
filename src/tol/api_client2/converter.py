@@ -2,7 +2,7 @@
 #
 # SPDX-License-Identifier: MIT
 
-from typing import Any, Optional, Union
+from typing import Any, Dict, Optional, Union
 
 from .parser import Parser
 from .view import View
@@ -35,11 +35,13 @@ class JsonApiConverter():
     def __init__(
         self,
         parser: Parser,
-        data_key: str = 'data'
+        data_key: str = 'data',
+        meta_key: str = 'meta'
     ) -> None:
 
         self.__parser = parser
         self.__data_key = data_key
+        self.__meta_key = meta_key
 
     def convert(self, input_: JsonApiTransfer) -> DataObject:
         """
@@ -64,6 +66,28 @@ class JsonApiConverter():
             self.__parser.parse(json_obj)
             for json_obj in json_obj_list
         ], total_count
+
+    def convert_count(
+        self,
+        input_: JsonApiTransfer
+    ) -> Dict[str, Any]:
+        """
+        Converts a JsonApiTransfer containing a list of stats.
+        """
+
+        stats = input_[self.__meta_key]
+        return stats['total']
+
+    def convert_stats(
+        self,
+        input_: JsonApiTransfer
+    ) -> Dict[str, Any]:
+        """
+        Converts a JsonApiTransfer containing a list of stats.
+        """
+
+        stats = input_[self.__meta_key]
+        return self.__parser.parse_stats(stats)
 
     def convert_relationship_config(
         self,

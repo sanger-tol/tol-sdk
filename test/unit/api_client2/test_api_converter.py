@@ -186,6 +186,79 @@ class TestJsonApiConverter:
             )
         assert isinstance(observed.attributes['d'], str)
 
+    def test_count(self):
+
+        in_ = {
+            'meta': {
+                'total': 123
+            }
+        }
+
+        attribute_types = {
+            'test': {
+                'a': 'datetime',
+                'd': 'str'
+            }
+        }
+
+        parser = DefaultParser(
+            _get_mock_ds_dict(attribute_types=attribute_types)
+        )
+
+        converter = JsonApiConverter(parser)
+
+        observed = converter.convert_count(in_)
+
+        assert observed == 123
+
+    def test_stats(self):
+        """
+        All `datetime` attributes, as defined in
+        `ApiDataSource().attribute_types`, are parsed.
+        """
+        now_datetime = datetime.now()
+        now = str(now_datetime)
+
+        in_ = {
+            'meta': {
+                'type': 'test',
+                'stats': {
+                    'a': {
+                        'min': now,
+                        'max': now,
+                        'unique': 16
+                    },
+                    'd': {
+                        'min': 'aaa',
+                        'max': 'zzz',
+                        'unique': 20
+                    }
+                }
+            }
+        }
+
+        attribute_types = {
+            'test': {
+                'a': 'datetime',
+                'd': 'str'
+            }
+        }
+
+        parser = DefaultParser(
+            _get_mock_ds_dict(attribute_types=attribute_types)
+        )
+
+        converter = JsonApiConverter(parser)
+
+        observed = converter.convert_stats(in_)
+
+        assert observed['stats']['a']['min'] == now_datetime
+        assert observed['stats']['a']['max'] == now_datetime
+        assert observed['stats']['a']['unique'] == 16
+        assert observed['stats']['d']['min'] == 'aaa'
+        assert observed['stats']['d']['max'] == 'zzz'
+        assert observed['stats']['d']['unique'] == 20
+
 
 class TestDataObjectConverter:
     """Tests `DataObjectConverter().convert()`"""

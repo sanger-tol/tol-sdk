@@ -103,6 +103,78 @@ class TestJsonApiClient:
         assert observed == expected
 
     @responses.activate
+    def test_get_count_complex(self):
+        """`JsonApiClient().get_count` also with kwargs"""
+
+        client = JsonApiClient(FAKE_API_URL, token='uplz')
+
+        filter_ = 'this is totally random and unrealistic!!'
+
+        expected = {'total': 17}
+
+        expected_url = f'{FAKE_API_URL}/data/lol:count'
+        responses.get(
+            expected_url,
+            json=expected,
+            match=[
+                query_param_matcher(
+                    {
+                        'filter': filter_
+                    },
+                    strict_match=True
+                ),
+                header_matcher({'token': 'uplz'})
+            ]
+        )
+
+        observed = client.get_count(
+            'lol',
+            filter_string=filter_
+        )
+        assert observed == expected
+
+    @responses.activate
+    def test_get_stats_complex(self):
+        """`JsonApiClient().get_stats` also with kwargs"""
+
+        client = JsonApiClient(FAKE_API_URL, token='uplz')
+
+        filter_ = 'this is totally random and unrealistic!!'
+
+        expected = {
+            'stats': {
+                'field1_min': 2,
+                'field1_max': 4,
+                'field2_min': 3,
+                'field2_max': 9
+            }
+        }
+        expected_url = f'{FAKE_API_URL}/data/lol:stats'
+        responses.get(
+            expected_url,
+            json=expected,
+            match=[
+                query_param_matcher(
+                    {
+                        'stats': 'min,max',
+                        'stats_fields': 'field1,field2',
+                        'filter': filter_
+                    },
+                    strict_match=True
+                ),
+                header_matcher({'token': 'uplz'})
+            ]
+        )
+
+        observed = client.get_stats(
+            'lol',
+            stats_string='min,max',
+            stats_fields_string='field1,field2',
+            filter_string=filter_
+        )
+        assert observed == expected
+
+    @responses.activate
     def test_delete(self):
         """`JsonApiClient().delete()`"""
 

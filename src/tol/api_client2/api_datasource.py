@@ -4,7 +4,7 @@
 
 from functools import cache
 from itertools import chain
-from typing import Callable, Iterable, Optional
+from typing import Callable, Iterable, List, Optional
 
 from .client import JsonApiClient
 from .converter import (
@@ -15,12 +15,14 @@ from .filter import ApiFilter
 from .validate import validate, validate_id
 from ..core import DataObject, DataSource, DataSourceFilter
 from ..core.operator import (
+    Counter,
     Deleter,
     DetailGetter,
     ListGetter,
     OperatorDict,
     PageGetter,
     Relational,
+    Statter,
     Upserter
 )
 from ..core.relationship import RelationshipConfig
@@ -36,11 +38,13 @@ class ApiDataSource(
     DataSource,
 
     # the supported operators
+    Counter,
     Deleter,
     DetailGetter,
     PageGetter,
     ListGetter,
     Relational,
+    Statter,
     Upserter
 ):
     """
@@ -157,6 +161,37 @@ class ApiDataSource(
 
             yield from results_page
             page += 1
+
+    @validate('count')
+    def get_count(
+        self,
+        object_type: str,
+        object_filters: Optional[DataSourceFilter] = None
+    ) -> int:
+        filter_string = self.__get_filter_string(object_filters)
+        transfer = self.__client_factory().get_count(
+            object_type,
+            filter_string=filter_string
+        )
+        return self.__jc_factory().convert_count(transfer)
+
+    @validate('stats')
+    def get_stats(
+        self,
+        object_type: str,
+        stats: Optional[List[str]] = [],
+        stats_fields: Optional[List[str]] = [],
+        object_filters: Optional[DataSourceFilter] = None
+    ) -> tuple[Iterable[DataObject], int]:
+
+        filter_string = self.__get_filter_string(object_filters)
+        transfer = self.__client_factory().get_stats(
+            object_type,
+            stats_string=','.join(stats),
+            stats_fields_string=','.join(stats_fields),
+            filter_string=filter_string
+        )
+        return self.__jc_factory().convert_stats(transfer)
 
     @validate('delete')
     def delete(

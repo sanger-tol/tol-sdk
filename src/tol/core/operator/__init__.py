@@ -15,6 +15,7 @@ from .list_getter import ListGetter
 from .operator_config import OperatorDict  # noqa
 from .page_getter import PageGetter
 from .relational import Relational
+from .statter import Statter
 from .updater import Updater
 from .upserter import Upserter
 
@@ -29,6 +30,7 @@ Operator = Union[
     ListGetter,
     PageGetter,
     Relational,
+    Statter,
     Updater,
     Upserter
 ]

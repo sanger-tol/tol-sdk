@@ -593,7 +593,49 @@ class TestElasticDataSource(TestCase):
         eds.es.search.assert_called_once()
         self.assertEqual(12345, returned)
 
-    def test_get_stats_standard(self):
+    def test_get_stats_unique_and_cardinality(self):
+        _, eds = mock_elastic_data_source()
+
+        ret = {
+            'aggregations': {
+                'datefield_unique': {
+                    'value': 10
+                },
+                'datefield_cardinality': {
+                    'value': 15
+                },
+                'field2_unique': {
+                    'value': 3
+                },
+                'field2_cardinality': {
+                    'value': 5
+                }
+            }
+        }
+        eds.es.search.side_effect = [
+            ret
+        ]
+
+        returned = eds.get_stats(
+            'obj_type',
+            stats_fields=['field2', 'datefield'],
+            stats=['unique', 'cardinality']
+        )
+        self.assertEqual({
+            'stats': {
+                'datefield': {
+                    'unique': 10,
+                    'cardinality': 15
+                },
+                'field2': {
+                    'unique': 3,
+                    'cardinality': 5
+                }
+            }
+        }, returned)
+        self.assertEqual(eds.es.search.call_count, 1)
+
+    def test_get_group_stats_standard(self):
         _, eds = mock_elastic_data_source()
 
         first_ret = {
@@ -657,19 +699,25 @@ class TestElasticDataSource(TestCase):
             second_ret
         ]
 
-        returned = eds.get_stats('obj_type',
-                                 group_by='field1',
-                                 stats_fields=['field2', 'datefield'],
-                                 stats=['min', 'max'])
+        returned = eds.get_group_stats(
+            'obj_type',
+            group_by='field1',
+            stats_fields=['field2', 'datefield'],
+            stats=['min', 'max']
+        )
         first = next(returned)
         self.assertEqual({
             'key': {'field1': '1111'},
             'stats': {
                 'count': 20,
-                'datefield_min': datetime.fromtimestamp(1000000000),
-                'datefield_max': datetime.fromtimestamp(1500000000),
-                'field2_min': 'A',
-                'field2_max': 'Z'
+                'datefield': {
+                    'min': datetime.fromtimestamp(1000000000),
+                    'max': datetime.fromtimestamp(1500000000)
+                },
+                'field2': {
+                    'min': 'A',
+                    'max': 'Z'
+                }
             }
         }, first)
         second = next(returned)
@@ -677,17 +725,21 @@ class TestElasticDataSource(TestCase):
             'key': {'field1': '1112'},
             'stats': {
                 'count': 18,
-                'datefield_min': None,
-                'datefield_max': None,
-                'field2_min': None,
-                'field2_max': None
+                'datefield': {
+                    'min': None,
+                    'max': None
+                },
+                'field2': {
+                    'min': None,
+                    'max': None
+                }
             }
         }, second)
         with self.assertRaises(StopIteration):
             next(returned)
         self.assertEqual(eds.es.search.call_count, 2)
 
-    def test_get_stats_union(self):
+    def test_get_group_stats_union(self):
         _, eds = mock_elastic_data_source()
 
         first_ret = {
@@ -733,16 +785,18 @@ class TestElasticDataSource(TestCase):
             second_ret
         ]
 
-        returned = eds.get_stats('obj_type',
-                                 group_by='field1',
-                                 stats_fields=['field4'],
-                                 stats=['union'])
+        returned = eds.get_group_stats(
+            'obj_type',
+            group_by='field1',
+            stats_fields=['field4'],
+            stats=['union']
+        )
         first = next(returned)
         self.assertEqual({
             'key': {'field1': '1111'},
             'stats': {
                 'count': 20,
-                'field4_union': ['val1', 'val2', 'val3']
+                'field4': {'union': ['val1', 'val2', 'val3']}
             }
         }, first)
         second = next(returned)
@@ -750,7 +804,7 @@ class TestElasticDataSource(TestCase):
             'key': {'field1': '1112'},
             'stats': {
                 'count': 18,
-                'field4_union': None
+                'field4': {'union': None}
             }
         }, second)
         with self.assertRaises(StopIteration):

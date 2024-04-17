@@ -4,8 +4,9 @@
 
 from __future__ import annotations
 
-from functools import cache
 from typing import Optional, Type
+
+from cachetools.func import ttl_cache
 
 from .attribute_metadata import (AttributeMetadata, DefaultAttributeMetadata)
 from .data_source_dict import DataSourceDict
@@ -28,7 +29,7 @@ def data_source_attribute_metadata(
         """
         AbstractMetadata that gets its info from one or more DataSources
         """
-        @cache
+        @ttl_cache(ttl=3600)
         def __read_attributes_from_datasource(self):
             ds = data_source_dict['attribute']
             attributes = ds.get_list('attribute')
@@ -37,6 +38,17 @@ def data_source_attribute_metadata(
                 if attribute.object_type not in ret:
                     ret[attribute.object_type] = {}
                 ret[attribute.object_type][attribute.name] = attribute
+            return ret
+
+        @ttl_cache(ttl=3600)
+        def __read_cardinality_from_datasource(self, object_type):
+            stats = self.host.get_stats(
+                object_type,
+                stats=['cardinality'],
+                stats_fields=self.host.attribute_types[object_type].keys())
+            ret = {}
+            for attribute in self.host.attribute_types[object_type].keys():
+                ret[attribute] = stats['stats'][attribute]['cardinality']
             return ret
 
         def __get_attribute(
@@ -80,6 +92,9 @@ def data_source_attribute_metadata(
                 self,
                 object_type: str,
                 attribute_name: str) -> Optional[int]:
+            cardinality = self.__read_cardinality_from_datasource(object_type)
+            if attribute_name in cardinality:
+                return cardinality[attribute_name]
             return super().get_cardinality(object_type, attribute_name)
 
         def get_description(

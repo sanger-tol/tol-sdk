@@ -111,9 +111,9 @@ class GroupStatterDataLoader(DefaultDataLoader):
     def get_default_converter(self):
         # This will convert:
         # [{'key': {'field1': 'ID123', 'subfield': 'CAT'}
-        #   'stats': {'count': 123, 'other_stat': 345}},
+        #   'stats': {'count': 123, 'other': {'stat': 345}}},
         #  {'key': {'field1': 'ID123', 'subfield': 'DOG'}
-        #   'stats': {'count': 456, 'other_stat': 678}}
+        #   'stats': {'count': 456, 'other': {'stat': 678}}}
         # ]
         # to a CoreDataObject of type destination_object_type
         # with id: ID123
@@ -161,7 +161,7 @@ class GroupStatterDataLoader(DefaultDataLoader):
                 for stats_field in data_loader._group_statter_stats_fields:
                     for stat in data_loader._group_statter_stats:
                         attributes[f'{source_object_type}_{stats_field}_{append_string}{stat}'] = \
-                            data_object['stats'][f'{stats_field}_{stat}']
+                            data_object['stats'][stats_field][stat]
                     ret1 = CoreDataObject(
                         id_=data_object['key'][data_loader._group_statter_group_by[0]],
                         type_=data_loader._destination_object_type,
@@ -194,7 +194,7 @@ class GroupStatterDataLoader(DefaultDataLoader):
         self._group_statter_stats = group_statter_stats
 
     def _get_source_objects(self) -> Iterable:
-        source_objs = self._source.get_stats(
+        source_objs = self._source.get_group_stats(
             self._source_object_type,
             group_by=self._group_statter_group_by,
             stats_fields=self._group_statter_stats_fields,
