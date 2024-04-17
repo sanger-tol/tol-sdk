@@ -571,7 +571,7 @@ class TestEndToEnd:
         assert ret.related_object is None
         assert ret.list_column is None
 
-    @against(elastic)
+    @against(elastic, api_elastic)
     def test_count(self, data_source: OperableDataSource):
         """
         Upsert a `DataObject` instance, and then count
@@ -609,8 +609,8 @@ class TestEndToEnd:
         cnt = data_source.get_count('root', object_filters=f)
         assert cnt == 5
 
-    @against(elastic)
-    def test_group_statter(self, data_source: OperableDataSource):
+    @against(elastic, api_elastic)
+    def test_stats(self, data_source: OperableDataSource):
         """
         Upsert 3 `DataObject` instances, and get them as a list with filters
         """
@@ -640,7 +640,60 @@ class TestEndToEnd:
         data_source.upsert('root', data_objects)
         time.sleep(5)  # Let Elastic settle down after the upsert
 
-        stats = list(data_source.get_stats(
+        stats = data_source.get_stats(
+            'root',
+            stats_fields=['bool_column', 'datetime_column', 'int_column'],
+            stats=['min', 'max', 'sum', 'unique', 'cardinality'],
+            object_filters=None
+        )['stats']
+        # Min makes no sense for bools
+        # Max makes no sense for bools
+        # Sum makes no sense for bools
+        assert stats['bool_column']['unique'] == 2
+        assert stats['bool_column']['cardinality'] == 2
+        assert stats['datetime_column']['min'] == datetime(2020, 1, 1, 0, 0, 0)
+        assert stats['datetime_column']['max'] == datetime(2024, 1, 3, 0, 0, 0)
+        # Sum makes no sense for datetimes
+        assert stats['datetime_column']['unique'] == 4
+        assert stats['datetime_column']['cardinality'] == 4
+        assert stats['int_column']['min'] == 0
+        assert stats['int_column']['max'] == 42
+        assert stats['int_column']['sum'] == 45
+        assert stats['int_column']['unique'] == 4
+        assert stats['int_column']['cardinality'] == 4
+
+    @against(elastic)
+    def test_group_stats(self, data_source: OperableDataSource):
+        """
+        Upsert 3 `DataObject` instances, and get them as a list with filters
+        """
+
+        ids = ['hype', 'train', 'max']
+
+        # none of them are present yet
+        first = list(
+            data_source.get_by_ids('root', ids)
+        )
+
+        assert first == [None, None, None]
+
+        data_objects = [
+            data_source.data_object_factory(
+                'root',
+                id_,
+                attributes={'str_column': f'test_{id_}',
+                            'int_column': i,
+                            'datetime_column': datetime(2024, 1, i + 1, 0, 0, 0),
+                            'bool_column': True if i % 2 == 0 else False,
+                            'list_column': ['a', 'b', 'c'] if i == 0 else ['x', 'y', 'z']}
+            )
+            for i, id_ in enumerate(ids)
+        ]
+
+        data_source.upsert('root', data_objects)
+        time.sleep(5)  # Let Elastic settle down after the upsert
+
+        stats = list(data_source.get_group_stats(
             object_type='root',
             group_by=['bool_column'],
             stats_fields=['int_column', 'datetime_column'],
@@ -650,23 +703,23 @@ class TestEndToEnd:
         assert len(stats) == 2
         false_stats = stats[0]['stats']
         assert false_stats['count'] == 1
-        assert false_stats['int_column_min'] == 1
-        assert false_stats['int_column_max'] == 1
-        assert false_stats['int_column_sum'] == 1
-        assert false_stats['datetime_column_min'] == datetime(2024, 1, 2, 0, 0, 0)
-        assert false_stats['datetime_column_max'] == datetime(2024, 1, 2, 0, 0, 0)
+        assert false_stats['int_column']['min'] == 1
+        assert false_stats['int_column']['max'] == 1
+        assert false_stats['int_column']['sum'] == 1
+        assert false_stats['datetime_column']['min'] == datetime(2024, 1, 2, 0, 0, 0)
+        assert false_stats['datetime_column']['max'] == datetime(2024, 1, 2, 0, 0, 0)
         # Sum makes no sense for datetimes
         true_stats = stats[1]['stats']
         assert true_stats['count'] == 3
-        assert true_stats['int_column_min'] == 0
-        assert true_stats['int_column_max'] == 42
-        assert true_stats['int_column_sum'] == 44
-        assert true_stats['datetime_column_min'] == datetime(2020, 1, 1, 0, 0, 0)
-        assert true_stats['datetime_column_max'] == datetime(2024, 1, 3, 0, 0, 0)
+        assert true_stats['int_column']['min'] == 0
+        assert true_stats['int_column']['max'] == 42
+        assert true_stats['int_column']['sum'] == 44
+        assert true_stats['datetime_column']['min'] == datetime(2020, 1, 1, 0, 0, 0)
+        assert true_stats['datetime_column']['max'] == datetime(2024, 1, 3, 0, 0, 0)
 
         f = DataSourceFilter()
         f.and_ = {'datetime_column': {'gte': {'value': datetime(2021, 1, 1, 0, 0, 0)}}}
-        stats = list(data_source.get_stats(
+        stats = list(data_source.get_group_stats(
             object_type='root',
             group_by=['bool_column'],
             stats_fields=['list_column'],
@@ -676,28 +729,32 @@ class TestEndToEnd:
         assert len(stats) == 2
         false_stats = stats[0]['stats']
         assert false_stats['count'] == 1
-        assert false_stats['list_column_union'] == ['x', 'y', 'z']
+        assert false_stats['list_column']['union'] == ['x', 'y', 'z']
         true_stats = stats[1]['stats']
         assert true_stats['count'] == 2
-        assert true_stats['list_column_union'] == ['a', 'b', 'c', 'x', 'y', 'z']
+        assert true_stats['list_column']['union'] == ['a', 'b', 'c', 'x', 'y', 'z']
 
         # String min and max
-        stats = list(data_source.get_stats(
+        stats = list(data_source.get_group_stats(
             object_type='root',
             group_by=['bool_column'],
             stats_fields=['str_column'],
-            stats=['min', 'max'],
+            stats=['min', 'max', 'unique', 'cardinality'],
             object_filters=f
         ))
         assert len(stats) == 2
         false_stats = stats[0]['stats']
         assert false_stats['count'] == 1
-        assert false_stats['str_column_min'] == 'test_train'
-        assert false_stats['str_column_max'] == 'test_train'
+        assert false_stats['str_column']['min'] == 'test_train'
+        assert false_stats['str_column']['max'] == 'test_train'
+        assert false_stats['str_column']['unique'] == 1
+        assert false_stats['str_column']['cardinality'] == 1
         true_stats = stats[1]['stats']
         assert true_stats['count'] == 2
-        assert true_stats['str_column_min'] == 'test_hype'
-        assert true_stats['str_column_max'] == 'test_max'
+        assert true_stats['str_column']['min'] == 'test_hype'
+        assert true_stats['str_column']['max'] == 'test_max'
+        assert true_stats['str_column']['unique'] == 2
+        assert true_stats['str_column']['cardinality'] == 2
 
         # Add another few to get more results for the second group_by
         ids = ['bill', 'bob', 'ben']
@@ -716,7 +773,7 @@ class TestEndToEnd:
         data_source.upsert('root', data_objects)
         time.sleep(5)  # Let Elastic settle down after the upsert
 
-        stats = list(data_source.get_stats(
+        stats = list(data_source.get_group_stats(
             object_type='root',
             group_by=['bool_column', 'int_column'],
             stats_fields=['datetime_column'],
@@ -726,20 +783,20 @@ class TestEndToEnd:
         assert len(stats) == 4
         false_stats = stats[0]['stats']
         assert false_stats['count'] == 2
-        assert false_stats['datetime_column_min'] == datetime(2024, 1, 2, 0, 0, 0)
-        assert false_stats['datetime_column_max'] == datetime(2025, 1, 2, 0, 0, 0)
+        assert false_stats['datetime_column']['min'] == datetime(2024, 1, 2, 0, 0, 0)
+        assert false_stats['datetime_column']['max'] == datetime(2025, 1, 2, 0, 0, 0)
         true_stats = stats[1]['stats']
         assert true_stats['count'] == 2
-        assert true_stats['datetime_column_min'] == datetime(2024, 1, 1, 0, 0, 0)
-        assert true_stats['datetime_column_max'] == datetime(2025, 1, 1, 0, 0, 0)
+        assert true_stats['datetime_column']['min'] == datetime(2024, 1, 1, 0, 0, 0)
+        assert true_stats['datetime_column']['max'] == datetime(2025, 1, 1, 0, 0, 0)
         true_stats = stats[2]['stats']
         assert true_stats['count'] == 2
-        assert true_stats['datetime_column_min'] == datetime(2024, 1, 3, 0, 0, 0)
-        assert true_stats['datetime_column_max'] == datetime(2025, 1, 3, 0, 0, 0)
+        assert true_stats['datetime_column']['min'] == datetime(2024, 1, 3, 0, 0, 0)
+        assert true_stats['datetime_column']['max'] == datetime(2025, 1, 3, 0, 0, 0)
         true_stats = stats[3]['stats']
         assert true_stats['count'] == 1
-        assert true_stats['datetime_column_min'] == datetime(2020, 1, 1, 0, 0, 0)
-        assert true_stats['datetime_column_max'] == datetime(2020, 1, 1, 0, 0, 0)
+        assert true_stats['datetime_column']['min'] == datetime(2020, 1, 1, 0, 0, 0)
+        assert true_stats['datetime_column']['max'] == datetime(2020, 1, 1, 0, 0, 0)
 
     @against(elastic)
     def test_runtime_fields(self, data_source: OperableDataSource):

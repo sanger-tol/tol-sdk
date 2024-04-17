@@ -248,6 +248,66 @@ class TestApiDataSource:
 
         assert observed == expected
 
+    def test_get_stats(self):
+        """
+        `ApiDataSource().get_list_pageget_stats()` gets stats
+        from client. `filter` is `None`
+        """
+
+        mock_stats = {
+            'stats': {
+                'field1_min': 10,
+                'field1_max': 20,
+                'field1_unique': 4,
+                'field2_min': 'aaa',
+                'field2_max': 'zzz',
+                'field2_unique': 7
+            }
+        }
+        expected = mock_stats
+
+        mock_json = Mock()
+
+        mock_client = Mock()
+        mock_client.config_operations.return_value = {
+            'test': {'auth': ['stats']}
+        }
+        mock_client.config_attribute_types.return_value = {
+            'test': {}
+        }
+        mock_client.get_stats.return_value = mock_json
+
+        mock_json_converter = Mock()
+        mock_json_converter.convert_stats.return_value = expected
+
+        mock_api_filter = Mock()
+
+        api_ds = ApiDataSource(
+            lambda: mock_client,
+            lambda: mock_json_converter,
+            None,
+            lambda: mock_api_filter
+        )
+
+        observed = api_ds.get_stats(
+            'test',
+            stats=['min', 'max', 'unique'],
+            stats_fields=['field1', 'field2']
+        )
+
+        mock_client.get_stats.assert_called_once_with(
+            'test',
+            stats_string='min,max,unique',
+            stats_fields_string='field1,field2',
+            filter_string=None
+        )
+        mock_api_filter.dumps.assert_not_called()
+        mock_json_converter.convert_stats.assert_called_once_with(
+            mock_json
+        )
+
+        assert observed == expected
+
     def test_supported_operations(self):
         """`ApiDataSource().supported_operations`"""
 

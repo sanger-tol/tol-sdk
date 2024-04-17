@@ -13,7 +13,8 @@ from .misc import (
     AggregationBody,
     AggregationParameters,
     JsonApiRequestBody,
-    ListGetParamaters
+    ListGetParamaters,
+    StatsParameters
 )
 from ..api_client2.exception import (
     ObjectNotFoundByIdException,
@@ -196,6 +197,24 @@ class Controller:
         document_meta = {
             'total': total
         }
+        return self.__view.dump_bulk([], document_meta=document_meta)
+
+    @validate(Counter, 'get_stats', OperatorMethod.STATS)
+    def get_stats(
+        self,
+        object_type: str,
+        query_args: StatsParameters
+    ) -> ResponseDict:
+        """
+        Gets stats of specified object type, respecting filters.
+        """
+        stats = self.__data_source.get_stats(
+            object_type,
+            stats=query_args.stats,
+            stats_fields=query_args.stats_fields,
+            object_filters=query_args.filter,
+        )
+        document_meta = {**stats, 'type': object_type}
         return self.__view.dump_bulk([], document_meta=document_meta)
 
     @validate(Deleter, 'delete', OperatorMethod.DELETE)

@@ -17,8 +17,8 @@ from tol.core import (
     core_data_object
 )
 from tol.core.operator import (
-    GroupStatter,
     ListGetter,
+    Statter,
     Upserter
 )
 
@@ -41,7 +41,7 @@ class TestDataObjectToDataObjectConverter(DataObjectToDataObjectOrUpdateConverte
         return iter([ret1, ret2])
 
 
-class _MockDataSource(DataSource, GroupStatter, ListGetter, Upserter):
+class _MockDataSource(DataSource, Statter, ListGetter, Upserter):
     def __init__(self, config: Dict):
         super().__init__(config)
 
@@ -72,25 +72,42 @@ class _MockDataSource(DataSource, GroupStatter, ListGetter, Upserter):
                 attributes=obj
             )
 
-    def get_stats(self, object_type: str, group_by: List[str],
-                  stats_fields: List[str] = [],
-                  stats: List[str] = [],
-                  object_filters: DataSourceFilter = None):
+    def get_stats(
+            self,
+            object_type: str,
+            stats_fields: List[str] = [],
+            stats: List[str] = [],
+            object_filters: DataSourceFilter = None
+    ):
+        pass
+
+    def get_group_stats(
+            self,
+            object_type: str,
+            group_by: List[str],
+            stats_fields: List[str] = [],
+            stats: List[str] = [],
+            object_filters: DataSourceFilter = None
+    ):
         if len(group_by) == 1:
             mock_objects = [
                 {
                     'key': {'group_by_field': 'value1'},
                     'stats': {
                         'count': 3,
-                        'field1_min': 'A',
-                        'field1_max': 'Z'
+                        'field1': {
+                            'min': 'A',
+                            'max': 'Z'
+                        }
                     }
                 }, {
                     'key': {'group_by_field': 'value2'},
                     'stats': {
                         'count': 17,
-                        'field1_min': None,
-                        'field1_max': None
+                        'field1': {
+                            'min': None,
+                            'max': None
+                        }
                     }
                 }
             ]
@@ -101,32 +118,40 @@ class _MockDataSource(DataSource, GroupStatter, ListGetter, Upserter):
                             'group_by_field2': 'valueX'},
                     'stats': {
                         'count': 3,
-                        'field1_min': 'A',
-                        'field1_max': 'Z'
+                        'field1': {
+                            'min': 'A',
+                            'max': 'Z'
+                        }
                     }
                 }, {
                     'key': {'group_by_field1': 'value1',
                             'group_by_field2': 'valueY'},
                     'stats': {
                         'count': 17,
-                        'field1_min': None,
-                        'field1_max': None
+                        'field1': {
+                            'min': None,
+                            'max': None
+                        }
                     }
                 }, {
                     'key': {'group_by_field1': 'value2',
                             'group_by_field2': 'valueX'},
                     'stats': {
                         'count': 4,
-                        'field1_min': 'P',
-                        'field1_max': 'Q'
+                        'field1': {
+                            'min': 'P',
+                            'max': 'Q'
+                        }
                     }
                 }, {
                     'key': {'group_by_field1': 'value2',
                             'group_by_field2': 'valueY'},
                     'stats': {
                         'count': 200,
-                        'field1_min': None,
-                        'field1_max': None
+                        'field1': {
+                            'min': None,
+                            'max': None
+                        }
                     }
                 }
             ]

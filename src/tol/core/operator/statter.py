@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2023 Genome Research Ltd.
+# SPDX-FileCopyrightText: 2024 Genome Research Ltd.
 #
 # SPDX-License-Identifier: MIT
 
@@ -12,17 +12,15 @@ if typing.TYPE_CHECKING:
     from ..datasource_filter import DataSourceFilter
 
 
-class GroupStatter(ABC):
+class Statter(ABC):
     @abstractmethod
-    def get_group_stats(
+    def get_stats(
         self,
         object_type: str,
-        group_by: List[str],
         stats_fields: List[str] = [],
         stats: List[str] = ['min', 'max'],
         object_filters: Optional[DataSourceFilter] = None
     ) -> dict[Any, int]:
         """
-        Gets stats for results that are matched by the (optional) filter,
-        broken down by the group_by parameter
+        Gets stats for results that are matched by the (optional) filter
         """

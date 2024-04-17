@@ -38,6 +38,7 @@ from ..core.operator import (
     ListGetter,
     PageGetter,
     Relational,
+    Statter,
     Updater,
     Upserter
 )
@@ -57,6 +58,7 @@ class ElasticDataSource(
     Updater,
     Upserter,
     Counter,
+    Statter,
     GroupStatter
 ):
 
@@ -71,6 +73,7 @@ class ElasticDataSource(
         relationship_cfg is also supported if we want to handle relationships
         Only FKs pointing to IDs are currently supported
         """
+        attribute_metadata.host = self
         self._initialise_elasticsearch()
         self.__lazy = False
 
@@ -595,15 +598,63 @@ class ElasticDataSource(
     ) -> Dict:
         index = self.__get_index(object_type)
         query = self._build_elasticsearch_query(object_type, object_filters)
+        fields = list(self.runtime_fields[object_type].keys()) \
+            if object_type in self.runtime_fields else None
+        runtime_mappings = self.runtime_fields[object_type] \
+            if object_type in self.runtime_fields else None
         resp = self.es.search(
             size=0,
             index=index,
             query=query,
-            aggregations=aggregations
+            aggregations=aggregations,
+            fields=fields,
+            runtime_mappings=runtime_mappings
         )
         return resp['aggregations']
 
     def get_stats(
+        self,
+        object_type: str,
+        stats_fields: List[str] = [],
+        stats: List[str] = [],
+        object_filters: DataSourceFilter = None,
+    ):
+        aggs = self.__get_aggs(
+            object_type=object_type,
+            stats_fields=stats_fields,
+            stats=stats)
+        agg_results = self.get_aggregations(
+            object_type=object_type,
+            aggregations=aggs,
+            object_filters=object_filters
+        )
+        return self.__get_data_from_stats_aggregation(
+            aggregation_result=agg_results,
+            object_type=object_type,
+            stats_fields=stats_fields,
+            stats=stats
+        )
+
+    def __get_data_from_stats_aggregation(
+            self,
+            aggregation_result,
+            object_type,
+            stats_fields,
+            stats
+    ):
+        stats_values = {}
+        for stats_field in stats_fields:
+            stats_values[stats_field] = {}
+            for stat in stats:
+                stat_value = aggregation_result[f'{stats_field}_{stat}']['value']
+                python_type = self.attribute_types[object_type][stats_field]
+                if python_type == 'datetime' and stat_value is not None \
+                        and stat in ['min', 'max']:
+                    stat_value = datetime.fromtimestamp(stat_value / 1000)
+                stats_values[stats_field][stat] = stat_value
+        return {'stats': stats_values}
+
+    def get_group_stats(
         self,
         object_type: str,
         group_by: List[str],
@@ -613,7 +664,7 @@ class ElasticDataSource(
     ) -> dict[Any, int]:
         after_key = None
         while True:
-            after_key, buckets = self.__get_stats_page(
+            after_key, buckets = self.__get_group_stats_page(
                 object_type,
                 group_by,
                 stats_fields=stats_fields,
@@ -624,7 +675,7 @@ class ElasticDataSource(
                 break
             yield from buckets
 
-    def __get_stats_page(
+    def __get_group_stats_page(
         self,
         object_type: str,
         group_by: List[str],
@@ -649,24 +700,18 @@ class ElasticDataSource(
             }
         }
         if stats_fields is not None:
-            aggregation['counts']['aggregations'] = {}
-            for stats_field in stats_fields:
-                for stat in stats:
-                    agg = {stat: {'field': self._field_or_keyword(object_type, stats_field)}}
-                    if stat == 'union':
-                        # This is a bespoke aggregation
-                        agg = self.__get_union_aggregation(object_type, stats_field)
-                    elif self.attribute_types[object_type][stats_field] == 'str' \
-                            and stat in ['min', 'max']:
-                        agg = self.__get_string_aggregation(object_type, stats_field, stat)
-                    aggregation['counts']['aggregations'][f'{stats_field}_{stat}'] = agg
+            aggregation['counts']['aggregations'] = self.__get_aggs(
+                object_type,
+                stats_fields,
+                stats
+            )
         if after_key is not None:
             aggregation['counts']['composite']['after'] = after_key
         agg_page = self.get_aggregations(
             object_type,
             aggregations=aggregation,
             object_filters=object_filters)
-        after_key, buckets = self.__get_data_from_stats_aggregation(
+        after_key, buckets = self.__get_data_from_group_stats_aggregation(
             agg_page,
             object_type,
             stats_fields,
@@ -674,7 +719,28 @@ class ElasticDataSource(
         )
         return after_key, buckets
 
-    def __get_data_from_stats_aggregation(
+    def __get_aggs(
+            self,
+            object_type: str,
+            stats_fields: List,
+            stats: List
+    ):
+        ret = {}
+        for stats_field in stats_fields:
+            for stat in stats:
+                agg = {stat: {'field': self._field_or_keyword(object_type, stats_field)}}
+                if stat == 'union':
+                    # This is a bespoke aggregation
+                    agg = self.__get_union_aggregation(object_type, stats_field)
+                elif stat == 'unique':
+                    agg = self.__get_unique_count_aggregation(object_type, stats_field)
+                elif self.attribute_types[object_type][stats_field] == 'str' \
+                        and stat in ['min', 'max']:
+                    agg = self.__get_string_aggregation(object_type, stats_field, stat)
+                ret[f'{stats_field}_{stat}'] = agg
+        return ret
+
+    def __get_data_from_group_stats_aggregation(
             self,
             aggregation_result,
             object_type,
@@ -695,12 +761,14 @@ class ElasticDataSource(
         for v in buckets:
             stats_values = {'count': v['doc_count']}
             for stats_field in stats_fields:
+                stats_values[stats_field] = {}
                 for stat in stats:
                     stat_value = v[f'{stats_field}_{stat}']['value']
                     python_type = self.attribute_types[object_type][stats_field]
-                    if python_type == 'datetime' and stat_value is not None:
+                    if python_type == 'datetime' and stat_value is not None \
+                            and stat in ['min', 'max']:
                         stat_value = datetime.fromtimestamp(stat_value / 1000)
-                    stats_values[f'{stats_field}_{stat}'] = stat_value
+                    stats_values[stats_field][stat] = stat_value
             all_stats.append({'key': v['key'], 'stats': stats_values})
 
         return after_key, all_stats
@@ -781,6 +849,43 @@ class ElasticDataSource(
                         }}
                     }}
                     return ret;
+                """
+            }
+        }
+        return agg
+
+    def __get_unique_count_aggregation(self, object_type, field):
+        """
+        This function is calculating the unique values in the given field
+
+        """
+        field_or_keyword = self._field_or_keyword(object_type, field)
+        agg = {
+            'scripted_metric': {
+                'params': {
+                    'fieldName': field_or_keyword
+                },
+                'init_script': 'state.list = []',
+                'map_script': """
+                    if(doc[params.fieldName].size() > 0) {
+                        state.list.add(doc[params.fieldName].value);
+                    }
+                    """,
+                'combine_script': 'return state.list;',
+                'reduce_script': """
+                    Map uniqueValueMap = new HashMap();
+                    int count = 0;
+                    for(shardList in states) {
+                        if(shardList != null) {
+                            for(key in shardList) {
+                                if(!uniqueValueMap.containsKey(key)) {
+                                    count +=1;
+                                    uniqueValueMap.put(key, key);
+                                }
+                            }
+                        }
+                    }
+                    return count;
                 """
             }
         }

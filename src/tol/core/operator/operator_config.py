@@ -15,6 +15,7 @@ from .deleter import Deleter
 from .detail_getter import DetailGetter
 from .page_getter import PageGetter
 from .relational import Relational
+from .statter import Statter
 from .updater import Updater
 from .upserter import Upserter
 
@@ -28,6 +29,7 @@ READ_OPERATOR_MAP: dict[str, type] = {
     'detailGet': DetailGetter,
     'listGet': PageGetter,
     'relational': Relational,
+    'stats': Statter,
 }
 
 

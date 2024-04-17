@@ -46,6 +46,13 @@ class Parser(ABC):
         `DataObject` instance
         """
 
+    @abstractmethod
+    def parse_stats(self, transfer: JsonApiResource) -> dict:
+        """
+        Parses an individual stats transfer resource to a
+        stats dict instance
+        """
+
 
 class DefaultParser(Parser):
 
@@ -65,6 +72,12 @@ class DefaultParser(Parser):
             attributes=attributes,
             to_one=self.__parse_to_ones(transfer)
         )
+
+    def parse_stats(self, transfer: JsonApiResource) -> dict:
+        type_ = transfer.get('type')
+        raw_stats = transfer.get('stats')
+        converted_stats = self.__convert_stats(type_, raw_stats)
+        return {'stats': converted_stats}
 
     def __get_data_source(self, type_: str) -> DataSource:
         return self.__dict[type_]
@@ -108,6 +121,31 @@ class DefaultParser(Parser):
                 else v
             )
             for k, v in attributes.items()
+        }
+
+    def __convert_stats(
+        self,
+        type_: str,
+        stats: Optional[dict[str, Any]]
+    ) -> dict[str, Any]:
+        # {'field': {'min': value, 'max': value}
+        if not stats:
+            return {}
+
+        datetime_keys = self.__get_datetime_keys(type_)
+
+        return {
+            fieldname: {
+                k: (
+                    dateutil_parse(v, ignoretz=True)
+                    if fieldname in datetime_keys
+                    and v is not None
+                    and k in ['min', 'max']
+                    else v
+                )
+                for k, v in fieldstats.items()
+            }
+            for fieldname, fieldstats in stats.items()
         }
 
     def __get_datetime_keys(self, type_: str) -> list[str]:

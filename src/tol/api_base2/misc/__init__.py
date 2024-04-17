@@ -10,3 +10,4 @@ from .data_body import RequestBody, JsonApiRequestBody  # noqa
 from .filter_utils import FilterUtils  # noqa
 from .list_get_parameters import ListGetParamaters  # noqa
 from .relation_url import RelataionshipHopsParser  # noqa
+from .stats_parameters import StatsParameters  # noqa
