@@ -2,7 +2,10 @@
 #
 # SPDX-License-Identifier: MIT
 
+
 from __future__ import annotations
+
+import logging
 
 from typing import Any, Callable, Iterable, Optional, Type
 
@@ -127,6 +130,8 @@ class Controller:
         auth_inspector: Optional[AuthInspector] = None
     ) -> None:
 
+        logging.debug(f'{auth_inspector = }')
+
         self.__data_source = data_source
         self.__view = view
         self.__inspector = auth_inspector
@@ -142,6 +147,7 @@ class Controller:
     ) -> Optional[AndFilter]:
 
         if self.__inspector is not None:
+            logging.debug(f'Inspecting: {object_type = } {operation = }')
             return self.__inspector(object_type, operation)
 
     @validate(DetailGetter, 'get_by_id', OperatorMethod.DETAIL)
@@ -339,6 +345,7 @@ class Controller:
         returned = self.data_source.upsert(object_type, objects)
         if self.data_source.return_mode[object_type] == ReturnMode.POPULATED:
             return self.__view.dump_bulk(returned)
+            logging.debug('Success!')
         else:
             return {'success': True}
 

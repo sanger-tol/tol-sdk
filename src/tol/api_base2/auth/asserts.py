@@ -2,6 +2,8 @@
 #
 # SPDX-License-Identifier: MIT
 
+import logging
+
 from functools import wraps
 from typing import Any, Callable, Optional, Protocol
 
@@ -102,16 +104,22 @@ def basic_auth_inspector(
       otherwise
     """
 
+    logging.debug(f'Building AuthInspector with {basic_role = }')
+
     def auth_inspector(
         __object_type: str,
         method: OperatorMethod
     ) -> None:
 
+
         if method in NO_AUTH:
             return
+        logging.debug(f'Authorizing {method = } {ctx_getter().authenticated = }')
 
         roles = ctx_getter().roles
+        logging.debug(f'Looking for {basic_role = } in {roles = }')
         if basic_role not in roles:
             raise ForbiddenError()
+        logging.debug(f'Authenticated OK')
 
     return auth_inspector

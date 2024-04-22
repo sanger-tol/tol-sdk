@@ -5,6 +5,8 @@
 from __future__ import annotations
 
 import typing
+import logging
+
 from typing import Callable, Dict, Iterable, List, Optional, Tuple
 
 from sqlalchemy.orm import Session as SqlaSession
@@ -276,6 +278,7 @@ class SqlDataSource(
         back_converter = self.__back_converter_factory()
         model_instances = back_converter.convert_iterable(objects)
         user_id = self.__user_id_getter()
+        logging.debug(f'Got {user_id = }')
         in_session = self.__get_sqla_session(session)
         returned_models = [
             self.__db.upsert(
@@ -481,6 +484,7 @@ class SqlDataSource(
         user_id_getter: UserIdGetter
     ) -> None:
 
+        logging.debug(f'Setting {user_id_getter = }')
         self.__user_id_getter = (
             (lambda: None) if user_id_getter is None else user_id_getter
         )
