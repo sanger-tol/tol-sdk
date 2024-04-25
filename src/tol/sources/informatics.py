@@ -32,7 +32,16 @@ def informatics():
                     'status': {
                         'heading': 'status',
                         'type': 'str'
+                    },
+                    'gscope_coverage': {
+                        'heading': 'long read cov (gscope)',
+                        'type': 'float'
+                    },
+                    'estimated_genome_size': {
+                        'heading': 'est. size (Mb)',
+                        'type': 'float'
                     }
+
                 },
                 'header_row': 1,
                 'data_start_row': 2
