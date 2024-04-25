@@ -17,10 +17,12 @@ class AuthBlueprint(Blueprint):
     def __init__(
         self,
         auth_manager: AuthManager,
-        url_prefix: str
+        url_prefix: str,
+        ctx_getter: CtxGetter = default_ctx_getter
     ) -> None:
 
         self.__manager = auth_manager
+        self.__ctx_getter = ctx_getter
 
         super().__init__(
             'auth',
@@ -33,13 +35,12 @@ class AuthBlueprint(Blueprint):
     def register_authenticator(
         self,
         app: Flask,
-        ctx_getter: CtxGetter = default_ctx_getter,
         header_name: str = 'token'
     ) -> None:
 
         self.__manager.register(
             app,
-            ctx_getter,
+            self.__ctx_getter,
             header_name=header_name
         )
 
@@ -53,18 +54,22 @@ class AuthBlueprint(Blueprint):
         def token():
             body: dict[str, str] = request.json
 
-            return self.__manager.get_token_from_callback(
+            res = self.__manager.get_token_from_callback(
                 body['state'],
                 body['code']
-            ), 200
+            )
+
+            return res, 200
 
         @self.post('/profile')
         def profile():
             body: dict[str, str] = request.json
 
-            return self.__manager.create_user_profile(
+            res = self.__manager.create_user_profile(
                 body['token']
-            ), 200
+            )
+
+            return res, 200
 
         @self.post('/logout')
         def logout():
@@ -73,6 +78,12 @@ class AuthBlueprint(Blueprint):
             self.__manager.revoke_token(body['token'])
 
             return {'success': True}, 200
+
+        @self.get('/roles')
+        def roles():
+            roles = self.__ctx_getter().roles
+
+            return {'roles': roles}, 200
 
         @self.errorhandler(AuthError)
         def auth_error(e: AuthError):

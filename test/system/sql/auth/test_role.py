@@ -114,6 +114,14 @@ class TestRole:
 class TestRequireRole:
     """the Sql-auth methods correctly assign roles."""
 
+    def test_no_auth(self, client):
+        """
+        no auth -> 401 on `/auth/roles`
+        """
+
+        r = client.get('/auth/roles')
+        assert r.status_code == 401
+
     def test_no_roles(
         self,
         session_factory,
@@ -123,7 +131,9 @@ class TestRequireRole:
         token_model,
         client
     ):
-        """no roles -> denied"""
+        """
+        no roles -> denied, empty `/auth/roles`
+        """
 
         self.__add_models(
             session_factory,
@@ -137,8 +147,14 @@ class TestRequireRole:
             '/hi',
             headers={'Dummy-Token': 'none'}
         )
-
         assert r.status_code == 403
+
+        r = client.get(
+            '/auth/roles',
+            headers={'Dummy-Token': 'none'}
+        )
+        assert r.status_code == 200
+        assert r.json == {'roles': []}
 
     def test_bad_roles(
         self,
@@ -149,7 +165,10 @@ class TestRequireRole:
         token_model,
         client
     ):
-        """roles exist, but are irrelevant -> denied"""
+        """
+        roles exist, but are irrelevant -> denied,
+        `/auth/roles` -> existing roles
+        """
 
         self.__add_models(
             session_factory,
@@ -163,8 +182,20 @@ class TestRequireRole:
             '/hi',
             headers={'Dummy-Token': 'bad'}
         )
-
         assert r.status_code == 403
+
+        r = client.get(
+            '/auth/roles',
+            headers={'Dummy-Token': 'bad'}
+        )
+        assert r.status_code == 200
+        assert r.json == {
+            'roles': [
+                'bad_A',
+                'bad_B',
+                'bad_C'
+            ]
+        }
 
     def test_good_role(
         self,
@@ -189,8 +220,16 @@ class TestRequireRole:
             '/hi',
             headers={'Dummy-Token': 'good'}
         )
-
         assert r.status_code == 200
+
+        r = client.get(
+            '/auth/roles',
+            headers={'Dummy-Token': 'good'}
+        )
+        assert r.status_code == 200
+        assert r.json == {
+            'roles': ['admin']
+        }
 
     def __add_models(
         self,
