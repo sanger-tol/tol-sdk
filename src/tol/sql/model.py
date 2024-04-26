@@ -10,7 +10,6 @@ from typing import Any, Iterable, Optional, Type
 
 from sqlalchemy import JSON, inspect
 from sqlalchemy.orm import (
-    ColumnProperty,
     DeclarativeMeta,
     Mapped,
     MappedColumn,
@@ -310,13 +309,17 @@ def model_base() -> Type[DefaultModel]:
             )
 
         @classmethod
-        def __get_foreign_keys(cls) -> list[str]:
-            attrs = inspect(cls).attrs
-            return [
-                k for k, v in attrs.items()
-                if isinstance(v, ColumnProperty)
-                and getattr(cls, k).foreign_keys
-            ]
+        def __get_foreign_keys(cls) -> set[str]:
+            """
+            Returns only the names of columns which are foreign keys used in
+            relationsips.
+            """
+
+            foreign_keys = set()
+            for rel in inspect(cls).relationships:
+                for col in rel.local_columns:
+                    foreign_keys.add(col.name)
+            return foreign_keys
 
         @classmethod
         def __get_attribute_names(cls) -> list[str]:
