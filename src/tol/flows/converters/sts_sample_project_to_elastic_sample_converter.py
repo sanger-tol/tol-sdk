@@ -22,6 +22,7 @@ class StsSampleProjectToElasticSampleConverter(
         s = data_object.sample
         attributes = {
             'project': [data_object.project.id],
+            'programme': [data_object.project.programme],
             **s.attributes
         }
         try:

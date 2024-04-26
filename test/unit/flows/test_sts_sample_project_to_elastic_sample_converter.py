@@ -88,7 +88,7 @@ class TestStsSampleProjectToElasticSampleConverter(TestCase):
         project = CoreDataObject(
             id_='test_project',
             type_='project',
-            attributes={}
+            attributes={'programme': 'test_programme'}
         )
         location = CoreDataObject(
             id_='test_gal',
@@ -151,6 +151,7 @@ class TestStsSampleProjectToElasticSampleConverter(TestCase):
         self.assertEqual('sample', ret1.type)
         self.assertEqual(ret1.attributes, {
             'project': ['test_project'],
+            'programme': ['test_programme'],
             'collection_country': 'Country',
             'collection_locality': 'County | Town',
             'latitude': 12.345678,
