@@ -84,7 +84,7 @@ def __database(
 def create_sql_datasource(
     models: List[Type[Model]],
     db_uri: str,
-    behind_api: bool = False,
+    behind_api: bool = False,  # deprecated
 
     # arguments below are optional and used mainly for testing
     type_function: TypeFunction = lambda m: m.get_table_name(),
@@ -109,8 +109,6 @@ def create_sql_datasource(
     sql_relationship_config = DefaultSqlRelationshipConfig(models, type_function)
     db = database_factory(models, db_uri)
 
-    user_id_getter = api_user_id_getter if behind_api else None
-
     return SqlDataSource(
         db,
         type_tablename_dict,
@@ -119,5 +117,5 @@ def create_sql_datasource(
         back_converter_factory,
         filter_factory,
         sorter_factory,
-        user_id_getter=user_id_getter
+        user_id_getter=api_user_id_getter
     )
