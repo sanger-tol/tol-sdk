@@ -4,16 +4,46 @@
 
 import time
 from datetime import datetime
+from typing import Dict
 
 from tol.core import (
+    DataSource,
     DataSourceFilter,
-    OperableDataSource
+    DefaultDataLoader,
+    DefaultDataObjectToDataObjectConverter,
+    OperableDataSource,
+    core_data_object
+)
+from tol.core.operator import (
+    ListGetter
 )
 
 from ..dec import against
 from ..fixtures import all_fixtures
 from ..fixtures.api.elastic import api_elastic
 from ..fixtures.elastic_ds import elastic
+
+
+class _MockDataSource(DataSource, ListGetter):
+    def __init__(self, config: Dict):
+        super().__init__(config)
+
+    def get_list(self, object_type: str, object_filters: DataSourceFilter):
+        for i in range(150):
+            yield self.data_object_factory(
+                'source_type',
+                f'loaded{i}',
+                attributes={
+                    'str_column': f'value{i}',
+                    'bool_column': True
+                }
+            )
+
+    @property
+    def supported_types(self):
+        return [
+            'source_type'
+        ]
 
 
 class TestEndToEnd:
@@ -851,3 +881,25 @@ class TestEndToEnd:
         assert fourth[3].runtime_column is False
         assert fourth[4].runtime_column is False
         assert fourth[5].runtime_column is False
+
+    @against(*all_fixtures)
+    def test_data_loader(self, data_source: OperableDataSource):
+        mock_ds = _MockDataSource({})
+        core_data_object(mock_ds)
+
+        loader = DefaultDataLoader(
+            source=mock_ds,
+            destination=data_source,
+            source_object_type='source_type',
+            destination_object_type='root',
+            dependencies=[],
+            convert_class=DefaultDataObjectToDataObjectConverter,
+            loader_name='e2e loader'
+        )
+        loader.load(field_prefix='e2e', batch_size=20)
+        time.sleep(5)
+
+        f = DataSourceFilter()
+        f.and_ = {'str_column': {'eq': {'value': 'abc', 'negate': True}}}
+        loaded = list(data_source.get_list('root', object_filters=f))
+        assert len(loaded) == 150

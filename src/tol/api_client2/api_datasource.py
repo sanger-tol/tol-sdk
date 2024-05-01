@@ -208,9 +208,9 @@ class ApiDataSource(
     def upsert(
         self,
         object_type: str,
-        objects: Iterable[DataObject]
+        objects: Iterable[DataObject],
+        **kwargs
     ) -> None:
-
         transfer = self.__dc_factory().convert_list(
             list(objects)
         )

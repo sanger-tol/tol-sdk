@@ -199,7 +199,7 @@ class ElasticDataSource(
         index = self.__get_index(object_type)
         for (_, update) in updates:
             self.es.update_by_query(
-                index,
+                index=index,
                 body=self._action_for_update(index,
                                              update,
                                              field_prefix,
@@ -932,7 +932,7 @@ class ElasticDataSource(
 
     def _get_attribute_types_for_object_type(self, object_type: str) -> Dict:
         index_name = self.__get_index(object_type)
-        mapping = self.es.indices.get_mapping(index_name)
+        mapping = self.es.indices.get_mapping(index=index_name)
         if 'properties' not in mapping[index_name]['mappings']:
             return {}
         properties = mapping[index_name]['mappings']['properties']

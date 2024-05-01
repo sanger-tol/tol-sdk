@@ -5,6 +5,7 @@
 from .elastic_sequencing_request_to_sts_sequencing_request_converter import ElasticSequencingRequestToStsSequencingRequestConverter  # noqa F401
 from .goat_taxon_to_elastic_species_converter import GoatTaxonToElasticSpeciesConverter  # noqa F401
 from .labwhere_location_to_elastic_sample_update_converter import LabwhereLocationToElasticSampleUpdateConverter  # noqa F401
+from .labwhere_location_to_sts_tray_converter import LabwhereLocationToStsTrayConverter  # noqa F401
 from .sts_banked_sample_to_elastic_sample_converter import StsBankedSampleToElasticSampleConverter  # noqa F401
 from .sts_sample_project_to_elastic_sample_converter import StsSampleProjectToElasticSampleConverter  # noqa F401
 from .sts_species_to_elastic_species_converter import StsSpeciesToElasticSpeciesConverter  # noqa F401
