@@ -9,28 +9,28 @@ from tol.core import (
     core_data_object
 )
 from tol.flows.converters import (
-    LabwhereLocationToElasticSampleUpdateConverter
+    LabwhereLocationToStsTrayConverter
 )
 
 
 class _MockDataSource(DataSource):
     @property
     def supported_types(self):
-        return ['location']
+        return ['location', 'freezer_tray']
 
     @property
     def attribute_types(self):
         raise NotImplementedError()
 
 
-class TestLabwhereLocationToElasticSampleConverter(TestCase):
+class TestLabwhereLocationToStsTrayConverter(TestCase):
     def test_convert(self):
 
         source = _MockDataSource(config={})
         destination = _MockDataSource(config={})
         core_data_object(source)
         core_data_object(destination)
-        converter = LabwhereLocationToElasticSampleUpdateConverter(
+        converter = LabwhereLocationToStsTrayConverter(
             data_object_factory=destination.data_object_factory
         )
 
@@ -55,16 +55,16 @@ class TestLabwhereLocationToElasticSampleConverter(TestCase):
 
         converteds = converter.convert(obj1)
         ret1 = next(converteds)
-        self.assertEqual(ret1, (None, {
-            'sts_location': 'lw-location-1234',
+        self.assertEqual('lw-location-1234', ret1.id)
+        self.assertEqual({
             'parentage': 'Site1 / Building1 / Freezer1 / Shelf1',
             'name': 'Tray1'
-        }))
+        }, ret1.attributes)
 
         converteds = converter.convert(obj2)
         ret2 = next(converteds)
-        self.assertEqual(ret2, (None, {
-            'sts_location': 'lw-location-5678',
+        self.assertEqual('lw-location-5678', ret2.id)
+        self.assertEqual({
             'parentage': 'Site2 / Building2 / Freezer2 / Shelf2',
             'name': 'Tray2'
-        }))
+        }, ret2.attributes)

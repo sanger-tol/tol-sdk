@@ -158,7 +158,11 @@ class SqlDataSource(
         for object_id in object_ids:
             self.__db.delete(tablename, object_id, user_id=user_id)
 
-    def upsert(self, object_type: str, objects: Iterable[DataObject]) -> None:
+    def upsert(
+            self,
+            object_type: str,
+            objects: Iterable[DataObject],
+            **kwargs) -> None:
         # TODO optimise by batching?
         back_converter = self.__back_converter_factory()
         model_instances = back_converter.convert_iterable(objects)
