@@ -10,7 +10,7 @@ from ...core import (
 )
 
 
-class ElasticSequencingRequestLrpacbioConverter(
+class LrpacbioSequencingRequestToElasticSequencingRequestConverter(
         DataObjectToDataObjectOrUpdateConverter):
 
     def _clean_attribute(self, value):
@@ -25,15 +25,12 @@ class ElasticSequencingRequestLrpacbioConverter(
     def convert(self, data_object: DataObject) -> Iterable[DataObject]:
         target_attributes = {}
 
-        if ('library_remaining' in data_object.attributes
-                and data_object.attributes['library_remaining'] is not None):
-            target_attributes['library_remaining'] = self._clean_attribute(
-                data_object.attributes['library_remaining']
-            )
-        if ('library_remaining_oplc' in data_object.attributes
-                and data_object.attributes['library_remaining_oplc'] is not None):
-            target_attributes['library_remaining_oplc'] = self._clean_attribute(
-                data_object.attributes['library_remaining_oplc'])
+        for field in ['library_remaining', 'library_remaining_oplc']:
+            if (field in data_object.attributes
+                    and data_object.attributes[field] is not None):
+                target_attributes[field] = self._clean_attribute(
+                    data_object.attributes[field]
+                )
 
         ret = self._data_object_factory(
             'sequencing_request',

@@ -9,7 +9,7 @@ from tol.core import (
     core_data_object
 )
 from tol.flows.converters import (
-    ElasticSequencingRequestLrpacbioConverter
+    LrpacbioSequencingRequestToElasticSequencingRequestConverter
 )
 
 
@@ -23,14 +23,14 @@ class _MockDataSource(DataSource):
         raise NotImplementedError()
 
 
-class TestElasticSequencingRequestLrpacbioConverter(TestCase):
+class TestLrpacbioSequencingRequestToElasticSequencingRequestConverter(TestCase):
     def test_convert(self):
 
         source = _MockDataSource(config={})
         destination = _MockDataSource(config={})
         core_data_object(source)
         core_data_object(destination)
-        converter = ElasticSequencingRequestLrpacbioConverter(
+        converter = LrpacbioSequencingRequestToElasticSequencingRequestConverter(
             data_object_factory=destination.data_object_factory
         )
 
