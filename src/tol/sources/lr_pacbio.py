@@ -36,7 +36,27 @@ def lr_pacbio():
                 },
                 'header_row': 1,
                 'data_start_row': 2
+            },
+            'sequencing_request_charge': {
+                'worksheet_name': 'FIXED PacBio Charging - Sequencing',
+                'columns': {
+                    'id': {
+                        'heading': 'SANGER SAMPLE ID',
+                        'type': 'str'
+                    },
+                    'portion_of_cell': {
+                        'heading': 'Portion of cell',
+                        'type': 'str'
+                    },
+                    'cell_status': {
+                        'heading': 'Cell Status',
+                        'type': 'str'
+                    }
+                },
+                'header_row': 1,
+                'data_start_row': 2
             }
+
         }
     })
     core_data_object(gsds)
