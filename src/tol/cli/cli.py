@@ -2,12 +2,22 @@
 #
 # SPDX-License-Identifier: MIT
 
+import ast
+import datetime
+import importlib
+import json
 import os
 import re
 import subprocess
 from uuid import uuid4
 
 import click
+
+from dotenv import load_dotenv
+
+from ..core import (
+    DataSourceFilter
+)
 
 
 @click.group()
@@ -265,6 +275,79 @@ def flow(ctx, filename):
     )
     click.secho(command, fg='green')
     run(command)
+
+
+# Data
+@cli.command()
+@click.option('--source', default='portal',
+              type=click.Choice(['portal']),
+              help='source DataSource')
+@click.option('--operation', default='list',
+              type=click.Choice(['list']),
+              help='operation to run')
+@click.option('--type', 'type_', required=True,
+              help='object type')
+@click.option('--filter', 'filter_', default=None,
+              help='filter')
+@click.option('--fields', default='',
+              help='fields to output')
+@click.option('--converter', default=None,
+              help='converter function')
+@click.option('--output', default='ndjson',
+              type=click.Choice(['ndjson', 'tsv']),
+              help='output type')
+@click.pass_context
+def data(ctx, source, operation, type_, filter_, fields, converter, output):
+    load_dotenv(ctx.parent.params['env_file'])
+    module = importlib.import_module(f'tol.sources.{source}')
+    class_ = getattr(module, source)
+    ds = class_()
+    f = DataSourceFilter()
+    if filter_ is not None:
+        provided_filter = ast.literal_eval(filter_)
+        f.and_ = provided_filter['and_'] if 'and_' in provided_filter else {}
+    if operation == 'list':
+        objs = ds.get_list(type_, object_filters=f)
+    if converter is not None:
+        module = importlib.import_module('tol.flows.converters')
+        class_ = getattr(module, converter)
+        objs = class_(ds.data_object_factory).convert_iterable(objs)
+    if output == 'tsv':
+        output_tsv(objs, fields.split(',') if fields else [])
+    if output == 'ndjson':
+        output_json(objs, fields.split(',') if fields else [])
+
+
+def output_tsv(objs, fields):
+    for i, obj in enumerate(objs):
+        if i == 0:
+            if len(fields) == 0:
+                fields = obj.attributes.keys()
+            click.echo('\t'.join(fields))
+
+        click.echo('\t'.join(
+            getattr(obj, field)
+            for field in fields
+        ))
+
+
+def output_json(objs, fields):
+    """
+    This is a very simple implementation. It doesn't yet handle relationships.
+    """
+    def datetime_handler(x):
+        if isinstance(x, datetime.datetime):
+            return x.isoformat()
+        raise TypeError('Unknown type')
+
+    for obj in objs:
+        click.echo(json.dumps(
+            {
+                'id': obj.id,
+                **obj.attributes
+            },
+            default=datetime_handler)
+        )
 
 
 def get_app():

@@ -3,6 +3,7 @@
 # SPDX-License-Identifier: MIT
 
 from .benchling_tissue_prep_to_elastic_tissue_prep_converter import BenchlingTissuePrepToElasticTissuePrepConverter  # noqa F401
+from .elastic_sample_to_bold_sample_converter import ElasticSampleToBoldSampleConverter  # noqa F401
 from .elastic_sequencing_request_to_sts_sequencing_request_converter import ElasticSequencingRequestToStsSequencingRequestConverter  # noqa F401
 from .goat_taxon_to_elastic_species_converter import GoatTaxonToElasticSpeciesConverter  # noqa F401
 from .labwhere_location_to_elastic_sample_update_converter import LabwhereLocationToElasticSampleUpdateConverter  # noqa F401
