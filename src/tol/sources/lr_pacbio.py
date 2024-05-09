@@ -32,6 +32,10 @@ def lr_pacbio():
                     'library_remaining_oplc': {
                         'heading': 'Max OPLC From\nRemaining Library\n(@75% recovery)',
                         'type': 'str'
+                    },
+                    'estimated_max_oplc': {
+                        'heading': 'Estimated Maximum OPLC\n(1 cell @50% recovery)',
+                        'type': 'int'
                     }
                 },
                 'header_row': 1,
