@@ -290,6 +290,8 @@ class ApiDataSource(
                 return
 
             yield from next_page
+            if len(next_page) < page_size:
+                return
             page_number += 1
 
     @property
