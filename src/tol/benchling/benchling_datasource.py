@@ -81,7 +81,8 @@ class BenchlingDataSource(DataSource, Updater):
     def update(
         self,
         object_type: str,
-        updates: Iterable[DataObjectUpdate]
+        updates: Iterable[DataObjectUpdate],
+        **kwargs
     ) -> None:
         # We have to do the updates in pages in Benchling
         for update_page in list(batched(updates, 20)):
