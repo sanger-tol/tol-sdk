@@ -46,11 +46,9 @@ class ElasticSampleToBoldSampleConverter(
                 data_object.sts_col_date.strftime('%Y-%m-%d')
                 if data_object.sts_col_date is not None else '',
             'countryocean':
-                data_object.sts_collection_country.title()
-                if data_object.sts_collection_country is not None else '',
-            'stateprovince':
-                data_object.sts_collection_location.title()
-                if data_object.sts_collection_location is not None else '',
+                data_object.sts_COUNTRY_OF_COLLECTION.title()
+                if data_object.sts_COUNTRY_OF_COLLECTION is not None else '',
+            'stateprovince': '',
             'lat':
                 data_object.sts_latitude
                 if data_object.sts_latitude is not None else '',

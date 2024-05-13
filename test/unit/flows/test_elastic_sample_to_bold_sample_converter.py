@@ -85,8 +85,7 @@ class TestElasticSampleToBoldSampleConverter(TestCase):
                     'Person One;Institution One;p1@i1.ac.uk;primary contact|'
                     'Person Two;Institution Two;p2@i2.ac.uk;plated specimens',
                 'sts_col_date': datetime(2024, 1, 1),
-                'sts_collection_country': 'UNITED KINGDOM',
-                'sts_collection_location': 'NEW FOREST',
+                'sts_COUNTRY_OF_COLLECTION': 'UNITED KINGDOM',
                 'sts_latitude': '1.23456',
                 'sts_longitude': '54.321123',
                 'sts_COLLECTION_METHOD': 'MALAISE_TRAP'
@@ -120,7 +119,7 @@ class TestElasticSampleToBoldSampleConverter(TestCase):
             'collectors': 'Person One, Person Two',
             'collectiondate': '2024-01-01',
             'countryocean': 'United Kingdom',
-            'stateprovince': 'New Forest',
+            'stateprovince': '',
             'lat': '1.23456',
             'lon': '54.321123',
             'elev': '',

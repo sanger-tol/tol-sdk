@@ -8,12 +8,11 @@ from ...core import (
     DataObject,
     DataObjectToDataObjectOrUpdateConverter
 )
-from ...core.operator.updater import DataObjectUpdate
 
 
 class LabwhereLocationToStsTrayConverter(
         DataObjectToDataObjectOrUpdateConverter):
-    def convert(self, data_object: DataObject) -> Iterable[DataObjectUpdate]:
+    def convert(self, data_object: DataObject) -> Iterable[DataObject]:
         if data_object is not None:
             yield self._data_object_factory(
                 'freezer_tray',

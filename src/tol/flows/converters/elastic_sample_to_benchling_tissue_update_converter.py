@@ -8,12 +8,13 @@ from ...core import (
     DataObject,
     DataObjectToDataObjectOrUpdateConverter
 )
+from ...core.operator.updater import DataObjectUpdate
 
 
-class ElasticSampleToBenchlingSampleConverter(
+class ElasticSampleToBenchlingTissueUpdateConverter(
         DataObjectToDataObjectOrUpdateConverter):
 
-    def convert(self, data_object: DataObject) -> Iterable[DataObject]:
+    def convert(self, data_object: DataObject) -> Iterable[DataObjectUpdate]:
         if data_object.benchling_eln_tissue_id is not None:
             species = data_object.to_one_relationships['sts_species']
             specimen = data_object.to_one_relationships['sts_specimen']

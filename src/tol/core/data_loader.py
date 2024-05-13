@@ -81,8 +81,8 @@ class DefaultDataLoader():
                         field_prefix=field_prefix
                     )
             else:
-                for _, converted_obj in converted_objs:
-                    print(converted_obj)
+                for converted_obj_id, converted_obj in converted_objs:
+                    print(converted_obj_id, converted_obj)
 
         if not dry_run:
             self._record_time('end')

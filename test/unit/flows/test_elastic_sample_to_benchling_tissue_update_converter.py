@@ -17,7 +17,7 @@ from tol.core.relationship import (
     RelationshipConfig
 )
 from tol.flows.converters import (
-    ElasticSampleToBenchlingSampleConverter
+    ElasticSampleToBenchlingTissueUpdateConverter
 )
 
 
@@ -79,14 +79,14 @@ class _MockDataSource(DataSource, Relational):
         raise NotImplementedError()
 
 
-class TestElasticSampleToBenchlingSampleConverter(TestCase):
+class TestElasticSampleToBenchlingTissueUpdateConverter(TestCase):
     def test_default_convert(self):
 
         source = _MockDataSource(config={})
         destination = _MockDataSource(config={})
         core_data_object(source)
         core_data_object(destination)
-        converter = ElasticSampleToBenchlingSampleConverter(
+        converter = ElasticSampleToBenchlingTissueUpdateConverter(
             data_object_factory=destination.data_object_factory
         )
 
