@@ -288,15 +288,23 @@ class TestDefaultDataObjectConverter:
             # foreign key name is `indeed` (its value is `'rel'`)
             foreign_key_map={'one_happy_family': 'indeed_foreign_key'}
         )
+        mock_relation_class = MagicMock()
+        mock_relation_class.get_id_column_name.return_value = 'id_hyped_up'
+        mock_relation_class.return_value = mock_relation_class
+        mock_relation_class.attributes = {}
+        mock_relation_class._to_one_objects = {}
 
         converter = DefaultDataObjectConverter(
-            {'tests': mock_model_class}
+            {
+                'tests': mock_model_class,
+                'relation': mock_relation_class
+            }
         )
         converter.convert(mock_object)
 
         mock_model_class.assert_called_once_with(
             id='lol',
-            indeed_foreign_key='rel'
+            one_happy_family=mock_relation_class
         )
 
     def __create_mock_object(

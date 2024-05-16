@@ -15,12 +15,14 @@ from .base import BaseModel
 if typing.TYPE_CHECKING:
     from .r2 import R2
     from .r3 import R3
+    from .r5 import R5
 
 
 class R1(BaseModel):
     """
     to-one -> r2
     to-many -> r3
+    to-one -> r4
     """
 
     __tablename__ = 'r1'
@@ -37,6 +39,14 @@ class R1(BaseModel):
 
     r3_plz: Mapped[List['R3']] = relationship(
         back_populates='funny_r1'
+    )
+
+    r5_foreign_key: Mapped[str] = mapped_column(
+        ForeignKey('r5.id'),
+        nullable=True
+    )
+    this_lovely_r5: Mapped['R5'] = relationship(
+        back_populates='no_more_r1s'
     )
 
     users: Mapped[list['User']] = relationship(  # noqa F821

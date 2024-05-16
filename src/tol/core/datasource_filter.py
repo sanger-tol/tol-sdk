@@ -5,12 +5,20 @@
 from dataclasses import dataclass
 from typing import Any, Dict, List, Optional
 
+__AndFilterTerm = dict[
+    str,
+    dict[str, Any]
+]
+
 
 ExactFilter = Dict[str, Any]
 ContainsFilter = Dict[str, str]
 InListFilter = Dict[str, List[Any]]
 RangeFilter = Dict[str, Dict[str, Any]]
-AndFilter = Dict[str, List[Dict[str, Any]]]
+AndFilter = dict[
+    str,
+    __AndFilterTerm
+]
 
 
 @dataclass

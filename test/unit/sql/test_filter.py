@@ -6,7 +6,7 @@ from __future__ import annotations
 
 from string import ascii_lowercase
 from typing import Any, List, Tuple
-from unittest.mock import MagicMock, call
+from unittest.mock import MagicMock, Mock, call
 
 from tol.core import DataSourceFilter
 from tol.sql.filter import DefaultDatabaseFilter
@@ -66,7 +66,7 @@ class TestDefaultDatabaseFilter:
 
         query = MockQuery()
         model = self.__get_mock_model()
-        db_filter = DefaultDatabaseFilter(None)  # give it None
+        db_filter = DefaultDatabaseFilter(None, {}, Mock())  # give it None
         query = db_filter.filter(query, 'test', {'test': model})
         assert query.filter_count == 0
 
@@ -76,7 +76,7 @@ class TestDefaultDatabaseFilter:
         query = MockQuery()
         model = self.__get_mock_model()
         ds_filter = DataSourceFilter()  # no terms
-        db_filter = DefaultDatabaseFilter(ds_filter)
+        db_filter = DefaultDatabaseFilter(ds_filter, {}, Mock())
         query = db_filter.filter(query, 'test', {'test': model})
         assert query.filter_count == 0
 
@@ -89,7 +89,7 @@ class TestDefaultDatabaseFilter:
         query = MockQuery()
         model = self.__get_mock_model()
         ds_filter = DataSourceFilter(exact=exact)
-        db_filter = DefaultDatabaseFilter(ds_filter)
+        db_filter = DefaultDatabaseFilter(ds_filter, {}, Mock())
         query = db_filter.filter(query, 'test', {'test': model})
 
         assert query.filter_count == 26  # 26 letters in string.ascii_lowercase
@@ -109,6 +109,10 @@ class TestDefaultDatabaseFilter:
             def get_column(cls, name):
                 return getattr(cls, name)
 
+            @classmethod
+            def get_table_name(cls):
+                return 'test'
+
         _mock_model_class = type(
             '',
             (_MockModel,),
@@ -122,7 +126,7 @@ class TestDefaultDatabaseFilter:
             c: str(ord(c)) for c in ascii_lowercase
         }
         ds_filter = DataSourceFilter(contains=contains_filter)
-        db_filter = DefaultDatabaseFilter(ds_filter)
+        db_filter = DefaultDatabaseFilter(ds_filter, {}, Mock())
         query: MockQuery = db_filter.filter(query, 'test', {'test': _mock_model_class})
         assert query.filter_count == 26  # 26 lower case letters
         assert query.filter_calls == [
@@ -164,13 +168,17 @@ class TestDefaultDatabaseFilter:
                 assert name in ['id_luls', 'int_hype']
                 return getattr(cls, name)
 
+            @classmethod
+            def get_table_name(cls):
+                return 'test'
+
         in_list = {
             'id': ['a', 'b', 'defence'],  # "id" not "id_luls"
             'int_hype': [None, 203, 3489, 1]
         }
         query = MockQuery()
         ds_filter = DataSourceFilter(in_list=in_list)
-        db_filter = DefaultDatabaseFilter(ds_filter)
+        db_filter = DefaultDatabaseFilter(ds_filter, {}, Mock())
         query: MockQuery = db_filter.filter(query, 'test', {'test': _MockModel})
 
         assert query.filter_calls == [
@@ -201,6 +209,10 @@ class TestDefaultDatabaseFilter:
                 assert name in ['id', 'datetime_hype']
                 return getattr(cls, name)
 
+            @classmethod
+            def get_table_name(cls):
+                return 'test'
+
         ranges = {
             'id': {
                 'from': 'lol',
@@ -213,7 +225,7 @@ class TestDefaultDatabaseFilter:
         }
         query = MockQuery()
         ds_filter = DataSourceFilter(range=ranges)
-        db_filter = DefaultDatabaseFilter(ds_filter)
+        db_filter = DefaultDatabaseFilter(ds_filter, {}, Mock())
         query: MockQuery = db_filter.filter(query, 'test', {'test': _MockModel})
 
         assert query.filter_calls == [
@@ -242,10 +254,14 @@ class TestDefaultDatabaseFilter:
             def get_id_column_name(cls):
                 return 'id'
 
+            @classmethod
+            def get_table_name(cls):
+                return 'test'
+
         exact = {'id': 'hype_train'}
         query = MockQuery()
         ds_filter = DataSourceFilter(exact=exact)
-        db_filter = DefaultDatabaseFilter(ds_filter)
+        db_filter = DefaultDatabaseFilter(ds_filter, {}, Mock())
         query = db_filter.filter(query, 'test', {'test': _MockModel})
 
         assert query.filter_calls == [
@@ -274,10 +290,14 @@ class TestDefaultDatabaseFilter:
                 assert name == 'id_override'
                 return cls.id_override
 
+            @classmethod
+            def get_table_name(cls):
+                return 'test'
+
         exact = {'id': 'hype_train'}
         query = MockQuery()
         ds_filter = DataSourceFilter(exact=exact)
-        db_filter = DefaultDatabaseFilter(ds_filter)
+        db_filter = DefaultDatabaseFilter(ds_filter, {}, Mock())
         query = db_filter.filter(query, 'test', {'test': _MockModel})
 
         assert query.filter_calls == [
@@ -305,11 +325,15 @@ class TestDefaultDatabaseFilter:
                 assert name == 'examine'
                 return cls.examine
 
+            @classmethod
+            def get_table_name(cls):
+                return 'test'
+
         query = MockQuery()
 
         contains_filter = {'examine': in_}
         ds_filter = DataSourceFilter(contains=contains_filter)
-        db_filter = DefaultDatabaseFilter(ds_filter)
+        db_filter = DefaultDatabaseFilter(ds_filter, {}, Mock())
         query: MockQuery = db_filter.filter(query, 'test', {'test': _MockModel})
         assert query.filter_count == 1
         assert query.filter_calls == [call(('ilike', 'examine', out_))]

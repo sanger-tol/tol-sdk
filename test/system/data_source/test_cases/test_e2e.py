@@ -2,7 +2,6 @@
 #
 # SPDX-License-Identifier: MIT
 
-import time
 from datetime import datetime
 from typing import Dict
 
@@ -53,7 +52,7 @@ class TestEndToEnd:
     """
 
     @against(*all_fixtures)
-    def test_upsert_and_detail_get(self, data_source: OperableDataSource):
+    def test_upsert_and_detail_get(self, data_source: OperableDataSource, ds_sleep):
         """
         Upsert 3 `DataObject` instances, and get them by their IDs
         """
@@ -77,7 +76,7 @@ class TestEndToEnd:
         ]
 
         data_source.upsert('root', data_objects)
-        time.sleep(2)  # Let Elastic settle down after the upsert
+        ds_sleep(2)  # Let Elastic settle down after the upsert
 
         # they should all be present now
         second = list(
@@ -111,8 +110,8 @@ class TestEndToEnd:
         assert fourth[1].str_column == 'test_train'
         assert fourth[2] is None
 
-    @against(elastic, api_elastic)  # and_ filter not yet implemented on SqlDataSource
-    def test_upsert_and_list_get(self, data_source: OperableDataSource):
+    @against(*all_fixtures)
+    def test_upsert_and_list_get(self, data_source: OperableDataSource, ds_sleep):
         """
         Upsert 3 `DataObject` instances, and get them as a list with filters
         """
@@ -126,6 +125,17 @@ class TestEndToEnd:
 
         assert first == [None, None, None]
 
+        related_objects = (
+            data_source.data_object_factory(
+                'related',
+                i,
+                attributes={
+                    'str_column': f'related_{i}'
+                }
+            )
+            for i in range(len(ids))
+        )
+
         data_objects = [
             data_source.data_object_factory(
                 'root',
@@ -134,14 +144,16 @@ class TestEndToEnd:
                             'int_column': i,
                             'datetime_column': datetime(2024, 1, i + 1),
                             'bool_column': True if i % 2 == 0 else False,
-                            'related_object': {'id': i, 'str_column': f'related_{i}'},
-                            'list_column': [0, 1, 2] if i % 2 == 0 else [4, 5, 6]}
+                            'list_column': [0, 1, 2] if i % 2 == 0 else [4, 5, 6]},
+                to_one={
+                    'related_object': r_obj
+                }
             )
-            for i, id_ in enumerate(ids)
+            for i, (id_, r_obj) in enumerate(zip(ids, related_objects))
         ]
 
         data_source.upsert('root', data_objects)
-        time.sleep(2)  # Let Elastic settle down after the upsert
+        ds_sleep(2)  # Let Elastic settle down after the upsert
 
         # they should all be present now
         second = list(
@@ -266,7 +278,7 @@ class TestEndToEnd:
         f = DataSourceFilter()
         f.and_ = {
             'list_column': {
-                'eq': {'value': 2}
+                'contains': {'value': 2}
             }
         }
         thirteenth = list(
@@ -278,7 +290,7 @@ class TestEndToEnd:
         f = DataSourceFilter()
         f.and_ = {
             'list_column': {
-                'eq': {'value': 2, 'negate': True}
+                'contains': {'value': 2, 'negate': True}
             }
         }
         fourteenth = list(
@@ -322,18 +334,19 @@ class TestEndToEnd:
         )
         assert len(seventeenth) == 1  # The archetype
 
-    @against(elastic)  # list and dict columns not implemented on SqlDataSource
-    def test_upsert(self, data_source: OperableDataSource):
+    @against(*all_fixtures)
+    def test_upsert(self, data_source: OperableDataSource, ds_sleep):
         """
         Upsert a `DataObject` instance, and then upsert again to test upsert behaviour
         """
+
         obj1 = data_source.data_object_factory(
             'root',
             '1',
             attributes={}
         )
         data_source.upsert('root', [obj1])
-        time.sleep(2)  # Let Elastic settle down after the upsert
+        ds_sleep(2)  # Let Elastic settle down after the upsert
 
         # they should all be present now
         first = list(
@@ -355,14 +368,20 @@ class TestEndToEnd:
                         'int_column': 2,
                         'datetime_column': datetime(2024, 1, 2),
                         'bool_column': False,
-                        'related_object': {
-                            'id': 'rel1',
-                            'str_column': 'value2',
-                            'int_column': 123},
-                        'list_column': ['item1', 'item2']}
+                        'list_column': ['item1', 'item2']},
+            to_one={
+                'related_object': data_source.data_object_factory(
+                    'related',
+                    'rel1',
+                    attributes={
+                        'str_column': 'value2',
+                        'int_column': 123
+                    },
+                ),
+            }
         )
         data_source.upsert('root', [obj1])
-        time.sleep(2)  # Let Elastic settle down after the upsert
+        ds_sleep(2)  # Let Elastic settle down after the upsert
 
         second = list(
             data_source.get_by_ids('root', ['1'])
@@ -387,16 +406,21 @@ class TestEndToEnd:
             attributes={'int_column': 3,
                         'datetime_column': datetime(2024, 1, 3),
                         'bool_column': True,
-                        'related_object': {
-                            'id': 'rel1',
-                            'int_column': 456,
-                            'bool_column': False,
-                            'datetime_column': datetime(2024, 6, 6)
-                        },
-                        'list_column': ['item1', 'item3']}
+                        'list_column': ['item1', 'item3']},
+            to_one={
+                'related_object': data_source.data_object_factory(
+                    'related',
+                    'rel1',
+                    attributes={
+                        'int_column': 456,
+                        'bool_column': False,
+                        'datetime_column': datetime(2024, 6, 6)
+                    },
+                ),
+            }
         )
         data_source.upsert('root', [obj1])
-        time.sleep(2)  # Let Elastic settle down after the upsert
+        ds_sleep(2)  # Let Elastic settle down after the upsert
 
         third = list(
             data_source.get_by_ids('root', ['1'])
@@ -421,7 +445,7 @@ class TestEndToEnd:
             attributes={}
         )
         data_source.upsert('root', [obj1])
-        time.sleep(2)  # Let Elastic settle down after the upsert
+        ds_sleep(2)  # Let Elastic settle down after the upsert
 
         fourth = list(
             data_source.get_by_ids('root', ['1'])
@@ -451,7 +475,7 @@ class TestEndToEnd:
                         'list_column': None}
         )
         data_source.upsert('root', [obj1])
-        time.sleep(2)  # Let Elastic settle down after the upsert
+        ds_sleep(2)  # Let Elastic settle down after the upsert
 
         fifth = list(
             data_source.get_by_ids('root', ['1'])
@@ -465,8 +489,8 @@ class TestEndToEnd:
         assert ret.related_object is None
         assert ret.list_column is None
 
-    @against(elastic)  # list and dict columns not implemented on SqlDataSource
-    def test_update(self, data_source: OperableDataSource):
+    @against(elastic)  # `Updater` not implemented on `Api`- or `SqlDataSource`
+    def test_update(self, data_source: OperableDataSource, ds_sleep):
         """
         Upsert a `DataObject` instance, and then perform updates
         """
@@ -476,7 +500,7 @@ class TestEndToEnd:
             attributes={'str_column': 'test_2'}
         )
         data_source.upsert('root', [obj1])
-        time.sleep(2)
+        ds_sleep(2)
         # they should all be present now
         first = list(
             data_source.get_by_ids('root', ['1'])
@@ -506,7 +530,7 @@ class TestEndToEnd:
         })
         data_source.update('root', [update],
                            candidate_key=['str_column'])
-        time.sleep(2)
+        ds_sleep(2)
         second = list(
             data_source.get_by_ids('root', ['1'])
         )
@@ -539,7 +563,7 @@ class TestEndToEnd:
         )
         data_source.update('root', [update],
                            candidate_key=['int_column'])
-        time.sleep(2)
+        ds_sleep(2)
         third = list(
             data_source.get_by_ids('root', ['1'])
         )
@@ -560,7 +584,7 @@ class TestEndToEnd:
         update = (None, {'int_column': 2})
         data_source.update('root', [update],
                            candidate_key=['int_column'])
-        time.sleep(2)
+        ds_sleep(2)
         fourth = list(
             data_source.get_by_ids('root', ['1'])
         )
@@ -588,7 +612,7 @@ class TestEndToEnd:
         )
         data_source.update('root', [update],
                            candidate_key=['int_column'])
-        time.sleep(5)
+        ds_sleep(5)
         fifth = list(
             data_source.get_by_ids('root', ['1'])
         )
@@ -601,8 +625,8 @@ class TestEndToEnd:
         assert ret.related_object is None
         assert ret.list_column is None
 
-    @against(elastic, api_elastic)
-    def test_count(self, data_source: OperableDataSource):
+    @against(*all_fixtures)
+    def test_count(self, data_source: OperableDataSource, ds_sleep):
         """
         Upsert a `DataObject` instance, and then count
         """
@@ -610,13 +634,15 @@ class TestEndToEnd:
             data_source.data_object_factory(
                 'root',
                 id_,
-                attributes={'str_column': f'test_{id_}',
-                            'bool_column': True if id_ % 2 == 0 else False}
+                attributes={
+                    'str_column': f'test_{id_}',
+                    'bool_column': True if id_ % 2 == 0 else False
+                }
             )
             for id_ in range(10)
         ]
         data_source.upsert('root', data_objects)
-        time.sleep(2)
+        ds_sleep(2)
 
         cnt = data_source.get_count('root')
         assert cnt == 11  # The archetype plus the new 10
@@ -640,7 +666,7 @@ class TestEndToEnd:
         assert cnt == 5
 
     @against(elastic, api_elastic)
-    def test_stats(self, data_source: OperableDataSource):
+    def test_stats(self, data_source: OperableDataSource, ds_sleep):
         """
         Upsert 3 `DataObject` instances, and get them as a list with filters
         """
@@ -668,7 +694,7 @@ class TestEndToEnd:
         ]
 
         data_source.upsert('root', data_objects)
-        time.sleep(5)  # Let Elastic settle down after the upsert
+        ds_sleep(5)  # Let Elastic settle down after the upsert
 
         stats = data_source.get_stats(
             'root',
@@ -693,7 +719,7 @@ class TestEndToEnd:
         assert stats['int_column']['cardinality'] == 4
 
     @against(elastic)
-    def test_group_stats(self, data_source: OperableDataSource):
+    def test_group_stats(self, data_source: OperableDataSource, ds_sleep):
         """
         Upsert 3 `DataObject` instances, and get them as a list with filters
         """
@@ -721,7 +747,7 @@ class TestEndToEnd:
         ]
 
         data_source.upsert('root', data_objects)
-        time.sleep(5)  # Let Elastic settle down after the upsert
+        ds_sleep(5)  # Let Elastic settle down after the upsert
 
         stats = list(data_source.get_group_stats(
             object_type='root',
@@ -801,7 +827,7 @@ class TestEndToEnd:
             for i, id_ in enumerate(ids)
         ]
         data_source.upsert('root', data_objects)
-        time.sleep(5)  # Let Elastic settle down after the upsert
+        ds_sleep(5)  # Let Elastic settle down after the upsert
 
         stats = list(data_source.get_group_stats(
             object_type='root',
@@ -829,7 +855,7 @@ class TestEndToEnd:
         assert true_stats['datetime_column']['max'] == datetime(2020, 1, 1, 0, 0, 0)
 
     @against(elastic)
-    def test_runtime_fields(self, data_source: OperableDataSource):
+    def test_runtime_fields(self, data_source: OperableDataSource, ds_sleep):
         """
         Upsert a `DataObject` instance, and then query a runtime field
         """
@@ -845,7 +871,7 @@ class TestEndToEnd:
             for id_ in range(10)
         ]
         data_source.upsert('root', data_objects)
-        time.sleep(2)
+        ds_sleep(2)
 
         # Get by ID
         first = list(data_source.get_by_ids('root', ['1', '2']))
@@ -883,7 +909,7 @@ class TestEndToEnd:
         assert fourth[5].runtime_column is False
 
     @against(*all_fixtures)
-    def test_data_loader(self, data_source: OperableDataSource):
+    def test_data_loader(self, data_source: OperableDataSource, ds_sleep):
         mock_ds = _MockDataSource({})
         core_data_object(mock_ds)
 
@@ -897,7 +923,7 @@ class TestEndToEnd:
             loader_name='e2e loader'
         )
         loader.load(field_prefix='e2e', batch_size=20)
-        time.sleep(5)
+        ds_sleep(5)
 
         f = DataSourceFilter()
         f.and_ = {'str_column': {'eq': {'value': 'abc', 'negate': True}}}

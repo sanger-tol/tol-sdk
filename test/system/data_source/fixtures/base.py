@@ -32,3 +32,21 @@ class DataSourceFixture(ABC):
 
         Can be used for cleanup between tests.
         """
+
+    @abstractmethod
+    def before_test(self) -> None:
+        """
+        Called before each test (separately from
+        `DataSourceFixture().get_ds_instance()`).
+
+        Used for setup that must occur on both the core
+        fixture, as well as the very same behind an API.
+        """
+
+    def sleep(self, time_: float) -> None:
+        """
+        Requests a specific `time_` seconds to pause
+        execution. Some fixtures, i.e. the (api ->) sql
+        pair, ignore these instructions (which is the
+        default).
+        """

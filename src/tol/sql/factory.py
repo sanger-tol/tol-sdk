@@ -7,7 +7,7 @@ from typing import Callable, Dict, List, Type
 from .database import Database, DefaultDatabase
 from .filter import DefaultDatabaseFilter
 from .model import Model
-from .relationship import DefaultSqlRelationshipConfig
+from .relationship import DefaultSqlRelationshipConfig, SqlRelationshipConfig
 from .session import create_session_factory
 from .sort import DefaultDatabaseSorter
 from .sql_converter import DefaultDataObjectConverter, DefaultModelConverter, TypeFunction
@@ -55,12 +55,6 @@ def __sorter_factory() -> SorterFactory:
     )
 
 
-def __filter_factory() -> FilterFactory:
-    return lambda ds_filter: DefaultDatabaseFilter(
-        ds_filter
-    )
-
-
 def __type_tablename_dict(
     models: List[Type[Model]],
     type_function: TypeFunction
@@ -70,6 +64,18 @@ def __type_tablename_dict(
     return {
         type_function(m): m.get_table_name() for m in models
     }
+
+
+def __filter_factory(
+    type_tablename_dict: dict[str, str],
+    relationship_config: SqlRelationshipConfig
+) -> FilterFactory:
+
+    return lambda ds_filter: DefaultDatabaseFilter(
+        ds_filter,
+        type_tablename_dict,
+        relationship_config
+    )
 
 
 def __database(
@@ -104,9 +110,12 @@ def create_sql_datasource(
     converter_factory = do_factory(type_function)
     back_converter_factory = model_factory(models, type_function)
     sorter_factory = __sorter_factory()
-    filter_factory = __filter_factory()
     type_tablename_dict = __type_tablename_dict(models, type_function)
     sql_relationship_config = DefaultSqlRelationshipConfig(models, type_function)
+    filter_factory = __filter_factory(
+        type_tablename_dict,
+        sql_relationship_config
+    )
     db = database_factory(models, db_uri)
 
     user_id_getter = api_user_id_getter if behind_api else None
