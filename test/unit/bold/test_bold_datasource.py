@@ -1,117 +1,121 @@
-# SPDX-FileCopyrightText: 2023 Genome Research Ltd.
+# SPDX-FileCopyrightText: 2024 Genome Research Ltd.
 #
 # SPDX-License-Identifier: MIT
 
-from unittest import (TestCase)
+from typing import Any, Optional
+from unittest.mock import Mock
 
-import responses
+import pytest
 
 from tol.bold import BoldDataSource
 from tol.core import (
-    DataSourceError,
-    DataSourceFilter,
-    core_data_object
+    DataObject,
+    DataSourceError
 )
 
 
-class TestBoldDataSource(TestCase):
+def _get_mock_data_object(
+    type_: str,
+    id_: Optional[str],
+    attributes: dict[str, Any] = {},
+    to_one: dict[str, Any] = {}
+) -> DataObject:
 
-    @responses.activate
-    def test_get_list(self):
-        bds = BoldDataSource({
-            'url': 'http://bold.local'
-        })
-        core_data_object(bds)
+    data_object = Mock()
 
-        mock_response_from_bold = {
-            'bold_records': {
-                'records': {
-                    'ABC001-19': {
-                        'record_id': '12345678',
-                        'processid': 'ABC001-19',
-                        'bin_uri': 'BOLD:ABA9789',
-                        'specimen_identifiers': {
-                            'sampleid': 'SAM12345678',
-                            'catalognum': 'SPEC1',
-                            'fieldnum': 'F1',
-                            'institution_storing': 'An institute'
-                        },
-                        'taxonomy': {
-                            'identification_provided_by': 'A person',
-                            'identification_method': 'Guessed',
-                            'phylum': {
-                                'taxon': {
-                                    'taxID': '20',
-                                    'name': 'Arthropoda'
-                                }
-                            }
-                        }
-                    },
-                    'ABC001-20': {
-                        'record_id': '12345679',
-                        'processid': 'ABC001-20',
-                        'bin_uri': 'BOLD:ABA9789',
-                        'specimen_identifiers': {
-                            'sampleid': 'SAM12345679',
-                            'catalognum': 'SPEC2',
-                            'fieldnum': 'F2',
-                            'institution_storing': 'An institute'
-                        },
-                        'taxonomy': {
-                            'identification_provided_by': 'A person',
-                            'identification_method': 'Guessed',
-                            'phylum': {
-                                'taxon': {
-                                    'taxID': '20',
-                                    'name': 'Arthropoda'
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-        responses.add(responses.GET, 'http://bold.local/index.php/API_Public/specimen',
-                      json=mock_response_from_bold, status=200)
+    data_object.type = type_
+    data_object.id = id_
+    data_object.attributes = attributes
+    data_object._to_one_objects = to_one
 
-        with self.assertRaises(DataSourceError):
-            bds.get_list('index')
+    return data_object
 
-        f = DataSourceFilter()
-        with self.assertRaises(DataSourceError):
-            bds.get_list('sample', object_filters=f)
 
-        f.in_list = {'container': ['ABC']}
-        with self.assertRaises(DataSourceError):
-            bds.get_list('sample', object_filters=f)
-        f.exact = {'container': 'ABC'}
+class TestBoldDataSource:
+    def test_get_by_id_found(self):
+        """200 response, no token"""
 
-        returned = bds.get_list('sample', object_filters=f)
-        first = next(returned)
-        self.assertEqual({'record_id': '12345678',
-                          'processid': 'ABC001-19',
-                          'bin_uri': 'BOLD:ABA9789',
-                          'specimen_identifiers_sampleid': 'SAM12345678',
-                          'specimen_identifiers_catalognum': 'SPEC1',
-                          'specimen_identifiers_fieldnum': 'F1',
-                          'specimen_identifiers_institution_storing': 'An institute',
-                          'taxonomy_identification_provided_by': 'A person',
-                          'taxonomy_identification_method': 'Guessed',
-                          'taxonomy_phylum_taxon_taxID': '20',
-                          'taxonomy_phylum_taxon_name': 'Arthropoda'},
-                         first.attributes)
-        second = next(returned)
-        self.assertEqual({'record_id': '12345679',
-                          'processid': 'ABC001-20',
-                          'bin_uri': 'BOLD:ABA9789',
-                          'specimen_identifiers_sampleid': 'SAM12345679',
-                          'specimen_identifiers_catalognum': 'SPEC2',
-                          'specimen_identifiers_fieldnum': 'F2',
-                          'specimen_identifiers_institution_storing': 'An institute',
-                          'taxonomy_identification_provided_by': 'A person',
-                          'taxonomy_identification_method': 'Guessed',
-                          'taxonomy_phylum_taxon_taxID': '20',
-                          'taxonomy_phylum_taxon_name': 'Arthropoda'},
-                         second.attributes)
-        with self.assertRaises(StopIteration):
-            next(returned)
+        mock_client = Mock()
+
+        mock_response = {'sampleid': 'an ID', 'bin_uri': 'BIN1'}
+        mock_client.get_detail.return_value = [mock_response]
+
+        mock_lc_converter = Mock()
+
+        ds = BoldDataSource(
+            lambda: mock_client,
+            lambda: mock_lc_converter
+        )
+        ds.data_object_factory = lambda: Mock()
+
+        mock_data_object = _get_mock_data_object(
+            type_='sample',
+            id_='an ID',
+            attributes={'bin_uri': 'BIN1'}
+        )
+        mock_lc_converter.convert_list.return_value = ([mock_data_object], 1)
+
+        (observed,) = list(ds.get_by_id('sample', ['an ID']))
+        assert observed == mock_data_object
+
+        mock_client.get_detail.assert_called_once_with(
+            'sample',
+            ['an ID']
+        )
+        mock_lc_converter.convert_list.assert_called_once_with(
+            [mock_response]
+        )
+
+    def test_get_by_id_not_found(self):
+        """404 response"""
+
+        mock_client = Mock()
+
+        # mock a 404 returning `None`
+        mock_client.get_detail.return_value = []
+
+        mock_lc_converter = Mock()
+        mock_lc_converter.convert_list.return_value = ([], 0)
+
+        ds = BoldDataSource(
+            lambda: mock_client,
+            lambda: mock_lc_converter
+        )
+        ds.data_object_factory = lambda: Mock()
+
+        (observed,) = list(ds.get_by_id('sample', ['an ID']))
+        assert observed is None
+
+        mock_client.get_detail.assert_called_once_with(
+            'sample',
+            ['an ID']
+        )
+        mock_lc_converter.convert_list.assert_called_once_with(
+            []
+        )
+
+    def test_bad_object_type(self):
+        """A bad object type -> raise `DataSourceError()`"""
+
+        ds = BoldDataSource(
+            lambda: None,
+            lambda: None
+        )
+        with pytest.raises(DataSourceError):
+            list(ds.get_by_id('test', ['does not matter at all']))
+
+    def test_supported_types(self):
+        """
+        `BoldDataSource().supported_types` calls
+        `config_attribute_types()` on client
+        """
+        expected = ['sample']
+
+        ds = BoldDataSource(
+            None,
+            None
+        )
+
+        observed = ds.supported_types
+
+        assert observed == expected

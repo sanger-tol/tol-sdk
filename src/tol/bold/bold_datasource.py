@@ -1,67 +1,153 @@
-# SPDX-FileCopyrightText: 2023 Genome Research Ltd.
+# SPDX-FileCopyrightText: 2024 Genome Research Ltd.
 #
 # SPDX-License-Identifier: MIT
 
-from typing import Dict, Iterable, List
+from functools import cache
+from typing import Callable, Iterable, Optional
+
+from more_itertools import seekable
+
+from .client import BoldApiClient
+from .converter import (
+    BoldApiConverter
+)
+from ..core import DataObject, DataSource, DataSourceError
+from ..core.operator import (
+    DetailGetter
+)
 
 
-import requests
+ClientFactory = Callable[[], BoldApiClient]
+BoldConverterFactory = Callable[[], BoldApiConverter]
 
-from ..core import (
-    DataObject,
+
+class BoldDataSource(
     DataSource,
-    DataSourceError,
-    DataSourceFilter
-)
-from ..core.operator import ListGetter
-from ..eln import (
-    flatten_entity
-)
 
+    # the supported operators
+    DetailGetter
+):
+    """
+    A `DataSource` that connects to a remote BOLD API.
 
-class BoldDataSource(DataSource, ListGetter):
-    def __init__(self, config: Dict):
-        # uri, user, password
-        super().__init__(config, expected=['url'])
-        self._initialise_bold()
+    Developers should likely use `create_bold_datasource`
+    instead of this directly.
+    """
 
-    def _initialise_bold(self):
-        pass
-
-    def _get_specimens(self, exact_filters={}):
-        url = self.url + '/index.php/API_Public/specimen'
-        params = {
-            **exact_filters,
-            'format': 'json'
-        }
-        headers = {'Accept': 'application/json'}
-        response = requests.get(url, params=params, headers=headers)
-        if response.status_code == 200:
-            return response.json()['bold_records']['records']
-        else:
-            raise DataSourceError('Error from BOLD database: ' + response.text)
-
-    def get_list(
+    def __init__(
         self,
-        object_type: str,
-        object_filters: DataSourceFilter = None,
-        **kwargs
-    ) -> Iterable[DataObject]:
-        if object_type != 'sample':
-            raise DataSourceError('Only objects of type "sample" are handled by BoldDataSource')
-        if object_filters is None or \
-                not isinstance(object_filters.exact, dict):
-            raise DataSourceError('Filter must contain an in_list filter')
-        generator = self._get_specimens(object_filters.exact)
-        return self._convert_dict_to_data_objects(generator)
+        client_factory: ClientFactory,
+        bold_converter_factory: BoldConverterFactory
+    ) -> None:
 
-    def _convert_dict_to_data_objects(self, objs: Dict) -> Iterable:
-        # Each "v" is a BOLD record
-        for value in objs.values():
-            attributes = flatten_entity(value)
-
-            yield self.data_object_factory('sample', attributes=attributes)
+        self.__client_factory = client_factory
+        self.__lc_factory = bold_converter_factory
+        super().__init__({})
 
     @property
-    def supported_types(self) -> List[str]:
-        return ['sample']
+    @cache
+    def attribute_types(self) -> dict[str, dict[str, str]]:
+        return {
+            'sample': {
+                'processid': 'str',
+                'record_id': 'str',
+                'insdc_acs': 'str',
+                'sampleid': 'str',
+                'specimenid': 'int',
+                'taxid': 'int',
+                'short_note': 'str',
+                'identification_method': 'str',
+                'museumid': 'str',
+                'fieldid': 'str',
+                'collection_code': 'str',
+                'processid_minted_date': 'datetime',
+                'inst': 'str',
+                'funding_src': 'str',
+                'sex': 'str',
+                'life_stage': 'str',
+                'reproduction': 'str',
+                'habitat': 'str',
+                'collectors': 'str',
+                'site_code': 'str',
+                'specimen_linkout': 'str',
+                'collection_event_id': 'str',
+                'sampling_protocol': 'str',
+                'tissue_type': 'str',
+                'collection_date_start': 'datetime',
+                'collection_time': 'str',
+                'associated_taxa': 'str',
+                'associated_specimens': 'str',
+                'voucher_type': 'str',
+                'notes': 'str',
+                'taxonomy_notes': 'str',
+                'collection_notes': 'str',
+                'geoid': 'int',
+                'marker_code': 'str',
+                'kingdom': 'str',
+                'phylum': 'str',
+                'class': 'str',
+                'order': 'str',
+                'family': 'str',
+                'subfamily': 'str',
+                'tribe': 'str',
+                'genus': 'str',
+                'species': 'str',
+                'subspecies': 'str',
+                'taxon_name': 'str',
+                'taxon_rank': 'str',
+                'species_reference': 'str',
+                'identified_by': 'str',
+                'sequence_run_site': 'str',
+                'nuc': 'str',
+                'nuc_basecount': 'int',
+                'sequence_upload_date': 'datetime',
+                'bin_uri': 'str',
+                'bin_created_date': 'datetime',
+                'elev': 'int',
+                'depth': 'int',
+                'coord': 'List[int]',
+                'coord_source': 'str',
+                'coord_accuracy': 'str',
+                'elev_accuracy': 'str',
+                'depth_accuracy': 'str',
+                'region': 'str',
+                'sector': 'str',
+                'site': 'str',
+                'country_iso': 'str',
+                'country/ocean': 'str',
+                'province/state': 'str',
+                'bold_recordset_code_arr': 'List[str]',
+                'collection_date_end': 'datetime'
+            }
+        }
+
+    @property
+    @cache
+    def supported_types(self) -> list[str]:
+        return list(
+            self.attribute_types.keys()
+        )
+
+    def get_by_id(
+        self,
+        object_type: str,
+        object_ids: Iterable[str]
+    ) -> Iterable[Optional[DataObject]]:
+        if object_type not in self.supported_types:
+            raise DataSourceError(f'{object_type} is not supported')
+
+        client = self.__client_factory()
+        bold_response = client.get_detail(object_type, object_ids)
+        bold_converter = self.__lc_factory()
+
+        converted_objects, _ = bold_converter.convert_list(bold_response) \
+            if bold_response is not None else ([], 0)
+        seekable_objects = seekable(converted_objects)
+        for id_ in object_ids:
+            seekable_objects.seek(0)
+            for obj in seekable_objects:
+                if obj.id == id_:
+                    yield obj
+                    break
+            else:
+                yield None

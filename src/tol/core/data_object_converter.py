@@ -54,7 +54,7 @@ class DefaultDataObjectToDataObjectConverter(DataObjectToDataObjectOrUpdateConve
             DataObject
             Iterable of DataObjects
         """
-        if data_object.id is not None:
+        if data_object is not None and data_object.id is not None:
             ret = self._data_object_factory(
                 id_=data_object.id,
                 type_=self.data_loader._destination_object_type,
