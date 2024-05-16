@@ -2,7 +2,6 @@
 #
 # SPDX-License-Identifier: MIT
 
-import ast
 import datetime
 import importlib
 import json
@@ -304,8 +303,11 @@ def data(ctx, source, operation, type_, filter_, fields, converter, output):
     ds = class_()
     f = DataSourceFilter()
     if filter_ is not None:
-        provided_filter = ast.literal_eval(filter_)
-        f.and_ = provided_filter['and_'] if 'and_' in provided_filter else {}
+        try:
+            provided_filter = json.loads(filter_)
+            f.and_ = provided_filter['and_'] if 'and_' in provided_filter else {}
+        except json.JSONDecodeError:
+            pass
     if operation == 'list':
         objs = ds.get_list(type_, object_filters=f)
     if converter is not None:
