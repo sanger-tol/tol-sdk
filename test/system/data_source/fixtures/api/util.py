@@ -33,5 +33,11 @@ class ApiFixture(DataSourceFixture):
         core_data_object(api_ds)
         return api_ds
 
+    def before_test(self) -> None:
+        self.__backer.before_test()
+
     def after_test(self) -> None:
         self.__backer.after_test()
+
+    def sleep(self, time_: float) -> None:
+        self.__backer.sleep(time_)

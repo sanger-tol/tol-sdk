@@ -20,23 +20,32 @@ def against(*fixtures: DataSourceFixture) -> Callable:
     """
 
     params = [
-        pytest.param(dsf, id=dsf.name) for dsf in fixtures
+        pytest.param(dsf, dsf.sleep, id=dsf.name) for dsf in fixtures
     ]
 
     def decorator(test_method: Callable) -> Callable:
 
         @wraps(test_method)
-        @pytest.mark.parametrize('data_source', params)
+        @pytest.mark.parametrize(
+            ('data_source', 'ds_sleep'),
+            params
+        )
         def wrapper(
             self,
-            data_source: DataSourceFixture
+            data_source: DataSourceFixture,
+            ds_sleep: Callable[[float], None]
         ) -> None:
 
             # a little hacky, but the names must match
             fixture = data_source
 
+            fixture.before_test()
             ds_instance = fixture.get_ds_instance()
-            test_method(self, data_source=ds_instance)
+            test_method(
+                self,
+                data_source=ds_instance,
+                ds_sleep=ds_sleep
+            )
             fixture.after_test()
 
         return wrapper

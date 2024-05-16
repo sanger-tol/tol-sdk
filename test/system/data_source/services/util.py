@@ -3,6 +3,7 @@
 # SPDX-License-Identifier: MIT
 
 import os
+from datetime import datetime
 
 from tol.core.relationship import RelationshipConfig
 from tol.elastic import ElasticDataSource
@@ -42,5 +43,78 @@ def elastic_datasource(
                     }
                 }
             }
+        }
+    )
+
+
+def __get_indices_names() -> None:
+    prefix = get_prefix()
+    return [
+        f'{prefix}-{type_}' for type_ in (
+            'root',
+            'related'
+        )
+    ]
+
+
+def create_indices() -> None:
+    """Creates all indices."""
+
+    indices = __get_indices_names()
+    elastic_ds = elastic_datasource()
+    elastic_ds.es.indices.create(
+        index=indices,
+        ignore=[400]
+    )
+
+
+def delete_indices() -> None:
+    """Deletes all indices"""
+
+    indices = __get_indices_names()
+    elastic_ds = elastic_datasource()
+
+    elastic_ds.es.indices.delete(
+        index=indices,
+        ignore=[400, 404]
+    )
+
+
+def upsert_archetypes() -> None:
+    """
+    Ensures that `ElasticDataSource().attribute_types`
+    is fully populated by upserting an archetypal
+    `DataObject` instance for each.
+    We do this directly in ElasticSearch to avoid
+    a chicken-and-egg situation
+    """
+
+    elastic_ds = elastic_datasource()
+
+    elastic_ds.es.index(
+        index=get_prefix() + '-root',
+        id='#YOLO',
+        document={
+            'str_column': 'abc',
+            'int_column': 42,
+            'datetime_column': datetime(2020, 1, 1, 0, 0, 0),
+            'bool_column': True,
+            'list_column': ['item'],
+            'related_object': {
+                'id': '#REL',
+                'int_column': 42,
+                'datetime_column': datetime(2021, 1, 1, 0, 0, 0)
+            },
+        }
+    )
+    elastic_ds.es.index(
+        index=get_prefix() + '-related',
+        id='#REL',
+        document={
+            'str_column': 'abc',
+            'int_column': 42,
+            'datetime_column': datetime(2020, 1, 1, 0, 0, 0),
+            'bool_column': True,
+            'list_column': ['item']
         }
     )

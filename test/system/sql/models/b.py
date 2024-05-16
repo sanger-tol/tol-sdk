@@ -12,7 +12,7 @@ class B(BaseModel):
 
     id_override: Mapped[str] = mapped_column(primary_key=True)  # noqa A003
     int_column: Mapped[int] = mapped_column()
-    another_string: Mapped[str] = mapped_column()
+    another_string: Mapped[str] = mapped_column(nullable=True)
 
     @classmethod
     def get_id_column_name(cls) -> str:

@@ -288,9 +288,78 @@ class DefaultDatabase(Database):
         if old_instance is None:
             session.add(instance)
         else:
-            session.merge(instance)
+            handled = self.__handle_difference(
+                old_instance,
+                instance
+            )
+            session.merge(handled)
 
         return session
+
+    def __handle_difference(self, old: Model, new: Model) -> Model:
+        """
+        Performs various pre-merge operations, including:
+
+        - merging `list`s and `dict`s like `ElasticDataSource`.
+        """
+
+        new = self.__handle_diff_dict(old, new)
+        new = self.__handle_diff_list(old, new)
+
+        return new
+
+    def __handle_diff_list(self, old: Model, new: Model) -> Model:
+        for k in self.__get_type_column_keys(new, list):
+            merge_list = getattr(old, k, [])
+            if merge_list is None:
+                continue
+
+            new_list = getattr(new, k)
+
+            for el in new_list:
+                if el not in merge_list:
+                    merge_list.append(el)
+
+            setattr(new, k, merge_list)
+
+        return new
+
+    def __handle_diff_dict(self, old: Model, new: Model) -> Model:
+        for k in self.__get_type_column_keys(new, dict):
+            merge_dict = getattr(old, k, {})
+            if merge_dict is None:
+                continue
+
+            new_dict = getattr(new, k)
+
+            setattr(
+                new,
+                k,
+                merge_dict | new_dict
+            )
+
+        return new
+
+    def __get_type_column_keys(
+        self,
+        instance: Model,
+        type_: type[Any]
+    ) -> list[str]:
+
+        return [
+            k for k in instance.get_attribute_types().keys()
+            if self.__is_type(instance, k, type_)
+        ]
+
+    def __is_type(
+        self,
+        instance: Model,
+        key: str,
+        type_: type[Any]
+    ) -> bool:
+
+        value = getattr(instance, key)
+        return isinstance(value, type_)
 
     def __raise_integrity_error(
         self,

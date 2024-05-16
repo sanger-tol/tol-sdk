@@ -2,9 +2,21 @@
 #
 # SPDX-License-Identifier: MIT
 
-from datetime import datetime
+from __future__ import annotations
 
-from sqlalchemy.orm import Mapped, mapped_column
+from datetime import datetime
+from typing import Any
+
+from sqlalchemy import (
+    ForeignKey,
+    JSON,
+    event,
+)
+from sqlalchemy.orm import (
+    Mapped,
+    mapped_column,
+    relationship,
+)
 
 from tol.sql import model_base
 
@@ -33,8 +45,58 @@ class Root(ModelBase):
     int_column: Mapped[int] = mapped_column(nullable=True)
     datetime_column: Mapped[datetime] = mapped_column(nullable=True)
     bool_column: Mapped[bool] = mapped_column(nullable=True)
+    list_column: Mapped[list] = mapped_column(
+        type_=JSON,
+        nullable=True
+    )
+    runtime_column: Mapped[bool] = mapped_column(nullable=True)
+
+    related_fkey: Mapped[str] = mapped_column(
+        ForeignKey('related.id'),
+        nullable=True
+    )
+    related_object: Mapped[Related] = relationship(
+        back_populates='my_root'
+    )
+
+
+@event.listens_for(Root.bool_column, 'set', retval=False)
+def update_runtime_column(
+    target: Root,
+    value: bool | None,
+    __old: bool | None,
+    __init: Any
+):
+    target.runtime_column = not value
+    return value
+
+
+class Related(ModelBase):
+    """
+    The "related" `ModelBase` child.
+
+    Has `object_type` related
+    """
+
+    __tablename__ = 'related'
+
+    id: Mapped[str] = mapped_column(primary_key=True)  # noqa A003
+
+    str_column: Mapped[str] = mapped_column(nullable=True)
+    int_column: Mapped[int] = mapped_column(nullable=True)
+    datetime_column: Mapped[datetime] = mapped_column(nullable=True)
+    bool_column: Mapped[bool] = mapped_column(nullable=True)
+    list_column: Mapped[list] = mapped_column(
+        type_=JSON,
+        nullable=True
+    )
+
+    my_root: Mapped[list[Root]] = relationship(
+        back_populates='related_object'
+    )
 
 
 ALL_MODELS = (
-    Root,
+    Related,
+    Root
 )

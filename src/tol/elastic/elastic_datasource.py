@@ -97,7 +97,18 @@ class ElasticDataSource(
         self.helpers = helpers
 
     def _convert_data_object_to_dict(self, data_object: DataObject) -> Dict:
-        return data_object.attributes
+        to_ones_dict = {
+            k: self._convert_to_one_relation(v)
+            for k, v in data_object._to_one_objects.items()
+            if v is not None
+        }
+        return data_object.attributes | to_ones_dict
+
+    def _convert_to_one_relation(self, one_relation: DataObject) -> dict[str, Any]:
+        return {
+            'id': one_relation.id,
+            **one_relation.attributes
+        }
 
     def _prefix_fields(self, dict_: Dict, prefix: str) -> Dict:
         if prefix == '':
@@ -194,6 +205,7 @@ class ElasticDataSource(
         field_prefix: str = '',
         candidate_key: Iterable[str] = []
     ) -> None:
+
         # This tries to find an object in the DataSource that matches
         # the candidate key. If found it will perform the update
         index = self.__get_index(object_type)
@@ -343,6 +355,48 @@ class ElasticDataSource(
         return self._convert_dict_to_data_objects(resp['hits']['hits']), \
             resp['hits']['total']['value']
 
+    def _contains_filter(
+        self,
+        query: dict[str, Any],
+        object_type: str,
+        key: str,
+        value: str
+    ) -> dict[str, Any]:
+
+        search_field = self._field_or_keyword(object_type, key)
+        if self.attribute_types[object_type][key] == 'str':
+            query['bool']['must'].append(
+                {
+                    'wildcard': {
+                        search_field: {
+                            'value': f'{value}*', 'boost': 1.0
+                        }
+                    }
+                }
+            )
+        else:
+            query = self._eq_filter(
+                query,
+                'must',
+                search_field,
+                value
+            )
+        return query
+
+    def _eq_filter(
+        self,
+        query: dict[str, Any],
+        elastic_section: str,
+        search_field: str,
+        search_value: str
+    ) -> dict[str, Any]:
+
+        query['bool'][elastic_section].append({
+            'match': {search_field: search_value}
+        })
+
+        return query
+
     def _build_elasticsearch_query(self, object_type: str,
                                    object_filters: DataSourceFilter = None):
         query = {'bool': {'must': [], 'must_not': []}}
@@ -358,9 +412,13 @@ class ElasticDataSource(
 
         if object_filters.contains is not None:
             for k, v in object_filters.contains.items():
-                search_field = self._field_or_keyword(object_type, k)
-                query['bool']['must'].append({'wildcard': {search_field:
-                                                           {'value': f'{v}*', 'boost': 1.0}}})
+                query = self._contains_filter(
+                    query,
+                    object_type,
+                    k,
+                    v
+                )
+
         if object_filters.in_list is not None:
             for k, v in object_filters.in_list.items():
                 search_field = self._field_or_keyword(object_type, k)
@@ -395,9 +453,12 @@ class ElasticDataSource(
                             'range': {search_field: {op: search_value}}
                         })
                     if op in ['eq']:
-                        query['bool'][elastic_section].append({
-                            'match': {search_field: search_value}
-                        })
+                        query = self._eq_filter(
+                            query,
+                            elastic_section,
+                            search_field,
+                            search_value
+                        )
                     if op in ['contains']:
                         query['bool'][elastic_section].append({
                             'wildcard': {
@@ -529,11 +590,11 @@ class ElasticDataSource(
     def _convert_data_dict_to_data_object(self, type_, id_, data, runtime_data):
         attributes = {
             k: self.__make_dates(type_, k, v) for k, v in data.items()
-            if k in self.attribute_types[type_].keys()
+            if k in self.attribute_types[type_]
         }
         runtime_attributes = {
             k: self.__make_dates(type_, k, v[0]) for k, v in runtime_data.items()
-            if k in self.attribute_types[type_].keys()
+            if k in self.attribute_types[type_]
         }
         to_one = self.__make_to_one_relations(type_, data)
         return self.data_object_factory(
@@ -978,11 +1039,15 @@ class ElasticDataSource(
 
         new_source: DataObject = self.get_one(source.type, source.id)
 
+        local_relation = new_source._to_one_objects.get(relationship_name)
+        if local_relation is None:
+            return None
+
         if self.lazy_fetch:
-            return new_source._to_one_objects.get(relationship_name)
+            return local_relation
 
         target_type = to_one[relationship_name]
-        target_id = new_source._to_one_objects.get(relationship_name).id
+        target_id = local_relation.id
         return self.get_one(target_type, target_id)
 
     def get_to_many_relations(
