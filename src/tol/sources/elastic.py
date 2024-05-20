@@ -42,6 +42,7 @@ def elastic():
                                     'benchling_species': 'species',
                                     'benchling_tolid': 'tolid',
                                     'benchling_specimen': 'specimen',
+                                    'benchling_tissue_prep': 'tissue_prep',
                                     'mlwh_species': 'species',
                                     'mlwh_tolid': 'tolid'}
     rc_sequencing_request.to_many = {
@@ -130,10 +131,12 @@ def elastic():
                              'benchling_tolid': 'tolid'}
     rc_tissue_prep.to_many = {
         'benchling_extractions': 'extraction',
+        'benchling_sequencing_requests': 'sequencing_request',
         'benchling_tissue_preps': 'tissue_prep'
     }
     rc_tissue_prep.foreign_keys = {
         'benchling_extractions': 'benchling_tissue_prep.id',
+        'benchling_sequencing_requests': 'benchling_tissue_prep.id',
         'benchling_tissue_preps': 'benchling_tissue_prep.id'
     }
 
