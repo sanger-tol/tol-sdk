@@ -10,6 +10,7 @@ from typing import Any, Optional
 
 if typing.TYPE_CHECKING:
     from ..datasource_filter import DataSourceFilter
+    from ..session import OperableSession
 
 
 class Aggregator(ABC):
@@ -22,7 +23,8 @@ class Aggregator(ABC):
         self,
         object_type: str,
         aggregations: dict[str, Any],
-        object_filters: Optional[DataSourceFilter] = None
+        object_filters: Optional[DataSourceFilter] = None,
+        session: Optional[OperableSession] = None
     ) -> dict[str, Any]:
         """
         Gets aggregations according to the Elastic aggregation specification

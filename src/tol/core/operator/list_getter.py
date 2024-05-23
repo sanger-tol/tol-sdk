@@ -11,6 +11,7 @@ from typing import Iterable, Optional
 if typing.TYPE_CHECKING:
     from ..data_object import DataObject
     from ..datasource_filter import DataSourceFilter
+    from ..session import OperableSession
 
 
 class ListGetter(ABC):
@@ -22,7 +23,8 @@ class ListGetter(ABC):
     def get_list(
         self,
         object_type: str,
-        object_filters: Optional[DataSourceFilter] = None
+        object_filters: Optional[DataSourceFilter] = None,
+        session: Optional[OperableSession] = None
     ) -> Iterable[DataObject]:
         """
         Gets an Iterable of DataObject instances of the given

@@ -47,7 +47,7 @@ def elastic_datasource(
     )
 
 
-def __get_indices_names() -> None:
+def __get_indices_names() -> list[str]:
     prefix = get_prefix()
     return [
         f'{prefix}-{type_}' for type_ in (
@@ -62,9 +62,22 @@ def create_indices() -> None:
 
     indices = __get_indices_names()
     elastic_ds = elastic_datasource()
+
     elastic_ds.es.indices.create(
         index=indices,
         ignore=[400]
+    )
+
+
+def empty_all_indices() -> None:
+    """Empties all indices of all rows"""
+
+    indices = __get_indices_names()
+    elastic_ds = elastic_datasource()
+
+    elastic_ds.es.delete_by_query(
+        index=indices,
+        body={'query': {'match_all': {}}}
     )
 
 

@@ -14,6 +14,7 @@ from ...core.datasource_error import DataSourceError
 if typing.TYPE_CHECKING:
     from ..data_object import DataObject
     from ..relationship import RelationshipConfig
+    from ..session import OperableSession
 
 
 class Relational(ABC):
@@ -34,7 +35,8 @@ class Relational(ABC):
     def get_to_one_relation(
         self,
         source: DataObject,
-        relationship_name: str
+        relationship_name: str,
+        session: Optional[OperableSession] = None
     ) -> Optional[DataObject]:
         """
         Gets the to-one relation DataObject, given a source DataObject and the
@@ -45,7 +47,8 @@ class Relational(ABC):
     def get_to_many_relations(
         self,
         source: DataObject,
-        relationship_name: str
+        relationship_name: str,
+        session: Optional[OperableSession] = None
     ) -> Iterable[DataObject]:
         """
         Gets the Iterable of to-many relation DataObject instances, given a source
@@ -57,7 +60,8 @@ class Relational(ABC):
         source: DataObject,
         relationship_name: str,
         page: int,
-        page_size: int
+        page_size: int,
+        session: Optional[OperableSession] = None
     ) -> Iterable[DataObject]:
         """
         Slices the `Relational().get_to_many_relations()` `Iterable` into pages.

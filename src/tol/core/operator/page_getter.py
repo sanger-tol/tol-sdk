@@ -11,6 +11,7 @@ from typing import Iterable, Optional, Tuple
 if typing.TYPE_CHECKING:
     from ..data_object import DataObject
     from ..datasource_filter import DataSourceFilter
+    from ..session import OperableSession
 
 
 class PageGetter(ABC):
@@ -25,7 +26,8 @@ class PageGetter(ABC):
         page_number: int,
         page_size: Optional[int] = None,
         object_filters: Optional[DataSourceFilter] = None,
-        sort_by: Optional[str] = None
+        sort_by: Optional[str] = None,
+        session: Optional[OperableSession] = None
     ) -> Tuple[Iterable[DataObject], int]:
         """
         For a specified object_type, of the given page_size

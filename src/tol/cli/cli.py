@@ -239,7 +239,7 @@ def test(ctx, type_):
         docker_compose_entry = f'{service}-python-unit-test'
         command = (
             f'docker compose build {docker_compose_entry} && '
-            f'docker compose --env-file {env_file} run {docker_compose_entry} '
+            f'docker compose --env-file {env_file} run --rm {docker_compose_entry} '
             f'sh -c "[ -d unit ] && pytest -v unit || echo \'No unit tests found\'"'
         )
     if type_ == 'system':
@@ -250,8 +250,8 @@ def test(ctx, type_):
             f'docker compose build {docker_compose_entry} && '
             f'docker compose --env-file {env_file} up -d {db_entry} && '
             f'UUID_PREFIX={uuid_prefix} docker compose --env-file {env_file} '
-            f'run --build {docker_compose_entry} '
-            f'sh -c "[ -d system ] && pytest -v system || echo \'No system tests found\'"'
+            f'run --rm --build {docker_compose_entry} '
+            f'sh -c "[ -d system ] && pytest -vvvx system || echo \'No system tests found\'"'
         )
     if type_ == 'integration':
         click.echo('Integration tests are not supported at this time.')

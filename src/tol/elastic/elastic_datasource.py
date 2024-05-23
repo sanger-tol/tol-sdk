@@ -183,7 +183,8 @@ class ElasticDataSource(
         objects: Iterable[DataObject],
         chunk_size: int = 100,
         id_func=lambda x: x.id,
-        field_prefix: str = ''
+        field_prefix: str = '',
+        **kwargs
     ) -> None:
         index = self.__get_index(object_type)
         (no_of_operations, no_of_errors) = \
@@ -203,7 +204,8 @@ class ElasticDataSource(
         object_type: str,
         updates: Iterable[DataObjectUpdate],
         field_prefix: str = '',
-        candidate_key: Iterable[str] = []
+        candidate_key: Iterable[str] = [],
+        **kwargs
     ) -> None:
 
         # This tries to find an object in the DataSource that matches
@@ -652,10 +654,11 @@ class ElasticDataSource(
         return value
 
     def get_aggregations(
-            self,
-            object_type: str,
-            aggregations: Dict,
-            object_filters: DataSourceFilter = None,
+        self,
+        object_type: str,
+        aggregations: Dict,
+        object_filters: DataSourceFilter = None,
+        **kwargs
     ) -> Dict:
         index = self.__get_index(object_type)
         query = self._build_elasticsearch_query(object_type, object_filters)
@@ -679,6 +682,7 @@ class ElasticDataSource(
         stats_fields: List[str] = [],
         stats: List[str] = [],
         object_filters: DataSourceFilter = None,
+        **kwargs
     ):
         aggs = self.__get_aggs(
             object_type=object_type,
@@ -722,6 +726,7 @@ class ElasticDataSource(
         stats_fields: List[str] = [],
         stats: List[str] = [],
         object_filters: DataSourceFilter = None,
+        **kwargs
     ) -> dict[Any, int]:
         after_key = None
         while True:
@@ -955,7 +960,8 @@ class ElasticDataSource(
     def get_count(
         self,
         object_type: str,
-        object_filters: DataSourceFilter = None
+        object_filters: DataSourceFilter = None,
+        **kwargs
     ) -> int:
         index = self.__get_index(object_type)
         query = self._build_elasticsearch_query(object_type, object_filters)
@@ -1024,7 +1030,8 @@ class ElasticDataSource(
     def get_to_one_relation(
         self,
         source: DataObject,
-        relationship_name: str
+        relationship_name: str,
+        **kwargs
     ) -> Optional[DataObject]:
 
         self.__validate_to_one_relation(source)
@@ -1053,7 +1060,8 @@ class ElasticDataSource(
     def get_to_many_relations(
         self,
         source: DataObject,
-        relationship_name: str
+        relationship_name: str,
+        **kwargs
     ) -> Iterable[DataObject]:
         if self.relationship_config is None:
             raise DataSourceError('There are no relationships defined')

@@ -4,8 +4,12 @@
 
 from __future__ import annotations
 
+import typing
 from abc import ABC, abstractmethod
-from typing import Any, Iterable
+from typing import Any, Iterable, Optional
+
+if typing.TYPE_CHECKING:
+    from ..session import OperableSession
 
 
 DataObjectUpdate = tuple[str, dict[str, Any]]
@@ -21,6 +25,7 @@ class Updater(ABC):
         self,
         object_type: str,
         updates: Iterable[DataObjectUpdate],
+        session: Optional[OperableSession] = None,
         **kwargs
     ) -> None:
         """

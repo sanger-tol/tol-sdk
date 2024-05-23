@@ -6,6 +6,7 @@ from typing import Union
 
 from .aggregator import Aggregator
 from .counter import Counter
+from .declare import get_operator_member_names  # noqa
 from .deleter import Deleter
 from .detail_getter import DetailGetter
 from .enum import OperatorMethod  # noqa
@@ -20,6 +21,25 @@ from .updater import Updater
 from .upserter import Upserter
 
 
+ALL_OPERATORS = (
+    Aggregator,
+    Counter,
+    Deleter,
+    DetailGetter,
+    GroupStatter,
+    Inserter,
+    ListGetter,
+    PageGetter,
+    Relational,
+    Statter,
+    Updater,
+    Upserter,
+)
+
+
+# TODO - deduplicate using python 3.11
+#
+# Operator = Union[*ALL_OPERATORS]
 Operator = Union[
     Aggregator,
     Counter,

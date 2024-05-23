@@ -4,8 +4,12 @@
 
 from __future__ import annotations
 
+import typing
 from abc import ABC, abstractmethod
-from typing import Iterable
+from typing import Iterable, Optional
+
+if typing.TYPE_CHECKING:
+    from ..session import OperableSession
 
 
 class Deleter(ABC):
@@ -17,7 +21,8 @@ class Deleter(ABC):
     def delete(
         self,
         object_type: str,
-        object_ids: Iterable[str]
+        object_ids: Iterable[str],
+        session: Optional[OperableSession] = None
     ) -> None:
         """
         Takes a type, and the IDs of the `DataObject` to delete

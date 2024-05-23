@@ -12,6 +12,7 @@ from ..services.util import (
     create_indices,
     delete_indices,
     elastic_datasource,
+    empty_all_indices,
     upsert_archetypes
 )
 
@@ -20,6 +21,9 @@ class ElasticFixture(DataSourceFixture):
     """A `DataSourceFixture` for `ElasticDataSource`"""
 
     def __init__(self) -> None:
+        # prevent race condition with the
+        # `api -> elastic` fixture/container
+        time.sleep(5)
         create_indices()
         upsert_archetypes()
 
@@ -33,13 +37,14 @@ class ElasticFixture(DataSourceFixture):
         return elastic_ds
 
     def after_test(self) -> None:
-        delete_indices()
+        empty_all_indices()
 
     def teardown(self) -> None:
         delete_indices()
 
     def before_test(self) -> None:
-        create_indices()
+        # prevent race condition with previous test
+        time.sleep(5)
         upsert_archetypes()
 
     def sleep(self, time_: float) -> None:

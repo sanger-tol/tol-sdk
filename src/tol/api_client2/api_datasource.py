@@ -2,6 +2,9 @@
 #
 # SPDX-License-Identifier: MIT
 
+from __future__ import annotations
+
+import typing
 from functools import cache
 from itertools import chain
 from typing import Callable, Iterable, List, Optional
@@ -26,6 +29,9 @@ from ..core.operator import (
     Upserter
 )
 from ..core.relationship import RelationshipConfig
+
+if typing.TYPE_CHECKING:
+    from ..core.session import OperableSession
 
 
 ClientFactory = Callable[[], JsonApiClient]
@@ -100,7 +106,8 @@ class ApiDataSource(
     def get_by_id(
         self,
         object_type: str,
-        object_ids: Iterable[str]
+        object_ids: Iterable[str],
+        session: Optional[OperableSession] = None
     ) -> Iterable[Optional[DataObject]]:
 
         client = self.__client_factory()
@@ -122,7 +129,8 @@ class ApiDataSource(
         page_number: int,
         page_size: Optional[int] = None,
         object_filters: Optional[DataSourceFilter] = None,
-        sort_by: Optional[str] = None
+        sort_by: Optional[str] = None,
+        session: Optional[OperableSession] = None
     ) -> tuple[Iterable[DataObject], int]:
 
         filter_string = self.__get_filter_string(object_filters)
@@ -139,7 +147,8 @@ class ApiDataSource(
     def get_list(
         self,
         object_type: str,
-        object_filters: Optional[DataSourceFilter] = None
+        object_filters: Optional[DataSourceFilter] = None,
+        session: Optional[OperableSession] = None
     ) -> Iterable[DataObject]:
 
         page = 1
@@ -166,7 +175,8 @@ class ApiDataSource(
     def get_count(
         self,
         object_type: str,
-        object_filters: Optional[DataSourceFilter] = None
+        object_filters: Optional[DataSourceFilter] = None,
+        session: Optional[OperableSession] = None
     ) -> int:
         filter_string = self.__get_filter_string(object_filters)
         transfer = self.__client_factory().get_count(
@@ -181,7 +191,8 @@ class ApiDataSource(
         object_type: str,
         stats: Optional[List[str]] = [],
         stats_fields: Optional[List[str]] = [],
-        object_filters: Optional[DataSourceFilter] = None
+        object_filters: Optional[DataSourceFilter] = None,
+        session: Optional[OperableSession] = None
     ) -> tuple[Iterable[DataObject], int]:
 
         filter_string = self.__get_filter_string(object_filters)
@@ -197,7 +208,8 @@ class ApiDataSource(
     def delete(
         self,
         object_type: str,
-        object_ids: Iterable[str]
+        object_ids: Iterable[str],
+        session: Optional[OperableSession] = None
     ) -> None:
 
         client = self.__client_factory()
@@ -209,6 +221,7 @@ class ApiDataSource(
         self,
         object_type: str,
         objects: Iterable[DataObject],
+        session: Optional[OperableSession] = None,
         **kwargs
     ) -> None:
         transfer = self.__dc_factory().convert_list(
@@ -221,7 +234,8 @@ class ApiDataSource(
     def get_recursive_relation(
         self,
         source: DataObject,
-        relationship_hops: list[str]
+        relationship_hops: list[str],
+        session: Optional[OperableSession] = None
     ) -> Optional[DataObject]:
 
         self.validate_to_one_recurse(source.type, relationship_hops)
@@ -239,7 +253,8 @@ class ApiDataSource(
     def get_to_one_relation(
         self,
         source: DataObject,
-        relationship_name: str
+        relationship_name: str,
+        session: Optional[OperableSession] = None
     ) -> Optional[DataObject]:
 
         return self.get_recursive_relation(
@@ -254,7 +269,8 @@ class ApiDataSource(
         source: DataObject,
         relationship_name: str,
         page: int,
-        page_size: int
+        page_size: int,
+        session: Optional[OperableSession] = None
     ) -> Iterable[DataObject]:
 
         transfer = self.__client_factory().get_to_many_relations_page(
@@ -271,7 +287,8 @@ class ApiDataSource(
     def get_to_many_relations(
         self,
         source: DataObject,
-        relationship_name: str
+        relationship_name: str,
+        session: Optional[OperableSession] = None
     ) -> Iterable[DataObject]:
 
         page_number = 1
