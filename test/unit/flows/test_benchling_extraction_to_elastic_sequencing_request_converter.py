@@ -65,25 +65,27 @@ class TestBenchlingExtractionToElasticSequencingRequestConverter(TestCase):
         converteds = converter.convert(obj1)
         ret1 = next(converteds)
         self.assertEqual(obj1.id, ret1.id)
-        self.assertEqual(obj1.type, ret1.type)
+        self.assertEqual('sequencing_request', ret1.type)
         self.assertEqual(ret1.attributes, {
             'sample': {'id': 'sts_id_1'},
             'species': {'id': 'taxon_id_1'},
             'specimen': {'id': 'specimen_id_1'},
             'tolid': {'id': 'programme_id_1'},
             'tissue_prep': {'id': 'tissue_prep_id_1'},
-            'extraction': {'id': obj1.id}
+            'extraction': {'id': obj1.id},
+            'sequencing_platform': 'pacbio'
         })
 
         converteds = converter.convert(obj2)
         ret2 = next(converteds)
         self.assertEqual(obj2.id, ret2.id)
-        self.assertEqual(obj2.type, ret2.type)
+        self.assertEqual('sequencing_request', ret2.type)
         self.assertEqual(ret2.attributes, {
             'sample': {'id': 'sts_id_2'},
             'species': {'id': 'taxon_id_2'},
             'specimen': {'id': 'specimen_id_2'},
             'tolid': {'id': None},
             'tissue_prep': {'id': 'tissue_prep_id_2'},
-            'extraction': {'id': obj2.id}
+            'extraction': {'id': obj2.id},
+            'sequencing_platform': 'pacbio'
         })

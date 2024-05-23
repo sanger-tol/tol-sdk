@@ -15,7 +15,7 @@ class BenchlingExtractionToElasticSequencingRequestConverter(
     def convert(self, data_object: DataObject) -> Iterable[DataObject]:
         if data_object.sts_id is not None:
             ret = self._data_object_factory(
-                'extraction',
+                'sequencing_request',
                 data_object.id,
                 attributes={
                     'extraction': {'id': data_object.id},
@@ -23,6 +23,7 @@ class BenchlingExtractionToElasticSequencingRequestConverter(
                     'species': {'id': data_object.taxon_id},
                     'specimen': {'id': data_object.specimen_id},
                     'tolid': {'id': data_object.programme_id},
-                    'tissue_prep': {'id': data_object.eln_tissue_prep_id}
+                    'tissue_prep': {'id': data_object.eln_tissue_prep_id},
+                    'sequencing_platform': 'pacbio'
                 })
             yield ret
