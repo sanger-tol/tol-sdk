@@ -8,6 +8,8 @@ import typing
 from abc import ABC, abstractmethod
 from typing import Any, Callable, Dict, List, Optional, Tuple, TypeVar
 
+from cachetools.func import ttl_cache
+
 from .attribute_metadata import (
     AttributeMetadata,
     DefaultAttributeMetadata
@@ -104,6 +106,7 @@ class DataSource(ABC):
         return {}
 
     @property
+    @ttl_cache(ttl=86400)
     def attribute_metadata(self) -> dict[str, dict[str, dict[str, Optional[str | bool]]]]:
         """
         Information about the attributes:
