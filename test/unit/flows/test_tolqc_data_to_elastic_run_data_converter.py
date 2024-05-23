@@ -186,7 +186,7 @@ class TestTolqcDataToElasticRunDataConverter(TestCase):
         obj1 = CoreDataObject(
             id_='data1_id',
             type_='data',
-            attributes={'name_root': 'id1',
+            attributes={'name': 'id1',
                         'tag_index': 'data1_tag_index',
                         'lims_qc': 'data1_manual_qc'}
         )

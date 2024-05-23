@@ -50,7 +50,7 @@ class TolqcDataToElasticRunDataConverter(DataObjectToDataObjectOrUpdateConverter
 
         ret = self._data_object_factory(
             'run_data',
-            data_object.name_root,
+            data_object.name,
             attributes=target_attributes
         )
         return iter([ret])
