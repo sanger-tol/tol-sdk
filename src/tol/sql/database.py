@@ -19,7 +19,12 @@ class Database(ABC):
     """Encapsulates basic operations on a Database"""
 
     @abstractmethod
-    def get_by_id(self, tablename: str, instance_id: Any) -> Optional[Model]:
+    def get_by_id(
+        self,
+        tablename: str,
+        instance_id: Any,
+        in_session: Optional[Session] = None
+    ) -> Optional[Model]:
         """
         Gets a single instance by its instance-ID, or None if not found.
 
@@ -34,7 +39,8 @@ class Database(ABC):
         filters: Optional[DatabaseFilter] = None,
         sort_by: Optional[DatabaseSorter] = None,
         offset: Optional[int] = None,
-        limit: Optional[int] = None
+        limit: Optional[int] = None,
+        in_session: Optional[Session] = None
     ) -> Iterable[Model]:
         """
         Returns an Iterable of `Model` instances according
@@ -45,7 +51,8 @@ class Database(ABC):
     def count(
         self,
         tablename: str,
-        filters: Optional[DatabaseFilter] = None
+        filters: Optional[DatabaseFilter] = None,
+        in_session: Optional[Session] = None
     ) -> int:
         """
         Counts the total number of `Model` instances of the given
@@ -57,7 +64,8 @@ class Database(ABC):
         self,
         tablename: str,
         instance_id: Any,
-        user_id: Optional[str] = None
+        user_id: Optional[str] = None,
+        in_session: Optional[Session] = None
     ) -> None:
         """
         Deletes the `Model` instance of specified tablename and
@@ -68,7 +76,8 @@ class Database(ABC):
     def upsert(
         self,
         instance: Model,
-        user_id: Optional[str] = None
+        user_id: Optional[str] = None,
+        in_session: Optional[Session] = None
     ) -> None:
         """Performs an "upsert" on the given `Model` instance."""
 
@@ -77,7 +86,8 @@ class Database(ABC):
         self,
         tablename: str,
         instance_id: str,
-        relationship_name: str
+        relationship_name: str,
+        in_session: Optional[Session] = None
     ) -> Optional[Model]:
         """
         For the instance of given tablename and ID, gets the to-one
@@ -89,7 +99,8 @@ class Database(ABC):
         self,
         tablename: str,
         instance_id: str,
-        relationship_name: str
+        relationship_name: str,
+        in_session: Optional[Session] = None
     ) -> Iterable[Model]:
         """
         For the instance of given tablename and ID, gets the to-many
@@ -102,6 +113,13 @@ class Database(ABC):
         """
         The mapping of attribute name to type for each model under
         this `Database` instance.
+        """
+
+    @property
+    @abstractmethod
+    def session_factory(self) -> SessionFactory:
+        """
+        Returns a `Callable` that returns a `Session` instance.
         """
 
 
@@ -118,9 +136,24 @@ class DefaultDatabase(Database):
         self.__tablename_model_dict = self.__get_tablename_model_dict(models)
         self.__attribute_types = self.__get_attribute_types()
 
-    def get_by_id(self, tablename: str, instance_id: Any) -> Optional[Model]:
-        result, session = self.__get_instance_by_id(tablename, instance_id)
-        session.close()
+    @property
+    def session_factory(self) -> SessionFactory:
+        return self.__session_factory
+
+    def get_by_id(
+        self,
+        tablename: str,
+        instance_id: Any,
+        in_session: Optional[Session] = None
+    ) -> Optional[Model]:
+
+        result, session = self.__get_instance_by_id(
+            tablename,
+            instance_id,
+            in_session
+        )
+        if in_session is None:
+            session.close()
         return result
 
     def get_page(
@@ -129,39 +162,48 @@ class DefaultDatabase(Database):
         filters: Optional[DatabaseFilter] = None,
         sort_by: Optional[DatabaseSorter] = None,
         offset: Optional[int] = None,
-        limit: Optional[int] = None
+        limit: Optional[int] = None,
+        in_session: Optional[Session] = None
     ) -> Iterable[Model]:
 
-        _, session, query = self.__get_model_session_query(tablename)
+        _, session, query = self.__get_model_session_query(tablename, in_session)
         if filters is not None:
             query = filters.filter(query, tablename, self.__tablename_model_dict)
         if sort_by is not None:
             query = sort_by.sort(query, tablename, self.__tablename_model_dict)
         query = query.limit(limit).offset(offset)
         results = query.all()
-        session.close()
+        if in_session is None:
+            session.close()
         return results
 
     def count(
         self,
         tablename: str,
-        filters: Optional[DatabaseFilter] = None
+        filters: Optional[DatabaseFilter] = None,
+        in_session: Optional[Session] = None
     ) -> int:
 
-        _, session, query = self.__get_model_session_query(tablename)
+        _, session, query = self.__get_model_session_query(tablename, in_session)
         if filters is not None:
             query = filters.filter(query, tablename, self.__tablename_model_dict)
         count = query.count()
-        session.close()
+        if in_session is None:
+            session.close()
         return count
 
     def delete(
         self,
         tablename: str,
         instance_id: Any,
-        user_id: Optional[str] = None
+        user_id: Optional[str] = None,
+        in_session: Optional[Session] = None
     ) -> None:
-        instance, session = self.__get_instance_by_id(tablename, instance_id)
+        instance, session = self.__get_instance_by_id(
+            tablename,
+            instance_id,
+            in_session
+        )
         session.delete(instance)
         self.__commit_session(
             session,
@@ -170,43 +212,63 @@ class DefaultDatabase(Database):
             user_id=user_id,
             is_delete=True
         )
+        if in_session is None:
+            session.close()
 
     def upsert(
         self,
         instance: Model,
-        user_id: Optional[str] = None
+        user_id: Optional[str] = None,
+        in_session: Optional[Session] = None
     ) -> None:
 
-        session = self.__upsert_to_session(instance)
+        session = self.__upsert_to_session(
+            instance,
+            in_session
+        )
         self.__commit_session(
             session,
             instance,
             'upserting',
             user_id=user_id
         )
+        if in_session is None:
+            session.close()
 
     def get_to_one_relation(
         self,
         tablename: str,
         instance_id: str,
-        relationship_name: str
+        relationship_name: str,
+        in_session: Optional[Session] = None
     ) -> Optional[Model]:
 
-        instance, session = self.__get_instance_by_id(tablename, instance_id)
+        instance, session = self.__get_instance_by_id(
+            tablename,
+            instance_id,
+            in_session
+        )
         result = instance.instance_to_one_relations[relationship_name]
-        session.close()
+        if in_session is None:
+            session.close()
         return result
 
     def get_to_many_relations(
         self,
         tablename: str,
         instance_id: str,
-        relationship_name: str
+        relationship_name: str,
+        in_session: Optional[Session] = None
     ) -> Iterable[Model]:
 
-        instance, session = self.__get_instance_by_id(tablename, instance_id)
+        instance, session = self.__get_instance_by_id(
+            tablename,
+            instance_id,
+            in_session
+        )
         result = instance.instance_to_many_relations[relationship_name]
-        session.close()
+        if in_session is None:
+            session.close()
         return result
 
     @property
@@ -221,11 +283,16 @@ class DefaultDatabase(Database):
 
     def __get_model_session_query(
         self,
-        tablename: str
+        tablename: str,
+        in_session: Optional[Session]
     ) -> Tuple[Type[Model], Session, Query]:
 
         model = self.__tablename_model_dict[tablename]
-        session = self.__session_factory()
+        session = (
+            self.__session_factory()
+            if in_session is None
+            else in_session
+        )
         query = session.query(model)
         return model, session, query
 
@@ -244,8 +311,7 @@ class DefaultDatabase(Database):
             session.commit()
         except IntegrityError:
             self.__raise_integrity_error(instance, operation)
-        finally:
-            session.close()
+            session.rollback()
 
     def __before_commit(
         self,
@@ -259,14 +325,14 @@ class DefaultDatabase(Database):
     def __get_instance_by_id(
         self,
         tablename: str,
-        instance_id: str
+        instance_id: str,
+        in_session: Optional[Session]
     ) -> Tuple[Optional[Model], Session]:
         """
-        Gets an instance by its tablename and id. Returns a session object that
-        must be manually closed.
+        Gets an instance by its tablename and id.
         """
 
-        model, session, query = self.__get_model_session_query(tablename)
+        model, session, query = self.__get_model_session_query(tablename, in_session)
         id_column = getattr(model, model.get_id_column_name())
         result = query.filter(id_column == instance_id).one_or_none()
         return result, session
@@ -280,10 +346,15 @@ class DefaultDatabase(Database):
             m.get_table_name(): m for m in models
         }
 
-    def __upsert_to_session(self, instance: Model) -> Session:
+    def __upsert_to_session(
+        self,
+        instance: Model,
+        in_session: Optional[Session]
+    ) -> Session:
         old_instance, session = self.__get_instance_by_id(
             instance.get_table_name(),
-            instance.instance_id
+            instance.instance_id,
+            in_session
         )
         if old_instance is None:
             session.add(instance)

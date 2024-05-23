@@ -10,6 +10,7 @@ from typing import Iterable, Optional
 
 if typing.TYPE_CHECKING:
     from ..data_object import DataObject
+    from ..session import OperableSession
 
 from more_itertools import chunked
 
@@ -24,7 +25,8 @@ class DetailGetter(ABC):
     def get_by_ids(
         self,
         object_type: str,
-        object_ids: Iterable[str]
+        object_ids: Iterable[str],
+        session: Optional[OperableSession] = None
     ) -> Iterable[Optional[DataObject]]:
         """
         Gets an Iterable of DataObject instances, of specified object_type,
@@ -40,7 +42,8 @@ class DetailGetter(ABC):
     def get_by_id(
         self,
         object_type: str,
-        object_ids: Iterable[str]
+        object_ids: Iterable[str],
+        session: Optional[OperableSession] = None
     ) -> Iterable[Optional[DataObject]]:
         """
         Gets an Iterable of DataObject instances, of specified object_type,
@@ -51,7 +54,8 @@ class DetailGetter(ABC):
     def get_one(
         self,
         object_type: str,
-        object_id: str
+        object_id: str,
+        session: Optional[OperableSession] = None
     ) -> Optional[DataObject]:
         """
         Gets the individual `DataObject` instance, of specified object_type

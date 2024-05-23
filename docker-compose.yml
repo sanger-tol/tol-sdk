@@ -21,7 +21,7 @@ services:
     
   tol-sdk-python-system-test:
     build: .
-    command: pytest -v system
+    command: pytest -vvvx system
     environment:
       - DB_URI=postgresql://test-user:test-password@tol-sdk-python-db:5432/test-db
       - GOOGLE_CLIENT_SECRETS

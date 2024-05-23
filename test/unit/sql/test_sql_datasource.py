@@ -141,12 +141,16 @@ class TestSqlDataSource:
                 raise NotImplementedError()
 
         class _SingleRowDatabase:
-            def get_by_id(self, tablename: str, id_: Any) -> Optional[Model]:
+            def get_by_id(self, tablename: str, id_: Any, **kwargs) -> Optional[Model]:
                 return _MockModel() if id_ != '404' else None
 
             @property
             def attribute_types(self):
                 return {}
+
+            @property
+            def session_factory(self):
+                return MagicMock()
 
         ds = SqlDataSource(
             _SingleRowDatabase(),
@@ -232,7 +236,8 @@ class TestSqlDataSource:
                 filters: Optional[DataSourceFilter] = None,
                 sort_by: Optional[str] = None,
                 offset: Optional[int] = None,
-                limit: Optional[int] = None
+                limit: Optional[int] = None,
+                **kwargs
             ) -> Iterable[Model]:
 
                 return (
@@ -241,13 +246,18 @@ class TestSqlDataSource:
                 )
 
             @property
+            def session_factory(self):
+                return MagicMock()
+
+            @property
             def attribute_types(self):
                 return {}
 
             def count(
                 self,
                 tablename: str,
-                filters: Optional[DataSourceFilter] = None
+                filters: Optional[DataSourceFilter] = None,
+                **kwargs
             ) -> int:
                 return 10001
 
@@ -293,9 +303,14 @@ class TestSqlDataSource:
             def count(
                 self,
                 tablename: str,
-                filters: Optional[DatabaseFilter] = None
+                filters: Optional[DatabaseFilter] = None,
+                **kwargs
             ) -> int:
                 return self.__get_count
+
+            @property
+            def session_factory(self):
+                return MagicMock()
 
         mock_db = _MockDatabase()
 
@@ -331,13 +346,18 @@ class TestSqlDataSource:
             def get_count(self) -> int:
                 return self.__get_count
 
+            @property
+            def session_factory(self):
+                return MagicMock()
+
             def get_page(
                 self,
                 tablename: str,
                 filters: Optional[DatabaseFilter] = None,
                 sort_by: Optional[str] = None,
                 offset: Optional[int] = None,
-                limit: Optional[int] = None
+                limit: Optional[int] = None,
+                **kwargs
             ):
                 # increment the get count
                 self.__get_count += 1
@@ -380,6 +400,10 @@ class TestSqlDataSource:
                 self.__get_count = 0
 
             @property
+            def session_factory(self):
+                return MagicMock()
+
+            @property
             def attribute_types(self):
                 return {}
 
@@ -389,7 +413,8 @@ class TestSqlDataSource:
                 filters: Optional[DatabaseFilter] = None,
                 sort_by: Optional[str] = None,
                 offset: Optional[int] = None,
-                limit: Optional[int] = None
+                limit: Optional[int] = None,
+                **kwargs
             ):
                 if self.__get_count > 4:
                     return []
@@ -418,12 +443,16 @@ class TestSqlDataSource:
         """no to-one relation of given key -> return None"""
 
         class _MockDatabase:
-            def get_to_one_relation(self, *args):
+            def get_to_one_relation(self, *args, **kwargs):
                 return None
 
             @property
             def attribute_types(self):
                 return {}
+
+            @property
+            def session_factory(self):
+                return MagicMock()
 
         mock_db = _MockDatabase()
 
@@ -451,12 +480,16 @@ class TestSqlDataSource:
         """relation of given key exists -> convert and return"""
 
         class _MockDatabase:
-            def get_to_one_relation(self, *args):
+            def get_to_one_relation(self, *args, **kwargs):
                 return 'I found one!!!!'
 
             @property
             def attribute_types(self):
                 return {}
+
+            @property
+            def session_factory(self):
+                return MagicMock()
 
         mock_db = _MockDatabase()
 
@@ -484,11 +517,17 @@ class TestSqlDataSource:
         """no to-many relations of given key -> return empty"""
 
         class _MockDatabase:
+
+            @property
+            def session_factory(self):
+                return MagicMock()
+
             def get_to_many_relations(
                 self,
                 tablename: str,
                 instance_id: str,
-                relationship_name: str
+                relationship_name: str,
+                **kwargs
             ):
                 assert tablename == 'test'
                 assert instance_id == 'lol'
@@ -532,13 +571,18 @@ class TestSqlDataSource:
                 self,
                 tablename: str,
                 instance_id: str,
-                relationship_name: str
+                relationship_name: str,
+                **kwargs
             ):
                 assert tablename == 'test'
                 assert instance_id == 'lol'
                 assert relationship_name == 'no_matter'
 
                 return inputs
+
+            @property
+            def session_factory(self):
+                return MagicMock()
 
             @property
             def attribute_types(self):
@@ -570,7 +614,11 @@ class TestSqlDataSource:
         `SqlDataSource().delete()` calls `Database().delete()` correctly
         """
 
+        mock_sess_factory = MagicMock()
+        mock_sess_factory.return_value = 'hi'
+
         mock_db = MagicMock()
+
         ds = SqlDataSource(
             mock_db,
             {'tests': 'mapped_tablename'},
@@ -583,7 +631,7 @@ class TestSqlDataSource:
         ds.delete('tests', list(ascii_uppercase))
 
         assert mock_db.delete.call_args_list == [
-            call('mapped_tablename', c, user_id=None) for c in ascii_uppercase
+            call('mapped_tablename', c, user_id=None, in_session=None) for c in ascii_uppercase
         ]
 
     def test_upsert(self):
@@ -592,7 +640,12 @@ class TestSqlDataSource:
         `BackConverter().convert() correctly`
         """
 
+        mock_sess_factory = MagicMock()
+        mock_sess_factory.return_value = 'hi'
+
         mock_db = MagicMock()
+        mock_db.session_factory = mock_sess_factory
+
         mock_model = MagicMock()
         mock_model.get_table_name.return_value = 'test'
         mock_back_converter = MagicMock()
@@ -608,7 +661,7 @@ class TestSqlDataSource:
             MagicMock()
         )
         ds.upsert('tests', mock_object)
-        mock_db.upsert.assert_called_once_with(mock_model, user_id=None)
+        mock_db.upsert.assert_called_once_with(mock_model, user_id=None, in_session=None)
 
     def test_get_attribute_types(self):
         """
@@ -657,7 +710,11 @@ class TestSqlDataSource:
     def test_user_id_delete(self):
         """user_id is set on delete"""
 
-        mock_db = Mock()
+        mock_sess_factory = MagicMock()
+        mock_sess_factory.return_value = 'hi'
+
+        mock_db = MagicMock()
+        mock_db.session_factory = mock_sess_factory
         type(mock_db).attribute_types = PropertyMock(
             return_value={'test': {}}
         )
@@ -680,13 +737,18 @@ class TestSqlDataSource:
         mock_db.delete.assert_called_once_with(
             'test',
             'test_ID',
-            user_id='a user ID'
+            user_id='a user ID',
+            in_session=None
         )
 
     def test_user_id_upsert(self):
         """user_id is set on upsert"""
 
-        mock_db = Mock()
+        mock_sess_factory = MagicMock()
+        mock_sess_factory.return_value = 'hi'
+
+        mock_db = MagicMock()
+        mock_db.session_factory = mock_sess_factory
         type(mock_db).attribute_types = PropertyMock(
             return_value={'test': {}}
         )
@@ -715,7 +777,8 @@ class TestSqlDataSource:
 
         mock_db.upsert.assert_called_once_with(
             mock_model_instance,
-            user_id='a user ID'
+            user_id='a user ID',
+            in_session=None
         )
 
     def __get_mock_data_object(self, type_: str, id_: str) -> MagicMock:

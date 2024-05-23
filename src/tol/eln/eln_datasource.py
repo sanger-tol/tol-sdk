@@ -83,7 +83,7 @@ class ElnDataSource(DataSource):
         except BenchlingError as error:
             raise Exception(400, error.json['error']['message'])
 
-    def update(self, entities, mapping_name):
+    def update(self, entities, mapping_name, **kwargs):
         mapping = self.entities[mapping_name]
         id_field = mapping['id_field']
         request = []

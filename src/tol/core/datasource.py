@@ -4,6 +4,7 @@
 
 from __future__ import annotations
 
+import typing
 from abc import ABC, abstractmethod
 from typing import Any, Callable, Dict, List, Optional, Tuple, TypeVar
 
@@ -15,6 +16,10 @@ from .data_object import DataDict
 from .datasource_error import DataSourceError, NoDataObjectFactoryError
 from .factory import DataObjectFactory
 from .operator import Operator
+from .session import DataSourceSession
+
+if typing.TYPE_CHECKING:
+    from .session import OperableSession
 
 
 DataId = str
@@ -50,6 +55,14 @@ class DataSource(ABC):
         This can either be a static list, or dynamically generated.
         """
 
+    def get_session(self) -> OperableSession:
+        """
+        Gets a `DataSourceSession` instance. This behaviour is
+        `DataSource`-specific, and may be overriden.
+        """
+
+        return DataSourceSession(self)
+
     def __validate_config(
         self,
         config: DataSourceConfig,
@@ -75,7 +88,7 @@ class DataSource(ABC):
         The types (str, int, etc) of the attributes of an object_type.
 
         This can either be a static list, or dynamically generated.
-v        """
+        """
 
         return self.attribute_types[object_type]
 

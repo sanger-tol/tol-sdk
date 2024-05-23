@@ -6,10 +6,11 @@ from __future__ import annotations
 
 import typing
 from abc import ABC, abstractmethod
-from typing import Iterable
+from typing import Iterable, Optional
 
 if typing.TYPE_CHECKING:
     from ..data_object import DataObject
+    from ..session import OperableSession
 
 
 class Upserter(ABC):
@@ -21,7 +22,8 @@ class Upserter(ABC):
     def upsert(
         self,
         object_type: str,
-        objects: Iterable[DataObject]
+        objects: Iterable[DataObject],
+        session: Optional[OperableSession] = None
     ) -> None:
         """
         Takes a type and an `Iterable` of `DataObject` instances, on
