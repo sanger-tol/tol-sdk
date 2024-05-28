@@ -39,40 +39,46 @@ class TestLrpacbioSequencingRequestToElasticSequencingRequestConverter(TestCase)
             id_='sequencing_request_id1',
             type_='sequencing_request',
             attributes={'library_remaining': 'No Library Type Matched',
-                        'library_remaining_oplc': 'Check Library Type'}
+                        'library_remaining_oplc': 'Check Library Type',
+                        'estimated_max_oplc': 0}
         )
 
         obj2 = CoreDataObject(
             id_='sequencing_request_id2',
             type_='sequencing_request',
             attributes={'library_remaining': '-2',
-                        'library_remaining_oplc': '-24'}
+                        'library_remaining_oplc': '-24',
+                        'estimated_max_oplc': 10}
         )
 
         obj3 = CoreDataObject(
             id_='sequencing_request_id3',
             type_='sequencing_request',
             attributes={'library_remaining': '4',
-                        'library_remaining_oplc': '6'}
+                        'library_remaining_oplc': '6',
+                        'estimated_max_oplc': -10}
         )
 
         converteds = converter.convert(obj1)
         ret1 = next(converteds)
         self.assertEqual(ret1.attributes, {
             'library_remaining': None,
-            'library_remaining_oplc': None
+            'library_remaining_oplc': None,
+            'estimated_max_oplc': 0
         })
 
         converteds = converter.convert(obj2)
         ret2 = next(converteds)
         self.assertEqual(ret2.attributes, {
             'library_remaining': 0.0,
-            'library_remaining_oplc': 0.0
+            'library_remaining_oplc': 0.0,
+            'estimated_max_oplc': 10
         })
 
         converteds = converter.convert(obj3)
         ret3 = next(converteds)
         self.assertEqual(ret3.attributes, {
             'library_remaining': 4.0,
-            'library_remaining_oplc': 6.0
+            'library_remaining_oplc': 6.0,
+            'estimated_max_oplc': 0
         })

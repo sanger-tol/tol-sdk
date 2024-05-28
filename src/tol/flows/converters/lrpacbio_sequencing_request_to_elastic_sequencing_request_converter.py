@@ -25,7 +25,7 @@ class LrpacbioSequencingRequestToElasticSequencingRequestConverter(
     def convert(self, data_object: DataObject) -> Iterable[DataObject]:
         target_attributes = {}
 
-        for field in ['library_remaining', 'library_remaining_oplc']:
+        for field in ['library_remaining', 'library_remaining_oplc', 'estimated_max_oplc']:
             if (field in data_object.attributes
                     and data_object.attributes[field] is not None):
                 target_attributes[field] = self._clean_attribute(
