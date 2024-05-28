@@ -152,6 +152,7 @@ class ApiDataSource(
     ) -> Iterable[DataObject]:
 
         page = 1
+        page_size = self.get_page_size()
         client = self.__client_factory()
         jc_converter = self.__jc_factory()
         filter_string = self.__get_filter_string(object_filters)
@@ -160,15 +161,15 @@ class ApiDataSource(
             transfer = client.get_list_page(
                 object_type,
                 page,
-                self.get_page_size(),
+                page_size,
                 filter_string=filter_string
             )
             (results_page, _) = jc_converter.convert_list(transfer)
 
-            if not results_page:
-                return
-
             yield from results_page
+            if len(results_page) < page_size:
+                break
+
             page += 1
 
     @validate('count')
