@@ -2,6 +2,8 @@
 #
 # SPDX-License-Identifier: MIT
 
+import json
+from typing import Optional
 from unittest.mock import create_autospec
 
 from flask import Flask
@@ -18,8 +20,14 @@ from tol.api_base2.auth import (
 )
 from tol.api_base2.auth.error import ForbiddenError
 from tol.api_base2.misc import AuthContext
-from tol.core import DataObject, DataSource
-from tol.core.operator import Deleter, DetailGetter, OperatorMethod
+from tol.core import DataObject, DataSource, OperableDataSource
+from tol.core.datasource_filter import AndFilter, DataSourceFilter
+from tol.core.operator import (
+    Deleter,
+    DetailGetter,
+    OperatorMethod,
+    PageGetter
+)
 
 
 class TestRequireAuth:
@@ -98,11 +106,24 @@ class TestRequireAuth:
 @pytest.fixture
 def inspector() -> AuthInspector:
 
-    def __inspector(object_type: str, operation: str) -> None:
+    def __inspect(
+        object_type: str,
+        operation: str
+    ) -> Optional[AndFilter]:
+
         if object_type == 'a' and operation != OperatorMethod.DETAIL:
             raise ForbiddenError()
 
-    return __inspector
+        if object_type == 'b' and operation == OperatorMethod.PAGE:
+            return {
+                'user.id': {
+                    'eq': {
+                        'value': 'random_ID'
+                    }
+                }
+            }
+
+    return __inspect
 
 
 @pytest.fixture
@@ -118,13 +139,21 @@ def mock_obj() -> DataObject:
 @pytest.fixture
 def mock_ds(mock_obj: DataObject) -> DataSource:
 
-    class _MockDs(DataSource, DetailGetter, Deleter):
+    class _MockDs(
+        DataSource,
+        DetailGetter,
+        Deleter,
+        PageGetter
+    ):
         pass
 
     _mock = create_autospec(_MockDs, spec_set=True)
     _mock.supported_types = ['a', 'b', 'c']
+    _mock.get_attribute_types.return_value = {}
 
     _mock.get_by_id.return_value = [mock_obj]
+    _mock.get_page_size.return_value = 10
+    _mock.get_list_page.return_value = ([], 0)
 
     return _mock
 
@@ -270,4 +299,131 @@ class TestBasicAuthInspector:
         basic_inspector(
             'does-not-matter',
             OperatorMethod.UPSERT
+        )
+
+
+class TestFilter:
+    """
+    an `AuthInspector`, if provided, will update filters.
+    """
+
+    def test_adds_and_filter(
+        self,
+        client: FlaskClient,
+        mock_ds: OperableDataSource
+    ):
+        """Returning `AndFilter` -> update"""
+
+        # no filter specified
+        client.get('/data/b')
+        mock_ds.get_list_page.assert_called_once_with(
+            'b',
+            1,
+            page_size=None,
+            object_filters=DataSourceFilter(
+                and_={
+                    'user.id': {
+                        'eq': {
+                            'value': 'random_ID'
+                        }
+                    }
+                }
+            ),
+            sort_by=None,
+        )
+
+        mock_ds.reset_mock()
+
+        # and_ filter specified
+        client.get(
+            '/data/b',
+            query_string={
+                'filter': json.dumps(
+                    {
+                        'and_': {
+                            'lol': {
+                                'eq': {
+                                    'value': 'hiiii',
+                                    'negate': True
+                                }
+                            }
+                        }
+                    }
+                )
+            }
+        )
+        mock_ds.get_list_page.assert_called_once_with(
+            'b',
+            1,
+            page_size=None,
+            object_filters=DataSourceFilter(
+                and_={
+                    'user.id': {
+                        'eq': {
+                            'value': 'random_ID'
+                        }
+                    },
+                    'lol': {
+                        'eq': {
+                            'value': 'hiiii',
+                            'negate': True
+                        }
+                    }
+                }
+            ),
+            sort_by=None,
+        )
+
+    def test_none(
+        self,
+        client: FlaskClient,
+        mock_ds: DataSource
+    ):
+        """Returning `None` -> no update"""
+
+        # no filter specified
+        client.get('/data/c')
+        mock_ds.get_list_page.assert_called_once_with(
+            'c',
+            1,
+            page_size=None,
+            object_filters=None,
+            sort_by=None,
+        )
+
+        mock_ds.reset_mock()
+
+        # and_ filter specified
+        client.get(
+            '/data/c',
+            query_string={
+                'filter': json.dumps(
+                    {
+                        'and_': {
+                            'lol': {
+                                'eq': {
+                                    'value': 'hiiii',
+                                    'negate': True
+                                }
+                            }
+                        }
+                    }
+                )
+            }
+        )
+        mock_ds.get_list_page.assert_called_once_with(
+            'c',
+            1,
+            page_size=None,
+            object_filters=DataSourceFilter(
+                and_={
+                    'lol': {
+                        'eq': {
+                            'value': 'hiiii',
+                            'negate': True
+                        }
+                    }
+                }
+            ),
+            sort_by=None,
         )

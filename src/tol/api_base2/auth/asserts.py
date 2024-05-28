@@ -7,6 +7,7 @@ from typing import Any, Callable, Optional, Protocol
 
 from .error import ForbiddenError
 from ..misc.auth_context import AuthContext, CtxGetter, default_ctx_getter
+from ...core.datasource_filter import AndFilter
 from ...core.operator import OperatorMethod
 
 
@@ -15,6 +16,9 @@ class AuthInspector(Protocol):
     Intercepts requests to `DataSource` instances behind `data_blueprint`.
 
     Raises a `ForbiddenError` for insufficient permissions.
+
+    Can also return an update to the `DataSourceFilter().and` terms. (e.g. to
+    lock down access to a user's objects by their ID).
     """
 
     # TODO support segementation within `object_type` - e.g. by programme/project
@@ -23,7 +27,7 @@ class AuthInspector(Protocol):
         self,
         object_type: str,
         method: OperatorMethod
-    ) -> None:
+    ) -> Optional[AndFilter]:
         ...
 
 
