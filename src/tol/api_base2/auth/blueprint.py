@@ -81,9 +81,12 @@ class AuthBlueprint(Blueprint):
 
         @self.get('/roles')
         def roles():
-            roles = self.__ctx_getter().roles
+            ctx = self.__ctx_getter()
 
-            return {'roles': roles}, 200
+            return {
+                'id': ctx.user_id,
+                'roles': ctx.roles
+            }, 200
 
         @self.errorhandler(AuthError)
         def auth_error(e: AuthError):

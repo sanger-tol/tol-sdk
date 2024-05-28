@@ -145,16 +145,19 @@ class TestRequireRole:
 
         r = client.get(
             '/hi',
-            headers={'Dummy-Token': 'none'}
+            headers={'Dummy-Token': 'no_roles'}
         )
         assert r.status_code == 403
 
         r = client.get(
             '/auth/roles',
-            headers={'Dummy-Token': 'none'}
+            headers={'Dummy-Token': 'no_roles'}
         )
         assert r.status_code == 200
-        assert r.json == {'roles': []}
+        assert r.json == {
+            'id': '404',
+            'roles': []
+        }
 
     def test_bad_roles(
         self,
@@ -190,6 +193,7 @@ class TestRequireRole:
         )
         assert r.status_code == 200
         assert r.json == {
+            'id': '403',
             'roles': [
                 'bad_A',
                 'bad_B',
@@ -228,6 +232,7 @@ class TestRequireRole:
         )
         assert r.status_code == 200
         assert r.json == {
+            'id': '200',
             'roles': ['admin']
         }
 
@@ -243,13 +248,13 @@ class TestRequireRole:
         with session_factory() as sess:
             # no roles user
             sess.add(
-                user_model(id=404, oidc_id='none')
+                user_model(id=404, oidc_id='no_roles')
             )
             sess.add(
                 token_model(
                     id=4040,
                     user_id=404,
-                    token='none'
+                    token='no_roles'
                 )
             )
 

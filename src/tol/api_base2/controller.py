@@ -8,6 +8,11 @@ from typing import Any, Callable, Iterable, Optional, Type
 
 from flask import make_response
 
+from tol.core.datasource_filter import (
+    AndFilter,
+    DataSourceFilter
+)
+
 from .auth import AuthInspector
 from .misc import (
     AggregationBody,
@@ -94,8 +99,14 @@ def validate(
                     object_type,
                     str(operator_method)
                 )
-            controller.inspect_auth(object_type, operator_method)
-            return method(controller, object_type, *args, **kwargs)
+            ext_and = controller.inspect_auth(object_type, operator_method)
+            return method(
+                controller,
+                object_type,
+                *args,
+                ext_and=ext_and,
+                **kwargs,
+            )
         return wrapper
     return decorator
 
@@ -120,12 +131,17 @@ class Controller:
     def data_source(self) -> OperableDataSource:
         return self.__data_source
 
-    def inspect_auth(self, object_type: str, operation: OperatorMethod) -> None:
+    def inspect_auth(
+        self,
+        object_type: str,
+        operation: OperatorMethod
+    ) -> Optional[AndFilter]:
+
         if self.__inspector is not None:
-            self.__inspector(object_type, operation)
+            return self.__inspector(object_type, operation)
 
     @validate(DetailGetter, 'get_by_id', OperatorMethod.DETAIL)
-    def get_detail(self, object_type: str, object_id: str) -> ResponseDict:
+    def get_detail(self, object_type: str, object_id: str, **kwargs) -> ResponseDict:
         """
         Gets an individual object of specified type and id
         """
@@ -136,7 +152,8 @@ class Controller:
     def get_list(
         self,
         object_type: str,
-        query_args: ListGetParamaters
+        query_args: ListGetParamaters,
+        ext_and: Optional[AndFilter] = None
     ) -> ResponseDict:
         """
         Gets a page of list results of specified type.
@@ -146,7 +163,10 @@ class Controller:
             object_type,
             page_number,
             page_size=query_args.page_size,
-            object_filters=query_args.filter,
+            object_filters=self.__combine_filters(
+                query_args.filter,
+                ext_and
+            ),
             sort_by=query_args.sort_by
         )
         document_meta = {
@@ -160,7 +180,8 @@ class Controller:
         self,
         object_type: str,
         query_args: ListGetParamaters,
-        body: JsonApiRequestBody
+        body: JsonApiRequestBody,
+        ext_and: Optional[AndFilter],
     ) -> ResponseDict:
         """
         Gets all the list results of the specified type.
@@ -171,7 +192,10 @@ class Controller:
             object_type,
             page_number,
             page_size=query_args.page_size,
-            object_filters=query_args.filter,
+            object_filters=self.__combine_filters(
+                query_args.filter,
+                ext_and
+            ),
             sort_by=query_args.sort_by
         )
 
@@ -185,14 +209,18 @@ class Controller:
     def get_count(
         self,
         object_type: str,
-        query_args: ListGetParamaters
+        query_args: ListGetParamaters,
+        ext_and: Optional[AndFilter],
     ) -> ResponseDict:
         """
         Gets a count of specified object type, respecting filters.
         """
         total = self.__data_source.get_count(
             object_type,
-            object_filters=query_args.filter,
+            object_filters=self.__combine_filters(
+                query_args.filter,
+                ext_and
+            ),
         )
         document_meta = {
             'total': total
@@ -203,7 +231,8 @@ class Controller:
     def get_stats(
         self,
         object_type: str,
-        query_args: StatsParameters
+        query_args: StatsParameters,
+        ext_and: Optional[AndFilter],
     ) -> ResponseDict:
         """
         Gets stats of specified object type, respecting filters.
@@ -212,7 +241,10 @@ class Controller:
             object_type,
             stats=query_args.stats,
             stats_fields=query_args.stats_fields,
-            object_filters=query_args.filter,
+            object_filters=self.__combine_filters(
+                query_args.filter,
+                ext_and
+            ),
         )
         document_meta = {**stats, 'type': object_type}
         return self.__view.dump_bulk([], document_meta=document_meta)
@@ -221,7 +253,8 @@ class Controller:
     def delete_detail(
         self,
         object_type: str,
-        object_id: str
+        object_id: str,
+        **kwargs
     ) -> EmptySuccessResponse:
         """Deletes the `DataObject` of specified type and id"""
 
@@ -232,7 +265,8 @@ class Controller:
     def patch_list(
         self,
         object_type: str,
-        updates: Iterable[DataObjectUpdate]
+        updates: Iterable[DataObjectUpdate],
+        **kwargs
     ) -> EmptySuccessResponse:
         """
         Updates the objects (all of same type) using the given
@@ -246,7 +280,8 @@ class Controller:
     def post_upserts(
         self,
         object_type: str,
-        objects: Iterable[DataObject]
+        objects: Iterable[DataObject],
+        **kwargs
     ) -> EmptySuccessResponse:
         """Upserts the given objects of specified type"""
 
@@ -258,14 +293,18 @@ class Controller:
         self,
         object_type: str,
         query_args: AggregationParameters,
-        body: AggregationBody
+        body: AggregationBody,
+        ext_and: Optional[AndFilter],
     ) -> ResponseDict:
         """
         Gets an aggregation on the specified object_type.
         """
         aggregation_results = self.__data_source.get_aggregations(
             object_type,
-            object_filters=query_args.filter,
+            object_filters=self.__combine_filters(
+                query_args.filter,
+                ext_and
+            ),
             aggregations=body.aggs
         )
         document_meta = {
@@ -282,7 +321,8 @@ class Controller:
     def get_recursive_relation(
         self,
         data_object: DataObject,
-        relationship_hops: list[str]
+        relationship_hops: list[str],
+        **kwargs
     ) -> ResponseDict:
         """
         Gets a nested to-one relation by recursive hops
@@ -305,7 +345,8 @@ class Controller:
         self,
         data_object: DataObject,
         relationship_name: str,
-        query_args: ListGetParamaters
+        query_args: ListGetParamaters,
+        **kwargs
     ) -> ResponseDict:
         """Gets a page of to-many relation results"""
 
@@ -316,6 +357,23 @@ class Controller:
             query_args.page_size
         )
         return self.__view.dump_bulk(page)
+
+    def __combine_filters(
+        self,
+        object_filters: Optional[DataSourceFilter],
+        ext_and: Optional[AndFilter]
+    ) -> Optional[DataSourceFilter]:
+
+        if ext_and is None:
+            return object_filters
+        else:
+            if object_filters is None:
+                return DataSourceFilter(
+                    and_=ext_and
+                )
+            else:
+                object_filters.and_ |= ext_and
+                return object_filters
 
     def __get_detail_object(self, object_type: str, object_id: str) -> DataObject:
         data_objects = list(self.__data_source.get_by_id(object_type, [object_id]))
