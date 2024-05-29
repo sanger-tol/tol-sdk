@@ -69,7 +69,8 @@ class TestGoatApiConverter:
                         'haploid_number': {'value': 22},
                         'ploidy': {'value': 2},
                         'isb_wildlife_act_1976': {'value': 'IWA-Sch5'},
-                        'protection_of_badgers_act_1992': {'value': 'Badgers92'}
+                        'protection_of_badgers_act_1992': {'value': 'Badgers92'},
+                        'family_representative': {'value': 'DTOL'}
                     },
                     'ranks': {
                         'species': {
@@ -106,7 +107,8 @@ class TestGoatApiConverter:
                         'echabs92': {'value': 'Ech'},
                         'habreg_2017': {'value': 'Hab'},
                         'marhabreg-2017': {'value': 'Mar'},
-                        'waca_1981': {'value': 'Shakira'}
+                        'waca_1981': {'value': 'Shakira'},
+                        'family_representative': {'value': ['PROJ_A', 'PROJ_B']}
                     }
                 }
             }
@@ -123,6 +125,7 @@ class TestGoatApiConverter:
             'marhabreg-2017': 'str',
             'waca_1981': 'str',
             'isb_wildlife_act_1976': 'str',
+            'family_representative': 'List[str]',
             'lineage': 'List[str]'
         }}))
         converter = GoatApiConverter(parser)
@@ -140,6 +143,7 @@ class TestGoatApiConverter:
             'ploidy': 2,
             'isb_wildlife_act_1976': 'IWA-Sch5',
             'protection_of_badgers_act_1992': 'Badgers92',
+            'family_representative': ['DTOL'],
             'lineage': ['Mustelidae', 'Meles', 'Meles meles']
         }
         assert first._to_one_objects['species'].id == '9662'
@@ -158,5 +162,6 @@ class TestGoatApiConverter:
             'echabs92': 'Ech',
             'habreg_2017': 'Hab',
             'marhabreg-2017': 'Mar',
-            'waca_1981': 'Shakira'
+            'waca_1981': 'Shakira',
+            'family_representative': ['PROJ_A', 'PROJ_B']
         }

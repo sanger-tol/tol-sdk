@@ -81,11 +81,16 @@ class DefaultParser(Parser):
         if 'fields' in attributes:
             for att in ['genome_size', 'chromosome_number', 'haploid_number', 'ploidy',
                         'echabs92', 'habreg_2017', 'marhabreg-2017', 'waca_1981',
-                        'isb_wildlife_act_1976', 'protection_of_badgers_act_1992']:
+                        'isb_wildlife_act_1976', 'protection_of_badgers_act_1992',
+                        'family_representative']:
                 if att in attributes['fields']:
                     att_value = attributes['fields'][att]
                     if att_value is not None and 'value' in att_value:
-                        ret[att] = att_value['value']
+                        if att == 'family_representative' and \
+                                not isinstance(att_value['value'], list):
+                            ret[att] = [att_value['value']]
+                        else:
+                            ret[att] = att_value['value']
 
         # Lineage
         if 'ranks' in attributes:

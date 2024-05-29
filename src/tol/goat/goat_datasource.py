@@ -63,6 +63,7 @@ class GoatDataSource(
                 'waca_1981': 'str',
                 'isb_wildlife_act_1976': 'str',
                 'protection_of_badgers_act_1992': 'str',
+                'family_representative': 'List[str]',
                 'lineage': 'List[str]'
             }
         }

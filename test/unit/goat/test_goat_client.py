@@ -30,7 +30,8 @@ class TestGoatApiClient:
                             'haploid_number': {'value': 22},
                             'ploidy': {'value': 2},
                             'isb_wildlife_act_1976': {'value': 'IWA-Sch5'},
-                            'protection_of_badgers_act_1992': {'value': 'Badgers92'}
+                            'protection_of_badgers_act_1992': {'value': 'Badgers92'},
+                            'family_representative': {'value': 'DTOL'}
                         }
                     }
                 },
@@ -46,7 +47,8 @@ class TestGoatApiClient:
                             'echabs92': {'value': 'Ech'},
                             'habreg_2017': {'value': 'Hab'},
                             'marhabreg-2017': {'value': 'Mar'},
-                            'waca_1981': {'value': 'Shakira'}
+                            'waca_1981': {'value': 'Shakira'},
+                            'family_representative': {'value': ['PROJ_A', 'PROJ_B']}
                         }
                     }
                 }
@@ -63,7 +65,8 @@ class TestGoatApiClient:
                         'haploid_number': {'value': 22},
                         'ploidy': {'value': 2},
                         'isb_wildlife_act_1976': {'value': 'IWA-Sch5'},
-                        'protection_of_badgers_act_1992': {'value': 'Badgers92'}
+                        'protection_of_badgers_act_1992': {'value': 'Badgers92'},
+                        'family_representative': {'value': 'DTOL'}
                     }
                 }
             },
@@ -79,7 +82,8 @@ class TestGoatApiClient:
                         'echabs92': {'value': 'Ech'},
                         'habreg_2017': {'value': 'Hab'},
                         'marhabreg-2017': {'value': 'Mar'},
-                        'waca_1981': {'value': 'Shakira'}
+                        'waca_1981': {'value': 'Shakira'},
+                        'family_representative': {'value': ['PROJ_A', 'PROJ_B']}
                     }
                 }
             }
