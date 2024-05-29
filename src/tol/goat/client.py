@@ -58,7 +58,7 @@ class GoatApiClient:
             'taxonomy': 'ncbi',
             'fields': 'genome_size,chromosome_number,haploid_number,ploidy,echabs92,'
                       'habreg_2017,marhabreg-2017,waca_1981,isb_wildlife_act_1976,'
-                      'protection_of_badgers_act_1992',
+                      'protection_of_badgers_act_1992,family_representative',
             'ranks': 'subspecies,species,genus,family,order,class,phylum,kingdom,superkingdom'
         }
         return url, params
