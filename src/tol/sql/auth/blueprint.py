@@ -42,7 +42,8 @@ class DbAuthManager(AuthManager):
         session_factory: SessionFactory,
         model_tuple: ModelTuple,
         state_delete_delta: timedelta,
-        oidc_id_target: str
+        oidc_id_target: str,
+        oidc_ext_mapping: dict[str, str],
     ) -> None:
 
         self.__config = oidc_config
@@ -50,6 +51,7 @@ class DbAuthManager(AuthManager):
         self.__models = model_tuple
         self.__state_delta = state_delete_delta
         self.__oidc_id_target = oidc_id_target
+        self.__ext_map = oidc_ext_mapping
 
     def login(self) -> dict[str, str]:
         self.__cleanup_before_login()
@@ -72,8 +74,11 @@ class DbAuthManager(AuthManager):
         token: str
     ) -> dict[str, Any]:
 
-        oidc_id = self.__get_oidc_id(token)
-        user_id = self.__get_or_create_user_id(oidc_id)
+        oidc_id, oidc_ext = self.__get_oidc_details(token)
+        user_id = self.__get_or_create_user_id(
+            oidc_id,
+            oidc_ext
+        )
         token_extra = self.__register_token(token, user_id)
 
         return {
@@ -96,6 +101,16 @@ class DbAuthManager(AuthManager):
         self.__delete_token(token)
         self.__post_revoke(token)
 
+    def __map_oidc_extra(
+        self,
+        json_return: dict[str, Any]
+    ) -> dict[str, Any]:
+
+        return {
+            v: json_return.get(k)
+            for k, v in self.__ext_map.items()
+        }
+
     def __post_revoke(self, token: str) -> None:
         r = requests.post(
             self.__config.revoke_url,
@@ -107,10 +122,10 @@ class DbAuthManager(AuthManager):
         )
         r.raise_for_status()
 
-    def __get_oidc_id(
+    def __get_oidc_details(
         self,
         token: str
-    ) -> str:
+    ) -> tuple[str, dict[str, Any]]:
 
         headers = {
             'Authorization': f'Bearer {token}'
@@ -122,7 +137,12 @@ class DbAuthManager(AuthManager):
         )
         r.raise_for_status()
 
-        return r.json()[self.__oidc_id_target]
+        json_return = r.json()
+
+        return (
+            json_return[self.__oidc_id_target],
+            self.__map_oidc_extra(json_return)
+        )
 
     def __get_user_details_for_token(
         self,
@@ -142,7 +162,8 @@ class DbAuthManager(AuthManager):
 
     def __get_or_create_user_id(
         self,
-        oidc_id: str
+        oidc_id: str,
+        oidc_ext: dict[str, Any]
     ) -> int:
 
         user_model = self.__models.user_class
@@ -150,7 +171,8 @@ class DbAuthManager(AuthManager):
         with self.__session_factory() as sess:
             user = user_model.get_or_create(
                 sess,
-                oidc_id
+                oidc_id,
+                **oidc_ext
             )
             return user.id
 
@@ -286,9 +308,11 @@ def __db_auth_manager(
     oidc_config: OidcConfig,
     user_mixin_class: ModelClass,
     user_model_name: str,
+    oidc_id_column_name: str,
     state_delete_delta: timedelta,
     token_expiry_delta: timedelta,
-    oidc_id_target: str
+    oidc_id_target: str,
+    oidc_ext_mapping: dict[str, str]
 ) -> tuple[DbAuthManager, ModelTuple]:
 
     session_factory = create_session_factory(db_uri)
@@ -296,6 +320,7 @@ def __db_auth_manager(
     model_tuple = create_models(
         model_base,
         user_model_name,
+        oidc_id_column_name,
         user_mixin_class,
         token_expiry_delta
     )
@@ -305,7 +330,8 @@ def __db_auth_manager(
         session_factory,
         model_tuple,
         state_delete_delta,
-        oidc_id_target
+        oidc_id_target,
+        oidc_ext_mapping,
     )
 
     return auth_manager, model_tuple
@@ -319,9 +345,11 @@ def db_auth_blueprint(
     oidc_config_factory: Callable[[], OidcConfig] = env_oidc_config,
     user_mixin_class: ModelClass = object,
     user_model_name: str = 'user',
+    oidc_id_column_name: str = 'oidc_id',
     state_delete_delta: timedelta = timedelta(hours=1),
     token_expiry_delta: timedelta = timedelta(days=7),
-    oidc_id_target: str = 'email'
+    oidc_id_target: str = 'email',
+    oidc_ext_mapping: dict[str, str] = {}
 ) -> DbAuthBlueprint:
     """
     Creates a flask `Blueprint` for auth using a DB,
@@ -348,9 +376,11 @@ def db_auth_blueprint(
         oidc_config_factory(),
         user_mixin_class,
         user_model_name,
+        oidc_id_column_name,
         state_delete_delta,
         token_expiry_delta,
-        oidc_id_target
+        oidc_id_target,
+        oidc_ext_mapping,
     )
 
     auth_bp = DbAuthBlueprint(

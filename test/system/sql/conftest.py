@@ -68,7 +68,12 @@ def auth_bp(db_uri, oidc_config):
         BaseModel,
         db_uri,
         oidc_config_factory=lambda: oidc_config,
-        user_mixin_class=TestUserMixin
+        user_mixin_class=TestUserMixin,
+        oidc_id_column_name='changed_lol',
+        oidc_ext_mapping={
+            'do_not_forget_me': 'extra_oidc_field',
+            'me_neither': 'extra_oidc_int'
+        }
     )
 
 

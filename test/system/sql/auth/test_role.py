@@ -54,7 +54,7 @@ class TestRole:
         with session_factory() as sess:
             user = user_model(
                 id=970,
-                oidc_id='lol'
+                changed_lol='lol'
             )
             sess.add(user)
             sess.commit()
@@ -75,7 +75,7 @@ class TestRole:
         with session_factory() as sess:
             user = user_model(
                 id=970,
-                oidc_id='lol'
+                changed_lol='lol'
             )
             sess.add(user)
 
@@ -248,7 +248,7 @@ class TestRequireRole:
         with session_factory() as sess:
             # no roles user
             sess.add(
-                user_model(id=404, oidc_id='no_roles')
+                user_model(id=404, changed_lol='no_roles')
             )
             sess.add(
                 token_model(
@@ -260,7 +260,7 @@ class TestRequireRole:
 
             # bad roles user
             sess.add(
-                user_model(id=403, oidc_id='bad')
+                user_model(id=403, changed_lol='bad')
             )
             sess.add(
                 token_model(
@@ -286,7 +286,7 @@ class TestRequireRole:
 
             # good roles user
             sess.add(
-                user_model(id=200, oidc_id='good')
+                user_model(id=200, changed_lol='good')
             )
             sess.add(
                 token_model(

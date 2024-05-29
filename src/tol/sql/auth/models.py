@@ -9,7 +9,12 @@ from datetime import datetime, timedelta
 from typing import Any, NamedTuple, Optional
 from uuid import uuid4
 
-from sqlalchemy import ForeignKey, delete, select
+from sqlalchemy import (
+    ForeignKey,
+    String,
+    delete,
+    select
+)
 from sqlalchemy.orm import (
     Mapped,
     Session,
@@ -28,8 +33,6 @@ class AuthUser(ABC):
 
     id: int  # noqa A003
 
-    oidc_id: str
-
     _tokens: list[AuthToken]
     _roles: list[AuthRole]
 
@@ -38,7 +41,8 @@ class AuthUser(ABC):
     def get_or_create(
         cls,
         sess: Session,
-        oidc_id: str
+        oidc_id: str,
+        **oidc_ext
     ) -> AuthUser:
         """
         Adds a new `User` row to the DB, with the
@@ -158,6 +162,7 @@ class ModelTuple(NamedTuple):
 def create_models(
     model_base: ModelClass,
     user_table_name: str,
+    oidc_id_column_name: str,
     user_mixin_class: ModelClass,
     token_expiry_delta: timedelta
 ) -> ModelTuple:
@@ -219,18 +224,33 @@ def create_models(
             sess.execute(stmt)
             sess.commit()
 
-    class User(AuthUser, model_base, user_mixin_class):
+    oidc_id_column: Mapped[str] = mapped_column(
+        type_=String(),
+        unique=True,
+        nullable=False
+    )
+
+    oidc_id_mixin_class = type(
+        'OidcIdMixin',
+        (object,),
+        {
+            oidc_id_column_name: oidc_id_column,
+            '__abstract__': True
+        }
+    )
+
+    class User(
+        AuthUser,
+        model_base,
+        oidc_id_mixin_class,
+        user_mixin_class,
+    ):
 
         __tablename__ = user_table_name
 
         id: Mapped[int] = mapped_column(  # noqa A003
             primary_key=True,
             autoincrement=True
-        )
-
-        oidc_id: Mapped[str] = mapped_column(
-            unique=True,
-            nullable=False
         )
 
         _tokens: Mapped[list['Token']] = relationship(
@@ -241,26 +261,42 @@ def create_models(
         )
 
         @classmethod
+        def __get_oidc_id_column_name(cls) -> str:
+            """
+            Reliably gets the ID column of this `User` against
+            the OIDC provider - irrespective of its name.
+            """
+            return getattr(cls, oidc_id_column_name).name
+
+        @classmethod
         def __one_or_none(
             cls,
             sess: Session,
             oidc_id: str
         ) -> Optional[User]:
 
+            name = cls.__get_oidc_id_column_name()
+
             return sess.query(
                 cls
             ).filter_by(
-                oidc_id=oidc_id
+                **{name: oidc_id}
             ).one_or_none()
 
         @classmethod
         def __add(
             cls,
             sess: Session,
-            oidc_id: str
+            oidc_id: str,
+            **oidc_ext
         ) -> User:
 
-            new_user = cls(oidc_id=oidc_id)
+            name = cls.__get_oidc_id_column_name()
+
+            new_user = cls(
+                **oidc_ext,
+                **{name: oidc_id},
+            )
             sess.add(new_user)
             sess.commit()
 
@@ -270,7 +306,8 @@ def create_models(
         def get_or_create(
             cls,
             sess: Session,
-            oidc_id: str
+            oidc_id: str,
+            **oidc_ext
         ) -> User:
 
             user = cls.__one_or_none(
@@ -283,7 +320,8 @@ def create_models(
 
             return cls.__add(
                 sess,
-                oidc_id
+                oidc_id,
+                **oidc_ext
             )
 
         @property
