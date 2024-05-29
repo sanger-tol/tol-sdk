@@ -357,14 +357,16 @@ def get_app():
 
 
 def run(command):
-    return_code = os.system(command)
-    if return_code != 0:
-        exit(return_code)
+    try:
+        subprocess.run(
+            ['bash', '-i', '-c', command]
+        ).check_returncode()
+    except subprocess.CalledProcessError as e:
+        exit(e.returncode)
 
 
 def run_capture(command):
-    list_command = command.split()
-    s = subprocess.run(list_command, check=True, capture_output=True)
+    s = subprocess.run(['bash', '-i', '-c', command], check=True, capture_output=True)
     return s.stdout.decode('utf-8')
 
 

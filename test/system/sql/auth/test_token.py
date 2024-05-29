@@ -233,7 +233,7 @@ class TestToken:
             sess.add(
                 user_model(
                     id=789,
-                    oidc_id='existing@hype.train'
+                    changed_lol='existing@hype.train'
                 )
             )
             sess.add(
@@ -249,11 +249,11 @@ class TestToken:
         self,
         user_model,
         session_factory,
-        oidc_id: str
+        changed_lol: str
     ) -> int:
         with session_factory() as sess:
             stmt = select(user_model).where(
-                user_model.oidc_id == oidc_id
+                user_model.changed_lol == changed_lol
             )
             rows = list(
                 sess.execute(stmt)
@@ -295,7 +295,7 @@ class TestToken:
             sess.add(
                 user_model(
                     id=456,
-                    oidc_id='test@hype.train'
+                    changed_lol='test@hype.train'
                 )
             )
 
