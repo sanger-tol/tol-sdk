@@ -82,8 +82,8 @@ class TestCreateGoatDatasource:
                 'chromosome_number': 44,
                 'haploid_number': 22,
                 'ploidy': 2,
-                'isb_wildlife_act_1976': 'IWA-Sch5',
-                'protection_of_badgers_act_1992': 'Badgers92'
+                'isb_wildlife_act_1976': ['IWA-Sch5'],
+                'protection_of_badgers_act_1992': ['Badgers92']
             },
             to_one={}
         )
@@ -143,8 +143,8 @@ class TestCreateGoatDatasource:
                 'chromosome_number': 44,
                 'haploid_number': 22,
                 'ploidy': 2,
-                'isb_wildlife_act_1976': 'IWA-Sch5',
-                'protection_of_badgers_act_1992': 'Badgers92'
+                'isb_wildlife_act_1976': ['IWA-Sch5'],
+                'protection_of_badgers_act_1992': ['Badgers92']
             },
             to_one={}
         )
