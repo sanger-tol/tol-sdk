@@ -78,15 +78,16 @@ class DefaultParser(Parser):
             ret[att] = attributes.get(att)
 
         # Attributes with values in fields
+        normal_fields = ['genome_size', 'chromosome_number', 'haploid_number', 'ploidy']
+        one_or_list_fields = ['echabs92', 'habreg_2017', 'marhabreg-2017', 'waca_1981',
+                              'isb_wildlife_act_1976', 'protection_of_badgers_act_1992',
+                              'family_representative']
         if 'fields' in attributes:
-            for att in ['genome_size', 'chromosome_number', 'haploid_number', 'ploidy',
-                        'echabs92', 'habreg_2017', 'marhabreg-2017', 'waca_1981',
-                        'isb_wildlife_act_1976', 'protection_of_badgers_act_1992',
-                        'family_representative']:
+            for att in normal_fields + one_or_list_fields:
                 if att in attributes['fields']:
                     att_value = attributes['fields'][att]
                     if att_value is not None and 'value' in att_value:
-                        if att == 'family_representative' and \
+                        if att in one_or_list_fields and \
                                 not isinstance(att_value['value'], list):
                             ret[att] = [att_value['value']]
                         else:

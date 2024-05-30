@@ -141,8 +141,8 @@ class TestGoatApiConverter:
             'chromosome_number': 44,
             'haploid_number': 22,
             'ploidy': 2,
-            'isb_wildlife_act_1976': 'IWA-Sch5',
-            'protection_of_badgers_act_1992': 'Badgers92',
+            'isb_wildlife_act_1976': ['IWA-Sch5'],
+            'protection_of_badgers_act_1992': ['Badgers92'],
             'family_representative': ['DTOL'],
             'lineage': ['Mustelidae', 'Meles', 'Meles meles']
         }
@@ -159,9 +159,9 @@ class TestGoatApiConverter:
             'chromosome_number': 88,
             'haploid_number': 44,
             'ploidy': 4,
-            'echabs92': 'Ech',
-            'habreg_2017': 'Hab',
-            'marhabreg-2017': 'Mar',
-            'waca_1981': 'Shakira',
+            'echabs92': ['Ech'],
+            'habreg_2017': ['Hab'],
+            'marhabreg-2017': ['Mar'],
+            'waca_1981': ['Shakira'],
             'family_representative': ['PROJ_A', 'PROJ_B']
         }
