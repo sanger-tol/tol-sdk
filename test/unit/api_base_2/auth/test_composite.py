@@ -58,7 +58,8 @@ class TestCompositeAuthInspector:
         @auth_inspector.handle_noauth
         def __raise_error(
             object_type: str,
-            op: OperatorMethod
+            op: OperatorMethod,
+            **kwargs
         ) -> Optional[AndFilter]:
 
             if object_type == 'forbidden':
@@ -67,7 +68,8 @@ class TestCompositeAuthInspector:
         @auth_inspector.handle_noauth
         def __return_dict1(
             object_type: str,
-            op: OperatorMethod
+            op: OperatorMethod,
+            **kwargs
         ) -> Optional[AndFilter]:
 
             return {
@@ -81,7 +83,8 @@ class TestCompositeAuthInspector:
         @auth_inspector.handle_noauth
         def __return_dict2(
             object_type: str,
-            op: OperatorMethod
+            op: OperatorMethod,
+            **kwargs
         ) -> Optional[AndFilter]:
 
             return {
@@ -154,21 +157,25 @@ class TestCompositeAuthInspector:
         """
 
         auth_ctx.authenticated = True
-        auth_ctx.roles = []
+        auth_ctx.roles = ['hi']
 
         @auth_inspector.handle
-        def __none(*args):
+        def __none(*args, **kwargs):
             return None
 
         @auth_inspector.handle
-        def __empty(*args):
+        def __empty(*args, **kwargs):
             return {}
 
         @auth_inspector.handle
         def __dict_if_nice(
             object_type: str,
-            *args
+            *args,
+            auth_context: Optional[AuthContext] = None
         ):
+
+            assert auth_context.roles == ['hi']
+
             if object_type != 'nice':
                 return None
             else:
@@ -203,15 +210,15 @@ class TestCompositeAuthInspector:
         """All methods together"""
 
         @auth_inspector.handle_type('fail')
-        def __fail(*args):
+        def __fail(*args, **kwargs):
             raise ForbiddenError()
 
         @auth_inspector.handle_noauth
-        def __noauth(*args):
+        def __noauth(*args, **kwargs):
             raise ForbiddenError()
 
         @auth_inspector.handle
-        def __fine(*args):
+        def __fine(*args, **kwargs):
             return {
                 'fine': {
                     'in_list': {
