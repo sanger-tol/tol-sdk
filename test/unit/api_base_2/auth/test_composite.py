@@ -43,19 +43,19 @@ def auth_inspector(
 
 class TestCompositeAuthInspector:
 
-    def test_handle_noauth(
+    def test_noauth(
         self,
         auth_ctx: AuthContext,
         auth_inspector: CompositeAuthInspector
     ) -> None:
         """
-        `CompositeAuthInspector().handle_noauth()`
+        `CompositeAuthInspector().noauth()`
         in isolation
         """
 
         auth_ctx.authenticated = False
 
-        @auth_inspector.handle_noauth
+        @auth_inspector.noauth
         def __raise_error(
             object_type: str,
             op: OperatorMethod,
@@ -65,7 +65,7 @@ class TestCompositeAuthInspector:
             if object_type == 'forbidden':
                 raise ForbiddenError()
 
-        @auth_inspector.handle_noauth
+        @auth_inspector.noauth
         def __return_dict1(
             object_type: str,
             op: OperatorMethod,
@@ -80,7 +80,7 @@ class TestCompositeAuthInspector:
                 }
             }
 
-        @auth_inspector.handle_noauth
+        @auth_inspector.noauth
         def __return_dict2(
             object_type: str,
             op: OperatorMethod,
@@ -121,7 +121,7 @@ class TestCompositeAuthInspector:
         )
         assert observed == expected
 
-    def test_handle_admin(
+    def test_admin(
         self,
         admin_role: str,
         auth_ctx: AuthContext,
@@ -129,13 +129,13 @@ class TestCompositeAuthInspector:
     ) -> None:
         """
         Users with the admin role can do anything,
-        no handlers are called
+        no hooks are called
         """
 
         auth_ctx.authenticated = True
         auth_ctx.roles = [admin_role, 'me_also']
 
-        @auth_inspector.handle
+        @auth_inspector.auth
         def __error_if_called(*args):
             raise ForbiddenError()
 
@@ -146,28 +146,28 @@ class TestCompositeAuthInspector:
 
         assert not ext_and
 
-    def test_handle(
+    def test_auth(
         self,
         auth_ctx: AuthContext,
         auth_inspector: CompositeAuthInspector
     ) -> None:
         """
-        `CompositeAuthInspector().handle()`
+        `CompositeAuthInspector().auth()`
         in isolation
         """
 
         auth_ctx.authenticated = True
         auth_ctx.roles = ['hi']
 
-        @auth_inspector.handle
+        @auth_inspector.auth
         def __none(*args, **kwargs):
             return None
 
-        @auth_inspector.handle
+        @auth_inspector.auth
         def __empty(*args, **kwargs):
             return {}
 
-        @auth_inspector.handle
+        @auth_inspector.auth
         def __dict_if_nice(
             object_type: str,
             *args,
@@ -202,6 +202,61 @@ class TestCompositeAuthInspector:
         )
         assert observed == expected
 
+    def test_forbid_noauth(
+        self,
+        auth_ctx: AuthContext,
+        auth_inspector: CompositeAuthInspector,
+        admin_role: str
+    ):
+        """
+        `CompositeAuthInspector().forbid_noauth` only
+        impedes unauthenticated requests
+        """
+
+        auth_inspector.forbid_noauth('verboten')
+
+        # no authentication
+        auth_ctx.authenticated = False
+        with pytest.raises(ForbiddenError):
+            auth_inspector('verboten', OperatorMethod.COUNT)
+
+        # no roles user
+        auth_ctx.authenticated = True
+        auth_ctx.roles = []
+        auth_inspector('verboten', OperatorMethod.TO_MANY)
+
+        # admin user
+        auth_ctx.roles = [admin_role]
+        auth_inspector('verboten', OperatorMethod.DETAIL)
+
+    def test_forbid(
+        self,
+        auth_ctx: AuthContext,
+        auth_inspector: CompositeAuthInspector,
+        admin_role: str
+    ):
+        """
+        `CompositeAuthInspector().forbid` only
+        impedes non-admin requests
+        """
+
+        auth_inspector.forbid(['a', 'b', 'c'])
+
+        # no authentication
+        auth_ctx.authenticated = False
+        with pytest.raises(ForbiddenError):
+            auth_inspector('c', OperatorMethod.COUNT)
+
+        # no roles user
+        auth_ctx.authenticated = True
+        auth_ctx.roles = []
+        with pytest.raises(ForbiddenError):
+            auth_inspector('b', OperatorMethod.TO_MANY)
+
+        # admin user
+        auth_ctx.roles = [admin_role]
+        auth_inspector('a', OperatorMethod.DETAIL)
+
     def test_ensemble(
         self,
         auth_ctx: AuthContext,
@@ -209,15 +264,15 @@ class TestCompositeAuthInspector:
     ) -> None:
         """All methods together"""
 
-        @auth_inspector.handle_type('fail')
-        def __fail(*args, **kwargs):
-            raise ForbiddenError()
+        auth_inspector.forbid('fail')
 
-        @auth_inspector.handle_noauth
+        @auth_inspector.noauth(
+            object_type=['a', 'b', 'c']
+        )
         def __noauth(*args, **kwargs):
             raise ForbiddenError()
 
-        @auth_inspector.handle
+        @auth_inspector.auth
         def __fine(*args, **kwargs):
             return {
                 'fine': {
@@ -233,7 +288,7 @@ class TestCompositeAuthInspector:
 
         with pytest.raises(ForbiddenError):
             auth_inspector(
-                'does not matter',
+                'a',
                 OperatorMethod.STATS
             )
 
