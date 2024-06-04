@@ -3,17 +3,19 @@
 # SPDX-License-Identifier: MIT
 
 from collections import defaultdict
-from functools import reduce
+from functools import reduce, wraps
 from itertools import chain
 from typing import (
     Callable,
-    Iterator,
+    Iterable,
     Optional,
-    Protocol
+    Protocol,
+    Union,
 )
 
 
 from .asserts import AuthInspector
+from .error import ForbiddenError
 from ..misc import (
     AuthContext,
     CtxGetter,
@@ -62,6 +64,12 @@ _TypeHandlerDict = dict[
 ]
 
 
+_HookDecorator = Union[
+    InspectorHook,
+    Callable[[InspectorHook], InspectorHook]
+]
+
+
 class CompositeAuthInspector(AuthInspector):
     """
     Composes many inspection hooks into
@@ -79,7 +87,8 @@ class CompositeAuthInspector(AuthInspector):
 
         self.__noauths: list[InspectorHook] = []
         self.__auths: list[InspectorHook] = []
-        self.__type_handlers = self.__new_type_handler_dict()
+        self.__typed_noauths = self.__new_type_handler_dict()
+        self.__typed_auths = self.__new_type_handler_dict()
 
     def __call__(
         self,
@@ -93,63 +102,206 @@ class CompositeAuthInspector(AuthInspector):
             if self.__admin_role in ctx.roles:
                 return
             else:
-                return self.__auth(
+                return self.__invoke_auth(
                     object_type,
                     method,
                     ctx
                 )
         else:
-            return self.__noauth(object_type, method)
-
-    def handle_noauth(
-        self,
-        handler: InspectorHook
-    ) -> InspectorHook:
-        """
-        Registers a handler `Callable` for an
-        unauthenticated user of `data_blueprint`.
-        """
-
-        self.__noauths.append(handler)
-
-        return handler
-
-    def handle_type(
-        self,
-        object_type: str
-    ) -> Callable[[InspectorHook], InspectorHook]:
-        """
-        Registers a handler `Callable` for an
-        authenticated user, for a specific
-        `object_type`.
-        """
-
-        def wrapper(
-            handler: InspectorHook
-        ) -> InspectorHook:
-
-            self.__register_type_handler(
+            return self.__invoke_noauth(
                 object_type,
-                handler
+                method
             )
 
-            return handler
-
-        return wrapper
-
-    def handle(
+    def noauth(
         self,
-        handler: InspectorHook
+        hook: Optional[InspectorHook] = None,
+        *,
+        object_type: str | list[str] | None = None
+    ) -> _HookDecorator:
+        """
+        Registers a hook `Callable` for a
+        request for which no user has
+        authenticated.
+
+        Specify an indvidual `str` or `list[str]`
+        (`object_type`) to limit its invocation,
+        otherwise it will be invoked for all
+        types.
+        """
+
+        return self.__hook_decorator(
+            hook,
+            lambda h: self.__noauth_append(
+                h,
+                object_type
+            )
+        )
+
+    def auth(
+        self,
+        hook: Optional[InspectorHook] = None,
+        *,
+        object_type: str | list[str] | None = None
+    ) -> _HookDecorator:
+        """
+        Registers a hook `Callable` for an
+        authenticated user.
+
+        Specify an indvidual `str` or `list[str]`
+        (`object_type`) to limit its invocation,
+        otherwise it will be invoked for all
+        types.
+        """
+
+        return self.__hook_decorator(
+            hook,
+            lambda h: self.__auth_append(
+                h,
+                object_type
+            )
+        )
+
+    def always(
+        self,
+        hook: Optional[InspectorHook] = None,
+        *,
+        object_type: str | list[str] | None = None
+    ) -> _HookDecorator:
+        """
+        Registers a hook `Callable` that is always
+        invoked, indepenently of the authentication
+        status of the request.
+
+        Specify an indvidual `str` or `list[str]`
+        (`object_type`) to limit its invocation,
+        otherwise it will be invoked for all
+        types.
+        """
+
+        return self.__hook_decorator(
+            hook,
+            lambda h: self.__always_append(
+                h,
+                object_type
+            )
+        )
+
+    def forbid(
+        self,
+        object_type: str | list[str]
+    ) -> None:
+        """
+        Always forbids any and all operations, to every
+        non-admin request, on the given `object_type`(s).
+        """
+
+        @self.always(object_type=object_type)
+        def __hook(*args, **kwargs) -> None:
+            raise ForbiddenError
+
+    def forbid_noauth(
+        self,
+        object_type: str | list[str]
+    ) -> None:
+        """
+        Forbids any and all operations, to every
+        unauthenticated request, on the given
+        `object_type`(s).
+        """
+
+        @self.noauth(object_type=object_type)
+        def __hook(*args, **kwargs) -> None:
+            raise ForbiddenError
+
+    def __noauth_append(
+        self,
+        hook: InspectorHook,
+        object_type: str | list[str] | None,
+    ) -> None:
+
+        if object_type is None:
+            self.__noauths.append(hook)
+        else:
+            self.__append_to_dict(
+                hook,
+                object_type,
+                self.__typed_noauths
+            )
+
+    def __auth_append(
+        self,
+        hook: InspectorHook,
+        object_type: str | list[str] | None,
+    ) -> None:
+
+        if object_type is None:
+            self.__auths.append(hook)
+        else:
+            self.__append_to_dict(
+                hook,
+                object_type,
+                self.__typed_auths
+            )
+
+    def __always_append(
+        self,
+        hook: InspectorHook,
+        object_type: str | list[str] | None,
+    ) -> None:
+
+        self.__noauth_append(hook, object_type)
+        self.__auth_append(hook, object_type)
+
+    def __hook_decorator(
+        self,
+        hook: InspectorHook | None,
+        append_func: Callable[[InspectorHook], None]
     ) -> InspectorHook:
-        """
-        Registers a handler `Callable` for an
-        authenticated user, for all values of
-        `object_type`.
-        """
 
-        self.__auths.append(handler)
+        def decorator(
+            arg_hook: InspectorHook
+        ) -> _HookDecorator:
 
-        return handler
+            append_func(arg_hook)
+
+            @wraps(arg_hook)
+            def wrapper(
+                __type: str,
+                __op: OperatorMethod,
+                auth_ctx: AuthContext | None = None
+            ):
+
+                return arg_hook(
+                    __type,
+                    __op,
+                    auth_ctx=auth_ctx
+                )
+
+            return wrapper
+
+        if callable(hook):
+            return decorator(hook)
+        else:
+            return decorator
+
+    def __append_to_dict(
+        self,
+        hook: InspectorHook,
+        object_type: str | list[str],
+        target: dict[str, list[InspectorHook]]
+    ) -> None:
+
+        def __append_single(__type: str) -> None:
+            existing = target.get(__type, [])
+            existing.append(hook)
+            target[__type] = existing
+
+        if isinstance(object_type, str):
+            __append_single(object_type)
+        else:
+            for __type in object_type:
+                __append_single(__type)
 
     def __accumulate(
         self,
@@ -165,29 +317,33 @@ class CompositeAuthInspector(AuthInspector):
             else:
                 return existing | add
 
-    def __noauth(
+    def __invoke_noauth(
         self,
         object_type: str,
         op: OperatorMethod
     ) -> Optional[AndFilter]:
+
+        hooks = self.__get_noauth_hooks(
+            object_type
+        )
 
         return reduce(
             lambda d, h: self.__accumulate(
                 d,
                 h(object_type, op)
             ),
-            self.__noauths,
+            hooks,
             None
         )
 
-    def __auth(
+    def __invoke_auth(
         self,
         object_type: str,
         op: OperatorMethod,
         auth_context: AuthContext
     ) -> Optional[AndFilter]:
 
-        handlers = self.__get_auth_handlers(
+        hooks = self.__get_auth_hooks(
             object_type
         )
 
@@ -200,7 +356,7 @@ class CompositeAuthInspector(AuthInspector):
                     auth_context=auth_context
                 )
             ),
-            handlers,
+            hooks,
             None
         )
 
@@ -212,25 +368,22 @@ class CompositeAuthInspector(AuthInspector):
             lambda: []
         )
 
-    def __register_type_handler(
-        self,
-        object_type: str,
-        handler: InspectorHook
-    ) -> None:
-
-        handlers = self.__type_handlers.get(
-            object_type,
-            []
-        )
-        handlers.append(handler)
-        self.__type_handlers[object_type] = handlers
-
-    def __get_auth_handlers(
+    def __get_auth_hooks(
         self,
         object_type: str
-    ) -> Iterator[InspectorHook]:
+    ) -> Iterable[InspectorHook]:
 
         return chain(
             self.__auths,
-            self.__type_handlers[object_type]
+            self.__typed_auths[object_type]
+        )
+
+    def __get_noauth_hooks(
+        self,
+        object_type: str
+    ) -> Iterable[InspectorHook]:
+
+        return chain(
+            self.__noauths,
+            self.__typed_noauths[object_type]
         )
