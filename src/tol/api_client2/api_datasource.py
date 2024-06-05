@@ -21,6 +21,7 @@ from ..core.operator import (
     Counter,
     Deleter,
     DetailGetter,
+    Inserter,
     ListGetter,
     OperatorDict,
     PageGetter,
@@ -47,6 +48,7 @@ class ApiDataSource(
     Counter,
     Deleter,
     DetailGetter,
+    Inserter,
     PageGetter,
     ListGetter,
     Relational,
@@ -311,6 +313,22 @@ class ApiDataSource(
             if len(next_page) < page_size:
                 return
             page_number += 1
+
+    @validate('insert')
+    def insert(
+        self,
+        object_type: str,
+        objects: Iterable[DataObject],
+        session: Optional[OperableSession] = None
+    ) -> Iterable[DataObject]:
+
+        transfer = self.__dc_factory().convert_list(
+            objects
+        )
+        self.__client_factory().insert(
+            object_type,
+            transfer
+        )
 
     @property
     @cache

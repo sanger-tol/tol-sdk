@@ -8,11 +8,6 @@ from typing import Any, Callable, Iterable, Optional, Type
 
 from flask import make_response
 
-from tol.core.datasource_filter import (
-    AndFilter,
-    DataSourceFilter
-)
-
 from .auth import AuthInspector
 from .misc import (
     AggregationBody,
@@ -29,11 +24,16 @@ from ..api_client2.exception import (
 )
 from ..api_client2.view import ResponseDict, View
 from ..core import DataObject, OperableDataSource
+from ..core.datasource_filter import (
+    AndFilter,
+    DataSourceFilter
+)
 from ..core.operator import (
     Aggregator,
     Counter,
     Deleter,
     DetailGetter,
+    Inserter,
     ListGetter,
     Operator,
     OperatorMethod,
@@ -274,6 +274,18 @@ class Controller:
         """
 
         self.data_source.update(object_type, updates)
+        return {'success': True}
+
+    @validate(Inserter, 'insert', OperatorMethod.INSERT)
+    def post_inserts(
+        self,
+        object_type: str,
+        objects: Iterable[DataObject],
+        **kwargs
+    ) -> EmptySuccessResponse:
+        """Inserts the given objects of specified type"""
+
+        self.data_source.insert(object_type, objects)
         return {'success': True}
 
     @validate(Upserter, 'post_upserts', OperatorMethod.UPSERT)

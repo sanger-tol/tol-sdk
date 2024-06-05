@@ -4,10 +4,11 @@
 
 from string import ascii_uppercase
 from typing import Any, Dict, Iterable, Optional
-from unittest.mock import MagicMock, Mock, PropertyMock, call
+from unittest.mock import MagicMock, Mock, PropertyMock, call, create_autospec
 
-from tol.core import DataSourceFilter, core_data_object
+from tol.core import DataObject, DataSourceFilter, core_data_object
 from tol.sql import SqlDataSource, create_sql_datasource
+from tol.sql.database import Database
 from tol.sql.filter import DatabaseFilter
 from tol.sql.model import Model
 from tol.sql.sql_converter import Converter, TypeFunction
@@ -780,6 +781,44 @@ class TestSqlDataSource:
             user_id='a user ID',
             in_session=None
         )
+
+    def test_insert(self):
+        """`SqlDataSource().insert()`"""
+
+        mock_db = create_autospec(Database, spec_set=True)
+        mock_db.attribute_types = {'test': {}}
+
+        mock_model = create_autospec(Model, spec_set=True)
+        mock_model.get_table_name.return_value = 'test'
+        mock_model.get_to_one_relationship_config.return_value = {}
+        mock_model.get_to_many_relationship_config.return_value = {}
+
+        mock_model_factory = Mock()
+        mock_model_factory.convert_iterable.side_effect = lambda a: a
+
+        sql_ds = create_sql_datasource(
+            [mock_model],
+            '',
+            behind_api=True,
+            api_user_id_getter=lambda: 'a user ID',
+            database_factory=lambda __a, __b: mock_db,
+            model_factory=lambda __a, __b: lambda: mock_model_factory
+        )
+
+        mock_objects = [
+            create_autospec(DataObject, spec_set=True)
+            for _ in range(3)
+        ]
+
+        sql_ds.insert('test', mock_objects)
+
+        mock_model_factory.convert_iterable.assert_called_once()
+
+        expected_insert_calls = [
+            call(obj, user_id='a user ID')
+            for obj in mock_objects
+        ]
+        assert mock_db.insert.call_args_list == expected_insert_calls
 
     def __get_mock_data_object(self, type_: str, id_: str) -> MagicMock:
         """Mocks a DataObject of given type and id"""

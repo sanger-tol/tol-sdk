@@ -20,6 +20,7 @@ from tol.core.operator import (
     Counter,
     Deleter,
     DetailGetter,
+    Inserter,
     PageGetter,
     Relational,
     Updater,
@@ -549,4 +550,67 @@ class TestBlueprintRelational(TestCase):
             'a-nice-to-many',
             3849,
             1
+        )
+
+
+class TestInserter(TestCase):
+    def create_app(self):
+
+        insert_ds_class = type('', (DataSource, Inserter), {})
+
+        def __obj_factory(
+            type_: str,
+            id_: str,
+            attributes: dict = None,
+            **kwargs
+        ) -> DataObject:
+
+            obj = create_autospec(DataObject, spec_set=True)
+            obj.type = type_
+            obj.id = id_
+            obj.attributes = attributes
+
+            return obj
+
+        self.insert_ds = create_autospec(insert_ds_class, spec_set=True)
+        self.insert_ds.supported_types = ['test']
+        self.insert_ds.data_object_factory = __obj_factory
+
+        def __side_effect(
+            __obj_type,
+            objs: Iterable[DataObject],
+            __user_id=None
+        ):
+            for c, obj in zip('abcd', objs):
+                assert obj.id == c
+                assert obj.attributes == {c: f'attr_{c.upper()}'}
+
+        self.insert_ds.insert.side_effect = __side_effect
+
+        return _test_application(self.insert_ds)
+
+    def test_insert_list(self):
+        """`Inserter().insert()` on an `Iterable`"""
+
+        body = {
+            'data': [
+                {
+                    'type': 'test',
+                    'id': c,
+                    'attributes': {
+                        c: f'attr_{c.upper()}'
+                    }
+                }
+                for c in 'abcd'
+            ]
+        }
+
+        response = self.client.open(
+            '/data/test:insert',
+            method='POST',
+            json=body
+        )
+        self.assert200(
+            response,
+            f'Response body is : {response.data.decode("utf-8")}'
         )

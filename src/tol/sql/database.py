@@ -82,6 +82,19 @@ class Database(ABC):
         """Performs an "upsert" on the given `Model` instance."""
 
     @abstractmethod
+    def insert(
+        self,
+        instance: Model,
+        user_id: Optional[str] = None,
+        in_session: Optional[Session] = None
+    ) -> None:
+        """
+        "Inserts" the given `Model` instance.
+
+        Must not already exist.
+        """
+
+    @abstractmethod
     def get_to_one_relation(
         self,
         tablename: str,
@@ -234,6 +247,33 @@ class DefaultDatabase(Database):
         )
         if in_session is None:
             session.close()
+
+    def insert(
+        self,
+        instance: Model,
+        user_id: Optional[str] = None,
+        in_session: Optional[Session] = None
+    ) -> None:
+
+        try:
+            _, session, _ = self.__get_model_session_query(
+                instance.get_table_name(),
+                in_session
+            )
+            session.add(instance)
+            instance.before_commit(user_id)
+            session.commit()
+            if in_session is None:
+                session.close()
+        except IntegrityError:
+            raise DataSourceError(
+                title='Integrity Error',
+                detail=(
+                    'An integrity error occured in the DB. '
+                    'This is likely due to a duplicate primary key.'
+                ),
+                status_code=400
+            )
 
     def get_to_one_relation(
         self,
