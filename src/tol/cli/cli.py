@@ -279,7 +279,7 @@ def flow(ctx, filename):
 # Data
 @cli.command()
 @click.option('--source', default='portal',
-              type=click.Choice(['portal']),
+              type=click.Choice(['portal', 'goat', 'sts', 'tolqc', 'tolid']),
               help='source DataSource')
 @click.option('--operation', default='list',
               type=click.Choice(['list']),

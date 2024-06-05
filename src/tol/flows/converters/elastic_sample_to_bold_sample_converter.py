@@ -25,8 +25,8 @@ class ElasticSampleToBoldSampleConverter(
             loc = ''
         attributes = {
             'projectcode':
-                data_object.sts_gal_abbreviation
-                if data_object.sts_gal_abbreviation is not None else '',
+                data_object.sts_rackid.split('_')[0]
+                if data_object.sts_rackid is not None else '',
             'sampleid':
                 data_object.sts_specimen.id
                 if data_object.sts_specimen is not None else '',
