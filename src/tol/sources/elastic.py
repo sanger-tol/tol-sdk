@@ -11,7 +11,8 @@ from ..core import (
 from ..core.data_source_attribute_metadata import data_source_attribute_metadata
 from ..core.relationship import RelationshipConfig
 from ..elastic import (
-    ElasticDataSource
+    ElasticDataSource,
+    RuntimeFields
 )
 
 
@@ -85,6 +86,20 @@ def elastic():
         'benchling_tissue_preps': 'benchling_sample.id'
     }
 
+    rc_sampleset = RelationshipConfig()
+    rc_sampleset.to_one = {}
+    rc_sampleset.to_many = {'sts_samples': 'sample'}
+    rc_sampleset.foreign_keys = {
+        'sts_samples': 'sts_sampleset.id'
+    }
+
+    rc_manifest = RelationshipConfig()
+    rc_manifest.to_one = {}
+    rc_manifest.to_many = {'sts_samples': 'sample'}
+    rc_manifest.foreign_keys = {
+        'sts_samples': 'sts_manifest.id'
+    }
+
     rc_tolid = RelationshipConfig()
     rc_tolid.to_one = {'informatics_specimen': 'specimen',
                        'tolid_specimen': 'specimen',
@@ -145,6 +160,8 @@ def elastic():
                            'extraction': rc_extraction,
                            'barcoding_run_data': rc_barcoding_run_data,
                            'sample': rc_sample,
+                           'sampleset': rc_sampleset,
+                           'manifest': rc_manifest,
                            'tolid': rc_tolid,
                            'specimen': rc_specimen,
                            'species': rc_species,
@@ -152,16 +169,6 @@ def elastic():
 
     runtime_fields = {
         'species': {
-            'calc_coverage': {
-                'type': 'double',
-                'script': """
-                    if (doc['mlwh_run_data_mlwh_hifi_read_bases_sum'].size() > 0
-                        && doc['sts_genome_size'].size() > 0) {
-                        emit(doc['mlwh_run_data_mlwh_hifi_read_bases_sum'].value /
-                             doc['sts_genome_size'].value)
-                    }
-                """
-            },
             'calc_done_date': {
                 'type': 'date',
                 'script': """
@@ -177,28 +184,26 @@ def elastic():
             }
         },
         'specimen': {
-            'calc_coverage_post_run': {
-                'type': 'double',
-                'script': """
-                    if (doc['mlwh_run_data_mlwh_hifi_read_bases_sum'].size() > 0
-                        && doc['sts_estimated_genome_size'].size() > 0) {
-                        emit(doc['mlwh_run_data_mlwh_hifi_read_bases_sum'].value /
-                             doc['sts_estimated_genome_size'].value)
-                    }
-                """
-            }
+            'calc_coverage_post_run': RuntimeFields.math(
+                'mlwh_run_data_mlwh_hifi_read_bases_sum',
+                'sts_estimated_genome_size',
+                operation='/'
+            )
         },
         'tolid': {
-            'calc_coverage': {
-                'type': 'double',
-                'script': """
-                    if (doc['mlwh_run_data_mlwh_hifi_read_bases_sum'].size() > 0
-                        && doc['tolid_species.sts_genome_size'].size() > 0) {
-                        emit(doc['mlwh_run_data_mlwh_hifi_read_bases_sum'].value /
-                             doc['tolid_species.sts_genome_size'].value)
-                    }
-                """
-            }
+            'calc_coverage': RuntimeFields.math('mlwh_run_data_mlwh_hifi_read_bases_sum',
+                                                'tolid_species.sts_genome_size',
+                                                operation='/')
+        },
+        'sampleset': {
+            'calc_tat': RuntimeFields.date_interval('sts_submit_date',
+                                                    'sts_sample_sts_receive_date_min',
+                                                    'days')
+        },
+        'manifest': {
+            'calc_tat': RuntimeFields.date_interval('sts_submit_date',
+                                                    'sts_receive_date',
+                                                    'days')
         }
     }
 

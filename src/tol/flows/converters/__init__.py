@@ -14,8 +14,10 @@ from .labwhere_location_to_elastic_sample_update_converter import LabwhereLocati
 from .labwhere_location_to_sts_tray_converter import LabwhereLocationToStsTrayConverter  # noqa F401
 from .lrpacbio_sequencing_request_to_elastic_sequencing_request_converter import LrpacbioSequencingRequestToElasticSequencingRequestConverter  # noqa F401
 from .sts_banked_sample_to_elastic_sample_converter import StsBankedSampleToElasticSampleConverter  # noqa F401
+from .sts_manifest_to_elastic_manifest_converter import StsManifestToElasticManifestConverter  # noqa F401
 from .sts_sample_project_to_elastic_sample_converter import StsSampleProjectToElasticSampleConverter  # noqa F401
 from .sts_sample_species_to_elastic_sample_converter import StsSampleSpeciesToElasticSampleConverter  # noqa F401
+from .sts_sampleset_to_elastic_sampleset_converter import StsSamplesetToElasticSamplesetConverter  # noqa F401
 from .sts_species_to_elastic_species_converter import StsSpeciesToElasticSpeciesConverter  # noqa F401
 from .tolqc_data_to_elastic_run_data_converter import TolqcDataToElasticRunDataConverter  # noqa F401
 from .tolqc_sample_to_elastic_sequencing_request_converter import TolqcSampleToElasticSequencingRequestConverter  # noqa F401

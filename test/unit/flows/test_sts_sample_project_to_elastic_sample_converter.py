@@ -24,7 +24,8 @@ class _MockDataSourceRelational(DataSource, Relational):
     @property
     def supported_types(self):
         return ['sample_project', 'sample', 'project',
-                'location', 'gal', 'sampleset', 'specimen']
+                'location', 'gal', 'sampleset', 'specimen',
+                'manifest']
 
     @property
     def attribute_types(self):
@@ -42,6 +43,7 @@ class _MockDataSourceRelational(DataSource, Relational):
             'location': 'location',
             'gal': 'gal',
             'sampleset': 'sampleset',
+            'manifest': 'manifest',
             'specimen': 'specimen'
         }
         return {
@@ -119,6 +121,11 @@ class TestStsSampleProjectToElasticSampleConverter(TestCase):
             type_='sampleset',
             attributes={}
         )
+        manifest = CoreDataObject(
+            id_='test_manifest',
+            type_='manifest',
+            attributes={}
+        )
         sample = CoreDataObject(
             id_='test_sample',
             type_='sample',
@@ -133,7 +140,8 @@ class TestStsSampleProjectToElasticSampleConverter(TestCase):
                 'location': location,
                 'gal': gal,
                 'specimen': specimen,
-                'sampleset': sampleset
+                'sampleset': sampleset,
+                'manifest': manifest
             }
         )
         sample_project = CoreDataObject(
@@ -161,7 +169,8 @@ class TestStsSampleProjectToElasticSampleConverter(TestCase):
             'gal_abbreviation': 'TESTGAL',
             'gal_name': 'Test Gal',
             'specimen': {'id': 'test_specimen'},
-            'sampleset_id': 'test_sampleset',
+            'sampleset': {'id': 'test_sampleset'},
+            'manifest': {'id': 'test_manifest'},
             'col_date': datetime.datetime(2020, 2, 2),
             'original_collection_date': datetime.datetime(2011, 1, 1, 12),
             'pre_date': datetime.datetime(2000, 12, 12),
