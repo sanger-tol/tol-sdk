@@ -2,6 +2,9 @@
 #
 # SPDX-License-Identifier: MIT
 
+import pytest
+
+from tol.core import DataSourceError
 from tol.sql.database import DefaultDatabase
 
 from .. import models
@@ -179,6 +182,51 @@ class TestDefaultDatabase:
         assert existing_a.id == '101'
         assert existing_a.string_column == (
             'consider yourself updated'
+        )
+        session.close()
+
+    def test_insert_existing(self, session_factory, models_list):
+        """Insert on existing model -> raises `DataSourceError`"""
+
+        session = session_factory()
+        session.add(
+            models.A(
+                id='101',
+                string_column='please do not try to update me'
+            )
+        )
+        session.commit()
+        session.close()
+
+        db = DefaultDatabase(session_factory, models_list)
+
+        # insert a duplicate
+        with pytest.raises(DataSourceError):
+            db.insert(
+                models.A(
+                    id='101',
+                    string_column='I am invincible'
+                )
+            )
+
+    def test_insert_not_existing(self, session_factory, models_list):
+        """Insert on not previously existing model -> all good"""
+
+        db = DefaultDatabase(session_factory, models_list)
+        db.insert(
+            models.A(
+                id='101',
+                string_column='I am invincible'
+            )
+        )
+
+        # confirm the "A" is inserted
+        session = session_factory()
+        existing_a = session.query(models.A).one_or_none()
+        assert existing_a is not None
+        assert existing_a.id == '101'
+        assert existing_a.string_column == (
+            'I am invincible'
         )
         session.close()
 

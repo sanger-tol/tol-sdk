@@ -5,8 +5,11 @@
 from datetime import datetime
 from typing import Dict
 
+import pytest
+
 from tol.core import (
     DataSource,
+    DataSourceError,
     DataSourceFilter,
     DefaultDataLoader,
     DefaultDataObjectToDataObjectConverter,
@@ -20,7 +23,9 @@ from tol.core.operator import (
 from ..dec import against
 from ..fixtures import all_fixtures
 from ..fixtures.api.elastic import api_elastic
+from ..fixtures.api.sql import api_sql
 from ..fixtures.elastic_ds import elastic
+from ..fixtures.sql_ds import sql
 
 
 class _MockDataSource(DataSource, ListGetter):
@@ -50,6 +55,35 @@ class TestEndToEnd:
     Tests an end-to-end interaction on each given `DataSource`
     instance.
     """
+
+    @against(sql, api_sql)
+    def test_insert(self, data_source: OperableDataSource, ds_sleep):
+        """
+        Inserting works and does not permit duplicates.
+        """
+
+        objs = [
+            data_source.data_object_factory(
+                'root',
+                f'id_{i}',
+                attributes={
+                    'str_column': 'a' * i,
+                    'int_column': ord(c)
+                }
+            )
+            for i, c in enumerate('abc')
+        ]
+
+        # insert 3 different objects
+        data_source.insert('root', objs)
+
+        # fail to insert the 2nd again
+        with pytest.raises(DataSourceError):
+            data_source.insert('root', [objs[1]])
+
+        # get the 3rd
+        fetched = data_source.get_one('root', 'id_2')
+        assert fetched is not None
 
     @against(*all_fixtures)
     def test_upsert_and_detail_get(self, data_source: OperableDataSource, ds_sleep):

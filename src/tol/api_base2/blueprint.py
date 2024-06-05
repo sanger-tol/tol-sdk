@@ -198,6 +198,14 @@ def _core_blueprint(
         request_body = JsonApiRequestBody(request.json)
         return controller.patch_list(object_type, request_body.data)
 
+    @data_handler.post('/<object_type>:insert')
+    def post_inserts(*, object_type: str):
+        controller = __new_controller(object_type)
+        request_body = JsonApiRequestBody(request.json)
+        parser = DefaultParser(data_source_dict)
+        objects = parser.parse_iterable(request_body.data)
+        return controller.post_inserts(object_type, objects)
+
     @data_handler.route('/<object_type>:upsert', methods=['POST'])
     def post_upserts(*, object_type: str):
         controller = __new_controller(object_type)

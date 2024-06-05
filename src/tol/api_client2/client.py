@@ -7,6 +7,7 @@ from typing import Any, Optional
 import requests
 
 from .converter import JsonApiTransfer, JsonRelationshipConfig
+from ..core.datasource_error import DataSourceError
 from ..core.operator import OperatorDict
 
 
@@ -112,7 +113,7 @@ class JsonApiClient:
         url = self.__detail_url(object_type, object_id)
         headers = self.__merge_headers()
         r = requests.delete(url, headers=headers)
-        r.raise_for_status()
+        self.__assert_no_error(r)
 
     def upsert(
         self,
@@ -127,7 +128,22 @@ class JsonApiClient:
         url = self.__upsert_url(object_type)
         headers = self.__merge_headers()
         r = requests.post(url, headers=headers, json=transfer)
-        r.raise_for_status()
+        self.__assert_no_error(r)
+
+    def insert(
+        self,
+        object_type: str,
+        transfer: JsonApiTransfer
+    ) -> None:
+        """
+        Takes a `JsonApiTransfer` containing a `list` of
+        serialized `DataObject` instances to be inserted.
+        """
+
+        url = self.__insert_url(object_type)
+        headers = self.__merge_headers()
+        r = requests.post(url, headers=headers, json=transfer)
+        self.__assert_no_error(r)
 
     def get_to_one_relation_recursive(
         self,
@@ -212,7 +228,7 @@ class JsonApiClient:
     def __fetch_config(self, url: str) -> Any:
         headers = self.__merge_headers()
         r = requests.get(url, headers=headers)
-        r.raise_for_status()
+        self.__assert_no_error(r)
         return r.json()
 
     def __fetch_detail(
@@ -225,8 +241,27 @@ class JsonApiClient:
         r = requests.get(url, params=params, headers=headers)
         if r.status_code == 404:
             return None
-        r.raise_for_status()
+        self.__assert_no_error(r)
         return r.json()
+
+    def __assert_no_error(
+        self,
+        r: requests.Response
+    ) -> None:
+
+        if r.headers.get('content-type') == 'application/json':
+            return_body = r.json()
+
+            if 'errors' in return_body:
+                e: dict[str, str] = return_body['errors'][0]
+
+                raise DataSourceError(
+                    title=e.get('title'),
+                    detail=e.get('detail'),
+                    status_code=r.status_code
+                )
+
+        r.raise_for_status()
 
     def __fetch_list(
         self,
@@ -236,7 +271,7 @@ class JsonApiClient:
     ) -> JsonApiTransfer:
 
         r = requests.get(url, params=params, headers=headers)
-        r.raise_for_status()
+        self.__assert_no_error(r)
         return r.json()
 
     def __detail_url(self, object_type: str, object_id: str) -> str:
@@ -253,6 +288,9 @@ class JsonApiClient:
 
     def __upsert_url(self, object_type: str) -> str:
         return f'{self.__list_url(object_type)}:upsert'
+
+    def __insert_url(self, object_type: str) -> str:
+        return f'{self.__list_url(object_type)}:insert'
 
     def __to_one_relation_url(
         self,

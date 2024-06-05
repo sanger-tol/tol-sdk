@@ -13,6 +13,7 @@ from .aggregator import Aggregator
 from .counter import Counter
 from .deleter import Deleter
 from .detail_getter import DetailGetter
+from .inserter import Inserter
 from .page_getter import PageGetter
 from .relational import Relational
 from .statter import Statter
@@ -35,6 +36,7 @@ READ_OPERATOR_MAP: dict[str, type] = {
 
 WRITE_OPERATOR_MAP: dict[str, type] = {
     'delete': Deleter,
+    'insert': Inserter,
     'update': Updater,
     'upsert': Upserter
 }

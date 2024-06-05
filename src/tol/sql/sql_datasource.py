@@ -28,6 +28,7 @@ from ..core.operator import (
     Counter,
     Deleter,
     DetailGetter,
+    Inserter,
     ListGetter,
     PageGetter,
     Relational,
@@ -53,6 +54,7 @@ class SqlDataSource(
     DataSource,
     Deleter,
     DetailGetter,
+    Inserter,
     ListGetter,
     PageGetter,
     Relational,
@@ -231,6 +233,19 @@ class SqlDataSource(
                 user_id=user_id,
                 in_session=self.__get_sqla_session(session)
             )
+
+    def insert(
+        self,
+        object_type: str,
+        objects: Iterable[DataObject]
+    ) -> Iterable[DataObject]:
+
+        # TODO optimise by batching?
+        back_converter = self.__back_converter_factory()
+        model_instances = back_converter.convert_iterable(objects)
+        user_id = self.__user_id_getter()
+        for instance in model_instances:
+            self.__db.insert(instance, user_id=user_id)
 
     def get_to_one_relation(
         self,
