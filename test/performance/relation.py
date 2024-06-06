@@ -49,4 +49,4 @@ def get_to_one_relation() -> None:
 
 
 if __name__ == '__main__':
-    time_get_to_one_relation()
+    get_to_one_relation()

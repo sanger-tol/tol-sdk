@@ -18,7 +18,6 @@ from ..services.sql import (
 from ..types import ALL_MODELS, Related, Root
 
 
-
 class SqlFixture(DataSourceFixture):
     """A `DataSourceFixture` for `SqlDataSource`"""
 
