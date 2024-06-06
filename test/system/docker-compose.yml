@@ -60,7 +60,7 @@ services:
   benchmark:
     image: ${BUILT_IMAGE}
     command: python3 -m performance.all
-    working_dir: /test/performance
+    working_dir: /test
     environment:
       - DB_URI=${DB_URI}
     networks:
