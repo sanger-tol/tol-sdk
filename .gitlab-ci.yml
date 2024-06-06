@@ -65,29 +65,25 @@ unit-test-python-package:
     - exists:
       - "**/test/unit/**/*"
 
-.db-test:
+system-test-python-package:
   image: $DOCKER_IMAGE
   extends: .test-python
   variables:
     DOCKER_HOST: "tcp://docker:2375"
     DOCKER_TLS_CERTDIR: ''
+    TEST_TYPE: system
     POSTGRES_DB: system_test
     POSTGRES_USER: system_test
     POSTGRES_PASSWORD: system_test
     POSTGRES_HOST_AUTH_METHOD: trust
     DB_URI: postgresql://system_test:system_test@db:5432/system_test
     API_PATH: /api
-
-system-test-python-package:
-  extends: .db-test
   stage: system test
   services:
     - name: $DIND_IMAGE
       alias: docker
   environment:
     name: system-test
-  variables:
-    TEST_TYPE: system
   before_script:
     - cd test/system
     - docker-compose up -d db
@@ -109,7 +105,16 @@ system-test-python-package:
 
 benchmark-python-package:
   image: $DOCKER_IMAGE
-  extends: .db-test
+  extends: .test-python
+  variables:
+    DOCKER_HOST: "tcp://docker:2375"
+    DOCKER_TLS_CERTDIR: ''
+    POSTGRES_DB: system_test
+    POSTGRES_USER: system_test
+    POSTGRES_PASSWORD: system_test
+    POSTGRES_HOST_AUTH_METHOD: trust
+    DB_URI: postgresql://system_test:system_test@db:5432/system_test
+    API_PATH: /api
   stage: benchmark
   before_script:
     - cd test/system
@@ -117,7 +122,7 @@ benchmark-python-package:
     - sleep 5
     - docker compose up -d system-test-api-sql
     - sleep 5
-    - env  # TODO remove
+    - env | grep -i postgres
   script:
     - docker compose run benchmark
   rules:
