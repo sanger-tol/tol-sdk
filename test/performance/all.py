@@ -69,7 +69,11 @@ def __run_methods(
         )
 
 
-if __name__ == '__main__':
+def main() -> None:
     methods = __get_timed_methods()
 
     __run_methods(methods)
+
+
+if __name__ == '__main__':
+    main()
