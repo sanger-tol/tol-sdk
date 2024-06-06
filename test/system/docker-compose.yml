@@ -9,9 +9,9 @@ services:
   db:
     image: postgres:12
     environment:
-      - POSTGRES_USER=test-user
-      - POSTGRES_PASSWORD=test-password
-      - POSTGRES_DB=test-db
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_DB=${POSTGRES_DB}
     networks:
       - test-network
     
@@ -19,7 +19,7 @@ services:
     image: ${BUILT_IMAGE}
     command: pytest -v system
     environment:
-      - DB_URI=postgresql://test-user:test-password@db:5432/test-db
+      - DB_URI={DB_URI}
       - GOOGLE_CLIENT_SECRETS=${GOOGLE_CLIENT_SECRETS}
       - UUID_PREFIX=${UUID_PREFIX}
       - ELASTIC_URI=${ELASTIC_URI}
@@ -51,7 +51,18 @@ services:
     command: flask --app sql run --host 0.0.0.0
     working_dir: /test/system/data_source/services
     environment:
-      - DB_URI=postgresql://test-user:test-password@db:5432/test-db
+      - DB_URI=${DB_URI}
+    networks:
+      - test-network
+    depends_on:
+      - db
+
+  benchmark:
+    image: ${BUILT_IMAGE}
+    command: python3 -m performance.all
+    working_dir: /test/performance
+    environment:
+      - DB_URI=${DB_URI}
     networks:
       - test-network
     depends_on:
