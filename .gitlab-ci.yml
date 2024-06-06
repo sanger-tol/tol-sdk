@@ -117,9 +117,8 @@ benchmark-python-package:
     - sleep 5
     - docker compose up -d system-test-api-sql
     - sleep 5
+    - env  # TODO remove
   script:
-    - ls
-    - cat docker-compose.yml
     - docker compose run benchmark
   rules:
     - if: $CI_COMMIT_REF_NAME == "qa"
