@@ -107,7 +107,7 @@ benchmark-python-package:
   image: $DOCKER_IMAGE
   extends: .test-python
   variables:
-    DOCKER_HOST: "tcp://docker:2375"
+    #DOCKER_HOST: "tcp://docker:2375"
     DOCKER_TLS_CERTDIR: ''
     POSTGRES_DB: system_test
     POSTGRES_USER: system_test
