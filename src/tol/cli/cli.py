@@ -342,6 +342,7 @@ def benchmark(ctx, suite: str) -> None:
         f'sh -c "sleep 5 && python3 -m performance.{suite}"'
     )
 
+    click.secho(command, fg='green')
     run(command)
 
 
