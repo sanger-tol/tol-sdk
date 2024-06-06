@@ -51,7 +51,7 @@ def benchmark(
 
             stop = time.perf_counter()
 
-            average = (stop - start) / repetitions * 1000
+            average = ((stop - start) / repetitions) * 1000
 
             print(
                 f'{hook_name} - {average:.3f} milliseconds'
