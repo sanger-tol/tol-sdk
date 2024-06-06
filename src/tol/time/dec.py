@@ -3,7 +3,6 @@
 # SPDX-License-Identifier: MIT
 
 import functools as f
-import logging as l
 import time
 import typing as t
 
