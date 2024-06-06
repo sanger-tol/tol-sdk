@@ -46,7 +46,6 @@ def elastic_datasource(
         }
     )
 
-
 def __get_indices_names() -> list[str]:
     prefix = get_prefix()
     return [

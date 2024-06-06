@@ -36,6 +36,9 @@ services:
       - system-test-api-sql
     networks:
       - api-base-test-network
+    volumes:
+      - ./src:/app/src
+      - ./test:/test
 
   system-test-api-elastic:
     build: .

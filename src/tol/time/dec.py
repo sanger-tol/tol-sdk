@@ -8,20 +8,20 @@ import time
 import typing as t
 
 
-__BENCHMARK_HOOK = t.Callable[[], None]
+BENCHMARK_HOOK = t.Callable[[], None]
 
 
 __BENCHMARK_DEC = t.Union[
-    __BENCHMARK_HOOK,
+    BENCHMARK_HOOK,
     t.Callable[
-        [__BENCHMARK_HOOK],
-        __BENCHMARK_HOOK
+        [BENCHMARK_HOOK],
+        BENCHMARK_HOOK
     ]
 ]
 
 
 def benchmark(
-    arg_hook: __BENCHMARK_HOOK | None = None,
+    arg_hook: BENCHMARK_HOOK | None = None,
     *,
     repetitions: int = 10
 ) -> __BENCHMARK_DEC:
@@ -37,8 +37,8 @@ def benchmark(
     """
 
     def decorator(
-        hook: __BENCHMARK_HOOK
-    ) -> __BENCHMARK_HOOK:
+        hook: BENCHMARK_HOOK
+    ) -> BENCHMARK_HOOK:
 
         hook_name = hook.__name__
 
@@ -51,10 +51,10 @@ def benchmark(
 
             stop = time.perf_counter()
 
-            average = (stop - start) / repetitions
+            average = (stop - start) / repetitions * 1000
 
-            l.info(
-                f'{hook_name} - {average:.3f} seconds'
+            print(
+                f'{hook_name} - {average:.3f} milliseconds'
             )
 
         return wrapper

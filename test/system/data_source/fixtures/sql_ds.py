@@ -2,36 +2,28 @@
 #
 # SPDX-License-Identifier: MIT
 
-import os
 from datetime import datetime
 
-from sqlalchemy import create_engine, delete
-from sqlalchemy.exc import ProgrammingError
+from sqlalchemy import delete
 
 from tol.core import DataSource, core_data_object
-from tol.sql import (
-    create_session_factory,
-    create_sql_datasource
-)
+from tol.sql import create_sql_datasource
 
 from .base import DataSourceFixture
+from ..services.sql import (
+    DB_URI,
+    create_tables,
+    session_factory
+)
 from ..types import ALL_MODELS, Related, Root
 
-
-DB_URI = os.environ['DB_URI']
-session_factory = create_session_factory(DB_URI)
 
 
 class SqlFixture(DataSourceFixture):
     """A `DataSourceFixture` for `SqlDataSource`"""
 
     def __init__(self) -> None:
-        engine = create_engine(DB_URI)
-        for model in ALL_MODELS:
-            try:
-                model.__table__.create(engine)
-            except ProgrammingError:
-                continue
+        create_tables()
 
     @property
     def name(self) -> str:
