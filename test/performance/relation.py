@@ -4,7 +4,7 @@
 
 from uuid import uuid4
 
-from performance.ds import api_ds
+from performance.ds import api_sql
 
 from tol.time import benchmark
 
@@ -17,7 +17,7 @@ from tol.time import benchmark
 def time_get_to_one_relation() -> None:
     """loosely checks for rogue fetches"""
 
-    rel = api_ds.data_object_factory(
+    rel = api_sql.data_object_factory(
         'related',
         uuid4().hex,
         attributes={
@@ -26,7 +26,7 @@ def time_get_to_one_relation() -> None:
     )
 
     root_id = uuid4().hex
-    root = api_ds.data_object_factory(
+    root = api_sql.data_object_factory(
         'root',
         root_id,
         to_one={
@@ -34,12 +34,12 @@ def time_get_to_one_relation() -> None:
         }
     )
 
-    api_ds.insert(
+    api_sql.insert(
         'root',
         [root]
     )
 
-    root_fetched = api_ds.get_one(
+    root_fetched = api_sql.get_one(
         'root',
         root_id
     )

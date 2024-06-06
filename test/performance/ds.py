@@ -12,7 +12,7 @@ from tol.core import core_data_object
 
 create_tables()
 
-api_ds = create_api_datasource(
+api_sql = create_api_datasource(
     'http://system-test-api-sql:5000'
 )
-core_data_object(api_ds)
+core_data_object(api_sql)
