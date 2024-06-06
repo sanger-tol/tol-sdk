@@ -9,7 +9,11 @@ from performance.ds import api_ds
 from tol.time import benchmark
 
 
-@benchmark(repetitions=100)
+@benchmark(
+    repetitions=100,
+    warn=20,
+    fail=50
+)
 def time_get_to_one_relation() -> None:
     """loosely checks for rogue fetches"""
 

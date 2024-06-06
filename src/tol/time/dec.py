@@ -2,6 +2,7 @@
 #
 # SPDX-License-Identifier: MIT
 
+import click
 import functools as f
 import time
 import typing as t
@@ -19,10 +20,59 @@ __BENCHMARK_DEC = t.Union[
 ]
 
 
+class LimitExceededError(Exception):
+
+    def __init__(
+        self,
+        hook_name: str,
+        fail: float
+    ) -> None:
+
+        self.__message = (
+            f'{hook_name} exceeded its "fail" '
+            f'duration ({fail:.3f}).'
+        )
+
+        click.secho(
+            self.__message,
+            fg='red'
+        )
+
+        super().__init__(self.__message)
+
+    @property
+    def message(self) -> str:
+        return self.__message
+
+
+def __report_result(
+    average: float,
+    hook_name: str,
+    warn: float | None,
+    fail: float | None
+) -> None:
+
+    click.secho(
+        f'{hook_name} - {average:.3f} milliseconds'
+    )
+
+    if fail is not None and average > fail:
+        raise LimitExceededError(hook_name, fail)
+
+    if warn is not None and average > warn:
+        message = (
+            f'{hook_name} exceeded its "warn" '
+            f'duration ({warn:.3f}).'
+        )
+        click.secho(message, fg='yellow')
+
+
 def benchmark(
     arg_hook: BENCHMARK_HOOK | None = None,
     *,
-    repetitions: int = 10
+    repetitions: int = 10,
+    warn: float | None = None,
+    fail: float | None = None
 ) -> __BENCHMARK_DEC:
     """
     Benchmarks the time taken by a hook.
@@ -33,6 +83,12 @@ def benchmark(
     use UUID's for any unique data.
 
     `assert` that the data is correct.
+
+    Specify `warn`, in milliseconds, to warn if
+    the average goes above.
+
+    Specify `fail`, also in milliseconds, to
+    fail test test above this.
     """
 
     def decorator(
@@ -52,9 +108,14 @@ def benchmark(
 
             average = ((stop - start) / repetitions) * 1000
 
-            print(
-                f'{hook_name} - {average:.3f} milliseconds'
+            __report_result(
+                average,
+                hook_name,
+                warn,
+                fail,
             )
+
+        wrapper.__benchmark__ = True
 
         return wrapper
 

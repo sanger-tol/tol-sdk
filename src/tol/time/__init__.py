@@ -2,4 +2,4 @@
 #
 # SPDX-License-Identifier: MIT
 
-from .dec import benchmark  # noqa
+from .dec import LimitExceededError, benchmark  # noqa
