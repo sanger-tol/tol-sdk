@@ -320,6 +320,31 @@ def data(ctx, source, operation, type_, filter_, fields, converter, output):
         output_json(objs, fields.split(',') if fields else [])
 
 
+# Benchmarking
+@cli.command()
+@click.option(
+    '--suite',
+    'suite',
+    default='all',
+    help='the benchmarking test-suite module to run'
+)
+@click.pass_context
+def benchmark(ctx, suite: str) -> None:
+    docker_compose_entry = f'{get_app()}-python-system-test'
+    db_entry = f'{get_app()}-python-db'
+    env_file = ctx.parent.params['env_file']
+
+    command = (
+        f'docker compose build {docker_compose_entry} && '
+        f'docker compose --env-file {env_file} up -d {db_entry} && '
+        f'docker compose --env-file {env_file} '
+        f'run --rm --build {docker_compose_entry} '
+        f'sh -c "sleep 5 && python3 -m performance.{suite}"'
+    )
+
+    run(command)
+
+
 def output_tsv(objs, fields):
     for i, obj in enumerate(objs):
         if i == 0:
