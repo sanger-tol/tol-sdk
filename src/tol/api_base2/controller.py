@@ -383,9 +383,12 @@ class Controller:
                 return DataSourceFilter(
                     and_=ext_and
                 )
+            elif object_filters.and_ is None:
+                object_filters.and_ = ext_and
             else:
                 object_filters.and_ |= ext_and
-                return object_filters
+
+            return object_filters
 
     def __get_detail_object(self, object_type: str, object_id: str) -> DataObject:
         data_objects = list(self.__data_source.get_by_id(object_type, [object_id]))
