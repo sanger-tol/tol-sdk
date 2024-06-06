@@ -40,10 +40,6 @@ class LimitExceededError(Exception):
 
         super().__init__(self.__message)
 
-    @property
-    def message(self) -> str:
-        return self.__message
-
 
 def __report_result(
     average: float,
