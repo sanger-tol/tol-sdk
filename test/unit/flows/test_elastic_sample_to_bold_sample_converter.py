@@ -81,6 +81,7 @@ class TestElasticSampleToBoldSampleConverter(TestCase):
                 'sts_gal_name': 'GENOME ACQUISITION LABORATORY',
                 'sts_gal_abbreviation': 'GAL',
                 'sts_organism_part': ['LEG', 'ARM'],
+                'sts_rackid': 'GAL_1234_5678',
                 'sts_CONTRIBUTORS':
                     'Person One;Institution One;p1@i1.ac.uk;primary contact|'
                     'Person Two;Institution Two;p2@i2.ac.uk;plated specimens',
