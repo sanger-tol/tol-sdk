@@ -2,15 +2,16 @@
 #
 # SPDX-License-Identifier: MIT
 
-import click
 import sys
 from functools import reduce
 from typing import Any, Callable
 
+import click
+
 from tol.time import LimitExceededError
 
 # import all test-suite modules like this
-from .relation import *
+from .relation import *  # noqa
 
 
 def __get_timed_methods() -> list[Callable]:
@@ -39,16 +40,16 @@ def __run_methods(
 ) -> None:
 
     def __run(
-        l: list[LimitExceededError],
+        list_exc: list[LimitExceededError],
         m: Callable,
     ) -> list[LimitExceededError]:
 
         try:
             m()
         except LimitExceededError as e:
-            l.append(e)
+            list_exc.append(e)
         finally:
-            return l
+            return list_exc
 
     errors = reduce(
         __run,

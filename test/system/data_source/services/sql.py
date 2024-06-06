@@ -32,8 +32,6 @@ def create_tables():
             continue
 
 
-
-
 sql_ds = create_sql_datasource(
     ALL_MODELS,
     os.environ['DB_URI']

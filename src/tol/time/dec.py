@@ -2,10 +2,11 @@
 #
 # SPDX-License-Identifier: MIT
 
-import click
 import functools as f
 import time
 import typing as t
+
+import click
 
 
 BENCHMARK_HOOK = t.Callable[[], None]
