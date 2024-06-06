@@ -116,6 +116,9 @@ benchmark-python-package:
     DB_URI: postgresql://system_test:system_test@db:5432/system_test
     API_PATH: /api
   stage: benchmark
+  services:
+    - name: $DIND_IMAGE
+      alias: docker
   before_script:
     - cd test/system
     - docker compose up -d db
