@@ -12,9 +12,9 @@ from tol.time import benchmark
 @benchmark(
     repetitions=100,
     warn=20,
-    fail=50
+    fail=30
 )
-def time_get_to_one_relation() -> None:
+def get_to_one_relation() -> None:
     """loosely checks for rogue fetches"""
 
     rel = api_sql.data_object_factory(
