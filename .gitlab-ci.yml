@@ -36,6 +36,9 @@ build-test-image:
     DOCKER_HOST: "tcp://docker:2375"
     DOCKER_TLS_CERTDIR: ''
     NAME: tol-sdk-test-image
+  needs:
+    - lint-python
+    - lint-license
   rules:
     - if: $CI_COMMIT_REF_NAME == "qa"
       when: never
