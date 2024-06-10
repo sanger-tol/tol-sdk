@@ -50,6 +50,8 @@ build-test-image:
 unit-test-python-package:
   extends: .unit-test-python-package
   image: $BUILT_IMAGE
+  needs:
+    - build-test-image
   rules:
     - if: $CI_COMMIT_REF_NAME == "qa"
       when: never
@@ -88,6 +90,8 @@ system-test-python-package:
     - docker-compose up -d system-test-api-sql system-test-api-elastic
   script:
     - docker-compose run system-test
+  needs:
+    - build-test-image
   rules:
     - if: $CI_COMMIT_REF_NAME == "qa"
       when: never
@@ -124,6 +128,8 @@ benchmark-python-package:
     - sleep 5
   script:
     - docker compose run benchmark
+  needs:
+    - build-test-image
   rules:
     - if: $CI_COMMIT_REF_NAME == "qa"
       when: never
