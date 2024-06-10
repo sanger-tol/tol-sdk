@@ -8,7 +8,7 @@ from typing import Any, Callable
 
 import click
 
-from tol.time import LimitExceededError
+from performance.utils import LimitExceededError
 
 # import all test-suite modules like this
 from .relation import *  # noqa

@@ -94,7 +94,7 @@ system-test-python-package:
   script:
     - docker-compose run system-test
   needs:
-    - build-test-image
+    - unit-test-python-package
   rules:
     - if: $CI_COMMIT_REF_NAME == "qa"
       when: never
@@ -125,14 +125,14 @@ benchmark-python-package:
       alias: docker
   before_script:
     - cd test/system
-    - docker compose up -d db
+    - docker-compose up -d db
     - sleep 5
-    - docker compose up -d system-test-api-sql
+    - docker-compose up -d system-test-api-sql
     - sleep 5
   script:
-    - docker compose run benchmark
+    - docker-compose run benchmark
   needs:
-    - build-test-image
+    - unit-test-python-package
   rules:
     - if: $CI_COMMIT_REF_NAME == "qa"
       when: never

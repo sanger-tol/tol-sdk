@@ -19,7 +19,7 @@ services:
     image: ${BUILT_IMAGE}
     command: pytest -v system
     environment:
-      - DB_URI={DB_URI}
+      - DB_URI=${DB_URI}
       - GOOGLE_CLIENT_SECRETS=${GOOGLE_CLIENT_SECRETS}
       - UUID_PREFIX=${UUID_PREFIX}
       - ELASTIC_URI=${ELASTIC_URI}

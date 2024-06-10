@@ -4,14 +4,12 @@
 
 from uuid import uuid4
 
-from performance.ds import api_sql
-
-from tol.time import benchmark
+from performance.utils import api_sql, benchmark
 
 
 @benchmark(
     repetitions=100,
-    warn=20,
+    warn=10,
     fail=30
 )
 def get_to_one_relation() -> None:
