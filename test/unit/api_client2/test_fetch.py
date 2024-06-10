@@ -119,4 +119,8 @@ class TestNoFetch:
             }
         }
 
-        api_ds.get_one('root', '400')
+        obj = api_ds.get_one('root', '400')
+
+        assert obj is not None
+        api_client.get_detail.assert_called_once()
+        api_client.get_to_one_relation_recursive.assert_not_called()
