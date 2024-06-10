@@ -62,7 +62,21 @@ def api_ds(
     )
 
 
-class TestFetch:
-    """
-    No superfluous fetches
-    """
+class TestNoFetch:
+    """No superfluous fetches"""
+
+    def test_get_recursive_relation(
+        self,
+        api_ds: ApiDataSource,
+        api_client: JsonApiClient
+    ):
+        """
+        Endpoint returns relations +
+        getting relation.attr on root
+        -> none of the following:
+
+        - get_recursive_relation (on
+          root type)
+        - get_by_id (on relation type)
+        - get_one (on relation type)
+        """
