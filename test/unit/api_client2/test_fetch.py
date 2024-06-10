@@ -92,7 +92,8 @@ class TestNoFetch:
     def test_get_by_id(
         self,
         api_ds: ApiDataSource,
-        api_client: JsonApiClient
+        api_client: JsonApiClient,
+        json_api_converter: JsonApiConverter
     ):
         """
         Endpoint returns relations +
@@ -114,6 +115,13 @@ class TestNoFetch:
             },
             'rel': {
                 'noauth': ['detailGet', 'relational']
+            }
+        }
+        api_client.config_relationships.return_value = {
+            'root': {
+                'one': {
+                    'relation': 'rel'
+                }
             }
         }
         api_client.get_detail.return_value = {
