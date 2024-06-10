@@ -2,7 +2,6 @@
 #
 # SPDX-License-Identifier: MIT
 
-from typing import Any
 from unittest.mock import create_autospec
 
 import pytest
@@ -11,7 +10,8 @@ from tol.api_client2 import ApiDataSource
 from tol.api_client2.client import JsonApiClient
 from tol.api_client2.converter import DataObjectConverter, JsonApiConverter
 from tol.api_client2.filter import ApiFilter
-from tol.core import DataObject, core_data_object
+from tol.api_client2.parser import DefaultParser, Parser
+from tol.core import core_data_object
 from tol.core.relationship import RelationshipConfig
 
 
@@ -24,10 +24,20 @@ def api_client() -> JsonApiClient:
 
 
 @pytest.fixture(scope='function')
-def json_api_converter() -> JsonApiConverter:
+def parser() -> Parser:
     return create_autospec(
-        JsonApiConverter,
+        Parser,
         spec_set=True
+    )
+
+
+@pytest.fixture(scope='function')
+def json_api_converter(
+    parser: Parser
+) -> JsonApiConverter:
+
+    return JsonApiConverter(
+        parser
     )
 
 
@@ -52,7 +62,8 @@ def api_ds(
     api_client: JsonApiClient,
     json_api_converter: JsonApiConverter,
     data_object_converter: DataObjectConverter,
-    api_filter: ApiFilter
+    api_filter: ApiFilter,
+    parser: Parser
 ) -> ApiDataSource:
 
     ds = ApiDataSource(
@@ -62,6 +73,15 @@ def api_ds(
         lambda: api_filter
     )
     core_data_object(ds)
+
+    # resolves a chicken-and-the-egg problem
+    parser_override = DefaultParser(
+        {
+            'root': ds,
+            'rel': ds
+        }
+    )
+    parser.parse.side_effect = parser_override.parse
 
     return ds
 
@@ -84,13 +104,6 @@ class TestNoFetch:
         - `get_to_one_relation_recursive`
         """
 
-        api_client.config_relationships.return_value = {
-            'root': RelationshipConfig(
-                to_one={
-                    'relation': 'rel'
-                }
-            )
-        }
         api_client.config_attribute_types.return_value = {
             'root': {},
             'rel': {'str_column': 'str'}
@@ -108,11 +121,13 @@ class TestNoFetch:
                 'type': 'root',
                 'id': '400',
                 'relationships': {
-                    'data': {
-                        'type': 'rel',
-                        'id': '408',
-                        'attributes': {
-                            'str_column': 'NO FETCH!'
+                    'relation': {
+                        'data': {
+                            'type': 'rel',
+                            'id': '408',
+                            'attributes': {
+                                'str_column': 'NO FETCH!'
+                            }
                         }
                     }
                 }
@@ -122,5 +137,14 @@ class TestNoFetch:
         obj = api_ds.get_one('root', '400')
 
         assert obj is not None
+        api_client.get_detail.assert_called_once()
+        api_client.get_to_one_relation_recursive.assert_not_called()
+
+        relation = obj.relation
+        assert relation is not None
+
+        assert relation.str_column == 'NO FETCH!'
+
+        # no more fetches since last time
         api_client.get_detail.assert_called_once()
         api_client.get_to_one_relation_recursive.assert_not_called()
