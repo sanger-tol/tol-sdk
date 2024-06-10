@@ -40,6 +40,16 @@ services:
       - ./src:/app/src
       - ./test:/test
 
+  tol-sdk-python-performance-test:
+    build: .
+    environment:
+      - DB_URI=postgresql://test-user:test-password@tol-sdk-python-db:5432/test-db
+    networks:
+      - api-base-test-network
+    volumes:
+      - ./src:/app/src
+      - ./test:/test
+
   system-test-api-elastic:
     build: .
     command: flask --app elastic run --host 0.0.0.0 --debugger
