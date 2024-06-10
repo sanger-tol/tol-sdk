@@ -49,6 +49,9 @@ services:
     volumes:
       - ./src:/app/src
       - ./test:/test
+    depends_on:
+      - tol-sdk-python-db
+      - system-test-api-sql
 
   system-test-api-elastic:
     build: .

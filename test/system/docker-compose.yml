@@ -67,6 +67,7 @@ services:
       - test-network
     depends_on:
       - db
+      - system-test-api-sql
 
 networks:
   test-network:
