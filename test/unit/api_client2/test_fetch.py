@@ -92,8 +92,7 @@ class TestNoFetch:
     def test_get_by_id(
         self,
         api_ds: ApiDataSource,
-        api_client: JsonApiClient,
-        json_api_converter: JsonApiConverter
+        api_client: JsonApiClient
     ):
         """
         Endpoint returns relations +
