@@ -649,8 +649,10 @@ class TestSqlDataSource:
         `BackConverter().convert() correctly`
         """
 
+        mock_sess = MagicMock()
+
         mock_sess_factory = MagicMock()
-        mock_sess_factory.return_value = 'hi'
+        mock_sess_factory.return_value = mock_sess
 
         mock_db = MagicMock()
         mock_db.session_factory = mock_sess_factory
@@ -670,7 +672,11 @@ class TestSqlDataSource:
             MagicMock()
         )
         ds.upsert('tests', mock_object)
-        mock_db.upsert.assert_called_once_with(mock_model, user_id=None, in_session=None)
+        mock_db.upsert.assert_called_once_with(
+            mock_model,
+            user_id=None,
+            in_session=mock_sess
+        )
 
     def test_get_attribute_types(self):
         """
@@ -719,8 +725,10 @@ class TestSqlDataSource:
     def test_user_id_delete(self):
         """user_id is set on delete"""
 
+        mock_sess = MagicMock()
+
         mock_sess_factory = MagicMock()
-        mock_sess_factory.return_value = 'hi'
+        mock_sess_factory.return_value = mock_sess
 
         mock_db = MagicMock()
         mock_db.session_factory = mock_sess_factory
@@ -747,14 +755,16 @@ class TestSqlDataSource:
             'test',
             'test_ID',
             user_id='a user ID',
-            in_session=None
+            in_session=mock_sess
         )
 
     def test_user_id_upsert(self):
         """user_id is set on upsert"""
 
+        mock_sess = MagicMock()
+
         mock_sess_factory = MagicMock()
-        mock_sess_factory.return_value = 'hi'
+        mock_sess_factory.return_value = mock_sess
 
         mock_db = MagicMock()
         mock_db.session_factory = mock_sess_factory
@@ -787,14 +797,20 @@ class TestSqlDataSource:
         mock_db.upsert.assert_called_once_with(
             mock_model_instance,
             user_id='a user ID',
-            in_session=None
+            in_session=mock_sess
         )
 
     def test_insert(self):
         """`SqlDataSource().insert()`"""
 
+        mock_sess = MagicMock()
+
+        mock_sess_factory = MagicMock()
+        mock_sess_factory.return_value = mock_sess
+
         mock_db = create_autospec(Database, spec_set=True)
         mock_db.attribute_types = {'test': {}}
+        mock_db.session_factory = mock_sess_factory
 
         mock_model = create_autospec(Model, spec_set=True)
         mock_model.get_table_name.return_value = 'test'
@@ -823,7 +839,11 @@ class TestSqlDataSource:
         mock_model_factory.convert_iterable.assert_called_once()
 
         expected_insert_calls = [
-            call(obj, user_id='a user ID')
+            call(
+                obj,
+                user_id='a user ID',
+                in_session=mock_sess
+            )
             for obj in mock_objects
         ]
         assert mock_db.insert.call_args_list == expected_insert_calls

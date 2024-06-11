@@ -268,7 +268,7 @@ class SqlDataSource(
         self,
         object_type: str,
         objects: Iterable[DataObject],
-        session: Optional[DataSourceSession]
+        session: Optional[DataSourceSession] = None
     ) -> Iterable[DataObject]:
 
         # TODO optimise by batching?
