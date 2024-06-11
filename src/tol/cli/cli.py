@@ -330,8 +330,10 @@ def benchmark(ctx) -> None:
 
     command = (
         f'docker compose --env-file {env_file} up -d {db_entry} && '
+        f'docker compose --env-file {env_file} '
+        f'build {docker_compose_entry} && '
         f'sleep 5 && docker compose --env-file {env_file} '
-        f'run --rm --build {docker_compose_entry} '
+        f'run --rm {docker_compose_entry} '
         'sh -c "sleep 5 && python3 -m performance.all"'
     )
 
