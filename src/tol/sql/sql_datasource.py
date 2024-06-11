@@ -410,11 +410,11 @@ class SqlDataSource(
         offset = self.__get_offset(page_number, page_size)
         return self.__db.get_page(
             tablename,
+            session,
             filters=filters,
             sort_by=sort_by,
             offset=offset,
-            limit=page_size,
-            in_session=session
+            limit=page_size
         )
 
     def __get_offset(

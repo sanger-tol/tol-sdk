@@ -234,6 +234,7 @@ class TestSqlDataSource:
             def get_page(
                 self,
                 tablename: str,
+                session,
                 filters: Optional[DataSourceFilter] = None,
                 sort_by: Optional[str] = None,
                 offset: Optional[int] = None,
@@ -256,6 +257,7 @@ class TestSqlDataSource:
 
             def count(
                 self,
+                session,
                 tablename: str,
                 filters: Optional[DataSourceFilter] = None,
                 **kwargs
@@ -304,6 +306,7 @@ class TestSqlDataSource:
             def count(
                 self,
                 tablename: str,
+                session,
                 filters: Optional[DatabaseFilter] = None,
                 **kwargs
             ) -> int:
@@ -354,6 +357,7 @@ class TestSqlDataSource:
             def get_page(
                 self,
                 tablename: str,
+                session,
                 filters: Optional[DatabaseFilter] = None,
                 sort_by: Optional[str] = None,
                 offset: Optional[int] = None,
@@ -411,6 +415,7 @@ class TestSqlDataSource:
             def get_page(
                 self,
                 tablename: str,
+                session,
                 filters: Optional[DatabaseFilter] = None,
                 sort_by: Optional[str] = None,
                 offset: Optional[int] = None,
@@ -528,6 +533,7 @@ class TestSqlDataSource:
                 tablename: str,
                 instance_id: str,
                 relationship_name: str,
+                session,
                 **kwargs
             ):
                 assert tablename == 'test'
@@ -573,6 +579,7 @@ class TestSqlDataSource:
                 tablename: str,
                 instance_id: str,
                 relationship_name: str,
+                session,
                 **kwargs
             ):
                 assert tablename == 'test'
