@@ -58,9 +58,9 @@ class DefaultModelConverter(ModelConverter):
     ) -> dict[str, DataObject]:
 
         return {
-            k: self.convert_optional(v)
+            k: self.convert(v)
             for k, v
-            in model.instance_to_one_relations
+            in model.instance_to_one_relations.items()
             if v is not None
         }
 
