@@ -14,6 +14,7 @@ from .session import SessionFactory
 from .sort import DatabaseSorter
 from ..core import DataSourceError
 
+
 class Database(ABC):
     """Encapsulates basic operations on a Database"""
 
@@ -222,7 +223,6 @@ class DefaultDatabase(Database):
             is_delete=True
         )
 
-
     def upsert(
         self,
         instance: Model,
@@ -240,7 +240,6 @@ class DefaultDatabase(Database):
             'upserting',
             user_id=user_id
         )
-
 
     def insert(
         self,

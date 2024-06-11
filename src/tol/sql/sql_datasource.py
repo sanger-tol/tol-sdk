@@ -198,7 +198,7 @@ class SqlDataSource(
         )
         if session is None:
             sqla_session.close()
-        
+
         return return_objects, total_count
 
     def get_list(
@@ -342,7 +342,7 @@ class SqlDataSource(
     ) -> list[DataObject]:
 
         sqla_session = self.__get_sqla_session(session)
-            
+
         models = self.__db.get_page(
             tablename,
             sqla_session,

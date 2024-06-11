@@ -7,10 +7,7 @@ from unittest.mock import create_autospec
 
 import pytest
 
-from tol.core import (
-    DataObject,
-    core_data_object
-)
+from tol.core import core_data_object
 from tol.core.relationship import (
     RelationshipConfig
 )
@@ -201,4 +198,3 @@ class TestFetch:
         mock_model.instance_to_one_relations = to_ones
 
         return mock_model
-
