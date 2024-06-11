@@ -47,9 +47,9 @@ class TestDefaultDatabaseFilter:
             type_tablename_dict,
             Mock()
         )
-        count = db.count('a', filters=even_filter)
+        count = db.count('a', session, filters=even_filter)
         assert count == 4
-        evens = db.get_page('a', filters=even_filter)
+        evens = db.get_page('a', session, filters=even_filter)
         for i, even in enumerate(evens):
             assert even.instance_id == str(i * 2)
             assert even.instance_attributes == {'string_column': 'even'}
@@ -60,9 +60,9 @@ class TestDefaultDatabaseFilter:
             type_tablename_dict,
             Mock()
         )
-        count = db.count('a', filters=odd_filter)
+        count = db.count('a', session, filters=odd_filter)
         assert count == 3
-        odds = db.get_page('a', filters=odd_filter)
+        odds = db.get_page('a', session, filters=odd_filter)
         for i, odd in enumerate(odds):
             assert odd.instance_id == str(i * 2 + 1)
             assert odd.instance_attributes == {'string_column': 'odd'}
@@ -99,11 +99,11 @@ class TestDefaultDatabaseFilter:
         db_filter = DefaultDatabaseFilter(ds_filter, type_tablename_dict, Mock())
 
         # there can be only one
-        count = db.count('b', filters=db_filter)
+        count = db.count('b', session, filters=db_filter)
         assert count == 1
 
         # check it's the right one
-        fetched = list(db.get_page('b', filters=db_filter))[0]
+        fetched = list(db.get_page('b', session, filters=db_filter))[0]
         assert fetched.instance_id == '23'
         assert fetched.instance_attributes == {
             'int_column': 3,
@@ -139,7 +139,7 @@ class TestDefaultDatabaseFilter:
 
         def __assert_count(and_: AndFilter, expected_count: int) -> None:
             db_filter = __make_db_and_filter(and_)
-            count = db.count('b', filters=db_filter)
+            count = db.count('b', session, filters=db_filter)
 
             assert count == expected_count
 
@@ -356,11 +356,11 @@ class TestDefaultDatabaseFilter:
         )
 
         # there can be only one
-        count = db.count('r3', filters=db_filter)
+        count = db.count('r3', session, filters=db_filter)
         assert count == 1
 
         # check it's the right one
         (r3_instance,) = list(
-            db.get_page('r3', filters=db_filter)
+            db.get_page('r3', session, filters=db_filter)
         )
         assert r3_instance.instance_id == '1031'

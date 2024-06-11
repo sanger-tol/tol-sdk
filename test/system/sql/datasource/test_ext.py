@@ -34,13 +34,13 @@ class TestDatabaseExt:
         db = DefaultDatabase(session_factory, models_list)
 
         # no ext
-        attrs = db.get_by_id('ext_default', 'yes').instance_attributes
+        attrs = db.get_by_id('ext_default', 'yes', session_factory()).instance_attributes
         assert attrs == {
             'string_column': None
         }
 
         # includes ext
-        attrs = db.get_by_id('ext_default', 'fun').instance_attributes
+        attrs = db.get_by_id('ext_default', 'fun', session_factory()).instance_attributes
         assert attrs == {
             'hype': 'train',
             'string_column': 'neverending'
@@ -70,7 +70,7 @@ class TestDatabaseExt:
 
         results = [
             m.instance_attributes
-            for m in db.get_page('ext_override')
+            for m in db.get_page('ext_override', session_factory())
         ]
 
         assert results == [

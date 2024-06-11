@@ -21,9 +21,13 @@ class TestLogBase:
         db = DefaultDatabase(session_factory, models_list)
 
         model = models.C(id_override='I am an override')
-        db.upsert(model, user_id='101')
+        db.upsert(model, session_factory(), user_id='101')
 
-        fetched: models.C = db.get_by_id('c', 'I am an override')
+        fetched: models.C = db.get_by_id(
+            'c',
+            'I am an override',
+            session_factory()
+        )
 
         assert fetched.id_override == 'I am an override'
         assert fetched.string_column is None
@@ -39,9 +43,9 @@ class TestLogBase:
         db = DefaultDatabase(session_factory, models_list)
 
         model = models.C(id_override='I am an override')
-        db.upsert(model, user_id='101')
+        db.upsert(model, session_factory(), user_id='101')
 
-        fetched: models.C = db.get_by_id('c', 'I am an override')
+        fetched: models.C = db.get_by_id('c', 'I am an override', session_factory())
 
         assert fetched.id_override == 'I am an override'
         assert fetched.string_column is None
@@ -52,9 +56,13 @@ class TestLogBase:
             id_override='I am an override',
             string_column='I am now set! :)'
         )
-        db.upsert(second_model, user_id='202')  # different `user_id`
+        db.upsert(second_model, session_factory(), user_id='202')  # different `user_id`
 
-        fetched_second: models.C = db.get_by_id('c', 'I am an override')
+        fetched_second: models.C = db.get_by_id(
+            'c',
+            'I am an override',
+            session_factory()
+        )
 
         assert fetched_second.id_override == 'I am an override'
         assert fetched_second.string_column == 'I am now set! :)'
@@ -68,6 +76,6 @@ class TestLogBase:
 
         model = models.C(id_override='I am an override')
 
-        db.upsert(model, user_id='101')
+        db.upsert(model, session_factory(), user_id='101')
 
-        db.delete('c', 'I am an override', user_id='101')  # this isn't stored
+        db.delete('c', 'I am an override', session_factory(), user_id='101')  # this isn't stored

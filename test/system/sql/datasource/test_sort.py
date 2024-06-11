@@ -26,7 +26,7 @@ class TestDefaultDatabaseSorter:
         db = DefaultDatabase(session_factory, models_list)
 
         sorter = DefaultDatabaseSorter('string_column')
-        a_list = db.get_page('a', sort_by=sorter)
+        a_list = db.get_page('a', session_factory(), sort_by=sorter)
         # the difference is preserved
         for a in a_list:
             assert a.string_column == str(20 - int(a.id))
@@ -50,7 +50,7 @@ class TestDefaultDatabaseSorter:
         db = DefaultDatabase(session_factory, models_list)
 
         sorter = DefaultDatabaseSorter('-string_column')
-        a_list = db.get_page('a', sort_by=sorter)
+        a_list = db.get_page('a', session_factory(), sort_by=sorter)
         # the difference is preserved
         for a in a_list:
             assert a.string_column == str(32 - int(a.id))
