@@ -215,26 +215,17 @@ class SqlDataSource(
         database_sorter = self.__sorter_factory(sort_by)
         page_size = self.get_page_size()
         while True:
-            sqla_sesion = self.__get_sqla_session(session)
-            
-            models_iterable = self.__db.get_page(
+            objects_page = self.__get_page(
+                page,
+                page_size,
                 tablename,
-                filters=database_filter,
-                sort_by=database_sorter,
-                offset=(page - 1) * page_size,
-                limit=page_size,
-                in_session=sqla_sesion
+                session,
+                database_filter,
+                database_sorter
             )
-            models = list(models_iterable)
-            if len(models) == 0:
+            if len(objects_page) == 0:
                 return
-            converter = self.__get_converter()
-            objects = converter.convert_iterable(
-                models
-            )
-            if session is None:
-                sqla_sesion.close()
-            yield from objects
+            yield from objects_page
             page += 1
 
     def delete(
@@ -339,6 +330,34 @@ class SqlDataSource(
         if session is None:
             sqla_session.close()
         return return_objects
+
+    def __get_page(
+        self,
+        page: int,
+        page_size: int,
+        tablename: str,
+        session: Optional[DataSourceSession],
+        database_filter: Optional[DatabaseFilter],
+        database_sorter: Optional[DatabaseSorter]
+    ) -> list[DataObject]:
+
+        sqla_sesion = self.__get_sqla_session(session)
+            
+        models = self.__db.get_page(
+            tablename,
+            filters=database_filter,
+            sort_by=database_sorter,
+            offset=(page - 1) * page_size,
+            limit=page_size,
+            in_session=sqla_sesion
+        )
+        converter = self.__get_converter()
+        objects = list(
+            converter.convert_iterable(models)
+        )
+        if session is None:
+            sqla_sesion.close()
+        return objects
 
     def __calculate_all_attribute_types(self) -> dict[str, dict[str, str]]:
         tablename_type_map = {
