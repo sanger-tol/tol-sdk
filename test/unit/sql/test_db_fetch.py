@@ -2,6 +2,7 @@
 #
 # SPDX-License-Identifier: MIT
 
+from typing import Any
 from unittest.mock import create_autospec
 
 import pytest
@@ -16,12 +17,14 @@ from tol.core.relationship import (
 from tol.sql import SqlDataSource
 from tol.sql.database import Database
 from tol.sql.filter import DatabaseFilter
+from tol.sql.model import Model
 from tol.sql.relationship import (
     SqlRelationshipConfig
 )
 from tol.sql.sort import DatabaseSorter
 from tol.sql.sql_converter import (
     DataObjectConverter,
+    DefaultModelConverter,
     ModelConverter
 )
 
@@ -121,6 +124,15 @@ def sql_ds(
     )
     core_data_object(ds)
 
+    # prevent chicken-and-the-egg
+    model_converter_override = DefaultModelConverter(
+        lambda t: t.get_table_name(),
+        ds.data_object_factory
+    )
+    model_converter.convert_iterable.side_effect = (
+        model_converter_override.convert_iterable
+    )
+
     return ds
 
 
@@ -138,20 +150,21 @@ class TestFetch:
         -> no relation fetch occurs.
         """
 
-        mock_r2 = create_autospec(DataObject, spec_set=True)
-        mock_r2.attributes = {
-            'str_column': 'lol'
-        }
+        mock_r2 = self.__mock_model(
+            'r2',
+            attributes={
+                'str_column': 'lol'
+            }
+        )
 
-        mock_r1 = create_autospec(DataObject, spec_set=True)
-        mock_r1.type = 'r1'
-        mock_r1._to_one_objects = {
-            'r2_d2': mock_r2
-        }
+        mock_r1 = self.__mock_model(
+            'r1',
+            to_ones={
+                'r2_d2': mock_r2
+            }
+        )
 
-        model_converter.convert_iterable.return_value = [
-            mock_r1
-        ]
+        db.get_by_id.return_value = mock_r1
 
         fetched_r1 = sql_ds.get_one(
             'r1',
@@ -159,3 +172,28 @@ class TestFetch:
         )
 
         db.get_by_id.assert_called_once()
+        db.get_to_one_relation.assert_not_called()
+
+        fetched_r2 = fetched_r1.r2_d2
+        assert fetched_r2 is not None
+
+    def __mock_model(
+        self,
+        tablename: str,
+        id_: str | None = None,
+        attributes: dict[str, Any] = {},
+        to_ones: dict[str, Model] = {}
+    ) -> Model:
+
+        mock_model = create_autospec(
+            Model,
+            spec_set=True
+        )
+
+        mock_model.get_table_name.return_value = tablename
+        mock_model.instance_id = id_
+        mock_model.instance_attributes = attributes
+        mock_model.instance_to_one_relations = to_ones
+
+        return mock_model
+
