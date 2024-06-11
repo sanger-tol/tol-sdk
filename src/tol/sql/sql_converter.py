@@ -64,7 +64,7 @@ class DefaultModelConverter(ModelConverter):
             return {}
 
         return {
-            k: self.convert(v, depth=depth)
+            k: self.convert(v, depth=depth + 1)
             for k, v
             in model.instance_to_one_relations.items()
             if v is not None
