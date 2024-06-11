@@ -15,7 +15,7 @@ class TestDefaultDatabase:
         """No rows -> count = 0"""
 
         db = DefaultDatabase(session_factory, models_list)
-        count = db.count('a')
+        count = db.count('a', session_factory())
         assert count == 0
 
     def test_count_with_added(self, session_factory, models_list):
@@ -29,7 +29,7 @@ class TestDefaultDatabase:
 
         # get the count, assert its right
         db = DefaultDatabase(session_factory, models_list)
-        count = db.count('a')
+        count = db.count('a', session_factory())
         assert count == 7
 
     def test_get_to_one_relation_none(self, session_factory, models_list):
@@ -46,7 +46,8 @@ class TestDefaultDatabase:
         r2_relation = db.get_to_one_relation(
             'r1',
             'jape',
-            'r2_d2'
+            'r2_d2',
+            session_factory()
         )
         assert r2_relation is None
 
@@ -69,7 +70,8 @@ class TestDefaultDatabase:
         r2_relation = db.get_to_one_relation(
             'r1',
             'omni',
-            'r2_d2'
+            'r2_d2',
+            session_factory()
         )
         assert r2_relation is not None
         assert r2_relation.instance_id == 'lol'
@@ -88,7 +90,8 @@ class TestDefaultDatabase:
         r3_relations = db.get_to_many_relations(
             'r1',
             'whatever',
-            'r3_plz'
+            'r3_plz',
+            session_factory()
         )
         assert list(r3_relations) == []
 
@@ -119,7 +122,8 @@ class TestDefaultDatabase:
             db.get_to_many_relations(
                 'r1',
                 'neverending-hype',
-                'r3_plz'
+                'r3_plz',
+                session_factory()
             )
         )
         # correct length
@@ -143,7 +147,8 @@ class TestDefaultDatabase:
         db = DefaultDatabase(session_factory, models_list)
         db.delete(
             'a',
-            'what are you going to do, delete me?'
+            'what are you going to do, delete me?',
+            session_factory()
         )
 
         # confirm the "A" is deleted
@@ -172,7 +177,8 @@ class TestDefaultDatabase:
             models.A(
                 id='101',
                 string_column='consider yourself updated'
-            )
+            ),
+            session_factory()
         )
 
         # confirm the "A" is updated
@@ -206,7 +212,8 @@ class TestDefaultDatabase:
                 models.A(
                     id='101',
                     string_column='I am invincible'
-                )
+                ),
+                session_factory()
             )
 
     def test_insert_not_existing(self, session_factory, models_list):
@@ -217,7 +224,8 @@ class TestDefaultDatabase:
             models.A(
                 id='101',
                 string_column='I am invincible'
-            )
+            ),
+            session_factory()
         )
 
         # confirm the "A" is inserted
@@ -239,7 +247,8 @@ class TestDefaultDatabase:
             models.A(
                 id='303',
                 string_column='consider yourself inserted'
-            )
+            ),
+            session_factory()
         )
 
         # confirm the "A" is inserted
