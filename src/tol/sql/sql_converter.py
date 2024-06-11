@@ -48,8 +48,21 @@ class DefaultModelConverter(ModelConverter):
         return self.__data_object_factory(
             type_,
             id_=model.instance_id,
-            attributes=model.instance_attributes
+            attributes=model.instance_attributes,
+            to_one=self.__convert_to_ones(model)
         )
+
+    def __convert_to_ones(
+        self,
+        model: Model
+    ) -> dict[str, DataObject]:
+
+        return {
+            k: self.convert_optional(v)
+            for k, v
+            in model.instance_to_one_relations
+            if v is not None
+        }
 
 
 class DataObjectConverter(Converter[DataObject, Model], ABC):
