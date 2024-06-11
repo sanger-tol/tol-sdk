@@ -48,8 +48,8 @@ def __run_methods(
             m()
         except LimitExceededError as e:
             list_exc.append(e)
-        finally:
-            return list_exc
+
+        return list_exc
 
     errors = reduce(
         __run,
