@@ -9,6 +9,8 @@ from typing import Callable, Dict, Iterable, List, Optional, Tuple
 
 from sqlalchemy.orm import Session as SqlaSession
 
+from tol.core.session import DataSourceSession
+
 from .database import Database
 from .ds_session import SqlDataSourceSession
 from .filter import DatabaseFilter
@@ -104,7 +106,7 @@ class SqlDataSource(
         return (
             session._sqla_session
             if session is not None
-            else None
+            else self.create_sqla_session()
         )
 
     @property
@@ -131,11 +133,14 @@ class SqlDataSource(
 
         tablename = self.__type_tablename_map[object_type]
         database_filter = self.__filter_factory(object_filters)
+        sqla_session = self.__get_sqla_session(session)
         total_count = self.__db.count(
             tablename,
             filters=database_filter,
-            in_session=self.__get_sqla_session(session)
+            in_session=sqla_session
         )
+        if session is None:
+            sqla_session.close()
         return total_count
 
     def get_by_id(
@@ -146,13 +151,19 @@ class SqlDataSource(
     ) -> Iterable[Optional[DataObject]]:
 
         # TODO maybe optimise on DB, and get multiple at once?
+        sqla_session = self.__get_sqla_session(session)
         models = self.__get_model_list_by_ids(
             object_type,
             object_ids,
-            session=self.__get_sqla_session(session)
+            session=sqla_session
         )
         converter = self.__get_converter()
-        return converter.convert_iterable(models)
+        return_objects = list(
+            converter.convert_iterable(models)
+        )
+        if session is None:
+            sqla_session.close()
+        return return_objects
 
     def get_list_page(
         self,
@@ -167,11 +178,11 @@ class SqlDataSource(
         tablename = self.__type_tablename_map[object_type]
         database_filter = self.__filter_factory(object_filters)
         sorter = self.__sorter_factory(sort_by)
-        session = self.__get_sqla_session(session)
+        sqla_session = self.__get_sqla_session(session)
         total_count = self.__db.count(
             tablename,
             filters=database_filter,
-            in_session=session
+            in_session=sqla_session
         )
         models = self.__get_list_page_models(
             tablename,
@@ -179,10 +190,16 @@ class SqlDataSource(
             page_number,
             page_size,
             sorter,
-            session
+            sqla_session
         )
         converter = self.__get_converter()
-        return converter.convert_iterable(models), total_count
+        return_objects = list(
+            converter.convert_iterable(models)
+        )
+        if session is None:
+            sqla_session.close()
+        
+        return return_objects, total_count
 
     def get_list(
         self,
@@ -191,14 +208,21 @@ class SqlDataSource(
         sort_by: Optional[str] = None,
         session: Optional[SqlDataSourceSession] = None
     ) -> Iterable[DataObject]:
+
+        sqla_session = self.__get_sqla_session(session)
         models = self.__generate_models_for_get_list(
             object_type,
             object_filters=object_filters,
             sort_by=sort_by,
-            session=self.__get_sqla_session(session)
+            session=sqla_session
         )
         converter = self.__get_converter()
-        return converter.convert_iterable(models)
+        return_objects = list(
+            converter.convert_iterable(models)
+        )
+        if session is None:
+            sqla_session.close()
+        return return_objects
 
     def delete(
         self,
@@ -208,13 +232,16 @@ class SqlDataSource(
     ) -> None:
         tablename = self.__type_tablename_map[object_type]
         user_id = self.__user_id_getter()
+        sqla_session = self.__get_sqla_session(session)
         for object_id in object_ids:
             self.__db.delete(
                 tablename,
                 object_id,
                 user_id=user_id,
-                in_session=self.__get_sqla_session(session)
+                in_session=sqla_session
             )
+        if session is None:
+            sqla_session.close()
 
     def upsert(
         self,
@@ -226,26 +253,37 @@ class SqlDataSource(
         # TODO optimise by batching?
         back_converter = self.__back_converter_factory()
         model_instances = back_converter.convert_iterable(objects)
+        sqla_session = self.__get_sqla_session(session)
         user_id = self.__user_id_getter()
         for instance in model_instances:
             self.__db.upsert(
                 instance,
                 user_id=user_id,
-                in_session=self.__get_sqla_session(session)
+                in_session=sqla_session
             )
+        if session is None:
+            sqla_session.close()
 
     def insert(
         self,
         object_type: str,
-        objects: Iterable[DataObject]
+        objects: Iterable[DataObject],
+        session: Optional[DataSourceSession]
     ) -> Iterable[DataObject]:
 
         # TODO optimise by batching?
         back_converter = self.__back_converter_factory()
         model_instances = back_converter.convert_iterable(objects)
         user_id = self.__user_id_getter()
+        sqla_session = self.__get_sqla_session(session)
         for instance in model_instances:
-            self.__db.insert(instance, user_id=user_id)
+            self.__db.insert(
+                instance,
+                user_id=user_id,
+                in_session=sqla_session
+            )
+        if session is None:
+            sqla_session.close()
 
     def get_to_one_relation(
         self,
@@ -255,13 +293,17 @@ class SqlDataSource(
     ) -> Optional[DataObject]:
 
         tablename = self.__type_tablename_map[source.type]
+        sqla_session = self.__get_sqla_session(session)
         model = self.__db.get_to_one_relation(
             tablename,
             source.id,
             relationship_name,
-            in_session=self.__get_sqla_session(session)
+            in_session=sqla_session
         )
-        return self.__get_converter().convert_optional(model)
+        return_object = self.__get_converter().convert_optional(model)
+        if session is None:
+            sqla_session.close()
+        return return_object
 
     def get_to_many_relations(
         self,
@@ -271,13 +313,19 @@ class SqlDataSource(
     ) -> Iterable[DataObject]:
 
         tablename = self.__type_tablename_map[source.type]
+        sqla_session = self.__get_sqla_session(session)
         models = self.__db.get_to_many_relations(
             tablename,
             source.id,
             relationship_name,
-            in_session=self.__get_sqla_session(session)
+            in_session=sqla_session
         )
-        return self.__get_converter().convert_iterable(models)
+        return_objects = list(
+            self.__get_converter().convert_iterable(models)
+        )
+        if session is None:
+            sqla_session.close()
+        return return_objects
 
     def __calculate_all_attribute_types(self) -> dict[str, dict[str, str]]:
         tablename_type_map = {
