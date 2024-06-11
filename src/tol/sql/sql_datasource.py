@@ -209,20 +209,33 @@ class SqlDataSource(
         session: Optional[SqlDataSourceSession] = None
     ) -> Iterable[DataObject]:
 
-        sqla_session = self.__get_sqla_session(session)
-        models = self.__generate_models_for_get_list(
-            object_type,
-            object_filters=object_filters,
-            sort_by=sort_by,
-            session=sqla_session
-        )
-        converter = self.__get_converter()
-        return_objects = list(
-            converter.convert_iterable(models)
-        )
-        if session is None:
-            sqla_session.close()
-        return return_objects
+        page = 1
+        tablename = self.__type_tablename_map[object_type]
+        database_filter = self.__filter_factory(object_filters)
+        database_sorter = self.__sorter_factory(sort_by)
+        page_size = self.get_page_size()
+        while True:
+            sqla_sesion = self.__get_sqla_session(session)
+            
+            models_iterable = self.__db.get_page(
+                tablename,
+                filters=database_filter,
+                sort_by=database_sorter,
+                offset=(page - 1) * page_size,
+                limit=page_size,
+                in_session=sqla_sesion
+            )
+            models = list(models_iterable)
+            if len(models) == 0:
+                return
+            converter = self.__get_converter()
+            objects = converter.convert_iterable(
+                models
+            )
+            if session is None:
+                sqla_sesion.close()
+            yield from objects
+            page += 1
 
     def delete(
         self,
@@ -349,33 +362,6 @@ class SqlDataSource(
 
     def __get_converter(self) -> ModelConverter:
         return self.__converter_factory(self.data_object_factory)
-
-    def __generate_models_for_get_list(
-        self,
-        object_type: str,
-        object_filters: Optional[DataSourceFilter] = None,
-        sort_by: Optional[str] = None,
-        session: Optional[SqlaSession] = None
-    ) -> Iterable[Model]:
-        page = 1
-        tablename = self.__type_tablename_map[object_type]
-        database_filter = self.__filter_factory(object_filters)
-        database_sorter = self.__sorter_factory(sort_by)
-        page_size = self.get_page_size()
-        while True:
-            models_iterable = self.__db.get_page(
-                tablename,
-                filters=database_filter,
-                sort_by=database_sorter,
-                offset=(page - 1) * page_size,
-                limit=page_size,
-                in_session=session
-            )
-            models = list(models_iterable)
-            if len(models) == 0:
-                return
-            yield from models
-            page += 1
 
     def __get_model_list_by_ids(
         self,
