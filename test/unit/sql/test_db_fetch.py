@@ -170,12 +170,17 @@ class TestFetch:
             'r1',
             'does not matter'
         )
-
         db.get_by_id.assert_called_once()
         db.get_to_one_relation.assert_not_called()
 
         fetched_r2 = fetched_r1.r2_d2
         assert fetched_r2 is not None
+        db.get_by_id.assert_called_once()
+        db.get_to_one_relation.assert_not_called()
+
+        assert fetched_r2.str_column == 'lol'
+        db.get_by_id.assert_called_once()
+        db.get_to_one_relation.assert_not_called()
 
     def __mock_model(
         self,
