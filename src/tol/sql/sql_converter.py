@@ -43,6 +43,9 @@ class DefaultModelConverter(ModelConverter):
         depth: int = 0
     ) -> DataObject:
 
+        if model is None:
+            return None
+
         type_ = self.__type_function(model)
         return self.__data_object_factory(
             type_,
