@@ -12,7 +12,6 @@ from tol.api_client2.converter import DataObjectConverter, JsonApiConverter
 from tol.api_client2.filter import ApiFilter
 from tol.api_client2.parser import DefaultParser, Parser
 from tol.core import core_data_object
-from tol.core.relationship import RelationshipConfig
 
 
 @pytest.fixture(scope='function')
