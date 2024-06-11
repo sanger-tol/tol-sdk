@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: MIT
 
 from abc import ABC
-from typing import Callable, TypeVar
+from typing import Callable
 
 from .model import Model
 from ..core import DataObject
@@ -13,14 +13,6 @@ from ..core.factory import DataObjectFactory
 
 TypeFunction = Callable[[Model], str]
 """Takes a Model instance, and returns the corresponding DataObject type."""
-
-
-In = TypeVar('In')
-"""The input representation type"""
-
-
-Out = TypeVar('Out')
-"""The output representation type"""
 
 
 class ModelConverter(Converter[Model, DataObject], ABC):
@@ -34,7 +26,8 @@ class DefaultModelConverter(ModelConverter):
     def __init__(
         self,
         type_function: TypeFunction,
-        data_object_factory: DataObjectFactory
+        data_object_factory: DataObjectFactory,
+        max_depth: int = 1
     ) -> None:
         """
         Takes a type_function Callable, which determines the type of the
@@ -42,23 +35,36 @@ class DefaultModelConverter(ModelConverter):
         """
         self.__type_function = type_function
         self.__data_object_factory = data_object_factory
+        self.__max_depth = max_depth
 
-    def convert(self, model: Model) -> DataObject:
+    def convert(
+        self,
+        model: Model,
+        depth: int = 0
+    ) -> DataObject:
+
         type_ = self.__type_function(model)
         return self.__data_object_factory(
             type_,
             id_=model.instance_id,
             attributes=model.instance_attributes,
-            to_one=self.__convert_to_ones(model)
+            to_one=self.__convert_to_ones(
+                model,
+                depth
+            )
         )
 
     def __convert_to_ones(
         self,
-        model: Model
+        model: Model,
+        depth: int
     ) -> dict[str, DataObject]:
 
+        if depth >= self.__max_depth:
+            return {}
+
         return {
-            k: self.convert(v)
+            k: self.convert(v, depth=depth)
             for k, v
             in model.instance_to_one_relations.items()
             if v is not None

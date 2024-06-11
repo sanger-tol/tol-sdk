@@ -56,11 +56,11 @@ class _ExampleModel(Model):
 
     @property
     def instance_to_one_relations(self) -> dict[str, Optional[Model]]:
-        pass
+        return {}
 
     @property
     def instance_to_many_relations(self) -> dict[str, Iterable[Model]]:
-        pass
+        return {}
 
     @property
     def instance_id(self) -> Optional[str]:  # noqa
@@ -106,7 +106,7 @@ class _ExampleDataObject(DataObject):
         raise NotImplementedError()
 
 
-def factory(type_, id_=None, attributes=None):
+def factory(type_, id_=None, attributes=None, **kwargs):
     return _ExampleDataObject(type_, id_, attributes)
 
 
