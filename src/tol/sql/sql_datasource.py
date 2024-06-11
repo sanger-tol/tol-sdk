@@ -136,8 +136,8 @@ class SqlDataSource(
         sqla_session = self.__get_sqla_session(session)
         total_count = self.__db.count(
             tablename,
-            filters=database_filter,
-            in_session=sqla_session
+            sqla_session,
+            filters=database_filter
         )
         if session is None:
             sqla_session.close()
@@ -181,8 +181,8 @@ class SqlDataSource(
         sqla_session = self.__get_sqla_session(session)
         total_count = self.__db.count(
             tablename,
-            filters=database_filter,
-            in_session=sqla_session
+            sqla_session,
+            filters=database_filter
         )
         models = self.__get_list_page_models(
             tablename,
@@ -302,7 +302,7 @@ class SqlDataSource(
             tablename,
             source.id,
             relationship_name,
-            in_session=sqla_session
+            sqla_session
         )
         return_object = self.__get_converter().convert_optional(model)
         if session is None:
@@ -322,7 +322,7 @@ class SqlDataSource(
             tablename,
             source.id,
             relationship_name,
-            in_session=sqla_session
+            sqla_session
         )
         return_objects = list(
             self.__get_converter().convert_iterable(models)
@@ -341,22 +341,22 @@ class SqlDataSource(
         database_sorter: Optional[DatabaseSorter]
     ) -> list[DataObject]:
 
-        sqla_sesion = self.__get_sqla_session(session)
+        sqla_session = self.__get_sqla_session(session)
             
         models = self.__db.get_page(
             tablename,
+            sqla_session,
             filters=database_filter,
             sort_by=database_sorter,
             offset=(page - 1) * page_size,
-            limit=page_size,
-            in_session=sqla_sesion
+            limit=page_size
         )
         converter = self.__get_converter()
         objects = list(
             converter.convert_iterable(models)
         )
         if session is None:
-            sqla_sesion.close()
+            sqla_session.close()
         return objects
 
     def __calculate_all_attribute_types(self) -> dict[str, dict[str, str]]:

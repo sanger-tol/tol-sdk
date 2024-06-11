@@ -146,7 +146,7 @@ class TestDefaultDatabase:
 
         session_mock = _SessionMock(None)
         db = DefaultDatabase(lambda: session_mock, [_TestModel])
-        result = db.get_by_id('test', '404')
+        result = db.get_by_id('test', '404', session_mock)
         assert result is None
         # 3 = 1 query + 1 filter + 1 one_or_none
         assert len(session_mock.calls) == 3
@@ -169,7 +169,7 @@ class TestDefaultDatabase:
         )
         session_mock = _SessionMock(expected)
         db = DefaultDatabase(lambda: session_mock, [_TestModel])
-        result = db.get_by_id('test', '302')
+        result = db.get_by_id('test', '302', session_mock)
         assert result == expected
         # 3 = 1 query + 1 filter + 1 one_or_none
         assert len(session_mock.calls) == 3
@@ -190,7 +190,7 @@ class TestDefaultDatabase:
         expected = _OverrideIdModel(id_other='302')
         session_mock = _SessionMock(expected)
         db = DefaultDatabase(lambda: session_mock, [_OverrideIdModel])
-        result = db.get_by_id('test_override', '302')
+        result = db.get_by_id('test_override', '302', session_mock)
         assert result == expected
         # 3 = 1 query + 1 filter + 1 one_or_none
         assert len(session_mock.calls) == 3
@@ -212,6 +212,7 @@ class TestDefaultDatabase:
         db = DefaultDatabase(lambda: session_mock, [_TestModel])
         result = db.get_page(
             'test',
+            session_mock,
             offset=300,
             limit=100
         )
@@ -245,6 +246,7 @@ class TestDefaultDatabase:
         db = DefaultDatabase(lambda: session_mock, [_TestModel])
         result = db.get_page(
             'test',
+            session_mock,
             offset=300,
             limit=100
         )
@@ -272,7 +274,7 @@ class TestDefaultDatabase:
 
         session_mock = _SessionMock([])
         db = DefaultDatabase(lambda: session_mock, [_TestModel])
-        result = db.count('test')
+        result = db.count('test', session_mock)
         assert result == 0
         # 2 = query + count
         assert len(session_mock.calls) == 2
@@ -287,7 +289,7 @@ class TestDefaultDatabase:
         expected = list(range(234))
         session_mock = _SessionMock(expected)
         db = DefaultDatabase(lambda: session_mock, [_TestModel])
-        result = db.count('test')
+        result = db.count('test', session_mock)
         assert result == 234
         # 2 = query + count
         assert len(session_mock.calls) == 2
@@ -321,7 +323,7 @@ class TestDefaultDatabase:
         db = DefaultDatabase(lambda: session_mock, [_IntegrityErrorModel])
 
         with pytest.raises(DataSourceError) as e:
-            db.delete('test', 'does_not_matter')
+            db.delete('test', 'does_not_matter', session_mock)
 
         # some loose checks on the error...
 
@@ -339,7 +341,7 @@ class TestDefaultDatabase:
         model_mock = _TestModel()
         session_mock = _SessionMock(model_mock)
         db = DefaultDatabase(lambda: session_mock, [_TestModel])
-        db.delete('test', 'why_should_I_care!')
+        db.delete('test', 'why_should_I_care!', session_mock)
 
         # same as get_by_id... 3 = query, filter, one_or_none, delete, commit
         assert len(session_mock.calls) == 5
