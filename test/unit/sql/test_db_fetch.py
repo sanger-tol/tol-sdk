@@ -6,10 +6,16 @@ from unittest.mock import create_autospec
 
 import pytest
 
-from tol.core.relationship import RelationshipConfig
+from tol.core import DataObject
+from tol.core.relationship import (
+    RelationshipConfig
+)
 from tol.sql import SqlDataSource
 from tol.sql.database import Database
 from tol.sql.filter import DatabaseFilter
+from tol.sql.relationship import (
+    SqlRelationshipConfig
+)
 from tol.sql.sort import DatabaseSorter
 from tol.sql.sql_converter import (
     DataObjectConverter,
@@ -19,35 +25,43 @@ from tol.sql.sql_converter import (
 
 @pytest.fixture(scope='function')
 def db() -> Database:
-    return create_autospec(
+    mock_db = create_autospec(
         Database,
         spec_set=True
     )
+    mock_db.attribute_types = {
+        'r1': {},
+        'r2': {
+            'str_column': str
+        }
+    }
+
+    return mock_db
 
 
 @pytest.fixture(scope='module')
 def type_tablename_map() -> dict[str, str]:
     return {
-        t: t
-        for t in (
-            'r1',
-            'r2',
-            'r3',
-            'r4',
-            'r5'
-        )
+        'r1': 'r1',
+        'r2': 'r2'
     }
 
 
 @pytest.fixture(scope='module')
 def rel_config(
-) -> dict[str, RelationshipConfig]:
+) -> SqlRelationshipConfig:
 
-    return {
+    config = create_autospec(
+        SqlRelationshipConfig,
+        spect_set=True
+    )
+    config.to_dict.return_value = {
         'r1': RelationshipConfig(
             to_one={'r2_d2': 'r2'}
         )
     }
+
+    return config
 
 
 @pytest.fixture(scope='function')
@@ -84,9 +98,9 @@ def db_sorter() -> DatabaseSorter:
 
 @pytest.fixture(scope='function')
 def sql_ds(
-    database: Database,
+    db: Database,
     type_tablename_map: dict[str, str],
-    rel_config: dict[str, RelationshipConfig],
+    rel_config: SqlRelationshipConfig,
     do_converter: DataObjectConverter,
     model_converter: ModelConverter,
     db_filter: DatabaseFilter,
@@ -94,7 +108,7 @@ def sql_ds(
 ) -> SqlDataSource:
 
     return SqlDataSource(
-        database,
+        db,
         type_tablename_map,
         rel_config,
         lambda: model_converter,
@@ -108,8 +122,24 @@ class TestFetch:
     """No superfluous fetches"""
 
     def test_relation(
-        self
+        self,
+        sql_ds: SqlDataSource,
+        model_converter: ModelConverter
     ):
         """
         Converter returns objects with relationships
+        -> no relation fetch occurs.
         """
+
+        mock_r2 = create_autospec(DataObject, spec_set=True)
+        mock_r2.str_column = 'lol'
+
+        mock_r1 = create_autospec(DataObject, spec_set=True)
+        mock_r1.type = 'r1'
+        mock_r1._to_one_objects = {
+            'r2_d2': mock_r2
+        }
+
+        model_converter.convert_iterable.return_value = [
+            mock_r1
+        ]
