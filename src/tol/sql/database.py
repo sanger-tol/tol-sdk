@@ -13,7 +13,6 @@ from .model import Model
 from .session import SessionFactory
 from .sort import DatabaseSorter
 from ..core import DataSourceError
-#TODO don't close sessions here!!!!!!!!
 
 class Database(ABC):
     """Encapsulates basic operations on a Database"""
