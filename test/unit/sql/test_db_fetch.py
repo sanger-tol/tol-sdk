@@ -6,7 +6,10 @@ from unittest.mock import create_autospec
 
 import pytest
 
-from tol.core import DataObject
+from tol.core import (
+    DataObject,
+    core_data_object
+)
 from tol.core.relationship import (
     RelationshipConfig
 )
@@ -107,15 +110,18 @@ def sql_ds(
     db_sorter: DatabaseSorter
 ) -> SqlDataSource:
 
-    return SqlDataSource(
+    ds = SqlDataSource(
         db,
         type_tablename_map,
         rel_config,
-        lambda: model_converter,
+        lambda _: model_converter,
         lambda: do_converter,
         lambda: db_filter,
         lambda: db_sorter
     )
+    core_data_object(ds)
+
+    return ds
 
 
 class TestFetch:
@@ -124,6 +130,7 @@ class TestFetch:
     def test_relation(
         self,
         sql_ds: SqlDataSource,
+        db: Database,
         model_converter: ModelConverter
     ):
         """
@@ -145,3 +152,10 @@ class TestFetch:
         model_converter.convert_iterable.return_value = [
             mock_r1
         ]
+
+        fetched_r1 = sql_ds.get_one(
+            'r1',
+            'does not matter'
+        )
+
+        db.get_by_id.assert_called_once()
