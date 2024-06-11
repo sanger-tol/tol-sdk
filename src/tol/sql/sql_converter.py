@@ -58,10 +58,10 @@ class DefaultModelConverter(ModelConverter):
         self,
         model: Model,
         depth: int
-    ) -> dict[str, DataObject]:
+    ) -> dict[str, DataObject] | None:
 
         if depth >= self.__max_depth:
-            return {}
+            return
 
         return {
             k: self.convert(v, depth=depth + 1)
