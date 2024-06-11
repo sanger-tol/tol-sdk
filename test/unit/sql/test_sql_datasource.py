@@ -615,10 +615,13 @@ class TestSqlDataSource:
         `SqlDataSource().delete()` calls `Database().delete()` correctly
         """
 
+        mock_sess = MagicMock()
+
         mock_sess_factory = MagicMock()
-        mock_sess_factory.return_value = 'hi'
+        mock_sess_factory.return_value = mock_sess
 
         mock_db = MagicMock()
+        mock_db.session_factory = mock_sess_factory
 
         ds = SqlDataSource(
             mock_db,
@@ -632,7 +635,12 @@ class TestSqlDataSource:
         ds.delete('tests', list(ascii_uppercase))
 
         assert mock_db.delete.call_args_list == [
-            call('mapped_tablename', c, user_id=None, in_session=None) for c in ascii_uppercase
+            call(
+                'mapped_tablename',
+                c,
+                user_id=None,
+                in_session=mock_sess
+            ) for c in ascii_uppercase
         ]
 
     def test_upsert(self):
