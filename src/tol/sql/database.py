@@ -251,15 +251,9 @@ class DefaultDatabase(Database):
     ) -> None:
 
         try:
-            _, session, _ = self.__get_model_query(
-                instance.get_table_name(),
-                in_session
-            )
-            session.add(instance)
+            in_session.add(instance)
             instance.before_commit(user_id)
-            session.commit()
-            if in_session is None:
-                session.close()
+            in_session.commit()
         except IntegrityError:
             raise DataSourceError(
                 title='Integrity Error',
