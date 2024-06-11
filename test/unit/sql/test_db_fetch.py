@@ -132,7 +132,9 @@ class TestFetch:
         """
 
         mock_r2 = create_autospec(DataObject, spec_set=True)
-        mock_r2.str_column = 'lol'
+        mock_r2.attributes = {
+            'str_column': 'lol'
+        }
 
         mock_r1 = create_autospec(DataObject, spec_set=True)
         mock_r1.type = 'r1'
