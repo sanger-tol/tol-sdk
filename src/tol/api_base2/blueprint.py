@@ -145,7 +145,6 @@ def _core_blueprint(
         data_source = data_source_dict[object_type]
         view = DefaultView(
             prefix=url_prefix,
-            include_all_to_ones=True,
             hop_limit=1
         )
         return Controller(

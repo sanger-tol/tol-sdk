@@ -39,7 +39,7 @@ class DefaultModelConverter(ModelConverter):
 
     def convert(
         self,
-        model: Model,
+        model: Model | None,
         depth: int = 0
     ) -> DataObject:
 
@@ -70,7 +70,6 @@ class DefaultModelConverter(ModelConverter):
             k: self.convert(v, depth=depth + 1)
             for k, v
             in model.instance_to_one_relations.items()
-            if v is not None
         }
 
 

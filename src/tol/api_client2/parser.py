@@ -88,15 +88,28 @@ class DefaultParser(Parser):
     ) -> dict[str, DataObject]:
 
         return {
-            k: self.parse(v.get('data', {}))
+            k: self.__parse_one(v)
             for k, v in transfer.get('relationships', {}).items()
             if self.__relationship_is_to_one(v)
         }
 
+    def __parse_one(
+        self,
+        v: dict[str, Any] | None
+    ) -> DataObject | None:
+
+        if v is None:
+            return None
+        else:
+            return self.parse(v.get('data', {}))
+
     def __relationship_is_to_one(
         self,
-        relationship: dict[str, Any]
+        relationship: dict[str, Any] | None
     ) -> bool:
+
+        if relationship is None:
+            return True
 
         return isinstance(
             relationship.get('data'),

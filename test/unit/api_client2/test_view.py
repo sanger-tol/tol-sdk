@@ -376,19 +376,6 @@ class TestDefaultViewInBlueprint(TestCase):
                 'type': 'test',
                 'id': 'hype',
                 'relationships': {
-                    'first': {
-                        'data': {
-                            'type': 'yes',
-                            'id': '1234',
-                            'attributes': {'att1': 'val1'}
-                        }
-                    },
-                    'second': {
-                        'data': {
-                            'type': 'another',
-                            'id': '5678'
-                        }
-                    },
                     'ex': {
                         'links': {
                             'related': '/super_data/test/hype/ex'

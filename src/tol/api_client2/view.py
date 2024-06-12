@@ -108,9 +108,12 @@ class DefaultView(View):
 
     def __dump_object(
         self,
-        data_object: DataObject,
+        data_object: DataObject | None,
         depth: int
     ) -> DumpDict:
+
+        if data_object is None:
+            return None
 
         dump = {
             'type': data_object.type,
@@ -153,18 +156,22 @@ class DefaultView(View):
         data_object: DataObject,
         depth: int
     ) -> AllRelationshipsDump:
-
-        dump = {
-            key: self.__dump_to_one_relationship(key, data_object, depth)
-            for key in to_one_relationships
-        } | {
+        
+        many_dump = {
             key: self.__dump_to_many_relationship(key, data_object.type,
                                                   data_object.id)
             for key in to_many_relationships
         }
-        return {
-            k: v for k, v in dump.items() if v
+
+        if self.__hop_limit is not None and depth >= self.__hop_limit:
+            return many_dump
+
+        one_dump = {
+            key: self.__dump_to_one_relationship(key, data_object, depth)
+            for key in to_one_relationships
+            if key in data_object._to_one_objects
         }
+        return one_dump | many_dump
 
     def __dump_to_many_relationship(
         self,
@@ -188,14 +195,25 @@ class DefaultView(View):
         depth: int
     ) -> Optional[RelationshipDump]:
 
-        if self.__hop_limit is not None and depth >= self.__hop_limit:
-            return
+        if self.__is_specified_none(key, data_object):
+            return None
 
         related_object = self.__get_related_to_one(data_object, key)
         if related_object is not None:
             return {
                 'data': self.__dump_object(related_object, depth + 1)
             }
+
+    def __is_specified_none(
+        self,
+        key: str,
+        data_object: DataObject
+    ) -> bool:
+
+        return (
+            key in data_object._to_one_objects and
+            data_object._to_one_objects[key] is None
+        )
 
     def __get_related_to_one(
         self,
