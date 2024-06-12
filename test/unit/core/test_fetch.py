@@ -37,7 +37,7 @@ def obj_class(
 class TestFetch:
     """
     No superfluous fetches on "False-y" to-one
-    relations
+    relations.
     """
 
     def test_empty_dict(
@@ -61,9 +61,19 @@ class TestFetch:
 
     def test_none(
         self,
-        ds: DataSource,
+        ds: _DS,
         obj_class: type[DataObject]
     ):
         """
         `_to_one_objects[__k] is None` -> no fetch
         """
+
+        obj = obj_class(
+            'test_type',
+            'test ID',
+            attributes={'hype': 'train'},
+            to_one={'relation': None}
+        )
+
+        assert not obj.relation
+        ds.get_to_one_relation.assert_not_called()
