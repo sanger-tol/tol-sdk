@@ -47,14 +47,36 @@ def get_to_one_relation() -> None:
 
 
 @benchmark(
-    repetitions=100
+    repetitions=100,
+    warn=12,
+    fail=30
 )
-def test_relation_is_none() -> None:
+def relation_is_none() -> None:
     """
     `related_object is None` -> definitely
     don't fetch again
     """
 
+    root_id = uuid4().hex
+    root = api_sql.data_object_factory(
+        'root',
+        root_id
+    )
+
+    api_sql.insert(
+        'root',
+        [root]
+    )
+
+    root_fetched = api_sql.get_one(
+        'root',
+        root_id
+    )
+
+    # this will be slow if there is another fetch
+    assert root_fetched.related_object is None
+
 
 if __name__ == '__main__':
     get_to_one_relation()
+    relation_is_none()
