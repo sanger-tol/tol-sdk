@@ -26,7 +26,10 @@ def obj_class(
 
 
 class TestFetch:
-    """No superfluous fetches"""
+    """
+    No superfluous fetches on "False-y" to-one
+    relations
+    """
 
     def test_empty_dict(
         self,
