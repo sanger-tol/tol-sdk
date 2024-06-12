@@ -46,5 +46,15 @@ def get_to_one_relation() -> None:
     assert root_fetched.related_object.str_column == 'lesser'
 
 
+@benchmark(
+    repetitions=100
+)
+def test_relation_is_none() -> None:
+    """
+    `related_object is None` -> definitely
+    don't fetch again
+    """
+
+
 if __name__ == '__main__':
     get_to_one_relation()
