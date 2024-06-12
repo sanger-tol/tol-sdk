@@ -46,7 +46,7 @@ class TestFetch:
         obj_class: type[DataObject]
     ):
         """
-        `_to_one_objects[__k] == {}` -> no fetch
+        `_to_one_objects[__k]` is empty dict -> no fetch
         """
 
         obj = obj_class(
