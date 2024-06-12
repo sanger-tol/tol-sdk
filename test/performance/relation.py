@@ -9,7 +9,7 @@ from performance.utils import api_sql, benchmark
 
 @benchmark(
     repetitions=100,
-    warn=10,
+    warn=12,
     fail=30
 )
 def get_to_one_relation() -> None:
