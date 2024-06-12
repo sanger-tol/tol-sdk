@@ -156,7 +156,7 @@ class DefaultView(View):
         data_object: DataObject,
         depth: int
     ) -> AllRelationshipsDump:
-        
+
         many_dump = {
             key: self.__dump_to_many_relationship(key, data_object.type,
                                                   data_object.id)
@@ -211,8 +211,8 @@ class DefaultView(View):
     ) -> bool:
 
         return (
-            key in data_object._to_one_objects and
-            data_object._to_one_objects[key] is None
+            key in data_object._to_one_objects
+            and data_object._to_one_objects[key] is None
         )
 
     def __get_related_to_one(
