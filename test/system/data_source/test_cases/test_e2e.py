@@ -17,7 +17,8 @@ from tol.core import (
     core_data_object
 )
 from tol.core.operator import (
-    ListGetter
+    ListGetter,
+    RelationWriteMode
 )
 
 from ..dec import against
@@ -159,7 +160,7 @@ class TestEndToEnd:
 
         assert first == [None, None, None]
 
-        related_objects = (
+        related_objects = [
             data_source.data_object_factory(
                 'related',
                 i,
@@ -168,7 +169,7 @@ class TestEndToEnd:
                 }
             )
             for i in range(len(ids))
-        )
+        ]
 
         data_objects = [
             data_source.data_object_factory(
@@ -186,7 +187,10 @@ class TestEndToEnd:
             for i, (id_, r_obj) in enumerate(zip(ids, related_objects))
         ]
 
+        if data_source.write_mode['root'] == RelationWriteMode.SEPARATE:
+            data_source.upsert('related', related_objects)
         data_source.upsert('root', data_objects)
+
         ds_sleep(2)  # Let Elastic settle down after the upsert
 
         # they should all be present now
@@ -395,6 +399,15 @@ class TestEndToEnd:
         assert ret.related_object is None
         assert ret.list_column is None
 
+        rel1 = data_source.data_object_factory(
+            'related',
+            'rel1',
+            attributes={
+                'str_column': 'value2',
+                'int_column': 123
+            },
+        )
+
         obj1 = data_source.data_object_factory(
             'root',
             '1',
@@ -404,17 +417,14 @@ class TestEndToEnd:
                         'bool_column': False,
                         'list_column': ['item1', 'item2']},
             to_one={
-                'related_object': data_source.data_object_factory(
-                    'related',
-                    'rel1',
-                    attributes={
-                        'str_column': 'value2',
-                        'int_column': 123
-                    },
-                ),
+                'related_object': rel1
             }
         )
+
+        if data_source.write_mode['root'] == RelationWriteMode.SEPARATE:
+            data_source.upsert('related', [rel1])
         data_source.upsert('root', [obj1])
+
         ds_sleep(2)  # Let Elastic settle down after the upsert
 
         second = list(
@@ -434,6 +444,16 @@ class TestEndToEnd:
         assert ret.related_object.list_column is None
         assert ret.list_column == ['item1', 'item2']
 
+        rel1 = data_source.data_object_factory(
+            'related',
+            'rel1',
+            attributes={
+                'int_column': 456,
+                'bool_column': False,
+                'datetime_column': datetime(2024, 6, 6)
+            },
+        )
+
         obj1 = data_source.data_object_factory(
             'root',
             '1',
@@ -442,18 +462,14 @@ class TestEndToEnd:
                         'bool_column': True,
                         'list_column': ['item1', 'item3']},
             to_one={
-                'related_object': data_source.data_object_factory(
-                    'related',
-                    'rel1',
-                    attributes={
-                        'int_column': 456,
-                        'bool_column': False,
-                        'datetime_column': datetime(2024, 6, 6)
-                    },
-                ),
+                'related_object': rel1
             }
         )
+
+        if data_source.write_mode['root'] == RelationWriteMode.SEPARATE:
+            data_source.upsert('related', [rel1])
         data_source.upsert('root', [obj1])
+
         ds_sleep(2)  # Let Elastic settle down after the upsert
 
         third = list(

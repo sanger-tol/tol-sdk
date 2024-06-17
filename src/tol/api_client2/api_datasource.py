@@ -25,9 +25,10 @@ from ..core.operator import (
     ListGetter,
     OperatorDict,
     PageGetter,
+    RelationWriteMode,
     Relational,
     Statter,
-    Upserter
+    Upserter,
 )
 from ..core.relationship import RelationshipConfig
 
@@ -103,6 +104,16 @@ class ApiDataSource(
         return self.__jc_factory().convert_relationship_config(
             transfer
         )
+
+    @property
+    @cache
+    def write_mode(self) -> dict[str, RelationWriteMode]:
+        transfer = self.__client_factory().config_write_mode()
+
+        return {
+            k: RelationWriteMode(v)
+            for k, v in transfer.items()
+        }
 
     @validate('detailGet')
     def get_by_id(

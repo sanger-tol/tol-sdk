@@ -8,12 +8,14 @@ import typing
 from abc import ABC, abstractmethod
 from typing import Iterable, Optional
 
+from ._writer import _Writer
+
 if typing.TYPE_CHECKING:
     from ..data_object import DataObject
     from ..session import OperableSession
 
 
-class Inserter(ABC):
+class Inserter(_Writer, ABC):
     """
     Inserts new `DataObject` instances into a `DataSource`.
 

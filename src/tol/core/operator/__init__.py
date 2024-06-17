@@ -9,7 +9,7 @@ from .counter import Counter
 from .declare import get_operator_member_names  # noqa
 from .deleter import Deleter
 from .detail_getter import DetailGetter
-from .enum import OperatorMethod  # noqa
+from .enum import OperatorMethod, RelationWriteMode  # noqa
 from .group_statter import GroupStatter
 from .inserter import Inserter
 from .list_getter import ListGetter

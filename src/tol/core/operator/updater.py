@@ -8,6 +8,8 @@ import typing
 from abc import ABC, abstractmethod
 from typing import Any, Iterable, Optional
 
+from ._writer import _Writer
+
 if typing.TYPE_CHECKING:
     from ..session import OperableSession
 
@@ -15,7 +17,7 @@ if typing.TYPE_CHECKING:
 DataObjectUpdate = tuple[str, dict[str, Any]]
 
 
-class Updater(ABC):
+class Updater(_Writer, ABC):
     """
     Updates existing DataObject instances.
     """
