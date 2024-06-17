@@ -78,6 +78,7 @@ class DefaultDataObjectConverter(DataObjectConverter):
             **self.__get_id_dict(input_.id, model_class),
             **input_.attributes,
             **self.__get_relation_dict(
+                model_class,
                 input_._to_one_objects
             )
         )
@@ -93,11 +94,14 @@ class DefaultDataObjectConverter(DataObjectConverter):
 
     def __get_relation_dict(
         self,
+        model_class: type[Model],
         ones: dict[str, DataObject]
     ) -> dict[str, str]:
         # TODO validation - relationship names and their types
 
         return {
-            relationship_name: self.convert(relation_object)
-            for relationship_name, relation_object in ones.items()
+            model_class.get_foreign_key_name(
+                rel_name
+            ): rel_obj.id
+            for rel_name, rel_obj in ones.items()
         }

@@ -23,7 +23,7 @@ from .misc import (
 from ..api_client2.exception import BaseRuntimeException
 from ..api_client2.parser import DefaultParser
 from ..api_client2.view import DefaultView
-from ..core import DataSource, DataSourceError
+from ..core import DataSource, DataSourceError, OperableDataSource
 from ..core.data_source_dict import DataSourceDict
 from ..core.operator import Relational
 from ..core.operator.operator_config import DefaultOperatorConfig, OperatorConfig
@@ -83,7 +83,7 @@ class CustomBlueprint(Blueprint):
 
 def _config_blueprint(
     url_prefix: str,
-    data_sources: tuple[DataSource],
+    data_sources: tuple[OperableDataSource],
     operator_config: OperatorConfig
 ) -> ConfigBlueprint:
     """
@@ -124,6 +124,12 @@ def _config_blueprint(
     @config_handler.route('/operations', methods=['GET'])
     def get_operations():
         return operator_config.to_dict()
+
+    @config_handler.get('/write_mode')
+    def get_relation_write_mode():
+        modes_list = [d.write_mode for d in data_sources]
+        chain_map = ChainMap(*modes_list)
+        return dict(chain_map)
 
     return config_handler
 

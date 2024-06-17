@@ -304,7 +304,7 @@ class TestDefaultDataObjectConverter:
 
         mock_model_class.assert_called_once_with(
             id='lol',
-            one_happy_family=mock_relation_class
+            indeed_foreign_key='rel'
         )
 
     def __create_mock_object(

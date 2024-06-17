@@ -37,10 +37,11 @@ from ..core.operator import (
     GroupStatter,
     ListGetter,
     PageGetter,
+    RelationWriteMode,
     Relational,
     Statter,
     Updater,
-    Upserter
+    Upserter,
 )
 from ..core.operator.updater import DataObjectUpdate
 from ..core.relationship import (
@@ -91,6 +92,10 @@ class ElasticDataSource(
     @lazy_fetch.setter
     def lazy_fetch(self, new_val: bool) -> None:
         self.__lazy = new_val
+
+    @property
+    def _default_write_mode(self) -> RelationWriteMode:
+        return RelationWriteMode.FUSED
 
     def _initialise_elasticsearch(self):
         self.es = Elasticsearch(self.uri, http_auth=(self.user, self.password))

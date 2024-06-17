@@ -225,6 +225,10 @@ class JsonApiClient:
         url = self.__config_rel_url()
         return self.__fetch_config(url)
 
+    def config_write_mode(self) -> dict[str, str]:
+        url = self.__config_write_model_url()
+        return self.__fetch_config(url)
+
     def __fetch_config(self, url: str) -> Any:
         headers = self.__merge_headers()
         r = requests.get(url, headers=headers)
@@ -328,6 +332,9 @@ class JsonApiClient:
 
     def __config_rel_url(self) -> str:
         return f'{self.__config_url}/relationships'
+
+    def __config_write_model_url(self) -> str:
+        return f'{self.__config_url}/write_mode'
 
     def __no_none_value_dict(self, **kwargs) -> dict[str, Any]:
         return {

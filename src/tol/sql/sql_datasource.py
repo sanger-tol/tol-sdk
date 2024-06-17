@@ -31,8 +31,9 @@ from ..core.operator import (
     Inserter,
     ListGetter,
     PageGetter,
+    RelationWriteMode,
     Relational,
-    Upserter
+    Upserter,
 )
 from ..core.relationship import RelationshipConfig
 
@@ -95,6 +96,10 @@ class SqlDataSource(
 
     def get_session(self) -> OperableSession:
         return SqlDataSourceSession(self)
+
+    @property
+    def _default_write_mode(self) -> RelationWriteMode:
+        return RelationWriteMode.SEPARATE
 
     def __get_sqla_session(
         self,
