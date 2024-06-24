@@ -3,10 +3,11 @@
 # SPDX-License-Identifier: MIT
 
 from abc import ABC, abstractmethod
-from typing import Any, Dict, Iterable, List, Optional, Tuple, Type
+from typing import Any, Dict, Iterable, List, Optional, Type
 
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Query, Session
+from sqlalchemy.orm.attributes import flag_modified
 
 from .filter import DatabaseFilter
 from .model import Model
@@ -23,7 +24,7 @@ class Database(ABC):
         self,
         tablename: str,
         instance_id: Any,
-        in_session: Optional[Session] = None
+        in_session: Session
     ) -> Optional[Model]:
         """
         Gets a single instance by its instance-ID, or None if not found.
@@ -36,11 +37,11 @@ class Database(ABC):
     def get_page(
         self,
         tablename: str,
+        in_session: Session,
         filters: Optional[DatabaseFilter] = None,
         sort_by: Optional[DatabaseSorter] = None,
         offset: Optional[int] = None,
         limit: Optional[int] = None,
-        in_session: Optional[Session] = None
     ) -> Iterable[Model]:
         """
         Returns an Iterable of `Model` instances according
@@ -51,8 +52,8 @@ class Database(ABC):
     def count(
         self,
         tablename: str,
-        filters: Optional[DatabaseFilter] = None,
-        in_session: Optional[Session] = None
+        in_session: Session,
+        filters: Optional[DatabaseFilter] = None
     ) -> int:
         """
         Counts the total number of `Model` instances of the given
@@ -64,8 +65,8 @@ class Database(ABC):
         self,
         tablename: str,
         instance_id: Any,
-        user_id: Optional[str] = None,
-        in_session: Optional[Session] = None
+        in_session: Session,
+        user_id: Optional[str] = None
     ) -> None:
         """
         Deletes the `Model` instance of specified tablename and
@@ -76,18 +77,18 @@ class Database(ABC):
     def upsert(
         self,
         instance: Model,
-        user_id: Optional[str] = None,
-        in_session: Optional[Session] = None
-    ) -> None:
+        in_session: Session,
+        user_id: Optional[str] = None
+    ) -> Model:
         """Performs an "upsert" on the given `Model` instance."""
 
     @abstractmethod
     def insert(
         self,
         instance: Model,
-        user_id: Optional[str] = None,
-        in_session: Optional[Session] = None
-    ) -> None:
+        in_session: Session,
+        user_id: Optional[str] = None
+    ) -> Model:
         """
         "Inserts" the given `Model` instance.
 
@@ -100,7 +101,7 @@ class Database(ABC):
         tablename: str,
         instance_id: str,
         relationship_name: str,
-        in_session: Optional[Session] = None
+        in_session: Session
     ) -> Optional[Model]:
         """
         For the instance of given tablename and ID, gets the to-one
@@ -113,7 +114,7 @@ class Database(ABC):
         tablename: str,
         instance_id: str,
         relationship_name: str,
-        in_session: Optional[Session] = None
+        in_session: Session
     ) -> Iterable[Model]:
         """
         For the instance of given tablename and ID, gets the to-many
@@ -157,140 +158,119 @@ class DefaultDatabase(Database):
         self,
         tablename: str,
         instance_id: Any,
-        in_session: Optional[Session] = None
+        in_session: Session
     ) -> Optional[Model]:
 
-        result, session = self.__get_instance_by_id(
+        result = self.__get_instance_by_id(
             tablename,
             instance_id,
             in_session
         )
-        if in_session is None:
-            session.close()
         return result
 
     def get_page(
         self,
         tablename: str,
+        in_session: Session,
         filters: Optional[DatabaseFilter] = None,
         sort_by: Optional[DatabaseSorter] = None,
         offset: Optional[int] = None,
         limit: Optional[int] = None,
-        in_session: Optional[Session] = None
     ) -> Iterable[Model]:
 
-        _, session, query = self.__get_model_session_query(tablename, in_session)
+        _, query = self.__get_model_query(tablename, in_session)
         if filters is not None:
             query = filters.filter(query, tablename, self.__tablename_model_dict)
         if sort_by is not None:
             query = sort_by.sort(query, tablename, self.__tablename_model_dict)
         query = query.limit(limit).offset(offset)
         results = query.all()
-        if in_session is None:
-            session.close()
         return results
 
     def count(
         self,
         tablename: str,
-        filters: Optional[DatabaseFilter] = None,
-        in_session: Optional[Session] = None
+        in_session: Session,
+        filters: Optional[DatabaseFilter] = None
     ) -> int:
 
-        _, session, query = self.__get_model_session_query(tablename, in_session)
+        _, query = self.__get_model_query(tablename, in_session)
         if filters is not None:
             query = filters.filter(query, tablename, self.__tablename_model_dict)
         count = query.count()
-        if in_session is None:
-            session.close()
         return count
 
     def delete(
         self,
         tablename: str,
         instance_id: Any,
-        user_id: Optional[str] = None,
-        in_session: Optional[Session] = None
+        in_session: Session,
+        user_id: Optional[str] = None
     ) -> None:
-        instance, session = self.__get_instance_by_id(
+
+        instance = self.__get_instance_by_id(
             tablename,
             instance_id,
             in_session
         )
-        session.delete(instance)
-        self.__commit_session(
-            session,
+        in_session.delete(instance)
+        return self.__commit_session(
+            in_session,
             instance,
             'deletion',
             user_id=user_id,
             is_delete=True
         )
-        if in_session is None:
-            session.close()
 
     def upsert(
         self,
         instance: Model,
-        user_id: Optional[str] = None,
-        in_session: Optional[Session] = None
-    ) -> None:
+        in_session: Session,
+        user_id: Optional[str] = None
+    ) -> Model:
 
-        session = self.__upsert_to_session(
+        instance = self.__upsert_to_session(
             instance,
             in_session
         )
-        self.__commit_session(
-            session,
+        in_session.flush()
+        return self.__commit_session(
+            in_session,
             instance,
             'upserting',
             user_id=user_id
         )
-        if in_session is None:
-            session.close()
 
     def insert(
         self,
         instance: Model,
+        in_session: Session,
         user_id: Optional[str] = None,
-        in_session: Optional[Session] = None
-    ) -> None:
+    ) -> Model:
 
-        try:
-            _, session, _ = self.__get_model_session_query(
-                instance.get_table_name(),
-                in_session
-            )
-            session.add(instance)
-            instance.before_commit(user_id)
-            session.commit()
-            if in_session is None:
-                session.close()
-        except IntegrityError:
-            raise DataSourceError(
-                title='Integrity Error',
-                detail=(
-                    'An integrity error occured in the DB. '
-                    'This is likely due to a duplicate primary key.'
-                ),
-                status_code=400
-            )
+        in_session.add(instance)
+
+        return self.__commit_session(
+            in_session,
+            instance,
+            'inserting',
+            user_id=user_id
+        )
 
     def get_to_one_relation(
         self,
         tablename: str,
         instance_id: str,
         relationship_name: str,
-        in_session: Optional[Session] = None
+        in_session: Session,
     ) -> Optional[Model]:
 
-        instance, session = self.__get_instance_by_id(
+        instance = self.__get_instance_by_id(
             tablename,
             instance_id,
             in_session
         )
         result = instance.instance_to_one_relations[relationship_name]
-        if in_session is None:
-            session.close()
         return result
 
     def get_to_many_relations(
@@ -298,17 +278,15 @@ class DefaultDatabase(Database):
         tablename: str,
         instance_id: str,
         relationship_name: str,
-        in_session: Optional[Session] = None
+        in_session: Session
     ) -> Iterable[Model]:
 
-        instance, session = self.__get_instance_by_id(
+        instance = self.__get_instance_by_id(
             tablename,
             instance_id,
             in_session
         )
         result = instance.instance_to_many_relations[relationship_name]
-        if in_session is None:
-            session.close()
         return result
 
     @property
@@ -321,61 +299,60 @@ class DefaultDatabase(Database):
             for t, m in self.__tablename_model_dict.items()
         }
 
-    def __get_model_session_query(
+    def __get_model_query(
         self,
         tablename: str,
-        in_session: Optional[Session]
-    ) -> Tuple[Type[Model], Session, Query]:
+        in_session: Session
+    ) -> tuple[Type[Model], Query]:
 
         model = self.__tablename_model_dict[tablename]
-        session = (
-            self.__session_factory()
-            if in_session is None
-            else in_session
-        )
-        query = session.query(model)
-        return model, session, query
+        query = in_session.query(model)
+        return model, query
 
     def __commit_session(
         self,
-        session: Session,
+        in_session: Session,
         instance: Model,
         operation: str,
         user_id: Optional[str] = None,
         is_delete: bool = False
-    ) -> None:
+    ) -> Model | None:
 
         try:
             if not is_delete:
-                self.__before_commit(instance, session, user_id)
-            session.commit()
+                self.__before_commit(instance, in_session, user_id)
+            in_session.commit()
+            if not is_delete:
+                in_session.refresh(instance)
+                return instance
         except IntegrityError:
+            in_session.rollback()
             self.__raise_integrity_error(instance, operation)
-            session.rollback()
 
     def __before_commit(
         self,
         instance: Model,
-        session: Session,
+        in_session: Session,
         user_id: Optional[str]
     ) -> None:
+
         instance.before_commit(user_id=user_id)
-        session.merge(instance)
+        in_session.merge(instance)
 
     def __get_instance_by_id(
         self,
         tablename: str,
         instance_id: str,
-        in_session: Optional[Session]
-    ) -> Tuple[Optional[Model], Session]:
+        in_session: Session
+    ) -> Optional[Model]:
         """
         Gets an instance by its tablename and id.
         """
 
-        model, session, query = self.__get_model_session_query(tablename, in_session)
+        model, query = self.__get_model_query(tablename, in_session)
         id_column = getattr(model, model.get_id_column_name())
         result = query.filter(id_column == instance_id).one_or_none()
-        return result, session
+        return result
 
     def __get_tablename_model_dict(
         self,
@@ -389,23 +366,24 @@ class DefaultDatabase(Database):
     def __upsert_to_session(
         self,
         instance: Model,
-        in_session: Optional[Session]
-    ) -> Session:
-        old_instance, session = self.__get_instance_by_id(
+        in_session: Session
+    ) -> Model:
+
+        old_instance = self.__get_instance_by_id(
             instance.get_table_name(),
             instance.instance_id,
             in_session
         )
-        if old_instance is None:
-            session.add(instance)
-        else:
-            handled = self.__handle_difference(
+        if old_instance is not None:
+            instance = self.__handle_difference(
                 old_instance,
                 instance
             )
-            session.merge(handled)
+            in_session.flush()
+            return instance
 
-        return session
+        in_session.add(instance)
+        return instance
 
     def __handle_difference(self, old: Model, new: Model) -> Model:
         """
@@ -414,18 +392,59 @@ class DefaultDatabase(Database):
         - merging `list`s and `dict`s like `ElasticDataSource`.
         """
 
-        new = self.__handle_diff_dict(old, new)
-        new = self.__handle_diff_list(old, new)
+        self.__handle_diff_dict(old, new)
+        self.__handle_diff_list(old, new)
 
-        return new
+        __keys = [
+            *new.get_attribute_types(),
+            *new.get_all_foreign_key_names()
+        ]
 
-    def __handle_diff_list(self, old: Model, new: Model) -> Model:
+        for k in __keys:
+            new_val = getattr(new, k)
+            if self.__ignore_new_val(new, k, new_val):
+                continue
+            setattr(old, k, new_val)
+
+        return old
+
+    def __ignore_new_val(
+        self,
+        instance: Model,
+        k: str,
+        v: Any
+    ) -> bool:
+
+        """
+        Returns `True` if the value is both:
+
+        - equal to `None`
+        - not previously directly set on the Model
+        """
+
+        return v is None and not self.__explititly_set(
+            instance,
+            k
+        )
+
+    def __explititly_set(
+        self,
+        instance: Model,
+        k: str
+    ) -> bool:
+
+        if not hasattr(instance, '_sa_instance_state'):
+            return False
+
+        return k in instance._sa_instance_state.dict
+
+    def __handle_diff_list(self, old: Model, new: Model) -> None:
         for k in self.__get_type_column_keys(new, list):
             merge_list = getattr(old, k, [])
             if merge_list is None:
                 continue
 
-            new_list = getattr(new, k)
+            new_list = getattr(new, k, [])
 
             for el in new_list:
                 if el not in merge_list:
@@ -433,15 +452,15 @@ class DefaultDatabase(Database):
 
             setattr(new, k, merge_list)
 
-        return new
+            flag_modified(old, k)
 
-    def __handle_diff_dict(self, old: Model, new: Model) -> Model:
+    def __handle_diff_dict(self, old: Model, new: Model) -> None:
         for k in self.__get_type_column_keys(new, dict):
             merge_dict = getattr(old, k, {})
             if merge_dict is None:
                 continue
 
-            new_dict = getattr(new, k)
+            new_dict = getattr(new, k, {})
 
             setattr(
                 new,
@@ -449,7 +468,7 @@ class DefaultDatabase(Database):
                 merge_dict | new_dict
             )
 
-        return new
+            flag_modified(old, k)
 
     def __get_type_column_keys(
         self,

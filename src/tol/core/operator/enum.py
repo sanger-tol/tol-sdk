@@ -20,6 +20,33 @@ class OperatorMethod(str, Enum):
     TO_MANY = 'to-many relations GET'
 
 
+class ReturnMode(str, Enum):
+    """
+    Describes what is returned by an instance
+    of `DataSource` on write methods.
+    """
+
+    NONE = 'none'
+    """
+    All write methods return `None`.
+    """
+
+    PARTIAL = 'partial'
+    """
+    Write methods return instances of
+    `DataObject`, but that may lack
+    certain attributes (e.g. those
+    that were not modified).
+    """
+
+    POPULATED = 'populated'
+    """
+    Write methods return instances of
+    `DataObject` with all attributes
+    populated.
+    """
+
+
 class RelationWriteMode(str, Enum):
     """
     Defines how a `Relational` instance

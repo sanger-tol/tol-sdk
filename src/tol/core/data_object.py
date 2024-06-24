@@ -72,7 +72,7 @@ class DataObject(ABC):
 
     @property
     @abstractmethod
-    def _to_one_objects(self) -> dict[str, DataObject]:
+    def _to_one_objects(self) -> dict[str, Optional[DataObject]]:
         """
         The name: attribute mapping for `DataObject`s set on this instance.
 

@@ -82,6 +82,13 @@ class Model(ABC):
         The name of the foreign key column for the given relationship name
         """
 
+    @classmethod
+    def get_all_foreign_key_names(cls) -> set[str]:
+        """
+        Returns only the names of columns which are foreign keys used in
+        relationsips.
+        """
+
     def before_commit(self, user_id: Optional[str] = None) -> None:
         """
         The method that is called by a `Database` instance before a commit
@@ -309,7 +316,7 @@ def model_base() -> Type[DefaultModel]:
             )
 
         @classmethod
-        def __get_foreign_keys(cls) -> set[str]:
+        def get_all_foreign_key_names(cls) -> set[str]:
             """
             Returns only the names of columns which are foreign keys used in
             relationsips.
@@ -326,7 +333,7 @@ def model_base() -> Type[DefaultModel]:
             excluded = cls.get_excluded_column_names()
             mapper = inspect(cls)
             relationships = cls.__get_all_relationship_names()
-            foreign_keys = cls.__get_foreign_keys()
+            foreign_keys = cls.get_all_foreign_key_names()
             return [
                 k for k in mapper.attrs.keys()
                 if k not in excluded

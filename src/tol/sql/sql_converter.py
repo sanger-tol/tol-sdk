@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: MIT
 
 from abc import ABC
-from typing import Callable, TypeVar
+from typing import Any, Callable, TypeVar
 
 from .model import Model
 from ..core import DataObject
@@ -102,6 +102,15 @@ class DefaultDataObjectConverter(DataObjectConverter):
         return {
             model_class.get_foreign_key_name(
                 rel_name
-            ): rel_obj.id
+            ): self.__map_to_foreign_key(rel_obj)
             for rel_name, rel_obj in ones.items()
         }
+
+    def __map_to_foreign_key(
+        self,
+        rel_obj: DataObject | None
+    ) -> Any | None:
+
+        return (
+            None if rel_obj is None else rel_obj.id
+        )

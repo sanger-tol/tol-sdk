@@ -11,14 +11,14 @@ from .. import models
 
 
 class TestDefaultDatabase:
-    def test_count_none(self, session_factory, models_list):
+    def test_count_none(self, session_factory, models_list, sess):
         """No rows -> count = 0"""
 
         db = DefaultDatabase(session_factory, models_list)
-        count = db.count('a')
+        count = db.count('a', sess)
         assert count == 0
 
-    def test_count_with_added(self, session_factory, models_list):
+    def test_count_with_added(self, session_factory, models_list, sess):
         # add the models
         session = session_factory()
         for i in range(7):
@@ -29,10 +29,10 @@ class TestDefaultDatabase:
 
         # get the count, assert its right
         db = DefaultDatabase(session_factory, models_list)
-        count = db.count('a')
+        count = db.count('a', sess)
         assert count == 7
 
-    def test_get_to_one_relation_none(self, session_factory, models_list):
+    def test_get_to_one_relation_none(self, session_factory, models_list, sess):
         """instance_to_one_relations with no instance set"""
 
         # add an R1 without a to-one R2
@@ -46,11 +46,12 @@ class TestDefaultDatabase:
         r2_relation = db.get_to_one_relation(
             'r1',
             'jape',
-            'r2_d2'
+            'r2_d2',
+            sess
         )
         assert r2_relation is None
 
-    def test_get_to_one_relation_set(self, session_factory, models_list):
+    def test_get_to_one_relation_set(self, session_factory, models_list, sess):
         """instance_to_one_relations with one instance set"""
         # add an R1 alongside a to-one R2
         session = session_factory()
@@ -69,12 +70,13 @@ class TestDefaultDatabase:
         r2_relation = db.get_to_one_relation(
             'r1',
             'omni',
-            'r2_d2'
+            'r2_d2',
+            sess
         )
         assert r2_relation is not None
         assert r2_relation.instance_id == 'lol'
 
-    def test_get_to_many_relations_empty(self, session_factory, models_list):
+    def test_get_to_many_relations_empty(self, session_factory, models_list, sess):
         """instance_to_many_relations with empty result"""
 
         # add an R1 without any R3's
@@ -88,11 +90,12 @@ class TestDefaultDatabase:
         r3_relations = db.get_to_many_relations(
             'r1',
             'whatever',
-            'r3_plz'
+            'r3_plz',
+            sess
         )
         assert list(r3_relations) == []
 
-    def test_get_to_many_relations_set(self, session_factory, models_list):
+    def test_get_to_many_relations_set(self, session_factory, models_list, sess):
         """
         get_to_many_relations with a populated result.
 
@@ -119,7 +122,8 @@ class TestDefaultDatabase:
             db.get_to_many_relations(
                 'r1',
                 'neverending-hype',
-                'r3_plz'
+                'r3_plz',
+                sess
             )
         )
         # correct length
@@ -128,7 +132,7 @@ class TestDefaultDatabase:
         for i, rel in enumerate(r3_relations, start=1):
             assert rel.instance_id == str(i)
 
-    def test_delete(self, session_factory, models_list):
+    def test_delete(self, session_factory, models_list, sess):
         """Delete works when given a good tablename and instance-ID"""
 
         # add an "A"
@@ -143,7 +147,8 @@ class TestDefaultDatabase:
         db = DefaultDatabase(session_factory, models_list)
         db.delete(
             'a',
-            'what are you going to do, delete me?'
+            'what are you going to do, delete me?',
+            sess
         )
 
         # confirm the "A" is deleted
@@ -152,7 +157,7 @@ class TestDefaultDatabase:
         session.close()
         assert len(existing_a_s) == 0
 
-    def test_upsert_not_existing(self, session_factory, models_list):
+    def test_upsert_not_existing(self, session_factory, models_list, sess):
         """Upsert on non-existant row causes an insert"""
 
         # add an "A"
@@ -172,7 +177,8 @@ class TestDefaultDatabase:
             models.A(
                 id='101',
                 string_column='consider yourself updated'
-            )
+            ),
+            sess
         )
 
         # confirm the "A" is updated
@@ -185,7 +191,7 @@ class TestDefaultDatabase:
         )
         session.close()
 
-    def test_insert_existing(self, session_factory, models_list):
+    def test_insert_existing(self, session_factory, models_list, sess):
         """Insert on existing model -> raises `DataSourceError`"""
 
         session = session_factory()
@@ -206,10 +212,11 @@ class TestDefaultDatabase:
                 models.A(
                     id='101',
                     string_column='I am invincible'
-                )
+                ),
+                sess
             )
 
-    def test_insert_not_existing(self, session_factory, models_list):
+    def test_insert_not_existing(self, session_factory, models_list, sess):
         """Insert on not previously existing model -> all good"""
 
         db = DefaultDatabase(session_factory, models_list)
@@ -217,7 +224,8 @@ class TestDefaultDatabase:
             models.A(
                 id='101',
                 string_column='I am invincible'
-            )
+            ),
+            sess
         )
 
         # confirm the "A" is inserted
@@ -230,7 +238,7 @@ class TestDefaultDatabase:
         )
         session.close()
 
-    def test_upsert_on_existing(self, session_factory, models_list):
+    def test_upsert_on_existing(self, session_factory, models_list, sess):
         """Upsert on existing row causes an update"""
 
         # upsert a new version
@@ -239,7 +247,8 @@ class TestDefaultDatabase:
             models.A(
                 id='303',
                 string_column='consider yourself inserted'
-            )
+            ),
+            sess
         )
 
         # confirm the "A" is inserted

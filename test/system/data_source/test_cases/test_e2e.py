@@ -18,7 +18,8 @@ from tol.core import (
 )
 from tol.core.operator import (
     ListGetter,
-    RelationWriteMode
+    RelationWriteMode,
+    ReturnMode
 )
 
 from ..dec import against
@@ -76,7 +77,15 @@ class TestEndToEnd:
         ]
 
         # insert 3 different objects
-        data_source.insert('root', objs)
+        returned = data_source.insert('root', objs)
+
+        if data_source.return_mode['root'] == ReturnMode.POPULATED:
+            third = list(returned)[2]
+
+            assert third.type == 'root'
+            assert third.id == 'id_2'
+            assert third.str_column == 'aa'
+            assert third.int_column == 99
 
         # fail to insert the 2nd again
         with pytest.raises(DataSourceError):
@@ -163,7 +172,7 @@ class TestEndToEnd:
         related_objects = [
             data_source.data_object_factory(
                 'related',
-                i,
+                str(i),
                 attributes={
                     'str_column': f'related_{i}'
                 }
@@ -423,7 +432,15 @@ class TestEndToEnd:
 
         if data_source.write_mode['root'] == RelationWriteMode.SEPARATE:
             data_source.upsert('related', [rel1])
-        data_source.upsert('root', [obj1])
+        returned_ = data_source.upsert('root', [obj1])
+
+        if data_source.return_mode['root'] == ReturnMode.POPULATED:
+            returned_root = list(returned_)[0]
+
+            assert returned_root.id == '1'
+            assert returned_root.str_column == 'test_2'
+            assert returned_root.int_column == 2
+            assert returned_root.bool_column is False
 
         ds_sleep(2)  # Let Elastic settle down after the upsert
 
@@ -521,8 +538,10 @@ class TestEndToEnd:
                         'int_column': None,
                         'datetime_column': None,
                         'bool_column': None,
-                        'related_object': None,
-                        'list_column': None}
+                        'list_column': None},
+            to_one={
+                'related_object': None
+            }
         )
         data_source.upsert('root', [obj1])
         ds_sleep(2)  # Let Elastic settle down after the upsert
@@ -683,7 +702,7 @@ class TestEndToEnd:
         data_objects = [
             data_source.data_object_factory(
                 'root',
-                id_,
+                str(id_),
                 attributes={
                     'str_column': f'test_{id_}',
                     'bool_column': True if id_ % 2 == 0 else False

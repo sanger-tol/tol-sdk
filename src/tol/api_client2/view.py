@@ -134,7 +134,7 @@ class DefaultView(View):
         if not isinstance(host, Relational):
             return dump
 
-        to_one_keys = self.__get_to_one_keys(host, data_object.type)
+        to_one_keys = self.__get_to_one_keys(data_object)
         to_many_keys = self.__get_to_many_keys(host, data_object.type)
         if not to_one_keys and not to_many_keys:
             return dump
@@ -162,8 +162,9 @@ class DefaultView(View):
                                                   data_object.id)
             for key in to_many_relationships
         }
+
         return {
-            k: v for k, v in dump.items() if v
+            k: v for k, v in dump.items() if v != {}
         }
 
     def __dump_to_many_relationship(
@@ -189,7 +190,7 @@ class DefaultView(View):
     ) -> Optional[RelationshipDump]:
 
         if self.__hop_limit is not None and depth >= self.__hop_limit:
-            return
+            return {}
 
         related_object = self.__get_related_to_one(data_object, key)
         if related_object is not None:
@@ -212,11 +213,19 @@ class DefaultView(View):
 
     def __get_to_one_keys(
         self,
-        host: Relational,
-        type_: str
+        obj: DataObject
     ) -> list[str]:
 
-        return self.__get_target_keys(host, type_, 'to_one')
+        if self.__all_to_ones:
+            return self.__get_target_keys(
+                obj._host,
+                obj.type,
+                'to_one'
+            )
+        else:
+            return list(
+                obj._to_one_objects.keys()
+            )
 
     def __get_to_many_keys(
         self,
