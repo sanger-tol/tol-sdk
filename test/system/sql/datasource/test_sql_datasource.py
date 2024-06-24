@@ -113,3 +113,77 @@ class TestCreateSqlDataSource:
             assert count == 7
             # empty page
             assert len(list(data_objects)) == 0
+
+    def test_upsert_return(
+        self,
+        session_factory,
+        models_list
+    ):
+        """
+        `SqlDataSource().upsert()` returns:
+
+        - valid `DataObject` instances
+        - that contain all attributes
+        """
+
+        # add the object
+        session = session_factory()
+        session.add(
+            models.B(
+                id_override='hello',
+                another_string='the code is hello',
+                int_column=20930
+            )
+        )
+        session.commit()
+        session.close()
+
+        # create the sql datasource
+        sql_ds = create_sql_datasource(models_list, DB_URI)
+        core_data_object(sql_ds)
+
+        # upsert over `another_string`
+        upsert_it = sql_ds.data_object_factory(
+            'b',
+            'hello',
+            attributes={
+                'another_string': 'another planet'
+            }
+        )
+
+        # upsert it
+        returned = list(
+            sql_ds.upsert('b', [upsert_it])
+        )[0]
+
+        # check all valid
+        assert returned is not None
+        assert returned.id == 'hello'
+        assert returned.another_string == 'another planet'
+
+    def test_insert_autoincrement(
+        self,
+        models_list
+    ):
+        """
+        unspecified `autoincrement=True` ID is populated
+        and returned when inserted
+        """
+
+        sql_ds = create_sql_datasource(models_list, DB_URI)
+        core_data_object(sql_ds)
+
+        obj = sql_ds.data_object_factory(
+            'inc',
+            attributes={
+                'string_column': 'yes'
+            }
+        )
+
+        returned_obj = list(
+            sql_ds.insert('inc', [obj])
+        )[0]
+
+        assert returned_obj.id is not None
+        assert returned_obj.type == 'inc'
+        assert returned_obj.string_column == 'yes'

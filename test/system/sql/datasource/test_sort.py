@@ -10,7 +10,7 @@ from .. import models
 
 class TestDefaultDatabaseSorter:
 
-    def test_sort_ascending(self, session_factory, models_list):
+    def test_sort_ascending(self, session_factory, models_list, sess):
 
         # add the models
         session = session_factory()
@@ -26,7 +26,7 @@ class TestDefaultDatabaseSorter:
         db = DefaultDatabase(session_factory, models_list)
 
         sorter = DefaultDatabaseSorter('string_column')
-        a_list = db.get_page('a', sort_by=sorter)
+        a_list = db.get_page('a', sess, sort_by=sorter)
         # the difference is preserved
         for a in a_list:
             assert a.string_column == str(20 - int(a.id))
@@ -34,7 +34,7 @@ class TestDefaultDatabaseSorter:
         string_columns = [int(a.string_column) for a in a_list]
         assert string_columns == list(range(14, 21))
 
-    def test_sort_descending(self, session_factory, models_list):
+    def test_sort_descending(self, session_factory, models_list, sess):
 
         # add the models
         session = session_factory()
@@ -50,7 +50,7 @@ class TestDefaultDatabaseSorter:
         db = DefaultDatabase(session_factory, models_list)
 
         sorter = DefaultDatabaseSorter('-string_column')
-        a_list = db.get_page('a', sort_by=sorter)
+        a_list = db.get_page('a', sess, sort_by=sorter)
         # the difference is preserved
         for a in a_list:
             assert a.string_column == str(32 - int(a.id))

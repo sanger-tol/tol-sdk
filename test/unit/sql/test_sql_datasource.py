@@ -6,6 +6,8 @@ from string import ascii_uppercase
 from typing import Any, Dict, Iterable, Optional
 from unittest.mock import MagicMock, Mock, PropertyMock, call, create_autospec
 
+from sqlalchemy.orm import Session
+
 from tol.core import DataObject, DataSourceFilter, core_data_object
 from tol.sql import SqlDataSource, create_sql_datasource
 from tol.sql.database import Database
@@ -142,7 +144,7 @@ class TestSqlDataSource:
                 raise NotImplementedError()
 
         class _SingleRowDatabase:
-            def get_by_id(self, tablename: str, id_: Any, **kwargs) -> Optional[Model]:
+            def get_by_id(self, tablename: str, id_: Any, session, **kwargs) -> Optional[Model]:
                 return _MockModel() if id_ != '404' else None
 
             @property
@@ -234,6 +236,7 @@ class TestSqlDataSource:
             def get_page(
                 self,
                 tablename: str,
+                in_session,
                 filters: Optional[DataSourceFilter] = None,
                 sort_by: Optional[str] = None,
                 offset: Optional[int] = None,
@@ -257,6 +260,7 @@ class TestSqlDataSource:
             def count(
                 self,
                 tablename: str,
+                in_session,
                 filters: Optional[DataSourceFilter] = None,
                 **kwargs
             ) -> int:
@@ -304,6 +308,7 @@ class TestSqlDataSource:
             def count(
                 self,
                 tablename: str,
+                in_session,
                 filters: Optional[DatabaseFilter] = None,
                 **kwargs
             ) -> int:
@@ -354,6 +359,7 @@ class TestSqlDataSource:
             def get_page(
                 self,
                 tablename: str,
+                in_session,
                 filters: Optional[DatabaseFilter] = None,
                 sort_by: Optional[str] = None,
                 offset: Optional[int] = None,
@@ -411,6 +417,7 @@ class TestSqlDataSource:
             def get_page(
                 self,
                 tablename: str,
+                in_session,
                 filters: Optional[DatabaseFilter] = None,
                 sort_by: Optional[str] = None,
                 offset: Optional[int] = None,
@@ -528,6 +535,7 @@ class TestSqlDataSource:
                 tablename: str,
                 instance_id: str,
                 relationship_name: str,
+                in_session,
                 **kwargs
             ):
                 assert tablename == 'test'
@@ -573,6 +581,7 @@ class TestSqlDataSource:
                 tablename: str,
                 instance_id: str,
                 relationship_name: str,
+                in_session,
                 **kwargs
             ):
                 assert tablename == 'test'
@@ -615,10 +624,13 @@ class TestSqlDataSource:
         `SqlDataSource().delete()` calls `Database().delete()` correctly
         """
 
+        mock_sess = create_autospec(Session)
+
         mock_sess_factory = MagicMock()
-        mock_sess_factory.return_value = 'hi'
+        mock_sess_factory.return_value = mock_sess
 
         mock_db = MagicMock()
+        mock_db.session_factory = mock_sess_factory
 
         ds = SqlDataSource(
             mock_db,
@@ -632,7 +644,7 @@ class TestSqlDataSource:
         ds.delete('tests', list(ascii_uppercase))
 
         assert mock_db.delete.call_args_list == [
-            call('mapped_tablename', c, user_id=None, in_session=None) for c in ascii_uppercase
+            call('mapped_tablename', c, mock_sess, user_id=None) for c in ascii_uppercase
         ]
 
     def test_upsert(self):
@@ -641,8 +653,10 @@ class TestSqlDataSource:
         `BackConverter().convert() correctly`
         """
 
+        mock_sess = create_autospec(Session)
+
         mock_sess_factory = MagicMock()
-        mock_sess_factory.return_value = 'hi'
+        mock_sess_factory.return_value = mock_sess
 
         mock_db = MagicMock()
         mock_db.session_factory = mock_sess_factory
@@ -656,13 +670,14 @@ class TestSqlDataSource:
             mock_db,
             {'tests': 'mapped_tablename'},
             MagicMock(),
-            None,
+            MagicMock(),
             lambda: mock_back_converter,
             MagicMock(),
             MagicMock()
         )
+        ds.data_object_factory = MagicMock()
         ds.upsert('tests', mock_object)
-        mock_db.upsert.assert_called_once_with(mock_model, user_id=None, in_session=None)
+        mock_db.upsert.assert_called_once_with(mock_model, mock_sess, user_id=None)
 
     def test_get_attribute_types(self):
         """
@@ -711,8 +726,10 @@ class TestSqlDataSource:
     def test_user_id_delete(self):
         """user_id is set on delete"""
 
+        mock_sess = create_autospec(Session)
+
         mock_sess_factory = MagicMock()
-        mock_sess_factory.return_value = 'hi'
+        mock_sess_factory.return_value = mock_sess
 
         mock_db = MagicMock()
         mock_db.session_factory = mock_sess_factory
@@ -738,15 +755,17 @@ class TestSqlDataSource:
         mock_db.delete.assert_called_once_with(
             'test',
             'test_ID',
-            user_id='a user ID',
-            in_session=None
+            mock_sess,
+            user_id='a user ID'
         )
 
     def test_user_id_upsert(self):
         """user_id is set on upsert"""
 
+        mock_sess = create_autospec(Session)
+
         mock_sess_factory = MagicMock()
-        mock_sess_factory.return_value = 'hi'
+        mock_sess_factory.return_value = mock_sess
 
         mock_db = MagicMock()
         mock_db.session_factory = mock_sess_factory
@@ -771,6 +790,7 @@ class TestSqlDataSource:
             database_factory=lambda __a, __b: mock_db,
             model_factory=lambda __a, __b: lambda: mock_model_factory
         )
+        sql_ds.data_object_factory = Mock()
 
         mock_obj = self.__get_mock_data_object('test', '1')
 
@@ -778,15 +798,18 @@ class TestSqlDataSource:
 
         mock_db.upsert.assert_called_once_with(
             mock_model_instance,
-            user_id='a user ID',
-            in_session=None
+            mock_sess,
+            user_id='a user ID'
         )
 
     def test_insert(self):
         """`SqlDataSource().insert()`"""
 
+        mock_sess = create_autospec(Session)
+
         mock_db = create_autospec(Database, spec_set=True)
         mock_db.attribute_types = {'test': {}}
+        mock_db.session_factory.return_value = mock_sess
 
         mock_model = create_autospec(Model, spec_set=True)
         mock_model.get_table_name.return_value = 'test'
@@ -804,6 +827,7 @@ class TestSqlDataSource:
             database_factory=lambda __a, __b: mock_db,
             model_factory=lambda __a, __b: lambda: mock_model_factory
         )
+        sql_ds.data_object_factory = Mock()
 
         mock_objects = [
             create_autospec(DataObject, spec_set=True)
@@ -815,7 +839,7 @@ class TestSqlDataSource:
         mock_model_factory.convert_iterable.assert_called_once()
 
         expected_insert_calls = [
-            call(obj, user_id='a user ID')
+            call(obj, mock_sess, user_id='a user ID')
             for obj in mock_objects
         ]
         assert mock_db.insert.call_args_list == expected_insert_calls

@@ -105,11 +105,17 @@ class ElasticDataSource(
         to_ones_dict = {
             k: self._convert_to_one_relation(v)
             for k, v in data_object._to_one_objects.items()
-            if v is not None
         }
         return data_object.attributes | to_ones_dict
 
-    def _convert_to_one_relation(self, one_relation: DataObject) -> dict[str, Any]:
+    def _convert_to_one_relation(
+        self,
+        one_relation: DataObject | None
+    ) -> dict[str, Any] | None:
+
+        if one_relation is None:
+            return None
+
         return {
             'id': one_relation.id,
             **one_relation.attributes

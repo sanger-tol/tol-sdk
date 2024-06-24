@@ -11,6 +11,7 @@ from flask import Blueprint, Flask
 from pytest import fixture
 
 from sqlalchemy import create_engine, delete
+from sqlalchemy.orm import Session
 
 from tol.api_base2 import data_blueprint
 from tol.api_base2.auth import OidcConfig, require_auth
@@ -109,6 +110,18 @@ def session_factory(db_uri: str, full_models_list: list[type[Any]]):
         __session_factory,
         reversed(full_models_list)
     )
+
+
+@fixture(scope='function')
+def sess(
+    session_factory: SessionFactory
+) -> Session:
+
+    sess = session_factory()
+
+    yield sess
+
+    sess.close()
 
 
 @fixture(scope='package')

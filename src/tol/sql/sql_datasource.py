@@ -33,6 +33,7 @@ from ..core.operator import (
     PageGetter,
     RelationWriteMode,
     Relational,
+    ReturnMode,
     Upserter,
 )
 from ..core.relationship import RelationshipConfig
@@ -101,15 +102,19 @@ class SqlDataSource(
     def _default_write_mode(self) -> RelationWriteMode:
         return RelationWriteMode.SEPARATE
 
+    @property
+    def _default_return_mode(self) -> ReturnMode:
+        return ReturnMode.POPULATED
+
     def __get_sqla_session(
         self,
         session: Optional[SqlDataSourceSession]
-    ) -> Optional[SqlaSession]:
+    ) -> SqlaSession:
 
         return (
             session._sqla_session
             if session is not None
-            else None
+            else self.create_sqla_session()
         )
 
     @property
@@ -136,11 +141,14 @@ class SqlDataSource(
 
         tablename = self.__type_tablename_map[object_type]
         database_filter = self.__filter_factory(object_filters)
+        in_session = self.__get_sqla_session(session)
         total_count = self.__db.count(
             tablename,
-            filters=database_filter,
-            in_session=self.__get_sqla_session(session)
+            in_session,
+            filters=database_filter
         )
+        if session is None:
+            in_session.close()
         return total_count
 
     def get_by_id(
@@ -172,11 +180,11 @@ class SqlDataSource(
         tablename = self.__type_tablename_map[object_type]
         database_filter = self.__filter_factory(object_filters)
         sorter = self.__sorter_factory(sort_by)
-        session = self.__get_sqla_session(session)
+        in_session = self.__get_sqla_session(session)
         total_count = self.__db.count(
             tablename,
-            filters=database_filter,
-            in_session=session
+            in_session,
+            filters=database_filter
         )
         models = self.__get_list_page_models(
             tablename,
@@ -184,10 +192,15 @@ class SqlDataSource(
             page_number,
             page_size,
             sorter,
-            session
+            in_session
         )
         converter = self.__get_converter()
-        return converter.convert_iterable(models), total_count
+        return_list = list(
+            converter.convert_iterable(models)
+        )
+        if session is None:
+            in_session.close()
+        return return_list, total_count
 
     def get_list(
         self,
@@ -196,14 +209,25 @@ class SqlDataSource(
         sort_by: Optional[str] = None,
         session: Optional[SqlDataSourceSession] = None
     ) -> Iterable[DataObject]:
-        models = self.__generate_models_for_get_list(
-            object_type,
-            object_filters=object_filters,
-            sort_by=sort_by,
-            session=self.__get_sqla_session(session)
-        )
-        converter = self.__get_converter()
-        return converter.convert_iterable(models)
+
+        page = 1
+        tablename = self.__type_tablename_map[object_type]
+        database_filter = self.__filter_factory(object_filters)
+        database_sorter = self.__sorter_factory(sort_by)
+        page_size = self.get_page_size()
+        while True:
+            objects_page = self.__get_page(
+                page,
+                page_size,
+                tablename,
+                session,
+                database_filter,
+                database_sorter
+            )
+            if len(objects_page) == 0:
+                return
+            yield from objects_page
+            page += 1
 
     def delete(
         self,
@@ -211,15 +235,19 @@ class SqlDataSource(
         object_ids: Iterable[str],
         session: Optional[SqlDataSourceSession] = None
     ) -> None:
+
         tablename = self.__type_tablename_map[object_type]
         user_id = self.__user_id_getter()
+        in_session = self.__get_sqla_session(session)
         for object_id in object_ids:
             self.__db.delete(
                 tablename,
                 object_id,
-                user_id=user_id,
-                in_session=self.__get_sqla_session(session)
+                in_session,
+                user_id=user_id
             )
+        if session is None:
+            in_session.close()
 
     def upsert(
         self,
@@ -227,30 +255,58 @@ class SqlDataSource(
         objects: Iterable[DataObject],
         session: Optional[SqlDataSourceSession] = None,
         **kwargs
-    ) -> None:
+    ) -> list[DataObject]:
+
         # TODO optimise by batching?
         back_converter = self.__back_converter_factory()
         model_instances = back_converter.convert_iterable(objects)
         user_id = self.__user_id_getter()
-        for instance in model_instances:
+        in_session = self.__get_sqla_session(session)
+        returned_models = [
             self.__db.upsert(
                 instance,
-                user_id=user_id,
-                in_session=self.__get_sqla_session(session)
+                in_session,
+                user_id=user_id
             )
+            for instance in model_instances
+        ]
+        return_list = list(
+            self.__get_converter().convert_iterable(
+                returned_models
+            )
+        )
+        if session is None:
+            in_session.close()
+        return return_list
 
     def insert(
         self,
         object_type: str,
-        objects: Iterable[DataObject]
+        objects: Iterable[DataObject],
+        session: Optional[SqlDataSourceSession] = None
     ) -> Iterable[DataObject]:
 
         # TODO optimise by batching?
         back_converter = self.__back_converter_factory()
         model_instances = back_converter.convert_iterable(objects)
         user_id = self.__user_id_getter()
-        for instance in model_instances:
-            self.__db.insert(instance, user_id=user_id)
+        in_session = self.__get_sqla_session(session)
+        inserted_list = [
+            self.__db.insert(
+                instance,
+                in_session,
+                user_id=user_id
+            )
+            for instance in model_instances
+        ]
+        return_list = list(
+            self.__get_converter().convert_iterable(
+                inserted_list
+            )
+        )
+        if session is None:
+            in_session.close()
+        return return_list
 
     def get_to_one_relation(
         self,
@@ -260,13 +316,17 @@ class SqlDataSource(
     ) -> Optional[DataObject]:
 
         tablename = self.__type_tablename_map[source.type]
+        in_session = self.__get_sqla_session(session)
         model = self.__db.get_to_one_relation(
             tablename,
             source.id,
             relationship_name,
-            in_session=self.__get_sqla_session(session)
+            in_session,
         )
-        return self.__get_converter().convert_optional(model)
+        return_ = self.__get_converter().convert_optional(model)
+        if session is None:
+            in_session.close()
+        return return_
 
     def get_to_many_relations(
         self,
@@ -276,13 +336,47 @@ class SqlDataSource(
     ) -> Iterable[DataObject]:
 
         tablename = self.__type_tablename_map[source.type]
+        in_session = self.__get_sqla_session(session)
         models = self.__db.get_to_many_relations(
             tablename,
             source.id,
             relationship_name,
-            in_session=self.__get_sqla_session(session)
+            in_session
         )
-        return self.__get_converter().convert_iterable(models)
+        return_list = list(
+            self.__get_converter().convert_iterable(models)
+        )
+        if session is None:
+            in_session.close()
+        return return_list
+
+    def __get_page(
+        self,
+        page: int,
+        page_size: int,
+        tablename: str,
+        session: Optional[SqlDataSourceSession],
+        database_filter: Optional[DatabaseFilter],
+        database_sorter: Optional[DatabaseSorter]
+    ) -> list[DataObject]:
+
+        sqla_session = self.__get_sqla_session(session)
+
+        models = self.__db.get_page(
+            tablename,
+            sqla_session,
+            filters=database_filter,
+            sort_by=database_sorter,
+            offset=(page - 1) * page_size,
+            limit=page_size
+        )
+        converter = self.__get_converter()
+        objects = list(
+            converter.convert_iterable(models)
+        )
+        if session is None:
+            sqla_session.close()
+        return objects
 
     def __calculate_all_attribute_types(self) -> dict[str, dict[str, str]]:
         tablename_type_map = {
@@ -307,33 +401,6 @@ class SqlDataSource(
     def __get_converter(self) -> ModelConverter:
         return self.__converter_factory(self.data_object_factory)
 
-    def __generate_models_for_get_list(
-        self,
-        object_type: str,
-        object_filters: Optional[DataSourceFilter] = None,
-        sort_by: Optional[str] = None,
-        session: Optional[SqlaSession] = None
-    ) -> Iterable[Model]:
-        page = 1
-        tablename = self.__type_tablename_map[object_type]
-        database_filter = self.__filter_factory(object_filters)
-        database_sorter = self.__sorter_factory(sort_by)
-        page_size = self.get_page_size()
-        while True:
-            models_iterable = self.__db.get_page(
-                tablename,
-                filters=database_filter,
-                sort_by=database_sorter,
-                offset=(page - 1) * page_size,
-                limit=page_size,
-                in_session=session
-            )
-            models = list(models_iterable)
-            if len(models) == 0:
-                return
-            yield from models
-            page += 1
-
     def __get_model_list_by_ids(
         self,
         object_type: str,
@@ -345,7 +412,7 @@ class SqlDataSource(
             self.__db.get_by_id(
                 self.__type_tablename_map[object_type],
                 id_,
-                in_session=session
+                session
             )
             for id_ in object_ids
         ]
@@ -357,16 +424,17 @@ class SqlDataSource(
         page_number: Optional[int],
         page_size: Optional[int],
         sort_by: Optional[DatabaseSorter],
-        session: SqlaSession
+        in_session: SqlaSession
     ) -> Iterable[Model]:
+
         offset = self.__get_offset(page_number, page_size)
         return self.__db.get_page(
             tablename,
+            in_session,
             filters=filters,
             sort_by=sort_by,
             offset=offset,
-            limit=page_size,
-            in_session=session
+            limit=page_size
         )
 
     def __get_offset(

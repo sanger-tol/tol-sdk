@@ -12,7 +12,7 @@ class TestDatabaseExt:
     Tests a real database with ext column.
     """
 
-    def test_json_default_name(self, session_factory, models_list):
+    def test_json_default_name(self, session_factory, models_list, sess):
         """JSON-type, default (`ext`) name"""
         with session_factory() as sess:
             sess.add(
@@ -34,19 +34,19 @@ class TestDatabaseExt:
         db = DefaultDatabase(session_factory, models_list)
 
         # no ext
-        attrs = db.get_by_id('ext_default', 'yes').instance_attributes
+        attrs = db.get_by_id('ext_default', 'yes', sess).instance_attributes
         assert attrs == {
             'string_column': None
         }
 
         # includes ext
-        attrs = db.get_by_id('ext_default', 'fun').instance_attributes
+        attrs = db.get_by_id('ext_default', 'fun', sess).instance_attributes
         assert attrs == {
             'hype': 'train',
             'string_column': 'neverending'
         }
 
-    def test_jsonb_override_name_nullable(self, session_factory, models_list):
+    def test_jsonb_override_name_nullable(self, session_factory, models_list, sess):
         """JSONB-type, override name, nullable"""
 
         with session_factory() as sess:
@@ -70,7 +70,7 @@ class TestDatabaseExt:
 
         results = [
             m.instance_attributes
-            for m in db.get_page('ext_override')
+            for m in db.get_page('ext_override', sess)
         ]
 
         assert results == [

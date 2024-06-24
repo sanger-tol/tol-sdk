@@ -8,11 +8,13 @@ import typing
 from abc import ABC, abstractmethod
 from typing import Iterable, Optional
 
+from ._writer import _Writer
+
 if typing.TYPE_CHECKING:
     from ..session import OperableSession
 
 
-class Deleter(ABC):
+class Deleter(_Writer, ABC):
     """
     Deletes DataObject instances.
     """
