@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: MIT
 
 from abc import ABC
-from typing import Any, Callable, TypeVar
+from typing import Any, Callable, Optional, TypeVar
 
 from .model import Model
 from ..core import DataObject
@@ -34,22 +34,56 @@ class DefaultModelConverter(ModelConverter):
     def __init__(
         self,
         type_function: TypeFunction,
-        data_object_factory: DataObjectFactory
+        data_object_factory: DataObjectFactory,
+        max_depth: int = 1
     ) -> None:
         """
         Takes a type_function Callable, which determines the type of the
         DataObject for a given Model instance.
         """
+
         self.__type_function = type_function
         self.__data_object_factory = data_object_factory
+        self.__max_depth = max_depth
 
     def convert(self, model: Model) -> DataObject:
+        return self.__convert_to_max_depth(model, 0)
+
+    def __convert_to_max_depth(
+        self,
+        model: Model | None,
+        depth: int
+    ) -> DataObject:
+
+        if model is None:
+            return None
+
         type_ = self.__type_function(model)
+
         return self.__data_object_factory(
             type_,
             id_=model.instance_id,
-            attributes=model.instance_attributes
+            attributes=model.instance_attributes,
+            to_one=self.__convert_to_ones(
+                model,
+                depth
+            )
         )
+
+    def __convert_to_ones(
+        self,
+        model: Model,
+        depth: int
+    ) -> dict[str, Optional[DataObject]]:
+
+        if depth >= self.__max_depth:
+            return {}
+
+        return {
+            k: self.__convert_to_max_depth(v, depth + 1)
+            for k, v
+            in model.instance_to_one_relations.items()
+        }
 
 
 class DataObjectConverter(Converter[DataObject, Model], ABC):

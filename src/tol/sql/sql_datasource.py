@@ -158,14 +158,19 @@ class SqlDataSource(
         session: Optional[SqlDataSourceSession] = None
     ) -> Iterable[Optional[DataObject]]:
 
-        # TODO maybe optimise on DB, and get multiple at once?
+        in_session = self.__get_sqla_session(session)
         models = self.__get_model_list_by_ids(
             object_type,
             object_ids,
-            session=self.__get_sqla_session(session)
+            in_session
         )
         converter = self.__get_converter()
-        return converter.convert_iterable(models)
+        return_list = list(
+            converter.convert_iterable(models)
+        )
+        if session is None:
+            in_session.close()
+        return return_list
 
     def get_list_page(
         self,

@@ -56,7 +56,7 @@ class _ExampleModel(Model):
 
     @property
     def instance_to_one_relations(self) -> dict[str, Optional[Model]]:
-        pass
+        return {}
 
     @property
     def instance_to_many_relations(self) -> dict[str, Iterable[Model]]:
@@ -106,7 +106,7 @@ class _ExampleDataObject(DataObject):
         raise NotImplementedError()
 
 
-def factory(type_, id_=None, attributes=None):
+def factory(type_, id_=None, attributes=None, to_one=None):
     return _ExampleDataObject(type_, id_, attributes)
 
 
