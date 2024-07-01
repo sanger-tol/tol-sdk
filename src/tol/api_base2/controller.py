@@ -39,6 +39,7 @@ from ..core.operator import (
     OperatorMethod,
     PageGetter,
     Relational,
+    ReturnMode,
     Updater,
     Upserter
 )
@@ -285,8 +286,11 @@ class Controller:
     ) -> EmptySuccessResponse:
         """Inserts the given objects of specified type"""
 
-        self.data_source.insert(object_type, objects)
-        return {'success': True}
+        returned = self.data_source.insert(object_type, objects)
+        if self.data_source.return_mode[object_type] == ReturnMode.POPULATED:
+            return self.__view.dump_bulk(returned)
+        else:
+            return {'success': True}
 
     @validate(Upserter, 'post_upserts', OperatorMethod.UPSERT)
     def post_upserts(
@@ -297,8 +301,11 @@ class Controller:
     ) -> EmptySuccessResponse:
         """Upserts the given objects of specified type"""
 
-        self.data_source.upsert(object_type, objects)
-        return {'success': True}
+        returned = self.data_source.upsert(object_type, objects)
+        if self.data_source.return_mode[object_type] == ReturnMode.POPULATED:
+            return self.__view.dump_bulk(returned)
+        else:
+            return {'success': True}
 
     @validate(Aggregator, 'get_aggregations', OperatorMethod.AGGREGATE)
     def post_aggregations(

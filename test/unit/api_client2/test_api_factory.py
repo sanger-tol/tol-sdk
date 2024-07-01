@@ -12,6 +12,7 @@ from responses.matchers import (
 )
 
 from tol.api_client2 import create_api_datasource
+from tol.core.operator import ReturnMode
 
 
 FAKE_API_URL = 'http://fake.lan/api/v42'
@@ -180,7 +181,10 @@ class TestCreateApiDatasource:
                     expected_json,
                     strict_match=True
                 )
-            ]
+            ],
+            json={
+                'data': []
+            }
         )
         self.__responses_preflight_check('test2', ['upsert'])
 
@@ -202,4 +206,8 @@ class TestCreateApiDatasource:
         responses.get(
             f'{FAKE_API_URL}/data/_config/attribute_types',
             json={object_type: {}}
+        )
+        responses.get(
+            f'{FAKE_API_URL}/data/_config/return_mode',
+            json={object_type: ReturnMode.NONE}
         )

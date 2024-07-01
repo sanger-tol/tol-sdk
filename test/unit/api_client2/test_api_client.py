@@ -211,7 +211,10 @@ class TestJsonApiClient:
             match=[
                 header_matcher({'token': 'funds'}),
                 json_params_matcher(transfer, strict_match=True)
-            ]
+            ],
+            json={
+                'data': []
+            }
         )
 
         client.upsert('test', transfer)

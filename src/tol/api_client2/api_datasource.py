@@ -27,6 +27,7 @@ from ..core.operator import (
     PageGetter,
     RelationWriteMode,
     Relational,
+    ReturnMode,
     Statter,
     Upserter,
 )
@@ -112,6 +113,16 @@ class ApiDataSource(
 
         return {
             k: RelationWriteMode(v)
+            for k, v in transfer.items()
+        }
+
+    @property
+    @cache
+    def return_mode(self) -> dict[str, ReturnMode]:
+        transfer = self.__client_factory().config_return_mode()
+
+        return {
+            k: ReturnMode(v)
             for k, v in transfer.items()
         }
 
@@ -237,11 +248,14 @@ class ApiDataSource(
         objects: Iterable[DataObject],
         session: Optional[OperableSession] = None,
         **kwargs
-    ) -> None:
+    ) -> Iterable[DataObject] | None:
         transfer = self.__dc_factory().convert_list(
             list(objects)
         )
-        self.__client_factory().upsert(object_type, transfer)
+        returned = self.__client_factory().upsert(object_type, transfer)
+        if self.return_mode[object_type] == ReturnMode.POPULATED:
+            converted, _ = self.__jc_factory().convert_list(returned)
+            return converted
 
     @validate('relational', direct_object=True)
     @validate_id
@@ -331,15 +345,18 @@ class ApiDataSource(
         object_type: str,
         objects: Iterable[DataObject],
         session: Optional[OperableSession] = None
-    ) -> Iterable[DataObject]:
+    ) -> Iterable[DataObject] | None:
 
         transfer = self.__dc_factory().convert_list(
             objects
         )
-        self.__client_factory().insert(
+        returned = self.__client_factory().insert(
             object_type,
             transfer
         )
+        if self.return_mode[object_type] == ReturnMode.POPULATED:
+            converted, _ = self.__jc_factory().convert_list(returned)
+            return converted
 
     @property
     @cache
