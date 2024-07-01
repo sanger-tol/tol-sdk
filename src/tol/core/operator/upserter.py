@@ -26,7 +26,7 @@ class Upserter(_Writer, ABC):
         object_type: str,
         objects: Iterable[DataObject],
         session: Optional[OperableSession] = None
-    ) -> None:
+    ) -> Iterable[DataObject] | None:
         """
         Takes a type and an `Iterable` of `DataObject` instances, on
         each of which to perform an "upsert", i.e.:

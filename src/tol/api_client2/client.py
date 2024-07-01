@@ -129,6 +129,7 @@ class JsonApiClient:
         headers = self.__merge_headers()
         r = requests.post(url, headers=headers, json=transfer)
         self.__assert_no_error(r)
+        return r.json()
 
     def insert(
         self,
@@ -144,6 +145,7 @@ class JsonApiClient:
         headers = self.__merge_headers()
         r = requests.post(url, headers=headers, json=transfer)
         self.__assert_no_error(r)
+        return r.json()
 
     def get_to_one_relation_recursive(
         self,
@@ -226,7 +228,11 @@ class JsonApiClient:
         return self.__fetch_config(url)
 
     def config_write_mode(self) -> dict[str, str]:
-        url = self.__config_write_model_url()
+        url = self.__config_write_mode_url()
+        return self.__fetch_config(url)
+
+    def config_return_mode(self) -> dict[str, str]:
+        url = self.__config_return_mode_url()
         return self.__fetch_config(url)
 
     def __fetch_config(self, url: str) -> Any:
@@ -333,8 +339,11 @@ class JsonApiClient:
     def __config_rel_url(self) -> str:
         return f'{self.__config_url}/relationships'
 
-    def __config_write_model_url(self) -> str:
+    def __config_write_mode_url(self) -> str:
         return f'{self.__config_url}/write_mode'
+
+    def __config_return_mode_url(self) -> str:
+        return f'{self.__config_url}/return_mode'
 
     def __no_none_value_dict(self, **kwargs) -> dict[str, Any]:
         return {

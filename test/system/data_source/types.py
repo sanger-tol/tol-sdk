@@ -96,7 +96,22 @@ class Related(ModelBase):
     )
 
 
+class Inc(ModelBase):
+    __tablename__ = 'inc'
+
+    id_indeed: Mapped[int] = mapped_column(
+        primary_key=True,
+        autoincrement=True
+    )
+    string_column: Mapped[str] = mapped_column(nullable=True)
+
+    @classmethod
+    def get_id_column_name(cls):
+        return 'id_indeed'
+
+
 ALL_MODELS = (
     Related,
-    Root
+    Root,
+    Inc
 )

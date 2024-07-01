@@ -11,6 +11,7 @@ from tol.api_client2 import ApiDataSource
 from tol.api_client2.client import JsonApiClient
 from tol.api_client2.converter import JsonApiConverter
 from tol.core import DataObject, DataSourceError
+from tol.core.operator import ReturnMode
 from tol.core.relationship import RelationshipConfig
 
 
@@ -378,6 +379,9 @@ class TestApiDataSource:
             lambda o: o
         )
 
+        mock_jc_converter = Mock()
+        mock_jc_converter.convert_list.return_value = [None, None]
+
         mock_client = Mock()
         mock_client.config_operations.return_value = {
             'test': {'auth': ['upsert']}
@@ -385,10 +389,13 @@ class TestApiDataSource:
         mock_client.config_attribute_types.return_value = {
             'test': {}
         }
+        mock_client.config_return_mode.return_value = {
+            'test': ReturnMode.NONE
+        }
 
         api_ds = ApiDataSource(
             lambda: mock_client,
-            None,
+            lambda: mock_jc_converter,
             lambda: mock_do_converter,
             None
         )

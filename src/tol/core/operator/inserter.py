@@ -28,7 +28,7 @@ class Inserter(_Writer, ABC):
         object_type: str,
         objects: Iterable[DataObject],
         session: Optional[OperableSession] = None
-    ) -> Iterable[DataObject]:
+    ) -> Iterable[DataObject] | None:
         """
         Inserts the given `DataObject` instances
         of specified type.

@@ -131,6 +131,12 @@ def _config_blueprint(
         chain_map = ChainMap(*modes_list)
         return dict(chain_map)
 
+    @config_handler.get('/return_mode')
+    def get_return_mode():
+        modes_list = [d.return_mode for d in data_sources]
+        chain_map = ChainMap(*modes_list)
+        return dict(chain_map)
+
     return config_handler
 
 

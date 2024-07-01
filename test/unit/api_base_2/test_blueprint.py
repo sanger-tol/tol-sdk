@@ -373,6 +373,8 @@ class TestBlueprintUpsert(TestCase):
                     'hype': 'train'
                 }
 
+                return []
+
         # add a data object factory
         ds_upsert = NeverEverStopUpserting()
         core_data_object(ds_upsert)
@@ -584,6 +586,7 @@ class TestInserter(TestCase):
             for c, obj in zip('abcd', objs):
                 assert obj.id == c
                 assert obj.attributes == {c: f'attr_{c.upper()}'}
+            return []
 
         self.insert_ds.insert.side_effect = __side_effect
 
