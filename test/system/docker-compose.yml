@@ -26,6 +26,8 @@ services:
       - ELASTIC_USER=${ELASTIC_USER}
       - ELASTIC_PASSWORD=${ELASTIC_PASSWORD}
       - ELASTIC_INDEX_PREFIX=${ELASTIC_INDEX_PREFIX}
+      - JIRA_URL=${JIRA_URL}
+      - JIRA_API_KEY=${JIRA_API_KEY}
     depends_on:
       - db
       - system-test-api-elastic

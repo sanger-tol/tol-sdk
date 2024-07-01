@@ -1,76 +1,223 @@
-# SPDX-FileCopyrightText: 2023 Genome Research Ltd.
+# SPDX-FileCopyrightText: 2024 Genome Research Ltd.
 #
 # SPDX-License-Identifier: MIT
 
-from typing import List
+from __future__ import annotations
 
-import tol.jira.jira_methods as jm
-from tol.core import DataSource
-from tol.jira.jira_auth import JiraAuth
+import typing
+from functools import cache
+from typing import Callable, Iterable, Optional
+
+from cachetools.func import ttl_cache
+
+from more_itertools import seekable
+
+from .client import JiraClient
+from .converter import (
+    JiraConverter
+)
+from .filter import (
+    JiraFilter
+)
+from .sort import (
+    JiraSorter
+)
+from ..core import (
+    DataObject,
+    DataSource,
+    DataSourceError,
+    DataSourceFilter
+)
+from ..core.operator import (
+    DetailGetter,
+    ListGetter,
+    PageGetter,
+    Relational
+)
+from ..core.relationship import RelationshipConfig
+
+if typing.TYPE_CHECKING:
+    from ..core.session import OperableSession
+
+ClientFactory = Callable[[], JiraClient]
+FilterFactory = Callable[[], JiraFilter]
+SorterFactory = Callable[[], JiraSorter]
+JiraConverterFactory = Callable[[], JiraConverter]
 
 
-class JiraDataSource(DataSource):
+class JiraDataSource(
+    DataSource,
 
-    def __init__(self, config):
-        super().__init__(config, expected=['url', 'api_token'])
+    # the supported operators
+    DetailGetter,
+    ListGetter,
+    PageGetter,
+    Relational
+):
+    """
+    A `DataSource` that connects to a remote JIRA
 
-    def get_specimens_for_treeval(self, page_number=1, page_size=1, filter_='', sort_by=''):
+    Developers should likely use `create_jira_datasource`
+    instead of this directly.
+    """
 
-        page_size = int(page_size)
-        page_number = int(page_number)
+    def __init__(
+        self,
+        client_factory: ClientFactory,
+        jira_converter_factory: JiraConverterFactory,
+        filter_factory: FilterFactory,
+        sorter_factory: SorterFactory
+    ) -> None:
 
-        jql_field_map = {
-            'tolid': ("'Sample ID'", 'contains'),
-            'species_name': ("'Species Name'", 'contains'),
-            'jira_issue': ('key', 'equals'),
-            'jira_issue_link': ('key', 'equals'),
-            'jira_issue_last_updated': ('updated', 'equals'),
-            'assignee': ("'Assignee'", 'equals'),
-            'jbrowse_link': ("'Treeval'", 'equals')
+        self.__client_factory = client_factory
+        self.__jc_factory = jira_converter_factory
+        self.__filter_factory = filter_factory
+        self.__sorter_factory = sorter_factory
+        super().__init__({})
+        self.DEFAULT_PAGE_SIZE = 100
+
+    @ttl_cache(ttl=60)
+    def get_fields(self) -> dict:
+        return self.__client_factory().get_fields()
+
+    def __get_filter_string(
+        self,
+        object_filters: Optional[DataSourceFilter]
+    ) -> Optional[str]:
+
+        if object_filters is None:
+            return ''
+        return self.__filter_factory().dumps(object_filters)
+
+    def __get_sort_string(
+        self,
+        sort_by: Optional[str]
+    ) -> str:
+        return self.__sorter_factory().sort(sort_by)
+
+    @property
+    @cache
+    def attribute_types(self) -> dict[str, dict[str, str]]:
+        fields = self.get_fields()
+        return {
+            'issue': {
+                field['system_name']: field['type']
+                for _, field in fields.items()
+                if field['relation'] is None
+            } | {
+                'status_changes': 'List[Dict[str, Any]]'
+            },
+            'user': {
+                'name': 'str',
+                'emailAddress': 'str',
+                'displayName': 'str'
+            }
         }
 
-        ja = JiraAuth(url=self.url, password=self.api_token)
-        jql_request = jm.apply_filter_sort_to_jql(
-            "project in (GRIT,RC) AND 'Treeval' is not EMPTY",
-            jql_field_map, filter_, sort_by)
+    @property
+    @cache
+    def supported_types(self) -> list[str]:
+        return list(self.attribute_types.keys())
 
-        # Return all results for page until the number requested.
-        results = ja.auth_jira.search_issues(jql_request, maxResults=0)
+    def get_by_id(
+        self,
+        object_type: str,
+        object_ids: Iterable[str]
+    ) -> Iterable[Optional[DataObject]]:
+        if object_type not in self.supported_types:
+            raise DataSourceError(f'{object_type} is not supported')
 
-        entries_len = len(results)
-        offset = page_size * (page_number - 1)
+        client = self.__client_factory()
+        jira_response = client.get_detail(object_type, object_ids)
+        jira_converter = self.__jc_factory()
 
-        page_first_row = offset + 1
-        page_last_row = offset + page_size
+        converted_objects, _ = jira_converter.convert_list(jira_response) \
+            if jira_response is not None else ([], 0)
+        seekable_objects = seekable(converted_objects)
+        for id_ in object_ids:
+            seekable_objects.seek(0)
+            for obj in seekable_objects:
+                if obj.id == id_:
+                    yield obj
+                    break
+            else:
+                yield None
 
-        if entries_len < page_last_row:
-            filtered_jira_results = results[page_first_row - 1:entries_len]
-        else:
-            filtered_jira_results = results[page_first_row - 1:page_last_row]
+    def get_list_page(
+        self,
+        object_type: str,
+        page_number: int,
+        page_size: Optional[int] = None,
+        object_filters: Optional[DataSourceFilter] = None,
+        sort_by: Optional[str] = None,
+        session: Optional[OperableSession] = None
+    ) -> tuple[Iterable[DataObject], int]:
+        if page_size is None:
+            page_size = self.get_page_size()
+        filter_string = self.__get_filter_string(object_filters)
+        sort_string = self.__get_sort_string(sort_by)
+        issues, total = self.__client_factory().get_list_page(
+            object_type,
+            page=page_number,
+            page_size=page_size,
+            filter_string=f'{filter_string} {sort_string}'.strip()
+        )
+        converted_issues, _ = self.__jc_factory().convert_list(issues)
+        return converted_issues, total
 
-        entries = []
-        for i in filtered_jira_results:
-            issue = ja.auth_jira.issue(i)
-            entry = {}
+    def get_list(
+        self,
+        object_type: str,
+        object_filters: Optional[DataSourceFilter] = None,
+        session: Optional[OperableSession] = None
+    ) -> Iterable[DataObject]:
 
-            entry['tolid'] = jm.get_species_id(issue)
-            entry['species_name'] = jm.get_species_name(issue)
-            entry['jira_issue'] = issue.key
-            entry['jira_issue_link'] = f'https://{ja.jira_path}/browse/{issue.key}'
-            entry['jira_issue_last_updated'] = str(issue.fields.updated)
-            entry['jbrowse_link'] = jm.get_jbrowse_link(issue)
-            entry['assignee'] = str(issue.fields.assignee)
-            entries.append(entry)
+        page = 1
+        page_size = self.get_page_size()
+        client = self.__client_factory()
+        jc_converter = self.__jc_factory()
+        filter_string = self.__get_filter_string(object_filters)
 
-        return {'total': entries_len, 'data': entries}
+        while True:
+            issues, _ = client.get_list_page(
+                object_type,
+                page,
+                page_size,
+                filter_string=filter_string + ' ' + self.__get_sort_string(None)
+            )
+            (results_page, _) = jc_converter.convert_list(issues)
 
-    def get_specimen_for_treeval(self, tolid):
-        return self.get_specimens_for_treeval(1, 1, f'[tolid={tolid}]', 'tolid')[0]
+            yield from results_page
+            if len(results_page) < page_size:
+                break
+
+            page += 1
 
     @property
-    def attribute_types(self):
-        raise NotImplementedError()
+    @cache
+    def relationship_config(self) -> dict[str, RelationshipConfig]:
+        field_mappings = self.get_fields()
+        return {
+            'issue': RelationshipConfig(
+                to_one={
+                    field['system_name']: field['relation']
+                    for _, field in field_mappings.items()
+                    if field['relation'] is not None
+                }
+            )
+        }
 
-    @property
-    def supported_types(self) -> List:
-        raise NotImplementedError()
+    def get_to_one_relation(
+        self,
+        source: DataObject,
+        relationship_name: str
+    ) -> Optional[DataObject]:
+        # If we are here then the relationship has not been initialised
+        return None
+
+    def get_to_many_relations(
+        self,
+        source: DataObject,
+        relationship_name: str
+    ) -> Iterable[DataObject]:
+        return []
