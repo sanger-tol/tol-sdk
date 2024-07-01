@@ -104,9 +104,13 @@ def elastic():
     rc_tolid.to_one = {'informatics_specimen': 'specimen',
                        'tolid_specimen': 'specimen',
                        'tolid_species': 'species'}
-    rc_tolid.to_many = {'benchling_tissue_preps': 'tissue-prep'}
+    rc_tolid.to_many = {
+        'benchling_tissue_preps': 'tissue-prep',
+        'grit_curations': 'curation'
+    }
     rc_tolid.foreign_keys = {
-        'benchling_tissue_preps': 'benchling_tolid.id'
+        'benchling_tissue_preps': 'benchling_tolid.id',
+        'grit_curations': 'grit_tolid.id'
     }
 
     rc_specimen = RelationshipConfig()
@@ -131,12 +135,14 @@ def elastic():
     rc_species.to_many = {'sts_samples': 'sample',
                           'benchling_samples': 'sample',
                           'sts_barcoding_run_datas': 'barcoding_run_data',
-                          'benchling_tissue_preps': 'tissue_prep'}
+                          'benchling_tissue_preps': 'tissue_prep',
+                          'grit_curations': 'curation'}
     rc_species.foreign_keys = {
         'sts_samples': 'sts_species.id',
         'benchling_samples': 'benchling_species.id',
         'sts_barcoding_run_datas': 'sts_species.id',
-        'benchling_tissue_preps': 'benchling_species.id'
+        'benchling_tissue_preps': 'benchling_species.id',
+        'grit_curations': 'grit_species.id'
     }
 
     rc_tissue_prep = RelationshipConfig()
@@ -155,6 +161,10 @@ def elastic():
         'benchling_tissue_preps': 'benchling_tissue_prep.id'
     }
 
+    rc_curation = RelationshipConfig()
+    rc_curation.to_one = {'grit_species': 'species',
+                          'grit_tolid': 'tolid'}
+
     relationship_config = {'run_data': rc_run_data,
                            'sequencing_request': rc_sequencing_request,
                            'extraction': rc_extraction,
@@ -165,7 +175,8 @@ def elastic():
                            'tolid': rc_tolid,
                            'specimen': rc_specimen,
                            'species': rc_species,
-                           'tissue_prep': rc_tissue_prep}
+                           'tissue_prep': rc_tissue_prep,
+                           'curation': rc_curation}
 
     runtime_fields = {
         'species': {
