@@ -300,6 +300,8 @@ class ElasticDataSource(
         return snakecase(index[start:])
 
     def _field_or_keyword(self, object_type: str, name: str):
+        if name == 'id':
+            return 'uid.keyword'
         # An attribute of the object
         if name in self.attribute_types[object_type]:
             field_type = self.attribute_types[object_type][name]

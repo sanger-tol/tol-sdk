@@ -43,19 +43,44 @@ class DefaultDatabaseSorter(DatabaseSorter):
         model_dict: Dict[str, Type[Model]]
     ) -> Query:
 
-        model = model_dict[tablename]
+        base_model = model_dict[tablename]
         if self.__term is None:
-            return self.__apply_default_sort(query, model)
+            return self.__apply_default_sort(query, base_model)
 
-        column = self.__get_column(model)
-        return self.__apply_default_sort(self.__apply_sort(query, column), model)
+        column, query = self.__join_and_get_column(query, base_model, model_dict)
+        return self.__apply_default_sort(self.__apply_sort(query, column), base_model)
 
-    def __get_column(self, model: Type[Model]) -> MappedColumn:
-        if self.__term == 'id':
+    def __join_and_get_column(
+        self,
+        query: Query,
+        base_model: type[Model],
+        model_dict: Dict[str, Type[Model]]
+    ) -> tuple[MappedColumn, Query]:
+
+        model = base_model
+
+        relations = self.__term.split('.')[:-1]
+        for relation in relations:
+            column = getattr(model, relation)
+            query = query.join(column)
+            to_one = model.get_to_one_relationship_config()
+            model = model_dict[
+                to_one[relation]
+            ]
+
+        column = self.__get_column(
+            model,
+            self.__term.split('.')[-1]
+        )
+
+        return column, query
+
+    def __get_column(self, model: Type[Model], term: str) -> MappedColumn:
+        if term == 'id':
             id_key = model.get_id_column_name()
             return model.get_column(id_key)
         else:
-            return model.get_column(self.__term)
+            return model.get_column(term)
 
     def __apply_sort(self, query: Query, column: MappedColumn) -> Query:
         if self.__desc:
