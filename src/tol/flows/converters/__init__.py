@@ -24,3 +24,4 @@ from .sts_species_to_elastic_species_converter import StsSpeciesToElasticSpecies
 from .tolqc_data_to_elastic_run_data_converter import TolqcDataToElasticRunDataConverter  # noqa F401
 from .tolqc_sample_to_elastic_sequencing_request_converter import TolqcSampleToElasticSequencingRequestConverter  # noqa F401
 from .tolqc_species_to_elastic_species_converter import TolqcSpeciesToElasticSpeciesConverter  # noqa F401
+from .tolid_to_elastic_converter import TolidToElasticConverter  # noqa F401
