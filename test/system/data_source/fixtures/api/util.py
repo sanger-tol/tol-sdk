@@ -28,6 +28,10 @@ class ApiFixture(DataSourceFixture):
     def name(self) -> str:
         return self.__name
 
+    @property
+    def url(self) -> str:
+        return self.__url
+
     def get_ds_instance(self) -> ApiDataSource:
         api_ds = create_api_datasource(self.__url, token=TOKEN)
         core_data_object(api_ds)

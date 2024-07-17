@@ -28,7 +28,7 @@ class _MockDataSource(DataSource):
 
     @property
     def attribute_types(self):
-        raise NotImplementedError()
+        return {}
 
 
 class _MockDataSourceRelational(DataSource, Relational):
@@ -38,7 +38,7 @@ class _MockDataSourceRelational(DataSource, Relational):
 
     @property
     def attribute_types(self):
-        raise NotImplementedError()
+        return {}
 
     @property
     def relationship_config(self):
@@ -182,17 +182,37 @@ class TestExcel(TestCase):
             {'Specimen Name': None, 'Column 2': 'value12'}
         ])
 
+        mock_host = _MockDataSourceRelational({})
+
         # with no relationships
-        output_stream = convert_data_objects_to_excel(mock_objects1, body1, 'Sheet1')
+        output_stream = convert_data_objects_to_excel(
+            mock_host,
+            'sample',
+            mock_objects1,
+            body1,
+            'Sheet1'
+        )
         output_data = pd.read_excel(io.BytesIO(output_stream.getvalue()), sheet_name='Sheet1')
         pd.testing.assert_frame_equal(expected1, output_data)
 
         # with to_one_relationship with existing relationship attribute
-        output_stream = convert_data_objects_to_excel(mock_objects2, body2, 'Sheet1')
+        output_stream = convert_data_objects_to_excel(
+            mock_host,
+            'sample',
+            mock_objects2,
+            body2,
+            'Sheet1'
+        )
         output_data = pd.read_excel(io.BytesIO(output_stream.getvalue()), sheet_name='Sheet1')
         pd.testing.assert_frame_equal(expected2, output_data)
 
         # with to_one_relationship with None relationship attribute
-        output_stream = convert_data_objects_to_excel(mock_objects3, body3, 'Sheet1')
+        output_stream = convert_data_objects_to_excel(
+            mock_host,
+            'sample',
+            mock_objects3,
+            body3,
+            'Sheet1'
+        )
         output_data = pd.read_excel(io.BytesIO(output_stream.getvalue()), sheet_name='Sheet1')
         pd.testing.assert_frame_equal(expected3, output_data, check_dtype=False)
