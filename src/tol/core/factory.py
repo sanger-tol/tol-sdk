@@ -43,9 +43,9 @@ class DataObjectFactory(Protocol):
         type_: str,
 
         id_: Optional[str] = None,
-        attributes: Dict[str, Any] = {},
-        to_one: ToOne = {},
-        to_many: ToMany = {}
+        attributes: Dict[str, Any] | None = None,
+        to_one: ToOne | None = None,
+        to_many: ToMany | None = None
     ) -> DataObject:
         ...
 
@@ -132,15 +132,15 @@ def core_data_object(
             self,
             type_: str,
             id_: Optional[str] = None,
-            attributes: DataDict = {},
-            to_one: ToOne = {},
-            to_many: ToMany = {}
+            attributes: DataDict | None = None,
+            to_one: ToOne | None = None,
+            to_many: ToMany | None = None
         ):
 
             self.__id = id_
             self.__type = type_
-            self.__attributes = attributes
-            self.__to_one_objects = to_one
+            self.__attributes = attributes if attributes is not None else {}
+            self.__to_one_objects = to_one if to_one is not None else {}
 
             if self.__relational:
                 self.__to_one_relations = one_dict_factory(self)
@@ -257,9 +257,9 @@ def core_data_object(
     def core_data_object_factory(
         type_: str,
         id_: Optional[str] = None,
-        attributes: Dict[str, Any] = {},
-        to_one: ToOne = {},
-        to_many: ToMany = {}
+        attributes: Dict[str, Any] | None = None,
+        to_one: ToOne | None = None,
+        to_many: ToMany | None = None
     ) -> DataObject:
 
         return CoreDataObject(
