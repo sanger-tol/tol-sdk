@@ -227,7 +227,7 @@ def merge(ctx):
 # Run tests
 @cli.command()
 @click.option('--type', 'type_', default='unit',
-              type=click.Choice(['unit', 'system', 'integration']),
+              type=click.Choice(['unit', 'system', 'integration', 'ui']),
               help='type of test')
 @click.pass_context
 def test(ctx, type_):
@@ -256,6 +256,13 @@ def test(ctx, type_):
     if type_ == 'integration':
         click.echo('Integration tests are not supported at this time.')
         return
+    if type_ == 'ui':
+        docker_compose_entry = f'{service}-ui-test'
+        command = (
+            f'docker compose build {docker_compose_entry} && '
+            f'docker compose --env-file {env_file} run --rm {docker_compose_entry} '
+            f'npm run test'
+        )
     click.secho(command, fg='green')
     run(command)
 
