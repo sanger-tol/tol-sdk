@@ -248,7 +248,7 @@ pacbio_submissions_v2 AS (
 		AND pbsubm_p.archived$ = FALSE -- Exclusing archived submissions
 		-- Filters to add DNA extract fluidx tubes
 		AND tube.type IS NULL -- Selecting non-Voucher containers
-		AND c_dna.volume_si * 1000000 != 10 -- Excluding vouchers without Voucher type in tube.type
+		-- AND c_dna.volume_si * 1000000 != 10 -- Excluding vouchers without Voucher type in tube.type (commented out as some tubes do have 10ul volume!)
 		AND (c_dna.archive_purpose$ != ('Made in error') OR c_dna.archive_purpose$ IS NULL) -- Excluding containers made by mistake
 		AND c_dna.barcode LIKE 'F%' -- Selecting only valid FluidX IDs
 		AND proj.name = 'ToL Core Lab' -- Selecting ToL Core Lab sbmissions only

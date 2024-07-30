@@ -88,15 +88,20 @@ class TestGoatTaxonToElasticSpeciesConverter(TestCase):
             attributes={'scientific_name': 'Test'}
         )
         obj1 = CoreDataObject(
-            id_='species1',
+            id_='1',
             type_='taxon',
             attributes={'taxon_rank': 'species'},
             to_one={'genus': genus}
         )
         obj2 = CoreDataObject(
-            id_='species2',
+            id_='2',
             type_='taxon',
             attributes={'scientific_name': 'Test test'}
+        )
+        obj3 = CoreDataObject(
+            id_='species3',
+            type_='taxon',
+            attributes={'scientific_name': 'Not an integer ID'}
         )
         converteds = converter.convert(obj1)
         ret1 = next(converteds)
@@ -117,6 +122,12 @@ class TestGoatTaxonToElasticSpeciesConverter(TestCase):
         self.assertEqual(ret2.attributes, {
             'scientific_name': 'Test test'
         })
+
+        with self.assertRaises(StopIteration):
+            next(converteds)
+
+        # This has got a non-integer ID so we will not convert it
+        converteds = converter.convert(obj3)
 
         with self.assertRaises(StopIteration):
             next(converteds)

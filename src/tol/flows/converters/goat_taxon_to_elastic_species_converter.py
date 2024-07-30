@@ -14,6 +14,11 @@ class GoatTaxonToElasticSpeciesConverter(
         DataObjectToDataObjectOrUpdateConverter):
     def convert(self, data_object: DataObject) -> Iterable[DataObject]:
         if data_object is not None and data_object.id is not None:
+            # Is the ID an integer?
+            try:
+                int(data_object.id)
+            except ValueError:
+                return iter([])
             ret = self._data_object_factory(
                 'species',
                 data_object.id,

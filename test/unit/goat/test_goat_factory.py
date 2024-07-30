@@ -63,7 +63,10 @@ class TestCreateGoatDatasource:
                         'protection_of_badgers_act_1992': {'value': 'Badgers92'}
                     }
                 }
-            }]
+            }],
+            'status': {
+                'hits': 1
+            }
         }
 
         responses.get(
@@ -122,7 +125,10 @@ class TestCreateGoatDatasource:
                         'protection_of_badgers_act_1992': {'value': 'Badgers92'}
                     }
                 }
-            }]
+            }],
+            'status': {
+                'hits': 1
+            }
         }
 
         responses.get(

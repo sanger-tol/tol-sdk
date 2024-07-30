@@ -38,13 +38,14 @@ class TestGoatDataSource:
         mock_client = Mock()
 
         mock_response = {'result': {'taxon_id': 'an ID'}}
-        mock_client.get_detail.return_value = [mock_response]
+        mock_client.get_detail.return_value = ([mock_response], 1)
 
         mock_lc_converter = Mock()
 
         ds = GoatDataSource(
             lambda: mock_client,
-            lambda: mock_lc_converter
+            lambda: mock_lc_converter,
+            None
         )
         ds.data_object_factory = lambda: Mock()
 
@@ -54,8 +55,8 @@ class TestGoatDataSource:
         )
         mock_lc_converter.convert_list.return_value = ([mock_data_object], 1)
 
-        (observed,) = list(ds.get_by_id('taxon', ['an ID']))
-        assert observed == mock_data_object
+        observed = list(ds.get_by_id('taxon', ['an ID']))
+        assert observed == [mock_data_object]
 
         mock_client.get_detail.assert_called_once_with(
             'taxon',
@@ -71,19 +72,20 @@ class TestGoatDataSource:
         mock_client = Mock()
 
         # mock a 404 returning `None`
-        mock_client.get_detail.return_value = []
+        mock_client.get_detail.return_value = ([], 0)
 
         mock_lc_converter = Mock()
         mock_lc_converter.convert_list.return_value = ([], 0)
 
         ds = GoatDataSource(
             lambda: mock_client,
-            lambda: mock_lc_converter
+            lambda: mock_lc_converter,
+            None
         )
         ds.data_object_factory = lambda: Mock()
 
-        (observed,) = list(ds.get_by_id('taxon', ['an ID']))
-        assert observed is None
+        observed = list(ds.get_by_id('taxon', ['an ID']))
+        assert observed == [None]
 
         mock_client.get_detail.assert_called_once_with(
             'taxon',
@@ -98,7 +100,8 @@ class TestGoatDataSource:
 
         ds = GoatDataSource(
             lambda: None,
-            lambda: None
+            lambda: None,
+            None
         )
         with pytest.raises(DataSourceError):
             list(ds.get_by_id('test', ['does not matter at all']))
@@ -111,6 +114,7 @@ class TestGoatDataSource:
         expected = ['taxon']
 
         ds = GoatDataSource(
+            None,
             None,
             None
         )
