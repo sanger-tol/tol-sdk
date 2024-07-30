@@ -2,6 +2,9 @@
 #
 # SPDX-License-Identifier: MIT
 
+from __future__ import annotations
+
+import typing
 from functools import cache
 from typing import Callable, Iterable, List, Optional
 
@@ -11,15 +14,28 @@ from .client import GoatApiClient
 from .converter import (
     GoatApiConverter
 )
-from ..core import DataObject, DataSource, DataSourceError
+from .filter import (
+    GoatFilter
+)
+from ..core import (
+    DataObject,
+    DataSource,
+    DataSourceError,
+    DataSourceFilter
+)
 from ..core.operator import (
     DetailGetter,
+    ListGetter,
+    PageGetter,
     Relational
 )
 from ..core.relationship import RelationshipConfig
 
+if typing.TYPE_CHECKING:
+    from ..core.session import OperableSession
 
 ClientFactory = Callable[[], GoatApiClient]
+FilterFactory = Callable[[], GoatFilter]
 GoatConverterFactory = Callable[[], GoatApiConverter]
 
 
@@ -28,6 +44,8 @@ class GoatDataSource(
 
     # the supported operators
     DetailGetter,
+    ListGetter,
+    PageGetter,
     Relational
 ):
     """
@@ -40,12 +58,23 @@ class GoatDataSource(
     def __init__(
         self,
         client_factory: ClientFactory,
-        goat_converter_factory: GoatConverterFactory
+        goat_converter_factory: GoatConverterFactory,
+        filter_factory: FilterFactory,
     ) -> None:
 
         self.__client_factory = client_factory
-        self.__lc_factory = goat_converter_factory
+        self.__gc_factory = goat_converter_factory
+        self.__filter_factory = filter_factory
         super().__init__({})
+
+    def __get_filter_string(
+        self,
+        object_filters: Optional[DataSourceFilter]
+    ) -> Optional[str]:
+
+        if object_filters is None:
+            return ''
+        return self.__filter_factory().dumps(object_filters)
 
     @property
     @cache
@@ -84,8 +113,8 @@ class GoatDataSource(
             raise DataSourceError(f'{object_type} is not supported')
 
         client = self.__client_factory()
-        goat_response = client.get_detail(object_type, object_ids)
-        goat_converter = self.__lc_factory()
+        goat_response, _ = client.get_detail(object_type, object_ids)
+        goat_converter = self.__gc_factory()
 
         converted_objects, _ = goat_converter.convert_list(goat_response) \
             if goat_response is not None else ([], 0)
@@ -98,6 +127,45 @@ class GoatDataSource(
                     break
             else:
                 yield None
+
+    def get_list_page(
+        self,
+        object_type: str,
+        page_number: int,
+        page_size: Optional[int] = None,
+        object_filters: Optional[DataSourceFilter] = None,
+        sort_by: Optional[str] = None,
+        session: Optional[OperableSession] = None
+    ) -> tuple[Iterable[DataObject], int]:
+        if page_size is None:
+            page_size = self.get_page_size()
+        filter_string = self.__get_filter_string(object_filters)
+        objects, total = self.__client_factory().get_list_page(
+            object_type,
+            page=page_number,
+            page_size=page_size,
+            filter_string=filter_string,
+            sort_by=sort_by
+        )
+        converted_objects, _ = self.__gc_factory().convert_list(objects)
+        return converted_objects, total
+
+    def get_list(
+        self,
+        object_type: str,
+        object_filters: Optional[DataSourceFilter] = None,
+        session: Optional[OperableSession] = None
+    ) -> Iterable[DataObject]:
+        # There is no way to page beyond 10000 in GoaT. After discussions with GoaT they
+        # users to set off long queries. Therefore, we just set a large size and no offset here.
+        filter_string = self.__get_filter_string(object_filters)
+        objects, total = self.__client_factory().get_list_page(
+            object_type,
+            page_size=10000000,  # large enough not to matter
+            filter_string=filter_string,
+        )
+        converted_objects, _ = self.__gc_factory().convert_list(objects)
+        return iter(converted_objects)
 
     @property
     @cache

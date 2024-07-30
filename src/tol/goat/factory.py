@@ -9,6 +9,7 @@ from .client import GoatApiClient
 from .converter import (
     GoatApiConverter
 )
+from .filter import DefaultGoatFilter
 from .goat_datasource import (
     GoatConverterFactory,
     GoatDataSource
@@ -68,6 +69,24 @@ class _ConverterFactory:
         return _GoatDSDict(self.data_source)
 
 
+class _FilterFactory:
+    """
+    Manges the instantation of:
+
+    - `GoatFilter`
+    """
+
+    def __init__(self) -> None:
+        pass
+
+    def goat_filter_factory(self) -> DefaultGoatFilter:
+        """
+        Returns an instantiated `GoatFilter`.
+        """
+
+        return DefaultGoatFilter()
+
+
 def _get_client_factory(
     api_url: str
 ) -> Callable[[], GoatApiClient]:
@@ -94,10 +113,11 @@ def create_goat_datasource(
         goat_url
     )
     manager = _ConverterFactory()
-
+    filter_factory = _FilterFactory()
     goat_ds = GoatDataSource(
         client_factory,
-        manager.goat_converter_factory
+        manager.goat_converter_factory,
+        filter_factory.goat_filter_factory
     )
 
     manager.data_source = goat_ds

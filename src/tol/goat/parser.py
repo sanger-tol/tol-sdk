@@ -81,7 +81,7 @@ class DefaultParser(Parser):
         normal_fields = ['genome_size', 'chromosome_number', 'haploid_number', 'ploidy']
         one_or_list_fields = ['echabs92', 'habreg_2017', 'marhabreg-2017', 'waca_1981',
                               'isb_wildlife_act_1976', 'protection_of_badgers_act_1992',
-                              'family_representative']
+                              'family_representative', 'long_list']
         if 'fields' in attributes:
             for att in normal_fields + one_or_list_fields:
                 if att in attributes['fields']:

@@ -52,7 +52,10 @@ class TestGoatApiClient:
                         }
                     }
                 }
-            ]
+            ],
+            'status': {
+                'hits': 2
+            }
         }
         expected = [
             {
@@ -95,4 +98,4 @@ class TestGoatApiClient:
         )
 
         observed = client.get_detail('taxon', ['6992', '6993'])
-        assert observed == expected
+        assert observed == (expected, 2)
