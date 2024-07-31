@@ -88,13 +88,19 @@ def elastic():
 
     rc_sampleset = RelationshipConfig()
     rc_sampleset.to_one = {}
-    rc_sampleset.to_many = {'sts_samples': 'sample'}
+    rc_sampleset.to_many = {
+        'sts_manifests': 'manifest',
+        'sts_samples': 'sample'
+    }
     rc_sampleset.foreign_keys = {
+        'sts_manifests': 'sts_sampleset.id',
         'sts_samples': 'sts_sampleset.id'
     }
 
     rc_manifest = RelationshipConfig()
-    rc_manifest.to_one = {}
+    rc_manifest.to_one = {
+        'sts_sampleset': 'sampleset'
+    }
     rc_manifest.to_many = {'sts_samples': 'sample'}
     rc_manifest.foreign_keys = {
         'sts_samples': 'sts_manifest.id'

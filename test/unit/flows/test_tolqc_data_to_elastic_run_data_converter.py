@@ -186,8 +186,7 @@ class TestTolqcDataToElasticRunDataConverter(TestCase):
         obj1 = CoreDataObject(
             id_='data1_id',
             type_='data',
-            attributes={'name': 'id1',
-                        'tag_index': 'data1_tag_index',
+            attributes={'tag_index': 'data1_tag_index',
                         'lims_qc': 'data1_manual_qc'}
         )
 
@@ -327,8 +326,7 @@ class TestTolqcDataToElasticRunDataConverter(TestCase):
         # with no relationships
         converteds = converter.convert(obj1)
         ret1 = next(converteds)
-        print(f'the returned data object is {ret1.attributes}')
-        self.assertEqual('id1', ret1.id)
+        self.assertEqual('data1_id', ret1.id)
         self.assertEqual('run_data', ret1.type)
         self.assertEqual(ret1.attributes, {
             'reporting_category': 'rnaseq',
@@ -346,6 +344,7 @@ class TestTolqcDataToElasticRunDataConverter(TestCase):
         # with data.run relationship
         converteds = converter.convert(obj2)
         ret2 = next(converteds)
+        self.assertEqual('data2_id', ret2.id)
         self.assertEqual('run_data', ret2.type)
         self.assertEqual(ret2.attributes, {
             'reporting_category': 'rnaseq',
@@ -368,6 +367,7 @@ class TestTolqcDataToElasticRunDataConverter(TestCase):
         converteds = converter.convert(obj3)
         ret3 = next(converteds)
         self.assertEqual('run_data', ret3.type)
+        self.assertEqual('data3_id', ret3.id)
         self.assertEqual(ret3.attributes, {
             'reporting_category': 'rnaseq',
             'tag_index': 'data3_tag_index',
@@ -389,6 +389,7 @@ class TestTolqcDataToElasticRunDataConverter(TestCase):
         # with data.sample relationship
         converteds = converter.convert(obj4)
         ret4 = next(converteds)
+        self.assertEqual('data4_id', ret4.id)
         self.assertEqual('run_data', ret4.type)
         self.assertEqual(ret4.attributes, {
             'reporting_category': 'rnaseq',
@@ -407,6 +408,7 @@ class TestTolqcDataToElasticRunDataConverter(TestCase):
         # with data.sample.specimen relationship
         converteds = converter.convert(obj5)
         ret5 = next(converteds)
+        self.assertEqual('data5_id', ret5.id)
         self.assertEqual('run_data', ret5.type)
         self.assertEqual(ret5.attributes, {
             'reporting_category': 'rnaseq',
@@ -427,6 +429,7 @@ class TestTolqcDataToElasticRunDataConverter(TestCase):
         # with data.sample.specimen.accession relationship
         converteds = converter.convert(obj6)
         ret6 = next(converteds)
+        self.assertEqual('data6_id', ret6.id)
         self.assertEqual('run_data', ret6.type)
         self.assertEqual(ret6.attributes, {
             'reporting_category': 'rnaseq',
@@ -448,6 +451,7 @@ class TestTolqcDataToElasticRunDataConverter(TestCase):
         # with data.sample.specimen.species relationship
         converteds = converter.convert(obj7)
         ret7 = next(converteds)
+        self.assertEqual('data7_id', ret7.id)
         self.assertEqual('run_data', ret7.type)
         self.assertEqual(ret7.attributes, {
             'reporting_category': 'rnaseq',
