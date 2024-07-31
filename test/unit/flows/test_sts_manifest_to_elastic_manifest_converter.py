@@ -24,7 +24,7 @@ class _MockDataSourceRelational(DataSource, Relational):
     @property
     def supported_types(self):
         return ['manifest', 'compliance_status', 'manifest_status', 'project',
-                'shipment_status']
+                'sampleset', 'shipment_status']
 
     @property
     def attribute_types(self):
@@ -37,6 +37,7 @@ class _MockDataSourceRelational(DataSource, Relational):
             'project': 'project',
             'manifest_status': 'sampleset_status',
             'compliance_status': 'compliance_status',
+            'sampleset': 'sampleset',
             'shipment_status': 'shipment_status'
         }
         return {
@@ -58,20 +59,43 @@ class _MockDataSourceRelational(DataSource, Relational):
         pass
 
 
-class _MockDataSource(DataSource):
+class _MockDataSource(DataSource, Relational):
 
     @property
     def supported_types(self):
-        return ['manifest']
+        return ['manifest', 'sampleset']
 
     @property
     def attribute_types(self):
         raise NotImplementedError()
 
+    @property
+    def relationship_config(self):
+        rc_manifest = RelationshipConfig()
+        rc_manifest.to_one = {
+            'sampleset': 'sampleset',
+        }
+        return {
+            'manifest': rc_manifest
+        }
+
+    def get_to_one_relation(
+        self,
+        source: DataObject,
+        relationship_name: str
+    ):
+        pass
+
+    def get_to_many_relations(
+        self,
+        source: DataObject,
+        relationship_name: str
+    ):
+        pass
+
 
 class TestStsManifestToElasticManifestConverter(TestCase):
     def test_convert(self):
-
         source = _MockDataSourceRelational(config={})
         destination = _MockDataSource(config={})
         core_data_object(source)
@@ -101,6 +125,10 @@ class TestStsManifestToElasticManifestConverter(TestCase):
             type_='shipment_status',
             attributes={'status': 'SHIPPED'}
         )
+        sampleset = CoreDataObject(
+            id_='test_sampleset',
+            type_='sampleset'
+        )
         manifest = CoreDataObject(
             id_='test_manifest',
             type_='manifest',
@@ -125,6 +153,7 @@ class TestStsManifestToElasticManifestConverter(TestCase):
                 'project': project,
                 'manifest_status': status,
                 'compliance_status': compliance_status,
+                'sampleset': sampleset,
                 'shipment_status': shipment_status
             }
         )
@@ -155,6 +184,7 @@ class TestStsManifestToElasticManifestConverter(TestCase):
             'shipment_status': 'SHIPPED',
             'compliance_status': 'PASSED'
         })
+        self.assertEqual(ret1.sampleset.id, 'test_sampleset')
 
         with self.assertRaises(StopIteration):
             next(converteds)

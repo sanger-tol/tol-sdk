@@ -42,7 +42,7 @@ def lr_pacbio():
                 'data_start_row': 2
             },
             'sequencing_request_charge': {
-                'worksheet_name': 'FIXED PacBio Charging - Sequencing',
+                'worksheet_name': 'Charging - Sequencing',
                 'columns': {
                     'id': {
                         'heading': 'SANGER SAMPLE ID',

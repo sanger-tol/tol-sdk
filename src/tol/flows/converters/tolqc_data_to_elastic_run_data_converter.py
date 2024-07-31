@@ -13,7 +13,6 @@ from ...core import (
 class TolqcDataToElasticRunDataConverter(DataObjectToDataObjectOrUpdateConverter):
 
     def convert(self, data_object: DataObject) -> Iterable[DataObject]:
-
         target_attributes = {}
 
         target_attributes['tag_index'] = data_object.tag_index
@@ -22,7 +21,6 @@ class TolqcDataToElasticRunDataConverter(DataObjectToDataObjectOrUpdateConverter
         target_attributes['manual_qc'] = data_object.lims_qc
         target_attributes['auto_qc'] = data_object.auto_qc
         target_attributes['qc'] = data_object.qc
-
         if data_object.library is not None \
                 and data_object.library.library_type is not None:
             target_attributes['reporting_category'] = \
@@ -50,7 +48,7 @@ class TolqcDataToElasticRunDataConverter(DataObjectToDataObjectOrUpdateConverter
 
         ret = self._data_object_factory(
             'run_data',
-            data_object.name,
+            data_object.id,
             attributes=target_attributes
         )
-        return iter([ret])
+        yield ret
