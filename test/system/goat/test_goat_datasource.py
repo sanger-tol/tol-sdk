@@ -107,7 +107,7 @@ class TestGoatDataSource(TestCase):
         obj3 = ret[1]
         self.assertEqual('1280447', obj3.id)
         self.assertEqual(obj3.scientific_name, 'Acompsia cinerella')
-        self.assertEqual(obj3.chromosome_number, 21)
+        self.assertEqual(obj3.chromosome_number, 58)
         self.assertEqual(obj3.long_list, ['DTOL', 'PSYCHE'])
         self.assertEqual(obj3.phylum.scientific_name, 'Arthropoda')
 

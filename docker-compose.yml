@@ -32,6 +32,7 @@ services:
       - JIRA_API_KEY
       - GOAT_URL
       - GOAT_API_PATH
+      - MLWH_URI
     depends_on:
       - tol-sdk-python-db
       - system-test-api-elastic
