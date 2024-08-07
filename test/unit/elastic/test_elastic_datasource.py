@@ -130,7 +130,14 @@ class TestUidSubstitution:
 
         _, mock_ds = mock_elastic_data_source()
 
-        expected_sort = [{'uid.keyword': order}]
+        expected_sort = [
+            {
+                'uid.keyword': {
+                    'order': order,
+                    'unmapped_type': 'keyword'
+                }
+            }
+        ]
 
         mock_ds.es.search.return_value = {
             'hits': {

@@ -106,6 +106,29 @@ class JsonApiClient:
         headers = self.__merge_headers()
         return self.__fetch_list(url, params=params, headers=headers)
 
+    def get_cursor_page(
+        self,
+        object_type: str,
+        page_size: int,
+        search_after: list[str] | None,
+        filter_string: Optional[str] = None
+    ) -> JsonApiTransfer:
+        """Cursor-pagination."""
+
+        url = self.__cursor_url(object_type)
+        params = self.__no_none_value_dict(
+            filter=filter_string,
+            page_size=page_size
+        )
+        headers = self.__merge_headers()
+        body = {'search_after': search_after}
+        return self.__fetch_cursor(
+            url,
+            body,
+            params=params,
+            headers=headers
+        )
+
     def delete(self, object_type: str, object_id: str) -> None:
         """
         Deletes the remote-API `DataObject` of specified type and ID.
@@ -284,6 +307,23 @@ class JsonApiClient:
         self.__assert_no_error(r)
         return r.json()
 
+    def __fetch_cursor(
+        self,
+        url: str,
+        body: dict[str, Any],
+        params: Optional[dict[str, Any]] = None,
+        headers: Optional[dict[str, str]] = None
+    ) -> JsonApiTransfer:
+
+        r = requests.post(
+            url,
+            json=body,
+            params=params,
+            headers=headers
+        )
+        self.__assert_no_error(r)
+        return r.json()
+
     def __detail_url(self, object_type: str, object_id: str) -> str:
         return f'{self.__data_url}/{object_type}/{object_id}'
 
@@ -295,6 +335,9 @@ class JsonApiClient:
 
     def __stats_url(self, object_type: str) -> str:
         return f'{self.__list_url(object_type)}:stats'
+
+    def __cursor_url(self, object_type: str) -> str:
+        return f'{self.__list_url(object_type)}:cursor'
 
     def __upsert_url(self, object_type: str) -> str:
         return f'{self.__list_url(object_type)}:upsert'

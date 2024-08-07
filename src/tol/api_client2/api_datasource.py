@@ -19,6 +19,7 @@ from .validate import validate, validate_id
 from ..core import DataObject, DataSource, DataSourceFilter
 from ..core.operator import (
     Counter,
+    Cursor,
     Deleter,
     DetailGetter,
     Inserter,
@@ -48,6 +49,7 @@ class ApiDataSource(
 
     # the supported operators
     Counter,
+    Cursor,
     Deleter,
     DetailGetter,
     Inserter,
@@ -167,7 +169,6 @@ class ApiDataSource(
         )
         return self.__jc_factory().convert_list(transfer)
 
-    @validate('listGet')
     def get_list(
         self,
         object_type: str,
@@ -175,26 +176,16 @@ class ApiDataSource(
         session: Optional[OperableSession] = None
     ) -> Iterable[DataObject]:
 
-        page = 1
-        page_size = self.get_page_size()
-        client = self.__client_factory()
-        jc_converter = self.__jc_factory()
-        filter_string = self.__get_filter_string(object_filters)
-
-        while True:
-            transfer = client.get_list_page(
+        if 'cursor' in self.supported_operations[object_type]:
+            return self._get_list_by_cursor(
                 object_type,
-                page,
-                page_size,
-                filter_string=filter_string
+                object_filters
             )
-            (results_page, _) = jc_converter.convert_list(transfer)
-
-            yield from results_page
-            if len(results_page) < page_size:
-                break
-
-            page += 1
+        else:
+            return self.__get_list_regular(
+                object_type,
+                object_filters
+            )
 
     @validate('count')
     def get_count(
@@ -228,6 +219,25 @@ class ApiDataSource(
             filter_string=filter_string
         )
         return self.__jc_factory().convert_stats(transfer)
+
+    @validate('cursor')
+    def get_cursor_page(
+        self,
+        object_type: str,
+        page_size: Optional[int] = None,
+        object_filters: Optional[DataSourceFilter] = None,
+        search_after: list[str] | None = None,
+        session: Optional[OperableSession] = None
+    ) -> tuple[Iterable[DataObject], list[str] | None]:
+
+        filter_string = self.__get_filter_string(object_filters)
+        transfer = self.__client_factory().get_cursor_page(
+            object_type,
+            page_size,
+            search_after,
+            filter_string=filter_string
+        )
+        return self.__jc_factory().convert_cursor_page(transfer)
 
     @validate('delete')
     def delete(
@@ -369,6 +379,33 @@ class ApiDataSource(
         client = self.__client_factory()
         transfer = client.config_operations()
         return self.__parse_operations(transfer)
+
+    def __get_list_regular(
+        self,
+        object_type: str,
+        object_filters: Optional[DataSourceFilter]
+    ) -> Iterable[DataObject]:
+
+        page = 1
+        page_size = self.get_page_size()
+        client = self.__client_factory()
+        jc_converter = self.__jc_factory()
+        filter_string = self.__get_filter_string(object_filters)
+
+        while True:
+            transfer = client.get_list_page(
+                object_type,
+                page,
+                page_size,
+                filter_string=filter_string
+            )
+            (results_page, _) = jc_converter.convert_list(transfer)
+
+            yield from results_page
+            if len(results_page) < page_size:
+                break
+
+            page += 1
 
     def __get_filter_string(
         self,

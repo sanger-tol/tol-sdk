@@ -31,6 +31,7 @@ from ..core.datasource_filter import (
 from ..core.operator import (
     Aggregator,
     Counter,
+    Cursor,
     Deleter,
     DetailGetter,
     Inserter,
@@ -337,6 +338,35 @@ class Controller:
             'types': self.__data_source.get_attribute_types(object_type)
         }
         return self.__view.dump_bulk([], document_meta=document_meta)
+
+    @validate(
+        Cursor,
+        'get_cursor_page',
+        OperatorMethod.CURSOR
+    )
+    def get_cursor_page(
+        self,
+        object_type: str,
+        query_args: ListGetParamaters,
+        search_after: list[str] | None,
+        ext_and: Optional[AndFilter]
+    ) -> ResponseDict:
+
+        data_objects, new_search_after = self.data_source.get_cursor_page(
+            object_type,
+            query_args.page_size,
+            self.__combine_filters(
+                query_args.filter,
+                ext_and
+            ),
+            search_after
+        )
+        meta = {'search_after': new_search_after}
+
+        return self.__view.dump_bulk(
+            data_objects,
+            document_meta=meta
+        )
 
     @validate(
         Relational,

@@ -89,6 +89,21 @@ class JsonApiConverter():
         stats = input_[self.__meta_key]
         return self.__parser.parse_stats(stats)
 
+    def convert_cursor_page(
+        self,
+        input_: JsonApiTransfer
+    ) -> tuple[list[DataObject], list[str] | None]:
+        """
+        Converts a `JsonApiTransfer` of a cursor-page
+        """
+
+        objs = self.__parser.parse_iterable(
+            input_[self.__data_key]
+        )
+        search_after = input_.get('meta', {}).get('search_after')
+
+        return objs, search_after
+
     def convert_relationship_config(
         self,
         config_transfer: JsonRelationshipConfig

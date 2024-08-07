@@ -2,8 +2,11 @@
 #
 # SPDX-License-Identifier: MIT
 
+from __future__ import annotations
+
 import hashlib
 import json
+import typing
 from collections.abc import Callable
 from datetime import datetime
 from typing import Any, Dict, Iterable, List, Mapping, Optional, Tuple
@@ -33,6 +36,7 @@ from ..core import (
 from ..core.operator import (
     Aggregator,
     Counter,
+    Cursor,
     DetailGetter,
     GroupStatter,
     ListGetter,
@@ -48,9 +52,13 @@ from ..core.relationship import (
     RelationshipConfig
 )
 
+if typing.TYPE_CHECKING:
+    from ..core.session import OperableSession
+
 
 class ElasticDataSource(
     DataSource,
+    Cursor,
     DetailGetter,
     PageGetter,
     ListGetter,
@@ -188,6 +196,28 @@ class ElasticDataSource(
                 }
             }
 
+    def get_cursor_page(
+        self,
+        object_type: str,
+        page_size: Optional[int] = None,
+        object_filters: Optional[DataSourceFilter] = None,
+        search_after: list[str] | None = None,
+        session: Optional[OperableSession] = None
+    ) -> tuple[Iterable[DataObject], list[str] | None]:
+
+        resp = self.__get_page_response(
+            object_type,
+            self.update_cursor_filters(
+                search_after,
+                object_filters
+            ),
+            'id',
+            page_size,
+            search_after=search_after
+        )
+
+        return self.__format_cursor_response(resp)
+
     def upsert(
         self,
         object_type: str,
@@ -231,6 +261,20 @@ class ElasticDataSource(
                                              candidate_key),
                 wait_for_completion=False
             )
+
+    def __format_cursor_response(
+        self,
+        resp: dict[str, Any]
+    ) -> tuple[Iterable[DataObject], list[str] | None]:
+
+        hits = list(resp['hits']['hits'])
+        if not hits:
+            return [], None
+
+        search_after = hits[-1]['sort']
+        objs = self._convert_dict_to_data_objects(hits)
+
+        return objs, search_after
 
     @property
     def _update_script(self):
@@ -348,6 +392,31 @@ class ElasticDataSource(
         **kwargs
     ) -> Tuple[Iterable[DataObject], int]:
 
+        resp = self.__get_page_response(
+            object_type,
+            object_filters,
+            sort_by,
+            page_size,
+            page=page
+        )
+
+        return (
+            self._convert_dict_to_data_objects(
+                resp['hits']['hits']
+            ),
+            resp['hits']['total']['value']
+        )
+
+    def __get_page_response(
+        self,
+        object_type: str,
+        object_filters: DataSourceFilter | None,
+        sort_by: str | None,
+        page_size: int | None,
+        page: int | None = None,
+        search_after: list[Any] | None = None
+    ) -> dict[str, Any]:
+
         index = self.__get_index(object_type)
         query = self._build_elasticsearch_query(object_type, object_filters)
         sort = self._build_elasticsearch_sort(object_type, sort_by)
@@ -357,18 +426,17 @@ class ElasticDataSource(
             if object_type in self.runtime_fields else None
         if page_size is None:
             page_size = self.get_page_size()
-        from_ = (page - 1) * page_size
-        resp = self.es.search(
+        from_ = (page - 1) * page_size if page is not None else None
+        return self.es.search(
             from_=from_,
             size=page_size,
             index=index,
             query=query,
             sort=sort,
             fields=fields,
-            runtime_mappings=runtime_mappings
+            runtime_mappings=runtime_mappings,
+            search_after=search_after
         )
-        return self._convert_dict_to_data_objects(resp['hits']['hits']), \
-            resp['hits']['total']['value']
 
     def _contains_filter(
         self,
@@ -548,7 +616,14 @@ class ElasticDataSource(
     ) -> list[dict[str, str]]:
 
         order = 'desc' if desc else 'asc'
-        return [{'uid.keyword': order}]
+        return [
+            {
+                'uid.keyword': {
+                    'order': order,
+                    'unmapped_type': 'keyword'
+                }
+            }
+        ]
 
     def __build_sort(
         self,
@@ -568,7 +643,8 @@ class ElasticDataSource(
     def get_list(
         self,
         object_type: str,
-        object_filters: DataSourceFilter = None,
+        object_filters: DataSourceFilter | None = None,
+        session: OperableSession | None = None,
         **kwargs
     ) -> Iterable[DataObject]:
         index = self.__get_index(object_type)

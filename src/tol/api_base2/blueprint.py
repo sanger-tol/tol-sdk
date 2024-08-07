@@ -233,6 +233,13 @@ def _core_blueprint(
         body = AggregationBody(request.json)
         return controller.post_aggregations(object_type, request_args, body)
 
+    @data_handler.post('/<object_type>:cursor')
+    def get_cursor_page(*, object_type: str):
+        controller = __new_controller(object_type)
+        request_args = ListGetParamaters(request.args)
+        search_after = request.json.get('search_after')
+        return controller.get_cursor_page(object_type, request_args, search_after)
+
     @data_handler.route(
         '/<object_type>:to-one/<object_id>/<path:hops_suffix>',
         methods=['GET']

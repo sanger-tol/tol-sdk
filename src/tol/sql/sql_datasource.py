@@ -26,6 +26,7 @@ from ..core import (
 from ..core.factory import DataObjectFactory
 from ..core.operator import (
     Counter,
+    Cursor,
     Deleter,
     DetailGetter,
     Inserter,
@@ -53,6 +54,7 @@ SorterFactory = Callable[[Optional[str]], DatabaseSorter]
 
 class SqlDataSource(
     Counter,
+    Cursor,
     DataSource,
     Deleter,
     DetailGetter,
@@ -211,28 +213,14 @@ class SqlDataSource(
         self,
         object_type: str,
         object_filters: Optional[DataSourceFilter] = None,
-        sort_by: Optional[str] = None,
         session: Optional[SqlDataSourceSession] = None
     ) -> Iterable[DataObject]:
 
-        page = 1
-        tablename = self.__type_tablename_map[object_type]
-        database_filter = self.__filter_factory(object_filters)
-        database_sorter = self.__sorter_factory(sort_by)
-        page_size = self.get_page_size()
-        while True:
-            objects_page = self.__get_page(
-                page,
-                page_size,
-                tablename,
-                session,
-                database_filter,
-                database_sorter
-            )
-            if len(objects_page) == 0:
-                return
-            yield from objects_page
-            page += 1
+        return self._get_list_by_cursor(
+            object_type,
+            object_filters=object_filters,
+            session=session
+        )
 
     def delete(
         self,
@@ -253,6 +241,29 @@ class SqlDataSource(
             )
         if session is None:
             in_session.close()
+
+    def get_cursor_page(
+        self,
+        object_type: str,
+        page_size: Optional[int] = None,
+        object_filters: Optional[DataSourceFilter] = None,
+        search_after: list[str] | None = None,
+        session: Optional[OperableSession] = None
+    ) -> tuple[Iterable[DataObject], list[str] | None]:
+
+        fetched, _ = self.get_list_page(
+            object_type,
+            1,
+            page_size=page_size,
+            object_filters=self.update_cursor_filters(
+                search_after,
+                object_filters
+            ),
+            sort_by='id',
+            session=session
+        )
+
+        return self.__format_cursor_page(fetched)
 
     def upsert(
         self,
@@ -354,6 +365,20 @@ class SqlDataSource(
         if session is None:
             in_session.close()
         return return_list
+
+    def __format_cursor_page(
+        self,
+        data_objects: Iterable[DataObject],
+    ) -> tuple[Iterable[DataObject], list[str] | None]:
+
+        return_list = list(data_objects)
+        if return_list:
+            return (
+                return_list,
+                [return_list[-1].id]
+            )
+        else:
+            return [], None
 
     def __get_page(
         self,
