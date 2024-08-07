@@ -6,6 +6,7 @@ from typing import Union
 
 from .aggregator import Aggregator
 from .counter import Counter
+from .cursor import Cursor
 from .declare import get_operator_member_names  # noqa
 from .deleter import Deleter
 from .detail_getter import DetailGetter
@@ -24,6 +25,7 @@ from .upserter import Upserter
 ALL_OPERATORS = (
     Aggregator,
     Counter,
+    Cursor,
     Deleter,
     DetailGetter,
     GroupStatter,
@@ -43,6 +45,7 @@ ALL_OPERATORS = (
 Operator = Union[
     Aggregator,
     Counter,
+    Cursor,
     Deleter,
     DetailGetter,
     GroupStatter,

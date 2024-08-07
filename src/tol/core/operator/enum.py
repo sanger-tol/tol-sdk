@@ -10,6 +10,7 @@ class OperatorMethod(str, Enum):
     PAGE = 'list GET'
     EXPORT = 'list POST'
     COUNT = 'count GET'
+    CURSOR = 'cursor GET'
     STATS = 'stats GET'
     DELETE = 'detail DELETE'
     INSERT = 'inserts POST'

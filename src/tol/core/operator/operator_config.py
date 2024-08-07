@@ -11,6 +11,7 @@ from typing import Iterable
 
 from .aggregator import Aggregator
 from .counter import Counter
+from .cursor import Cursor
 from .deleter import Deleter
 from .detail_getter import DetailGetter
 from .inserter import Inserter
@@ -27,6 +28,7 @@ if typing.TYPE_CHECKING:
 READ_OPERATOR_MAP: dict[str, type] = {
     'aggregate': Aggregator,
     'count': Counter,
+    'cursor': Cursor,
     'detailGet': DetailGetter,
     'listGet': PageGetter,
     'relational': Relational,
