@@ -30,6 +30,7 @@ services:
       - JIRA_API_KEY=${JIRA_API_KEY}
       - GOAT_URL=${GOAT_URL}
       - GOAT_API_PATH=${GOAT_API_PATH}
+      - MLWH_URI=${MLWH_URI}
     depends_on:
       - db
       - system-test-api-elastic

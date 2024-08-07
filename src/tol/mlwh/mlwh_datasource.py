@@ -3,6 +3,7 @@
 # SPDX-License-Identifier: MIT
 
 import inspect
+import re
 import urllib.parse
 from typing import Dict, Iterable, List
 
@@ -34,14 +35,14 @@ class MlwhDataSource(DataSource, ListGetter):
             f'{col} AS {alias}' for alias, col in mappings.items()
         )
 
-    def _get_column_mappings_iseq(self):
+    def _get_column_mappings_illumina(self):
         return {
-            'name_root': (
+            'id': (
                 # Trim file suffix, i.e. ".cram"
                 'REGEXP_REPLACE(irods.irods_data_relative_path'
                 ", '\\.[[:alnum:]]+$', '')"
             ),
-            'study_id': 'study.id_study_lims',
+            'study_id': 'CONVERT(study.id_study_lims, SIGNED)',
             'sample_ref': 'sample.name',
             'supplier_name': 'sample.supplier_name',
             'tolid': 'sample.public_name',
@@ -52,9 +53,16 @@ class MlwhDataSource(DataSource, ListGetter):
             'platform_type': "'Illumina'",
             'instrument_model': 'run_lane_metrics.instrument_model',
             'instrument_name': 'run_lane_metrics.instrument_name',
+            'element':
+                'COALESCE(REGEXP_SUBSTR('
+                'irods.irods_data_relative_path'
+                ", '(?<=_)[^_]+(?=#)')"
+                ', run_lane_metrics.position)',
             'pipeline_id_lims': 'flowcell.pipeline_id_lims',
-            'run_id': 'CONVERT(product_metrics.id_run, CHAR)',
-            'position': 'CONVERT(product_metrics.position, CHAR)',
+            'run_id': 'COALESCE(REGEXP_SUBSTR('
+                'irods.irods_data_relative_path, '
+                "'^[^#\\.]+'"
+                '), CONVERT(product_metrics.id_run, CHAR))',
             'tag_index': 'CONVERT(product_metrics.tag_index, CHAR)',
             'run_complete': 'run_lane_metrics.run_complete',
             'lims_qc': (
@@ -69,9 +77,9 @@ class MlwhDataSource(DataSource, ListGetter):
             'irods_file': 'irods.irods_data_relative_path',
         }
 
-    def _get_iseq_query(self, clause: str):
+    def _get_illumina_query(self, clause: str):
         col_string = self._columns_string_from_mappings(
-            self._get_column_mappings_iseq()
+            self._get_column_mappings_illumina()
         )
 
         return inspect.cleandoc(
@@ -99,7 +107,6 @@ class MlwhDataSource(DataSource, ListGetter):
               ON product_metrics.id_iseq_product = irods.id_product
             WHERE {clause}
               AND run_lane_metrics.qc_complete IS NOT NULL
-              AND product_metrics.num_reads IS NOT NULL
               AND study.id_lims = 'SQSCP'
             ORDER BY run_lane_metrics.id_run
             """,
@@ -107,16 +114,8 @@ class MlwhDataSource(DataSource, ListGetter):
 
     def _get_column_mappings_pacbio(self):
         return {
-            'name_root': (
-                'CASE WHEN run.tag2_identifier'
-                ' IS NOT NULL THEN CONCAT(well_metrics.movie_name'
-                ", '#', run.tag_identifier, '#', run.tag2_identifier)"
-                ' WHEN run.tag_identifier IS NOT NULL'
-                ' THEN CONCAT(well_metrics.movie_name'
-                ", '#', run.tag_identifier)"
-                ' ELSE well_metrics.movie_name END'
-            ),
-            'study_id': 'study.id_study_lims',
+            'id': 'well_metrics.movie_name',
+            'study_id': 'CONVERT(study.id_study_lims, SIGNED)',
             'sample_ref': 'sample.name',
             'supplier_name': 'sample.supplier_name',
             'tolid': 'sample.public_name',
@@ -132,10 +131,14 @@ class MlwhDataSource(DataSource, ListGetter):
             'pipeline_id_lims': 'run.pipeline_id_lims',
             'run_id': 'well_metrics.movie_name',
             'lims_run_id': 'well_metrics.pac_bio_run_name',
-            'well_label': 'well_metrics.well_label',
-            'plate_number': 'well_metrics.plate_number',
+            'element': 'IF(well_metrics.plate_number IS NULL'
+                       ', well_metrics.well_label'
+                       ', CONCAT(well_metrics.well_label'
+                       ", '.'"
+                       ', well_metrics.plate_number))',
             'run_start': 'well_metrics.run_start',
             'run_complete': 'well_metrics.run_complete',
+            'plex_count': 'plex_agg.plex_count',
             'lims_qc': (
                 'IF(well_metrics.qc_seq IS NULL, NULL,'
                 " IF(well_metrics.qc_seq = 1, 'pass', 'fail'))"
@@ -148,6 +151,8 @@ class MlwhDataSource(DataSource, ListGetter):
             'movie_minutes': 'well_metrics.movie_minutes',
             'binding_kit': 'well_metrics.binding_kit',
             'sequencing_kit': 'well_metrics.sequencing_kit',
+            'sequencing_kit_lot_number': 'well_metrics.sequencing_kit_lot_number',
+            'cell_lot_number': 'well_metrics.cell_lot_number',
             'include_kinetics': (
                 'IF(well_metrics.include_kinetics IS NULL, NULL,'
                 " IF(well_metrics.include_kinetics = 1, 'true', 'false'))"
@@ -155,6 +160,9 @@ class MlwhDataSource(DataSource, ListGetter):
             'loading_conc': 'well_metrics.loading_conc',
             'control_num_reads': 'well_metrics.control_num_reads',
             'control_read_length_mean': 'well_metrics.control_read_length_mean',
+            'control_concordance_mean': 'well_metrics.control_concordance_mean',
+            'control_concordance_mode': 'well_metrics.control_concordance_mode',
+            'local_base_rate': 'well_metrics.local_base_rate',
             'polymerase_read_bases': 'well_metrics.polymerase_read_bases',
             'polymerase_num_reads': 'well_metrics.polymerase_num_reads',
             'polymerase_read_length_mean': 'well_metrics.polymerase_read_length_mean',
@@ -162,12 +170,24 @@ class MlwhDataSource(DataSource, ListGetter):
             'insert_length_mean': 'well_metrics.insert_length_mean',
             'insert_length_n50': 'well_metrics.insert_length_n50',
             'unique_molecular_bases': 'well_metrics.unique_molecular_bases',
+            'productive_zmws_num': 'well_metrics.productive_zmws_num',
             'p0_num': 'well_metrics.p0_num',
             'p1_num': 'well_metrics.p1_num',
             'p2_num': 'well_metrics.p2_num',
+            'adapter_dimer_percent': 'well_metrics.adapter_dimer_percent',
+            'short_insert_percent': 'well_metrics.short_insert_percent',
             'hifi_read_bases': 'well_metrics.hifi_read_bases',
             'hifi_num_reads': 'well_metrics.hifi_num_reads',
+            'hifi_read_length_mean': 'well_metrics.hifi_read_length_mean',
+            'hifi_read_quality_median': 'well_metrics.hifi_read_quality_median',
+            'hifi_number_passes_mean': 'well_metrics.hifi_number_passes_mean',
+            'hifi_low_quality_read_bases': 'well_metrics.hifi_low_quality_read_bases',
             'hifi_low_quality_num_reads': 'well_metrics.hifi_low_quality_num_reads',
+            'hifi_low_quality_read_length_mean': 'well_metrics.hifi_low_quality_read_length_mean',
+            'hifi_low_quality_read_quality_median':
+                'well_metrics.hifi_low_quality_read_quality_median',
+            'hifi_barcoded_reads': 'well_metrics.hifi_barcoded_reads',
+            'hifi_bases_in_barcoded_reads': 'well_metrics.hifi_bases_in_barcoded_reads',
             'irods_path': 'irods.irods_root_collection',
             'irods_file': 'irods.irods_data_relative_path',
         }
@@ -178,19 +198,29 @@ class MlwhDataSource(DataSource, ListGetter):
         )
         return inspect.cleandoc(
             f"""
+            WITH plex_agg AS (
+                SELECT rwm.id_pac_bio_rw_metrics_tmp, COUNT(*) plex_count
+                FROM pac_bio_run_well_metrics rwm
+                JOIN pac_bio_product_metrics pm
+                USING (id_pac_bio_rw_metrics_tmp)
+                GROUP BY rwm.id_pac_bio_rw_metrics_tmp
+            )
             SELECT {col_string}
             FROM study
             JOIN pac_bio_run AS run
-              ON study.id_study_tmp = run.id_study_tmp
+                ON study.id_study_tmp = run.id_study_tmp
             JOIN sample
-              ON run.id_sample_tmp = sample.id_sample_tmp
+                ON run.id_sample_tmp = sample.id_sample_tmp
             JOIN pac_bio_product_metrics AS product_metrics
-              ON run.id_pac_bio_tmp = product_metrics.id_pac_bio_tmp
+                ON run.id_pac_bio_tmp = product_metrics.id_pac_bio_tmp
             JOIN pac_bio_run_well_metrics AS well_metrics
-              ON product_metrics.id_pac_bio_rw_metrics_tmp
-                  = well_metrics.id_pac_bio_rw_metrics_tmp
-            LEFT JOIN seq_product_irods_locations AS irods
-              ON product_metrics.id_pac_bio_product = irods.id_product
+                ON product_metrics.id_pac_bio_rw_metrics_tmp
+                = well_metrics.id_pac_bio_rw_metrics_tmp
+            JOIN plex_agg
+                ON well_metrics.id_pac_bio_rw_metrics_tmp
+                = plex_agg.id_pac_bio_rw_metrics_tmp
+            JOIN seq_product_irods_locations AS irods
+            ON product_metrics.id_pac_bio_product = irods.id_product
             WHERE {clause}
               AND well_metrics.movie_name IS NOT NULL
               AND study.id_lims = 'SQSCP'
@@ -274,9 +304,34 @@ class MlwhDataSource(DataSource, ListGetter):
             """
         )
 
+    def _get_id_from_row(self, row: Dict) -> str:
+        data_id = row.get('id')
+        if row.get('platform_type', '').lower() == 'pacbio':
+            tag1 = self.__trimmed_tag(row.get('tag1_id'))
+            tag2 = self.__trimmed_tag(row.get('tag2_id'))
+            if tag2:
+                return f'{data_id}#{tag1}#{tag2}'
+            elif tag1:
+                return f'{data_id}#{tag1}'
+        return data_id
+
+    def __trimmed_tag(self, tag):
+        if tag is None:
+            return tag
+        if m := re.match(r'bc(\d{4,})', tag):
+            return m.group(1)
+        return tag
+
     def _format_mlwh_row(self, object_type: str, row: Dict):
+        data_id = self._get_id_from_row(row)
         return self.data_object_factory(
-            object_type, id_=row.pop('id', None), attributes=row
+            object_type,
+            id_=data_id,
+            attributes={
+                k: v
+                for k, v in row.items()
+                if k != 'id'
+            }
         )
 
     def _join(self, values: List) -> str:
@@ -286,11 +341,11 @@ class MlwhDataSource(DataSource, ListGetter):
         if in_list is None:
             return '1=1'  # Something to go with the where clause
         sql_conditions = []
-        if platform_type == 'iseq':
-            mappings = self._get_column_mappings_iseq()
-        if platform_type == 'pacbio':
+        if platform_type.lower() == 'illumina':
+            mappings = self._get_column_mappings_illumina()
+        if platform_type.lower() == 'pacbio':
             mappings = self._get_column_mappings_pacbio()
-        if platform_type == 'sequencing_request':
+        if platform_type.lower() == 'sequencing_request':
             mappings = self._get_column_mappings_sequencing_request()
         for k, v in in_list.items():
             mapped_k = mappings[k]
@@ -304,6 +359,13 @@ class MlwhDataSource(DataSource, ListGetter):
         for row in cur_mlwh.fetchall():
             yield self._format_mlwh_row(object_type, row)
 
+    def __get_in_lists(self, f: DataSourceFilter):
+        ret = {}
+        for a in f.and_:
+            if 'in_list' in f.and_[a] and 'value' in f.and_[a]['in_list']:
+                ret[a] = f.and_[a]['in_list']['value']
+        return ret
+
     def get_list(
         self,
         object_type: str,
@@ -314,33 +376,37 @@ class MlwhDataSource(DataSource, ListGetter):
         if object_type == 'run_data':
             if (
                 object_filters is None
-                or not isinstance(object_filters.exact, dict)
-                or 'platform_type' not in object_filters.exact
+                or not isinstance(object_filters.and_, dict)
+                or 'platform_type' not in object_filters.and_
+                or 'eq' not in object_filters.and_['platform_type']
+                or 'value' not in object_filters.and_['platform_type']['eq']
             ):
                 raise DataSourceError(
-                    'Filter must contain platform_type exact filter'
+                    'Filter must contain platform_type exact filter and list of study_ids'
                 )
-            if object_filters.exact['platform_type'] == 'iseq':
+            if object_filters.and_['platform_type']['eq']['value'].lower() == 'illumina':
                 sql_conditions = self._conditions_string(
-                    'iseq', object_filters.in_list
+                    'illumina', self.__get_in_lists(object_filters)
                 )
-                query = self._get_iseq_query(sql_conditions)
+                query = self._get_illumina_query(sql_conditions)
                 return self._execute_query(query, 'run_data')
-            elif object_filters.exact['platform_type'] == 'pacbio':
+            elif object_filters.and_['platform_type']['eq']['value'].lower() == 'pacbio':
                 sql_conditions = self._conditions_string(
-                    'pacbio', object_filters.in_list
+                    'pacbio',
+                    self.__get_in_lists(object_filters)
                 )
                 query = self._get_pacbio_query(sql_conditions)
                 return self._execute_query(query, 'run_data')
         elif object_type == 'sequencing_request':
             sql_conditions = self._conditions_string(
-                'sequencing_request', object_filters.in_list
+                'sequencing_request',
+                self.__get_in_lists(object_filters)
             )
             query = self._get_sequencing_request_query(sql_conditions)
             return self._execute_query(query, 'sequencing_request')
         elif object_type == 'long_read_qc_result':
             sql_conditions = self._conditions_string(
-                'long_read_qc_result', object_filters.in_list
+                'long_read_qc_result', {}  # No filters
             )
             query = self._get_long_read_qc_result_query(sql_conditions)
             return self._execute_query(query, 'long_read_qc_result')
