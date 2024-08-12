@@ -41,11 +41,11 @@ def env_oidc_config() -> OidcConfig:
     """
 
     return OidcConfig(
-        auth_url=os.get('OIDC_AUTH_URL', ''),
-        user_info_url=os.get('OIDC_USER_INFO_URL', ''),
-        token_url=os.get('OIDC_TOKEN_URL', ''),
-        revoke_url=os.get('OIDC_REVOKE_TOKEN_URL', ''),
-        client_id=os.get('OIDC_CLIENT_ID', ''),
-        client_secret=os.get('OIDC_CLIENT_SECRET'),
-        redirect_uri=os.get('OIDC_REDIRECT_URI')
+        auth_url=os.getenv('OIDC_AUTH_URL', ''),
+        user_info_url=os.getenv('OIDC_USER_INFO_URL', ''),
+        token_url=os.getenv('OIDC_TOKEN_URL', ''),
+        revoke_url=os.getenv('OIDC_REVOKE_TOKEN_URL', ''),
+        client_id=os.getenv('OIDC_CLIENT_ID', ''),
+        client_secret=os.getenv('OIDC_CLIENT_SECRET', ''),
+        redirect_uri=os.getenv('OIDC_REDIRECT_URI', '')
     )
