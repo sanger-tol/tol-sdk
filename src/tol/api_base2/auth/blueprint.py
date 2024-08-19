@@ -72,6 +72,7 @@ class AuthBlueprint(Blueprint):
             return res, 200
 
         @self.post('/logout')
+        @self.delete('/token')
         def logout():
             body: dict[str, str] = request.json
 

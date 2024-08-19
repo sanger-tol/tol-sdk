@@ -75,14 +75,18 @@ class DbAuthManager(AuthManager):
     ) -> dict[str, Any]:
 
         oidc_id, oidc_ext = self.__get_oidc_details(token)
-        user_id = self.__get_or_create_user_id(
+        user_id, user_ext = self.__get_or_create_user(
             oidc_id,
             oidc_ext
         )
-        token_extra = self.__register_token(token, user_id)
+        token_extra = self.__get_or_create_token(
+            token,
+            user_id
+        )
 
         return {
             **token_extra,
+            **user_ext,
             'oidc_id': oidc_id
         }
 
@@ -160,11 +164,11 @@ class DbAuthManager(AuthManager):
                 user = instance.user
                 return str(user.id), user.role_names
 
-    def __get_or_create_user_id(
+    def __get_or_create_user(
         self,
         oidc_id: str,
         oidc_ext: dict[str, Any]
-    ) -> int:
+    ) -> tuple[int, dict[str, Any]]:
 
         user_model = self.__models.user_class
 
@@ -174,9 +178,39 @@ class DbAuthManager(AuthManager):
                 oidc_id,
                 **oidc_ext
             )
-            return user.id
+            userinfo_ext = self.__get_user_ext(
+                user
+            )
 
-    def __register_token(
+            return user.id, userinfo_ext
+
+    def __get_user_ext(
+        self,
+        user: Any
+    ) -> dict[str, Any]:
+
+        if self.__user_model_defines_ext(user):
+            return user.get_userinfo_ext()
+        else:
+            return {}
+
+    def __user_model_defines_ext(
+        self,
+        user: Any
+    ) -> bool:
+        """
+        Returns `True` if an `get_userinfo_ext()` method is
+        defined on the mixin for `User`.
+        """
+
+        return (
+            hasattr(user, 'get_userinfo_ext')
+            and callable(
+                user.get_userinfo_ext
+            )
+        )
+
+    def __get_or_create_token(
         self,
         token: str,
         user_id: int
@@ -185,7 +219,7 @@ class DbAuthManager(AuthManager):
         token_model = self.__models.token_class
 
         with self.__session_factory() as sess:
-            return token_model.register(
+            return token_model.get_or_create(
                 sess,
                 token,
                 user_id
@@ -308,11 +342,15 @@ def __db_auth_manager(
     oidc_config: OidcConfig,
     user_mixin_class: ModelClass,
     user_model_name: str,
+    token_mixin_class: ModelClass,
+    token_is_pk: bool,
+    role_mixin_class: ModelClass,
     oidc_id_column_name: str,
     state_delete_delta: timedelta,
     token_expiry_delta: timedelta,
     oidc_id_target: str,
-    oidc_ext_mapping: dict[str, str]
+    oidc_ext_mapping: dict[str, str],
+    prefix_with_name: bool
 ) -> tuple[DbAuthManager, ModelTuple]:
 
     session_factory = create_session_factory(db_uri)
@@ -322,7 +360,11 @@ def __db_auth_manager(
         user_model_name,
         oidc_id_column_name,
         user_mixin_class,
-        token_expiry_delta
+        token_mixin_class,
+        token_is_pk,
+        role_mixin_class,
+        token_expiry_delta,
+        prefix_with_name
     )
 
     auth_manager = DbAuthManager(
@@ -342,9 +384,13 @@ def db_auth_blueprint(
     db_uri: str,
 
     url_prefix: str = '/auth',
+    prefix_with_name: bool = False,
     oidc_config_factory: Callable[[], OidcConfig] = env_oidc_config,
     user_mixin_class: ModelClass = object,
     user_model_name: str = 'user',
+    token_mixin_class: ModelClass = object,
+    token_is_pk: bool = False,
+    role_mixin_class: ModelClass = object,
     oidc_id_column_name: str = 'oidc_id',
     state_delete_delta: timedelta = timedelta(hours=1),
     token_expiry_delta: timedelta = timedelta(days=7),
@@ -376,11 +422,15 @@ def db_auth_blueprint(
         oidc_config_factory(),
         user_mixin_class,
         user_model_name,
+        token_mixin_class,
+        token_is_pk,
+        role_mixin_class,
         oidc_id_column_name,
         state_delete_delta,
         token_expiry_delta,
         oidc_id_target,
         oidc_ext_mapping,
+        prefix_with_name
     )
 
     auth_bp = DbAuthBlueprint(
