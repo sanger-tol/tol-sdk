@@ -15,6 +15,7 @@ from sqlalchemy import (
     delete,
     select
 )
+from sqlalchemy.ext.declarative import declared_attr
 from sqlalchemy.orm import (
     Mapped,
     Session,
@@ -110,7 +111,7 @@ class AuthToken(ABC):
 
     @classmethod
     @abstractmethod
-    def register(
+    def get_or_create(
         cls,
         sess: Session,
         token: str,
@@ -164,7 +165,11 @@ def create_models(
     user_table_name: str,
     oidc_id_column_name: str,
     user_mixin_class: ModelClass,
-    token_expiry_delta: timedelta
+    token_mixin_class: ModelClass,
+    token_is_pk: bool,
+    role_mixin_class: ModelClass,
+    token_expiry_delta: timedelta,
+    prefix_with_name: bool
 ) -> ModelTuple:
     """
     Creates the OIDC db models, given a suitable base (and
@@ -178,7 +183,8 @@ def create_models(
         __tablename__ = 'oidc_state'
 
         id: Mapped[str] = mapped_column(  # noqa A003
-            primary_key=True
+            primary_key=True,
+            name=None if not prefix_with_name else 'state_id'
         )
 
         created_at: Mapped[datetime] = mapped_column(
@@ -250,7 +256,8 @@ def create_models(
 
         id: Mapped[int] = mapped_column(  # noqa A003
             primary_key=True,
-            autoincrement=True
+            autoincrement=True,
+            name=None if not prefix_with_name else 'user_id'
         )
 
         _tokens: Mapped[list['Token']] = relationship(
@@ -331,17 +338,43 @@ def create_models(
             ]
             return sorted(names)
 
-    class Token(AuthToken, model_base):
+    class _TokenPKMixin:
+        """
+        Has an integer has a primary key.
+
+        This is all that is needed in most apps,
+        and is the default.
+        """
+
+        __abstract__ = True
+
+        @declared_attr
+        def id(self) -> Mapped[int]:  # noqa A003
+            return mapped_column(
+                primary_key=True,
+                autoincrement=True
+            )
+
+    class _EmptyTokenMixin(object):
+        """Is deliberately empty"""
+
+    token_pk_mixin_class = (
+        _EmptyTokenMixin if token_is_pk else _TokenPKMixin
+    )
+
+    class Token(
+        AuthToken,
+        model_base,
+        token_pk_mixin_class,
+        token_mixin_class
+    ):
 
         __tablename__ = 'token'
 
-        id: Mapped[int] = mapped_column(  # noqa A003
-            primary_key=True
-        )
-
         token: Mapped[str] = mapped_column(
             nullable=False,
-            unique=True
+            unique=True,
+            primary_key=token_is_pk
         )
 
         created_at: Mapped[datetime] = mapped_column(
@@ -377,19 +410,26 @@ def create_models(
             ).one_or_none()
 
         @classmethod
-        def register(
+        def get_or_create(
             cls,
             sess: Session,
             token: str,
             user_id: int
         ) -> dict[str, str]:
 
-            token_row = cls(
-                token=token,
-                user_id=user_id
+            token_row = cls.get(
+                sess,
+                token
             )
-            sess.add(token_row)
-            sess.commit()
+
+            if token_row is None:
+
+                token_row = cls(
+                    token=token,
+                    user_id=user_id
+                )
+                sess.add(token_row)
+                sess.commit()
 
             return token_row.__to_dict()
 
@@ -424,13 +464,18 @@ def create_models(
         def __str_datetime(self, val: datetime) -> str:
             return val.strftime('%Y-%m-%dT%H:%M:%S.%f')
 
-    class Role(AuthRole, model_base):
+    class Role(
+        AuthRole,
+        model_base,
+        role_mixin_class
+    ):
 
         __tablename__ = 'role'
 
         id: Mapped[int] = mapped_column(  # noqa A003
             primary_key=True,
-            autoincrement=True
+            autoincrement=True,
+            name=None if not prefix_with_name else 'role_id'
         )
 
         name: Mapped[str] = mapped_column(
