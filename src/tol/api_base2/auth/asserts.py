@@ -84,6 +84,7 @@ NO_AUTH = [
     OperatorMethod.PAGE,
     OperatorMethod.TO_MANY,
     OperatorMethod.TO_ONE,
+    OperatorMethod.CURSOR
 ]
 
 
