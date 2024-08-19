@@ -85,6 +85,9 @@ class Cursor(ABC):
                 }
             )
 
+        if object_filters.and_ is None:
+            object_filters.and_ = {}
+
         object_filters.and_['id'] = {
             'gt': {
                 'value': search_after[0]
