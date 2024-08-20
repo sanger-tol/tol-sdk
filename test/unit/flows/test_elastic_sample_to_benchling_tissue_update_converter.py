@@ -50,7 +50,7 @@ class _MockDataSource(DataSource, Relational):
                 id_='species1',
                 type_='species',
                 attributes={
-                    'sts_order_group': 'order1',
+                    'sts_taxon_group': 'order1',
                     'sts_genome_size': 100
                 }
             )
@@ -59,7 +59,7 @@ class _MockDataSource(DataSource, Relational):
                 id_='specimen1',
                 type_='specimen',
                 attributes={
-                    'sts_order_group': 'order1',
+                    'sts_taxon_group': 'order1',
                     'sts_genome_size': 100
                 }
             )
@@ -68,7 +68,7 @@ class _MockDataSource(DataSource, Relational):
                 id_='tolid1',
                 type_='specimen',
                 attributes={
-                    'sts_order_group': 'order1',
+                    'sts_taxon_group': 'order1',
                     'sts_genome_size': 100
                 }
             )
@@ -95,7 +95,7 @@ class TestElasticSampleToBenchlingTissueUpdateConverter(TestCase):
             id_='species1',
             type_='species',
             attributes={
-                'sts_order_group': 'order1',
+                'sts_taxon_group': 'order1',
                 'sts_genome_size': 100,
                 'sts_scientific_name': 'scientific1',
             }

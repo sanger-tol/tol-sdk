@@ -13,16 +13,16 @@ from ...core import (
 class StsManifestToElasticManifestConverter(
         DataObjectToDataObjectOrUpdateConverter):
     def convert(self, data_object: DataObject) -> Iterable[DataObject]:
-        attributes = data_object.attributes
-        attributes['project'] = data_object.project.id \
+        attributes = {f'sts_{k}': v for k, v in data_object.attributes.items()}
+        attributes['sts_project'] = data_object.project.id \
             if data_object.project is not None else None
-        attributes['programme'] = data_object.project.programme \
+        attributes['sts_programme'] = data_object.project.programme \
             if data_object.project is not None else None
-        attributes['status'] = data_object.manifest_status.status \
+        attributes['sts_status'] = data_object.manifest_status.status \
             if data_object.manifest_status is not None else None
-        attributes['shipment_status'] = data_object.shipment_status.status \
+        attributes['sts_shipment_status'] = data_object.shipment_status.status \
             if data_object.shipment_status is not None else None
-        attributes['compliance_status'] = data_object.compliance_status.status \
+        attributes['sts_compliance_status'] = data_object.compliance_status.status \
             if data_object.compliance_status is not None else None
 
         ret = self._data_object_factory(
@@ -31,7 +31,7 @@ class StsManifestToElasticManifestConverter(
             attributes=attributes
         )
         if data_object.sampleset is not None:
-            ret.sampleset = self._data_object_factory(
+            ret.sts_sampleset = self._data_object_factory(
                 'sampleset',
                 data_object.sampleset.id
             )

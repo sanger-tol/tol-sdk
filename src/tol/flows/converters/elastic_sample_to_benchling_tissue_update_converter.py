@@ -28,8 +28,8 @@ class ElasticSampleToBenchlingTissueUpdateConverter(
                         'scientific_name': species.sts_scientific_name,
                         'taxon_id': species.id,
                         'taxon_group_phyla':
-                            species.sts_order_group
-                            if species.sts_order_group != '' else 'NA',
+                            species.sts_taxon_group
+                            if species.sts_taxon_group else 'NA',
                         'genome_size': str(species.sts_genome_size),
                         'freezer': None,
                         'shelf': data_object.sts_labwhere_parentage,

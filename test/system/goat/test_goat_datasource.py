@@ -86,7 +86,7 @@ class TestGoatDataSource(TestCase):
         f = DataSourceFilter()
         f.and_ = {
             'long_list': {'eq': {'value': 'DTOL'}},
-            'id': {'in_list': {'value': ['2708', '62298', '1280447', '1857951']}}
+            'id': {'in_list': {'value': ['2708', '62298', '687059', '1857951']}}
         }
         ret, total = gds.get_list_page(
             'taxon',
@@ -105,9 +105,9 @@ class TestGoatDataSource(TestCase):
         self.assertEqual(obj2.phylum.scientific_name, 'Arthropoda')
 
         obj3 = ret[1]
-        self.assertEqual('1280447', obj3.id)
-        self.assertEqual(obj3.scientific_name, 'Acompsia cinerella')
-        self.assertEqual(obj3.chromosome_number, 21)
+        self.assertEqual('687059', obj3.id)
+        self.assertEqual(obj3.scientific_name, 'Psyche casta')
+        self.assertEqual(obj3.chromosome_number, 31)
         self.assertEqual(obj3.long_list, ['DTOL', 'PSYCHE'])
         self.assertEqual(obj3.phylum.scientific_name, 'Arthropoda')
 
