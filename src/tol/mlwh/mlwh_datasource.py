@@ -406,7 +406,7 @@ class MlwhDataSource(DataSource, ListGetter):
             return self._execute_query(query, 'sequencing_request')
         elif object_type == 'long_read_qc_result':
             sql_conditions = self._conditions_string(
-                'long_read_qc_result', {}  # No filters
+                'long_read_qc_result', None  # No filters
             )
             query = self._get_long_read_qc_result_query(sql_conditions)
             return self._execute_query(query, 'long_read_qc_result')

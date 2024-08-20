@@ -45,7 +45,8 @@ def elastic():
                                     'benchling_specimen': 'specimen',
                                     'benchling_tissue_prep': 'tissue_prep',
                                     'mlwh_species': 'species',
-                                    'mlwh_tolid': 'tolid'}
+                                    'mlwh_tolid': 'tolid',
+                                    'mlwh_specimen': 'specimen'}
     rc_sequencing_request.to_many = {
         'mlwh_run_datas': 'run_data',
         'tolqc_run_datas': 'run_data'
@@ -124,6 +125,7 @@ def elastic():
         'benchling_extractions': 'extraction',
         'benchling_samples': 'sample',
         'benchling_sequencing_request': 'sequencing_request',
+        'mlwh_sequencing_request': 'sequencing_request',
         'sts_samples': 'sample',
         'bioscan_barcoding_run_datas': 'barcoding_run_data',
         'sts_barcoding_run_datas': 'barcoding_run_data'
@@ -132,6 +134,7 @@ def elastic():
         'benchling_extractions': 'benchling_specimen.id',
         'benchling_samples': 'benchling_specimen.id',
         'benchling_sequencing_request': 'benchling_specimen.id',
+        'mlwh_sequencing_request': 'mlwh_specimen.id',
         'sts_samples': 'sts_specimen.id',
         'bioscan_barcoding_run_data': 'bioscan_specimen.id',
         'sts_barcoding_run_data': 'sts_specimen.id'

@@ -14,9 +14,9 @@ from ..core import (
 
 def tolid():
     tolid = create_api_datasource(
-        api_url=os.getenv('PORTAL_URL') + os.getenv('PORTAL_API_PATH') + '/external/tolid',
-        token=os.getenv('PORTAL_API_KEY'),
-        data_prefix=''
+        api_url=os.getenv('TOLID_URL') + os.getenv('TOLID_API_PATH'),
+        token=os.getenv('TOLID_API_KEY'),
+        data_prefix=os.getenv('TOLID_API_DATA_PATH', '')
     )
     core_data_object(tolid)
     return tolid

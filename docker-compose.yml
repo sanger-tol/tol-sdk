@@ -9,7 +9,7 @@ services:
     command: pytest -v unit
 
   tol-sdk-python-db:
-    image: postgres:11
+    image: postgres:14
     environment:
       - POSTGRES_USER=test-user
       - POSTGRES_PASSWORD=test-password
