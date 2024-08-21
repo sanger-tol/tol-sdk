@@ -70,12 +70,16 @@ def elastic():
     }
 
     rc_sample = RelationshipConfig()
-    rc_sample.to_one = {'sts_specimen': 'specimen',
-                        'benchling_specimen': 'specimen',
-                        'sts_species': 'species',
-                        'benchling_species': 'species',
-                        'sts_tolid': 'tolid',
-                        'benchling_tolid': 'tolid'}
+    rc_sample.to_one = {
+        'sts_specimen': 'specimen',
+        'benchling_specimen': 'specimen',
+        'sts_species': 'species',
+        'benchling_species': 'species',
+        'sts_tolid': 'tolid',
+        'benchling_tolid': 'tolid',
+        'sts_manifest': 'manifest',
+        'sts_sampleset': 'sampleset'
+    }
     rc_sample.to_many = {
         'sts_barcoding_run_datas': 'barcoding_run_data',
         'benchling_sequencing_requests': 'sequencing_request',
