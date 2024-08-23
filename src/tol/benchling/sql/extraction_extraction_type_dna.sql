@@ -66,11 +66,11 @@ SELECT DISTINCT
 	box.barcode AS rack,
 	dna.bt_id AS bnt_id,
 	'dna'::varchar AS extraction_type, f.name, dna.archive_purpose$,
-	COALESCE(dna.protocol, dna.protocol_computed ->> 0) AS "extraction_protocol",
-	nanod.nanodrop_concentration_ngul AS "dna_nanodrop_ngul",
+	COALESCE(dna.protocol, dna.protocol_computed ->> 0) AS extraction_protocol,
+	nanod.nanodrop_concentration_ngul AS dna_nanodrop_ngul,
 	nanod._260_280_ratio AS "dna_260_280_ratio",
 	nanod._260_230_ratio AS "dna_260_230_ratio",
-	dnadc.next_step AS "dna_next_step"
+	dnadc.next_step AS dna_next_step
 FROM dna_extract$raw AS dna
 LEFT JOIN container_content$raw AS cc 
 	ON cc.entity_id = dna.id
