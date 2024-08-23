@@ -29,6 +29,12 @@ Output: Table with cols:
 16) rack: [character] Physical locationo of the DNA extraction. Rack barcode.
 17) bnt_id: [character] Batches and Tracking legacy id.
 18) extraction_type: [character] dna
+19) extraction_protocol: [character] Extraction protocol. This field coalesces protocol and protocol_computed fields.
+20)	dna_nanodrop_ngul: [double] Spectrophotometry data. Nanodrop concentration.
+21)	dna_260_280_ratio: [double] Spectrophotometry data.
+22)	dna_260_230_ratio: [double] Spectrophotometry data.
+23) dna_next_step: [character] Next step after dna extraction.
+24) percentage_dna_recovery: [double] Percentage DNA recovery.
 
 NOTES: 
 
@@ -59,7 +65,12 @@ SELECT DISTINCT
 	loc.name AS shelf, 
 	box.barcode AS rack,
 	dna.bt_id AS bnt_id,
-	'dna'::varchar AS extraction_type, f.name, dna.archive_purpose$
+	'dna'::varchar AS extraction_type, f.name, dna.archive_purpose$,
+	COALESCE(dna.protocol, dna.protocol_computed ->> 0) AS "extraction_protocol",
+	nanod.nanodrop_concentration_ngul AS "dna_nanodrop_ngul",
+	nanod._260_280_ratio AS "dna_260_280_ratio",
+	nanod._260_230_ratio AS "dna_260_230_ratio",
+	dnadc.next_step AS "dna_next_step"
 FROM dna_extract$raw AS dna
 LEFT JOIN container_content$raw AS cc 
 	ON cc.entity_id = dna.id
@@ -75,12 +86,14 @@ LEFT JOIN folder$raw AS f
 	ON dna.folder_id$ = f.id
 LEFT JOIN project$raw AS proj
 	ON dna.project_id$ = proj.id
-LEFT JOIN dna_decision_making_v2$raw AS dnadc  -- Results chunk
+LEFT JOIN dna_decision_making_v2$raw AS dnadc -- Results chunk
 	ON dna.id = dnadc.sample_id
 LEFT JOIN femto_dna_extract_v2$raw AS femto 
 	ON dna.id = femto.sample_id
 LEFT JOIN yield_v2$raw AS dnay 
-	ON dna.id = dnay.sample_id -- End Results chunk
+	ON dna.id = dnay.sample_id
+LEFT JOIN nanodrop_measurements_v2$raw AS nanod 
+	ON dna.id = nanod.sample_id -- End Results chunk
 LEFT JOIN box$raw AS box -- Location chunk
 	ON con.box_id = box.id 
 LEFT JOIN location$raw AS loc
