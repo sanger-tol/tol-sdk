@@ -80,6 +80,36 @@ class TestGoatDataSource(TestCase):
         with self.assertRaises(StopIteration):
             next(ret)
 
+    def test_get_list_tax_rank(self):
+        _, gds = goat_data_source()
+
+        f = DataSourceFilter()
+        f.and_ = {
+            'taxon_rank': {'eq': {'value': 'species'}},
+            'id': {'in_list': {'value': ['9925', '2759']}}
+        }
+        ret = gds.get_list('taxon', object_filters=f)
+        obj1 = next(ret)
+        self.assertEqual('9925', obj1.id)
+        self.assertEqual(obj1.scientific_name, 'Capra hircus')
+
+        with self.assertRaises(StopIteration):
+            next(ret)
+
+    def test_get_list_scientific_name(self):
+        _, gds = goat_data_source()
+
+        f = DataSourceFilter()
+        f.and_ = {
+            'scientific_name': {'in_list': {'value': ['Capra hircus', 'Mus musculus']}}
+        }
+        ret = gds.get_list('taxon', object_filters=f)
+        # Cannot guarantee order of results
+        obj_ids = [obj.id for obj in ret]
+        assert '9925' in obj_ids
+        assert '10090' in obj_ids
+        assert len(obj_ids) == 2
+
     def test_get_list_page_sort_custom(self):
         _, gds = goat_data_source()
 
