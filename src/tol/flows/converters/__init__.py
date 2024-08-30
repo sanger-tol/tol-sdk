@@ -5,6 +5,7 @@
 from .benchling_extraction_to_elastic_extraction_converter import BenchlingExtractionToElasticExtractionConverter  # noqa F401
 from .benchling_extraction_to_elastic_sequencing_request_converter import BenchlingExtractionToElasticSequencingRequestConverter  # noqa F401
 from .benchling_tissue_prep_to_elastic_tissue_prep_converter import BenchlingTissuePrepToElasticTissuePrepConverter  # noqa F401
+from .bioscan_extra_species_to_elastic_species_update_converter import BioscanExtraSpeciesToElasticSpeciesUpdateConverter  # noqa F401
 from .elastic_sample_to_benchling_tissue_update_converter import ElasticSampleToBenchlingTissueUpdateConverter  # noqa F401
 from .elastic_sample_to_bold_sample_converter import ElasticSampleToBoldSampleConverter  # noqa F401
 from .elastic_sample_to_sts_sample_converter import ElasticSampleToStsSampleConverter  # noqa F401
@@ -24,7 +25,7 @@ from .sts_sample_project_to_elastic_sample_converter import StsSampleProjectToEl
 from .sts_sample_species_to_elastic_sample_converter import StsSampleSpeciesToElasticSampleConverter  # noqa F401
 from .sts_sampleset_to_elastic_sampleset_converter import StsSamplesetToElasticSamplesetConverter  # noqa F401
 from .sts_species_to_elastic_species_converter import StsSpeciesToElasticSpeciesConverter  # noqa F401
+from .tolid_specimen_to_elastic_tolid_converter import TolidSpecimenToElasticTolidConverter  # noqa F401
 from .tolqc_data_to_elastic_run_data_converter import TolqcDataToElasticRunDataConverter  # noqa F401
 from .tolqc_sample_to_elastic_sequencing_request_converter import TolqcSampleToElasticSequencingRequestConverter  # noqa F401
 from .tolqc_species_to_elastic_species_converter import TolqcSpeciesToElasticSpeciesConverter  # noqa F401
-from .tolid_to_elastic_converter import TolidToElasticConverter  # noqa F401
