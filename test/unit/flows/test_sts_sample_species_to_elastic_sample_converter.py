@@ -63,7 +63,6 @@ class _MockDataSourceRelational(DataSource, Relational):
         source: DataObject,
         relationship_name: str
     ):
-        print('HERE', flush=True)
         op1 = source._host.data_object_factory(
             id_='test_op1',
             type_='organism_part',

@@ -24,8 +24,9 @@ class _MockDataSourceRelational(DataSource, Relational):
     @property
     def supported_types(self):
         return ['sample_project', 'sample', 'project',
-                'location', 'gal', 'sampleset', 'specimen',
-                'manifest']
+                'location', 'gal', 'preservation_approach', 'sampleset',
+                'specimen', 'preservative_solution', 'collection_method',
+                'sample_person', 'person', 'manifest']
 
     @property
     def attribute_types(self):
@@ -44,11 +45,23 @@ class _MockDataSourceRelational(DataSource, Relational):
             'gal': 'gal',
             'sampleset': 'sampleset',
             'manifest': 'manifest',
-            'specimen': 'specimen'
+            'specimen': 'specimen',
+            'preservation_approach': 'preservation_approach',
+            'preservative_solution': 'preservative_solution',
+            'collection_method': 'collection_method'
+        }
+        rc_sample.to_many = {
+            'sample_persons': 'sample_person'
+        }
+        rc_sample_person = RelationshipConfig()
+        rc_sample_person.to_one = {
+            'sample': 'sample',
+            'person': 'person'
         }
         return {
             'sample_project': rc_sample_project,
-            'sample': rc_sample
+            'sample': rc_sample,
+            'sample_person': rc_sample_person
         }
 
     def get_to_one_relation(
@@ -59,9 +72,45 @@ class _MockDataSourceRelational(DataSource, Relational):
         pass
 
     def get_to_many_relations(
-        self
+        self,
+        source: DataObject,
+        relationship_name: str
     ):
-        raise NotImplementedError()
+        person1 = source._host.data_object_factory(
+            id_='test_person1',
+            type_='person',
+            attributes={
+                'fullname': 'full name1',
+            }
+        )
+        person2 = source._host.data_object_factory(
+            id_='test_person2',
+            type_='person',
+            attributes={
+                'fullname': 'full name2',
+            }
+        )
+        sample_person1 = source._host.data_object_factory(
+            id_='test_sample_person1',
+            type_='sample_person',
+            to_one={
+                'person': person1,
+            },
+            attributes={
+                'action': 'action1'
+            }
+        )
+        sample_person2 = source._host.data_object_factory(
+            id_='test_sample_person2',
+            type_='sample_person',
+            to_one={
+                'person': person2,
+            },
+            attributes={
+                'action': 'action2'
+            }
+        )
+        return [sample_person1, sample_person2]
 
 
 class _MockDataSource(DataSource):
@@ -100,7 +149,8 @@ class TestStsSampleProjectToElasticSampleConverter(TestCase):
                 'lat': 12.345678,
                 'long': 23.456789,
                 'elevation': 65,
-                'depth': 200
+                'depth': 200,
+                'habitat': 'Woodland'
             }
         )
         gal = CoreDataObject(
@@ -126,6 +176,27 @@ class TestStsSampleProjectToElasticSampleConverter(TestCase):
             type_='manifest',
             attributes={}
         )
+        approach = CoreDataObject(
+            id_='test_approach',
+            type_='preservation_approach',
+            attributes={
+                'approach': 'approach'
+            }
+        )
+        solution = CoreDataObject(
+            id_='test_solution',
+            type_='preservative_solution',
+            attributes={
+                'solution': 'solution'
+            }
+        )
+        method = CoreDataObject(
+            id_='test_method',
+            type_='collection_method',
+            attributes={
+                'method': 'method_desc'
+            }
+        )
         sample = CoreDataObject(
             id_='test_sample',
             type_='sample',
@@ -139,6 +210,9 @@ class TestStsSampleProjectToElasticSampleConverter(TestCase):
             to_one={
                 'location': location,
                 'gal': gal,
+                'preservation_approach': approach,
+                'preservative_solution': solution,
+                'collection_method': method,
                 'specimen': specimen,
                 'sampleset': sampleset,
                 'manifest': manifest
@@ -157,6 +231,7 @@ class TestStsSampleProjectToElasticSampleConverter(TestCase):
         ret1 = next(converteds)
         self.assertEqual('test_sample', ret1.id)
         self.assertEqual('sample', ret1.type)
+        self.maxDiff = None
         self.assertEqual(ret1.attributes, {
             'project': ['test_project'],
             'programme': ['test_programme'],
@@ -166,8 +241,12 @@ class TestStsSampleProjectToElasticSampleConverter(TestCase):
             'longitude': 23.456789,
             'elevation': 65,
             'depth': 200,
+            'habitat': 'Woodland',
             'gal_abbreviation': 'TESTGAL',
             'gal_name': 'Test Gal',
+            'preservation_approach': 'approach',
+            'preservative_solution': 'solution',
+            'collection_method_desc': 'method_desc',
             'specimen': {'id': 'test_specimen'},
             'sampleset': {'id': 'test_sampleset'},
             'manifest': {'id': 'test_manifest'},
@@ -176,7 +255,9 @@ class TestStsSampleProjectToElasticSampleConverter(TestCase):
             'pre_date': datetime.datetime(2000, 12, 12),
             'tolid': {'id': 'xxTesTest1'},
             'public_name': None,
-            'other': 'another'
+            'other': 'another',
+            'action1_name': 'full name1',
+            'action2_name': 'full name2',
         })
 
         with self.assertRaises(StopIteration):
