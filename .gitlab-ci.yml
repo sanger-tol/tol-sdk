@@ -24,6 +24,7 @@ stages:
   - build
   - unit test
   - system test
+  - integration test
   - deploy
 
 
@@ -56,8 +57,7 @@ unit-test-python-package:
       when: never
     - if: $CI_PIPELINE_SOURCE == 'merge_request_event'
       when: never
-    - exists:
-      - "**/test/unit/**/*"
+    - when: always
 
 system-test-python-package:
   extends: .test-python
@@ -95,8 +95,26 @@ system-test-python-package:
       when: never
     - if: $CI_PIPELINE_SOURCE == 'merge_request_event'
       when: never
-    - exists:
-      - "**/test/system/**/*"
+    - when: always
+
+integration-test-python-package:
+  extends: .unit-test-python-package
+  image: $BUILT_IMAGE
+  stage: integration test
+  variables:
+    TEST_TYPE: integration
+  needs:
+    - unit-test-python-package
+  rules:
+    - if: $CI_COMMIT_REF_NAME == "qa"
+      when: never
+    - if: $CI_COMMIT_REF_NAME == "staging"
+      when: never
+    - if: $CI_COMMIT_REF_NAME == "production"
+      when: never
+    - if: $CI_PIPELINE_SOURCE == 'merge_request_event'
+      when: never
+    - when: always
 
 deploy-package:
   extends: .deploy-python-package

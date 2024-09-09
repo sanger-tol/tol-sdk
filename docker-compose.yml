@@ -22,17 +22,11 @@ services:
     command: pytest -vvvx system
     environment:
       - DB_URI=postgresql://test-user:test-password@tol-sdk-python-db:5432/test-db
-      - GOOGLE_CLIENT_SECRETS
       - UUID_PREFIX=${UUID_PREFIX}
       - ELASTIC_URI
       - ELASTIC_USER
       - ELASTIC_PASSWORD
       - ELASTIC_INDEX_PREFIX
-      - JIRA_URL
-      - JIRA_API_KEY
-      - GOAT_URL
-      - GOAT_API_PATH
-      - MLWH_URI
     depends_on:
       - tol-sdk-python-db
       - system-test-api-elastic
@@ -69,6 +63,20 @@ services:
       - tol-sdk-python-db
     ports:
       - '9021:5000'
+
+  tol-sdk-python-integration-test:
+    build: .
+    command: pytest -vvvx integration
+    environment:
+      - GOOGLE_CLIENT_SECRETS
+      - UUID_PREFIX=${UUID_PREFIX}
+      - JIRA_URL
+      - JIRA_API_KEY
+      - GOAT_URL
+      - GOAT_API_PATH
+      - MLWH_URI
+    networks:
+      - api-base-test-network
 
 networks:
   api-base-test-network:
