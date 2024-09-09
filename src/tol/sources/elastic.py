@@ -17,14 +17,6 @@ from ..elastic import (
 
 
 def elastic():
-    rc_barcoding_run_data = RelationshipConfig()
-    rc_barcoding_run_data.to_one = {
-        'sts_sample': 'sample',
-        'sts_specimen': 'specimen',
-        'bioscan_specimen': 'specimen',
-        'sts_species': 'species'
-    }
-
     rc_run_data = RelationshipConfig()
     rc_run_data.to_one = {'benchling_extraction': 'extraction',
                           'benchling_sample': 'sample',
@@ -81,12 +73,10 @@ def elastic():
         'sts_sampleset': 'sampleset'
     }
     rc_sample.to_many = {
-        'sts_barcoding_run_datas': 'barcoding_run_data',
         'benchling_sequencing_requests': 'sequencing_request',
         'benchling_tissue_preps': 'tissue_prep'
     }
     rc_sample.foreign_keys = {
-        'sts_barcoding_run_datas': 'sts_sample.id',
         'benchling_sequencing_requests': 'benchling_sample.id',
         'benchling_tissue_preps': 'benchling_sample.id'
     }
@@ -131,8 +121,6 @@ def elastic():
         'benchling_sequencing_request': 'sequencing_request',
         'mlwh_sequencing_request': 'sequencing_request',
         'sts_samples': 'sample',
-        'bioscan_barcoding_run_datas': 'barcoding_run_data',
-        'sts_barcoding_run_datas': 'barcoding_run_data'
     }
     rc_specimen.foreign_keys = {
         'benchling_extractions': 'benchling_specimen.id',
@@ -140,20 +128,16 @@ def elastic():
         'benchling_sequencing_request': 'benchling_specimen.id',
         'mlwh_sequencing_request': 'mlwh_specimen.id',
         'sts_samples': 'sts_specimen.id',
-        'bioscan_barcoding_run_data': 'bioscan_specimen.id',
-        'sts_barcoding_run_data': 'sts_specimen.id'
     }
 
     rc_species = RelationshipConfig()
     rc_species.to_many = {'sts_samples': 'sample',
                           'benchling_samples': 'sample',
-                          'sts_barcoding_run_datas': 'barcoding_run_data',
                           'benchling_tissue_preps': 'tissue_prep',
                           'grit_curations': 'curation'}
     rc_species.foreign_keys = {
         'sts_samples': 'sts_species.id',
         'benchling_samples': 'benchling_species.id',
-        'sts_barcoding_run_datas': 'sts_species.id',
         'benchling_tissue_preps': 'benchling_species.id',
         'grit_curations': 'grit_species.id'
     }
@@ -181,7 +165,6 @@ def elastic():
     relationship_config = {'run_data': rc_run_data,
                            'sequencing_request': rc_sequencing_request,
                            'extraction': rc_extraction,
-                           'barcoding_run_data': rc_barcoding_run_data,
                            'sample': rc_sample,
                            'sampleset': rc_sampleset,
                            'manifest': rc_manifest,

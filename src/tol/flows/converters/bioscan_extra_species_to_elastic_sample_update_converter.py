@@ -11,12 +11,11 @@ from ...core import (
 from ...core.operator.updater import DataObjectUpdate
 
 
-class BioscanExtraSpeciesToElasticSpeciesUpdateConverter(
+class BioscanExtraSpeciesToElasticSampleUpdateConverter(
         DataObjectToDataObjectOrUpdateConverter):
     def convert(self, data_object: DataObject) -> Iterable[DataObjectUpdate]:
         if data_object is not None:
             yield (None, {
-                'goat_scientific_name': data_object.id,
-                'goat_phylum_name': 'Arthropoda',
-                **data_object.attributes
-            })
+                'bold_species': data_object.id
+            } | data_object.attributes
+            )

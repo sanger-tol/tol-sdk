@@ -9,14 +9,14 @@ from tol.core import (
     core_data_object
 )
 from tol.flows.converters import (
-    BioscanExtraSpeciesToElasticSpeciesUpdateConverter
+    BioscanExtraSpeciesToElasticSampleUpdateConverter
 )
 
 
 class _MockDataSource(DataSource):
     @property
     def supported_types(self):
-        return ['species']
+        return ['sample', 'species']
 
     @property
     def attribute_types(self):
@@ -30,7 +30,7 @@ class TestBioScanExtraSpeciesToElasticSpeciesUpdateConverter(TestCase):
         destination = _MockDataSource(config={})
         core_data_object(source)
         core_data_object(destination)
-        converter = BioscanExtraSpeciesToElasticSpeciesUpdateConverter(
+        converter = BioscanExtraSpeciesToElasticSampleUpdateConverter(
             data_object_factory=destination.data_object_factory
         )
 
@@ -39,7 +39,6 @@ class TestBioScanExtraSpeciesToElasticSpeciesUpdateConverter(TestCase):
             id_='Genus species',
             type_='species',
             attributes={
-                'goat_phylum_name': 'Arthropoda',
                 'conservation_status': 'Bad',
             }
         )
@@ -48,7 +47,6 @@ class TestBioScanExtraSpeciesToElasticSpeciesUpdateConverter(TestCase):
             id_='Genus2 species2',
             type_='species',
             attributes={
-                'goat_phylum_name': 'Arthropoda',
                 'conservation_status': 'Good',
             }
         )
@@ -56,15 +54,13 @@ class TestBioScanExtraSpeciesToElasticSpeciesUpdateConverter(TestCase):
         converteds = converter.convert(obj1)
         ret1 = next(converteds)
         self.assertEqual(ret1, (None, {
-            'goat_scientific_name': 'Genus species',
-            'goat_phylum_name': 'Arthropoda',
+            'bold_species': 'Genus species',
             'conservation_status': 'Bad'
         }))
 
         converteds = converter.convert(obj2)
         ret2 = next(converteds)
         self.assertEqual(ret2, (None, {
-            'goat_scientific_name': 'Genus2 species2',
-            'goat_phylum_name': 'Arthropoda',
+            'bold_species': 'Genus2 species2',
             'conservation_status': 'Good'
         }))

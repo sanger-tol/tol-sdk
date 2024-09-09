@@ -60,8 +60,7 @@ class TestBoldSampleToElasticSampleUpdateConverter(TestCase):
         ret1 = next(converteds)
         self.assertEqual(ret1, (None, {
             'sts_specimen.id': 'BOLD1',
-            'species.bold_scientific_name': 'Species name',
-            'species.bold_taxid': 1234,
+            'species': 'Species name',
             'taxid': 1234,
             'other': 'other',
         }))
@@ -80,8 +79,7 @@ class TestBoldSampleToElasticSampleUpdateConverter(TestCase):
         ret2 = next(converteds)
         self.assertEqual(ret2, (None, {
             'sts_specimen.id': 'BOLD2',
-            'species.bold_scientific_name': None,
-            'species.bold_taxid': None,
+            'species': None,
             'taxid': 1234,
             'other': 'other',
         }))
