@@ -38,10 +38,12 @@ class ElasticSampleToBenchlingTissueUpdateConverter(
                         'programme_id': data_object.sts_tolid.id,
                         'biosample_id': data_object.sts_biosample_accession,
                         # 'biospecimen_id': sample.sts_biospecimen_accession,  # Needs work
-                        # 'organism_part': sample.sts_organism_part,
-                        # 'lifestage': sample.sts_lifestage,
-                        # 'sex': sample.sts_sex,
-                        # 'preservation_approach': sample.sts_preservation_approach,
+                        'organism_part':
+                            ', '.join(data_object.sts_organism_part)
+                            if data_object.sts_organism_part is not None else None,
+                        'lifestage': data_object.sts_lifestage,
+                        'sex': data_object.sts_sex,
+                        'preservation_approach': data_object.sts_preservation_approach,
                         # 'size_of_tissue_in_tube': sample.sts_tissue_size,
                         'date_sample_received_at_sanger':
                             data_object.sts_receive_date.strftime('%Y-%m-%d'),
@@ -50,8 +52,9 @@ class ElasticSampleToBenchlingTissueUpdateConverter(
                             if data_object.sts_tollab_assign_date is not None else '1970-01-01',
                         # 'assigned_by': ,
                         # 'lab_work_category': ,
-                        # 'family_representative': ,
-                        'sample_set_id': data_object.sts_sampleset_id,
+                        'family_representative': ', '.join(species.goat_family_representative)
+                            if species.goat_family_representative is not None else None,
+                        'sample_set_id': data_object.sts_sampleset.id,
                         'rd_sample': data_object.sts_send_rd,
                         'sts_id': int(data_object.id),
                         # 'remaining_weight':,

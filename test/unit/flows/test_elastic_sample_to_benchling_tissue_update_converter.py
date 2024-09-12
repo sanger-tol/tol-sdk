@@ -24,7 +24,7 @@ from tol.flows.converters import (
 class _MockDataSource(DataSource, Relational):
     @property
     def supported_types(self):
-        return ['sample', 'species', 'specimen', 'tolid']
+        return ['sample', 'sampleset', 'species', 'specimen', 'tolid']
 
     @property
     def attribute_types(self):
@@ -34,6 +34,7 @@ class _MockDataSource(DataSource, Relational):
     def relationship_config(self):
         rc_sample = RelationshipConfig()
         rc_sample.to_one = {
+            'sts_sampleset': 'sampleset',
             'sts_species': 'species',
             'sts_specimen': 'specimen',
             'sts_tolid': 'tolid'
@@ -98,6 +99,7 @@ class TestElasticSampleToBenchlingTissueUpdateConverter(TestCase):
                 'sts_taxon_group': 'order1',
                 'sts_genome_size': 100,
                 'sts_scientific_name': 'scientific1',
+                'goat_family_representative': ['family1', 'family2']
             }
         )
 
@@ -113,6 +115,12 @@ class TestElasticSampleToBenchlingTissueUpdateConverter(TestCase):
             attributes={
             }
         )
+        sampleset = CoreDataObject(
+            id_='sampleset1',
+            type_='sampleset',
+            attributes={
+            }
+        )
         obj1 = CoreDataObject(
             id_='1234',
             type_='sample',
@@ -124,9 +132,12 @@ class TestElasticSampleToBenchlingTissueUpdateConverter(TestCase):
                 'sts_labwhere_parentage': 'parentage',
                 'sts_labwhere_name': 'tray_name',
                 'sts_biosample_accession': 'biosample1',
+                'sts_organism_part': ['part1', 'part2'],
+                'sts_lifestage': 'lifestage1',
+                'sts_sex': 'sex1',
+                'sts_preservation_approach': 'approach1',
                 'sts_receive_date': datetime(2022, 1, 1),
                 'sts_tollab_assign_date': datetime(2023, 1, 1),
-                'sts_sampleset_id': 'sampleset1',
                 'sts_send_rd': 'rd',
                 'sts_priority': '1',
                 'sts_project': ['project1', 'project2']
@@ -134,7 +145,8 @@ class TestElasticSampleToBenchlingTissueUpdateConverter(TestCase):
             to_one={
                 'sts_species': species,
                 'sts_specimen': specimen,
-                'sts_tolid': tolid
+                'sts_tolid': tolid,
+                'sts_sampleset': sampleset
             }
         )
         obj2 = CoreDataObject(
@@ -162,6 +174,11 @@ class TestElasticSampleToBenchlingTissueUpdateConverter(TestCase):
             'specimen_id': 'specimen1',
             'programme_id': 'tolid1',
             'biosample_id': 'biosample1',
+            'organism_part': 'part1, part2',
+            'lifestage': 'lifestage1',
+            'sex': 'sex1',
+            'preservation_approach': 'approach1',
+            'family_representative': 'family1, family2',
             'date_sample_received_at_sanger': '2022-01-01',
             'date_assigned_to_lab': '2023-01-01',
             'sample_set_id': 'sampleset1',

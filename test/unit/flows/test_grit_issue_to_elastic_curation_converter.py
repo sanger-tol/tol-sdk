@@ -33,7 +33,8 @@ class _MockDataSourceRelational(DataSource, Relational):
     def relationship_config(self):
         rc_issue = RelationshipConfig()
         rc_issue.to_one = {
-            'reporter': 'user'
+            'reporter': 'user',
+            'assignee': 'user'
         }
         return {
             'issue': rc_issue
@@ -102,7 +103,8 @@ class TestGritIssueToElasticCurationConverter(TestCase):
             type_='user',
             attributes={
                 'email': 'test@test.com',
-                'name': 'Test User'
+                'name': 'test',
+                'displayName': 'Test User'
             }
         )
         issue = CoreDataObject(
@@ -129,7 +131,8 @@ class TestGritIssueToElasticCurationConverter(TestCase):
                 'chromosome_result': 'found 31 autosomes and W and Z and MT\nTotal length 333047658\nChr length 332949469\nChr length 99.97 %\n',  # noqa E501
             },
             to_one={
-                'reporter': user
+                'reporter': user,
+                'assignee': user
             }
         )
         converteds = converter.convert(issue)
@@ -140,17 +143,45 @@ class TestGritIssueToElasticCurationConverter(TestCase):
             'created': datetime(2020, 2, 2),
             'mid_range_date': datetime(2020, 2, 3),
             'closed_date': datetime(2020, 2, 4),
-            'length_before': 333046658,
-            'length_after': 333047658,
-            'length_change_per': 0.0003002582298844146,
-            'n50_before': 11581856,
-            'n50_after': 11581856,
-            'n50_change_per': 0,
-            'scaff_count_before': 41,
-            'scaff_count_after': 36,
-            'scaff_count_per': -12.195121951219512,
+            'scaffolds_total_before': 333046658,
+            'scaffolds_total_after': 333047658,
+            'scaffolds_total_change_per': 0.0003002582298844146,
+            'scaffolds_count_before': 41,
+            'scaffolds_count_after': 36,
+            'scaffolds_count_change_per': -12.195121951219512,
+            'scaffolds_n50_before': 11581856,
+            'scaffolds_n50_after': 11581856,
+            'scaffolds_n50_change_per': 0.0,
+            'scaffolds_l50_before': 13,
+            'scaffolds_l50_after': 13,
+            'scaffolds_l50_change_per': 0.0,
+            'scaffolds_n90_before': 7014107,
+            'scaffolds_n90_after': 7711609,
+            'scaffolds_n90_change_per': 9.944273732921383,
+            'scaffolds_l90_before': 27,
+            'scaffolds_l90_after': 27,
+            'scaffolds_l90_change_per': 0.0,
+            'contigs_total_before': 333046218,
+            'contigs_total_after': 333046218,
+            'contigs_total_change_per': 0.0,
+            'contigs_count_before': 44,
+            'contigs_count_after': 44,
+            'contigs_count_change_per': 0.0,
+            'contigs_n50_before': 11581856,
+            'contigs_n50_after': 11581856,
+            'contigs_n50_change_per': 0.0,
+            'contigs_l50_before': 13,
+            'contigs_l50_after': 13,
+            'contigs_l50_change_per': 0.0,
+            'contigs_n90_before': 7014107,
+            'contigs_n90_after': 7014107,
+            'contigs_n90_change_per': 0.0,
+            'contigs_l90_before': 27,
+            'contigs_l90_after': 27,
+            'contigs_l90_change_per': 0.0,
             'chr_ass': 'found 31 autosomes',
-            'ass_percent': '99.97'
+            'ass_percent': '99.97',
+            'assignee_name': 'test'
         })
         self.assertEqual(ret1.tolid.id, 'abCdeFghi1')
 

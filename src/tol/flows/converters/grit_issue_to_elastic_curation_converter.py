@@ -15,10 +15,9 @@ class GritIssueToElasticCurationConverter(
         DataObjectToDataObjectOrUpdateConverter):
 
     def convert(self, data_object: DataObject) -> Iterable[DataObject]:
-        length_info = self.__get_length_info(data_object.attributes.get('assembly_statistics'))
-        n50_info = self.__get_n50_info(data_object.attributes.get('assembly_statistics'))
-        scaff_count_info = \
-            self.__get_scaff_count(data_object.attributes.get('assembly_statistics'))
+        assembly_stats = self.__get_assembly_stats(
+            data_object.attributes.get('assembly_statistics')
+        )
         chr_data = self.__get_chr_data(data_object.attributes.get('chromosome_result'))
         attributes = {
             k: v for k, v in data_object.attributes.items()
@@ -27,7 +26,9 @@ class GritIssueToElasticCurationConverter(
         } | {
             self.__sanitise_attribute_name(sc['next_status']) + '_date': sc['end_date']
             for sc in data_object.status_changes
-        } | length_info | n50_info | scaff_count_info | chr_data
+        } | {
+            'assignee_name': data_object.assignee.name if data_object.assignee else None,
+        } | assembly_stats | chr_data
 
         to_one_relations = {
             'tolid': self._data_object_factory(
@@ -46,68 +47,31 @@ class GritIssueToElasticCurationConverter(
     def __sanitise_attribute_name(self, name: str) -> str:
         return re.sub(r'\s+', '_', name.lower())
 
-    def __get_length_info(self, data):
+    def __get_assembly_stats(self, data):
+        assembly_stats = {}
+        pattern = re.compile(
+            r'(?P<section>scaffolds|contigs)\n(?P<section_data>(?:[a-zA-Z0-9]+\s+\d+\s+\d+\n?)+)'
+        )
+        for match in pattern.finditer(data):
+            section = match.group('section')
+            section_data = match.group('section_data')
+            for att in ['total', 'count', 'N50', 'L50', 'N90', 'L90']:
+                assembly_stats.update(self.__get_assembly_info(section_data, section, att))
+        return assembly_stats
+
+    def __get_assembly_info(self, data, contig_or_scaffold, att):
         """
-        Function to return the length information hidden in assembly stats
-        :param scaff_data:
-        :return:
+        Function to return the information hidden in assembly stats
         """
         if data:
-            length_search = re.search(r'total\s*([0-9]\w+)\s*([0-9]\w+)', data)
-            length_before = int(length_search.group(1))
-            length_after = int(length_search.group(2))
-            length_change_per = (length_after - length_before) / length_before * 100
+            att_search = re.search(rf'{att}\s*([0-9]\w+)\s*([0-9]\w+)', data)
+            att_before = int(att_search.group(1))
+            att_after = int(att_search.group(2))
+            att_change_per = (att_after - att_before) / att_before * 100
             return {
-                'length_before': length_before,
-                'length_after': length_after,
-                'length_change_per': length_change_per
-            }
-        else:
-            return {}
-
-    def __get_n50_info(self, scaff_data):
-        """
-        Function to return the length information hidden in assembly stats
-        :param scaff_data:
-        :return:
-        """
-        if scaff_data:
-            n50_search = re.search(r'N50\s*([0-9]*)\s*([0-9]*)', scaff_data)
-            n50_before = int(n50_search.group(1))
-            n50_after = int(n50_search.group(2))
-            n50_ab = n50_after - n50_before
-            if n50_ab == 0:
-                n50_change_per = 0
-            else:
-                n50_change_per = (n50_after - n50_before) / n50_before * 100
-            return {
-                'n50_before': n50_before,
-                'n50_after': n50_after,
-                'n50_change_per': n50_change_per
-            }
-        else:
-            return {}
-
-    def __get_scaff_count(self, scaff_data):
-        """
-
-        :param scaff_data:
-        :return:
-        """
-        if scaff_data:
-            scaff_count_search = re.search(r'count\s*([0-9]*)\s*([0-9]*)', scaff_data)
-            scaff_count_before = int(scaff_count_search.group(1))
-            scaff_count_after = int(scaff_count_search.group(2))
-            if scaff_count_before + scaff_count_after == 0:
-                scaff_count_per = 0
-            else:
-                scaff_count_per = (
-                    (scaff_count_after - scaff_count_before) / scaff_count_before * 100
-                )
-            return {
-                'scaff_count_before': scaff_count_before,
-                'scaff_count_after': scaff_count_after,
-                'scaff_count_per': scaff_count_per
+                f'{contig_or_scaffold}_{att.lower()}_before': att_before,
+                f'{contig_or_scaffold}_{att.lower()}_after': att_after,
+                f'{contig_or_scaffold}_{att.lower()}_change_per': att_change_per
             }
         else:
             return {}
