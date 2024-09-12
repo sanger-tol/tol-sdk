@@ -10,10 +10,10 @@ from typing import Dict, Iterable, List
 import mysql.connector
 
 from ..core import DataObject, DataSource, DataSourceError, DataSourceFilter
-from ..core.operator import ListGetter
+from ..core.operator import DetailGetter, ListGetter
 
 
-class MlwhDataSource(DataSource, ListGetter):
+class MlwhDataSource(DataSource, DetailGetter, ListGetter):
     def __init__(self, config: Dict):
         # uri
         super().__init__(config, expected=['uri'])
