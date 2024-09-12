@@ -89,3 +89,18 @@ class TestMlwhDataSource(TestCase):
         self.assertEqual(obj2.run_id, '47067_4')
         self.assertEqual(obj2.study_id, 5901)
         self.assertEqual(obj2.library_id, 'SQPP-18544-S:E3')
+
+        with self.assertRaises(StopIteration):
+            next(ret)
+
+    def test_get_by_id_sequencing_request_volume(self):
+        mds = mlwh()
+        ret = mds.get_by_id('sequencing_request_volume', ['DTOL14860867'])
+        obj1 = next(ret)
+        self.assertEqual(float(obj1.original_volume), 55.4)
+        self.assertEqual(obj1.insert_size, 14658)
+        self.assertEqual(float(obj1.concentration), 19.06)
+        self.assertEqual(float(obj1.volume_remaining), 47.9)
+
+        with self.assertRaises(StopIteration):
+            next(ret)

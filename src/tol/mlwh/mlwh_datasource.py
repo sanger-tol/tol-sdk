@@ -304,6 +304,38 @@ class MlwhDataSource(DataSource, ListGetter):
             """
         )
 
+    def _get_column_mappings_sequencing_request_volume(self):
+        return {
+            'id': 'aliquot.sample_name',
+            'original_volume': 'aliquot.volume',
+            'insert_size': 'aliquot.insert_size',
+            'concentration': 'aliquot.concentration',
+            'volume_remaining': 'aliquot.volume - COALESCE(derived_amounts.amount, 0)'
+        }
+
+    def _get_sequencing_request_volume_query(self, clause: str):
+        col_string = self._columns_string_from_mappings(
+            self._get_column_mappings_sequencing_request_volume()
+        )
+
+        return inspect.cleandoc(
+            f"""
+            -- derived
+            WITH derived_amounts AS (
+                SELECT sample_name, SUM(volume) as amount
+                FROM aliquot
+                WHERE aliquot_type='derived'
+                GROUP BY sample_name
+            )
+
+            -- main SELECT
+            SELECT {col_string}
+            FROM aliquot
+            LEFT JOIN derived_amounts on aliquot.sample_name = derived_amounts.sample_name
+            WHERE {clause} AND aliquot.aliquot_type='primary'
+            """
+        )
+
     def _get_id_from_row(self, row: Dict) -> str:
         data_id = row.get('id')
         if row.get('platform_type', '').lower() == 'pacbio':
@@ -347,6 +379,8 @@ class MlwhDataSource(DataSource, ListGetter):
             mappings = self._get_column_mappings_pacbio()
         if platform_type.lower() == 'sequencing_request':
             mappings = self._get_column_mappings_sequencing_request()
+        if platform_type.lower() == 'sequencing_request_volume':
+            mappings = self._get_column_mappings_sequencing_request_volume()
         for k, v in in_list.items():
             mapped_k = mappings[k]
             sql_conditions.append(f"{mapped_k} IN ('{self._join(v)}')")
@@ -416,6 +450,25 @@ class MlwhDataSource(DataSource, ListGetter):
                 'sequencing_request are supported'
             )
 
+    def get_by_id(
+        self,
+        object_type: str,
+        object_ids: Iterable[str],
+        **kwargs,
+    ) -> Iterable[DataObject]:
+        # Sort out the conditions
+        if object_type == 'sequencing_request_volume':
+            sql_conditions = self._conditions_string(
+                'sequencing_request_volume', {'id': object_ids}
+            )
+            query = self._get_sequencing_request_volume_query(sql_conditions)
+            return self._execute_query(query, 'sequencing_request_volume')
+        else:
+            raise DataSourceError(
+                'Only objects of type sequencing_request_volume are supported'
+            )
+
     @property
     def supported_types(self) -> List[str]:
-        return ['long_read_qc_result', 'sequencing_request', 'run_data']
+        return ['long_read_qc_result', 'sequencing_request', 'run_data',
+                'sequencing_request_volume']

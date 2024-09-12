@@ -210,3 +210,35 @@ class TestMlwhDataSource(TestCase):
             next(returned)
 
         mocked_function.assert_called_once()
+
+    def test_get_by_id_sequencing_request_volume(self):
+        mds = MockMlwhDataSource({
+            'uri': 'mysql://user:pass@host:1234/db'
+        })
+        core_data_object(mds)
+        mocked_function = mds.mlwh.cursor.return_value.fetchall
+        mocked_function.return_value = [
+            {'id': 1, 'original_volume': 10, 'insert_size': 5, 'concentration': 1,
+             'remaining_volume': 5},
+            {'id': 2, 'original_volume': 11, 'insert_size': 6, 'concentration': 2,
+             'remaining_volume': 6},
+            {'id': 3, 'original_volume': 12, 'insert_size': 7, 'concentration': 3,
+             'remaining_volume': 7},
+        ]
+        returned = mds.get_by_id('sequencing_request_volume', ['testId1', 'testId2', 'testId3'])
+        first = next(returned)
+        self.assertEqual({'original_volume': 10,
+                          'insert_size': 5, 'concentration': 1,
+                          'remaining_volume': 5}, first.attributes)
+        second = next(returned)
+        self.assertEqual({'original_volume': 11,
+                          'insert_size': 6, 'concentration': 2,
+                          'remaining_volume': 6}, second.attributes)
+        third = next(returned)
+        self.assertEqual({'original_volume': 12,
+                          'insert_size': 7, 'concentration': 3,
+                          'remaining_volume': 7}, third.attributes)
+        with self.assertRaises(StopIteration):
+            next(returned)
+
+        mocked_function.assert_called_once()
