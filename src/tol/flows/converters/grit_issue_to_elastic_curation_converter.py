@@ -48,9 +48,12 @@ class GritIssueToElasticCurationConverter(
         return re.sub(r'\s+', '_', name.lower())
 
     def __get_assembly_stats(self, data):
+        if not data:
+            return {}
         assembly_stats = {}
         pattern = re.compile(
-            r'(?P<section>scaffolds|contigs)\n(?P<section_data>(?:[a-zA-Z0-9]+\s+\d+\s+\d+\n?)+)'
+            r'(?P<section>scaffolds|contigs)\n(?P<section_data>'
+            r'(?:[a-zA-Z0-9]+\s+\d+\s+\d+\s*\n?)+)'
         )
         for match in pattern.finditer(data):
             section = match.group('section')
@@ -64,7 +67,7 @@ class GritIssueToElasticCurationConverter(
         Function to return the information hidden in assembly stats
         """
         if data:
-            att_search = re.search(rf'{att}\s*([0-9]\w+)\s*([0-9]\w+)', data)
+            att_search = re.search(rf'{att}\s*([0-9]\w*)\s*([0-9]\w*)', data)
             att_before = int(att_search.group(1))
             att_after = int(att_search.group(2))
             att_change_per = (att_after - att_before) / att_before * 100

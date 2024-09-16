@@ -127,7 +127,7 @@ class TestGritIssueToElasticCurationConverter(TestCase):
                         'end_date': datetime(2020, 2, 4)
                     }
                 ],
-                'assembly_statistics': 'scaffolds\ntotal 333046658 333047658\ncount 41 36\nN50 11581856 11581856\nL50 13 13\nN90 7014107 7711609\nL90 27 27\n\ncontigs\ntotal 333046218 333046218\ncount 44 44\nN50 11581856 11581856\nL50 13 13\nN90 7014107 7014107\nL90 27 27\n',  # noqa E501
+                'assembly_statistics': 'scaffolds\ntotal 333046658 333047658\ncount 41 36\nN50 11581856 11581856\nL50 3 4    \nN90 7014107 7711609\nL90 27 27\n\ncontigs\ntotal 333046218 333046218\ncount 44 44\nN50 11581856 11581856\nL50 13 13\nN90 7014107 7014107\nL90 27 27\n',  # noqa E501
                 'chromosome_result': 'found 31 autosomes and W and Z and MT\nTotal length 333047658\nChr length 332949469\nChr length 99.97 %\n',  # noqa E501
             },
             to_one={
@@ -152,9 +152,9 @@ class TestGritIssueToElasticCurationConverter(TestCase):
             'scaffolds_n50_before': 11581856,
             'scaffolds_n50_after': 11581856,
             'scaffolds_n50_change_per': 0.0,
-            'scaffolds_l50_before': 13,
-            'scaffolds_l50_after': 13,
-            'scaffolds_l50_change_per': 0.0,
+            'scaffolds_l50_before': 3,
+            'scaffolds_l50_after': 4,
+            'scaffolds_l50_change_per': 33.33333333333333,
             'scaffolds_n90_before': 7014107,
             'scaffolds_n90_after': 7711609,
             'scaffolds_n90_change_per': 9.944273732921383,
