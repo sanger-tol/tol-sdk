@@ -6,6 +6,7 @@ from __future__ import annotations
 
 import typing
 from abc import ABC, abstractmethod
+from dataclasses import dataclass
 from typing import Any, Iterable, Optional, Union
 
 if typing.TYPE_CHECKING:
@@ -80,3 +81,27 @@ class DataObject(ABC):
         both set `DataObject` instances and fetched relations from the
         `DataSource`. Most users will not need (or want) to use this property.
         """
+
+
+@dataclass(frozen=True)
+class ErrorObject:
+    """
+    Returned by write `Operator` methods, in place of a valid `DataObject`,
+    if there was an error with "writing" an individual input `DataObject` in
+    the `Iterable`.
+    """
+
+    details: dict[str, Any]
+    """Additional detail on this error"""
+    object_type: str
+    """The `type` of the object that this write concerns"""
+
+    error_id: str | None = None
+    """An optional ID for this error"""
+    object_id: str | None = None
+    """The `id` of the object that this write concerns, if provided"""
+    http_code: int | None = None
+    """An optional HTTP Status Code for this error"""
+
+
+WriteObject = DataObject | ErrorObject

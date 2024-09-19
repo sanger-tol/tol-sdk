@@ -75,6 +75,11 @@ services:
       - GOAT_URL
       - GOAT_API_PATH
       - MLWH_URI
+      - BENCHLING_URL
+      - BENCHLING_API_KEY
+      - BENCHLING_REGISTRY_ID
+      - BENCHLING_PROJECT
+      - BENCHLING_FOLDER
     networks:
       - api-base-test-network
 

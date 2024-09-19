@@ -8,9 +8,8 @@ from unittest import (
 )
 
 from tol.benchling import BenchlingDataSource
-from tol.core import (
-    core_data_object
-)
+from tol.core import DataObject, core_data_object
+from tol.core.data_object import ErrorObject
 
 
 class MockBenchlingDataSource(BenchlingDataSource):
@@ -20,6 +19,7 @@ class MockBenchlingDataSource(BenchlingDataSource):
     def _get_entity_schemas(self):
         return {
             'test_entity_type': {
+                '__id__': 'ts_DONTCARE',
                 'field_name': {
                     'name': 'Test Field',
                     'type': 'str'
@@ -37,7 +37,8 @@ def mock_benchling_data_source() -> BenchlingDataSource:
         'url': 'http://test/benchling',
         'api_key': '1234',
         'registry_id': '5678',
-        'project_id': '6789'
+        'project_id': '6789',
+        'folder_id': '8901'
     })
     core_data_object_mock = core_data_object(bds)
     return core_data_object_mock, bds
@@ -65,8 +66,44 @@ class TestBenchlingDataSource(TestCase):
                    'field_name2': 4}
         updates = [('123', update1),
                    ('456', update2)]
-        status = mock.Mock()
-        status.status.return_value = 'FAILED'
+        status = mock.MagicMock()
+        status.status = 'FAILED'
         bds.benchling_interface.tasks.wait_for_task.return_value = status
-        bds.update('test_entity_type', updates)
-        self.assertEqual(bds.benchling_interface.custom_entities.bulk_update.call_count, 1)
+        res = bds.update('test_entity_type', updates)
+
+        # properly formatted `ErrorObject` instances are returned
+        assert len(res) == 2
+        for obj in res:
+            assert isinstance(obj, ErrorObject)
+            assert obj.object_type == 'test_entity_type'
+
+        # once for the page of 2, plus once _each_ for both individually ( = 3)
+        self.assertEqual(bds.benchling_interface.custom_entities.bulk_update.call_count, 3)
+
+    def test_insert(self):
+        _, bds = mock_benchling_data_source()
+
+        inserts = [
+            self.__mock_obj(),
+            self.__mock_obj()
+        ]
+
+        status = mock.MagicMock()
+        status.status = 'FAILED'
+        bds.benchling_interface.tasks.wait_for_task.return_value = status
+        res = bds.insert('test_entity_type', inserts)
+
+        # properly formatted `ErrorObject` instances are returned
+        assert len(res) == 2
+        for obj in res:
+            assert isinstance(obj, ErrorObject)
+            assert obj.object_type == 'test_entity_type'
+
+        # once for the page of 2, plus once _each_ for both individually ( = 3)
+        self.assertEqual(bds.benchling_interface.custom_entities.bulk_create.call_count, 3)
+
+    def __mock_obj(self) -> DataObject:
+        obj = mock.create_autospec(DataObject, spec_set=True)
+        obj.type = 'test_entity_type'
+
+        return obj

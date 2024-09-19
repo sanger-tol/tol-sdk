@@ -11,6 +11,7 @@ from typing import Any, Iterable, Optional
 from ._writer import _Writer
 
 if typing.TYPE_CHECKING:
+    from ..data_object import DataObject, ErrorObject
     from ..session import OperableSession
 
 
@@ -29,7 +30,7 @@ class Updater(_Writer, ABC):
         updates: Iterable[DataObjectUpdate],
         session: Optional[OperableSession] = None,
         **kwargs
-    ) -> None:
+    ) -> Iterable[DataObject | ErrorObject] | None:
         """
         Takes a type and an `Iterable` of ID-`DataObjectUpdate` pairs.
 

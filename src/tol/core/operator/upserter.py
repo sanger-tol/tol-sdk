@@ -11,7 +11,7 @@ from typing import Iterable, Optional
 from ._writer import _Writer
 
 if typing.TYPE_CHECKING:
-    from ..data_object import DataObject
+    from ..data_object import DataObject, ErrorObject
     from ..session import OperableSession
 
 
@@ -26,7 +26,7 @@ class Upserter(_Writer, ABC):
         object_type: str,
         objects: Iterable[DataObject],
         session: Optional[OperableSession] = None
-    ) -> Iterable[DataObject] | None:
+    ) -> Iterable[DataObject | ErrorObject] | None:
         """
         Takes a type and an `Iterable` of `DataObject` instances, on
         each of which to perform an "upsert", i.e.:

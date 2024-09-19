@@ -11,6 +11,7 @@ from typing import Iterable, Optional
 from ._writer import _Writer
 
 if typing.TYPE_CHECKING:
+    from ..data_object import ErrorObject
     from ..session import OperableSession
 
 
@@ -25,7 +26,7 @@ class Deleter(_Writer, ABC):
         object_type: str,
         object_ids: Iterable[str],
         session: Optional[OperableSession] = None
-    ) -> None:
+    ) -> Iterable[ErrorObject | None] | None:
         """
         Takes a type, and the IDs of the `DataObject` to delete
         of the stated type.
