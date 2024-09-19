@@ -64,6 +64,12 @@ class StsSampleProjectToElasticSampleConverter(
             if 'manifest' in s.to_one_relationships:
                 if s.manifest is not None:
                     attributes['manifest'] = {'id': s.manifest.id}
+            if 'tissue_size' in s.to_one_relationships:
+                if s.tissue_size is not None:
+                    attributes['tissue_size'] = s.tissue_size.size
+            if 'hook' in s.to_one_relationships:
+                if s.hook is not None:
+                    attributes['lab_work_category'] = s.hook.display_name
             # Make tolid a relationship
             if s.public_name is not None and s.public_name != '':
                 attributes['tolid'] = {'id': s.public_name}

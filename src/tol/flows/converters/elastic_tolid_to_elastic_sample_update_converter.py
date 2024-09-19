@@ -21,7 +21,7 @@ class ElasticTolidToElasticSampleUpdateConverter(
             yield (
                 None,
                 {
-                    'tolid_tolid.id': data_object.id,
+                    'tolid_tolid': {'id': data_object.id},
                     'sts_species.id': species.id,
                     'sts_specimen.id': specimen.id
                 }

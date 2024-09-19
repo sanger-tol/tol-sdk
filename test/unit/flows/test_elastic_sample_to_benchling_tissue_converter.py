@@ -17,14 +17,14 @@ from tol.core.relationship import (
     RelationshipConfig
 )
 from tol.flows.converters import (
-    ElasticSampleToBenchlingTissueUpdateConverter
+    ElasticSampleToBenchlingTissueConverter
 )
 
 
 class _MockDataSource(DataSource, Relational):
     @property
     def supported_types(self):
-        return ['sample', 'sampleset', 'species', 'specimen', 'tolid']
+        return ['sample', 'sampleset', 'species', 'specimen', 'tolid', 'tissue']
 
     @property
     def attribute_types(self):
@@ -80,14 +80,14 @@ class _MockDataSource(DataSource, Relational):
         raise NotImplementedError()
 
 
-class TestElasticSampleToBenchlingTissueUpdateConverter(TestCase):
+class TestElasticSampleToBenchlingTissueConverter(TestCase):
     def test_default_convert(self):
 
         source = _MockDataSource(config={})
         destination = _MockDataSource(config={})
         core_data_object(source)
         core_data_object(destination)
-        converter = ElasticSampleToBenchlingTissueUpdateConverter(
+        converter = ElasticSampleToBenchlingTissueConverter(
             data_object_factory=destination.data_object_factory
         )
 
@@ -161,9 +161,9 @@ class TestElasticSampleToBenchlingTissueUpdateConverter(TestCase):
         )
 
         converteds = converter.convert(obj1)
-        id1, attributes1 = next(converteds)
-        self.assertEqual('benchling1', id1)
-        self.assertEqual(attributes1, {
+        ret1 = next(converteds)
+        self.assertEqual('benchling1', ret1.id)
+        self.assertEqual(ret1.attributes, {
             'rack_id': 'rack1',
             'tube_well_id': 'tube1',
             'tube_position': 'pos1',
@@ -198,5 +198,6 @@ class TestElasticSampleToBenchlingTissueUpdateConverter(TestCase):
             next(converteds)
 
         converteds = converter.convert(obj2)
+        assert next(converteds) is None
         with self.assertRaises(StopIteration):
             next(converteds)

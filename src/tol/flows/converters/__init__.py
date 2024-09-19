@@ -5,8 +5,10 @@
 from .benchling_extraction_to_elastic_extraction_converter import BenchlingExtractionToElasticExtractionConverter  # noqa F401
 from .benchling_extraction_to_elastic_sequencing_request_converter import BenchlingExtractionToElasticSequencingRequestConverter  # noqa F401
 from .benchling_tissue_prep_to_elastic_tissue_prep_converter import BenchlingTissuePrepToElasticTissuePrepConverter  # noqa F401
+from .benchling_sample_to_elastic_sample_converter import BenchlingSampleToElasticSampleConverter  # noqa F401
 from .bioscan_extra_species_to_elastic_sample_update_converter import BioscanExtraSpeciesToElasticSampleUpdateConverter  # noqa F401
 from .bold_sample_to_elastic_sample_update_converter import BoldSampleToElasticSampleUpdateConverter  # noqa F401
+from .elastic_sample_to_benchling_tissue_converter import ElasticSampleToBenchlingTissueConverter  # noqa F401
 from .elastic_sample_to_benchling_tissue_update_converter import ElasticSampleToBenchlingTissueUpdateConverter  # noqa F401
 from .elastic_sample_to_bold_sample_converter import ElasticSampleToBoldSampleConverter  # noqa F401
 from .elastic_sample_to_sts_sample_converter import ElasticSampleToStsSampleConverter  # noqa F401

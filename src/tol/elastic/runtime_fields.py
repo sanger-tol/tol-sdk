@@ -34,3 +34,18 @@ class RuntimeFields:
                 }}
             """
         }
+
+    @classmethod
+    def coalesce(cls, fields: list[str]):
+        return {
+            'type': 'keyword',
+            'script': 'else '.join(
+                [
+                    f"if (doc.containsKey('{field}.keyword') "
+                    f"&& doc['{field}.keyword'].size() > 0) {{"
+                    f"emit(doc['{field}.keyword'].value);"
+                    f'}}'
+                    for field in fields
+                ]
+            )
+        }

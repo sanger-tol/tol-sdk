@@ -23,10 +23,10 @@ class _MockDataSourceRelational(DataSource, Relational):
 
     @property
     def supported_types(self):
-        return ['sample_project', 'sample', 'project',
+        return ['sample_project', 'sample', 'project', 'hook',
                 'location', 'gal', 'preservation_approach', 'sampleset',
                 'specimen', 'preservative_solution', 'collection_method',
-                'sample_person', 'person', 'manifest']
+                'sample_person', 'person', 'manifest', 'tissue_size']
 
     @property
     def attribute_types(self):
@@ -48,7 +48,9 @@ class _MockDataSourceRelational(DataSource, Relational):
             'specimen': 'specimen',
             'preservation_approach': 'preservation_approach',
             'preservative_solution': 'preservative_solution',
-            'collection_method': 'collection_method'
+            'collection_method': 'collection_method',
+            'tissue_size': 'tissue_size',
+            'hook': 'hook'
         }
         rc_sample.to_many = {
             'sample_persons': 'sample_person'
@@ -176,6 +178,20 @@ class TestStsSampleProjectToElasticSampleConverter(TestCase):
             type_='manifest',
             attributes={}
         )
+        tissue_size = CoreDataObject(
+            id_='test_tissue_size',
+            type_='tissue_size',
+            attributes={
+                'size': 'huge'
+            }
+        )
+        hook = CoreDataObject(
+            id_='test_hook',
+            type_='hook',
+            attributes={
+                'display_name': 'labwork1'
+            }
+        )
         approach = CoreDataObject(
             id_='test_approach',
             type_='preservation_approach',
@@ -215,7 +231,9 @@ class TestStsSampleProjectToElasticSampleConverter(TestCase):
                 'collection_method': method,
                 'specimen': specimen,
                 'sampleset': sampleset,
-                'manifest': manifest
+                'manifest': manifest,
+                'tissue_size': tissue_size,
+                'hook': hook
             }
         )
         sample_project = CoreDataObject(
@@ -250,6 +268,8 @@ class TestStsSampleProjectToElasticSampleConverter(TestCase):
             'specimen': {'id': 'test_specimen'},
             'sampleset': {'id': 'test_sampleset'},
             'manifest': {'id': 'test_manifest'},
+            'tissue_size': 'huge',
+            'lab_work_category': 'labwork1',
             'col_date': datetime.datetime(2020, 2, 2),
             'original_collection_date': datetime.datetime(2011, 1, 1, 12),
             'pre_date': datetime.datetime(2000, 12, 12),

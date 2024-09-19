@@ -68,6 +68,7 @@ def elastic():
         'sts_species': 'species',
         'benchling_species': 'species',
         'sts_tolid': 'tolid',
+        'tolid_tolid': 'tolid',
         'benchling_tolid': 'tolid',
         'sts_manifest': 'manifest',
         'sts_sampleset': 'sampleset'
@@ -201,6 +202,14 @@ def elastic():
             'calc_coverage': RuntimeFields.math('mlwh_run_data_mlwh_hifi_read_bases_sum',
                                                 'tolid_species.sts_genome_size',
                                                 operation='/')
+        },
+        'sample': {
+            'calc_biospecimen_id':
+                RuntimeFields.coalesce([
+                    'sts_sample_same_as',
+                    'sts_biospecimen_accession',
+                    'sts_sample_symbiont_of'
+                ])
         },
         'sampleset': {
             'calc_tat': RuntimeFields.date_interval('sts_submit_date',

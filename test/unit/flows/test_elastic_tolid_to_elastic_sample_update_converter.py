@@ -104,7 +104,7 @@ class TestElasticTolidToElasticSampleUpdateConverter(TestCase):
         id1, attributes1 = next(converteds)
         self.assertIsNone(id1)
         self.assertEqual(attributes1, {
-            'tolid_tolid.id': 'tolid1',
+            'tolid_tolid': {'id': 'tolid1'},
             'sts_species.id': 'species1',
             'sts_specimen.id': 'specimen1',
         })

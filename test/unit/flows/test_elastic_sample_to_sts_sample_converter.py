@@ -76,7 +76,9 @@ class TestElasticSampleToStsSampleConverter(TestCase):
         obj1 = CoreDataObject(
             id_='1234',
             type_='sample',
-            attributes={},
+            attributes={
+                'benchling_eln_tissue_id': 'tissue_id'
+            },
             to_one={
                 'tolid_tolid': tolid
             }
@@ -84,7 +86,9 @@ class TestElasticSampleToStsSampleConverter(TestCase):
         obj2 = CoreDataObject(
             id_='test2',
             type_='sample',
-            attributes={}
+            attributes={
+                'benchling_eln_tissue_id': 'tissue_id2'
+            }
         )
 
         converteds = converter.convert(obj1)
@@ -92,13 +96,21 @@ class TestElasticSampleToStsSampleConverter(TestCase):
         self.assertEqual('1234', ret1.id)
         self.assertEqual(obj1.type, ret1.type)
         self.assertEqual(ret1.attributes, {
-            'public_name': 'tolid1'
+            'public_name': 'tolid1',
+            'eln_id': 'tissue_id'
         })
 
         with self.assertRaises(StopIteration):
             next(converteds)
 
         converteds = converter.convert(obj2)
+        ret1 = next(converteds)
+        self.assertEqual('test2', ret1.id)
+        self.assertEqual(obj1.type, ret1.type)
+        self.assertEqual(ret1.attributes, {
+            'public_name': None,
+            'eln_id': 'tissue_id2'
+        })
 
         with self.assertRaises(StopIteration):
             next(converteds)
