@@ -2,38 +2,10 @@
 #
 # SPDX-License-Identifier: MIT
 
-import os
-
-import pytest
-
 from tol.benchling import BenchlingDataSource
-from tol.core import DataSourceConfig, core_data_object
+from tol.sources.benchling import benchling
 
 from .utils import against_types
-
-
-@pytest.fixture(scope='module')
-def ds_config() -> DataSourceConfig:
-    return {
-        'url': os.environ['BENCHLING_URL'],
-        'api_key': os.environ['BENCHLING_API_KEY'],
-        'registry_id': os.environ['BENCHLING_REGISTRY_ID'],
-        'project_id': os.environ['BENCHLING_PROJECT'],
-        'folder_id': os.environ['BENCHLING_FOLDER'],
-    }
-
-
-@pytest.fixture
-def benchling_ds(
-    ds_config: DataSourceConfig
-) -> BenchlingDataSource:
-
-    ds = BenchlingDataSource(
-        ds_config
-    )
-    core_data_object(ds)
-
-    return ds
 
 
 class TestBenchlingDataSourceE2E:
@@ -48,15 +20,13 @@ class TestBenchlingDataSourceE2E:
     """
 
     @against_types(['tissue'])
-    def test_one(
-        self,
-        benchling_ds: BenchlingDataSource,
-        object_type: str
-    ) -> None:
+    def test_one(self, object_type: str) -> None:
         """
         Inserts a single `DataObject` of specified type,
         confirms its there, and updates, confirms changes.
         """
+
+        benchling_ds = benchling()
 
         # create the object
         obj = benchling_ds.data_object_factory(
@@ -115,16 +85,14 @@ class TestBenchlingDataSourceE2E:
         assert str_val == 'updated :)'
 
     @against_types(['tissue'])
-    def test_many(
-        self,
-        benchling_ds: BenchlingDataSource,
-        object_type: str
-    ) -> None:
+    def test_many(self, object_type: str) -> None:
         """
         Inserts several `DataObject` instances of specified type,
         confirms they are present there, and updates, confirms
         changes.
         """
+
+        benchling_ds = benchling()
 
         # get the key of a `str` field
         str_key = self.__find_string_key(

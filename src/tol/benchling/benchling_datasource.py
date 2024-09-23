@@ -4,6 +4,7 @@
 
 from __future__ import annotations
 
+import os
 from itertools import chain
 from typing import Any, Callable, Iterable, List
 
@@ -63,14 +64,16 @@ class BenchlingDataSource(DataSource, Deleter, DetailGetter, Updater, Inserter):
     api_key: str
     registry_id: str
     project_id: str
-    folder_id: str
 
     def __init__(
         self,
         config: DataSourceConfig,
         benchling_converter_factory: BenchlingConverterFactory | None = None,
-        data_object_converter_factory: DataObjectConverterFactory | None = None,
+        data_object_converter_factory: DataObjectConverterFactory | None = None
     ) -> None:
+
+        # initialy set to `None`
+        self.__folder_id = None
 
         super().__init__(
             config,
@@ -78,8 +81,7 @@ class BenchlingDataSource(DataSource, Deleter, DetailGetter, Updater, Inserter):
                 'url',
                 'api_key',
                 'registry_id',
-                'project_id',
-                'folder_id'
+                'project_id'
             ]
         )
 
@@ -90,6 +92,24 @@ class BenchlingDataSource(DataSource, Deleter, DetailGetter, Updater, Inserter):
 
         self.benchling_interface = self._get_benchling_interface(self.url, self.api_key)
         self.entities = self._get_entity_schemas()
+
+    @property
+    def folder_id(self) -> str:
+        """The current `folder_id` in Benchling"""
+
+        return (
+            self.__folder_id if
+            self.__folder_id else
+            os.getenv('BENCHLING_FOLDER')
+        )
+
+    @folder_id.setter
+    def folder_id(self, new_id: str) -> None:
+        self.__folder_id = new_id
+
+    @folder_id.deleter
+    def folder_id(self) -> None:
+        self.__folder_id = None
 
     def _get_benchling_interface(self, url, api_key):
         return Benchling(
@@ -181,7 +201,7 @@ class BenchlingDataSource(DataSource, Deleter, DetailGetter, Updater, Inserter):
         self,
         object_type: str,
         objects: Iterable[DataObject],
-        session=None
+        session=None,
     ) -> list[DataObject | ErrorObject]:
 
         converter = self.__dc_factory()

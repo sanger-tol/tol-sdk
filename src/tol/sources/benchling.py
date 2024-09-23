@@ -12,11 +12,15 @@ from ..core import (
 )
 
 
-def benchling():
-    benchling = BenchlingDataSource({
-        'api_key': os.getenv('BENCHLING_API_KEY'),
-        'url': os.getenv('BENCHLING_URL'),
-        'registry_id': os.getenv('BENCHLING_REGISTRY_ID'),
-        'project_id': os.getenv('BENCHLING_PROJECT_ID')})
+def benchling() -> BenchlingDataSource:
+    benchling = BenchlingDataSource(
+        {
+            'api_key': os.getenv('BENCHLING_API_KEY'),
+            'url': os.getenv('BENCHLING_URL'),
+            'registry_id': os.getenv('BENCHLING_REGISTRY_ID'),
+            'project_id': os.getenv('BENCHLING_PROJECT_ID')
+        }
+    )
     core_data_object(benchling)
+
     return benchling
