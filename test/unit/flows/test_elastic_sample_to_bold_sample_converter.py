@@ -125,7 +125,7 @@ class TestElasticSampleToBoldSampleConverter(TestCase):
             'lon': '54.321123',
             'elev': '',
             'elevationprecision': '',
-            'collectiondateaccuarcy': '',
+            'collectiondateaccuracy': '',
             'samplingprotocol': 'Malaise Trap'
         })
 
@@ -156,7 +156,7 @@ class TestElasticSampleToBoldSampleConverter(TestCase):
             'lon': '',
             'elev': '',
             'elevationprecision': '',
-            'collectiondateaccuarcy': '',
+            'collectiondateaccuracy': '',
             'samplingprotocol': ''
         })
         with self.assertRaises(StopIteration):

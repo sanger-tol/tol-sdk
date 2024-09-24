@@ -57,7 +57,7 @@ class ElasticSampleToBoldSampleConverter(
                 if data_object.sts_longitude is not None else '',
             'elev': '',
             'elevationprecision': '',
-            'collectiondateaccuarcy': '',
+            'collectiondateaccuracy': '',
             'samplingprotocol':
                 data_object.sts_COLLECTION_METHOD.replace('_', ' ').title()
                 if data_object.sts_COLLECTION_METHOD is not None else '',
