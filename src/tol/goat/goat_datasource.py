@@ -82,6 +82,8 @@ class GoatDataSource(
         return {
             'taxon': {
                 'scientific_name': 'str',
+                'common_name': 'str',
+                'tolid_prefix': 'str',
                 'genome_size': 'int',
                 'chromosome_number': 'int',
                 'haploid_number': 'int',

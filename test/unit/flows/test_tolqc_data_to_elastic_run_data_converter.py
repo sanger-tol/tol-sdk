@@ -23,7 +23,7 @@ class _MockDataSourceRelational(DataSource, Relational):
     @property
     def supported_types(self):
         return ['data', 'run', 'sample', 'platform', 'species', 'specimen',
-                'accession', 'library', 'library_type']
+                'accession', 'library', 'library_type', 'folder', 'folder_location']
 
     @property
     def attribute_types(self):
@@ -35,7 +35,8 @@ class _MockDataSourceRelational(DataSource, Relational):
         rc_data.to_one = {
             'run': 'run',
             'sample': 'sample',
-            'library': 'library'
+            'library': 'library',
+            'folder': 'folder'
         }
         rc_run = RelationshipConfig()
         rc_run.to_one = {
@@ -58,11 +59,17 @@ class _MockDataSourceRelational(DataSource, Relational):
             'library_type': 'library_type'
         }
 
+        rc_folder = RelationshipConfig()
+        rc_folder.to_one = {
+            'folder_location': 'folder_location'
+        }
+
         return {'data': rc_data,
                 'run': rc_run,
                 'sample': rc_sample,
                 'specimen': rc_specimen,
-                'library': rc_library}
+                'library': rc_library,
+                'folder': rc_folder}
 
     def get_to_one_relation(
         self,
@@ -322,6 +329,33 @@ class TestTolqcDataToElasticRunDataConverter(TestCase):
             to_one={'sample': sample4}
         )
 
+        # with data.folder.folder_location nested relationship
+        folder_location1 = CoreDataObject(
+            id_='folder_location1_id',
+            type_='folder_location',
+            attributes={'uri_prefix': 's3://test-bucket'}
+        )
+
+        folder1 = CoreDataObject(
+            id_='folder1_id',
+            type_='folder',
+            attributes={
+                'image_file_list': [
+                    {'file': 'file1', 'caption': 'caption1'},
+                    {'file': 'file2', 'caption': 'caption2'}
+                ]
+            },
+            to_one={'folder_location': folder_location1}
+        )
+
+        obj8 = CoreDataObject(
+            id_='data8_id',
+            type_='data',
+            attributes={'tag_index': 'data7_tag_index',
+                        'lims_qc': 'data7_manual_qc'},
+            to_one={'folder': folder1}
+        )
+
         # testing
         # with no relationships
         converteds = converter.convert(obj1)
@@ -467,4 +501,29 @@ class TestTolqcDataToElasticRunDataConverter(TestCase):
             'tolid': {'id': 'specimen3_id'},
             'specimen': {'id': None},
             'species': {'id': 'taxon_id1'}
+        })
+
+        # with data.folder.folder_location relationship
+        converteds = converter.convert(obj8)
+        ret8 = next(converteds)
+        self.assertEqual('data8_id', ret8.id)
+        self.assertEqual('run_data', ret8.type)
+        self.assertEqual(ret8.attributes, {
+            'tag_index': 'data7_tag_index',
+            'tag_sequence': None,
+            'tag2_sequence': None,
+            'manual_qc': 'data7_manual_qc',
+            'auto_qc': None,
+            'qc': None,
+            'reporting_category': 'rnaseq',
+            'images': [
+                {
+                    'url': 's3://test-bucket/folder1_id/file1',
+                    'caption': 'caption1'
+                },
+                {
+                    'url': 's3://test-bucket/folder1_id/file2',
+                    'caption': 'caption2'
+                }
+            ],
         })

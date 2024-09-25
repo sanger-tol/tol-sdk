@@ -61,7 +61,31 @@ class TestCreateGoatDatasource:
                         'ploidy': {'value': 2},
                         'isb_wildlife_act_1976': {'value': 'IWA-Sch5'},
                         'protection_of_badgers_act_1992': {'value': 'Badgers92'}
-                    }
+                    },
+                    'names': {
+                        'tolid_prefix': {
+                            'class': [
+                                'tolid_prefix'
+                            ],
+                            'name': [
+                                'mMelMel'
+                            ],
+                            'source': [
+                                'dtol sample naming'
+                            ]
+                        },
+                        'common_name': {
+                            'class': [
+                                'common_name'
+                            ],
+                            'name': [
+                                'Melon'
+                            ],
+                            'source': [
+                                'animal genome size database'
+                            ]
+                        }
+                    },
                 }
             }],
             'status': {
@@ -86,7 +110,9 @@ class TestCreateGoatDatasource:
                 'haploid_number': 22,
                 'ploidy': 2,
                 'isb_wildlife_act_1976': ['IWA-Sch5'],
-                'protection_of_badgers_act_1992': ['Badgers92']
+                'protection_of_badgers_act_1992': ['Badgers92'],
+                'tolid_prefix': 'mMelMel',
+                'common_name': 'Melon'
             },
             to_one={}
         )
@@ -123,7 +149,31 @@ class TestCreateGoatDatasource:
                         'ploidy': {'value': 2},
                         'isb_wildlife_act_1976': {'value': 'IWA-Sch5'},
                         'protection_of_badgers_act_1992': {'value': 'Badgers92'}
-                    }
+                    },
+                    'names': {
+                        'tolid_prefix': {
+                            'class': [
+                                'tolid_prefix'
+                            ],
+                            'name': [
+                                'mMelMel'
+                            ],
+                            'source': [
+                                'dtol sample naming'
+                            ]
+                        },
+                        'common_name': {
+                            'class': [
+                                'common_name'
+                            ],
+                            'name': [
+                                'Melon'
+                            ],
+                            'source': [
+                                'animal genome size database'
+                            ]
+                        }
+                    },
                 }
             }],
             'status': {
@@ -150,7 +200,9 @@ class TestCreateGoatDatasource:
                 'haploid_number': 22,
                 'ploidy': 2,
                 'isb_wildlife_act_1976': ['IWA-Sch5'],
-                'protection_of_badgers_act_1992': ['Badgers92']
+                'protection_of_badgers_act_1992': ['Badgers92'],
+                'tolid_prefix': 'mMelMel',
+                'common_name': 'Melon'
             },
             to_one={}
         )

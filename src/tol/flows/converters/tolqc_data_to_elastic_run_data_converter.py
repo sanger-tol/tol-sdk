@@ -46,6 +46,18 @@ class TolqcDataToElasticRunDataConverter(DataObjectToDataObjectOrUpdateConverter
                     target_attributes['species'] = {
                         'id': data_object.sample.specimen.species.taxon_id}
 
+        if data_object.folder is not None:
+            target_attributes['images'] = [
+                {
+                    'url':
+                        f'{data_object.folder.folder_location.uri_prefix}'
+                        f'/{data_object.folder.id}'
+                        '/' + file.get('file', ''),
+                    'caption': file.get('caption')
+                }
+                for file in data_object.folder.image_file_list
+            ]
+
         ret = self._data_object_factory(
             'run_data',
             data_object.id,

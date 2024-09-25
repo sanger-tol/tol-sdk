@@ -72,6 +72,30 @@ class TestGoatApiConverter:
                         'protection_of_badgers_act_1992': {'value': 'Badgers92'},
                         'family_representative': {'value': 'DTOL'}
                     },
+                    'names': {
+                        'tolid_prefix': {
+                            'class': [
+                                'tolid_prefix'
+                            ],
+                            'name': [
+                                'mMelMel'
+                            ],
+                            'source': [
+                                'dtol sample naming'
+                            ]
+                        },
+                        'common_name': {
+                            'class': [
+                                'common_name'
+                            ],
+                            'name': [
+                                'Melon'
+                            ],
+                            'source': [
+                                'animal genome size database'
+                            ]
+                        }
+                    },
                     'ranks': {
                         'species': {
                             'taxon_rank': 'species',
@@ -126,7 +150,9 @@ class TestGoatApiConverter:
             'waca_1981': 'str',
             'isb_wildlife_act_1976': 'str',
             'family_representative': 'List[str]',
-            'lineage': 'List[str]'
+            'lineage': 'List[str]',
+            'tolid_prefix': 'str',
+            'common_name': 'str'
         }}))
         converter = GoatApiConverter(parser)
         (out_, _) = converter.convert_list(in_)
@@ -144,7 +170,9 @@ class TestGoatApiConverter:
             'isb_wildlife_act_1976': ['IWA-Sch5'],
             'protection_of_badgers_act_1992': ['Badgers92'],
             'family_representative': ['DTOL'],
-            'lineage': ['Mustelidae', 'Meles', 'Meles meles']
+            'lineage': ['Mustelidae', 'Meles', 'Meles meles'],
+            'tolid_prefix': 'mMelMel',
+            'common_name': 'Melon'
         }
         assert first._to_one_objects['species'].id == '9662'
         assert first._to_one_objects['genus'].id == '9661'

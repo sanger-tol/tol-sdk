@@ -51,6 +51,8 @@ class TestGoatDataSource(TestCase):
         self.assertEqual(obj1.chromosome_number, 18)
         self.assertEqual(obj1.long_list, ['DTOL'])
         self.assertEqual(obj1.phylum.scientific_name, 'Streptophyta')
+        self.assertIsNone(obj1.common_name)
+        self.assertEqual(obj1.tolid_prefix, 'drCitLimo')
         with self.assertRaises(StopIteration):
             next(ret)
 
@@ -92,6 +94,8 @@ class TestGoatDataSource(TestCase):
         obj1 = next(ret)
         self.assertEqual('9925', obj1.id)
         self.assertEqual(obj1.scientific_name, 'Capra hircus')
+        self.assertEqual(obj1.common_name, 'Domestic goat')
+        self.assertEqual(obj1.tolid_prefix, 'mCapHir')
 
         with self.assertRaises(StopIteration):
             next(ret)

@@ -78,7 +78,10 @@ class DefaultParser(Parser):
             ret[att] = attributes.get(att)
 
         # Attributes with values in fields
-        normal_fields = ['genome_size', 'chromosome_number', 'haploid_number', 'ploidy']
+        normal_fields = [
+            'genome_size', 'chromosome_number',
+            'haploid_number', 'ploidy'
+        ]
         one_or_list_fields = ['echabs92', 'habreg_2017', 'marhabreg-2017', 'waca_1981',
                               'isb_wildlife_act_1976', 'protection_of_badgers_act_1992',
                               'family_representative', 'long_list']
@@ -92,6 +95,9 @@ class DefaultParser(Parser):
                             ret[att] = [att_value['value']]
                         else:
                             ret[att] = att_value['value']
+        if 'names' in attributes:
+            for att in attributes['names']:
+                ret[att] = attributes['names'][att]['name'][0]
 
         # Lineage
         if 'ranks' in attributes:

@@ -73,9 +73,10 @@ class GoatApiClient:
         params = {
             # 'query': filter_string,  # We encode the query string manually to ensure space->%20
             'result': object_type,
-            'includeEstimates': 'false',
+            'includeEstimates': 'true',
             'summaryValues': 'count',
             'taxonomy': 'ncbi',
+            'names': 'common_name,tolid_prefix',
             'fields': 'genome_size,chromosome_number,haploid_number,ploidy,echabs92,'
                       'habreg_2017,marhabreg-2017,waca_1981,isb_wildlife_act_1976,'
                       'protection_of_badgers_act_1992,family_representative,long_list',
