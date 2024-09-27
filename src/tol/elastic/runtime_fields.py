@@ -42,7 +42,8 @@ class RuntimeFields:
             'script': 'else '.join(
                 [
                     f"if (doc.containsKey('{field}.keyword') "
-                    f"&& doc['{field}.keyword'].size() > 0) {{"
+                    f"&& doc['{field}.keyword'].size() > 0 "
+                    f"&& doc['{field}.keyword'].value =~ /\\S/) {{"
                     f"emit(doc['{field}.keyword'].value);"
                     f'}}'
                     for field in fields

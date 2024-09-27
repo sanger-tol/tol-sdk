@@ -1078,7 +1078,7 @@ class ElasticDataSource(
                 if index_name.startswith(self.index_prefix)]
 
     def __map_type(self, type_: str) -> str:
-        if type_ == 'text':
+        if type_ in ['text', 'keyword']:
             return 'str'
         if type_ == 'long':
             return 'int'
