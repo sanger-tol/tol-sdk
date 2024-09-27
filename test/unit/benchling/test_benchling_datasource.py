@@ -22,11 +22,15 @@ class MockBenchlingDataSource(BenchlingDataSource):
                 '__id__': 'ts_DONTCARE',
                 'field_name': {
                     'name': 'Test Field',
-                    'type': 'str'
+                    'type': 'str',
+                    'benchling_type': 'text',
+                    'required': True
                 },
                 'field_name2': {
                     'name': 'Test Field 2',
-                    'type': 'int'
+                    'type': 'int',
+                    'benchling_type': 'integer',
+                    'required': True
                 }
             }
         }

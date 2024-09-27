@@ -14,6 +14,8 @@ from benchling_sdk.errors import BenchlingError, WaitForTaskExpiredError
 from benchling_sdk.helpers.retry_helpers import RetryStrategy
 from benchling_sdk.models import AsyncTask, AsyncTaskLink
 
+from cachetools.func import ttl_cache
+
 from caseconverter import snakecase
 
 from more_itertools import batched
@@ -142,8 +144,21 @@ class BenchlingDataSource(DataSource, Deleter, DetailGetter, Updater, Inserter):
                             entities[schema_name][snakecase(field.name)] = {
                                 'name': field.name,
                                 'type': TYPE_MAPPING.get(field.type.value, 'str'),
+                                'benchling_type': field.type.value,
+                                'required': field.is_required,
                             }
+                            if field.type.value == 'dropdown':
+                                entities[schema_name][snakecase(field.name)]['dropdown_id'] = \
+                                    field.additional_properties.get('dropdownId')
         return entities
+
+    @ttl_cache(ttl=86400)
+    def get_attribute_value_options(self, object_type: str, name: str) -> dict[str, str]:
+        dropdown_id = self.entities[object_type][name]['dropdown_id']
+        return {
+            option.id: option.name
+            for option in self.benchling_interface.dropdowns.get_by_id(dropdown_id).options
+        }
 
     def update(
         self,

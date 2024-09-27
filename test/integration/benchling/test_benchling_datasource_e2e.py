@@ -2,6 +2,8 @@
 #
 # SPDX-License-Identifier: MIT
 
+import datetime
+
 from tol.benchling import BenchlingDataSource
 from tol.sources.benchling import benchling
 
@@ -29,8 +31,10 @@ class TestBenchlingDataSourceE2E:
         benchling_ds = benchling()
 
         # create the object
-        obj = benchling_ds.data_object_factory(
-            object_type
+        obj = self.__create_test_object(
+            object_type,
+            benchling_ds,
+            string_value='A'
         )
 
         # insert it
@@ -102,11 +106,10 @@ class TestBenchlingDataSourceE2E:
 
         # create the objects
         objs = [
-            benchling_ds.data_object_factory(
+            self.__create_test_object(
                 object_type,
-                attributes={
-                    str_key: 'A' * i
-                }
+                benchling_ds,
+                string_value='A' * i
             )
             for i in range(1, 4)
         ]
@@ -172,7 +175,39 @@ class TestBenchlingDataSourceE2E:
         attribute_types = benchling_ds.attribute_types[object_type]
 
         for k, v in attribute_types.items():
-            if v == 'str':
+            if v == 'str' and benchling_ds.entities[object_type][k]['required']:
                 return k
 
         raise Exception('no `str` key was found.')
+
+    def __create_test_object(
+        self,
+        object_type: str,
+        benchling_ds: BenchlingDataSource,
+        string_value: str = 'test',
+        int_value: int = 1,
+        float_value: float = 1.0,
+        datetime_value: datetime.datetime = datetime.datetime(2021, 1, 1)
+    ) -> str:
+        """Creates test data for an example object"""
+        atts = {}
+        for att in benchling_ds.attribute_types[object_type]:
+            # Easy way to avoid computed fields
+            if not benchling_ds.entities[object_type][att]['required']:
+                continue
+            if benchling_ds.entities[object_type][att]['benchling_type'] == 'text':
+                atts[att] = string_value
+            if benchling_ds.entities[object_type][att]['benchling_type'] == 'integer':
+                atts[att] = int_value
+            if benchling_ds.entities[object_type][att]['benchling_type'] == 'float':
+                atts[att] = float_value
+            if benchling_ds.entities[object_type][att]['benchling_type'] == 'date':
+                atts[att] = datetime_value
+            if benchling_ds.entities[object_type][att]['benchling_type'] == 'dropdown':
+                attribute_values = benchling_ds.get_attribute_value_options(object_type, att)
+                atts[att] = next(iter(attribute_values.values()))
+        return benchling_ds.data_object_factory(
+            object_type,
+            None,
+            attributes=atts
+        )
