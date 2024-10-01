@@ -189,7 +189,40 @@ def elastic():
                                 .value.toEpochMilli())
                     }
                 """
-            }
+            },
+            'calc_pm_status': {
+                'type': 'keyword',
+                'script': {
+                    'source': """
+                    if (doc.containsKey('grit_curation_grit_done_date_max')
+                        && doc['grit_curation_grit_done_date_max'].size() > 0) {
+                        emit("Submitted to ENA");
+                    }
+                    else if (doc.containsKey('grit_curation_grit_in_submission_date_max')
+                        && doc['grit_curation_grit_in_submission_date_max'].size() > 0) {
+                        emit("Curated");
+                    }
+                    else if (doc.containsKey('grit_curation_grit_created_date_min')
+                        && doc['grit_curation_grit_created_date_min'].size() > 0) {
+                        emit("In curation");
+                    }
+                    else if (doc.containsKey('mlwh_run_data_mlwh_run_complete_hic_min')
+                        && doc['mlwh_run_data_mlwh_run_complete_hic_min'].size() > 0
+                        && doc.containsKey('mlwh_run_data_mlwh_run_complete_pacbio_min')
+                        && doc['mlwh_run_data_mlwh_run_complete_pacbio_min'].size() > 0) {
+                        emit("Data complete, assembly in progress");
+                    }
+                    else if (doc.containsKey('sts_sample_sts_tollab_assign_date_min')
+                        && doc['sts_sample_sts_tollab_assign_date_min'].size() > 0) {
+                        emit("Species has been released to lab, no complete data yet");
+                    }
+                    else if (doc.containsKey('sts_sample_sts_receive_date_min')
+                        && doc['sts_sample_sts_receive_date_min'].size() > 0) {
+                        emit("Species not released to lab");
+                    }
+                """
+                }
+            },
         },
         'specimen': {
             'calc_coverage_post_run': RuntimeFields.math(
