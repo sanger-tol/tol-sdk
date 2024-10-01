@@ -45,6 +45,7 @@ class MockElasticDataSource(ElasticDataSource):
                 'field5': 'str',
                 'field6': 'int',
                 'field7': 'str',
+                'field8': 'datetime',
                 'datefield': 'datetime'},
             'reltype': {
                 'field3': 'str',
@@ -66,6 +67,10 @@ def mock_elastic_data_source() -> tuple[Callable, ElasticDataSource]:
                 'field7': {
                     'type': 'keyword',
                     'script': 'emit("Hello")'
+                },
+                'field8': {
+                    'type': 'date',
+                    'script': "emit(doc['datefield'].value.toEpochMilli())"
                 }
             }
         }
@@ -515,6 +520,10 @@ class TestElasticDataSource(TestCase):
             'field7': {
                 'eq': {'value': 'haberdashery', 'negate': True}
             },
+            'field8': {
+                'gt': {'value': '2022-01-01'},
+                'lte': {'value': '2023-01-01'}
+            },
             'datefield': {
                 'gt': {'value': '2022-01-01'},
                 'lte': {'value': '2023-01-01'}
@@ -529,12 +538,14 @@ class TestElasticDataSource(TestCase):
                     {'wildcard': {'field4.keyword': {'value': 'abc*', 'boost': 1.0}}},
                     {'terms': {'field5.keyword': ['one', 'two'], 'boost': 1.0}},
                     {'match': {'field6': 5}},
+                    {'range': {'field8': {'gt': '2022-01-01'}}},
+                    {'range': {'field8': {'lte': '2023-01-01'}}},
                     {'range': {'datefield': {'gt': '2022-01-01'}}},
                     {'range': {'datefield': {'lte': '2023-01-01'}}}
                 ],
                 'must_not': [
                     {'exists': {'field': 'field2.keyword'}},
-                    {'match': {'field7.keyword': 'haberdashery'}}
+                    {'match': {'field7': 'haberdashery'}}
                 ],
                 'filter': eds._get_field_comparison_filter(
                     'field1.keyword', 'field2.keyword', 'lt', False

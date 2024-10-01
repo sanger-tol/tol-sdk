@@ -106,7 +106,13 @@ class ElasticDataSource(
         return RelationWriteMode.FUSED
 
     def _initialise_elasticsearch(self):
-        self.es = Elasticsearch(self.uri, http_auth=(self.user, self.password))
+        self.es = Elasticsearch(
+            self.uri,
+            http_auth=(self.user, self.password),
+            timeout=30,
+            max_retries=10,
+            retry_on_timeout=True
+        )
         self.helpers = helpers
 
     def _convert_data_object_to_dict(self, data_object: DataObject) -> Dict:
@@ -346,6 +352,9 @@ class ElasticDataSource(
     def _field_or_keyword(self, object_type: str, name: str):
         if name == 'id':
             return 'uid.keyword'
+        # Runtime fields don't behave the same as text fields
+        if object_type in self.runtime_fields and name in self.runtime_fields[object_type]:
+            return name
         # An attribute of the object
         if name in self.attribute_types[object_type]:
             field_type = self.attribute_types[object_type][name]
