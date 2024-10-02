@@ -242,7 +242,18 @@ def elastic():
                     'sts_sample_same_as',
                     'sts_biospecimen_accession',
                     'sts_sample_symbiont_of'
-                ])
+                ]),
+            'calc_psyche_recollection': {
+                'type': 'keyword',
+                'script': {
+                    'source': """
+                    if (doc.containsKey('')
+                        && doc[''].size() < 3 || doc[''].size() == null) {
+                        emit("Submitted to ENA");
+                    }
+                """
+                }
+            },
         },
         'sampleset': {
             'calc_tat': RuntimeFields.date_interval('sts_submit_date',
