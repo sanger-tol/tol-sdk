@@ -97,6 +97,17 @@ class TestElasticTolidToElasticSampleUpdateConverter(TestCase):
         obj2 = CoreDataObject(
             id_='tolid2',
             type_='tolid',
+            attributes={
+                'requested_taxonomy_id': 'subspecies1'
+            },
+            to_one={
+                'tolid_species': species,
+                'tolid_specimen': specimen
+            }
+        )
+        obj3 = CoreDataObject(
+            id_='tolid3',
+            type_='tolid',
             attributes={}
         )
 
@@ -113,5 +124,17 @@ class TestElasticTolidToElasticSampleUpdateConverter(TestCase):
             next(converteds)
 
         converteds = converter.convert(obj2)
+        id1, attributes1 = next(converteds)
+        self.assertIsNone(id1)
+        self.assertEqual(attributes1, {
+            'tolid_tolid': {'id': 'tolid2'},
+            'sts_species.id': 'subspecies1',
+            'sts_specimen.id': 'specimen1',
+        })
+
+        with self.assertRaises(StopIteration):
+            next(converteds)
+
+        converteds = converter.convert(obj3)
         with self.assertRaises(StopIteration):
             next(converteds)

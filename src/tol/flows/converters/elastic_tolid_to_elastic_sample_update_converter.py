@@ -22,7 +22,10 @@ class ElasticTolidToElasticSampleUpdateConverter(
                 None,
                 {
                     'tolid_tolid': {'id': data_object.id},
-                    'sts_species.id': species.id,
+                    'sts_species.id':
+                        data_object.requested_taxonomy_id
+                        if data_object.requested_taxonomy_id is not None
+                        else species.id,
                     'sts_specimen.id': specimen.id
                 }
             )
