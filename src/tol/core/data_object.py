@@ -100,6 +100,8 @@ class ErrorObject:
     """An optional ID for this error"""
     object_id: str | None = None
     """The `id` of the object that this write concerns, if provided"""
+    object_: DataObject | None = None
+    """The object that this write concerns, if provided"""
     http_code: int | None = None
     """An optional HTTP Status Code for this error"""
 
