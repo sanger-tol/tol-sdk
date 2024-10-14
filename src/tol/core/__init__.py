@@ -14,7 +14,10 @@ from .data_loader import (  # noqa F401
     IdsDataLoader,
     GroupStatterDataLoader
 )
-from .data_object import DataObject  # noqa F401
+from .data_object import (  # noqa F401
+    DataObject,
+    ErrorObject
+)
 from .data_object_converter import (  # noqa F401
     DataObjectToDataObjectOrUpdateConverter,
     DefaultDataObjectToDataObjectConverter

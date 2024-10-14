@@ -11,11 +11,15 @@ from tol.core import (
     DataSourceError,
     core_data_object
 )
-from tol.core.operator import Relational
+from tol.core.operator import DetailGetter, Relational
 from tol.core.relationship import RelationshipConfig
 
 
 class _RelationalDS(DataSource, Relational):
+    """A `DataSource` that implements `Relational`"""
+
+
+class _DetailDS(DataSource, DetailGetter):
     """A `DataSource` that implements `Relational`"""
 
 
@@ -179,6 +183,57 @@ class TestCoreDataObject:
             'friendos'
         )
         assert to_manys == mock_to_manys
+
+    def test_getattr_stub(self):
+        """
+        `CoreDataObject().__getattr__` behaves correctly
+        if created as a stub:
+
+        """
+
+        mock_ds = create_autospec(_DetailDS)
+        type(mock_ds).supported_types = PropertyMock(
+            return_value=['test_type']
+        )
+        type(mock_ds).attribute_types = PropertyMock(
+            return_value={
+                'test_type': {
+                    'an_attr': 'str'
+                }
+            }
+        )
+
+        CoreDataObject = core_data_object(mock_ds)  # noqa N806
+
+        # This should fail with an exception as no ID set
+        with pytest.raises(DataSourceError):
+            obj = CoreDataObject('test_type', stub=True)
+
+        # Set an ID and ensure that it gets real object from database (individual attribute)
+        obj = CoreDataObject('test_type', 'id', stub=True)
+        mock_ds.get_one.return_value = CoreDataObject(
+            'test_type',
+            id_='id',
+            attributes={'an_attr': 'yes'}
+        )
+        assert obj.an_attr == 'yes'
+        mock_ds.get_one.assert_called_once_with(
+            'test_type',
+            'id'
+        )
+        # Set an ID and ensure that it gets real object from database (attributes)
+        mock_ds.get_one.reset_mock()
+        obj = CoreDataObject('test_type', 'id2', stub=True)
+        mock_ds.get_one.return_value = CoreDataObject(
+            'test_type',
+            id_='id2',
+            attributes={'an_attr': 'yes'}
+        )
+        assert obj.attributes['an_attr'] == 'yes'
+        mock_ds.get_one.assert_called_once_with(
+            'test_type',
+            'id2'
+        )
 
     def test_setattr_attributes_and_id(self):
         """

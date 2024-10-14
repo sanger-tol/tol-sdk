@@ -56,6 +56,9 @@ class RelationshipConfig:
             __dict['foreign_keys'] = self.foreign_keys
         return __dict
 
+    def __str__(self) -> str:
+        return str(self.to_dict())
+
 
 class ToManyDict(Mapping):
     """A Dict that loads items lazily and memoizes the result"""

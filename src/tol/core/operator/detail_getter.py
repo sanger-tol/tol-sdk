@@ -12,7 +12,7 @@ if typing.TYPE_CHECKING:
     from ..data_object import DataObject
     from ..session import OperableSession
 
-from more_itertools import chunked
+from more_itertools import chunked, seekable
 
 
 class DetailGetter(ABC):
@@ -65,3 +65,20 @@ class DetailGetter(ABC):
         return list(
             self.get_by_id(object_type, [object_id])
         )[0]
+
+    # A helper method to ensure that the order of the returned objects
+    # matches the order of the input ids
+    def sort_by_id(
+        self,
+        data_objects: Iterable[DataObject],
+        object_ids: Iterable[int | str]
+    ) -> Iterable[DataObject | None]:
+        seekable_objects = seekable(data_objects)
+        for id_ in object_ids:
+            seekable_objects.seek(0)
+            for obj in seekable_objects:
+                if obj.id == id_:
+                    yield obj
+                    break
+            else:
+                yield None

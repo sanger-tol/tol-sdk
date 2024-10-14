@@ -5,8 +5,6 @@
 from functools import cache
 from typing import Callable, Iterable, Optional
 
-from more_itertools import seekable
-
 from .client import BoldApiClient
 from .converter import (
     BoldApiConverter
@@ -142,12 +140,4 @@ class BoldDataSource(
 
         converted_objects, _ = bold_converter.convert_list(bold_response) \
             if bold_response is not None else ([], 0)
-        seekable_objects = seekable(converted_objects)
-        for id_ in object_ids:
-            seekable_objects.seek(0)
-            for obj in seekable_objects:
-                if obj.id == id_:
-                    yield obj
-                    break
-            else:
-                yield None
+        yield from self.sort_by_id(converted_objects, object_ids)

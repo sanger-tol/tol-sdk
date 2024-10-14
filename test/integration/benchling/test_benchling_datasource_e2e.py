@@ -5,6 +5,7 @@
 import datetime
 
 from tol.benchling import BenchlingDataSource
+from tol.core import DataObject, ErrorObject
 from tol.sources.benchling import benchling
 
 from .utils import against_types
@@ -21,75 +22,10 @@ class TestBenchlingDataSourceE2E:
     existence/non-existence.
     """
 
-    @against_types(['tissue'])
-    def test_one(self, object_type: str) -> None:
-        """
-        Inserts a single `DataObject` of specified type,
-        confirms its there, and updates, confirms changes.
-        """
+    can_update = ['tissue', 'tissue_prep']
 
-        benchling_ds = benchling()
-
-        # create the object
-        obj = self.__create_test_object(
-            object_type,
-            benchling_ds,
-            string_value='A'
-        )
-
-        # insert it
-        res = list(
-            benchling_ds.insert(
-                object_type,
-                [obj]
-            )
-        )
-
-        # there can be only one
-        assert len(res) == 1
-
-        # get its new ID
-        id_ = res[0].id
-
-        # update a `str` attribute
-        str_key = self.__find_string_key(
-            object_type,
-            benchling_ds
-        )
-        res = benchling_ds.update(
-            object_type,
-            [
-                (
-                    id_,
-                    {
-                        str_key: 'updated :)'
-                    }
-                )
-            ]
-        )
-
-        assert len(res) == 1
-
-        # assert everything is right (and `str` key is updated)
-        assert res[0].type == object_type
-        assert res[0].id == id_
-        str_val = getattr(res[0], str_key)
-        assert str_val == 'updated :)'
-
-        # get it back
-        new_obj = benchling_ds.get_one(
-            object_type,
-            id_
-        )
-
-        # assert everything is right (and `str` key is updated)
-        assert new_obj.type == object_type
-        assert new_obj.id == id_
-        str_val = getattr(new_obj, str_key)
-        assert str_val == 'updated :)'
-
-    @against_types(['tissue'])
-    def test_many(self, object_type: str) -> None:
+    @against_types(['tissue', 'tissue_prep', 'folder'])
+    def test_many_insert_update_delete(self, object_type: str) -> None:
         """
         Inserts several `DataObject` instances of specified type,
         confirms they are present there, and updates, confirms
@@ -109,7 +45,8 @@ class TestBenchlingDataSourceE2E:
             self.__create_test_object(
                 object_type,
                 benchling_ds,
-                string_value='A' * i
+                string_value='A' * i,
+                str_key=str_key
             )
             for i in range(1, 4)
         ]
@@ -135,19 +72,22 @@ class TestBenchlingDataSourceE2E:
             r.id for r in res
         ]
 
-        # update each `str` attribute
-        benchling_ds.update(
-            object_type,
-            [
-                (
-                    id_,
-                    {
-                        str_key: 'CBA' * i
-                    }
-                )
-                for i, id_ in enumerate(ids, start=2)
-            ]
-        )
+        expected_str_val = 'A'
+        if object_type in self.can_update:
+            expected_str_val = 'CBA'
+            # update each `str` attribute
+            benchling_ds.update(
+                object_type,
+                [
+                    (
+                        id_,
+                        {
+                            str_key: expected_str_val * i
+                        }
+                    )
+                    for i, id_ in enumerate(ids, start=1)
+                ]
+            )
 
         # get them back
         new_objs = list(
@@ -157,25 +97,165 @@ class TestBenchlingDataSourceE2E:
             )
         )
 
-        # assert everything is right (and `str` key is updated)
-        for i, (id_, new_obj) in enumerate(zip(ids, new_objs), start=2):
+        # assert everything is right (and `str` key is updated if allowed)
+        for i, (id_, new_obj) in enumerate(zip(ids, new_objs), start=1):
             assert new_obj.type == object_type
             assert new_obj.id == id_
-
             str_val = getattr(new_obj, str_key)
-            assert str_val == 'CBA' * i
+            assert str_val == expected_str_val * i
+            # Assert that any required relations are filled
+            if object_type in benchling_ds.entities:
+                for att, field_def in benchling_ds.entities[object_type].items():
+                    if isinstance(field_def, dict) and field_def['required'] \
+                            and field_def['benchling_type'] == 'entity_link':
+                        related_object = getattr(new_obj, att)
+                        assert related_object is not None
+                        assert related_object.type == \
+                            benchling_ds.schema_names[field_def['schema_id']]
+                        # Assert that the related object has a string key
+                        # (i.e. has been unstubbed)
+                        related_str_key = self.__find_string_key(
+                            related_object.type,
+                            benchling_ds
+                        )
+                        assert getattr(related_object, related_str_key) is not None
+
+        benchling_ds.delete(object_type, [obj.id for obj in new_objs])
+
+    @against_types(['tissue', 'folder'])
+    def test_many_insert_update_delete_with_errors(self, object_type: str) -> None:
+        """
+        Inserts several `DataObject` instances of specified type,
+        confirms they are present there, and updates, confirms
+        changes.
+        """
+
+        benchling_ds = benchling()
+
+        # get the key of a `str` field
+        str_key = self.__find_string_key(
+            object_type,
+            benchling_ds
+        )
+
+        # create the objects
+        objs = [
+            self.__create_test_object(
+                object_type,
+                benchling_ds,
+                string_value='A' * i,
+                str_key=str_key
+            )
+            for i in range(1, 4)
+        ]
+        # Unset that string key to cause an error in one object
+        objs[1].attributes[str_key] = None
+
+        # insert them
+        res = list(
+            benchling_ds.insert(
+                object_type,
+                objs
+            )
+        )
+
+        # there should be 3
+        assert len(res) == 3
+        assert isinstance(res[0], DataObject)
+        assert isinstance(res[1], ErrorObject)
+        assert isinstance(res[2], DataObject)
+
+        # Test the error message
+        assert 'Invalid field value' in res[1].details \
+            or 'must be of type string' in res[1].details
+
+        benchling_ds.delete(object_type, [res[0].id, res[2].id])
+
+    def test_worklists(self) -> None:
+        """
+        Creates a worklist, adds a tissue to it, and then
+        deletes the worklist.
+        """
+
+        benchling_ds = benchling()
+
+        # create the worklist
+        worklist_to_add = benchling_ds.data_object_factory(
+            'worklist',
+            None,
+            attributes={
+                'name': 'Test Worklist',
+                'worklist_type': 'bioentity'
+            }
+        )
+        # insert it
+        worklists_added = list(
+            benchling_ds.insert(
+                'worklist',
+                [worklist_to_add]
+            )
+        )
+        worklist_added = worklists_added[0]
+        # create the worklist items
+        all_tissues = benchling_ds.get_list('tissue')
+        tissues_to_add = [
+            next(all_tissues)
+            for _ in range(3)
+        ]
+        worklist_items = [
+            benchling_ds.data_object_factory(
+                'worklist_item',
+                None,
+                to_one={
+                    'worklist': worklist_added,
+                    'tissue': tissues_to_add[i]
+                }
+            )
+            for i in range(3)
+        ]
+        # insert them
+        res = list(
+            benchling_ds.insert(
+                'worklist_item',
+                worklist_items
+            )
+        )
+        # there should be 3
+        assert len(res) == 3
+        # We won't test the return values as Benchling doesn't return the worklist
+
+        # Try listing the worklist items via the worklist
+        worklist = benchling_ds.get_one('worklist', worklist_added.id)
+
+        worklist_items = list(worklist.worklist_items)
+        assert len(worklist_items) == 3
+        assert worklist_items[0].tissue.id == tissues_to_add[0].id
+        assert worklist_items[1].tissue.id == tissues_to_add[1].id
+        assert worklist_items[2].tissue.id == tissues_to_add[2].id
+
+        # delete the worklist
+        benchling_ds.delete('worklist', [worklist_added.id])
 
     def __find_string_key(
         self,
         object_type: str,
         benchling_ds: BenchlingDataSource
     ) -> str:
-        """Finds an `attribute` key that is a string"""
+        """This used to be automatic but it would return computed fields.
+        For now, just hard code an appropriate string field"""
+        if object_type == 'tissue':
+            return 'programme_id'
+        if object_type == 'tissue_prep':
+            return 'submission_id'
+        if object_type in ['folder', 'worklist']:
+            return 'name'
 
+        # Else do it the way we did before
         attribute_types = benchling_ds.attribute_types[object_type]
 
         for k, v in attribute_types.items():
-            if v == 'str' and benchling_ds.entities[object_type][k]['required']:
+            if benchling_ds.entities[object_type][k]['benchling_type'] == 'text' \
+                    and benchling_ds.entities[object_type][k]['required']:
                 return k
 
         raise Exception('no `str` key was found.')
@@ -185,29 +265,43 @@ class TestBenchlingDataSourceE2E:
         object_type: str,
         benchling_ds: BenchlingDataSource,
         string_value: str = 'test',
+        str_key: str = None,
         int_value: int = 1,
         float_value: float = 1.0,
         datetime_value: datetime.datetime = datetime.datetime(2021, 1, 1)
     ) -> str:
         """Creates test data for an example object"""
         atts = {}
-        for att in benchling_ds.attribute_types[object_type]:
-            # Easy way to avoid computed fields
-            if not benchling_ds.entities[object_type][att]['required']:
-                continue
-            if benchling_ds.entities[object_type][att]['benchling_type'] == 'text':
-                atts[att] = string_value
-            if benchling_ds.entities[object_type][att]['benchling_type'] == 'integer':
-                atts[att] = int_value
-            if benchling_ds.entities[object_type][att]['benchling_type'] == 'float':
-                atts[att] = float_value
-            if benchling_ds.entities[object_type][att]['benchling_type'] == 'date':
-                atts[att] = datetime_value
-            if benchling_ds.entities[object_type][att]['benchling_type'] == 'dropdown':
-                attribute_values = benchling_ds.get_attribute_value_options(object_type, att)
-                atts[att] = next(iter(attribute_values.values()))
+        to_ones = {}
+        for att, att_type in benchling_ds.attribute_types[object_type].items():
+            if object_type in benchling_ds.entities:
+                field_def = benchling_ds.entities[object_type][att]
+                # Easy way to avoid computed fields
+                if not field_def['required']:
+                    continue
+                if field_def['benchling_type'] == 'dropdown':
+                    attribute_values = benchling_ds.get_attribute_value_options(object_type, att)
+                    atts[att] = next(iter(attribute_values.values()))
+            if att not in atts:
+                if att_type == 'str':
+                    atts[att] = string_value
+                if att_type == 'int':
+                    atts[att] = int_value
+                if att_type == 'float':
+                    atts[att] = float_value
+                if att_type == 'datetime':
+                    atts[att] = datetime_value
+        if object_type in benchling_ds.relationship_config and \
+                benchling_ds.relationship_config[object_type].to_one is not None:
+            for rel, rel_type in benchling_ds.relationship_config[object_type].to_one.items():
+                example_object = next(benchling_ds.get_list(rel_type))
+                to_ones[rel] = example_object
+        # Explicitly set the string key
+        if str_key is not None:
+            atts[str_key] = string_value
         return benchling_ds.data_object_factory(
             object_type,
             None,
-            attributes=atts
+            attributes=atts,
+            to_one=to_ones
         )

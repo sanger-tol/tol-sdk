@@ -7,7 +7,13 @@ from unittest import (
     mock
 )
 
+from benchling_sdk.errors import BenchlingError
+
 from tol.benchling import BenchlingDataSource
+from tol.benchling.benchling_converter import (
+    BenchlingCustomEntity,
+    BenchlingWorklist
+)
 from tol.core import DataObject, core_data_object
 from tol.core.data_object import ErrorObject
 
@@ -24,13 +30,34 @@ class MockBenchlingDataSource(BenchlingDataSource):
                     'name': 'Test Field',
                     'type': 'str',
                     'benchling_type': 'text',
-                    'required': True
+                    'required': True,
+                    'is_multi': False
                 },
                 'field_name2': {
                     'name': 'Test Field 2',
                     'type': 'int',
                     'benchling_type': 'integer',
-                    'required': True
+                    'required': True,
+                    'is_multi': False
+                }
+            },
+            'test_child_type': {
+                '__id__': 'ts_ANOTHER',
+                'parent': {
+                    'name': 'Parent',
+                    'type': 'str',
+                    'benchling_type': 'entity_link',
+                    'schema_id': 'ts_DONTCARE',
+                    'required': True,
+                    'is_multi': False
+
+                },
+                'name': {
+                    'name': 'Name',
+                    'type': 'str',
+                    'benchling_type': 'text',
+                    'required': True,
+                    'is_multi': False
                 }
             }
         }
@@ -56,12 +83,76 @@ class TestBenchlingDataSource(TestCase):
             'test_entity_type': {
                 'field_name': 'str',
                 'field_name2': 'int'
+            },
+            'test_child_type': {
+                'name': 'str'
+            },
+            'folder': {
+                'name': 'str'
+            },
+            'worklist': {
+                'name': 'str',
+                'worklist_type': 'str'
+            },
+            'worklist_item': {
+                'name': 'str'
             }
         }
         self.assertEqual(expected, bds.attribute_types)
-        self.assertEqual(['test_entity_type'], bds.supported_types)
+        self.assertEqual(
+            ['test_entity_type', 'test_child_type', 'folder',
+             'worklist', 'worklist_item'],
+            bds.supported_types
+        )
 
-    def test_update(self):
+    def test_relationship_config(self):
+        _, bds = mock_benchling_data_source()
+        rc = bds.relationship_config
+        self.assertEqual({'parent': 'test_entity_type'}, rc['test_child_type'].to_one)
+
+    def test_get_by_id_custom_entity(self):
+        _, bds = mock_benchling_data_source()
+        obj = mock.create_autospec(BenchlingCustomEntity, spec_set=True)
+        obj.schema.name = 'test_entity_type'
+        obj.id = '123'
+        bds.benchling_interface.custom_entities.list.return_value = [[obj]]
+        res = list(bds.get_by_ids('test_entity_type', ['123']))
+        self.assertEqual(1, len(res))
+        self.assertEqual('123', res[0].id)
+
+    def test_get_by_id_worklist(self):
+        _, bds = mock_benchling_data_source()
+        obj = mock.create_autospec(BenchlingWorklist, spec_set=True)
+        obj.id = '123'
+        obj.name = 'Worklist 1'
+        bds.benchling_interface.v2.beta.worklists.list.return_value = [[obj]]
+        res = list(bds.get_by_ids('worklist', ['123']))
+        self.assertEqual(1, len(res))
+        self.assertEqual('123', res[0].id)
+        self.assertEqual('Worklist 1', res[0].name)
+
+    def test_get_list_custom_entity(self):
+        _, bds = mock_benchling_data_source()
+        obj = mock.create_autospec(BenchlingCustomEntity, spec_set=True)
+        obj.schema.name = 'test_entity_type'
+        obj.id = '123'
+        bds.benchling_interface.custom_entities.list.return_value = [[obj]]
+        res = list(bds.get_list('test_entity_type'))
+        self.assertEqual(1, len(res))
+        self.assertEqual('123', res[0].id)
+
+    def test_get_list_worklist(self):
+        _, bds = mock_benchling_data_source()
+        obj = mock.create_autospec(BenchlingWorklist, spec_set=True)
+        obj.id = '123'
+        obj.name = 'Worklist 1'
+        bds.benchling_interface.v2.beta.worklists.list.return_value = [[obj]]
+        res = list(bds.get_list('worklist'))
+        self.assertEqual(1, len(res))
+        self.assertEqual('123', res[0].id)
+        self.assertEqual('Worklist 1', res[0].name)
+
+    def test_update_error(self):
         _, bds = mock_benchling_data_source()
 
         update1 = {'field_name': 'value1',
@@ -73,6 +164,15 @@ class TestBenchlingDataSource(TestCase):
         status = mock.MagicMock()
         status.status = 'FAILED'
         bds.benchling_interface.tasks.wait_for_task.return_value = status
+        # Error from trying singly
+        bds.benchling_interface.custom_entities.update.side_effect = BenchlingError(
+            status_code=400,
+            headers={},
+            json={'error': {'message': 'Boom'}},
+            content='',
+            parsed=''
+        )
+
         res = bds.update('test_entity_type', updates)
 
         # properly formatted `ErrorObject` instances are returned
@@ -81,10 +181,11 @@ class TestBenchlingDataSource(TestCase):
             assert isinstance(obj, ErrorObject)
             assert obj.object_type == 'test_entity_type'
 
-        # once for the page of 2, plus once _each_ for both individually ( = 3)
-        self.assertEqual(bds.benchling_interface.custom_entities.bulk_update.call_count, 3)
+        # once for the page of 2, plus 2 single calls
+        self.assertEqual(bds.benchling_interface.custom_entities.bulk_update.call_count, 1)
+        self.assertEqual(bds.benchling_interface.custom_entities.update.call_count, 2)
 
-    def test_insert(self):
+    def test_insert_error(self):
         _, bds = mock_benchling_data_source()
 
         inserts = [
@@ -95,6 +196,13 @@ class TestBenchlingDataSource(TestCase):
         status = mock.MagicMock()
         status.status = 'FAILED'
         bds.benchling_interface.tasks.wait_for_task.return_value = status
+        bds.benchling_interface.custom_entities.create.side_effect = BenchlingError(
+            status_code=400,
+            headers={},
+            json={'error': {'message': 'Boom'}},
+            content='',
+            parsed=''
+        )
         res = bds.insert('test_entity_type', inserts)
 
         # properly formatted `ErrorObject` instances are returned
@@ -103,8 +211,9 @@ class TestBenchlingDataSource(TestCase):
             assert isinstance(obj, ErrorObject)
             assert obj.object_type == 'test_entity_type'
 
-        # once for the page of 2, plus once _each_ for both individually ( = 3)
-        self.assertEqual(bds.benchling_interface.custom_entities.bulk_create.call_count, 3)
+        # once for the page of 2, plus 2 single calls
+        self.assertEqual(bds.benchling_interface.custom_entities.bulk_create.call_count, 1)
+        self.assertEqual(bds.benchling_interface.custom_entities.create.call_count, 2)
 
     def __mock_obj(self) -> DataObject:
         obj = mock.create_autospec(DataObject, spec_set=True)

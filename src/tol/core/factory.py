@@ -134,14 +134,17 @@ def core_data_object(
             id_: Optional[str] = None,
             attributes: DataDict | None = None,
             to_one: ToOne | None = None,
-            to_many: ToMany | None = None
+            to_many: ToMany | None = None,
+            stub: bool = False
         ):
 
             self.__id = id_
             self.__type = type_
             self.__attributes = attributes if attributes is not None else {}
             self.__to_one_objects = to_one if to_one is not None else {}
-
+            if stub and id_ is None:
+                raise DataSourceError('ID must be set if stub is True')
+            self.__stub_value = stub
             if self.__relational:
                 self.__to_one_relations = one_dict_factory(self)
                 self.__to_many_relations = many_dict_factory(self)
@@ -160,9 +163,11 @@ def core_data_object(
             return f'CoreDataObject({dump})'
 
         def __getattribute__(self, __name: str) -> Any:
-
             if _local_name(__name):
                 return object.__getattribute__(self, __name)
+
+            if self.__stub_value:
+                self.__unstub()
 
             if __name in self.__to_one_names:
                 if __name in self._to_one_objects:
@@ -188,6 +193,13 @@ def core_data_object(
             else:
                 self.__attributes[__name] = __value
 
+        def __unstub(self) -> None:
+            self.__stub_value = False
+            # Actually get this object from the datasource
+            object_from_datasource = self._host.get_one(self.type, self.id)
+            self.__attributes = object_from_datasource.attributes
+            self.__to_one_objects = object_from_datasource.to_one_objects
+
         @property
         def type(self) -> str:  # noqa
             return self.__type
@@ -202,6 +214,8 @@ def core_data_object(
 
         @property
         def attributes(self) -> Dict[str, Any]:
+            if self.__stub_value:
+                self.__unstub()
             return self.__attributes
 
         @property
@@ -259,7 +273,8 @@ def core_data_object(
         id_: Optional[str] = None,
         attributes: Dict[str, Any] | None = None,
         to_one: ToOne | None = None,
-        to_many: ToMany | None = None
+        to_many: ToMany | None = None,
+        stub: bool = False  # Set stub if only type and id are given on creation
     ) -> DataObject:
 
         return CoreDataObject(
@@ -267,7 +282,8 @@ def core_data_object(
             id_=id_,
             attributes=attributes,
             to_one=to_one,
-            to_many=to_many
+            to_many=to_many,
+            stub=stub
         )
 
     for ds in data_sources:
