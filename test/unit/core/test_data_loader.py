@@ -14,6 +14,7 @@ from tol.core import (
     DefaultDataObjectToDataObjectConverter,
     GroupStatterDataLoader,
     IdsDataLoader,
+    ObjectsDataLoader,
     core_data_object
 )
 from tol.core.operator import (
@@ -44,8 +45,9 @@ class TestDataObjectToDataObjectConverter(DataObjectToDataObjectOrUpdateConverte
 class _MockDataSource(DataSource, Statter, ListGetter, Upserter):
     def __init__(self, config: Dict):
         super().__init__(config)
+        self.exhausted = False
 
-    def get_list(self, object_type: str, object_filters: DataSourceFilter):
+    def get_list(self, object_type: str, object_filters: DataSourceFilter = None):
         if object_filters is not None:
             mock_objects = [{'id': 'test', 'attribute': 'att1'}]
         else:
@@ -157,9 +159,16 @@ class _MockDataSource(DataSource, Statter, ListGetter, Upserter):
             ]
         yield from mock_objects
 
+    def __record_exhaustion(self, objects):
+        yield from objects
+        self.exhausted = True
+
     def upsert(self, object_type, objects, field_prefix=None):
-        self.upserted = objects
+        objects_to_upsert = list(objects)
+        # This is what we test with - make it it's own generator
+        self.upserted = (obj for obj in objects_to_upsert)
         self.upserted_object_type = object_type
+        return self.__record_exhaustion(objects_to_upsert)
 
     @property
     def supported_types(self):
@@ -188,7 +197,12 @@ class TestDataLoader(TestCase):
             loader_name='test_loader'
         )
 
-        loader.load()
+        upserted_objects = loader.load(auto_exhaust=False)
+        # Test that the upserted objects have not been iterated through automatically
+        assert not destination.exhausted
+        for _ in upserted_objects:
+            pass
+        assert destination.exhausted
 
         obj1 = next(destination.upserted)
         self.assertEqual('test', obj1.id)
@@ -233,6 +247,8 @@ class TestDataLoader(TestCase):
         )
 
         loader.load()
+        # Test that the upserted objects have been iterated through automatically
+        assert destination.exhausted
 
         obj1 = next(destination.upserted)
         self.assertEqual('test_test', obj1.id)
@@ -272,6 +288,47 @@ class TestDataLoader(TestCase):
             dependencies=[],
             loader_name='test_loader',
             object_ids=['test', 'test2'],
+            convert_class=DefaultDataObjectToDataObjectConverter
+        )
+
+        loader.load()
+
+        obj1 = next(destination.upserted)
+        self.assertEqual('test', obj1.id)
+        self.assertEqual('destination_type', obj1.type)
+        self.assertEqual('att1', obj1.attribute)
+
+        obj2 = next(destination.upserted)
+        self.assertEqual('test2', obj2.id)
+        self.assertEqual('destination_type', obj2.type)
+        self.assertEqual('att2', obj2.attribute)
+
+        with self.assertRaises(StopIteration):
+            next(destination.upserted)
+
+        for obj in audit.upserted:
+            self.assertEqual('test_loader', obj.id)
+            self.assertEqual('data_load_event', obj.type)
+            self.assertEqual('source_type', obj.source_object_type)
+            self.assertEqual('destination_type', obj.destination_object_type)
+
+    def test_load_objects_and_convert(self):
+        source = _MockDataSource(config={})
+        destination = _MockDataSource(config={})
+        audit = _MockDataSource(config={})
+        core_data_object(source)
+        core_data_object(destination)
+        core_data_object(audit)
+
+        loader = ObjectsDataLoader(
+            source=None,
+            destination=destination,
+            audit=audit,
+            source_object_type='source_type',
+            destination_object_type='destination_type',
+            dependencies=[],
+            loader_name='test_loader',
+            objects=source.get_list('source_type'),
             convert_class=DefaultDataObjectToDataObjectConverter
         )
 

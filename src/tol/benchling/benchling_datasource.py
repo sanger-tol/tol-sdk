@@ -202,20 +202,14 @@ class BenchlingDataSource(
     ) -> list[DataObject | ErrorObject]:
 
         converter = self.__dc_factory()
-        converted_updates = (
-            converter.convert_update(
-                object_type,
-                update
-            )
-            for update in updates
-        )
         back_converter = self.__bc_factory()
 
         benchling_package = self.__get_benchling_package(object_type)
         if object_type not in NATIVE_OBJECT_TYPES:
             return self.__do_bulk_method(
                 object_type,
-                converted_updates,
+                updates,
+                converter,
                 back_converter,
                 benchling_package.bulk_update,
                 benchling_package.update
@@ -224,11 +218,12 @@ class BenchlingDataSource(
             return [
                 self.__do_single_method(
                     object_type,
-                    converted_update,
+                    update,
+                    converter,
                     back_converter,
                     benchling_package.update
                 )
-                for converted_update in converted_updates
+                for update in updates
             ]
 
     def get_by_id(
@@ -338,7 +333,8 @@ class BenchlingDataSource(
             # Do bulk inserts of custom entities
             return self.__do_bulk_method(
                 object_type,
-                converter.convert_iterable(objects),
+                objects,
+                converter,
                 back_converter,
                 benchling_package.bulk_create,
                 benchling_package.create,
@@ -348,7 +344,8 @@ class BenchlingDataSource(
             return [
                 self.__do_single_method(
                     object_type,
-                    converter.convert(obj),
+                    obj,
+                    converter,
                     back_converter,
                     benchling_package.create
                 )
@@ -377,13 +374,15 @@ class BenchlingDataSource(
                 yield ErrorObject(
                     error.json['error']['message'],
                     'worklist_item',
-                    http_code=error.status_code
+                    http_code=error.status_code,
+                    object_=obj
                 )
 
     def __do_single_method(
         self,
         object_type: str,
         obj: DataObject,
+        converter: DataObjectConverter,
         back_converter: BenchlingConverter,
         method: Callable[[BenchlingWrite], AsyncTaskLink]
     ) -> DataObject | ErrorObject:
@@ -391,19 +390,28 @@ class BenchlingDataSource(
         Single object method
         """
         try:
-            ret = method(obj)
+            if isinstance(obj, DataObject):
+                converted_object = converter.convert(obj)
+            else:
+                converted_object = converter.convert_update(
+                    object_type,
+                    obj
+                )
+            ret = method(converted_object)
             return back_converter.convert(ret)
         except BenchlingError as error:
             return ErrorObject(
                 error.json['error']['message'],
                 object_type,
-                http_code=error.status_code
+                http_code=error.status_code,
+                object_=obj
             )
 
     def __do_bulk_method(
         self,
         object_type: str,
         objects: Iterable[DataObject],
+        converter: DataObjectConverter,
         back_converter: BenchlingConverter,
         bulk_method: Callable[[Iterable[BenchlingWrite]], AsyncTaskLink] = None,
         single_method: Callable[[Iterable[BenchlingWrite]], AsyncTaskLink] = None
@@ -419,6 +427,7 @@ class BenchlingDataSource(
             self.__do_bulk_method_on_page(
                 object_type,
                 list(page),
+                converter,
                 back_converter,
                 bulk_method,
                 single_method
@@ -433,7 +442,8 @@ class BenchlingDataSource(
     def __do_bulk_method_on_page(
         self,
         object_type: str,
-        page: list[BenchlingWrite],
+        page: list[DataObject],
+        converter,
         back_converter: BenchlingConverter,
         bulk_method: Callable[[Iterable[BenchlingWrite]], AsyncTaskLink],
         single_method: Callable[[Iterable[BenchlingWrite]], AsyncTaskLink],
@@ -446,8 +456,18 @@ class BenchlingDataSource(
         individually.
         """
 
+        if isinstance(page[0], DataObject):
+            converted_objects = converter.convert_iterable(page)
+        else:
+            converted_objects = (
+                converter.convert_update(
+                    object_type,
+                    obj
+                )
+                for obj in page
+            )
         task = self.__wait_for_task(
-            page,
+            converted_objects,
             bulk_method
         )
 
@@ -456,6 +476,7 @@ class BenchlingDataSource(
                 return self.__retry_bulk_methods_on_singletons(
                     object_type,
                     page,
+                    converter,
                     back_converter,
                     single_method
                 )
@@ -464,8 +485,10 @@ class BenchlingDataSource(
                     ErrorObject(
                         task.errors.to_dict(),
                         object_type,
-                        http_code=400
+                        http_code=400,
+                        object_=obj
                     )
+                    for obj in page
                 ]
         return back_converter.convert_return_entites(
             task.response.additional_properties['customEntities']
@@ -474,7 +497,8 @@ class BenchlingDataSource(
     def __retry_bulk_methods_on_singletons(
         self,
         object_type: str,
-        page: list[BenchlingWrite],
+        page: list[DataObject],
+        converter: DataObjectConverter,
         back_converter: BenchlingConverter,
         single_method: Callable[[Iterable[BenchlingWrite]], AsyncTaskLink],
     ) -> list[DataObject | ErrorObject]:
@@ -486,6 +510,7 @@ class BenchlingDataSource(
             yield self.__do_single_method(
                 object_type,
                 obj,
+                converter,
                 back_converter,
                 single_method
             )

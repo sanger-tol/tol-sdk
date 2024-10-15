@@ -163,6 +163,7 @@ class TestBenchlingDataSourceE2E:
         assert len(res) == 3
         assert isinstance(res[0], DataObject)
         assert isinstance(res[1], ErrorObject)
+        assert res[1].object_ is objs[1]
         assert isinstance(res[2], DataObject)
 
         # Test the error message

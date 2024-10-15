@@ -51,7 +51,8 @@ class DefaultDataLoader():
             field_prefix: str = None,
             dry_run: bool = False,
             candidate_key: Optional[List[str]] = ['id'],
-            batch_size: int = 0):
+            batch_size: int = 0,
+            auto_exhaust: bool = True):
         if not dry_run:
             self._record_time('start')
 
@@ -63,7 +64,7 @@ class DefaultDataLoader():
         if candidate_key == ['id']:
             if not dry_run:
                 for batch in batches:
-                    self._destination.upsert(
+                    returned_objects = self._destination.upsert(
                         self._destination_object_type,
                         objects=batch,
                         field_prefix=field_prefix
@@ -74,7 +75,7 @@ class DefaultDataLoader():
         else:
             if not dry_run:
                 for batch in batches:
-                    self._destination.update(
+                    returned_objects = self._destination.update(
                         object_type=self._destination_object_type,
                         updates=batch,
                         candidate_key=candidate_key,
@@ -86,6 +87,11 @@ class DefaultDataLoader():
 
         if not dry_run:
             self._record_time('end')
+        if returned_objects is not None and auto_exhaust:
+            # Exhaust the returned objects
+            for obj in returned_objects:
+                pass
+        return returned_objects
 
     def _get_source_objects(self) -> Iterable:
         source_objs = self._source.get_list(
@@ -230,3 +236,23 @@ class IdsDataLoader(DefaultDataLoader):
             self._source_object_type,
             self._object_ids)
         return source_objs
+
+
+class ObjectsDataLoader(DefaultDataLoader):
+    def __init__(self, source: DataSource, destination: DataSource,
+                 dependencies: List[Type['DataLoader']],
+                 source_object_type: str, destination_object_type: str,
+                 loader_name: str,
+                 audit: Optional[DataSource] = None,
+                 convert_class: Optional[DataObjectToDataObjectOrUpdateConverter] = None,
+                 objects: Optional[Iterable[DataObject]] = None):
+        super().__init__(
+            source=source, destination=destination,
+            dependencies=dependencies, source_object_type=source_object_type,
+            destination_object_type=destination_object_type,
+            loader_name=loader_name, audit=audit,
+            convert_class=convert_class)
+        self._objects = objects
+
+    def _get_source_objects(self) -> Iterable:
+        return self._objects

@@ -11,8 +11,9 @@ from .datasource_filter import DataSourceFilter  # noqa F401
 from .data_loader import (  # noqa F401
     DataLoader,
     DefaultDataLoader,
+    GroupStatterDataLoader,
     IdsDataLoader,
-    GroupStatterDataLoader
+    ObjectsDataLoader
 )
 from .data_object import (  # noqa F401
     DataObject,

@@ -318,7 +318,8 @@ class DataObjectConverter(Converter[DataObject, BenchlingWrite]):
         object_type: str,
         update: DataSourceUpdate
     ) -> BenchlingObjectUpdate:
-
+        # This function needs some work to handle objects other than custom_entities.
+        # It would be better if we could just use convert() for updates as well.
         update_id, update_dict = update
         if object_type in self.__ds.entities.keys():
             entity_fields = self.__convert_entity_fields(
