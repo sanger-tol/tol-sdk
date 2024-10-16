@@ -52,6 +52,7 @@ class DefaultDataLoader():
             dry_run: bool = False,
             candidate_key: Optional[List[str]] = ['id'],
             batch_size: int = 0,
+            method: str = 'upsert',
             auto_exhaust: bool = True):
         if not dry_run:
             self._record_time('start')
@@ -63,8 +64,9 @@ class DefaultDataLoader():
             batches = chunked(converted_objs, batch_size)
         if candidate_key == ['id']:
             if not dry_run:
+                insert_method = getattr(self._destination, method)
                 for batch in batches:
-                    returned_objects = self._destination.upsert(
+                    returned_objects = insert_method(
                         self._destination_object_type,
                         objects=batch,
                         field_prefix=field_prefix
@@ -87,11 +89,11 @@ class DefaultDataLoader():
 
         if not dry_run:
             self._record_time('end')
-        if returned_objects is not None and auto_exhaust:
-            # Exhaust the returned objects
-            for obj in returned_objects:
-                pass
-        return returned_objects
+            if returned_objects is not None and auto_exhaust:
+                # Exhaust the returned objects
+                for _ in returned_objects:
+                    pass
+            return returned_objects
 
     def _get_source_objects(self) -> Iterable:
         source_objs = self._source.get_list(

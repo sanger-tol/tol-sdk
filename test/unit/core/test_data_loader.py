@@ -170,6 +170,13 @@ class _MockDataSource(DataSource, Statter, ListGetter, Upserter):
         self.upserted_object_type = object_type
         return self.__record_exhaustion(objects_to_upsert)
 
+    def insert(self, object_type, objects, field_prefix=None):
+        objects_to_insert = list(objects)
+        # This is what we test with - make it it's own generator
+        self.inserted = (obj for obj in objects_to_insert)
+        self.inserted_object_type = object_type
+        return self.__record_exhaustion(objects_to_insert)
+
     @property
     def supported_types(self):
         return [
@@ -436,3 +443,41 @@ class TestDataLoader(TestCase):
 
         with self.assertRaises(StopIteration):
             next(destination.upserted)
+
+    def test_load_insert_method(self):
+        source = _MockDataSource(config={})
+        destination = _MockDataSource(config={})
+        audit = _MockDataSource(config={})
+        core_data_object(source, destination, audit)
+
+        loader = DefaultDataLoader(
+            source=source,
+            destination=destination,
+            audit=audit,
+            source_object_type='source_type',
+            destination_object_type='destination_type',
+            dependencies=[],
+            convert_class=DefaultDataObjectToDataObjectConverter,
+            loader_name='test_loader'
+        )
+
+        loader.load(method='insert')
+
+        obj1 = next(destination.inserted)
+        self.assertEqual('test', obj1.id)
+        self.assertEqual('destination_type', obj1.type)
+        self.assertEqual('att1', obj1.attribute)
+
+        obj2 = next(destination.inserted)
+        self.assertEqual('test2', obj2.id)
+        self.assertEqual('destination_type', obj2.type)
+        self.assertEqual('att2', obj2.attribute)
+
+        with self.assertRaises(StopIteration):
+            next(destination.inserted)
+
+        for obj in audit.upserted:
+            self.assertEqual('test_loader', obj.id)
+            self.assertEqual('data_load_event', obj.type)
+            self.assertEqual('source_type', obj.source_object_type)
+            self.assertEqual('destination_type', obj.destination_object_type)

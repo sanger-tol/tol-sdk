@@ -15,6 +15,8 @@ class ElasticSampleToBenchlingTissueUpdateConverter(
         DataObjectToDataObjectOrUpdateConverter):
 
     def _convert_one(self, data_object: DataObject) -> DataObjectUpdate:
+        if data_object is None:
+            return
         species = data_object.to_one_relationships['sts_species']
         specimen = data_object.to_one_relationships['sts_specimen']
 

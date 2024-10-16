@@ -317,6 +317,7 @@ class BenchlingDataSource(
         object_type: str,
         objects: Iterable[DataObject],
         session=None,
+        **kwargs
     ) -> list[DataObject | ErrorObject]:
 
         converter = self.__dc_factory()
