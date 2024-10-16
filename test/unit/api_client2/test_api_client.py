@@ -398,3 +398,29 @@ class TestJsonApiClient:
         observed = client.config_relationships()
 
         assert observed == expected
+
+    @responses.activate
+    def test_get_session(self):
+        """
+        Fails 3 times, then succeeds
+        """
+        client = JsonApiClient(FAKE_API_URL, token='')
+
+        for i in range(3):
+            responses.add(
+                responses.GET,
+                f'{FAKE_API_URL}/data/test/hype',
+                json={'error': 'Temporary failure'},
+                status=500
+            )
+
+        responses.add(
+            responses.GET,
+            f'{FAKE_API_URL}/data/test/hype',
+            json={'success': True},
+            status=200
+        )
+
+        response = client.get_detail('test', 'hype')
+
+        assert response == {'success': True}

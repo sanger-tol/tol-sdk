@@ -5,6 +5,7 @@
 from typing import Any, Optional
 
 import requests
+from requests.adapters import HTTPAdapter, Retry
 
 from .converter import JsonApiTransfer, JsonRelationshipConfig
 from ..core.datasource_error import DataSourceError
@@ -135,7 +136,8 @@ class JsonApiClient:
         """
         url = self.__detail_url(object_type, object_id)
         headers = self.__merge_headers()
-        r = requests.delete(url, headers=headers)
+        session = self.__get_session()
+        r = session.delete(url, headers=headers)
         self.__assert_no_error(r)
 
     def upsert(
@@ -259,8 +261,9 @@ class JsonApiClient:
         return self.__fetch_config(url)
 
     def __fetch_config(self, url: str) -> Any:
+        session = self.__get_session()
         headers = self.__merge_headers()
-        r = requests.get(url, headers=headers)
+        r = session.get(url, headers=headers)
         self.__assert_no_error(r)
         return r.json()
 
@@ -271,7 +274,8 @@ class JsonApiClient:
         headers: Optional[dict[str, str]] = None
     ) -> Optional[JsonApiTransfer]:
 
-        r = requests.get(url, params=params, headers=headers)
+        session = self.__get_session()
+        r = session.get(url, params=params, headers=headers)
         if r.status_code == 404:
             return None
         self.__assert_no_error(r)
@@ -303,7 +307,8 @@ class JsonApiClient:
         headers: Optional[dict[str, str]] = None
     ) -> JsonApiTransfer:
 
-        r = requests.get(url, params=params, headers=headers)
+        session = self.__get_session()
+        r = session.get(url, params=params, headers=headers)
         self.__assert_no_error(r)
         return r.json()
 
@@ -315,7 +320,8 @@ class JsonApiClient:
         headers: Optional[dict[str, str]] = None
     ) -> JsonApiTransfer:
 
-        r = requests.post(
+        session = self.__get_session()
+        r = session.post(
             url,
             json=body,
             params=params,
@@ -423,3 +429,20 @@ class JsonApiClient:
             **__empty_if_none(headers),
             **__empty_if_none(self.__token)
         }
+
+    def __get_session(self) -> requests.Session:
+        """
+        Attempts a call to the endpoint 5 times, with a delay of 1 second
+        """
+
+        retry_strategy = Retry(
+            total=5,
+            backoff_factor=1,
+            status_forcelist=[429, 500, 502, 503, 504]
+        )
+
+        session = requests.Session()
+        session.mount('http://', HTTPAdapter(max_retries=retry_strategy))
+        session.mount('https://', HTTPAdapter(max_retries=retry_strategy))
+
+        return session
