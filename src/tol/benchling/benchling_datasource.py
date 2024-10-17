@@ -282,6 +282,9 @@ class BenchlingDataSource(
             kwargs = {}
         if object_type not in NATIVE_OBJECT_TYPES:
             kwargs['schema_id'] = self.schema_ids[object_type]
+        # Limit folder searching to the project set a top level
+        if object_type == 'folder':
+            kwargs['project_id'] = self.project_id
 
         back_converter = self.__bc_factory()
         try:
@@ -473,24 +476,13 @@ class BenchlingDataSource(
         )
 
         if task.status == 'FAILED':
-            if len(page) > 1:
-                return self.__retry_bulk_methods_on_singletons(
-                    object_type,
-                    page,
-                    converter,
-                    back_converter,
-                    single_method
-                )
-            else:
-                return [
-                    ErrorObject(
-                        task.errors.to_dict(),
-                        object_type,
-                        http_code=400,
-                        object_=obj
-                    )
-                    for obj in page
-                ]
+            return self.__retry_bulk_methods_on_singletons(
+                object_type,
+                page,
+                converter,
+                back_converter,
+                single_method
+            )
         return back_converter.convert_return_entites(
             task.response.additional_properties['customEntities']
         )
