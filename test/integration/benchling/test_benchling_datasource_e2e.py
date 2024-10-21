@@ -170,6 +170,30 @@ class TestBenchlingDataSourceE2E:
         assert 'Invalid field value' in res[1].details \
             or 'must be of type string' in res[1].details
 
+        # Update the first object with something invalid
+        if object_type in self.can_update:
+            res2 = list(benchling_ds.update(
+                object_type,
+                [
+                    (
+                        res[0].id,
+                        {
+                            str_key: None
+                        }
+                    )
+                ]
+            ))
+            assert len(res2) == 1
+            assert isinstance(res2[0], ErrorObject)
+
+            # Get the object back
+            new_obj = benchling_ds.get_one(
+                object_type,
+                res[0].id
+            )
+            # Assert that the string key has not been updated
+            assert getattr(new_obj, str_key) == 'A'
+
         benchling_ds.delete(object_type, [res[0].id, res[2].id])
 
     def test_worklists(self) -> None:

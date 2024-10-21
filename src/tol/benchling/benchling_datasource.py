@@ -396,12 +396,14 @@ class BenchlingDataSource(
         try:
             if isinstance(obj, DataObject):
                 converted_object = converter.convert(obj)
+                ret = method(converted_object)
             else:
                 converted_object = converter.convert_update(
                     object_type,
                     obj
                 )
-            ret = method(converted_object)
+                # Need to pass in IDs for updates
+                ret = method(converted_object.id, converted_object)
             return back_converter.convert(ret)
         except BenchlingError as error:
             return ErrorObject(
