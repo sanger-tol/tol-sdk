@@ -232,12 +232,15 @@ class BenchlingDataSource(
         object_ids: Iterable[str],
         session=None
     ) -> Iterable[DataObject | ErrorObject | None]:
-
         back_converter = self.__bc_factory()
         benchling_package = self.__get_benchling_package(object_type)
         try:
+            kwargs = {}
+            if object_type not in NATIVE_OBJECT_TYPES:
+                kwargs['schema_id'] = self.schema_ids[object_type]
             benchling_objects_page = benchling_package.list(
-                ids=object_ids
+                ids=object_ids,
+                **kwargs
             )
             for benchling_objects in benchling_objects_page:
                 yield from self.sort_by_id(
@@ -584,6 +587,11 @@ class BenchlingDataSource(
 
         benchling_package = self.__get_benchling_package(object_type)
         try:
+            if object_type not in NATIVE_OBJECT_TYPES:
+                return benchling_package.get_by_id(
+                    object_id,
+                    schema_id=self.schema_ids[object_type]
+                )
             return benchling_package.get_by_id(
                 object_id
             )
@@ -635,7 +643,7 @@ class BenchlingDataSource(
             'worklist_item': RelationshipConfig(
                 to_one={
                     'worklist': 'worklist',
-                    'tissue': 'tissue'
+                    'item': list(self.entities.keys())
                 }
             )
         } | {

@@ -34,7 +34,7 @@ class RelationshipConfig:
     """
 
     to_one: Optional[Dict[str, str]] = None
-    to_many: Optional[Dict[str, str]] = None
+    to_many: Optional[Dict[str, str | List[str]]] = None
     foreign_keys: Optional[Dict[str, str]] = None
 
     def to_dict(self) -> Optional[RelationshipDump]:

@@ -2,7 +2,7 @@
 #
 # SPDX-License-Identifier: MIT
 
-from unittest.mock import Mock, PropertyMock, create_autospec
+from unittest.mock import Mock, PropertyMock, call, create_autospec
 
 import pytest
 
@@ -20,7 +20,7 @@ class _RelationalDS(DataSource, Relational):
 
 
 class _DetailDS(DataSource, DetailGetter):
-    """A `DataSource` that implements `Relational`"""
+    """A `DataSource` that implements `DetailGetter`"""
 
 
 class TestCoreDataObject:
@@ -193,7 +193,7 @@ class TestCoreDataObject:
 
         mock_ds = create_autospec(_DetailDS)
         type(mock_ds).supported_types = PropertyMock(
-            return_value=['test_type']
+            return_value=['test_type', 'test_type2']
         )
         type(mock_ds).attribute_types = PropertyMock(
             return_value={
@@ -234,6 +234,26 @@ class TestCoreDataObject:
             'test_type',
             'id2'
         )
+
+        # Set an ID and but only a list of possible types
+        mock_ds.get_one.reset_mock()
+        mock_ds.get_one.return_value = None
+        mock_ds.get_one.side_effect = [
+            None,
+            CoreDataObject(
+                'test_type',
+                id_='id',
+                attributes={'an_attr': 'yes'}
+            )
+        ]
+        obj = CoreDataObject(None, 'id', stub=True, stub_types=['test_type2', 'test_type'])
+        assert obj.type == 'test_type'
+        assert obj.id == 'id'
+        assert obj.an_attr == 'yes'
+        mock_ds.get_one.assert_has_calls([
+            call('test_type2', 'id'),
+            call('test_type', 'id')
+        ])
 
     def test_setattr_attributes_and_id(self):
         """

@@ -123,10 +123,11 @@ class BenchlingConverter(Converter[BenchlingReturn, DataObject]):
             to_ones = {}
             if worklist_type == 'bioentity':
                 to_ones = {
-                    'tissue': self.__ds.data_object_factory(
-                        'tissue',
+                    'item': self.__ds.data_object_factory(
+                        None,
                         id_=worklist_item.id,
-                        stub=True
+                        stub=True,  # We set the type as a list - this is sorted out when unstubbed
+                        stub_types=self.__ds.relationship_config['worklist_item'].to_one['item'],
                     )
                 }
 
@@ -147,11 +148,13 @@ class BenchlingConverter(Converter[BenchlingReturn, DataObject]):
 
     def __convert_custom_entity(self, input_: BenchlingCustomEntity) -> DataObject:
         object_type = snakecase(input_.schema.name)
+        attributes = self.__convert_attributes(input_.fields, object_type)
+        to_ones = self.__convert_relationships(input_.fields, object_type)
         return self.__ds.data_object_factory(
             object_type,
             id_=input_.id,
-            attributes=self.__convert_attributes(input_.fields),
-            to_one=self.__convert_relationships(input_.fields, object_type)
+            attributes=attributes,
+            to_one=to_ones
         )
 
     def __convert_return(self, input_: BenchlingReturn) -> DataObject:
@@ -164,7 +167,8 @@ class BenchlingConverter(Converter[BenchlingReturn, DataObject]):
             object_type,
             id_=id_,
             attributes=self.__convert_return_attributes(
-                input_
+                input_,
+                object_type
             ),
             to_one=self.__convert_return_relationships(
                 input_,
@@ -174,37 +178,47 @@ class BenchlingConverter(Converter[BenchlingReturn, DataObject]):
 
     def __convert_return_attributes(
         self,
-        input_: BenchlingReturn
+        input_: BenchlingReturn,
+        object_type: str
     ) -> dict[str, Any]:
-
-        return {
+        standard_attributes = {
             snakecase(k): v['value']
             for k, v
             in input_.get('fields', {}).items()
-            if v['type'] != 'entity_link'
+            if v['type'] not in ['dropdown', 'entity_link']
         }
+        dropdown_attributes = {
+            snakecase(k): self.__get_dropdown_values(
+                object_type,
+                snakecase(k),
+                v.get('value')
+            )
+            for k, v
+            in input_.get('fields', {}).items()
+            if v['type'] == 'dropdown'
+        }
+        return standard_attributes | dropdown_attributes
 
     def __convert_return_relationships(
         self,
         input_: BenchlingReturn,
         object_type: str
     ) -> dict[str, Any]:
-
         return {
             snakecase(k): self.__ds.data_object_factory(
                 self.__ds.schema_names[self.__ds.entities[object_type][snakecase(k)]['schema_id']],
                 v['value'],
                 stub=True
-            )
+            ) if v.get('value') != [] and v.get('value') is not None else None
             for k, v
             in input_.get('fields', {}).items()
             if v['type'] == 'entity_link'
         }
 
-    def __convert_attributes(self, fields: Fields) -> dict[str, Any]:
+    def __convert_attributes(self, fields: Fields, object_type: str) -> dict[str, Any]:
         raw_attributes = self.__get_raw_attributes(fields)
 
-        return self.__format_attributes(raw_attributes)
+        return self.__format_attributes(raw_attributes, object_type)
 
     def __get_raw_attributes(
         self,
@@ -221,18 +235,36 @@ class BenchlingConverter(Converter[BenchlingReturn, DataObject]):
 
     def __format_attributes(
         self,
-        raw_attributes: dict[str, dict[str, Any]]
+        raw_attributes: dict[str, dict[str, Any]],
+        object_type: str
     ) -> dict[str, Any]:
 
-        return {
+        standard_attributes = {
             snakecase(k): v.get('value')
             for k, v in raw_attributes.items()
-            if v['type'] != 'entity_link'
+            if v['type'] not in ['dropdown', 'entity_link']
         }
+        dropdown_attributes = {
+            snakecase(k): self.__get_dropdown_values(
+                object_type,
+                snakecase(k),
+                v.get('value')
+            )
+            for k, v in raw_attributes.items()
+            if v['type'] == 'dropdown'
+        }
+        return standard_attributes | dropdown_attributes
+
+    def __get_dropdown_values(self, object_type: str, name: str, value: Any) -> list | str:
+        if isinstance(value, list):
+            return [
+                self.__ds.get_attribute_value_options(object_type, name).get(v, None)
+                for v in value
+            ]
+        return self.__ds.get_attribute_value_options(object_type, name).get(value, None)
 
     def __convert_relationships(self, fields: Fields, object_type: str) -> dict[str, Any]:
         raw_attributes = self.__get_raw_attributes(fields)
-
         return self.__format_relationships(raw_attributes, object_type)
 
     def __format_relationships(
@@ -240,13 +272,12 @@ class BenchlingConverter(Converter[BenchlingReturn, DataObject]):
         raw_attributes: dict[str, dict[str, Any]],
         object_type: str
     ) -> dict[str, Any]:
-
         return {
             snakecase(k): self.__ds.data_object_factory(
                 self.__ds.schema_names[self.__ds.entities[object_type][snakecase(k)]['schema_id']],
                 v.get('value'),
                 stub=True
-            )
+            ) if v.get('value') != [] and v.get('value') is not None else None
             for k, v in raw_attributes.items()
             if v['type'] == 'entity_link'
         }
@@ -294,7 +325,7 @@ class DataObjectConverter(Converter[DataObject, BenchlingWrite]):
 
     def __convert_worklist_item(self, input_: DataObject) -> BenchlingWorklistItemCreate:
         return WorklistItemCreate(
-            item_id=input_.tissue.id
+            item_id=input_.item.id
         )
 
     def __convert_custom_entity(self, input_: DataObject) -> BenchlingCustomEntityCreate:

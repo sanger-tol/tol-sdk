@@ -23,7 +23,7 @@ class _MockDataSourceRelational(DataSource, Relational):
 
     @property
     def supported_types(self):
-        return ['sample_project', 'sample', 'project', 'hook',
+        return ['sample_project', 'sample', 'project', 'sample_export_options',
                 'location', 'gal', 'preservation_approach', 'sampleset',
                 'specimen', 'preservative_solution', 'collection_method',
                 'sample_person', 'person', 'manifest', 'tissue_size']
@@ -50,7 +50,7 @@ class _MockDataSourceRelational(DataSource, Relational):
             'preservative_solution': 'preservative_solution',
             'collection_method': 'collection_method',
             'tissue_size': 'tissue_size',
-            'hook': 'hook'
+            'sample_export_options': 'sample_export_options'
         }
         rc_sample.to_many = {
             'sample_persons': 'sample_person'
@@ -185,9 +185,9 @@ class TestStsSampleProjectToElasticSampleConverter(TestCase):
                 'size': 'huge'
             }
         )
-        hook = CoreDataObject(
-            id_='test_hook',
-            type_='hook',
+        sample_export_options = CoreDataObject(
+            id_='test_sample_export_options',
+            type_='sample_export_options',
             attributes={
                 'display_name': 'labwork1'
             }
@@ -233,7 +233,7 @@ class TestStsSampleProjectToElasticSampleConverter(TestCase):
                 'sampleset': sampleset,
                 'manifest': manifest,
                 'tissue_size': tissue_size,
-                'hook': hook
+                'sample_export_options': sample_export_options
             }
         )
         sample_project = CoreDataObject(

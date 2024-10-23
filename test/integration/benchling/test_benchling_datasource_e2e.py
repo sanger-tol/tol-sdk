@@ -196,7 +196,8 @@ class TestBenchlingDataSourceE2E:
 
         benchling_ds.delete(object_type, [res[0].id, res[2].id])
 
-    def test_worklists(self) -> None:
+    @against_types(['tissue', 'tissue_prep'])
+    def test_worklists(self, object_type: str) -> None:
         """
         Creates a worklist, adds a tissue to it, and then
         deletes the worklist.
@@ -222,9 +223,9 @@ class TestBenchlingDataSourceE2E:
         )
         worklist_added = worklists_added[0]
         # create the worklist items
-        all_tissues = benchling_ds.get_list('tissue')
-        tissues_to_add = [
-            next(all_tissues)
+        all_entities = benchling_ds.get_list(object_type)
+        items_to_add = [
+            next(all_entities)
             for _ in range(3)
         ]
         worklist_items = [
@@ -233,7 +234,7 @@ class TestBenchlingDataSourceE2E:
                 None,
                 to_one={
                     'worklist': worklist_added,
-                    'tissue': tissues_to_add[i]
+                    'item': items_to_add[i]
                 }
             )
             for i in range(3)
@@ -254,9 +255,12 @@ class TestBenchlingDataSourceE2E:
 
         worklist_items = list(worklist.worklist_items)
         assert len(worklist_items) == 3
-        assert worklist_items[0].tissue.id == tissues_to_add[0].id
-        assert worklist_items[1].tissue.id == tissues_to_add[1].id
-        assert worklist_items[2].tissue.id == tissues_to_add[2].id
+        assert worklist_items[0].item.id == items_to_add[0].id
+        assert worklist_items[0].item.type == object_type
+        assert worklist_items[1].item.id == items_to_add[1].id
+        assert worklist_items[1].item.type == object_type
+        assert worklist_items[2].item.id == items_to_add[2].id
+        assert worklist_items[2].item.type == object_type
 
         # delete the worklist
         benchling_ds.delete('worklist', [worklist_added.id])
