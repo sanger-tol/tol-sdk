@@ -253,6 +253,25 @@ def elastic():
             'calc_tat': RuntimeFields.date_interval('sts_submit_date',
                                                     'sts_receive_date',
                                                     'days')
+        },
+        'sequencing_request': {
+            'calc_existing_library_oplc': {
+                'type': 'double',
+                'script': {
+                    'source': """
+                      if (doc.containsKey('mlwh_insert_size')
+                      && doc['mlwh_insert_size'].size() > 0
+                      && doc.containsKey('mlwh_concentration')
+                      && doc['mlwh_concentration'].size() > 0
+                      && doc.containsKey('mlwh_volume_remaining')
+                      && doc['mlwh_volume_remaining'].size() > 0){
+                        emit((doc['mlwh_concentration']
+                        .value/(doc['mlwh_insert_size'].value * 660))
+                        * doc['mlwh_volume_remaining'].value * 7500000)
+                }
+                """
+                }
+            }
         }
     }
 
