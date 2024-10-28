@@ -2,6 +2,7 @@
 #
 # SPDX-License-Identifier: MIT
 
+import os
 from typing import Any, Optional
 
 import requests
@@ -25,12 +26,14 @@ class JsonApiClient:
 
         data_prefix: str = '/data',
         config_prefix: str = '/_config',
-        token_header: str = 'token'
+        token_header: str = 'token',
+        retries: int = 5
     ) -> None:
 
         self.__token = self.__token_header(token_header, token)
         self.__data_url = f'{api_url}{data_prefix}'
         self.__config_url = f'{self.__data_url}{config_prefix}'
+        self.__retries = retries
 
     def get_detail(
         self,
@@ -136,7 +139,7 @@ class JsonApiClient:
         """
         url = self.__detail_url(object_type, object_id)
         headers = self.__merge_headers()
-        session = self.__get_session()
+        session = self.__get_session_with_retries()
         r = session.delete(url, headers=headers)
         self.__assert_no_error(r)
 
@@ -152,7 +155,8 @@ class JsonApiClient:
 
         url = self.__upsert_url(object_type)
         headers = self.__merge_headers()
-        r = requests.post(url, headers=headers, json=transfer)
+        session = self.__get_session()
+        r = session.post(url, headers=headers, json=transfer)
         self.__assert_no_error(r)
         return r.json()
 
@@ -168,7 +172,8 @@ class JsonApiClient:
 
         url = self.__insert_url(object_type)
         headers = self.__merge_headers()
-        r = requests.post(url, headers=headers, json=transfer)
+        session = self.__get_session()
+        r = session.post(url, headers=headers, json=transfer)
         self.__assert_no_error(r)
         return r.json()
 
@@ -261,7 +266,7 @@ class JsonApiClient:
         return self.__fetch_config(url)
 
     def __fetch_config(self, url: str) -> Any:
-        session = self.__get_session()
+        session = self.__get_session_with_retries()
         headers = self.__merge_headers()
         r = session.get(url, headers=headers)
         self.__assert_no_error(r)
@@ -274,7 +279,7 @@ class JsonApiClient:
         headers: Optional[dict[str, str]] = None
     ) -> Optional[JsonApiTransfer]:
 
-        session = self.__get_session()
+        session = self.__get_session_with_retries()
         r = session.get(url, params=params, headers=headers)
         if r.status_code == 404:
             return None
@@ -307,7 +312,7 @@ class JsonApiClient:
         headers: Optional[dict[str, str]] = None
     ) -> JsonApiTransfer:
 
-        session = self.__get_session()
+        session = self.__get_session_with_retries()
         r = session.get(url, params=params, headers=headers)
         self.__assert_no_error(r)
         return r.json()
@@ -320,7 +325,7 @@ class JsonApiClient:
         headers: Optional[dict[str, str]] = None
     ) -> JsonApiTransfer:
 
-        session = self.__get_session()
+        session = self.__get_session_with_retries()
         r = session.post(
             url,
             json=body,
@@ -431,17 +436,31 @@ class JsonApiClient:
         }
 
     def __get_session(self) -> requests.Session:
-        """
-        Attempts a call to the endpoint 5 times, with a delay of 1 second
-        """
 
-        retry_strategy = Retry(
-            total=5,
-            backoff_factor=1,
-            status_forcelist=[429, 500, 502, 503, 504]
+        cert_path = os.path.join(
+            os.path.dirname(__file__),
+            '..',
+            '..',
+            'certs',
+            'cacert.pem'
         )
 
         session = requests.Session()
+        session.verify = cert_path
+
+        return session
+
+    def __get_session_with_retries(self) -> requests.Session:
+        """
+        Attempts a call to the endpoint 5 times, with a delay of 1 second
+        """
+        session = self.__get_session()
+
+        retry_strategy = Retry(
+            total=self.__retries,
+            backoff_factor=1,
+            status_forcelist=[429, 500, 502, 503, 504]
+        )
         session.mount('http://', HTTPAdapter(max_retries=retry_strategy))
         session.mount('https://', HTTPAdapter(max_retries=retry_strategy))
 

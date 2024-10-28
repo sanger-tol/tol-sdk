@@ -85,7 +85,8 @@ class _ConverterFactory:
 def _get_client_factory(
     api_url: str,
     token: Optional[str],
-    data_prefix: str
+    data_prefix: str,
+    retries: int
 ) -> Callable[[], JsonApiClient]:
     """
     A resonable default for creating
@@ -95,7 +96,8 @@ def _get_client_factory(
     return lambda: JsonApiClient(
         api_url,
         token=token,
-        data_prefix=data_prefix
+        data_prefix=data_prefix,
+        retries=retries
     )
 
 
@@ -107,7 +109,8 @@ def create_api_datasource(
     api_url: str,
     token: Optional[str] = None,
 
-    data_prefix: str = '/data'
+    data_prefix: str = '/data',
+    retries: int = 5
 ) -> ApiDataSource:
     """
     Instantiates `ApiDataSource` using the given:
@@ -119,7 +122,8 @@ def create_api_datasource(
     client_factory = _get_client_factory(
         api_url,
         token=token,
-        data_prefix=data_prefix
+        data_prefix=data_prefix,
+        retries=retries
     )
     manager = _ConverterFactory(data_prefix)
 

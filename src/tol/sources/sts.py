@@ -4,6 +4,7 @@
 
 import os
 
+from .defaults import Defaults
 from ..api_client2 import (
     create_api_datasource
 )
@@ -14,9 +15,10 @@ from ..core import (
 
 def sts():
     sts = create_api_datasource(
-        api_url=os.getenv('STS_URL') + os.getenv('STS_API_PATH'),
+        api_url=os.getenv('STS_URL', Defaults.STS_URL)
+        + os.getenv('STS_API_PATH', Defaults.STS_API_PATH),
         token=os.getenv('STS_API_KEY'),
-        data_prefix=os.getenv('STS_API_DATA_PATH', '')
+        data_prefix=os.getenv('STS_API_DATA_PATH', Defaults.STS_API_DATA_PATH),
     )
     core_data_object(sts)
     return sts

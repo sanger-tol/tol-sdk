@@ -4,6 +4,7 @@
 
 import os
 
+from .defaults import Defaults
 from ..bold import (
     BoldDataSource,
     create_bold_datasource
@@ -15,7 +16,8 @@ from ..core import (
 
 def bold() -> BoldDataSource:
     bold = create_bold_datasource(
-        bold_url=os.getenv('BOLD_URL') + os.getenv('BOLD_API_PATH'),
+        bold_url=os.getenv('BOLD_URL', Defaults.BOLD_URL)
+        + os.getenv('BOLD_API_PATH', Defaults.BOLD_API_PATH),
         bold_api_key=os.getenv('BOLD_API_KEY')
     )
     core_data_object(bold)
