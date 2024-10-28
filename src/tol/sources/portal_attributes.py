@@ -48,6 +48,10 @@ def portal_attributes():
                     'description': {
                         'heading': 'description',
                         'type': 'str'
+                    },
+                    'source': {
+                        'heading': 'source',
+                        'type': 'str'
                     }
                 },
                 'header_row': 5,

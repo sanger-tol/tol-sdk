@@ -68,6 +68,9 @@ class _TestAttributeMetadata(DefaultAttributeMetadata):
     def get_description(self, object_type, attribute_name):
         return f'Interesting {attribute_name}'
 
+    def get_source(self, object_type, attribute_name):
+        return 'test_source'
+
 
 class _TestDataSourceAttributes(DataSource):
     def __init__(self, config: Dict):
@@ -130,7 +133,8 @@ class TestDataSource(TestCase):
                         'description': 'Interesting attribute1',
                         'cardinality': 1000,
                         'available_on_relationships': True,
-                        'authoritative': True
+                        'authoritative': True,
+                        'source': 'test_source'
                     },
                     'attribute2': {
                         'python_type': 'int',
@@ -138,7 +142,8 @@ class TestDataSource(TestCase):
                         'description': 'Interesting attribute2',
                         'cardinality': 1000,
                         'available_on_relationships': True,
-                        'authoritative': True
+                        'authoritative': True,
+                        'source': 'test_source'
                     }
                 },
                 'object_type2': {
@@ -148,7 +153,8 @@ class TestDataSource(TestCase):
                         'description': 'Interesting attribute3',
                         'cardinality': 5,
                         'available_on_relationships': False,
-                        'authoritative': False
+                        'authoritative': False,
+                        'source': 'test_source'
                     },
                     'attribute4': {
                         'python_type': 'datetime',
@@ -156,7 +162,8 @@ class TestDataSource(TestCase):
                         'description': 'Interesting attribute4',
                         'cardinality': 5,
                         'available_on_relationships': False,
-                        'authoritative': False
+                        'authoritative': False,
+                        'source': 'test_source'
                     }
                 }
             }

@@ -125,6 +125,7 @@ class DataSource(ABC):
                     'description': am.get_description(object_type, attribute_name),
                     'cardinality': am.get_cardinality(object_type, attribute_name),
                     'authoritative': am.is_authoritative(object_type, attribute_name),
+                    'source': am.get_source(object_type, attribute_name),
                     'available_on_relationships':
                         am.is_available_on_relationships(
                             object_type,

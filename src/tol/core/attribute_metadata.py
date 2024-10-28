@@ -50,6 +50,15 @@ class AttributeMetadata(ABC):
         and underlying metadata store.
         """
 
+    @abstractmethod
+    def get_source(
+            self,
+            object_type: str,
+            attribute_name: str) -> Optional[str]:
+        """
+        The source of the attribute i.e becnhling, sts etc
+        """
+
 
 class DefaultAttributeMetadata(AttributeMetadata):
     def get_display_name(
@@ -118,5 +127,14 @@ class DefaultAttributeMetadata(AttributeMetadata):
         """
         The description of an attribute. This would normally be fetched from
         and underlying metadata store.
+        """
+        return None
+
+    def get_source(
+            self,
+            object_type: str,
+            attribute_name: str) -> Optional[str]:
+        """
+        The source of the attribute i.e becnhling, sts etc
         """
         return None
