@@ -80,6 +80,11 @@ services:
       - BENCHLING_REGISTRY_ID
       - BENCHLING_PROJECT
       - BENCHLING_FOLDER
+      - ENA_URL
+      - ENA_USER
+      - ENA_PASSWORD
+      - ENA_CONTACT_NAME
+      - ENA_CONTACT_EMAIL
     networks:
       - api-base-test-network
 

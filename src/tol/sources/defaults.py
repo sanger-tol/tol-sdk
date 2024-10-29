@@ -37,3 +37,5 @@ class Defaults:
 
     LABWHERE_URL = 'https://labwhere.psd.sanger.ac.uk'
     LABWHERE_API_PATH = '/api'
+
+    ENA_URL = 'https://www.ebi.ac.uk'
