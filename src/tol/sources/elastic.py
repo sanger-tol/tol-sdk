@@ -190,21 +190,27 @@ def elastic():
                     }
                 """
             },
-            "calc_pm_status": {
-                "type": "keyword",
-                "script": {
-                    "source": """
+            'calc_pm_status': {
+                'type': 'keyword',
+                'script': {
+                    'source': """
                     def statusMapping = [
-                        '11_published': '1. Submitted', '12_public': '1. Submitted', '13_submitted': '1. Submitted',
-                        '21_in_submission': '2. Curated', '22_postprocessing': '2. Curated', '23_submission_hold': '2. Curated',
-                        '31_curation': '3. In curation', '33_build': '3. In curation', '34_contam_check_btk': '3. In curation', 
+                        '11_published': '1. Submitted', '12_public': '1. Submitted',
+                        '13_submitted': '1. Submitted',
+                        '21_in_submission': '2. Curated', '22_postprocessing': '2. Curated',
+                        '23_submission_hold': '2. Curated',
+                        '31_curation': '3. In curation', '33_build': '3. In curation',
+                        '34_contam_check_btk': '3. In curation',
                         '35_open': '3. In curation', '36_awaiting_data': '3. In curation',
-                        '41_data_asm': '4. In Assembly', '42_asm_r&d': '4. In Assembly', '43_hold_for_analysis': '4. In Assembly', 
-                        '44_faculty_asm': '4. In Assembly', '45_resubmit_asm': '4. In Assembly', '46_faculty_asm': '4. In Assembly',
-                        '51_pacbio_fail': '5. In Sequencing', '52_hic_fail': '5. In Sequencing', '54_species_id': '5. In Sequencing', 
-                        '55_data_query': '5. In Sequencing', '56_data_wrangle': '5. In Sequencing', '61_lr_asm_10x': '5. In Sequencing', 
-                        '62_lr_asm': '5. In Sequencing', '63_lr_topup_hic': '5. In Sequencing', 
-                        '64_10x_only': '5. In Sequencing', '64_10x_hic_only': '5. In Sequencing', '65_hic_only': '5. In Sequencing'
+                        '41_data_asm': '4. In Assembly', '42_asm_r&d': '4. In Assembly',
+                        '43_hold_for_analysis': '4. In Assembly', '44_faculty_asm': '4. In Assembly',
+                        '45_resubmit_asm': '4. In Assembly', '46_faculty_asm': '4. In Assembly',
+                        '51_pacbio_fail': '5. In Sequencing', '52_hic_fail': '5. In Sequencing',
+                        '54_species_id': '5. In Sequencing', '55_data_query': '5. In Sequencing',
+                        '56_data_wrangle': '5. In Sequencing', '61_lr_asm_10x': '5. In Sequencing',
+                        '62_lr_asm': '5. In Sequencing', '63_lr_topup_hic': '5. In Sequencing',
+                        '64_10x_only': '5. In Sequencing', '64_10x_hic_only': '5. In Sequencing',
+                        '65_hic_only': '5. In Sequencing'
                     ];
 
                     if (doc['informatics_tolid_informatics_status_min.keyword'].size() > 0) {
