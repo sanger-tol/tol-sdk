@@ -203,14 +203,16 @@ def elastic():
                         '34_contam_check_btk': '3. In curation',
                         '35_open': '3. In curation', '36_awaiting_data': '3. In curation',
                         '41_data_asm': '4. In Assembly', '42_asm_r&d': '4. In Assembly',
-                        '43_hold_for_analysis': '4. In Assembly', '44_faculty_asm': '4. In Assembly',
-                        '45_resubmit_asm': '4. In Assembly', '46_faculty_asm': '4. In Assembly',
-                        '51_pacbio_fail': '5. In Sequencing', '52_hic_fail': '5. In Sequencing',
-                        '54_species_id': '5. In Sequencing', '55_data_query': '5. In Sequencing',
-                        '56_data_wrangle': '5. In Sequencing', '61_lr_asm_10x': '5. In Sequencing',
-                        '62_lr_asm': '5. In Sequencing', '63_lr_topup_hic': '5. In Sequencing',
-                        '64_10x_only': '5. In Sequencing', '64_10x_hic_only': '5. In Sequencing',
-                        '65_hic_only': '5. In Sequencing'
+                        '43_hold_for_analysis': '4. In Assembly', '44_faculty_asm':
+                        '4. In Assembly', '45_resubmit_asm': '4. In Assembly',
+                        '46_faculty_asm': '4. In Assembly', '51_pacbio_fail':
+                        '5. In Sequencing', '52_hic_fail': '5. In Sequencing',
+                        '54_species_id': '5. In Sequencing', '55_data_query':
+                        '5. In Sequencing','56_data_wrangle': '5. In Sequencing',
+                        '61_lr_asm_10x': '5. In Sequencing','62_lr_asm':
+                        '5. In Sequencing', '63_lr_topup_hic': '5. In Sequencing',
+                        '64_10x_only': '5. In Sequencing', '64_10x_hic_only':
+                        '5. In Sequencing', '65_hic_only': '5. In Sequencing'
                     ];
 
                     if (doc['informatics_tolid_informatics_status_min.keyword'].size() > 0) {
@@ -228,26 +230,6 @@ def elastic():
                 """
                 }
             },
-            'calc_pacbio_completion_status': {
-                'type': 'keyword',
-                'script': """
-                    if (doc.containsKey('mlwh_run_data_mlwh_hifi_read_bases_sum') && 
-                        doc.containsKey('goat_genome_size')) {
-                        if (doc['mlwh_run_data_mlwh_hifi_read_bases_sum'].size() > 0 &&
-                            doc['goat_genome_size'].size() > 0) {
-                            
-                            double calc_coverage = doc['mlwh_run_data_mlwh_hifi_read_bases_sum'].value / doc['goat_genome_size'].value;
-                            
-                            if (calc_coverage > 25 && doc.containsKey('mlwh_run_data_mlwh_run_complete_pacbio_max')) {
-                                if (doc['mlwh_run_data_mlwh_run_complete_pacbio_max'].size() > 0) {
-                                    emit("PacBio complete");
-                                }
-                            }
-                        }
-                    }
-                """
-            },            
-        },
         'specimen': {
             'calc_coverage_post_run': RuntimeFields.math(
                 'mlwh_run_data_mlwh_hifi_read_bases_sum',
