@@ -295,3 +295,4 @@ def elastic():
         attribute_metadata=amd)
     core_data_object(elastic)
     return elastic
+    
