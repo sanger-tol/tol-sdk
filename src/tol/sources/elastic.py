@@ -281,8 +281,7 @@ def elastic():
         }
     }
 
-    amd = data_source_attribute_metadata(portal_attributes()
-    )
+    amd = data_source_attribute_metadata(portal_attributes())
 
     elastic = ElasticDataSource({
         'uri': os.getenv('ELASTIC_URI'),
