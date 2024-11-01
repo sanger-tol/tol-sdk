@@ -230,6 +230,7 @@ def elastic():
                 """
                 }
             },
+        },
         'specimen': {
             'calc_coverage_post_run': RuntimeFields.math(
                 'mlwh_run_data_mlwh_hifi_read_bases_sum',
