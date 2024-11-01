@@ -240,7 +240,7 @@ def elastic():
         'tolid': {
             'calc_coverage': RuntimeFields.math('mlwh_run_data_mlwh_hifi_read_bases_sum',
                                                 'tolid_species.sts_genome_size',
-                                                operation='/')
+                                                operation='/'),
         },
         'sample': {
             'calc_biospecimen_id':
@@ -278,10 +278,13 @@ def elastic():
                 """
                 }
             }
-        },
+        }
     }
 
-    amd = data_source_attribute_metadata(portal_attributes())
+    amd = data_source_attribute_metadata(
+        portal_attributes()
+    )
+
     elastic = ElasticDataSource({
         'uri': os.getenv('ELASTIC_URI'),
         'user': os.getenv('ELASTIC_USER'),
