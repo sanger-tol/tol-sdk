@@ -201,7 +201,7 @@ def elastic():
                         '23_submission_hold': '2. Curated',
                         '31_curation': '3. In curation', '33_build': '3. In curation',
                         '34_contam_check': '3. In curation','34_contam_check_btk':
-                        '3. In curation', '35_open': '3. In curation', 
+                        '3. In curation', '35_open': '3. In curation',
                         '36_awaiting_data': '3. In curation',
                         '41_data_asm': '4. In Assembly', '42_asm_r&d': '4. In Assembly',
                         '43_hold_for_analysis': '4. In Assembly', '44_faculty_asm':
