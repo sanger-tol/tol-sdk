@@ -216,14 +216,19 @@ def elastic():
                         } else if (doc.containsKey('grit_curation_grit_open_date_min')
                             && doc['grit_curation_grit_open_date_min'].size() > 0) {
                             emit("3. In Curation");
-                        } else if (doc.containsKey('informatics_tolid_informatics_status_min.keyword')
-                            && doc['informatics_tolid_informatics_status_min.keyword'].size() > 0) {
-                            def status = doc['informatics_tolid_informatics_status_min.keyword'].value;
+                        } else if (doc.containsKey('informatics_tolid_' +
+                            'informatics_status_min.keyword')
+                            && doc['informatics_tolid_informatics_' +
+                            'status_min.keyword'].size() > 0) {
+                            def status = doc['informatics_tolid_' +
+                            'informatics_status_min.keyword'].value;
                             if (statusMapping.containsKey(status)) {
                                 emit(statusMapping[status]);
                             }
-                        } else if (doc.containsKey('sts_sample_sts_tollab_assign_date_min')
-                            && doc['sts_sample_sts_tollab_assign_date_min'].size() > 0) {
+                        } else if (doc.containsKey('sts_sample_sts_' +
+                            'tollab_assign_date_min')
+                            && doc['sts_sample_sts_tollab_assign_' +
+                            'date_min'].size() > 0) {
                             emit("6. Sent to lab");
                         } else {
                             emit("7. Onboarding");
