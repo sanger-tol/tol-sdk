@@ -190,48 +190,46 @@ def elastic():
                     }
                 """
             },
-        'calc_pm_status': {
+            'calc_pm_status': {
                 'type': 'keyword',
                 'script': {
-                'source': """
-            
-                    def statusMapping = [
-                    '41_data_asm': '4. In Assembly', '42_asm_r&d': '4. In Assembly',
-                    '43_hold_for_analysis': '4. In Assembly', '44_faculty_asm': '4. In Assembly',
-                    '45_resubmit_asm': '4. In Assembly', '46_faculty_asm': '4. In Assembly',
-                    '51_pacbio_fail': '5. In Sequencing', '52_hic_fail': '5. In Sequencing',
-                    '54_species_id': '5. In Sequencing', '55_data_query': '5. In Sequencing',
-                    '56_data_wrangle': '5. In Sequencing', '61_lr_asm_10x': '5. In Sequencing',
-                    '62_lr_asm': '5. In Sequencing', '63_lr_topup_hic': '5. In Sequencing',
-                    '64_10x_only': '5. In Sequencing', '64_10x_hic_only': '5. In Sequencing',
-                    '65_hic_only': '5. In Sequencing'
-                    ];
+                    'source': """
+                        def statusMapping = [
+                            '41_data_asm': '4. In Assembly', '42_asm_r&d': '4. In Assembly',
+                            '43_hold_for_analysis': '4. In Assembly', '44_faculty_asm': '4. In Assembly',
+                            '45_resubmit_asm': '4. In Assembly', '46_faculty_asm': '4. In Assembly',
+                            '51_pacbio_fail': '5. In Sequencing', '52_hic_fail': '5. In Sequencing',
+                            '54_species_id': '5. In Sequencing', '55_data_query': '5. In Sequencing',
+                            '56_data_wrangle': '5. In Sequencing', '61_lr_asm_10x': '5. In Sequencing',
+                            '62_lr_asm': '5. In Sequencing', '63_lr_topup_hic': '5. In Sequencing',
+                            '64_10x_only': '5. In Sequencing', '64_10x_hic_only': '5. In Sequencing',
+                            '65_hic_only': '5. In Sequencing'
+                        ];
 
-                    if (doc.containsKey('grit_curation_grit_done_date_min')
-                        && doc['grit_curation_grit_done_date_min'].size() > 0) {
+                        if (doc.containsKey('grit_curation_grit_done_date_min')
+                            && doc['grit_curation_grit_done_date_min'].size() > 0) {
                             emit("1. Submitted");
-                    } else if (doc.containsKey('grit_curation_grit_in_submission_date_min')
-                        && doc['grit_curation_grit_in_submission_date_min'].size() > 0) {
+                        } else if (doc.containsKey('grit_curation_grit_in_submission_date_min')
+                            && doc['grit_curation_grit_in_submission_date_min'].size() > 0) {
                             emit("2. Curated");
-                    } else if (doc.containsKey('grit_curation_grit_open_date_min')
-                        && doc['grit_curation_grit_open_date_min'].size() > 0) {
+                        } else if (doc.containsKey('grit_curation_grit_open_date_min')
+                            && doc['grit_curation_grit_open_date_min'].size() > 0) {
                             emit("3. In Curation");
-                    } else if (doc.containsKey('informatics_tolid_informatics_status_min.keyword') 
-                        && doc['informatics_tolid_informatics_status_min.keyword'].size() > 0) {
-                        def status = doc['informatics_tolid_informatics_status_min.keyword'].value;
-                        if (statusMapping.containsKey(status)) {
-                            emit(statusMapping[status]);
-                        }
-                    } else if (doc.containsKey('sts_sample_sts_tollab_assign_date_min')
-                        && doc['sts_sample_sts_tollab_assign_date_min'].size() > 0) {
+                        } else if (doc.containsKey('informatics_tolid_informatics_status_min.keyword')
+                            && doc['informatics_tolid_informatics_status_min.keyword'].size() > 0) {
+                            def status = doc['informatics_tolid_informatics_status_min.keyword'].value;
+                            if (statusMapping.containsKey(status)) {
+                                emit(statusMapping[status]);
+                            }
+                        } else if (doc.containsKey('sts_sample_sts_tollab_assign_date_min')
+                            && doc['sts_sample_sts_tollab_assign_date_min'].size() > 0) {
                             emit("6. Sent to lab");
-                    } else {
+                        } else {
                             emit("7. Onboarding");
-                    }
-                """
-    }
-},
-
+                        }
+                    """
+                }
+            },
         },
         'specimen': {
             'calc_coverage_post_run': RuntimeFields.math(
