@@ -207,30 +207,30 @@ def elastic():
                             '64_10x_only': '5. In Sequencing', '64_10x_hic_only':
                             '5. In Sequencing', '65_hic_only': '5. In Sequencing'
                         ];
-                    if (doc.containsKey('grit_curation_grit_done_date_min')
-                        && doc['grit_curation_grit_done_date_min'].size() > 0) {
-                        emit("1. Submitted");
-                    } else if (doc.containsKey('grit_curation_grit_in_submission_date_min')
-                        && doc['grit_curation_grit_in_submission_date_min'].size() > 0) {
-                        emit("2. Curated");
-                    } else if (doc.containsKey('grit_curation_grit_open_date_min')
-                        && doc['grit_curation_grit_open_date_min'].size() > 0) {
-                        emit("3. In Curation");
-                    } else if (doc.containsKey('informatics_tolid_informatics_status_min.keyword')
-                        && doc['informatics_tolid_informatics_status_min.keyword'].size() > 0) {
-                        def status = doc['informatics_tolid_informatics_status_min.keyword'].value;
-                        if (statusMapping.containsKey(status)) {
-                            emit(statusMapping[status]);
+                        if (doc.containsKey('grit_curation_grit_done_date_min')
+                            && doc['grit_curation_grit_done_date_min'].size() > 0) {
+                            emit("1. Submitted");
+                        } else if (doc.containsKey('grit_curation_grit_in_submission_date_min')
+                            && doc['grit_curation_grit_in_submission_date_min'].size() > 0) {
+                            emit("2. Curated");
+                        } else if (doc.containsKey('grit_curation_grit_open_date_min')
+                            && doc['grit_curation_grit_open_date_min'].size() > 0) {
+                            emit("3. In Curation");
+                        } else if (doc.containsKey('informatics_tolid_informatics_status_min.keyword')
+                            && doc['informatics_tolid_informatics_status_min.keyword'].size() > 0) {
+                            def status = doc['informatics_tolid_informatics_status_min.keyword'].value;
+                            if (statusMapping.containsKey(status)) {
+                                emit(statusMapping[status]);
+                            }
+                        } else if (doc.containsKey('sts_sample_sts_tollab_assign_date_min')
+                            && doc['sts_sample_sts_tollab_assign_date_min'].size() > 0) {
+                            emit("6. Sent to lab");
+                        } else {
+                            emit("7. Onboarding");
                         }
-                    } else if (doc.containsKey('sts_sample_sts_tollab_assign_date_min')
-                        && doc['sts_sample_sts_tollab_assign_date_min'].size() > 0) {
-                        emit("6. Sent to lab");
-                    } else {
-                        emit("7. Onboarding");
-                    }
-                """
-            }
-        },
+                    """
+                }
+            },
         },
         'specimen': {
             'calc_coverage_post_run': RuntimeFields.math(
