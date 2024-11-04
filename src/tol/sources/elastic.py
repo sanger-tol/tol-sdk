@@ -196,14 +196,16 @@ def elastic():
                     'source': """
                         def statusMapping = [
                             '41_data_asm': '4. In Assembly', '42_asm_r&d': '4. In Assembly',
-                            '43_hold_for_analysis': '4. In Assembly', '44_faculty_asm': '4. In Assembly',
-                            '45_resubmit_asm': '4. In Assembly', '46_faculty_asm': '4. In Assembly',
-                            '51_pacbio_fail': '5. In Sequencing', '52_hic_fail': '5. In Sequencing',
-                            '54_species_id': '5. In Sequencing', '55_data_query': '5. In Sequencing',
-                            '56_data_wrangle': '5. In Sequencing', '61_lr_asm_10x': '5. In Sequencing',
-                            '62_lr_asm': '5. In Sequencing', '63_lr_topup_hic': '5. In Sequencing',
-                            '64_10x_only': '5. In Sequencing', '64_10x_hic_only': '5. In Sequencing',
-                            '65_hic_only': '5. In Sequencing'
+                            '43_hold_for_analysis': '4. In Assembly', '44_faculty_asm':
+                            '4. In Assembly', '45_resubmit_asm': '4. In Assembly',
+                            '46_faculty_asm': '4. In Assembly', '51_pacbio_fail':
+                            '5. In Sequencing', '52_hic_fail': '5. In Sequencing',
+                            '54_species_id': '5. In Sequencing', '55_data_query':
+                            '5. In Sequencing', '56_data_wrangle': '5. In Sequencing',
+                            '61_lr_asm_10x': '5. In Sequencing', '62_lr_asm':
+                            '5. In Sequencing', '63_lr_topup_hic': '5. In Sequencing',
+                            '64_10x_only': '5. In Sequencing', '64_10x_hic_only':
+                            '5. In Sequencing', '65_hic_only': '5. In Sequencing'
                         ];
 
                         if (doc.containsKey('grit_curation_grit_done_date_min')
