@@ -2,6 +2,7 @@
 #
 # SPDX-License-Identifier: MIT
 
+import json
 from typing import Iterable
 
 from ...core import (
@@ -27,7 +28,8 @@ class ElasticSpeciesToStsSpeciesConverter(
                 attributes={
                     'genome_size': data_object.goat_genome_size,
                     # 'parentage': data_object.parentage,
-                    'legislation': legislation if legislation != {} else None,
+                    'legislation': json.dumps(legislation, default=str)
+                    if legislation != {} else None,
                     'family_representative': data_object.goat_family_representative,
                     'prefix': data_object.tolid_prefix
                 }

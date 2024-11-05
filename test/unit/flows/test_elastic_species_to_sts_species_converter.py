@@ -2,6 +2,7 @@
 #
 # SPDX-License-Identifier: MIT
 
+import json
 from unittest import (TestCase)
 
 from tol.core import (
@@ -67,14 +68,14 @@ class TestElasticSpeciesToStsSpeciesConverter(TestCase):
         self.assertEqual(ret1.attributes, {
             'genome_size': 123456789.9,
             'family_representative': ['PROJ1'],
-            'legislation': {
+            'legislation': json.dumps({
                 'echabs92': ['echabs1'],
                 'habreg_2017': ['habreg1', 'habreg2'],
                 'marhabreg-2017': ['marhabreg1', 'marhabreg2'],
                 'waca_1981': ['waca1'],
                 'isb_wildlife_act_1976': ['isb1'],
                 'protection_of_badgers_act_1992': ['badger1']
-            },
+            }, default=str),
             'prefix': 'abCdeFghi'
         })
 
