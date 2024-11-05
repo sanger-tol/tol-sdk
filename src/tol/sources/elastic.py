@@ -225,9 +225,9 @@ def elastic():
                         }
                     } else if (doc.containsKey('sts_sample_sts_tollab_assign_date_min')) {
                         if (doc['sts_sample_sts_tollab_assign_date_min'].size() > 0) {
-                            emit("6. Sent to lab");
+                            emit("6. Sample Prep");
                         } else {
-                            emit("7. Onboarding");
+                            emit("7. Sample Onboarding");
                         }
                     }
                 """
