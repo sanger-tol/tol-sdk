@@ -22,45 +22,68 @@ class MockBenchlingDataSource(BenchlingDataSource):
     def _get_benchling_interface(self, url, api_key):
         return mock.Mock()
 
-    def _get_entity_schemas(self):
-        return {
-            'test_entity_type': {
-                '__id__': 'ts_DONTCARE',
-                'field_name': {
-                    'name': 'Test Field',
-                    'type': 'str',
-                    'benchling_type': 'text',
-                    'required': True,
-                    'is_multi': False
+    def _get_schemas(self, benchling_type: str):
+        if benchling_type == 'custom_entity':
+            return {
+                'test_entity_type': {
+                    '__id__': 'ts_DONTCARE',
+                    'field_name': {
+                        'name': 'Test Field',
+                        'type': 'str',
+                        'benchling_type': 'text',
+                        'required': True,
+                        'is_multi': False
+                    },
+                    'field_name2': {
+                        'name': 'Test Field 2',
+                        'type': 'int',
+                        'benchling_type': 'integer',
+                        'required': True,
+                        'is_multi': False
+                    }
                 },
-                'field_name2': {
-                    'name': 'Test Field 2',
-                    'type': 'int',
-                    'benchling_type': 'integer',
-                    'required': True,
-                    'is_multi': False
-                }
-            },
-            'test_child_type': {
-                '__id__': 'ts_ANOTHER',
-                'parent': {
-                    'name': 'Parent',
-                    'type': 'str',
-                    'benchling_type': 'entity_link',
-                    'schema_id': 'ts_DONTCARE',
-                    'required': True,
-                    'is_multi': False
+                'test_child_type': {
+                    '__id__': 'ts_ANOTHER',
+                    'parent': {
+                        'name': 'Parent',
+                        'type': 'str',
+                        'benchling_type': 'entity_link',
+                        'schema_id': 'ts_DONTCARE',
+                        'required': True,
+                        'is_multi': False
 
-                },
-                'name': {
-                    'name': 'Name',
-                    'type': 'str',
-                    'benchling_type': 'text',
-                    'required': True,
-                    'is_multi': False
+                    },
+                    'name': {
+                        'name': 'Name',
+                        'type': 'str',
+                        'benchling_type': 'text',
+                        'required': True,
+                        'is_multi': False
+                    }
                 }
             }
-        }
+        elif benchling_type == 'location':
+            return {
+                'test_location_type': {
+                    '__id__': 'ts_DONTCARE2',
+                    'field_name': {
+                        'name': 'Test Location Field',
+                        'type': 'str',
+                        'benchling_type': 'text',
+                        'required': True,
+                        'is_multi': False
+                    },
+                    'field_name2': {
+                        'name': 'Test Location Field 2',
+                        'type': 'int',
+                        'benchling_type': 'integer',
+                        'required': True,
+                        'is_multi': False
+                    }
+                },
+            }
+        else:
+            return {}
 
 
 def mock_benchling_data_source() -> BenchlingDataSource:
@@ -87,6 +110,12 @@ class TestBenchlingDataSource(TestCase):
             'test_child_type': {
                 'name': 'str'
             },
+            'test_location_type': {
+                'field_name': 'str',
+                'field_name2': 'int',
+                'name': 'str',
+                'barcode': 'str'
+            },
             'folder': {
                 'name': 'str'
             },
@@ -100,8 +129,8 @@ class TestBenchlingDataSource(TestCase):
         }
         self.assertEqual(expected, bds.attribute_types)
         self.assertEqual(
-            ['test_entity_type', 'test_child_type', 'folder',
-             'worklist', 'worklist_item'],
+            ['test_entity_type', 'test_child_type', 'test_location_type',
+             'folder', 'worklist', 'worklist_item'],
             bds.supported_types
         )
 

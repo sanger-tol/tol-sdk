@@ -64,6 +64,28 @@ NATIVE_OBJECT_TYPES = {
     'worklist': {'name': 'str', 'worklist_type': 'str'},
     'worklist_item': {'name': 'str'}
 }
+BENCHLING_PARENT_TYPES_WITH_SCHEMAS = {
+    'custom_entity': {
+        'attributes': {},
+        'to_one': {},
+        'to_many': {}
+    },
+    'location': {
+        'attributes': {'name': 'str', 'barcode': 'str'},
+        'to_one': {'parent_location': 'location'},
+        'to_many': {}
+    },
+    'box': {
+        'attributes': {},
+        'to_one': {},
+        'to_many': {}
+    },
+    'plate': {
+        'attributes': {},
+        'to_one': {},
+        'to_many': {}
+    }
+}
 
 BenchlingConverterFactory = Callable[['BenchlingDataSource'], BenchlingConverter]
 """A type hint for the kwarg to `BenchlingDataSource`. Internally, there are no arguments."""
@@ -116,7 +138,10 @@ class BenchlingDataSource(
         )
 
         self.benchling_interface = self._get_benchling_interface(self.url, self.api_key)
-        self.entities = self._get_entity_schemas()
+        self.schemas = {
+            benchling_type: self._get_schemas(benchling_type)
+            for benchling_type in BENCHLING_PARENT_TYPES_WITH_SCHEMAS.keys()
+        }
 
     @property
     def folder_id(self) -> str:
@@ -146,13 +171,12 @@ class BenchlingDataSource(
             )
         )
 
-    def _get_entity_schemas(
-        self
+    def _get_schemas(
+        self,
+        benchling_type: str = 'custom_entity'
     ) -> dict[str, dict[str, dict[str, Any]]]:
 
-        pages = self.benchling_interface.schemas.list_entity_schemas(
-            # registry_id=self.registry_id
-        )
+        pages = self.__get_benchling_schema_function(benchling_type)()
         entities = {}
         for page in pages:
             for schema in page:
@@ -184,11 +208,21 @@ class BenchlingDataSource(
             return self.benchling_interface.folders
         if object_type == 'worklist':
             return self.benchling_interface.v2.beta.worklists
+        if object_type in self.schemas['location'].keys():
+            return self.benchling_interface.locations
         return self.benchling_interface.custom_entities
+
+    def __get_benchling_schema_function(self, benchling_type: str):
+        if benchling_type == 'custom_entity':
+            return self.benchling_interface.schemas.list_entity_schemas
+        function_name = f'list_{benchling_type}_schemas'
+        func = getattr(self.benchling_interface.schemas, function_name)
+        return func
 
     @ttl_cache(ttl=86400)
     def get_attribute_value_options(self, object_type: str, name: str) -> dict[str, str]:
-        dropdown_id = self.entities[object_type][name]['dropdown_id']
+        benchling_type = self.benchling_types[object_type]
+        dropdown_id = self.schemas[benchling_type][object_type][name]['dropdown_id']
         return {
             option.id: option.name
             for option in self.benchling_interface.dropdowns.get_by_id(dropdown_id).options
@@ -336,7 +370,7 @@ class BenchlingDataSource(
                 converter,
                 back_converter
             )
-        if object_type not in NATIVE_OBJECT_TYPES:
+        if object_type in self.schemas['custom_entity'].keys():
             # Do bulk inserts of custom entities
             return self.__do_bulk_method(
                 object_type,
@@ -347,7 +381,7 @@ class BenchlingDataSource(
                 benchling_package.create,
             )
         else:
-            # Native objects are inserted one-by-one
+            # Other objects are inserted one-by-one
             return [
                 self.__do_single_method(
                     object_type,
@@ -547,13 +581,20 @@ class BenchlingDataSource(
                 for k2, v2 in v1.items()
                 if not k2.startswith('__')  # filter out '__id__'
                 and v2['benchling_type'] != 'entity_link'
-            }
-            for k1, v1 in self.entities.items()
+            } | BENCHLING_PARENT_TYPES_WITH_SCHEMAS[benchling_type]['attributes']
+            for benchling_type in BENCHLING_PARENT_TYPES_WITH_SCHEMAS.keys()
+            for k1, v1 in self.schemas[benchling_type].items()
         } | NATIVE_OBJECT_TYPES
 
     @property
     def supported_types(self) -> List:
-        return list(self.entities.keys()) + list(NATIVE_OBJECT_TYPES.keys())
+        result = [
+            key
+            for benchling_type in BENCHLING_PARENT_TYPES_WITH_SCHEMAS.keys()
+            for key in self.schemas[benchling_type].keys()
+        ]
+        result.extend(list(NATIVE_OBJECT_TYPES.keys()))
+        return result
 
     @property
     def schema_ids(self) -> dict[str, str]:
@@ -564,16 +605,26 @@ class BenchlingDataSource(
 
         return {
             k: v['__id__']
+            for benchling_type in BENCHLING_PARENT_TYPES_WITH_SCHEMAS.keys()
             for k, v
-            in self.entities.items()
+            in self.schemas[benchling_type].items()
         }
 
     @property
     def schema_names(self) -> dict[str, str]:
         return {
             v['__id__']: k
+            for benchling_type in BENCHLING_PARENT_TYPES_WITH_SCHEMAS.keys()
             for k, v
-            in self.entities.items()
+            in self.schemas[benchling_type].items()
+        }
+
+    @property
+    def benchling_types(self) -> dict[str, str]:
+        return {
+            k: benchling_type
+            for benchling_type in BENCHLING_PARENT_TYPES_WITH_SCHEMAS.keys()
+            for k in self.schemas[benchling_type].keys()
         }
 
     def get_page_size(self) -> int:
@@ -643,7 +694,7 @@ class BenchlingDataSource(
             'worklist_item': RelationshipConfig(
                 to_one={
                     'worklist': 'worklist',
-                    'item': list(self.entities.keys())
+                    'item': list(self.schemas['custom_entity'].keys())
                 }
             )
         } | {
@@ -652,10 +703,16 @@ class BenchlingDataSource(
                     attribute_name: self.schema_names.get(entity_def['schema_id'])
                     for attribute_name, entity_def in v.items()
                     if 'schema_id' in entity_def and entity_def['is_multi'] is False
+                } | {
+                    k1: list(self.schemas[v1].keys())
+                    for k1, v1 in BENCHLING_PARENT_TYPES_WITH_SCHEMAS[benchling_type][
+                        'to_one'
+                    ].items()
                 },
-                to_many={}
+                to_many=BENCHLING_PARENT_TYPES_WITH_SCHEMAS[benchling_type]['to_many']
             )
-            for k, v in self.entities.items()
+            for benchling_type in BENCHLING_PARENT_TYPES_WITH_SCHEMAS.keys()
+            for k, v in self.schemas[benchling_type].items()
         }
 
     def get_to_one_relation(
