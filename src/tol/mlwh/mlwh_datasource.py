@@ -310,6 +310,7 @@ class MlwhDataSource(DataSource, DetailGetter, ListGetter):
             'original_volume': 'aliquot.volume',
             'insert_size': 'aliquot.insert_size',
             'concentration': 'aliquot.concentration',
+            'source_barcode': 'aliquot.source_barcode',
             'volume_remaining': 'aliquot.volume - COALESCE(derived_amounts.amount, 0)'
         }
 
@@ -324,15 +325,27 @@ class MlwhDataSource(DataSource, DetailGetter, ListGetter):
             WITH derived_amounts AS (
                 SELECT sample_name, SUM(volume) as amount
                 FROM aliquot
-                WHERE aliquot_type='derived'
+                WHERE aliquot_type = 'derived'
+                AND source_type = 'library'
+                GROUP BY sample_name
+            ),
+            latest_primary_aliquots AS (
+                SELECT sample_name, MAX(last_updated) AS latest_updated_at
+                FROM aliquot
+                WHERE aliquot_type = 'primary'
+                AND source_type = 'library'
                 GROUP BY sample_name
             )
-
             -- main SELECT
             SELECT {col_string}
             FROM aliquot
             LEFT JOIN derived_amounts on aliquot.sample_name = derived_amounts.sample_name
-            WHERE {clause} AND aliquot.aliquot_type='primary'
+            INNER JOIN latest_primary_aliquots
+                ON aliquot.sample_name = latest_primary_aliquots.sample_name
+                AND aliquot.last_updated = latest_primary_aliquots.latest_updated_at
+            WHERE {clause}
+            AND aliquot.aliquot_type='primary'
+            AND aliquot.source_type = 'library'
             """
         )
 

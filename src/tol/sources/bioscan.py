@@ -13,12 +13,13 @@ from ..core import (
 )
 
 
-def bioscan():
+def bioscan(retries: int = 5):
     bioscan = create_api_datasource(
         api_url=os.getenv('BIOSCAN_URL', Defaults.BIOSCAN_URL)
         + os.getenv('BIOSCAN_API_PATH', Defaults.BIOSCAN_API_PATH),
         token=os.getenv('BIOSCAN_API_KEY'),
-        data_prefix=os.getenv('BIOSCAN_API_DATA_PATH', Defaults.BIOSCAN_API_DATA_PATH)
+        data_prefix=os.getenv('BIOSCAN_API_DATA_PATH', Defaults.BIOSCAN_API_DATA_PATH),
+        retries=retries
     )
     core_data_object(bioscan)
     return bioscan

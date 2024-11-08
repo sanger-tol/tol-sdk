@@ -12,11 +12,12 @@ from ..core import (
 )
 
 
-def portaldb():
+def portaldb(retries: int = 5):
     portaldb = create_api_datasource(
         api_url=os.getenv('PORTAL_URL') + os.getenv('PORTAL_API_PATH') + '/local',
         token=os.getenv('PORTAL_API_KEY'),
-        data_prefix=''
+        data_prefix='',
+        retries=retries
     )
     core_data_object(portaldb)
     return portaldb

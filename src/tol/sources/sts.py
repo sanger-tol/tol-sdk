@@ -13,12 +13,13 @@ from ..core import (
 )
 
 
-def sts():
+def sts(retries: int = 5):
     sts = create_api_datasource(
         api_url=os.getenv('STS_URL', Defaults.STS_URL)
         + os.getenv('STS_API_PATH', Defaults.STS_API_PATH),
         token=os.getenv('STS_API_KEY'),
         data_prefix=os.getenv('STS_API_DATA_PATH', Defaults.STS_API_DATA_PATH),
+        retries=retries
     )
     core_data_object(sts)
     return sts

@@ -13,12 +13,13 @@ from ..core import (
 )
 
 
-def tolid():
+def tolid(retries: int = 5):
     tolid = create_api_datasource(
         api_url=os.getenv('TOLID_URL', Defaults.TOLID_URL)
         + os.getenv('TOLID_API_PATH', Defaults.TOLID_API_PATH),
         token=os.getenv('TOLID_API_KEY'),
-        data_prefix=os.getenv('TOLID_API_DATA_PATH', Defaults.TOLID_API_DATA_PATH)
+        data_prefix=os.getenv('TOLID_API_DATA_PATH', Defaults.TOLID_API_DATA_PATH),
+        retries=retries
     )
     core_data_object(tolid)
     return tolid

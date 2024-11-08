@@ -95,12 +95,21 @@ class TestMlwhDataSource(TestCase):
 
     def test_get_by_id_sequencing_request_volume(self):
         mds = mlwh()
-        ret = mds.get_by_id('sequencing_request_volume', ['DTOL14860867'])
+        ret = mds.get_by_id('sequencing_request_volume', ['DTOL14860867', 'DTOL14809561'])
         obj1 = next(ret)
         self.assertEqual(float(obj1.original_volume), 55.4)
         self.assertEqual(obj1.insert_size, 14658)
         self.assertEqual(float(obj1.concentration), 19.06)
         self.assertEqual(float(obj1.volume_remaining), 47.9)
+        self.assertEqual(obj1.source_barcode, 'TRAC-2-10395')
+
+        # Has a corrected primary volume (i.e. 2 primary records)
+        obj2 = next(ret)
+        self.assertEqual(float(obj2.original_volume), 12.9)
+        self.assertEqual(obj2.insert_size, 9852)
+        self.assertEqual(float(obj2.concentration), 12.8)
+        self.assertEqual(float(obj2.volume_remaining), 5.4)
+        self.assertEqual(obj2.source_barcode, 'TRAC-2-11696')
 
         with self.assertRaises(StopIteration):
             next(ret)
