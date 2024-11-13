@@ -787,7 +787,7 @@ class TestEndToEnd:
         assert stats['int_column']['unique'] == 4
         assert stats['int_column']['cardinality'] == 4
 
-    @against(elastic)
+    @against(elastic, api_elastic)
     def test_group_stats(self, data_source: OperableDataSource, ds_sleep):
         """
         Upsert 3 `DataObject` instances, and get them as a list with filters
@@ -819,8 +819,8 @@ class TestEndToEnd:
         ds_sleep(5)  # Let Elastic settle down after the upsert
 
         stats = list(data_source.get_group_stats(
-            object_type='root',
-            group_by=['bool_column'],
+            'root',
+            ['bool_column'],
             stats_fields=['int_column', 'datetime_column'],
             stats=['min', 'max', 'sum'],
             object_filters=None
@@ -845,8 +845,8 @@ class TestEndToEnd:
         f = DataSourceFilter()
         f.and_ = {'datetime_column': {'gte': {'value': datetime(2021, 1, 1, 0, 0, 0)}}}
         stats = list(data_source.get_group_stats(
-            object_type='root',
-            group_by=['bool_column'],
+            'root',
+            ['bool_column'],
             stats_fields=['list_column'],
             stats=['union'],
             object_filters=f
@@ -861,8 +861,8 @@ class TestEndToEnd:
 
         # String min and max
         stats = list(data_source.get_group_stats(
-            object_type='root',
-            group_by=['bool_column'],
+            'root',
+            ['bool_column'],
             stats_fields=['str_column'],
             stats=['min', 'max', 'unique', 'cardinality'],
             object_filters=f
@@ -899,8 +899,8 @@ class TestEndToEnd:
         ds_sleep(5)  # Let Elastic settle down after the upsert
 
         stats = list(data_source.get_group_stats(
-            object_type='root',
-            group_by=['bool_column', 'int_column'],
+            'root',
+            ['bool_column', 'int_column'],
             stats_fields=['datetime_column'],
             stats=['min', 'max'],
             object_filters=None

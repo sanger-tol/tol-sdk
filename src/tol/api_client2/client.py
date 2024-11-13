@@ -110,6 +110,29 @@ class JsonApiClient:
         headers = self.__merge_headers()
         return self.__fetch_list(url, params=params, headers=headers)
 
+    def get_group_stats(
+        self,
+        object_type: str,
+        group_by_string: str,
+        stats_string: Optional[str],
+        stats_fields_string: Optional[str],
+        filter_string: Optional[str] = None
+    ) -> JsonApiTransfer:
+        """
+        Gets stats transfer for the objects of specified
+        `object_type`.
+        """
+
+        url = self.__group_stats_url(object_type)
+        params = self.__no_none_value_dict(
+            group_by=group_by_string,
+            stats=stats_string,
+            stats_fields=stats_fields_string,
+            filter=filter_string
+        )
+        headers = self.__merge_headers()
+        return self.__fetch_list(url, params=params, headers=headers)
+
     def get_cursor_page(
         self,
         object_type: str,
@@ -346,6 +369,9 @@ class JsonApiClient:
 
     def __stats_url(self, object_type: str) -> str:
         return f'{self.__list_url(object_type)}:stats'
+
+    def __group_stats_url(self, object_type: str) -> str:
+        return f'{self.__list_url(object_type)}:group-stats'
 
     def __cursor_url(self, object_type: str) -> str:
         return f'{self.__list_url(object_type)}:cursor'

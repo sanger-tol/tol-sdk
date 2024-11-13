@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import typing
 from abc import ABC, abstractmethod
-from typing import Any, List, Optional
+from typing import Any, Iterable, Optional
 
 if typing.TYPE_CHECKING:
     from ..datasource_filter import DataSourceFilter
@@ -18,12 +18,12 @@ class GroupStatter(ABC):
     def get_group_stats(
         self,
         object_type: str,
-        group_by: List[str],
-        stats_fields: List[str] = [],
-        stats: List[str] = ['min', 'max'],
+        group_by: list[str],
+        stats_fields: list[str] = [],
+        stats: list[str] = ['min', 'max'],
         object_filters: Optional[DataSourceFilter] = None,
         session: Optional[OperableSession] = None
-    ) -> dict[Any, int]:
+    ) -> Iterable[dict[Any, int]]:
         """
         Gets stats for results that are matched by the (optional) filter,
         broken down by the group_by parameter

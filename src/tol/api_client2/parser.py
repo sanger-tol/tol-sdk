@@ -53,6 +53,13 @@ class Parser(ABC):
         stats dict instance
         """
 
+    @abstractmethod
+    def parse_group_stats(self, transfer: JsonApiResource) -> list[dict]:
+        """
+        Parses a grouped stats transfer resource to a
+        list instance
+        """
+
 
 class DefaultParser(Parser):
 
@@ -78,6 +85,15 @@ class DefaultParser(Parser):
         raw_stats = transfer.get('stats')
         converted_stats = self.__convert_stats(type_, raw_stats)
         return {'stats': converted_stats}
+
+    def parse_group_stats(self, transfer: JsonApiResource) -> Iterable[dict]:
+        type_ = transfer.get('type')
+        raw_stats = transfer.get('stats')
+
+        return [
+            self.__convert_group_stats(type_, raw_stat)
+            for raw_stat in raw_stats
+        ]
 
     def __get_data_source(self, type_: str) -> DataSource:
         return self.__dict[type_]
@@ -160,6 +176,22 @@ class DefaultParser(Parser):
             }
             for fieldname, fieldstats in stats.items()
         }
+
+    def __convert_group_stats(
+        self,
+        type_: str,
+        raw_stats: dict[str, dict[str, Any]]
+    ) -> dict[str, dict[str, Any]]:
+
+        st = raw_stats.pop('stats')
+        count = st.pop('count', None)
+
+        raw_stats['stats'] = self.__convert_stats(type_, st)
+
+        if count is not None:
+            raw_stats['stats']['count'] = count
+
+        return raw_stats
 
     def __get_datetime_keys(self, type_: str) -> list[str]:
         ds = self.__get_data_source(type_)

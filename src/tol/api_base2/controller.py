@@ -12,6 +12,7 @@ from .auth import AuthInspector
 from .misc import (
     AggregationBody,
     AggregationParameters,
+    GroupStatsParameters,
     JsonApiRequestBody,
     ListGetParamaters,
     StatsParameters
@@ -34,6 +35,7 @@ from ..core.operator import (
     Cursor,
     Deleter,
     DetailGetter,
+    GroupStatter,
     Inserter,
     ListGetter,
     Operator,
@@ -255,6 +257,32 @@ class Controller:
             ),
         )
         document_meta = {**stats, 'type': object_type}
+        return self.__view.dump_bulk([], document_meta=document_meta)
+
+    @validate(GroupStatter, 'get_group_stats', OperatorMethod.GROUP_STATS)
+    def get_group_stats(
+        self,
+        object_type: str,
+        query_args: GroupStatsParameters,
+        ext_and: Optional[AndFilter],
+    ) -> ResponseDict:
+        """
+        Gets stats of specified object type, respecting filters.
+        """
+        stats = self.__data_source.get_group_stats(
+            object_type,
+            query_args.group_by,
+            stats=query_args.stats,
+            stats_fields=query_args.stats_fields,
+            object_filters=self.__combine_filters(
+                query_args.filter,
+                ext_and
+            ),
+        )
+        document_meta = {
+            'stats': list(stats),
+            'type': object_type
+        }
         return self.__view.dump_bulk([], document_meta=document_meta)
 
     @validate(Deleter, 'delete', OperatorMethod.DELETE)

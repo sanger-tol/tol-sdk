@@ -7,7 +7,7 @@ from __future__ import annotations
 import typing
 from functools import cache
 from itertools import chain
-from typing import Callable, Iterable, List, Optional
+from typing import Any, Callable, Iterable, List, Optional
 
 from .client import JsonApiClient
 from .converter import (
@@ -22,6 +22,7 @@ from ..core.operator import (
     Cursor,
     Deleter,
     DetailGetter,
+    GroupStatter,
     Inserter,
     ListGetter,
     OperatorDict,
@@ -52,6 +53,7 @@ class ApiDataSource(
     Cursor,
     Deleter,
     DetailGetter,
+    GroupStatter,
     Inserter,
     PageGetter,
     ListGetter,
@@ -219,6 +221,27 @@ class ApiDataSource(
             filter_string=filter_string
         )
         return self.__jc_factory().convert_stats(transfer)
+
+    @validate('groupStats')
+    def get_group_stats(
+        self,
+        object_type: str,
+        group_by: List[str],
+        stats_fields: List[str] = [],
+        stats: List[str] = ['min', 'max'],
+        object_filters: DataSourceFilter | None = None,
+        session: OperableSession | None = None
+    ) -> Iterable[OperatorDict[Any, int]]:
+
+        filter_string = self.__get_filter_string(object_filters)
+        transfer = self.__client_factory().get_group_stats(
+            object_type,
+            ','.join(group_by),
+            stats_string=','.join(stats),
+            stats_fields_string=','.join(stats_fields),
+            filter_string=filter_string
+        )
+        return self.__jc_factory().convert_group_stats(transfer)
 
     @validate('cursor')
     def get_cursor_page(

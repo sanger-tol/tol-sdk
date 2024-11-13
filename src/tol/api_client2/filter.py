@@ -3,6 +3,7 @@
 # SPDX-License-Identifier: MIT
 
 from abc import ABC, abstractmethod
+from datetime import date, datetime
 from json import dumps
 from typing import Any, Callable, Optional
 
@@ -22,10 +23,17 @@ class ApiFilter(ABC):
         """
 
 
+def date_serial(v: Any) -> Any:
+    if isinstance(v, (date, datetime)):
+        return v.isoformat()
+    return v
+
+
 DictDumper = Callable[[dict[str, Any]], str]
 default_dict_dumper: DictDumper = lambda d: dumps(
     d,
-    separators=(',', ':')
+    separators=(',', ':'),
+    default=date_serial
 )
 
 

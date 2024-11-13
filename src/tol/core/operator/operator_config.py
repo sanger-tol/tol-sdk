@@ -14,6 +14,7 @@ from .counter import Counter
 from .cursor import Cursor
 from .deleter import Deleter
 from .detail_getter import DetailGetter
+from .group_statter import GroupStatter
 from .inserter import Inserter
 from .page_getter import PageGetter
 from .relational import Relational
@@ -33,6 +34,7 @@ READ_OPERATOR_MAP: dict[str, type] = {
     'listGet': PageGetter,
     'relational': Relational,
     'stats': Statter,
+    'groupStats': GroupStatter,
 }
 
 

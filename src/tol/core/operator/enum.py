@@ -12,6 +12,7 @@ class OperatorMethod(str, Enum):
     COUNT = 'count GET'
     CURSOR = 'cursor GET'
     STATS = 'stats GET'
+    GROUP_STATS = 'group-stat GET'
     DELETE = 'detail DELETE'
     INSERT = 'inserts POST'
     UPDATE = 'update PATCH'

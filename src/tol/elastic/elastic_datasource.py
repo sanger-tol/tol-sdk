@@ -825,7 +825,8 @@ class ElasticDataSource(
         stats: List[str] = [],
         object_filters: DataSourceFilter = None,
         **kwargs
-    ) -> dict[Any, int]:
+    ) -> Iterable[dict[Any, int]]:
+
         after_key = None
         while True:
             after_key, buckets = self.__get_group_stats_page(

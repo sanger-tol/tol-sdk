@@ -89,6 +89,17 @@ class JsonApiConverter():
         stats = input_[self.__meta_key]
         return self.__parser.parse_stats(stats)
 
+    def convert_group_stats(
+        self,
+        input_: JsonApiTransfer
+    ) -> Dict[str, Any]:
+        """
+        Converts a JsonApiTransfer containing a list of grouped stats.
+        """
+
+        stats = input_[self.__meta_key]
+        return self.__parser.parse_group_stats(stats)
+
     def convert_cursor_page(
         self,
         input_: JsonApiTransfer
