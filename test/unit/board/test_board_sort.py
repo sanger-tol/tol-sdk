@@ -15,12 +15,9 @@ from tol.core import (
 )
 
 
-class TestDashboardBlueprint:
+class TestDashboardSorting:
     """
-    Tests `dashboard_blueprint()` for both:
-
-    - methods called on the given `DataSource`
-    - permissions for various roles
+    Tests `dashboard_blueprint()` for correct ordering.
     """
 
     def test_sorting__components_of_zone(
