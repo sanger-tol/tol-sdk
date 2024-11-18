@@ -109,9 +109,9 @@ class TestDashboardSorting:
 
         ds.get_list_page.return_value = [
             self.__mock_obj(
-                joining_type,
                 c,
-                i
+                i,
+                element_type
             )
             for i, c in enumerate('abc')
         ]
@@ -154,20 +154,24 @@ class TestDashboardSorting:
 
     def __mock_obj(
         self,
-        type_: str,
         id_: str,
-        order: str
+        order: str,
+        element_type: str
     ) -> DataObject:
 
         mock_obj: DataObject = create_autospec(
-            DataObject,
-            spec_set=True
+            DataObject
         )
-
-        mock_obj.type = type_
-        mock_obj.id = id_
         mock_obj.attributes = {
             'order': order
         }
+
+        mock_element: DataObject = create_autospec(
+            DataObject,
+            spec_set=True
+        )
+        mock_element.id = id_
+
+        setattr(mock_obj, element_type, mock_element)
 
         return mock_obj
