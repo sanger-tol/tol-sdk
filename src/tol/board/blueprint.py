@@ -103,7 +103,8 @@ class DashboardBlueprint(Blueprint):
     ) -> Iterable[DataObject]:
 
         element_ids = (
-            obj.id for obj in joining_objs
+            getattr(obj, element_type).id
+            for obj in joining_objs
         )
 
         return self.__ds.get_by_ids(
