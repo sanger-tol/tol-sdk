@@ -19,7 +19,9 @@ def create_session_factory(db_uri: str) -> SessionFactory:
 
     engine = create_engine(db_uri,
                            pool_recycle=1800,
-                           pool_pre_ping=True)
+                           pool_pre_ping=True,
+                           pool_size=2,
+                           max_overflow=10)
 
     session_maker = sessionmaker(
         bind=engine,

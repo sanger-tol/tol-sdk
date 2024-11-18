@@ -46,19 +46,19 @@ class TestEnaDataSource(TestCase):
         f.and_ = {
             'scientific_name': {'in_list': {'value': ['Capra hircus', 'Mus musculus']}}
         }
-        ret = eds.get_list('taxon', object_filters=f)
-        obj1 = next(ret)
-
-        self.assertEqual(obj1.id, '9925')
-        self.assertEqual(obj1.common_name, 'domestic goat')
-        self.assertEqual(obj1.merged_tax_id, '57076')
-
-        obj2 = next(ret)
-        self.assertEqual(obj2.id, '10090')
-        self.assertEqual(obj2.genbank_common_name, 'house mouse')
-
-        with self.assertRaises(StopIteration):
-            next(ret)
+        ret = list(eds.get_list('taxon', object_filters=f))
+        obj_ids = [obj.id for obj in ret]
+        assert '9925' in obj_ids
+        assert '10090' in obj_ids
+        assert len(obj_ids) == 2
+        for obj in ret:
+            if obj.id == '9925':
+                self.assertEqual(obj.id, '9925')
+                self.assertEqual(obj.common_name, 'domestic goat')
+                self.assertEqual(obj.merged_tax_id, '57076')
+            elif obj.id == '10090':
+                self.assertEqual(obj.id, '10090')
+                self.assertEqual(obj.genbank_common_name, 'house mouse')
 
     def test_get_list_page(self):
         eds = ena()

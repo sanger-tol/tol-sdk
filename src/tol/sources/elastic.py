@@ -194,40 +194,46 @@ def elastic():
                 'type': 'keyword',
                 'script': {
                     'source': """
-                    def statusMapping = [
-                        '11_published': '1. Submitted', '12_public': '1. Submitted',
-                        '13_submitted': '1. Submitted',
-                        '21_in_submission': '2. Curated', '22_postprocessing': '2. Curated',
-                        '23_submission_hold': '2. Curated',
-                        '31_curation': '3. In curation', '33_build': '3. In curation',
-                        '34_contam_check_btk': '3. In curation',
-                        '35_open': '3. In curation', '36_awaiting_data': '3. In curation',
-                        '41_data_asm': '4. In Assembly', '42_asm_r&d': '4. In Assembly',
-                        '43_hold_for_analysis': '4. In Assembly', '44_faculty_asm':
-                        '4. In Assembly', '45_resubmit_asm': '4. In Assembly',
-                        '46_faculty_asm': '4. In Assembly', '51_pacbio_fail':
-                        '5. In Sequencing', '52_hic_fail': '5. In Sequencing',
-                        '54_species_id': '5. In Sequencing', '55_data_query':
-                        '5. In Sequencing','56_data_wrangle': '5. In Sequencing',
-                        '61_lr_asm_10x': '5. In Sequencing','62_lr_asm':
-                        '5. In Sequencing', '63_lr_topup_hic': '5. In Sequencing',
-                        '64_10x_only': '5. In Sequencing', '64_10x_hic_only':
-                        '5. In Sequencing', '65_hic_only': '5. In Sequencing'
-                    ];
+                        String status = null;
+                        if (doc['informatics_tolid_informatics_status_summary_min.keyword']
+                        .size() > 0) {
+                            status =
+                            doc['informatics_tolid_informatics_status_summary_min.keyword']
+                            .value;
+                        }
 
-                    if (doc['informatics_tolid_informatics_status_min.keyword'].size() > 0) {
-                        def status = doc['informatics_tolid_informatics_status_min.keyword'].value;
-                        if (statusMapping.containsKey(status)) {
-                            emit(statusMapping[status]);
+                        String stage = null;
+                        if (doc['tolqclegacy_assembly_stage.keyword'].size() > 0) {
+                            stage = doc['tolqclegacy_assembly_stage.keyword'].value;
                         }
-                    } else if (doc.containsKey('sts_sample_sts_tollab_assign_date_min')) {
-                        if (doc['sts_sample_sts_tollab_assign_date_min'].size() > 0) {
-                            emit("6. Sent to lab");
-                        } else {
-                            emit("7. Onboarding");
+
+                        if (doc.containsKey('sts_sample_sts_project_union.keyword')
+                        && doc['sts_sample_sts_project_union.keyword'].size() > 0) {
+                            emit("a. On Site");
                         }
-                    }
-                """
+
+                        if (status == '1 submitted') {
+                            emit("h. Submitted");
+                        } else if (status == '3 curation') {
+                            emit("g. Curation");
+                        } else if (status == '4 data complete') {
+                            emit("f. Data Complete");
+                        } else if (status == '5 data issue') {
+                            emit("e. Data Issue");
+                        } else if (status == '6 data generation') {
+                            emit("d. Data Generation");
+                        } else if (status == null && (stage == null || stage == '-')
+                            && doc['sts_sample_sts_tollab_assign_date_min'].size() > 0
+                            && doc['mlwh_run_data_mlwh_run_complete_pacbio_min'].size() == 0
+                            && doc['mlwh_run_data_mlwh_run_complete_hic_min'].size() == 0) {
+                            emit("c. No Data Yet");
+                        }
+
+                        if (doc['sts_sample_sts_receive_date_min'].size() > 0
+                            && doc['sts_sample_sts_tollab_assign_date_min'].size() == 0) {
+                            emit("b. Not Released To Lab");
+                        }
+                    """
                 }
             },
         },
