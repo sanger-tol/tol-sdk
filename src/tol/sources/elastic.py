@@ -248,9 +248,10 @@ def elastic():
             'calc_coverage': RuntimeFields.math('mlwh_run_data_mlwh_hifi_read_bases_sum',
                                                 'tolid_species.sts_genome_size',
                                                 operation='/'),
-            'calc_ongoing_sumbissions': RuntimeFields.math('tolqc_sequencing_request_count',
-                                                           'tolqc_completed_sequencing_request_count',
-                                                           operation='-')
+            'calc_ongoing_sumbissions': RuntimeFields.math(
+                'tolqc_sequencing_request_count',
+                'tolqc_completed_sequencing_request_count',
+                operation='-')
         },
         'sample': {
             'calc_biospecimen_id':
