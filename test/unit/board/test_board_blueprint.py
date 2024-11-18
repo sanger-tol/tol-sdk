@@ -94,7 +94,7 @@ class TestDashboardBlueprint:
     def __test_sorting(
         self,
         container_type: str,
-        smaller_type: str,
+        element_type: str,
         ctx: AuthContext,
         ds: OperableDataSource,
         view: View,
@@ -103,7 +103,7 @@ class TestDashboardBlueprint:
     ):
         """The common logic of the "sorting" tests."""
 
-        joining_type = f'{smaller_type}_{container_type}'
+        joining_type = f'{element_type}_{container_type}'
 
         ctx.authenticated = True
         ctx.user_id = 100
@@ -125,7 +125,7 @@ class TestDashboardBlueprint:
         view.dump_bulk.return_value = mock_json
 
         r = client.get(
-            f'/{container_type}/605/{smaller_type}'
+            f'/{container_type}/605/{element_type}'
             '?page=1&page_size=20'
         )
 
@@ -148,7 +148,7 @@ class TestDashboardBlueprint:
         )
         assert ds.get_by_ids.call_count == 1
         (type_, ids) = ds.get_by_ids.call_args_list[0]
-        assert type_ == smaller_type
+        assert type_ == element_type
         assert list(ids) == ['c', 'b', 'a']
         assert view.dump_bulk.called_once_with(
             mock_detail
