@@ -117,7 +117,8 @@ class TestDashboardBlueprint:
         ctx: AuthContext,
         ds: OperableDataSource,
         view: View,
-        client: FlaskClient
+        client: FlaskClient,
+        admin_role: str
     ):
         """
         `GET /zone/{id}/components` respects `order`
@@ -126,7 +127,7 @@ class TestDashboardBlueprint:
 
         ctx.authenticated = True
         ctx.user_id = 100
-        ctx.roles = ['admin']
+        ctx.roles = [admin_role]
 
         ds.get_list_page.return_value = [
             {
