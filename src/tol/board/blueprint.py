@@ -28,11 +28,15 @@ ViewFactory = Callable[[], View]
 class DashboardBlueprint(Blueprint):
     def __init__(
         self,
+        name: str,
+        import_name: str,
         ds: OperableDataSource,
         admin_role: str,
         ctx_getter: CtxGetter,
         view_factory: ViewFactory
     ) -> None:
+
+        super().__init__(name, import_name)
 
         self.__ds = ds
         self.__admin_role = admin_role
@@ -51,9 +55,10 @@ class DashboardBlueprint(Blueprint):
         """
 
         @self.get(
-            f'/{container_type}/{{id_: str}}/{element_type}s'
+            f'/{container_type}/<id_>/{element_type}s',
+            endpoint=f'{element_type}_in_{container_type}'
         )
-        def __route(id_: str):
+        def route_method(id_: str):
             view = self.__view_factory()
             args = ListGetParamaters(request.args)
             element_objs = self.__get_contained(
@@ -75,7 +80,7 @@ class DashboardBlueprint(Blueprint):
         page_size: int,
     ) -> Iterable[DataObject]:
 
-        joinining_type = f'{container_type}_{element_type}'
+        joinining_type = f'{element_type}_{container_type}'
         f = self.__get_filter(container_type, container_id)
 
         joining_objs = self.__ds.get_list_page(
@@ -114,8 +119,8 @@ class DashboardBlueprint(Blueprint):
 
         return DataSourceFilter(
             and_={
-                'eq': {
-                    f'{container_type}.id': {
+                f'{container_type}.id': {
+                    'eq': {
                         'value': container_id
                     }
                 }
@@ -129,14 +134,22 @@ def dashboard_blueprint(
     admin_role: str = 'admin',
     ctx_getter: CtxGetter = default_ctx_getter,
     view_factory: ViewFactory = lambda: DefaultView()
-) -> Blueprint:
+) -> DashboardBlueprint:
     """
-    A flask `Blueprint`
+    A flask `Blueprint` for user-configured dashboards
     """
 
-    board_bp = Blueprint(
+    board_bp = DashboardBlueprint(
         'dashboard',
-        __name__
+        __name__,
+        ds,
+        admin_role,
+        ctx_getter,
+        view_factory
     )
+
+    board_bp.route_container('zone', 'component')
+    board_bp.route_container('view', 'zone')
+    board_bp.route_container('board', 'view')
 
     return board_bp

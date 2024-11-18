@@ -2,13 +2,14 @@
 #
 # SPDX-License-Identifier: MIT
 
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, create_autospec
 
 from flask.testing import FlaskClient
 
 from tol.api_base2.misc import AuthContext
 from tol.api_client2.view import View
 from tol.core import (
+    DataObject,
     DataSourceFilter,
     OperableDataSource
 )
@@ -110,11 +111,11 @@ class TestDashboardBlueprint:
         ctx.roles = [admin_role]
 
         ds.get_list_page.return_value = [
-            {
-                'type': joining_type,
-                'id': c,
-                'order': 50 - i * 3  # descending order
-            }
+            self.__mock_obj(
+                joining_type,
+                c,
+                i
+            )
             for i, c in enumerate('abc')
         ]
 
@@ -125,13 +126,13 @@ class TestDashboardBlueprint:
         view.dump_bulk.return_value = mock_json
 
         r = client.get(
-            f'/{container_type}/605/{element_type}'
+            f'/{container_type}/605/{element_type}s'
             '?page=1&page_size=20'
         )
 
         assert r.status_code == 200
         assert r.json == mock_json
-        assert ds.get_list_page.called_once_with(
+        ds.get_list_page.assert_called_once_with(
             joining_type,
             1,
             page_size=20,
@@ -147,10 +148,29 @@ class TestDashboardBlueprint:
             sort_by='order'
         )
         assert ds.get_by_ids.call_count == 1
-        (type_, ids) = ds.get_by_ids.call_args_list[0]
+        (type_, ids) = ds.get_by_ids.call_args_list[0].args
         assert type_ == element_type
-        assert list(ids) == ['c', 'b', 'a']
-        assert view.dump_bulk.called_once_with(
+        assert list(ids) == ['a', 'b', 'c']
+        view.dump_bulk.assert_called_once_with(
             mock_detail
         )
 
+    def __mock_obj(
+        self,
+        type_: str,
+        id_: str,
+        order: str
+    ) -> DataObject:
+
+        mock_obj: DataObject = create_autospec(
+            DataObject,
+            spec_set=True
+        )
+
+        mock_obj.type = type_
+        mock_obj.id = id_
+        mock_obj.attributes = {
+            'order': order
+        }
+
+        return mock_obj

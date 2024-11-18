@@ -95,6 +95,8 @@ def app(
     )
     app.register_blueprint(bp)
 
+    import logging; logging.error(app.url_map)
+
     return app
 
 
