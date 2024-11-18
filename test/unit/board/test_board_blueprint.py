@@ -2,106 +2,16 @@
 #
 # SPDX-License-Identifier: MIT
 
-from unittest.mock import MagicMock, create_autospec
+from unittest.mock import MagicMock
 
-from flask import Flask
 from flask.testing import FlaskClient
-
-import pytest
 
 from tol.api_base2.misc import AuthContext
 from tol.api_client2.view import View
-from tol.board import dashboard_blueprint
 from tol.core import (
-    DataSource,
     DataSourceFilter,
     OperableDataSource
 )
-from tol.core.operator import (
-    DetailGetter,
-    PageGetter,
-    Relational
-)
-
-
-@pytest.fixture
-def ds() -> OperableDataSource:
-    ds_class = type(
-        '',
-        (
-            DataSource,
-            DetailGetter,
-            PageGetter,
-            Relational,
-        ),
-        {}
-    )
-
-    mock_ds: OperableDataSource = create_autospec(
-        ds_class,
-        spec_set=True
-    )
-
-    mock_ds.supported_types = [
-        'component',
-        'component_zone',
-        'zone',
-        'zone_view',
-        'view',
-        'view_board',
-        'board',
-        'user'
-    ]
-
-    return mock_ds
-
-
-@pytest.fixture
-def ctx() -> AuthContext:
-    return create_autospec(
-        AuthContext,
-        spec_set=True
-    )
-
-
-@pytest.fixture
-def view() -> View:
-    return create_autospec(
-        View,
-        spec_set=True
-    )
-
-
-@pytest.fixture
-def admin_role() -> str:
-    return 'adminzzzz'
-
-
-@pytest.fixture
-def app(
-    ds: OperableDataSource,
-    ctx: AuthContext,
-    view: View,
-    admin_role: str,
-) -> Flask:
-
-    app = Flask(__name__)
-    app.testing = True
-
-    bp = dashboard_blueprint(
-        ds,
-        admin_role=admin_role,
-        ctx_getter=lambda: ctx,
-        view_factory=lambda: view
-    )
-    app.register_blueprint(bp)
-
-    return app
-
-
-@pytest.fixture
-def client(app: Flask) -> FlaskClient:
-    return app.test_client()
 
 
 class TestDashboardBlueprint:
@@ -122,8 +32,78 @@ class TestDashboardBlueprint:
     ):
         """
         `GET /zone/{id}/components` respects `order`
-        in `component_zone` table
+        in the `component_zone` table.
         """
+
+        self.__test_sorting(
+            'zone',
+            'component',
+            ctx,
+            ds,
+            view,
+            client,
+            admin_role,
+        )
+
+    def test_sorting__zones_of_view(
+        self,
+        ctx: AuthContext,
+        ds: OperableDataSource,
+        view: View,
+        client: FlaskClient,
+        admin_role: str
+    ):
+        """
+        `GET /zone/{id}/components` respects `order`
+        in the `component_zone` table.
+        """
+
+        self.__test_sorting(
+            'view',
+            'zone',
+            ctx,
+            ds,
+            view,
+            client,
+            admin_role,
+        )
+
+    def test_sorting__views_of_board(
+        self,
+        ctx: AuthContext,
+        ds: OperableDataSource,
+        view: View,
+        client: FlaskClient,
+        admin_role: str
+    ):
+        """
+        `GET /zone/{id}/components` respects `order`
+        in the `component_zone` table.
+        """
+
+        self.__test_sorting(
+            'board',
+            'view',
+            ctx,
+            ds,
+            view,
+            client,
+            admin_role,
+        )
+
+    def __test_sorting(
+        self,
+        container_type: str,
+        smaller_type: str,
+        ctx: AuthContext,
+        ds: OperableDataSource,
+        view: View,
+        client: FlaskClient,
+        admin_role: str
+    ):
+        """The common logic of the "sorting" tests."""
+
+        joining_type = f'{smaller_type}_{container_type}'
 
         ctx.authenticated = True
         ctx.user_id = 100
@@ -131,7 +111,7 @@ class TestDashboardBlueprint:
 
         ds.get_list_page.return_value = [
             {
-                'type': 'component_zone',
+                'type': joining_type,
                 'id': c,
                 'order': 50 - i * 3  # descending order
             }
@@ -145,18 +125,19 @@ class TestDashboardBlueprint:
         view.dump_bulk.return_value = mock_json
 
         r = client.get(
-            '/zone/605/components?page=1&page_size=20'
+            f'/{container_type}/605/{smaller_type}'
+            '?page=1&page_size=20'
         )
 
         assert r.status_code == 200
         assert r.json == mock_json
         assert ds.get_list_page.called_once_with(
-            'component_zone',
+            joining_type,
             1,
             page_size=20,
             object_filters=DataSourceFilter(
                 and_={
-                    'zone.id': {
+                    f'{container_type}.id': {
                         'eq': {
                             'value': '605'
                         }
@@ -167,7 +148,7 @@ class TestDashboardBlueprint:
         )
         assert ds.get_by_ids.call_count == 1
         (type_, ids) = ds.get_by_ids.call_args_list[0]
-        assert type_ == 'component'
+        assert type_ == smaller_type
         assert list(ids) == ['c', 'b', 'a']
         assert view.dump_bulk.called_once_with(
             mock_detail
