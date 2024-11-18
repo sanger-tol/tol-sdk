@@ -26,6 +26,7 @@ from .lrpacbio_sequencing_request_to_elastic_sequencing_request_converter import
 from .mlwh_run_data_to_elastic_run_data_converter import MlwhRunDataToElasticRunDataConverter  # noqa F401
 from .sts_banked_sample_to_elastic_sample_converter import StsBankedSampleToElasticSampleConverter  # noqa F401
 from .sts_manifest_to_elastic_manifest_converter import StsManifestToElasticManifestConverter  # noqa F401
+from .sts_project_to_elastic_sample_update_converter import StsProjectToElasticSampleUpdateConverter  # noqa F401
 from .sts_sample_project_to_elastic_sample_converter import StsSampleProjectToElasticSampleConverter  # noqa F401
 from .sts_sample_species_to_elastic_sample_converter import StsSampleSpeciesToElasticSampleConverter  # noqa F401
 from .sts_sampleset_to_elastic_sampleset_converter import StsSamplesetToElasticSamplesetConverter  # noqa F401
