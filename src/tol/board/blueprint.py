@@ -6,11 +6,6 @@ from typing import Callable, Iterable
 
 from flask import Blueprint, request
 
-from tol.core import (
-    DataObject,
-    DataSourceFilter,
-    OperableDataSource
-)
 from tol.api_base2.misc import (
     CtxGetter,
     ListGetParamaters,
@@ -19,6 +14,11 @@ from tol.api_base2.misc import (
 from tol.api_client2.view import (
     DefaultView,
     View
+)
+from tol.core import (
+    DataObject,
+    DataSourceFilter,
+    OperableDataSource
 )
 
 
