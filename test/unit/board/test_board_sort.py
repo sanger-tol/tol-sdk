@@ -28,10 +28,6 @@ class TestDashboardSorting:
         client: FlaskClient,
         admin_role: str
     ):
-        """
-        `GET /zone/{id}/components` respects `order`
-        in the `component_zone` table.
-        """
 
         self.__test_sorting(
             'zone',
@@ -51,10 +47,6 @@ class TestDashboardSorting:
         client: FlaskClient,
         admin_role: str
     ):
-        """
-        `GET /zone/{id}/components` respects `order`
-        in the `component_zone` table.
-        """
 
         self.__test_sorting(
             'view',
@@ -74,10 +66,6 @@ class TestDashboardSorting:
         client: FlaskClient,
         admin_role: str
     ):
-        """
-        `GET /zone/{id}/components` respects `order`
-        in the `component_zone` table.
-        """
 
         self.__test_sorting(
             'board',
