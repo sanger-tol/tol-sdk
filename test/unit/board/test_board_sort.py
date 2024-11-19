@@ -128,7 +128,7 @@ class TestDashboardSorting:
                             'value': '605'
                         }
                     },
-                    'user.id': {
+                    f'{container_type}.user.id': {
                         'eq': {
                             'value': '100'
                         }

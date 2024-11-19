@@ -129,7 +129,7 @@ class DashboardBlueprint(Blueprint):
                         'value': container_id
                     }
                 },
-                'user.id': {
+                f'{container_type}.user.id': {
                     'eq': {
                         'value': self.__user_id
                     }
