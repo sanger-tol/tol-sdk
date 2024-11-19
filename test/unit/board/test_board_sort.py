@@ -102,7 +102,7 @@ class TestDashboardSorting:
                 element_type
             )
             for i, c in enumerate('abc')
-        ]
+        ], None
 
         mock_detail = MagicMock()
         ds.get_by_ids.return_value = mock_detail
