@@ -11,9 +11,9 @@ from flask.testing import FlaskClient
 import pytest
 
 from tol.api_base2.misc import AuthContext
+from tol.board import dashboard_blueprint
 from tol.core import core_data_object
 from tol.sql import SqlDataSource, create_sql_datasource
-from tol.board import dashboard_blueprint
 
 from ..models import delete_models_list
 
@@ -101,7 +101,7 @@ class TestDashboardSorting:
             'zone',
             [zone]
         )
-        
+
         components = [
             board_sql_ds.data_object_factory(
                 'component',
@@ -132,7 +132,7 @@ class TestDashboardSorting:
                     'component_zone',
                     str(i),
                     {
-                        'order': i    
+                        'order': i
                     },
                     to_one={
                         'zone': zone,
