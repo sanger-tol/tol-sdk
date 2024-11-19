@@ -87,7 +87,7 @@ class DashboardBlueprint(Blueprint):
         joinining_type = f'{element_type}_{container_type}'
         f = self.__get_filter(container_type, container_id)
 
-        joining_objs = self.__ds.get_list_page(
+        (joining_objs, _) = self.__ds.get_list_page(
             joinining_type,
             page,
             page_size=page_size,

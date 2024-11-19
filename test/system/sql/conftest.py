@@ -18,13 +18,9 @@ from tol.api_base2.auth import OidcConfig, require_auth
 from tol.core import DataSource
 from tol.core.operator import DetailGetter
 from tol.sql import create_session_factory
-from tol.sql.auth import (
-    DbAuthBlueprint,
-    db_auth_blueprint,
-)
 from tol.sql.session import SessionFactory
 
-from .models import TestUserMixin, create_models_list
+from .models import OIDC_CONFIG, auth_bp, create_models_list
 from .models.base import BaseModel
 
 
@@ -46,45 +42,20 @@ def __tear_down(
 
 
 @fixture(scope='package')
-def db_uri() -> str:
-    return os.environ['DB_URI']
+def full_models_list():
+
+    return [
+        *create_models_list,
+        auth_bp.models.role_class,
+        auth_bp.models.role_binding_class,
+        auth_bp.models.token_class,
+        auth_bp.models.state_class,
+    ]
 
 
 @fixture(scope='package')
 def oidc_config() -> OidcConfig:
-    return OidcConfig(
-        auth_url='http://local.lan/authorize',
-        user_info_url='http://local.lan/userinfo',
-        token_url='http://local.lan/token',
-        revoke_url='http://local.lan/revoke',
-        client_id='a fun ID',
-        client_secret='bubbles',
-        redirect_uri='http://other.lan/callback'
-    )
-
-
-@fixture(scope='package')
-def auth_bp(db_uri, oidc_config):
-    return db_auth_blueprint(
-        BaseModel,
-        db_uri,
-        oidc_config_factory=lambda: oidc_config,
-        user_mixin_class=TestUserMixin,
-        oidc_id_column_name='changed_lol',
-        oidc_ext_mapping={
-            'do_not_forget_me': 'extra_oidc_field',
-            'me_neither': 'extra_oidc_int'
-        }
-    )
-
-
-@fixture(scope='package')
-def full_models_list(auth_bp: DbAuthBlueprint):
-
-    return [
-        *create_models_list,
-        *auth_bp.models
-    ]
+    return OIDC_CONFIG
 
 
 @fixture(scope='package')
@@ -98,7 +69,9 @@ def models_list(full_models_list):
 
 
 @fixture
-def session_factory(db_uri: str, full_models_list: list[type[Any]]):
+def session_factory(full_models_list: list[type[Any]]):
+
+    db_uri = os.environ['DB_URI']
 
     __set_up(db_uri)
 
@@ -146,7 +119,6 @@ def data_bp(data_source: DataSource):
 
 @fixture(scope='package')
 def app(
-    auth_bp: DbAuthBlueprint,
     data_bp: Blueprint
 ) -> Flask:
 
