@@ -71,6 +71,10 @@ class DashboardBlueprint(Blueprint):
 
             return view.dump_bulk(element_objs)
 
+    @property
+    def __user_id(self) -> str:
+        return self.__ctx_getter().user_id
+
     def __get_contained(
         self,
         container_type: str,
@@ -123,6 +127,11 @@ class DashboardBlueprint(Blueprint):
                 f'{container_type}.id': {
                     'eq': {
                         'value': container_id
+                    }
+                },
+                'user.id': {
+                    'eq': {
+                        'value': self.__user_id
                     }
                 }
             }

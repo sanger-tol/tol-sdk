@@ -92,7 +92,7 @@ class TestDashboardSorting:
         joining_type = f'{element_type}_{container_type}'
 
         ctx.authenticated = True
-        ctx.user_id = 100
+        ctx.user_id = '100'
         ctx.roles = [admin_role]
 
         ds.get_list_page.return_value = [
@@ -126,6 +126,11 @@ class TestDashboardSorting:
                     f'{container_type}.id': {
                         'eq': {
                             'value': '605'
+                        }
+                    },
+                    'user.id': {
+                        'eq': {
+                            'value': '100'
                         }
                     }
                 }
