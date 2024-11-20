@@ -70,9 +70,8 @@ def create_board_models(
     class Component(base_model_class):
         __tablename__ = 'component'
 
-        id: Mapped[int] = mapped_column(  # noqa A003
-            primary_key=True,
-            autoincrement=True
+        id: Mapped[str] = mapped_column(  # noqa A003
+            primary_key=True
         )
 
         title: Mapped[str] = mapped_column(nullable=False)
@@ -135,9 +134,8 @@ def create_board_models(
     class Zone(base_model_class):
         __tablename__ = 'zone'
 
-        id: Mapped[int] = mapped_column(  # noqa A003
-            primary_key=True,
-            autoincrement=True
+        id: Mapped[str] = mapped_column(  # noqa A003
+            primary_key=True
         )
 
         title: Mapped[str] = mapped_column(nullable=False)
@@ -201,9 +199,8 @@ def create_board_models(
     class View(base_model_class):
         __tablename__ = 'view'
 
-        id: Mapped[int] = mapped_column(  # noqa A003
-            primary_key=True,
-            autoincrement=True
+        id: Mapped[str] = mapped_column(  # noqa A003
+            primary_key=True
         )
 
         title: Mapped[str] = mapped_column(nullable=False)
@@ -265,9 +262,8 @@ def create_board_models(
     class Board(base_model_class):
         __tablename__ = 'board'
 
-        id: Mapped[int] = mapped_column(  # noqa A003
-            primary_key=True,
-            autoincrement=True
+        id: Mapped[str] = mapped_column(  # noqa A003
+            primary_key=True
         )
 
         title: Mapped[str] = mapped_column(nullable=False)
