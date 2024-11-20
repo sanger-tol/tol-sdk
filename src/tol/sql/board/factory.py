@@ -111,7 +111,7 @@ def create_board_models(
 
         order: Mapped[int] = mapped_column(nullable=False)
 
-        component_id: Mapped[int] = mapped_column(
+        component_id: Mapped[str] = mapped_column(
             ForeignKey('component.id'),
             nullable=False
         )
@@ -121,7 +121,7 @@ def create_board_models(
             foreign_keys=[component_id]
         )
 
-        zone_id: Mapped[int] = mapped_column(
+        zone_id: Mapped[str] = mapped_column(
             ForeignKey('zone.id'),
             nullable=False
         )
@@ -176,7 +176,7 @@ def create_board_models(
 
         order: Mapped[int] = mapped_column(nullable=False)
 
-        zone_id: Mapped[int] = mapped_column(
+        zone_id: Mapped[str] = mapped_column(
             ForeignKey('zone.id'),
             nullable=False
         )
@@ -186,7 +186,7 @@ def create_board_models(
             foreign_keys=[zone_id]
         )
 
-        view_id: Mapped[int] = mapped_column(
+        view_id: Mapped[str] = mapped_column(
             ForeignKey('view.id'),
             nullable=False
         )
@@ -239,7 +239,7 @@ def create_board_models(
 
         order: Mapped[int] = mapped_column(nullable=False)
 
-        view_id: Mapped[int] = mapped_column(
+        view_id: Mapped[str] = mapped_column(
             ForeignKey('view.id'),
             nullable=False
         )
@@ -249,7 +249,7 @@ def create_board_models(
             foreign_keys=[view_id]
         )
 
-        board_id: Mapped[int] = mapped_column(
+        board_id: Mapped[str] = mapped_column(
             ForeignKey('board.id'),
             nullable=False
         )
