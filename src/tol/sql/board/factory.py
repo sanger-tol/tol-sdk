@@ -77,10 +77,16 @@ def create_board_models(
 
         title: Mapped[str] = mapped_column(nullable=False)
         object_type: Mapped[str] = mapped_column(nullable=False)
-        base_url: Mapped[str] = mapped_column(nullable=False)
+        base_url: Mapped[str] = mapped_column(nullable=True)
         component_type: Mapped[str] = mapped_column(nullable=False)
         widget_type: Mapped[str] = mapped_column(nullable=False)
         config = mapped_column(type_=JSONB(), nullable=False)
+        filter = mapped_column(  # noqa A003
+            type_=JSONB(),
+            nullable=False,
+            default={},
+            server_default={}
+        )
 
         user_id: Mapped[int] = mapped_column(
             ForeignKey(f'{user_table_name}.id'),
@@ -136,6 +142,13 @@ def create_board_models(
 
         title: Mapped[str] = mapped_column(nullable=False)
         object_type: Mapped[str] = mapped_column(nullable=False)
+        base_url: Mapped[str] = mapped_column(nullable=True)
+        filter = mapped_column(  # noqa A003
+            type_=JSONB(),
+            nullable=False,
+            default={},
+            server_default={}
+        )
 
         component_zones: Mapped[list[ComponentZone]] = relationship(
             back_populates='zone'
@@ -194,6 +207,12 @@ def create_board_models(
         )
 
         title: Mapped[str] = mapped_column(nullable=False)
+        filter = mapped_column(  # noqa A003
+            type_=JSONB(),
+            nullable=False,
+            default={},
+            server_default={}
+        )
 
         zone_views: Mapped[list[ZoneView]] = relationship(
             back_populates='view'
@@ -252,6 +271,12 @@ def create_board_models(
         )
 
         title: Mapped[str] = mapped_column(nullable=False)
+        filter = mapped_column(  # noqa A003
+            type_=JSONB(),
+            nullable=False,
+            default={},
+            server_default={}
+        )
 
         view_boards: Mapped[list[ViewBoard]] = relationship(
             back_populates='board'
