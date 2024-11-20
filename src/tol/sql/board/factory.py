@@ -85,7 +85,7 @@ def create_board_models(
             type_=JSONB(),
             nullable=False,
             default={},
-            server_default={}
+            server_default='{}'  # noqa P103
         )
 
         user_id: Mapped[int] = mapped_column(
@@ -147,7 +147,7 @@ def create_board_models(
             type_=JSONB(),
             nullable=False,
             default={},
-            server_default={}
+            server_default='{}'  # noqa P103
         )
 
         component_zones: Mapped[list[ComponentZone]] = relationship(
@@ -211,7 +211,7 @@ def create_board_models(
             type_=JSONB(),
             nullable=False,
             default={},
-            server_default={}
+            server_default='{}'  # noqa P103
         )
 
         zone_views: Mapped[list[ZoneView]] = relationship(
@@ -275,7 +275,7 @@ def create_board_models(
             type_=JSONB(),
             nullable=False,
             default={},
-            server_default={}
+            server_default='{}'  # noqa P103
         )
 
         view_boards: Mapped[list[ViewBoard]] = relationship(
