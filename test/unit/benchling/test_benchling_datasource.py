@@ -11,7 +11,10 @@ from benchling_sdk.errors import BenchlingError
 
 from tol.benchling import BenchlingDataSource
 from tol.benchling.benchling_converter import (
+    BenchlingContainer,
     BenchlingCustomEntity,
+    BenchlingFolder,
+    BenchlingLocation,
     BenchlingWorklist
 )
 from tol.core import DataObject, core_data_object
@@ -61,6 +64,26 @@ class MockBenchlingDataSource(BenchlingDataSource):
                         'is_multi': False
                     }
                 }
+            }
+        elif benchling_type == 'container':
+            return {
+                'test_container_type': {
+                    '__id__': 'ts_DONTCARE3',
+                    'field_name': {
+                        'name': 'Test Container Field',
+                        'type': 'str',
+                        'benchling_type': 'text',
+                        'required': True,
+                        'is_multi': False
+                    },
+                    'field_name2': {
+                        'name': 'Test Container Field 2',
+                        'type': 'int',
+                        'benchling_type': 'integer',
+                        'required': True,
+                        'is_multi': False
+                    }
+                },
             }
         elif benchling_type == 'location':
             return {
@@ -116,6 +139,16 @@ class TestBenchlingDataSource(TestCase):
                 'name': 'str',
                 'barcode': 'str'
             },
+            'test_container_type': {
+                'field_name': 'str',
+                'field_name2': 'int',
+                'name': 'str',
+                'barcode': 'str',
+                'quantity': 'float',
+                'quantity_units': 'str',
+                'volume': 'float',
+                'volume_units': 'str'
+            },
             'folder': {
                 'name': 'str'
             },
@@ -130,7 +163,7 @@ class TestBenchlingDataSource(TestCase):
         self.assertEqual(expected, bds.attribute_types)
         self.assertEqual(
             ['test_entity_type', 'test_child_type', 'test_location_type',
-             'folder', 'worklist', 'worklist_item'],
+             'test_container_type', 'folder', 'worklist', 'worklist_item'],
             bds.supported_types
         )
 
@@ -180,6 +213,42 @@ class TestBenchlingDataSource(TestCase):
         self.assertEqual(1, len(res))
         self.assertEqual('123', res[0].id)
         self.assertEqual('Worklist 1', res[0].name)
+
+    def test_get_list_folder(self):
+        _, bds = mock_benchling_data_source()
+        obj = mock.create_autospec(BenchlingFolder, spec_set=True)
+        obj.id = '123'
+        obj.name = 'Folder 1'
+        bds.benchling_interface.folders.list.return_value = [[obj]]
+        res = list(bds.get_list('folder'))
+        self.assertEqual(1, len(res))
+        self.assertEqual('123', res[0].id)
+        self.assertEqual('Folder 1', res[0].name)
+
+    def test_get_list_location(self):
+        _, bds = mock_benchling_data_source()
+        obj = mock.create_autospec(BenchlingLocation, spec_set=True)
+        obj.id = '123'
+        obj.name = 'Location 1'
+        obj.schema.name = 'test_location_type'
+        bds.benchling_interface.locations.list.return_value = [[obj]]
+        res = list(bds.get_list('test_location_type'))
+        self.assertEqual(1, len(res))
+        self.assertEqual('123', res[0].id)
+        self.assertEqual('Location 1', res[0].name)
+
+    def test_get_list_container(self):
+        _, bds = mock_benchling_data_source()
+        obj = mock.create_autospec(BenchlingContainer, spec_set=True)
+        obj.id = '123'
+        obj.name = 'Container 1'
+        obj.barcode = 'CON1'
+        obj.schema.name = 'test_container_type'
+        bds.benchling_interface.containers.list.return_value = [[obj]]
+        res = list(bds.get_list('test_container_type'))
+        self.assertEqual(1, len(res))
+        self.assertEqual('123', res[0].id)
+        self.assertEqual('Container 1', res[0].name)
 
     def test_update_error(self):
         _, bds = mock_benchling_data_source()

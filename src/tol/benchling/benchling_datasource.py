@@ -64,6 +64,9 @@ NATIVE_OBJECT_TYPES = {
     'worklist': {'name': 'str', 'worklist_type': 'str'},
     'worklist_item': {'name': 'str'}
 }
+BENCHLING_TYPE_SEARCH_WITH_SCHEMA_ID = [
+    'custom_entity'
+]
 BENCHLING_PARENT_TYPES_WITH_SCHEMAS = {
     'custom_entity': {
         'attributes': {},
@@ -73,6 +76,18 @@ BENCHLING_PARENT_TYPES_WITH_SCHEMAS = {
     'location': {
         'attributes': {'name': 'str', 'barcode': 'str'},
         'to_one': {'parent_location': 'location'},
+        'to_many': {}
+    },
+    'container': {
+        'attributes': {
+            'name': 'str',
+            'barcode': 'str',
+            'quantity': 'float',
+            'quantity_units': 'str',
+            'volume': 'float',
+            'volume_units': 'str',
+            },
+        'to_one': {'parent': 'location'},
         'to_many': {}
     },
     'box': {
@@ -210,6 +225,8 @@ class BenchlingDataSource(
             return self.benchling_interface.v2.beta.worklists
         if object_type in self.schemas['location'].keys():
             return self.benchling_interface.locations
+        if object_type in self.schemas['container'].keys():
+            return self.benchling_interface.containers
         return self.benchling_interface.custom_entities
 
     def __get_benchling_schema_function(self, benchling_type: str):
@@ -239,7 +256,7 @@ class BenchlingDataSource(
         back_converter = self.__bc_factory()
 
         benchling_package = self.__get_benchling_package(object_type)
-        if object_type not in NATIVE_OBJECT_TYPES:
+        if hasattr(benchling_package, 'bulk_update'):
             return self.__do_bulk_method(
                 object_type,
                 updates,
@@ -268,9 +285,10 @@ class BenchlingDataSource(
     ) -> Iterable[DataObject | ErrorObject | None]:
         back_converter = self.__bc_factory()
         benchling_package = self.__get_benchling_package(object_type)
+        benchling_type = self.benchling_types[object_type]
         try:
             kwargs = {}
-            if object_type not in NATIVE_OBJECT_TYPES:
+            if benchling_type in BENCHLING_TYPE_SEARCH_WITH_SCHEMA_ID:
                 kwargs['schema_id'] = self.schema_ids[object_type]
             benchling_objects_page = benchling_package.list(
                 ids=object_ids,
@@ -299,6 +317,7 @@ class BenchlingDataSource(
     ) -> Iterable[DataObject]:
         # Currently only deals with filtering by eq/contains: name
         benchling_package = self.__get_benchling_package(object_type)
+        benchling_type = self.benchling_types[object_type]
         if object_filters is not None \
                 and object_filters.and_ is not None \
                 and 'name' in object_filters.and_ \
@@ -317,7 +336,7 @@ class BenchlingDataSource(
                 }
         else:
             kwargs = {}
-        if object_type not in NATIVE_OBJECT_TYPES:
+        if benchling_type in BENCHLING_TYPE_SEARCH_WITH_SCHEMA_ID:
             kwargs['schema_id'] = self.schema_ids[object_type]
         # Limit folder searching to the project set a top level
         if object_type == 'folder':
@@ -370,8 +389,8 @@ class BenchlingDataSource(
                 converter,
                 back_converter
             )
-        if object_type in self.schemas['custom_entity'].keys():
-            # Do bulk inserts of custom entities
+        if hasattr(benchling_package, 'bulk_create'):
+            # Do bulk inserts of object that allow it
             return self.__do_bulk_method(
                 object_type,
                 objects,
@@ -625,7 +644,7 @@ class BenchlingDataSource(
             k: benchling_type
             for benchling_type in BENCHLING_PARENT_TYPES_WITH_SCHEMAS.keys()
             for k in self.schemas[benchling_type].keys()
-        }
+        } | {k: k for k in NATIVE_OBJECT_TYPES.keys()}
 
     def get_page_size(self) -> int:
         return 20
@@ -637,8 +656,9 @@ class BenchlingDataSource(
     ) -> BenchlingReturn:
 
         benchling_package = self.__get_benchling_package(object_type)
+        benchling_type = self.benchling_types[object_type]
         try:
-            if object_type not in NATIVE_OBJECT_TYPES:
+            if benchling_type in BENCHLING_TYPE_SEARCH_WITH_SCHEMA_ID:
                 return benchling_package.get_by_id(
                     object_id,
                     schema_id=self.schema_ids[object_type]
