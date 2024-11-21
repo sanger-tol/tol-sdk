@@ -85,6 +85,8 @@ services:
       - ENA_PASSWORD
       - ENA_CONTACT_NAME
       - ENA_CONTACT_EMAIL
+      - PORTAL_URL
+      - PORTAL_API_PATH
     networks:
       - api-base-test-network
 
