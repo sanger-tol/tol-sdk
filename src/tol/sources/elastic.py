@@ -248,7 +248,7 @@ def elastic():
             'calc_coverage': RuntimeFields.math('mlwh_run_data_mlwh_hifi_read_bases_sum',
                                                 'tolid_species.sts_genome_size',
                                                 operation='/'),
-            'calc_ongoing_sumbissions': RuntimeFields.math(
+            'calc_ongoing_submissions': RuntimeFields.math(
                 'tolqc_pacbio_sequencing_request_count',
                 'tolqc_pacbio_completed_sequencing_request_count',
                 operation='-'),
@@ -309,7 +309,13 @@ def elastic():
                 """
                 }
             }
-        }
+        },
+        'extraction': {
+            'calc_dna_volume_remaining': RuntimeFields.coalesce([
+                'mlwh_volume_si_value',
+                'benchling_volume_ul',
+            ])
+        },
     }
 
     amd = data_source_attribute_metadata(
