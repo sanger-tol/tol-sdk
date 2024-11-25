@@ -249,8 +249,8 @@ def elastic():
                                                 'tolid_species.sts_genome_size',
                                                 operation='/'),
             'calc_ongoing_submissions': RuntimeFields.math(
-                'tolqc_pacbio_sequencing_request_count',
-                'tolqc_pacbio_completed_sequencing_request_count',
+                'benchling_pacbio_sequencing_request_count',
+                'benchling_pacbio_completed_sequencing_request_count',
                 operation='-'),
             'calc_coverage_met': {
                 'type': 'boolean',
