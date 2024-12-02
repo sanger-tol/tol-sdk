@@ -63,7 +63,7 @@ class TestElasticSpeciesToStsSpeciesConverter(TestCase):
 
         converteds = converter.convert(obj1)
         ret1 = next(converteds)
-        self.assertEqual(123, ret1.id)
+        self.assertEqual('test1', ret1.id)
         self.assertEqual(obj1.type, ret1.type)
         self.assertEqual(ret1.attributes, {
             'genome_size': 123456789.9,
@@ -84,7 +84,7 @@ class TestElasticSpeciesToStsSpeciesConverter(TestCase):
 
         converteds = converter.convert(obj2)
         ret2 = next(converteds)
-        self.assertEqual(456, ret2.id)
+        self.assertEqual('test2', ret2.id)
         self.assertEqual(obj2.type, ret2.type)
         self.assertEqual(ret2.attributes, {
             'genome_size': None,

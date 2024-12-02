@@ -25,4 +25,4 @@ class CastToFloatType(TypeDecorator):
         return cast(col, Float)
 
     def process_bind_param(self, value, dialect):
-        return str(value)
+        return str(value) if value is not None else None

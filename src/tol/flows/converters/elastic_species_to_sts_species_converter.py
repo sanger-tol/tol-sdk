@@ -24,7 +24,7 @@ class ElasticSpeciesToStsSpeciesConverter(
                     legislation[att] = att_value
             yield self._data_object_factory(
                 'species',
-                data_object.sts_species_id,
+                data_object.id,
                 attributes={
                     'genome_size': data_object.goat_genome_size,
                     # 'parentage': data_object.parentage,
