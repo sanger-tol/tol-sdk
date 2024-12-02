@@ -6,7 +6,10 @@ import os
 from datetime import datetime
 
 from tol.core.relationship import RelationshipConfig
-from tol.elastic import ElasticDataSource
+from tol.elastic import (
+    ElasticDataSource,
+    RuntimeField
+)
 
 
 def get_prefix() -> str:
@@ -33,14 +36,11 @@ def elastic_datasource(
             'relationship_cfg': {'root': rc_root},
             'runtime_fields': {
                 'root': {
-                    'runtime_column': {
-                        'type': 'boolean',
-                        'script': """
-                            if (doc['bool_column'].size()>0) {
-                                emit(!doc['bool_column'].value)
-                            }
-                        """
-                    }
+                    'runtime_column': RuntimeField(
+                        field_type='boolean',
+                        dependencies=['bool_column'],
+                        function_body="emit(!doc['bool_column'].value)"
+                    ).to_dict()
                 }
             }
         }

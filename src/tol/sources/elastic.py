@@ -177,19 +177,13 @@ def elastic():
 
     runtime_fields = {
         'species': {
-            'calc_done_date': {
-                'type': 'date',
-                'script': """
-                    if (doc['mlwh_run_data_mlwh_run_complete_rnaseq_min'].size() > 0
-                        && doc['informatics_tolid_informatics_status_summary_min.keyword'].size()
-                            > 0
-                        && doc['informatics_tolid_informatics_status_summary_min.keyword'].value
-                            == '1 submitted') {
-                            emit(doc['mlwh_run_data_mlwh_run_complete_rnaseq_min']
-                                .value.toEpochMilli())
-                    }
-                """
-            },
+            'calc_done_date': RuntimeFields.latest_date(
+                [
+                    'mlwh_run_data_mlwh_run_complete_rnaseq_min',
+                    'grit_curation_grit_in_submission_date_min'
+                ],
+                allow_missing=False
+            ),
             'calc_pm_status': {
                 'type': 'keyword',
                 'script': {
@@ -314,7 +308,7 @@ def elastic():
             'calc_dna_volume_remaining': RuntimeFields.coalesce([
                 'mlwh_volume_si_value',
                 'benchling_volume_ul',
-            ])
+            ], return_type='double')
         },
     }
 

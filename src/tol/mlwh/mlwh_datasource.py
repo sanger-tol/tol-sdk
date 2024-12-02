@@ -285,7 +285,7 @@ class MlwhDataSource(DataSource, DetailGetter, ListGetter):
             'sample_id': 'sample_id',
             'assay_type': 'assay_type_key',
             'units': 'units',
-            'value': 'value',
+            'value': 'CAST(value AS DECIMAL(20, 2))',
             'recorded_at': 'recorded_at',
             'qc_status': 'qc_status',
             'qc_status_decision_by': 'qc_status_decision_by',

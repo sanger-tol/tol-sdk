@@ -14,7 +14,8 @@ from tol.core import (
 )
 from tol.core.relationship import RelationshipConfig
 from tol.elastic import (
-    ElasticDataSource
+    ElasticDataSource,
+    RuntimeField
 )
 
 
@@ -64,14 +65,16 @@ def mock_elastic_data_source() -> tuple[Callable, ElasticDataSource]:
         'relationship_cfg': {},
         'runtime_fields': {
             'obj_type': {
-                'field7': {
-                    'type': 'keyword',
-                    'script': 'emit("Hello")'
-                },
-                'field8': {
-                    'type': 'date',
-                    'script': "emit(doc['datefield'].value.toEpochMilli())"
-                }
+                'field7': RuntimeField(
+                    field_type='keyword',
+                    dependencies=[],
+                    function_body="emit('Hello')"
+                ),
+                'field8': RuntimeField(
+                    field_type='date',
+                    dependencies=['datefield'],
+                    function_body="emit(doc['datefield'].value.toEpochMilli())"
+                )
             }
         }
     })
