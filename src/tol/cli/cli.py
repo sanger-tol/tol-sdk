@@ -172,7 +172,10 @@ def restore(ctx):
     env_file = ctx.parent.params['env_file']
     service = get_app()
     click.echo('Restoring database...')
-    command = f'docker compose --env-file {env_file} run {service}-dbutils python3 run.py restore'
+    command = (
+        f'docker compose --env-file {env_file} run --rm {service}-dbutils'
+        ' python3 run.py restore'
+    )
     click.secho(command, fg='green')
     run(command)
 
@@ -219,7 +222,7 @@ def merge(ctx):
     service = get_app()
     click.echo('Merging heads...')
     command = f'docker compose build {service}-api && docker compose --env-file {env_file} ' \
-        + f'run {service}-alembic alembic merge heads -m "merge heads"'
+        + f'run --rm {service}-alembic alembic merge heads -m "merge heads"'
     click.secho(command, fg='green')
     run(command)
 
