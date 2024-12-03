@@ -34,7 +34,7 @@ class _MockDataSourceRelational(DataSource, Relational):
         rc_run_data.to_one = {
             'species': 'species',
             'specimen': 'specimen',
-            'sequencing_request': 'quequencing_request',
+            'sequencing_request': 'sequencing_request',
             'tolid': 'tolid'
         }
         return {'run_data': rc_run_data}

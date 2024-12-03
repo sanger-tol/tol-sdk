@@ -22,15 +22,17 @@ class ElasticSpeciesToStsSpeciesConverter(
                 att_value = getattr(data_object, f'goat_{att}')
                 if att_value is not None:
                     legislation[att] = att_value
+            attributes = {
+                'legislation': json.dumps(legislation, default=str)
+                if legislation != {} else None,
+                'family_representative': data_object.goat_family_representative,
+                'prefix': data_object.tolid_prefix
+            }
+            # Don't override the genome size as it may be already set
+            if data_object.goat_genome_size is not None:
+                attributes['genome_size'] = data_object.goat_genome_size
             yield self._data_object_factory(
                 'species',
                 data_object.id,
-                attributes={
-                    'genome_size': data_object.goat_genome_size,
-                    # 'parentage': data_object.parentage,
-                    'legislation': json.dumps(legislation, default=str)
-                    if legislation != {} else None,
-                    'family_representative': data_object.goat_family_representative,
-                    'prefix': data_object.tolid_prefix
-                }
+                attributes=attributes
             )

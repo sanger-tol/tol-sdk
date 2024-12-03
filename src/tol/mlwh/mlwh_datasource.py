@@ -144,6 +144,11 @@ class MlwhDataSource(DataSource, DetailGetter, ListGetter):
                 " IF(well_metrics.qc_seq = 1, 'pass', 'fail'))"
             ),
             'qc_date': 'well_metrics.qc_seq_date',
+            'qc_seq_state': 'well_metrics.qc_seq_state',
+            'qc_seq_state_is_final': (
+                'IF(well_metrics.qc_seq_state_is_final IS NULL, NULL,'
+                ' IF(well_metrics.qc_seq_state_is_final = 1, true, false))'
+            ),
             'tag1_id': 'run.tag_identifier',
             'tag2_id': 'run.tag2_identifier',
             'library_id': 'run.pac_bio_library_tube_name',

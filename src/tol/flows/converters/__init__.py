@@ -23,6 +23,7 @@ from .grit_issue_to_elastic_curation_converter import GritIssueToElasticCuration
 from .labwhere_location_to_elastic_sample_update_converter import LabwhereLocationToElasticSampleUpdateConverter  # noqa F401
 from .labwhere_location_to_sts_tray_converter import LabwhereLocationToStsTrayConverter  # noqa F401
 from .lrpacbio_sequencing_request_to_elastic_sequencing_request_converter import LrpacbioSequencingRequestToElasticSequencingRequestConverter  # noqa F401
+from .mlwh_extraction_to_elastic_extraction_converter import MlwhExtractionToElasticExtractionConverter  # noqa F401
 from .mlwh_run_data_to_elastic_run_data_converter import MlwhRunDataToElasticRunDataConverter  # noqa F401
 from .sts_banked_sample_to_elastic_sample_converter import StsBankedSampleToElasticSampleConverter  # noqa F401
 from .sts_manifest_to_elastic_manifest_converter import StsManifestToElasticManifestConverter  # noqa F401

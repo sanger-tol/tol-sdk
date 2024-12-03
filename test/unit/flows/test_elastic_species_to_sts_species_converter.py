@@ -87,7 +87,7 @@ class TestElasticSpeciesToStsSpeciesConverter(TestCase):
         self.assertEqual('test2', ret2.id)
         self.assertEqual(obj2.type, ret2.type)
         self.assertEqual(ret2.attributes, {
-            'genome_size': None,
+            # No genome_size
             'family_representative': None,
             'legislation': None,
             'prefix': None

@@ -9,8 +9,9 @@ import os
 import requests
 
 
-STS_URL = os.getenv('STS_LEGACY_URL')
-STS_API_KEY = os.getenv('STS_LEGACY_API_KEY')
+STS_URL = os.getenv('STS_URL')
+STS_API_KEY = os.getenv('STS_API_KEY')
+STS_API_PATH = os.getenv('STS_LEGACY_API_PATH')
 
 
 def __override_method(method, relative_url, headers=None, **kwargs):
@@ -24,7 +25,7 @@ def __override_method(method, relative_url, headers=None, **kwargs):
             **headers
         }
     return method(
-        f'{STS_URL}/api/v1/{relative_url}',
+        f'{STS_URL}{STS_API_PATH}/{relative_url}',
         headers=new_headers,
         **kwargs
     )
