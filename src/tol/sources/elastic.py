@@ -12,6 +12,7 @@ from ..core.data_source_attribute_metadata import data_source_attribute_metadata
 from ..core.relationship import RelationshipConfig
 from ..elastic import (
     ElasticDataSource,
+    RuntimeField,
     RuntimeFields
 )
 
@@ -184,6 +185,15 @@ def elastic():
                 ],
                 allow_missing=False
             ),
+            'calc_is_novel': RuntimeField(
+                field_type='boolean',
+                dependencies=['sts_species_id'],
+                function_body="""
+                    emit(!(doc.containsKey('sts_sample_sts_tollab_assign_date_min')
+                        && doc['sts_sample_sts_tollab_assign_date_min'].size() > 0))
+                """,
+                function_default='emit(false)'
+            ).to_dict(),
             'calc_pm_status': {
                 'type': 'keyword',
                 'script': {
