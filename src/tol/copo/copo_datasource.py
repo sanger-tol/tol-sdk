@@ -50,8 +50,6 @@ class CopoDataSource(
     def attribute_types(self) -> dict[str, dict[str, str]]:
         return {
             'manifest': {
-                'status': 'str',
-                'number_found': 'int'
             },
             'sample': {
                 'associated_tol_project': 'str',

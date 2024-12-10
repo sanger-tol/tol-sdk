@@ -16,8 +16,8 @@ from ..core import (
 
 def copo() -> CopoDataSource:
     copo = create_copo_datasource(
-        copo_url=os.getenv('COPO_URL', Defaults.BOLD_URL)
-        + os.getenv('COPO_API_PATH', Defaults.BOLD_API_PATH)
+        copo_url=os.getenv('COPO_URL', Defaults.COPO_URL)
+        + os.getenv('COPO_API_PATH', Defaults.COPO_API_PATH)
     )
     core_data_object(copo)
     return copo
