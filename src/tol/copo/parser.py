@@ -57,8 +57,8 @@ class DefaultParser(Parser):
     def parse(
             self,
             transfer: CopoApiResource) -> DataObject:
-        object_type = transfer.get('tolsdk-type', 'sample')
-        object_id = transfer.get('copo_id')
+        object_type = transfer.pop('tolsdk-type', 'sample')
+        object_id = transfer.pop('copo_id')
         ds = self.__get_data_source(object_type)
         raw_attributes = transfer
         attributes = self.__convert_attributes(object_type, raw_attributes)
