@@ -10,11 +10,12 @@ import requests
 from requests.adapters import HTTPAdapter, Retry
 
 from .converter import JsonApiTransfer, JsonRelationshipConfig
+from ..core import HttpClient
 from ..core.datasource_error import DataSourceError
 from ..core.operator import OperatorDict
 
 
-class JsonApiClient:
+class JsonApiClient(HttpClient):
     """
     Takes JSON:API transfers and connects to a remote
     API.
@@ -30,11 +31,9 @@ class JsonApiClient:
         token_header: str = 'token',
         retries: int = 5
     ) -> None:
-
-        self.__token = self.__token_header(token_header, token)
+        super().__init__(token=token, token_header=token_header, retries=retries)
         self.__data_url = f'{api_url}{data_prefix}'
         self.__config_url = f'{self.__data_url}{config_prefix}'
-        self.__retries = retries
 
     def get_detail(
         self,
@@ -47,7 +46,7 @@ class JsonApiClient:
         """
 
         url = self.__detail_url(object_type, object_id)
-        headers = self.__merge_headers()
+        headers = self._merge_headers()
         return self.__fetch_detail(url, headers=headers)
 
     def get_list_page(
@@ -70,7 +69,7 @@ class JsonApiClient:
             filter=filter_string,
             sort_by=sort_string
         )
-        headers = self.__merge_headers()
+        headers = self._merge_headers()
         return self.__fetch_list(url, params=params, headers=headers)
 
     def get_count(
@@ -87,7 +86,7 @@ class JsonApiClient:
         params = self.__no_none_value_dict(
             filter=filter_string
         )
-        headers = self.__merge_headers()
+        headers = self._merge_headers()
         return self.__fetch_list(url, params=params, headers=headers)
 
     def get_stats(
@@ -108,7 +107,7 @@ class JsonApiClient:
             stats_fields=stats_fields_string,
             filter=filter_string
         )
-        headers = self.__merge_headers()
+        headers = self._merge_headers()
         return self.__fetch_list(url, params=params, headers=headers)
 
     def get_group_stats(
@@ -131,7 +130,7 @@ class JsonApiClient:
             stats_fields=stats_fields_string,
             filter=filter_string
         )
-        headers = self.__merge_headers()
+        headers = self._merge_headers()
         return self.__fetch_list(url, params=params, headers=headers)
 
     def get_cursor_page(
@@ -148,7 +147,7 @@ class JsonApiClient:
             filter=filter_string,
             page_size=page_size
         )
-        headers = self.__merge_headers()
+        headers = self._merge_headers()
         body = {'search_after': search_after}
         return self.__fetch_cursor(
             url,
@@ -162,8 +161,8 @@ class JsonApiClient:
         Deletes the remote-API `DataObject` of specified type and ID.
         """
         url = self.__detail_url(object_type, object_id)
-        headers = self.__merge_headers()
-        session = self.__get_session_with_retries()
+        headers = self._merge_headers()
+        session = self._get_session_with_retries()
         r = session.delete(url, headers=headers)
         self.__assert_no_error(r)
 
@@ -178,8 +177,8 @@ class JsonApiClient:
         """
 
         url = self.__upsert_url(object_type)
-        headers = self.__merge_headers()
-        session = self.__get_session()
+        headers = self._merge_headers()
+        session = self._get_session()
         r = session.post(url, headers=headers, json=transfer)
         self.__assert_no_error(r)
         return r.json()
@@ -195,8 +194,8 @@ class JsonApiClient:
         """
 
         url = self.__insert_url(object_type)
-        headers = self.__merge_headers()
-        session = self.__get_session()
+        headers = self._merge_headers()
+        session = self._get_session()
         r = session.post(url, headers=headers, json=transfer)
         self.__assert_no_error(r)
         return r.json()
@@ -218,7 +217,7 @@ class JsonApiClient:
             object_id,
             relationship_hops
         )
-        headers = self.__merge_headers()
+        headers = self._merge_headers()
         return self.__fetch_detail(url, headers=headers)
 
     def get_to_many_relations_page(
@@ -241,7 +240,7 @@ class JsonApiClient:
             relationship_name
         )
         params = {'page': page, 'page_size': page_size}
-        headers = self.__merge_headers()
+        headers = self._merge_headers()
 
         return self.__fetch_list(url, params=params, headers=headers)
 
@@ -290,8 +289,8 @@ class JsonApiClient:
         return self.__fetch_config(url)
 
     def __fetch_config(self, url: str) -> Any:
-        session = self.__get_session_with_retries()
-        headers = self.__merge_headers()
+        session = self._get_session_with_retries()
+        headers = self._merge_headers()
         r = session.get(url, headers=headers)
         self.__assert_no_error(r)
         return r.json()
@@ -303,7 +302,7 @@ class JsonApiClient:
         headers: Optional[dict[str, str]] = None
     ) -> Optional[JsonApiTransfer]:
 
-        session = self.__get_session_with_retries()
+        session = self._get_session_with_retries()
         r = session.get(url, params=params, headers=headers)
         if r.status_code == 404:
             return None
@@ -336,7 +335,7 @@ class JsonApiClient:
         headers: Optional[dict[str, str]] = None
     ) -> JsonApiTransfer:
 
-        session = self.__get_session_with_retries()
+        session = self._get_session_with_retries()
         r = session.get(url, params=params, headers=headers)
         self.__assert_no_error(r)
         return r.json()
@@ -349,7 +348,7 @@ class JsonApiClient:
         headers: Optional[dict[str, str]] = None
     ) -> JsonApiTransfer:
 
-        session = self.__get_session_with_retries()
+        session = self._get_session_with_retries()
         r = session.post(
             url,
             json=body,
@@ -431,64 +430,3 @@ class JsonApiClient:
             k: v for k, v in kwargs.items()
             if v is not None
         }
-
-    def __token_header(
-        self,
-        key: str,
-        token: Optional[str],
-    ) -> Optional[dict[str, str]]:
-
-        return None if token is None else {key: token}
-
-    def __merge_headers(
-        self,
-        headers: Optional[dict[str, str]] = None
-    ) -> dict[str, str]:
-        """
-        Merges (possibly `None`) headers with the
-        `Optional[str]` token. Returns `None` if both are
-        undefined
-        """
-
-        def __empty_if_none(
-            d: Optional[dict[str, str]]
-        ) -> dict[str, str]:
-            return {} if d is None else d
-
-        if self.__token is None and headers is None:
-            return None
-        return {
-            **__empty_if_none(headers),
-            **__empty_if_none(self.__token)
-        }
-
-    def __get_session(self) -> requests.Session:
-
-        cert_path = os.path.join(
-            os.path.dirname(__file__),
-            '..',
-            '..',
-            'certs',
-            'cacert.pem'
-        )
-
-        session = requests.Session()
-        session.verify = cert_path
-
-        return session
-
-    def __get_session_with_retries(self) -> requests.Session:
-        """
-        Attempts a call to the endpoint 5 times, with a delay of 1 second
-        """
-        session = self.__get_session()
-
-        retry_strategy = Retry(
-            total=self.__retries,
-            backoff_factor=1,
-            status_forcelist=[429, 500, 502, 503, 504]
-        )
-        session.mount('http://', HTTPAdapter(max_retries=retry_strategy))
-        session.mount('https://', HTTPAdapter(max_retries=retry_strategy))
-
-        return session

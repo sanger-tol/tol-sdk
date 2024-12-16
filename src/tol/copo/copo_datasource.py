@@ -2,6 +2,9 @@
 #
 # SPDX-License-Identifier: MIT
 
+from __future__ import annotations
+
+import typing
 from functools import cache
 from typing import Callable, Iterable, Optional
 
@@ -9,12 +12,16 @@ from .client import CopoApiClient
 from .converter import (
     CopoApiConverter
 )
-from ..core import DataObject, DataSource, DataSourceError
+from ..core import DataObject, DataSource, DataSourceError, DataSourceFilter
 from ..core.operator import (
     DetailGetter,
+    ListGetter,
     Relational
 )
 from ..core.relationship import RelationshipConfig
+
+if typing.TYPE_CHECKING:
+    from ..core.session import OperableSession
 
 
 ClientFactory = Callable[[], CopoApiClient]
@@ -26,6 +33,7 @@ class CopoDataSource(
 
     # the supported operators
     DetailGetter,
+    ListGetter,
     Relational
 ):
     """
@@ -108,6 +116,41 @@ class CopoDataSource(
             if r is not None else None
             for r in copo_responses
         )
+
+    def get_list(
+        self,
+        object_type: str,
+        object_filters: Optional[DataSourceFilter] = None,
+        session: Optional[OperableSession] = None
+    ) -> Iterable[DataObject]:
+        """
+        This is a very limited implementation of `get_list`.
+        It only supports checking for manifests in a project
+        between certain dates
+        """
+        client = self.__client_factory()
+        jc_converter = self.__lc_factory()
+
+        project = object_filters.and_ \
+            .get('project', {}) \
+            .get('eq', {}) \
+            .get('value', None)
+        from_ = object_filters.and_ \
+            .get('time_created', {}) \
+            .get('gte', {}) \
+            .get('value', None)
+        to = object_filters.and_ \
+            .get('time_created', {}) \
+            .get('lt', {}) \
+            .get('value', None)
+
+        manifests_json = client.get_manifests(
+                project=project,
+                from_=from_,
+                to=to,
+            )
+        manifests, _ = jc_converter.convert_list(manifests_json)
+        return manifests
 
     def get_to_one_relation(
         self,

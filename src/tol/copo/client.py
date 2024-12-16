@@ -2,15 +2,16 @@
 #
 # SPDX-License-Identifier: MIT
 
+from datetime import datetime
 from itertools import chain
 from typing import Optional
 
 import requests
 
 from .converter import CopoApiTransfer
+from ..core import HttpClient
 
-
-class CopoApiClient:
+class CopoApiClient(HttpClient):
     """
     Takes COPO API transfers and connects to a remote
     COPO API.
@@ -20,6 +21,7 @@ class CopoApiClient:
         self,
         copo_url: str,
     ) -> None:
+        super().__init__()
         self.__copo_url = copo_url
 
     def get_detail(
@@ -53,6 +55,31 @@ class CopoApiClient:
             'samples_in_manifest',  # A fudge to ignore the manifest-specific stuff
             manifest_id
         )
+    def get_manifests(
+        self,
+        project: str,
+        from_: datetime,
+        to: datetime
+    ) -> Optional[CopoApiTransfer]:
+        """
+        Gets a list of COPO API transfers for the samples in a
+        specified manifest, or returns None if not found.
+        """
+
+        from_string = from_.isoformat()
+        to_string = to.isoformat()
+        url = f'{self.__copo_url}/manifest/{project}/{from_string}/{to_string}'
+        manifest_ids = self.__fetch_detail(
+            url,
+            'manifests_between_dates'  # A fudge to ignore the manifest-specific stuff
+        )
+        return [
+            {
+                'tolsdk-type': 'manifest',
+                'copo_id': id_
+            }
+            for id_ in manifest_ids
+        ]
 
     def __fetch_detail(
         self,
@@ -61,7 +88,8 @@ class CopoApiClient:
         object_id: str = None
     ) -> Optional[CopoApiTransfer]:
         print(f'Getting {url}')
-        r = requests.get(url)
+        session = self._get_session_with_retries()
+        r = requests.get(url, timeout=30)
         if r.status_code in [400, 404]:
             return [None]
         r.raise_for_status()
