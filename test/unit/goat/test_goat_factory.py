@@ -58,6 +58,7 @@ class TestCreateGoatDatasource:
                         'genome_size': {'value': 1000},
                         'chromosome_number': {'value': 44},
                         'haploid_number': {'value': 22},
+                        'assembly_level': {'value': 'Chromosome'},
                         'ploidy': {'value': 2},
                         'isb_wildlife_act_1976': {'value': 'IWA-Sch5'},
                         'protection_of_badgers_act_1992': {'value': 'Badgers92'}
@@ -108,6 +109,7 @@ class TestCreateGoatDatasource:
                 'genome_size': 1000,
                 'chromosome_number': 44,
                 'haploid_number': 22,
+                'assembly_level': 'Chromosome',
                 'ploidy': 2,
                 'isb_wildlife_act_1976': ['IWA-Sch5'],
                 'protection_of_badgers_act_1992': ['Badgers92'],
@@ -146,6 +148,7 @@ class TestCreateGoatDatasource:
                         'genome_size': {'value': 1000},
                         'chromosome_number': {'value': 44},
                         'haploid_number': {'value': 22},
+                        'assembly_level': {'value': 'Chromosome'},
                         'ploidy': {'value': 2},
                         'isb_wildlife_act_1976': {'value': 'IWA-Sch5'},
                         'protection_of_badgers_act_1992': {'value': 'Badgers92'}
@@ -198,6 +201,7 @@ class TestCreateGoatDatasource:
                 'genome_size': 1000,
                 'chromosome_number': 44,
                 'haploid_number': 22,
+                'assembly_level': 'Chromosome',
                 'ploidy': 2,
                 'isb_wildlife_act_1976': ['IWA-Sch5'],
                 'protection_of_badgers_act_1992': ['Badgers92'],

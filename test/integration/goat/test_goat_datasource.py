@@ -2,32 +2,22 @@
 #
 # SPDX-License-Identifier: MIT
 
-import os
 from unittest import (
     TestCase
 )
 
 from tol.core import (
-    DataSourceFilter,
-    core_data_object
+    DataSourceFilter
 )
-from tol.goat import (
-    GoatDataSource, create_goat_datasource
+from tol.sources.goat import (
+    goat
 )
-
-
-def goat_data_source() -> GoatDataSource:
-    gds = create_goat_datasource(
-        goat_url=os.getenv('GOAT_URL') + os.getenv('GOAT_API_PATH')
-    )
-    cdo = core_data_object(gds)
-    return cdo, gds
 
 
 class TestGoatDataSource(TestCase):
 
     def test_attribute_types(self):
-        _, gds = goat_data_source()
+        gds = goat()
 
         assert 'taxon' in gds.attribute_types
         assert gds.attribute_types['taxon']['scientific_name'] == 'str'
@@ -35,20 +25,23 @@ class TestGoatDataSource(TestCase):
         assert gds.attribute_types['taxon']['family_representative'] == 'List[str]'
 
     def test_relationship_config(self):
-        _, gds = goat_data_source()
+        gds = goat()
 
         assert 'taxon' in gds.relationship_config
         assert gds.relationship_config['taxon'].to_one['phylum'] == 'taxon'
 
     def test_get_by_id(self):
-        _, gds = goat_data_source()
+        gds = goat()
 
         ret = gds.get_by_ids('taxon', ['2708'])
         obj1 = next(ret)
         self.assertEqual('2708', obj1.id)
+        print(obj1.attributes)
+
         # Just pick out a few attributes here to test
         self.assertEqual(obj1.scientific_name, 'Citrus x limon')
         self.assertEqual(obj1.chromosome_number, 18)
+        self.assertEqual(obj1.assembly_level, 'Chromosome')
         self.assertEqual(obj1.long_list, ['DTOL'])
         self.assertEqual(obj1.phylum.scientific_name, 'Streptophyta')
         self.assertIsNone(obj1.common_name)
@@ -57,7 +50,7 @@ class TestGoatDataSource(TestCase):
             next(ret)
 
     def test_get_list(self):
-        _, gds = goat_data_source()
+        gds = goat()
 
         f = DataSourceFilter()
         f.and_ = {
@@ -74,17 +67,19 @@ class TestGoatDataSource(TestCase):
                 self.assertEqual('2708', obj.id)
                 self.assertEqual(obj.scientific_name, 'Citrus x limon')
                 self.assertEqual(obj.chromosome_number, 18)
+                self.assertEqual(obj.assembly_level, 'Chromosome')
                 self.assertEqual(obj.long_list, ['DTOL'])
                 self.assertEqual(obj.phylum.scientific_name, 'Streptophyta')
             elif obj.id == '1857951':
                 self.assertEqual('1857951', obj.id)
                 self.assertEqual(obj.scientific_name, 'Acrobasis suavella')
                 self.assertEqual(obj.chromosome_number, 60)
+                self.assertEqual(obj.assembly_level, 'Chromosome')
                 self.assertEqual(obj.long_list, ['DTOL', 'PSYCHE'])
                 self.assertEqual(obj.phylum.scientific_name, 'Arthropoda')
 
     def test_get_list_tax_rank(self):
-        _, gds = goat_data_source()
+        gds = goat()
 
         f = DataSourceFilter()
         f.and_ = {
@@ -102,7 +97,7 @@ class TestGoatDataSource(TestCase):
             next(ret)
 
     def test_get_list_scientific_name(self):
-        _, gds = goat_data_source()
+        gds = goat()
 
         f = DataSourceFilter()
         f.and_ = {
@@ -116,7 +111,7 @@ class TestGoatDataSource(TestCase):
         assert len(obj_ids) == 2
 
     def test_get_list_page_sort_custom(self):
-        _, gds = goat_data_source()
+        gds = goat()
 
         f = DataSourceFilter()
         f.and_ = {
@@ -152,7 +147,7 @@ class TestGoatDataSource(TestCase):
         self.assertEqual(obj1.phylum.scientific_name, 'Streptophyta')
 
     def test_get_list_page_sort_id(self):
-        _, gds = goat_data_source()
+        gds = goat()
 
         f = DataSourceFilter()
         f.and_ = {

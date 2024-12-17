@@ -80,7 +80,7 @@ class DefaultParser(Parser):
         # Attributes with values in fields
         normal_fields = [
             'genome_size', 'chromosome_number',
-            'haploid_number', 'ploidy'
+            'haploid_number', 'ploidy', 'assembly_level'
         ]
         one_or_list_fields = ['echabs92', 'habreg_2017', 'marhabreg-2017', 'waca_1981',
                               'isb_wildlife_act_1976', 'protection_of_badgers_act_1992',

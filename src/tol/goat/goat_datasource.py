@@ -84,6 +84,7 @@ class GoatDataSource(
                 'scientific_name': 'str',
                 'common_name': 'str',
                 'tolid_prefix': 'str',
+                'assembly_level': 'str',
                 'genome_size': 'int',
                 'chromosome_number': 'int',
                 'haploid_number': 'int',

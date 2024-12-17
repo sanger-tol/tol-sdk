@@ -4,15 +4,13 @@
 
 # Used to set up the build environment
 variables:
-  DOCKER_IMAGE: $CI_REGISTRY/tol/tol-core/build-base:1.0.0
-  DIND_IMAGE: docker:dind
   GOOGLE_CLIENT_SECRETS: $GOOGLE_CLIENT_SECRETS_DEV
   BUILT_IMAGE: $CI_REGISTRY_IMAGE/tol-sdk-test-image:$CI_COMMIT_SHA
   UUID_PREFIX: $CI_JOB_ID
 
 include:
   - project: 'tol/tol-core'
-    ref: v1.4.0
+    ref: v1.6.0
     file: '/gitlab/main.yml'
 
 
