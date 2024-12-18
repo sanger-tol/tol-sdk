@@ -2,20 +2,41 @@
 #
 # SPDX-License-Identifier: MIT
 
+from __future__ import annotations
+
 import os
+import typing
 
 from ..core import (
     core_data_object
 )
-from ..prefect import (
-    PrefectDataSource,
-    create_prefect_datasource
-)
+
+if typing.TYPE_CHECKING:
+    from ..prefect import PrefectDataSource
 
 
-def prefect() -> PrefectDataSource:
+def prefect(
+    insecure: bool = False
+) -> PrefectDataSource:
+    """
+    Note - this must be the main entrypoint to the prefect SDK.
+
+    Do not import anything from the `prefect` namespace before running
+    this function.
+    """
+
+    api_url = os.environ['PREFECT_URL'] + os.environ['PREFECT_API_PATH']
+
+    # this must be set before importing anything from prefect. failure
+    # to do so causes the prefect SDK to spin up a local instance.
+    os.environ['PREFECT_API_URL'] = api_url
+
+    from ..prefect import create_prefect_datasource
+
     prefect = create_prefect_datasource(
-        api_url=os.getenv('PREFECT_URL') + os.getenv('PREFECT_API_PATH')
+        api_url,
+        insecure=insecure
     )
     core_data_object(prefect)
+
     return prefect

@@ -11,6 +11,7 @@ from prefect.client.schemas.filters import (
     FlowRunFilter
 )
 from prefect.settings import (
+    PREFECT_API_TLS_INSECURE_SKIP_VERIFY,
     PREFECT_API_URL,
     update_current_profile
 )
@@ -61,20 +62,32 @@ def _filter_factory() -> PrefectFilter:
     return PrefectFilter(builder)
 
 
-def _set_api_url(api_url: str) -> None:
+def _set_config(
+    api_url: str,
+    insecure: bool
+) -> None:
+
     update_current_profile(
         {
-            PREFECT_API_URL: api_url
+            PREFECT_API_URL: api_url,
         }
     )
 
+    if insecure:
+        update_current_profile(
+            {
+                PREFECT_API_TLS_INSECURE_SKIP_VERIFY: '1'
+            }
+        )
+
 
 def create_prefect_datasource(
-    api_url: str
+    api_url: str,
+    insecure: bool = False,
 ) -> PrefectDataSource:
     """Instantiates `PrefectDataSource`."""
 
-    _set_api_url(api_url)
+    _set_config(api_url, insecure)
 
     manager = _FactoryManager()
 
