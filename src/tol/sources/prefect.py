@@ -31,6 +31,9 @@ def prefect(
     # to do so causes the prefect SDK to spin up a local instance.
     os.environ['PREFECT_API_URL'] = api_url
 
+    if insecure:
+        os.environ['PREFECT_API_TLS_INSECURE_SKIP_VERIFY'] = '1'
+
     from ..prefect import create_prefect_datasource
 
     prefect = create_prefect_datasource(
