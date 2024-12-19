@@ -4,8 +4,11 @@
 
 from __future__ import annotations
 
+import itertools
 import typing
 from typing import Callable, Dict, Iterable, List, Optional, Tuple
+
+import more_itertools
 
 from sqlalchemy.orm import Session as SqlaSession
 
@@ -91,6 +94,7 @@ class SqlDataSource(
         self.__sorter_factory = sorter_factory
         self.__all_attribute_types = self.__calculate_all_attribute_types()
         self.__set_user_id_getter(user_id_getter)
+        self.__batch_size = 100
 
         super().__init__({})
 
@@ -271,9 +275,24 @@ class SqlDataSource(
         objects: Iterable[DataObject],
         session: Optional[SqlDataSourceSession] = None,
         **kwargs
-    ) -> list[DataObject]:
+    ) -> Iterable[DataObject]:
+        upserted = ()
+        for batch in more_itertools.chunked(objects, self.__batch_size):
+            upserted = itertools.chain(upserted, self.upsert_batch(
+                object_type,
+                batch,
+                session=session,
+                **kwargs
+            ))
+        return upserted
 
-        # TODO optimise by batching?
+    def upsert_batch(
+        self,
+        object_type: str,
+        objects: Iterable[DataObject],
+        session: Optional[SqlDataSourceSession] = None,
+        **kwargs
+    ) -> list[DataObject]:
         back_converter = self.__back_converter_factory()
         model_instances = back_converter.convert_iterable(objects)
         user_id = self.__user_id_getter()
@@ -296,6 +315,23 @@ class SqlDataSource(
         return return_list
 
     def insert(
+        self,
+        object_type: str,
+        objects: Iterable[DataObject],
+        session: Optional[SqlDataSourceSession] = None,
+        **kwargs
+    ) -> Iterable[DataObject]:
+        inserted = ()
+        for batch in more_itertools.chunked(objects, self.__batch_size):
+            inserted = itertools.chain(inserted, self.insert_batch(
+                object_type,
+                batch,
+                session=session,
+                **kwargs
+            ))
+        return inserted
+
+    def insert_batch(
         self,
         object_type: str,
         objects: Iterable[DataObject],

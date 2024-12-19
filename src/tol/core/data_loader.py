@@ -6,7 +6,7 @@ from abc import ABC, abstractmethod
 from datetime import datetime
 from typing import Iterable, List, Optional, Type
 
-from more_itertools import chunked, peekable
+from more_itertools import peekable
 
 import pytz
 
@@ -51,7 +51,6 @@ class DefaultDataLoader():
             field_prefix: str = None,
             dry_run: bool = False,
             candidate_key: Optional[List[str]] = ['id'],
-            batch_size: int = 0,
             method: str = 'upsert',
             auto_exhaust: bool = True):
         if not dry_run:
@@ -59,30 +58,25 @@ class DefaultDataLoader():
 
         source_objs = self._get_source_objects()
         converted_objs = self._convert_objects(source_objs, self._converter)
-        batches = [converted_objs]
-        if batch_size > 0:
-            batches = chunked(converted_objs, batch_size)
         if candidate_key == ['id']:
             if not dry_run:
                 insert_method = getattr(self._destination, method)
-                for batch in batches:
-                    returned_objects = insert_method(
-                        self._destination_object_type,
-                        objects=batch,
-                        field_prefix=field_prefix
-                    )
+                returned_objects = insert_method(
+                    self._destination_object_type,
+                    objects=converted_objs,
+                    field_prefix=field_prefix
+                )
             else:
                 for converted_obj in converted_objs:
                     print(f'{converted_obj.id}: {converted_obj.attributes}')
         else:
             if not dry_run:
-                for batch in batches:
-                    returned_objects = self._destination.update(
-                        object_type=self._destination_object_type,
-                        updates=batch,
-                        candidate_key=candidate_key,
-                        field_prefix=field_prefix
-                    )
+                returned_objects = self._destination.update(
+                    object_type=self._destination_object_type,
+                    updates=converted_objs,
+                    candidate_key=candidate_key,
+                    field_prefix=field_prefix
+                )
             else:
                 for converted_obj_id, converted_obj in converted_objs:
                     print(converted_obj_id, converted_obj)

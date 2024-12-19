@@ -563,7 +563,7 @@ class TestSqlDataSource:
             MagicMock()
         )
         ds.data_object_factory = MagicMock()
-        ds.upsert('tests', mock_object)
+        ds.upsert('tests', [mock_object])
         mock_db.upsert.assert_called_once_with(mock_model, mock_sess, user_id=None)
 
     def test_get_attribute_types(self):

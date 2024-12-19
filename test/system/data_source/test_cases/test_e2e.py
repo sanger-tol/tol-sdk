@@ -991,7 +991,7 @@ class TestEndToEnd:
             convert_class=DefaultDataObjectToDataObjectConverter,
             loader_name='e2e loader'
         )
-        loader.load(field_prefix='e2e', batch_size=20)
+        loader.load(field_prefix='e2e')
         ds_sleep(5)
 
         f = DataSourceFilter()
