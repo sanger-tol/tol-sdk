@@ -61,7 +61,7 @@ class TestBenchlingSequencingRequestToElasticSequencingRequestConverter(TestCase
                 'specimen_id': 'specimen_id_2',
                 'programme_id': 'programme_id_2',
                 'sequencing_platform': 'pacbio',
-                'source': 'v1'                 
+                'source': 'v1'
             }
         )
 
