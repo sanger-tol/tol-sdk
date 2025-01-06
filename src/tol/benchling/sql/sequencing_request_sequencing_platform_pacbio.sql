@@ -67,6 +67,7 @@ WITH pacbio_submissions_v1 AS (
 	SELECT DISTINCT
 		t.sts_id,
 		t.taxon_id,
+		tp.id AS tissue_prep_id,
 		subsam.id AS submission_sample_id,
 		subsam.file_registry_id$ AS eln_file_registry_id,
 		subsam.original_dna_extract AS extraction_id,
@@ -132,6 +133,7 @@ pacbio_legacy_submissions AS (
 	SELECT DISTINCT
 		t.sts_id,
 		t.taxon_id,
+		tp.id AS tissue_prep_id,
 		subsam.id AS submission_sample_id,
 		subsam.file_registry_id$ AS eln_file_registry_id,
 		subsam.original_dna_extract AS extraction_id,
@@ -194,6 +196,7 @@ pacbio_submissions_v2 AS (
 	SELECT DISTINCT	
 		t.sts_id,
 		t.taxon_id,
+		tp.id AS tissue_prep_id,
 		subsam.id AS submission_sample_id,
 		subsam.file_registry_id$ AS eln_file_registry_id,
 		subsam.originaL_dna_extract AS extraction_id,
@@ -261,6 +264,7 @@ pacbio_submissions_pooled_v1 AS (
 	SELECT DISTINCT
 		t.sts_id,
 		t.taxon_id,
+		tp.id AS tissue_prep_id,
 		subsam.id AS submission_sample_id,
 		subsam.file_registry_id$ AS eln_file_registry_id,
 		subsam.pooled_sample  AS extraction_id,
@@ -326,6 +330,7 @@ pacbio_submissions_pooled_v2 AS (
 	SELECT DISTINCT	
 		t.sts_id,
 		t.taxon_id,
+		tp.id AS tissue_prep_id,
 		subsam.id AS eln_submission_sample_id,
 		subsam.file_registry_id$ AS eln_file_registry_id,
 		subsam.pooled_sample AS extraction_id,
