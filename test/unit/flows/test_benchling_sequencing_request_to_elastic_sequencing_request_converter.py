@@ -1,8 +1,4 @@
-<<<<<<< HEAD
 # SPDX-FileCopyrightText: 2024 Genome Research Ltd.
-=======
-# SPDX-FileCopyrightText: 2023 Genome Research Ltd.
->>>>>>> cab324a (Modified converter to implement new sequencing platforms)
 #
 # SPDX-License-Identifier: MIT
 
