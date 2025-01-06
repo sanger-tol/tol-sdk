@@ -68,6 +68,7 @@ class TestBenchlingSequencingRequestToElasticSequencingRequestConverter(TestCase
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
                 'source': 'v1'
 =======
                 'source': 'v1'                 
@@ -78,6 +79,9 @@ class TestBenchlingSequencingRequestToElasticSequencingRequestConverter(TestCase
 =======
                 'source': 'v1'                 
 >>>>>>> cab324a (Modified converter to implement new sequencing platforms)
+=======
+                'source': 'v1'
+>>>>>>> db9900d (Lint)
             }
         )
 
