@@ -1,4 +1,8 @@
+<<<<<<< HEAD
 # SPDX-FileCopyrightText: 2024 Genome Research Ltd.
+=======
+# SPDX-FileCopyrightText: 2023 Genome Research Ltd.
+>>>>>>> 4d6e0ad (Modified converter to implement new sequencing platforms)
 #
 # SPDX-License-Identifier: MIT
 
@@ -61,7 +65,11 @@ class TestBenchlingSequencingRequestToElasticSequencingRequestConverter(TestCase
                 'specimen_id': 'specimen_id_2',
                 'programme_id': 'programme_id_2',
                 'sequencing_platform': 'pacbio',
+<<<<<<< HEAD
                 'source': 'v1'
+=======
+                'source': 'v1'                 
+>>>>>>> 4d6e0ad (Modified converter to implement new sequencing platforms)
             }
         )
 
