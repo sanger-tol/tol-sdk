@@ -6,6 +6,7 @@ from .benchling_extraction_to_elastic_extraction_converter import BenchlingExtra
 from .benchling_extraction_to_elastic_sequencing_request_converter import BenchlingExtractionToElasticSequencingRequestConverter  # noqa F401
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 from .benchling_sequencing_request_to_elastic_sequencing_request_converter import (  # noqa F401
     BenchlingSequencingRequestToElasticSequencingRequestConverter
 )
@@ -16,6 +17,11 @@ from .benchling_sequencing_request_to_elastic_sequencing_request_converter impor
 from .benchling_sequencing_request_to_elastic_sequencing_request_converter
 import BenchlingSequencingRequestToElasticSequencingRequestConverter # noqa F401
 >>>>>>> 57b6ae8 (lint)
+=======
+from .benchling_sequencing_request_to_elastic_sequencing_request_converter import (
+    BenchlingSequencingRequestToElasticSequencingRequestConverter # noqa F401
+)
+>>>>>>> 052fd6e (lint lint)
 from .benchling_tissue_prep_to_elastic_tissue_prep_converter import BenchlingTissuePrepToElasticTissuePrepConverter  # noqa F401
 from .benchling_tissue_to_benchling_worklist_item_converter_factory import BenchlingTissueToBenchlingWorklistItemConverterFactory  # noqa F401
 from .benchling_tissue_to_sts_sample_converter import BenchlingTissueToStsSampleConverter  # noqa F401
