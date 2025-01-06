@@ -1,4 +1,8 @@
+<<<<<<< HEAD
 # SPDX-FileCopyrightText: 2024 Genome Research Ltd.
+=======
+# SPDX-FileCopyrightText: 2023 Genome Research Ltd.
+>>>>>>> cab324a (Modified converter to implement new sequencing platforms)
 #
 # SPDX-License-Identifier: MIT
 
@@ -63,6 +67,7 @@ class TestBenchlingSequencingRequestToElasticSequencingRequestConverter(TestCase
                 'sequencing_platform': 'pacbio',
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
                 'source': 'v1'
 =======
                 'source': 'v1'                 
@@ -70,6 +75,9 @@ class TestBenchlingSequencingRequestToElasticSequencingRequestConverter(TestCase
 =======
                 'source': 'v1'
 >>>>>>> 4497495 (Lint)
+=======
+                'source': 'v1'                 
+>>>>>>> cab324a (Modified converter to implement new sequencing platforms)
             }
         )
 
