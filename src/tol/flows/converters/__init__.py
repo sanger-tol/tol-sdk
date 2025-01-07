@@ -5,7 +5,7 @@
 from .benchling_extraction_to_elastic_extraction_converter import BenchlingExtractionToElasticExtractionConverter  # noqa F401
 from .benchling_extraction_to_elastic_sequencing_request_converter import BenchlingExtractionToElasticSequencingRequestConverter  # noqa F401
 from .benchling_sequencing_request_to_elastic_sequencing_request_converter import (  # noqa F401
-    BenchlingSequencingRequestToElasticSequencingRequestConverter 
+    BenchlingSequencingRequestToElasticSequencingRequestConverter
 )
 from .benchling_tissue_prep_to_elastic_tissue_prep_converter import BenchlingTissuePrepToElasticTissuePrepConverter  # noqa F401
 from .benchling_tissue_to_benchling_worklist_item_converter_factory import BenchlingTissueToBenchlingWorklistItemConverterFactory  # noqa F401
