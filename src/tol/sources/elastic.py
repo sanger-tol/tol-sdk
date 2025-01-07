@@ -240,6 +240,45 @@ def elastic():
                     """
                 }
             },
+            'calc_specimen_needed_psyche': {
+                'type': 'boolean',
+                'script': {
+                    'source': """
+                        boolean isRecollectionRequired = (
+                            doc.containsKey('sts_sequencing_material_status.keyword') &&
+                            doc['sts_sequencing_material_status.keyword'].size() > 0 &&
+                            doc['sts_sequencing_material_status.keyword'].value
+                            == 'RECOLLECTION_REQUIRED'
+                        );
+
+                        boolean isExcludedProject = (
+                            doc.containsKey('goat_long_list.keyword') &&
+                            doc['goat_long_list.keyword'].size() > 0 &&
+                            ['AG100PEST', 'i5K', 'CBP', 'ERGA-PIL', 'ERGA-BGE', 'ERGA-CH',
+                            'ENDEMIXIT'].contains(doc['goat_long_list.keyword'].value)
+                        );
+
+                        boolean isNotChromosome = (
+                            !doc.containsKey('goat_assembly_level.keyword') ||
+                            (doc.containsKey('goat_assembly_level.keyword') &&
+                            doc['goat_assembly_level.keyword'].size() > 0 &&
+                            doc['goat_assembly_level.keyword'].value != 'Chromosome')
+                        );
+
+                        boolean isSpecimensAtSangerEmpty = (
+                            !doc.containsKey('tolid_tolid_count') ||
+                            doc['tolid_tolid_count'].size() == 0 ||
+                            doc['tolid_tolid_count'].value == null
+                        );
+
+                        emit(
+                            isRecollectionRequired ||
+                            (!isExcludedProject && isNotChromosome
+                            && isSpecimensAtSangerEmpty)
+                        );
+                    """
+                }
+            },
         },
         'specimen': {
             'calc_coverage_post_run': RuntimeFields.math(
