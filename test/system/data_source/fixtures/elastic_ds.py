@@ -13,7 +13,8 @@ from ..services.util import (
     delete_indices,
     elastic_datasource,
     empty_all_indices,
-    upsert_archetypes
+    upsert_archetypes,
+    wait_for_ready,
 )
 
 
@@ -21,9 +22,12 @@ class ElasticFixture(DataSourceFixture):
     """A `DataSourceFixture` for `ElasticDataSource`"""
 
     def __init__(self) -> None:
+        wait_for_ready()
+
         # prevent race condition with the
         # `api -> elastic` fixture/container
         time.sleep(5)
+
         create_indices()
         upsert_archetypes()
 

@@ -16,6 +16,14 @@ services:
       - POSTGRES_DB=test-db
     networks:
       - api-base-test-network
+
+  tol-sdk-python-elastic:
+    # NB - the below image is ARM/M1 only.
+    image: gitlab-registry.internal.sanger.ac.uk/tol/tol-core/elastic:0.1.0
+    ports:
+      - 9200:9200
+    networks:
+      - api-base-test-network
     
   tol-sdk-python-system-test:
     build: .
@@ -23,12 +31,14 @@ services:
     environment:
       - DB_URI=postgresql://test-user:test-password@tol-sdk-python-db:5432/test-db
       - UUID_PREFIX=${UUID_PREFIX}
-      - ELASTIC_URI
-      - ELASTIC_USER
-      - ELASTIC_PASSWORD
-      - ELASTIC_INDEX_PREFIX
+      - ELASTIC_URI=http://tol-sdk-python-elastic:9200
+      - ELASTIC_USER=elastic
+      # needs to be set, but doesn't matter at all
+      - ELASTIC_PASSWORD=anything
+      - ELASTIC_INDEX_PREFIX=test
     depends_on:
       - tol-sdk-python-db
+      - tol-sdk-python-elastic
       - system-test-api-elastic
       - system-test-api-sql
     networks:
@@ -40,11 +50,14 @@ services:
     working_dir: /test/system/data_source/services
     environment:
       - UUID_PREFIX=${UUID_PREFIX}
-      - ELASTIC_URI
-      - ELASTIC_USER
-      - ELASTIC_PASSWORD
+      - ELASTIC_URI=http://tol-sdk-python-elastic:9200
+      - ELASTIC_USER=elastic
+      # needs to be set, but doesn't matter at all
+      - ELASTIC_PASSWORD=anything
+      - ELASTIC_INDEX_PREFIX=test
       - FLASK_DEBUG=1
-      - ELASTIC_INDEX_PREFIX
+    depends_on:
+      - tol-sdk-python-elastic
     networks:
       - api-base-test-network
     ports:

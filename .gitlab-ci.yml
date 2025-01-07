@@ -79,8 +79,8 @@ system-test-python-package:
     DOCKER_TLS_VERIFY: "1"
   before_script:
     - cd test/system
-    - docker-compose up -d db
-    - sleep 5s
+    - docker-compose up -d db elastic
+    - sleep 20s
     - docker-compose up -d system-test-api-sql system-test-api-elastic
   script:
     - docker-compose run system-test

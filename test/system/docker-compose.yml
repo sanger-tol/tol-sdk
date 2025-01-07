@@ -14,6 +14,11 @@ services:
       - POSTGRES_DB=test-db
     networks:
       - test-network
+
+  elastic:
+    image: gitlab-registry.internal.sanger.ac.uk/tol/tol-core/elastic:0.2.0-ci
+    networks:
+      - test-network
     
   system-test:
     image: ${BUILT_IMAGE}
@@ -22,17 +27,13 @@ services:
       - DB_URI=postgresql://test-user:test-password@db:5432/test-db
       - GOOGLE_CLIENT_SECRETS=${GOOGLE_CLIENT_SECRETS}
       - UUID_PREFIX=${UUID_PREFIX}
-      - ELASTIC_URI=${ELASTIC_URI}
-      - ELASTIC_USER=${ELASTIC_USER}
-      - ELASTIC_PASSWORD=${ELASTIC_PASSWORD}
-      - ELASTIC_INDEX_PREFIX=${ELASTIC_INDEX_PREFIX}
-      - JIRA_URL=${JIRA_URL}
-      - JIRA_API_KEY=${JIRA_API_KEY}
-      - GOAT_URL=${GOAT_URL}
-      - GOAT_API_PATH=${GOAT_API_PATH}
-      - MLWH_URI=${MLWH_URI}
+      - ELASTIC_URI=http://elastic:9200
+      - ELASTIC_USER=elastic
+      - ELASTIC_PASSWORD=anything
+      - ELASTIC_INDEX_PREFIX=test
     depends_on:
       - db
+      - elastic
       - system-test-api-elastic
       - system-test-api-sql
     networks:
@@ -44,12 +45,14 @@ services:
     working_dir: /test/system/data_source/services
     environment:
       - UUID_PREFIX=${UUID_PREFIX}
-      - ELASTIC_URI=${ELASTIC_URI}
-      - ELASTIC_USER=${ELASTIC_USER}
-      - ELASTIC_PASSWORD=${ELASTIC_PASSWORD}
-      - ELASTIC_INDEX_PREFIX=${ELASTIC_INDEX_PREFIX}
+      - ELASTIC_URI=http://elastic:9200
+      - ELASTIC_USER=elastic
+      - ELASTIC_PASSWORD=anything
+      - ELASTIC_INDEX_PREFIX=test
     networks:
       - test-network
+    depends_on:
+      - elastic
 
   system-test-api-sql:
     image: ${BUILT_IMAGE}

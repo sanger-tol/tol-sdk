@@ -46,9 +46,16 @@ class SqlFixture(DataSourceFixture):
         return sql_ds
 
     def before_test(self) -> None:
+        # need this in case a previous test
+        # fails to teardown properly
+        self.__delete_all()
+
         self.__insert_archetypes()
 
     def after_test(self) -> None:
+        self.__delete_all()
+
+    def __delete_all(self) -> None:
         delete_order = list(reversed(ALL_MODELS))
 
         session = session_factory()

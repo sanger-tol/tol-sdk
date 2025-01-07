@@ -12,8 +12,12 @@ from tol.core.factory import core_data_object
 from .util import (
     create_indices,
     elastic_datasource,
-    upsert_archetypes
+    upsert_archetypes,
+    wait_for_ready
 )
+
+
+wait_for_ready()
 
 
 # this upserts archetypes before starting, so that

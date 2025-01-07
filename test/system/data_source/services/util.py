@@ -3,13 +3,36 @@
 # SPDX-License-Identifier: MIT
 
 import os
+import time
 from datetime import datetime
+
+import requests
+from requests.exceptions import ConnectionError
 
 from tol.core.relationship import RelationshipConfig
 from tol.elastic import (
     ElasticDataSource,
     RuntimeField
 )
+
+
+def wait_for_ready(seconds: int = 60) -> None:
+    elastic_uri = os.environ['ELASTIC_URI']
+
+    for _ in range(seconds):
+        try:
+            r = requests.get(elastic_uri)
+            if r.ok:
+                return
+        except ConnectionError:
+            pass
+        finally:
+            time.sleep(1)
+
+    raise Exception(
+        'The elasticsearch cluster was not ready after '
+        f'{seconds} seconds.'
+    )
 
 
 def get_prefix() -> str:
