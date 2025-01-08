@@ -41,14 +41,18 @@ class BoardModels(IterableABC[type[Model]]):
     _user_mixin: type[Any]
 
     def __iter__(self) -> Iterator[type[Model]]:
+        """
+        Returns in order they should be deleted
+        """
+
         return iter(
             [
-                self.component,
                 self.component_zone,
-                self.zone,
+                self.component,
                 self.zone_view,
-                self.view,
+                self.zone,
                 self.view_board,
+                self.view,
                 self.board
             ]
         )

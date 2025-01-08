@@ -82,8 +82,8 @@ def auth_bp(db_uri, oidc_config):
 def full_models_list(auth_bp: DbAuthBlueprint):
 
     return [
+        *auth_bp.models,
         *create_models_list,
-        *auth_bp.models
     ]
 
 
@@ -97,7 +97,7 @@ def models_list(full_models_list):
     ]
 
 
-@fixture
+@fixture(autouse=True)
 def session_factory(db_uri: str, full_models_list: list[type[Any]]):
 
     __set_up(db_uri)
