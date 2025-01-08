@@ -82,11 +82,11 @@ class BenchlingWarehouseDataSource(DataSource, ListGetter):
         if object_filters is not None:
             if isinstance(object_filters.and_, dict):
                 if 'sequencing_platform' in object_filters.and_:
-                    file_suffix = ('_sequencing_platform_'
-                                   + object_filters.and_['sequencing_platform']['eq']['value'])
+                    file_suffix = '_sequencing_platform_' \
+                                  + object_filters.and_['sequencing_platform']['eq']['value']
                 elif 'extraction_type' in object_filters.and_:
-                    file_suffix = '_extraction_type_'
-                    + object_filters.and_['extraction_type']['eq']['value']
+                    file_suffix = '_extraction_type_' \
+                                  + object_filters.and_['extraction_type']['eq']['value']
             else:
                 raise DataSourceError('Filtering only on sequencing platform and extraction '
                                       'type currently supported on BenchlingDataSource')

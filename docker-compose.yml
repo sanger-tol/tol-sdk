@@ -6,10 +6,12 @@ services:
     
   tol-sdk-python-unit-test:
     build: .
+    container_name: unit-test
     command: pytest -v unit
 
   tol-sdk-python-db:
     image: postgres:14
+    container_name: db
     environment:
       - POSTGRES_USER=test-user
       - POSTGRES_PASSWORD=test-password
@@ -20,6 +22,7 @@ services:
   tol-sdk-python-elastic:
     # NB - the below image is ARM/M1 only.
     image: gitlab-registry.internal.sanger.ac.uk/tol/tol-core/elastic:0.1.0
+    container_name: elastic
     ports:
       - 9200:9200
     networks:
@@ -27,6 +30,7 @@ services:
     
   tol-sdk-python-system-test:
     build: .
+    container_name: system-test
     command: pytest -vvvx system
     environment:
       - DB_URI=postgresql://test-user:test-password@tol-sdk-python-db:5432/test-db
@@ -46,6 +50,7 @@ services:
 
   system-test-api-elastic:
     build: .
+    container_name: api-elastic
     command: flask --app elastic run --host 0.0.0.0 --debugger
     working_dir: /test/system/data_source/services
     environment:
@@ -65,6 +70,7 @@ services:
 
   system-test-api-sql:
     build: .
+    container_name: api-sql
     command: flask --app sql run --host 0.0.0.0 --debugger
     working_dir: /test/system/data_source/services
     environment:
@@ -79,6 +85,7 @@ services:
 
   tol-sdk-python-integration-test:
     build: .
+    container_name: integration-test
     command: pytest -vvvx integration
     environment:
       - GOOGLE_CLIENT_SECRETS
