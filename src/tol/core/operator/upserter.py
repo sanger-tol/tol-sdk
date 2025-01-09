@@ -4,9 +4,12 @@
 
 from __future__ import annotations
 
+import itertools
 import typing
-from abc import ABC, abstractmethod
+from abc import ABC
 from typing import Iterable, Optional
+
+import more_itertools
 
 from ._writer import _Writer
 
@@ -19,13 +22,12 @@ class Upserter(_Writer, ABC):
     """
     Upserts DataObject instances.
     """
-
-    @abstractmethod
     def upsert(
         self,
         object_type: str,
         objects: Iterable[DataObject],
-        session: Optional[OperableSession] = None
+        session: Optional[OperableSession] = None,
+        **kwargs
     ) -> Iterable[DataObject | ErrorObject] | None:
         """
         Takes a type and an `Iterable` of `DataObject` instances, on
@@ -33,4 +35,24 @@ class Upserter(_Writer, ABC):
 
         - insert    - if the `DataObject` is new to the `DataSource`
         - update    - if the `DataObject` is not new
+
+        We previde a default implementation that calls `upsert_batch`
         """
+        upserted = ()
+        for batch in more_itertools.chunked(objects, self.write_batch_size):
+            upserted = itertools.chain(upserted, self.upsert_batch(
+                object_type,
+                batch,
+                session=session,
+                **kwargs
+            ))
+        return upserted
+
+    def upsert_batch(
+        self,
+        object_type: str,
+        objects: Iterable[DataObject],
+        session: Optional[OperableSession] = None,
+        **kwargs
+    ) -> Iterable[DataObject | ErrorObject] | None:
+        raise NotImplementedError()

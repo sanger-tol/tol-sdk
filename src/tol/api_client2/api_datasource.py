@@ -82,6 +82,7 @@ class ApiDataSource(
         self.__dc_factory = do_converter_factory
         self.__filter_factory = filter_factory
         super().__init__({})
+        self.write_batch_size = 100
 
     @property
     @cache
@@ -275,7 +276,7 @@ class ApiDataSource(
             client.delete(object_type, object_id)
 
     @validate('upsert')
-    def upsert(
+    def upsert_batch(
         self,
         object_type: str,
         objects: Iterable[DataObject],
@@ -289,6 +290,7 @@ class ApiDataSource(
         if self.return_mode[object_type] == ReturnMode.POPULATED:
             converted, _ = self.__jc_factory().convert_list(returned)
             return converted
+        return []  # when the underlying DataSource doesn't return anything
 
     @validate('relational', direct_object=True)
     @validate_id
