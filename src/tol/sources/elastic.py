@@ -316,7 +316,7 @@ def elastic():
                 }
             },
             'calc_topup_required': {
-              'type': 'boolean',
+                'type': 'boolean',
                 'script': {
                     'source': """
                         boolean isTotalSubmissionsGreaterThanOne = (
@@ -327,10 +327,10 @@ def elastic():
 
                         boolean isOngoingSubmissionsEqualZero = (
                             doc.containsKey('benchling_pacbio_sequencing_request_count') &&
-                            doc.containsKey('benchling_pacbio_completed_sequencing_request_count') &&
-                            doc['benchling_pacbio_sequencing_request_count'].size() > 0 &&
-                            doc['benchling_pacbio_completed_sequencing_request_count'].size() > 0 && 
-                            (doc['benchling_pacbio_sequencing_request_count'].value -
+                            doc.containsKey('benchling_pacbio_completed_sequencing_request_count')
+                            && doc['benchling_pacbio_sequencing_request_count'].size() > 0 &&
+                            doc['benchling_pacbio_completed_sequencing_request_count'].size() > 0
+                            && (doc['benchling_pacbio_sequencing_request_count'].value -
                             doc['benchling_pacbio_completed_sequencing_request_count'].value == 0)
                         );
 
@@ -353,7 +353,7 @@ def elastic():
                         );
                     """
                 }
-            },  
+            },
         },
         'sample': {
             'calc_biospecimen_id':
