@@ -362,12 +362,13 @@ def elastic():
                             doc.containsKey('benchling_pacbio_sequencing_request_count') &&
                             doc['benchling_pacbio_sequencing_request_count'].size() > 0 &&
                             doc['benchling_pacbio_sequencing_request_count'].value > 1 &&
-                            
-                            doc.containsKey('benchling_pacbio_completed_sequencing_request_count') &&
-                            doc['benchling_pacbio_completed_sequencing_request_count'].size() > 0 &&
-                            (doc['benchling_pacbio_sequencing_request_count'].value -
-                            doc['benchling_pacbio_completed_sequencing_request_count'].value == 0) &&
-                            
+
+                            doc.containsKey('benchling_pacbio_completed_sequencing_request_count')
+                            && doc['benchling_pacbio_completed_sequencing_request_count'].size()
+                            > 0 && (doc['benchling_pacbio_sequencing_request_count'].value
+                            - doc['benchling_pacbio_completed_sequencing_request_count'].value
+                            == 0) &&
+
                             doc.containsKey('mlwh_run_data_mlwh_hifi_read_bases_sum') &&
                             doc.containsKey('tolid_species.sts_genome_size') &&
                             doc.containsKey('sts_sample_sts_target_coverage_max') &&
@@ -380,48 +381,91 @@ def elastic():
                         );
 
                         boolean isLibraryExhausted = (
-                            doc.containsKey('benchling_tolid.benchling_sequencing_request_mlwh_volume_remaining_max') &&
-                            doc['benchling_tolid.benchling_sequencing_request_mlwh_volume_remaining_max'].size() > 0 &&
-                            doc['benchling_tolid.benchling_sequencing_request_mlwh_volume_remaining_max'].value == 0
+                            doc.containsKey
+                            ('benchling_tolid.benchling_sequencing_request_mlwh_volume_remaining_max')
+                            &&
+                            doc['benchling_tolid.benchling_sequencing_request_mlwh_volume_remaining_max']
+                            .size() > 0 &&
+                            doc['benchling_tolid.benchling_sequencing_request_mlwh_volume_remaining_max']
+                            .value == 0
                         );
 
                         boolean isDnaExhausted = (
-                            doc.containsKey('benchling_tolid.benchling_sequencing_request_mlwh_volume_remaining_max') &&
-                            doc.containsKey('benchling_tolid.benchling_extraction_benchling_volume_ul_max') &&
-                            doc['benchling_tolid.benchling_sequencing_request_mlwh_volume_remaining_max'].size() > 0 &&
-                            doc['benchling_tolid.benchling_extraction_benchling_volume_ul_max'].size() > 0 &&
-                            doc['benchling_tolid.benchling_sequencing_request_mlwh_volume_remaining_max'].value == 0 &&
-                            doc['benchling_tolid.benchling_extraction_benchling_volume_ul_max'].value == 0
+                            doc.containsKey(
+                            'benchling_tolid.benchling_sequencing_request_mlwh_volume_remaining_max'
+                            ) &&
+                            doc.containsKey(
+                            'benchling_tolid.benchling_extraction_benchling_volume_ul_max'
+                            ) &&
+                            doc['benchling_tolid.benchling_sequencing_request_mlwh_volume_remaining_max']
+                            .size() > 0 &&
+                            doc['benchling_tolid.benchling_extraction_benchling_volume_ul_max']
+                            .size() > 0 &&
+                            doc['benchling_tolid.benchling_sequencing_request_mlwh_volume_remaining_max']
+                            .value == 0 &&
+                            doc['benchling_tolid.benchling_extraction_benchling_volume_ul_max']
+                            .value == 0
                             );
-                        
+
                         boolean isTissuePrepExhausted = (
-                            doc.containsKey('benchling_tolid.benchling_sequencing_request_mlwh_volume_remaining_max') &&
-                            doc.containsKey('benchling_tolid.benchling_extraction_benchling_volume_ul_max') &&
-                            doc.containsKey('benchling_tolid.benchling_tissue_prep_benchling_weight_mg_max') &&
-                            doc['benchling_tolid.benchling_sequencing_request_mlwh_volume_remaining_max'].size() > 0 &&
-                            doc['benchling_tolid.benchling_extraction_benchling_volume_ul_max'].size() > 0 &&
-                            doc['benchling_tolid.benchling_tissue_prep_benchling_weight_mg_max'].size() > 0 &&
-                            doc['benchling_tolid.benchling_sequencing_request_mlwh_volume_remaining_max'].value == 0 &&
-                            doc['benchling_tolid.benchling_extraction_benchling_volume_ul_max'].value == 0 &&
-                            doc['benchling_tolid.benchling_tissue_prep_benchling_weight_mg_max'].value == 0
+                            doc.containsKey(
+                            'benchling_tolid.benchling_sequencing_request_mlwh_volume_remaining_max'
+                            ) && doc.containsKey(
+                            'benchling_tolid.benchling_extraction_benchling_volume_ul_max'
+                            ) && doc.containsKey(
+                            'benchling_tolid.benchling_tissue_prep_benchling_weight_mg_max'
+                            ) && doc[
+                            'benchling_tolid.benchling_sequencing_request_mlwh_volume_remaining_max'
+                            ].size() > 0 &&
+                            doc[
+                            'benchling_tolid.benchling_extraction_benchling_volume_ul_max'
+                            ].size() > 0 &&
+                            doc[
+                            'benchling_tolid.benchling_tissue_prep_benchling_weight_mg_max'
+                            ].size() > 0 &&
+                            doc[
+                            'benchling_tolid.benchling_sequencing_request_mlwh_volume_remaining_max'
+                            ].value == 0 &&
+                            doc[
+                            'benchling_tolid.benchling_extraction_benchling_volume_ul_max'
+                            ].value == 0 &&
+                            doc[
+                            'benchling_tolid.benchling_tissue_prep_benchling_weight_mg_max'
+                            ].value == 0
                             );
 
                         boolean isSampleExhausted = (
-                            doc.containsKey('benchling_tolid.benchling_sequencing_request_mlwh_volume_remaining_max') &&
-                            doc.containsKey('benchling_tolid.benchling_extraction_benchling_volume_ul_max') &&
-                            doc.containsKey('benchling_tolid.benchling_tissue_prep_benchling_weight_mg_max') &&
-                            doc.containsKey('sts_tolid.benchling_sample_benchling_remaining_weight_max') &&
-                            doc.containsKey('sts_sample_count') &&
-                            doc['benchling_tolid.benchling_sequencing_request_mlwh_volume_remaining_max'].size() > 0 &&
-                            doc['benchling_tolid.benchling_extraction_benchling_volume_ul_max'].size() > 0 &&
-                            doc['benchling_tolid.benchling_tissue_prep_benchling_weight_mg_max'].size() > 0 &&
-                            doc['sts_sample_count'].size() > 0 &&
-                            doc['sts_tolid.benchling_sample_benchling_remaining_weight_max'].size() > 0 &&
-                            doc['benchling_tolid.benchling_sequencing_request_mlwh_volume_remaining_max'].value == 0 &&
-                            doc['benchling_tolid.benchling_extraction_benchling_volume_ul_max'].value == 0 &&
-                            doc['benchling_tolid.benchling_tissue_prep_benchling_weight_mg_max'].value == 0 &&
-                            doc['sts_tolid.benchling_sample_benchling_remaining_weight_max'].value == 0 &&
-                            doc['sts_sample_count'].value == 0
+                            doc.containsKey(
+                            'benchling_tolid.benchling_sequencing_request_mlwh_volume_remaining_max'
+                            ) && doc.containsKey(
+                            'benchling_tolid.benchling_extraction_benchling_volume_ul_max'
+                            ) && doc.containsKey(
+                            'benchling_tolid.benchling_tissue_prep_benchling_weight_mg_max'
+                            ) && doc.containsKey(
+                            'sts_tolid.benchling_sample_benchling_remaining_weight_max'
+                            ) && doc.containsKey(
+                            'sts_sample_count'
+                            ) && doc[
+                            'benchling_tolid.benchling_sequencing_request_mlwh_volume_remaining_max'
+                            ].size() > 0 && doc[
+                            'benchling_tolid.benchling_extraction_benchling_volume_ul_max'
+                            ].size() > 0 && doc[
+                            'benchling_tolid.benchling_tissue_prep_benchling_weight_mg_max'
+                            ].size() > 0 && doc[
+                            'sts_sample_count'
+                            ].size() > 0 && doc[
+                            'sts_tolid.benchling_sample_benchling_remaining_weight_max'
+                            ].size() > 0 && doc[
+                            'benchling_tolid.benchling_sequencing_request_mlwh_volume_remaining_max'
+                            ].value == 0 &&
+                            doc['benchling_tolid.benchling_extraction_benchling_volume_ul_max'
+                            ].value == 0 && doc[
+                            'benchling_tolid.benchling_tissue_prep_benchling_weight_mg_max'
+                            ].value == 0 && doc[
+                            'sts_tolid.benchling_sample_benchling_remaining_weight_max'
+                            ].value == 0 && doc[
+                            'sts_sample_count'
+                            ].value == 0
                             );
 
                         emit(
