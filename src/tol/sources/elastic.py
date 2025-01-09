@@ -314,7 +314,46 @@ def elastic():
                         }
                     """
                 }
-            }
+            },
+            'calc_topup_required': {
+              'type': 'boolean',
+                'script': {
+                    'source': """
+                        boolean isTotalSubmissionsGreaterThanOne = (
+                            doc.containsKey('benchling_pacbio_sequencing_request_count') &&
+                            doc['benchling_pacbio_sequencing_request_count'].size() > 0 &&
+                            doc['benchling_pacbio_sequencing_request_count'].value > 1
+                        );
+
+                        boolean isOngoingSubmissionsEqualZero = (
+                            doc.containsKey('benchling_pacbio_sequencing_request_count') &&
+                            doc.containsKey('benchling_pacbio_completed_sequencing_request_count') &&
+                            doc['benchling_pacbio_sequencing_request_count'].size() > 0 &&
+                            doc['benchling_pacbio_completed_sequencing_request_count'].size() > 0 && 
+                            (doc['benchling_pacbio_sequencing_request_count'].value -
+                            doc['benchling_pacbio_completed_sequencing_request_count'].value == 0)
+                        );
+
+                        boolean isTargetCoverageMet = (
+                            doc.containsKey('mlwh_run_data_mlwh_hifi_read_bases_sum') &&
+                            doc.containsKey('tolid_species.sts_genome_size') &&
+                            doc.containsKey('sts_sample_sts_target_coverage_max') &&
+                            doc['mlwh_run_data_mlwh_hifi_read_bases_sum'].size() > 0 &&
+                            doc['tolid_species.sts_genome_size'].size() > 0 &&
+                            doc['sts_sample_sts_target_coverage_max'].size() > 0 &&
+                            (doc['mlwh_run_data_mlwh_hifi_read_bases_sum'].value /
+                            doc['tolid_species.sts_genome_size'].value >=
+                            doc['sts_sample_sts_target_coverage_max'].value)
+                            );
+
+                        emit(
+                            isTotalSubmissionsGreaterThanOne &&
+                            isOngoingSubmissionsEqualZero &&
+                            !isTargetCoverageMet
+                        );
+                    """
+                }
+            },  
         },
         'sample': {
             'calc_biospecimen_id':
