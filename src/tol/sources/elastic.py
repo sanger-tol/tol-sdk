@@ -267,7 +267,7 @@ def elastic():
 
                         boolean isSpecimensAtSangerEmpty = (
                             !doc.containsKey('tolid_tolid_count') ||
-                            doc['tolid_tolid_count'].size() == 0 ||
+                            doc['tolid_tolid_count'].empty ||
                             doc['tolid_tolid_count'].value == null
                         );
 
@@ -470,7 +470,7 @@ def elastic():
                             ].size() > 0 && doc[
                             'benchling_tissue_prep_benchling_weight_mg_max'
                             ].size() > 0 && doc[
-                            'tolid.species_sts_sample_count'
+                            'tolid.species.sts_sample_count'
                             ].size() > 0 && doc[
                             'tolid_species.benchling_sample_count'
                             ].size() > 0 && doc[
