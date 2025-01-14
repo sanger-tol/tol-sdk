@@ -383,8 +383,8 @@ def elastic():
                             (doc['mlwh_run_data_mlwh_hifi_read_bases_sum'].value /
                             doc['tolid_species.sts_genome_size'].value >=
                             doc['sts_sample_sts_target_coverage_max'].value)
-                            );    
-                    
+                            );
+
                         boolean isTopUpRequired = (
                             isTotalSubmissionsGreaterThanOne &&
                             isOngoingSubmissionsEqualZero &&
