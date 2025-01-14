@@ -358,7 +358,6 @@ def elastic():
                 'type': 'boolean',
                 'script': {
                     'source': """
-                        
                         boolean isTotalSubmissionsGreaterThanOne = (
                             doc.containsKey('benchling_pacbio_sequencing_request_count') &&
                             doc['benchling_pacbio_sequencing_request_count'].size() > 0 &&
@@ -456,7 +455,7 @@ def elastic():
                             ) && doc.containsKey(
                             'tolid_species.benchling_sample_count'
                             ) && doc.containsKey(
-                            'tolid_species.sts_sample_count'
+                            'sts_sample_count'
                             ) && doc[
                             'benchling_sequencing_request_mlwh_volume_remaining_max'
                             ].size() > 0 && doc[
@@ -464,7 +463,7 @@ def elastic():
                             ].size() > 0 && doc[
                             'benchling_tissue_prep_benchling_weight_mg_max'
                             ].size() > 0 && doc[
-                            'tolid.species.sts_sample_count'
+                            'sts_sample_count'
                             ].size() > 0 && doc[
                             'tolid_species.benchling_sample_count'
                             ].size() > 0 && doc[
@@ -476,7 +475,7 @@ def elastic():
                             ].value == 0 && doc[
                             'tolid_species.benchling_sample_count'
                             ].value == 0 && doc[
-                            'tolid_species.sts_sample_count'
+                            'sts_sample_count'
                             ].value == 0
                             );
 
