@@ -279,6 +279,31 @@ def elastic():
                     """
                 }
             },
+            'calc_recollection_needed': {
+                'type': 'boolean',
+                'script': {
+                    'source': """
+                        boolean isSpeciesNovel = (
+                            !doc.containsKey('tolid_tolid_count') ||
+                            doc['tolid_tolid_count'].empty ||
+                            doc['tolid_tolid_count'].value == null
+                        );
+
+                        boolean isSpeciesExhausted = (
+                            doc.containsKey('calc_individual_exhausted_tolid_count') &&
+                            doc.containsKey('tolid_tolid_count') &&
+                            doc['calc_individual_exhausted_tolid_count'].size() > 0 &&
+                            doc['tolid_tolid_count'].size() > 0 &&
+                            (doc['calc_individual_exhausted_tolid_count'].value -
+                            doc['tolid_tolid_count'].value == 0)
+                        );
+
+                        emit(
+                            !isSpeciesNovel && isSpeciesExhausted
+                        );
+                    """
+                }
+            },
         },
         'specimen': {
             'calc_coverage_post_run': RuntimeFields.math(
@@ -314,7 +339,130 @@ def elastic():
                         }
                     """
                 }
-            }
+            },
+            'calc_topup_required': {
+                'type': 'boolean',
+                'script': {
+                    'source': """
+                        boolean isTotalSubmissionsGreaterThanZero = (
+                            doc.containsKey('benchling_pacbio_sequencing_request_count') &&
+                            doc['benchling_pacbio_sequencing_request_count'].size() > 0 &&
+                            doc['benchling_pacbio_sequencing_request_count'].value > 0
+                        );
+
+                        boolean isOngoingSubmissionsEqualZero = (
+                            doc.containsKey('benchling_pacbio_sequencing_request_count') &&
+                            doc.containsKey('benchling_pacbio_completed_sequencing_request_count')
+                            && doc['benchling_pacbio_sequencing_request_count'].size() > 0 &&
+                            doc['benchling_pacbio_completed_sequencing_request_count'].size() > 0
+                            && (doc['benchling_pacbio_sequencing_request_count'].value -
+                            doc['benchling_pacbio_completed_sequencing_request_count'].value == 0)
+                        );
+
+                        boolean isTargetCoverageMet = (
+                            doc.containsKey('mlwh_run_data_mlwh_hifi_read_bases_sum') &&
+                            doc.containsKey('tolid_species.sts_genome_size') &&
+                            doc.containsKey('sts_sample_sts_target_coverage_max') &&
+                            doc['mlwh_run_data_mlwh_hifi_read_bases_sum'].size() > 0 &&
+                            doc['tolid_species.sts_genome_size'].size() > 0 &&
+                            doc['sts_sample_sts_target_coverage_max'].size() > 0 &&
+                            (doc['mlwh_run_data_mlwh_hifi_read_bases_sum'].value /
+                            doc['tolid_species.sts_genome_size'].value >=
+                            doc['sts_sample_sts_target_coverage_max'].value)
+                            );
+
+                        emit(
+                            isTotalSubmissionsGreaterThanZero &&
+                            isOngoingSubmissionsEqualZero &&
+                            !isTargetCoverageMet
+                        );
+                    """
+                }
+            },
+            'calc_individual_exhausted': {
+                'type': 'boolean',
+                'script': {
+                    'source': """
+                        boolean isTotalSubmissionsGreaterThanZero = (
+                            doc.containsKey('benchling_pacbio_sequencing_request_count') &&
+                            doc['benchling_pacbio_sequencing_request_count'].size() > 0 &&
+                            doc['benchling_pacbio_sequencing_request_count'].value > 0
+                        );
+
+                        boolean isOngoingSubmissionsEqualZero = (
+                            doc.containsKey('benchling_pacbio_sequencing_request_count') &&
+                            doc.containsKey('benchling_pacbio_completed_sequencing_request_count')
+                            && doc['benchling_pacbio_sequencing_request_count'].size() > 0 &&
+                            doc['benchling_pacbio_completed_sequencing_request_count'].size() > 0
+                            && (doc['benchling_pacbio_sequencing_request_count'].value -
+                            doc['benchling_pacbio_completed_sequencing_request_count'].value == 0)
+                        );
+
+                        boolean isTargetCoverageMet = (
+                            doc.containsKey('mlwh_run_data_mlwh_hifi_read_bases_sum') &&
+                            doc.containsKey('tolid_species.sts_genome_size') &&
+                            doc.containsKey('sts_sample_sts_target_coverage_max') &&
+                            doc['mlwh_run_data_mlwh_hifi_read_bases_sum'].size() > 0 &&
+                            doc['tolid_species.sts_genome_size'].size() > 0 &&
+                            doc['sts_sample_sts_target_coverage_max'].size() > 0 &&
+                            (doc['mlwh_run_data_mlwh_hifi_read_bases_sum'].value /
+                            doc['tolid_species.sts_genome_size'].value >=
+                            doc['sts_sample_sts_target_coverage_max'].value)
+                            );
+
+                        boolean isTopUpRequired = (
+                            isTotalSubmissionsGreaterThanZero &&
+                            isOngoingSubmissionsEqualZero &&
+                            !isTargetCoverageMet
+                            );
+
+                        boolean isIndividualExhausted = (
+                            doc.containsKey(
+                            'benchling_sequencing_request_mlwh_volume_remaining_max'
+                            ) && doc.containsKey(
+                            'benchling_extraction_benchling_volume_ul_max'
+                            ) && doc.containsKey(
+                            'benchling_tissue_prep_benchling_weight_mg_max'
+                            ) && doc.containsKey(
+                            'sts_tolid.sts_sample_benchling_remaining_weight_max'
+                            ) && doc.containsKey(
+                            'benchling_sample_count'
+                            ) && doc.containsKey(
+                            'sts_sample_count'
+                            ) && doc[
+                            'benchling_sequencing_request_mlwh_volume_remaining_max'
+                            ].size() > 0 && doc[
+                            'benchling_extraction_benchling_volume_ul_max'
+                            ].size() > 0 && doc[
+                            'benchling_tissue_prep_benchling_weight_mg_max'
+                            ].size() > 0 && doc[
+                            'sts_tolid.sts_sample_benchling_remaining_weight_max'
+                            ].size() > 0 && doc[
+                            'benchling_sample_count'
+                            ].size() > 0 && doc[
+                            'sts_sample_count'
+                            ].size() > 0 && doc[
+                            'benchling_sequencing_request_mlwh_volume_remaining_max'
+                            ].value == 0 &&
+                            doc['benchling_extraction_benchling_volume_ul_max'
+                            ].value == 0 && doc[
+                            'benchling_tissue_prep_benchling_weight_mg_max'
+                            ].value == 0 && doc[
+                            'sts_tolid.sts_sample_benchling_remaining_weight_max'
+                            ].value == 0 && doc[
+                            'benchling_sample_count'
+                            ].value == doc[
+                            'sts_sample_count'
+                            ].value
+                            );
+
+                        emit(
+                            isTopUpRequired &&
+                            isIndividualExhausted
+                        );
+                    """
+                }
+            },
         },
         'sample': {
             'calc_biospecimen_id':
