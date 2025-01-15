@@ -2,10 +2,11 @@
 #
 # SPDX-License-Identifier: MIT
 
+import os
 import urllib
 from collections import ChainMap
 from itertools import chain
-from typing import Optional
+from typing import Any, Optional
 
 from flask import Blueprint, request
 
@@ -83,6 +84,7 @@ class CustomBlueprint(Blueprint):
 
 
 def _config_blueprint(
+    config_prefix: str,
     url_prefix: str,
     data_sources: tuple[OperableDataSource],
     operator_config: OperatorConfig
@@ -94,7 +96,7 @@ def _config_blueprint(
     - `data_sources`, a `tuple` of `DataSource` instances behind the API
     """
 
-    config_handler = ConfigBlueprint(url_prefix)
+    config_handler = ConfigBlueprint(config_prefix)
 
     @config_handler.route('/relationships', methods=['GET'])
     def get_relationships():
@@ -137,6 +139,156 @@ def _config_blueprint(
         modes_list = [d.return_mode for d in data_sources]
         chain_map = ChainMap(*modes_list)
         return dict(chain_map)
+
+    @config_handler.get('/swagger.json')
+    def get_swagger_json():
+        ds_dict = DataSourceDict(*data_sources)
+
+        supported_types = list(
+            chain.from_iterable(
+                d.supported_types for d in data_sources
+            )
+        )
+
+        def __render_type(attribute_type: str) -> str:
+            if attribute_type == 'str':
+                return 'string'
+            elif attribute_type == 'int':
+                return 'integer'
+            elif attribute_type == 'bool':
+                return 'boolean'
+            elif attribute_type.startswith('dict'):
+                return 'object'
+            elif attribute_type.startswith('list'):
+                return 'array'
+            else:
+                return 'string'
+
+        def __render_object_schema(object_type: str) -> dict[str, Any]:
+            return {
+                'properties': {
+                    'attributes': {
+                        'type': 'object',
+                        'properties': {
+                            k: {
+                                'type': __render_type(v)
+                            }
+                            for k, v
+                            in ds_dict[object_type].attribute_types[object_type].items()
+                        }
+                    }
+                }
+            }
+
+        def __object_title(object_type: str) -> str:
+            return object_type.title().replace('_', '')
+
+        def __render_paths(object_type: str) -> dict[str, Any]:
+            prefix = f'{url_prefix}/{object_type}'
+            object_title = __object_title(object_type)
+            detail_id = f'{object_title}Id'
+
+            return {
+                f'{prefix}/{{{detail_id}}}': {
+                    'get': {
+                        'description': f'Get the given {object_title}',
+                        'parameters': [
+                            {
+                                'name': detail_id,
+                                'in': 'path',
+                                'schema': {
+                                    'type': 'string'
+                                },
+                                'required': True
+                            }
+                        ],
+                        'responses': {
+                            '200': {
+                                'description': 'Success'
+                            }
+                        },
+                        'tags': [object_type]
+                    },
+                    'delete': {
+                        'description': f'Delete the given {object_title}',
+                        'parameters': [
+                            {
+                                'name': detail_id,
+                                'in': 'path',
+                                'schema': {
+                                    'type': 'string'
+                                },
+                                'required': True
+                            }
+                        ],
+                        'responses': {
+                            '200': {
+                                'description': 'Success'
+                            }
+                        },
+                        'tags': [object_type]
+                    }
+                },
+                f'{prefix}/{object_type}': {
+                    'get': {
+                        'description': f'Get {object_title} instances',
+                        'parameters': [
+                            {
+                                'name': 'filter',
+                                'in': 'query',
+                                'schema': {
+                                    'type': 'object'
+                                },
+                                'required': False
+                            }
+                        ],
+                        'responses': {
+                            '200': {
+                                'description': 'Success'
+                            }
+                        },
+                        'tags': [object_type]
+                    }
+                }
+            }
+
+        paths = dict(
+            ChainMap(
+                *(
+                    __render_paths(object_type)
+                    for object_type in supported_types
+                )
+            )
+        )
+
+        object_schemas = {
+            __object_title(object_type): __render_object_schema(
+                object_type
+            )
+            for object_type in supported_types
+        }
+
+        return {
+            'openapi': '3.0.3',
+            'info': {
+                'title': 'Example App',
+                'version': '0.1.0'
+            },
+            'paths': paths,
+            'components': {
+                'schemas': {
+                    'Filter': {
+                        'type': 'object',
+                        'properties': {
+                            'and_': {
+                                'type': 'object',
+                            }
+                        }
+                    },
+                    **object_schemas
+                }
+            }
+        }
 
     return config_handler
 
@@ -320,6 +472,7 @@ def data_blueprint(
 
     config_bp = _config_blueprint(
         config_prefix,
+        url_prefix,
         data_sources,
         DefaultOperatorConfig(*data_sources)
     )
