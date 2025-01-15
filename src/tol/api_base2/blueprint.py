@@ -167,6 +167,14 @@ def _config_blueprint(
         def __render_object_schema(object_type: str) -> dict[str, Any]:
             return {
                 'properties': {
+                    'id': {
+                        'type': 'string',
+                        'example': '101'
+                    },
+                    'type': {
+                        'type': 'string',
+                        'example': object_type,
+                    },
                     'attributes': {
                         'type': 'object',
                         'properties': {
@@ -208,7 +216,12 @@ def _config_blueprint(
                                 'content': {
                                     'application/json': {
                                         'schema': {
-                                            '$ref': f"#/components/schemas/{object_title}"
+                                            'type': 'object',
+                                            'properties': {
+                                                'data': {
+                                                    '$ref': f"#/components/schemas/{object_title}"           
+                                                }
+                                            }
                                         }
                                     }
                                 }
