@@ -4,6 +4,7 @@
 
 import os
 from typing import Any, Optional
+from urllib.parse import quote
 
 import requests
 from requests.adapters import HTTPAdapter, Retry
@@ -359,7 +360,7 @@ class JsonApiClient:
         return r.json()
 
     def __detail_url(self, object_type: str, object_id: str) -> str:
-        return f'{self.__data_url}/{object_type}/{object_id}'
+        return f'{self.__data_url}/{object_type}/{quote(object_id)}'
 
     def __list_url(self, object_type: str) -> str:
         return f'{self.__data_url}/{object_type}'
