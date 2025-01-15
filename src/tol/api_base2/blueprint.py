@@ -204,7 +204,14 @@ def _config_blueprint(
                         ],
                         'responses': {
                             '200': {
-                                'description': 'Success'
+                                'description': 'Success',
+                                'content': {
+                                    'application/json': {
+                                        'schema': {
+                                            '$ref': f"#/components/schemas/{object_title}"
+                                        }
+                                    }
+                                }
                             }
                         },
                         'tags': [object_type]
@@ -223,7 +230,7 @@ def _config_blueprint(
                         ],
                         'responses': {
                             '200': {
-                                'description': 'Success'
+                                'description': 'Success',
                             }
                         },
                         'tags': [object_type]
