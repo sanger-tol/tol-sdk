@@ -24,6 +24,36 @@ class TestBenchlingDataSourceE2E:
 
     can_update = ['tissue', 'tissue_prep']
 
+    @against_types(['tissue', 'consumables_lot', 'folder', 'worklist', 'storage'])
+    def test_get(self, object_type: str) -> None:
+        """
+        Gets a single object of specified type.
+        """
+
+        benchling_ds = benchling()
+        str_key = self.__find_string_key(
+            object_type,
+            benchling_ds
+        )
+        # get an object list
+        objs = benchling_ds.get_list(
+            object_type
+        )
+        obj = next(objs)
+        assert obj.type == object_type
+        assert getattr(obj, str_key) is not None
+        self.__assert_relations_filled(obj, benchling_ds)
+
+        # now try getting one by ID
+        obj2 = benchling_ds.get_one(
+            object_type,
+            obj.id
+        )
+        assert obj2.type == object_type
+        self.__assert_relations_filled(obj2, benchling_ds)
+
+    # We should add 'storage' to the list but the test user has insufficient privileges
+    # to test location types
     @against_types(['tissue', 'tissue_prep', 'folder'])
     def test_many_insert_update_delete(self, object_type: str) -> None:
         """
@@ -104,21 +134,7 @@ class TestBenchlingDataSourceE2E:
             str_val = getattr(new_obj, str_key)
             assert str_val == expected_str_val * i
             # Assert that any required relations are filled
-            if object_type in benchling_ds.entities:
-                for att, field_def in benchling_ds.entities[object_type].items():
-                    if isinstance(field_def, dict) and field_def['required'] \
-                            and field_def['benchling_type'] == 'entity_link':
-                        related_object = getattr(new_obj, att)
-                        assert related_object is not None
-                        assert related_object.type == \
-                            benchling_ds.schema_names[field_def['schema_id']]
-                        # Assert that the related object has a string key
-                        # (i.e. has been unstubbed)
-                        related_str_key = self.__find_string_key(
-                            related_object.type,
-                            benchling_ds
-                        )
-                        assert getattr(related_object, related_str_key) is not None
+            self.__assert_relations_filled(new_obj, benchling_ds)
 
         benchling_ds.delete(object_type, [obj.id for obj in new_objs])
 
@@ -265,6 +281,76 @@ class TestBenchlingDataSourceE2E:
         # delete the worklist
         benchling_ds.delete('worklist', [worklist_added.id])
 
+    @against_types(['tissue', 'tissue_prep'])
+    def test_folders(self, object_type: str) -> None:
+        """
+        Creates a folder, adds a tissue to it, and then removes the tissue from it.
+        """
+
+        benchling_ds = benchling()
+
+        folder = next(benchling_ds.get_list('folder'))
+        entity = next(benchling_ds.get_list(object_type))
+
+        # Remove from folder
+        updates = [
+            (entity.id, {'folder': None})
+        ]
+        res = list(benchling_ds.update(object_type, updates))
+        assert len(res) == 1
+
+        refetched_entity = benchling_ds.get_one(object_type, entity.id)
+        assert refetched_entity.folder is None
+
+        # Add to a folder
+        updates = [
+            (entity.id, {'folder': folder})
+        ]
+
+        res = list(benchling_ds.update(object_type, updates))
+        assert len(res) == 1
+
+        refetched_entity = benchling_ds.get_one(object_type, entity.id)
+        assert refetched_entity.folder is not None
+        assert refetched_entity.folder.id == folder.id
+
+    def __assert_relations_filled(
+        self,
+        obj: DataObject,
+        benchling_ds: BenchlingDataSource
+    ) -> None:
+        if obj.type in benchling_ds.benchling_types:
+            benchling_type = benchling_ds.benchling_types[obj.type]
+            # Native relationships
+            native_relations = self.__get_native_relations(benchling_type)
+            # Schema relationships
+            schema_relations = {}
+            if benchling_type in benchling_ds.schemas \
+                    and obj.type in benchling_ds.schemas[benchling_type]:
+                for att, field_def in benchling_ds.schemas[benchling_type][obj.type].items():
+                    if isinstance(field_def, dict) and field_def['required'] \
+                            and field_def['benchling_type'] == 'entity_link':
+                        schema_relations[att] = benchling_ds.schema_names[field_def['schema_id']]
+            for att, type_ in (native_relations | schema_relations).items():
+                related_object = getattr(obj, att)
+                assert related_object is not None
+                assert related_object.type == type_
+                # Assert that the related object has a string key
+                # (i.e. has been unstubbed)
+                related_str_key = self.__find_string_key(
+                    related_object.type,
+                    benchling_ds
+                )
+                assert getattr(related_object, related_str_key) is not None
+
+    def __get_native_relations(
+        self,
+        benchling_type: str
+    ) -> list[str]:
+        if benchling_type == 'custom_entity':
+            return {'folder': 'folder'}
+        return {}
+
     def __find_string_key(
         self,
         object_type: str,
@@ -276,15 +362,17 @@ class TestBenchlingDataSourceE2E:
             return 'programme_id'
         if object_type == 'tissue_prep':
             return 'submission_id'
-        if object_type in ['folder', 'worklist']:
+        if object_type == 'consumables_lot':
+            return 'batch_lot_number'
+        if object_type in ['folder', 'worklist', 'storage']:
             return 'name'
 
         # Else do it the way we did before
         attribute_types = benchling_ds.attribute_types[object_type]
-
+        benchling_type = benchling_ds.benchling_types[object_type]
         for k, v in attribute_types.items():
-            if benchling_ds.entities[object_type][k]['benchling_type'] == 'text' \
-                    and benchling_ds.entities[object_type][k]['required']:
+            if benchling_ds.schemas[benchling_type][object_type][k]['benchling_type'] == 'text' \
+                    and benchling_ds.schemas[benchling_type][object_type][k]['required']:
                 return k
 
         raise Exception('no `str` key was found.')
@@ -303,14 +391,23 @@ class TestBenchlingDataSourceE2E:
         atts = {}
         to_ones = {}
         for att, att_type in benchling_ds.attribute_types[object_type].items():
-            if object_type in benchling_ds.entities:
-                field_def = benchling_ds.entities[object_type][att]
-                # Easy way to avoid computed fields
-                if not field_def['required']:
-                    continue
-                if field_def['benchling_type'] == 'dropdown':
-                    attribute_values = benchling_ds.get_attribute_value_options(object_type, att)
-                    atts[att] = next(iter(attribute_values.values()))
+            # Does this object have a schema?
+            if object_type in benchling_ds.benchling_types \
+                    and benchling_ds.benchling_types[object_type] in benchling_ds.schemas \
+                    and object_type in benchling_ds.schemas[benchling_ds.benchling_types[object_type]]:  # noqa E501
+                benchling_type = benchling_ds.benchling_types[object_type]
+                defs = benchling_ds.schemas[benchling_type][object_type]
+                if att in defs:
+                    field_def = defs[att]
+                    # Easy way to avoid computed fields
+                    if not field_def['required']:
+                        continue
+                    if field_def['benchling_type'] == 'dropdown':
+                        attribute_values = benchling_ds.get_attribute_value_options(
+                            object_type,
+                            att
+                        )
+                        atts[att] = next(iter(attribute_values.values()))
             if att not in atts:
                 if att_type == 'str':
                     atts[att] = string_value
@@ -323,6 +420,8 @@ class TestBenchlingDataSourceE2E:
         if object_type in benchling_ds.relationship_config and \
                 benchling_ds.relationship_config[object_type].to_one is not None:
             for rel, rel_type in benchling_ds.relationship_config[object_type].to_one.items():
+                if isinstance(rel_type, list):
+                    rel_type = rel_type[0]
                 example_object = next(benchling_ds.get_list(rel_type))
                 to_ones[rel] = example_object
         # Explicitly set the string key

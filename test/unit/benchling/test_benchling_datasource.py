@@ -12,6 +12,8 @@ from benchling_sdk.errors import BenchlingError
 from tol.benchling import BenchlingDataSource
 from tol.benchling.benchling_converter import (
     BenchlingCustomEntity,
+    BenchlingFolder,
+    BenchlingLocation,
     BenchlingWorklist
 )
 from tol.core import DataObject, core_data_object
@@ -22,45 +24,68 @@ class MockBenchlingDataSource(BenchlingDataSource):
     def _get_benchling_interface(self, url, api_key):
         return mock.Mock()
 
-    def _get_entity_schemas(self):
-        return {
-            'test_entity_type': {
-                '__id__': 'ts_DONTCARE',
-                'field_name': {
-                    'name': 'Test Field',
-                    'type': 'str',
-                    'benchling_type': 'text',
-                    'required': True,
-                    'is_multi': False
+    def _get_schemas(self, benchling_type: str):
+        if benchling_type == 'custom_entity':
+            return {
+                'test_entity_type': {
+                    '__id__': 'ts_DONTCARE',
+                    'field_name': {
+                        'name': 'Test Field',
+                        'type': 'str',
+                        'benchling_type': 'text',
+                        'required': True,
+                        'is_multi': False
+                    },
+                    'field_name2': {
+                        'name': 'Test Field 2',
+                        'type': 'int',
+                        'benchling_type': 'integer',
+                        'required': True,
+                        'is_multi': False
+                    }
                 },
-                'field_name2': {
-                    'name': 'Test Field 2',
-                    'type': 'int',
-                    'benchling_type': 'integer',
-                    'required': True,
-                    'is_multi': False
-                }
-            },
-            'test_child_type': {
-                '__id__': 'ts_ANOTHER',
-                'parent': {
-                    'name': 'Parent',
-                    'type': 'str',
-                    'benchling_type': 'entity_link',
-                    'schema_id': 'ts_DONTCARE',
-                    'required': True,
-                    'is_multi': False
+                'test_child_type': {
+                    '__id__': 'ts_ANOTHER',
+                    'parent': {
+                        'name': 'Parent',
+                        'type': 'str',
+                        'benchling_type': 'entity_link',
+                        'schema_id': 'ts_DONTCARE',
+                        'required': True,
+                        'is_multi': False
 
-                },
-                'name': {
-                    'name': 'Name',
-                    'type': 'str',
-                    'benchling_type': 'text',
-                    'required': True,
-                    'is_multi': False
+                    },
+                    'name': {
+                        'name': 'Name',
+                        'type': 'str',
+                        'benchling_type': 'text',
+                        'required': True,
+                        'is_multi': False
+                    }
                 }
             }
-        }
+        elif benchling_type == 'location':
+            return {
+                'test_location_type': {
+                    '__id__': 'ts_DONTCARE2',
+                    'field_name': {
+                        'name': 'Test Location Field',
+                        'type': 'str',
+                        'benchling_type': 'text',
+                        'required': True,
+                        'is_multi': False
+                    },
+                    'field_name2': {
+                        'name': 'Test Location Field 2',
+                        'type': 'int',
+                        'benchling_type': 'integer',
+                        'required': True,
+                        'is_multi': False
+                    }
+                },
+            }
+        else:
+            return {}
 
 
 def mock_benchling_data_source() -> BenchlingDataSource:
@@ -87,6 +112,12 @@ class TestBenchlingDataSource(TestCase):
             'test_child_type': {
                 'name': 'str'
             },
+            'test_location_type': {
+                'field_name': 'str',
+                'field_name2': 'int',
+                'name': 'str',
+                'barcode': 'str'
+            },
             'folder': {
                 'name': 'str'
             },
@@ -100,15 +131,19 @@ class TestBenchlingDataSource(TestCase):
         }
         self.assertEqual(expected, bds.attribute_types)
         self.assertEqual(
-            ['test_entity_type', 'test_child_type', 'folder',
-             'worklist', 'worklist_item'],
+            ['test_entity_type', 'test_child_type', 'test_location_type',
+             'folder', 'worklist', 'worklist_item'],
             bds.supported_types
         )
 
     def test_relationship_config(self):
         _, bds = mock_benchling_data_source()
         rc = bds.relationship_config
-        self.assertEqual({'parent': 'test_entity_type'}, rc['test_child_type'].to_one)
+        self.assertEqual(
+            {'parent': 'test_entity_type', 'folder': 'folder'},
+            rc['test_child_type'].to_one
+        )
+        self.assertEqual({'folder': 'folder'}, rc['test_entity_type'].to_one)
 
     def test_get_by_id_custom_entity(self):
         _, bds = mock_benchling_data_source()
@@ -151,6 +186,30 @@ class TestBenchlingDataSource(TestCase):
         self.assertEqual(1, len(res))
         self.assertEqual('123', res[0].id)
         self.assertEqual('Worklist 1', res[0].name)
+
+    def test_get_list_folder(self):
+        _, bds = mock_benchling_data_source()
+        obj = mock.create_autospec(BenchlingFolder, spec_set=True)
+        obj.id = '123'
+        obj.name = 'Folder 1'
+        bds.benchling_interface.folders.list.return_value = [[obj]]
+        res = list(bds.get_list('folder'))
+        self.assertEqual(1, len(res))
+        self.assertEqual('123', res[0].id)
+        self.assertEqual('Folder 1', res[0].name)
+
+    def test_get_list_location(self):
+        _, bds = mock_benchling_data_source()
+        obj = mock.create_autospec(BenchlingLocation, spec_set=True)
+        obj.id = '123'
+        obj.name = 'Location 1'
+        obj.schema.name = 'test_location_type'
+        obj.parent_storage_id = None
+        bds.benchling_interface.locations.list.return_value = [[obj]]
+        res = list(bds.get_list('test_location_type'))
+        self.assertEqual(1, len(res))
+        self.assertEqual('123', res[0].id)
+        self.assertEqual('Location 1', res[0].name)
 
     def test_update_error(self):
         _, bds = mock_benchling_data_source()
@@ -216,7 +275,8 @@ class TestBenchlingDataSource(TestCase):
         self.assertEqual(bds.benchling_interface.custom_entities.create.call_count, 2)
 
     def __mock_obj(self) -> DataObject:
-        obj = mock.create_autospec(DataObject, spec_set=True)
+        obj = mock.create_autospec(DataObject)
         obj.type = 'test_entity_type'
+        obj.folder = None
 
         return obj
