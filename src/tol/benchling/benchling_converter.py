@@ -24,6 +24,8 @@ from benchling_sdk.models import (
     Fields,
     Folder,
     FolderCreate,
+    Location,
+    LocationCreate
 )
 
 from caseconverter import snakecase
@@ -44,6 +46,8 @@ BenchlingCustomEntity = CustomEntity
 """Returned by the `get_` methods - which are only for debugging!"""
 BenchlingFolder = Folder
 BenchlingFolderCreate = FolderCreate
+BenchlingLocation = Location
+BenchlingLocationCreate = LocationCreate
 BenchlingWorklist = Worklist
 BenchlingWorklistCreate = WorklistCreate
 BenchlingWorklistItem = WorklistItem
@@ -82,6 +86,8 @@ class BenchlingConverter(Converter[BenchlingReturn, DataObject]):
             return self.__convert_folder(input_)
         elif isinstance(input_, BenchlingWorklist):
             return self.__convert_worklist(input_)
+        elif isinstance(input_, BenchlingLocation):
+            return self.__convert_location(input_)
         elif isinstance(input_, BenchlingWorklistItem):
             return self.__convert_worklist_item(input_)
         elif isinstance(input_, BenchlingCustomEntity):
@@ -100,6 +106,29 @@ class BenchlingConverter(Converter[BenchlingReturn, DataObject]):
                     stub=True
                 ) if input_.parent_folder_id is not None else None
             }
+        )
+
+    def __convert_location(self, input_: BenchlingLocation) -> DataObject:
+        object_type = snakecase(input_.schema.name)
+        attributes = self.__convert_attributes(input_.fields, object_type)
+        to_ones = self.__convert_relationships(input_.fields, object_type)
+        native_to_ones = {}
+        if input_.parent_storage_id is not None:
+            native_to_ones['parent_location'] = self.__ds.data_object_factory(
+                None,
+                input_.parent_storage_id,
+                stub=True,
+                stub_types=[k for k, v in self.__ds.benchling_types.items() if v == 'location']
+            )
+
+        return self.__ds.data_object_factory(
+            object_type,
+            id_=input_.id,
+            attributes=attributes | {
+                'name': input_.name,
+                'barcode': input_.barcode,
+            },
+            to_one=to_ones | native_to_ones
         )
 
     def __convert_worklist(self, input_: BenchlingWorklist) -> DataObject:
@@ -150,11 +179,18 @@ class BenchlingConverter(Converter[BenchlingReturn, DataObject]):
         object_type = snakecase(input_.schema.name)
         attributes = self.__convert_attributes(input_.fields, object_type)
         to_ones = self.__convert_relationships(input_.fields, object_type)
+        native_to_ones = {}
+        if input_.folder_id is not None:
+            native_to_ones['folder'] = self.__ds.data_object_factory(
+                'folder',
+                input_.folder_id,
+                stub=True
+            )
         return self.__ds.data_object_factory(
             object_type,
             id_=input_.id,
             attributes=attributes,
-            to_one=to_ones
+            to_one=to_ones | native_to_ones
         )
 
     def __convert_return(self, input_: BenchlingReturn) -> DataObject:
@@ -163,17 +199,14 @@ class BenchlingConverter(Converter[BenchlingReturn, DataObject]):
         if schema is not None:
             object_type = snakecase(schema.get('name', None))
 
+        attributes = self.__convert_return_attributes(input_, object_type)
+        to_ones = self.__convert_return_relationships(input_, object_type)
+
         return self.__ds.data_object_factory(
             object_type,
             id_=id_,
-            attributes=self.__convert_return_attributes(
-                input_,
-                object_type
-            ),
-            to_one=self.__convert_return_relationships(
-                input_,
-                object_type
-            )
+            attributes=attributes,
+            to_one=to_ones
         )
 
     def __convert_return_attributes(
@@ -204,9 +237,12 @@ class BenchlingConverter(Converter[BenchlingReturn, DataObject]):
         input_: BenchlingReturn,
         object_type: str
     ) -> dict[str, Any]:
+        benchling_type = self.__ds.benchling_types[object_type]
         return {
             snakecase(k): self.__ds.data_object_factory(
-                self.__ds.schema_names[self.__ds.entities[object_type][snakecase(k)]['schema_id']],
+                self.__ds.schema_names[
+                    self.__ds.schemas[benchling_type][object_type][snakecase(k)]['schema_id']
+                ],
                 v['value'],
                 stub=True
             ) if v.get('value') != [] and v.get('value') is not None else None
@@ -272,9 +308,12 @@ class BenchlingConverter(Converter[BenchlingReturn, DataObject]):
         raw_attributes: dict[str, dict[str, Any]],
         object_type: str
     ) -> dict[str, Any]:
+        benchling_type = self.__ds.benchling_types[object_type]
         return {
             snakecase(k): self.__ds.data_object_factory(
-                self.__ds.schema_names[self.__ds.entities[object_type][snakecase(k)]['schema_id']],
+                self.__ds.schema_names[
+                    self.__ds.schemas[benchling_type][object_type][snakecase(k)]['schema_id']
+                ],
                 v.get('value'),
                 stub=True
             ) if v.get('value') != [] and v.get('value') is not None else None
@@ -295,8 +334,10 @@ class DataObjectConverter(Converter[DataObject, BenchlingWrite]):
         super().__init__()
 
     def convert(self, input_: DataObject) -> BenchlingObjectCreate:
-        if input_.type in self.__ds.entities.keys():
+        if input_.type in self.__ds.schemas['custom_entity'].keys():
             return self.__convert_custom_entity(input_)
+        if input_.type in self.__ds.schemas['location'].keys():
+            return self.__convert_location(input_)
         if input_.type == 'folder':
             return self.__convert_folder(input_)
         if input_.type == 'worklist':
@@ -309,6 +350,15 @@ class DataObjectConverter(Converter[DataObject, BenchlingWrite]):
         return FolderCreate(
             name=input_.name,
             parent_folder_id=input_.parent_folder.id if input_.parent_folder is not None else None
+        )
+
+    def __convert_location(self, input_: DataObject) -> BenchlingLocationCreate:
+        return LocationCreate(
+            name=input_.name,
+            barcode=input_.barcode,
+            parent_storage_id=input_.parent_location.id
+            if input_.parent_location is not None else None,
+            schema_id=self.__ds.schema_ids[input_.type]
         )
 
     def __convert_worklist(self, input_: DataObject) -> BenchlingWorklistCreate:
@@ -329,7 +379,7 @@ class DataObjectConverter(Converter[DataObject, BenchlingWrite]):
         )
 
     def __convert_custom_entity(self, input_: DataObject) -> BenchlingCustomEntityCreate:
-        entity_fields = self.__convert_entity_fields(
+        entity_fields = self.__convert_fields(
             input_.type,
             input_.attributes,
             input_.to_one_relationships
@@ -338,7 +388,7 @@ class DataObjectConverter(Converter[DataObject, BenchlingWrite]):
             name=uuid4().hex,
             schema_id=self.__ds.schema_ids[input_.type],
             registry_id=self.__ds.registry_id,
-            folder_id=self.__ds.folder_id,
+            folder_id=input_.folder.id if input_.folder is not None else self.__ds.folder_id,
             fields=entity_fields,
             naming_strategy=NamingStrategy.REPLACE_NAMES_FROM_PARTS,
             custom_fields=fields({})
@@ -352,38 +402,48 @@ class DataObjectConverter(Converter[DataObject, BenchlingWrite]):
         # This function needs some work to handle objects other than custom_entities.
         # It would be better if we could just use convert() for updates as well.
         update_id, update_dict = update
-        if object_type in self.__ds.entities.keys():
-            entity_fields = self.__convert_entity_fields(
+        if object_type in self.__ds.schemas['custom_entity'].keys():
+            entity_fields = self.__convert_fields(
                 object_type,
-                update_dict
+                {
+                    k: v for k, v in update_dict.items()
+                    if k in self.__ds.schemas['custom_entity'][object_type].keys()
+                },
             )
 
+            kwargs = {}
+            if 'folder' in update_dict:
+                kwargs['folder_id'] = \
+                    update_dict['folder'].id if update_dict['folder'] is not None else None
             return CustomEntityBulkUpdate(
                 id=update_id,
                 fields=entity_fields,
-                custom_fields=fields({})
+                custom_fields=fields({}),
+                **kwargs
             )
         raise DataSourceError('Cannot update object type {object_type}')
 
-    def __convert_entity_fields(
+    def __convert_fields(
         self,
         object_type: str,
         data_dict: DataDict,
         to_one_relationships: dict[str, DataObject] = {}
     ) -> Fields:
+        benchling_type = self.__ds.benchling_types[object_type]
         mapped_dict = {
-            self.__get_entity_name(object_type, name): {'value': self.__format_date(value)}
+            self.__get_field_name(object_type, name): {'value': self.__format_date(value)}
             for name, value in data_dict.items()
-            if self.__ds.entities[object_type][name]['benchling_type'] != 'dropdown'
+            if self.__ds.schemas[benchling_type][object_type][name]['benchling_type'] != 'dropdown'
         }
         mapped_relationships = {
-            self.__get_entity_name(object_type, name): {'value': value.id}
+            self.__get_field_name(object_type, name): {'value': value.id}
             for name, value in to_one_relationships.items()
             if value is not None  # Not sure how to handle null relationships
+            and name in self.__ds.schemas[benchling_type][object_type].keys()
         }
         # Convert dropdown values to Benchling dropdown values
         dropdown_values = {
-            self.__get_entity_name(object_type, name): {
+            self.__get_field_name(object_type, name): {
                 'value': next(
                     (k for k, v in self.__ds.get_attribute_value_options(object_type, name).items()
                      if v == value),
@@ -391,17 +451,17 @@ class DataObjectConverter(Converter[DataObject, BenchlingWrite]):
                 )
             }
             for name, value in data_dict.items()
-            if self.__ds.entities[object_type][name]['benchling_type'] == 'dropdown'
+            if self.__ds.schemas[benchling_type][object_type][name]['benchling_type'] == 'dropdown'
         }
         return fields(mapped_dict | mapped_relationships | dropdown_values)
 
-    def __get_entity_name(
+    def __get_field_name(
         self,
         object_type: str,
         name: str
     ) -> str:
-
-        return self.__ds.entities[object_type][name]['name']
+        benchling_type = self.__ds.benchling_types[object_type]
+        return self.__ds.schemas[benchling_type][object_type][name]['name']
 
     def __format_date(self, date: Any) -> str:
         if isinstance(date, datetime.datetime):
