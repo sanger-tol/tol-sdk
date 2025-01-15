@@ -219,7 +219,7 @@ def _config_blueprint(
                                             'type': 'object',
                                             'properties': {
                                                 'data': {
-                                                    '$ref': f"#/components/schemas/{object_title}"           
+                                                    '$ref': f"#/components/schemas/{object_title}"
                                                 }
                                             }
                                         }
@@ -257,7 +257,7 @@ def _config_blueprint(
                                 'name': 'filter',
                                 'in': 'query',
                                 'schema': {
-                                    'type': 'object'
+                                    '$ref': f'#/components/schemas/Filter'
                                 },
                                 'required': False
                             }
