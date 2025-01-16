@@ -249,7 +249,7 @@ def _config_blueprint(
                         'tags': [object_type]
                     }
                 },
-                f'{prefix}/{object_type}': {
+                f'{prefix}': {
                     'get': {
                         'description': f'Get {object_title} instances',
                         'parameters': [
