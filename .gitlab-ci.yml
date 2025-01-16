@@ -116,3 +116,4 @@ integration-test-python-package:
 
 deploy-package:
   extends: .deploy-python-package
+  when: always
