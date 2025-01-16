@@ -118,3 +118,4 @@ deploy-package:
   extends: .deploy-python-package
   only:
     - swagger-ui  # TODO put back!!
+  dependencies: []  # TODO remove!!
