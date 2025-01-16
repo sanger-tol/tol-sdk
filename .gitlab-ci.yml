@@ -116,4 +116,5 @@ integration-test-python-package:
 
 deploy-package:
   extends: .deploy-python-package
-  only: swagger-ui  # TODO put back!!
+  only:
+    - swagger-ui  # TODO put back!!
