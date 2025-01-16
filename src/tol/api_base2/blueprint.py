@@ -471,7 +471,7 @@ def _core_blueprint(
         return {
             'openapi': '3.0.3',
             'info': {
-                'title': 'Example App',
+                'title': 'Swagger UI',
                 'version': '0.1.0'
             },
             'paths': paths,
