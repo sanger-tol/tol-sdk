@@ -90,7 +90,6 @@ class CustomBlueprint(Blueprint):
 
 def _config_blueprint(
     config_prefix: str,
-    url_prefix: str,
     data_sources: tuple[OperableDataSource],
     operator_config: OperatorConfig
 ) -> ConfigBlueprint:
@@ -503,7 +502,6 @@ def data_blueprint(
 
     config_bp = _config_blueprint(
         config_prefix,
-        url_prefix,
         data_sources,
         DefaultOperatorConfig(*data_sources)
     )
