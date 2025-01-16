@@ -2,7 +2,6 @@
 #
 # SPDX-License-Identifier: MIT
 
-import os
 import urllib
 from collections import ChainMap
 from itertools import chain
@@ -399,7 +398,7 @@ def _core_blueprint(
                                             'type': 'object',
                                             'properties': {
                                                 'data': {
-                                                    '$ref': f"#/components/schemas/{object_title}"
+                                                    '$ref': f'#/components/schemas/{object_title}'
                                                 }
                                             }
                                         }
@@ -437,7 +436,7 @@ def _core_blueprint(
                                 'name': 'filter',
                                 'in': 'query',
                                 'schema': {
-                                    '$ref': f'#/components/schemas/Filter'
+                                    '$ref': '#/components/schemas/Filter'
                                 },
                                 'required': False
                             }
