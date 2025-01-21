@@ -36,6 +36,7 @@ class StsSampleProjectToElasticSampleConverter(
                     attributes['longitude'] = s.location.long
                     attributes['elevation'] = s.location.elevation
                     attributes['depth'] = s.location.depth
+                    attributes['habitat'] = s.location.habitat
 
             attributes['col_date'] = self.__sanitise_date_field(s.col_date)
             attributes['original_collection_date'] = \
@@ -45,6 +46,15 @@ class StsSampleProjectToElasticSampleConverter(
                 if s.gal is not None:
                     attributes['gal_name'] = s.gal.name
                     attributes['gal_abbreviation'] = s.gal.abbreviation
+            if 'preservation_approach' in s.to_one_relationships:
+                if s.preservation_approach is not None:
+                    attributes['preservation_approach'] = s.preservation_approach.approach
+            if 'preservative_solution' in s.to_one_relationships:
+                if s.preservative_solution is not None:
+                    attributes['preservative_solution'] = s.preservative_solution.solution
+            if 'collection_method' in s.to_one_relationships:
+                if s.collection_method is not None:
+                    attributes['collection_method_desc'] = s.collection_method.method
             if 'specimen' in s.to_one_relationships:
                 if s.specimen is not None:
                     attributes['specimen'] = {'id': s.specimen.id}
@@ -58,13 +68,18 @@ class StsSampleProjectToElasticSampleConverter(
             if s.public_name is not None and s.public_name != '':
                 attributes['tolid'] = {'id': s.public_name}
                 attributes['public_name'] = None
+
+            person_attributes = {}
+            for sp in s.sample_persons:
+                person_attributes[f'{sp.action.lower()}_name'] = sp.person.fullname
+
         except DataSourceError:
             print(f'Problem with sample {s.id}')
 
         ret = self._data_object_factory(
             'sample',
             s.id,
-            attributes=attributes
+            attributes=attributes | person_attributes
         )
         return iter([ret])
 

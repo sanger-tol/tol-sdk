@@ -38,6 +38,10 @@ class DefaultGoatFilter(GoatFilter):
         'in_list': ['=', '!='],
         'exists': ['is not null', 'is null'],
     }
+    __special_fields = {
+        'taxon_rank': 'tax_rank',
+        'scientific_name': 'tax_name'
+    }
 
     def dumps(self, filter_: DataSourceFilter) -> str:
         filter_conditions = []
@@ -45,8 +49,14 @@ class DefaultGoatFilter(GoatFilter):
             standard_field = True
             if field == 'id':
                 field = 'taxon_id'
-            if field == 'taxon_rank':
-                filter_conditions.append(f'tax_rank({filter_list["eq"]["value"]})')
+            if field in self.__special_fields:
+                field = self.__special_fields[field]
+                if 'eq' in filter_list and 'value' in filter_list['eq']:
+                    filter_conditions.append(f'{field}({filter_list["eq"]["value"]})')
+                if 'in_list' in filter_list and 'value' in filter_list['in_list']:
+                    filter_conditions.append(
+                        f'{field}({",".join(filter_list["in_list"]["value"])})'
+                    )
                 standard_field = False
             if standard_field:
                 for op, ops in self.__op_mappings.items():

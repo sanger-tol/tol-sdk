@@ -59,7 +59,7 @@ class _MockDataSource(DataSource):
         raise NotImplementedError()
 
 
-class TestLabwhereLocationToElasticSampleConverter(TestCase):
+class TestElasticTolidToElasticSampleUpdateConverter(TestCase):
     def test_convert(self):
 
         source = _MockDataSourceRelational(config={})

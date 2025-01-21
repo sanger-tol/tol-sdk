@@ -254,8 +254,15 @@ def test(ctx, type_):
             f'sh -c "[ -d system ] && pytest -vvvx system || echo \'No system tests found\'"'
         )
     if type_ == 'integration':
-        click.echo('Integration tests are not supported at this time.')
-        return
+        docker_compose_entry = f'{service}-python-integration-test'
+        uuid_prefix = uuid4().hex
+        command = (
+            f'docker compose build {docker_compose_entry} && '
+            f'UUID_PREFIX={uuid_prefix} docker compose --env-file {env_file} '
+            f'run --rm --build {docker_compose_entry} '
+            f'sh -c "[ -d system ] && pytest -vvvx integration || '
+            'echo \'No integration tests found\'"'
+        )
     if type_ == 'ui':
         docker_compose_entry = f'{service}-ui-test'
         command = (

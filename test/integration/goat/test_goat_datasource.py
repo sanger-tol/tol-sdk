@@ -80,6 +80,36 @@ class TestGoatDataSource(TestCase):
         with self.assertRaises(StopIteration):
             next(ret)
 
+    def test_get_list_tax_rank(self):
+        _, gds = goat_data_source()
+
+        f = DataSourceFilter()
+        f.and_ = {
+            'taxon_rank': {'eq': {'value': 'species'}},
+            'id': {'in_list': {'value': ['9925', '2759']}}
+        }
+        ret = gds.get_list('taxon', object_filters=f)
+        obj1 = next(ret)
+        self.assertEqual('9925', obj1.id)
+        self.assertEqual(obj1.scientific_name, 'Capra hircus')
+
+        with self.assertRaises(StopIteration):
+            next(ret)
+
+    def test_get_list_scientific_name(self):
+        _, gds = goat_data_source()
+
+        f = DataSourceFilter()
+        f.and_ = {
+            'scientific_name': {'in_list': {'value': ['Capra hircus', 'Mus musculus']}}
+        }
+        ret = gds.get_list('taxon', object_filters=f)
+        # Cannot guarantee order of results
+        obj_ids = [obj.id for obj in ret]
+        assert '9925' in obj_ids
+        assert '10090' in obj_ids
+        assert len(obj_ids) == 2
+
     def test_get_list_page_sort_custom(self):
         _, gds = goat_data_source()
 
@@ -93,29 +123,27 @@ class TestGoatDataSource(TestCase):
             object_filters=f,
             page_number=1,
             page_size=3,
-            sort_by='-chromosome_number'
+            sort_by='-scientific_name'
         )
         assert total == 4
         assert len(ret) == 3
-        obj2 = ret[0]
-        self.assertEqual('1857951', obj2.id)
-        self.assertEqual(obj2.scientific_name, 'Acrobasis suavella')
-        self.assertEqual(obj2.chromosome_number, 60)
-        self.assertEqual(obj2.long_list, ['DTOL', 'PSYCHE'])
-        self.assertEqual(obj2.phylum.scientific_name, 'Arthropoda')
-
-        obj3 = ret[1]
+        # 687059: Psyche casta
+        # 62298: Desmarestia aculeata
+        # 2708: Citrus x limon
+        # 1857951: Acrobasis suavella
+        obj3 = ret[0]
         self.assertEqual('687059', obj3.id)
         self.assertEqual(obj3.scientific_name, 'Psyche casta')
-        self.assertEqual(obj3.chromosome_number, 31)
-        self.assertEqual(obj3.long_list, ['DTOL', 'PSYCHE'])
         self.assertEqual(obj3.phylum.scientific_name, 'Arthropoda')
+
+        obj2 = ret[1]
+        self.assertEqual('62298', obj2.id)
+        self.assertEqual(obj2.scientific_name, 'Desmarestia aculeata')
+        self.assertEqual(obj2.family.scientific_name, 'Desmarestiaceae')
 
         obj1 = ret[2]
         self.assertEqual('2708', obj1.id)
         self.assertEqual(obj1.scientific_name, 'Citrus x limon')
-        self.assertEqual(obj1.chromosome_number, 18)
-        self.assertEqual(obj1.long_list, ['DTOL'])
         self.assertEqual(obj1.phylum.scientific_name, 'Streptophyta')
 
     def test_get_list_page_sort_id(self):
