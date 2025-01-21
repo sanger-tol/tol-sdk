@@ -279,7 +279,7 @@ def elastic():
             'calc_recollection_needed': {
                 'type': 'boolean',
                 'script': {
-                    'source': """                       
+                    'source': """
                         if (doc.containsKey('calc_individual_exhausted_tolid_count') &&
                             doc.containsKey('tolid_tolid_count') &&
                             doc['calc_individual_exhausted_tolid_count'].size() > 0 &&
