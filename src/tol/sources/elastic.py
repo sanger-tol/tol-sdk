@@ -279,25 +279,16 @@ def elastic():
             'calc_recollection_needed': {
                 'type': 'boolean',
                 'script': {
-                    'source': """
-                        boolean isSpeciesNovel = (
-                            !doc.containsKey('tolid_tolid_count') ||
-                            doc['tolid_tolid_count'].empty ||
-                            doc['tolid_tolid_count'].value == null
-                        );
-
-                        boolean isSpeciesExhausted = (
-                            doc.containsKey('calc_individual_exhausted_tolid_count') &&
+                    'source': """                       
+                        if (doc.containsKey('calc_individual_exhausted_tolid_count') &&
                             doc.containsKey('tolid_tolid_count') &&
                             doc['calc_individual_exhausted_tolid_count'].size() > 0 &&
-                            doc['tolid_tolid_count'].size() > 0 &&
-                            (doc['calc_individual_exhausted_tolid_count'].value -
-                            doc['tolid_tolid_count'].value == 0)
-                        );
-
-                        emit(
-                            !isSpeciesNovel && isSpeciesExhausted
-                        );
+                            doc['tolid_tolid_count'].size() > 0) {
+                            emit(doc['calc_individual_exhausted_tolid_count'].value -
+                                doc['tolid_tolid_count'].value == 0);
+                        } else {
+                            emit(false);
+                        }
                     """
                 }
             },
@@ -421,7 +412,7 @@ def elastic():
                             ) && doc.containsKey(
                             'benchling_tissue_prep_benchling_weight_mg_max'
                             ) && doc.containsKey(
-                            'sts_tolid.sts_sample_benchling_remaining_weight_max'
+                            'benchling_sample_benchling_remaining_weight_max'
                             ) && doc.containsKey(
                             'benchling_sample_count'
                             ) && doc.containsKey(
@@ -433,7 +424,7 @@ def elastic():
                             ].size() > 0 && doc[
                             'benchling_tissue_prep_benchling_weight_mg_max'
                             ].size() > 0 && doc[
-                            'sts_tolid.sts_sample_benchling_remaining_weight_max'
+                            'benchling_sample_benchling_remaining_weight_max'
                             ].size() > 0 && doc[
                             'benchling_sample_count'
                             ].size() > 0 && doc[
@@ -445,7 +436,7 @@ def elastic():
                             ].value == 0 && doc[
                             'benchling_tissue_prep_benchling_weight_mg_max'
                             ].value == 0 && doc[
-                            'sts_tolid.sts_sample_benchling_remaining_weight_max'
+                            'benchling_sample_benchling_remaining_weight_max'
                             ].value == 0 && doc[
                             'benchling_sample_count'
                             ].value == doc[
