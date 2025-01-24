@@ -188,7 +188,8 @@ class MlwhDataSource(DataSource, DetailGetter, ListGetter):
             'hifi_number_passes_mean': 'well_metrics.hifi_number_passes_mean',
             'hifi_low_quality_read_bases': 'well_metrics.hifi_low_quality_read_bases',
             'hifi_low_quality_num_reads': 'well_metrics.hifi_low_quality_num_reads',
-            'hifi_low_quality_read_length_mean': 'well_metrics.hifi_low_quality_read_length_mean',
+            'hifi_low_quality_read_length_mean':
+                'well_metrics.hifi_low_quality_read_length_mean',
             'hifi_low_quality_read_quality_median':
                 'well_metrics.hifi_low_quality_read_quality_median',
             'hifi_barcoded_reads': 'well_metrics.hifi_barcoded_reads',
@@ -224,8 +225,8 @@ class MlwhDataSource(DataSource, DetailGetter, ListGetter):
             JOIN plex_agg
                 ON well_metrics.id_pac_bio_rw_metrics_tmp
                 = plex_agg.id_pac_bio_rw_metrics_tmp
-            JOIN seq_product_irods_locations AS irods
-            ON product_metrics.id_pac_bio_product = irods.id_product
+            LEFT JOIN seq_product_irods_locations AS irods
+                ON product_metrics.id_pac_bio_product = irods.id_product
             WHERE {clause}
               AND well_metrics.movie_name IS NOT NULL
               AND study.id_lims = 'SQSCP'
@@ -239,7 +240,6 @@ class MlwhDataSource(DataSource, DetailGetter, ListGetter):
             'supplier_name': 'mlwh_sample.supplier_name',
             'accession_number': 'mlwh_sample.accession_number',
             'public_name': 'mlwh_sample.public_name',
-            'supplier_name': 'mlwh_sample.supplier_name',
             'donor_id': 'mlwh_sample.donor_id',
             'taxon_id': 'mlwh_sample.taxon_id',
             'common_name': 'mlwh_sample.common_name',
