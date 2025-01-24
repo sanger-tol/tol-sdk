@@ -2,8 +2,6 @@
 #
 # SPDX-License-Identifier: MIT
 
-import logging
-
 from typing import Callable, Dict, List, Type
 
 from .database import Database, DefaultDatabase
@@ -120,8 +118,6 @@ def create_sql_datasource(
     )
     db = database_factory(models, db_uri)
 
-    logging.debug(f'{api_user_id_getter = } {behind_api = }')
-    # logging.debug(f'{api_user_id_getter = }')
     user_id_getter = api_user_id_getter if behind_api else None
 
     return SqlDataSource(

@@ -2,8 +2,6 @@
 #
 # SPDX-License-Identifier: MIT
 
-import logging
-
 from collections.abc import Mapping
 from typing import Callable, Iterator, Optional
 
@@ -95,7 +93,6 @@ def _get_client_factory(
     a `JsonApiClient` instance
     """
 
-    logging.debug(f'Client factory with {token = }')
     return lambda: JsonApiClient(
         api_url,
         token=token,
@@ -121,8 +118,6 @@ def create_api_datasource(
     - `api_url`
     - `token` (optional)
     """
-
-    logging.debug(f'Creating ApiDataSource with {token = }')
 
     client_factory = _get_client_factory(
         api_url,

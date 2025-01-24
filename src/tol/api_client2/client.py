@@ -2,7 +2,6 @@
 #
 # SPDX-License-Identifier: MIT
 
-import logging
 import os
 from typing import Any, Optional
 
@@ -30,8 +29,6 @@ class JsonApiClient:
         token_header: str = 'token',
         retries: int = 5
     ) -> None:
-
-        logging.debug(f'Making a new Client')
 
         self.__token = self.__token_header(token_header, token)
         self.__data_url = f'{api_url}{data_prefix}'
@@ -440,7 +437,6 @@ class JsonApiClient:
         token: Optional[str],
     ) -> Optional[dict[str, str]]:
 
-        logging.debug(f'Returning {token = }')
         return None if token is None else {key: token}
 
     def __merge_headers(
