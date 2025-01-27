@@ -20,6 +20,17 @@ class StsSampleProjectToElasticSampleConverter(
     def convert(self, data_object: DataObject) -> Iterable[DataObject]:
         # The project (note this is adding to a list)
         s = data_object.sample
+
+    # Validate mandatory fields first
+        mandatory_fields = {
+            'sequencescape_study_id': s.sequencescape_study_id,
+            'cost_code': s.cost_code,
+        }
+
+        if not all(mandatory_fields.values()):
+            missing = [k for k, v in mandatory_fields.items() if not v]
+            raise ValueError(f"Missing mandatory fields: {', '.join(missing)}")
+
         attributes = {
             'project': [data_object.project.id],
             'programme': [data_object.project.programme],
