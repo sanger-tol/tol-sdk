@@ -34,7 +34,7 @@ class ElasticSampleToBenchlingTissueUpdateConverter(
                         if species.sts_taxon_group else 'NA',
                     'genome_size': str(species.sts_genome_size),
                     # 'freezer': None,
-                    'location': data_object.sts_labwhere_parentage, # Previously shelf
+                    'location': data_object.sts_labwhere_parentage,  # Previously shelf
                     'tray': data_object.sts_labwhere_name,
                     'specimen_id': specimen.id,
                     'programme_id': data_object.sts_tolid.id,
