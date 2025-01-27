@@ -27,12 +27,16 @@ class DataObjectToDataObjectOrUpdateConverter(ABC):
         Takes a data_object_factory to use for creating new DataObjects
         """
         self._data_object_factory = data_object_factory
+        self._return_objects = []
 
     def convert_iterable(
         self,
         inputs: Iterable[DataObject | DataObjectUpdate]
     ) -> Iterable[DataObject]:
         return flatten((self.convert(i) for i in inputs))
+
+    def get_return_objects(self):
+        return self._return_objects
 
     @abstractmethod
     def convert(self, input_: DataObject) -> Iterable[DataObject | DataObjectUpdate]:

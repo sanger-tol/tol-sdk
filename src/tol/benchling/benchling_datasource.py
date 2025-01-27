@@ -303,24 +303,21 @@ class BenchlingDataSource(
         # Currently only deals with filtering by eq/contains: name
         benchling_package = self.__get_benchling_package(object_type)
         benchling_type = self.benchling_types[object_type]
-        if object_filters is not None \
-                and object_filters.and_ is not None \
-                and 'name' in object_filters.and_ \
-                and object_filters.and_['name'] is not None:
-            if 'contains' in object_filters.and_['name'] \
+        kwargs = {}
+        if object_filters is not None and object_filters.and_ is not None:
+            if 'name' in object_filters.and_ and object_filters.and_['name'] is not None:
+                if 'contains' in object_filters.and_['name'] \
                     and object_filters.and_['name']['contains'] is not None \
                     and 'value' in object_filters.and_['name']['contains']:
-                kwargs = {
-                    'name_includes': object_filters.and_['name']['contains']['value']
-                }
-            if 'eq' in object_filters.and_['name'] \
+                    kwargs['name_includes'] = object_filters.and_['name']['contains']['value']
+                elif 'eq' in object_filters.and_['name'] \
                     and object_filters.and_['name']['eq'] is not None \
                     and 'value' in object_filters.and_['name']['eq']:
-                kwargs = {
-                    'name': object_filters.and_['name']['eq']['value']
-                }
-        else:
-            kwargs = {}
+                    kwargs['name'] = object_filters.and_['name']['eq']['value']
+
+            if 'schema_fields' in object_filters.and_ and object_filters.and_['schema_fields'] is not None:
+                kwargs['schema_fields'] = self.__build_schema_fields_filter(object_filters.and_['schema_fields'], object_type, benchling_type)
+
         if benchling_type in BENCHLING_TYPE_SEARCH_WITH_SCHEMA_ID:
             kwargs['schema_id'] = self.schema_ids[object_type]
         # Limit folder searching to the project set a top level
@@ -328,14 +325,17 @@ class BenchlingDataSource(
             kwargs['project_id'] = self.project_id
 
         back_converter = self.__bc_factory()
+
         try:
             benchling_objects_page = benchling_package.list(
                 **kwargs
             )
+
             for benchling_objects in benchling_objects_page:
                 yield from back_converter.convert_iterable(benchling_objects)
-        except BenchlingError:
-            return
+        except Exception as e:
+            print(f"Exception type: {type(e)}")
+            print(f"Exception message: {str(e)}")
 
     def delete(
         self,
@@ -750,3 +750,52 @@ class BenchlingDataSource(
             return back_converter.convert_worklist_items(
                 self.__get_benchling_package('worklist').get_by_id(source.id)
             )
+
+    def __build_schema_fields_filter(self, schema_filters: Optional[DataSourceFilter], object_type: str, benchling_type: str):
+        kwargs = {}
+
+        if self.attribute_types.get(object_type):
+            fields = self.schemas[benchling_type][object_type]
+
+            for key, field_data in fields.items():
+                filter_criteria = schema_filters.and_.get(key)
+
+                if not filter_criteria:
+                    continue
+
+                field_type = field_data['type']
+
+                # benchling expexts the field name as the key for the filter
+                field_key = field_data['name']
+
+                eq_value = filter_criteria.get('eq', {}).get('value')
+                if field_type == 'str' and eq_value is not None:
+                    benchling_data_type = field_data['benchling_type']
+
+                    if benchling_data_type == 'dropdown':
+                        options = self.get_attribute_value_options(object_type,key)
+                        for identifier, option  in options.items():
+                            if option == eq_value:
+                                eq_value = identifier
+                                break
+
+                    kwargs[field_key] = eq_value
+                elif field_type in ['int', 'datetime','float']:
+                    if eq_value is not None:
+                        kwargs[field_key] = eq_value
+                    else:
+                        gt_eq_value = filter_criteria.get('gt_eq', {}).get('value')
+                        ls_eq_value = filter_criteria.get('ls_eq', {}).get('value')
+                        between_values = filter_criteria.get('between', {})
+
+                        if gt_eq_value:
+                            kwargs[field_key] = f">={gt_eq_value}"
+                        elif ls_eq_value:
+                            kwargs[field_key] = f"<={ls_eq_value}"
+                        elif 'value_smaller' in between_values and 'value_larger' in between_values:
+                            kwargs[field_key] = (
+                                f">={between_values['value_smaller']} "
+                                f"<={between_values['value_larger']}"
+                            )
+
+        return kwargs

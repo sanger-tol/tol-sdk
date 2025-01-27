@@ -39,3 +39,4 @@ from .tolid_specimen_to_elastic_tolid_converter import TolidSpecimenToElasticTol
 from .tolqc_data_to_elastic_run_data_converter import TolqcDataToElasticRunDataConverter  # noqa F401
 from .tolqc_sample_to_elastic_sequencing_request_converter import TolqcSampleToElasticSequencingRequestConverter  # noqa F401
 from .tolqc_species_to_elastic_species_converter import TolqcSpeciesToElasticSpeciesConverter  # noqa F401
+from .sts_sample_to_casm_benchling_donor_converter import StsSampleToCasmBenchlingDonorConverter # noqa F401

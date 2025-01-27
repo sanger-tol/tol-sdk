@@ -83,6 +83,7 @@ class DefaultDataLoader():
 
         if not dry_run:
             self._record_time('end')
+            returned_objects = returned_objects + self._check_converter_for_returned_objects()
             if returned_objects is not None and auto_exhaust:
                 # Exhaust the returned objects
                 for _ in returned_objects:
@@ -111,7 +112,20 @@ class DefaultDataLoader():
 
     def _convert_objects(self, objs: Iterable, _converter):
         converted_objects = _converter.convert_iterable(objs)
+
         return converted_objects
+
+    def _check_converter_for_returned_objects(self):
+        return_objects = self._converter.get_return_objects()
+
+        if not 0 == len(return_objects):
+            for return_object in return_objects:
+                return_object.attributes['retrieved'] = True
+
+            return return_objects
+
+        return list()
+
 
 
 class GroupStatterDataLoader(DefaultDataLoader):
@@ -252,3 +266,4 @@ class ObjectsDataLoader(DefaultDataLoader):
 
     def _get_source_objects(self) -> Iterable:
         return self._objects
+
