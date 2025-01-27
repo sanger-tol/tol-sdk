@@ -69,6 +69,7 @@ rnaseq_legacy_submissions AS (
 	SELECT DISTINCT 
 		t.sts_id,
 		t.taxon_id,
+		tp.id AS tissue_prep_id,
 		rna.id AS extraction_id,
 		rna.file_registry_id$ AS eln_file_registry,
 		t.programme_id,
