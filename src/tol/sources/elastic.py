@@ -213,14 +213,14 @@ def elastic():
                             stage = doc['tolqclegacy_assembly_stage.keyword'].value;
                         }
 
-                        boolean OnSite = doc.containsKey('sts_sample_sts_received_date_max')
+                        boolean onSite = doc.containsKey('sts_sample_sts_received_date_max')
                         && doc['sts_sample_sts_received_date_max'].size() > 0;
 
-                        boolean ReleasedToLab =
+                        boolean releasedToLab =
                         doc.containsKey('sts_sample_sts_tollab_assign_date_min')
                         && doc['sts_sample_sts_tollab_assign_date_min'].size() > 0;
 
-                        boolean NoDataYet =
+                        boolean noDataYet =
                         (status == null)
                         && (stage == null || stage == '-')
                         && doc.containsKey('mlwh_run_data_mlwh_run_complete_pacbio_min')
@@ -228,38 +228,38 @@ def elastic():
                         && doc.containsKey('mlwh_run_data_mlwh_run_complete_hic_min')
                         && doc['mlwh_run_data_mlwh_run_complete_hic_min'].size() == 0;
 
-                        boolean Submitted = status == '1 submitted' && stage == 'RELEASED';
+                        boolean submitted = status == '1 submitted' && stage == 'RELEASED';
 
-                        boolean Curation = status == '2 curated' || status == '3 curation';
+                        boolean curation = status == '2 curated' || status == '3 curation';
 
-                        boolean DataComplete = status == '4 data complete';
+                        boolean dataComplete = status == '4 data complete';
 
-                        boolean DataIssue = status == '5 data issue';
+                        boolean dataIssue = status == '5 data issue';
 
-                        boolean DataGeneration = status == '6 data generation';
+                        boolean dataGeneration = status == '6 data generation';
 
-                        if (OnSite) {
+                        if (onSite) {
                             emit('a. Species on site');
 
-                            if (!ReleasedToLab) {
+                            if (!releasedToLab) {
                                 emit('b. Not released to lab');
                             } else {
-                                if (NoDataYet) {
+                                if (noDataYet) {
                                     emit('c. No data yet');
                                 }
-                                if (DataGeneration) {
+                                if (dataGeneration) {
                                     emit('d. Data generation');
                                 }
-                                if (DataIssue) {
+                                if (dataIssue) {
                                     emit('e. Data issue');
                                 }
-                                if (DataComplete) {
+                                if (dataComplete) {
                                     emit('f. Data complete');
                                 }
-                                if (Curation) {
+                                if (curation) {
                                     emit('g. Curation');
                                 }
-                                if (Submitted) {
+                                if (submitted) {
                                     emit('h. Submitted');
                                 }
                             }
