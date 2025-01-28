@@ -213,8 +213,8 @@ def elastic():
                             stage = doc['tolqclegacy_assembly_stage.keyword'].value;
                         }
 
-                        boolean onSite = doc.containsKey('sts_sample_sts_received_date_max')
-                        && doc['sts_sample_sts_received_date_max'].size() > 0;
+                        boolean onSite = doc.containsKey('sts_sample_sts_receive_date_max')
+                        && doc['sts_sample_sts_receive_date_max'].size() > 0;
 
                         boolean releasedToLab =
                         doc.containsKey('sts_sample_sts_tollab_assign_date_min')
