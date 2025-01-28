@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2023 Genome Research Ltd.
+# SPDX-FileCopyrightText: 2025 Genome Research Ltd.
 #
 # SPDX-License-Identifier: MIT
 
@@ -199,43 +199,70 @@ def elastic():
                 'script': {
                     'source': """
                         String status = null;
-                        if (doc['informatics_tolid_informatics_status_summary_min.keyword']
-                        .size() > 0) {
+                        if (doc.containsKey
+                            ('informatics_tolid_informatics_status_summary_min.keyword')
+                            && doc['informatics_tolid_informatics_status_summary_min.keyword']
+                            .size() > 0) {
                             status =
-                            doc['informatics_tolid_informatics_status_summary_min.keyword']
-                            .value;
+                            doc['informatics_tolid_informatics_status_summary_min.keyword'].value;
                         }
 
                         String stage = null;
-                        if (doc['tolqclegacy_assembly_stage.keyword'].size() > 0) {
+                        if (doc.containsKey('tolqclegacy_assembly_stage.keyword')
+                            && doc['tolqclegacy_assembly_stage.keyword'].size() > 0) {
                             stage = doc['tolqclegacy_assembly_stage.keyword'].value;
                         }
 
-                        if (doc.containsKey('sts_sample_sts_project_union.keyword')
-                        && doc['sts_sample_sts_project_union.keyword'].size() > 0) {
-                            emit("a. On Site");
-                        }
+                        boolean onSite = doc.containsKey('sts_sample_sts_receive_date_max')
+                        && doc['sts_sample_sts_receive_date_max'].size() > 0;
 
-                        if (status == '1 submitted') {
-                            emit("h. Submitted");
-                        } else if (status == '3 curation') {
-                            emit("g. Curation");
-                        } else if (status == '4 data complete') {
-                            emit("f. Data Complete");
-                        } else if (status == '5 data issue') {
-                            emit("e. Data Issue");
-                        } else if (status == '6 data generation') {
-                            emit("d. Data Generation");
-                        } else if (status == null && (stage == null || stage == '-')
-                            && doc['sts_sample_sts_tollab_assign_date_min'].size() > 0
-                            && doc['mlwh_run_data_mlwh_run_complete_pacbio_min'].size() == 0
-                            && doc['mlwh_run_data_mlwh_run_complete_hic_min'].size() == 0) {
-                            emit("c. No Data Yet");
-                        }
+                        boolean releasedToLab =
+                        doc.containsKey('sts_sample_sts_tollab_assign_date_min')
+                        && doc['sts_sample_sts_tollab_assign_date_min'].size() > 0;
 
-                        if (doc['sts_sample_sts_receive_date_min'].size() > 0
-                            && doc['sts_sample_sts_tollab_assign_date_min'].size() == 0) {
-                            emit("b. Not Released To Lab");
+                        boolean noDataYet =
+                        (status == null)
+                        && (stage == null || stage == '-')
+                        && doc.containsKey('mlwh_run_data_mlwh_run_complete_pacbio_min')
+                        && doc['mlwh_run_data_mlwh_run_complete_pacbio_min'].size() == 0
+                        && doc.containsKey('mlwh_run_data_mlwh_run_complete_hic_min')
+                        && doc['mlwh_run_data_mlwh_run_complete_hic_min'].size() == 0;
+
+                        boolean submitted = status == '1 submitted' && stage == 'RELEASED';
+
+                        boolean curation = status == '2 curated' || status == '3 curation';
+
+                        boolean dataComplete = status == '4 data complete';
+
+                        boolean dataIssue = status == '5 data issue';
+
+                        boolean dataGeneration = status == '6 data generation';
+
+                        if (onSite) {
+                            emit('a. Species on site');
+
+                            if (!releasedToLab) {
+                                emit('b. Not released to lab');
+                            } else {
+                                if (noDataYet) {
+                                    emit('c. No data yet');
+                                }
+                                if (dataGeneration) {
+                                    emit('d. Data generation');
+                                }
+                                if (dataIssue) {
+                                    emit('e. Data issue');
+                                }
+                                if (dataComplete) {
+                                    emit('f. Data complete');
+                                }
+                                if (curation) {
+                                    emit('g. Curation');
+                                }
+                                if (submitted) {
+                                    emit('h. Submitted');
+                                }
+                            }
                         }
                     """
                 }
