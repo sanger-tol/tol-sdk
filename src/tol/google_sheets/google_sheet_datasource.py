@@ -100,7 +100,7 @@ class GoogleSheetDataSource(
             ret.append(item)
         return ret
 
-    def _convert_row_to_data_object(self, object_type, row):
+    def _convert_row_to_data_object(self, object_type, row, row_index):
         CoreDataObject = self.data_object_factory  # noqa N806
         attributes = {attribute_name: row[column_def['heading']]
                       for attribute_name, column_def
@@ -118,7 +118,7 @@ class GoogleSheetDataSource(
                 attributes[attribute_name] = dateutil_parse(attribute_value)
         return CoreDataObject(
             object_type,
-            id_=attributes.pop('id', None),
+            id_=attributes.pop('id', row_index),
             attributes=attributes
         )
 
@@ -149,8 +149,8 @@ class GoogleSheetDataSource(
         f = DataSourceFilter()
         f.in_list = {'id': object_ids}
         rows = self._apply_filter(f, self.data[object_type], object_type)
-        for row in rows:
-            yield self._convert_row_to_data_object(object_type, row)
+        for row_index, row in rows:
+            yield self._convert_row_to_data_object(object_type, row, row_index)
 
     def get_list(
         self,
@@ -160,8 +160,8 @@ class GoogleSheetDataSource(
     ) -> Iterable[DataObject]:
         self._initialise_data(object_type)
         rows = self._apply_filter(object_filters, self.data[object_type], object_type)
-        for row in rows:
-            obj = self._convert_row_to_data_object(object_type, row)
+        for row_index, row in rows:
+            obj = self._convert_row_to_data_object(object_type, row, row_index)
             if obj.id is not None:
                 yield obj
 
