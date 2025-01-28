@@ -15,7 +15,11 @@ class LabwhereLocationToElasticSampleUpdateConverter(
         DataObjectToDataObjectOrUpdateConverter):
     def convert(self, data_object: DataObject) -> Iterable[DataObjectUpdate]:
         if data_object is not None:
-            # Validate mandatory parentage field
+            # Validate all mandatory fields
+            if not data_object.id:
+                raise ValueError('Labwhere location ID is a mandatory field')
+            if not data_object.name:
+                raise ValueError('Labwhere name is a mandatory field')
             if not data_object.parentage:
                 raise ValueError('Labwhere parentage is a mandatory field')
 
