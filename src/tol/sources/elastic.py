@@ -199,43 +199,70 @@ def elastic():
                 'script': {
                     'source': """
                         String status = null;
-                        if (doc['informatics_tolid_informatics_status_summary_min.keyword']
-                        .size() > 0) {
+                        if (doc.containsKey
+                            ('informatics_tolid_informatics_status_summary_min.keyword')
+                            && doc['informatics_tolid_informatics_status_summary_min.keyword']
+                            .size() > 0) {
                             status =
-                            doc['informatics_tolid_informatics_status_summary_min.keyword']
-                            .value;
+                            doc['informatics_tolid_informatics_status_summary_min.keyword'].value;
                         }
 
                         String stage = null;
-                        if (doc['tolqclegacy_assembly_stage.keyword'].size() > 0) {
+                        if (doc.containsKey('tolqclegacy_assembly_stage.keyword')
+                            && doc['tolqclegacy_assembly_stage.keyword'].size() > 0) {
                             stage = doc['tolqclegacy_assembly_stage.keyword'].value;
                         }
 
-                        if (doc.containsKey('sts_sample_sts_project_union.keyword')
-                        && doc['sts_sample_sts_project_union.keyword'].size() > 0) {
-                            emit("a. On Site");
-                        }
+                        boolean OnSite = doc.containsKey('sts_sample_sts_received_date_max')
+                        && doc['sts_sample_sts_received_date_max'].size() > 0;
 
-                        if (status == '1 submitted') {
-                            emit("h. Submitted");
-                        } else if (status == '3 curation') {
-                            emit("g. Curation");
-                        } else if (status == '4 data complete') {
-                            emit("f. Data Complete");
-                        } else if (status == '5 data issue') {
-                            emit("e. Data Issue");
-                        } else if (status == '6 data generation') {
-                            emit("d. Data Generation");
-                        } else if (status == null && (stage == null || stage == '-')
-                            && doc['sts_sample_sts_tollab_assign_date_min'].size() > 0
-                            && doc['mlwh_run_data_mlwh_run_complete_pacbio_min'].size() == 0
-                            && doc['mlwh_run_data_mlwh_run_complete_hic_min'].size() == 0) {
-                            emit("c. No Data Yet");
-                        }
+                        boolean ReleasedToLab =
+                        doc.containsKey('sts_sample_sts_tollab_assign_date_min')
+                        && doc['sts_sample_sts_tollab_assign_date_min'].size() > 0;
 
-                        if (doc['sts_sample_sts_receive_date_min'].size() > 0
-                            && doc['sts_sample_sts_tollab_assign_date_min'].size() == 0) {
-                            emit("b. Not Released To Lab");
+                        boolean NoDataYet =
+                        (status == null)
+                        && (stage == null || stage == '-')
+                        && doc.containsKey('mlwh_run_data_mlwh_run_complete_pacbio_min')
+                        && doc['mlwh_run_data_mlwh_run_complete_pacbio_min'].size() == 0
+                        && doc.containsKey('mlwh_run_data_mlwh_run_complete_hic_min')
+                        && doc['mlwh_run_data_mlwh_run_complete_hic_min'].size() == 0;
+
+                        boolean Submitted = status == '1 submitted' && stage == 'RELEASED';
+
+                        boolean Curation = status == '2 curated' || status == '3 curation';
+
+                        boolean DataComplete = status == '4 data complete';
+
+                        boolean DataIssue = status == '5 data issue';
+
+                        boolean DataGeneration = status == '6 data generation';
+
+                        if (OnSite) {
+                            emit('a. Species on site');
+
+                            if (!ReleasedToLab) {
+                                emit('b. Not released to lab');
+                            } else {
+                                if (NoDataYet) {
+                                    emit('c. No data yet');
+                                }
+                                if (DataGeneration) {
+                                    emit('d. Data generation');
+                                }
+                                if (DataIssue) {
+                                    emit('e. Data issue');
+                                }
+                                if (DataComplete) {
+                                    emit('f. Data complete');
+                                }
+                                if (Curation) {
+                                    emit('g. Curation');
+                                }
+                                if (Submitted) {
+                                    emit('h. Submitted');
+                                }
+                            }
                         }
                     """
                 }
