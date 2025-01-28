@@ -13,7 +13,7 @@ from tol.google_sheets import (
 )
 
 
-def lr_pacbio():
+def forecast():
     gsds = GoogleSheetDataSource({
         'client_secrets': json.loads(os.getenv('GOOGLE_CLIENT_SECRETS')),
         'sheet_key': '1-1BuL2vhg0pe_znGm0X_dVwYYDXu6wCmh7CB39PN0hE',
