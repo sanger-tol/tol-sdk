@@ -2,8 +2,9 @@
 # SPDX-License-Identifier: MIT
 
 from typing import Iterable
+
+from tol.core import DataObject, DataObjectToDataObjectOrUpdateConverter, DataSourceFilter
 from tol.sources.benchling import benchling
-from tol.core import DataObject, DataSourceFilter, DataObjectToDataObjectOrUpdateConverter
 
 
 class StsSampleToCasmBenchlingConverterFactory:
@@ -204,7 +205,7 @@ class StsSampleToCasmBenchlingConverterFactory:
     def __init__(
             self,
             destination_object_type: str,
-            previous_object_type: str = "",
+            previous_object_type: str = '',
             previous_objects: list = None
     ):
         self.destination_object_type = destination_object_type

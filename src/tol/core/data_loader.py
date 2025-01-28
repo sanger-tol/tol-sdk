@@ -124,7 +124,7 @@ class DefaultDataLoader():
 
             return return_objects
 
-        return list()
+        return []
 
 
 class GroupStatterDataLoader(DefaultDataLoader):

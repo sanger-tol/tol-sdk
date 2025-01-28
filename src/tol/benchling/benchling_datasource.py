@@ -345,8 +345,8 @@ class BenchlingDataSource(
             for benchling_objects in benchling_objects_page:
                 yield from back_converter.convert_iterable(benchling_objects)
         except Exception as e:
-            print(f"Exception type: {type(e)}")
-            print(f"Exception message: {str(e)}")
+            print(f'Exception type: {type(e)}')
+            print(f'Exception message: {str(e)}')
 
     def delete(
         self,
@@ -805,15 +805,15 @@ class BenchlingDataSource(
                         between_values = filter_criteria.get('between', {})
 
                         if gt_eq_value:
-                            kwargs[field_key] = f">={gt_eq_value}"
+                            kwargs[field_key] = f'>={gt_eq_value}'
                         elif ls_eq_value:
-                            kwargs[field_key] = f"<={ls_eq_value}"
+                            kwargs[field_key] = f'<={ls_eq_value}'
                         elif (
                             'value_smaller' in between_values
                             and 'value_larger' in between_values
                         ):
                             kwargs[field_key] = (
-                                f">={between_values['value_smaller']} "
+                                f">={between_values['value_smaller']}"
                                 f"<={between_values['value_larger']}"
                             )
 
