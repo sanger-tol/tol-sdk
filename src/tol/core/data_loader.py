@@ -127,7 +127,6 @@ class DefaultDataLoader():
         return list()
 
 
-
 class GroupStatterDataLoader(DefaultDataLoader):
 
     def get_default_converter(self):
@@ -266,4 +265,3 @@ class ObjectsDataLoader(DefaultDataLoader):
 
     def _get_source_objects(self) -> Iterable:
         return self._objects
-

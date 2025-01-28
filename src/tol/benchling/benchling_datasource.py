@@ -306,17 +306,28 @@ class BenchlingDataSource(
         kwargs = {}
         if object_filters is not None and object_filters.and_ is not None:
             if 'name' in object_filters.and_ and object_filters.and_['name'] is not None:
-                if 'contains' in object_filters.and_['name'] \
-                    and object_filters.and_['name']['contains'] is not None \
-                    and 'value' in object_filters.and_['name']['contains']:
+                if (
+                        'contains' in object_filters.and_['name']
+                        and object_filters.and_['name']['contains'] is not None
+                        and 'value' in object_filters.and_['name']['contains']
+                ):
                     kwargs['name_includes'] = object_filters.and_['name']['contains']['value']
-                elif 'eq' in object_filters.and_['name'] \
-                    and object_filters.and_['name']['eq'] is not None \
-                    and 'value' in object_filters.and_['name']['eq']:
+                elif (
+                    'eq' in object_filters.and_['name']
+                    and object_filters.and_['name']['eq'] is not None
+                    and 'value' in object_filters.and_['name']['eq']
+                ):
                     kwargs['name'] = object_filters.and_['name']['eq']['value']
 
-            if 'schema_fields' in object_filters.and_ and object_filters.and_['schema_fields'] is not None:
-                kwargs['schema_fields'] = self.__build_schema_fields_filter(object_filters.and_['schema_fields'], object_type, benchling_type)
+            if (
+                'schema_fields' in object_filters.and_
+                and object_filters.and_['schema_fields'] is not None
+            ):
+                kwargs['schema_fields'] = self.__build_schema_fields_filter(
+                    object_filters.and_['schema_fields'],
+                    object_type,
+                    benchling_type
+                )
 
         if benchling_type in BENCHLING_TYPE_SEARCH_WITH_SCHEMA_ID:
             kwargs['schema_id'] = self.schema_ids[object_type]
@@ -751,7 +762,12 @@ class BenchlingDataSource(
                 self.__get_benchling_package('worklist').get_by_id(source.id)
             )
 
-    def __build_schema_fields_filter(self, schema_filters: Optional[DataSourceFilter], object_type: str, benchling_type: str):
+    def __build_schema_fields_filter(
+        self,
+        schema_filters: Optional[DataSourceFilter],
+        object_type: str,
+        benchling_type: str
+    ):
         kwargs = {}
 
         if self.attribute_types.get(object_type):
@@ -773,14 +789,14 @@ class BenchlingDataSource(
                     benchling_data_type = field_data['benchling_type']
 
                     if benchling_data_type == 'dropdown':
-                        options = self.get_attribute_value_options(object_type,key)
-                        for identifier, option  in options.items():
+                        options = self.get_attribute_value_options(object_type, key)
+                        for identifier, option in options.items():
                             if option == eq_value:
                                 eq_value = identifier
                                 break
 
                     kwargs[field_key] = eq_value
-                elif field_type in ['int', 'datetime','float']:
+                elif field_type in ['int', 'datetime', 'float']:
                     if eq_value is not None:
                         kwargs[field_key] = eq_value
                     else:
@@ -792,7 +808,10 @@ class BenchlingDataSource(
                             kwargs[field_key] = f">={gt_eq_value}"
                         elif ls_eq_value:
                             kwargs[field_key] = f"<={ls_eq_value}"
-                        elif 'value_smaller' in between_values and 'value_larger' in between_values:
+                        elif (
+                            'value_smaller' in between_values
+                            and 'value_larger' in between_values
+                        ):
                             kwargs[field_key] = (
                                 f">={between_values['value_smaller']} "
                                 f"<={between_values['value_larger']}"
