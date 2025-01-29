@@ -83,7 +83,7 @@ def create_authorization_models(
 
         @declared_attr
         def user_memberships(self):
-            return relationship("UserMembership", back_populates="role")
+            return relationship("UserMembership", back_populates="user")
 
         @declared_attr
         def memberships(self):
