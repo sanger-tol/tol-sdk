@@ -30,11 +30,11 @@ def forecast():
                         'type': 'int'
                     },
                     'type': {
-                        'heading': 'Library/ Sequencing',
+                        'heading': 'Analysis Type',
                         'type': 'str'
                     },
                     'method': {
-                        'heading': 'Type',
+                        'heading': 'Preparation Type',
                         'type': 'str'
                     },
                     'forecast': {
