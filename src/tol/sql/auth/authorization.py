@@ -1,156 +1,186 @@
-from sqlalchemy import create_engine, Column, Integer, String, ForeignKey
+# SPDX-FileCopyrightText: 2024 Genome Research Ltd.
+#
+# SPDX-License-Identifier: MIT
+
+import typing
+from typing import Any, NamedTuple
+
+from sqlalchemy import Column, Integer, String, ForeignKey
 from sqlalchemy.orm import relationship
-from sqlalchemy.ext.declarative import declarative_base
 
-Base = declarative_base()
 
-# Define the Roles model
-class Role(Base):
-    __tablename__ = 'roles'
-    id = Column(Integer, primary_key=True)
-    name = Column(String)
+if typing.TYPE_CHECKING:
+    from .models import ModelClass
 
-    user_memberships = relationship("UserMembership", back_populates="role")
-    need_methods = relationship("NeedMethod", back_populates="role")
 
-# Define the Users model
-class User(Base):
-    __tablename__ = 'users'
-    id = Column(Integer, primary_key=True)
-    username = Column(String)
+class AuthorizationModels(NamedTuple):
+    role_mixin: type[Any]
+    user_mixin: type[Any]
+    membership: ModelClass
+    user_membership: ModelClass
+    data_object_type: ModelClass
+    data_object_type_attribute: ModelClass
+    membership_data_object_type: ModelClass
+    membership_data_object_type_allowed_attribute: ModelClass
+    membership_need: ModelClass
+    source: ModelClass
+    source_membership: ModelClass
+    need: ModelClass
+    need_method: ModelClass
+    method: ModelClass
 
-    user_memberships = relationship("UserMembership", back_populates="user")
 
-# Define the Memberships model
-class Membership(Base):
-    __tablename__ = 'memberships'
-    id = Column(Integer, primary_key=True)
-    parent_id = Column(Integer, ForeignKey('memberships.id'))
-    name = Column(String)
+def create_authorization_models(
+    model_class: ModelClass
+) -> AuthorizationModels:
 
-    parent = relationship("Membership", remote_side=[id], back_populates="children")
-    children = relationship("Membership", back_populates="parent")
-    user_memberships = relationship("UserMembership", back_populates="membership")
-    membership_data_object_types = relationship("MembershipDataObjectType", back_populates="membership")
-    membership_needs = relationship("MembershipNeed", back_populates="membership")
-    source_memberships = relationship("SourceMembership", back_populates="membership")
-    membership_data_object_type_allowed_attributes = relationship("MembershipDataObjectTypeAllowedAttribute", back_populates="membership")
+    class RoleMixin:
+        id = Column(Integer, primary_key=True)
+        name = Column(String)
 
-# Define the UserMemberships model
-class UserMembership(Base):
-    __tablename__ = 'user_memberships'
-    id = Column(Integer, primary_key=True)
-    user_id = Column(Integer, ForeignKey('users.id'))
-    membership_id = Column(Integer, ForeignKey('memberships.id'))
-    role_id = Column(Integer, ForeignKey('roles.id'))
+        user_memberships = relationship("UserMembership", back_populates="role")
+        need_methods = relationship("NeedMethod", back_populates="role")
 
-    user = relationship("User", back_populates="user_memberships")
-    membership = relationship("Membership", back_populates="user_memberships")
-    role = relationship("Role", back_populates="user_memberships")
+    class AuthzUserMixin:
+        id = Column(Integer, primary_key=True)
+        username = Column(String)
 
-# Define the DataObjectTypes model
-class DataObjectType(Base):
-    __tablename__ = 'data_object_types'
-    id = Column(Integer, primary_key=True)
-    source_id = Column(Integer, ForeignKey('sources.id'))
-    name = Column(String)
+        user_memberships = relationship("UserMembership", back_populates="user")
 
-    source = relationship("Source", back_populates="data_object_types")
-    membership_data_object_types = relationship("MembershipDataObjectType", back_populates="data_object_type")
-    data_object_type_attributes = relationship("DataObjectTypeAttribute", back_populates="data_object_type")
-    needs = relationship("Need", back_populates="data_object_type")
+    class Membership(model_class):
+        __tablename__ = 'membership'
+        id = Column(Integer, primary_key=True)
+        parent_id = Column(Integer, ForeignKey('membership.id'))
+        name = Column(String)
 
-# Define the DataObjectTypeAttributes model
-class DataObjectTypeAttribute(Base):
-    __tablename__ = 'data_object_type_attributes'
-    id = Column(Integer, primary_key=True)
-    data_object_type_id = Column(Integer, ForeignKey('data_object_types.id'))
-    name = Column(String)
+        parent = relationship("Membership", remote_side=[id], back_populates="children")
+        children = relationship("Membership", back_populates="parent")
+        user_memberships = relationship("UserMembership", back_populates="membership")
+        membership_data_object_types = relationship("MembershipDataObjectType", back_populates="membership")
+        membership_needs = relationship("MembershipNeed", back_populates="membership")
+        source_memberships = relationship("SourceMembership", back_populates="membership")
+        membership_data_object_type_allowed_attributes = relationship(
+            "MembershipDataObjectTypeAllowedAttribute",
+            back_populates="membership"
+        )
 
-    data_object_type = relationship("DataObjectType", back_populates="data_object_type_attributes")
-    membership_data_object_type_allowed_attributes = relationship("MembershipDataObjectTypeAllowedAttribute", back_populates="data_object_type_attribute")
+    class UserMembership(model_class):
+        __tablename__ = 'user_membership'
+        id = Column(Integer, primary_key=True)
+        user_id = Column(Integer, ForeignKey('user.id'))
+        membership_id = Column(Integer, ForeignKey('membership.id'))
+        role_id = Column(Integer, ForeignKey('role.id'))
 
-# Define the MembershipDataObjectTypes model
-class MembershipDataObjectType(Base):
-    __tablename__ = 'membership_data_object_types'
-    id = Column(Integer, primary_key=True)
-    membership_id = Column(Integer, ForeignKey('memberships.id'))
-    data_object_type_id = Column(Integer, ForeignKey('data_object_types.id'))
+        user = relationship("User", back_populates="user_memberships")
+        membership = relationship("Membership", back_populates="user_memberships")
+        role = relationship("Role", back_populates="user_memberships")
 
-    membership = relationship("Membership", back_populates="membership_data_object_types")
-    data_object_type = relationship("DataObjectType", back_populates="membership_data_object_types")
-    membership_data_object_type_allowed_attributes = relationship("MembershipDataObjectTypeAllowedAttribute", back_populates="membership_data_object_type")
+    class DataObjectType(model_class):
+        __tablename__ = 'data_object_type'
+        id = Column(Integer, primary_key=True)
+        source_id = Column(Integer, ForeignKey('source.id'))
+        name = Column(String)
 
-# Define the MembershipDataObjectTypeAllowedAttributes model
-class MembershipDataObjectTypeAllowedAttribute(Base):
-    __tablename__ = 'membership_data_object_type_allowed_attributes'
-    id = Column(Integer, primary_key=True)
-    membership_data_object_type_id = Column(Integer, ForeignKey('membership_data_object_types.id'))
-    data_object_type_attribute_id = Column(Integer, ForeignKey('data_object_type_attributes.id'))
+        source = relationship("Source", back_populates="data_object_types")
+        membership_data_object_types = relationship("MembershipDataObjectType", back_populates="data_object_type")
+        data_object_type_attributes = relationship("DataObjectTypeAttribute", back_populates="data_object_type")
+        needs = relationship("Need", back_populates="data_object_type")
 
-    membership_data_object_type = relationship("MembershipDataObjectType", back_populates="membership_data_object_type_allowed_attributes")
-    data_object_type_attribute = relationship("DataObjectTypeAttribute", back_populates="membership_data_object_type_allowed_attributes")
+    class DataObjectTypeAttribute(model_class):
+        __tablename__ = 'data_object_type_attribute'
+        id = Column(Integer, primary_key=True)
+        data_object_type_id = Column(Integer, ForeignKey('data_object_type.id'))
+        name = Column(String)
 
-# Define the MembershipNeeds model
-class MembershipNeed(Base):
-    __tablename__ = 'membership_needs'
-    id = Column(Integer, primary_key=True)
-    membership_id = Column(Integer, ForeignKey('memberships.id'))
-    need_id = Column(Integer, ForeignKey('needs.id'))
+        data_object_type = relationship("DataObjectType", back_populates="data_object_type_attributes")
+        membership_data_object_type_allowed_attributes = relationship("MembershipDataObjectTypeAllowedAttribute", back_populates="data_object_type_attribute")
 
-    membership = relationship("Membership", back_populates="membership_needs")
-    need = relationship("Need", back_populates="membership_needs")
+    class MembershipDataObjectType(model_class):
+        __tablename__ = 'membership_data_object_type'
+        id = Column(Integer, primary_key=True)
+        membership_id = Column(Integer, ForeignKey('membership.id'))
+        data_object_type_id = Column(Integer, ForeignKey('data_object_type.id'))
 
-# Define the Sources model
-class Source(Base):
-    __tablename__ = 'sources'
-    id = Column(Integer, primary_key=True)
-    name = Column(String)
+        membership = relationship("Membership", back_populates="membership_data_object_types")
+        data_object_type = relationship("DataObjectType", back_populates="membership_data_object_types")
+        membership_data_object_type_allowed_attributes = relationship("MembershipDataObjectTypeAllowedAttribute", back_populates="membership_data_object_type")
 
-    data_object_types = relationship("DataObjectType", back_populates="source")
-    source_memberships = relationship("SourceMembership", back_populates="source")
+    class MembershipDataObjectTypeAllowedAttribute(model_class):
+        __tablename__ = 'membership_data_object_type_allowed_attribute'
+        id = Column(Integer, primary_key=True)
+        membership_data_object_type_id = Column(Integer, ForeignKey('membership_data_object_type.id'))
+        data_object_type_attribute_id = Column(Integer, ForeignKey('data_object_type_attribute.id'))
 
-# Define the SourceMemberships model
-class SourceMembership(Base):
-    __tablename__ = 'source_memberships'
-    id = Column(Integer, primary_key=True)
-    source_id = Column(Integer, ForeignKey('sources.id'))
-    membership_id = Column(Integer, ForeignKey('memberships.id'))
-    source_member_ship_object_name = Column(String)
+        membership_data_object_type = relationship("MembershipDataObjectType", back_populates="membership_data_object_type_allowed_attributes")
+        data_object_type_attribute = relationship("DataObjectTypeAttribute", back_populates="membership_data_object_type_allowed_attributes")
 
-    source = relationship("Source", back_populates="source_memberships")
-    membership = relationship("Membership", back_populates="source_memberships")
+    class MembershipNeed(model_class):
+        __tablename__ = 'membership_need'
+        id = Column(Integer, primary_key=True)
+        membership_id = Column(Integer, ForeignKey('membership.id'))
+        need_id = Column(Integer, ForeignKey('need.id'))
 
-# Define the Needs model
-class Need(Base):
-    __tablename__ = 'needs'
-    id = Column(Integer, primary_key=True)
-    data_object_type_id = Column(Integer, ForeignKey('data_object_types.id'))
+        membership = relationship("Membership", back_populates="membership_needs")
+        need = relationship("Need", back_populates="membership_needs")
 
-    data_object_type = relationship("DataObjectType", back_populates="needs")
-    membership_needs = relationship("MembershipNeed", back_populates="need")
-    need_methods = relationship("NeedMethod", back_populates="need")
+    class Source(model_class):
+        __tablename__ = 'source'
+        id = Column(Integer, primary_key=True)
+        name = Column(String)
 
-# Define the NeedMethods model
-class NeedMethod(Base):
-    __tablename__ = 'need_methods'
-    id = Column(Integer, primary_key=True)
-    need_id = Column(Integer, ForeignKey('needs.id'))
-    method_id = Column(Integer, ForeignKey('methods.id'))
-    role_id = Column(Integer, ForeignKey('roles.id'), nullable=True)
+        data_object_types = relationship("DataObjectType", back_populates="source")
+        source_memberships = relationship("SourceMembership", back_populates="source")
 
-    need = relationship("Need", back_populates="need_methods")
-    method = relationship("Method", back_populates="need_methods")
-    role = relationship("Role", back_populates="need_methods")
+    class SourceMembership(model_class):
+        __tablename__ = 'source_membership'
+        id = Column(Integer, primary_key=True)
+        source_id = Column(Integer, ForeignKey('source.id'))
+        membership_id = Column(Integer, ForeignKey('membership.id'))
+        source_member_ship_object_name = Column(String)
 
-# Define the Methods model
-class Method(Base):
-    __tablename__ = 'methods'
-    id = Column(Integer, primary_key=True)
-    identifier = Column(String)
+        source = relationship("Source", back_populates="source_memberships")
+        membership = relationship("Membership", back_populates="source_memberships")
 
-    need_methods = relationship("NeedMethod", back_populates="method")
+    class Need(model_class):
+        __tablename__ = 'need'
+        id = Column(Integer, primary_key=True)
+        data_object_type_id = Column(Integer, ForeignKey('data_object_type.id'))
 
-# Set up the engine and session
-engine = create_engine('sqlite:///:memory:')  # Use an actual database URI in production
-Base.metadata.create_all(engine)
+        data_object_type = relationship("DataObjectType", back_populates="needs")
+        membership_needs = relationship("MembershipNeed", back_populates="need")
+        need_methods = relationship("NeedMethod", back_populates="need")
+
+    class NeedMethod(model_class):
+        __tablename__ = 'need_method'
+        id = Column(Integer, primary_key=True)
+        need_id = Column(Integer, ForeignKey('need.id'))
+        method_id = Column(Integer, ForeignKey('method.id'))
+        role_id = Column(Integer, ForeignKey('role.id'), nullable=True)
+
+        need = relationship("Need", back_populates="need_methods")
+        method = relationship("Method", back_populates="need_methods")
+        role = relationship("Role", back_populates="need_methods")
+
+    class Method(model_class):
+        __tablename__ = 'method'
+        id = Column(Integer, primary_key=True)
+        identifier = Column(String)
+
+        need_methods = relationship("NeedMethod", back_populates="method")
+
+    return AuthorizationModels(
+        role_mixin=RoleMixin,
+        user_mixin=AuthzUserMixin,
+        membership=Membership,
+        user_membership=UserMembership,
+        data_object_type=DataObjectType,
+        data_object_type_attribute=DataObjectTypeAttribute,
+        membership_data_object_type=MembershipDataObjectType,
+        membership_data_object_type_allowed_attribute=MembershipDataObjectTypeAllowedAttribute,
+        membership_need=MembershipNeed,
+        source=Source,
+        source_membership=SourceMembership,
+        need=Need,
+        need_method=NeedMethod,
+        method=Method
+    )
