@@ -2,15 +2,28 @@
 #
 # SPDX-License-Identifier: MIT
 
+from __future__ import annotations
+
 import typing
+from abc import ABC, abstractmethod
 from typing import Any, NamedTuple
 
-from sqlalchemy import Column, Integer, String, ForeignKey
-from sqlalchemy.orm import relationship
-
+from sqlalchemy import Column, Integer, String, ForeignKey, BOOLEAN, and_
+from sqlalchemy.orm import Mapped, Session, relationship
 
 if typing.TYPE_CHECKING:
     from .models import ModelClass
+
+
+class NeedABC(ABC):
+    @abstractmethod
+    @classmethod
+    def get_needs(
+        cls,
+        object_type: str,
+        method: str
+    ) -> list[NeedABC]:
+        pass
 
 
 class AuthorizationModels(NamedTuple):
@@ -37,6 +50,10 @@ def create_authorization_models(
     class RoleMixin:
         id = Column(Integer, primary_key=True)
         name = Column(String)
+        system_access = Column(BOOLEAN, default=False)
+        '''
+            Identifies the role as a elevated role for the access of system attributes
+        '''
 
         user_memberships = relationship("UserMembership", back_populates="role")
         need_methods = relationship("NeedMethod", back_populates="role")
@@ -46,6 +63,7 @@ def create_authorization_models(
         username = Column(String)
 
         user_memberships = relationship("UserMembership", back_populates="user")
+        memberships: Mapped[list[Membership]] = relationship('user_membership')
 
     class Membership(model_base):
         __tablename__ = 'membership'
@@ -57,6 +75,7 @@ def create_authorization_models(
         children = relationship("Membership", back_populates="parent")
         user_memberships = relationship("UserMembership", back_populates="membership")
         membership_data_object_types = relationship("MembershipDataObjectType", back_populates="membership")
+        data_object_types = relationship("DataObjectType", secondary='membership_data_object_type')
         membership_needs = relationship("MembershipNeed", back_populates="membership")
         source_memberships = relationship("SourceMembership", back_populates="membership")
         membership_data_object_type_allowed_attributes = relationship(
@@ -91,6 +110,13 @@ def create_authorization_models(
         id = Column(Integer, primary_key=True)
         data_object_type_id = Column(Integer, ForeignKey('data_object_type.id'))
         name = Column(String)
+        system = Column(BOOLEAN, default=False)
+        '''
+            The system attribute identifies trusted system attributes that requires elevated access to update.
+            e.g.: 
+                membership_id
+                project_id
+        '''
 
         data_object_type = relationship("DataObjectType", back_populates="data_object_type_attributes")
         membership_data_object_type_allowed_attributes = relationship("MembershipDataObjectTypeAllowedAttribute", back_populates="data_object_type_attribute")
@@ -141,7 +167,7 @@ def create_authorization_models(
         source = relationship("Source", back_populates="source_memberships")
         membership = relationship("Membership", back_populates="source_memberships")
 
-    class Need(model_base):
+    class Need(NeedABC, model_base):
         __tablename__ = 'need'
         id = Column(Integer, primary_key=True)
         data_object_type_id = Column(Integer, ForeignKey('data_object_type.id'))
@@ -149,6 +175,32 @@ def create_authorization_models(
         data_object_type = relationship("DataObjectType", back_populates="needs")
         membership_needs = relationship("MembershipNeed", back_populates="need")
         need_methods = relationship("NeedMethod", back_populates="need")
+        methods: Mapped[list[Method]] = relationship(secondary='need_method')
+
+        def get_needs(
+            cls,
+            object_type: str,
+            method: str,
+            session: Session
+        ) -> list[tuple[Need, str]]:
+
+            return session.query(
+                cls
+            ).join(
+                DataObjectType,
+                DataObjectType.id == cls.data_object_type_id
+            ).join(
+                NeedMethod,
+                NeedMethod.need_id == cls.id
+            ).join(
+                Method,
+                Method.id == NeedMethod.method_id
+            ).filter(
+                and_(
+                    Method.identifier == method,
+                    DataObjectType.name == object_type
+                )
+            ).all()
 
     class NeedMethod(model_base):
         __tablename__ = 'need_method'

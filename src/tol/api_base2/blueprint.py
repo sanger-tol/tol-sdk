@@ -28,6 +28,7 @@ from ..core import DataSource, DataSourceError, OperableDataSource
 from ..core.data_source_dict import DataSourceDict
 from ..core.operator import Relational
 from ..core.operator.operator_config import DefaultOperatorConfig, OperatorConfig
+from ..sql.auth.permission_handler import DefaultPermissionManager
 
 
 class DataBlueprint(Blueprint):
@@ -144,7 +145,7 @@ def _config_blueprint(
 def _core_blueprint(
     data_source_dict: dict[str, DataSource],
     url_prefix: str,
-    auth_inspector: Optional[AuthInspector] = None
+    auth_inspector: Optional[AuthInspector] = None,
 ) -> DataBlueprint:
     """
     Creates the "core" blueprint, responsible for managing
@@ -207,6 +208,7 @@ def _core_blueprint(
 
     @data_handler.route('/<object_type>/<path:object_id>', methods=['DELETE'])
     def delete_detail(*, object_type: str, object_id: str):
+        DefaultPermissionManager(object_type, 'delete').check_permission()
         controller = __new_controller(object_type)
         object_id_unencoded = urllib.parse.unquote(object_id)
         return controller.delete_detail(object_type, object_id_unencoded)
@@ -315,7 +317,8 @@ def data_blueprint(
     *data_sources: DataSource,
     url_prefix: str = '/data',
     config_prefix: str = '/_config',
-    auth_inspector: Optional[AuthInspector] = None
+    auth_inspector: Optional[AuthInspector] = None,
+    permission_manager: PermissionManager | None = None
 ) -> DataBlueprint:
 
     config_bp = _config_blueprint(
@@ -326,7 +329,8 @@ def data_blueprint(
     core_bp = _core_blueprint(
         DataSourceDict(*data_sources),
         url_prefix,
-        auth_inspector=auth_inspector
+        permission_manager,
+        auth_inspector=auth_inspector,
     )
     core_bp.register_blueprint(config_bp)
 

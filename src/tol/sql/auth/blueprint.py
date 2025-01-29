@@ -4,11 +4,15 @@
 
 from __future__ import annotations
 
+from collections import namedtuple
 from datetime import datetime, timedelta
+from functools import partial
 from typing import Any, Callable, Optional
 from urllib.parse import urlencode
 
 import requests
+from flask import Flask, current_app
+from flask_principal import Principal, identity_changed, Identity, identity_loaded, UserNeed, RoleNeed, Need
 from requests.auth import HTTPBasicAuth
 
 from .models import (
@@ -52,6 +56,16 @@ class DbAuthManager(AuthManager):
         self.__state_delta = state_delete_delta
         self.__oidc_id_target = oidc_id_target
         self.__ext_map = oidc_ext_mapping
+
+    def get_user(self, user_id):
+        user_model = self.__models.user_class
+
+        with self.__session_factory() as sess:
+            return sess.query(
+                user_model
+            ).filter_by(
+                id=user_id
+            ).one_or_none()
 
     def login(self) -> dict[str, str]:
         self.__cleanup_before_login()
@@ -100,6 +114,11 @@ class DbAuthManager(AuthManager):
         if user_id is not None:
             ctx.user_id = user_id
             ctx.roles = role_names
+
+            identity_changed.send(
+                current_app._get_current_object(),
+                identity=Identity(user_id)
+            )
 
     def revoke_token(self, token: str) -> None:
         self.__delete_token(token)
@@ -379,9 +398,11 @@ def __db_auth_manager(
     return auth_manager, model_tuple
 
 
+
 def db_auth_blueprint(
     model_base: ModelClass,
     db_uri: str,
+    app: Flask,
 
     url_prefix: str = '/auth',
     prefix_with_name: bool = False,
@@ -416,6 +437,8 @@ def db_auth_blueprint(
     - provide a default value.
     """
 
+    Principal(app)
+
     auth_manager, models = __db_auth_manager(
         model_base,
         db_uri,
@@ -438,5 +461,28 @@ def db_auth_blueprint(
         url_prefix,
         models
     )
+
+    @identity_loaded.connect_via(app)
+    def on_identity_loaded(sender, identity):
+        user = models.user_class.find(identity.id)
+        identity.user = user
+
+        # Add the UserNeed to the identity
+        if hasattr(user, 'id'):
+            identity.provides.add(UserNeed(user.id))
+
+        # Get the memberships and roles for the user
+        if hasattr(user, 'memberships'):
+            for membership in user.memberships:
+                if hasattr(membership, 'data_object_types'):
+                    for data_object_type in membership.data_object_types:
+                        if hasattr(data_object_type, 'needs'):
+                            needs = NeedsFactory(
+                                data_object_type.name
+                            ).build_needs(needs=data_object_type.needs) 
+                            for need in needs:
+                                identity.provides.add(need)
+                
+
 
     return auth_bp
