@@ -35,7 +35,6 @@ class AuthUser(ABC):
     id: int  # noqa A003
 
     _tokens: list[AuthToken]
-    _roles: list[AuthRole]
 
     @classmethod
     @abstractmethod

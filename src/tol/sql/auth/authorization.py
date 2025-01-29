@@ -16,7 +16,7 @@ if typing.TYPE_CHECKING:
 class AuthorizationModels(NamedTuple):
     role_mixin: type[Any]
     user_mixin: type[Any]
-    membership: type[Any]
+    membership: ModelClass
     user_membership: ModelClass
     data_object_type: ModelClass
     data_object_type_attribute: ModelClass
@@ -47,7 +47,8 @@ def create_authorization_models(
 
         user_memberships = relationship("UserMembership", back_populates="user")
 
-    class Membership:
+    class Membership(model_class):
+        __tablename__ = 'membership'
         id = Column(Integer, primary_key=True)
         parent_id = Column(Integer, ForeignKey('membership.id'))
         name = Column(String)
