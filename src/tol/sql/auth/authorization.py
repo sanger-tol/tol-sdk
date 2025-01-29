@@ -9,7 +9,7 @@ from abc import ABC, abstractmethod
 from typing import Any, NamedTuple
 
 from sqlalchemy import Column, Integer, String, ForeignKey, BOOLEAN, and_
-from sqlalchemy.orm import Mapped, Session, relationship, declared_attr
+from sqlalchemy.orm import Session, relationship, declared_attr
 
 if typing.TYPE_CHECKING:
     from .models import ModelClass
@@ -86,8 +86,8 @@ def create_authorization_models(
             return relationship("UserMembership", back_populates="role")
 
         @declared_attr
-        def memberships(self) -> Mapped[list[Membership]]:
-            return relationship(secondary='user_membership')
+        def memberships(self):
+            return relationship('Membership', secondary='user_membership')
 
     class Membership(model_base):
         __tablename__ = 'membership'
@@ -199,7 +199,7 @@ def create_authorization_models(
         data_object_type = relationship("DataObjectType", back_populates="needs")
         membership_needs = relationship("MembershipNeed", back_populates="need")
         need_methods = relationship("NeedMethod", back_populates="need")
-        methods: Mapped[list[Method]] = relationship(secondary='need_method')
+        methods = relationship('Method', secondary='need_method')
 
         def get_needs(
             cls,
