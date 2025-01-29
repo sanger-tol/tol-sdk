@@ -16,15 +16,11 @@ from tol.google_sheets import (
 def finance():
     gsds = GoogleSheetDataSource({
         'client_secrets': json.loads(os.getenv('GOOGLE_CLIENT_SECRETS')),
-        'sheet_key': '1k4_B7_htmlJ762HsoDfZp1lGLJfLuvOX0N9cRh1uQVw',
+        'sheet_key': '1lMTcxF2XNSagkNQADqD9EavLLnwBZ-OgRYf_njtRAMw',
         'mappings': {
             'cost': {
                 'worksheet_name': 'Sample financial data',
                 'columns': {
-                    # 'id': {
-                    #     'heading': 'SANGER SAMPLE ID',
-                    #     'type': 'str'
-                    # },
                     'project': {
                         'heading': 'Proj',
                         'type': 'str'
