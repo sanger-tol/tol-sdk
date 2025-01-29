@@ -69,7 +69,7 @@ class MlwhDataSource(DataSource, DetailGetter, ListGetter):
                 'IF(product_metrics.qc IS NULL, NULL,'
                 " IF(product_metrics.qc = 1, 'pass', 'fail'))"
             ),
-            'cost_code': 'flowcell.cost_code', 
+            'cost_code': 'flowcell.cost_code',
             'qc_date': 'run_lane_metrics.qc_complete',
             'tag1_id': 'flowcell.tag_identifier',
             'tag2_id': 'flowcell.tag2_identifier',
