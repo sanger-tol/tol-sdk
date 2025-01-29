@@ -24,15 +24,6 @@ def role_model(full_models_list):
 
 
 @pytest.fixture(scope='module')
-def role_binding_model(full_models_list):
-    matches = [
-        m for m in full_models_list
-        if m.__tablename__ == 'role_binding'
-    ]
-    return matches[0]
-
-
-@pytest.fixture(scope='module')
 def token_model(full_models_list):
     matches = [
         m for m in full_models_list
@@ -65,8 +56,7 @@ class TestRole:
         self,
         session_factory,
         user_model,
-        role_model,
-        role_binding_model
+        role_model
     ):
         """
         roles exist -> a `list` of their names in alphabetical order
@@ -86,24 +76,12 @@ class TestRole:
                     name='yar'
                 )
             )
-            sess.add(
-                role_binding_model(
-                    user_id=970,
-                    role_id=3498
-                )
-            )
 
             # admin role
             sess.add(
                 role_model(
                     id=34230,
                     name='admin'
-                )
-            )
-            sess.add(
-                role_binding_model(
-                    user_id=970,
-                    role_id=34230
                 )
             )
             sess.commit()
@@ -127,7 +105,6 @@ class TestRequireRole:
         session_factory,
         user_model,
         role_model,
-        role_binding_model,
         token_model,
         client
     ):
@@ -139,7 +116,6 @@ class TestRequireRole:
             session_factory,
             user_model,
             role_model,
-            role_binding_model,
             token_model,
         )
 
@@ -164,7 +140,6 @@ class TestRequireRole:
         session_factory,
         user_model,
         role_model,
-        role_binding_model,
         token_model,
         client
     ):
@@ -177,7 +152,6 @@ class TestRequireRole:
             session_factory,
             user_model,
             role_model,
-            role_binding_model,
             token_model,
         )
 
@@ -206,7 +180,6 @@ class TestRequireRole:
         session_factory,
         user_model,
         role_model,
-        role_binding_model,
         token_model,
         client
     ):
@@ -216,7 +189,6 @@ class TestRequireRole:
             session_factory,
             user_model,
             role_model,
-            role_binding_model,
             token_model,
         )
 
@@ -241,7 +213,6 @@ class TestRequireRole:
         session_factory,
         user_model,
         role_model,
-        role_binding_model,
         token_model
     ):
 
@@ -276,13 +247,6 @@ class TestRequireRole:
                         name=f'bad_{c}'
                     )
                 )
-                sess.add(
-                    role_binding_model(
-                        id=i + 405,
-                        user_id=403,
-                        role_id=i + 400
-                    )
-                )
 
             # good roles user
             sess.add(
@@ -297,13 +261,6 @@ class TestRequireRole:
             )
             sess.add(
                 role_model(id=2000, name='admin')
-            )
-            sess.add(
-                role_binding_model(
-                    id=2030,
-                    user_id=200,
-                    role_id=2000
-                )
             )
 
             sess.commit()

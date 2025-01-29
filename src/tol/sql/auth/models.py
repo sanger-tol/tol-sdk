@@ -140,13 +140,6 @@ class AuthRole:
     name: str
 
 
-class AuthRoleBinding:
-    """An assignment of a role to a user."""
-
-    user_id: str
-    role_id: str
-
-
 class ModelTuple(NamedTuple):
     """
     Contains the `ModelClass` variables required
@@ -157,7 +150,6 @@ class ModelTuple(NamedTuple):
     user_class: type[AuthUser]
     token_class: type[AuthToken]
     role_class: type[AuthRole]
-    role_binding_class: type[AuthRoleBinding]
 
 
 def create_models(
@@ -263,9 +255,6 @@ def create_models(
         _tokens: Mapped[list['Token']] = relationship(
             back_populates='user'
         )
-        _role_bindings: Mapped[list['RoleBinding']] = relationship(
-            back_populates='user'
-        )
 
         @classmethod
         def __get_oidc_id_column_name(cls) -> str:
@@ -333,6 +322,7 @@ def create_models(
 
         @property
         def role_names(self) -> list[str]:
+            # TODO work out how to get role_names
             names = [
                 b.role.name for b in self._role_bindings
             ]
@@ -482,41 +472,9 @@ def create_models(
             unique=True
         )
 
-        _role_bindings: Mapped[list['RoleBinding']] = relationship(
-            back_populates='role'
-        )
-
-    class RoleBinding(AuthRoleBinding, model_base):
-
-        __tablename__ = 'role_binding'
-
-        id: Mapped[int] = mapped_column(  # noqa A003
-            primary_key=True,
-            autoincrement=True
-        )
-
-        user_id: Mapped[int] = mapped_column(
-            ForeignKey(User.id)
-        )
-        role_id: Mapped[int] = mapped_column(
-            ForeignKey(Role.id)
-        )
-
-        user = relationship(
-            'User',
-            back_populates='_role_bindings',
-            foreign_keys=[user_id]
-        )
-        role = relationship(
-            'Role',
-            back_populates='_role_bindings',
-            foreign_keys=[role_id]
-        )
-
     return ModelTuple(
         state_class=State,
         token_class=Token,
         user_class=User,
-        role_class=Role,
-        role_binding_class=RoleBinding
+        role_class=Role
     )
