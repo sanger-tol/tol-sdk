@@ -149,7 +149,7 @@ class GoogleSheetDataSource(
         f = DataSourceFilter()
         f.in_list = {'id': object_ids}
         rows = self._apply_filter(f, self.data[object_type], object_type)
-        for row_index, row in rows:
+        for row_index, row in enumerate(rows, start=1):
             yield self._convert_row_to_data_object(object_type, row, row_index)
 
     def get_list(
