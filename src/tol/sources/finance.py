@@ -21,31 +21,19 @@ def finance():
             'cost': {
                 'worksheet_name': 'Sample financial data',
                 'columns': {
-                    # 'id': {
-                    #     'heading': 'SANGER SAMPLE ID',
-                    #     'type': 'str'
-                    # },
-                    'project': {
+                    'project_cost_id': {
                         'heading': 'Proj',
                         'type': 'str'
                     },
-                    'cat5': {
+                    'study_id': {
                         'heading': 'Cat5',
                         'type': 'int'
                     },
-                    'transaction_date': {
-                        'heading': 'Trans date',
-                        'type': 'datetime'
+                    'period': {
+                        'heading': 'Period(T)',
+                        'type': 'date'
                     },
-                    'currency': {
-                        'heading': 'Cur',
-                        'type': 'str'
-                    },
-                    'currency_amount': {
-                        'heading': 'Curr. amnt',
-                        'type': 'datetime'
-                    },
-                    'GBP_amount': {
+                    'amount': {
                         'heading': 'GBP amnt',
                         'type': 'double'
                     }
