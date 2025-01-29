@@ -59,6 +59,44 @@ class MockGoogleSheetDataSource(GoogleSheetDataSource):
         ]
 
 
+class MockGoogleSheetDataSourceWithoutIdColumn(GoogleSheetDataSource):
+    def _initialise_google_sheet(self):
+        return mock.Mock()
+
+    def _initialise_data(self, object_type):
+        self.data[object_type] = [
+            {
+                'Value': 'Value 1',
+                'Optional': 'YES',
+                'Boolean': '1',
+                'Float': 2.34,
+                'Datetime': datetime(2024, 1, 1, 12, 13, 14)
+            },
+            {
+                'Value': 'Value 2',
+                'Optional': None,
+                'Boolean': '0',
+                'Float': None,
+                'Datetime': None
+            },
+            {
+                'Value': 'Value 3',
+                'Optional': 'NO',
+                'Boolean': None,
+                'Float': None,
+                'Datetime': '14/12/2030'
+            },
+            {
+                'Value': 'Value 4',
+                'Optional': None,
+                'Boolean': None,
+                'Float': None,
+                'Datetime': '2024-07-08 13:14:15'
+            }
+
+        ]
+
+
 def mock_google_sheet_data_source() -> GoogleSheetDataSource:
     gsds = MockGoogleSheetDataSource({
         'client_secrets': {},
@@ -71,6 +109,44 @@ def mock_google_sheet_data_source() -> GoogleSheetDataSource:
                         'heading': 'Id',
                         'type': 'int'
                     },
+                    'value': {
+                        'heading': 'Value',
+                        'type': 'str'
+                    },
+                    'optional': {
+                        'heading': 'Optional',
+                        'type': 'str'
+                    },
+                    'boolean': {
+                        'heading': 'Boolean',
+                        'type': 'boolean'
+                    },
+                    'float': {
+                        'heading': 'Float',
+                        'type': 'float'
+                    },
+                    'datetime': {
+                        'heading': 'Datetime',
+                        'type': 'datetime'
+                    }
+                },
+                'header_row': 2,
+                'data_start_row': 4
+            }
+        }
+    })
+    core_data_object_mock = core_data_object(gsds)
+    return core_data_object_mock, gsds
+
+
+def mock_google_sheet_data_source_without_id_column() -> GoogleSheetDataSource:
+    gsds = MockGoogleSheetDataSourceWithoutIdColumn({
+        'client_secrets': {},
+        'sheet_key': 'MOCK',
+        'mappings': {
+            'object1': {
+                'worksheet_name': 'Sheet1',
+                'columns': {
                     'value': {
                         'heading': 'Value',
                         'type': 'str'
@@ -151,6 +227,45 @@ class TestGoogleSheetDataSource(TestCase):
 
     def test_get_list(self):
         _, gsds = mock_google_sheet_data_source()
+
+        ret = gsds.get_list('object1')
+        obj1 = next(ret)
+        self.assertEqual(1, obj1.id)
+        self.assertEqual({
+            'value': 'Value 1',
+            'optional': 'YES',
+            'boolean': True,
+            'float': 2.34,
+            'datetime': datetime(2024, 1, 1, 12, 13, 14)}, obj1.attributes)
+        obj2 = next(ret)
+        self.assertEqual(2, obj2.id)
+        self.assertEqual({
+            'value': 'Value 2',
+            'optional': None,
+            'boolean': False,
+            'float': None,
+            'datetime': None}, obj2.attributes)
+        obj3 = next(ret)
+        self.assertEqual(3, obj3.id)
+        self.assertEqual({
+            'value': 'Value 3',
+            'optional': 'NO',
+            'boolean': None,
+            'float': None,
+            'datetime': datetime(2030, 12, 14)}, obj3.attributes)
+        obj4 = next(ret)
+        self.assertEqual(4, obj4.id)
+        self.assertEqual({
+            'value': 'Value 4',
+            'optional': None,
+            'boolean': None,
+            'float': None,
+            'datetime': datetime(2024, 7, 8, 13, 14, 15)}, obj4.attributes)
+        with self.assertRaises(StopIteration):
+            next(ret)
+
+    def test_get_list_when_sheet_cheat_does_not_have_column_id(self):
+        _, gsds = mock_google_sheet_data_source_without_id_column()
 
         ret = gsds.get_list('object1')
         obj1 = next(ret)
