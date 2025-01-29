@@ -87,7 +87,7 @@ def create_authorization_models(
 
         @declared_attr
         def memberships(self):
-            return relationship('Membership', secondary='user_membership')
+            return relationship('Membership', secondary='user_membership', overlaps='membership,user_memberships,user')
 
     class Membership(model_base):
         __tablename__ = 'membership'
@@ -99,12 +99,13 @@ def create_authorization_models(
         children = relationship("Membership", back_populates="parent")
         user_memberships = relationship("UserMembership", back_populates="membership")
         membership_data_object_types = relationship("MembershipDataObjectType", back_populates="membership")
-        data_object_types = relationship("DataObjectType", secondary='membership_data_object_type')
+        data_object_types = relationship("DataObjectType", secondary='membership_data_object_type', overlaps="membership_data_object_types")
         membership_needs = relationship("MembershipNeed", back_populates="membership")
         source_memberships = relationship("SourceMembership", back_populates="membership")
         membership_data_object_type_allowed_attributes = relationship(
             "MembershipDataObjectTypeAllowedAttribute",
-            secondary='membership_data_object_type'
+            secondary='membership_data_object_type',
+            overlaps = "data_object_types,membership_data_object_types"
         )
 
     class UserMembership(model_base):
@@ -125,7 +126,7 @@ def create_authorization_models(
         name = Column(String)
 
         source = relationship("Source", back_populates="data_object_types")
-        membership_data_object_types = relationship("MembershipDataObjectType", back_populates="data_object_type")
+        membership_data_object_types = relationship("MembershipDataObjectType", back_populates="data_object_type", overlaps="data_object_types")
         data_object_type_attributes = relationship("DataObjectTypeAttribute", back_populates="data_object_type")
         needs = relationship("Need", back_populates="data_object_type")
 
@@ -151,9 +152,9 @@ def create_authorization_models(
         membership_id = Column(Integer, ForeignKey('membership.id'))
         data_object_type_id = Column(Integer, ForeignKey('data_object_type.id'))
 
-        membership = relationship("Membership", back_populates="membership_data_object_types")
-        data_object_type = relationship("DataObjectType", back_populates="membership_data_object_types")
-        membership_data_object_type_allowed_attributes = relationship("MembershipDataObjectTypeAllowedAttribute", back_populates="membership_data_object_type")
+        membership = relationship("Membership", back_populates="membership_data_object_types", overlaps="data_object_types,membership_data_object_type_allowed_attributes")
+        data_object_type = relationship("DataObjectType", back_populates="membership_data_object_types", overlaps="data_object_types")
+        membership_data_object_type_allowed_attributes = relationship("MembershipDataObjectTypeAllowedAttribute", back_populates="membership_data_object_type", overlaps="membership_data_object_type_allowed_attributes")
 
     class MembershipDataObjectTypeAllowedAttribute(model_base):
         __tablename__ = 'membership_data_object_type_allowed_attribute'
@@ -161,7 +162,7 @@ def create_authorization_models(
         membership_data_object_type_id = Column(Integer, ForeignKey('membership_data_object_type.id'))
         data_object_type_attribute_id = Column(Integer, ForeignKey('data_object_type_attribute.id'))
 
-        membership_data_object_type = relationship("MembershipDataObjectType", back_populates="membership_data_object_type_allowed_attributes")
+        membership_data_object_type = relationship("MembershipDataObjectType", back_populates="membership_data_object_type_allowed_attributes", overlaps="membership_data_object_type_allowed_attributes")
         data_object_type_attribute = relationship("DataObjectTypeAttribute", back_populates="membership_data_object_type_allowed_attributes")
 
     class MembershipNeed(model_base):
@@ -199,7 +200,7 @@ def create_authorization_models(
         data_object_type = relationship("DataObjectType", back_populates="needs")
         membership_needs = relationship("MembershipNeed", back_populates="need")
         need_methods = relationship("NeedMethod", back_populates="need")
-        methods = relationship('Method', secondary='need_method')
+        methods = relationship('Method', secondary='need_method', overlaps="need_methods")
 
         def get_needs(
             cls,
@@ -233,8 +234,8 @@ def create_authorization_models(
         method_id = Column(Integer, ForeignKey('method.id'))
         role_id = Column(Integer, ForeignKey('role.id'), nullable=True)
 
-        need = relationship("Need", back_populates="need_methods")
-        method = relationship("Method", back_populates="need_methods")
+        need = relationship("Need", back_populates="need_methods", overlaps="methods")
+        method = relationship("Method", back_populates="need_methods", overlaps="methods")
         role = relationship("Role", back_populates="need_methods")
 
     class Method(model_base):
@@ -242,7 +243,7 @@ def create_authorization_models(
         id = Column(Integer, primary_key=True)
         identifier = Column(String)
 
-        need_methods = relationship("NeedMethod", back_populates="method")
+        need_methods = relationship("NeedMethod", back_populates="method", overlaps="methods")
 
     return AuthorizationModels(
         role_mixin=RoleMixin,
