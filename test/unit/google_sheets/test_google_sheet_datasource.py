@@ -58,6 +58,7 @@ class MockGoogleSheetDataSource(GoogleSheetDataSource):
 
         ]
 
+
 class MockGoogleSheetDataSourceWithoutIdColumn(GoogleSheetDataSource):
     def _initialise_google_sheet(self):
         return mock.Mock()
@@ -136,6 +137,7 @@ def mock_google_sheet_data_source() -> GoogleSheetDataSource:
     })
     core_data_object_mock = core_data_object(gsds)
     return core_data_object_mock, gsds
+
 
 def mock_google_sheet_data_source_without_id_column() -> GoogleSheetDataSource:
     gsds = MockGoogleSheetDataSourceWithoutIdColumn({
