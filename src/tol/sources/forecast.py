@@ -21,16 +21,12 @@ def forecast():
             'forecast_lib': {
                 'worksheet_name': 'Demand Libraries',
                 'columns': {
-                    'id': {
-                        'heading': 'Column name',
-                        'type': 'int'
-                    },
                     'programme': {
                         'heading': 'Programme',
                         'type': 'str'
                     },
                     'analysis_type': {
-                        'heading': 'Library/Sequencing',
+                        'heading': 'Library/ Sequencing',
                         'type': 'str'
                     },
                     'preparation_type': {
@@ -38,7 +34,7 @@ def forecast():
                         'type': 'str'
                     },
                     'forecast': {
-                        'heading': 'Demand Forecast',
+                        'heading': 'Demand forecast ',
                         'type': 'int'
                     },
                     'date': {
@@ -49,21 +45,19 @@ def forecast():
                         'heading': 'Budget',
                         'type': 'float'
                     },
-                }
+                },
+                'header_row': 1,
+                'data_start_row': 2
             },
             'forecast_seq': {
                 'worksheet_name': 'Demand Sequencing',
                 'columns': {
-                    'id': {
-                        'heading': 'Column name',
-                        'type': 'int'
-                    },
                     'programme': {
                         'heading': 'Programme',
                         'type': 'str'
                     },
                     'analysis_type': {
-                        'heading': 'Library/Sequencing',
+                        'heading': 'Library/ Sequencing',
                         'type': 'str'
                     },
                     'preparation_type': {
@@ -71,7 +65,7 @@ def forecast():
                         'type': 'str'
                     },
                     'forecast': {
-                        'heading': 'Demand Forecast',
+                        'heading': 'Demand forecast ',
                         'type': 'int'
                     },
                     'date': {
@@ -81,11 +75,11 @@ def forecast():
                     'budget': {
                         'heading': 'Budget',
                         'type': 'float'
-                    },
-                }
+                    }
+                },
+                'header_row': 1,
+                'data_start_row': 2
             },
-            'header_row': 1,
-            'data_start_row': 2
         }
     })
 
