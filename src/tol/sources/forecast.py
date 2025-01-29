@@ -24,31 +24,31 @@ def forecast():
                     'id': {
                         'heading': 'Column name',
                         'type': 'int'
-                    }
+                    },
                     'programme': {
                         'heading': 'Programme',
                         'type': 'int'
-                    }
+                    },
                     'type': {
                         'heading': 'Library/ Sequencing',
                         'type': 'str'
-                    }
+                    },
                     'method': {
                         'heading': 'Type',
                         'type': 'str'
-                    }
+                    },
                     'forecast': {
                         'heading': 'Demand Forecast',
                         'type': 'int'
-                    }
+                    },
                     'date': {
                         'heading': 'Date',
                         'type': 'date'
-                    }
+                    },
                     'budget': {
                         'heading': 'Budget',
                         'type': 'float'
-                    }
+                    },
                 }
             },
             'header_row': 1,
