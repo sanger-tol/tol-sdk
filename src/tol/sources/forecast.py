@@ -29,12 +29,12 @@ def forecast():
                         'heading': 'Programme',
                         'type': 'str'
                     },
-                    'type': {
-                        'heading': 'Analysis Type',
+                    'analysis_type': {
+                        'heading': 'Library/Sequencing',
                         'type': 'str'
                     },
-                    'method': {
-                        'heading': 'Preparation Type',
+                    'preparation_type': {
+                        'heading': 'Type',
                         'type': 'str'
                     },
                     'forecast': {
@@ -62,12 +62,12 @@ def forecast():
                         'heading': 'Programme',
                         'type': 'str'
                     },
-                    'type': {
-                        'heading': 'Analysis Type',
+                    'analysis_type': {
+                        'heading': 'Library/Sequencing',
                         'type': 'str'
                     },
-                    'method': {
-                        'heading': 'Preparation Type',
+                    'preparation_type': {
+                        'heading': 'Type',
                         'type': 'str'
                     },
                     'forecast': {
