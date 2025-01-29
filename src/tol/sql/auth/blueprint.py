@@ -110,13 +110,14 @@ class DbAuthManager(AuthManager):
         token: str,
     ) -> None:
 
-        user_id = self.__get_user_id_for_token(token)
-        if user_id is not None:
-            ctx.user_id = user_id
-
+        user = self.__get_user_for_token(token)
+        if user is not None:
+            ctx.user_id = user.id
+            identity = Identity(user.id)
+            identity.user = user
             identity_changed.send(
                 current_app._get_current_object(),
-                identity=Identity(user_id)
+                identity=identity
             )
 
     def revoke_token(self, token: str) -> None:
@@ -166,7 +167,7 @@ class DbAuthManager(AuthManager):
             self.__map_oidc_extra(json_return)
         )
 
-    def __get_user_id_for_token(
+    def __get_user_for_token(
         self,
         token: str
     ) -> str | None:
@@ -179,8 +180,7 @@ class DbAuthManager(AuthManager):
             if instance is None:
                 return None
             else:
-                user = instance.user
-                return str(user.id)
+                return instance.user
 
     def __get_or_create_user(
         self,
@@ -463,8 +463,7 @@ def db_auth_blueprint(
 
     @identity_loaded.connect_via(app)
     def on_identity_loaded(sender, identity):
-        user = models.user_class.find(identity.id)
-        identity.user = user
+        user = identity.user
 
         # Add the UserNeed to the identity
         if hasattr(user, 'id'):
@@ -481,7 +480,6 @@ def db_auth_blueprint(
                             ).build_needs(needs=data_object_type.needs) 
                             for need in needs:
                                 identity.provides.add(need)
-                
 
 
     return auth_bp
