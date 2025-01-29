@@ -29,12 +29,12 @@ def forecast():
                         'heading': 'Programme',
                         'type': 'str'
                     },
-                    'analysis_type': {
-                        'heading': 'Library/ Sequencing',
+                    'type': {
+                        'heading': 'Analysis Type',
                         'type': 'str'
                     },
-                    'preparation_type': {
-                        'heading': 'Type',
+                    'method': {
+                        'heading': 'Preparation Type',
                         'type': 'str'
                     },
                     'forecast': {
@@ -48,14 +48,46 @@ def forecast():
                     'budget': {
                         'heading': 'Budget',
                         'type': 'float'
-                    }
+                    },
                 }
             },
+            'forecast_seq': {
+                    'worksheet_name': 'Demand Sequencing',
+                    'columns': {
+                        'id': {
+                            'heading': 'Column name',
+                            'type': 'int'
+                        },
+                        'programme': {
+                            'heading': 'Programme',
+                            'type': 'str'
+                        },
+                        'type': {
+                            'heading': 'Analysis Type',
+                            'type': 'str'
+                        },
+                        'method': {
+                            'heading': 'Preparation Type',
+                            'type': 'str'
+                        },
+                        'forecast': {
+                            'heading': 'Demand Forecast',
+                            'type': 'int'
+                        },
+                        'date': {
+                            'heading': 'Date',
+                            'type': 'date'
+                        },
+                        'budget': {
+                            'heading': 'Budget',
+                            'type': 'float'
+                        },
+                    }
+                },
             'header_row': 1,
             'data_start_row': 2
-        },
-        'header_row': 1,
-        'data_start_row': 2
-        })
+        }
+    })
+
     core_data_object(gsds)
     return gsds
