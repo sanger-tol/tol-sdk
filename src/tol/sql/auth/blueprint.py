@@ -463,7 +463,8 @@ def db_auth_blueprint(
 
     @identity_loaded.connect_via(app)
     def on_identity_loaded(sender, identity):
-        user = identity.user
+
+        user = auth_manager.get_user(identity.id)
 
         # Add the UserNeed to the identity
         if hasattr(user, 'id'):
