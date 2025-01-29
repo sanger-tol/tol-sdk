@@ -160,7 +160,7 @@ class GoogleSheetDataSource(
     ) -> Iterable[DataObject]:
         self._initialise_data(object_type)
         rows = self._apply_filter(object_filters, self.data[object_type], object_type)
-        for row_index, row in rows:
+        for row_index, row in enumerate(rows, start=1):
             obj = self._convert_row_to_data_object(object_type, row, row_index)
             if obj.id is not None:
                 yield obj
