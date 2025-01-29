@@ -53,13 +53,6 @@ class AuthUser(ABC):
         Returns the found row if it does.
         """
 
-    @property
-    @abstractmethod
-    def role_names(self) -> list[str]:
-        """
-        A `list[str]` of roles assigned to this user.
-        """
-
 
 class AuthState(ABC):
     """
@@ -335,14 +328,6 @@ def create_models(
                 oidc_id,
                 **oidc_ext
             )
-
-        @property
-        def role_names(self) -> list[str]:
-            # TODO work out how to get role_names
-            names = [
-                b.role.name for b in self._role_bindings
-            ]
-            return sorted(names)
 
     class _TokenPKMixin:
         """

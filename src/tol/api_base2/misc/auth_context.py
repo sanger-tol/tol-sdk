@@ -39,7 +39,6 @@ class AuthContext:
 
     def __init__(self) -> None:
         self.__user_id: Optional[str] = None
-        self.__roles: list[str] = []
 
     @property
     def authenticated(self) -> bool:
@@ -61,21 +60,6 @@ class AuthContext:
     @user_id.setter
     def user_id(self, val: str) -> None:
         self.__user_id = val
-
-    @property
-    def roles(self) -> list[str]:
-        """
-        A `list[str]` of names of roles assigned to
-        the authenticated user.
-        """
-
-        self.__assert_authenticated()
-
-        return self.__roles
-
-    @roles.setter
-    def roles(self, val: list[str]) -> None:
-        self.__roles = val
 
     def __assert_authenticated(self) -> None:
         if not self.authenticated:
