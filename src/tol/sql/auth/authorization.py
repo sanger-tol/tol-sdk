@@ -104,7 +104,7 @@ def create_authorization_models(
         source_memberships = relationship("SourceMembership", back_populates="membership")
         membership_data_object_type_allowed_attributes = relationship(
             "MembershipDataObjectTypeAllowedAttribute",
-            back_populates="membership"
+            secondary='membership_data_object_type'
         )
 
     class UserMembership(model_base):
