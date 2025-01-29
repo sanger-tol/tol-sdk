@@ -32,6 +32,7 @@ from ...api_base2.auth import (
     env_oidc_config
 )
 from ...api_base2.misc import AuthContext
+from .needs_factory import NeedsFactory
 
 
 class DbAuthManager(AuthManager):
@@ -58,14 +59,17 @@ class DbAuthManager(AuthManager):
         self.__ext_map = oidc_ext_mapping
 
     def get_user(self, user_id):
+        '''
+            Warning: dev use only!!!
+        '''
         user_model = self.__models.user_class
+        sess = self.__session_factory()
 
-        with self.__session_factory() as sess:
-            return sess.query(
-                user_model
-            ).filter_by(
-                id=user_id
-            ).one_or_none()
+        return sess.query(
+            user_model
+        ).filter_by(
+            id=user_id
+        ).one_or_none(), sess
 
     def login(self) -> dict[str, str]:
         self.__cleanup_before_login()
@@ -112,7 +116,7 @@ class DbAuthManager(AuthManager):
 
         user = self.__get_user_for_token(token)
         if user is not None:
-            ctx.user_id = user.id
+            ctx.user_id = str(user.id)
             identity = Identity(user.id)
             identity.user = user
             identity_changed.send(
@@ -463,8 +467,7 @@ def db_auth_blueprint(
 
     @identity_loaded.connect_via(app)
     def on_identity_loaded(sender, identity):
-
-        user = auth_manager.get_user(identity.id)
+        user, sess = auth_manager.get_user(identity.id)
 
         # Add the UserNeed to the identity
         if hasattr(user, 'id'):
@@ -481,6 +484,8 @@ def db_auth_blueprint(
                             ).build_needs(needs=data_object_type.needs) 
                             for need in needs:
                                 identity.provides.add(need)
+
+        sess.close()
 
 
     return auth_bp

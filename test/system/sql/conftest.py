@@ -163,6 +163,11 @@ def app(
 
     app.register_blueprint(data_bp)
 
+    app.config['SECRET_KEY'] = "Your_secret_string"
+    '''
+        This needs to be inplace for Flask-Principle package to interact with the app layer
+    '''
+
     @app.get('/hi')
     @require_auth(role='admin')
     def hi_admin():
