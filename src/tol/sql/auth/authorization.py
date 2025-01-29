@@ -9,7 +9,7 @@ from abc import ABC, abstractmethod
 from typing import Any, NamedTuple
 
 from sqlalchemy import Column, Integer, String, ForeignKey, BOOLEAN, and_
-from sqlalchemy.orm import Mapped, Session, relationship
+from sqlalchemy.orm import Mapped, Session, relationship, declared_attr
 
 if typing.TYPE_CHECKING:
     from .models import ModelClass
@@ -48,22 +48,46 @@ def create_authorization_models(
 ) -> AuthorizationModels:
 
     class RoleMixin:
-        id = Column(Integer, primary_key=True)
-        name = Column(String)
-        system_access = Column(BOOLEAN, default=False)
-        '''
-            Identifies the role as a elevated role for the access of system attributes
-        '''
 
-        user_memberships = relationship("UserMembership", back_populates="role")
-        need_methods = relationship("NeedMethod", back_populates="role")
+        @declared_attr
+        def id(self):
+            return Column(Integer, primary_key=True)
+
+        @declared_attr
+        def name(self):
+            return Column(String)
+
+        @declared_attr
+        def system_access(self):
+            '''
+            Identifies the role as a elevated role for the access of system attributes
+            '''
+            return Column(BOOLEAN, default=False)
+
+        @declared_attr
+        def user_memberships(self):
+            return relationship("UserMembership", back_populates="role")
+
+        @declared_attr
+        def need_methods(self):
+            return relationship("NeedMethod", back_populates="role")
 
     class AuthzUserMixin:
-        id = Column(Integer, primary_key=True)
-        username = Column(String)
+        @declared_attr
+        def id(self):
+            return Column(Integer, primary_key=True)
 
-        user_memberships = relationship("UserMembership", back_populates="user")
-        memberships: Mapped[list[Membership]] = relationship('user_membership')
+        @declared_attr
+        def username(self):
+            return Column(String)
+
+        @declared_attr
+        def user_memberships(self):
+            return relationship("UserMembership", back_populates="role")
+
+        @declared_attr
+        def memberships(self) -> Mapped[list[Membership]]:
+            return relationship(secondary='user_membership')
 
     class Membership(model_base):
         __tablename__ = 'membership'

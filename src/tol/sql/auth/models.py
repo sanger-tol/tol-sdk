@@ -473,8 +473,8 @@ def create_models(
     class Role(
         AuthRole,
         model_base,
+        authz_models.role_mixin,
         role_mixin_class,
-        authz_models.role_mixin
     ):
 
         __tablename__ = 'role'
