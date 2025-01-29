@@ -317,8 +317,7 @@ def data_blueprint(
     *data_sources: DataSource,
     url_prefix: str = '/data',
     config_prefix: str = '/_config',
-    auth_inspector: Optional[AuthInspector] = None,
-    permission_manager: PermissionManager | None = None
+    auth_inspector: Optional[AuthInspector] = None
 ) -> DataBlueprint:
 
     config_bp = _config_blueprint(
@@ -329,7 +328,6 @@ def data_blueprint(
     core_bp = _core_blueprint(
         DataSourceDict(*data_sources),
         url_prefix,
-        permission_manager,
         auth_inspector=auth_inspector,
     )
     core_bp.register_blueprint(config_bp)

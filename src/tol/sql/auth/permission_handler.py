@@ -7,7 +7,7 @@ from functools import wraps
 from typing import Callable
 
 from flask import abort
-from flask.ext.principal import Permission
+from flask_principal import Permission
 
 from .needs_factory import NeedsFactory
 from ...core import DataSourceFilter
@@ -28,8 +28,8 @@ class PermissionManager(ABC):
     ) -> None:
         pass
 
-    @abstractmethod
     @property
+    @abstractmethod
     def filter(
         self
     ) -> DataSourceFilter | None:

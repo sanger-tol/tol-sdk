@@ -16,8 +16,8 @@ if typing.TYPE_CHECKING:
 
 
 class NeedABC(ABC):
-    @abstractmethod
     @classmethod
+    @abstractmethod
     def get_needs(
         cls,
         object_type: str,
