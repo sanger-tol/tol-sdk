@@ -31,7 +31,7 @@ class AuthorizationModels(NamedTuple):
 
 
 def create_authorization_models(
-    model_class: ModelClass
+    model_base: ModelClass
 ) -> AuthorizationModels:
 
     class RoleMixin:
@@ -47,7 +47,7 @@ def create_authorization_models(
 
         user_memberships = relationship("UserMembership", back_populates="user")
 
-    class Membership(model_class):
+    class Membership(model_base):
         __tablename__ = 'membership'
         id = Column(Integer, primary_key=True)
         parent_id = Column(Integer, ForeignKey('membership.id'))
@@ -64,7 +64,7 @@ def create_authorization_models(
             back_populates="membership"
         )
 
-    class UserMembership(model_class):
+    class UserMembership(model_base):
         __tablename__ = 'user_membership'
         id = Column(Integer, primary_key=True)
         user_id = Column(Integer, ForeignKey('user.id'))
@@ -75,7 +75,7 @@ def create_authorization_models(
         membership = relationship("Membership", back_populates="user_memberships")
         role = relationship("Role", back_populates="user_memberships")
 
-    class DataObjectType(model_class):
+    class DataObjectType(model_base):
         __tablename__ = 'data_object_type'
         id = Column(Integer, primary_key=True)
         source_id = Column(Integer, ForeignKey('source.id'))
@@ -86,7 +86,7 @@ def create_authorization_models(
         data_object_type_attributes = relationship("DataObjectTypeAttribute", back_populates="data_object_type")
         needs = relationship("Need", back_populates="data_object_type")
 
-    class DataObjectTypeAttribute(model_class):
+    class DataObjectTypeAttribute(model_base):
         __tablename__ = 'data_object_type_attribute'
         id = Column(Integer, primary_key=True)
         data_object_type_id = Column(Integer, ForeignKey('data_object_type.id'))
@@ -95,7 +95,7 @@ def create_authorization_models(
         data_object_type = relationship("DataObjectType", back_populates="data_object_type_attributes")
         membership_data_object_type_allowed_attributes = relationship("MembershipDataObjectTypeAllowedAttribute", back_populates="data_object_type_attribute")
 
-    class MembershipDataObjectType(model_class):
+    class MembershipDataObjectType(model_base):
         __tablename__ = 'membership_data_object_type'
         id = Column(Integer, primary_key=True)
         membership_id = Column(Integer, ForeignKey('membership.id'))
@@ -105,7 +105,7 @@ def create_authorization_models(
         data_object_type = relationship("DataObjectType", back_populates="membership_data_object_types")
         membership_data_object_type_allowed_attributes = relationship("MembershipDataObjectTypeAllowedAttribute", back_populates="membership_data_object_type")
 
-    class MembershipDataObjectTypeAllowedAttribute(model_class):
+    class MembershipDataObjectTypeAllowedAttribute(model_base):
         __tablename__ = 'membership_data_object_type_allowed_attribute'
         id = Column(Integer, primary_key=True)
         membership_data_object_type_id = Column(Integer, ForeignKey('membership_data_object_type.id'))
@@ -114,7 +114,7 @@ def create_authorization_models(
         membership_data_object_type = relationship("MembershipDataObjectType", back_populates="membership_data_object_type_allowed_attributes")
         data_object_type_attribute = relationship("DataObjectTypeAttribute", back_populates="membership_data_object_type_allowed_attributes")
 
-    class MembershipNeed(model_class):
+    class MembershipNeed(model_base):
         __tablename__ = 'membership_need'
         id = Column(Integer, primary_key=True)
         membership_id = Column(Integer, ForeignKey('membership.id'))
@@ -123,7 +123,7 @@ def create_authorization_models(
         membership = relationship("Membership", back_populates="membership_needs")
         need = relationship("Need", back_populates="membership_needs")
 
-    class Source(model_class):
+    class Source(model_base):
         __tablename__ = 'source'
         id = Column(Integer, primary_key=True)
         name = Column(String)
@@ -131,7 +131,7 @@ def create_authorization_models(
         data_object_types = relationship("DataObjectType", back_populates="source")
         source_memberships = relationship("SourceMembership", back_populates="source")
 
-    class SourceMembership(model_class):
+    class SourceMembership(model_base):
         __tablename__ = 'source_membership'
         id = Column(Integer, primary_key=True)
         source_id = Column(Integer, ForeignKey('source.id'))
@@ -141,7 +141,7 @@ def create_authorization_models(
         source = relationship("Source", back_populates="source_memberships")
         membership = relationship("Membership", back_populates="source_memberships")
 
-    class Need(model_class):
+    class Need(model_base):
         __tablename__ = 'need'
         id = Column(Integer, primary_key=True)
         data_object_type_id = Column(Integer, ForeignKey('data_object_type.id'))
@@ -150,7 +150,7 @@ def create_authorization_models(
         membership_needs = relationship("MembershipNeed", back_populates="need")
         need_methods = relationship("NeedMethod", back_populates="need")
 
-    class NeedMethod(model_class):
+    class NeedMethod(model_base):
         __tablename__ = 'need_method'
         id = Column(Integer, primary_key=True)
         need_id = Column(Integer, ForeignKey('need.id'))
@@ -161,7 +161,7 @@ def create_authorization_models(
         method = relationship("Method", back_populates="need_methods")
         role = relationship("Role", back_populates="need_methods")
 
-    class Method(model_class):
+    class Method(model_base):
         __tablename__ = 'method'
         id = Column(Integer, primary_key=True)
         identifier = Column(String)

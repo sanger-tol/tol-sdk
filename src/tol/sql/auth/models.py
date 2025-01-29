@@ -23,6 +23,8 @@ from sqlalchemy.orm import (
     relationship
 )
 
+from .authorization import create_authorization_models
+
 
 ModelClass = type[Any]
 
@@ -149,6 +151,18 @@ class ModelTuple(NamedTuple):
     user_class: type[AuthUser]
     token_class: type[AuthToken]
     role_class: type[AuthRole]
+    membership: ModelClass
+    user_membership: ModelClass
+    data_object_type: ModelClass
+    data_object_type_attribute: ModelClass
+    membership_data_object_type: ModelClass
+    membership_data_object_type_allowed_attribute: ModelClass
+    membership_need: ModelClass
+    source: ModelClass
+    source_membership: ModelClass
+    need: ModelClass
+    need_method: ModelClass
+    method: ModelClass
 
 
 def create_models(
@@ -221,6 +235,8 @@ def create_models(
             sess.execute(stmt)
             sess.commit()
 
+    authz_models = create_authorization_models(model_base)
+
     oidc_id_column: Mapped[str] = mapped_column(
         type_=String(),
         unique=True,
@@ -241,6 +257,7 @@ def create_models(
         model_base,
         oidc_id_mixin_class,
         user_mixin_class,
+        authz_models.user_mixin
     ):
 
         __tablename__ = user_table_name
@@ -456,7 +473,8 @@ def create_models(
     class Role(
         AuthRole,
         model_base,
-        role_mixin_class
+        role_mixin_class,
+        authz_models.role_mixin
     ):
 
         __tablename__ = 'role'
@@ -475,5 +493,17 @@ def create_models(
         state_class=State,
         token_class=Token,
         user_class=User,
-        role_class=Role
+        role_class=Role,
+        membership=authz_models.membership,
+        user_membership=authz_models.user_membership,
+        data_object_type=authz_models.data_object_type,
+        data_object_type_attribute=authz_models.data_object_type_attribute,
+        membership_data_object_type=authz_models.membership_data_object_type,
+        membership_data_object_type_allowed_attribute=authz_models.membership_data_object_type_allowed_attribute,
+        membership_need=authz_models.membership_need,
+        source=authz_models.source,
+        source_membership=authz_models.source_membership,
+        need=authz_models.need,
+        need_method=authz_models.need_method,
+        method=authz_models.method
     )
