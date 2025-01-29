@@ -18,7 +18,7 @@ def forecast():
         'client_secrets': json.loads(os.getenv('GOOGLE_CLIENT_SECRETS')),
         'sheet_key': '1-1BuL2vhg0pe_znGm0X_dVwYYDXu6wCmh7CB39PN0hE',
         'mappings': {
-            'forecast': {
+            'forecast_lib': {
                 'worksheet_name': 'Demand Libraries',
                 'columns': {
                     'id': {
@@ -27,8 +27,44 @@ def forecast():
                     },
                     'programme': {
                         'heading': 'Programme',
+                        'type': 'str'
+                    }
+                    'type': {
+                        'heading': 'Library/ Sequencing',
+                        'type': 'str'
+                    }
+                    'method': {
+                        'heading': 'Type',
+                        'type': 'str'
+                    }
+                    'forecast': {
+                        'heading': 'Demand Forecast',
                         'type': 'int'
-                    },
+                    }
+                    'date': {
+                        'heading': 'Date',
+                        'type': 'date'
+                    }
+                    'budget': {
+                        'heading': 'Budget',
+                        'type': 'float'
+                    }
+                }
+            },
+            'header_row': 1,
+            'data_start_row': 2
+        },
+        'forecast_seq': {
+                'worksheet_name': 'Demand Sequencing',
+                'columns': {
+                    'id': {
+                        'heading': 'Column name',
+                        'type': 'int'
+                    }
+                    'programme': {
+                        'heading': 'Programme',
+                        'type': 'str'
+                    }
                     'type': {
                         'heading': 'Analysis Type',
                         'type': 'str'
@@ -51,9 +87,9 @@ def forecast():
                     },
                 }
             },
-            'header_row': 1,
-            'data_start_row': 2
-        }
+        'header_row': 1,
+        'data_start_row': 2
+      }
     })
     core_data_object(gsds)
     return gsds
