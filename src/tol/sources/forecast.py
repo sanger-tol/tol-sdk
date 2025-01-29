@@ -54,7 +54,7 @@ def forecast():
             'header_row': 1,
             'data_start_row': 2
         },
-        'forecast_seq': {
+            'forecast_seq': {
                 'worksheet_name': 'Demand Sequencing',
                 'columns': {
                     'id': {
