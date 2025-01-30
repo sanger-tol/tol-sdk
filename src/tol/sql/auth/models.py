@@ -248,9 +248,9 @@ def create_models(
     class User(
         AuthUser,
         model_base,
+        authz_models.user_mixin,
         oidc_id_mixin_class,
         user_mixin_class,
-        authz_models.user_mixin
     ):
 
         __tablename__ = user_table_name

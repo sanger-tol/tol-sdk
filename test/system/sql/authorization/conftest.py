@@ -6,9 +6,11 @@ import os
 from unittest.mock import create_autospec
 
 from flask import Flask
+from flask.testing import FlaskClient
 
 import pytest
 
+from tol.api_base2 import data_blueprint
 from tol.core import DataSource, OperableDataSource
 from tol.core.operator import Deleter, OperatorMethod
 from tol.sql import model_base
@@ -16,9 +18,10 @@ from tol.sql.session import SessionFactory
 from tol.sql.auth import ModelTuple, db_auth_blueprint
 from tol.sql.auth.blueprint import DbAuthBlueprint
 
+from ..models import TestUserMixin
 
-@pytest.fixture(scope='package')
-def db_uri() -> str:
+@pytest.fixture
+def auth_db_uri() -> str:
     return os.environ['DB_URI']
 
 
@@ -28,7 +31,7 @@ def base_model() -> type:
 
 
 @pytest.fixture
-def auth_app() -> Flask:
+def db_auth_app() -> Flask:
     flask_app = Flask(__name__)
     flask_app.testing = True
 
@@ -36,29 +39,16 @@ def auth_app() -> Flask:
 
 
 @pytest.fixture
-def db_auth_bp(
-    base_model: type,
-    db_uri: str,
-    auth_app: Flask
-) -> DbAuthBlueprint:
-
-    auth_bp = db_auth_blueprint(
-        base_model,
-        db_uri,
-        auth_app
-    )
-    auth_app.register_blueprint(auth_bp)
-    auth_bp.register_authenticator(auth_app)
-
-    return auth_bp
+def auth_client(db_auth_app: Flask) -> FlaskClient:
+    return db_auth_app.test_client()
 
 
 @pytest.fixture
 def auth_models(
-    db_auth_bp: DbAuthBlueprint
+    auth_bp: DbAuthBlueprint
 ) -> ModelTuple:
 
-    return db_auth_bp.models
+    return auth_bp.models
 
 
 @pytest.fixture
@@ -80,6 +70,20 @@ def auth_mock_ds() -> OperableDataSource:
 
 
 @pytest.fixture(autouse=True)
+def auth_data_bp(
+    db_auth_app: Flask,
+    auth_mock_ds: OperableDataSource
+) -> None:
+
+    data_bp = data_blueprint(
+        auth_mock_ds
+    )
+    db_auth_app.register_blueprint(
+        data_bp
+    )
+
+
+@pytest.fixture(autouse=True)
 def test_data(
     auth_models: ModelTuple,
     session_factory: SessionFactory,
@@ -91,9 +95,14 @@ def test_data(
         session.add_all([admin_role, user_role])
         session.flush()
 
-        admin_user = auth_models.user_class(username='admin')
-        regular_user = auth_models.user_class(username='user')
+        admin_user = auth_models.user_class(id=1, username='admin')
+        regular_user = auth_models.user_class(id=100, username='regular')
         session.add_all([admin_user, regular_user])
+        session.flush()
+
+        admin_token = auth_models.token_class(token='admin', user_id=1)
+        regular_token = auth_models.token_class(token='regular', user_id=100)
+        session.add_all([admin_token, regular_token])
         session.flush()
 
         root_membership = auth_models.membership(name='Root Membership')

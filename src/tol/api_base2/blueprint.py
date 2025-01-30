@@ -39,11 +39,12 @@ class DataBlueprint(Blueprint):
 
     def __init__(
         self,
-        url_prefix: str
+        url_prefix: str,
+        name: str = 'data_source_handler'
     ) -> None:
 
         super().__init__(
-            'data_source_handler',
+            name,
             __name__,
             url_prefix=url_prefix
         )
@@ -145,6 +146,7 @@ def _config_blueprint(
 def _core_blueprint(
     data_source_dict: dict[str, DataSource],
     url_prefix: str,
+    name: str = 'data_source_handler',
     auth_inspector: Optional[AuthInspector] = None,
 ) -> DataBlueprint:
     """
@@ -153,7 +155,10 @@ def _core_blueprint(
     in the given `dict`.
     """
 
-    data_handler = DataBlueprint(url_prefix=url_prefix)
+    data_handler = DataBlueprint(
+        url_prefix=url_prefix,
+        name=name
+    )
 
     def __new_controller(object_type: str) -> Controller:
         data_source = data_source_dict[object_type]
@@ -317,7 +322,8 @@ def data_blueprint(
     *data_sources: DataSource,
     url_prefix: str = '/data',
     config_prefix: str = '/_config',
-    auth_inspector: Optional[AuthInspector] = None
+    auth_inspector: Optional[AuthInspector] = None,
+    name: str = 'data_source_handler'
 ) -> DataBlueprint:
 
     config_bp = _config_blueprint(
@@ -329,6 +335,7 @@ def data_blueprint(
         DataSourceDict(*data_sources),
         url_prefix,
         auth_inspector=auth_inspector,
+        name=name,
     )
     core_bp.register_blueprint(config_bp)
 
