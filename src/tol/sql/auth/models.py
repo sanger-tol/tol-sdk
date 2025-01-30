@@ -144,18 +144,18 @@ class ModelTuple(NamedTuple):
     user_class: type[AuthUser]
     token_class: type[AuthToken]
     role_class: type[AuthRole]
+    method: ModelClass
+    source: ModelClass
+    data_object_type: ModelClass
     membership: ModelClass
     user_membership: ModelClass
-    data_object_type: ModelClass
+    source_membership: ModelClass
+    need: ModelClass
+    membership_need: ModelClass
+    need_method: ModelClass
     data_object_type_attribute: ModelClass
     membership_data_object_type: ModelClass
     membership_data_object_type_allowed_attribute: ModelClass
-    membership_need: ModelClass
-    source: ModelClass
-    source_membership: ModelClass
-    need: ModelClass
-    need_method: ModelClass
-    method: ModelClass
 
 
 def create_models(

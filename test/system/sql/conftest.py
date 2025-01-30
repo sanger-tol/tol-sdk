@@ -165,17 +165,17 @@ def test_data(
     auth_models = auth_bp.models
 
     with session_factory() as session:
-        admin_role = auth_models.role_class(name='Admin', system_access=True)
-        user_role = auth_models.role_class(name='auth_models.user_class', system_access=False)
-        session.add_all([admin_role, user_role])
+        super_admin_role = auth_models.role_class(name='super_admin', system_access=True)
+        user_role = auth_models.role_class(name='regular', system_access=False)
+        session.add_all([super_admin_role, user_role])
         session.flush()
 
-        admin_user = auth_models.user_class(id=1, username='admin', changed_lol='admin')
+        super_admin_user = auth_models.user_class(id=1, username='super_admin', changed_lol='super_admin')
         regular_user = auth_models.user_class(id=100, username='regular', changed_lol='regular')
-        session.add_all([admin_user, regular_user])
+        session.add_all([super_admin_user, regular_user])
         session.flush()
 
-        admin_token = auth_models.token_class(token='admin', user_id=1)
+        admin_token = auth_models.token_class(token='super_admin', user_id=1)
         regular_token = auth_models.token_class(token='regular', user_id=100)
         session.add_all([admin_token, regular_token])
         session.flush()
@@ -185,7 +185,7 @@ def test_data(
         session.add_all([root_membership, child_membership])
         session.flush()
 
-        admin_membership = auth_models.user_membership(user=admin_user, membership=root_membership, role=admin_role)
+        admin_membership = auth_models.user_membership(user=super_admin_user, membership=root_membership, role=super_admin_role)
         user_membership = auth_models.user_membership(user=regular_user, membership=child_membership, role=user_role)
         session.add_all([admin_membership, user_membership])
         session.flush()
@@ -223,7 +223,7 @@ def test_data(
         session.add(read_need)
         session.flush()
 
-        need_method_admin = auth_models.need_method(need=read_need, method=detail_read_method, role=admin_role)
+        need_method_admin = auth_models.need_method(need=read_need, method=detail_read_method, role=super_admin_role)
         session.add(need_method_admin)
         session.commit()
 
