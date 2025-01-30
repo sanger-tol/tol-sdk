@@ -82,11 +82,11 @@ def create_authorization_models(
             return Column(String)
 
         @declared_attr
-        def user_memberships(self):
+        def _user_memberships(self):
             return relationship("UserMembership", back_populates="user")
 
         @declared_attr
-        def memberships(self):
+        def _memberships(self):
             return relationship('Membership', secondary='user_membership', overlaps='membership,user_memberships,user')
 
     class Membership(model_base):

@@ -475,7 +475,7 @@ def db_auth_blueprint(
 
         # Get the memberships and roles for the user
         if hasattr(user, 'memberships'):
-            for membership in user.memberships:
+            for membership in user._memberships:
                 if hasattr(membership, 'data_object_types'):
                     for data_object_type in membership.data_object_types:
                         if hasattr(data_object_type, 'needs'):
