@@ -2,105 +2,33 @@
 #
 # SPDX-License-Identifier: MIT
 
-import os
-from unittest.mock import create_autospec
+from pytest import fixture
 
-from flask import Flask
-from flask.testing import FlaskClient
-
-import pytest
-
-from tol.api_base2 import data_blueprint
-from tol.core import DataSource, OperableDataSource
-from tol.core.operator import Deleter, OperatorMethod
-from tol.sql import model_base
+from tol.core.operator import OperatorMethod
 from tol.sql.session import SessionFactory
-from tol.sql.auth import ModelTuple, db_auth_blueprint
 from tol.sql.auth.blueprint import DbAuthBlueprint
 
-from ..models import TestUserMixin
 
-@pytest.fixture
-def auth_db_uri() -> str:
-    return os.environ['DB_URI']
-
-
-@pytest.fixture
-def base_model() -> type:
-    return model_base()
-
-
-@pytest.fixture
-def db_auth_app() -> Flask:
-    flask_app = Flask(__name__)
-    flask_app.testing = True
-
-    return flask_app
-
-
-@pytest.fixture
-def auth_client(db_auth_app: Flask) -> FlaskClient:
-    return db_auth_app.test_client()
-
-
-@pytest.fixture
-def auth_models(
-    auth_bp: DbAuthBlueprint
-) -> ModelTuple:
-
-    return auth_bp.models
-
-
-@pytest.fixture
-def auth_mock_ds() -> OperableDataSource:
-    _mock_ds_class = type(
-        '',
-        (DataSource, Deleter,),
-        {}
-    )
-
-    mock_ds: OperableDataSource = create_autospec(
-        _mock_ds_class,
-        spec_set=True
-    )
-    mock_ds.supported_types = ['sample']
-    mock_ds.attribute_types = {'sample': {}}
-
-    return mock_ds
-
-
-@pytest.fixture(autouse=True)
-def auth_data_bp(
-    db_auth_app: Flask,
-    auth_mock_ds: OperableDataSource
-) -> None:
-
-    data_bp = data_blueprint(
-        auth_mock_ds
-    )
-    db_auth_app.register_blueprint(
-        data_bp
-    )
-
-
-@pytest.fixture(autouse=True)
+@fixture(autouse=True)
 def test_data(
-    auth_models: ModelTuple,
+    auth_bp: DbAuthBlueprint,
     session_factory: SessionFactory,
 ) -> None:
 
+    auth_models = auth_bp.models
+
     with session_factory() as session:
-        admin_role = auth_models.role_class(name='Admin', system_access=True)
-        user_role = auth_models.role_class(name='auth_models.user_class', system_access=False)
-        session.add_all([admin_role, user_role])
+        super_admin_role = auth_models.role_class(name='super_admin', system_access=True)
+        user_role = auth_models.role_class(name='regular', system_access=False)
+        session.add_all([super_admin_role, user_role])
         session.flush()
 
-        admin_user = auth_models.user_class(id=1, username='admin')
-        regular_user = auth_models.user_class(id=100, username='regular')
-        session.add_all([admin_user, regular_user])
+        super_admin_user = auth_models.user_class(id=1, username='super_admin', changed_lol='super_admin')
+        regular_user = auth_models.user_class(id=100, username='regular', changed_lol='regular')
+        session.add_all([super_admin_user, regular_user])
         session.flush()
 
-        admin_token = auth_models.token_class(token='admin', user_id=1)
+        admin_token = auth_models.token_class(token='super_admin', user_id=1)
         regular_token = auth_models.token_class(token='regular', user_id=100)
         session.add_all([admin_token, regular_token])
         session.flush()
@@ -110,7 +38,7 @@ def test_data(
         session.add_all([root_membership, child_membership])
         session.flush()
 
-        admin_membership = auth_models.user_membership(user=admin_user, membership=root_membership, role=admin_role)
+        admin_membership = auth_models.user_membership(user=super_admin_user, membership=root_membership, role=super_admin_role)
         user_membership = auth_models.user_membership(user=regular_user, membership=child_membership, role=user_role)
         session.add_all([admin_membership, user_membership])
         session.flush()
@@ -148,6 +76,6 @@ def test_data(
         session.add(read_need)
         session.flush()
 
-        need_method_admin = auth_models.need_method(need=read_need, method=detail_read_method, role=admin_role)
+        need_method_admin = auth_models.need_method(need=read_need, method=detail_read_method, role=super_admin_role)
         session.add(need_method_admin)
         session.commit()
