@@ -33,8 +33,8 @@ def test_data(
         session.add_all([admin_token, regular_token])
         session.flush()
 
-        root_membership = auth_models.membership(name='Root auth_models.membership')
-        child_membership = auth_models.membership(name='Child auth_models.membership', parent=root_membership)
+        root_membership = auth_models.membership(id=200, name='Root auth_models.membership')
+        child_membership = auth_models.membership(id=201, name='Child auth_models.membership', parent=root_membership)
         session.add_all([root_membership, child_membership])
         session.flush()
 
