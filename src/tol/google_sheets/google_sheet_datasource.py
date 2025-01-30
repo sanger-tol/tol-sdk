@@ -86,7 +86,7 @@ class GoogleSheetDataSource(
         return value
 
     def _get_worksheet_vals(self, object_type, worksheet):
-        vals = worksheet.get_values()
+        vals = worksheet.get_values(value_render_option='UNFORMATTED_VALUE')
         header_row = self.mappings[object_type]['header_row']
         data_start_row = self.mappings[object_type]['data_start_row']
         headers = vals[header_row - 1]
