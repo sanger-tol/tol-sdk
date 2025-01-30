@@ -97,10 +97,24 @@ class TestTreeManager:
         self,
         tree_manager: MembershipTreeManager
     ):
-        pass
+
+        expected_mapping: dict[int, set[int]] = {
+            1: set(range(1, 9)),  # root -> all ID's 1-8
+            2: {2, 4, 5, 7, 8},
+            4: {4, 7, 8},  # always contains given ID
+            6: {},  # leaf node only returns its own ID
+        }
+
+        for in_, expected in expected_mapping.items():
+            observed = tree_manager.get_ids_below_id(in_)
+
+            assert observed == expected
 
     def test_get_ids_below_id__key_error(
         self,
         tree_manager: MembershipTreeManager
     ):
-        pass
+
+        with pytest.raises(KeyError):
+            # obviously out of range
+            tree_manager.get_ids_below_id(100)
