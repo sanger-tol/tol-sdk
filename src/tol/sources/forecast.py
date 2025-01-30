@@ -50,14 +50,14 @@ def forecast():
                 'columns': common_columns,
                 'header_row': 1,
                 'data_start_row': 2,
-                'id_prefix': 'L'
+                'id_prefix': lambda x: 'L' if x.get('analysis_type') == 'Library' else 'S'
             },
             'forecast_seq': {
                 'worksheet_name': 'Demand Sequencing',
                 'columns': common_columns,
                 'header_row': 1,
                 'data_start_row': 2,
-                'id_prefix': 'S'
+                'id_prefix': lambda x: 'L' if x.get('analysis_type') == 'Library' else 'S'
             }
         }
     })
