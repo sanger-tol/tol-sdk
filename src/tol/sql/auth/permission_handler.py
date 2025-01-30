@@ -79,7 +79,9 @@ class DefaultPermissionManager(PermissionManager):
         self.__needs = []
 
         self.__build_needs()
-        
+        import logging
+        logging.error('Permissions Needs')
+        logging.error(self.needs)
         permission = DefaultPermission(*self.needs)
 
         if not permission.can():

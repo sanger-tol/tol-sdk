@@ -20,7 +20,10 @@ class TestGood:
     ):
 
         r = client.delete(
-            '/data_auth/sample/1'
+            '/data_auth/sample/1',
+            headers={
+                'Dummy-Token': 'super_admin'
+            }
         )
         assert r.status_code == 200
 

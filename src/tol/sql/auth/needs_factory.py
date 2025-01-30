@@ -16,7 +16,7 @@ class NeedsFactory:
         for need in needs:
             if hasattr(need, 'methods'):
                 for method in need.methods:
-                    need_objects.append(self.build_need(method.name))
+                    need_objects.append(self.build_need(method.identifier))
 
         return need_objects
 

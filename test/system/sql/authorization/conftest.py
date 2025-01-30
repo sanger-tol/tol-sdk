@@ -72,10 +72,12 @@ def test_data(
         session.add_all([detail_read_method, detail_delete_method])
         session.flush()
         
-        read_need = auth_models.need(data_object_type=data_type)
-        session.add(read_need)
+        need = auth_models.need(data_object_type=data_type)
+        session.add(need)
         session.flush()
 
-        need_method_admin = auth_models.need_method(need=read_need, method=detail_read_method, role=super_admin_role)
-        session.add(need_method_admin)
+        need_method_detail_admin = auth_models.need_method(need=need, method=detail_read_method, role=super_admin_role)
+        need_method_delete_admin = auth_models.need_method(need=need, method=detail_delete_method, role=super_admin_role)
+        session.add_all([need_method_detail_admin, need_method_delete_admin])
+
         session.commit()

@@ -116,13 +116,35 @@ class DbAuthManager(AuthManager):
 
         user = self.__get_user_for_token(token)
         if user is not None:
+            user, sess = self.get_user(user.id)
             ctx.user_id = str(user.id)
             identity = Identity(user.id)
             identity.user = user
+            # Add the UserNeed to the identity
+            if hasattr(user, 'id'):
+                identity.provides.add(UserNeed(user.id))
+
+            # Get the memberships and roles for the user
+            if hasattr(user, '_memberships'):
+                for membership in user._memberships:
+                    if hasattr(membership, 'data_object_types'):
+                        for data_object_type in membership.data_object_types:
+                            if hasattr(data_object_type, 'needs'):
+                                needs = NeedsFactory(
+                                    data_object_type.name
+                                ).build_needs(needs=data_object_type.needs) 
+                                import logging
+                                logging.error('User Needs')
+                                logging.error(needs)
+                                for need in needs:
+                                    identity.provides.add(need)
+
             identity_changed.send(
                 current_app._get_current_object(),
                 identity=identity
             )
+
+            sess.close()
 
     def revoke_token(self, token: str) -> None:
         self.__delete_token(token)
@@ -180,7 +202,7 @@ class DbAuthManager(AuthManager):
 
         with self.__session_factory() as sess:
             instance = token_model.get(sess, token)
-
+            
             if instance is None:
                 return None
             else:
@@ -465,8 +487,8 @@ def db_auth_blueprint(
         models
     )
 
-    @identity_loaded.connect_via(app)
-    def on_identity_loaded(sender, identity):
+    @identity_changed.connect_via(app)
+    def on_identity_changed(sender, identity):
         user, sess = auth_manager.get_user(identity.id)
 
         # Add the UserNeed to the identity
@@ -482,6 +504,9 @@ def db_auth_blueprint(
                             needs = NeedsFactory(
                                 data_object_type.name
                             ).build_needs(needs=data_object_type.needs) 
+                            import logging
+                            logging.error('User Needs')
+                            logging.error(needs)
                             for need in needs:
                                 identity.provides.add(need)
 
