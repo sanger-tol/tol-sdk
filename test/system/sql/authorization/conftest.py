@@ -33,8 +33,8 @@ def test_data(
         session.add_all([admin_token, regular_token])
         session.flush()
 
-        root_membership = auth_models.membership(name='Root Membership')
-        child_membership = auth_models.membership(name='Child Membership', parent=root_membership)
+        root_membership = auth_models.membership(name='Root auth_models.membership')
+        child_membership = auth_models.membership(name='Child auth_models.membership', parent=root_membership)
         session.add_all([root_membership, child_membership])
         session.flush()
 
@@ -79,5 +79,31 @@ def test_data(
         need_method_detail_admin = auth_models.need_method(need=need, method=detail_read_method, role=super_admin_role)
         need_method_delete_admin = auth_models.need_method(need=need, method=detail_delete_method, role=super_admin_role)
         session.add_all([need_method_detail_admin, need_method_delete_admin])
+
+        # tree hierarchy tests
+        root = auth_models.membership(name="Sanger Institute")
+        session.add(root)
+
+        # Depth 2
+        genomics = auth_models.membership(name="Genomics", parent_id=root.id)
+        informatics = auth_models.membership(name="Informatics", parent_id=root.id)
+        session.add(genomics)
+        session.add(informatics)
+
+        # Depth 3 (Genomics Division has two sub-divisions)
+        genomics_research = auth_models.membership(name="Genomics Research", parent_id=genomics.id)
+        genomics_services = auth_models.membership(name="Genomics Services", parent_id=genomics.id)
+        session.add(genomics_research)
+        session.add(genomics_services)
+
+        # Informatics Division has only one sub-division
+        informatics_research = auth_models.membership(name="Informatics Research", parent_id=informatics.id)
+        session.add(informatics_research)
+
+        # Depth 4 (Genomics Research further has some more divisions)
+        genomics_research_bioinformatics = auth_models.membership(name="Bioinformatics", parent_id=genomics_research.id)
+        genomics_research_analysis = auth_models.membership(name="Genomic Analysis", parent_id=genomics_research.id)
+        session.add(genomics_research_bioinformatics)
+        session.add(genomics_research_analysis)
 
         session.commit()
