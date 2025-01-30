@@ -167,10 +167,12 @@ def _core_blueprint(
             include_all_to_ones=True,
             hop_limit=1
         )
+
         return Controller(
             data_source,
             view,
-            auth_inspector=auth_inspector
+            auth_inspector=auth_inspector,
+            permission_manager=DefaultPermissionManager()
         )
 
     @data_handler.route('/<object_type>/<path:object_id>', methods=['GET'])  # Allow slashes
@@ -213,7 +215,6 @@ def _core_blueprint(
 
     @data_handler.route('/<object_type>/<path:object_id>', methods=['DELETE'])
     def delete_detail(*, object_type: str, object_id: str):
-        DefaultPermissionManager(object_type, 'delete').check_permission()
         controller = __new_controller(object_type)
         object_id_unencoded = urllib.parse.unquote(object_id)
         return controller.delete_detail(object_type, object_id_unencoded)

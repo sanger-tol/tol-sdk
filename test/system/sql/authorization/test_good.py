@@ -16,10 +16,10 @@ class TestGood:
     def test_delete(
         self,
         auth_mock_ds: OperableDataSource,
-        auth_client: FlaskClient
+        client: FlaskClient
     ):
 
-        r = auth_client.delete(
+        r = client.delete(
             '/data_auth/sample/1'
         )
         assert r.status_code == 200

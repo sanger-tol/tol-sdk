@@ -80,13 +80,13 @@ class DefaultPermissionManager(PermissionManager):
 
         self.__build_needs()
         
-        permission = DefaultPermission(self.needs)
+        permission = DefaultPermission(*self.needs)
 
         if not permission.can():
             abort(403)
 
     def __build_needs(self) -> None:
-        need = NeedsFactory(
+        needs = NeedsFactory(
             self.__object_type
         ).build_need(self.__method)
-        self.__needs.append(need)
+        self.__needs.append(needs)

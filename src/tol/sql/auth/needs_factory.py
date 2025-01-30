@@ -1,4 +1,7 @@
-from .authorization import NeedABC
+from typing import Any
+from collections import namedtuple
+from functools import partial
+
 
 class NeedsFactory:
     def __init__(
@@ -6,18 +9,16 @@ class NeedsFactory:
         object_type: str,
     ):
         self.object_type = object_type
-        self.method = method
-        self.need_class = namedtuble(self.object_type, ['method','value'])
-        self.needs = needs
+        self.need_class = namedtuple(self.object_type, ['method','value'])
 
-    def build_needs(self, needs: list[any]):
+    def build_needs(self, needs: list[Any]):
         need_objects = []
         for need in needs:
             if hasattr(need, 'methods'):
-                for method in methods:
+                for method in need.methods:
                     need_objects.append(self.build_need(method.name))
 
         return need_objects
 
     def build_need(self, method: str):
-        return self.need_class(method)
+        return partial(self.need_class, method)
