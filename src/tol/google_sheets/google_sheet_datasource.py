@@ -74,8 +74,7 @@ class GoogleSheetDataSource(
         header_mappings = self._get_header_mappings(object_type)
         target_type = self.mappings[object_type]['columns'][header_mappings[header]]['type']
         try:
-            value = str(value).strip()
-            if value == '':
+            if target_type == 'str' and value.strip() == '':
                 return None
             if target_type == 'int':
                 return int(value)
@@ -115,7 +114,12 @@ class GoogleSheetDataSource(
         for attribute_name, attribute_value in attributes.items():
             if self.mappings[object_type]['columns'][attribute_name]['type'] == 'datetime' and \
                     attribute_value is not None and not isinstance(attribute_value, datetime):
-                attributes[attribute_name] = dateutil_parse(attribute_value)
+                
+                # if isinstance(attribute_value, (int, float)):  # Likely an Excel serial date
+                #     attributes[attribute_name] = EXCEL_EPOCH + timedelta(days=attribute_value)
+                # else
+                    attributes[attribute_name] = dateutil_parse(attribute_value)
+            
         return CoreDataObject(
             object_type,
             id_=attributes.pop('id', row_index),
