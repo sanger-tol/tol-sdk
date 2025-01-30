@@ -122,8 +122,9 @@ def session_factory(db_uri: str, full_models_list: list[type[Any]]):
     )
 
 
-@fixture
+@fixture(scope='package')
 def auth_mock_ds() -> OperableDataSource:
+    """You need to reset the mock every time!"""
     _mock_ds_class = type(
         '',
         (DataSource, Deleter,),
@@ -140,7 +141,7 @@ def auth_mock_ds() -> OperableDataSource:
     return mock_ds
 
 
-@fixture(autouse=True)
+@fixture(autouse=True, scope='package')
 def auth_data_bp(
     auth_app: Flask,
     auth_mock_ds: OperableDataSource
@@ -282,6 +283,6 @@ def auth_app(
     return app
 
 
-@fixture(scope='package')
+@fixture
 def client(auth_app: Flask):
     return auth_app.test_client()

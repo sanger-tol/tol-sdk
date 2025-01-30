@@ -21,7 +21,7 @@ from sqlalchemy import select
 from tol.api_base2.auth import OidcConfig
 
 
-@pytest.fixture(scope='module')
+@pytest.fixture
 def state_model(full_models_list):
     matches = [
         m for m in full_models_list

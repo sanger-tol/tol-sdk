@@ -18,7 +18,7 @@ from tol.api_base2.auth import OidcConfig
 from tol.api_base2.misc import default_ctx_getter
 
 
-@pytest.fixture(scope='module')
+@pytest.fixture
 def token_model(full_models_list):
     matches = [
         m for m in full_models_list
@@ -27,7 +27,7 @@ def token_model(full_models_list):
     return matches[0]
 
 
-@pytest.fixture(scope='module')
+@pytest.fixture
 def user_model(full_models_list):
     matches = [
         m for m in full_models_list
