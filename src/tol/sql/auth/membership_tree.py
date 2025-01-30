@@ -35,17 +35,8 @@ class MembershipTreeManager:
         self.__membership_model = membership_model
         self.__session_factiory = session_factory
 
-    def get_dict_below_name(
-        self,
-        name: str
-    ) -> MembershipTreeNode:
-        pass
-
     def get_dict(self) -> MembershipTreeNode:
         pass
 
-    def get_ids_below_name(
-        self,
-        name: str
-    ) -> list[str]:
+    def get_ids_below_id(self, id_: int) -> list[int]:
         pass

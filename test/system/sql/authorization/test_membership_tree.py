@@ -43,27 +43,63 @@ class TestTreeManager:
         self,
         tree_manager: MembershipTreeManager
     ):
-        pass
 
-    def test_get_dict_below_name__good(
+        expected = {
+            'id': 1,
+            'name': 'Sanger Institute',
+            'children': [
+                {
+                    'id': 2,
+                    'name': 'Genomics',
+                    'children': [
+                        {
+                            'id': 4,
+                            'name': 'Genomics Research',
+                            'children': [
+                                {
+                                    'id': 7,
+                                    'name': 'Bioinformatics',
+                                    'children': []
+                                },
+                                {
+                                    'id': 8,
+                                    'name': 'Genomic Analysis',
+                                    'children': []
+                                }
+                            ]
+                        },
+                        {
+                            'id': 5,
+                            'name': 'Genomics Services',
+                            'children': []
+                        }
+                    ]
+                },
+                {
+                    'name': 'Informatics',
+                    'id': 3,
+                    'children': [
+                        {
+                            'name': 'Informatics Research',
+                            'id': 6,
+                            'children': []
+                        }
+                    ]
+                }
+            ]
+        }
+
+        observed = tree_manager.get_dict()
+
+        assert observed == expected
+
+    def test_get_ids_below_id__good(
         self,
         tree_manager: MembershipTreeManager
     ):
         pass
 
-    def test_get_dict_below_name__key_error(
-        self,
-        tree_manager: MembershipTreeManager
-    ):
-        pass
-
-    def test_get_ids_below_name__good(
-        self,
-        tree_manager: MembershipTreeManager
-    ):
-        pass
-
-    def test_get_ids_below_name__key_error(
+    def test_get_ids_below_id__key_error(
         self,
         tree_manager: MembershipTreeManager
     ):
