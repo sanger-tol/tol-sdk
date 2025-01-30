@@ -118,7 +118,7 @@ class GoogleSheetDataSource(
                 attributes[attribute_name] = dateutil_parse(attribute_value)
         # Handle ID prefixing
         prefix = self.mappings[object_type].get('id_prefix', '')
-        id_value = f"{prefix}{row_index}" if prefix else row_index        
+        id_value = f'{prefix}{row_index}' if prefix else row_index
         return CoreDataObject(
             object_type,
             id_=attributes.pop('id', id_value),
