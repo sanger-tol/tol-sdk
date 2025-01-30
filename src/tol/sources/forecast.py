@@ -12,6 +12,8 @@ from tol.google_sheets import (
     GoogleSheetDataSource
 )
 
+def get_prefix(row):
+    return 'L' if row.get('analysis_type') == 'Library' else 'S'
 
 def forecast():
     common_columns = {
@@ -50,14 +52,14 @@ def forecast():
                 'columns': common_columns,
                 'header_row': 1,
                 'data_start_row': 2,
-                'id_prefix': lambda x: 'L' if x.get('analysis_type') == 'Library' else 'S'
+                'id_prefix': get_prefix
             },
             'forecast_seq': {
                 'worksheet_name': 'Demand Sequencing',
                 'columns': common_columns,
                 'header_row': 1,
                 'data_start_row': 2,
-                'id_prefix': lambda x: 'L' if x.get('analysis_type') == 'Library' else 'S'
+                'id_prefix': get_prefix
             }
         }
     })
