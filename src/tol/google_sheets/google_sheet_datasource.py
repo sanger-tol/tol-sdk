@@ -74,8 +74,7 @@ class GoogleSheetDataSource(
         header_mappings = self._get_header_mappings(object_type)
         target_type = self.mappings[object_type]['columns'][header_mappings[header]]['type']
         try:
-            value  = str(value)
-            value = value.strip()
+            value = str(value).strip()
             if value == '':
                 return None
             if target_type == 'int':
