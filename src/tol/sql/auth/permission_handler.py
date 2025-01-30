@@ -83,7 +83,7 @@ class DefaultPermissionManager(PermissionManager):
         logging.error('Permissions Needs')
         logging.error(self.needs)
         permission = DefaultPermission(*self.needs)
-
+        
         if not permission.can():
             abort(403)
 

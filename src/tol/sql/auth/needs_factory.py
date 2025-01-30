@@ -21,4 +21,5 @@ class NeedsFactory:
         return need_objects
 
     def build_need(self, method: str):
-        return partial(self.need_class, method)
+        need_class = partial(self.need_class, 'method')
+        return need_class(method)

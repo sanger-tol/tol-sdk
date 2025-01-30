@@ -64,10 +64,10 @@ def test_data(
         session.flush()
 
         detail_read_method = auth_models.method(
-            identifier=OperatorMethod.DETAIL
+            identifier=str(OperatorMethod.DETAIL)
         )
         detail_delete_method = auth_models.method(
-            identifier=OperatorMethod.DELETE
+            identifier=str(OperatorMethod.DELETE)
         )
         session.add_all([detail_read_method, detail_delete_method])
         session.flush()
