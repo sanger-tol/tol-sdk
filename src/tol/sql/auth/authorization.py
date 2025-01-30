@@ -26,6 +26,23 @@ class NeedABC(ABC):
         pass
 
 
+class MembershipABC(ABC):
+    @property
+    @abstractmethod
+    def id(self) -> int:
+        pass
+
+    @property
+    @abstractmethod
+    def name(self) -> str:
+        pass
+
+    @property
+    @abstractmethod
+    def parent_id(self) -> int:
+        pass
+
+
 class AuthorizationModels(NamedTuple):
     role_mixin: type[Any]
     user_mixin: type[Any]
@@ -89,7 +106,7 @@ def create_authorization_models(
         def _memberships(self):
             return relationship('Membership', secondary='user_membership', overlaps='membership,_user_memberships,user')
 
-    class Membership(model_base):
+    class Membership(MembershipABC, model_base):
         __tablename__ = 'membership'
         id = Column(Integer, primary_key=True)
         parent_id = Column(Integer, ForeignKey('membership.id'))

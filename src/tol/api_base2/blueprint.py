@@ -146,6 +146,7 @@ def _config_blueprint(
 def _core_blueprint(
     data_source_dict: dict[str, DataSource],
     url_prefix: str,
+    advanced_authz: bool,
     name: str = 'data_source_handler',
     auth_inspector: Optional[AuthInspector] = None,
 ) -> DataBlueprint:
@@ -172,7 +173,7 @@ def _core_blueprint(
             data_source,
             view,
             auth_inspector=auth_inspector,
-            permission_manager=DefaultPermissionManager()
+            permission_manager=DefaultPermissionManager() if advanced_authz else None
         )
 
     @data_handler.route('/<object_type>/<path:object_id>', methods=['GET'])  # Allow slashes
@@ -324,7 +325,8 @@ def data_blueprint(
     url_prefix: str = '/data',
     config_prefix: str = '/_config',
     auth_inspector: Optional[AuthInspector] = None,
-    name: str = 'data_source_handler'
+    name: str = 'data_source_handler',
+    advanced_authz: bool = False
 ) -> DataBlueprint:
 
     config_bp = _config_blueprint(
@@ -335,6 +337,7 @@ def data_blueprint(
     core_bp = _core_blueprint(
         DataSourceDict(*data_sources),
         url_prefix,
+        advanced_authz,
         auth_inspector=auth_inspector,
         name=name,
     )
