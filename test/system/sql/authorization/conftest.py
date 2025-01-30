@@ -81,7 +81,7 @@ def test_data(
         session.add_all([need_method_detail_admin, need_method_delete_admin])
 
         # tree hierarchy tests
-        root = auth_models.membership(id=1, name="Sanger Institute")
+        root = auth_models.membership(id=1, name="*")
         session.add(root)
 
         # Depth 2
