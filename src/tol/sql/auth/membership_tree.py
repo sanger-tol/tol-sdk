@@ -10,12 +10,12 @@ from .authorization import MembershipABC
 from ..session import SessionFactory
 
 
-MembershipJsonNode = dict[
+MembershipTreeNode = dict[
     str,
     (
         int | # id
         str | # name
-        list['MembershipJsonNode']  # children
+        list['MembershipTreeNode']  # children
     )
 ]
 
@@ -28,20 +28,20 @@ class MembershipTreeManager:
 
     def __init__(
         self,
-        membership_model: type[MembershipABC],
+        membership_model: MembershipABC,
         session_factory: SessionFactory
     ):
 
         self.__membership_model = membership_model
         self.__session_factiory = session_factory
 
-    def get_json_below_name(
+    def get_dict_below_name(
         self,
         name: str
-    ) -> MembershipJsonNode:
+    ) -> MembershipTreeNode:
         pass
 
-    def get_json(self) -> MembershipJsonNode:
+    def get_dict(self) -> MembershipTreeNode:
         pass
 
     def get_ids_below_name(
