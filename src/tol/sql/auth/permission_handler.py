@@ -38,18 +38,6 @@ class PermissionManager(ABC):
 
 class DefaultPermissionManager(PermissionManager):
 
-    def __init__(
-        self,
-        object_type: str,
-        method: str
-    ):
-
-        self.__object_type = object_type
-        self.__method = method
-        self.__needs = []
-
-        self.__build_needs()
-
     @property
     def filter(
         self
@@ -86,7 +74,12 @@ class DefaultPermissionManager(PermissionManager):
         object_type: str,
         method: str
     ) -> None:
+        self.__object_type = object_type
+        self.__method = method
+        self.__needs = []
 
+        self.__build_needs()
+        
         permission = DefaultPermission(self.needs)
 
         if not permission.can():

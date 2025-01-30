@@ -48,6 +48,7 @@ from ..core.operator import (
 )
 from ..core.operator.updater import DataObjectUpdate
 from ..excel import convert_data_objects_to_excel
+from ..sql.auth.permission_handler import PermissionManager
 
 
 EmptySuccessResponse = dict[str, bool]
@@ -103,6 +104,12 @@ def validate(
                     object_type,
                     str(operator_method)
                 )
+            permission_manager = controller.permission_manager
+            if permission_manager is not None:
+                permission_manager.check_permission(
+                    object_type,
+                    str(operator_method)
+                )
             ext_and = controller.inspect_auth(object_type, operator_method)
             return method(
                 controller,
@@ -124,16 +131,22 @@ class Controller:
         self,
         data_source: OperableDataSource,
         view: View,
-        auth_inspector: Optional[AuthInspector] = None
+        auth_inspector: Optional[AuthInspector] = None,
+        permission_manager: PermissionManager | None = None
     ) -> None:
 
         self.__data_source = data_source
         self.__view = view
         self.__inspector = auth_inspector
+        self.__permission_manager = permission_manager
 
     @property
     def data_source(self) -> OperableDataSource:
         return self.__data_source
+
+    @property
+    def permission_manager(self) -> PermissionManager | None:
+        return self.__permission_manager
 
     def inspect_auth(
         self,

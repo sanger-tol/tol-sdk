@@ -168,7 +168,7 @@ class TestToken:
         token_model,
         user_model,
         session_factory,
-        app: Flask,
+        auth_app: Flask,
         client: FlaskClient
     ):
         """
@@ -182,7 +182,7 @@ class TestToken:
             session_factory
         )
 
-        with app.app_context():
+        with auth_app.app_context():
             client.get(
                 '/data/test/404',
                 headers={
@@ -199,7 +199,7 @@ class TestToken:
         user_model,
         session_factory,
         client: FlaskClient,
-        app: Flask
+        auth_app: Flask
     ):
         """
         Calling a write endpoint with a known
@@ -212,7 +212,7 @@ class TestToken:
             session_factory
         )
 
-        with app.app_context():
+        with auth_app.app_context():
             client.get(
                 '/data/test/404',
                 headers={

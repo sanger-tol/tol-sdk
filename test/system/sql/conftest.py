@@ -64,11 +64,11 @@ def oidc_config() -> OidcConfig:
 
 
 @fixture(scope='package')
-def auth_bp(db_uri, oidc_config, app: Flask):
+def auth_bp(db_uri, oidc_config, auth_app: Flask):
     bp = db_auth_blueprint(
         BaseModel,
         db_uri,
-        app,
+        auth_app,
         oidc_config_factory=lambda: oidc_config,
         user_mixin_class=TestUserMixin,
         oidc_id_column_name='changed_lol',
@@ -77,10 +77,10 @@ def auth_bp(db_uri, oidc_config, app: Flask):
             'me_neither': 'extra_oidc_int'
         }
     )
-    app.register_blueprint(bp)
+    auth_app.register_blueprint(bp)
 
     bp.register_authenticator(
-        app,
+        auth_app,
         header_name='Dummy-Token'
     )
 
@@ -154,7 +154,7 @@ def data_bp(data_source: DataSource):
 
 
 @fixture(scope='package')
-def app(
+def auth_app(
     data_bp: Blueprint
 ) -> Flask:
 
@@ -177,5 +177,5 @@ def app(
 
 
 @fixture(scope='package')
-def client(app: Flask):
-    return app.test_client()
+def client(auth_app: Flask):
+    return auth_app.test_client()
