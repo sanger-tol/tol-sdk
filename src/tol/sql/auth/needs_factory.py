@@ -1,6 +1,7 @@
 from typing import Any
 from collections import namedtuple
 from functools import partial
+from flask_principal import Need
 
 
 class NeedsFactory:
@@ -16,10 +17,10 @@ class NeedsFactory:
         for need in needs:
             if hasattr(need, 'methods'):
                 for method in need.methods:
-                    need_objects.append(self.build_need(method.identifier))
+                    need_objects.append(self.build_need('method', method.identifier))
 
         return need_objects
 
-    def build_need(self, method: str):
-        need_class = partial(self.need_class, 'method')
-        return need_class(method)
+    def build_need(self, identifier: str, value: any):
+        need_class = partial(self.need_class, identifier)
+        return need_class(value)

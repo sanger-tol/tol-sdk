@@ -127,15 +127,19 @@ class DbAuthManager(AuthManager):
             # Get the memberships and roles for the user
             if hasattr(user, '_memberships'):
                 for membership in user._memberships:
+                    membership_need = NeedsFactory(
+                        'membership'
+                    ).build_need('membership_name', membership.name)
+
+                    identity.provides.add(membership_need)
+
                     if hasattr(membership, 'data_object_types'):
                         for data_object_type in membership.data_object_types:
                             if hasattr(data_object_type, 'needs'):
                                 needs = NeedsFactory(
                                     data_object_type.name
                                 ).build_needs(needs=data_object_type.needs) 
-                                import logging
-                                logging.error('User Needs')
-                                logging.error(needs)
+                                
                                 for need in needs:
                                     identity.provides.add(need)
 

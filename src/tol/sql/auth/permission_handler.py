@@ -47,27 +47,10 @@ class DefaultPermissionManager(PermissionManager):
     @property
     def needs(self) -> list:
         return self.__needs
-
-    # TODO remove!
-    def check(
-        self,
-        method_func: Callable
-    ) -> Callable:
-
-        method = method_func.__name__
-
-        @wraps(method_func)
-        def _wrapper(*, object_type: str, **kwargs):
-            self.check_permission(
-                object_type,
-                method
-            )
-            return method_func(
-                object_type=object_type,
-                **kwargs
-            )
-
-        return _wrapper
+    
+    @property
+    def membership_value(self) -> str | None:
+        pass
 
     def check_permission(
         self,
@@ -90,5 +73,13 @@ class DefaultPermissionManager(PermissionManager):
     def __build_needs(self) -> None:
         needs = NeedsFactory(
             self.__object_type
-        ).build_need(self.__method)
+        ).build_need('method', self.__method)
+
         self.__needs.append(needs)
+
+        if self.membership_value is not None:
+            membership_need = NeedsFactory(
+                'membership'
+            ).build_need('membership_name', self.membership_value)
+
+            self.__needs.append(membership_need)
