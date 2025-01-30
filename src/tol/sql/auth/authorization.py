@@ -87,7 +87,7 @@ def create_authorization_models(
 
         @declared_attr
         def _memberships(self):
-            return relationship('Membership', secondary='user_membership', overlaps='membership,user_memberships,user')
+            return relationship('Membership', secondary='user_membership', overlaps='membership,_user_memberships,user')
 
     class Membership(model_base):
         __tablename__ = 'membership'
@@ -115,7 +115,7 @@ def create_authorization_models(
         membership_id = Column(Integer, ForeignKey('membership.id'))
         role_id = Column(Integer, ForeignKey('role.id'))
 
-        user = relationship("User", back_populates="user_memberships")
+        user = relationship("User", back_populates="_user_memberships")
         membership = relationship("Membership", back_populates="user_memberships")
         role = relationship("Role", back_populates="user_memberships")
 
