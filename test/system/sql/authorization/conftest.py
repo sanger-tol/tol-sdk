@@ -23,8 +23,8 @@ def test_data(
         session.add_all([super_admin_role, user_role])
         session.flush()
 
-        super_admin_user = auth_models.user_class(id=1, oidc_id='super_admin', changed_lol='super_admin')
-        regular_user = auth_models.user_class(id=100, oidc_id='regular', changed_lol='regular')
+        super_admin_user = auth_models.user_class(id=1, username='super_admin', changed_lol='super_admin')
+        regular_user = auth_models.user_class(id=100, username='regular', changed_lol='regular')
         session.add_all([super_admin_user, regular_user])
         session.flush()
 
