@@ -85,8 +85,7 @@ class AuthBlueprint(Blueprint):
             ctx = self.__ctx_getter()
 
             return {
-                'id': ctx.user_id,
-                'roles': ctx.roles
+                'id': ctx.user_id
             }, 200
 
         @self.errorhandler(AuthError)

@@ -95,10 +95,6 @@ def create_authorization_models(
             return Column(Integer, primary_key=True)
 
         @declared_attr
-        def username(self):
-            return Column(String)
-
-        @declared_attr
         def _user_memberships(self):
             return relationship("UserMembership", back_populates="user")
 
