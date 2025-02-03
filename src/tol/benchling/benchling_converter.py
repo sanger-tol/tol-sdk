@@ -15,17 +15,21 @@ from benchling_api_client.v2.beta.models.worklist_create import WorklistCreate
 from benchling_api_client.v2.beta.models.worklist_item import WorklistItem
 from benchling_api_client.v2.beta.models.worklist_item_create import WorklistItemCreate
 from benchling_api_client.v2.beta.models.worklist_type import WorklistType
+from benchling_api_client.v2.stable.models.assay_result import AssayResult
 
 from benchling_sdk.helpers.serialization_helpers import fields
 from benchling_sdk.models import (
     CustomEntity,
     CustomEntityBulkCreate,
     CustomEntityBulkUpdate,
+    AssayResultCreate,
+    AssayResultsBulkCreateRequest,
     Fields,
     Folder,
     FolderCreate,
     Location,
-    LocationCreate
+    LocationCreate,
+    AssayResultsCreateResponse
 )
 
 from caseconverter import snakecase
@@ -42,7 +46,10 @@ BenchlingCustomEntityCreate = CustomEntityBulkCreate
 """Suitable as arguments to `insert`"""
 BenchlingCustomEntityUpdate = CustomEntityBulkUpdate
 """Suitable as arguments to `update`"""
+BenchlingAssayResultCreate = AssayResultsBulkCreateRequest
+"""Suitable as arguments to `update`"""
 BenchlingCustomEntity = CustomEntity
+BenchlingAssayResult = AssayResultCreate
 """Returned by the `get_` methods - which are only for debugging!"""
 BenchlingFolder = Folder
 BenchlingFolderCreate = FolderCreate
@@ -54,7 +61,7 @@ BenchlingWorklistItem = WorklistItem
 BenchlingWorklistItemCreate = WorklistItemCreate
 BenchlingObject = BenchlingCustomEntity | BenchlingFolder | BenchlingWorklist
 BenchlingObjectCreate = BenchlingCustomEntityCreate | BenchlingFolderCreate \
-    | BenchlingWorklistCreate | BenchlingWorklistItemCreate
+    | BenchlingWorklistCreate | BenchlingWorklistItemCreate | AssayResultCreate
 BenchlingObjectUpdate = BenchlingCustomEntityUpdate
 BenchlingWrite = BenchlingObjectCreate | BenchlingObjectUpdate
 """Suitable as arguments to either `insert` or `update`"""
@@ -92,6 +99,8 @@ class BenchlingConverter(Converter[BenchlingReturn, DataObject]):
             return self.__convert_worklist_item(input_)
         elif isinstance(input_, BenchlingCustomEntity):
             return self.__convert_custom_entity(input_)
+        elif isinstance(input_, AssayResultsCreateResponse):
+            return self.__convert_assay_result(input_)
         raise ValueError(f'Unknown object type: {type(input_)}')
 
     def __convert_folder(self, input_: BenchlingFolder) -> DataObject:
@@ -192,6 +201,15 @@ class BenchlingConverter(Converter[BenchlingReturn, DataObject]):
             attributes=attributes,
             to_one=to_ones | native_to_ones
         )
+
+    def __convert_assay_result(self, input_) -> Iterable[DataObject]:
+        assay_results = input_.assay_results
+
+        for assay_result in assay_results:
+            yield self.__ds.data_object_factory(
+                'assay_resut',
+                id_=assay_result
+            )
 
     def __convert_return(self, input_: BenchlingReturn) -> DataObject:
         id_ = input_.pop('id', None)
@@ -336,6 +354,8 @@ class DataObjectConverter(Converter[DataObject, BenchlingWrite]):
     def convert(self, input_: DataObject) -> BenchlingObjectCreate:
         if input_.type in self.__ds.schemas['custom_entity'].keys():
             return self.__convert_custom_entity(input_)
+        if input_.type in self.__ds.schemas['assay_result'].keys():
+            return self.__convert_assay_result(input_)
         if input_.type in self.__ds.schemas['location'].keys():
             return self.__convert_location(input_)
         if input_.type == 'folder':
@@ -393,6 +413,19 @@ class DataObjectConverter(Converter[DataObject, BenchlingWrite]):
             naming_strategy=NamingStrategy.REPLACE_NAMES_FROM_PARTS,
             custom_fields=fields({})
         )
+
+    def __convert_assay_result(self, input_: DataObject) -> BenchlingAssayResultCreate:
+        fields = self.__convert_fields(
+            input_.type,
+            input_.attributes,
+            input_.to_one_relationships
+        )
+
+        return AssayResultCreate(
+            schema_id=self.__ds.schema_ids[input_.type],
+            fields=fields
+        )
+
 
     def convert_update(
         self,
@@ -454,6 +487,16 @@ class DataObjectConverter(Converter[DataObject, BenchlingWrite]):
             if self.__ds.schemas[benchling_type][object_type][name]['benchling_type'] == 'dropdown'
         }
         return fields(mapped_dict | mapped_relationships | dropdown_values)
+
+    def __convert_assay_results(
+        self,
+        object_type: str,
+        data_dict: DataDict,
+        to_one_relationships: dict[str, DataObject] = {}
+    ) -> AssayResult:
+        fields = self.__convert_fields(object_type,data_dict,to_one_relationships)
+
+        return assat(mapped_dict | mapped_relationships | dropdown_values)
 
     def __get_field_name(
         self,

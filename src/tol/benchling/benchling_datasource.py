@@ -72,7 +72,8 @@ NATIVE_OBJECT_TYPES = {
     }
 }
 BENCHLING_TYPE_SEARCH_WITH_SCHEMA_ID = [
-    'custom_entity'
+    'custom_entity',
+    'assay_result'
 ]
 BENCHLING_PARENT_TYPES_WITH_SCHEMAS = {
     'custom_entity': {
@@ -84,6 +85,24 @@ BENCHLING_PARENT_TYPES_WITH_SCHEMAS = {
     'location': {
         'attributes': {'name': 'str', 'barcode': 'str'},
         'to_one': {'parent_location': 'location'},
+        'to_one_native': {},
+        'to_many': {}
+    },
+    'assay_result' : {
+        'attributes': {},
+        'to_one': {},
+        'to_one_native': {},
+        'to_many': {}
+    },
+    'container' : {
+        'attributes': {},
+        'to_one': {},
+        'to_one_native': {},
+        'to_many': {}
+    },
+    'box': {
+        'attributes': {},
+        'to_one': {},
         'to_one_native': {},
         'to_many': {}
     },
@@ -182,8 +201,13 @@ class BenchlingDataSource(
         entities = {}
         for page in pages:
             for schema in page:
-                if schema.registry_id == self.registry_id \
-                        and schema.archive_record is None:
+                if (
+                    (
+                        'assay_result' == benchling_type
+                        or schema.registry_id == self.registry_id
+                    )
+                    and schema.archive_record is None
+                ):
                     schema_name = snakecase(schema.name)
                     entities[schema_name] = {
                         '__id__': schema.id
@@ -206,13 +230,20 @@ class BenchlingDataSource(
         return entities
 
     def __get_benchling_package(self, object_type: str):
-        if object_type == 'folder':
-            return self.benchling_interface.folders
-        if object_type == 'worklist':
-            return self.benchling_interface.v2.beta.worklists
         if object_type in self.schemas['location'].keys():
             return self.benchling_interface.locations
-        return self.benchling_interface.custom_entities
+        else:
+            match self.benchling_types[object_type]:
+                case 'folder':
+                    return self.benchling_interface.folders
+                case 'worklist':
+                    return self.benchling_interface.v2.beta.worklists
+                case 'location':
+                    return self.benchling_interface.locations
+                case 'assay_result':
+                    return self.benchling_interface.assay_results
+                case _:
+                    return self.benchling_interface.custom_entities
 
     def __get_benchling_schema_function(self, benchling_type: str):
         if benchling_type == 'custom_entity':
@@ -236,6 +267,16 @@ class BenchlingDataSource(
         updates: Iterable[DataObjectUpdate],
         **kwargs
     ) -> list[DataObject | ErrorObject]:
+        '''
+            Update function of the benchling datasource
+
+            Raises:
+                Exception if the object_type is of the assay_result benchling_type.
+                This is becuase the assay result does not support the update method
+        '''
+
+        if 'assay_result' == self.benchling_types[object_type]:
+            raise Exception('Update is not supported on the assay_result benchling_type')
 
         converter = self.__dc_factory()
         back_converter = self.__bc_factory()
@@ -385,6 +426,15 @@ class BenchlingDataSource(
                 converter,
                 back_converter
             )
+
+        if 'assay_result' == self.benchling_types[object_type]:
+            return self.__insert_assay_result_item(
+                objects,
+                converter,
+                back_converter,
+                benchling_package
+            )
+
         if hasattr(benchling_package, 'bulk_create'):
             # Do bulk inserts of object that allow it
             return self.__do_bulk_method(
@@ -433,6 +483,35 @@ class BenchlingDataSource(
                     http_code=error.status_code,
                     object_=obj
                 )
+
+    def __insert_assay_result_item(
+        self,
+        objects: Iterable[DataObject],
+        converter: DataObjectConverter,
+        back_converter: BenchlingConverter,
+        benchling_package
+    ) -> list[DataObject | ErrorObject]:
+        """
+        Inserts assay results into benchling
+        """
+        assay_result_objects = []
+
+        for obj in objects:
+            assay_result_objects.append(converter.convert(obj))
+
+        try:
+            ret = benchling_package.create(assay_result_objects)
+
+            return back_converter.convert(ret)
+        except BenchlingError as error:
+            print(error)
+            exit(0)
+            yield ErrorObject(
+                error.json['error']['message'],
+                'assay_result',
+                http_code=error.status_code,
+                object_=obj
+            )
 
     def __do_single_method(
         self,

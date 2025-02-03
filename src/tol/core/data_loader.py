@@ -5,6 +5,7 @@
 from abc import ABC, abstractmethod
 from datetime import datetime
 from typing import Iterable, List, Optional, Type
+from itertools import chain
 
 from more_itertools import peekable
 
@@ -83,7 +84,9 @@ class DefaultDataLoader():
 
         if not dry_run:
             self._record_time('end')
-            returned_objects = returned_objects + self._check_converter_for_returned_objects()
+
+            returned_objects = chain(returned_objects, self._check_converter_for_returned_objects())
+
             if returned_objects is not None and auto_exhaust:
                 # Exhaust the returned objects
                 for _ in returned_objects:
@@ -122,9 +125,9 @@ class DefaultDataLoader():
             for return_object in return_objects:
                 return_object.attributes['retrieved'] = True
 
-            return return_objects
+            return iter(return_objects)
 
-        return []
+        return iter([])
 
 
 class GroupStatterDataLoader(DefaultDataLoader):

@@ -32,8 +32,15 @@ class StsSampleToCasmBenchlingConverterFactory:
         },
         'benchling_sample_meta_data': {
             'benchling_object_name': 'casm_sample_metadata',
-            'benchling_search_identifier': 'id_sample_casm_manual',
+            'benchling_search_identifier': 'sts_id',
             'sts_identifier': 'sts_id',
+            'sts_type': 'field',
+            'relationship_identifier': None,
+        },
+        'benchling_sample': {
+            'benchling_object_name': 'casm_sample',
+            'benchling_search_identifier': 'id_sample_casm_manual',
+            'sts_identifier': 'ID_SAMPLE_CASM',
             'sts_type': 'field',
             'relationship_identifier': None,
         },
@@ -154,7 +161,7 @@ class StsSampleToCasmBenchlingConverterFactory:
                 'programme_id_manual': 'INTERNAL_CASM_SAMPLE_NAME',
                 'id_sample_casm_manual': 'ID_SAMPLE_CASM'
             },
-            'primary_attribute': 'programme_id_manual',
+            'primary_attribute': 'id_sample_casm_manual',
             'benchling_relationships': [
                 'benchling_sample_meta_data',
             ],
@@ -164,7 +171,36 @@ class StsSampleToCasmBenchlingConverterFactory:
             ],
             'converted_value_identifiers': [],
             'stored_values': {},
-        }
+        },
+        'casm_programme_id' : {
+            'attribute_map': {
+                'sample_id': 'benchling_sample',
+                'programme_id': 'INTERNAL_CASM_SAMPLE_NAME',
+                'id_sample_casm': 'ID_SAMPLE_CASM'
+            },
+            'primary_attribute': 'sample_id',
+            'benchling_relationships': [
+                'benchling_sample',
+            ],
+            'sts_relationships': [],
+            'converted_value_identifiers': [],
+            'stored_values': {},
+        },
+        'casm_sample_status' : {
+            'attribute_map': {
+                'sample_id': 'benchling_sample',
+                'status': 'sts_sample_status'
+            },
+            'primary_attribute': 'sample_id',
+            'benchling_relationships': [
+                'benchling_sample',
+            ],
+            'sts_relationships': [
+                'sts_sample_status'
+            ],
+            'converted_value_identifiers': [],
+            'stored_values': {},
+        },
     }
 
     VALUE_REPLACEMENTS = {
@@ -189,6 +225,9 @@ class StsSampleToCasmBenchlingConverterFactory:
             'default': 'No'
         },
         'status_manual': {
+            'ACCEPTED': 'Available'
+        },
+        'status': {
             'ACCEPTED': 'Available'
         },
         'species_name': {
@@ -234,7 +273,11 @@ class StsSampleToCasmBenchlingConverterFactory:
                 else:
                     primary_attr_value = sample.attributes.get(primary_attr)
 
-                if not self._does_object_exist(primary_attr_value, primary_attr_id):
+
+                if (
+                    'custom_entity' != factory.benchling.benchling_types[factory.destination_object_type]
+                    or not self._does_object_exist(primary_attr_value, primary_attr_id)
+                ):
                     self._populate_relationships(sample)
 
                     attribute_map = object_map['attribute_map']
@@ -301,7 +344,7 @@ class StsSampleToCasmBenchlingConverterFactory:
                         if 'sts_id' == relationship['sts_identifier']:
                             search_value = sample.id
                         else:
-                            getattr(sample, relationship['sts_identifier'], None)
+                            search_value = getattr(sample, relationship['sts_identifier'], None)
 
                     stored_values = factory.BENCHLING_OBJECT_MAP[object_type]['stored_values']
                     if search_value is not None:
@@ -334,8 +377,6 @@ class StsSampleToCasmBenchlingConverterFactory:
                                 )
                                 stored_values[search_value] = benchling_item.id
                             except StopIteration:
-                                print('search_value')
-                                print(search_value)
                                 raise Exception(
                                     f'Sample not ready for import: Sample #{sample.id} '
                                     f'is missing the relationship for {relationship_key}'
