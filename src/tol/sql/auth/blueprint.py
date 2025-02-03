@@ -10,11 +10,17 @@ from functools import partial
 from typing import Any, Callable, Optional
 from urllib.parse import urlencode
 
+from cachetools import TTLCache, cached
+
 import requests
 from flask import Flask, current_app
 from flask_principal import Principal, identity_changed, Identity, identity_loaded, UserNeed, RoleNeed, Need
 from requests.auth import HTTPBasicAuth
 
+from .membership_tree import (
+    MembershipTreeManager,
+    MembershipTreeNode
+)
 from .models import (
     ModelClass,
     ModelTuple,
@@ -153,6 +159,18 @@ class DbAuthManager(AuthManager):
     def revoke_token(self, token: str) -> None:
         self.__delete_token(token)
         self.__post_revoke(token)
+
+    @property
+    @cached(
+        TTLCache(maxsize=1, ttl=60)
+    )
+    def org_tree(self) -> MembershipTreeNode:
+        tree_manager =  MembershipTreeManager(
+            self.__models.membership,
+            self.__session_factory
+        )
+
+        return tree_manager.get_dict()
 
     def __map_oidc_extra(
         self,
@@ -363,9 +381,11 @@ class DbAuthBlueprint(AuthBlueprint):
     classes too.
     """
 
+    _manager: DbAuthManager
+
     def __init__(
         self,
-        auth_manager: AuthManager,
+        auth_manager: DbAuthManager,
         url_prefix: str,
         models: ModelTuple
     ) -> None:
@@ -373,6 +393,10 @@ class DbAuthBlueprint(AuthBlueprint):
         super().__init__(auth_manager, url_prefix)
 
         self.__models = models
+
+        @self.get('/org')
+        def org_chart():
+            return self._manager.org_tree, 200
 
     @property
     def models(self) -> ModelTuple:

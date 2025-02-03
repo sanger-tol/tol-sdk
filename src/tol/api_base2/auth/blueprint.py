@@ -44,6 +44,10 @@ class AuthBlueprint(Blueprint):
             header_name=header_name
         )
 
+    @property
+    def _manager(self) -> AuthManager:
+        return self.__manager
+
     def __register_auth_endpoints(self) -> None:
 
         @self.get('/login')
