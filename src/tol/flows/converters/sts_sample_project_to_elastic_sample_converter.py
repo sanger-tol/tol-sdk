@@ -11,6 +11,7 @@ from dateutil import parser as dateutil_parser
 from ...core import (
     DataObject,
     DataObjectToDataObjectOrUpdateConverter,
+    DataSourceError,
     ErrorObject
 )
 
@@ -98,7 +99,14 @@ class StsSampleProjectToElasticSampleConverter(
                 person_attributes[f'{sp.action.lower()}_name'] = sp.person.fullname
 
         except DataSourceError:
-            print(f'Problem with sample {s.id}')
+            error = ErrorObject(
+                details={'message': f'Problem accessing relationships for sample {s.id}'},
+                object_type='sample',
+                object_id=s.id,
+                object_=data_object,
+                http_code=400
+            )
+            return iter([error])
 
         ret = self._data_object_factory(
             'sample',

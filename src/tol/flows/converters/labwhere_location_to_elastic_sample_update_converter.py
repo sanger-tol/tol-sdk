@@ -22,7 +22,7 @@ class LabwhereLocationToElasticSampleUpdateConverter(
                 'name': data_object.name,
                 'parentage': data_object.parentage
             }
-            
+
             if not all(mandatory_fields.values()):
                 missing = [k for k, v in mandatory_fields.items() if not v]
                 error = ErrorObject(
