@@ -14,7 +14,7 @@ from ..sts import (
 
 def sts_legacy():
     sts_legacy = StsDataSource({
-        'url': os.getenv('STS_URL') + os.getenv('STS_LEGACY_API_PATH'),
+        'url': os.getenv('STS_LEGACY_URL') + os.getenv('STS_LEGACY_API_PATH'),
         'key': os.getenv('STS_API_KEY')
     })
     core_data_object(sts_legacy)

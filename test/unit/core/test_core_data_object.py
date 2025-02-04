@@ -359,3 +359,68 @@ class TestCoreDataObject:
 
         with pytest.raises(DataSourceError):
             obj.friendos = [Mock()]
+
+    def test_get_field_by_name(self):
+
+        mock_ds = create_autospec(_RelationalDS)
+        type(mock_ds).supported_types = PropertyMock(
+            return_value=['test_type', 'related_type', 'other_type']
+        )
+        type(mock_ds).attribute_types = PropertyMock(
+            return_value={
+                'test_type': {
+                    'an_attr': 'str',
+                    'non_attr': 'str'
+                },
+                'related_type': {
+                    'related_attr': 'int'
+                },
+                'other_type': {
+                    'other_attr': 'float'
+                }
+            }
+        )
+        type(mock_ds).relationship_config = {
+            'test_type': RelationshipConfig(
+                to_one={'rel': 'related_type'}
+            ),
+            'related_type': RelationshipConfig(
+                to_one={'other': 'other_type'}
+            )
+        }
+
+        CoreDataObject = core_data_object(mock_ds)  # noqa N806
+        other_obj = CoreDataObject(
+            'other_type',
+            attributes={'other_attr': 23.9}
+        )
+        related_obj = CoreDataObject(
+            'related_type',
+            attributes={'related_attr': 42},
+            to_one={'other': other_obj}
+        )
+        obj = CoreDataObject(
+            'test_type',
+            None,
+            attributes={'an_attr': 'attr_value'},
+            to_one={'rel': related_obj}
+        )
+
+        # Attributes
+        val = obj.get_field_by_name('an_attr')
+        assert val == 'attr_value'
+
+        # Relations
+        val = obj.get_field_by_name('rel.other.other_attr')
+        assert val == 23.9
+        val = obj.get_field_by_name('rel.related_attr')
+        assert val == 42
+
+        # Null attribute
+        val = obj.get_field_by_name('non_attr')
+        assert val is None
+
+        # Null relations
+        other_obj.other_attr = None
+        val = obj.get_field_by_name('rel.other.other_attr')
+        assert val is None

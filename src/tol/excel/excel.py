@@ -107,22 +107,7 @@ def convert_data_objects_to_excel(
             if not field['hidden']:
                 display_name = field['display_name']
                 key = field['key']
-
-                if '.' in key:
-                    relationship, relationship_attribute = key.split('.')
-                else:
-                    relationship, relationship_attribute = None, None
-
-                attr_value = ''
-
-                if key in data_object.attributes:
-                    attr_value = data_object.attributes.get(key, '')
-                elif (data_object.to_one_relationships is not None
-                      and relationship in data_object.to_one_relationships):
-                    to_one_relationship = data_object.to_one_relationships[relationship]
-                    attr_value = getattr(to_one_relationship, relationship_attribute, '')
-
-                data[display_name] = attr_value
+                data[display_name] = data_object.get_field_by_name(key)
 
         # Append to data frame
         df = pd.concat([df, pd.DataFrame([data])], ignore_index=True)
