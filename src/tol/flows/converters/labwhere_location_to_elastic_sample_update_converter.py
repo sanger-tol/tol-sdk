@@ -6,7 +6,8 @@ from typing import Iterable
 
 from ...core import (
     DataObject,
-    DataObjectToDataObjectOrUpdateConverter
+    DataObjectToDataObjectOrUpdateConverter,
+    ErrorObject
 )
 from ...core.operator.updater import DataObjectUpdate
 
