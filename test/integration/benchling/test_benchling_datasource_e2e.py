@@ -5,7 +5,7 @@
 import datetime
 
 from tol.benchling import BenchlingDataSource
-from tol.core import DataObject, ErrorObject
+from tol.core import DataObject, DataSourceFilter, ErrorObject
 from tol.sources.benchling import benchling
 
 from .utils import against_types
@@ -289,8 +289,8 @@ class TestBenchlingDataSourceE2E:
 
         benchling_ds = benchling()
 
-        folder = next(benchling_ds.get_list('folder'))
-        entity = next(benchling_ds.get_list(object_type))
+        folder = self.__get_example_object('folder')
+        entity = self.__get_example_object(object_type)
 
         # Remove from folder
         updates = [
@@ -313,6 +313,19 @@ class TestBenchlingDataSourceE2E:
         refetched_entity = benchling_ds.get_one(object_type, entity.id)
         assert refetched_entity.folder is not None
         assert refetched_entity.folder.id == folder.id
+
+    def __get_example_object(self, object_type: str) -> DataObject:
+        benchling_ds = benchling()
+        f = DataSourceFilter()
+        if object_type == 'folder':
+            f.and_ = {'name': {'eq': {'value': 'Core Lab Entities'}}}
+        if object_type == 'tissue':
+            f.and_ = {'project': {'eq': {'value': 'DTOL'}}}
+        if object_type == 'tissue_prep':
+            # A specific tissue prep
+            return benchling_ds.get_one('tissue_prep', 'bfi_ZNh4kTQZ')
+        objs = benchling_ds.get_list(object_type)
+        return next(objs)
 
     def __assert_relations_filled(
         self,
