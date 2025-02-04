@@ -11,7 +11,7 @@ from dateutil import parser as dateutil_parser
 from ...core import (
     DataObject,
     DataObjectToDataObjectOrUpdateConverter,
-    DataSourceError
+    ErrorObject
 )
 
 
@@ -29,7 +29,14 @@ class StsSampleProjectToElasticSampleConverter(
 
         if not all(mandatory_fields.values()):
             missing = [k for k, v in mandatory_fields.items() if not v]
-            raise ValueError(f"Missing mandatory fields: {', '.join(missing)}")
+            error = ErrorObject(
+                details={'message': f"Missing mandatory fields: {', '.join(missing)}"},
+                object_type='sample',
+                object_id=s.id,
+                object_=data_object,
+                http_code=400
+            )
+            return iter([error])
 
         attributes = {
             'project': [data_object.project.id],

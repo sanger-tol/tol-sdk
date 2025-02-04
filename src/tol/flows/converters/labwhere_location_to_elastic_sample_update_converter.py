@@ -6,7 +6,8 @@ from typing import Iterable
 
 from ...core import (
     DataObject,
-    DataObjectToDataObjectOrUpdateConverter
+    DataObjectToDataObjectOrUpdateConverter,
+    ErrorObject
 )
 from ...core.operator.updater import DataObjectUpdate
 
@@ -16,15 +17,26 @@ class LabwhereLocationToElasticSampleUpdateConverter(
     def convert(self, data_object: DataObject) -> Iterable[DataObjectUpdate]:
         if data_object is not None:
             # Validate all mandatory fields
-            if not data_object.id:
-                raise ValueError('Labwhere location ID is a mandatory field')
-            if not data_object.name:
-                raise ValueError('Labwhere name is a mandatory field')
-            if not data_object.parentage:
-                raise ValueError('Labwhere parentage is a mandatory field')
-
-            yield (None, {
-                'sts_location': data_object.id,
+            mandatory_fields = {
+                'id': data_object.id,
                 'name': data_object.name,
                 'parentage': data_object.parentage
-            })
+            }
+            
+            if not all(mandatory_fields.values()):
+                missing = [k for k, v in mandatory_fields.items() if not v]
+                error = ErrorObject(
+                    details={'message': f"Missing mandatory fields: {', '.join(missing)}"},
+                    object_type='location',
+                    object_id=data_object.id,
+                    object_=data_object,
+                    http_code=400
+                )
+                yield error
+                return
+
+        yield (None, {
+            'sts_location': data_object.id,
+            'name': data_object.name,
+            'parentage': data_object.parentage
+        })
