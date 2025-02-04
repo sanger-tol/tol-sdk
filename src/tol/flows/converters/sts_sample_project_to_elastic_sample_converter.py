@@ -11,8 +11,7 @@ from dateutil import parser as dateutil_parser
 from ...core import (
     DataObject,
     DataObjectToDataObjectOrUpdateConverter,
-    DataSourceError,
-    ErrorObject
+    DataSourceError
 )
 
 
@@ -21,24 +20,6 @@ class StsSampleProjectToElasticSampleConverter(
     def convert(self, data_object: DataObject) -> Iterable[DataObject]:
         # The project (note this is adding to a list)
         s = data_object.sample
-
-    # Validate mandatory fields first
-        mandatory_fields = {
-            'sequencescape_study_id': s.sequencescape_study_id,
-            'cost_code': s.cost_code,
-        }
-
-        if not all(mandatory_fields.values()):
-            missing = [k for k, v in mandatory_fields.items() if not v]
-            error = ErrorObject(
-                details={'message': f"Missing mandatory fields: {', '.join(missing)}"},
-                object_type='sample',
-                object_id=s.id,
-                object_=data_object,
-                http_code=400
-            )
-            return iter([error])
-
         attributes = {
             'project': [data_object.project.id],
             'programme': [data_object.project.programme],
@@ -99,14 +80,7 @@ class StsSampleProjectToElasticSampleConverter(
                 person_attributes[f'{sp.action.lower()}_name'] = sp.person.fullname
 
         except DataSourceError:
-            error = ErrorObject(
-                details={'message': f'Problem accessing relationships for sample {s.id}'},
-                object_type='sample',
-                object_id=s.id,
-                object_=data_object,
-                http_code=400
-            )
-            return iter([error])
+            print(f'Problem with sample {s.id}')
 
         ret = self._data_object_factory(
             'sample',
