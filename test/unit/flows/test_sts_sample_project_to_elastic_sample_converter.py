@@ -221,7 +221,9 @@ class TestStsSampleProjectToElasticSampleConverter(TestCase):
                 'original_collection_date': '2011-01-01 12:00:00',
                 'pre_date': '2000-12-12',
                 'public_name': 'xxTesTest1',
-                'other': 'another'
+                'other': 'another',
+                'sequencescape_study_id': 'cf01ea23-ac45-67e8-9101-11b213141516',
+                'cost_code': 'S12345',
             },
             to_one={
                 'location': location,
@@ -278,6 +280,8 @@ class TestStsSampleProjectToElasticSampleConverter(TestCase):
             'other': 'another',
             'action1_name': 'full name1',
             'action2_name': 'full name2',
+            'sequencescape_study_id': 'cf01ea23-ac45-67e8-9101-11b213141516',
+            'cost_code': 'S12345',
         })
 
         with self.assertRaises(StopIteration):
