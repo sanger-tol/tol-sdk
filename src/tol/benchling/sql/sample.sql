@@ -48,7 +48,7 @@ Columns in output table:
 30) family_representative: [character] Origin: STS
 31) priority: [integer] Origin: STS
 32) freezer: [character] Origin: STS. Physical location of the sample.
-33) shelf: [character] Origin: STS. Physical location of the sample.
+33) location: [character] Origin: STS. Physical location of the sample.
 34) tray: [character] Origin: STS. Physical location of the sample.
 35) rack_id: [character] Origin: STS. Physical location of the sample.
 36) tube_position: [character] Origin: STS. Physical location of the sample.
@@ -88,7 +88,7 @@ SELECT
 	t.family_representative,
 	t.priority,
 	t.freezer,
-	t.shelf,
+	t.location,
 	t.tray,
 	t.rack_id,
 	t.tube_position,
