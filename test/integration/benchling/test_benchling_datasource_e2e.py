@@ -324,7 +324,7 @@ class TestBenchlingDataSourceE2E:
         if object_type == 'tissue_prep':
             # A specific tissue prep
             return benchling_ds.get_one('tissue_prep', 'bfi_ZNh4kTQZ')
-        objs = benchling_ds.get_list(object_type)
+        objs = benchling_ds.get_list(object_type, object_filters=f)
         return next(objs)
 
     def __assert_relations_filled(
