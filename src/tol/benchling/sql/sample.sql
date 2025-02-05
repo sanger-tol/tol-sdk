@@ -42,15 +42,17 @@ Columns in output table:
 24) project: [character] Origin: STS
 25) date_sample_received_at_sanger: [date] Origin: STS
 26) date_assigned_to_tol_lab: [date] Origin: STS
-27) assigned_by: [character] Origin: STS
-28) rd_sample: [character] Origin: STS
-29) family_representative: [character] Origin: STS
-30) priority: [integer] Origin: STS
-32) location: [character] Origin: STS. Physical location of the sample.
-33) tray: [character] Origin: STS. Physical location of the sample.
-34) rack_id: [character] Origin: STS. Physical location of the sample.
-35) tube_position: [character] Origin: STS. Physical location of the sample.
-36) remaining_weight: [double precision] Origin: BWH. Data taken during laboratory processes. 
+27) lab_work_category: [character] Origin: STS. Reason for assigning the sample to ToL Core Lab.
+28) assigned_by: [character] Origin: STS
+29) rd_sample: [character] Origin: STS
+30) family_representative: [character] Origin: STS
+31) priority: [integer] Origin: STS
+32) freezer: [character] Origin: STS. Physical location of the sample.
+33) location: [character] Origin: STS. Physical location of the sample.
+34) tray: [character] Origin: STS. Physical location of the sample.
+35) rack_id: [character] Origin: STS. Physical location of the sample.
+36) tube_position: [character] Origin: STS. Physical location of the sample.
+37) remaining_weight: [double precision] Origin: BWH. Data taken during laboratory processes. 
 */
 
 SELECT
@@ -84,6 +86,7 @@ SELECT
 	t.rd_sample,
 	t.family_representative,
 	t.priority,
+	t.freezer,
 	t.location,
 	t.tray,
 	t.rack_id,
