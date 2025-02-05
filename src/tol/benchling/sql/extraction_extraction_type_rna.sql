@@ -22,7 +22,7 @@ Output: Table with cols:
 12) extraction_qc_result: [character] QC result: Yes = Extraction passed; No = Extraction failed. 
 13) yield_ng: [double] DNA yield after extraction. 
 14) volume_ul: [double] volume of DNA available in the fluidx tube.
-15) shelf: [character] Physical locationo of the DNA extraction. Freezer shelf.
+15) location: [character] Physical locationo of the DNA extraction. Freezer shelf.
 16) rack: [character] Physical locationo of the DNA extraction. Rack barcode.
 17) bnt_id: [character] Batches and Tracking legacy id.
 18) extraction_type: rna
@@ -50,7 +50,7 @@ SELECT DISTINCT
 	rnadc.qc_passfail AS rna_qc_passfail,
 	rnay.yield AS rna_yield,
 	con.volume_si * 1000000 AS volume_ul,
-	loc.name AS shelf,
+	loc.name AS location,
 	box.barcode AS rack,
 	rna.bt_id AS bnt_id,
 	'rna'::varchar AS extraction_type

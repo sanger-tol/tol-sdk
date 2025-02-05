@@ -28,7 +28,7 @@ Output: Table with cols:
 13) yield_ng: [double] DNA yield after extraction. 
 14) femto_description:[character] Categorical description of the femto pulse profile. 
 15) volume_ul: [double] volume of DNA available in the fluidx tube.
-16) shelf: [character] Physical locationo of the DNA extraction. Freezer shelf.
+16) location: [character] Physical locationo of the DNA extraction. Freezer shelf.
 17) rack: [character] Physical locationo of the DNA extraction. Rack barcode.
 18) source_extractions_id: [jsonb] List of ids for pooled dna extracts.
 19) extraction_type: [character] pooled_dna.
@@ -61,7 +61,7 @@ SELECT DISTINCT
 	dnay.yield AS yield_ng,
 	femto.femto_profile_description AS femto_description,
 	con.volume_si * 1000000 AS volume_ul,
-	loc.name AS shelf,
+	loc.name AS location,
 	box.barcode AS rack, 
 	dnap.samples AS source_extractions_id,
 	'pooled_dna'::varchar AS extraction_type
