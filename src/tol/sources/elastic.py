@@ -418,11 +418,17 @@ def elastic():
                             doc['tolid_species.sts_genome_size'].value >=
                             doc['sts_sample_sts_target_coverage_max'].value)
                             );
+                        
+                        boolean isActioned = (
+                            doc.containsKey('is_actioned') &&
+                            doc['is_actioned'].value == true
+                        );
 
                         boolean isTopUpRequired = (
                             isTotalSubmissionsGreaterThanZero &&
                             isOngoingSubmissionsEqualZero &&
-                            !isTargetCoverageMet
+                            !isTargetCoverageMet &&
+                            !isActioned
                             );
 
                         boolean isSpecimenNotAtSequencingStage = false;
