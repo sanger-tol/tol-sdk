@@ -54,7 +54,7 @@ class MockS3JsonDataSource(S3JsonDataSource):
         ]
 
 
-def mock_json_data_source() -> S3JsonDataSource:
+def mock_s3_json_data_source() -> S3JsonDataSource:
 
     config1 = {
         'type': 'object1',
@@ -103,7 +103,7 @@ def mock_json_data_source() -> S3JsonDataSource:
 class TestS3JsonDataSource(TestCase):
 
     def test_attribute_types(self):
-        _, jds = mock_json_data_source()
+        _, jds = mock_s3_json_data_source()
         expected = {
             'object1': {
                 'id': 'int',
@@ -118,7 +118,7 @@ class TestS3JsonDataSource(TestCase):
         self.assertEqual(['object1'], jds.supported_types)
 
     def test_get_by_id(self):
-        _, jds = mock_json_data_source()
+        _, jds = mock_s3_json_data_source()
 
         ret = jds.get_by_id('object1', [1, 2, 4])
         obj1 = next(ret)
@@ -149,7 +149,7 @@ class TestS3JsonDataSource(TestCase):
             next(ret)
 
     def test_get_list(self):
-        _, jds = mock_json_data_source()
+        _, jds = mock_s3_json_data_source()
 
         ret = jds.get_list('object1')
         obj1 = next(ret)
