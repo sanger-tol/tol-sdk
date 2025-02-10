@@ -2,6 +2,8 @@
 #
 # SPDX-License-Identifier: MIT
 
+import os
+
 from datetime import datetime
 from unittest import (
     TestCase
@@ -21,8 +23,8 @@ def json_data_source() -> S3JsonDataSource:
         'type': 'object1',
         'id_attribute': 'Id',
         's3_host': 'cog.sanger.ac.uk',
-        's3_access_key': 'MD8EDMSNP9M8D87C7AU4',
-        's3_secret_key': 'ADdE4mPDqlMd2jolZjaQI0tt8CV2RaeAZWU2Rkgv',
+        's3_access_key': os.getenv('MINIO_ACCESS_KEY'),
+        's3_secret_key': os.getenv('MINIO_SECRET_KEY'),
         'mappings': {
             'id': {
                 'heading': 'Id',

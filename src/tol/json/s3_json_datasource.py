@@ -4,9 +4,7 @@
 
 
 import json
-from functools import cache
 from io import BytesIO
-
 from typing import Dict
 
 from minio import Minio
@@ -33,7 +31,15 @@ class S3JsonDataSource(
         DataSource.__init__(
             self,
             config=config,
-            expected=['uri', 'type', 'id_attribute', 'mappings', 's3_host', 's3_access_key', 's3_secret_key']
+            expected=[
+                'uri',
+                'type',
+                'id_attribute',
+                'mappings',
+                's3_host',
+                's3_access_key',
+                's3_secret_key'
+            ]
         )
 
         self.config = config
@@ -44,8 +50,8 @@ class S3JsonDataSource(
         # Initialize MinIO client
         self.minio_client = Minio(
             self.s3_host,
-            access_key= self.s3_access_key,
-            secret_key= self.s3_secret_key,
+            access_key=self.s3_access_key,
+            secret_key=self.s3_secret_key,
             secure=secure
         )
 
