@@ -59,6 +59,10 @@ def mock_s3_json_data_source() -> S3JsonDataSource:
     config1 = {
         'type': 'object1',
         'id_attribute': 'Id',
+        'uri': 's3://tol-system-test-assets/test.json',
+        's3_access_key': 'test_access_key',
+        's3_secret_key': 'test_secret_key',
+        's3_host': 'test_host.sanger.ac.uk',
         'mappings': {
             'id': {
                 'heading': 'Id',
@@ -90,11 +94,6 @@ def mock_s3_json_data_source() -> S3JsonDataSource:
     s3ds = MockS3JsonDataSource(
         config=config1,
         secure=False,
-        s3_endpoint='endpoint',
-        s3_access_key='accesskey',
-        s3_secret_key='secretkey',
-        s3_bucket='test-bucket',
-        s3_object='test.json'
     )
     core_data_object_mock = core_data_object(s3ds)
     return core_data_object_mock, s3ds
