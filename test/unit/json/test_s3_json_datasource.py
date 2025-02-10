@@ -14,6 +14,7 @@ from tol.json import (
     S3JsonDataSource
 )
 
+
 class MockS3JsonDataSource(S3JsonDataSource):
     def _load_json_from_s3(self, s3_bucket, s3_object):
         return [
@@ -52,8 +53,9 @@ class MockS3JsonDataSource(S3JsonDataSource):
 
         ]
 
+
 def mock_json_data_source() -> S3JsonDataSource:
-    
+
     config1 = {
         'type': 'object1',
         'id_attribute': 'Id',
@@ -84,18 +86,19 @@ def mock_json_data_source() -> S3JsonDataSource:
             }
         }
     }
-    
+
     s3ds = MockS3JsonDataSource(
         config=config1,
         secure=False,
         s3_endpoint='endpoint',
         s3_access_key='accesskey',
         s3_secret_key='secretkey',
-        s3_bucket="test-bucket",
-        s3_object="test.json"
+        s3_bucket='test-bucket',
+        s3_object='test.json'
     )
     core_data_object_mock = core_data_object(s3ds)
     return core_data_object_mock, s3ds
+
 
 class TestS3JsonDataSource(TestCase):
 
