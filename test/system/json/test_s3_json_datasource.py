@@ -3,7 +3,6 @@
 # SPDX-License-Identifier: MIT
 
 import os
-
 from datetime import datetime
 from unittest import (
     TestCase
