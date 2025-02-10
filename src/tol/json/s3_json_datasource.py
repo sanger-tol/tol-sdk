@@ -7,6 +7,8 @@ import json
 from functools import cache
 from io import BytesIO
 
+from typing import Dict
+
 from minio import Minio
 
 from . import JsonDataSource
@@ -25,29 +27,30 @@ class S3JsonDataSource(
 
     def __init__(
         self,
-        config: dict,
-        s3_endpoint: str,
-        s3_access_key: str,
-        s3_secret_key: str,
-        s3_bucket: str,
-        s3_object: str,
+        config: Dict,
         secure: bool = True
     ) -> None:
-        DataSource.__init__(self, config=config)
-
-        # Initialize MinIO client
-        self.minio_client = Minio(
-            s3_endpoint,
-            access_key=s3_access_key,
-            secret_key=s3_secret_key,
-            secure=secure
+        DataSource.__init__(
+            self,
+            config=config,
+            expected=['uri', 'type', 'id_attribute', 'mappings', 's3_host', 's3_access_key', 's3_secret_key']
         )
 
         self.config = config
         self.id_attribute = config.get('id_attribute')
 
+        bucket, object_name = self._extract_object_and_bucket(self.uri)
+
+        # Initialize MinIO client
+        self.minio_client = Minio(
+            self.s3_host,
+            access_key= self.s3_access_key,
+            secret_key= self.s3_secret_key,
+            secure=secure
+        )
+
         # Load JSON data from S3
-        raw_data = self._load_json_from_s3(s3_bucket, s3_object)
+        raw_data = self._load_json_from_s3(bucket, object_name)
 
         # Set raw data
         self._raw_data = raw_data
@@ -57,23 +60,6 @@ class S3JsonDataSource(
             if self.id_attribute in v
         }
 
-    @property
-    @cache
-    def attribute_types(self) -> dict[str, dict[str, str]]:
-        return {
-            self.type: {
-                k: v['type']
-                for k, v in self.mappings.items()
-            }
-        }
-
-    @property
-    @cache
-    def supported_types(self) -> list[str]:
-        return list(
-            self.attribute_types.keys()
-        )
-
     def _load_json_from_s3(self, bucket: str, object_name: str):
         """Fetch and load JSON data from an S3 bucket."""
         try:
@@ -82,3 +68,12 @@ class S3JsonDataSource(
             return json_data
         except Exception as e:
             raise DataSourceError(f'Failed to load JSON from S3: {e}')
+
+    def _extract_object_and_bucket(self, uri: str):
+        """Extract the bucket and object name from an S3 URI."""
+        if uri.startswith('s3://'):
+            uri = uri[5:]
+        parts = uri.split('/')
+        bucket = parts[0]
+        object_name = '/'.join(parts[1:])
+        return bucket, object_name
