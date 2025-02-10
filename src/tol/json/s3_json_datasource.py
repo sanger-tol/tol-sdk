@@ -8,26 +8,16 @@ import json
 from io import BytesIO
 from minio import Minio
 
-from typing import Any, Dict, Iterable, Optional
-
-from dateutil import parser as dateutil_parser
-
 from . import JsonDataSource
 
 from ..core import (
-    DataObject,
     DataSource,
     DataSourceError,
-    DataSourceFilter
-)
-from ..core.operator import (
-    ListGetter,
 )
 
 
 class S3JsonDataSource(
-    DataSource,
-    ListGetter
+    JsonDataSource
 ):
     """
     A subclass of JsonDataSource that loads JSON data directly from an S3 bucket.
@@ -60,10 +50,10 @@ class S3JsonDataSource(
         raw_data = self._load_json_from_s3(s3_bucket, s3_object)
 
         # Set raw data
-        self.__raw_data = raw_data
-        self.__keyed_by_id = {
+        self._raw_data = raw_data
+        self._keyed_by_id = {
             v[self.id_attribute]: v
-            for v in self.__raw_data
+            for v in self._raw_data
             if self.id_attribute in v
         }
     
@@ -92,46 +82,3 @@ class S3JsonDataSource(
             return json_data
         except Exception as e:
             raise DataSourceError(f"Failed to load JSON from S3: {e}")
-        
-    def __map_entry(self, entry: Dict):
-        ret = {}
-        for mapping_key, mapping_value in self.mappings.items():
-            if mapping_value['heading'] != self.id_attribute:
-                subentry = entry
-                for level in mapping_value['heading'].split('.'):
-                    if subentry is not None:
-                        subentry = subentry.get(level)
-                ret[mapping_key] = self.__parse_date(mapping_key, subentry)
-        return ret
-
-    def __parse_date(self, attribute_name: str, value: Any):
-        if self.mappings[attribute_name]['type'] == 'datetime' and value is not None:
-            return dateutil_parser.parse(value)
-        if self.mappings[attribute_name]['type'] == 'str' and value is not None:
-            return str(value)
-        return value
-        
-    def __create_data_object(self, entry: Dict):
-        return self.data_object_factory(
-            self.type,
-            entry.get(self.id_attribute),
-            attributes=self.__map_entry(entry)
-        )
-        
-    def get_list(
-        self,
-        object_type: str,
-        object_filters: Optional[DataSourceFilter] = None
-    ) -> Iterable[DataObject]:
-        """
-        Gets an Iterable of DataObject instances of the given
-        type, according to the given DataSourceFilter.
-        """
-        if object_filters is not None:
-            raise DataSourceError('Filtering is not supported on S3JsonDataSource')
-        if object_type not in self.supported_types:
-            raise DataSourceError(f'{object_type} is not supported')
-        for entry in self.__raw_data:
-            id_ = entry.get(self.id_attribute)
-            if id_ is not None and id_ != '':
-                yield self.__create_data_object(entry)
