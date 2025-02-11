@@ -104,4 +104,16 @@ class ChainedConverter(Converter, Generic[In, Out]):
         self.__converters = converters
 
     def convert(self, input_: In) -> Out:
-        pass
+        return reduce(
+            self.__convert_with,
+            self.__converters,
+            input_
+        )
+
+    def __convert_with(
+        self,
+        previous: Any,
+        converter: Converter
+    ) -> Any:
+
+        return converter.convert(previous)
