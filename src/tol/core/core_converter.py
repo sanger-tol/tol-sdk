@@ -92,9 +92,10 @@ class ChainedConverter(Converter, Generic[In, Out]):
     """
 
     def __init__(
+        self,
         *converters: Converter
     ):
-        pass
+        self.__converters = converters
 
     def convert(self, input_: In) -> Out:
         pass
