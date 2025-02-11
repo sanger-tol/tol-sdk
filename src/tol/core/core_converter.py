@@ -7,15 +7,7 @@ from __future__ import annotations
 import typing
 from abc import ABC, abstractmethod
 from functools import reduce
-from itertools import chain
-from typing import (
-    Any,
-    Generic,
-    Iterable,
-    Iterator,
-    Optional,
-    TypeVar
-)
+from typing import Any, Generic, Iterable, Optional, TypeVar
 
 if typing.TYPE_CHECKING:
     from .data_loader import DataLoader
@@ -124,4 +116,16 @@ class ChainedConverter(Converter, Generic[In, Out]):
         self.__converters = converters
 
     def convert(self, input_: In) -> Out:
-        pass
+        return reduce(
+            self.__convert_with,
+            self.__converters,
+            input_
+        )
+
+    def __convert_with(
+        self,
+        previous: Any,
+        converter: Converter
+    ) -> Any:
+
+        return converter.convert(previous)
