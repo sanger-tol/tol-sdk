@@ -5,8 +5,7 @@
 from .attribute_metadata import *  # noqa F401
 from .core_converter import (  # noqa F401
     ChainedConverter,
-    Converter,
-    is_iter
+    Converter
 )
 from .data_source_dict import DataSourceDict  # noqa F401
 from .datasource import *  # noqa F401
