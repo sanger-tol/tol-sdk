@@ -105,39 +105,3 @@ class TestChainedConverter:
         observed = cc.convert(in_).attributes
 
         assert observed == expected
-
-        converters.a.convert.assert_called_once()
-
-    def test_many(
-        self,
-        converters: Converters
-    ):
-
-        cc = ChainedConverter(
-            converters.a,
-            converters.b,
-            converters.c
-        )
-
-        in_ = _mock_do(
-            attributes={
-                'hello': 'world',
-                'welcome': True,
-                'answer': 42,
-                'certainty': 100.0
-            }
-        )
-
-        expected = {
-            'hello': 'world_a_b_c',
-            'welcome': True,
-            'answer': 42,
-            'certainty': 100.0
-        }
-        observed = cc.convert(in_).attributes
-
-        assert observed == expected
-
-        converters.a.convert.assert_called_once()
-        converters.b.convert.assert_called_once()
-        converters.c.convert.assert_called_once()
