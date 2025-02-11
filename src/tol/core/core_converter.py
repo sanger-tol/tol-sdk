@@ -3,7 +3,8 @@
 # SPDX-License-Identifier: MIT
 
 from abc import ABC, abstractmethod
-from typing import Generic, Iterable, Optional, TypeVar
+from functools import reduce
+from typing import Any, Generic, Iterable, Optional, TypeVar
 
 
 In = TypeVar('In')
@@ -97,4 +98,16 @@ class ChainedConverter(Converter, Generic[In, Out]):
         self.__converters = converters
 
     def convert(self, input_: In) -> Out:
-        pass
+        return reduce(
+            self.__convert_with,
+            self.__converters,
+            input_
+        )
+
+    def __convert_with(
+        self,
+        previous: Any,
+        converter: Converter
+    ) -> Any:
+
+        return converter.convert(previous)
