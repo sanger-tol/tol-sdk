@@ -106,6 +106,8 @@ class TestChainedConverter:
 
         assert observed == expected
 
+        converters.a.convert.assert_called_once()
+
     def test_many(
         self,
         converters: Converters
@@ -135,3 +137,7 @@ class TestChainedConverter:
         observed = cc.convert(in_).attributes
 
         assert observed == expected
+
+        converters.a.convert.assert_called_once()
+        converters.b.convert.assert_called_once()
+        converters.c.convert.assert_called_once()
