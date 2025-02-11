@@ -90,5 +90,10 @@ class ChainedConverter(Converter, Generic[In, Out]):
     ```
     """
 
+    def __init__(
+        *converters: Converter
+    ):
+        pass
+
     def convert(self, input_: In) -> Out:
         pass
