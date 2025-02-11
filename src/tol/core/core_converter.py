@@ -85,14 +85,6 @@ class AsyncConverter(ABC, Generic[In, Out]):
         ]
 
 
-def is_iter(in_: Any) -> bool:
-    try:
-        iter(in_)
-        return True
-    except TypeError:
-        return False
-
-
 class ChainedConverter(Converter, Generic[In, Out]):
     """
     Using multiple converters in sequence, converts in a chain.
@@ -105,66 +97,7 @@ class ChainedConverter(Converter, Generic[In, Out]):
         inner = a.convert(input_)
         return b.convert(inner)
     ```
-
-    Please note that this is different to the main `Converter` -
-    `None` elements are ignored in the sequence. Only use the
-    `convert_iterable` method.
     """
 
-    def __init__(
-        self,
-        *converters: Converter
-    ):
-        self.__converters = converters
-
-    def convert_iterable(
-        self,
-        inputs: Iterable[In | None]
-    ) -> Iterator[Out]:
-
-        return chain.from_iterable(
-            self.convert_optional(input_)
-            for input_ in inputs
-        )
-
-    def convert_optional(
-        self,
-        input_: In | None
-    ) -> Iterator[Out]:
-
-        if input_ is None:
-            return iter([])
-        else:
-            return self.convert(input_)
-
-    def convert(self, input_: In) -> Iterator[Out]:
-        return reduce(
-            self.__convert_with,
-            self.__converters,
-            iter([input_])
-        )
-
-    def __convert_with(
-        self,
-        previous: Iterator[Any],
-        converter: Converter
-    ) -> Iterator[Any]:
-
-        for p in previous:
-            converted = converter.convert(p)
-
-            if self.__is_iter(converted):
-                yield from converted
-            else:
-                yield converted
-
-    def __is_iter(
-        self,
-        previous: Any
-    ) -> bool:
-
-        try:
-            iter(previous)
-            return True
-        except TypeError:
-            return False
+    def convert(self, input_: In) -> Out:
+        pass
