@@ -74,3 +74,21 @@ class AsyncConverter(ABC, Generic[In, Out]):
         return [
             await self.async_convert_optional(i) for i in input_
         ]
+
+
+class ChainedConverter(Converter, Generic[In, Out]):
+    """
+    Using multiple converters in sequence, converts in a chain.
+
+    e.g. with `Converter` instances, `a` and `b`, this is roughly
+    equivalent to:
+
+    ```
+    def convert(self, input_: In) -> Out:
+        inner = a.convert(input_)
+        return b.convert(inner)
+    ```
+    """
+
+    def convert(self, input_: In) -> Out:
+        pass
