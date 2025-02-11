@@ -3,7 +3,8 @@
 # SPDX-License-Identifier: MIT
 
 from abc import ABC, abstractmethod
-from typing import Generic, Iterable, Optional, TypeVar
+from functools import reduce
+from typing import Any, Generic, Iterable, Optional, TypeVar
 
 
 In = TypeVar('In')
@@ -74,3 +75,39 @@ class AsyncConverter(ABC, Generic[In, Out]):
         return [
             await self.async_convert_optional(i) for i in input_
         ]
+
+
+class ChainedConverter(Converter, Generic[In, Out]):
+    """
+    Using multiple converters in sequence, converts in a chain.
+
+    e.g. with `Converter` instances, `a` and `b`, this is roughly
+    equivalent to:
+
+    ```
+    def convert(self, input_: In) -> Out:
+        inner = a.convert(input_)
+        return b.convert(inner)
+    ```
+    """
+
+    def __init__(
+        self,
+        *converters: Converter
+    ):
+        self.__converters = converters
+
+    def convert(self, input_: In) -> Out:
+        return reduce(
+            self.__convert_with,
+            self.__converters,
+            input_
+        )
+
+    def __convert_with(
+        self,
+        previous: Any,
+        converter: Converter
+    ) -> Any:
+
+        return converter.convert(previous)
