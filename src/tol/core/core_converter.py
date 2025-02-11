@@ -103,5 +103,10 @@ class ChainedConverter(Converter, Generic[In, Out]):
     `convert_iterable` method.
     """
 
+    def __init__(
+        *converters: Converter
+    ):
+        pass
+
     def convert(self, input_: In) -> Out:
         pass
