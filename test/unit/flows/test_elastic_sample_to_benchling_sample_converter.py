@@ -92,4 +92,3 @@ class TestElasticSampleToBenchlingSampleConverter(TestCase):
             'programme_id': 'programme_id_1',
             'sts_id': 'sample_id1'
         })
-        
