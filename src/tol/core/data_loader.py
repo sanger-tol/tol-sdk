@@ -10,6 +10,7 @@ from more_itertools import peekable
 
 import pytz
 
+from .core_converter import Converter
 from .data_object import DataObject
 from .data_object_converter import DataObjectToDataObjectOrUpdateConverter
 from .datasource import DataSource
@@ -31,15 +32,14 @@ class DefaultDataLoader():
                  loader_name: str,
                  audit: Optional[DataSource] = None,
                  convert_class: Optional[DataObjectToDataObjectOrUpdateConverter] = None,
-                 object_filters: Optional[DataSourceFilter] = None):
+                 object_filters: Optional[DataSourceFilter] = None,
+                 converter: Converter | None = None):
 
         self._source = source
         self._destination = destination
         self._audit = audit
         self._dependencies = dependencies
-        self._converter = convert_class(
-            data_object_factory=destination.data_object_factory
-        )
+        self._converter = self.__get_converter(convert_class, converter)
         self._converter.data_loader = self  # Set here to avoid circular import
         self._source_object_type = source_object_type
         self._destination_object_type = destination_object_type
@@ -88,6 +88,24 @@ class DefaultDataLoader():
                 for _ in returned_objects:
                     pass
             return returned_objects
+
+    def __get_converter(
+        self,
+        convert_class: type[Converter] | None,
+        converter: Converter | None
+    ) -> Converter:
+
+        if converter is not None:
+            return converter
+
+        if convert_class is not None:
+            return convert_class(
+                data_object_factory=self._destination.data_object_factory
+            )
+
+        raise Exception(
+            'Either `convert_class` or `converter` must be specified.'
+        )
 
     def _get_source_objects(self) -> Iterable:
         source_objs = self._source.get_list(
