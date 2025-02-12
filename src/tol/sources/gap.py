@@ -11,8 +11,6 @@ from ..json import (
     S3JsonDataSource
 )
 
-os.getenv('S3_ACCESS')
-
 
 def gap():
     gap = S3JsonDataSource({
