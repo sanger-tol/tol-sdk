@@ -119,7 +119,7 @@ class ChainedConverter(Converter, Generic[In, Out]):
 
     def convert_iterable(
         self,
-        inputs: Iterable[In]
+        inputs: Iterable[In | None]
     ) -> Iterator[Out]:
 
         return chain.from_iterable(
