@@ -141,10 +141,20 @@ class TestChainedConverter:
             }
         )
 
-        expected = {
-            'hello': 'world_a',
-            'answer': 42
-        }
+        expected = [
+            {
+                'hello': 'world_iter_0',
+                'answer': 42
+            },
+            {
+                'hello': 'world_iter_1',
+                'answer': 42
+            },
+            {
+                'hello': 'world_iter_2',
+                'answer': 42
+            }
+        ]
         observed = [
             o.attributes
             for o in cc.convert(in_)
