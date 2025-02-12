@@ -171,30 +171,37 @@ class TestChainedConverter:
     ):
 
         cc = ChainedConverter(
-            converters.a,
-            converters.b,
-            converters.c
+            to_iter_converter,
+            to_one_converter
         )
 
         in_ = _mock_do(
             attributes={
                 'hello': 'world',
-                'welcome': True,
-                'answer': 42,
                 'certainty': 100.0
             }
         )
 
-        expected = {
-            'hello': 'world_a_b_c',
-            'welcome': True,
-            'answer': 42,
-            'certainty': 100.0
-        }
-        observed = cc.convert(in_).attributes
+        expected = [
+            {
+                'hello': 'world_iter_0_one',
+                'answer': 42
+            },
+            {
+                'hello': 'world_iter_1_one',
+                'answer': 42
+            },
+            {
+                'hello': 'world_iter_2_one',
+                'answer': 42
+            }
+        ]
+        observed = [
+            o.attributes
+            for o in cc.convert(in_)
+        ]
 
         assert observed == expected
 
-        converters.a.convert.assert_called_once()
-        converters.b.convert.assert_called_once()
-        converters.c.convert.assert_called_once()
+        to_iter_converter.convert.assert_called_once()
+        to_one_converter.convert.assert_called_once()
