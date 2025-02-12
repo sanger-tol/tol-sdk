@@ -50,9 +50,9 @@ def __convert_to_iter(
     return (
         __convert_to_one(
             in_,
-            f'{suffix}_{i}'
+            f'{suffix}_{c}'
         )
-        for i in range(3)
+        for c in 'abc'
     )
 
 
@@ -148,15 +148,15 @@ class TestChainedConverter:
 
         expected = [
             {
-                'hello': 'world_iter_0',
+                'hello': 'world_iter_a',
                 'answer': 42
             },
             {
-                'hello': 'world_iter_1',
+                'hello': 'world_iter_b',
                 'answer': 42
             },
             {
-                'hello': 'world_iter_2',
+                'hello': 'world_iter_c',
                 'answer': 42
             }
         ]
@@ -189,15 +189,15 @@ class TestChainedConverter:
 
         expected = [
             {
-                'hello': 'world_iter_0_one',
+                'hello': 'world_iter_a_one',
                 'certainty': 100.0
             },
             {
-                'hello': 'world_iter_1_one',
+                'hello': 'world_iter_b_one',
                 'certainty': 100.0
             },
             {
-                'hello': 'world_iter_2_one',
+                'hello': 'world_iter_c_one',
                 'certainty': 100.0
             }
         ]
