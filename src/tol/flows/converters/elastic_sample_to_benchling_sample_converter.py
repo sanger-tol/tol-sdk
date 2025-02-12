@@ -15,15 +15,15 @@ class ElasticSampleToBenchlingSampleConverter(
     def convert(self, data_object: DataObject) -> Iterable[DataObject]:
         if 'benchling_eln_tissue_id' in data_object.attributes:
             # Extract the relationships first
-            species = data_object.to_one_relationships.get('benchling_species')
-            specimen = data_object.to_one_relationships.get('benchling_specimen')
-            tolid = data_object.to_one_relationships.get('benchling_tolid')
+            species = data_object.to_one.get('benchling_species')
+            specimen = data_object.to_one.get('benchling_specimen')
+            tolid = data_object.to_one.get('benchling_tolid')
 
             # Create attributes dict removing benchling_ prefix
             attributes = {
                 k[10:]: v  # Remove 'benchling_' prefix
                 for k, v in data_object.attributes.items()
-                if k.startswith('benchling_')and k != 'benchling_eln_tissue_id' 
+                if k.startswith('benchling_')
             }
 
             # Add the relationship IDs to attributes
@@ -34,11 +34,11 @@ class ElasticSampleToBenchlingSampleConverter(
             if tolid:
                 attributes['programme_id'] = tolid.id
 
-            attributes['sts_id'] = data_object.id
+            attributes['eln_tissue_id'] = data_object.id
 
             ret = self._data_object_factory(
                 'sample',
-                data_object.attributes['benchling_eln_tissue_id'],
+                data_object.id,
                 attributes=attributes
             )
             yield ret
