@@ -103,6 +103,9 @@ class ChainedConverter(Converter, Generic[In, Out]):
         inner = a.convert(input_)
         return b.convert(inner)
     ```
+
+    Please note that this is different to the main `Converter` -
+    and only use the `convert_iterable` entrypoint.
     """
 
     def __init__(
