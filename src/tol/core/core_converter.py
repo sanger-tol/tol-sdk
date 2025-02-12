@@ -112,16 +112,11 @@ class ChainedConverter(Converter, Generic[In, Out]):
         self.__converters = converters
 
     def convert(self, input_: In) -> Iterator[Out]:
-        # TODO refactor to use `functools.reduce`
-        converted = [input_]
-
-        for converter in self.__converters:
-            converted = self.__convert_with(
-                converted,
-                converter
-            )
-
-        return converted
+        return reduce(
+            self.__convert_with,
+            self.__converters,
+            [input_]
+        )
 
     def __convert_with(
         self,
