@@ -42,4 +42,3 @@ class ElasticSampleToBenchlingSampleConverter(
                 attributes=attributes
             )
             yield ret
-            
