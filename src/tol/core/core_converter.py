@@ -102,7 +102,8 @@ class ChainedConverter(Converter, Generic[In, Out]):
     ```
 
     Please note that this is different to the main `Converter` -
-    and only use the `convert_iterable` entrypoint.
+    `None` elements are ignored in the sequence. Only use the
+    `convert_iterable` method. 
     """
 
     def __init__(
@@ -110,6 +111,26 @@ class ChainedConverter(Converter, Generic[In, Out]):
         *converters: Converter
     ):
         self.__converters = converters
+
+    def convert_iterable(
+        self,
+        inputs: Iterable[In]
+    ) -> Iterator[Out]:
+
+        return chain.from_iterable(
+            self.convert_optional(input_)
+            for input_ in inputs
+        )
+
+    def convert_optional(
+        self,
+        input_: In
+    ) -> Iterator[Out]:
+
+        if input_ is None:
+            return iter([])
+        else:
+            return self.convert(input_)
 
     def convert(self, input_: In) -> Iterator[Out]:
         return reduce(
