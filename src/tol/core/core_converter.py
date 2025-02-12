@@ -108,7 +108,7 @@ class ChainedConverter(Converter, Generic[In, Out]):
 
     Please note that this is different to the main `Converter` -
     `None` elements are ignored in the sequence. Only use the
-    `convert_iterable` method. 
+    `convert_iterable` method.
     """
 
     def __init__(
