@@ -115,7 +115,9 @@ class TestChainedConverter:
             'answer': 42,
             'certainty': 100.0
         }
-        observed = cc.convert(in_).attributes
+        observed = [
+            o for o in cc.convert(in_)
+        ]
 
         assert observed == expected
 
