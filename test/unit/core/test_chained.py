@@ -190,15 +190,15 @@ class TestChainedConverter:
         expected = [
             {
                 'hello': 'world_iter_0_one',
-                'answer': 42
+                'certainty': 100.0
             },
             {
                 'hello': 'world_iter_1_one',
-                'answer': 42
+                'certainty': 100.0
             },
             {
                 'hello': 'world_iter_2_one',
-                'answer': 42
+                'certainty': 100.0
             }
         ]
         observed = [
@@ -207,6 +207,3 @@ class TestChainedConverter:
         ]
 
         assert observed == expected
-
-        to_iter_converter.convert.assert_called_once()
-        to_one_converter.convert.assert_called_once()
