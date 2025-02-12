@@ -19,6 +19,7 @@ from tol.flows.converters import (
     ElasticSampleToBenchlingSampleConverter
 )
 
+
 class _MockDataSource(DataSource, Relational):
     @property
     def supported_types(self):
@@ -39,8 +40,8 @@ class _MockDataSource(DataSource, Relational):
         return {'sample': rc_sample}
 
     def get_to_one_relation(
-            self, 
-            source: DataObject, 
+            self,
+            source: DataObject,
             relationship_name: str
     ):
         return source.to_one.get(relationship_name)
@@ -49,6 +50,7 @@ class _MockDataSource(DataSource, Relational):
             self
     ):
         raise NotImplementedError()
+
 
 class TestElasticSampleToBenchlingSampleConverter(TestCase):
     def test_convert(self):
@@ -61,7 +63,7 @@ class TestElasticSampleToBenchlingSampleConverter(TestCase):
             data_object_factory=destination.data_object_factory
         )
 
-        CoreDataObject = source.data_object_factory
+        CoreDataObject = source.data_object_factory # noqa N806
         obj1 = CoreDataObject(
             id_='sample_id1',
             type_='sample',
@@ -79,7 +81,7 @@ class TestElasticSampleToBenchlingSampleConverter(TestCase):
 
         converteds = converter.convert(obj1)
         ret1 = next(converteds)
-        
+
         self.assertEqual('benchling1', ret1.id)
         self.assertEqual('sample', ret1.type)
         self.assertEqual(ret1.attributes, {
@@ -90,3 +92,4 @@ class TestElasticSampleToBenchlingSampleConverter(TestCase):
             'programme_id': 'programme_id_1',
             'sts_id': 'sample_id1'
         })
+        
