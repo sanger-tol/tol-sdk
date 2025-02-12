@@ -4,7 +4,15 @@
 
 from abc import ABC, abstractmethod
 from functools import reduce
-from typing import Any, Generic, Iterable, Optional, TypeVar
+from itertools import chain
+from typing import (
+    Any,
+    Generic,
+    Iterable,
+    Iterator,
+    Optional,
+    TypeVar
+)
 
 
 In = TypeVar('In')
@@ -97,17 +105,39 @@ class ChainedConverter(Converter, Generic[In, Out]):
     ):
         self.__converters = converters
 
-    def convert(self, input_: In) -> Out:
-        return reduce(
-            self.__convert_with,
-            self.__converters,
-            input_
-        )
+    def convert(self, input_: In) -> Iterator[Out]:
+        # TODO refactor to use `functools.reduce`
+        converted = [input_]
+
+        for converter in self.__converters:
+            converted = self.__convert_with(
+                converted,
+                converter
+            )
+
+        return converted
 
     def __convert_with(
         self,
-        previous: Any,
+        previous: Iterator[Any],
         converter: Converter
-    ) -> Any:
+    ) -> Iterator[Any]:
 
-        return converter.convert(previous)
+        for p in previous:
+            converted = converter.convert(p)
+
+            if self.__is_iter(converted):
+                yield from converted
+            else:
+                yield converted
+
+    def __is_iter(
+        self,
+        previous: Any
+    ) -> bool:
+
+        try:
+            iter(previous)
+            return True
+        except TypeError:
+            return False
