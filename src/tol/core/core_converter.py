@@ -135,7 +135,7 @@ class ChainedConverter(Converter, Generic[In, Out]):
 
     def convert_optional(
         self,
-        input_: In
+        input_: In | None
     ) -> Iterator[Out]:
 
         if input_ is None:
