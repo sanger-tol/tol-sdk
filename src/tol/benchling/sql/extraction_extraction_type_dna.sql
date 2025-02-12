@@ -21,7 +21,7 @@ Output: Table with cols:
 10) extraction_name: [character] Entity name. 
 11) fluidx_id: [character] Fluidx ID.
 12) volume_ul: [double] volume of DNA available in the fluidx tube.
-13) location: [character] Physical location of the DNA extraction. Freezer shelf.
+13) location: [character] Physical locationo of the DNA extraction. Freezer location.
 14) rack: [character] Physical locationo of the DNA extraction. Rack barcode.
 15) bnt_id: [character] Batches and Tracking legacy id.
 16) extraction_type: [character] dna.
