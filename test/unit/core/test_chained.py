@@ -109,14 +109,17 @@ class TestChainedConverter:
             }
         )
 
-        expected = {
-            'hello': 'world_one',
-            'welcome': True,
-            'answer': 42,
-            'certainty': 100.0
-        }
+        expected = [
+            {
+                'hello': 'world_one',
+                'welcome': True,
+                'answer': 42,
+                'certainty': 100.0
+            }
+        ]
         observed = [
-            o for o in cc.convert(in_)
+            o.attributes
+            for o in cc.convert(in_)
         ]
 
         assert observed == expected
