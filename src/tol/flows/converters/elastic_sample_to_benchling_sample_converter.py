@@ -23,7 +23,7 @@ class ElasticSampleToBenchlingSampleConverter(
             attributes = {
                 k[10:]: v  # Remove 'benchling_' prefix
                 for k, v in data_object.attributes.items()
-                if k.startswith('benchling_')and k != 'benchling_eln_tissue_id' 
+                if k.startswith('benchling_') and k != 'benchling_eln_tissue_id'
             }
 
             # Add the relationship IDs to attributes
@@ -42,3 +42,4 @@ class ElasticSampleToBenchlingSampleConverter(
                 attributes=attributes
             )
             yield ret
+            
