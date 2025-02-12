@@ -119,7 +119,7 @@ class TestChainedConverter:
         ]
         observed = [
             o.attributes
-            for o in cc.convert(in_)
+            for o in cc.convert_iterable([in_])
         ]
 
         assert observed == expected
@@ -162,7 +162,7 @@ class TestChainedConverter:
         ]
         observed = [
             o.attributes
-            for o in cc.convert(in_)
+            for o in cc.convert_iterable([in_])
         ]
 
         assert observed == expected
@@ -203,7 +203,7 @@ class TestChainedConverter:
         ]
         observed = [
             o.attributes
-            for o in cc.convert(in_)
+            for o in cc.convert_iterable([in_])
         ]
 
         assert observed == expected
