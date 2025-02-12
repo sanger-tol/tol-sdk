@@ -136,7 +136,7 @@ class ChainedConverter(Converter, Generic[In, Out]):
         return reduce(
             self.__convert_with,
             self.__converters,
-            [input_]
+            iter([input_])
         )
 
     def __convert_with(
