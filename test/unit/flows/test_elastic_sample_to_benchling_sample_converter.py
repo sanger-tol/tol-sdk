@@ -63,7 +63,7 @@ class TestElasticSampleToBenchlingSampleConverter(TestCase):
         converter = ElasticSampleToBenchlingSampleConverter(
             data_object_factory=destination.data_object_factory
         )
-        
+
         CoreDataObject = source.data_object_factory # noqa N806
         obj1 = CoreDataObject(
             id_='sample_id1',
@@ -105,7 +105,7 @@ class TestElasticSampleToBenchlingSampleConverter(TestCase):
 
         with self.assertRaises(StopIteration):
             next(converteds)
-        
+
         # test for multiple objects
         converteds = []
         for obj in obj3:
