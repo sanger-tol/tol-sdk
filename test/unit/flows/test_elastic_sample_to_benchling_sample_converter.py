@@ -44,7 +44,8 @@ class _MockDataSource(DataSource, Relational):
             source: DataObject,
             relationship_name: str
     ):
-        return source.to_one.get(relationship_name)
+        to_one = getattr(source, 'to_one', {})
+        return to_one.get(relationship_name) if to_one else None
 
     def get_to_many_relations(
             self
@@ -53,7 +54,7 @@ class _MockDataSource(DataSource, Relational):
 
 
 class TestElasticSampleToBenchlingSampleConverter(TestCase):
-    def test_convert(self):
+    def test_default_convert(self):
 
         source = _MockDataSource(config={})
         destination = _MockDataSource(config={})
@@ -62,33 +63,54 @@ class TestElasticSampleToBenchlingSampleConverter(TestCase):
         converter = ElasticSampleToBenchlingSampleConverter(
             data_object_factory=destination.data_object_factory
         )
-
+        
         CoreDataObject = source.data_object_factory # noqa N806
         obj1 = CoreDataObject(
             id_='sample_id1',
             type_='sample',
             attributes={
-                'benchling_eln_tissue_id': 'benchling1',
-                'benchling_another': 'another1',
-                'benchling_another2': None
-            },
-            to_one={
-                'benchling_species': CoreDataObject('species', 'taxon_id_1'),
-                'benchling_specimen': CoreDataObject('specimen', 'specimen_id_1'),
-                'benchling_tolid': CoreDataObject('tolid', 'programme_id_1')
+                'benchling_another': 'another1'
             }
         )
+        obj2 = CoreDataObject(
+            id_='sample_id1',
+            type_='sample',
+            attributes={
+                'benchling_eln_tissue_id': 'benchling1',
+                'benchling_another': 'another1'
+            },
+            to_one={}
+        )
+        obj3 = [
+            CoreDataObject(
+                id_=f'sample_id{i}',
+                type_='sample',
+                attributes={
+                    'benchling_eln_tissue_id': f'benchling{i}',
+                    'benchling_another': f'another{i}'
+                },
+                to_one={}
+            ) for i in range(3)
+        ]
 
-        converteds = converter.convert(obj1)
+        # test for no benchling_eln_tissue_id
+        converteds = list(converter.convert(obj1))
+        self.assertEqual(len(converteds), 0)
+
+        # test for missing relationships
+        converteds = converter.convert(obj2)
         ret1 = next(converteds)
-
         self.assertEqual('benchling1', ret1.id)
-        self.assertEqual('sample', ret1.type)
-        self.assertEqual(ret1.attributes, {
-            'another': 'another1',
-            'another2': None,
-            'taxon_id': 'taxon_id_1',
-            'specimen_id': 'specimen_id_1',
-            'programme_id': 'programme_id_1',
-            'sts_id': 'sample_id1'
-        })
+        self.assertEqual('another1', ret1.attributes['another'])
+
+        with self.assertRaises(StopIteration):
+            next(converteds)
+        
+        # test for multiple objects
+        converteds = []
+        for obj in obj3:
+            converteds.extend(list(converter.convert(obj)))
+        self.assertEqual(len(converteds), 3)
+        for i, converted in enumerate(converteds):
+            self.assertEqual(f'benchling{i}', converted.id)
+            self.assertEqual(f'another{i}', converted.attributes['another'])
