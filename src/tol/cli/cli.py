@@ -345,7 +345,7 @@ def output_tsv(objs, fields):
             click.echo('\t'.join(fields))
 
         click.echo('\t'.join(
-            getattr(obj, field)
+            str(obj.get_field_by_name(field))
             for field in fields
         ))
 

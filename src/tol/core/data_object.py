@@ -82,6 +82,19 @@ class DataObject(ABC):
         `DataSource`. Most users will not need (or want) to use this property.
         """
 
+    def get_field_by_name(self, field_name: str) -> Any:
+        """
+        Get a field by name, or return `None` if the field does not exist.
+        """
+        # Split by dots to allow for nested fields
+        field_names = field_name.split('.')
+        current_obj = self
+        for name in field_names:
+            current_obj = getattr(current_obj, name)
+            if current_obj is None:
+                return None
+        return current_obj
+
 
 @dataclass(frozen=True)
 class ErrorObject:

@@ -40,10 +40,10 @@ class JsonDataSource(
             config,
             expected=['uri', 'type', 'id_attribute', 'mappings']
         )
-        self.__raw_data = self._load_json()
-        self.__keyed_by_id = {
+        self._raw_data = self._load_json()
+        self._keyed_by_id = {
             v[self.id_attribute]: v
-            for v in self.__raw_data
+            for v in self._raw_data
             if self.id_attribute in v
         }
 
@@ -105,8 +105,8 @@ class JsonDataSource(
             raise DataSourceError(f'{object_type} is not supported')
 
         return (
-            self.__create_data_object(self.__keyed_by_id[object_id])
-            if self.__keyed_by_id[object_id] is not None else None
+            self.__create_data_object(self._keyed_by_id[object_id])
+            if self._keyed_by_id[object_id] is not None else None
             for object_id in object_ids
         )
 
@@ -123,7 +123,7 @@ class JsonDataSource(
             raise DataSourceError('Filtering is not supported on JsonDataSource')
         if object_type not in self.supported_types:
             raise DataSourceError(f'{object_type} is not supported')
-        for entry in self.__raw_data:
+        for entry in self._raw_data:
             id_ = entry.get(self.id_attribute)
             if id_ is not None and id_ != '':
                 yield self.__create_data_object(entry)

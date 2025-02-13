@@ -179,11 +179,11 @@ class TestJsonApiClient:
         """`JsonApiClient().delete()`"""
 
         client = JsonApiClient(FAKE_API_URL, token='funds')
-        expected_url = f'{FAKE_API_URL}/data/test/2'
+        expected_url = f'{FAKE_API_URL}/data/test/2%20and%20a%20bit'
 
         responses.delete(expected_url)
 
-        client.delete('test', '2')
+        client.delete('test', '2 and a bit')
 
     @responses.activate
     def test_upsert(self):

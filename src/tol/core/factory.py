@@ -90,7 +90,8 @@ def _local_name(__name: str) -> bool:
         'type',
         'attributes',
         'to_one_relationships',
-        'to_many_relationships'
+        'to_many_relationships',
+        'get_field_by_name'
     ]
 
     return (

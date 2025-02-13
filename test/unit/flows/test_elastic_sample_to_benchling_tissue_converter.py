@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2024 Genome Research Ltd.
+# SPDX-FileCopyrightText: 2025 Genome Research Ltd.
 #
 # SPDX-License-Identifier: MIT
 
@@ -137,13 +137,14 @@ class TestElasticSampleToBenchlingTissueConverter(TestCase):
                 'sts_lifestage': 'lifestage1',
                 'sts_sex': 'sex1',
                 'sts_tissue_size': 'size1',
-                'sts_lab_work_category': 'labwork1',
                 'sts_preservation_approach': 'approach1',
                 'sts_receive_date': datetime(2022, 1, 1),
                 'sts_tollab_assign_date': datetime(2023, 1, 1),
                 'sts_send_rd': 'rd',
                 'sts_priority': '1',
-                'sts_project': ['project1', 'project2']
+                'sts_project': ['project1', 'project2'],
+                'sts_sequencescape_study_id': 'cf01ea23-ac45-67e8-9101-11b213141516',
+                'sts_cost_code': 'S12345',
             },
             to_one={
                 'sts_species': species,
@@ -171,8 +172,7 @@ class TestElasticSampleToBenchlingTissueConverter(TestCase):
             'taxon_id': 'species1',
             'taxon_group_phyla': 'order1',
             'genome_size': '100',
-            'freezer': None,
-            'shelf': 'parentage',
+            'location': 'parentage',
             'tray': 'tray_name',
             'specimen_id': 'specimen1',
             'programme_id': 'tolid1',
@@ -183,7 +183,6 @@ class TestElasticSampleToBenchlingTissueConverter(TestCase):
             'sex': 'sex1',
             'preservation_approach': 'approach1',
             'size_of_tissue_in_tube': 'size1',
-            'lab_work_category': 'labwork1',
             'family_representative': 'family1, family2',
             'date_sample_received_at_sanger': '2022-01-01',
             'date_assigned_to_lab': '2023-01-01',
@@ -192,6 +191,8 @@ class TestElasticSampleToBenchlingTissueConverter(TestCase):
             'sts_id': 1234,
             'priority': '1',
             'project': 'project1, project2',
+            'study_id': 'cf01ea23-ac45-67e8-9101-11b213141516',
+            'cost_code': 'S12345',
         })
 
         with self.assertRaises(StopIteration):

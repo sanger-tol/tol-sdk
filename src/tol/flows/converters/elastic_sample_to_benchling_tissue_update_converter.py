@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2024 Genome Research Ltd.
+# SPDX-FileCopyrightText: 2025 Genome Research Ltd.
 #
 # SPDX-License-Identifier: MIT
 
@@ -33,8 +33,8 @@ class ElasticSampleToBenchlingTissueUpdateConverter(
                         species.sts_taxon_group
                         if species.sts_taxon_group else 'NA',
                     'genome_size': str(species.sts_genome_size),
-                    'freezer': None,
-                    'shelf': data_object.sts_labwhere_parentage,
+                    # 'freezer': None,
+                    'location': data_object.sts_labwhere_parentage,  # Previously shelf
                     'tray': data_object.sts_labwhere_name,
                     'specimen_id': specimen.id,
                     'programme_id': data_object.sts_tolid.id,
@@ -54,7 +54,7 @@ class ElasticSampleToBenchlingTissueUpdateConverter(
                         data_object.sts_tollab_assign_date.strftime('%Y-%m-%d')
                         if data_object.sts_tollab_assign_date is not None else '1970-01-01',
                     # 'assigned_by': ,
-                    'lab_work_category': data_object.sts_lab_work_category,
+                    # 'lab_work_category': data_object.sts_lab_work_category,
                     'family_representative': ', '.join(species.goat_family_representative)
                         if species.goat_family_representative is not None else None,
                     'sample_set_id': data_object.sts_sampleset.id,
@@ -63,6 +63,8 @@ class ElasticSampleToBenchlingTissueUpdateConverter(
                     # 'remaining_weight':,
                     'priority': data_object.sts_priority,
                     'project': ', '.join(data_object.sts_project),
+                    'study_id': data_object.sts_sequencescape_study_id,
+                    'cost_code': data_object.sts_cost_code,
                 }
             )
             return ret
