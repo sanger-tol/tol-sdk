@@ -39,7 +39,8 @@ def elastic():
                                     'benchling_tissue_prep': 'tissue_prep',
                                     'mlwh_species': 'species',
                                     'mlwh_tolid': 'tolid',
-                                    'mlwh_specimen': 'specimen'}
+                                    'mlwh_specimen': 'specimen',
+                                    'mlwh_sample': 'sample'}
     rc_sequencing_request.to_many = {
         'mlwh_run_datas': 'run_data',
         'tolqc_run_datas': 'run_data'

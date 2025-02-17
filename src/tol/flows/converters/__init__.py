@@ -16,6 +16,7 @@ from .bold_sample_to_elastic_sample_update_converter import BoldSampleToElasticS
 from .elastic_sample_to_benchling_tissue_converter import ElasticSampleToBenchlingTissueConverter  # noqa F401
 from .elastic_sample_to_benchling_tissue_update_converter import ElasticSampleToBenchlingTissueUpdateConverter  # noqa F401
 from .elastic_sample_to_bold_sample_converter import ElasticSampleToBoldSampleConverter  # noqa F401
+from .elastic_sample_to_elastic_sequencing_request_update_converter import ElasticSampleToElasticSequencingRequestUpdateConverter  # noqa F401
 from .elastic_sample_to_sts_sample_converter import ElasticSampleToStsSampleConverter  # noqa F401
 from .elastic_sequencing_request_to_sts_sequencing_request_converter import ElasticSequencingRequestToStsSequencingRequestConverter  # noqa F401
 from .elastic_species_to_sts_species_converter import ElasticSpeciesToStsSpeciesConverter  # noqa F401
