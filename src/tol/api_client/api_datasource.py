@@ -2,239 +2,459 @@
 #
 # SPDX-License-Identifier: MIT
 
-import json
-import math
-import urllib
-from dataclasses import asdict
-from datetime import datetime, time
+from __future__ import annotations
+
+import typing
+from functools import cache
 from itertools import chain
-from typing import Dict, Iterable, List
+from typing import Any, Callable, Iterable, List, Optional
 
-from cachetools import LFUCache
-
-import requests
-
-from .api_object import ApiObject
-from ..core import (
-    DataObject,
-    DataSource,
-    DataSourceError,
-    DataSourceFilter
+from .client import JsonApiClient
+from .converter import (
+    DataObjectConverter,
+    JsonApiConverter
 )
+from .filter import ApiFilter
+from .validate import validate, validate_id
+from ..core import DataObject, DataSource, DataSourceFilter
 from ..core.operator import (
-    Upserter
+    Counter,
+    Cursor,
+    Deleter,
+    DetailGetter,
+    GroupStatter,
+    Inserter,
+    ListGetter,
+    OperatorDict,
+    PageGetter,
+    RelationWriteMode,
+    Relational,
+    ReturnMode,
+    Statter,
+    Upserter,
 )
+from ..core.relationship import RelationshipConfig
+
+if typing.TYPE_CHECKING:
+    from ..core.session import OperableSession
 
 
-class ApiDataSource(DataSource, Upserter):
+ClientFactory = Callable[[], JsonApiClient]
+JsonConverterFactory = Callable[[], JsonApiConverter]
+DOConverterFactory = Callable[[], DataObjectConverter]
+FilterFactory = Callable[[], ApiFilter]
 
-    def __init__(self, config: Dict):
-        """Initialises an API base data source.
 
-        We expect the following keys in the config:
-        url -- the URL of the instance (including path with API prefix)
-        key -- the API key to use for authentication
-        """
-        super().__init__(config, expected=['url', 'key'])
-        self.cache = LFUCache(100000)  # Might want to make this configurable at some point
+class ApiDataSource(
+    DataSource,
 
-    def get_by_id(self, object_type: str, id_: int):
-        id_encoded = urllib.parse.quote(str(id_), safe='')
-        url = f'{object_type}/{id_encoded}'
-        ret, _ = self.get_by_link(url)
-        return ret
+    # the supported operators
+    Counter,
+    Cursor,
+    Deleter,
+    DetailGetter,
+    GroupStatter,
+    Inserter,
+    PageGetter,
+    ListGetter,
+    Relational,
+    Statter,
+    Upserter
+):
+    """
+    A `DataSource` that connects to a remote API based upon
+    `api_base2`.
 
-    def _get(self, path, params):
-        return requests.get(f'{self.url}{path}', params=params)
+    Developers should likely use `create_api_datasource`
+    instead of this directly.
+    """
 
-    def _post(self, path, json):
-        return requests.post(f'{self.url}/{path}', json=json,
-                             headers={'Token': self.key})
+    def __init__(
+        self,
+        client_factory: ClientFactory,
+        json_converter_factory: JsonConverterFactory,
+        do_converter_factory: DOConverterFactory,
+        filter_factory: FilterFactory
+    ) -> None:
 
-    def _patch(self, path, json):
-        return requests.patch(f'{self.url}/{path}', json=json,
-                              headers={'Token': self.key})
+        self.__client_factory = client_factory
+        self.__jc_factory = json_converter_factory
+        self.__dc_factory = do_converter_factory
+        self.__filter_factory = filter_factory
+        super().__init__({})
+        self.write_batch_size = 100
 
-    def _delete(self, path):
-        return requests.delete(f'{self.url}/{path}',
-                               headers={'Token': self.key})
+    @property
+    @cache
+    def attribute_types(self) -> dict[str, dict[str, str]]:
+        client = self.__client_factory()
+        return client.config_attribute_types()
 
-    def get_by_link(self, link: str, params: Dict = {}):
-        response = self._get(f'/{link}', params=params)
-        if response.status_code != 200:
-            raise DataSourceError(f'Cannot find object(s): {link} {params}',
-                                  response.text,
-                                  response.status_code)
-        json = response.json() if callable(response.json) else response.json
-        meta = json['meta'] if 'meta' in json else {'total': 1}
-        return self.unpack(json), meta
+    @property
+    @cache
+    def attribute_metadata(self) -> dict[str, dict[str, dict[str, str | bool]]]:
+        client = self.__client_factory()
+        return client.config_attribute_metadata()
 
-    def get_list(self, object_type: str, object_filters: DataSourceFilter = None,
-                 sort_by: str = None, page_size: int = 100):
-        # Get the first page, then we know the total size
-        args = {'filter': json.dumps(asdict(object_filters)) if object_filters else {},
-                'page_size': page_size}
-        if sort_by is not None:
-            args['sort_by'] = sort_by
-        first_page, meta = self.get_list_page(object_type, 1, **args)
-        total_rows = meta['total']
-        last_page = math.ceil(total_rows / page_size)
-        if last_page == 1:
-            return first_page
+    @property
+    @cache
+    def supported_types(self) -> list[str]:
+        return list(
+            self.attribute_types.keys()
+        )
 
-        pages = range(2, last_page + 1)
-        return chain(first_page,
-                     self.get_list_pages(object_type, pages, **args))
+    @property
+    @cache
+    def relationship_config(self) -> dict[str, RelationshipConfig]:
+        transfer = self.__client_factory().config_relationships()
+        return self.__jc_factory().convert_relationship_config(
+            transfer
+        )
 
-    def get_list_pages(self, object_type: str, pages: List, **kwargs):
-        for page in pages:
-            page, _ = self.get_list_page(object_type, page, **kwargs)
-            yield from page
+    @property
+    @cache
+    def write_mode(self) -> dict[str, RelationWriteMode]:
+        transfer = self.__client_factory().config_write_mode()
 
-    def get_list_page(self, object_type: str, page: int, **kwargs):
-        url = f'{object_type}'
-        return self.get_by_link(url, params={**kwargs, 'page': page})
+        return {
+            k: RelationWriteMode(v)
+            for k, v in transfer.items()
+        }
 
-    def unpack(self, json):
-        if isinstance(json['data'], list):
-            ret = []
-            for obj in json['data']:
-                ret.append(self.new_or_from_cache(obj))
-            return ret
+    @property
+    @cache
+    def return_mode(self) -> dict[str, ReturnMode]:
+        transfer = self.__client_factory().config_return_mode()
 
-        # Single object
-        return self.new_or_from_cache(json['data'])
+        return {
+            k: ReturnMode(v)
+            for k, v in transfer.items()
+        }
 
-    def new_or_from_cache(self, obj_dict: Dict):
-        id_ = obj_dict['id']
-        type_ = obj_dict['type']
-        key = f'{type_}{id_}'
-        if key in self.cache:
-            cached_object = self.cache[key]
-            cached_object.update_attributes_from_dict(obj_dict['attributes'])
-            return cached_object
-        new_object = ApiObject(type_, id_)
-        self._update_object_from_json(new_object, obj_dict)
-        self._cache_object(new_object)
-        return new_object
-
-    def _cache_object(self, obj):
-        id_ = obj.id
-        type_ = obj.type
-        key = f'{type_}{id_}'
-        self.cache[key] = obj
-
-    def _convert_relationships_from_json_to_objects(self, relationships: Dict):
-        # We see both one- and many- ends of the relationships here
-        ret = {}
-        for k, v in relationships.items():
-            if 'data' in v and v['data'] is not None:  # Relationship to single object
-                ret[k] = self._get_from_cache_or_remote(v['data']['type'], v['data']['id'])
-            # Ignore many end
-        return ret
-
-    def _update_attributes_from_object(self, obj: ApiObject):
-        for k in obj.attributes.keys():
-            obj.attributes[k] = getattr(obj, k)
-
-    def _update_relationships_from_object(self, obj: ApiObject):
-        for k in obj.relationships.keys():
-            obj.relationships[k] = getattr(obj, k)
-
-    def _get_from_cache_or_remote(self, type_, id_):
-        key = f'{type_}{id_}'
-        if key in self.cache:
-            return self.cache.get(key)
-        return self.get_by_id(type_, id_)
-
-    def delete_by_id(self, object_type: str, id_: int):
-        if id_ is None:
-            raise DataSourceError('Object ID must be given')
-        url = f'/{object_type}/{id_}'
-        response = self._delete(url)
-        if response.status_code != 204:
-            raise DataSourceError('Cannot find object(s)',
-                                  response.text,
-                                  response.status_code)
-        return
-
-    def delete(self, obj: ApiObject):
-        return self.delete_by_id(obj.type, obj.id)
-
-    def create(self, obj: ApiObject):
-        url = f'/{obj.type}'
-        obj_json = obj.to_json()
-        if 'id' in obj_json:
-            del obj_json['id']
-        json = {'data': obj_json}
-        response = self._post(path=url, json=json)
-        if response.status_code != 201:
-            raise DataSourceError('Cannot create object',
-                                  response.text,
-                                  response.status_code)
-        json = response.json() if callable(response.json) else response.json
-        self._update_object_from_json(obj, json['data'])
-        self._cache_object(obj)
-        return obj
-
-    def update(self, obj: ApiObject):
-        url = f'/{obj.type}/{obj.id}'
-        # We may have updated object's attributes/relationships since this was created
-        self._update_attributes_from_object(obj)
-        self._update_relationships_from_object(obj)
-        obj_json = obj.to_json()
-        if 'id' in obj_json:
-            del obj_json['id']
-        json = {'data': obj_json}
-        response = self._patch(path=url, json=json)
-        if response.status_code != 200:
-            raise DataSourceError('Cannot update object',
-                                  response.text,
-                                  response.status_code)
-        json = response.json() if callable(response.json) else response.json
-        self._update_object_from_json(obj, json['data'])
-        self._cache_object(obj)
-        return obj
-
-    def _update_object_from_json(self, obj: ApiObject, obj_json: Dict):
-        obj._id = obj_json['id']
-        obj.update_attributes_from_dict(obj_json.get('attributes', {}))
-        if 'relationships' in obj_json:
-            relationships_obj = \
-                self._convert_relationships_from_json_to_objects(obj_json['relationships'])
-            obj.update_relationships_from_dict(relationships_obj)
-
-    def __sanitise(self, o):
-        if isinstance(o, datetime):
-            return o.isoformat()
-        if isinstance(o, time):
-            return o.isoformat()
-        return o
-
-    def __sanitise_attributes(self, attributes):
-        return {k: self.__sanitise(v) for k, v in attributes.items()}
-
-    # This currently only deals with attributes. Need it to cope with relationships as well
-    def upsert(
+    @validate('detailGet')
+    def get_by_id(
         self,
         object_type: str,
-        objects: Iterable[DataObject]
+        object_ids: Iterable[str],
+        session: Optional[OperableSession] = None
+    ) -> Iterable[Optional[DataObject]]:
+
+        client = self.__client_factory()
+        json_responses = (
+            client.get_detail(object_type, id_)
+            for id_ in object_ids
+        )
+        json_converter = self.__jc_factory()
+        return (
+            json_converter.convert(r)
+            if r is not None else None
+            for r in json_responses
+        )
+
+    @validate('listGet')
+    def get_list_page(
+        self,
+        object_type: str,
+        page_number: int,
+        page_size: Optional[int] = None,
+        object_filters: Optional[DataSourceFilter] = None,
+        sort_by: Optional[str] = None,
+        session: Optional[OperableSession] = None
+    ) -> tuple[Iterable[DataObject], int]:
+
+        filter_string = self.__get_filter_string(object_filters)
+        transfer = self.__client_factory().get_list_page(
+            object_type,
+            page_number,
+            page_size,
+            filter_string=filter_string,
+            sort_string=sort_by
+        )
+        return self.__jc_factory().convert_list(transfer)
+
+    def get_list(
+        self,
+        object_type: str,
+        object_filters: Optional[DataSourceFilter] = None,
+        session: Optional[OperableSession] = None
+    ) -> Iterable[DataObject]:
+
+        if 'cursor' in self.supported_operations[object_type]:
+            return self._get_list_by_cursor(
+                object_type,
+                object_filters
+            )
+        else:
+            return self.__get_list_regular(
+                object_type,
+                object_filters
+            )
+
+    @validate('count')
+    def get_count(
+        self,
+        object_type: str,
+        object_filters: Optional[DataSourceFilter] = None,
+        session: Optional[OperableSession] = None
+    ) -> int:
+        filter_string = self.__get_filter_string(object_filters)
+        transfer = self.__client_factory().get_count(
+            object_type,
+            filter_string=filter_string
+        )
+        return self.__jc_factory().convert_count(transfer)
+
+    @validate('stats')
+    def get_stats(
+        self,
+        object_type: str,
+        stats: Optional[List[str]] = [],
+        stats_fields: Optional[List[str]] = [],
+        object_filters: Optional[DataSourceFilter] = None,
+        session: Optional[OperableSession] = None
+    ) -> tuple[Iterable[DataObject], int]:
+
+        filter_string = self.__get_filter_string(object_filters)
+        transfer = self.__client_factory().get_stats(
+            object_type,
+            stats_string=','.join(stats),
+            stats_fields_string=','.join(stats_fields),
+            filter_string=filter_string
+        )
+        return self.__jc_factory().convert_stats(transfer)
+
+    @validate('groupStats')
+    def get_group_stats(
+        self,
+        object_type: str,
+        group_by: List[str],
+        stats_fields: List[str] = [],
+        stats: List[str] = ['min', 'max'],
+        object_filters: DataSourceFilter | None = None,
+        session: OperableSession | None = None
+    ) -> Iterable[OperatorDict[Any, int]]:
+
+        filter_string = self.__get_filter_string(object_filters)
+        transfer = self.__client_factory().get_group_stats(
+            object_type,
+            ','.join(group_by),
+            stats_string=','.join(stats),
+            stats_fields_string=','.join(stats_fields),
+            filter_string=filter_string
+        )
+        return self.__jc_factory().convert_group_stats(transfer)
+
+    @validate('cursor')
+    def get_cursor_page(
+        self,
+        object_type: str,
+        page_size: Optional[int] = None,
+        object_filters: Optional[DataSourceFilter] = None,
+        search_after: list[str] | None = None,
+        session: Optional[OperableSession] = None
+    ) -> tuple[Iterable[DataObject], list[str] | None]:
+
+        filter_string = self.__get_filter_string(object_filters)
+        transfer = self.__client_factory().get_cursor_page(
+            object_type,
+            page_size,
+            search_after,
+            filter_string=filter_string
+        )
+        return self.__jc_factory().convert_cursor_page(transfer)
+
+    @validate('delete')
+    def delete(
+        self,
+        object_type: str,
+        object_ids: Iterable[str],
+        session: Optional[OperableSession] = None
     ) -> None:
-        url = f'/{object_type}:upsert'
-        json = {'data': [{'type': obj.type,
-                          'id': obj.id,
-                          'attributes': self.__sanitise_attributes(obj.attributes)}
-                         for obj in objects]}
-        response = self._post(path=url, json=json)
-        if response.status_code != 200:
-            raise DataSourceError('Cannot upsert objects',
-                                  response.text,
-                                  response.status_code)
+
+        client = self.__client_factory()
+        for object_id in object_ids:
+            client.delete(object_type, object_id)
+
+    @validate('upsert')
+    def upsert_batch(
+        self,
+        object_type: str,
+        objects: Iterable[DataObject],
+        session: Optional[OperableSession] = None,
+        **kwargs
+    ) -> Iterable[DataObject] | None:
+        transfer = self.__dc_factory().convert_list(
+            list(objects)
+        )
+        returned = self.__client_factory().upsert(object_type, transfer)
+        if self.return_mode[object_type] == ReturnMode.POPULATED:
+            converted, _ = self.__jc_factory().convert_list(returned)
+            return converted
+        return []  # when the underlying DataSource doesn't return anything
+
+    @validate('relational', direct_object=True)
+    @validate_id
+    def get_recursive_relation(
+        self,
+        source: DataObject,
+        relationship_hops: list[str],
+        session: Optional[OperableSession] = None
+    ) -> Optional[DataObject]:
+
+        self.validate_to_one_recurse(source.type, relationship_hops)
+        transfer = self.__client_factory().get_to_one_relation_recursive(
+            source.type,
+            source.id,
+            relationship_hops
+        )
+        if transfer is None:
+            return None
+        return self.__jc_factory().convert(transfer)
+
+    @validate('relational', direct_object=True)
+    @validate_id
+    def get_to_one_relation(
+        self,
+        source: DataObject,
+        relationship_name: str,
+        session: Optional[OperableSession] = None
+    ) -> Optional[DataObject]:
+
+        return self.get_recursive_relation(
+            source,
+            [relationship_name]
+        )
+
+    @validate('relational', direct_object=True)
+    @validate_id
+    def get_to_many_relations_page(
+        self,
+        source: DataObject,
+        relationship_name: str,
+        page: int,
+        page_size: int,
+        session: Optional[OperableSession] = None
+    ) -> Iterable[DataObject]:
+
+        transfer = self.__client_factory().get_to_many_relations_page(
+            source.type,
+            source.id,
+            relationship_name,
+            page,
+            page_size
+        )
+        return self.__jc_factory().convert_list(transfer)
+
+    @validate('relational', direct_object=True)
+    @validate_id
+    def get_to_many_relations(
+        self,
+        source: DataObject,
+        relationship_name: str,
+        session: Optional[OperableSession] = None
+    ) -> Iterable[DataObject]:
+
+        page_number = 1
+        page_size = self.get_page_size()
+
+        while True:
+            page, _ = self.get_to_many_relations_page(
+                source,
+                relationship_name,
+                page_number,
+                page_size
+            )
+
+            next_page = list(page)
+            if not next_page:
+                return
+
+            yield from next_page
+            if len(next_page) < page_size:
+                return
+            page_number += 1
+
+    @validate('insert')
+    def insert(
+        self,
+        object_type: str,
+        objects: Iterable[DataObject],
+        session: Optional[OperableSession] = None
+    ) -> Iterable[DataObject] | None:
+
+        transfer = self.__dc_factory().convert_list(
+            objects
+        )
+        returned = self.__client_factory().insert(
+            object_type,
+            transfer
+        )
+        if self.return_mode[object_type] == ReturnMode.POPULATED:
+            converted, _ = self.__jc_factory().convert_list(returned)
+            return converted
 
     @property
-    def supported_types(self):
-        raise NotImplementedError()
+    @cache
+    def supported_operations(self) -> dict[str, list[str]]:
+        """
+        The list of `Operator` ABC's implemented for each
+        `object_type`.
+        """
 
-    @property
-    def attribute_types(self):
-        raise NotImplementedError()
+        client = self.__client_factory()
+        transfer = client.config_operations()
+        return self.__parse_operations(transfer)
+
+    def __get_list_regular(
+        self,
+        object_type: str,
+        object_filters: Optional[DataSourceFilter]
+    ) -> Iterable[DataObject]:
+
+        page = 1
+        page_size = self.get_page_size()
+        client = self.__client_factory()
+        jc_converter = self.__jc_factory()
+        filter_string = self.__get_filter_string(object_filters)
+
+        while True:
+            transfer = client.get_list_page(
+                object_type,
+                page,
+                page_size,
+                filter_string=filter_string
+            )
+            (results_page, _) = jc_converter.convert_list(transfer)
+
+            yield from results_page
+            if len(results_page) < page_size:
+                break
+
+            page += 1
+
+    def __get_filter_string(
+        self,
+        object_filters: Optional[DataSourceFilter]
+    ) -> Optional[str]:
+
+        if object_filters is None:
+            return None
+        return self.__filter_factory().dumps(object_filters)
+
+    def __parse_operations(
+        self,
+        transfer: dict[str, OperatorDict]
+    ) -> dict[str, list[str]]:
+
+        return {
+            t: self.__join_operations(o)
+            for t, o in transfer.items()
+        }
+
+    def __join_operations(
+        self,
+        operator_dict: OperatorDict
+    ) -> list[str]:
+
+        operators = chain(*list(operator_dict.values()))
+        return list(operators)

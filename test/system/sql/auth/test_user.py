@@ -8,7 +8,7 @@ import pytest
 
 import responses
 
-from tol.api_base2.auth import OidcConfig
+from tol.api_base.auth import OidcConfig
 from tol.sql.auth.models import AuthUser
 
 

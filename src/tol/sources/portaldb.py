@@ -4,7 +4,7 @@
 
 import os
 
-from ..api_client2 import (
+from ..api_client import (
     create_api_datasource
 )
 from ..core import (
