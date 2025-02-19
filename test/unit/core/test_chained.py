@@ -2,7 +2,8 @@
 #
 # SPDX-License-Identifier: MIT
 
-from typing import Any, Iterator
+from dataclasses import dataclass
+from typing import Any
 from unittest.mock import create_autospec
 
 import pytest
@@ -12,6 +13,13 @@ from tol.core import (
     Converter,
     DataObject
 )
+
+
+@dataclass
+class Converters:
+    a: Converter
+    b: Converter
+    c: Converter
 
 
 def _mock_do(
@@ -31,9 +39,9 @@ def _mock_do(
     return mock_do
 
 
-def __convert_to_one(in_: DataObject, suffix: str) -> DataObject:
+def __convert(in_: DataObject, char: str) -> DataObject:
     new_attributes = {
-        k: f'{v}_{suffix}' if isinstance(v, str) else v
+        k: f'{v}_{char}' if isinstance(v, str) else v
         for k, v in in_.attributes.items()
     }
 
@@ -42,62 +50,41 @@ def __convert_to_one(in_: DataObject, suffix: str) -> DataObject:
     )
 
 
-def __convert_to_iter(
-    in_: DataObject,
-    suffix: str
-) -> Iterator[DataObject]:
-
-    return (
-        __convert_to_one(
-            in_,
-            f'{suffix}_{c}'
-        )
-        for c in 'abc'
-    )
-
-
-@pytest.fixture
-def to_one_converter() -> Converter:
+def __mock_converter(char: str) -> Converter:
     mock_converter: Converter = create_autospec(
         Converter,
         spec_set=True
     )
     mock_converter.convert.side_effect = (
-        lambda in_: __convert_to_one(in_, 'one')
+        lambda in_: __convert(in_, char)
     )
 
     return mock_converter
 
 
 @pytest.fixture
-def to_iter_converter() -> Converter:
-    mock_converter: Converter = create_autospec(
-        Converter,
-        spec_set=True
+def converters() -> Converters:
+    return Converters(
+        *[
+            __mock_converter(char)
+            for char in 'abc'
+        ]
     )
-    mock_converter.convert.side_effect = (
-        lambda in_: __convert_to_iter(in_, 'iter')
-    )
-
-    return mock_converter
 
 
 class TestChainedConverter:
     """
     All converters suffix any `str` attribute
-    with their given `suffix`.
+    with their given `char`.
     """
 
-    def test_to_one(
+    def test_one(
         self,
-        to_one_converter: Converter
+        converters: Converters
     ):
-        """
-        Just `to_one_converter`, no generators or `yield`.
-        """
 
         cc = ChainedConverter(
-            to_one_converter
+            converters.a
         )
 
         in_ = _mock_do(
@@ -109,101 +96,48 @@ class TestChainedConverter:
             }
         )
 
-        expected = [
-            {
-                'hello': 'world_one',
-                'welcome': True,
-                'answer': 42,
-                'certainty': 100.0
-            }
-        ]
-        observed = [
-            o.attributes
-            for o in cc.convert_iterable([in_])
-        ]
+        expected = {
+            'hello': 'world_a',
+            'welcome': True,
+            'answer': 42,
+            'certainty': 100.0
+        }
+        observed = cc.convert(in_).attributes
 
         assert observed == expected
 
-        to_one_converter.convert.assert_called_once()
-
-    def test_to_iter(
-        self,
-        to_iter_converter: Converter
-    ):
-        """
-        Just `to_iter_converter`, returning multiple
-        in an `Iterator`.
-        """
-
-        cc = ChainedConverter(
-            to_iter_converter
-        )
-
-        in_ = _mock_do(
-            attributes={
-                'hello': 'world',
-                'answer': 42,
-            }
-        )
-
-        expected = [
-            {
-                'hello': 'world_iter_a',
-                'answer': 42
-            },
-            {
-                'hello': 'world_iter_b',
-                'answer': 42
-            },
-            {
-                'hello': 'world_iter_c',
-                'answer': 42
-            }
-        ]
-        observed = [
-            o.attributes
-            for o in cc.convert_iterable([in_])
-        ]
-
-        assert observed == expected
-
-        to_iter_converter.convert.assert_called_once()
+        converters.a.convert.assert_called_once()
 
     def test_many(
         self,
-        to_one_converter: Converter,
-        to_iter_converter: Converter
+        converters: Converters
     ):
 
         cc = ChainedConverter(
-            to_iter_converter,
-            to_one_converter
+            converters.a,
+            converters.b,
+            converters.c
         )
 
         in_ = _mock_do(
             attributes={
                 'hello': 'world',
+                'welcome': True,
+                'answer': 42,
                 'certainty': 100.0
             }
         )
 
-        expected = [
-            {
-                'hello': 'world_iter_a_one',
-                'certainty': 100.0
-            },
-            {
-                'hello': 'world_iter_b_one',
-                'certainty': 100.0
-            },
-            {
-                'hello': 'world_iter_c_one',
-                'certainty': 100.0
-            }
-        ]
-        observed = [
-            o.attributes
-            for o in cc.convert_iterable([in_])
-        ]
+        expected = {
+            'hello': 'world_a_b_c',
+            'welcome': True,
+            'answer': 42,
+            'certainty': 100.0
+        }
+        observed = cc.convert(in_).attributes
 
         assert observed == expected
+
+        converters.a.convert.assert_called_once()
+        converters.b.convert.assert_called_once()
+        converters.c.convert.assert_called_once()
