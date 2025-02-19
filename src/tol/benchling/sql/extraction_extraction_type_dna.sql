@@ -3,11 +3,9 @@
 
 This SQL query retrieves all the information of DNA extractions performed by the ToL Core Laboratory. 
 
-The table produced also contains the eln_dna_extract_id and eln_file_registry_id 
-which uniquely idenfied each dna extract entity in Benchling Warehouse (BWH). 
+The table produced also contains the eln_dna_extract_id and eln_file_registry_id which uniquely idenfied each dna extract entity in Benchling Warehouse (BWH). 
 
-The eln_dna_extract_id should be used as the foreign key to the DNA extract entity the
-submission is derived from.
+The eln_dna_extract_id should be used as the foreign key to the DNA extract entity thesubmission is derived from.
 
 Output: Table with cols: 
 
@@ -21,75 +19,153 @@ Output: Table with cols:
 8) specimen_id: [character] Specimen ID. Origin: STS
 9) completion_date: [date] Extraction date. This field coalesces created_at$ and created_on fields. Created_on is for bnt legacy data.
 10) extraction_name: [character] Entity name. 
-11) extraction_qc_result: [character] QC result: Yes = Extraction passed; No = Extraction failed. 
-12) yield_ng: [double] DNA yield after extraction. 
-13) femto_description:[character] Categorical description of the femto pulse profile. 
-14) volume_ul: [double] volume of DNA available in the fluidx tube.
-15) shelf: [character] Physical locationo of the DNA extraction. Freezer shelf.
-16) rack: [character] Physical locationo of the DNA extraction. Rack barcode.
-17) bnt_id: [character] Batches and Tracking legacy id.
-18) extraction_type: [character] dna
+11) fluidx_id: [character] Fluidx ID.
+12) volume_ul: [double] volume of DNA available in the fluidx tube.
+13) location: [character] Physical locationo of the DNA extraction. Freezer shelf.
+14) rack: [character] Physical locationo of the DNA extraction. Rack barcode.
+15) bnt_id: [character] Batches and Tracking legacy id.
+16) extraction_type: [character] dna.
+17) name: [character] Folder name.
+18) archive_purpose: [character] Reason for archiving the DNA extraction.
+19) nanodrop_concentration_ngul: [double] Concentration of DNA as measured by Nanodrop.
+20) qubit_concentration_ngul: [double] Concentration of DNA as measured by Qubit.
+21) yield_ng: [double] DNA yield after extraction.
+22) femto_date_code: [character] Femto date code.
+23) femto_description:[character] Categorical description of the femto pulse profile. 
+24) gqn_index: [character] Genomic Quality Number (GQN) index, calculated by the Femto software.
+25) extraction_qc_result: [character] QC result: Yes = Extraction passed; No = Extraction failed. 
 
 NOTES: 
-
 1) Data types were casted explicitly to conserved the data type stored in BWH.
-2) To add the Fluidx ID of the original DNA extract a few filters were applied to
-delete Vouchers, tubes archived because they were made in error, and 
-invalid container names. 
-3) Vouchers: The volume filter is risky but necessary. A few container might be excluded. 
+2) To add the Fluidx ID of the original DNA extract a few filters were applied to delete Vouchers, tubes archived because they were made in error, and invalid container names. 
+3) Vouchers: The volume filter is risky but necessary. A few container might be excluded.
 
 */
 
+WITH latest_nanodrop_conc AS (    
+    SELECT
+        nanod.sample_id,
+        nanod.nanodrop_concentration_ngul
+    FROM nanodrop_measurements_v2$raw AS nanod
+    WHERE nanod.created_at$ = (        
+        SELECT MAX(sub.created_at$)
+        FROM nanodrop_measurements_v2$raw AS sub
+        WHERE sub.sample_id = nanod.sample_id
+    )
+),
+
+latest_qubit_conc AS (
+    SELECT
+        qbit.sample_id,
+        qbit.qubit_concentration_ngul
+    FROM qubit_measurements_v2$raw as qbit
+    WHERE qbit.created_at$ = (
+        SELECT MAX(sub.created_at$)
+        FROM qubit_measurements_v2$raw AS sub
+        WHERE sub.sample_id = qbit.sample_id
+    )
+),
+
+latest_yield AS (
+    SELECT
+        dnay.sample_id,
+        dnay.yield
+    FROM yield_v2$raw as dnay
+    WHERE dnay.created_at$ = (
+        SELECT MAX(sub.created_at$)
+        FROM yield_v2$raw AS sub
+        WHERE sub.sample_id = dnay.sample_id
+    )
+),
+
+latest_femto AS (
+    SELECT
+        femto.sample_id,
+        femto.femto_date_code,
+        femto.femto_profile_description AS femto_description,
+        femto.gqn_dnaex
+    FROM femto_dna_extract_v2$raw AS femto
+    WHERE femto.created_at$ = (
+        SELECT MAX(sub.created_at$)
+        FROM femto_dna_extract_v2$raw as sub
+        WHERE sub.sample_id = femto.sample_id
+    )
+),
+
+latest_decision_making AS (
+    SELECT
+        dnad.sample_id,
+        dnad.next_step,
+        qc_passfail AS extraction_qc_result
+    FROM dna_decision_making_v2$raw AS dnad
+    WHERE dnad.created_at$ = (
+        SELECT MAX(sub.created_at$)
+        FROM dna_decision_making_v2$raw AS sub
+        WHERE sub.sample_id = dnad.sample_id
+    )
+)
+
 SELECT DISTINCT
-	t.sts_id,
-	t.taxon_id,
-	t.id AS eln_tissue_id,
-	tp.id AS eln_tissue_prep_id,
-	dna.file_registry_id$ AS eln_file_registry_id,
-	dna.id AS extraction_id,
-	t.programme_id,
-	t.specimen_id,
-	COALESCE(DATE(dna.created_on), DATE(dna.created_at$)) AS completion_date, -- Homogenising BnT and Benchling dates
-	dna.name$ AS extraction_name,
-	con.barcode AS fluidx_id,
-	dnadc.qc_passfail AS extraction_qc_result,
-	dnay.yield AS yield_ng,
-	femto.femto_profile_description AS femto_description,
-	con.volume_si * 1000000 AS volume_ul,
-	loc.name AS shelf, 
-	box.barcode AS rack,
-	dna.bt_id AS bnt_id,
-	'dna'::varchar AS extraction_type, f.name, dna.archive_purpose$
+    t.sts_id,
+    t.taxon_id,
+    t.id AS eln_tissue_id,
+    tp.id AS eln_tissue_prep_id,
+    dna.file_registry_id$ AS eln_file_registry_id,
+    dna.id AS extraction_id,
+    t.programme_id,
+    t.specimen_id,
+    COALESCE(DATE(dna.created_on), DATE(dna.created_at$)) AS completion_date, -- Homogenising BnT and Benchling dates
+    dna.name$ AS extraction_name,
+    con.barcode AS fluidx_id,
+    con.volume_si * 1000000 AS volume_ul,
+    loc.name AS location,
+    box.barcode AS rack,
+    dna.bt_id AS bnt_id,
+    'dna'::varchar AS extraction_type,
+    f.name, dna.archive_purpose$,
+    latest_nanodrop_conc.nanodrop_concentration_ngul,
+    latest_qubit_conc.qubit_concentration_ngul,
+    latest_yield.yield AS yield_ng,
+    latest_femto.femto_date_code,
+    latest_femto.femto_description,
+    latest_femto.gqn_dnaex AS gqn_index,
+    latest_decision_making.next_step,
+    latest_decision_making.extraction_qc_result
 FROM dna_extract$raw AS dna
-LEFT JOIN container_content$raw AS cc 
-	ON cc.entity_id = dna.id
-LEFT JOIN container$raw AS con 
-	ON con.id = cc.container_id
-LEFT JOIN tissue_prep$raw AS tp 
-	ON tp.id = dna.tissue_prep
-LEFT JOIN tissue$raw AS t 
-	ON t.id = tp.tissue
-LEFT JOIN tube$raw AS tube 
-	ON cc.container_id = tube.id 
-LEFT JOIN folder$raw AS f 
-	ON dna.folder_id$ = f.id
+LEFT JOIN container_content$raw AS cc
+     ON cc.entity_id = dna.id
+LEFT JOIN container$raw AS con
+     ON con.id = cc.container_id
+LEFT JOIN tissue_prep$raw AS tp
+     ON tp.id = dna.tissue_prep
+LEFT JOIN tissue$raw AS t
+     ON t.id = tp.tissue
+LEFT JOIN tube$raw AS tube
+     ON cc.container_id = tube.id
+LEFT JOIN folder$raw AS f
+     ON dna.folder_id$ = f.id
 LEFT JOIN project$raw AS proj
-	ON dna.project_id$ = proj.id
-LEFT JOIN dna_decision_making_v2$raw AS dnadc  -- Results chunk
-	ON dna.id = dnadc.sample_id
-LEFT JOIN femto_dna_extract_v2$raw AS femto 
-	ON dna.id = femto.sample_id
-LEFT JOIN yield_v2$raw AS dnay 
-	ON dna.id = dnay.sample_id -- End Results chunk
+    ON dna.project_id$ = proj.id
+LEFT JOIN latest_nanodrop_conc -- Results chunk
+    ON dna.id = latest_nanodrop_conc.sample_id
+LEFT JOIN latest_qubit_conc
+    ON dna.id = latest_qubit_conc.sample_id
+LEFT JOIN latest_yield
+    ON dna.id = latest_yield.sample_id
+LEFT JOIN latest_femto
+    ON dna.id = latest_femto.sample_id
+LEFT JOIN latest_decision_making
+    ON dna.id = latest_decision_making.sample_id -- End Results chunk
 LEFT JOIN box$raw AS box -- Location chunk
-	ON con.box_id = box.id 
+    ON con.box_id = box.id
 LEFT JOIN location$raw AS loc
-	ON loc.id = box.location_id -- End of location chunk
+    ON loc.id = box.location_id -- End of location chunk
 WHERE tube.type IS NULL -- Excluding vouchers
-	AND con.volume_si * 1000000 != 10
-	AND proj.name = 'ToL Core Lab'
-	AND  (f.name IN ('Routine Throughput', 'DNA', 'Core Lab Entities', 'Benchling MS Project Move') OR f.name IS NULL)
-	AND (dna.archive_purpose$ != ('Made in error') OR dna.archive_purpose$ IS NULL)
-	AND (con.archive_purpose$ != ('Made in error') OR con.archive_purpose$ IS NULL)
-	AND con.barcode NOT LIKE 'CON%'
+    AND con.volume_si * 1000000 != 10
+    AND proj.name = 'ToL Core Lab'
+    AND  (f.name IN ('Routine Throughput', 'DNA', 'Core Lab Entities', 'Benchling MS Project Move') OR f.name IS NULL)
+    AND (dna.archive_purpose$ != ('Made in error') OR dna.archive_purpose$ IS NULL)
+    AND (con.archive_purpose$ != ('Made in error') OR con.archive_purpose$ IS NULL)
+    AND con.barcode NOT LIKE 'CON%'
 ORDER BY completion_date DESC
+ 
