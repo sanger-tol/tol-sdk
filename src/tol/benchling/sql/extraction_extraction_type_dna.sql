@@ -21,7 +21,7 @@ Output: Table with cols:
 10) extraction_name: [character] Entity name. 
 11) fluidx_id: [character] Fluidx ID.
 12) volume_ul: [double] volume of DNA available in the fluidx tube.
-13) location: [character] Physical locationo of the DNA extraction. Freezer location.
+13) location: [character] Physical locationo of the DNA extraction. Freezer shelf.
 14) rack: [character] Physical locationo of the DNA extraction. Rack barcode.
 15) bnt_id: [character] Batches and Tracking legacy id.
 16) extraction_type: [character] dna.
@@ -168,3 +168,4 @@ WHERE tube.type IS NULL -- Excluding vouchers
     AND (con.archive_purpose$ != ('Made in error') OR con.archive_purpose$ IS NULL)
     AND con.barcode NOT LIKE 'CON%'
 ORDER BY completion_date DESC
+ 
