@@ -13,8 +13,8 @@ from pytest import fixture
 from sqlalchemy import create_engine, delete
 from sqlalchemy.orm import Session
 
-from tol.api_base2 import data_blueprint
-from tol.api_base2.auth import OidcConfig, require_auth
+from tol.api_base import data_blueprint
+from tol.api_base.auth import OidcConfig, require_auth
 from tol.core import DataSource
 from tol.core.operator import DetailGetter
 from tol.sql import create_session_factory

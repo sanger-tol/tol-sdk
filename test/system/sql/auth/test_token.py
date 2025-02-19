@@ -14,8 +14,8 @@ from responses.matchers import header_matcher
 
 from sqlalchemy import select
 
-from tol.api_base2.auth import OidcConfig
-from tol.api_base2.misc import default_ctx_getter
+from tol.api_base.auth import OidcConfig
+from tol.api_base.misc import default_ctx_getter
 
 
 @pytest.fixture(scope='module')

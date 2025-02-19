@@ -18,7 +18,7 @@ from .sql_datasource import (
     SorterFactory,
     SqlDataSource
 )
-from ..api_base2.misc.auth_context import default_ctx_getter
+from ..api_base.misc.auth_context import default_ctx_getter
 
 
 DatabaseFactory = Callable[

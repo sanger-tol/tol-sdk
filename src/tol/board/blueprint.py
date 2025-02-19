@@ -8,8 +8,8 @@ import typing
 
 from flask import Blueprint
 
-from ..api_base2.auth import ForbiddenError
-from ..api_base2.misc import (
+from ..api_base.auth import ForbiddenError
+from ..api_base.misc import (
     CtxGetter,
     default_ctx_getter
 )

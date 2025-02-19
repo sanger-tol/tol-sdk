@@ -20,14 +20,14 @@ from ..session import (
     SessionFactory,
     create_session_factory
 )
-from ...api_base2.auth import (
+from ...api_base.auth import (
     AuthBlueprint,
     AuthManager,
     OidcConfig,
     StateNotFoundError,
     env_oidc_config
 )
-from ...api_base2.misc import AuthContext
+from ...api_base.misc import AuthContext
 
 
 class DbAuthManager(AuthManager):

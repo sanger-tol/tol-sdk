@@ -6,7 +6,7 @@ import time
 
 from flask import Flask
 
-from tol.api_base2 import data_blueprint
+from tol.api_base import data_blueprint
 from tol.core.factory import core_data_object
 
 from .util import (
