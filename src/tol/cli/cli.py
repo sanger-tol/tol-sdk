@@ -230,7 +230,7 @@ def merge(ctx):
 # Run tests
 @cli.command()
 @click.option('--type', 'type_', default='unit',
-              type=click.Choice(['unit', 'system', 'integration', 'ui']),
+              type=click.Choice(['unit', 'system', 'integration', 'ui', 'playwright']),
               help='type of test')
 @click.pass_context
 def test(ctx, type_):
@@ -272,6 +272,13 @@ def test(ctx, type_):
             f'docker compose build {docker_compose_entry} && '
             f'docker compose --env-file {env_file} run --rm {docker_compose_entry} '
             f'npm run test'
+        )
+    if type_ == 'playwright':
+        docker_compose_entry = f'{service}-playwright-test'
+        command = (
+            f'docker compose build {docker_compose_entry} && '
+            f'docker compose --env-file {env_file} run --rm {docker_compose_entry} '
+            f'npx playwright test'
         )
     click.secho(command, fg='green')
     run(command)
