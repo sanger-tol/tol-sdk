@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2024 Genome Research Ltd.
+# SPDX-FileCopyrightText: 2025 Genome Research Ltd.
 #
 # SPDX-License-Identifier: MIT
 
@@ -86,7 +86,6 @@ def create_action_models(
             back_populates='action'
         )
 
-
     class UserAction(base_model_class):
         __tablename__ = 'user_action'
 
@@ -125,7 +124,6 @@ def create_action_models(
             back_populates='user_actions',
             foreign_keys=[action_id]
         )
-
 
     class _UserMixin:
 
