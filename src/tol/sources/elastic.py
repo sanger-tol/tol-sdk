@@ -424,21 +424,6 @@ def elastic():
                             doc['is_actioned'].value == true
                         );
 
-                        boolean isActioned = (
-                            doc.containsKey('is_actioned') &&
-                            doc['is_actioned'].value == true
-                        );
-
-                        boolean isActioned = (
-                            doc.containsKey('is_actioned') &&
-                            doc['is_actioned'].value == true
-                        );
-
-                        boolean isActioned = (
-                            doc.containsKey('is_actioned') &&
-                            doc['is_actioned'].value == true
-                        );
-
                         boolean isTopUpRequired = (
                             isTotalSubmissionsGreaterThanZero &&
                             isOngoingSubmissionsEqualZero &&
