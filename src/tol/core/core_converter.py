@@ -85,6 +85,14 @@ class AsyncConverter(ABC, Generic[In, Out]):
         ]
 
 
+def is_iter(in_: Any) -> bool:
+    try:
+        iter(in_)
+        return True
+    except TypeError:
+        return False
+
+
 class ChainedConverter(Converter, Generic[In, Out]):
     """
     Using multiple converters in sequence, converts in a chain.
@@ -145,18 +153,7 @@ class ChainedConverter(Converter, Generic[In, Out]):
         for p in previous:
             converted = converter.convert(p)
 
-            if self.__is_iter(converted):
+            if is_iter(converted):
                 yield from converted
             else:
                 yield converted
-
-    def __is_iter(
-        self,
-        previous: Any
-    ) -> bool:
-
-        try:
-            iter(previous)
-            return True
-        except TypeError:
-            return False
