@@ -27,7 +27,6 @@ class BenchlingEntityToBenchlingWorklistItemConverterFactory():
                 else:
                     ret = self._data_object_factory(
                         'worklist_item',
-                        None,
                         to_one={
                             'worklist': factory._worklist,
                             'item': data_object,
