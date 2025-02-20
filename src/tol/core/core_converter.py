@@ -4,7 +4,15 @@
 
 from abc import ABC, abstractmethod
 from functools import reduce
-from typing import Any, Generic, Iterable, Optional, TypeVar
+from itertools import chain
+from typing import (
+    Any,
+    Generic,
+    Iterable,
+    Iterator,
+    Optional,
+    TypeVar
+)
 
 
 In = TypeVar('In')
@@ -77,6 +85,14 @@ class AsyncConverter(ABC, Generic[In, Out]):
         ]
 
 
+def is_iter(in_: Any) -> bool:
+    try:
+        iter(in_)
+        return True
+    except TypeError:
+        return False
+
+
 class ChainedConverter(Converter, Generic[In, Out]):
     """
     Using multiple converters in sequence, converts in a chain.
@@ -89,6 +105,10 @@ class ChainedConverter(Converter, Generic[In, Out]):
         inner = a.convert(input_)
         return b.convert(inner)
     ```
+
+    Please note that this is different to the main `Converter` -
+    `None` elements are ignored in the sequence. Only use the
+    `convert_iterable` method.
     """
 
     def __init__(
@@ -97,17 +117,43 @@ class ChainedConverter(Converter, Generic[In, Out]):
     ):
         self.__converters = converters
 
-    def convert(self, input_: In) -> Out:
+    def convert_iterable(
+        self,
+        inputs: Iterable[In | None]
+    ) -> Iterator[Out]:
+
+        return chain.from_iterable(
+            self.convert_optional(input_)
+            for input_ in inputs
+        )
+
+    def convert_optional(
+        self,
+        input_: In | None
+    ) -> Iterator[Out]:
+
+        if input_ is None:
+            return iter([])
+        else:
+            return self.convert(input_)
+
+    def convert(self, input_: In) -> Iterator[Out]:
         return reduce(
             self.__convert_with,
             self.__converters,
-            input_
+            iter([input_])
         )
 
     def __convert_with(
         self,
-        previous: Any,
+        previous: Iterator[Any],
         converter: Converter
-    ) -> Any:
+    ) -> Iterator[Any]:
 
-        return converter.convert(previous)
+        for p in previous:
+            converted = converter.convert(p)
+
+            if is_iter(converted):
+                yield from converted
+            else:
+                yield converted

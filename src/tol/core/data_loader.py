@@ -107,6 +107,24 @@ class DefaultDataLoader():
             'Either `convert_class` or `converter` must be specified.'
         )
 
+    def __get_converter(
+        self,
+        convert_class: type[Converter] | None,
+        converter: Converter | None
+    ) -> Converter:
+
+        if converter is not None:
+            return converter
+
+        if convert_class is not None:
+            return convert_class(
+                data_object_factory=self._destination.data_object_factory
+            )
+
+        raise Exception(
+            'Either `convert_class` or `converter` must be specified.'
+        )
+
     def _get_source_objects(self) -> Iterable:
         source_objs = self._source.get_list(
             self._source_object_type,
