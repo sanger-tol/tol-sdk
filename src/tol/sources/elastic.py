@@ -462,8 +462,7 @@ def elastic():
                         boolean isTopUpRequired = (
                             isTotalSubmissionsGreaterThanZero &&
                             isOngoingSubmissionsEqualZero &&
-                            !isTargetCoverageMet &&
-                            !isActioned
+                            !isTargetCoverageMet
                             );
 
                         boolean isSpecimenNotAtSequencingStage = false;
@@ -483,8 +482,28 @@ def elastic():
                                 }
                             }
 
+                        boolean isTolidNotBeenActioned = (
+                            !doc.containsKey['date_topup_actioned_by'] ||
+                            doc['date_topup_actioned_by'].size() == 0 ||
+                            doc['date_topup_actioned_by'].value == null
+                        );
+
+                        boolean isTolidActionedBeforeLastRun = (
+                           doc.containsKey['mlwh_run_data_mlwh_run_complete_max'] &&
+                           doc.containsKey['date_topup_actioned_by'] &&
+                           doc['mlwh_run_data_mlwh_run_complete_max'].size() > 0 &&
+                           doc['date_topup_actioned_by'].size() > 0 &&
+                           doc['date_topup_actioned_by'].value <
+                           doc['mlwh_run_data_mlwh_run_complete_max'].value
+                        );
+
+                        boolean isTolidSuitableForAction = (
+                            isTolidNotBeenActioned || isTolidActionedBeforeLastRun
+                        );
+
                         emit(
                             isTopUpRequired && !isSpecimenNotAtSequencingStage
+                            && isTolidSuitableForAction
                         );
                     """
                 }
@@ -524,7 +543,7 @@ def elastic():
                             isTotalSubmissionsGreaterThanZero &&
                             isOngoingSubmissionsEqualZero &&
                             !isTargetCoverageMet
-                            );
+                        );
 
                         boolean isSpecimenNotAtSequencingStage = false;
 
@@ -625,7 +644,7 @@ def elastic():
                             isTotalSubmissionsGreaterThanZero &&
                             isOngoingSubmissionsEqualZero &&
                             !isTargetCoverageMet
-                            );
+                        );
 
                         boolean isSpecimenNotAtSequencingStage = false;
 
@@ -643,6 +662,25 @@ def elastic():
                                     }
                                 }
                             }
+
+                        boolean isTolidNotBeenActioned = (
+                            !doc.containsKey['date_topup_actioned_by'] ||
+                            doc['date_topup_actioned_by'].size() == 0 ||
+                            doc['date_topup_actioned_by'].value == null
+                        );
+
+                        boolean isTolidActionedBeforeLastRun = (
+                           doc.containsKey['mlwh_run_data_mlwh_run_complete_max'] &&
+                           doc.containsKey['date_topup_actioned_by'] &&
+                           doc['mlwh_run_data_mlwh_run_complete_max'].size() > 0 &&
+                           doc['date_topup_actioned_by'].size() > 0 &&
+                           doc['date_topup_actioned_by'].value <
+                           doc['mlwh_run_data_mlwh_run_complete_max'].value
+                        );
+
+                        boolean isTolidSuitableForAction = (
+                            isTolidNotBeenActioned || isTolidActionedBeforeLastRun
+                        );
 
                         boolean isAtLeastOneOtherIndividualAvailable = (
                             doc.containsKey('tolid_species.calc_tolid_calc_topup_required_max') &&
@@ -662,7 +700,7 @@ def elastic():
 
                         emit(
                             !isTopUpRequired && !isSpecimenNotAtSequencingStage
-                            && isAtLeastOneOtherIndividualAvailable &&
+                            && isTolidSuitableForAction && isAtLeastOneOtherIndividualAvailable &&
                             isSpeciesTopUpEqualsIndividualExhausted
                         );
                     """

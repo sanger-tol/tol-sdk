@@ -15,7 +15,6 @@ from .bioscan_extra_species_to_elastic_sample_update_converter import BioscanExt
 from .bold_sample_to_elastic_sample_update_converter import BoldSampleToElasticSampleUpdateConverter  # noqa F401
 from .elastic_sample_to_benchling_tissue_converter import ElasticSampleToBenchlingTissueConverter  # noqa F401
 from .elastic_sample_to_benchling_tissue_update_converter import ElasticSampleToBenchlingTissueUpdateConverter  # noqa F401
-from .elastic_sample_to_benchling_sample_converter import ElasticSampleToBenchlingSampleConverter  # noqa F401
 from .elastic_sample_to_bold_sample_converter import ElasticSampleToBoldSampleConverter  # noqa F401
 from .elastic_sample_to_elastic_sequencing_request_update_converter import ElasticSampleToElasticSequencingRequestUpdateConverter  # noqa F401
 from .elastic_sample_to_sts_sample_converter import ElasticSampleToStsSampleConverter  # noqa F401
