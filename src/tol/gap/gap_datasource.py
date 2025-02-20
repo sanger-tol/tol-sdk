@@ -60,10 +60,10 @@ class GapDataSource(
 
     def get_to_many_relations(
         self,
-        assmbly: DataObject
+        source: DataObject
     ) -> Iterable[DataObject]:
         temp_config = {
-            'uri': f's3://gap/{assmbly.id}/data/analysis.json',
+            'uri': 's3://tol-system-test-assets/test.json',#f's3://gap/{source.id}/data/analysis.json',
             'type': 'pipeline',
             'id_attribute': 'id',
             'mappings': {

@@ -12,14 +12,15 @@ from ...core import (
 
 class GapAssemblyToElasticAssemblyConverter(
         DataObjectToDataObjectOrUpdateConverter):
-    def convert(self, data_object: DataObject) -> Iterable[DataObject]:
+    def convert(self, assembly: DataObject) -> Iterable[DataObject]:
+        
+        for p in assembly.pipelines:
+            print(p)
+        
         ret = self._data_object_factory(
             'assembly',
-            data_object.id,
+            assembly.id,
             attributes={
-                **data_object.attributes
             }
         )
-        if data_object.sequencing_material_status is not None:
-            ret.sequencing_material_status = data_object.sequencing_material_status.status
         return iter([ret])

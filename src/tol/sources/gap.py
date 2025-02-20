@@ -7,13 +7,13 @@ import os
 from ..core import (
     core_data_object
 )
-from ..json import (
-    S3JsonDataSource
+from ..gap import (
+    GapDataSource
 )
 
 
 def gap():
-    gap = S3JsonDataSource({
+    gap = GapDataSource({
         'uri': 's3://tolqc/data.json',
         'type': 'assembly',
         'id_attribute': 'accession',
@@ -21,17 +21,9 @@ def gap():
         's3_access_key': os.getenv('MINIO_ACCESS_KEY'),
         's3_secret_key': os.getenv('MINIO_SECRET_KEY'),
         'mappings': {
-            'taxon_id': {
-                'heading': 'species',
-                'type': 'int'
-            },
-            'assembly_name': {
-                'heading': 'assembly_name',
-                'type': 'str'
-            },
-            'results': {
-                'heading': 'results',
-                'type': 'str'
+            '': {
+                'heading': '',
+                'type': ''
             }
         }
     })
