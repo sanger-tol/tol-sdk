@@ -419,12 +419,6 @@ def elastic():
                             doc['sts_sample_sts_target_coverage_max'].value)
                             );
 
-                        boolean isTopUpRequired = (
-                            isTotalSubmissionsGreaterThanZero &&
-                            isOngoingSubmissionsEqualZero &&
-                            !isTargetCoverageMet
-                            );
-
                         boolean isSpecimenNotAtSequencingStage = false;
 
                             if (doc.containsKey('informatics_status_summary.keyword') &&
@@ -441,9 +435,36 @@ def elastic():
                                     }
                                 }
                             }
+                        emit(
+                            isTotalSubmissionsGreaterThanZero &&
+                            isOngoingSubmissionsEqualZero &&
+                            !isTargetCoverageMet &&
+                            !isSpecimenNotAtSequencingStage
+                        );
+                    """
+                }
+            },
+            'calc_tolid_action': {
+                'type': 'boolean',
+                'script': {
+                    'source': """
+                        boolean isTolidNotBeenActioned = (
+                            !doc.containsKey['date_topup_actioned_by'] ||
+                            doc['date_topup_actioned_by'].size() == 0 ||
+                            doc['date_topup_actioned_by'].value == null
+                        );
+
+                        boolean isTolidActionedBeforeLastRun = (
+                           doc.containsKey['mlwh_run_data_mlwh_run_complete_max'] &&
+                           doc.containsKey['date_topup_actioned_by'] &&
+                           doc['mlwh_run_data_mlwh_run_complete_max'].size() > 0 &&
+                           doc['date_topup_actioned_by'].size() > 0 &&
+                           doc['date_topup_actioned_by'].value <
+                           doc['mlwh_run_data_mlwh_run_complete_max'].value
+                        );
 
                         emit(
-                            isTopUpRequired && !isSpecimenNotAtSequencingStage
+                            isTolidNotBeenActioned || isTolidActionedBeforeLastRun
                         );
                     """
                 }
@@ -452,56 +473,6 @@ def elastic():
                 'type': 'boolean',
                 'script': {
                     'source': """
-                        boolean isTotalSubmissionsGreaterThanZero = (
-                            doc.containsKey('benchling_pacbio_sequencing_request_count') &&
-                            doc['benchling_pacbio_sequencing_request_count'].size() > 0 &&
-                            doc['benchling_pacbio_sequencing_request_count'].value > 0
-                        );
-
-                        boolean isOngoingSubmissionsEqualZero = (
-                            doc.containsKey('benchling_pacbio_sequencing_request_count') &&
-                            doc.containsKey('benchling_pacbio_completed_sequencing_request_count')
-                            && doc['benchling_pacbio_sequencing_request_count'].size() > 0 &&
-                            doc['benchling_pacbio_completed_sequencing_request_count'].size() > 0
-                            && (doc['benchling_pacbio_sequencing_request_count'].value -
-                            doc['benchling_pacbio_completed_sequencing_request_count'].value == 0)
-                        );
-
-                        boolean isTargetCoverageMet = (
-                            doc.containsKey('mlwh_run_data_mlwh_hifi_read_bases_sum') &&
-                            doc.containsKey('tolid_species.sts_genome_size') &&
-                            doc.containsKey('sts_sample_sts_target_coverage_max') &&
-                            doc['mlwh_run_data_mlwh_hifi_read_bases_sum'].size() > 0 &&
-                            doc['tolid_species.sts_genome_size'].size() > 0 &&
-                            doc['sts_sample_sts_target_coverage_max'].size() > 0 &&
-                            (doc['mlwh_run_data_mlwh_hifi_read_bases_sum'].value /
-                            doc['tolid_species.sts_genome_size'].value >=
-                            doc['sts_sample_sts_target_coverage_max'].value)
-                            );
-
-                        boolean isTopUpRequired = (
-                            isTotalSubmissionsGreaterThanZero &&
-                            isOngoingSubmissionsEqualZero &&
-                            !isTargetCoverageMet
-                            );
-
-                        boolean isSpecimenNotAtSequencingStage = false;
-
-                            if (doc.containsKey('informatics_status_summary.keyword') &&
-                                doc['informatics_status_summary.keyword'].size() > 0) {
-
-                                for (String value : doc['informatics_status_summary.keyword']) {
-                                    if (value == '1 submitted' ||
-                                        value == '2 curated' ||
-                                        value == '3 curation' ||
-                                        value == '4 data complete' ||
-                                        value == '7 ignore') {
-                                        isSpecimenNotAtSequencingStage = true;
-                                        break;
-                                    }
-                                }
-                            }
-
                         boolean isIndividualExhausted = (
                             doc.containsKey(
                             'benchling_sequencing_request_mlwh_volume_remaining_max'
@@ -543,8 +514,7 @@ def elastic():
                             );
 
                         emit(
-                            isTopUpRequired && !isSpecimenNotAtSequencingStage
-                            && isIndividualExhausted
+                            isIndividualExhausted
                         );
                     """
                 }
@@ -553,56 +523,6 @@ def elastic():
                 'type': 'boolean',
                 'script': {
                     'source': """
-                        boolean isTotalSubmissionsGreaterThanZero = (
-                            doc.containsKey('benchling_pacbio_sequencing_request_count') &&
-                            doc['benchling_pacbio_sequencing_request_count'].size() > 0 &&
-                            doc['benchling_pacbio_sequencing_request_count'].value > 0
-                        );
-
-                        boolean isOngoingSubmissionsEqualZero = (
-                            doc.containsKey('benchling_pacbio_sequencing_request_count') &&
-                            doc.containsKey('benchling_pacbio_completed_sequencing_request_count')
-                            && doc['benchling_pacbio_sequencing_request_count'].size() > 0 &&
-                            doc['benchling_pacbio_completed_sequencing_request_count'].size() > 0
-                            && (doc['benchling_pacbio_sequencing_request_count'].value -
-                            doc['benchling_pacbio_completed_sequencing_request_count'].value == 0)
-                        );
-
-                        boolean isTargetCoverageMet = (
-                            doc.containsKey('mlwh_run_data_mlwh_hifi_read_bases_sum') &&
-                            doc.containsKey('tolid_species.sts_genome_size') &&
-                            doc.containsKey('sts_sample_sts_target_coverage_max') &&
-                            doc['mlwh_run_data_mlwh_hifi_read_bases_sum'].size() > 0 &&
-                            doc['tolid_species.sts_genome_size'].size() > 0 &&
-                            doc['sts_sample_sts_target_coverage_max'].size() > 0 &&
-                            (doc['mlwh_run_data_mlwh_hifi_read_bases_sum'].value /
-                            doc['tolid_species.sts_genome_size'].value >=
-                            doc['sts_sample_sts_target_coverage_max'].value)
-                            );
-
-                        boolean isTopUpRequired = (
-                            isTotalSubmissionsGreaterThanZero &&
-                            isOngoingSubmissionsEqualZero &&
-                            !isTargetCoverageMet
-                            );
-
-                        boolean isSpecimenNotAtSequencingStage = false;
-
-                            if (doc.containsKey('informatics_status_summary.keyword') &&
-                                doc['informatics_status_summary.keyword'].size() > 0) {
-
-                                for (String value : doc['informatics_status_summary.keyword']) {
-                                    if (value == '1 submitted' ||
-                                        value == '2 curated' ||
-                                        value == '3 curation' ||
-                                        value == '4 data complete' ||
-                                        value == '7 ignore') {
-                                        isSpecimenNotAtSequencingStage = true;
-                                        break;
-                                    }
-                                }
-                            }
-
                         boolean isAtLeastOneOtherIndividualAvailable = (
                             doc.containsKey('tolid_species.calc_tolid_calc_topup_required_max') &&
                             doc['tolid_species.calc_tolid_calc_topup_required_max'].size() > 0 &&
@@ -620,8 +540,7 @@ def elastic():
                         );
 
                         emit(
-                            !isTopUpRequired && !isSpecimenNotAtSequencingStage
-                            && isAtLeastOneOtherIndividualAvailable &&
+                            isAtLeastOneOtherIndividualAvailable &&
                             isSpeciesTopUpEqualsIndividualExhausted
                         );
                     """
