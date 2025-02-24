@@ -4,10 +4,10 @@
 
 from __future__ import annotations
 
+import typing
 from abc import ABC, abstractmethod
 from functools import reduce
 from itertools import chain
-import typing
 from typing import (
     Any,
     Generic,
