@@ -12,9 +12,13 @@ from ...core import (
 
 class GapAssemblyToElasticAssemblyConverter(
         DataObjectToDataObjectOrUpdateConverter):
+    def __init__(self, data_object_factory, gap_ds):
+        super().__init__(data_object_factory)
+        self.gap_ds = gap_ds
+
     def convert(self, assembly: DataObject) -> Iterable[DataObject]:
 
-        print(assembly)
+        print(assembly.pipeline)
     
         ret = self._data_object_factory(
             'assembly',
