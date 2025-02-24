@@ -16,7 +16,7 @@ from tol.flows.converters import (
 class _MockDataSource(DataSource):
     @property
     def supported_types(self):
-        return ['tissue_prep','tissue_prep_event']
+        return ['tissue_prep', 'tissue_prep_event']
 
     @property
     def attribute_types(self):

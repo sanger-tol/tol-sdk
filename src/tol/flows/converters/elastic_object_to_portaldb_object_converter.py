@@ -15,7 +15,8 @@ from ...core import (
 class ElasticObjectToPortaldbObjectConverter(
         DataObjectToDataObjectOrUpdateConverter):
 
-    def __init__(self, data_object_factory, fields: dict = {}, destination_object_type: str = 'tolid_event'):
+    def __init__(self, data_object_factory, fields: dict = {},
+                 destination_object_type: str = 'tolid_event'):
         super().__init__(data_object_factory)
         self.__fields = fields
         self.__destination_object_type = destination_object_type
