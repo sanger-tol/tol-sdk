@@ -3,19 +3,13 @@
 # SPDX-License-Identifier: MIT
 
 
-import json
-from io import BytesIO
 from typing import Dict, Iterable, Optional
 
 from functools import cache
 
-from minio import Minio
-
-
 from ..json import S3JsonDataSource
 
 from ..core import (
-    DataSourceError,
     DataObject,
     core_data_object
 )
