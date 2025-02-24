@@ -12,15 +12,14 @@ from ...core import (
 
 class GapAssemblyToElasticAssemblyConverter(
         DataObjectToDataObjectOrUpdateConverter):
-    def convert(self, assemblies: DataObject) -> Iterable[DataObject]:
-        
-        for assembly in assemblies:
-            print(p)
-        
+    def convert(self, assembly: DataObject) -> Iterable[DataObject]:
+
+        print(assembly)
+    
         ret = self._data_object_factory(
             'assembly',
             assembly.id,
             attributes={
             }
         )
-        return iter([ret])
+        yield ret
