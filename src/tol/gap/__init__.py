@@ -2,4 +2,4 @@
 #
 # SPDX-License-Identifier: MIT
 
-from .gap_datasource import GapDataSource
+from .gap_datasource import GapDataSource # noqa

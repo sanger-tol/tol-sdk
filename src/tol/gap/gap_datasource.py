@@ -3,22 +3,16 @@
 # SPDX-License-Identifier: MIT
 
 
-from typing import Dict, Iterable, Optional
-
 from functools import cache
-
-from ..json import S3JsonDataSource
+from typing import Dict, Iterable, Optional
 
 from ..core import (
     DataObject,
     core_data_object
 )
-
 from ..core.operator import Relational
-
 from ..core.relationship import RelationshipConfig
-
-
+from ..json import S3JsonDataSource
 
 
 class GapDataSource(
@@ -34,7 +28,7 @@ class GapDataSource(
             config=config,
             secure=secure
         )
-        
+
     @property
     @cache
     def relationship_config(self) -> dict[str, RelationshipConfig]:
@@ -92,6 +86,6 @@ class GapDataSource(
             's3_secret_key': self.config['s3_secret_key']
         }
         temp_ds = S3JsonDataSource(config=temp_config, secure=True)
-        cdo = core_data_object(temp_ds)
-        
+        cdo = core_data_object(temp_ds) # noqa
+
         return temp_ds.get_list('pipeline')

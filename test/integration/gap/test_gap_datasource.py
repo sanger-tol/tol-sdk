@@ -3,7 +3,6 @@
 # SPDX-License-Identifier: MIT
 
 import os
-from datetime import datetime
 from unittest import TestCase
 
 from tol.core import core_data_object
@@ -118,7 +117,7 @@ class TestGapDataSource(TestCase):
             'description': (
                 "\u003Ca href='https://pipelines.tol.sanger.ac.uk/sequencecomposition/"
                 "output#sequence-composition-files'\u003ESequence composition "
-                "k-mer files\u003C/a\u003E"
+                "k-mer files\u003C/a\u003E" # noqa
             ),
             's3': (
                 'https://gap.cog.sanger.ac.uk/browser.html?shared=GCA_002706865.2/base_content/'

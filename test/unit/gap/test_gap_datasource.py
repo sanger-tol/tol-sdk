@@ -14,23 +14,24 @@ from tol.gap import (
     GapDataSource
 )
 
+
 class MockGapDataSource(GapDataSource):
     def _load_json_from_s3(self, s3_bucket, s3_object):
-        if s3_object == "data/assembly.json":
+        if s3_object == 'data/assembly.json':
             return [{
                 'accession': 'GCA_002706865.2',
                 'project': 'Lepidoptera',
                 'phylum': 'Arthropoda',
                 'species': 'Spodoptera litura',
                 'assembly_name': 'ASM270686v2',
-                'results': (
-                    '<a href=\'https://gap.cog.sanger.ac.uk/browser.html?shared='
-                    'GCA_002706865.2/base_content/\'>Base Content</a><br>'
-                    '<a href=\'https://blobtoolkit.genomehubs.org/view/dataset/'
-                    'GCA_002706865.1/dataset/MTZO01.1/blob#Filters\'>BlobToolKit</a>'
+                'results': ( # noqa
+                    '<a href=\'https://gap.cog.sanger.ac.uk/browser.html?shared=' # noqa
+                    'GCA_002706865.2/base_content/\'>Base Content</a><br>' # noqa
+                    '<a href=\'https://blobtoolkit.genomehubs.org/view/dataset/' # noqa
+                    'GCA_002706865.1/dataset/MTZO01.1/blob#Filters\'>BlobToolKit</a>' # noqa
                 ),
                 'taxon_id': 69820,
-                'phylum_id': "6656",
+                'phylum_id': '6656',
                 'image_url': (
                     'https://inaturalist-open-data.s3.amazonaws.com/photos/253028015/medium.jpg'
                 ),
@@ -64,7 +65,7 @@ class MockGapDataSource(GapDataSource):
                     'analysis/ASM270686v2/base_content'
                 )
             },
-            {
+            { # noqa
                 'analysis': 'BlobToolKit',
                 'results': 'BlobToolKit',
                 'description': (
