@@ -13,6 +13,7 @@ from .benchling_tissue_to_sts_sample_converter import BenchlingTissueToStsSample
 from .benchling_sample_to_elastic_sample_converter import BenchlingSampleToElasticSampleConverter  # noqa F401
 from .bioscan_extra_species_to_elastic_sample_update_converter import BioscanExtraSpeciesToElasticSampleUpdateConverter  # noqa F401
 from .bold_sample_to_elastic_sample_update_converter import BoldSampleToElasticSampleUpdateConverter  # noqa F401
+from .elastic_object_to_portaldb_object_converter import ElasticObjectToPortaldbObjectConverter  # noqa F401
 from .elastic_sample_to_benchling_tissue_converter import ElasticSampleToBenchlingTissueConverter  # noqa F401
 from .elastic_sample_to_benchling_tissue_update_converter import ElasticSampleToBenchlingTissueUpdateConverter  # noqa F401
 from .elastic_sample_to_bold_sample_converter import ElasticSampleToBoldSampleConverter  # noqa F401

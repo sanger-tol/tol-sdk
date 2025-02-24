@@ -16,15 +16,9 @@ from typing import (
     Optional,
     TypeVar
 )
-from itertools import chain
-from typing import (
-    Any,
-    Generic,
-    Iterable,
-    Iterator,
-    Optional,
-    TypeVar
-)
+
+if typing.TYPE_CHECKING:
+    from .data_loader import DataLoader
 
 
 In = TypeVar('In')
@@ -121,10 +115,6 @@ class ChainedConverter(Converter, Generic[In, Out]):
     Please note that this is different to the main `Converter` -
     `None` elements are ignored in the sequence. Only use the
     `convert_iterable` method.
-
-    Please note that this is different to the main `Converter` -
-    `None` elements are ignored in the sequence. Only use the
-    `convert_iterable` method.
     """
 
     def __init__(
@@ -132,28 +122,18 @@ class ChainedConverter(Converter, Generic[In, Out]):
         *converters: Converter
     ):
         self.__converters = converters
+        self.__data_loader = None
 
-    def convert_iterable(
-        self,
-        inputs: Iterable[In | None]
-    ) -> Iterator[Out]:
+    @property
+    def data_loader(self) -> DataLoader | None:
+        return self.__data_loader
 
-        return chain.from_iterable(
-            self.convert_optional(input_)
-            for input_ in inputs
-        )
+    @data_loader.setter
+    def data_loader(self, dl: DataLoader) -> None:
+        self.__data_loader = dl
+        for converter in self.__converters:
+            converter.data_loader = dl
 
-    def convert_optional(
-        self,
-        input_: In | None
-    ) -> Iterator[Out]:
-
-        if input_ is None:
-            return iter([])
-        else:
-            return self.convert(input_)
-
-    def convert(self, input_: In) -> Iterator[Out]:
     def convert_iterable(
         self,
         inputs: Iterable[In | None]
@@ -179,12 +159,10 @@ class ChainedConverter(Converter, Generic[In, Out]):
             self.__convert_with,
             self.__converters,
             iter([input_])
-            iter([input_])
         )
 
     def __convert_with(
         self,
-        previous: Iterator[Any],
         previous: Iterator[Any],
         converter: Converter
     ) -> Iterator[Any]:
