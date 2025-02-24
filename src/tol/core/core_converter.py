@@ -2,9 +2,12 @@
 #
 # SPDX-License-Identifier: MIT
 
+from __future__ import annotations
+
 from abc import ABC, abstractmethod
 from functools import reduce
 from itertools import chain
+import typing
 from typing import (
     Any,
     Generic,
@@ -13,6 +16,9 @@ from typing import (
     Optional,
     TypeVar
 )
+
+if typing.TYPE_CHECKING:
+    from .data_loader import DataLoader
 
 
 In = TypeVar('In')
@@ -116,6 +122,17 @@ class ChainedConverter(Converter, Generic[In, Out]):
         *converters: Converter
     ):
         self.__converters = converters
+        self.__data_loader = None
+
+    @property
+    def data_loader(self) -> DataLoader | None:
+        return self.__data_loader
+
+    @data_loader.setter
+    def data_loader(self, dl: DataLoader) -> None:
+        self.__data_loader = dl
+        for converter in self.__converters:
+            converter.data_loader = dl
 
     def convert_iterable(
         self,
