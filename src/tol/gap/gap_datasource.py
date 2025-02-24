@@ -17,6 +17,7 @@ from ..json import S3JsonDataSource
 from ..core import (
     DataSourceError,
     DataObject,
+    core_data_object
 )
 
 from ..core.operator import Relational
@@ -63,15 +64,40 @@ class GapDataSource(
         source: DataObject
     ) -> Iterable[DataObject]:
         temp_config = {
-            'uri': 's3://tol-system-test-assets/test.json',#f's3://gap/{source.id}/data/analysis.json',
+            'uri': f's3://gap/{source.id}/data/analysis.json',
             'type': 'pipeline',
-            'id_attribute': 'id',
+            'id_attribute': 'pipeline',
             'mappings': {
+                'pipeline': {
+                    'heading': 'pipeline',
+                    'type': 'str'
+                },
+                'analysis': {
+                    'heading': 'analysis',
+                    'type': 'str'
+                },
+                'results': {
+                    'heading': 'results',
+                    'type': 'str'
+                },
+                'description': {
+                    'heading': 'description',
+                    'type': 'str'
+                },
+                's3': {
+                    'heading': 's3',
+                    'type': 'str'
+                },
+                'lustre_path_analysis': {
+                    'heading': 'lustre_path_analysis',
+                    'type': 'str'
+                },
             },
             's3_host': 'cog.sanger.ac.uk',
             's3_access_key': self.config['s3_access_key'],
             's3_secret_key': self.config['s3_secret_key']
         }
         temp_ds = S3JsonDataSource(config=temp_config, secure=True)
+        cdo = core_data_object(temp_ds)
         
         return temp_ds.get_list('pipeline')
