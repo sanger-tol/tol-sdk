@@ -12,9 +12,9 @@ from ...core import (
 
 class GapAssemblyToElasticAssemblyConverter(
         DataObjectToDataObjectOrUpdateConverter):
-    def convert(self, assembly: DataObject) -> Iterable[DataObject]:
+    def convert(self, assemblies: DataObject) -> Iterable[DataObject]:
         
-        for p in assembly.pipelines:
+        for assembly in assemblies:
             print(p)
         
         ret = self._data_object_factory(
