@@ -105,8 +105,8 @@ def create_action_models(
             default={}
         )
 
-        ids: Mapped[list[str]] = mapped_column(nullable=True)
-        filters: Mapped[dict[str, Any]] = mapped_column(nullable=True)
+        ids: Mapped[list[str]] = mapped_column(JSONB, nullable=True)
+        filters: Mapped[dict[str, Any]] = mapped_column(JSONB, nullable=True)
 
         action_id: Mapped[int] = mapped_column(
             ForeignKey('action.id'),
@@ -118,11 +118,12 @@ def create_action_models(
         )
 
         user_id: Mapped[int] = mapped_column(
-            ForeignKey
+            ForeignKey('user.id'),
+            nullable=False
         )
         user: Mapped['User'] = relationship(  # noqa F821
             back_populates='user_actions',
-            foreign_keys=[action_id]
+            foreign_keys=[user_id]
         )
 
     class _UserMixin:
