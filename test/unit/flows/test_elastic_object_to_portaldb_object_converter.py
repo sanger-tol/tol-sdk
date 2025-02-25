@@ -33,17 +33,21 @@ class TestElasticObjectToPortaldbObjectConverter(TestCase):
         converter = ElasticObjectToPortaldbObjectConverter(
             data_object_factory=destination.data_object_factory,
             destination_object_type='tissue_prep_event',
-            fields={'test_field_1': 'test1'}
+            fields={'test_field_1': 'test1'},
+            id_field='different_id'
         )
 
         CoreDataObject = source.data_object_factory # noqa N806
         obj1 = CoreDataObject(
             id_='tissue_prep_id1',
             type_='tissue_prep',
+            attributes={
+                'different_id': 'different_id1',
+            }
         )
 
         converteds = converter.convert(obj1)
         ret1 = next(converteds)
-        self.assertEqual(obj1.id, ret1.id)
+        self.assertEqual('different_id1', ret1.id)
         self.assertEqual('tissue_prep_event', ret1.type)
         self.assertEqual(ret1.attributes, {'test_field_1': 'test1'})
