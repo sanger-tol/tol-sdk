@@ -16,8 +16,9 @@ from benchling_api_client.v2.beta.models.worklist_item import WorklistItem
 from benchling_api_client.v2.beta.models.worklist_item_create import WorklistItemCreate
 from benchling_api_client.v2.beta.models.worklist_type import WorklistType
 from benchling_api_client.v2.stable.models.assay_result import AssayResult
+from benchling_api_client.v2.stable.models.container_transfer import ContainerTransfer
 
-from benchling_sdk.helpers.serialization_helpers import fields
+from benchling_sdk.helpers.serialization_helpers import fields, none_as_unset
 from benchling_sdk.models import (
     CustomEntity,
     CustomEntityBulkCreate,
@@ -29,7 +30,16 @@ from benchling_sdk.models import (
     FolderCreate,
     Location,
     LocationCreate,
-    AssayResultsCreateResponse
+    AssayResultsCreateResponse,
+    BoxCreate,
+    Box,
+    Plate,
+    PlateCreate,
+    Container,
+    ContainerCreate,
+    ContainerQuantity,
+    MultipleContainersTransfer,
+    Measurement, ContainerQuantityUnits
 )
 
 from caseconverter import snakecase
@@ -55,13 +65,21 @@ BenchlingFolder = Folder
 BenchlingFolderCreate = FolderCreate
 BenchlingLocation = Location
 BenchlingLocationCreate = LocationCreate
+BenchlingBox = Box
+BenchlingBoxCreate = BoxCreate
+BenchlingPlate = Plate
+BenchlingPlateCreate = PlateCreate
+BenchlingContainer = Container
+BenchlingContainerCreate = ContainerCreate
 BenchlingWorklist = Worklist
 BenchlingWorklistCreate = WorklistCreate
 BenchlingWorklistItem = WorklistItem
 BenchlingWorklistItemCreate = WorklistItemCreate
-BenchlingObject = BenchlingCustomEntity | BenchlingFolder | BenchlingWorklist
+BenchlingObject = BenchlingCustomEntity | BenchlingFolder | BenchlingWorklist | BenchlingBox | BenchlingPlate \
+    | BenchlingContainer
 BenchlingObjectCreate = BenchlingCustomEntityCreate | BenchlingFolderCreate \
-    | BenchlingWorklistCreate | BenchlingWorklistItemCreate | AssayResultCreate
+    | BenchlingWorklistCreate | BenchlingWorklistItemCreate | AssayResultCreate | BenchlingBoxCreate \
+    | BenchlingPlateCreate | BenchlingContainerCreate
 BenchlingObjectUpdate = BenchlingCustomEntityUpdate
 BenchlingWrite = BenchlingObjectCreate | BenchlingObjectUpdate
 """Suitable as arguments to either `insert` or `update`"""
@@ -101,6 +119,12 @@ class BenchlingConverter(Converter[BenchlingReturn, DataObject]):
             return self.__convert_custom_entity(input_)
         elif isinstance(input_, AssayResultsCreateResponse):
             return self.__convert_assay_result(input_)
+        elif isinstance(input_, BenchlingBox):
+            return self.__convert_box_result(input_)
+        elif isinstance(input_, BenchlingPlate):
+            return self.__convert_plate_result(input_)
+        elif isinstance(input_, BenchlingContainer):
+            return self.__convert_plate_result(input_)
         raise ValueError(f'Unknown object type: {type(input_)}')
 
     def __convert_folder(self, input_: BenchlingFolder) -> DataObject:
@@ -210,6 +234,30 @@ class BenchlingConverter(Converter[BenchlingReturn, DataObject]):
                 'assay_resut',
                 id_=assay_result
             )
+
+    def __convert_box_result(self, input_) -> Iterable[DataObject]:
+        object_type = snakecase(input_.schema.name)
+        attributes = self.__convert_attributes(input_.fields, object_type)
+        to_ones = self.__convert_relationships(input_.fields, object_type)
+
+        return self.__ds.data_object_factory(
+            object_type,
+            id_=input_.id,
+            attributes=attributes,
+            to_one=to_ones
+        )
+
+    def __convert_plate_result(self, input_) -> Iterable[DataObject]:
+        object_type = snakecase(input_.schema.name)
+        attributes = self.__convert_attributes(input_.fields, object_type)
+        to_ones = self.__convert_relationships(input_.fields, object_type)
+
+        return self.__ds.data_object_factory(
+            object_type,
+            id_=input_.id,
+            attributes=attributes,
+            to_one=to_ones
+        )
 
     def __convert_return(self, input_: BenchlingReturn) -> DataObject:
         id_ = input_.pop('id', None)
@@ -342,6 +390,10 @@ class BenchlingConverter(Converter[BenchlingReturn, DataObject]):
 
 class DataObjectConverter(Converter[DataObject, BenchlingWrite]):
 
+    IGNORE_FIELD_NAMES = [
+        'naming_strategy'
+    ]
+
     def __init__(
         self,
         benchling_ds: BenchlingDataSource
@@ -358,12 +410,21 @@ class DataObjectConverter(Converter[DataObject, BenchlingWrite]):
             return self.__convert_assay_result(input_)
         if input_.type in self.__ds.schemas['location'].keys():
             return self.__convert_location(input_)
+        if input_.type in self.__ds.schemas['box'].keys():
+            return self.__convert_box(input_)
+        if input_.type in self.__ds.schemas['plate'].keys():
+            return self.__convert_plate(input_)
+        if input_.type in self.__ds.schemas['container'].keys():
+            return self.__convert_container(input_)
         if input_.type == 'folder':
             return self.__convert_folder(input_)
         if input_.type == 'worklist':
             return self.__convert_worklist(input_)
         if input_.type == 'worklist_item':
             return self.__convert_worklist_item(input_)
+        if input_.type == 'transfer':
+            return self.__convert_transfer_item(input_)
+
         raise ValueError(f'Unknown object type: {input_.type}')
 
     def __convert_folder(self, input_: DataObject) -> BenchlingFolderCreate:
@@ -376,8 +437,29 @@ class DataObjectConverter(Converter[DataObject, BenchlingWrite]):
         return LocationCreate(
             name=input_.name,
             barcode=input_.barcode,
-            parent_storage_id=input_.parent_location.id
+            parent_storage_id=parent_storage_location
             if input_.parent_location is not None else None,
+            schema_id=self.__ds.schema_ids[input_.type]
+        )
+
+    def __convert_box(self, input_: DataObject) -> BenchlingBoxCreate:
+        return BoxCreate(
+            barcode=input_.attributes.get('barcode'),
+            parent_storage_id=input_.attributes.get('parent_storage_id'),
+            schema_id=self.__ds.schema_ids[input_.type]
+        )
+
+    def __convert_plate(self, input_: DataObject) -> BenchlingBoxCreate:
+        return PlateCreate(
+            barcode=input_.attributes.get('barcode'),
+            parent_storage_id=input_.attributes.get('parent_storage_id'),
+            schema_id=self.__ds.schema_ids[input_.type]
+        )
+
+    def __convert_container(self, input_: DataObject) -> BenchlingBoxCreate:
+        return ContainerCreate(
+            barcode=input_.attributes.get('barcode'),
+            parent_storage_id=input_.attributes.get('parent_storage_id'),
             schema_id=self.__ds.schema_ids[input_.type]
         )
 
@@ -398,7 +480,34 @@ class DataObjectConverter(Converter[DataObject, BenchlingWrite]):
             item_id=input_.item.id
         )
 
+    def __convert_transfer_item(self, input_: DataObject) -> BenchlingWorklistItemCreate:
+        transfer_quantity = None
+        if input_.attributes.get('transfer_quantity'):
+            transfer_quantity = ContainerQuantity(
+                units=ContainerQuantityUnits.UL,
+                value=float(input_.attributes.get('transfer_quantity'))
+            )
+
+        source_concentration = None
+        if input_.attributes.get('transfer_concentration'):
+            source_concentration = Measurement(
+                units='uL',
+                value=float(input_.attributes.get('transfer_concentration'))
+            )
+
+        return MultipleContainersTransfer(
+            destination_container_id=input_.attributes.get('destination_container_id'),
+            source_entity_id=input_.attributes.get('source_entity_id'),
+            transfer_quantity=none_as_unset(transfer_quantity),
+            source_concentration=none_as_unset(source_concentration)
+        )
+
     def __convert_custom_entity(self, input_: DataObject) -> BenchlingCustomEntityCreate:
+        naming_strategy = input_.attributes.get('naming_strategy', None)
+
+        if not naming_strategy:
+            naming_strategy = NamingStrategy.REPLACE_NAMES_FROM_PARTS
+
         entity_fields = self.__convert_fields(
             input_.type,
             input_.attributes,
@@ -410,7 +519,7 @@ class DataObjectConverter(Converter[DataObject, BenchlingWrite]):
             registry_id=self.__ds.registry_id,
             folder_id=input_.folder.id if input_.folder is not None else self.__ds.folder_id,
             fields=entity_fields,
-            naming_strategy=NamingStrategy.REPLACE_NAMES_FROM_PARTS,
+            naming_strategy=naming_strategy,
             custom_fields=fields({})
         )
 
@@ -466,13 +575,19 @@ class DataObjectConverter(Converter[DataObject, BenchlingWrite]):
         mapped_dict = {
             self.__get_field_name(object_type, name): {'value': self.__format_date(value)}
             for name, value in data_dict.items()
-            if self.__ds.schemas[benchling_type][object_type][name]['benchling_type'] != 'dropdown'
+            if (
+                name not in self.IGNORE_FIELD_NAMES
+                and self.__ds.schemas[benchling_type][object_type][name]['benchling_type'] != 'dropdown'
+            )
         }
         mapped_relationships = {
             self.__get_field_name(object_type, name): {'value': value.id}
             for name, value in to_one_relationships.items()
-            if value is not None  # Not sure how to handle null relationships
-            and name in self.__ds.schemas[benchling_type][object_type].keys()
+            if (
+                value is not None  # Not sure how to handle null relationships
+                and name not in self.IGNORE_FIELD_NAMES
+                and name in self.__ds.schemas[benchling_type][object_type].keys()
+            )
         }
         # Convert dropdown values to Benchling dropdown values
         dropdown_values = {
@@ -484,7 +599,10 @@ class DataObjectConverter(Converter[DataObject, BenchlingWrite]):
                 )
             }
             for name, value in data_dict.items()
-            if self.__ds.schemas[benchling_type][object_type][name]['benchling_type'] == 'dropdown'
+            if (
+                name not in self.IGNORE_FIELD_NAMES
+                and self.__ds.schemas[benchling_type][object_type][name]['benchling_type'] == 'dropdown'
+            )
         }
         return fields(mapped_dict | mapped_relationships | dropdown_values)
 

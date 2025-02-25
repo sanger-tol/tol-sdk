@@ -1,116 +1,118 @@
 # SPDX-FileCopyrightText: 2025 Genome Research Ltd.
 # SPDX-License-Identifier: MIT
-
+import re
 from typing import Iterable
 
+from benchling_sdk.errors import BenchlingError
+from benchling_sdk.models import NamingStrategy
+from certifi import contents
 from tol.core import DataObject, DataObjectToDataObjectOrUpdateConverter, DataSourceFilter
 from tol.sources.benchling import benchling
 
 
 class StsSampleToCasmBenchlingConverterFactory:
-    RELATIONSHIPS = {
-        'benchling_species': {
-            'benchling_object_name': 'casm_species',
-            'benchling_search_identifier': 'species_name',
-            'sts_identifier': 'scientific_name',
-            'sts_type': 'relationship',
-            'relationship_identifier': 'target_species',
+    STS_OBJECT_MAP = {
+        'storage_rack': {
+            'identifier': 'id',
+            'relationship_identifier': 'storage_rack',
         },
-        'benchling_donor': {
-            'benchling_object_name': 'casm_donor',
-            'benchling_search_identifier': 'id_donor_casm',
-            'sts_identifier': 'ID_DONOR_CASM',
-            'sts_type': 'field',
-            'relationship_identifier': None,
-        },
-        'benchling_tissue': {
-            'benchling_object_name': 'casm_tissue',
-            'benchling_search_identifier': 'id_tissue_casm',
-            'sts_identifier': 'ID_TISSUE_CASM',
-            'sts_type': 'field',
-            'relationship_identifier': None,
-        },
-        'benchling_sample_meta_data': {
-            'benchling_object_name': 'casm_sample_metadata',
-            'benchling_search_identifier': 'sts_id',
-            'sts_identifier': 'sts_id',
-            'sts_type': 'field',
-            'relationship_identifier': None,
-        },
-        'benchling_sample': {
-            'benchling_object_name': 'casm_sample',
-            'benchling_search_identifier': 'id_sample_casm_manual',
-            'sts_identifier': 'ID_SAMPLE_CASM',
-            'sts_type': 'field',
-            'relationship_identifier': None,
-        },
-        'benchling_compliance_agreement': {
-            'benchling_object_name': 'casm_compliance_agreement',
-            'benchling_search_identifier': 'id_tissue_casm',
-            'sts_identifier': 'HUMFRE_REFERENCE',
-            'sts_type': 'field',
-            'relationship_identifier': None,
-        },
-        'benchling_sample_owner': {
-            'benchling_object_name': 'casm_users',
-            'benchling_search_identifier': 'Email',
-            'sts_identifier': 'SANGER_RESPONSIBLE_SCIENTIST',
-            'sts_type': 'field',
-            'relationship_identifier': None,
-        },
-        'benchling_gal': {
-            'benchling_object_name': 'casm_gal',
-            'benchling_search_identifier': 'Email',
-            'sts_identifier': 'COLLABORATOR_ADDRESS',
-            'sts_type': 'field',
-            'relationship_identifier': None,
-        },
-        'sts_sex': {
+        'sex': {
             'identifier': 'name',
             'relationship_identifier': 'target_species_sex',
         },
-        'sts_sampleset': {
+        'sampleset': {
             'identifier': 'sampleset_id',
             'relationship_identifier': 'sampleset',
         },
-        'sts_sample_status': {
+        'sample_status': {
             'identifier': 'status',
             'relationship_identifier': 'sample_status',
         },
-        'sts_hazard_group': {
+        'hazard_group': {
             'identifier': 'level',
             'relationship_identifier': 'hazard_group',
-        }
+        },
+        'target_species': {
+            'identifier': 'scientific_name',
+            'relationship_identifier': 'target_species',
+        },
+        'labwhere': {
+            'identifier': 'labwhere_id',
+            'relationship_identifier': 'storage_rack',
+        },
     }
+    '''
+        Map of sts relationship objects to call to. 
+        These objects could are mainly used to query the relationships of the sample for a specific value
+    '''
 
     BENCHLING_OBJECT_MAP = {
         'casm_species': {
+            'attribute_map': {
+                'species_name': 'target_species',
+            },
+            'primary_attribute': 'species_name',
+            'primary_attribute_type': 'schema_field',
+            'benchling_relationships': [],
+            'sts_relationships': ['target_species'],
+            'polymorphic_benchling_relationships': [],
+            'converted_value_identifiers': [],
+            'stored_values': {},
+        },
+        'storage': {
+            'attribute_map': {
+                'barcode': 'labwhere',
+            },
+            'primary_attribute': 'barcode',
+            'primary_attribute_type': 'attribute',
+            'benchling_relationships': [],
+            'sts_relationships': ['labwhere'],
+            'polymorphic_benchling_relationships': [],
+            'converted_value_identifiers': [],
             'stored_values': {},
         },
         'casm_compliance_agreement': {
+            'attribute_map': {
+                'compliance_agreement_id': 'HUMFRE_REFERENCE',
+            },
+            'primary_attribute': 'compliance_agreement_id',
+            'primary_attribute_type': 'schema_field',
+            'benchling_relationships': [],
+            'sts_relationships': [],
+            'polymorphic_benchling_relationships': [],
+            'converted_value_identifiers': [],
             'stored_values': {},
         },
         'casm_users': {
-            'stored_values': {},
-        },
-        'casm_gal': {
+            'attribute_map': {
+                'Email': 'SANGER_RESPONSIBLE_SCIENTIST',
+            },
+            'primary_attribute': 'Email',
+            'primary_attribute_type': 'schema_field',
+            'benchling_relationships': [],
+            'sts_relationships': [],
+            'polymorphic_benchling_relationships': [],
+            'converted_value_identifiers': [],
             'stored_values': {},
         },
         'casm_donor': {
             'attribute_map': {
                 'id_donor_casm': 'ID_DONOR_CASM',
-                'species': 'benchling_species',
-                'sex': 'sts_sex',
+                'species': 'casm_species',
+                'sex': 'sex',
             },
             'primary_attribute': 'id_donor_casm',
-            'benchling_relationships': ['benchling_species'],
-            'sts_relationships': ['sts_sex'],
+            'primary_attribute_type': 'schema_field',
+            'benchling_relationships': ['casm_species'],
+            'sts_relationships': ['sex'],
+            'polymorphic_benchling_relationships': [],
             'converted_value_identifiers': [],
             'stored_values': {},
+            'naming_strategy': NamingStrategy.NEW_IDS
         },
         'casm_tissue': {
             'attribute_map': {
-                'donor_id': 'benchling_donor',
+                'donor_id': 'casm_donor',
                 'tissue_type': 'TISSUE_PHENOTYPE',
                 'age': 'SPECIMEN_AGE_YEARS',
                 'foetal_tissue': 'FETAL_TISSUE',
@@ -120,91 +122,215 @@ class StsSampleToCasmBenchlingConverterFactory:
                 'country_of_origin': 'COUNTRY_OF_ORIGIN',
             },
             'primary_attribute': 'id_tissue_casm',
-            'benchling_relationships': ['benchling_donor'],
+            'primary_attribute_type': 'schema_field',
+            'benchling_relationships': ['casm_donor'],
             'sts_relationships': [],
+            'polymorphic_benchling_relationships': [],
             'converted_value_identifiers': [],
             'stored_values': {},
+            'naming_strategy': NamingStrategy.NEW_IDS
         },
         'casm_sample_metadata': {
             'attribute_map': {
-                'tissue_id': 'benchling_tissue',
-                'compliance_agreement': 'benchling_compliance_agreement',
-                'sample_owner': 'benchling_sample_owner',
-                # 'gal': 'sts_gal',
+                'tissue_id': 'casm_tissue',
+                'compliance_agreement': 'casm_compliance_agreement',
+                'sample_owner': 'casm_users',
                 'tissue_preparation': 'TISSUE_PREPARATION',
                 'sts_id': 'id',
                 'collaborator_name': 'COLLABORATOR_NAME',
-                # 'sample_preparation': '',
                 'responsible_pi': 'SANGER_RESPONSIBLE_PI',
                 'responsible_scientist': 'SANGER_RESPONSIBLE_SCIENTIST',
-                'sample_set_id': 'sts_sampleset',
+                'sample_set_id': 'sampleset'
             },
             'primary_attribute': 'sts_id',
+            'primary_attribute_type': 'schema_field',
             'benchling_relationships': [
-                'benchling_tissue',
-                'benchling_compliance_agreement',
-                'benchling_sample_owner',
-                # 'benchling_gal'
+                'casm_tissue',
+                'casm_compliance_agreement',
+                'casm_users'
             ],
-            'sts_relationships': ['sts_sampleset'],
+            'sts_relationships': ['sampleset'],
+            'polymorphic_benchling_relationships': [],
             'converted_value_identifiers': [],
             'stored_values': {},
+            'naming_strategy': NamingStrategy.NEW_IDS
         },
         'casm_sample': {
             'attribute_map': {
-                'sample_metadata_id': 'benchling_sample_meta_data',
+                'sample_metadata_id': 'casm_sample_metadata',
                 'sample_type': 'sample_format',
                 'date_created': 'created_on',
-                'safety_class': 'sts_hazard_group',
+                'safety_class': 'hazard_group',
                 'genetically_modified': 'genetically_modified',
-                'status_manual': 'sts_sample_status',
+                'status_manual': 'sample_status',
                 'programme_id_manual': 'INTERNAL_CASM_SAMPLE_NAME',
                 'id_sample_casm_manual': 'ID_SAMPLE_CASM'
             },
             'primary_attribute': 'id_sample_casm_manual',
+            'primary_attribute_type': 'schema_field',
             'benchling_relationships': [
-                'benchling_sample_meta_data',
+                'casm_sample_metadata',
             ],
             'sts_relationships': [
-                'sts_sample_status',
-                'sts_hazard_group',
+                'sample_status',
+                'hazard_group',
             ],
+            'polymorphic_benchling_relationships': [],
             'converted_value_identifiers': [],
-            'stored_values': {},
+            'stored_values': {}
         },
         'casm_programme_id' : {
             'attribute_map': {
-                'sample_id': 'benchling_sample',
+                'sample_id': 'casm_sample',
                 'programme_id': 'INTERNAL_CASM_SAMPLE_NAME',
                 'id_sample_casm': 'ID_SAMPLE_CASM'
             },
             'primary_attribute': 'sample_id',
+            'primary_attribute_type': 'schema_field',
             'benchling_relationships': [
-                'benchling_sample',
+                'casm_sample',
             ],
             'sts_relationships': [],
+            'polymorphic_benchling_relationships': [],
             'converted_value_identifiers': [],
             'stored_values': {},
         },
         'casm_sample_status' : {
             'attribute_map': {
-                'sample_id': 'benchling_sample',
-                'status': 'sts_sample_status'
+                'sample_id': 'casm_sample',
+                'status': 'sample_status'
             },
             'primary_attribute': 'sample_id',
+            'primary_attribute_type': 'schema_field',
             'benchling_relationships': [
-                'benchling_sample',
+                'casm_sample',
             ],
             'sts_relationships': [
-                'sts_sample_status'
+                'sample_status'
             ],
+            'polymorphic_benchling_relationships': [],
             'converted_value_identifiers': [],
             'stored_values': {},
         },
+        '10x10_box': {
+            'attribute_map': {
+                'barcode': 'storage_rack',
+                'parent_storage_id': 'storage'
+            },
+            'primary_attribute': 'barcode',
+            'primary_attribute_type': 'attribute',
+            'benchling_relationships': [
+                'storage',
+            ],
+            'sts_relationships': [
+                'storage_rack'
+            ],
+            'polymorphic_benchling_relationships': [],
+            'converted_value_identifiers': [],
+            'stored_values': {},
+        },
+        'casm_96_well_plate': {
+            'attribute_map': {
+                'barcode': 'storage_rack',
+                'parent_storage_id': 'storage'
+            },
+            'primary_attribute': 'barcode',
+            'primary_attribute_type': 'attribute',
+            'benchling_relationships': [
+                'storage',
+            ],
+            'sts_relationships': [
+                'storage_rack'
+            ],
+            'polymorphic_benchling_relationships': [],
+            'converted_value_identifiers': [],
+            'stored_values': {},
+        },
+        'casm_tube': {
+            'attribute_map': {
+                'barcode': 'tubeid',
+                'parent_storage_id': 'box_and_position'
+            },
+            'primary_attribute': 'barcode',
+            'primary_attribute_type': 'schema_field',
+            'benchling_relationships': [
+                '10x10_box',
+            ],
+            'sts_relationships': [],
+            'polymorphic_benchling_relationships': [],
+            'converted_value_identifiers': [],
+            'concatinated_values': ['box_and_position'],
+            'stored_values': {},
+        },
+        'casm_well': {
+            'attribute_map': {
+                'barcode': 'plate_and_location_non_relationship',
+                'parent_storage_id': 'plate_and_location'
+            },
+            'primary_attribute': 'barcode',
+            'primary_attribute_type': 'schema_field',
+            'benchling_relationships': [
+                'casm_96_well_plate',
+            ],
+            'sts_relationships': ['storage_rack'],
+            'polymorphic_benchling_relationships': [],
+            'converted_value_identifiers': [],
+            'concatinated_values': ['plate_and_location_non_relationship','plate_and_location'],
+            'stored_values': {},
+        },
+        'transfer': {
+            'attribute_map': {
+                'source_entity_id': 'casm_sample',
+                'destination_container_id': 'container',
+                'transfer_quantity': 'VOLUME_UL',
+                'transfer_concentration': 'CONCENTRATION_NG_UL',
+            },
+            'primary_attribute': None,
+            'benchling_relationships': ['casm_sample'],
+            'sts_relationships': [],
+            'polymorphic_benchling_relationships': [
+                'container'
+            ],
+            'converted_value_identifiers': [],
+            'concatinated_values': [],
+            'stored_values': {},
+        }
+    }
+    '''
+     Map of benchling objects to transform based on sts attributes. 
+     If only stored_values are present then the object is mainly used for storing results in memory
+    '''
+
+
+
+    CONCATENATED_VALUES = {
+        'plate_and_location': {
+            'values':    [
+                'casm_96_well_plate',
+                'TUBE_WELL_POSITION'
+            ],
+            'separator': ':'
+        },
+        'plate_and_location_non_relationship': {
+            'values':    [
+                'storage_rack',
+                'TUBE_WELL_POSITION'
+            ],
+            'separator': ':'
+        },
+        'box_and_position': {
+            'values':    [
+                '10x10_box',
+                'TUBE_WELL_POSITION'
+            ],
+            'separator': ':'
+        }
     }
 
     VALUE_REPLACEMENTS = {
         'sex': {
+            'MALE': 'Male',
+            'FEMALE': 'Female',
             'NOT_PROVIDED': 'Unknown'
         },
         'responsible_pi': {
@@ -240,14 +366,54 @@ class StsSampleToCasmBenchlingConverterFactory:
             'default': 'DNA'
         }
     }
+    '''
+        Map of replacements for string objects. Mainly used for data cleanup
+    '''
+
+    DESTINATION_OBJECT_TYPES = {
+        'box_or_plate': {
+            'RACK_TUBE': "10x10_box",
+            'PLATE_WELL': "casm_96_well_plate"
+        },
+        'container': {
+            'RACK_TUBE': "casm_tube",
+            'PLATE_WELL': "casm_well"
+        }
+    }
+    '''
+        Map of the dynamic object types
+    '''
+
+    POLYMORPHIC_RELATIONSHIP_OBJECT_TYPES = {
+        'container': {
+            'RACK_TUBE': "casm_tube",
+            'PLATE_WELL': "casm_well"
+        }
+    }
+    '''
+        Map of the polymorphic relationship objects
+    '''
+
+    destination_object_type: str
+    fields: Iterable[any]
 
     def __init__(
             self,
-            destination_object_type: str,
+            destination_object_type: str = '',
             previous_object_type: str = '',
-            previous_objects: list = None
+            previous_objects: list = None,
+            detect_destination: bool = False,
+            detect_destination_type: str = '',
     ):
-        self.destination_object_type = destination_object_type
+        self.detect_destination = detect_destination
+        self.benchling = benchling()
+        if not detect_destination:
+            self.populate_destination(destination_object_type)
+        elif detect_destination_type == '':
+            raise Exception('Please include a detect_destination_type to auto-detect')
+        else:
+            self.detect_destination_type = detect_destination_type
+
         if previous_object_type and previous_objects:
             for previous_object in previous_objects:
                 object_map = self.BENCHLING_OBJECT_MAP[previous_object_type]
@@ -255,9 +421,12 @@ class StsSampleToCasmBenchlingConverterFactory:
                 key = getattr(previous_object, identifier)
                 object_map['stored_values'][key] = previous_object
 
-        self.benchling = benchling()
-        benchling_type = self.benchling.benchling_types[self.destination_object_type]
-        self.fields = self.benchling.schemas[benchling_type][self.destination_object_type]
+    def populate_destination(self, destination_object_type):
+        self.destination_object_type = destination_object_type
+
+        if 'transfer' != self.destination_object_type:
+            benchling_type = self.benchling.benchling_types[self.destination_object_type]
+            self.fields = self.benchling.schemas[benchling_type][self.destination_object_type]
 
     def get_converter_class(self) -> DataObjectToDataObjectOrUpdateConverter:
         factory = self
@@ -265,131 +434,218 @@ class StsSampleToCasmBenchlingConverterFactory:
         class StsSampleToCasmBenchlingConverter(DataObjectToDataObjectOrUpdateConverter):
             def convert(self, data_object: DataObject) -> Iterable[DataObject]:
                 sample = data_object
+
+                if factory.detect_destination:
+                    destination_object_type = self._get_destination_object_type(
+                        sample = sample,
+                        detect_destination_type = factory.detect_destination_type
+                    )
+                    factory.populate_destination(destination_object_type)
                 object_map = factory.BENCHLING_OBJECT_MAP[factory.destination_object_type]
-                primary_attr_id = object_map['primary_attribute']
-                primary_attr = object_map['attribute_map'][primary_attr_id]
-                if 'id' == primary_attr:
-                    primary_attr_value = sample.id
-                else:
-                    primary_attr_value = sample.attributes.get(primary_attr)
+                if not self._does_object_exist(factory.destination_object_type, sample, object_map):
+                    self._populate_relationships(sample, object_map)
 
+                    object_attributes = self._populate_object_attributes(object_map, sample)
 
-                if (
-                    'custom_entity' != factory.benchling.benchling_types[factory.destination_object_type]
-                    or not self._does_object_exist(primary_attr_value, primary_attr_id)
-                ):
-                    self._populate_relationships(sample)
+                    if 'transfer' != factory.destination_object_type:
+                        object_map['converted_value_identifiers'] = \
+                            object_map['converted_value_identifiers'] + [primary_attr_value]
 
-                    attribute_map = object_map['attribute_map']
-                    object_attributes = {
-                        key: (
-                            sample.id
-                            if 'id' == attr_mapping
-                            else sample.attributes.get(attr_mapping)
-                        )
-                        for key, attr_mapping in attribute_map.items()
-                    }
+                    if 'naming_strategy' in object_map and object_map['naming_strategy']:
+                        object_attributes['naming_strategy'] = object_map['naming_strategy']
 
-                    self._sanitize_attributes(object_attributes)
-                    object_map['converted_value_identifiers'] = \
-                        object_map['converted_value_identifiers'] + [primary_attr]
                     print(object_attributes)
+                    exit(0)
                     yield self._data_object_factory(
                         factory.destination_object_type,
                         sample.id,
                         attributes=object_attributes
                     )
 
-            def _populate_relationships(self, sample):
-                self._populate_benchling_relationships(sample)
-                self._populate_sts_relationships(sample)
+            def __get_primary_attribute(self, object_map, primary_attr_id, sample):
+                primary_attr = object_map['attribute_map'][primary_attr_id]
 
-            def _populate_benchling_relationships(self, sample):
+                if primary_attr in object_map['sts_relationships']:
+                    self._populate_relationships(sample, object_map)
+
+                if 'concatinated_values' in object_map and primary_attr in object_map['concatinated_values']:
+                    self._populate_relationships(sample, object_map)
+                    self._populate_concatenated_attributes(sample, object_map['attribute_map'])
+
+                if 'id' == primary_attr:
+                    primary_attr_value = sample.id
+                else:
+                    primary_attr_value = sample.attributes.get(primary_attr)
+                return primary_attr_value
+
+            def _populate_object_attributes(self, object_map, sample):
+                attribute_map = object_map['attribute_map']
+                self._populate_concatenated_attributes(sample, attribute_map)
+
+                object_attributes = {
+                    key: (
+                        sample.id
+                        if 'id' == attr_mapping
+                        else sample.attributes.get(attr_mapping)
+                    )
+                    for key, attr_mapping in attribute_map.items()
+                }
+                self._sanitize_attributes(object_attributes)
+                return object_attributes
+
+            @staticmethod
+            def _populate_concatenated_attributes(sample, attribute_map):
+                if not sample.attributes.get('concatenated_attributes_populated', False):
+                    for key, attr_mapping in attribute_map.items():
+                        if attr_mapping in factory.CONCATENATED_VALUES:
+                            separator = factory.CONCATENATED_VALUES[attr_mapping]['separator']
+
+                            # Strip out any trailing 0 for the TUBE_WELL_POSITION as benchling strips this out on save
+                            # so it breaks any search queires for bar codes
+                            values = [
+                                re.sub(r'([A-Za-z]+)0', r'\1', sample.attributes.get(attribute, ''))\
+                                    if attribute == 'TUBE_WELL_POSITION' else sample.attributes.get(attribute, '')
+                                for attribute in factory.CONCATENATED_VALUES[attr_mapping]['values']
+                            ]
+
+                            sample.attributes[attr_mapping] = separator.join(filter(None, values))
+                    sample.attributes['concatenated_attributes_populated'] = True
+
+            def _populate_relationships(self, sample, object_map):
+                if not sample.attributes.get('relationships_populated', False):
+                    self._populate_benchling_relationships(sample, object_map)
+                    self._populate_sts_relationships(sample, object_map)
+                    sample.attributes['relationships_populated'] = True
+
+            def _populate_benchling_relationships(self, sample, object_map):
                 """
-                    This method populates the attributes with the values
-                    from the benchling_relationships.
-                    This population is handled through lookups to the benchling data source
-                    or looking at the saved values in the config
+                Populates the STS sample object attributes with Benchling-compatible values.
+                This ensures Benchling relationship IDs replace human-readable elements.
 
-                    Args:
-                        sample: sample data object from sts
+                Args:
+                    sample: Sample data object from STS.
+                    object_map: The nested JSON config from the factory.
 
-                    Returns:
-                        None
-
-                    Raises:
-                        Exception if the relationship is not returned.
-                        This is mainly because the relationships identified within
-                        the benchling_relationships are almost always required.
+                Raises:
+                    Exception: If a required relationship is missing or cannot be populated.
                 """
-                object_type = factory.destination_object_type
-                relationships = \
-                    factory.BENCHLING_OBJECT_MAP[object_type]['benchling_relationships']
+                self._populate_polymorphic_benchling_relationships(sample, object_map)
 
-                for relationship_key in relationships:
-                    relationship = factory.RELATIONSHIPS[relationship_key]
-                    identifier = relationship['relationship_identifier']
-                    search_value = None
-                    if 'relationship' == relationship['sts_type'] and hasattr(sample, identifier):
-                        try:
-                            relationship_obj = next(iter(getattr(sample, identifier)))
-                            search_value = getattr(
-                                relationship_obj,
-                                relationship['sts_identifier'],
-                                None
-                            )
-                        except StopIteration:
-                            continue
-                    elif 'field' == relationship['sts_type']:
-                        if 'sts_id' == relationship['sts_identifier']:
-                            search_value = sample.id
-                        else:
-                            search_value = getattr(sample, relationship['sts_identifier'], None)
+                for benchling_object_identifier in object_map['benchling_relationships']:
+                    relationship_object_map = factory.BENCHLING_OBJECT_MAP[benchling_object_identifier]
+                    benchling_primary_attribute = relationship_object_map['primary_attribute']
+                    sts_attribute_identifier = relationship_object_map['attribute_map'][benchling_primary_attribute]
 
-                    stored_values = factory.BENCHLING_OBJECT_MAP[object_type]['stored_values']
+                    if (
+                        'concatinated_values' in relationship_object_map
+                        and sts_attribute_identifier in relationship_object_map['concatinated_values']
+                    ):
+                        self._populate_relationships(sample, relationship_object_map)
+                        self._populate_concatenated_attributes(sample, relationship_object_map['attribute_map'])
+
+                    search_value = self._get_relationship_search_value(
+                        sample,
+                        sts_attribute_identifier,
+                        relationship_object_map
+                    )
+
                     if search_value is not None:
                         search_value = self._sanitize_attribute(
-                            relationship['benchling_search_identifier'],
-                            search_value,
-                            relationship['benchling_object_name'],
+                            benchling_primary_attribute, search_value, benchling_object_identifier
                         )
 
-                        if search_value not in stored_values:
-                            schema_filter = DataSourceFilter()
-                            schema_filter.and_ = {
-                                relationship['benchling_search_identifier']: {
-                                    'eq': {
-                                        'value': search_value
-                                    }
-                                },
-                            }
-                            filter_obj = DataSourceFilter()
-                            filter_obj.and_ = {'schema_fields': schema_filter}
+                        if search_value in relationship_object_map['stored_values']:
+                            sample.attributes[benchling_object_identifier] = \
+                            relationship_object_map['stored_values'][search_value]
 
-                            try:
-                                benchling_item = next(
-                                    iter(
-                                        factory.benchling.get_list(
-                                            relationship['benchling_object_name'],
-                                            filter_obj
-                                        )
-                                    )
-                                )
-                                stored_values[search_value] = benchling_item.id
-                            except StopIteration:
-                                raise Exception(
-                                    f'Sample not ready for import: Sample #{sample.id} '
-                                    f'is missing the relationship for {relationship_key}'
-                                )
+                        benchling_object_id = self._get_benchling_object_id(
+                            object_type=benchling_object_identifier,
+                            search_identifier=benchling_primary_attribute,
+                            search_value=search_value
+                        )
 
-                        sample.attributes[relationship_key] = stored_values[search_value]
+                        if benchling_object_id is not None:
+                            sample.attributes[benchling_object_identifier] = benchling_object_id
+                            continue
+
+                    raise Exception(
+                        f'Sample not ready for import: {sample.id} '
+                        f'is missing the relationship for {benchling_object_identifier}'
+                    )
+
+            @staticmethod
+            def _get_relationship_search_value(sample, sts_attribute_identifier, relationship_object_map):
+                """
+                Determines the appropriate search value for a relationship.
+
+                Args:
+                    sample: The sample data object from STS.
+                    sts_attribute_identifier: The attribute name in the STS object.
+                    relationship_object_map: The mapping of relationships in Benchling.
+
+                Returns:
+                    The appropriate search value or None.
+                """
+                if (
+                    sts_attribute_identifier in relationship_object_map['sts_relationships']
+                    and sts_attribute_identifier in factory.STS_OBJECT_MAP
+                ):
+                    relationship_identifier = factory.STS_OBJECT_MAP[sts_attribute_identifier]['relationship_identifier']
+                    sts_relationship_attr = getattr(sample, relationship_identifier, None)
+
+                    if isinstance(sts_relationship_attr, Iterable) and not isinstance(sts_relationship_attr, str):
+                        relationship_obj = next(iter(sts_relationship_attr), None)
                     else:
-                        raise Exception(
-                            f'Sample not ready for import: {sample.id} '
-                            f'is missing the relationship for {relationship_key}'
+                        relationship_obj = sts_relationship_attr
+
+                    if relationship_obj is not None:
+                        return getattr(
+                            relationship_obj,
+                            factory.STS_OBJECT_MAP[sts_attribute_identifier]['identifier'],
+                            None
                         )
 
-            def _populate_sts_relationships(self, sample):
+                return sample.id if sts_attribute_identifier == 'sts_id' \
+                    else getattr(sample, sts_attribute_identifier, None)
+
+            def _populate_polymorphic_benchling_relationships(self, sample, object_map):
+                """
+                Populates the 'benchling_relationships' list in object_map with detected
+                polymorphic relationships for the given sample.
+
+                Args:
+                    sample: The sample object being processed.
+                    object_map (dict): A mapping containing 'polymorphic_benchling_relationships'
+                                       and 'benchling_relationships' lists.
+
+                The function iterates over 'polymorphic_benchling_relationships', determines
+                the destination object type, and appends it to 'benchling_relationships'
+                if it's not already present.
+                """
+                for relationship in object_map.get('polymorphic_benchling_relationships', []):
+                    relationship_object_type = self._get_destination_object_type(
+                        sample=sample,
+                        detect_destination_type=relationship,
+                        raise_exception=False
+                    )
+
+                    if (
+                        relationship_object_type and
+                        relationship_object_type not in object_map['benchling_relationships']
+                    ):
+
+                        key_for_relationship_object_type = next(
+                            (key for key, value in object_map['attribute_map'].items() if relationship == value),
+                            None
+                        )
+
+                        if key_for_relationship_object_type:
+                            object_map['benchling_relationships'].append(relationship_object_type)
+                            object_map['attribute_map'][key_for_relationship_object_type] = relationship_object_type
+
+
+            @staticmethod
+            def _populate_sts_relationships(sample, object_map):
                 """
                     This method populates the attributes with the values from the sts_relationships
 
@@ -401,73 +657,134 @@ class StsSampleToCasmBenchlingConverterFactory:
 
                     Expects a StopIteration exception if the relationship does not have a value
                 """
-                object_type = factory.destination_object_type
-                relationships = factory.BENCHLING_OBJECT_MAP[object_type]['sts_relationships']
-
-                for relationship_key in relationships:
-                    relationship = factory.RELATIONSHIPS[relationship_key]
-                    identifier = relationship['relationship_identifier']
+                for sts_object_identifier in object_map['sts_relationships']:
+                    relationship_object_map = factory.STS_OBJECT_MAP[sts_object_identifier]
+                    relationship_identifier = relationship_object_map['relationship_identifier']
 
                     try:
-                        relationship_obj = getattr(sample, identifier)
+                        relationship_object = getattr(sample, relationship_identifier)
 
-                        if isinstance(relationship_obj, Iterable):
-                            relationship_obj = next(iter(relationship_obj))
+                        if isinstance(relationship_object, Iterable):
+                            relationship_object = next(iter(relationship_object))
 
-                        value = getattr(relationship_obj, relationship['identifier'], None)
-                        sample.attributes[relationship_key] = value
+                        value = getattr(relationship_object, relationship_object_map['identifier'], None)
+                        sample.attributes[sts_object_identifier] = value
 
                     except StopIteration:
                         continue
 
-            def _does_object_exist(self, attribute: any, identifier: str):
+            def _does_object_exist(self, destination_object_type, sample,object_map):
                 """
                 Checks if the object all ready exists within the
                 Benchling ecosystem or is all ready loaded into memory
 
                 Args:
-                    attribute - the attribute value we are searching for
-                    identifier - the identifier of the attribute within Benchling
+                    destination_object_type - type of object we are looking for
+                    sample - the sample we are using to get the search values
 
                 Expects:
                     StopIteration - if no object is returned from Benchling
                 """
-                object_map = factory.BENCHLING_OBJECT_MAP[factory.destination_object_type]
+
                 stored_values = object_map['stored_values']
                 converted_value_ids = object_map['converted_value_identifiers']
-                attribute = self._sanitize_attribute(identifier, attribute)
 
-                if attribute in stored_values or attribute in converted_value_ids:
-                    return True
+                if 'transfer' == destination_object_type:
+                    return self._check_sample_transfers_done(sample, object_map)
+                else:
+                    identifier = object_map['primary_attribute']
+                    attribute = self.__get_primary_attribute(object_map, primary_attr_id, sample)
+                    attribute = self._sanitize_attribute(identifier, attribute)
 
-                schema_filter = DataSourceFilter()
-                schema_filter.and_ = {identifier: {'eq': {'value': attribute}}}
-                filter_obj = DataSourceFilter()
-                filter_obj.and_ = {'schema_fields': schema_filter}
+                    if attribute in stored_values or attribute in converted_value_ids:
+                        return True
+
+                    benchling_object_id = self._get_benchling_object_id(
+                        object_type=destination_object_type,
+                        search_identifier=identifier,
+                        search_value=attribute,
+                        add_to_return=True
+                    )
+
+                    if benchling_object_id is not None:
+                        factory.BENCHLING_OBJECT_MAP[factory.destination_object_type]['stored_values'][attribute] = benchling_object_id
+
+                        return True
+
+                return False
+
+            def _check_sample_transfers_done(self, sample, object_map):
+                self._populate_relationships(sample, object_map)
+
+                container_id = sample.attributes.get(object_map['attribute_map']['destination_container_id'])
+                if not container_id:
+                    return False
+
+                contents_found = True
+                try:
+                    contents = factory.benchling.get_conainer_contents(container_id)
+
+                    if not contents:
+                        contents_found = False
+                except BenchlingError as e:
+                    contents_found = False
+
+                return contents_found
+
+            def _get_benchling_object_id(
+                self,
+                object_type:str ,
+                search_identifier:str,
+                search_value:str,
+                add_to_return: bool = False
+            ) -> str|None:
+                """
+                This method is used to get the benchling object id for its given args
+
+                Args:
+                    object_type: String identifying the benchling object type
+                    search_identifier: The identifier of the attribute of the benchling object
+                    search_value: The values we are searching for
+                """
+                filter_object = DataSourceFilter()
+                if 'custom_entity' == factory.benchling.benchling_types[object_type]:
+                    schema_filter = DataSourceFilter()
+                    schema_filter.and_ = {search_identifier: {'eq': {'value': search_value}}}
+                    filter_object.and_ = {'schema_fields': schema_filter}
+                elif factory.benchling.benchling_types[object_type] in ['box','plate','container','location']:
+                    if 'barcode' == search_identifier:
+                        search_identifier = 'barcodes'
+                    filter_object.and_ = {search_identifier: {'in_list': {'value': [search_value]}}}
+                elif factory.benchling.benchling_types[object_type] in ['assay_result']:
+                    filter_object.and_ = {'entity_id': {'eq': {'value': [search_value]}}}
+                else:
+                    raise Exception('Unsupported search')
 
                 try:
-                    benchling_obj = next(
+                    benchling_object = next(
                         iter(
                             factory.benchling.get_list(
-                                factory.destination_object_type,
-                                filter_obj
+                                object_type,
+                                filter_object
                             )
                         )
                     )
-                    self._return_objects.append(benchling_obj)
-                    stored_values[attribute] = benchling_obj
 
-                    return True
+                    if add_to_return:
+                        self._return_objects.append(benchling_object)
+
+                    return benchling_object.id
                 except StopIteration:
-                    return False
+                    return None
 
             def _sanitize_attributes(self, object_attributes):
                 for key, value in object_attributes.items():
                     object_attributes[key] = self._sanitize_attribute(key, value)
 
-            def _sanitize_attribute(self, key: str, value: any, object_type_override: str = ''):
+            @staticmethod
+            def _sanitize_attribute(key: str, value: any, object_type_override: str = ''):
                 """
-                    This method sanitises an attribute making sure its the
+                    This static method sanitizes an attribute making sure it's the
                     correct type expected by Benchling, it will also transform the value of
                     the attribute to a predetermined safe value for
                     Benchling this is configured in VALUE_REPLACEMENTS.
@@ -482,9 +799,9 @@ class StsSampleToCasmBenchlingConverterFactory:
                     Return:
                         Any - depends on the value provided and the cleanup performed
                 """
-                if '' == object_type_override:
-                    fields = factory.fields
-                else:
+                fields = getattr(factory, 'fields', [])
+
+                if '' != object_type_override:
                     benchling_type = factory.benchling.benchling_types[object_type_override]
                     if (
                         benchling_type
@@ -516,5 +833,26 @@ class StsSampleToCasmBenchlingConverterFactory:
                         value = factory.VALUE_REPLACEMENTS[key]['default']
 
                 return value
+
+            @staticmethod
+            def _get_destination_object_type(
+                    sample,
+                    detect_destination_type: str,
+                    raise_exception: bool = True
+            ) -> str | None:
+                if (
+                    hasattr(sample, 'manifest')
+                    and hasattr(sample.manifest, 'manifest_type')
+                    and sample.manifest.manifest_type in factory.
+                        DESTINATION_OBJECT_TYPES[detect_destination_type]
+                ):
+                    return factory.DESTINATION_OBJECT_TYPES[detect_destination_type][
+                        sample.manifest.manifest_type]
+
+                if raise_exception:
+                    raise Exception(
+                        f'Sample is not ready for import: Sample #{sample.id} has unsupported destination type')
+
+                return None
 
         return StsSampleToCasmBenchlingConverter

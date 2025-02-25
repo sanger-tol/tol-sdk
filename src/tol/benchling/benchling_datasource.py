@@ -69,12 +69,23 @@ NATIVE_OBJECT_TYPES = {
     },
     'worklist_item': {
         'attributes': {'name': 'str'}
+    },
+    'transfer': {
+        'attributes': {
+            'destination_contrainer_id': 'str',
+            'transfer_quantity': 'str',
+            'transfer_concentration': 'str',
+        }
     }
 }
 BENCHLING_TYPE_SEARCH_WITH_SCHEMA_ID = [
     'custom_entity',
-    'assay_result'
+    'assay_result',
+    'container',
+    'plate',
+    'box'
 ]
+
 BENCHLING_PARENT_TYPES_WITH_SCHEMAS = {
     'custom_entity': {
         'attributes': {},
@@ -101,7 +112,15 @@ BENCHLING_PARENT_TYPES_WITH_SCHEMAS = {
         'to_many': {}
     },
     'box': {
-        'attributes': {},
+        'attributes': {'name': 'str', 'barcode': 'str'},
+        'to_one': {'parent_location': 'location'},
+        'to_one': {},
+        'to_one_native': {},
+        'to_many': {}
+    },
+    'plate': {
+        'attributes': {'name': 'str', 'barcode': 'str'},
+        'to_one': {'parent_location': 'location'},
         'to_one': {},
         'to_one_native': {},
         'to_many': {}
@@ -232,6 +251,12 @@ class BenchlingDataSource(
     def __get_benchling_package(self, object_type: str):
         if object_type in self.schemas['location'].keys():
             return self.benchling_interface.locations
+        elif object_type in self.schemas['box'].keys():
+            return self.benchling_interface.boxes
+        elif object_type in self.schemas['plate'].keys():
+            return self.benchling_interface.plates
+        elif object_type in self.schemas['container'].keys():
+            return self.benchling_interface.containers
         else:
             match self.benchling_types[object_type]:
                 case 'folder':
@@ -242,6 +267,8 @@ class BenchlingDataSource(
                     return self.benchling_interface.locations
                 case 'assay_result':
                     return self.benchling_interface.assay_results
+                case 'transfer':
+                    return self.benchling_interface.containers
                 case _:
                     return self.benchling_interface.custom_entities
 
@@ -370,6 +397,10 @@ class BenchlingDataSource(
                     benchling_type
                 )
 
+            for key in ('barcodes', 'entity_ids'):
+                if key in object_filters.and_ and object_filters.and_[key] is not None:
+                    kwargs[key] = self.__build_list_filter(object_filters.and_[key])
+
         if benchling_type in BENCHLING_TYPE_SEARCH_WITH_SCHEMA_ID:
             kwargs['schema_id'] = self.schema_ids[object_type]
         # Limit folder searching to the project set a top level
@@ -415,10 +446,10 @@ class BenchlingDataSource(
         session=None,
         **kwargs
     ) -> list[DataObject | ErrorObject]:
-
         converter = self.__dc_factory()
         back_converter = self.__bc_factory()
         benchling_package = self.__get_benchling_package(object_type)
+
         if object_type == 'worklist_item':
             # Worklist items are appended to a worklist
             return self.__insert_worklist_items(
@@ -429,6 +460,14 @@ class BenchlingDataSource(
 
         if 'assay_result' == self.benchling_types[object_type]:
             return self.__insert_assay_result_item(
+                objects,
+                converter,
+                back_converter,
+                benchling_package
+            )
+
+        if 'transfer' == object_type:
+            return self.__create_transfers(
                 objects,
                 converter,
                 back_converter,
@@ -504,8 +543,6 @@ class BenchlingDataSource(
 
             return back_converter.convert(ret)
         except BenchlingError as error:
-            print(error)
-            exit(0)
             yield ErrorObject(
                 error.json['error']['message'],
                 'assay_result',
@@ -616,8 +653,13 @@ class BenchlingDataSource(
                 back_converter,
                 single_method
             )
+
+        return_key = 'customEntities'
+        if 'container' == object_type:
+            return_key = 'containers'
+
         return back_converter.convert_return_entites(
-            task.response.additional_properties['customEntities']
+            task.response.additional_properties[return_key]
         )
 
     def __retry_bulk_methods_on_singletons(
@@ -841,6 +883,27 @@ class BenchlingDataSource(
                 self.__get_benchling_package('worklist').get_by_id(source.id)
             )
 
+    def __build_list_filter(self, list_filter: Optional[DataSourceFilter]):
+        arg = ''
+
+        if (
+            'eq' in list_filter
+            and list_filter['eq'] is not None
+            and 'value' in list_filter['eq']
+            and list_filter['eq']['value'] is not None
+        ):
+            arg = [list_filter['eq']['value']]
+        elif (
+            'in_list' in list_filter
+            and list_filter['in_list'] is not None
+            and 'value' in list_filter['in_list']
+            and list_filter['in_list']['value'] is not None
+            and isinstance(list_filter['in_list']['value'], list)
+        ):
+            arg = list_filter['in_list']['value']
+
+        return arg
+
     def __build_schema_fields_filter(
         self,
         schema_filters: Optional[DataSourceFilter],
@@ -897,3 +960,50 @@ class BenchlingDataSource(
                             )
 
         return kwargs
+
+    def __clean_object_type(self, object_type):
+        if object_type in self.benchling_types:
+            return self.benchling_types[object_type]
+
+        return object_type
+
+    def __create_transfers(
+        self,
+        objects: Iterable[DataObject],
+        converter: DataObjectConverter,
+        back_converter: BenchlingConverter,
+        benchling_package
+    ) :
+        """
+        Inserts assay results into benchling
+        """
+        converted_objects = converter.convert_iterable(objects)
+
+        try:
+            task = self.__wait_for_task(
+                converted_objects,
+                benchling_package.transfer_into_containers
+            )
+
+            if task.status == 'FAILED':
+                return ErrorObject(
+                    task.message,
+                    'transfer_task',
+                    object_=obj
+                )
+
+            return back_converter.convert_return_entites(
+                task.response.additional_properties['destinationContainers']
+            )
+        except BenchlingError as error:
+            return ErrorObject(
+                error.json['error']['message'],
+                'transfer',
+                http_code=error.status_code,
+                object_=obj
+            )
+
+    def get_conainer_contents(self, container_id):
+        container_package = self.benchling_interface.containers
+
+        return container_package.list_contents(container_id)
