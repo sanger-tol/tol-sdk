@@ -11,14 +11,14 @@ from ...core import (
 )
 
 
-class BenchlingTissueToBenchlingWorklistItemConverterFactory():
+class BenchlingEntityToBenchlingWorklistItemConverterFactory():
     def __init__(self, worklist: DataObject):
         self._worklist = worklist
 
     def get_converter_class(self) -> DataObjectToDataObjectOrUpdateConverter:
         factory = self
 
-        class BenchlingTissueToBenchlingWorklistItemConverter(
+        class BenchlingEntityToBenchlingWorklistItemConverter(
                 DataObjectToDataObjectOrUpdateConverter):
             def convert(self, data_object: DataObject | ErrorObject) \
                     -> Iterable[DataObject | ErrorObject]:
@@ -27,7 +27,6 @@ class BenchlingTissueToBenchlingWorklistItemConverterFactory():
                 else:
                     ret = self._data_object_factory(
                         'worklist_item',
-                        None,
                         to_one={
                             'worklist': factory._worklist,
                             'item': data_object,
@@ -35,4 +34,4 @@ class BenchlingTissueToBenchlingWorklistItemConverterFactory():
                     )
                     yield ret
 
-        return BenchlingTissueToBenchlingWorklistItemConverter
+        return BenchlingEntityToBenchlingWorklistItemConverter

@@ -236,12 +236,14 @@ class IdsDataLoader(DefaultDataLoader):
                  loader_name: str,
                  audit: Optional[DataSource] = None,
                  convert_class: Optional[DataObjectToDataObjectOrUpdateConverter] = None,
-                 object_ids: Optional[Iterable[str]] = None):
+                 object_ids: Optional[Iterable[str]] = None,
+                 converter: Converter | None = None):
         super().__init__(
             source=source, destination=destination,
             dependencies=dependencies, source_object_type=source_object_type,
             destination_object_type=destination_object_type,
             loader_name=loader_name, audit=audit,
+            converter=converter,
             convert_class=convert_class)
         self._object_ids = object_ids
 
