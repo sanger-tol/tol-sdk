@@ -174,6 +174,7 @@ def action_blueprint(
                 **action_params,
             },
             'user_id': user_id,
+            'object_type': object_type,
             'ids': ids
         }
 

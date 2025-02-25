@@ -138,6 +138,7 @@ class TestActionsWithDataSources:
                 'bool': True,
                 'answer': 42,
             },
+            'object_type': 'test',
             'ids': list('abc'),
             'user_id': '100'
         }
