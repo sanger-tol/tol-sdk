@@ -37,20 +37,19 @@ class GapAssemblyToElasticAssemblyConverter(
                 str(assembly.taxon_id)
             ),
         }
+        
+        attributes = {
+            k: v
+            for k, v in assembly.attributes.items()
+            if k not in ['taxon_id', 'species', 'phylum_id', 'phylum']
+        }
 
         ret = self._data_object_factory(
             'assembly',
             assembly.id,
             attributes={
                 **pipeline_atts,
-                'project': assembly.project,
-                'assembly_name': assembly.assembly_name,
-                'results': assembly.results,
-                'image_url': assembly.image_url,
-                'image_caption': assembly.image_caption,
-                'lustre_path_analysis_base': assembly.lustre_path_analysis_base,
-                'lustre_path_assembly': assembly.lustre_path_assembly,
-                'lustre_path_species': assembly.lustre_path_species,
+                **attributes
             },
             to_one=to_one_relations
         )
