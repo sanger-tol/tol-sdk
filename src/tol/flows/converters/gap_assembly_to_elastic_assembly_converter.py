@@ -3,6 +3,7 @@
 # SPDX-License-Identifier: MIT
 
 from typing import Iterable
+from uuid import uuid4
 
 from ...core import (
     DataObject,
@@ -21,13 +22,15 @@ class GapAssemblyToElasticAssemblyConverter(
         pipelines = self.gap_ds.get_to_many_relations(assembly)
         pipeline_atts = []
         for p in pipelines:
-            pipeline_atts.append(p.attributes)
+
+            pipeline_atts.append({'pipeline': p.id, **p.attributes})
 
         ret = self._data_object_factory(
             'assembly',
-            assembly.id,
+            uuid4().hex,
             attributes={
                 **assembly.attributes,
+                'accession': assembly.id,
                 'pipelines': pipeline_atts
             }
         )
