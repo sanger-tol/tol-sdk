@@ -12,23 +12,23 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from .base import BaseModel
 
 if typing.TYPE_CHECKING:
-    from .r1 import R1
+    from .r7 import R7
     from .r6 import R6
 
 
-class R1ToR6(BaseModel):
+class R6toR7(BaseModel):
     """
     Joining table between R1 and R6
     """
 
-    __tablename__ = 'r1_r6'
+    __tablename__ = 'r6_r7'
 
-    r1_id: Mapped[str] = mapped_column(
-        ForeignKey('r1.id_override'),
+    r7_id: Mapped[str] = mapped_column(
+        ForeignKey('r7.id'),
         nullable=False,
         primary_key=True
     )
-    r1_rel: Mapped['R1'] = relationship(
+    r7_rel: Mapped['R7'] = relationship(
         back_populates='joins_stuff'
     )
 

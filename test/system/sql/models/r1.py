@@ -13,7 +13,6 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from .base import BaseModel
 
 if typing.TYPE_CHECKING:
-    from .r1_to_r6 import R1ToR6
     from .r2 import R2
     from .r3 import R3
     from .r5 import R5
@@ -48,14 +47,6 @@ class R1(BaseModel):
     )
     this_lovely_r5: Mapped['R5'] = relationship(
         back_populates='no_more_r1s'
-    )
-
-    joins_stuff: Mapped[list['R1ToR6']] = relationship(
-        back_populates='r1_rel'
-    )
-
-    users: Mapped[list['User']] = relationship(  # noqa F821
-        back_populates='this_r1'
     )
 
     @classmethod

@@ -10,12 +10,13 @@ from .c import C
 from .ext import ExtDefault, ExtOverride
 from .inc import Inc
 from .r1 import R1
-from .r1_to_r6 import R1ToR6
 from .r2 import R2
 from .r3 import R3
 from .r4 import R4
 from .r5 import R5
 from .r6 import R6
+from .r7 import R7
+from .r6_to_r7 import R6toR7
 from .user_mixin import TestUserMixin  # noqa F401
 
 delete_models_list = [
@@ -25,11 +26,12 @@ delete_models_list = [
     Inc,
     R3,  # must come before R1, as it points to it
     R4,  # must come before R3, as it points to it
-    R1ToR6,
+    R6toR7,
     R1,
     R5,
     R2,
     R6,
+    R7,
     ExtDefault,
     ExtOverride,
     *board_models  # these are already in deletion order

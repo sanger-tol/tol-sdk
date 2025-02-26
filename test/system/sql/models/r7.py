@@ -11,12 +11,12 @@ from .base import BaseModel
 from .r6_to_r7 import R6toR7
 
 
-class R6(BaseModel):
+class R7(BaseModel):
 
-    __tablename__ = 'r6'
+    __tablename__ = 'r7'
 
     id: Mapped[str] = mapped_column(primary_key=True)  # noqa
 
     joins_stuff: Mapped[list['R6toR7']] = relationship(
-        back_populates='r6_rel'
+        back_populates='r7_rel'
     )
