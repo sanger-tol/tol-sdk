@@ -20,18 +20,24 @@ class GapAssemblyToElasticAssemblyConverter(
     def convert(self, assembly: DataObject) -> Iterable[DataObject]:
 
         pipelines = self.gap_ds.get_to_many_relations(assembly)
-        pipeline_atts = []
+        pipeline_atts = {}
         for p in pipelines:
-
-            pipeline_atts.append({'pipeline': p.id, **p.attributes})
+            prefix = p.id
+            pipeline_atts = {
+                f'{prefix}_analysis': p.analysis,
+                f'{prefix}_results': p.results,
+                f'{prefix}_s3': p.s3,
+                f'{prefix}_lustre_path_analysis': p.lustre_path_analysis,
+                **pipeline_atts,
+                }
 
         ret = self._data_object_factory(
             'assembly',
             uuid4().hex,
             attributes={
+                **pipeline_atts,
                 **assembly.attributes,
                 'accession': assembly.id,
-                'pipelines': pipeline_atts
             }
         )
         yield ret
