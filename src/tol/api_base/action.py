@@ -158,6 +158,7 @@ def action_blueprint(
         user_action = sql_ds.data_object_factory(
             'user_action',
             attributes={
+                'ids': ids,
                 'params': user_action_params,
                 'created_at': datetime.now()
             },
@@ -174,6 +175,7 @@ def action_blueprint(
                 **action_params,
             },
             'user_id': user_id,
+            'object_type': object_type,
             'ids': ids
         }
 

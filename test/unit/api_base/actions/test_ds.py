@@ -103,6 +103,7 @@ class TestActionsWithDataSources:
         created_at = attributes.pop('created_at')
         assert isinstance(created_at, datetime)
         assert kwargs['attributes'] == {
+            'ids': list('abc'),
             'params': {
                 'additional': 'indeeeeed',
                 'ids': list('abc'),
@@ -138,6 +139,7 @@ class TestActionsWithDataSources:
                 'bool': True,
                 'answer': 42,
             },
+            'object_type': 'test',
             'ids': list('abc'),
             'user_id': '100'
         }
