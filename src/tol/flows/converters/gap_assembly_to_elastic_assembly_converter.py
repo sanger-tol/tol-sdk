@@ -30,14 +30,28 @@ class GapAssemblyToElasticAssemblyConverter(
                 f'{prefix}_lustre_path_analysis': p.lustre_path_analysis,
                 **pipeline_atts,
             }
+            
+        to_one_relations = {
+            'species': self._data_object_factory(
+                'species',
+                str(assembly.taxon_id)
+            ),
+        }
 
         ret = self._data_object_factory(
             'assembly',
-            uuid4().hex,
+            assembly.id,
             attributes={
                 **pipeline_atts,
-                **assembly.attributes,
-                'accession': assembly.id,
-            }
+                'project': assembly.project,
+                'assembly_name': assembly.assembly_name,
+                'results': assembly.results,
+                'image_url': assembly.image_url,
+                'image_caption': assembly.image_caption,
+                'lustre_path_analysis_base': assembly.lustre_path_analysis_base,
+                'lustre_path_assembly': assembly.lustre_path_assembly,
+                'lustre_path_species': assembly.lustre_path_species,
+            },
+            to_one=to_one_relations
         )
         yield ret
