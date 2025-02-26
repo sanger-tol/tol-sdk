@@ -449,17 +449,17 @@ def elastic():
                 'script': {
                     'source': """
                         boolean isTolidNotBeenActioned = (
-                            !doc.containsKey['date_topup_actioned_by'] ||
-                            doc['date_topup_actioned_by'].size() == 0 ||
-                            doc['date_topup_actioned_by'].value == null
+                            !doc.containsKey['portaldb_date_topup_actioned'] ||
+                            doc['portaldb_date_topup_actioned'].size() == 0 ||
+                            doc['portaldb_date_topup_actioned'].value == null
                         );
 
                         boolean isTolidActionedBeforeLastRun = (
                            doc.containsKey['mlwh_run_data_mlwh_run_complete_max'] &&
-                           doc.containsKey['date_topup_actioned_by'] &&
+                           doc.containsKey['portaldb_date_topup_actioned'] &&
                            doc['mlwh_run_data_mlwh_run_complete_max'].size() > 0 &&
-                           doc['date_topup_actioned_by'].size() > 0 &&
-                           doc['date_topup_actioned_by'].value <
+                           doc['portaldb_date_topup_actioned'].size() > 0 &&
+                           doc['portaldb_date_topup_actioned'].value <
                            doc['mlwh_run_data_mlwh_run_complete_max'].value
                         );
 
