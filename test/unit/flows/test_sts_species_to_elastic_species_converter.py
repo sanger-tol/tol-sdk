@@ -69,7 +69,6 @@ class _MockDataSourceRelational(DataSource, Relational):
                     attributes={'status': 'value2'}
                 )
             ]
-            
         return []
 
 
