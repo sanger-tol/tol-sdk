@@ -29,7 +29,7 @@ class GapAssemblyToElasticAssemblyConverter(
                 f'{prefix}_s3': p.s3,
                 f'{prefix}_lustre_path_analysis': p.lustre_path_analysis,
                 **pipeline_atts,
-                }
+            }
 
         ret = self._data_object_factory(
             'assembly',
