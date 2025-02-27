@@ -70,7 +70,7 @@ class TestGapDataSource(TestCase):
             next(ret)
 
     def test_get_to_many_relations(self):
-        _, gsds = gap()
+        gsds = gap()
 
         assembly = gsds.get_by_id('assembly', ['GCA_002706865.2'])
         pipelines = next(assembly).pipelines
