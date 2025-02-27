@@ -22,7 +22,7 @@ class _MockDataSourceRelational(DataSource, Relational):
 
     @property
     def supported_types(self):
-        return ['sequencing_material_status', 'species']
+        return ['sequencing_material_status', 'species', 'species_lab_work_status']
 
     @property
     def attribute_types(self):
@@ -33,6 +33,9 @@ class _MockDataSourceRelational(DataSource, Relational):
         rc_species = RelationshipConfig()
         rc_species.to_one = {
             'sequencing_material_status': 'sequencing_material_status'
+        }
+        rc_species.to_many = {
+            'species_lab_work_statuses': 'species_lab_work_status'
         }
         return {'species': rc_species}
 
@@ -49,9 +52,24 @@ class _MockDataSourceRelational(DataSource, Relational):
             )
 
     def get_to_many_relations(
-        self
+        self,
+        source: DataObject,
+        relationship_name: str
     ):
-        raise NotImplementedError()
+        if source.id == 'test1':
+            return [
+                source._host.data_object_factory(
+                    id_='test1',
+                    type_='species_lab_work_status',
+                    attributes={'status': 'value1'}
+                ),
+                source._host.data_object_factory(
+                    id_='test2',
+                    type_='species_lab_work_status',
+                    attributes={'status': 'value2'}
+                )
+            ]
+        return []
 
 
 class _MockDataSource(DataSource):
@@ -99,7 +117,8 @@ class TestStsSpeciesToElasticSpeciesConverter(TestCase):
         self.assertEqual(obj1.type, ret1.type)
         self.assertEqual(ret1.attributes, {
             'attribute1': 'value1',
-            'sequencing_material_status': 'status1'
+            'sequencing_material_status': 'status1',
+            'lab_work_status': ['value1', 'value2']
         })
 
         with self.assertRaises(StopIteration):
