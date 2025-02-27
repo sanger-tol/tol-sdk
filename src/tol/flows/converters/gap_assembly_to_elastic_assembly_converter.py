@@ -3,7 +3,6 @@
 # SPDX-License-Identifier: MIT
 
 from typing import Iterable
-from uuid import uuid4
 
 from ...core import (
     DataObject,
@@ -30,14 +29,14 @@ class GapAssemblyToElasticAssemblyConverter(
                 f'{prefix}_lustre_path_analysis': p.lustre_path_analysis,
                 **pipeline_atts,
             }
-            
+
         to_one_relations = {
             'species': self._data_object_factory(
                 'species',
                 str(assembly.taxon_id)
             ),
         }
-        
+
         attributes = {
             k: v
             for k, v in assembly.attributes.items()
