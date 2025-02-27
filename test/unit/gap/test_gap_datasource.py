@@ -2,7 +2,7 @@
 #
 # SPDX-License-Identifier: MIT
 
-import os
+
 from unittest import (
     TestCase
 )
@@ -90,8 +90,8 @@ def gap_data_source() -> GapDataSource:
         'type': 'assembly',
         'id_attribute': 'accession',
         's3_host': 'cog.sanger.ac.uk',
-        's3_access_key': os.getenv('MINIO_ACCESS_KEY'),
-        's3_secret_key': os.getenv('MINIO_SECRET_KEY'),
+        's3_access_key': None,
+        's3_secret_key': None,
         'mappings': {
             'project': {'heading': 'project', 'type': 'str'},
             'phylum': {'heading': 'phylum', 'type': 'str'},
@@ -178,7 +178,7 @@ class TestGapDataSource(TestCase):
         _, gsds = gap_data_source()
 
         assembly = gsds.get_by_id('assembly', ['GCA_002706865.2'])
-        ret = gsds.get_to_many_relations(next(assembly))
+        ret = gsds.get_to_many_relations(next(assembly), 'pipelines')
         obj1 = next(ret)
         self.assertEqual({
             'analysis': 'Sequence Composition',

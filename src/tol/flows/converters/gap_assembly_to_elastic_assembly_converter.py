@@ -18,9 +18,8 @@ class GapAssemblyToElasticAssemblyConverter(
 
     def convert(self, assembly: DataObject) -> Iterable[DataObject]:
 
-        pipelines = self.gap_ds.get_to_many_relations(assembly)
         pipeline_atts = {}
-        for p in pipelines:
+        for p in assembly.pipelines:
             prefix = p.id
             pipeline_atts = {
                 f'{prefix}_analysis': p.analysis,

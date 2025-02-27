@@ -2,7 +2,6 @@
 #
 # SPDX-License-Identifier: MIT
 
-import os
 
 from ..core import (
     core_data_object
@@ -18,8 +17,8 @@ def gap():
         'type': 'assembly',
         'id_attribute': 'accession',
         's3_host': 'cog.sanger.ac.uk',
-        's3_access_key': os.getenv('MINIO_ACCESS_KEY'),
-        's3_secret_key': os.getenv('MINIO_SECRET_KEY'),
+        's3_access_key': None,
+        's3_secret_key': None,
         'mappings': {
             'project': {'heading': 'project', 'type': 'str'},
             'phylum': {'heading': 'phylum', 'type': 'str'},

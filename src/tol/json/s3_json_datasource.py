@@ -50,8 +50,8 @@ class S3JsonDataSource(
         # Initialize MinIO client
         self.minio_client = Minio(
             self.s3_host,
-            access_key=None,
-            secret_key=None,
+            access_key=self.s3_access_key,
+            secret_key=self.s3_secret_key,
             secure=secure
         )
 

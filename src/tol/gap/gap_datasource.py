@@ -32,12 +32,12 @@ class GapDataSource(
     @property
     @cache
     def relationship_config(self) -> dict[str, RelationshipConfig]:
-        rc_pipeline = RelationshipConfig()
-        rc_pipeline.to_many = {
-            'pipeline': 'pipeline'
+        rc_assembly = RelationshipConfig()
+        rc_assembly.to_many = {
+            'pipelines': 'pipeline'
         }
         return {
-            'pipeline': rc_pipeline
+            'assembly': rc_assembly
         }
 
     def get_to_one_relation(
@@ -49,7 +49,8 @@ class GapDataSource(
 
     def get_to_many_relations(
         self,
-        source: DataObject
+        source: DataObject,
+        relationship_name: str,
     ) -> Iterable[DataObject]:
         temp_config = {
             'uri': f's3://gap/{source.id}/data/analysis.json',
@@ -82,8 +83,8 @@ class GapDataSource(
                 },
             },
             's3_host': 'cog.sanger.ac.uk',
-            's3_access_key': self.config['s3_access_key'],
-            's3_secret_key': self.config['s3_secret_key']
+            's3_access_key': None,
+            's3_secret_key': None
         }
         temp_ds = S3JsonDataSource(config=temp_config, secure=True)
         cdo = core_data_object(temp_ds) # noqa

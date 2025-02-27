@@ -2,43 +2,15 @@
 #
 # SPDX-License-Identifier: MIT
 
-import os
 from unittest import TestCase
 
 from tol.core import core_data_object
 from tol.gap import GapDataSource
+from tol.sources.gap import gap
 
 
 def gap_data_source() -> GapDataSource:
-    gds = GapDataSource({
-        'uri': 's3://gap/data/assembly.json',
-        'type': 'assembly',
-        'id_attribute': 'accession',
-        's3_host': 'cog.sanger.ac.uk',
-        's3_access_key': os.getenv('MINIO_ACCESS_KEY'),
-        's3_secret_key': os.getenv('MINIO_SECRET_KEY'),
-        'mappings': {
-            'project': {'heading': 'project', 'type': 'str'},
-            'phylum': {'heading': 'phylum', 'type': 'str'},
-            'species': {'heading': 'species', 'type': 'str'},
-            'accession': {'heading': 'accession', 'type': 'str'},
-            'assembly_name': {'heading': 'assembly_name', 'type': 'str'},
-            'results': {'heading': 'results', 'type': 'str'},
-            'taxon_id': {'heading': 'taxon_id', 'type': 'int'},
-            'phylum_id': {'heading': 'phylum_id', 'type': 'str'},
-            'image_url': {'heading': 'image_url', 'type': 'str'},
-            'image_caption': {'heading': 'image_caption', 'type': 'str'},
-            'lustre_path_analysis_base': {
-                'heading': 'lustre_path_analysis_base', 'type': 'str'
-            },
-            'lustre_path_assembly': {
-                'heading': 'lustre_path_assembly', 'type': 'str'
-            },
-            'lustre_path_species': {
-                'heading': 'lustre_path_species', 'type': 'str'
-            }
-        }
-    })
+    gds = gap()
     cdo = core_data_object(gds)
     return cdo, gds
 
@@ -109,8 +81,8 @@ class TestGapDataSource(TestCase):
         _, gsds = gap_data_source()
 
         assembly = gsds.get_by_id('assembly', ['GCA_002706865.2'])
-        ret = gsds.get_to_many_relations(next(assembly))
-        obj1 = next(ret)
+        pipelines = next(assembly).pipelines
+        pipeline1 = next(pipelines)
         self.assertEqual({
             'analysis': 'Sequence Composition',
             'results': 'Base Content',
@@ -126,9 +98,9 @@ class TestGapDataSource(TestCase):
                 '/lustre/scratch123/tol/projects/lepidoptera/data/insects/Spodoptera_litura/'
                 'analysis/ASM270686v2/base_content'
             )
-        }, obj1.attributes)
+        }, pipeline1.attributes)
 
-        obj2 = next(ret)
+        pipeline2 = next(pipelines)
         self.assertEqual({
             'analysis': 'BlobToolKit',
             'results': 'BlobToolKit',
@@ -145,7 +117,7 @@ class TestGapDataSource(TestCase):
                 'dataset/MTZO01.1/blob#Filters'
             ),
             'lustre_path_analysis': None
-        }, obj2.attributes)
+        }, pipeline2.attributes)
 
         with self.assertRaises(StopIteration):
-            next(ret)
+            next(assembly)
