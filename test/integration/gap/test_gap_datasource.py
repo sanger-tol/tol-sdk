@@ -4,8 +4,6 @@
 
 from unittest import TestCase
 
-from tol.core import core_data_object
-from tol.gap import GapDataSource
 from tol.sources.gap import gap
 
 
