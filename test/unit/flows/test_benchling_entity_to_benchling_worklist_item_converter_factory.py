@@ -48,7 +48,7 @@ class _MockDataSource(DataSource, Relational):
         raise NotImplementedError()
 
 
-class TestBenchlingTissueToStsSampleConverter(TestCase):
+class TestBenchlingEntityToStsSampleConverter(TestCase):
     def test_default_convert(self):
 
         source = _MockDataSource(config={})
