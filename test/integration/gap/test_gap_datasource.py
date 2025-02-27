@@ -9,16 +9,10 @@ from tol.gap import GapDataSource
 from tol.sources.gap import gap
 
 
-def gap_data_source() -> GapDataSource:
-    gds = gap()
-    cdo = core_data_object(gds)
-    return cdo, gds
-
-
 class TestGapDataSource(TestCase):
 
     def test_attribute_types(self):
-        _, gds = gap_data_source()
+        gds = gap()
         expected = {
             'assembly': {
                 'project': 'str',
@@ -40,7 +34,7 @@ class TestGapDataSource(TestCase):
         self.assertEqual(['assembly'], gds.supported_types)
 
     def test_get_by_id(self):
-        _, gsds = gap_data_source()
+        gsds = gap()
 
         ret = gsds.get_by_id('assembly', ['GCA_002706865.2'])
         obj1 = next(ret)
@@ -78,7 +72,7 @@ class TestGapDataSource(TestCase):
             next(ret)
 
     def test_get_to_many_relations(self):
-        _, gsds = gap_data_source()
+        _, gsds = gap()
 
         assembly = gsds.get_by_id('assembly', ['GCA_002706865.2'])
         pipelines = next(assembly).pipelines
