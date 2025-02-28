@@ -55,14 +55,14 @@ if typing.TYPE_CHECKING:
 
 BenchlingReturn = dict[str, dict[str, Any]]
 BenchlingObject = CustomEntity | Folder | Worklist | Box | Plate | Container | \
-                  AssayResultsBulkCreateRequest | Location | WorklistItem | AssayResult
+    AssayResultsBulkCreateRequest | Location | WorklistItem | AssayResult
 BenchlingObjectCreate = CustomEntityCreate | FolderCreate | WorklistCreate | WorklistItemCreate | \
-                        BoxCreate | PlateCreate | ContainerCreate | LocationCreate
+    BoxCreate | PlateCreate | ContainerCreate | LocationCreate
 BenchlingObjectBulkCreate = CustomEntityBulkCreate | MultipleContainersTransfer | AssayResultCreate
 BenchlingObjectUpdate = CustomEntityUpdate
 BenchlingObjectBulkUpdate = CustomEntityBulkUpdate
 BenchlingWrite = BenchlingObjectCreate | BenchlingObjectUpdate | BenchlingObjectBulkCreate | \
-                 BenchlingObjectBulkUpdate
+    BenchlingObjectBulkUpdate
 """Suitable as arguments to either `insert` or `update`"""
 
 
@@ -687,18 +687,18 @@ class DataObjectConverter(Converter[DataObject, BenchlingWrite]):
             self.__get_field_name(object_type, name): {'value': self.__format_date(value)}
             for name, value in data_dict.items()
             if (
-                    name not in self.IGNORE_FIELD_NAMES
-                    and self.__ds.schemas[benchling_type]
-                    [object_type][name]['benchling_type'] != 'dropdown'
+                name not in self.IGNORE_FIELD_NAMES
+                and self.__ds.schemas[benchling_type]
+                [object_type][name]['benchling_type'] != 'dropdown'
             )
         }
         mapped_relationships = {
             self.__get_field_name(object_type, name): {'value': value.id}
             for name, value in to_one_relationships.items()
             if (
-                    value is not None  # Not sure how to handle null relationships
-                    and name not in self.IGNORE_FIELD_NAMES
-                    and name in self.__ds.schemas[benchling_type][object_type].keys()
+                value is not None  # Not sure how to handle null relationships
+                and name not in self.IGNORE_FIELD_NAMES
+                and name in self.__ds.schemas[benchling_type][object_type].keys()
             )
         }
         # Convert dropdown values to Benchling dropdown values
@@ -712,9 +712,9 @@ class DataObjectConverter(Converter[DataObject, BenchlingWrite]):
             }
             for name, value in data_dict.items()
             if (
-                    name not in self.IGNORE_FIELD_NAMES
-                    and self.__ds.schemas[benchling_type]
-                    [object_type][name]['benchling_type'] == 'dropdown'
+                name not in self.IGNORE_FIELD_NAMES
+                and self.__ds.schemas[benchling_type]
+                [object_type][name]['benchling_type'] == 'dropdown'
             )
         }
         return fields(mapped_dict | mapped_relationships | dropdown_values)

@@ -256,7 +256,7 @@ class BenchlingDataSource(
         elif object_type in self.schemas['container'].keys():
             return self.benchling_interface.containers
         else:
-            match self.benchling_types[object_type]:
+            match self.benchling_types[object_type]: # noqa E999
                 case 'folder':
                     return self.benchling_interface.folders
                 case 'worklist':

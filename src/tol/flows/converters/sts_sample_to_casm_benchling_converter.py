@@ -213,7 +213,7 @@ class StsSampleToCasmBenchlingConverterFactory:
             'converted_value_identifiers': [],
             'stored_values': {},
         },
-        '10x10_box': {
+        '12x12_box': {
             'attribute_map': {
                 'barcode': 'storage_rack',
                 'parent_storage_id': 'storage'
@@ -255,7 +255,7 @@ class StsSampleToCasmBenchlingConverterFactory:
             'primary_attribute': 'barcode',
             'primary_attribute_type': 'schema_field',
             'benchling_relationships': [
-                '10x10_box',
+                '12x12_box',
             ],
             'sts_relationships': [],
             'polymorphic_benchling_relationships': [],
@@ -304,22 +304,22 @@ class StsSampleToCasmBenchlingConverterFactory:
 
     CONCATENATED_VALUES = {
         'plate_and_location': {
-            'values':    [
+            'values': [
                 'casm_96_well_plate',
                 'TUBE_WELL_POSITION'
             ],
             'separator': ':'
         },
         'plate_and_location_non_relationship': {
-            'values':    [
+            'values': [
                 'storage_rack',
                 'TUBE_WELL_POSITION'
             ],
             'separator': ':'
         },
         'box_and_position': {
-            'values':    [
-                '10x10_box',
+            'values': [
+                '12x12_box',
                 'TUBE_WELL_POSITION'
             ],
             'separator': ':'
@@ -374,7 +374,7 @@ class StsSampleToCasmBenchlingConverterFactory:
 
     DESTINATION_OBJECT_TYPES = {
         'box_or_plate': {
-            'RACK_TUBE': '10x10_box',
+            'RACK_TUBE': '12x12_box',
             'PLATE_WELL': 'casm_96_well_plate'
         },
         'container': {
@@ -883,8 +883,8 @@ class StsSampleToCasmBenchlingConverterFactory:
                     )
 
                     if (
-                        relationship_object_type and
-                        relationship_object_type not in object_map['benchling_relationships']
+                        relationship_object_type
+                        and relationship_object_type not in object_map['benchling_relationships']
                     ):
 
                         key_for_relationship_object_type = next(
