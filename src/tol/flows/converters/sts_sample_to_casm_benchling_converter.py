@@ -655,9 +655,7 @@ class StsSampleToCasmBenchlingConverterFactory:
                     if sample.attributes.get(relationship_object_identifier, None) is None:
                         sample.attributes[relationship_object_identifier] = \
                             self._get_sts_relationship_attribute_value(
-                                relationship_object_identifier,
-                                sample
-                            )
+                                relationship_object_identifier, sample)
 
             def _does_object_exist(self, destination_object_type, sample, object_map):
                 """

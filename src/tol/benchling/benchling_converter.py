@@ -421,9 +421,9 @@ class DataObjectConverter(Converter[DataObject, BenchlingWrite]):
             destination_type: str
     ) -> Iterable[Optional[BenchlingObjectBulkCreate]]:
         if destination_type in self.__ds.schemas['custom_entity'].keys():
-            return self.__convert_insert_custom_entity_bulk(inputs)
+            return self.__convert_insert_custom_entity_bulk(inputs, destination_type)
         if destination_type in self.__ds.schemas['assay_result'].keys():
-            return self.__convert_insert_assay_result_bulk(inputs)
+            return self.__convert_insert_assay_result_bulk(inputs, destination_type)
 
         return self.convert_iterable(inputs)
 
@@ -548,7 +548,8 @@ class DataObjectConverter(Converter[DataObject, BenchlingWrite]):
 
     def __convert_insert_custom_entity_bulk(
             self,
-            inputs: Iterable[DataObject]
+            inputs: Iterable[DataObject],
+            destination_type: str
     ) -> Iterable[CustomEntityBulkCreate]:
         return_iterable = []
         for input_ in inputs:
@@ -558,7 +559,7 @@ class DataObjectConverter(Converter[DataObject, BenchlingWrite]):
                 naming_strategy = NamingStrategy.REPLACE_NAMES_FROM_PARTS
 
             entity_fields = self.__convert_fields(
-                input_.type,
+                destination_type,
                 input_.attributes,
                 input_.to_one_relationships
             )
@@ -587,7 +588,7 @@ class DataObjectConverter(Converter[DataObject, BenchlingWrite]):
         for input_ in inputs:
             update_id, update_dict = input_
             entity_fields = self.__convert_fields(
-                '',
+                object_type,
                 {
                     k: v for k, v in update_dict.items()
                     if k in self.__ds.schemas['custom_entity'][object_type].keys()
@@ -601,7 +602,7 @@ class DataObjectConverter(Converter[DataObject, BenchlingWrite]):
 
             return_iterable.append(
                 CustomEntityBulkUpdate(
-                    id=update_dict.type,
+                    id=object_type,
                     fields=entity_fields,
                     custom_fields=fields({}),
                     **kwargs
@@ -632,12 +633,13 @@ class DataObjectConverter(Converter[DataObject, BenchlingWrite]):
 
     def __convert_insert_assay_result_bulk(
             self,
-            inputs: Iterable[DataObject]
+            inputs: Iterable[DataObject],
+            object_type: str
     ) -> Iterable[AssayResultCreate]:
         return_iterable = []
         for input_ in inputs:
             assay_fields = self.__convert_fields(
-                input_.type,
+                object_type,
                 input_.attributes,
                 input_.to_one_relationships
             )

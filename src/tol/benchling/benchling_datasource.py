@@ -69,13 +69,6 @@ NATIVE_OBJECT_TYPES = {
     },
     'worklist_item': {
         'attributes': {'name': 'str'}
-    },
-    'transfer': {
-        'attributes': {
-            'destination_contrainer_id': 'str',
-            'transfer_quantity': 'str',
-            'transfer_concentration': 'str',
-        }
     }
 }
 BENCHLING_TYPE_SEARCH_WITH_SCHEMA_ID = [
@@ -314,8 +307,7 @@ class BenchlingDataSource(
                 converter,
                 back_converter,
                 benchling_package.bulk_update,
-                benchling_package.update,
-                True
+                benchling_package.update
             )
         else:
             return [
@@ -324,8 +316,7 @@ class BenchlingDataSource(
                     update,
                     converter,
                     back_converter,
-                    benchling_package.update,
-                    True
+                    benchling_package.update
                 )
                 for update in updates
             ]
@@ -535,7 +526,7 @@ class BenchlingDataSource(
             else:
                 converted_object = converter.convert_update(obj, object_type)
                 # Need to pass in IDs for updates
-                ret = method(converted_object.id, converted_object)
+                ret = method(obj[0], converted_object)
             return back_converter.convert(ret)
         except BenchlingError as error:
             return ErrorObject(

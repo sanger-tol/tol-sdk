@@ -11,10 +11,10 @@ from benchling_sdk.errors import BenchlingError
 
 from tol.benchling import BenchlingDataSource
 from tol.benchling.benchling_converter import (
-    BenchlingCustomEntity,
-    BenchlingFolder,
-    BenchlingLocation,
-    BenchlingWorklist
+    CustomEntity,
+    Folder,
+    Location,
+    Worklist
 )
 from tol.core import DataObject, core_data_object
 from tol.core.data_object import ErrorObject
@@ -147,7 +147,7 @@ class TestBenchlingDataSource(TestCase):
 
     def test_get_by_id_custom_entity(self):
         _, bds = mock_benchling_data_source()
-        obj = mock.create_autospec(BenchlingCustomEntity, spec_set=True)
+        obj = mock.create_autospec(CustomEntity, spec_set=True)
         obj.schema.name = 'test_entity_type'
         obj.id = '123'
         bds.benchling_interface.custom_entities.list.return_value = [[obj]]
@@ -157,7 +157,7 @@ class TestBenchlingDataSource(TestCase):
 
     def test_get_by_id_worklist(self):
         _, bds = mock_benchling_data_source()
-        obj = mock.create_autospec(BenchlingWorklist, spec_set=True)
+        obj = mock.create_autospec(Worklist, spec_set=True)
         obj.id = '123'
         obj.name = 'Worklist 1'
         bds.benchling_interface.v2.beta.worklists.list.return_value = [[obj]]
@@ -168,7 +168,7 @@ class TestBenchlingDataSource(TestCase):
 
     def test_get_list_custom_entity(self):
         _, bds = mock_benchling_data_source()
-        obj = mock.create_autospec(BenchlingCustomEntity, spec_set=True)
+        obj = mock.create_autospec(CustomEntity, spec_set=True)
         obj.schema.name = 'test_entity_type'
         obj.id = '123'
         bds.benchling_interface.custom_entities.list.return_value = [[obj]]
@@ -178,7 +178,7 @@ class TestBenchlingDataSource(TestCase):
 
     def test_get_list_worklist(self):
         _, bds = mock_benchling_data_source()
-        obj = mock.create_autospec(BenchlingWorklist, spec_set=True)
+        obj = mock.create_autospec(Worklist, spec_set=True)
         obj.id = '123'
         obj.name = 'Worklist 1'
         bds.benchling_interface.v2.beta.worklists.list.return_value = [[obj]]
@@ -189,7 +189,7 @@ class TestBenchlingDataSource(TestCase):
 
     def test_get_list_folder(self):
         _, bds = mock_benchling_data_source()
-        obj = mock.create_autospec(BenchlingFolder, spec_set=True)
+        obj = mock.create_autospec(Folder, spec_set=True)
         obj.id = '123'
         obj.name = 'Folder 1'
         bds.benchling_interface.folders.list.return_value = [[obj]]
@@ -200,7 +200,7 @@ class TestBenchlingDataSource(TestCase):
 
     def test_get_list_location(self):
         _, bds = mock_benchling_data_source()
-        obj = mock.create_autospec(BenchlingLocation, spec_set=True)
+        obj = mock.create_autospec(Location, spec_set=True)
         obj.id = '123'
         obj.name = 'Location 1'
         obj.schema.name = 'test_location_type'
