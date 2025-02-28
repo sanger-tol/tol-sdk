@@ -99,13 +99,13 @@ BENCHLING_PARENT_TYPES_WITH_SCHEMAS = {
         'to_one_native': {},
         'to_many': {}
     },
-    'assay_result' : {
+    'assay_result': {
         'attributes': {},
         'to_one': {},
         'to_one_native': {},
         'to_many': {}
     },
-    'container' : {
+    'container': {
         'attributes': {},
         'to_one': {},
         'to_one_native': {},

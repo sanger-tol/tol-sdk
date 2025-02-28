@@ -5,6 +5,7 @@ from typing import Iterable
 
 from benchling_sdk.errors import BenchlingError
 from benchling_sdk.models import NamingStrategy
+
 from tol.core import DataObject, DataObjectToDataObjectOrUpdateConverter, DataSourceFilter
 from tol.sources.benchling import benchling
 
@@ -40,10 +41,11 @@ class StsSampleToCasmBenchlingConverterFactory:
             'relationship_identifier': 'storage_rack',
         },
     }
-    '''
-        Map of sts relationship objects to call to. 
-        These objects could are mainly used to query the relationships of the sample for a specific value
-    '''
+    """
+        Map of sts relationship objects to call to.
+        These objects could are mainly used to query the
+        relationships of the sample for a specific value
+    """
 
     BENCHLING_OBJECT_MAP = {
         'casm_species': {
@@ -178,7 +180,7 @@ class StsSampleToCasmBenchlingConverterFactory:
             'converted_value_identifiers': [],
             'stored_values': {}
         },
-        'casm_programme_id' : {
+        'casm_programme_id': {
             'attribute_map': {
                 'sample_id': 'casm_sample',
                 'programme_id': 'INTERNAL_CASM_SAMPLE_NAME',
@@ -194,7 +196,7 @@ class StsSampleToCasmBenchlingConverterFactory:
             'converted_value_identifiers': [],
             'stored_values': {},
         },
-        'casm_sample_status' : {
+        'casm_sample_status': {
             'attribute_map': {
                 'sample_id': 'casm_sample',
                 'status': 'sample_status'
@@ -274,7 +276,7 @@ class StsSampleToCasmBenchlingConverterFactory:
             'sts_relationships': ['storage_rack'],
             'polymorphic_benchling_relationships': [],
             'converted_value_identifiers': [],
-            'concatenated_values': ['plate_and_location_non_relationship','plate_and_location'],
+            'concatenated_values': ['plate_and_location_non_relationship', 'plate_and_location'],
             'stored_values': {},
         },
         'transfer': {
@@ -295,10 +297,10 @@ class StsSampleToCasmBenchlingConverterFactory:
             'stored_values': {},
         }
     }
-    '''
-     Map of benchling objects to transform based on sts attributes. 
+    """
+     Map of benchling objects to transform based on sts attributes.
      If only stored_values are present then the object is mainly used for storing results in memory
-    '''
+    """
 
     CONCATENATED_VALUES = {
         'plate_and_location': {
@@ -323,9 +325,9 @@ class StsSampleToCasmBenchlingConverterFactory:
             'separator': ':'
         }
     }
-    '''
+    """
     Map of the values that need to be concatenated for the use within benchling
-    '''
+    """
 
     VALUE_REPLACEMENTS = {
         'sex': {
@@ -366,33 +368,33 @@ class StsSampleToCasmBenchlingConverterFactory:
             'default': 'DNA'
         }
     }
-    '''
+    """
         Map of replacements for string objects. Mainly used for data cleanup
-    '''
+    """
 
     DESTINATION_OBJECT_TYPES = {
         'box_or_plate': {
-            'RACK_TUBE': "10x10_box",
-            'PLATE_WELL': "casm_96_well_plate"
+            'RACK_TUBE': '10x10_box',
+            'PLATE_WELL': 'casm_96_well_plate'
         },
         'container': {
-            'RACK_TUBE': "casm_tube",
-            'PLATE_WELL': "casm_well"
+            'RACK_TUBE': 'casm_tube',
+            'PLATE_WELL': 'casm_well'
         }
     }
-    '''
+    """
         Map of the dynamic object types
-    '''
+    """
 
     POLYMORPHIC_RELATIONSHIP_OBJECT_TYPES = {
         'container': {
-            'RACK_TUBE': "casm_tube",
-            'PLATE_WELL': "casm_well"
+            'RACK_TUBE': 'casm_tube',
+            'PLATE_WELL': 'casm_well'
         }
     }
-    '''
+    """
         Map of the polymorphic relationship objects
-    '''
+    """
 
     destination_object_type: str
     fields: Iterable[any]
@@ -437,19 +439,26 @@ class StsSampleToCasmBenchlingConverterFactory:
 
                 if factory.detect_destination:
                     destination_object_type = self._get_destination_object_type(
-                        sample = sample,
-                        detect_destination_type = factory.detect_destination_type
+                        sample=sample,
+                        detect_destination_type=factory.detect_destination_type
                     )
                     factory.populate_destination(destination_object_type)
 
                 object_map = factory.BENCHLING_OBJECT_MAP[factory.destination_object_type]
-                if not self._does_object_exist(factory.destination_object_type, sample, object_map):
+                if not self._does_object_exist(
+                    factory.destination_object_type,
+                    sample,
+                    object_map
+                ):
                     self._populate_relationships(sample, object_map)
 
                     object_attributes = self._populate_object_attributes(object_map, sample)
 
                     if 'transfer' != factory.destination_object_type:
-                        primary_attribute = self._get_object_primary_attribute_value(object_map, sample)
+                        primary_attribute = self._get_object_primary_attribute_value(
+                            object_map,
+                            sample
+                        )
                         object_map['converted_value_identifiers'] = \
                             object_map['converted_value_identifiers'] + [primary_attribute]
 
@@ -476,13 +485,16 @@ class StsSampleToCasmBenchlingConverterFactory:
                 Args:
                     sample - the sample used to determine the destination object type
                     detect_destination_type - the type of destination to detect
-                    raise_exception - whether to raise an exception if the destination type is unsupported
+                    raise_exception - whether to raise an exception if the
+                    destination type is unsupported
 
                 Expects:
-                    Exception - if the sample has an unsupported destination type and raise_exception is True
+                    Exception - if the sample has an unsupported destination type
+                    and raise_exception is True
 
                 Returns:
-                    str | None - the detected destination object type or None if not found and raise_exception is False
+                    str | None - the detected destination object type or None if not found
+                    and raise_exception is False
                 """
                 if (
                         hasattr(sample, 'manifest')
@@ -495,7 +507,9 @@ class StsSampleToCasmBenchlingConverterFactory:
 
                 if raise_exception:
                     raise Exception(
-                        f'Sample is not ready for import: Sample #{sample.id} has unsupported destination type')
+                        f'Sample is not ready for import: Sample #{sample.id}'
+                        f' has unsupported destination type'
+                    )
 
                 return None
 
@@ -562,13 +576,20 @@ class StsSampleToCasmBenchlingConverterFactory:
                     sample - the sample from which to retrieve the relationship attribute value
 
                 Returns:
-                    str | None - the attribute value of the relationship object, or None if not found
+                    str | None - the attribute value of the relationship object, or None
                 """
                 attribute_value = None
                 relationship_object_map = factory.STS_OBJECT_MAP[relationship_object_identifier]
-                sts_relationship = getattr(sample, relationship_object_map['relationship_identifier'], None)
+                sts_relationship = getattr(
+                    sample,
+                    relationship_object_map['relationship_identifier'],
+                    None
+                )
 
-                if isinstance(sts_relationship, Iterable) and not isinstance(sts_relationship, str):
+                if (
+                    isinstance(sts_relationship, Iterable)
+                    and not isinstance(sts_relationship, str)
+                ):
                     relationship_object = next(iter(sts_relationship), None)
                 else:
                     relationship_object = sts_relationship
@@ -603,12 +624,17 @@ class StsSampleToCasmBenchlingConverterFactory:
                     ):
                         separator = factory.CONCATENATED_VALUES[attribute_mapping]['separator']
 
-                        # Strip out any trailing 0 for the TUBE_WELL_POSITION as benchling strips this out on save
-                        # so it breaks any search queires for bar codes
+                        # Strip out any trailing 0 for the TUBE_WELL_POSITION as benchling strips
+                        # this out on save so it breaks any search queries for bar codes
                         values = [
-                            re.sub(r'([A-Za-z]+)0', r'\1', sample.attributes.get(attribute, '')) \
-                                if attribute == 'TUBE_WELL_POSITION' else sample.attributes.get(attribute, '')
-                            for attribute in factory.CONCATENATED_VALUES[attribute_mapping]['values']
+                            re.sub(
+                                r'([A-Za-z]+)0',
+                                r'\1',
+                                sample.attributes.get(attribute, '')
+                            ) if attribute == 'TUBE_WELL_POSITION' else sample.attributes.get(
+                                attribute, ''
+                            ) for attribute in factory.CONCATENATED_VALUES[
+                                attribute_mapping]['values']
                         ]
 
                         sample.attributes[attribute_mapping] = separator.join(filter(None, values))
@@ -627,12 +653,13 @@ class StsSampleToCasmBenchlingConverterFactory:
                 """
                 for relationship_object_identifier in object_map['sts_relationships']:
                     if sample.attributes.get(relationship_object_identifier, None) is None:
-                        sample.attributes[relationship_object_identifier] = self._get_sts_relationship_attribute_value(
-                            relationship_object_identifier,
-                            sample
-                        )
+                        sample.attributes[relationship_object_identifier] = \
+                            self._get_sts_relationship_attribute_value(
+                                relationship_object_identifier,
+                                sample
+                            )
 
-            def _does_object_exist(self, destination_object_type, sample,object_map):
+            def _does_object_exist(self, destination_object_type, sample, object_map):
                 """
                 Checks if the object all ready exists within the
                 Benchling ecosystem or is already loaded into memory
@@ -664,7 +691,8 @@ class StsSampleToCasmBenchlingConverterFactory:
                     )
 
                     if benchling_object_id is not None:
-                        factory.BENCHLING_OBJECT_MAP[factory.destination_object_type]['stored_values'][attribute] = benchling_object_id
+                        factory.BENCHLING_OBJECT_MAP[factory.destination_object_type][
+                            'stored_values'][attribute] = benchling_object_id
 
                         return True
 
@@ -689,7 +717,9 @@ class StsSampleToCasmBenchlingConverterFactory:
                 """
                 self._populate_relationships(sample, object_map)
 
-                container_id = sample.attributes.get(object_map['attribute_map']['destination_container_id'])
+                container_id = sample.attributes.get(
+                    object_map['attribute_map']['destination_container_id']
+                )
                 if not container_id:
                     raise Exception(
                         f'Sample: {sample.id} not ready for transfer as '
@@ -719,7 +749,8 @@ class StsSampleToCasmBenchlingConverterFactory:
                     str | None - the primary attribute value, or None if not found
                 """
                 benchling_attribute_identifier = object_map['primary_attribute']
-                sts_attribute_identifier = object_map['attribute_map'][benchling_attribute_identifier]
+                sts_attribute_identifier = object_map['attribute_map'][
+                    benchling_attribute_identifier]
 
                 if (
                         sts_attribute_identifier in object_map['sts_relationships']
@@ -732,12 +763,15 @@ class StsSampleToCasmBenchlingConverterFactory:
                 ):
                     self._populate_concatenated_attributes(sample, object_map)
 
-                if sts_attribute_identifier in ['id','sts_id']:
+                if sts_attribute_identifier in ['id', 'sts_id']:
                     attribute_value = sample.id
                 else:
                     attribute_value = sample.attributes.get(sts_attribute_identifier, None)
 
-                attribute_value = self._sanitize_attribute(sts_attribute_identifier, attribute_value)
+                attribute_value = self._sanitize_attribute(
+                    sts_attribute_identifier,
+                    attribute_value
+                )
 
                 return attribute_value
 
@@ -754,7 +788,6 @@ class StsSampleToCasmBenchlingConverterFactory:
                 """
                 self._populate_benchling_relationships(sample, object_map)
                 self._populate_sts_relationships(sample, object_map)
-
 
             def _populate_benchling_relationships(self, sample, object_map):
                 """
@@ -774,13 +807,18 @@ class StsSampleToCasmBenchlingConverterFactory:
                 self._populate_polymorphic_benchling_relationships(sample, object_map)
 
                 for benchling_object_identifier in object_map['benchling_relationships']:
-                    relationship_object_map = factory.BENCHLING_OBJECT_MAP[benchling_object_identifier]
+                    relationship_object_map = factory.BENCHLING_OBJECT_MAP[
+                        benchling_object_identifier]
                     if sample.attributes.get(benchling_object_identifier, None) is None:
-                        search_value = self._get_object_primary_attribute_value(relationship_object_map, sample)
+                        search_value = self._get_object_primary_attribute_value(
+                            relationship_object_map,
+                            sample
+                        )
                         print(search_value)
                         if search_value is not None:
                             if search_value in relationship_object_map['stored_values']:
-                                benchling_object_id = relationship_object_map['stored_values'][search_value]
+                                benchling_object_id = relationship_object_map['stored_values'][
+                                    search_value]
                             else:
                                 benchling_object_id = self._get_benchling_object_id(
                                     object_type=benchling_object_identifier,
@@ -789,14 +827,14 @@ class StsSampleToCasmBenchlingConverterFactory:
                                 )
 
                             if benchling_object_id is not None:
-                                sample.attributes[benchling_object_identifier] = benchling_object_id
+                                sample.attributes[benchling_object_identifier] = \
+                                    benchling_object_id
                                 continue
 
                         raise Exception(
                             f'Sample not ready for import: {sample.id} '
                             f'is missing the relationship for {benchling_object_identifier}'
                         )
-
 
             def _populate_object_attributes(self, object_map, sample):
                 """
@@ -850,21 +888,25 @@ class StsSampleToCasmBenchlingConverterFactory:
                     ):
 
                         key_for_relationship_object_type = next(
-                            (key for key, value in object_map['attribute_map'].items() if relationship == value),
+                            (
+                                key for key, value in object_map['attribute_map'].items()
+                                if relationship == value
+                            ),
                             None
                         )
 
                         if key_for_relationship_object_type:
                             object_map['benchling_relationships'].append(relationship_object_type)
-                            object_map['attribute_map'][key_for_relationship_object_type] = relationship_object_type
+                            object_map['attribute_map'][key_for_relationship_object_type] = \
+                                relationship_object_type
 
             def _get_benchling_object_id(
                 self,
-                object_type:str ,
-                search_identifier:str,
-                search_value:str,
+                object_type: str,
+                search_identifier: str,
+                search_value: str,
                 add_to_return: bool = False
-            ) -> str|None:
+            ) -> str | None:
                 """
                 This method is used to get the benchling object id for its given args
 
@@ -878,10 +920,13 @@ class StsSampleToCasmBenchlingConverterFactory:
                     schema_filter = DataSourceFilter()
                     schema_filter.and_ = {search_identifier: {'eq': {'value': search_value}}}
                     filter_object.and_ = {'schema_fields': schema_filter}
-                elif factory.benchling.benchling_types[object_type] in ['box','plate','container','location']:
+                elif (factory.benchling.benchling_types[object_type]
+                      in ['box', 'plate', 'container', 'location']):
                     if 'barcode' == search_identifier:
                         search_identifier = 'barcodes'
-                    filter_object.and_ = {search_identifier: {'in_list': {'value': [search_value]}}}
+                    filter_object.and_ = {
+                        search_identifier: {'in_list': {'value': [search_value]}}
+                    }
                 elif factory.benchling.benchling_types[object_type] in ['assay_result']:
                     filter_object.and_ = {'entity_id': {'eq': {'value': [search_value]}}}
                 else:

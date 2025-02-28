@@ -4,8 +4,8 @@
 
 from abc import ABC, abstractmethod
 from datetime import datetime
-from typing import Iterable, List, Optional, Type, Dict
 from itertools import chain, groupby
+from typing import Dict, Iterable, List, Optional, Type
 
 from more_itertools import peekable
 
@@ -86,7 +86,10 @@ class DefaultDataLoader():
         if not dry_run:
             self._record_time('end')
 
-            returned_objects = chain(returned_objects, self._check_converter_for_returned_objects())
+            returned_objects = chain(
+                returned_objects,
+                self._check_converter_for_returned_objects()
+            )
 
             if returned_objects is not None and auto_exhaust:
                 # Exhaust the returned objects
@@ -119,10 +122,15 @@ class DefaultDataLoader():
 
         return all_returned_objects
 
-    def _get_sorted_converted_objs(self, converted_objs: Iterable[object])->Dict[str, Iterable[object]]:
+    def _get_sorted_converted_objs(
+            self,
+            converted_objs: Iterable[object]
+    ) -> Dict[str, Iterable[object]]:
         sorted_objects = sorted(converted_objs, key=lambda obj: obj.type)
 
-        return {key: list(group) for key, group in groupby(sorted_objects, key=lambda obj: obj.type)}
+        return {
+            key: list(group) for key, group in groupby(sorted_objects, key=lambda obj: obj.type)
+        }
 
     def _process_data_load(
         self,
@@ -170,7 +178,8 @@ class DefaultDataLoader():
         new_datetime = datetime.now(pytz.UTC)
         CoreDataObject = self._audit.data_object_factory  # noqa N806
 
-        destination_object_type = 'multiple' if self._destination_object_type == '' else self._destination_object_type
+        destination_object_type = 'multiple' \
+            if self._destination_object_type == '' else self._destination_object_type
 
         audit_obj = CoreDataObject(
             'data_load_event',
@@ -338,4 +347,3 @@ class ObjectsDataLoader(DefaultDataLoader):
 
     def _get_source_objects(self) -> Iterable:
         return self._objects
-
