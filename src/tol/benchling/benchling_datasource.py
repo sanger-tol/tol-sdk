@@ -114,14 +114,12 @@ BENCHLING_PARENT_TYPES_WITH_SCHEMAS = {
     'box': {
         'attributes': {'name': 'str', 'barcode': 'str'},
         'to_one': {'parent_location': 'location'},
-        'to_one': {},
         'to_one_native': {},
         'to_many': {}
     },
     'plate': {
         'attributes': {'name': 'str', 'barcode': 'str'},
         'to_one': {'parent_location': 'location'},
-        'to_one': {},
         'to_one_native': {},
         'to_many': {}
     },
@@ -294,13 +292,13 @@ class BenchlingDataSource(
         updates: Iterable[DataObjectUpdate],
         **kwargs
     ) -> list[DataObject | ErrorObject]:
-        '''
+        """
             Update function of the benchling datasource
 
             Raises:
                 Exception if the object_type is of the assay_result benchling_type.
-                This is becuase the assay result does not support the update method
-        '''
+                This is because the assay result does not support the update method
+        """
 
         if 'assay_result' == self.benchling_types[object_type]:
             raise Exception('Update is not supported on the assay_result benchling_type')
@@ -316,7 +314,8 @@ class BenchlingDataSource(
                 converter,
                 back_converter,
                 benchling_package.bulk_update,
-                benchling_package.update
+                benchling_package.update,
+                True
             )
         else:
             return [
@@ -325,7 +324,8 @@ class BenchlingDataSource(
                     update,
                     converter,
                     back_converter,
-                    benchling_package.update
+                    benchling_package.update,
+                    True
                 )
                 for update in updates
             ]
@@ -458,31 +458,25 @@ class BenchlingDataSource(
                 back_converter
             )
 
-        if 'assay_result' == self.benchling_types[object_type]:
-            return self.__insert_assay_result_item(
-                objects,
-                converter,
-                back_converter,
-                benchling_package
-            )
+        bulk_create_method = None
+        create_method = benchling_package.create
+        if benchling_package == self.benchling_interface.assay_results:
+            bulk_create_method = benchling_package.create
+        elif 'transfer' == object_type:
+            bulk_create_method = benchling_package.transfer_into_containers
+            create_method = benchling_package.transfer_into_containers
+        elif hasattr(benchling_package, 'bulk_create'):
+            bulk_create_method = benchling_package.bulk_create
 
-        if 'transfer' == object_type:
-            return self.__create_transfers(
-                objects,
-                converter,
-                back_converter,
-                benchling_package
-            )
-
-        if hasattr(benchling_package, 'bulk_create'):
+        if bulk_create_method is not None:
             # Do bulk inserts of object that allow it
             return self.__do_bulk_method(
                 object_type,
                 objects,
                 converter,
                 back_converter,
-                benchling_package.bulk_create,
-                benchling_package.create,
+                bulk_create_method,
+                create_method
             )
         else:
             # Other objects are inserted one-by-one
@@ -492,7 +486,7 @@ class BenchlingDataSource(
                     obj,
                     converter,
                     back_converter,
-                    benchling_package.create
+                    create_method
                 )
                 for obj in objects
             ]
@@ -523,33 +517,6 @@ class BenchlingDataSource(
                     object_=obj
                 )
 
-    def __insert_assay_result_item(
-        self,
-        objects: Iterable[DataObject],
-        converter: DataObjectConverter,
-        back_converter: BenchlingConverter,
-        benchling_package
-    ) -> list[DataObject | ErrorObject]:
-        """
-        Inserts assay results into benchling
-        """
-        assay_result_objects = []
-
-        for obj in objects:
-            assay_result_objects.append(converter.convert(obj))
-
-        try:
-            ret = benchling_package.create(assay_result_objects)
-
-            return back_converter.convert(ret)
-        except BenchlingError as error:
-            yield ErrorObject(
-                error.json['error']['message'],
-                'assay_result',
-                http_code=error.status_code,
-                object_=obj
-            )
-
     def __do_single_method(
         self,
         object_type: str,
@@ -566,10 +533,7 @@ class BenchlingDataSource(
                 converted_object = converter.convert(obj)
                 ret = method(converted_object)
             else:
-                converted_object = converter.convert_update(
-                    object_type,
-                    obj
-                )
+                converted_object = converter.convert_update(obj, object_type)
                 # Need to pass in IDs for updates
                 ret = method(converted_object.id, converted_object)
             return back_converter.convert(ret)
@@ -631,36 +595,46 @@ class BenchlingDataSource(
         """
 
         if isinstance(page[0], DataObject):
-            converted_objects = converter.convert_iterable(page)
+            converted_objects = converter.convert_bulk(page, object_type)
         else:
-            converted_objects = (
-                converter.convert_update(
+            converted_objects = converter.convert_bulk_update(page, object_type)
+
+        if 'assay_result' == self.benchling_types[object_type]:
+            response = bulk_method(converted_objects)
+
+            if hasattr(response, '_errors'):
+                return self.__retry_bulk_methods_on_singletons(
                     object_type,
-                    obj
+                    page,
+                    converter,
+                    back_converter,
+                    single_method
                 )
-                for obj in page
-            )
-        task = self.__wait_for_task(
-            converted_objects,
-            bulk_method
-        )
 
-        if task.status == 'FAILED':
-            return self.__retry_bulk_methods_on_singletons(
-                object_type,
-                page,
-                converter,
-                back_converter,
-                single_method
+            return_objects = [response]
+        else:
+            task = self.__wait_for_task(
+                converted_objects,
+                bulk_method
             )
 
-        return_key = 'customEntities'
-        if 'container' == object_type:
-            return_key = 'containers'
+            if task.status == 'FAILED':
+                return self.__retry_bulk_methods_on_singletons(
+                    object_type,
+                    page,
+                    converter,
+                    back_converter,
+                    single_method
+                )
 
-        return back_converter.convert_return_entites(
-            task.response.additional_properties[return_key]
-        )
+            return_key = 'customEntities'
+            if 'container' == object_type:
+                return_key = 'containers'
+            elif 'transfer' == object_type:
+                return_key = 'destinationContainers'
+
+            return_objects = task.response.additional_properties[return_key]
+        return back_converter.convert_return_entities(return_objects)
 
     def __retry_bulk_methods_on_singletons(
         self,
@@ -967,43 +941,7 @@ class BenchlingDataSource(
 
         return object_type
 
-    def __create_transfers(
-        self,
-        objects: Iterable[DataObject],
-        converter: DataObjectConverter,
-        back_converter: BenchlingConverter,
-        benchling_package
-    ) :
-        """
-        Inserts assay results into benchling
-        """
-        converted_objects = converter.convert_iterable(objects)
-
-        try:
-            task = self.__wait_for_task(
-                converted_objects,
-                benchling_package.transfer_into_containers
-            )
-
-            if task.status == 'FAILED':
-                return ErrorObject(
-                    task.message,
-                    'transfer_task',
-                    object_=obj
-                )
-
-            return back_converter.convert_return_entites(
-                task.response.additional_properties['destinationContainers']
-            )
-        except BenchlingError as error:
-            return ErrorObject(
-                error.json['error']['message'],
-                'transfer',
-                http_code=error.status_code,
-                object_=obj
-            )
-
-    def get_conainer_contents(self, container_id):
+    def get_container_contents(self, container_id):
         container_package = self.benchling_interface.containers
 
         return container_package.list_contents(container_id)

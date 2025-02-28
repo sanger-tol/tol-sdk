@@ -6,9 +6,10 @@ from __future__ import annotations
 
 import datetime
 import typing
-from typing import Any, Iterable
+from typing import Any, Iterable, Optional
 from uuid import uuid4
 
+from benchling_api_client.models.custom_entity_create import CustomEntityCreate
 from benchling_api_client.models.naming_strategy import NamingStrategy
 from benchling_api_client.v2.beta.models.worklist import Worklist
 from benchling_api_client.v2.beta.models.worklist_create import WorklistCreate
@@ -16,7 +17,6 @@ from benchling_api_client.v2.beta.models.worklist_item import WorklistItem
 from benchling_api_client.v2.beta.models.worklist_item_create import WorklistItemCreate
 from benchling_api_client.v2.beta.models.worklist_type import WorklistType
 from benchling_api_client.v2.stable.models.assay_result import AssayResult
-from benchling_api_client.v2.stable.models.container_transfer import ContainerTransfer
 
 from benchling_sdk.helpers.serialization_helpers import fields, none_as_unset
 from benchling_sdk.models import (
@@ -30,7 +30,6 @@ from benchling_sdk.models import (
     FolderCreate,
     Location,
     LocationCreate,
-    AssayResultsCreateResponse,
     BoxCreate,
     Box,
     Plate,
@@ -39,10 +38,14 @@ from benchling_sdk.models import (
     ContainerCreate,
     ContainerQuantity,
     MultipleContainersTransfer,
-    Measurement, ContainerQuantityUnits
+    Measurement,
+    ContainerQuantityUnits,
+    AssayResultsCreateResponse,
+    CustomEntityUpdate
 )
 
 from caseconverter import snakecase
+from tol.core.core_converter import In, Out
 
 from ..core import Converter, DataDict, DataObject, DataSourceError, DataSourceUpdate
 
@@ -51,39 +54,14 @@ if typing.TYPE_CHECKING:
 
 
 BenchlingReturn = dict[str, dict[str, Any]]
-"""Returned from `insert` and `update` internally"""
-BenchlingCustomEntityCreate = CustomEntityBulkCreate
-"""Suitable as arguments to `insert`"""
-BenchlingCustomEntityUpdate = CustomEntityBulkUpdate
-"""Suitable as arguments to `update`"""
-BenchlingAssayResultCreate = AssayResultsBulkCreateRequest
-"""Suitable as arguments to `update`"""
-BenchlingCustomEntity = CustomEntity
-BenchlingAssayResult = AssayResultCreate
-"""Returned by the `get_` methods - which are only for debugging!"""
-BenchlingFolder = Folder
-BenchlingFolderCreate = FolderCreate
-BenchlingLocation = Location
-BenchlingLocationCreate = LocationCreate
-BenchlingBox = Box
-BenchlingBoxCreate = BoxCreate
-BenchlingPlate = Plate
-BenchlingPlateCreate = PlateCreate
-BenchlingContainer = Container
-BenchlingContainerCreate = ContainerCreate
-BenchlingWorklist = Worklist
-BenchlingWorklistCreate = WorklistCreate
-BenchlingWorklistItem = WorklistItem
-BenchlingWorklistItemCreate = WorklistItemCreate
-BenchlingObject = BenchlingCustomEntity | BenchlingFolder | BenchlingWorklist | BenchlingBox | BenchlingPlate \
-    | BenchlingContainer
-BenchlingObjectCreate = BenchlingCustomEntityCreate | BenchlingFolderCreate \
-    | BenchlingWorklistCreate | BenchlingWorklistItemCreate | AssayResultCreate | BenchlingBoxCreate \
-    | BenchlingPlateCreate | BenchlingContainerCreate
-BenchlingObjectUpdate = BenchlingCustomEntityUpdate
-BenchlingWrite = BenchlingObjectCreate | BenchlingObjectUpdate
+BenchlingObject = CustomEntity | Folder | Worklist | Box | Plate | Container | AssayResultsBulkCreateRequest | \
+                  Location | WorklistItem | AssayResult
+BenchlingObjectCreate = CustomEntityCreate | FolderCreate | WorklistCreate | WorklistItemCreate | BoxCreate | PlateCreate | ContainerCreate | LocationCreate
+BenchlingObjectBulkCreate = CustomEntityBulkCreate | MultipleContainersTransfer | AssayResultCreate
+BenchlingObjectUpdate = CustomEntityUpdate
+BenchlingObjectBulkUpdate = CustomEntityBulkUpdate
+BenchlingWrite = BenchlingObjectCreate | BenchlingObjectUpdate | BenchlingObjectBulkCreate | BenchlingObjectBulkUpdate
 """Suitable as arguments to either `insert` or `update`"""
-
 
 class BenchlingConverter(Converter[BenchlingReturn, DataObject]):
 
@@ -96,10 +74,12 @@ class BenchlingConverter(Converter[BenchlingReturn, DataObject]):
 
         super().__init__()
 
-    def convert_return_entites(
+    def convert_return_entities(
         self,
         input_list: list[BenchlingReturn]
     ) -> Iterable[DataObject]:
+        if isinstance(input_list[0], AssayResultsCreateResponse):
+            return self.__convert_assay_results(input_list)
 
         return (
             self.__convert_return(input_)
@@ -107,27 +87,29 @@ class BenchlingConverter(Converter[BenchlingReturn, DataObject]):
         )
 
     def convert(self, input_: BenchlingObject) -> DataObject:
-        if isinstance(input_, BenchlingFolder):
+        if isinstance(input_, Folder):
             return self.__convert_folder(input_)
-        elif isinstance(input_, BenchlingWorklist):
+        elif isinstance(input_, Worklist):
             return self.__convert_worklist(input_)
-        elif isinstance(input_, BenchlingLocation):
+        elif isinstance(input_, Location):
             return self.__convert_location(input_)
-        elif isinstance(input_, BenchlingWorklistItem):
+        elif isinstance(input_, WorklistItem):
             return self.__convert_worklist_item(input_)
-        elif isinstance(input_, BenchlingCustomEntity):
+        elif isinstance(input_, CustomEntity):
             return self.__convert_custom_entity(input_)
-        elif isinstance(input_, AssayResultsCreateResponse):
+        elif isinstance(input_, AssayResult):
             return self.__convert_assay_result(input_)
-        elif isinstance(input_, BenchlingBox):
+        if isinstance(input_, AssayResultsCreateResponse):
+            return next(iter(self.__convert_assay_results(input_)), None)
+        elif isinstance(input_, Box):
             return self.__convert_box_result(input_)
-        elif isinstance(input_, BenchlingPlate):
+        elif isinstance(input_, Plate):
             return self.__convert_plate_result(input_)
-        elif isinstance(input_, BenchlingContainer):
-            return self.__convert_plate_result(input_)
+        elif isinstance(input_, Container):
+            return self.__convert_container_result(input_)
         raise ValueError(f'Unknown object type: {type(input_)}')
 
-    def __convert_folder(self, input_: BenchlingFolder) -> DataObject:
+    def __convert_folder(self, input_: Folder) -> DataObject:
         return self.__ds.data_object_factory(
             'folder',
             id_=input_.id,
@@ -141,7 +123,7 @@ class BenchlingConverter(Converter[BenchlingReturn, DataObject]):
             }
         )
 
-    def __convert_location(self, input_: BenchlingLocation) -> DataObject:
+    def __convert_location(self, input_: Location) -> DataObject:
         object_type = snakecase(input_.schema.name)
         attributes = self.__convert_attributes(input_.fields, object_type)
         to_ones = self.__convert_relationships(input_.fields, object_type)
@@ -164,19 +146,19 @@ class BenchlingConverter(Converter[BenchlingReturn, DataObject]):
             to_one=to_ones | native_to_ones
         )
 
-    def __convert_worklist(self, input_: BenchlingWorklist) -> DataObject:
+    def __convert_worklist(self, input_: Worklist) -> DataObject:
         return self.__ds.data_object_factory(
             'worklist',
             id_=input_.id,
             attributes={'name': input_.name}
         )
 
-    def __convert_worklist_item(self, input_: BenchlingWorklistItem) -> DataObject:
+    def __convert_worklist_item(self, input_: WorklistItem) -> DataObject:
         # Benchling gives back the object that has been added to the worklist
         # for now, we will return None
         return None
 
-    def convert_worklist_items(self, worklist: BenchlingWorklist) -> Iterable[DataObject]:
+    def convert_worklist_items(self, worklist: Worklist) -> Iterable[DataObject]:
         # This is a bit of a hack as we don't know exactly the type of the objects
         # in the worklist. More work will be needed here eventually
         worklist_type = worklist.type
@@ -208,7 +190,7 @@ class BenchlingConverter(Converter[BenchlingReturn, DataObject]):
                 }
             )
 
-    def __convert_custom_entity(self, input_: BenchlingCustomEntity) -> DataObject:
+    def __convert_custom_entity(self, input_: CustomEntity) -> DataObject:
         object_type = snakecase(input_.schema.name)
         attributes = self.__convert_attributes(input_.fields, object_type)
         to_ones = self.__convert_relationships(input_.fields, object_type)
@@ -226,16 +208,31 @@ class BenchlingConverter(Converter[BenchlingReturn, DataObject]):
             to_one=to_ones | native_to_ones
         )
 
-    def __convert_assay_result(self, input_) -> Iterable[DataObject]:
+    def __convert_assay_results(self, input_: AssayResultsCreateResponse) -> Iterable[DataObject]:
         assay_results = input_.assay_results
 
+        return_objects = []
         for assay_result in assay_results:
-            yield self.__ds.data_object_factory(
+            return_objects.append(
+                self.__ds.data_object_factory(
                 'assay_resut',
                 id_=assay_result
             )
+        )
 
-    def __convert_box_result(self, input_) -> Iterable[DataObject]:
+        return return_objects
+
+    def __convert_assay_result(self, input_: AssayResult) -> DataObject:
+        object_type = snakecase(input_.schema.name)
+        attributes = self.__convert_attributes(input_.fields, object_type)
+
+        return self.__ds.data_object_factory(
+            object_type,
+            id_=input_.id,
+            attributes = attributes,
+        )
+
+    def __convert_box_result(self, input_) -> DataObject:
         object_type = snakecase(input_.schema.name)
         attributes = self.__convert_attributes(input_.fields, object_type)
         to_ones = self.__convert_relationships(input_.fields, object_type)
@@ -247,7 +244,19 @@ class BenchlingConverter(Converter[BenchlingReturn, DataObject]):
             to_one=to_ones
         )
 
-    def __convert_plate_result(self, input_) -> Iterable[DataObject]:
+    def __convert_plate_result(self, input_) -> DataObject:
+        object_type = snakecase(input_.schema.name)
+        attributes = self.__convert_attributes(input_.fields, object_type)
+        to_ones = self.__convert_relationships(input_.fields, object_type)
+
+        return self.__ds.data_object_factory(
+            object_type,
+            id_=input_.id,
+            attributes=attributes,
+            to_one=to_ones
+        )
+
+    def __convert_container_result(self,input_):
         object_type = snakecase(input_.schema.name)
         attributes = self.__convert_attributes(input_.fields, object_type)
         to_ones = self.__convert_relationships(input_.fields, object_type)
@@ -387,9 +396,8 @@ class BenchlingConverter(Converter[BenchlingReturn, DataObject]):
             if v['type'] == 'entity_link'
         }
 
-
 class DataObjectConverter(Converter[DataObject, BenchlingWrite]):
-
+    #TODO: this needs splitting into two classes, one for create and one for update
     IGNORE_FIELD_NAMES = [
         'naming_strategy'
     ]
@@ -403,11 +411,31 @@ class DataObjectConverter(Converter[DataObject, BenchlingWrite]):
 
         super().__init__()
 
+    def convert_bulk(
+        self,
+        inputs: Iterable[Optional[In]],
+        destination_type: str
+    ) -> Iterable[Optional[BenchlingObjectBulkCreate]]:
+        if destination_type in self.__ds.schemas['custom_entity'].keys():
+            return self.__convert_insert_custom_entity_bulk(inputs)
+        if destination_type in self.__ds.schemas['assay_result'].keys():
+            return self.__convert_insert_assay_result_bulk(inputs)
+
+        return self.convert_iterable(inputs)
+
+    def convert_bulk_update(
+            self,
+            inputs: Iterable[Optional[In]],
+            destination_type: str
+    ) -> Iterable[Optional[BenchlingObjectUpdate]]:
+        if destination_type in self.__ds.schemas['custom_entity'].keys():
+            return self.__convert_update_custom_entity_bulk(inputs)
+
+        raise DataSourceError(f'Cannot bulk update object type {destination_type}')
+
     def convert(self, input_: DataObject) -> BenchlingObjectCreate:
         if input_.type in self.__ds.schemas['custom_entity'].keys():
-            return self.__convert_custom_entity(input_)
-        if input_.type in self.__ds.schemas['assay_result'].keys():
-            return self.__convert_assay_result(input_)
+            return self.__convert_insert_custom_entity(input_)
         if input_.type in self.__ds.schemas['location'].keys():
             return self.__convert_location(input_)
         if input_.type in self.__ds.schemas['box'].keys():
@@ -427,13 +455,24 @@ class DataObjectConverter(Converter[DataObject, BenchlingWrite]):
 
         raise ValueError(f'Unknown object type: {input_.type}')
 
-    def __convert_folder(self, input_: DataObject) -> BenchlingFolderCreate:
+    def convert_update(
+        self,
+        input_: DataSourceUpdate,
+        destination_type: str
+    ) -> BenchlingObjectUpdate:
+        # TODO: need to convert DataSourceUpdate into DataObjects so we have consistency across board
+        if destination_type in self.__ds.schemas['custom_entity'].keys():
+            return self.__convert_update_custom_entity(input_, destination_type)
+
+        raise ValueError(f'Unknown object type: {destination_type}')
+
+    def __convert_folder(self, input_: DataObject) -> FolderCreate:
         return FolderCreate(
             name=input_.name,
             parent_folder_id=input_.parent_folder.id if input_.parent_folder is not None else None
         )
 
-    def __convert_location(self, input_: DataObject) -> BenchlingLocationCreate:
+    def __convert_location(self, input_: DataObject) -> LocationCreate:
         return LocationCreate(
             name=input_.name,
             barcode=input_.barcode,
@@ -442,28 +481,28 @@ class DataObjectConverter(Converter[DataObject, BenchlingWrite]):
             schema_id=self.__ds.schema_ids[input_.type]
         )
 
-    def __convert_box(self, input_: DataObject) -> BenchlingBoxCreate:
+    def __convert_box(self, input_: DataObject) -> BoxCreate:
         return BoxCreate(
             barcode=input_.attributes.get('barcode'),
             parent_storage_id=input_.attributes.get('parent_storage_id'),
             schema_id=self.__ds.schema_ids[input_.type]
         )
 
-    def __convert_plate(self, input_: DataObject) -> BenchlingBoxCreate:
+    def __convert_plate(self, input_: DataObject) -> PlateCreate:
         return PlateCreate(
             barcode=input_.attributes.get('barcode'),
             parent_storage_id=input_.attributes.get('parent_storage_id'),
             schema_id=self.__ds.schema_ids[input_.type]
         )
 
-    def __convert_container(self, input_: DataObject) -> BenchlingBoxCreate:
+    def __convert_container(self, input_: DataObject) -> ContainerCreate:
         return ContainerCreate(
             barcode=input_.attributes.get('barcode'),
             parent_storage_id=input_.attributes.get('parent_storage_id'),
             schema_id=self.__ds.schema_ids[input_.type]
         )
 
-    def __convert_worklist(self, input_: DataObject) -> BenchlingWorklistCreate:
+    def __convert_worklist(self, input_: DataObject) -> WorklistCreate:
         mappings = {
             'bioentity': WorklistType.BIOENTITY,
             'container': WorklistType.CONTAINER,
@@ -475,12 +514,12 @@ class DataObjectConverter(Converter[DataObject, BenchlingWrite]):
             type=mappings.get(input_.worklist_type, WorklistType.BIOENTITY)
         )
 
-    def __convert_worklist_item(self, input_: DataObject) -> BenchlingWorklistItemCreate:
+    def __convert_worklist_item(self, input_: DataObject) -> WorklistItemCreate:
         return WorklistItemCreate(
             item_id=input_.item.id
         )
 
-    def __convert_transfer_item(self, input_: DataObject) -> BenchlingWorklistItemCreate:
+    def __convert_transfer_item(self, input_: DataObject) -> MultipleContainersTransfer:
         transfer_quantity = None
         if input_.attributes.get('transfer_quantity'):
             transfer_quantity = ContainerQuantity(
@@ -502,51 +541,40 @@ class DataObjectConverter(Converter[DataObject, BenchlingWrite]):
             source_concentration=none_as_unset(source_concentration)
         )
 
-    def __convert_custom_entity(self, input_: DataObject) -> BenchlingCustomEntityCreate:
-        naming_strategy = input_.attributes.get('naming_strategy', None)
+    def __convert_insert_custom_entity_bulk(self, inputs: Iterable[DataObject]) -> Iterable[CustomEntityBulkCreate]:
+        return_iterable = []
+        for input_ in inputs:
+            naming_strategy = input_.attributes.get('naming_strategy', None)
 
-        if not naming_strategy:
-            naming_strategy = NamingStrategy.REPLACE_NAMES_FROM_PARTS
+            if not naming_strategy:
+                naming_strategy = NamingStrategy.REPLACE_NAMES_FROM_PARTS
 
-        entity_fields = self.__convert_fields(
-            input_.type,
-            input_.attributes,
-            input_.to_one_relationships
-        )
-        return CustomEntityBulkCreate(
-            name=uuid4().hex,
-            schema_id=self.__ds.schema_ids[input_.type],
-            registry_id=self.__ds.registry_id,
-            folder_id=input_.folder.id if input_.folder is not None else self.__ds.folder_id,
-            fields=entity_fields,
-            naming_strategy=naming_strategy,
-            custom_fields=fields({})
-        )
-
-    def __convert_assay_result(self, input_: DataObject) -> BenchlingAssayResultCreate:
-        fields = self.__convert_fields(
-            input_.type,
-            input_.attributes,
-            input_.to_one_relationships
-        )
-
-        return AssayResultCreate(
-            schema_id=self.__ds.schema_ids[input_.type],
-            fields=fields
-        )
-
-
-    def convert_update(
-        self,
-        object_type: str,
-        update: DataSourceUpdate
-    ) -> BenchlingObjectUpdate:
-        # This function needs some work to handle objects other than custom_entities.
-        # It would be better if we could just use convert() for updates as well.
-        update_id, update_dict = update
-        if object_type in self.__ds.schemas['custom_entity'].keys():
             entity_fields = self.__convert_fields(
-                object_type,
+                input_.type,
+                input_.attributes,
+                input_.to_one_relationships
+            )
+
+            return_iterable.append(
+                CustomEntityBulkCreate(
+                    name=uuid4().hex,
+                    schema_id=self.__ds.schema_ids[input_.type],
+                    registry_id=self.__ds.registry_id,
+                    folder_id=input_.folder.id if input_.folder is not None else self.__ds.folder_id,
+                    fields=entity_fields,
+                    naming_strategy=naming_strategy,
+                    custom_fields=fields({})
+                )
+            )
+
+        return return_iterable
+
+    def __convert_update_custom_entity_bulk(self, inputs: Iterable[DataSourceUpdate]) -> Iterable[CustomEntityBulkUpdate]:
+        return_iterable = []
+        for input_ in inputs:
+            update_id, update_dict = input_
+            entity_fields = self.__convert_fields(
+                '',
                 {
                     k: v for k, v in update_dict.items()
                     if k in self.__ds.schemas['custom_entity'][object_type].keys()
@@ -557,13 +585,77 @@ class DataObjectConverter(Converter[DataObject, BenchlingWrite]):
             if 'folder' in update_dict:
                 kwargs['folder_id'] = \
                     update_dict['folder'].id if update_dict['folder'] is not None else None
-            return CustomEntityBulkUpdate(
-                id=update_id,
-                fields=entity_fields,
-                custom_fields=fields({}),
-                **kwargs
+
+            return_iterable.append(
+                CustomEntityBulkUpdate(
+                    id=update_dict.type,
+                    fields=entity_fields,
+                    custom_fields=fields({}),
+                    **kwargs
+                )
             )
-        raise DataSourceError('Cannot update object type {object_type}')
+
+        return return_iterable
+
+    def __convert_insert_custom_entity(self, input_: DataObject) -> CustomEntityCreate:
+        naming_strategy = input_.attributes.get('naming_strategy', None)
+
+        if not naming_strategy:
+            naming_strategy = NamingStrategy.REPLACE_NAMES_FROM_PARTS
+
+        entity_fields = self.__convert_fields(
+            input_.type,
+            input_.attributes,
+            input_.to_one_relationships
+        )
+        return CustomEntityCreate(
+            name=uuid4().hex,
+            schema_id=self.__ds.schema_ids[input_.type],
+            registry_id=self.__ds.registry_id,
+            folder_id=input_.folder.id if input_.folder is not None else self.__ds.folder_id,
+            fields=entity_fields,
+            naming_strategy=naming_strategy,
+        )
+
+    def __convert_insert_assay_result_bulk(self, inputs: Iterable[DataObject]) -> Iterable[AssayResultCreate]:
+        return_iterable = []
+        for input_ in inputs:
+            assay_fields = self.__convert_fields(
+                input_.type,
+                input_.attributes,
+                input_.to_one_relationships
+            )
+
+            return_iterable.append(
+                AssayResultCreate(
+                    schema_id=self.__ds.schema_ids[input_.type],
+                    fields=assay_fields
+                )
+            )
+
+        return return_iterable
+
+    def __convert_update_custom_entity(self, input_: DataSourceUpdate, destination_type: str) -> CustomEntityUpdate:
+        update_id, update_dict = input_
+        entity_fields = self.__convert_fields(
+            destination_type,
+            {
+                k: v for k, v in update_dict.items()
+                if k in self.__ds.schemas['custom_entity'][destination_type].keys()
+            },
+        )
+
+        kwargs = {}
+        if 'folder' in update_dict:
+            kwargs['folder_id'] = \
+                update_dict['folder'].id if update_dict['folder'] is not None else None
+
+        return CustomEntityUpdate(
+            fields=entity_fields,
+            schema_id=self.__ds.schema_ids[destination_type],
+            **kwargs
+        )
+
 
     def __convert_fields(
         self,
@@ -605,16 +697,6 @@ class DataObjectConverter(Converter[DataObject, BenchlingWrite]):
             )
         }
         return fields(mapped_dict | mapped_relationships | dropdown_values)
-
-    def __convert_assay_results(
-        self,
-        object_type: str,
-        data_dict: DataDict,
-        to_one_relationships: dict[str, DataObject] = {}
-    ) -> AssayResult:
-        fields = self.__convert_fields(object_type,data_dict,to_one_relationships)
-
-        return assat(mapped_dict | mapped_relationships | dropdown_values)
 
     def __get_field_name(
         self,

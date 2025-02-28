@@ -5,7 +5,6 @@ from typing import Iterable
 
 from benchling_sdk.errors import BenchlingError
 from benchling_sdk.models import NamingStrategy
-from certifi import contents
 from tol.core import DataObject, DataObjectToDataObjectOrUpdateConverter, DataSourceFilter
 from tol.sources.benchling import benchling
 
@@ -259,7 +258,7 @@ class StsSampleToCasmBenchlingConverterFactory:
             'sts_relationships': [],
             'polymorphic_benchling_relationships': [],
             'converted_value_identifiers': [],
-            'concatinated_values': ['box_and_position'],
+            'concatenated_values': ['box_and_position'],
             'stored_values': {},
         },
         'casm_well': {
@@ -275,7 +274,7 @@ class StsSampleToCasmBenchlingConverterFactory:
             'sts_relationships': ['storage_rack'],
             'polymorphic_benchling_relationships': [],
             'converted_value_identifiers': [],
-            'concatinated_values': ['plate_and_location_non_relationship','plate_and_location'],
+            'concatenated_values': ['plate_and_location_non_relationship','plate_and_location'],
             'stored_values': {},
         },
         'transfer': {
@@ -292,7 +291,7 @@ class StsSampleToCasmBenchlingConverterFactory:
                 'container'
             ],
             'converted_value_identifiers': [],
-            'concatinated_values': [],
+            'concatenated_values': [],
             'stored_values': {},
         }
     }
@@ -300,8 +299,6 @@ class StsSampleToCasmBenchlingConverterFactory:
      Map of benchling objects to transform based on sts attributes. 
      If only stored_values are present then the object is mainly used for storing results in memory
     '''
-
-
 
     CONCATENATED_VALUES = {
         'plate_and_location': {
@@ -326,6 +323,9 @@ class StsSampleToCasmBenchlingConverterFactory:
             'separator': ':'
         }
     }
+    '''
+    Map of the values that need to be concatenated for the use within benchling
+    '''
 
     VALUE_REPLACEMENTS = {
         'sex': {
@@ -441,6 +441,7 @@ class StsSampleToCasmBenchlingConverterFactory:
                         detect_destination_type = factory.detect_destination_type
                     )
                     factory.populate_destination(destination_object_type)
+
                 object_map = factory.BENCHLING_OBJECT_MAP[factory.destination_object_type]
                 if not self._does_object_exist(factory.destination_object_type, sample, object_map):
                     self._populate_relationships(sample, object_map)
@@ -448,74 +449,312 @@ class StsSampleToCasmBenchlingConverterFactory:
                     object_attributes = self._populate_object_attributes(object_map, sample)
 
                     if 'transfer' != factory.destination_object_type:
+                        primary_attribute = self._get_object_primary_attribute_value(object_map, sample)
                         object_map['converted_value_identifiers'] = \
-                            object_map['converted_value_identifiers'] + [primary_attr_value]
+                            object_map['converted_value_identifiers'] + [primary_attribute]
 
                     if 'naming_strategy' in object_map and object_map['naming_strategy']:
                         object_attributes['naming_strategy'] = object_map['naming_strategy']
 
                     print(object_attributes)
-                    exit(0)
+
                     yield self._data_object_factory(
                         factory.destination_object_type,
                         sample.id,
                         attributes=object_attributes
                     )
 
-            def __get_primary_attribute(self, object_map, primary_attr_id, sample):
-                primary_attr = object_map['attribute_map'][primary_attr_id]
+            @staticmethod
+            def _get_destination_object_type(
+                    sample,
+                    detect_destination_type: str,
+                    raise_exception: bool = True
+            ) -> str | None:
+                """
+                Determines the destination object type for a sample.
 
-                if primary_attr in object_map['sts_relationships']:
-                    self._populate_relationships(sample, object_map)
+                Args:
+                    sample - the sample used to determine the destination object type
+                    detect_destination_type - the type of destination to detect
+                    raise_exception - whether to raise an exception if the destination type is unsupported
 
-                if 'concatinated_values' in object_map and primary_attr in object_map['concatinated_values']:
-                    self._populate_relationships(sample, object_map)
-                    self._populate_concatenated_attributes(sample, object_map['attribute_map'])
+                Expects:
+                    Exception - if the sample has an unsupported destination type and raise_exception is True
 
-                if 'id' == primary_attr:
-                    primary_attr_value = sample.id
-                else:
-                    primary_attr_value = sample.attributes.get(primary_attr)
-                return primary_attr_value
+                Returns:
+                    str | None - the detected destination object type or None if not found and raise_exception is False
+                """
+                if (
+                        hasattr(sample, 'manifest')
+                        and hasattr(sample.manifest, 'manifest_type')
+                        and sample.manifest.manifest_type in factory.
+                        DESTINATION_OBJECT_TYPES[detect_destination_type]
+                ):
+                    return factory.DESTINATION_OBJECT_TYPES[detect_destination_type][
+                        sample.manifest.manifest_type]
 
-            def _populate_object_attributes(self, object_map, sample):
-                attribute_map = object_map['attribute_map']
-                self._populate_concatenated_attributes(sample, attribute_map)
+                if raise_exception:
+                    raise Exception(
+                        f'Sample is not ready for import: Sample #{sample.id} has unsupported destination type')
 
-                object_attributes = {
-                    key: (
-                        sample.id
-                        if 'id' == attr_mapping
-                        else sample.attributes.get(attr_mapping)
-                    )
-                    for key, attr_mapping in attribute_map.items()
-                }
-                self._sanitize_attributes(object_attributes)
-                return object_attributes
+                return None
 
             @staticmethod
-            def _populate_concatenated_attributes(sample, attribute_map):
-                if not sample.attributes.get('concatenated_attributes_populated', False):
-                    for key, attr_mapping in attribute_map.items():
-                        if attr_mapping in factory.CONCATENATED_VALUES:
-                            separator = factory.CONCATENATED_VALUES[attr_mapping]['separator']
+            def _sanitize_attribute(key: str, value: any, object_type_override: str = ''):
+                """
+                    This static method sanitizes an attribute making sure it's the
+                    correct type expected by Benchling, it will also transform the value of
+                    the attribute to a predetermined safe value for
+                    Benchling this is configured in VALUE_REPLACEMENTS.
 
-                            # Strip out any trailing 0 for the TUBE_WELL_POSITION as benchling strips this out on save
-                            # so it breaks any search queires for bar codes
-                            values = [
-                                re.sub(r'([A-Za-z]+)0', r'\1', sample.attributes.get(attribute, ''))\
-                                    if attribute == 'TUBE_WELL_POSITION' else sample.attributes.get(attribute, '')
-                                for attribute in factory.CONCATENATED_VALUES[attr_mapping]['values']
-                            ]
+                    Args:
+                         key -  This argument specifies the key of the attribute,
+                         value -  This argument specifies the value of the attribute to be cleaned
+                         object_type_override – This argument specifies the cleanup actions to
+                         be performed if the attribute does not belong to
+                         the destination object of the converter.
 
-                            sample.attributes[attr_mapping] = separator.join(filter(None, values))
-                    sample.attributes['concatenated_attributes_populated'] = True
+                    Return:
+                        Any - depends on the value provided and the cleanup performed
+                """
+                fields = getattr(factory, 'fields', [])
+
+                if '' != object_type_override:
+                    benchling_type = factory.benchling.benchling_types[object_type_override]
+                    if (
+                            benchling_type
+                            and object_type_override in factory.benchling.schemas[benchling_type]
+                    ):
+                        fields = factory.benchling.schemas[benchling_type][object_type_override]
+
+                if fields and key in fields:
+                    if 'int' == fields[key]['type']:
+                        if value:
+                            value = int(value)
+                        else:
+                            value = 0
+
+                    if 'str' == fields[key]['type']:
+                        if value:
+                            value = str(value)
+
+                        if key in factory.VALUE_REPLACEMENTS:
+                            if value in factory.VALUE_REPLACEMENTS[key]:
+                                value = factory.VALUE_REPLACEMENTS[key][value]
+                            elif 'default' in factory.VALUE_REPLACEMENTS[key]:
+                                value = factory.VALUE_REPLACEMENTS[key]['default']
+
+                        if fields[key]['is_multi']:
+                            value = [value]
+
+                    if 'genetically_modified' == key:
+                        value = factory.VALUE_REPLACEMENTS[key]['default']
+
+                return value
+
+            @staticmethod
+            def _get_sts_relationship_attribute_value(relationship_object_identifier: str, sample):
+                """
+                Retrieves the attribute value for an STS relationship.
+
+                Args:
+                    relationship_object_identifier - the identifier of the relationship object
+                    sample - the sample from which to retrieve the relationship attribute value
+
+                Returns:
+                    str | None - the attribute value of the relationship object, or None if not found
+                """
+                attribute_value = None
+                relationship_object_map = factory.STS_OBJECT_MAP[relationship_object_identifier]
+                sts_relationship = getattr(sample, relationship_object_map['relationship_identifier'], None)
+
+                if isinstance(sts_relationship, Iterable) and not isinstance(sts_relationship, str):
+                    relationship_object = next(iter(sts_relationship), None)
+                else:
+                    relationship_object = sts_relationship
+
+                if relationship_object is not None:
+                    attribute_value = getattr(
+                        relationship_object,
+                        relationship_object_map['identifier'],
+                        None
+                    )
+
+                return attribute_value
+
+            def _populate_concatenated_attributes(self, sample, object_map):
+                """
+                Populates concatenated attributes for a given sample.
+
+                Args:
+                    sample - the sample whose concatenated attributes need to be populated
+                    object_map - a mapping of attributes relevant to the sample
+
+                Returns:
+                    None
+                """
+
+                self._populate_relationships(sample, object_map)
+
+                for key, attribute_mapping in object_map['attribute_map'].items():
+                    if (
+                        attribute_mapping in factory.CONCATENATED_VALUES
+                        and sample.attributes.get(attribute_mapping, None) is None
+                    ):
+                        separator = factory.CONCATENATED_VALUES[attribute_mapping]['separator']
+
+                        # Strip out any trailing 0 for the TUBE_WELL_POSITION as benchling strips this out on save
+                        # so it breaks any search queires for bar codes
+                        values = [
+                            re.sub(r'([A-Za-z]+)0', r'\1', sample.attributes.get(attribute, '')) \
+                                if attribute == 'TUBE_WELL_POSITION' else sample.attributes.get(attribute, '')
+                            for attribute in factory.CONCATENATED_VALUES[attribute_mapping]['values']
+                        ]
+
+                        sample.attributes[attribute_mapping] = separator.join(filter(None, values))
+
+            def _populate_sts_relationships(self, sample, object_map):
+                """
+                    This method populates the attributes with the values from the sts_relationships
+
+                    Args:
+                        sample: sample data object from sts
+
+                    Returns:
+                        None
+
+                    Expects a StopIteration exception if the relationship does not have a value
+                """
+                for relationship_object_identifier in object_map['sts_relationships']:
+                    if sample.attributes.get(relationship_object_identifier, None) is None:
+                        sample.attributes[relationship_object_identifier] = self._get_sts_relationship_attribute_value(
+                            relationship_object_identifier,
+                            sample
+                        )
+
+            def _does_object_exist(self, destination_object_type, sample,object_map):
+                """
+                Checks if the object all ready exists within the
+                Benchling ecosystem or is already loaded into memory
+
+                Args:
+                    destination_object_type - type of object we are looking for
+                    sample - the sample we are using to get the search values
+
+                Expects:
+                    StopIteration - if no object is returned from Benchling
+                """
+
+                stored_values = object_map['stored_values']
+                converted_value_ids = object_map['converted_value_identifiers']
+
+                if 'transfer' == destination_object_type:
+                    return self._check_sample_transfers_done(sample, object_map)
+                else:
+                    attribute = self._get_object_primary_attribute_value(object_map, sample)
+
+                    if attribute in stored_values or attribute in converted_value_ids:
+                        return True
+
+                    benchling_object_id = self._get_benchling_object_id(
+                        object_type=destination_object_type,
+                        search_identifier=object_map['primary_attribute'],
+                        search_value=attribute,
+                        add_to_return=True
+                    )
+
+                    if benchling_object_id is not None:
+                        factory.BENCHLING_OBJECT_MAP[factory.destination_object_type]['stored_values'][attribute] = benchling_object_id
+
+                        return True
+
+                return False
+
+            def _check_sample_transfers_done(self, sample, object_map) -> bool:
+                """
+                Checks if a sample has any transfers by retrieving the container for the sample.
+
+                Args:
+                    sample - the sample to check for completed transfers
+                    object_map - a mapping of attributes relevant to the sample
+
+                Expects:
+                    BenchlingError - if an error occurs while retrieving container contents
+
+                Returns:
+                    bool - True if the container has contents, False otherwise
+
+                Raises:
+                    Exception: If teh sample has no container in Bechnling
+                """
+                self._populate_relationships(sample, object_map)
+
+                container_id = sample.attributes.get(object_map['attribute_map']['destination_container_id'])
+                if not container_id:
+                    raise Exception(
+                        f'Sample: {sample.id} not ready for transfer as '
+                        f'it does not have a container in benchling'
+                    )
+
+                contents_found = True
+                try:
+                    contents = factory.benchling.get_container_contents(container_id)
+
+                    if not contents:
+                        contents_found = False
+                except BenchlingError:
+                    contents_found = False
+
+                return contents_found
+
+            def _get_object_primary_attribute_value(self, object_map, sample):
+                """
+                Retrieves the primary attribute value for a given object map from the sts sample.
+
+                Args:
+                    object_map - a mapping of attributes relevant to the object
+                    sample - the sample from which to retrieve the primary attribute value
+
+                Returns:
+                    str | None - the primary attribute value, or None if not found
+                """
+                benchling_attribute_identifier = object_map['primary_attribute']
+                sts_attribute_identifier = object_map['attribute_map'][benchling_attribute_identifier]
+
+                if (
+                        sts_attribute_identifier in object_map['sts_relationships']
+                        and sts_attribute_identifier in factory.STS_OBJECT_MAP
+                ):
+                    self._populate_sts_relationships(sample, object_map)
+                elif (
+                    'concatenated_values' in object_map
+                    and sts_attribute_identifier in object_map['concatenated_values']
+                ):
+                    self._populate_concatenated_attributes(sample, object_map)
+
+                if sts_attribute_identifier in ['id','sts_id']:
+                    attribute_value = sample.id
+                else:
+                    attribute_value = sample.attributes.get(sts_attribute_identifier, None)
+
+                attribute_value = self._sanitize_attribute(sts_attribute_identifier, attribute_value)
+
+                return attribute_value
 
             def _populate_relationships(self, sample, object_map):
-                if not sample.attributes.get('relationships_populated', False):
-                    self._populate_benchling_relationships(sample, object_map)
-                    self._populate_sts_relationships(sample, object_map)
-                    sample.attributes['relationships_populated'] = True
+                """
+                Populates the relationships for a given sample based on the object_map
+
+                Args:
+                    sample - the sample whose relationships need to be populated
+                    object_map - a mapping of attributes relevant to the sample
+
+                Returns:
+                    None
+                """
+                self._populate_benchling_relationships(sample, object_map)
+                self._populate_sts_relationships(sample, object_map)
+
 
             def _populate_benchling_relationships(self, sample, object_map):
                 """
@@ -528,85 +767,61 @@ class StsSampleToCasmBenchlingConverterFactory:
 
                 Raises:
                     Exception: If a required relationship is missing or cannot be populated.
+
+                Returns:
+                    None
                 """
                 self._populate_polymorphic_benchling_relationships(sample, object_map)
 
                 for benchling_object_identifier in object_map['benchling_relationships']:
                     relationship_object_map = factory.BENCHLING_OBJECT_MAP[benchling_object_identifier]
-                    benchling_primary_attribute = relationship_object_map['primary_attribute']
-                    sts_attribute_identifier = relationship_object_map['attribute_map'][benchling_primary_attribute]
+                    if sample.attributes.get(benchling_object_identifier, None) is None:
+                        search_value = self._get_object_primary_attribute_value(relationship_object_map, sample)
+                        print(search_value)
+                        if search_value is not None:
+                            if search_value in relationship_object_map['stored_values']:
+                                benchling_object_id = relationship_object_map['stored_values'][search_value]
+                            else:
+                                benchling_object_id = self._get_benchling_object_id(
+                                    object_type=benchling_object_identifier,
+                                    search_identifier=relationship_object_map['primary_attribute'],
+                                    search_value=search_value
+                                )
 
-                    if (
-                        'concatinated_values' in relationship_object_map
-                        and sts_attribute_identifier in relationship_object_map['concatinated_values']
-                    ):
-                        self._populate_relationships(sample, relationship_object_map)
-                        self._populate_concatenated_attributes(sample, relationship_object_map['attribute_map'])
+                            if benchling_object_id is not None:
+                                sample.attributes[benchling_object_identifier] = benchling_object_id
+                                continue
 
-                    search_value = self._get_relationship_search_value(
-                        sample,
-                        sts_attribute_identifier,
-                        relationship_object_map
-                    )
-
-                    if search_value is not None:
-                        search_value = self._sanitize_attribute(
-                            benchling_primary_attribute, search_value, benchling_object_identifier
+                        raise Exception(
+                            f'Sample not ready for import: {sample.id} '
+                            f'is missing the relationship for {benchling_object_identifier}'
                         )
 
-                        if search_value in relationship_object_map['stored_values']:
-                            sample.attributes[benchling_object_identifier] = \
-                            relationship_object_map['stored_values'][search_value]
 
-                        benchling_object_id = self._get_benchling_object_id(
-                            object_type=benchling_object_identifier,
-                            search_identifier=benchling_primary_attribute,
-                            search_value=search_value
-                        )
-
-                        if benchling_object_id is not None:
-                            sample.attributes[benchling_object_identifier] = benchling_object_id
-                            continue
-
-                    raise Exception(
-                        f'Sample not ready for import: {sample.id} '
-                        f'is missing the relationship for {benchling_object_identifier}'
-                    )
-
-            @staticmethod
-            def _get_relationship_search_value(sample, sts_attribute_identifier, relationship_object_map):
+            def _populate_object_attributes(self, object_map, sample):
                 """
-                Determines the appropriate search value for a relationship.
+                Populates the attributes for an object using the given sample.
 
                 Args:
-                    sample: The sample data object from STS.
-                    sts_attribute_identifier: The attribute name in the STS object.
-                    relationship_object_map: The mapping of relationships in Benchling.
+                    object_map - a mapping of attributes relevant to the object
+                    sample - the sample from which to populate the object attributes
 
                 Returns:
-                    The appropriate search value or None.
+                    dict - a dictionary of populated object attributes
                 """
-                if (
-                    sts_attribute_identifier in relationship_object_map['sts_relationships']
-                    and sts_attribute_identifier in factory.STS_OBJECT_MAP
-                ):
-                    relationship_identifier = factory.STS_OBJECT_MAP[sts_attribute_identifier]['relationship_identifier']
-                    sts_relationship_attr = getattr(sample, relationship_identifier, None)
+                attribute_map = object_map['attribute_map']
+                self._populate_concatenated_attributes(sample, object_map)
 
-                    if isinstance(sts_relationship_attr, Iterable) and not isinstance(sts_relationship_attr, str):
-                        relationship_obj = next(iter(sts_relationship_attr), None)
-                    else:
-                        relationship_obj = sts_relationship_attr
-
-                    if relationship_obj is not None:
-                        return getattr(
-                            relationship_obj,
-                            factory.STS_OBJECT_MAP[sts_attribute_identifier]['identifier'],
-                            None
-                        )
-
-                return sample.id if sts_attribute_identifier == 'sts_id' \
-                    else getattr(sample, sts_attribute_identifier, None)
+                object_attributes = {
+                    key: (
+                        sample.id
+                        if 'id' == attr_mapping
+                        else sample.attributes.get(attr_mapping)
+                    )
+                    for key, attr_mapping in attribute_map.items()
+                }
+                self._sanitize_attributes(object_attributes)
+                return object_attributes
 
             def _populate_polymorphic_benchling_relationships(self, sample, object_map):
                 """
@@ -642,94 +857,6 @@ class StsSampleToCasmBenchlingConverterFactory:
                         if key_for_relationship_object_type:
                             object_map['benchling_relationships'].append(relationship_object_type)
                             object_map['attribute_map'][key_for_relationship_object_type] = relationship_object_type
-
-
-            @staticmethod
-            def _populate_sts_relationships(sample, object_map):
-                """
-                    This method populates the attributes with the values from the sts_relationships
-
-                    Args:
-                        sample: sample data object from sts
-
-                    Returns:
-                        None
-
-                    Expects a StopIteration exception if the relationship does not have a value
-                """
-                for sts_object_identifier in object_map['sts_relationships']:
-                    relationship_object_map = factory.STS_OBJECT_MAP[sts_object_identifier]
-                    relationship_identifier = relationship_object_map['relationship_identifier']
-
-                    try:
-                        relationship_object = getattr(sample, relationship_identifier)
-
-                        if isinstance(relationship_object, Iterable):
-                            relationship_object = next(iter(relationship_object))
-
-                        value = getattr(relationship_object, relationship_object_map['identifier'], None)
-                        sample.attributes[sts_object_identifier] = value
-
-                    except StopIteration:
-                        continue
-
-            def _does_object_exist(self, destination_object_type, sample,object_map):
-                """
-                Checks if the object all ready exists within the
-                Benchling ecosystem or is all ready loaded into memory
-
-                Args:
-                    destination_object_type - type of object we are looking for
-                    sample - the sample we are using to get the search values
-
-                Expects:
-                    StopIteration - if no object is returned from Benchling
-                """
-
-                stored_values = object_map['stored_values']
-                converted_value_ids = object_map['converted_value_identifiers']
-
-                if 'transfer' == destination_object_type:
-                    return self._check_sample_transfers_done(sample, object_map)
-                else:
-                    identifier = object_map['primary_attribute']
-                    attribute = self.__get_primary_attribute(object_map, primary_attr_id, sample)
-                    attribute = self._sanitize_attribute(identifier, attribute)
-
-                    if attribute in stored_values or attribute in converted_value_ids:
-                        return True
-
-                    benchling_object_id = self._get_benchling_object_id(
-                        object_type=destination_object_type,
-                        search_identifier=identifier,
-                        search_value=attribute,
-                        add_to_return=True
-                    )
-
-                    if benchling_object_id is not None:
-                        factory.BENCHLING_OBJECT_MAP[factory.destination_object_type]['stored_values'][attribute] = benchling_object_id
-
-                        return True
-
-                return False
-
-            def _check_sample_transfers_done(self, sample, object_map):
-                self._populate_relationships(sample, object_map)
-
-                container_id = sample.attributes.get(object_map['attribute_map']['destination_container_id'])
-                if not container_id:
-                    return False
-
-                contents_found = True
-                try:
-                    contents = factory.benchling.get_conainer_contents(container_id)
-
-                    if not contents:
-                        contents_found = False
-                except BenchlingError as e:
-                    contents_found = False
-
-                return contents_found
 
             def _get_benchling_object_id(
                 self,
@@ -780,79 +907,5 @@ class StsSampleToCasmBenchlingConverterFactory:
             def _sanitize_attributes(self, object_attributes):
                 for key, value in object_attributes.items():
                     object_attributes[key] = self._sanitize_attribute(key, value)
-
-            @staticmethod
-            def _sanitize_attribute(key: str, value: any, object_type_override: str = ''):
-                """
-                    This static method sanitizes an attribute making sure it's the
-                    correct type expected by Benchling, it will also transform the value of
-                    the attribute to a predetermined safe value for
-                    Benchling this is configured in VALUE_REPLACEMENTS.
-
-                    Args:
-                         key -  This argument specifies the key of the attribute,
-                         value -  This argument specifies the value of the attribute to be cleaned
-                         object_type_override – This argument specifies the cleanup actions to
-                         be performed if the attribute does not belong to
-                         the destination object of the converter.
-
-                    Return:
-                        Any - depends on the value provided and the cleanup performed
-                """
-                fields = getattr(factory, 'fields', [])
-
-                if '' != object_type_override:
-                    benchling_type = factory.benchling.benchling_types[object_type_override]
-                    if (
-                        benchling_type
-                        and object_type_override in factory.benchling.schemas[benchling_type]
-                    ):
-                        fields = factory.benchling.schemas[benchling_type][object_type_override]
-
-                if fields and key in fields:
-                    if 'int' == fields[key]['type']:
-                        if value:
-                            value = int(value)
-                        else:
-                            value = 0
-
-                    if 'str' == fields[key]['type']:
-                        if value:
-                            value = str(value)
-
-                        if key in factory.VALUE_REPLACEMENTS:
-                            if value in factory.VALUE_REPLACEMENTS[key]:
-                                value = factory.VALUE_REPLACEMENTS[key][value]
-                            elif 'default' in factory.VALUE_REPLACEMENTS[key]:
-                                value = factory.VALUE_REPLACEMENTS[key]['default']
-
-                        if fields[key]['is_multi']:
-                            value = [value]
-
-                    if 'genetically_modified' == key:
-                        value = factory.VALUE_REPLACEMENTS[key]['default']
-
-                return value
-
-            @staticmethod
-            def _get_destination_object_type(
-                    sample,
-                    detect_destination_type: str,
-                    raise_exception: bool = True
-            ) -> str | None:
-                if (
-                    hasattr(sample, 'manifest')
-                    and hasattr(sample.manifest, 'manifest_type')
-                    and sample.manifest.manifest_type in factory.
-                        DESTINATION_OBJECT_TYPES[detect_destination_type]
-                ):
-                    return factory.DESTINATION_OBJECT_TYPES[detect_destination_type][
-                        sample.manifest.manifest_type]
-
-                if raise_exception:
-                    raise Exception(
-                        f'Sample is not ready for import: Sample #{sample.id} has unsupported destination type')
-
-                return None
 
         return StsSampleToCasmBenchlingConverter
