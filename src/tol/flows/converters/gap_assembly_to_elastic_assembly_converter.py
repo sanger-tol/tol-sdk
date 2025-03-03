@@ -17,15 +17,10 @@ class GapAssemblyToElasticAssemblyConverter(
         self.gap_ds = gap_ds
 
     def convert_details(self, assembly: DataObject) -> Iterable[DataObject]:
-        detail_atts = {}
-        for d in assembly.assembly_details:
-            case_corrected = d.id.replace(' ', '_').lower()
-            detail_atts = {
-                **detail_atts,
-                case_corrected: d.info,
-            }
-
-        return detail_atts
+        return {
+            d.id.replace(' ', '_').lower(): d.info
+            for d in assembly.assembly_details
+        }
 
     def convert(self, assembly: DataObject) -> Iterable[DataObject]:
 
