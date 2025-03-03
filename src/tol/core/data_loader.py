@@ -10,6 +10,7 @@ from typing import Dict, Iterable, List, Optional, Type
 from more_itertools import peekable
 
 import pytz
+from tol.core import is_iter
 
 from .core_converter import Converter
 from .data_object import DataObject
@@ -91,12 +92,11 @@ class DefaultDataLoader():
                 self._check_converter_for_returned_objects()
             )
 
-            returned_objects = list(returned_objects)
-
-            if returned_objects and auto_exhaust:
+            if is_iter(returned_objects) and auto_exhaust:
                 # Exhaust the returned objects
                 for _ in returned_objects:
                     pass
+
             return returned_objects
 
     def _process_data_loads(
