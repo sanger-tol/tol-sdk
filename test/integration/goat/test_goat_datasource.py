@@ -90,7 +90,7 @@ class TestGoatDataSource(TestCase):
         obj1 = next(ret)
         self.assertEqual('9925', obj1.id)
         self.assertEqual(obj1.scientific_name, 'Capra hircus')
-        self.assertEqual(obj1.common_name, 'Domestic goat')
+        self.assertEqual(obj1.common_name, 'goat')
         self.assertEqual(obj1.tolid_prefix, 'mCapHir')
 
         with self.assertRaises(StopIteration):
