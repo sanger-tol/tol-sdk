@@ -86,11 +86,12 @@ class DefaultDataLoader():
 
         if not dry_run:
             self._record_time('end')
-
-            returned_objects = chain(
-                returned_objects,
-                self._check_converter_for_returned_objects()
-            )
+            converter_return_object = self._check_converter_for_returned_objects()
+            if is_iter(converter_return_object) and is_iter(returned_objects):
+                returned_objects = chain(
+                    returned_objects,
+                    converter_return_object
+                )
 
             if is_iter(returned_objects) and auto_exhaust:
                 # Exhaust the returned objects
@@ -227,7 +228,7 @@ class DefaultDataLoader():
 
             return iter(return_objects)
 
-        return iter([])
+        return None
 
 
 class GroupStatterDataLoader(DefaultDataLoader):
