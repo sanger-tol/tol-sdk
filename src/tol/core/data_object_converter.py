@@ -51,6 +51,15 @@ class DataObjectToDataObjectOrUpdateConverter(ABC):
 
 class DefaultDataObjectToDataObjectConverter(DataObjectToDataObjectOrUpdateConverter):
 
+    def __init__(
+        self,
+        data_object_factory: DataObjectFactory,
+        destination_object_type: str | None = None
+    ):
+
+        super().__init__(data_object_factory)
+        self.__dest_object_type = destination_object_type
+
     def convert(self, data_object: DataObject) -> Iterable[DataObject]:
         """
         A "passthrough" converter only dealing with attributes:
@@ -59,9 +68,14 @@ class DefaultDataObjectToDataObjectConverter(DataObjectToDataObjectOrUpdateConve
             Iterable of DataObjects
         """
         if data_object is not None and data_object.id is not None:
+            dest_type = (
+                self.__dest_object_type
+                if self.__dest_object_type is not None
+                else self.data_loader._destination_object_type
+            )
             ret = self._data_object_factory(
                 id_=data_object.id,
-                type_=self.data_loader._destination_object_type,
+                type_=dest_type,
                 attributes={**data_object.attributes}
             )
             return iter([ret])

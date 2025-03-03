@@ -2,9 +2,9 @@
 #
 # SPDX-License-Identifier: MIT
 
-from .model import *  # noqa
-from .resource import *  # noqa
-from .schema import *  # noqa
-from .service import *  # noqa
-from .swagger import *  # noqa
-from . import auth  # noqa
+from .action import action_blueprint  # noqa
+from .blueprint import (  # noqa
+    custom_blueprint,
+    data_blueprint
+)
+from .system import system_blueprint  # noqa

@@ -46,11 +46,11 @@ Columns in output table:
 28) rd_sample: [character] Origin: STS
 29) family_representative: [character] Origin: STS
 30) priority: [integer] Origin: STS
-32) location: [character] Origin: STS. Physical location of the sample.
-33) tray: [character] Origin: STS. Physical location of the sample.
-34) rack_id: [character] Origin: STS. Physical location of the sample.
-35) tube_position: [character] Origin: STS. Physical location of the sample.
-36) remaining_weight: [double precision] Origin: BWH. Data taken during laboratory processes. 
+31) location: [character] Origin: STS. Physical location of the sample.
+32) tray: [character] Origin: STS. Physical location of the sample.
+33) rack_id: [character] Origin: STS. Physical location of the sample.
+34) tube_position: [character] Origin: STS. Physical location of the sample.
+35) remaining_weight: [double precision] Origin: BWH. Data taken during laboratory processes. 
 */
 
 SELECT

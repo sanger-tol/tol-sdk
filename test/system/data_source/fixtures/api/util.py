@@ -2,7 +2,7 @@
 #
 # SPDX-License-Identifier: MIT
 
-from tol.api_client2 import ApiDataSource, create_api_datasource
+from tol.api_client import ApiDataSource, create_api_datasource
 from tol.core.factory import core_data_object
 
 from ..base import DataSourceFixture

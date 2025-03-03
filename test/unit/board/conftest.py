@@ -9,7 +9,7 @@ from flask.testing import FlaskClient
 
 import pytest
 
-from tol.api_base2.misc import AuthContext
+from tol.api_base.misc import AuthContext
 from tol.board import board_blueprint
 from tol.sql import SqlDataSource
 

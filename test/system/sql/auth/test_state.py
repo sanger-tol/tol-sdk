@@ -18,7 +18,7 @@ from responses.matchers import (
 
 from sqlalchemy import select
 
-from tol.api_base2.auth import OidcConfig
+from tol.api_base.auth import OidcConfig
 
 
 @pytest.fixture(scope='module')

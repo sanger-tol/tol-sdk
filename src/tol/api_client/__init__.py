@@ -3,4 +3,4 @@
 # SPDX-License-Identifier: MIT
 
 from .api_datasource import ApiDataSource  # noqa
-from .api_object import ApiObject  # noqa
+from .factory import create_api_datasource  # noqa
