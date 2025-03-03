@@ -91,7 +91,7 @@ class DefaultDataLoader():
                 self._check_converter_for_returned_objects()
             )
 
-            if returned_objects is not None and auto_exhaust:
+            if returned_objects and auto_exhaust:
                 # Exhaust the returned objects
                 for _ in returned_objects:
                     pass
