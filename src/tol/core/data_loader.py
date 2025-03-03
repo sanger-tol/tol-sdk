@@ -91,7 +91,7 @@ class DefaultDataLoader():
                 self._check_converter_for_returned_objects()
             )
 
-            returned_objects = returned_objects or []
+            returned_objects = list(returned_objects)
 
             if returned_objects and auto_exhaust:
                 # Exhaust the returned objects
@@ -143,6 +143,7 @@ class DefaultDataLoader():
         field_prefix: str = None,
         method: str = 'upsert'
     ):
+        returned_objects=[]
         if candidate_key == ['id']:
             if not dry_run:
                 insert_method = getattr(self._destination, method)
