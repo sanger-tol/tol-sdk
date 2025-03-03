@@ -257,8 +257,12 @@ class ElasticDataSource(
 
         # This tries to find an object in the DataSource that matches
         # the candidate key. If found it will perform the update
+
         index = self.__get_index(object_type)
         for (_, update) in updates:
+            # We can get the candidate key dynamically from the actual update
+            if 'candidate_key_func' in kwargs:
+                candidate_key = kwargs['candidate_key_func'](update)
             self.es.update_by_query(
                 index=index,
                 body=self._action_for_update(index,
@@ -1180,3 +1184,85 @@ class ElasticDataSource(
 
         if source.type not in self.relationship_config:
             raise DataSourceError('This type has no relationships')
+
+    @property
+    def enriching_fields(self):
+        """
+        Returns a dictionary of object types and their enriching fields
+        e.g. {'species': ['goat_family', 'goat_genome_size']}
+        """
+        object_enriching_fields = {}
+        for object_type, attributes in self.attribute_metadata.items():
+            enriching_fields = []
+            for attribute, metadata in attributes.items():
+                if metadata['available_on_relationships']:
+                    enriching_fields.append(attribute)
+            if len(enriching_fields) > 0:
+                object_enriching_fields[object_type] = enriching_fields
+        return object_enriching_fields
+
+    @property
+    def relationships_to_enrich(self):
+        """
+        Returns a dictionary of object types and their relationships to enrich for
+        each source object type
+        e.g. {'extraction': {'species': ['sts_species', 'benchling_species]}}
+        """
+        relationships_to_enrich = {}
+        for object_type, rc in self.relationship_config.items():
+            if rc.to_one is not None:
+                for rel_name, related_object_type in rc.to_one.items():
+                    if related_object_type not in relationships_to_enrich:
+                        relationships_to_enrich[related_object_type] = {}
+                    if object_type not in relationships_to_enrich[related_object_type]:
+                        relationships_to_enrich[related_object_type][object_type] = []
+                    relationships_to_enrich[related_object_type][object_type].append(rel_name)
+        return relationships_to_enrich
+
+    def get_enrich_update(self, enriching_fields, source_data, target_object_type):
+        """
+        Gets the update data for enriching an index with the source fields
+        Makes an update if the id of the target attribute is present (candidate_key).
+
+        args:
+            source_fields: list of fields to enrich the index with
+            source_data: elastic.get_list data returned by the source_index
+            target_object_type: the object type of the target index
+        """
+        for obj in source_data:
+            obj_dict = {'id': obj.id}
+            # Get the values of the enriching fields
+            for field in enriching_fields:
+                obj_dict[field] = getattr(obj, field)
+            for target_attribute in self.relationships_to_enrich[obj.type][target_object_type]:
+                yield (
+                    None,
+                    {
+                        f'{target_attribute}': obj_dict,
+                        f'{target_attribute}.id': obj.id  # The candidate key
+                    }
+                )
+
+    def enrich(
+            self,
+            source_object_type: str,
+            source_objects: Iterable[DataObject],
+            target_object_type: str):
+        """
+        Enriches the target index with the enriching fields from the source index
+        """
+        updates = self.get_enrich_update(
+            self.enriching_fields[source_object_type],
+            source_objects,
+            target_object_type
+        )
+        candidate_key_possibilities = [
+            f'{rel}.id'
+            for rel in self.relationships_to_enrich[source_object_type][target_object_type]
+        ]
+        self.update(
+            target_object_type,
+            updates,
+            candidate_key_func=lambda x:
+                [next((key for key in candidate_key_possibilities if key in x))]
+        )

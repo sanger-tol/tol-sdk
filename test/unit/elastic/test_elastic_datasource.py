@@ -10,6 +10,7 @@ from tol.core import (
     DataObject,
     DataSourceError,
     DataSourceFilter,
+    DefaultAttributeMetadata,
     core_data_object
 )
 from tol.core.relationship import RelationshipConfig
@@ -56,13 +57,31 @@ class MockElasticDataSource(ElasticDataSource):
         }
 
 
+class MockAttributeMetadata(DefaultAttributeMetadata):
+    def is_available_on_relationships(
+            self,
+            object_type: str,
+            attribute_name: str) -> bool:
+
+        if attribute_name in ['field1', 'field2']:
+            return True
+        return False
+
+
 def mock_elastic_data_source() -> tuple[Callable, ElasticDataSource]:
     eds = MockElasticDataSource({
         'uri': 'test',
         'user': 'user',
         'password': 'password',
         'index_prefix': 'test',
-        'relationship_cfg': {},
+        'relationship_cfg': {
+            'obj_type': RelationshipConfig(
+                to_many={'children': 'reltype'}
+            ),
+            'reltype': RelationshipConfig(
+                to_one={'parent': 'obj_type'}
+            )
+        },
         'runtime_fields': {
             'obj_type': {
                 'field7': RuntimeField(
@@ -77,7 +96,7 @@ def mock_elastic_data_source() -> tuple[Callable, ElasticDataSource]:
                 )
             }
         }
-    })
+    }, attribute_metadata=MockAttributeMetadata)
     core_data_object_mock = core_data_object(eds)
     return core_data_object_mock, eds
 
@@ -1073,3 +1092,61 @@ class TestElasticDataSource(TestCase):
             mock.call('b', 'yo')
         ]
         assert observed == mock_inter2
+
+    def test_get_enriching_fields(self):
+        _, eds = mock_elastic_data_source()
+
+        expected = {'obj_type': ['field1', 'field2']}
+
+        self.assertEqual(expected, eds.enriching_fields)
+
+    def test_relationships_to_enrich(self):
+        _, eds = mock_elastic_data_source()
+
+        expected = {
+            'obj_type': {'reltype': ['parent']}
+        }
+        self.assertEqual(expected, eds.relationships_to_enrich)
+
+    def test_get_enrich_update(self):
+        _, eds = mock_elastic_data_source()
+
+        expected = [
+            (None, {'parent': {'id': 'id1', 'field1': 'value1', 'field2': 'value2'},
+                    'parent.id': 'id1'}),
+            (None, {'parent': {'id': 'id2', 'field1': 'value3', 'field2': 'value4'},
+                    'parent.id': 'id2'})
+        ]
+
+        enriching_fields = ['field1', 'field2']
+        source_data = [
+            eds.data_object_factory(
+                'obj_type',
+                'id1',
+                attributes={'field1': 'value1', 'field2': 'value2'}
+            ), eds.data_object_factory(
+                'obj_type',
+                'id2',
+                attributes={'field1': 'value3', 'field2': 'value4'}
+            )
+        ]
+        returned = eds.get_enrich_update(enriching_fields, source_data, 'reltype')
+        self.assertEqual(expected, list(returned))
+
+    def test_enrich(self):
+        _, eds = mock_elastic_data_source()
+
+        source_data = [
+            eds.data_object_factory(
+                'obj_type',
+                'id1',
+                attributes={'field1': 'value1', 'field2': 'value2'}
+            ), eds.data_object_factory(
+                'obj_type',
+                'id2',
+                attributes={'field1': 'value3', 'field2': 'value4'}
+            )
+        ]
+        eds.es.update_by_query.return_value = (2, 0)
+        eds.enrich('obj_type', source_data, 'reltype')
+        self.assertEqual(eds.es.update_by_query.call_count, 2)
