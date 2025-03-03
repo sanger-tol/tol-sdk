@@ -228,47 +228,44 @@ class BenchlingConverter(Converter[BenchlingReturn, DataObject]):
     def __convert_assay_result(self, input_: AssayResult) -> DataObject:
         object_type = snakecase(input_.schema.name)
         attributes = self.__convert_attributes(input_.fields, object_type)
+        to_ones = self.__convert_relationships(input_.fields, object_type)
+        native_to_ones = {}
 
         return self.__ds.data_object_factory(
             object_type,
             id_=input_.id,
             attributes=attributes,
+            to_one=to_ones | native_to_ones
         )
 
-    def __convert_box_result(self, input_) -> DataObject:
+    def __convert_box_result(self, input_: Box) -> DataObject:
         object_type = snakecase(input_.schema.name)
-        attributes = self.__convert_attributes(input_.fields, object_type)
-        to_ones = self.__convert_relationships(input_.fields, object_type)
+        attributes = input_.to_dict()
 
         return self.__ds.data_object_factory(
             object_type,
             id_=input_.id,
-            attributes=attributes,
-            to_one=to_ones
+            attributes=attributes
         )
 
     def __convert_plate_result(self, input_) -> DataObject:
         object_type = snakecase(input_.schema.name)
-        attributes = self.__convert_attributes(input_.fields, object_type)
-        to_ones = self.__convert_relationships(input_.fields, object_type)
+        attributes = input_.to_dict()
 
         return self.__ds.data_object_factory(
             object_type,
             id_=input_.id,
-            attributes=attributes,
-            to_one=to_ones
+            attributes=attributes
         )
 
     def __convert_container_result(self, input_):
         object_type = snakecase(input_.schema.name)
-        attributes = self.__convert_attributes(input_.fields, object_type)
-        to_ones = self.__convert_relationships(input_.fields, object_type)
+        attributes = input_.to_dict()
 
         return self.__ds.data_object_factory(
             object_type,
             id_=input_.id,
-            attributes=attributes,
-            to_one=to_ones
+            attributes=attributes
         )
 
     def __convert_return(self, input_: BenchlingReturn) -> DataObject:
@@ -602,7 +599,7 @@ class DataObjectConverter(Converter[DataObject, BenchlingWrite]):
 
             return_iterable.append(
                 CustomEntityBulkUpdate(
-                    id=object_type,
+                    id=update_id,
                     fields=entity_fields,
                     custom_fields=fields({}),
                     **kwargs
