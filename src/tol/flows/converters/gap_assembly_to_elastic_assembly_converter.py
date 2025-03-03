@@ -1,0 +1,54 @@
+# SPDX-FileCopyrightText: 2025 Genome Research Ltd.
+#
+# SPDX-License-Identifier: MIT
+
+from typing import Iterable
+
+from ...core import (
+    DataObject,
+    DataObjectToDataObjectOrUpdateConverter
+)
+
+
+class GapAssemblyToElasticAssemblyConverter(
+        DataObjectToDataObjectOrUpdateConverter):
+    def __init__(self, data_object_factory, gap_ds):
+        super().__init__(data_object_factory)
+        self.gap_ds = gap_ds
+
+    def convert(self, assembly: DataObject) -> Iterable[DataObject]:
+
+        pipeline_atts = {}
+        for p in assembly.pipelines:
+            prefix = p.id
+            pipeline_atts = {
+                f'{prefix}_analysis': p.analysis,
+                f'{prefix}_results': p.results,
+                f'{prefix}_s3': p.s3,
+                f'{prefix}_lustre_path_analysis': p.lustre_path_analysis,
+                **pipeline_atts,
+            }
+
+        to_one_relations = {
+            'species': self._data_object_factory(
+                'species',
+                str(assembly.taxon_id)
+            ),
+        }
+
+        attributes = {
+            k: v
+            for k, v in assembly.attributes.items()
+            if k not in ['taxon_id', 'species', 'phylum_id', 'phylum']
+        }
+
+        ret = self._data_object_factory(
+            'assembly',
+            assembly.id,
+            attributes={
+                **pipeline_atts,
+                **attributes
+            },
+            to_one=to_one_relations
+        )
+        yield ret

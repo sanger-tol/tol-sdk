@@ -23,6 +23,7 @@ from .elastic_sequencing_request_to_sts_sequencing_request_converter import Elas
 from .elastic_species_to_sts_species_converter import ElasticSpeciesToStsSpeciesConverter  # noqa F401
 from .elastic_tolid_to_elastic_curation_update_converter import ElasticTolidToElasticCurationUpdateConverter  # noqa F401
 from .elastic_tolid_to_elastic_sample_update_converter import ElasticTolidToElasticSampleUpdateConverter  # noqa F401
+from .gap_assembly_to_elastic_assembly_converter import GapAssemblyToElasticAssemblyConverter  # noqa F401
 from .goat_taxon_to_elastic_species_converter import GoatTaxonToElasticSpeciesConverter  # noqa F401
 from .grit_issue_to_elastic_curation_converter import GritIssueToElasticCurationConverter  # noqa F401
 from .labwhere_location_to_elastic_sample_update_converter import LabwhereLocationToElasticSampleUpdateConverter  # noqa F401
