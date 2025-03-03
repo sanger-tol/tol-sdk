@@ -91,6 +91,8 @@ class DefaultDataLoader():
                 self._check_converter_for_returned_objects()
             )
 
+            returned_objects = returned_objects or []
+
             if returned_objects and auto_exhaust:
                 # Exhaust the returned objects
                 for _ in returned_objects:
