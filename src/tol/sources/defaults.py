@@ -27,6 +27,10 @@ class Defaults:
     BIOSCAN_API_PATH = '/api/v1'
     BIOSCAN_API_DATA_PATH = ''
 
+    WORKFLOWS_URL = 'https://workflows.tol.sanger.ac.uk'
+    WORKFLOWS_API_PATH = '/api/v2'
+    WORKFLOWS_API_DATA_PATH = ''
+
     GOAT_URL = 'https://goat.genomehubs.org'
     GOAT_API_PATH = '/api/v2'
 
