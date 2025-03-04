@@ -931,7 +931,9 @@ class StsSampleToCasmBenchlingConverterFactory:
                 elif factory.benchling.benchling_types[object_type] in ['assay_result']:
                     filter_object.and_ = {'entity_id': {'eq': {'value': [search_value]}}}
                 else:
-                    raise Exception(f'Configuration error: Unsupported search of type {object_type}')
+                    raise Exception(
+                        f'Configuration error: Unsupported search of type {object_type}'
+                    )
 
                 try:
                     benchling_object = next(
