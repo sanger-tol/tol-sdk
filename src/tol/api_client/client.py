@@ -2,12 +2,10 @@
 #
 # SPDX-License-Identifier: MIT
 
-import os
 from typing import Any, Optional
 from urllib.parse import quote
 
 import requests
-from requests.adapters import HTTPAdapter, Retry
 
 from .converter import JsonApiTransfer, JsonRelationshipConfig
 from ..core import HttpClient
