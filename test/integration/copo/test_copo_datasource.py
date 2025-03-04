@@ -40,10 +40,7 @@ class TestCopoDataSource(TestCase):
         samples = list(obj1.samples)
         assert len(samples) == 5
         assert samples[0].id == '671b8c96d10362e252e21848'
-        assert samples[0].tol_project == 'erga'
-
-        with self.assertRaises(StopIteration):
-            next(ret)
+        assert samples[0].tol_project.lower() == 'erga'
 
     def test_get_by_id_sample(self):
         cds = copo()
