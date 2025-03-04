@@ -145,10 +145,10 @@ class CopoDataSource(
             .get('value', None)
 
         manifests_json = client.get_manifests(
-                project=project,
-                from_=from_,
-                to=to,
-            )
+            project=project,
+            from_=from_,
+            to=to,
+        )
         manifests, _ = jc_converter.convert_list(manifests_json)
         return manifests
 

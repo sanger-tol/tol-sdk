@@ -91,7 +91,7 @@ class DefaultParser(Parser):
         return {
             k: (
                 dateutil_parse(v)
-                if k in datetime_keys and v is not None
+                if k in datetime_keys and v is not None and v != ''
                 else v
             )
             for k, v in attributes.items()

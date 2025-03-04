@@ -6,10 +6,9 @@ from datetime import datetime
 from itertools import chain
 from typing import Optional
 
-import requests
-
 from .converter import CopoApiTransfer
 from ..core import HttpClient
+
 
 class CopoApiClient(HttpClient):
     """
@@ -55,6 +54,7 @@ class CopoApiClient(HttpClient):
             'samples_in_manifest',  # A fudge to ignore the manifest-specific stuff
             manifest_id
         )
+
     def get_manifests(
         self,
         project: str,
@@ -89,7 +89,7 @@ class CopoApiClient(HttpClient):
     ) -> Optional[CopoApiTransfer]:
         print(f'Getting {url}')
         session = self._get_session_with_retries()
-        r = requests.get(url, timeout=30)
+        r = session.get(url, headers={'accept-encoding': 'gzip;q=0,deflate,sdch'})
         if r.status_code in [400, 404]:
             return [None]
         r.raise_for_status()
