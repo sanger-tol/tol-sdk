@@ -548,13 +548,80 @@ def elastic():
             },
         },
         'sample': {
-            'calc_biospecimen_id':
-                RuntimeFields.coalesce([
-                    'sts_sample_same_as',
-                    'sts_biospecimen_accession',
-                    'sts_sample_symbiont_of'
-                ])
+            'calc_biospecimen_id': RuntimeFields.coalesce([
+                'sts_sample_same_as',
+                'sts_biospecimen_accession',
+                'sts_sample_symbiont_of'
+            ]),
+            'calc_sts_export_eligible': {
+                'type': 'boolean',
+                'script': {
+                    'source': """
+                        String biospecimenId = null;
+                        List biospecimenFields = [
+                            'sts_sample_same_as.keyword',
+                            'sts_biospecimen_accession.keyword',
+                            'sts_sample_symbiont_of.keyword'
+                        ];
+
+                        for (String field : biospecimenFields) {
+                            if (doc.containsKey(field) &&
+                                doc[field].size() > 0) {
+                                biospecimenId = doc[field].value;
+                                break;
+                            }
+                        }
+
+                        List requiredFields = [
+                            'sts_tubeid.keyword',
+                            'sts_species.sts_scientific_name.keyword',
+                            'sts_species.id',
+                            'sts_specimen.id',
+                            'sts_organism_part.keyword',
+                            'sts_lifestage.keyword',
+                            'sts_preservation_approach.keyword',
+                            'sts_sex.keyword',
+                            'sts_tissue_size.keyword',
+                            'sts_programme.keyword',
+                            'sts_biosample_accession.keyword',
+                            'sts_submit_date',
+                            'sts_sampleset.id',
+                            'sts_project.keyword',
+                            'sts_species.sts_taxon_group.keyword',
+                            'sts_species.sts_genome_size',
+                            'sts_rackid.keyword',
+                            'sts_pos_in_rack.keyword',
+                            'sts_labwhere_parentage.keyword',
+                            'sts_labwhere_name.keyword',
+                            'sts_cost_code.keyword',
+                            'sts_sequencescape_study_id.keyword'
+                        ];
+
+                        boolean basicFieldsExist = true;
+                        for (String field : requiredFields) {
+                            boolean fieldHasValue = false;
+
+                            if (doc.containsKey(field)) {
+                                if (field.endsWith(".keyword")) {
+                                    fieldHasValue = doc[field].size() > 0;
+                                } else {
+                                    fieldHasValue = doc[field] != null;
+                                }
+                            }
+
+                            if (!fieldHasValue) {
+                                basicFieldsExist = false;
+                                break;
+                            }
+                        }
+
+                        boolean biospecimenIdExists = (biospecimenId != null);
+                        emit(basicFieldsExist && biospecimenIdExists);
+                    """
+                }
+            },
         },
+
         'sampleset': {
             'calc_tat': RuntimeFields.date_interval('sts_submit_date',
                                                     'sts_sample_sts_receive_date_min',
