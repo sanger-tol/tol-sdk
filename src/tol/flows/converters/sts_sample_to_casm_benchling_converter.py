@@ -412,7 +412,10 @@ class StsSampleToCasmBenchlingConverterFactory:
         if not detect_destination:
             self.populate_destination(destination_object_type)
         elif detect_destination_type == '':
-            raise Exception('Please include a detect_destination_type to auto-detect')
+            raise Exception(
+                'Configuration error of flow: Please include a '
+                'detect_destination_type to auto-detect'
+            )
         else:
             self.detect_destination_type = detect_destination_type
 
@@ -508,7 +511,7 @@ class StsSampleToCasmBenchlingConverterFactory:
                 if raise_exception:
                     raise Exception(
                         f'Sample is not ready for import: Sample #{sample.id}'
-                        f' has unsupported destination type'
+                        f' has unsupported destination type for dynamic conversion'
                     )
 
                 return None
@@ -721,7 +724,7 @@ class StsSampleToCasmBenchlingConverterFactory:
                 if not container_id:
                     raise Exception(
                         f'Sample: {sample.id} not ready for transfer as '
-                        f'it does not have a container in benchling'
+                        f'it does not have a container registered in benchling'
                     )
 
                 contents_found = True
@@ -812,7 +815,7 @@ class StsSampleToCasmBenchlingConverterFactory:
                             relationship_object_map,
                             sample
                         )
-                        print(search_value)
+
                         if search_value is not None:
                             if search_value in relationship_object_map['stored_values']:
                                 benchling_object_id = relationship_object_map['stored_values'][
@@ -830,8 +833,8 @@ class StsSampleToCasmBenchlingConverterFactory:
                                 continue
 
                         raise Exception(
-                            f'Sample not ready for import: {sample.id} '
-                            f'is missing the relationship for {benchling_object_identifier}'
+                            f'Sample not ready for import: {sample.id} is missing the '
+                            f'benchling relationship for {benchling_object_identifier}'
                         )
 
             def _populate_object_attributes(self, object_map, sample):
@@ -928,7 +931,7 @@ class StsSampleToCasmBenchlingConverterFactory:
                 elif factory.benchling.benchling_types[object_type] in ['assay_result']:
                     filter_object.and_ = {'entity_id': {'eq': {'value': [search_value]}}}
                 else:
-                    raise Exception('Unsupported search')
+                    raise Exception(f'Configuration error: Unsupported search of type {object_type}')
 
                 try:
                     benchling_object = next(

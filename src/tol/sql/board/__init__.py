@@ -2,4 +2,4 @@
 #
 # SPDX-License-Identifier: MIT
 
-from .factory import create_board_models
+from .factory import create_board_models # noqa F401

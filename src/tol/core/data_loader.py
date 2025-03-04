@@ -10,6 +10,7 @@ from typing import Dict, Iterable, List, Optional, Type
 from more_itertools import peekable
 
 import pytz
+
 from tol.core import is_iter
 
 from .core_converter import Converter
@@ -144,7 +145,7 @@ class DefaultDataLoader():
         field_prefix: str = None,
         method: str = 'upsert'
     ):
-        returned_objects=[]
+        returned_objects = []
         if candidate_key == ['id']:
             if not dry_run:
                 insert_method = getattr(self._destination, method)
