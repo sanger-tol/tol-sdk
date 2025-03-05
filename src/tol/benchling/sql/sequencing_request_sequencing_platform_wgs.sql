@@ -5,14 +5,14 @@ Output: Table with cols:
 
 1. sts_id: [integer] Tissue metadata. Origin: STS.
 2. taxon_id: [character] Tissue metadata. Origin: STS.
-3. tissue_prep_id: [character]  Foreign key to other entities and results in Benchling. Origin: BWH.
+3. tissue_prep_id: [character]  Foreign key to tissue prep entity in Benchling. Origin: BWH.
 4. programme_id: [character] ToLID.
 5. specimen_id: [character] Origin: STS.
 6. submission_display_id: [character] ID of the sequencing submission. Origin: Benchling.
-7. sequencing_platform: [character] Sequencing platform: WGS
-8. sanger_sample_id: [character] Sanger Sample ID or UUID for the submission.
+7. sequencing_platform: [character] Sequencing platform: WGS, ONT
+8. sanger_sample_id: [character] Sanger Sample ID for the submission.
 9. tube_id: [character] Identifier for the tube containing DNA extract. Origin: Benchling.
-10. executed_on: [timestamp] Timestamp of submission execution. Origin: Benchling.
+10. completion_date: [timestamp] Timestamp of submission execution. Origin: Benchling.
 11. bt_id: [character] B&T ID (legacy)
 12. source: [character] Data source: v1, legacy_bnt
 
@@ -43,7 +43,7 @@ WITH dna_extr_submissions AS (
         dna_sub_out.submission_platform AS sequencing_platform,
         ssid.sanger_sample_id,
         c.barcode AS tube_id,
-        dna_sub.executed_on$ AS executed_on,
+        dna_sub.executed_on$ AS completion_date,
         tp.bt_id,
         'v1'::varchar AS source
     FROM dna_extract_submission$raw AS dna_sub
@@ -83,7 +83,7 @@ pooled_dna_extr_submissions AS (
         dna_sub_out.submission_platform AS sequencing_platform,
         ssid.sanger_sample_id,
         tube.name$ AS tube_id,
-        sub.executed_on$ AS executed_on,
+        sub.executed_on$ AS completion_date,
         tp.bt_id,
         'v1'::varchar AS source
     FROM pooled_samples$raw AS dnap
@@ -128,7 +128,7 @@ subsam_submissions AS (
         dna_sub_out.submission_platform AS sequencing_platform,
         ssid.sanger_sample_id,
         tube.name$ AS tube_id,
-        sub.executed_on$ AS executed_on,
+        sub.executed_on$ AS completion_date,
         tp.bt_id,
         'v1'::varchar AS source
     FROM submission_samples$raw AS subsam
@@ -173,7 +173,7 @@ SELECT
     dna.sequencing_platform,
     dna.sanger_sample_id,
     dna.tube_id,
-    dna.executed_on,
+    dna.completion_date,
     dna.bt_id,
     dna.source
 FROM dna_extr_submissions AS dna
