@@ -32,11 +32,12 @@ Columns in output table:
 8) sampleprep_date: [Date] date of sample preparation.
 9) tissue_prep_fluidx_id: [character] fluidx id of the tissue prep container
 10) weight_mg: [double] weight in mg of the tissue prep.
-11) downstream_protocol: [text] downstream process the tissue prep was prepped for. 
-12) tissue_prep_type: [character] tissue type for HiC SciOps submissions.
-13) sciops_protocol_required: [character] protocol required for HiC SciOps submissions.
-14) sts_labwork_category: [character] Reason for exporting tissue. Aid to interpret downstream protocol for legacy samples.
-15) tissue_prep_bnt_id: [character] Batches and Tracking legacy id.
+11) downstream_protocol: [text] downstream process the tissue prep was prepped for.
+12) disruption_method: [character] method used to disrupt the tissue.
+13) tissue_prep_type: [character] tissue type for HiC SciOps submissions.
+14) sciops_protocol_required: [character] protocol required for HiC SciOps submissions.
+15) sts_labwork_category: [character] Reason for exporting tissue. Aid to interpret downstream protocol for legacy samples.
+16) tissue_prep_bnt_id: [character] Batches and Tracking legacy id.
 */
 
 WITH tissue_preps AS (
@@ -52,7 +53,8 @@ WITH tissue_preps AS (
 		DATE(tp.created_at$) AS sampleprep_date,
 		con.barcode AS tissue_prep_fluidx_id,
 		con.volume_si * 1000000 AS weight_mg,
-		wrkf_tp.downstream_protocol_tube AS downstream_protocol,
+		tube.tissue_prep_downstream_process AS downstream_protocol,
+		tube.tissue_prep_disruption_method AS disruption_method,
 		tube.tissue_prep_type,
 		tube.sciops_protocol_required,
 		t.lab_work_category AS labwork_category_sts,
@@ -90,6 +92,7 @@ legacy_tissue_preps AS (
 		con.barcode AS tissue_prep_fluidx_id,
 		con.volume_si * 1000000 AS weight_mg,
 		tpr.downstream_protocol,
+		''::varchar AS disruption_method,
 		tube.tissue_prep_type,
 		tube.sciops_protocol_required,
 		t.lab_work_category AS labwork_category_sts,
