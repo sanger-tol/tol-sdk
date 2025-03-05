@@ -38,6 +38,7 @@ from ..core.operator import (
     Counter,
     Cursor,
     DetailGetter,
+    Enricher,
     GroupStatter,
     ListGetter,
     PageGetter,
@@ -60,6 +61,7 @@ class ElasticDataSource(
     DataSource,
     Cursor,
     DetailGetter,
+    Enricher,
     PageGetter,
     ListGetter,
     Aggregator,
@@ -257,8 +259,12 @@ class ElasticDataSource(
 
         # This tries to find an object in the DataSource that matches
         # the candidate key. If found it will perform the update
+
         index = self.__get_index(object_type)
         for (_, update) in updates:
+            # We can get the candidate key dynamically from the actual update
+            if 'candidate_key_func' in kwargs:
+                candidate_key = kwargs['candidate_key_func'](update)
             self.es.update_by_query(
                 index=index,
                 body=self._action_for_update(index,

@@ -10,6 +10,7 @@ from .cursor import Cursor
 from .declare import get_operator_member_names  # noqa
 from .deleter import Deleter
 from .detail_getter import DetailGetter
+from .enricher import Enricher
 from .enum import OperatorMethod, RelationWriteMode, ReturnMode  # noqa
 from .group_statter import GroupStatter
 from .inserter import Inserter
@@ -28,6 +29,7 @@ ALL_OPERATORS = (
     Cursor,
     Deleter,
     DetailGetter,
+    Enricher,
     GroupStatter,
     Inserter,
     ListGetter,
