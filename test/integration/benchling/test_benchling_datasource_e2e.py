@@ -24,7 +24,16 @@ class TestBenchlingDataSourceE2E:
 
     can_update = ['tissue', 'tissue_prep']
 
-    @against_types(['tissue', 'consumables_lot', 'folder', 'worklist', 'storage'])
+    @against_types([
+        'tissue',
+        'consumables_lot',
+        'folder',
+        'worklist',
+        'storage',
+        '12x12_box',
+        'casm_well',
+        'casm_programme_id'
+    ])
     def test_get(self, object_type: str) -> None:
         """
         Gets a single object of specified type.
@@ -371,7 +380,7 @@ class TestBenchlingDataSourceE2E:
     ) -> str:
         """This used to be automatic but it would return computed fields.
         For now, just hard code an appropriate string field"""
-        if object_type == 'tissue':
+        if object_type in ['tissue']:
             return 'programme_id'
         if object_type == 'tissue_prep':
             return 'submission_id'
@@ -379,6 +388,12 @@ class TestBenchlingDataSourceE2E:
             return 'batch_lot_number'
         if object_type in ['folder', 'worklist', 'storage']:
             return 'name'
+        if benchling_ds.benchling_types[object_type] in ['box', 'plate', 'container']:
+            return 'barcode'
+        if benchling_ds.benchling_types[object_type] == 'assay_result':
+            return 'programme_id'
+        if object_type == 'casm_sample':
+            return 'programme_id_manual'
 
         # Else do it the way we did before
         attribute_types = benchling_ds.attribute_types[object_type]

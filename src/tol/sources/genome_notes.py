@@ -1,0 +1,60 @@
+# SPDX-FileCopyrightText: 2023 Genome Research Ltd.
+#
+# SPDX-License-Identifier: MIT
+
+import json
+import os
+
+from ..core import (
+    core_data_object
+)
+from ..google_sheets import (
+    GoogleSheetDataSource
+)
+
+
+def genome_notes():
+    gsds = GoogleSheetDataSource({
+        'client_secrets': json.loads(os.getenv('GOOGLE_CLIENT_SECRETS')),
+        'sheet_key': '1OwMsyI8a5WfQf2Y0LHM-SqJ17exjTLjjUDG-ig3aHw0',
+        'mappings': {
+            'genome_note': {
+                'worksheet_name': 'Published record',
+                'columns': {
+                    'id': {
+                        'heading': 'doi',
+                        'type': 'str'
+                    },
+                    'species_name': {
+                        'heading': 'Species',
+                        'type': 'str'
+                    },
+                    'tolid': {
+                        'heading': 'ToLID',
+                        'type': 'str'
+                    },
+                    'passed_pr': {
+                        'heading': 'Passed PR',
+                        'type': 'str'
+                    },
+                    'assembly_accession': {
+                        'heading': 'Accession number',
+                        'type': 'str'
+                    },
+                    'date_published': {
+                        'heading': 'Date published',
+                        'type': 'datetime'
+                    },
+                    'pmid': {
+                        'heading': 'PMID',
+                        'type': 'int'
+                    }
+
+                },
+                'header_row': 1,
+                'data_start_row': 2
+            }
+        }
+    })
+    core_data_object(gsds)
+    return gsds
