@@ -576,8 +576,6 @@ class TestEndToEnd:
         )
         assert len(first) == 1
         ret = first[0]
-        print(ret)
-        print(ret.attributes)
         assert ret.str_column == 'test_2'
         assert ret.int_column is None
         assert ret.datetime_column is None
@@ -688,6 +686,29 @@ class TestEndToEnd:
         assert len(fifth) == 1
         ret = fifth[0]
         assert ret.str_column is None
+        assert ret.int_column == 2
+        assert ret.datetime_column is None
+        assert ret.bool_column is None
+        assert ret.related_object is None
+        assert ret.list_column is None
+
+        update = (None, {
+            'str_column': 'Updated by function',
+            'int_column': 2,
+            'datetime_column': None,
+            'bool_column': None,
+            'related_object': None,
+            'list_column': None}
+        )
+        data_source.update('root', [update],
+                           candidate_key_func=lambda x: ['int_column'])
+        ds_sleep(5)
+        sixth = list(
+            data_source.get_by_ids('root', ['1'])
+        )
+        assert len(sixth) == 1
+        ret = sixth[0]
+        assert ret.str_column == 'Updated by function'
         assert ret.int_column == 2
         assert ret.datetime_column is None
         assert ret.bool_column is None

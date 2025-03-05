@@ -22,6 +22,7 @@ from ..core.operator import (
     Cursor,
     Deleter,
     DetailGetter,
+    Enricher,
     GroupStatter,
     Inserter,
     ListGetter,
@@ -53,6 +54,7 @@ class ApiDataSource(
     Cursor,
     Deleter,
     DetailGetter,
+    Enricher,
     GroupStatter,
     Inserter,
     PageGetter,
@@ -458,3 +460,11 @@ class ApiDataSource(
 
         operators = chain(*list(operator_dict.values()))
         return list(operators)
+
+    # We can't actually enrich as Updater is not implemented on this DataSource
+    def enrich(
+            self,
+            source_object_type: str,
+            source_objects: Iterable[DataObject],
+            target_object_type: str):
+        raise NotImplementedError()
