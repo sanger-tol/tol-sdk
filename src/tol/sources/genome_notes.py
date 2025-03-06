@@ -35,7 +35,7 @@ def genome_notes():
                     },
                     'passed_pr': {
                         'heading': 'Passed_PR',
-                        'type': 'str'
+                        'type': 'boolean'
                     },
                     'assembly_accession': {
                         'heading': 'Accession',
@@ -43,7 +43,8 @@ def genome_notes():
                     },
                     'date_published': {
                         'heading': 'Date_published',
-                        'type': 'datetime'
+                        'type': 'datetime',
+                        'dayfirst': True
                     },
                     'pmid': {
                         'heading': 'PMID',

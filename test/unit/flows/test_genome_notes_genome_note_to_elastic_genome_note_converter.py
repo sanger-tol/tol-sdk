@@ -77,7 +77,7 @@ class TestGenomeNotesGenomeNoteToElasticGenomeNoteConverter(TestCase):
             id_='Test1',
             type_='genome_note',
             attributes={
-                'passed_pr': 'YES',
+                'passed_pr': True,
                 'assembly_accession': 'assembly1',
                 'tolid': 'tolid1',
                 'another_attribute': 'another_value'
