@@ -470,23 +470,22 @@ def elastic():
                 'type': 'boolean',
                 'script': {
                     'source': """
-                        boolean isTolidNotBeenActioned = (
-                            !doc.containsKey('portaldb_date_topup_actioned') ||
-                            doc['portaldb_date_topup_actioned'].size() == 0 ||
-                            doc['portaldb_date_topup_actioned'].value == null
-                        );
+                        boolean isTolidNotBeenActioned = true;
+                        if (doc.containsKey('portaldb_date_topup_actioned') &&
+                            doc['portaldb_date_topup_actioned'].size() > 0 &&
+                            doc['portaldb_date_topup_actioned'].value != null) {
+                                isTolidNotBeenActioned = false;
+                            }
 
                         boolean isTolidActionedBeforeLastRun = false;
-                        if (doc.containsKey('mlwh_run_data_mlwh_run_complete_max') &&
+                         if (doc.containsKey('mlwh_run_data_mlwh_run_complete_max') &&
                             doc.containsKey('portaldb_date_topup_actioned') &&
                             doc['mlwh_run_data_mlwh_run_complete_max'].size() > 0 &&
                             doc['portaldb_date_topup_actioned'].size() > 0) {
-
-                            isTolidActionedBeforeLastRun =
-                                doc['portaldb_date_topup_actioned'].value.isBefore(
-                                doc['mlwh_run_data_mlwh_run_complete_max'].value);
-                        }
-
+                                isTolidActionedBeforeLastRun =
+                                    doc['portaldb_date_topup_actioned'].value.isBefore(
+                                    doc['mlwh_run_data_mlwh_run_complete_max'].value);
+                            }
                         emit(isTolidNotBeenActioned || isTolidActionedBeforeLastRun);
                     """
                 }
