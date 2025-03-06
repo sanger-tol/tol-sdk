@@ -34,15 +34,15 @@ def genome_notes():
                         'type': 'str'
                     },
                     'passed_pr': {
-                        'heading': 'Passed PR',
+                        'heading': 'Passed_PR',
                         'type': 'str'
                     },
                     'assembly_accession': {
-                        'heading': 'Accession number',
+                        'heading': 'Accession',
                         'type': 'str'
                     },
                     'date_published': {
-                        'heading': 'Date published',
+                        'heading': 'Date_published',
                         'type': 'datetime'
                     },
                     'pmid': {
