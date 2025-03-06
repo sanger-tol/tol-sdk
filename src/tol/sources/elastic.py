@@ -561,8 +561,6 @@ def elastic():
                             doc['tolid_species.calc_individual_exhausted_tolid_count'].value == 0)
                         );
 
-                        boolean
-
                         emit(
                             isAtLeastOneOtherIndividualAvailable &&
                             isSpeciesTopUpEqualsIndividualExhausted
