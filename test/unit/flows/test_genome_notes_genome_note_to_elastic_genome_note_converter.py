@@ -77,9 +77,10 @@ class TestGenomeNotesGenomeNoteToElasticGenomeNoteConverter(TestCase):
             id_='Test1',
             type_='genome_note',
             attributes={
-                'passed_pr': 'YES',
+                'passed_pr': True,
                 'assembly_accession': 'assembly1',
                 'tolid': 'tolid1',
+                'another_attribute': 'another_value'
             }
         )
         converteds = converter.convert(obj1)
@@ -87,7 +88,8 @@ class TestGenomeNotesGenomeNoteToElasticGenomeNoteConverter(TestCase):
         self.assertEqual('Test1', ret1.id)
         self.assertEqual('genome_note', ret1.type)
         self.assertEqual(ret1.attributes, {
-            'passed_pr': 'YES'
+            'passed_pr': True,
+            'another_attribute': 'another_value'
         })
         self.assertEqual(ret1.to_one_relationships['assembly'].id, 'assembly1')
         self.assertEqual(ret1.to_one_relationships['tolid'].id, 'tolid1')

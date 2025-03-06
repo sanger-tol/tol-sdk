@@ -115,7 +115,13 @@ class GoogleSheetDataSource(
         for attribute_name, attribute_value in attributes.items():
             if self.mappings[object_type]['columns'][attribute_name]['type'] == 'datetime' and \
                     attribute_value is not None and not isinstance(attribute_value, datetime):
-                attributes[attribute_name] = dateutil_parse(attribute_value)
+                dayfirst = self.mappings[object_type]['columns'][attribute_name].get(
+                    'dayfirst', False
+                )
+                attributes[attribute_name] = dateutil_parse(
+                    attribute_value,
+                    dayfirst=dayfirst
+                )
         return CoreDataObject(
             object_type,
             id_=attributes.pop('id', None),
