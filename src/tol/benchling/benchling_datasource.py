@@ -69,6 +69,12 @@ NATIVE_OBJECT_TYPES = {
     },
     'worklist_item': {
         'attributes': {'name': 'str'}
+    },
+    'transfer': {
+        'attributes': {
+            'source_entity_id': 'str',
+            'destination_container_id': 'str'
+        }
     }
 }
 BENCHLING_TYPE_SEARCH_WITH_SCHEMA_ID = [
@@ -248,6 +254,8 @@ class BenchlingDataSource(
             return self.benchling_interface.plates
         elif object_type in self.schemas['container'].keys():
             return self.benchling_interface.containers
+        elif 'transfer' == object_type:
+            return self.benchling_interface.containers
         else:
             match self.benchling_types[object_type]: # noqa E999
                 case 'folder':
@@ -258,8 +266,6 @@ class BenchlingDataSource(
                     return self.benchling_interface.locations
                 case 'assay_result':
                     return self.benchling_interface.assay_results
-                case 'transfer':
-                    return self.benchling_interface.containers
                 case _:
                     return self.benchling_interface.custom_entities
 
@@ -619,7 +625,7 @@ class BenchlingDataSource(
                 )
 
             return_key = 'customEntities'
-            if 'container' == object_type:
+            if object_type in self.schemas['container'].keys():
                 return_key = 'containers'
             elif 'transfer' == object_type:
                 return_key = 'destinationContainers'
