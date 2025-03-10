@@ -77,6 +77,9 @@ class TestActionsWithDataSources:
         sql_ds.data_object_factory.side_effect = self.__do_factory
         sql_ds.get_list.return_value = [self.__mock_action('123')]
         sql_ds.get_one.return_value = self.__mock_user('100')
+        prefect_ds.insert.return_value = [
+            self.__do_factory('flow_run', 'uuid123456', attributes={'name': 'fabulous_flamingo'})
+        ]
 
         response = client.post(
             '/run-action',
@@ -108,7 +111,8 @@ class TestActionsWithDataSources:
                 'additional': 'indeeeeed',
                 'ids': list('abc'),
                 'bool': True,
-                'answer': 42
+                'answer': 42,
+                'flow_run_name': 'fabulous_flamingo'
             }
         }
 
