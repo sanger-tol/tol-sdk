@@ -78,7 +78,11 @@ class TestActionsWithDataSources:
         sql_ds.get_list.return_value = [self.__mock_action('123')]
         sql_ds.get_one.return_value = self.__mock_user('100')
         prefect_ds.insert.return_value = [
-            self.__do_factory('flow_run', 'uuid123456', attributes={'name': 'fabulous_flamingo'})
+            self.__do_factory(
+                'flow_run',
+                'uuid123456',
+                attributes={'name': 'fabulous_flamingo'}
+            )
         ]
 
         response = client.post(
@@ -112,6 +116,7 @@ class TestActionsWithDataSources:
                 'ids': list('abc'),
                 'bool': True,
                 'answer': 42,
+                'flow_run_id': 'uuid123456',
                 'flow_run_name': 'fabulous_flamingo'
             }
         }
