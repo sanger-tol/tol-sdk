@@ -6,20 +6,12 @@ from __future__ import annotations
 
 from collections.abc import Iterable as IterableABC
 from dataclasses import dataclass
-from datetime import datetime
-from typing import Any, Iterator
+from typing import Iterator
 
-from sqlalchemy import (
-    CheckConstraint,
-    ForeignKey,
-    UniqueConstraint
-)
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import (
     Mapped,
-    declared_attr,
-    mapped_column,
-    relationship
+    mapped_column
 )
 
 from ..model import Model
