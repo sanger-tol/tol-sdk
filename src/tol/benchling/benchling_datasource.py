@@ -75,6 +75,9 @@ NATIVE_OBJECT_TYPES = {
             'source_entity_id': 'str',
             'destination_container_id': 'str'
         }
+    },
+    'assay_result': {
+        'attributes': {}
     }
 }
 BENCHLING_TYPE_SEARCH_WITH_SCHEMA_ID = [
@@ -105,20 +108,20 @@ BENCHLING_PARENT_TYPES_WITH_SCHEMAS = {
         'to_many': {}
     },
     'container': {
-        'attributes': {},
+        'attributes': {'barcode': 'str', 'parent_storage_id': 'str'},
         'to_one': {},
         'to_one_native': {},
         'to_many': {}
     },
     'box': {
-        'attributes': {'name': 'str', 'barcode': 'str'},
-        'to_one': {'parent_location': 'location'},
+        'attributes': {'barcode': 'str'},
+        'to_one': {'parent_storage_id': 'location'},
         'to_one_native': {},
         'to_many': {}
     },
     'plate': {
-        'attributes': {'name': 'str', 'barcode': 'str'},
-        'to_one': {'parent_location': 'location'},
+        'attributes': {'barcode': 'str'},
+        'to_one': {'parent_storage_id': 'location'},
         'to_one_native': {},
         'to_many': {}
     },
@@ -426,10 +429,25 @@ class BenchlingDataSource(
         benchling_package = self.__get_benchling_package(object_type)
 
         if hasattr(benchling_package, 'archive'):
-            benchling_package.archive(
-                object_ids,
-                reason=EntityArchiveReason.OTHER  # may need to change this
-            )
+            if (
+                object_type in self.schemas['box'].keys()
+                or object_type in self.schemas['plate'].keys()
+                or object_type in self.schemas['container'].keys()
+            ):
+                benchling_package.archive(
+                    object_ids,
+                    reason=EntityArchiveReason.OTHER,  # may need to change this
+                    should_remove_barcodes=True
+                )
+            elif object_type in self.schemas['assay_result'].keys():
+                benchling_package.archive(
+                    object_ids
+                )
+            else:
+                benchling_package.archive(
+                    object_ids,
+                    reason=EntityArchiveReason.OTHER  # may need to change this
+                )
         elif hasattr(benchling_package, 'delete'):
             for object_id in object_ids:
                 benchling_package.delete(object_id)
