@@ -367,7 +367,7 @@ class TestBenchlingDataSourceE2E:
     def test_folders(self, object_type: str) -> None:
         """
         Creates a folder, adds a tissue to it, and then removes the tissue from it.
-        ""'
+        """
 
         benchling_ds = benchling()
 
@@ -401,10 +401,10 @@ class TestBenchlingDataSourceE2E:
         # 'casm_sample_status'
     ])
     def test_assay_results_casm(self, object_type: str) -> None:
-        '''
+        """
         Retrieves a custom entity and attaches an assay result to it and
         then removes the assay result
-        '''
+        """
 
         benchling_ds = benchling()
         custom_entity = self.__get_example_object('casm_sample')
@@ -502,7 +502,7 @@ class TestBenchlingDataSourceE2E:
         object_type: str,
         benchling_ds: BenchlingDataSource
     ) -> str:
-        '''This used to be automatic but it would return computed fields.
+        """This used to be automatic but it would return computed fields.
         For now, just hard code an appropriate string field"""
         if object_type in ['tissue']:
             return 'programme_id'
