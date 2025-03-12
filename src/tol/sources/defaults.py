@@ -37,6 +37,9 @@ class Defaults:
     BOLD_URL = 'https://data.boldsystems.org'
     BOLD_API_PATH = '/api'
 
+    COPO_URL = 'https://copo-project.org'
+    COPO_API_PATH = '/api'
+
     JIRA_URL = 'https://jira.sanger.ac.uk'
 
     LABWHERE_URL = 'https://labwhere.psd.sanger.ac.uk'
