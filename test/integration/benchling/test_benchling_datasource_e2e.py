@@ -198,7 +198,7 @@ class TestBenchlingDataSourceE2E:
                         object_type=second_object_type
                     ),
                     str_key=second_str_key,
-                    parent_storage_id=f"{obj.id}:a{i}"
+                    parent_storage_id=f'{obj.id}:a{i}'
                 )
                 for i in range(1, 4)
             ]
@@ -213,13 +213,12 @@ class TestBenchlingDataSourceE2E:
                     second_str_key,
                     i2
                 )
-                assert obj2.parent_storage_id == f"{obj.id}:a{i2}"
+                assert obj2.parent_storage_id == f'{obj.id}:a{i2}'
 
             benchling_ds.delete(second_object_type, [obj.id for obj in second_res])
 
         # ---- Clean Up ----
         benchling_ds.delete(first_object_type, ids)
-
 
     @against_types(['tissue', 'folder'])
     def test_many_insert_update_delete_with_errors(self, object_type: str) -> None:
@@ -368,7 +367,7 @@ class TestBenchlingDataSourceE2E:
     def test_folders(self, object_type: str) -> None:
         """
         Creates a folder, adds a tissue to it, and then removes the tissue from it.
-        """
+        ""'
 
         benchling_ds = benchling()
 
@@ -402,10 +401,10 @@ class TestBenchlingDataSourceE2E:
         # 'casm_sample_status'
     ])
     def test_assay_results_casm(self, object_type: str) -> None:
-        """
+        '''
         Retrieves a custom entity and attaches an assay result to it and
         then removes the assay result
-        """
+        '''
 
         benchling_ds = benchling()
         custom_entity = self.__get_example_object('casm_sample')
@@ -503,7 +502,7 @@ class TestBenchlingDataSourceE2E:
         object_type: str,
         benchling_ds: BenchlingDataSource
     ) -> str:
-        """This used to be automatic but it would return computed fields.
+        '''This used to be automatic but it would return computed fields.
         For now, just hard code an appropriate string field"""
         if object_type in ['tissue']:
             return 'programme_id'
@@ -535,7 +534,7 @@ class TestBenchlingDataSourceE2E:
             str_key,
             counter,
             object_type: str,
-            string_override: str = "A"
+            string_override: str = 'A'
     ):
         if self._str_values is None:
             self._str_values = {}
@@ -551,13 +550,13 @@ class TestBenchlingDataSourceE2E:
         if 'barcode' == str_key:
             timestamp = int(time.time() * 1000)  # Current time in milliseconds
             unique_id = uuid.uuid4()
-            string_value = f"{timestamp}-{unique_id}"
+            string_value = f'{timestamp}-{unique_id}'
 
             self._str_values[object_type][str_key][counter] = string_value
 
         return string_value
 
-    def __get_string_value(self, object_type: str, str_key, counter, string_override: str = "A"):
+    def __get_string_value(self, object_type: str, str_key, counter, string_override: str = 'A'):
         string_value = string_override * counter
 
         if 'barcode' == str_key:

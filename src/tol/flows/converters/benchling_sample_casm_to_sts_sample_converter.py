@@ -5,7 +5,6 @@
 from datetime import datetime
 from typing import Any, Iterable
 
-from tol.sources.benchling import benchling
 from ...core import (
     DataObject,
     DataObjectToDataObjectOrUpdateConverter
