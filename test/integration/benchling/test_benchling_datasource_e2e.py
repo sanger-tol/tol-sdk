@@ -3,8 +3,8 @@
 # SPDX-License-Identifier: MIT
 
 import datetime
-import uuid
 import time
+import uuid
 
 from tol.benchling import BenchlingDataSource
 from tol.core import DataObject, DataSourceFilter, ErrorObject
