@@ -174,3 +174,7 @@ class ChainedConverter(Converter, Generic[In, Out]):
                 yield from converted
             else:
                 yield converted
+
+    # not ideal, but this is a workaround
+    def get_return_objects(self) -> Iterable[Out]:
+        return []
