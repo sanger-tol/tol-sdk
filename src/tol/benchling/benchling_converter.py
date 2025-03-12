@@ -47,6 +47,7 @@ from benchling_sdk.models import (
 from caseconverter import snakecase
 
 from tol.core.core_converter import In
+
 from ..core import Converter, DataDict, DataObject, DataSourceError, DataSourceUpdate
 
 if typing.TYPE_CHECKING:
