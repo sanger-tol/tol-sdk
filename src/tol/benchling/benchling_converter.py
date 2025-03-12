@@ -6,9 +6,7 @@ from __future__ import annotations
 
 import datetime
 import typing
-
 from typing import Any, Iterable, Optional
-
 from uuid import uuid4
 
 from benchling_api_client.models.custom_entity_create import CustomEntityCreate
@@ -43,13 +41,12 @@ from benchling_sdk.models import (
     Measurement,
     MultipleContainersTransfer,
     Plate,
-    PlateCreate
+    PlateCreate,
 )
 
 from caseconverter import snakecase
 
 from tol.core.core_converter import In
-
 from ..core import Converter, DataDict, DataObject, DataSourceError, DataSourceUpdate
 
 if typing.TYPE_CHECKING:
