@@ -9,7 +9,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "tol-sdk"
 version = "1.4.12"
-description = "SDK for interaction with ToL services"
+description = "SDK for interaction with ToL, Sanger and external services"
 readme = "README.md"
 authors = [
     { name = "ToL Platforms Team", email = "tol-platforms@sanger.ac.uk" }
@@ -29,8 +29,7 @@ dependencies = [
   "setuptools == 69.0.3",
   "case-converter == 1.1.0",
   "Click == 8.1.7",
-  "more-itertools == 10.2.0",
-  "python-dotenv >= 1.0.1"
+  "more-itertools == 10.2.0"
 ]
 
 [project.optional-dependencies]
