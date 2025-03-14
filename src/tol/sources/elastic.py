@@ -374,7 +374,7 @@ def elastic():
                     """
                 }
             },
-            'calc_tolid_recollectable': {
+            'calc_species_recollectable': {
                 'type': 'boolean',
                 'script': {
                     'source': """
