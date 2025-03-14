@@ -22,7 +22,7 @@ class _MockDataSourceRelational(DataSource, Relational):
 
     @property
     def supported_types(self):
-        return ['assembly', 'genome_note', 'tolid']
+        return ['assembly', 'genome_note', 'tolid', 'species']
 
     @property
     def attribute_types(self):
@@ -33,7 +33,8 @@ class _MockDataSourceRelational(DataSource, Relational):
         rc_genome_note = RelationshipConfig()
         rc_genome_note.to_one = {
             'assembly': 'assembly',
-            'tolid': 'tolid'
+            'tolid': 'tolid',
+            'species': 'species'
         }
         return {'genome_note': rc_genome_note}
 
@@ -80,6 +81,7 @@ class TestGenomeNotesGenomeNoteToElasticGenomeNoteConverter(TestCase):
                 'passed_pr': True,
                 'assembly_accession': 'assembly1',
                 'tolid': 'tolid1',
+                'taxid': 123,
                 'another_attribute': 'another_value'
             }
         )
@@ -93,6 +95,7 @@ class TestGenomeNotesGenomeNoteToElasticGenomeNoteConverter(TestCase):
         })
         self.assertEqual(ret1.to_one_relationships['assembly'].id, 'assembly1')
         self.assertEqual(ret1.to_one_relationships['tolid'].id, 'tolid1')
+        self.assertEqual(ret1.to_one_relationships['species'].id, '123')
 
         with self.assertRaises(StopIteration):
             next(converteds)
