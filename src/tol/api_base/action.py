@@ -100,7 +100,7 @@ def action_blueprint(
         action: DataObject,
         flow_params: dict[str, Any],
         user_id: str
-    ) -> dict[str, str]:
+    ) -> tuple[str, str]:
 
         flow_name = action.flow_name
         flow_run = prefect_ds.data_object_factory(
@@ -123,10 +123,7 @@ def action_blueprint(
             )
         )[0]
 
-        return {
-            'id': inserted_run_data.id,
-            'name': inserted_run_data.name,
-        }
+        return inserted_run_data.id, inserted_run_data.name
 
     @bp.post('')
     def action():
@@ -164,7 +161,7 @@ def action_blueprint(
             'ids': ids
         }
 
-        flow_run = __insert_flow_run(
+        flow_run_id, flow_run_name = __insert_flow_run(
             action,
             flow_params,
             user_id
@@ -176,8 +173,8 @@ def action_blueprint(
             **params,
             **action_params,
             'ids': ids,
-            'flow_run_id': flow_run['id'],
-            'flow_run_name': flow_run['name']
+            'flow_run_id': flow_run_id,
+            'flow_run_name': flow_run_name
         }
 
         user_action = sql_ds.data_object_factory(
