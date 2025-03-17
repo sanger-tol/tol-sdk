@@ -2,12 +2,12 @@
 #
 # SPDX-License-Identifier: MIT
 
-FROM python:3.10
+FROM python:3.12
 
 WORKDIR /app
 
 # copy package files
-COPY setup.cfg pyproject.toml ./
+COPY pyproject.toml ./
 
 # create the stub directory
 RUN mkdir -p src/tol && touch src/tol/__init__.py

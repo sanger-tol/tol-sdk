@@ -18,7 +18,7 @@ class GenomeNotesGenomeNoteToElasticGenomeNoteConverter(
         attributes = {
             k: v
             for k, v in data_object.attributes.items()
-            if k not in ['tolid', 'assembly_accession']
+            if k not in ['taxid', 'tolid', 'assembly_accession']
         }
         to_one_relations = {
             'assembly': self._data_object_factory(
@@ -27,6 +27,10 @@ class GenomeNotesGenomeNoteToElasticGenomeNoteConverter(
             'tolid': self._data_object_factory(
                 'tolid',
                 data_object.tolid
+            ),
+            'species': self._data_object_factory(
+                'species',
+                str(data_object.taxid)
             )
         }
         ret = self._data_object_factory(
