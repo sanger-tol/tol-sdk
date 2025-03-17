@@ -22,7 +22,7 @@ from ..core import (
 @click.group()
 @click.option(
     '--env-file', default='.env.dev',
-    type=click.Path(exists=True), help='set a custom .env file'
+    type=click.Path(), help='set a custom .env file'
 )
 def cli(env_file):
     pass
@@ -321,7 +321,9 @@ def flow(ctx, filename):
               help='output type')
 @click.pass_context
 def data(ctx, source, operation, type_, filter_, fields, converter, output):
-    load_dotenv(ctx.parent.params['env_file'])
+    env_file = ctx.parent.params['env_file']
+    if os.path.exists(env_file):
+        load_dotenv(ctx.parent.params['env_file'])
     module = importlib.import_module(f'tol.sources.{source}')
     class_ = getattr(module, source)
     ds = class_()
