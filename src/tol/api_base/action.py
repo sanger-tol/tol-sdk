@@ -100,7 +100,7 @@ def action_blueprint(
         action: DataObject,
         flow_params: dict[str, Any],
         user_id: str
-    ) -> None:
+    ) -> tuple[str, str]:
 
         flow_name = action.flow_name
         flow_run = prefect_ds.data_object_factory(
@@ -116,10 +116,14 @@ def action_blueprint(
             }
         )
 
-        prefect_ds.insert(
-            'flow_run',
-            [flow_run]
-        )
+        inserted_run_data = list(
+            prefect_ds.insert(
+                'flow_run',
+                [flow_run]
+            )
+        )[0]
+
+        return inserted_run_data.id, inserted_run_data.name
 
     @bp.post('')
     def action():
@@ -147,12 +151,30 @@ def action_blueprint(
             else {}
         )
 
+        flow_params = {
+            'extra_params': {
+                **params,
+                **action_params,
+            },
+            'user_id': user_id,
+            'object_type': object_type,
+            'ids': ids
+        }
+
+        flow_run_id, flow_run_name = __insert_flow_run(
+            action,
+            flow_params,
+            user_id
+        )
+
         user = sql_ds.get_one('user', user_id)
 
         user_action_params = {
             **params,
             **action_params,
             'ids': ids,
+            'flow_run_id': flow_run_id,
+            'flow_run_name': flow_run_name
         }
 
         user_action = sql_ds.data_object_factory(
@@ -168,22 +190,6 @@ def action_blueprint(
             }
         )
         sql_ds.insert('user_action', [user_action])
-
-        flow_params = {
-            'extra_params': {
-                **params,
-                **action_params,
-            },
-            'user_id': user_id,
-            'object_type': object_type,
-            'ids': ids
-        }
-
-        __insert_flow_run(
-            action,
-            flow_params,
-            user_id
-        )
 
         return {'success': True}, 200
 
