@@ -468,8 +468,6 @@ class StsSampleToCasmBenchlingConverterFactory:
                     if 'naming_strategy' in object_map and object_map['naming_strategy']:
                         object_attributes['naming_strategy'] = object_map['naming_strategy']
 
-                    print(object_attributes)
-
                     yield self._data_object_factory(
                         factory.destination_object_type,
                         sample.id,
