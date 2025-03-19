@@ -374,6 +374,31 @@ def elastic():
                     """
                 }
             },
+            'calc_species_recollectable': {
+                'type': 'boolean',
+                'script': {
+                    'source': """
+                        boolean isSpeciesNotBeenMarked = (
+                            !doc.containsKey('portaldb_date_marked_for_recollection') ||
+                            doc['portaldb_date_marked_for_recollection'].size() == 0 ||
+                            doc['portaldb_date_marked_for_recollection'].value == null
+                        );
+
+                        boolean isSpeciesMarkedBeforeRecollected = false;
+                        if (doc.containsKey('sts_sample_sts_submit_date_max') &&
+                            doc.containsKey('portaldb_date_marked_for_recollection') &&
+                            doc['sts_sample_sts_submit_date_max'].size() > 0 &&
+                            doc['portaldb_date_marked_for_recollection'].size() > 0) {
+
+                            isSpeciesMarkedBeforeRecollected =
+                                doc['portaldb_date_marked_for_recollection'].value.isBefore(
+                                doc['sts_sample_sts_submit_date_max'].value);
+                        }
+
+                        emit(isSpeciesNotBeenMarked || isSpeciesMarkedBeforeRecollected);
+                    """
+                }
+            },
         },
         'specimen': {
             'calc_coverage_post_run': RuntimeFields.math(
