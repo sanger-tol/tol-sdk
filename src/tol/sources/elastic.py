@@ -439,6 +439,11 @@ def elastic():
                 'type': 'boolean',
                 'script': {
                     'source': """
+                        boolean isTolidAbandoned = (
+                            doc.containsKey('portaldb_date_abandoned') &&
+                            doc['portaldb_date_abandoned'].size() > 0
+                        );
+
                         boolean isTotalSubmissionsGreaterThanZero = (
                             doc.containsKey('benchling_pacbio_sequencing_request_count') &&
                             doc['benchling_pacbio_sequencing_request_count'].size() > 0 &&
@@ -483,6 +488,7 @@ def elastic():
                                 }
                             }
                         emit(
+                            !isTolidAbandoned &&
                             isTotalSubmissionsGreaterThanZero &&
                             isOngoingSubmissionsEqualZero &&
                             !isTargetCoverageMet &&
@@ -520,39 +526,44 @@ def elastic():
                 'type': 'boolean',
                 'script': {
                     'source': """
+                        boolean isTolidAbandoned = (
+                            doc.containsKey('portaldb_date_abandoned') &&
+                            doc['portaldb_date_abandoned'].size() > 0
+                        );
+
                         boolean isIndividualExhausted = (
                             doc.containsKey(
-                            'benchling_sequencing_request_mlwh_volume_remaining_max'
+                            'calc_sequencing_request_calc_mlwh_volume_remaining_max'
                             ) && doc.containsKey(
-                            'benchling_extraction_benchling_volume_ul_max'
+                            'calc_extraction_calc_benchling_volume_ul_max'
                             ) && doc.containsKey(
-                            'benchling_tissue_prep_benchling_weight_mg_max'
+                            'calc_tissue_prep_calc_benchling_weight_mg_max'
                             ) && doc.containsKey(
-                            'sts_tolid.benchling_sample_benchling_remaining_weight_max'
+                            'sts_tolid.calc_sample_calc_benchling_remaining_weight_max'
                             ) && doc.containsKey(
                             'benchling_sample_count'
                             ) && doc.containsKey(
                             'sts_sample_count'
                             ) && doc[
-                            'benchling_sequencing_request_mlwh_volume_remaining_max'
+                            'calc_sequencing_request_calc_mlwh_volume_remaining_max'
                             ].size() > 0 && doc[
-                            'benchling_extraction_benchling_volume_ul_max'
+                            'calc_extraction_calc_benchling_volume_ul_max'
                             ].size() > 0 && doc[
-                            'benchling_tissue_prep_benchling_weight_mg_max'
+                            'calc_tissue_prep_calc_benchling_weight_mg_max'
                             ].size() > 0 && doc[
-                            'sts_tolid.benchling_sample_benchling_remaining_weight_max'
+                            'sts_tolid.calc_sample_calc_benchling_remaining_weight_max'
                             ].size() > 0 && doc[
                             'benchling_sample_count'
                             ].size() > 0 && doc[
                             'sts_sample_count'
                             ].size() > 0 && doc[
-                            'benchling_sequencing_request_mlwh_volume_remaining_max'
+                            'calc_sequencing_request_calc_mlwh_volume_remaining_max'
                             ].value == 0 &&
-                            doc['benchling_extraction_benchling_volume_ul_max'
+                            doc['calc_extraction_calc_benchling_volume_ul_max'
                             ].value == 0 && doc[
-                            'benchling_tissue_prep_benchling_weight_mg_max'
+                            'calc_tissue_prep_calc_benchling_weight_mg_max'
                             ].value == 0 && doc[
-                            'sts_tolid.benchling_sample_benchling_remaining_weight_max'
+                            'sts_tolid.calc_sample_calc_benchling_remaining_weight_max'
                             ].value == 0 && doc[
                             'benchling_sample_count'
                             ].value == doc[
@@ -561,7 +572,7 @@ def elastic():
                             );
 
                         emit(
-                            isIndividualExhausted
+                            !isTolidAbandoned && isIndividualExhausted
                         );
                     """
                 }
@@ -667,6 +678,22 @@ def elastic():
                     """
                 }
             },
+            'calc_benchling_remaining_weight': {
+                'type': 'double',
+                'script': {
+                    'source': """
+                    if (doc.containsKey('portaldb_date_abandoned') &&
+                        doc['portaldb_date_abandoned'].size() > 0) {
+                        emit(0.0);
+                    } else if (doc.containsKey('benchling_remaining_weight') &&
+                        doc['benchling_remaining_weight'].size() > 0) {
+                        emit(doc['benchling_remaining_weight'].value);
+                    } else {
+                        emit(Double.NaN);
+                    }
+                """
+                }
+            },
         },
 
         'sampleset': {
@@ -696,13 +723,64 @@ def elastic():
                 }
                 """
                 }
-            }
+            },
+            'calc_mlwh_volume_remaining': {
+                'type': 'double',
+                'script': {
+                    'source': """
+                    if (doc.containsKey('portaldb_date_abandoned') &&
+                        doc['portaldb_date_abandoned'].size() > 0) {
+                        emit(0.0);
+                    } else if (doc.containsKey('mlwh_volume_remaining') &&
+                        doc['mlwh_volume_remaining'].size() > 0) {
+                        emit(doc['mlwh_volume_remaining'].value);
+                    } else {
+                        emit(Double.NaN);
+                    }
+                """
+                }
+            },
         },
         'extraction': {
             'calc_dna_volume_remaining': RuntimeFields.coalesce([
                 'mlwh_volume_si_value',
                 'benchling_volume_ul',
-            ], return_type='double')
+            ], return_type='double'
+            ),
+            'calc_benchling_volume_ul': {
+                'type': 'double',
+                'script': {
+                    'source': """
+                    if (doc.containsKey('portaldb_date_abandoned') &&
+                        doc['portaldb_date_abandoned'].size() > 0) {
+                        emit(0.0);
+                    } else if (doc.containsKey('benchling_volume_ul') &&
+                        doc['benchling_volume_ul'].size() > 0) {
+                        emit(doc['benchling_volume_ul'].value);
+                    } else {
+                        emit(Double.NaN);
+                    }
+                """
+                }
+            },
+        },
+        'tissue_prep': {
+            'calc_benchling_weight_mg': {
+                'type': 'double',
+                'script': {
+                    'source': """
+                    if (doc.containsKey('portaldb_date_abandoned') &&
+                        doc['portaldb_date_abandoned'].size() > 0) {
+                        emit(0.0);
+                    } else if (doc.containsKey('benchling_weight_mg') &&
+                        doc['benchling_weight_mg'].size() > 0) {
+                        emit(doc['benchling_weight_mg'].value);
+                    } else {
+                        emit(Double.NaN);
+                    }
+                """
+                }
+            }
         },
     }
 
