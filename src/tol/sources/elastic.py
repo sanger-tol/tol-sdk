@@ -688,8 +688,6 @@ def elastic():
                     } else if (doc.containsKey('benchling_remaining_weight') &&
                         doc['benchling_remaining_weight'].size() > 0) {
                         emit(doc['benchling_remaining_weight'].value);
-                    } else {
-                        emit(Double.NaN);
                     }
                 """
                 }
@@ -734,8 +732,6 @@ def elastic():
                     } else if (doc.containsKey('mlwh_volume_remaining') &&
                         doc['mlwh_volume_remaining'].size() > 0) {
                         emit(doc['mlwh_volume_remaining'].value);
-                    } else {
-                        emit(Double.NaN);
                     }
                 """
                 }
@@ -757,8 +753,6 @@ def elastic():
                     } else if (doc.containsKey('benchling_volume_ul') &&
                         doc['benchling_volume_ul'].size() > 0) {
                         emit(doc['benchling_volume_ul'].value);
-                    } else {
-                        emit(Double.NaN);
                     }
                 """
                 }
@@ -775,8 +769,6 @@ def elastic():
                     } else if (doc.containsKey('benchling_weight_mg') &&
                         doc['benchling_weight_mg'].size() > 0) {
                         emit(doc['benchling_weight_mg'].value);
-                    } else {
-                        emit(Double.NaN);
                     }
                 """
                 }
