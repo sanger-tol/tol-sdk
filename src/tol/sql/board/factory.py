@@ -90,6 +90,7 @@ def create_board_models(
             default={},
             server_default='{}'  # noqa P103
         )
+        filter_pass_through: Mapped[bool] = mapped_column(nullable=False)
 
         user_id: Mapped[int] = mapped_column(
             ForeignKey(f'{user_table_name}.id'),
