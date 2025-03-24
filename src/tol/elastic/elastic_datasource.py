@@ -31,7 +31,8 @@ from ..core import (
     DataSource,
     DataSourceError,
     DataSourceFilter,
-    DefaultAttributeMetadata
+    DefaultAttributeMetadata,
+    GroupStatterDataLoader
 )
 from ..core.operator import (
     Aggregator,
@@ -274,15 +275,34 @@ class ElasticDataSource(
                 wait_for_completion=False
             )
 
-    def summarise_one(
+    def summarise(
         self,
         object_type: str,
-        object_id: str,
+        object_ids: Iterable[str],
         summary_objects: list[DataObject],
-        #TODO implement below!!!
-        **kwargs
     ) -> None:
-        pass
+
+        source_object_ids = list(object_ids)
+
+        filtered_summaries = [
+            s for s in summary_objects
+            if s.source_object_type == object_type
+        ]
+
+        for summary in filtered_summaries:
+            loader = GroupStatterDataLoader(
+                self,
+                self,
+                [],
+                summary.source_object_type,
+                summary.destination_object_type,
+                object_filters=summary.object_filters,
+                group_statter_group_by=summary.group_by,
+                group_statter_stats_fields=summary.stats_fields,
+                group_statter_stats=summary.stats,
+                source_object_ids=source_object_ids
+            )
+            loader.load(field_prefix=summary.prefix)
 
     def __format_cursor_response(
         self,

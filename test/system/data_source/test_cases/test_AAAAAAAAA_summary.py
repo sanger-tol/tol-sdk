@@ -61,7 +61,7 @@ class TestSummariseObject:
             }
         )
 
-        data_source.summarise_one(
+        data_source.summarise(
             'related',
             'related_summarise',
             [summary_obj]

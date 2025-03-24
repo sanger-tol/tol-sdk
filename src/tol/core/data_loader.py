@@ -305,7 +305,8 @@ class GroupStatterDataLoader(DefaultDataLoader):
                  object_filters: Optional[DataSourceFilter] = None,
                  group_statter_group_by: Optional[str] = None,
                  group_statter_stats_fields: Optional[List[str]] = [],
-                 group_statter_stats: Optional[List[str]] = ['min', 'max']):
+                 group_statter_stats: Optional[List[str]] = ['min', 'max'],
+                 source_object_ids: Iterable[str] | None = None):
         if convert_class is None:
             convert_class = self.get_default_converter()
         super().__init__(
