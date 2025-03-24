@@ -319,8 +319,22 @@ class GroupStatterDataLoader(DefaultDataLoader):
         self._group_statter_group_by = group_statter_group_by
         self._group_statter_stats_fields = group_statter_stats_fields
         self._group_statter_stats = group_statter_stats
+        self.__source_ids = list(source_object_ids)
 
     def _get_source_objects(self) -> Iterable:
+        if self.__source_ids and self._object_filters:
+            extra_filter = {
+                'in_list': {
+                    'value': self.__source_ids
+                }
+            }
+            #TODO is this ID or of root or related???
+            if self._object_filters.and_:
+                self._object_filters.and_['id'] = extra_filter
+            else:
+                self._object_filters.and_ = {
+                    'id': extra_filter
+                }
         source_objs = self._source.get_group_stats(
             self._source_object_type,
             group_by=self._group_statter_group_by,
