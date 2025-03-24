@@ -231,7 +231,8 @@ class TestBoardDelete:
                 'object_type': 'sample',
                 'base_url': 'local.lan',
                 'component_type': 'table',
-                'widget_type': 'idk this is a test'
+                'widget_type': 'idk this is a test',
+                'filter_pass_through': False
             }
 
         elif type_ == 'zone':
