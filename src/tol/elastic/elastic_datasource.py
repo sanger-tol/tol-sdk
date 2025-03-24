@@ -274,6 +274,16 @@ class ElasticDataSource(
                 wait_for_completion=False
             )
 
+    def summarise_one(
+        self,
+        object_type: str,
+        object_id: str,
+        summary_objects: list[DataObject],
+        #TODO implement below!!!
+        **kwargs
+    ) -> None:
+        pass
+
     def __format_cursor_response(
         self,
         resp: dict[str, Any]

@@ -2,7 +2,10 @@
 #
 # SPDX-License-Identifier: MIT
 
-from tol.core import GroupStatterDataLoader
+from typing import Any
+from unittest.mock import create_autospec
+
+from tol.core import DataObject
 from tol.elastic import ElasticDataSource
 
 from ..dec import against
@@ -43,15 +46,46 @@ class TestSummariseObject:
             for i in range(1, 6)
         )
         data_source.upsert('root', root_objs)
-
         ds_sleep(3)
 
-        GroupStatterDataLoader(
-            data_source,
-            data_source,
-            [],
+        summary_obj = self.__summary_obj(
+            'summary_one',
+            {
+                'source_object_type': 'root',
+                'destination_object_type': 'related',
+                'object_filters': {},
+                'group_by': ['int_column'],
+                'stats_fields': ['int_column'],
+                'stats': ['min', 'max'],
+                'prefix': 'summarise_one',
+            }
+        )
+
+        data_source.summarise_one(
             'related',
-            'root',
-            'summary_test',
-            group_statter_group_by=['int_column']
-        ).load('')
+            'related_summarise',
+            [summary_obj]
+        )
+        ds_sleep(3)
+
+        rel_obj = data_source.get_one(
+            'related',
+            'related_summarise'
+        )
+
+    def __summary_obj(
+        self,
+        id_: str,
+        attributes: dict[str, Any]
+    ) -> DataObject:
+
+        mock_obj: DataObject = create_autospec(DataObject)
+
+        mock_obj.type = 'summary'
+        mock_obj.id = id_
+        mock_obj.attributes = attributes
+
+        for k, v in attributes.items():
+            setattr(mock_obj, k, v)
+
+        return mock_obj
