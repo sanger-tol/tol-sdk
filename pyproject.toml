@@ -8,7 +8,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "tol-sdk"
-version = "1.4.18"
+version = "1.4.19"
 description = "SDK for interaction with ToL, Sanger and external services"
 readme = "README.md"
 authors = [
@@ -24,12 +24,13 @@ classifiers = [
 urls = { "Homepage" = "https://gitlab.internal.sanger.ac.uk/tol/platforms/tol-sdk", "Jira" = "https://jira.sanger.ac.uk/secure/RapidBoard.jspa?rapidView=32&projectKey=TOLP" }
 dependencies = [
   "cachetools == 5.3.3",
-  "requests == 2.31.0",
-  "python_dateutil >= 2.8.1",
-  "setuptools == 69.0.3",
   "case-converter == 1.1.0",
   "Click == 8.1.7",
-  "more-itertools == 10.2.0"
+  "more-itertools == 10.2.0",
+  "python_dateutil >= 2.8.1",
+  "python-dotenv >= 1.0.1",
+  "requests == 2.31.0",
+  "setuptools == 69.0.3"
 ]
 
 [project.optional-dependencies]
