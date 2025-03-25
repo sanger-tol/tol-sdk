@@ -38,12 +38,6 @@ Columns in output table:
 14) sciops_protocol_required: [character] protocol required for HiC SciOps submissions.
 15) sts_labwork_category: [character] Reason for exporting tissue. Aid to interpret downstream protocol for legacy samples.
 16) tissue_prep_bnt_id: [character] Batches and Tracking legacy id.
-11) downstream_protocol: [text] downstream process the tissue prep was prepped for.
-12) disruption_method: [character] method used to disrupt the tissue.
-13) tissue_prep_type: [character] tissue type for HiC SciOps submissions.
-14) sciops_protocol_required: [character] protocol required for HiC SciOps submissions.
-15) sts_labwork_category: [character] Reason for exporting tissue. Aid to interpret downstream protocol for legacy samples.
-16) tissue_prep_bnt_id: [character] Batches and Tracking legacy id.
 */
 
 WITH tissue_preps AS (
