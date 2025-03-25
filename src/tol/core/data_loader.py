@@ -4,11 +4,14 @@
 
 from abc import ABC, abstractmethod
 from datetime import datetime
-from typing import Iterable, List, Optional, Type
+from itertools import chain, groupby
+from typing import Dict, Iterable, List, Optional, Type
 
 from more_itertools import peekable
 
 import pytz
+
+from tol.core import is_iter
 
 from .core_converter import Converter
 from .data_object import DataObject
@@ -26,15 +29,19 @@ class DataLoader(ABC):
 
 
 class DefaultDataLoader():
-    def __init__(self, source: DataSource, destination: DataSource,
-                 dependencies: List[Type['DataLoader']],
-                 source_object_type: str, destination_object_type: str,
-                 loader_name: str,
-                 audit: Optional[DataSource] = None,
-                 convert_class: Optional[DataObjectToDataObjectOrUpdateConverter] = None,
-                 object_filters: Optional[DataSourceFilter] = None,
-                 converter: Converter | None = None):
-
+    def __init__(
+        self,
+        source: DataSource,
+        destination: DataSource,
+        dependencies: List[Type['DataLoader']],
+        source_object_type: str,
+        loader_name: str,
+        destination_object_type: str = '',
+        audit: Optional[DataSource] = None,
+        convert_class: Optional[DataObjectToDataObjectOrUpdateConverter] = None,
+        object_filters: Optional[DataSourceFilter] = None,
+        converter: Converter | None = None
+    ):
         self._source = source
         self._destination = destination
         self._audit = audit
@@ -47,22 +54,103 @@ class DefaultDataLoader():
         self._object_filters = object_filters
 
     def load(
-            self,
-            field_prefix: str = None,
-            dry_run: bool = False,
-            candidate_key: Optional[List[str]] = ['id'],
-            method: str = 'upsert',
-            auto_exhaust: bool = True):
+        self,
+        field_prefix: str = None,
+        dry_run: bool = False,
+        candidate_key: Optional[List[str]] = ['id'],
+        method: str = 'upsert',
+        auto_exhaust: bool = True
+    ):
         if not dry_run:
             self._record_time('start')
 
         source_objs = self._get_source_objects()
         converted_objs = self._convert_objects(source_objs, self._converter)
+
+        if '' == self._destination_object_type:
+            returned_objects = self._process_data_loads(
+                candidate_key=candidate_key,
+                converted_objs=converted_objs,
+                dry_run=dry_run,
+                field_prefix=field_prefix,
+                method=method
+            )
+        else:
+            returned_objects = self._process_data_load(
+                candidate_key=candidate_key,
+                converted_objs=converted_objs,
+                dry_run=dry_run,
+                field_prefix=field_prefix,
+                method=method,
+                destination_object_type=self._destination_object_type
+            )
+
+        if not dry_run:
+            self._record_time('end')
+            converter_return_object = self._check_converter_for_returned_objects()
+            if is_iter(converter_return_object) and is_iter(returned_objects):
+                returned_objects = chain(
+                    returned_objects,
+                    converter_return_object
+                )
+
+            if is_iter(returned_objects) and auto_exhaust:
+                # Exhaust the returned objects
+                for _ in returned_objects:
+                    pass
+
+            return returned_objects
+
+    def _process_data_loads(
+        self,
+        converted_objs: Iterable[object],
+        candidate_key: List[str] = ['id'],
+        dry_run: bool = False,
+        field_prefix: str = None,
+        method: str = 'upsert'
+    ):
+        grouped_sorted_converted_objects = self._get_sorted_converted_objs(converted_objs)
+        all_returned_objects = iter([])
+
+        for key in grouped_sorted_converted_objects.keys():
+            returned_objects = self._process_data_load(
+                candidate_key=candidate_key,
+                converted_objs=grouped_sorted_converted_objects[key],
+                dry_run=dry_run,
+                field_prefix=field_prefix,
+                method=method,
+                destination_object_type=key
+            )
+
+            all_returned_objects = chain(all_returned_objects, returned_objects)
+
+        return all_returned_objects
+
+    def _get_sorted_converted_objs(
+            self,
+            converted_objs: Iterable[object]
+    ) -> Dict[str, Iterable[object]]:
+        sorted_objects = sorted(converted_objs, key=lambda obj: obj.type)
+
+        return {
+            key: list(group) for key, group in groupby(sorted_objects, key=lambda obj: obj.type)
+        }
+
+    def _process_data_load(
+        self,
+        destination_object_type: str,
+        converted_objs: Iterable[object],
+        candidate_key: List[str] = ['id'],
+        dry_run: bool = False,
+        field_prefix: str = None,
+        method: str = 'upsert'
+    ):
+        returned_objects = []
         if candidate_key == ['id']:
             if not dry_run:
                 insert_method = getattr(self._destination, method)
                 returned_objects = insert_method(
-                    self._destination_object_type,
+                    destination_object_type,
                     objects=converted_objs,
                     field_prefix=field_prefix
                 )
@@ -72,7 +160,7 @@ class DefaultDataLoader():
         else:
             if not dry_run:
                 returned_objects = self._destination.update(
-                    object_type=self._destination_object_type,
+                    object_type=destination_object_type,
                     updates=converted_objs,
                     candidate_key=candidate_key,
                     field_prefix=field_prefix
@@ -81,13 +169,7 @@ class DefaultDataLoader():
                 for converted_obj_id, converted_obj in converted_objs:
                     print(converted_obj_id, converted_obj)
 
-        if not dry_run:
-            self._record_time('end')
-            if returned_objects is not None and auto_exhaust:
-                # Exhaust the returned objects
-                for _ in returned_objects:
-                    pass
-            return returned_objects
+        return returned_objects
 
     def __get_converter(
         self,
@@ -118,18 +200,36 @@ class DefaultDataLoader():
             return
         new_datetime = datetime.now(pytz.UTC)
         CoreDataObject = self._audit.data_object_factory  # noqa N806
+
+        destination_object_type = 'multiple' \
+            if self._destination_object_type == '' else self._destination_object_type
+
         audit_obj = CoreDataObject(
             'data_load_event',
             id_=self._loader_name,
-            attributes={f'{start_or_end}_time': new_datetime,
-                        'source_object_type': self._source_object_type,
-                        'destination_object_type': self._destination_object_type}
+            attributes={
+                f'{start_or_end}_time': new_datetime,
+                'source_object_type': self._source_object_type,
+                'destination_object_type': destination_object_type
+            }
         )
         self._audit.upsert('data_load_event', [audit_obj])
 
     def _convert_objects(self, objs: Iterable, _converter):
         converted_objects = _converter.convert_iterable(objs)
+
         return converted_objects
+
+    def _check_converter_for_returned_objects(self):
+        return_objects = self._converter.get_return_objects()
+
+        if not 0 == len(return_objects):
+            for return_object in return_objects:
+                return_object.attributes['retrieved'] = True
+
+            return iter(return_objects)
+
+        return None
 
 
 class GroupStatterDataLoader(DefaultDataLoader):

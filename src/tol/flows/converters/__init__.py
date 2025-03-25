@@ -22,8 +22,10 @@ from .elastic_sample_to_sts_sample_converter import ElasticSampleToStsSampleConv
 from .elastic_sequencing_request_to_sts_sequencing_request_converter import ElasticSequencingRequestToStsSequencingRequestConverter  # noqa F401
 from .elastic_species_to_sts_species_converter import ElasticSpeciesToStsSpeciesConverter  # noqa F401
 from .elastic_tolid_to_elastic_curation_update_converter import ElasticTolidToElasticCurationUpdateConverter  # noqa F401
+from .elastic_tolid_to_elastic_genome_note_update_converter import ElasticTolidToElasticGenomeNoteUpdateConverter  # noqa F401
 from .elastic_tolid_to_elastic_sample_update_converter import ElasticTolidToElasticSampleUpdateConverter  # noqa F401
 from .gap_assembly_to_elastic_assembly_converter import GapAssemblyToElasticAssemblyConverter  # noqa F401
+from .genome_notes_genome_note_to_elastic_genome_note_converter import GenomeNotesGenomeNoteToElasticGenomeNoteConverter  # noqa F401
 from .goat_taxon_to_elastic_species_converter import GoatTaxonToElasticSpeciesConverter  # noqa F401
 from .grit_issue_to_elastic_curation_converter import GritIssueToElasticCurationConverter  # noqa F401
 from .labwhere_location_to_elastic_sample_update_converter import LabwhereLocationToElasticSampleUpdateConverter  # noqa F401
@@ -42,3 +44,4 @@ from .tolid_specimen_to_elastic_tolid_converter import TolidSpecimenToElasticTol
 from .tolqc_data_to_elastic_run_data_converter import TolqcDataToElasticRunDataConverter  # noqa F401
 from .tolqc_sample_to_elastic_sequencing_request_converter import TolqcSampleToElasticSequencingRequestConverter  # noqa F401
 from .tolqc_species_to_elastic_species_converter import TolqcSpeciesToElasticSpeciesConverter  # noqa F401
+from .sts_sample_to_casm_benchling_converter import StsSampleToCasmBenchlingConverterFactory # noqa F401

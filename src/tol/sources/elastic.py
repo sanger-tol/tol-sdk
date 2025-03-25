@@ -110,11 +110,15 @@ def elastic():
                        'tolid_species': 'species'}
     rc_tolid.to_many = {
         'benchling_tissue_preps': 'tissue-prep',
-        'grit_curations': 'curation'
+        'grit_curations': 'curation',
+        'gap_assemblies': 'assembly',
+        'gn_genome_notes': 'genome_note'
     }
     rc_tolid.foreign_keys = {
         'benchling_tissue_preps': 'benchling_tolid.id',
-        'grit_curations': 'grit_tolid.id'
+        'grit_curations': 'grit_tolid.id',
+        'gap_assemblies': 'gap_tolid.id',
+        'gn_genome_notes': 'gn_tolid.id'
     }
 
     rc_specimen = RelationshipConfig()
@@ -137,12 +141,16 @@ def elastic():
     rc_species.to_many = {'sts_samples': 'sample',
                           'benchling_samples': 'sample',
                           'benchling_tissue_preps': 'tissue_prep',
-                          'grit_curations': 'curation'}
+                          'grit_curations': 'curation',
+                          'gap_assemblies': 'assembly',
+                          'gn_genome_notes': 'genome_note'}
     rc_species.foreign_keys = {
         'sts_samples': 'sts_species.id',
         'benchling_samples': 'benchling_species.id',
         'benchling_tissue_preps': 'benchling_species.id',
-        'grit_curations': 'grit_species.id'
+        'grit_curations': 'grit_species.id',
+        'gap_assemblies': 'gap_species.id',
+        'gn_genome_notes': 'gn_species.id'
     }
 
     rc_tissue_prep = RelationshipConfig()
@@ -165,6 +173,18 @@ def elastic():
     rc_curation.to_one = {'grit_species': 'species',
                           'grit_tolid': 'tolid'}
 
+    rc_assembly = RelationshipConfig()
+    rc_assembly.to_one = {'gap_species': 'species'}
+    rc_assembly.to_many = {'gn_genome_notes': 'genome_note'}
+    rc_assembly.foreign_keys = {'gn_genome_notes': 'gn_assembly.id'}
+
+    rc_genome_note = RelationshipConfig()
+    rc_genome_note.to_one = {
+        'gn_assembly': 'assembly',
+        'gn_species': 'species',
+        'gn_tolid': 'tolid'
+    }
+
     relationship_config = {'run_data': rc_run_data,
                            'sequencing_request': rc_sequencing_request,
                            'extraction': rc_extraction,
@@ -175,7 +195,9 @@ def elastic():
                            'specimen': rc_specimen,
                            'species': rc_species,
                            'tissue_prep': rc_tissue_prep,
-                           'curation': rc_curation}
+                           'curation': rc_curation,
+                           'assembly': rc_assembly,
+                           'genome_note': rc_genome_note}
 
     runtime_fields = {
         'species': {
@@ -575,8 +597,8 @@ def elastic():
                         List requiredFields = [
                             'sts_tubeid.keyword',
                             'sts_species.sts_scientific_name.keyword',
-                            'sts_species.id',
-                            'sts_specimen.id',
+                            'sts_species.id.keyword',
+                            'sts_specimen.id.keyword',
                             'sts_organism_part.keyword',
                             'sts_lifestage.keyword',
                             'sts_preservation_approach.keyword',
@@ -585,7 +607,7 @@ def elastic():
                             'sts_programme.keyword',
                             'sts_biosample_accession.keyword',
                             'sts_submit_date',
-                            'sts_sampleset.id',
+                            'sts_sampleset.id.keyword',
                             'sts_project.keyword',
                             'sts_species.sts_taxon_group.keyword',
                             'sts_species.sts_genome_size',
