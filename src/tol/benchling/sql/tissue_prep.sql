@@ -52,7 +52,11 @@ WITH tissue_preps AS (
 		tp.name$ AS eln_tissue_prep_name,
 		DATE(tp.created_at$) AS sampleprep_date,
 		con.barcode AS tissue_prep_fluidx_id,
-		con.volume_si * 1000000 AS weight_mg,
+		CASE
+			WHEN con.archive_purpose$ IN ('Retired', 'Expended') THEN 0 -- Retired or expended tissue preps have a weight of 0
+			WHEN loc.name = 'SciOps ToL Lab' THEN 0 -- Tissue preps sent to LRES have a weight of 0
+			ELSE con.volume_si * 1000000
+		END AS weight_mg,
 		tube.tissue_prep_downstream_process AS downstream_protocol,
 		tube.tissue_prep_disruption_method AS disruption_method,
 		tube.tissue_prep_type,
@@ -68,6 +72,8 @@ WITH tissue_preps AS (
 		ON wrkf_tp.tissue_prep_tube_id = con.id
 	LEFT JOIN tube$raw AS tube
 		ON con.id = tube.id
+	LEFT JOIN location$raw AS loc
+		ON tube.location_id$ = loc.id
 	LEFT JOIN project$raw AS proj
 		ON tp.project_id$ = proj.id
 	LEFT JOIN folder$raw AS f
@@ -90,7 +96,11 @@ legacy_tissue_preps AS (
 		tp.name$ AS eln_tissue_prep_name,
 		DATE(tp.created_at$) AS sampleprep_date,
 		con.barcode AS tissue_prep_fluidx_id,
-		con.volume_si * 1000000 AS weight_mg,
+		CASE
+			WHEN con.archive_purpose$ IN ('Retired', 'Expended') THEN 0 -- Retired or expended tissue preps have a weight of 0
+			WHEN loc.name = 'SciOps ToL Lab' THEN 0 -- Tissue preps sent to LRES have a weight of 0
+			ELSE con.volume_si * 1000000 
+		END AS weight_mg,
 		tpr.downstream_protocol,
 		''::varchar AS disruption_method,
 		tube.tissue_prep_type,
@@ -108,6 +118,8 @@ legacy_tissue_preps AS (
 		ON cc.container_id = con.id
 	LEFT JOIN tube$raw AS tube
 		ON con.id = tube.id
+	LEFT JOIN location$raw AS loc
+		ON tube.location_id$ = loc.id
 	LEFT JOIN project$raw AS proj
 		ON tp.project_id$ = proj.id
 	LEFT JOIN folder$raw AS f
