@@ -26,11 +26,15 @@ def genome_notes():
                         'type': 'str'
                     },
                     'species_name': {
-                        'heading': 'Species',
+                        'heading': 'species',
                         'type': 'str'
                     },
+                    'taxid': {
+                        'heading': 'taxid',
+                        'type': 'int'
+                    },
                     'tolid': {
-                        'heading': 'ToLID',
+                        'heading': 'tolid',
                         'type': 'str'
                     },
                     'passed_pr': {

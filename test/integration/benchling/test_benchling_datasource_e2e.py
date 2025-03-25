@@ -3,6 +3,8 @@
 # SPDX-License-Identifier: MIT
 
 import datetime
+import time
+import uuid
 
 from tol.benchling import BenchlingDataSource
 from tol.core import DataObject, DataSourceFilter, ErrorObject
@@ -21,6 +23,7 @@ class TestBenchlingDataSourceE2E:
     standard `Operator` methods, and only confirm
     existence/non-existence.
     """
+    _str_values = None
 
     can_update = ['tissue', 'tissue_prep']
 
@@ -63,7 +66,7 @@ class TestBenchlingDataSourceE2E:
 
     # We should add 'storage' to the list but the test user has insufficient privileges
     # to test location types
-    @against_types(['tissue', 'tissue_prep', 'folder'])
+    @against_types(['tissue', 'tissue_prep', 'folder', 'casm_96_well_plate'])
     def test_many_insert_update_delete(self, object_type: str) -> None:
         """
         Inserts several `DataObject` instances of specified type,
@@ -84,7 +87,7 @@ class TestBenchlingDataSourceE2E:
             self.__create_test_object(
                 object_type,
                 benchling_ds,
-                string_value='A' * i,
+                string_value=self.__populate_string_value(str_key, i, object_type),
                 str_key=str_key
             )
             for i in range(1, 4)
@@ -104,13 +107,12 @@ class TestBenchlingDataSourceE2E:
         # they all have the right value for `str_key`
         for i, obj in enumerate(res, start=1):
             str_val = getattr(obj, str_key)
-            assert str_val == 'A' * i
+            assert str_val == self.__get_string_value(object_type, str_key, i)
 
         # get their new ID's
         ids = [
             r.id for r in res
         ]
-
         expected_str_val = 'A'
         if object_type in self.can_update:
             expected_str_val = 'CBA'
@@ -121,7 +123,12 @@ class TestBenchlingDataSourceE2E:
                     (
                         id_,
                         {
-                            str_key: expected_str_val * i
+                            str_key: self.__populate_string_value(
+                                str_key,
+                                i,
+                                object_type,
+                                expected_str_val
+                            )
                         }
                     )
                     for i, id_ in enumerate(ids, start=1)
@@ -141,11 +148,77 @@ class TestBenchlingDataSourceE2E:
             assert new_obj.type == object_type
             assert new_obj.id == id_
             str_val = getattr(new_obj, str_key)
-            assert str_val == expected_str_val * i
+            assert str_val == self.__get_string_value(object_type, str_key, i, expected_str_val)
             # Assert that any required relations are filled
             self.__assert_relations_filled(new_obj, benchling_ds)
 
         benchling_ds.delete(object_type, [obj.id for obj in new_objs])
+
+    @against_types([
+        '12x12_box:casm_tube'
+    ])
+    def test_many_insert_delete_storage_layers(self, object_type: str) -> None:
+        benchling_ds = benchling()
+        first_object_type, second_object_type = object_type.split(':', 1)
+        first_str_key = self.__find_string_key(first_object_type, benchling_ds)
+        second_str_key = self.__find_string_key(second_object_type, benchling_ds)
+
+        # ---- Create First Objects in Batch ----
+        first_objs = [
+            self.__create_test_object(
+                first_object_type,
+                benchling_ds,
+                string_value=self.__populate_string_value(first_str_key, i, first_object_type),
+                str_key=first_str_key
+            )
+            for i in range(1, 4)
+        ]
+
+        # Insert in a single batch call
+        res = list(benchling_ds.insert(first_object_type, first_objs))
+        assert len(res) == 3
+        ids = [r.id for r in res]
+
+        # Confirm inserted values in one loop
+        for i, obj in enumerate(res, start=1):
+            assert getattr(obj, first_str_key) == self.__get_string_value(
+                first_object_type,
+                first_str_key,
+                i
+            )
+
+            # ---- Create Second Objects Using First Object IDs ----
+            second_objs = [
+                self.__create_test_object(
+                    second_object_type,
+                    benchling_ds,
+                    string_value=self.__populate_string_value(
+                        str_key=second_str_key,
+                        counter=i,
+                        object_type=second_object_type
+                    ),
+                    str_key=second_str_key,
+                    parent_storage_id=f'{obj.id}:a{i}'
+                )
+                for i in range(1, 4)
+            ]
+
+            second_res = list(benchling_ds.insert(second_object_type, second_objs))
+            assert len(second_res) == 3
+
+            # Confirm inserted second objects
+            for i2, obj2 in enumerate(second_res, start=1):
+                assert getattr(obj2, second_str_key) == self.__get_string_value(
+                    second_object_type,
+                    second_str_key,
+                    i2
+                )
+                assert obj2.parent_storage_id == f'{obj.id}:a{i2}'
+
+            benchling_ds.delete(second_object_type, [obj.id for obj in second_res])
+
+        # ---- Clean Up ----
+        benchling_ds.delete(first_object_type, ids)
 
     @against_types(['tissue', 'folder'])
     def test_many_insert_update_delete_with_errors(self, object_type: str) -> None:
@@ -323,6 +396,54 @@ class TestBenchlingDataSourceE2E:
         assert refetched_entity.folder is not None
         assert refetched_entity.folder.id == folder.id
 
+    @against_types([
+        'casm_programme_id',
+        # 'casm_sample_status'
+    ])
+    def test_assay_results_casm(self, object_type: str) -> None:
+        """
+        Retrieves a custom entity and attaches an assay result to it and
+        then removes the assay result
+        """
+
+        benchling_ds = benchling()
+        custom_entity = self.__get_example_object('casm_sample')
+
+        str_key = self.__find_string_key(
+            object_type,
+            benchling_ds
+        )
+        # create the objects
+        objs = [
+            self.__create_test_object(
+                object_type,
+                benchling_ds,
+                string_value='A' * i,
+                str_key=str_key
+            )
+            for i in range(1, 4)
+        ]
+
+        for obj in objs:
+            obj.attributes['sample_id'] = custom_entity.id
+
+        res = list(
+            benchling_ds.insert(
+                object_type,
+                objs
+            )
+        )
+
+        # there should be 3
+        assert len(res) == 3
+
+        # get their new ID's
+        for r in res:
+            assert r.type == 'assay_result'
+            assert r.id is not None
+
+        benchling_ds.delete(object_type, [obj.id for obj in res])
+
     def __get_example_object(self, object_type: str) -> DataObject:
         benchling_ds = benchling()
         f = DataSourceFilter()
@@ -333,6 +454,9 @@ class TestBenchlingDataSourceE2E:
         if object_type == 'tissue_prep':
             # A specific tissue prep
             return benchling_ds.get_one('tissue_prep', 'bfi_ZNh4kTQZ')
+        if object_type == 'location':
+            # A specific storage location used for testing
+            return benchling_ds.get_one('storage', 'loc_9rnbkEzo')
         objs = benchling_ds.get_list(object_type, object_filters=f)
         return next(objs)
 
@@ -405,6 +529,41 @@ class TestBenchlingDataSourceE2E:
 
         raise Exception('no `str` key was found.')
 
+    def __populate_string_value(
+            self,
+            str_key,
+            counter,
+            object_type: str,
+            string_override: str = 'A'
+    ):
+        if self._str_values is None:
+            self._str_values = {}
+
+        if object_type not in self._str_values:
+            self._str_values[object_type] = {}
+
+        if str_key not in self._str_values[object_type]:
+            self._str_values[object_type][str_key] = {}
+
+        string_value = string_override * counter
+
+        if 'barcode' == str_key:
+            timestamp = int(time.time() * 1000)  # Current time in milliseconds
+            unique_id = uuid.uuid4()
+            string_value = f'{timestamp}-{unique_id}'
+
+            self._str_values[object_type][str_key][counter] = string_value
+
+        return string_value
+
+    def __get_string_value(self, object_type: str, str_key, counter, string_override: str = 'A'):
+        string_value = string_override * counter
+
+        if 'barcode' == str_key:
+            string_value = self._str_values[object_type][str_key][counter]
+
+        return string_value
+
     def __create_test_object(
         self,
         object_type: str,
@@ -413,7 +572,8 @@ class TestBenchlingDataSourceE2E:
         str_key: str = None,
         int_value: int = 1,
         float_value: float = 1.0,
-        datetime_value: datetime.datetime = datetime.datetime(2021, 1, 1)
+        datetime_value: datetime.datetime = datetime.datetime(2021, 1, 1),
+        parent_storage_id: str | None = None
     ) -> str:
         """Creates test data for an example object"""
         atts = {}
@@ -445,8 +605,11 @@ class TestBenchlingDataSourceE2E:
                     atts[att] = float_value
                 if att_type == 'datetime':
                     atts[att] = datetime_value
-        if object_type in benchling_ds.relationship_config and \
-                benchling_ds.relationship_config[object_type].to_one is not None:
+
+        if (
+            object_type in benchling_ds.relationship_config
+            and benchling_ds.relationship_config[object_type].to_one is not None
+        ):
             for rel, rel_type in benchling_ds.relationship_config[object_type].to_one.items():
                 if isinstance(rel_type, list):
                     rel_type = rel_type[0]
@@ -455,6 +618,10 @@ class TestBenchlingDataSourceE2E:
         # Explicitly set the string key
         if str_key is not None:
             atts[str_key] = string_value
+
+        # Explicitly set the parent_storage_id
+        if parent_storage_id is not None:
+            atts['parent_storage_id'] = parent_storage_id
         return benchling_ds.data_object_factory(
             object_type,
             None,

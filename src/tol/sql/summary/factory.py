@@ -81,6 +81,11 @@ def create_summary_models(
             default=[]
         )
 
+        prefix: Mapped[str] = mapped_column(
+            nullable=False,
+            default=''
+        )
+
     return SummaryModels(
         summary=Summary,
     )

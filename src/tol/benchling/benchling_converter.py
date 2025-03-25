@@ -41,7 +41,7 @@ from benchling_sdk.models import (
     Measurement,
     MultipleContainersTransfer,
     Plate,
-    PlateCreate
+    PlateCreate,
 )
 
 from caseconverter import snakecase
@@ -57,7 +57,7 @@ BenchlingReturn = dict[str, dict[str, Any]]
 BenchlingObject = CustomEntity | Folder | Worklist | Box | Plate | Container | \
     AssayResultsBulkCreateRequest | Location | WorklistItem | AssayResult
 BenchlingObjectCreate = CustomEntityCreate | FolderCreate | WorklistCreate | WorklistItemCreate | \
-    BoxCreate | PlateCreate | ContainerCreate | LocationCreate
+    BoxCreate | PlateCreate | ContainerCreate | LocationCreate | Iterable[AssayResultCreate]
 BenchlingObjectBulkCreate = CustomEntityBulkCreate | MultipleContainersTransfer | AssayResultCreate
 BenchlingObjectUpdate = CustomEntityUpdate
 BenchlingObjectBulkUpdate = CustomEntityBulkUpdate
@@ -258,8 +258,9 @@ class BenchlingConverter(Converter[BenchlingReturn, DataObject]):
             attributes=attributes
         )
 
-    def __convert_container_result(self, input_):
+    def __convert_container_result(self, input_: Container):
         object_type = snakecase(input_.schema.name)
+
         attributes = input_.to_dict()
 
         return self.__ds.data_object_factory(
@@ -305,7 +306,15 @@ class BenchlingConverter(Converter[BenchlingReturn, DataObject]):
             in input_.get('fields', {}).items()
             if v['type'] == 'dropdown'
         }
-        return standard_attributes | dropdown_attributes
+
+        additional_attributes = {}
+        if 'barcode' in input_:
+            additional_attributes['barcode'] = input_.get('barcode')
+
+        if 'parentStorageId' in input_:
+            additional_attributes['parent_storage_id'] = input_.get('parentStorageId')
+
+        return standard_attributes | dropdown_attributes | additional_attributes
 
     def __convert_return_relationships(
             self,
@@ -445,6 +454,8 @@ class DataObjectConverter(Converter[DataObject, BenchlingWrite]):
             return self.__convert_plate(input_)
         if input_.type in self.__ds.schemas['container'].keys():
             return self.__convert_container(input_)
+        if input_.type in self.__ds.schemas['assay_result'].keys():
+            return self.__convert_insert_assay_result_bulk([input_], input_.type)
         if input_.type == 'folder':
             return self.__convert_folder(input_)
         if input_.type == 'worklist':
@@ -484,16 +495,24 @@ class DataObjectConverter(Converter[DataObject, BenchlingWrite]):
         )
 
     def __convert_box(self, input_: DataObject) -> BoxCreate:
+        parent_storage_id = input_.attributes.get('parent_storage_id') \
+            if input_.attributes.get('parent_storage_id', None) is not None \
+            else input_.parent_storage_id.id
+
         return BoxCreate(
             barcode=input_.attributes.get('barcode'),
-            parent_storage_id=input_.attributes.get('parent_storage_id'),
+            parent_storage_id=parent_storage_id,
             schema_id=self.__ds.schema_ids[input_.type]
         )
 
     def __convert_plate(self, input_: DataObject) -> PlateCreate:
+        parent_storage_id = input_.attributes.get('parent_storage_id') \
+            if input_.attributes.get('parent_storage_id', None) is not None \
+            else input_.parent_storage_id.id
+
         return PlateCreate(
             barcode=input_.attributes.get('barcode'),
-            parent_storage_id=input_.attributes.get('parent_storage_id'),
+            parent_storage_id=parent_storage_id,
             schema_id=self.__ds.schema_ids[input_.type]
         )
 
@@ -637,8 +656,7 @@ class DataObjectConverter(Converter[DataObject, BenchlingWrite]):
         for input_ in inputs:
             assay_fields = self.__convert_fields(
                 object_type,
-                input_.attributes,
-                input_.to_one_relationships
+                input_.attributes
             )
 
             return_iterable.append(

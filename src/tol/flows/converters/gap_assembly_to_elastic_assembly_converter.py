@@ -12,10 +12,6 @@ from ...core import (
 
 class GapAssemblyToElasticAssemblyConverter(
         DataObjectToDataObjectOrUpdateConverter):
-    def __init__(self, data_object_factory, gap_ds):
-        super().__init__(data_object_factory)
-        self.gap_ds = gap_ds
-
     def convert_details(self, assembly: DataObject) -> Iterable[DataObject]:
         return {
             d.id.replace(' ', '_').lower(): d.info

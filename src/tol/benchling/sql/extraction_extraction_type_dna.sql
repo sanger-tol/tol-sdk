@@ -24,16 +24,17 @@ Output: Table with cols:
 13) location: [character] Physical locationo of the DNA extraction. Freezer shelf.
 14) rack: [character] Physical locationo of the DNA extraction. Rack barcode.
 15) bnt_id: [character] Batches and Tracking legacy id.
-16) extraction_type: [character] dna.
-17) name: [character] Folder name.
-18) archive_purpose: [character] Reason for archiving the DNA extraction.
-19) nanodrop_concentration_ngul: [double] Concentration of DNA as measured by Nanodrop.
-20) qubit_concentration_ngul: [double] Concentration of DNA as measured by Qubit.
-21) yield_ng: [double] DNA yield after extraction.
-22) femto_date_code: [character] Femto date code.
-23) femto_description:[character] Categorical description of the femto pulse profile. 
-24) gqn_index: [character] Genomic Quality Number (GQN) index, calculated by the Femto software.
-25) extraction_qc_result: [character] QC result: Yes = Extraction passed; No = Extraction failed. 
+16) manual_vs_automatic: [character].
+17) extraction_type: [character] dna.
+18) name: [character] Folder name.
+19) archive_purpose: [character] Reason for archiving the DNA extraction.
+20) nanodrop_concentration_ngul: [double] Concentration of DNA as measured by Nanodrop.
+21) qubit_concentration_ngul: [double] Concentration of DNA as measured by Qubit.
+22) yield_ng: [double] DNA yield after extraction.
+23) femto_date_code: [character] Femto date code.
+24) femto_description:[character] Categorical description of the femto pulse profile. 
+25) gqn_index: [character] Genomic Quality Number (GQN) index, calculated by the Femto software.
+26) extraction_qc_result: [character] QC result: Yes = Extraction passed; No = Extraction failed. 
 
 NOTES: 
 1) Data types were casted explicitly to conserved the data type stored in BWH.
@@ -121,6 +122,7 @@ SELECT DISTINCT
     loc.name AS location,
     box.barcode AS rack,
     dna.bt_id AS bnt_id,
+	dna.manual_vs_automatic AS manual_vs_automatic,
     'dna'::varchar AS extraction_type,
     f.name, dna.archive_purpose$,
     latest_nanodrop_conc.nanodrop_concentration_ngul,
