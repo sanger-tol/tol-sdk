@@ -682,7 +682,7 @@ def elastic():
                 }
             },
             'calc_benchling_remaining_weight': {
-                'type': 'double',
+                'type': 'float',
                 'script': {
                     'source': """
                     if (doc.containsKey('portaldb_date_abandoned') &&
@@ -726,7 +726,7 @@ def elastic():
                 }
             },
             'calc_mlwh_volume_remaining': {
-                'type': 'double',
+                'type': 'float',
                 'script': {
                     'source': """
                     if (doc.containsKey('portaldb_date_abandoned') &&
@@ -747,7 +747,7 @@ def elastic():
             ], return_type='double'
             ),
             'calc_benchling_volume_ul': {
-                'type': 'double',
+                'type': 'float',
                 'script': {
                     'source': """
                     if (doc.containsKey('portaldb_date_abandoned') &&
@@ -763,7 +763,7 @@ def elastic():
         },
         'tissue_prep': {
             'calc_benchling_weight_mg': {
-                'type': 'double',
+                'type': 'float',
                 'script': {
                     'source': """
                     if (doc.containsKey('portaldb_date_abandoned') &&
