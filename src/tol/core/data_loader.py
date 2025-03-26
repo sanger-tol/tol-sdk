@@ -17,6 +17,7 @@ from .core_converter import Converter
 from .data_object import DataObject
 from .data_object_converter import DataObjectToDataObjectOrUpdateConverter
 from .datasource import DataSource
+from .datasource_error import DataSourceError
 from .datasource_filter import DataSourceFilter
 
 
@@ -296,17 +297,22 @@ class GroupStatterDataLoader(DefaultDataLoader):
                 yield ret1
         return DefaultGroupStatToDataObjectConverter
 
-    def __init__(self, source: DataSource, destination: DataSource,
-                 dependencies: List[Type['DataLoader']],
-                 source_object_type: str, destination_object_type: str,
-                 loader_name: str,
-                 audit: DataSource = None,
-                 convert_class: Optional[DataObjectToDataObjectOrUpdateConverter] = None,
-                 object_filters: Optional[DataSourceFilter] = None,
-                 group_statter_group_by: Optional[str] = None,
-                 group_statter_stats_fields: Optional[List[str]] = [],
-                 group_statter_stats: Optional[List[str]] = ['min', 'max'],
-                 source_object_ids: Iterable[str] | None = None):
+    def __init__(
+        self,
+        source: DataSource,
+        destination: DataSource,
+        dependencies: List[Type['DataLoader']],
+        source_object_type: str, destination_object_type: str,
+        loader_name: str,
+        audit: DataSource = None,
+        convert_class: Optional[DataObjectToDataObjectOrUpdateConverter] = None,
+        object_filters: Optional[DataSourceFilter] = None,
+        group_statter_group_by: Optional[str] = None,
+        group_statter_stats_fields: Optional[List[str]] = [],
+        group_statter_stats: Optional[List[str]] = ['min', 'max'],
+        source_object_ids: Iterable[str] | None = None,
+        relationship_name: str | None = None,
+    ):
         if convert_class is None:
             convert_class = self.get_default_converter()
         super().__init__(
@@ -319,7 +325,14 @@ class GroupStatterDataLoader(DefaultDataLoader):
         self._group_statter_group_by = group_statter_group_by
         self._group_statter_stats_fields = group_statter_stats_fields
         self._group_statter_stats = group_statter_stats
+
+        if source_object_ids is not None and relationship_name is None:
+            raise DataSourceError(
+                'No Relationship Name',
+                'A relationship name must be specified to limit by IDs.'
+            )
         self.__source_ids = list(source_object_ids) if source_object_ids is not None else None
+        self.__rel_name = relationship_name
 
     def _get_source_objects(self) -> Iterable:
         source_objs = self._source.get_group_stats(
@@ -327,8 +340,36 @@ class GroupStatterDataLoader(DefaultDataLoader):
             group_by=self._group_statter_group_by,
             stats_fields=self._group_statter_stats_fields,
             stats=self._group_statter_stats,
-            object_filters=self._object_filters)
+            object_filters=self.__get_object_filters(),
+        )
         return source_objs
+
+    def __get_object_filters(self) -> DataSourceFilter:
+        if not self.__source_ids:
+            return self._object_filters
+
+        key = f'{self.__rel_name}.id'
+        and_term = {
+            'in_list': {
+                'value': self.__source_ids
+            }
+        }
+
+        if not self._object_filters:
+            return DataSourceFilter(
+                and_={
+                    key: and_term
+                }
+            )
+
+        if self._object_filters.and_ is None:
+            self._object_filters.and_ = {
+                key: and_term
+            }
+        else:
+            self._object_filters.and_[key] = and_term
+
+        return self._object_filters
 
 
 class IdsDataLoader(DefaultDataLoader):
