@@ -25,16 +25,19 @@ Output: Table with cols:
 14) rack: [character] Physical locationo of the DNA extraction. Rack barcode.
 15) bnt_id: [character] Batches and Tracking legacy id.
 16) manual_vs_automatic: [character].
-17) extraction_type: [character] dna.
-18) name: [character] Folder name.
-19) archive_purpose: [character] Reason for archiving the DNA extraction.
-20) nanodrop_concentration_ngul: [double] Concentration of DNA as measured by Nanodrop.
-21) qubit_concentration_ngul: [double] Concentration of DNA as measured by Qubit.
-22) yield_ng: [double] DNA yield after extraction.
-23) femto_date_code: [character] Femto date code.
-24) femto_description:[character] Categorical description of the femto pulse profile. 
-25) gqn_index: [character] Genomic Quality Number (GQN) index, calculated by the Femto software.
-26) extraction_qc_result: [character] QC result: Yes = Extraction passed; No = Extraction failed. 
+17) extraction_protocol: [character] DNA extraction protocol as recorded at the time of extraction
+18) extraction_type: [character] dna.
+19) name: [character] Folder name.
+20) archive_purpose: [character] Reason for archiving the DNA extraction.
+21) nanodrop_concentration_ngul: [double] Concentration of DNA as measured by Nanodrop.
+22) dna_260_280_ratio: [double] Ratio of absorbance at 260:280nm as measured by spectrophotometer.
+23) dna_260_230_ratio: [double] Ratio of absorbance at 260:230nm as measured by spectrophotometer.
+24) qubit_concentration_ngul: [double] Concentration of DNA as measured by Qubit.
+25) yield_ng: [double] DNA yield after extraction.
+26) femto_date_code: [character] Femto date code.
+27) femto_description:[character] Categorical description of the femto pulse profile. 
+28) gqn_index: [character] Genomic Quality Number (GQN) index, calculated by the Femto software.
+29) extraction_qc_result: [character] QC result: Yes = Extraction passed; No = Extraction failed. 
 
 NOTES: 
 1) Data types were casted explicitly to conserved the data type stored in BWH.
@@ -46,7 +49,9 @@ NOTES:
 WITH latest_nanodrop_conc AS (    
     SELECT
         nanod.sample_id,
-        nanod.nanodrop_concentration_ngul
+        nanod.nanodrop_concentration_ngul,
+        nanod._260_280_ratio AS "dna_260_280_ratio",
+        nanod._260_230_ratio AS "dna_260_230_ratio"
     FROM nanodrop_measurements_v2$raw AS nanod
     WHERE nanod.created_at$ = (        
         SELECT MAX(sub.created_at$)
@@ -123,9 +128,12 @@ SELECT DISTINCT
     box.barcode AS rack,
     dna.bt_id AS bnt_id,
 	dna.manual_vs_automatic AS manual_vs_automatic,
+    dna.extraction_protocol,
     'dna'::varchar AS extraction_type,
     f.name, dna.archive_purpose$,
     latest_nanodrop_conc.nanodrop_concentration_ngul,
+    latest_nanodrop_conc.dna_260_280_ratio,
+    latest_nanodrop_conc.dna_260_230_ratio,
     latest_qubit_conc.qubit_concentration_ngul,
     latest_yield.yield AS yield_ng,
     latest_femto.femto_date_code,
