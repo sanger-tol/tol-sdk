@@ -66,10 +66,10 @@ class TestSummarise:
             }
         )
 
+        # summarise all `root` objects
         data_source.summarise(
             'root',
-            ['root_2_indeed'],
-            [summary_obj]
+            [summary_obj],
         )
         ds_sleep(5)
 
@@ -80,7 +80,7 @@ class TestSummarise:
         assert rel_obj.summarise_one_root_int_column_min == 1
         assert rel_obj.summarise_one_root_int_column_max == 5
 
-        # change the first one to be the biggest
+        # change the first `root` to be the biggest
         first_root_obj = data_source.get_one(
             'root',
             'root_1_indeed'
@@ -89,11 +89,11 @@ class TestSummarise:
         data_source.upsert('root', [first_root_obj])
         ds_sleep(5)
 
-        # re-summarise from just that one
+        # re-summarise from just the changed `root` instance
         data_source.summarise(
             'root',
-            ['root_1_indeed'],
-            [summary_obj]
+            [summary_obj],
+            object_ids=['root_1_indeed']
         )
         ds_sleep(5)
 

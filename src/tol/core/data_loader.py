@@ -5,7 +5,7 @@
 from abc import ABC, abstractmethod
 from datetime import datetime
 from itertools import chain, groupby
-from typing import Dict, Iterable, List, Optional, Type
+from typing import Any, Dict, Iterable, List, Optional, Type
 
 from more_itertools import peekable
 
@@ -310,8 +310,7 @@ class GroupStatterDataLoader(DefaultDataLoader):
         group_statter_group_by: Optional[str] = None,
         group_statter_stats_fields: Optional[List[str]] = [],
         group_statter_stats: Optional[List[str]] = ['min', 'max'],
-        source_object_ids: Iterable[str] | None = None,
-        relationship_name: str | None = None,
+        source_object_ids: Iterable[str] | None = None
     ):
         if convert_class is None:
             convert_class = self.get_default_converter()
@@ -326,13 +325,7 @@ class GroupStatterDataLoader(DefaultDataLoader):
         self._group_statter_stats_fields = group_statter_stats_fields
         self._group_statter_stats = group_statter_stats
 
-        if source_object_ids is not None and relationship_name is None:
-            raise DataSourceError(
-                'No Relationship Name',
-                'A relationship name must be specified to limit by IDs.'
-            )
         self.__source_ids = list(source_object_ids) if source_object_ids is not None else None
-        self.__rel_name = relationship_name
 
     def _get_source_objects(self) -> Iterable:
         source_objs = self._source.get_group_stats(
@@ -348,28 +341,63 @@ class GroupStatterDataLoader(DefaultDataLoader):
         if not self.__source_ids:
             return self._object_filters
 
-        key = f'{self.__rel_name}.id'
-        and_term = {
-            'in_list': {
-                'value': self.__source_ids
-            }
-        }
+        source_objs = list(
+            self._source.get_by_ids(
+                self._source_object_type,
+                self.__source_ids
+            )
+        )
+
+        if not source_objs:
+            return self._object_filters
+
+        rel_config = self._source.relationship_config.get(self._source_object_type)
+        if not rel_config:
+            return self._object_filters
+        rel_names = rel_config.to_one if rel_config.to_one else {}
+
+        and_extra = {}
+        for rel_name in rel_names:
+            and_extra |= self.__add_relationship_filter_term(
+                source_objs,
+                rel_name
+            )
 
         if not self._object_filters:
             return DataSourceFilter(
-                and_={
-                    key: and_term
-                }
+                and_=and_extra
             )
 
         if self._object_filters.and_ is None:
-            self._object_filters.and_ = {
-                key: and_term
-            }
+            self._object_filters.and_ = and_extra
         else:
-            self._object_filters.and_[key] = and_term
+            self._object_filters.and_ |= and_extra
 
         return self._object_filters
+
+    def __add_relationship_filter_term(
+        self,
+        source_objs: list[DataObject],
+        relationship_name: str
+    ) -> dict[str, Any]:
+
+        rel_objs = (
+            getattr(source_obj, relationship_name)
+            for source_obj in source_objs
+        )
+        rel_ids = [
+            rel_obj.id
+            for rel_obj in rel_objs
+            if rel_obj is not None
+        ]
+
+        return {
+            f'{relationship_name}.id': {
+                'in_list': {
+                    'value': rel_ids
+                }
+            }
+        }
 
 
 class IdsDataLoader(DefaultDataLoader):

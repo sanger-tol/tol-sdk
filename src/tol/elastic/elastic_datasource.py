@@ -279,11 +279,11 @@ class ElasticDataSource(
     def summarise(
         self,
         object_type: str,
-        object_ids: Iterable[str],
         summary_objects: list[DataObject],
+        object_ids: Iterable[str] | None = None,
     ) -> None:
 
-        source_object_ids = list(object_ids)
+        source_object_ids = list(object_ids) if object_ids else None
 
         filtered_summaries = [
             s for s in summary_objects
@@ -297,7 +297,7 @@ class ElasticDataSource(
                 [],
                 summary.source_object_type,
                 summary.destination_object_type,
-                'some random summariser name',  # TODO change
+                'Unmanaged summariser (no audit)',
                 object_filters=DataSourceFilter(
                     and_=summary.object_filters
                 ),
