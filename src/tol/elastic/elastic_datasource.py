@@ -236,6 +236,7 @@ class ElasticDataSource(
         field_prefix: str = '',
         **kwargs
     ) -> None:
+
         index = self.__get_index(object_type)
         (no_of_operations, no_of_errors) = \
             self.helpers.bulk(self.es,
@@ -799,7 +800,6 @@ class ElasticDataSource(
     ) -> Dict:
         index = self.__get_index(object_type)
         query = self._build_elasticsearch_query(object_type, object_filters)
-        import logging; logging.error(query)
         fields = list(self.runtime_fields[object_type].keys()) \
             if object_type in self.runtime_fields else None
         runtime_mappings = self.runtime_fields[object_type] \
@@ -812,7 +812,6 @@ class ElasticDataSource(
             fields=fields,
             runtime_mappings=runtime_mappings
         )
-        import logging; logging.error(resp)
         return resp['aggregations']
 
     def get_stats(
@@ -827,7 +826,6 @@ class ElasticDataSource(
             object_type=object_type,
             stats_fields=stats_fields,
             stats=stats)
-        import logging; logging.error(aggs)
         agg_results = self.get_aggregations(
             object_type=object_type,
             aggregations=aggs,
@@ -880,8 +878,6 @@ class ElasticDataSource(
                 after_key=after_key)
             if len(buckets) == 0:
                 break
-            import logging; logging.error(object_type)
-            import logging; logging.error(buckets)
             yield from buckets
 
     def __get_group_stats_page(
@@ -916,19 +912,16 @@ class ElasticDataSource(
             )
         if after_key is not None:
             aggregation['counts']['composite']['after'] = after_key
-        import logging; logging.error(aggregation)
         agg_page = self.get_aggregations(
             object_type,
             aggregations=aggregation,
             object_filters=object_filters)
-        import logging; logging.error(agg_page)
         after_key, buckets = self.__get_data_from_group_stats_aggregation(
             agg_page,
             object_type,
             stats_fields,
             stats
         )
-        import logging; logging.error(after_key); logging.error(buckets)
         return after_key, buckets
 
     def __get_aggs(

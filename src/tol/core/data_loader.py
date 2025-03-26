@@ -342,9 +342,7 @@ class GroupStatterDataLoader(DefaultDataLoader):
             stats_fields=self._group_statter_stats_fields,
             stats=self._group_statter_stats,
             object_filters=self._object_filters)
-        import logging; logging.error('lolll')
         for obj in source_objs:
-            import logging; logging.error(str(obj))
             yield obj
 
 

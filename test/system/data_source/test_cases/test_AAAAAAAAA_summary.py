@@ -53,8 +53,6 @@ class TestSummariseObject:
 
         ds_sleep(5)
 
-        stupid_obj = data_source.get_one('root', 'root_2_indeed'); import logging; logging.error(stupid_obj.related_object.attributes)
-
         summary_obj = self.__summary_obj(
             'summary_one',
             {
@@ -80,7 +78,7 @@ class TestSummariseObject:
             'related',
             'related_summarise'
         )
-        import logging; logging.error(rel_obj.attributes); assert False
+        import logging; logging.error(rel_obj.attributes); logging.error(rel_obj.root_int_column_min); assert False
 
     def __summary_obj(
         self,
