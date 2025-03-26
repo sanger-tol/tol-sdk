@@ -17,7 +17,6 @@ from .core_converter import Converter
 from .data_object import DataObject
 from .data_object_converter import DataObjectToDataObjectOrUpdateConverter
 from .datasource import DataSource
-from .datasource_error import DataSourceError
 from .datasource_filter import DataSourceFilter
 
 
