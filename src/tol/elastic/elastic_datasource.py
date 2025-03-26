@@ -878,10 +878,10 @@ class ElasticDataSource(
                 stats=stats,
                 object_filters=object_filters,
                 after_key=after_key)
-            import logging; logging.error(object_type)
-            import logging; logging.error(buckets)
             if len(buckets) == 0:
                 break
+            import logging; logging.error(object_type)
+            import logging; logging.error(buckets)
             yield from buckets
 
     def __get_group_stats_page(
@@ -908,7 +908,6 @@ class ElasticDataSource(
                 },
             }
         }
-        import logging; logging.error(aggregation)
         if stats_fields is not None:
             aggregation['counts']['aggregations'] = self.__get_aggs(
                 object_type,
@@ -917,6 +916,7 @@ class ElasticDataSource(
             )
         if after_key is not None:
             aggregation['counts']['composite']['after'] = after_key
+        import logging; logging.error(aggregation)
         agg_page = self.get_aggregations(
             object_type,
             aggregations=aggregation,
