@@ -12,14 +12,14 @@ from ..dec import against
 from ..fixtures import elastic
 
 
-class TestSummariseObject:
+class TestSummarise:
     """
-    Tests `ElasticDataSource.summarise_object()`
+    Tests `ElasticDataSource.summarise()`
     for real `DataSource` instances.
     """
 
     @against(elastic)
-    def test_after_remove(
+    def test_summarise(
         self,
         data_source: ElasticDataSource,
         ds_sleep
@@ -66,7 +66,30 @@ class TestSummariseObject:
             }
         )
 
-        # make the 1st have the largest now
+        data_source.summarise(
+            'root',
+            ['root_2_indeed'],
+            [summary_obj]
+        )
+        ds_sleep(5)
+
+        rel_obj = data_source.get_one(
+            'related',
+            'related_summarise'
+        )
+        assert rel_obj.summarise_one_root_int_column_min == 1
+        assert rel_obj.summarise_one_root_int_column_max == 5
+
+        # change the first one to be the biggest
+        first_root_obj = data_source.get_one(
+            'root',
+            'root_1_indeed'
+        )
+        first_root_obj.int_column = 42
+        data_source.upsert('root', [first_root_obj])
+        ds_sleep(5)
+
+        # re-summarise from just that one
         data_source.summarise(
             'root',
             ['root_1_indeed'],
@@ -78,7 +101,8 @@ class TestSummariseObject:
             'related',
             'related_summarise'
         )
-        import logging; logging.error(rel_obj.attributes); logging.error(rel_obj.root_int_column_min); assert False
+        assert rel_obj.summarise_one_root_int_column_min == 2
+        assert rel_obj.summarise_one_root_int_column_max == 42
 
     def __summary_obj(
         self,
