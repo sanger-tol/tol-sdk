@@ -319,7 +319,7 @@ class GroupStatterDataLoader(DefaultDataLoader):
         self._group_statter_group_by = group_statter_group_by
         self._group_statter_stats_fields = group_statter_stats_fields
         self._group_statter_stats = group_statter_stats
-        self.__source_ids = list(source_object_ids)
+        self.__source_ids = list(source_object_ids) if source_object_ids is not None else None
 
     def _get_source_objects(self) -> Iterable:
         source_objs = self._source.get_group_stats(
