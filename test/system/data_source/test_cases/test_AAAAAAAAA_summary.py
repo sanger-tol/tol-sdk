@@ -41,6 +41,9 @@ class TestSummariseObject:
                 f'root_{i}_indeed',
                 {
                     'int_column': i
+                },
+                to_one={
+                    'related_object': rel_obj
                 }
             )
             for i in range(1, 6)
