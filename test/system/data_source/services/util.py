@@ -66,7 +66,6 @@ def elastic_datasource(
                     ).to_dict(),
                 },
                 'related': {
-                    #TODO is this right???
                     'summarise_one_root_int_column_min': {'type': 'double'},
                     'summarise_one_root_int_column_max': {'type': 'double'},
                 }
