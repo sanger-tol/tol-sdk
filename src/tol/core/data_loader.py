@@ -322,6 +322,7 @@ class GroupStatterDataLoader(DefaultDataLoader):
         self.__source_ids = list(source_object_ids)
 
     def _get_source_objects(self) -> Iterable:
+        #TODO - this is so brittle :(
         if self.__source_ids and self._object_filters:
             extra_filter = {
                 'in_list': {
@@ -329,19 +330,22 @@ class GroupStatterDataLoader(DefaultDataLoader):
                 }
             }
             #TODO is this ID or of root or related???
-            if self._object_filters.and_:
-                self._object_filters.and_['id'] = extra_filter
-            else:
-                self._object_filters.and_ = {
-                    'id': extra_filter
-                }
+            # if self._object_filters.and_:
+            #     self._object_filters.and_['id'] = extra_filter
+            # else:
+            #     self._object_filters.and_ = {
+            #         'id': extra_filter
+            #     }
         source_objs = self._source.get_group_stats(
             self._source_object_type,
             group_by=self._group_statter_group_by,
             stats_fields=self._group_statter_stats_fields,
             stats=self._group_statter_stats,
             object_filters=self._object_filters)
-        return source_objs
+        import logging; logging.error('lolll')
+        for obj in source_objs:
+            import logging; logging.error(str(obj))
+            yield obj
 
 
 class IdsDataLoader(DefaultDataLoader):

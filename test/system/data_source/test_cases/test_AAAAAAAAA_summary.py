@@ -40,7 +40,8 @@ class TestSummariseObject:
                 'root',
                 f'root_{i}_indeed',
                 {
-                    'int_column': i
+                    'int_column': i,
+                    'str_column': str(i)
                 },
                 to_one={
                     'related_object': rel_obj
@@ -49,7 +50,10 @@ class TestSummariseObject:
             for i in range(1, 6)
         )
         data_source.upsert('root', root_objs)
-        ds_sleep(3)
+
+        ds_sleep(5)
+
+        stupid_obj = data_source.get_one('root', 'root_2_indeed'); import logging; logging.error(stupid_obj.related_object.attributes)
 
         summary_obj = self.__summary_obj(
             'summary_one',
@@ -57,24 +61,26 @@ class TestSummariseObject:
                 'source_object_type': 'root',
                 'destination_object_type': 'related',
                 'object_filters': {},
-                'group_by': ['int_column'],
+                'group_by': ['related_object.id'],
                 'stats_fields': ['int_column'],
                 'stats': ['min', 'max'],
                 'prefix': 'summarise_one',
             }
         )
 
+        # make the 1st have the largest now
         data_source.summarise(
-            'related',
-            'related_summarise',
+            'root',
+            ['root_1_indeed'],
             [summary_obj]
         )
-        ds_sleep(3)
+        ds_sleep(5)
 
         rel_obj = data_source.get_one(
             'related',
             'related_summarise'
         )
+        import logging; logging.error(rel_obj.attributes); assert False
 
     def __summary_obj(
         self,
