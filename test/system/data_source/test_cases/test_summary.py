@@ -68,8 +68,8 @@ class TestSummarise:
 
         # summarise all `root` objects
         data_source.summarise(
-            'root',
             [summary_obj],
+            object_type='root',
         )
         ds_sleep(5)
 
@@ -91,8 +91,8 @@ class TestSummarise:
 
         # re-summarise from just the changed `root` instance
         data_source.summarise(
-            'root',
             [summary_obj],
+            object_type='root',
             object_ids=['root_1_indeed']
         )
         ds_sleep(5)

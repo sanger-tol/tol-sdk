@@ -278,8 +278,8 @@ class ElasticDataSource(
 
     def summarise(
         self,
-        object_type: str,
         summary_objects: list[DataObject],
+        object_type: str | None = None,
         object_ids: Iterable[str] | None = None,
     ) -> None:
 
@@ -288,7 +288,7 @@ class ElasticDataSource(
         filtered_summaries = [
             s for s in summary_objects
             if s.source_object_type == object_type
-        ]
+        ] if object_type else summary_objects
 
         for summary in filtered_summaries:
             loader = GroupStatterDataLoader(
