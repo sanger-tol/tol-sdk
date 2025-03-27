@@ -31,7 +31,8 @@ from ..core import (
     DataSource,
     DataSourceError,
     DataSourceFilter,
-    DefaultAttributeMetadata
+    DefaultAttributeMetadata,
+    GroupStatterDataLoader
 )
 from ..core.operator import (
     Aggregator,
@@ -235,6 +236,7 @@ class ElasticDataSource(
         field_prefix: str = '',
         **kwargs
     ) -> None:
+
         index = self.__get_index(object_type)
         (no_of_operations, no_of_errors) = \
             self.helpers.bulk(self.es,
@@ -273,6 +275,38 @@ class ElasticDataSource(
                                              candidate_key),
                 wait_for_completion=False
             )
+
+    def summarise(
+        self,
+        summary_objects: list[DataObject],
+        object_type: str | None = None,
+        object_ids: Iterable[str] | None = None,
+    ) -> None:
+
+        source_object_ids = list(object_ids) if object_ids else None
+
+        filtered_summaries = [
+            s for s in summary_objects
+            if s.source_object_type == object_type
+        ] if object_type else summary_objects
+
+        for summary in filtered_summaries:
+            loader = GroupStatterDataLoader(
+                self,
+                self,
+                [],
+                summary.source_object_type,
+                summary.destination_object_type,
+                'Unmanaged summariser (no audit)',
+                object_filters=DataSourceFilter(
+                    and_=summary.object_filters
+                ),
+                group_statter_group_by=summary.group_by,
+                group_statter_stats_fields=summary.stats_fields,
+                group_statter_stats=summary.stats,
+                source_object_ids=source_object_ids
+            )
+            loader.load(field_prefix=summary.prefix)
 
     def __format_cursor_response(
         self,
