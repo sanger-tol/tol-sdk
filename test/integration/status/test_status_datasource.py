@@ -55,10 +55,10 @@ class TestStatusDataSource(TestCase):
         )
         assert total == 3
         assert len(ret) == 3
-        assert ret[0].id == 'https://portal.tol.sanger.ac.uk'
+        assert ret[0].id == 'https://portal-staging.tol.sanger.ac.uk'
         assert ret[0].status_code == 200
         assert ret[0].ok
-        assert ret[1].id == 'https://portal.tol.sanger.ac.uk/api/v1/nonsense'
+        assert ret[1].id == 'https://portal-staging.tol.sanger.ac.uk/api/v1/nonsense'
         assert ret[1].status_code == 404
         assert not ret[1].ok
         assert ret[2].id == 'http://nothing.tol.sanger.ac.uk'

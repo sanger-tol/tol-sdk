@@ -5,7 +5,7 @@
 from abc import ABC, abstractmethod
 from datetime import datetime
 from itertools import chain, groupby
-from typing import Dict, Iterable, List, Optional, Type
+from typing import Any, Dict, Iterable, List, Optional, Type
 
 from more_itertools import peekable
 
@@ -296,16 +296,21 @@ class GroupStatterDataLoader(DefaultDataLoader):
                 yield ret1
         return DefaultGroupStatToDataObjectConverter
 
-    def __init__(self, source: DataSource, destination: DataSource,
-                 dependencies: List[Type['DataLoader']],
-                 source_object_type: str, destination_object_type: str,
-                 loader_name: str,
-                 audit: DataSource = None,
-                 convert_class: Optional[DataObjectToDataObjectOrUpdateConverter] = None,
-                 object_filters: Optional[DataSourceFilter] = None,
-                 group_statter_group_by: Optional[str] = None,
-                 group_statter_stats_fields: Optional[List[str]] = [],
-                 group_statter_stats: Optional[List[str]] = ['min', 'max']):
+    def __init__(
+        self,
+        source: DataSource,
+        destination: DataSource,
+        dependencies: List[Type['DataLoader']],
+        source_object_type: str, destination_object_type: str,
+        loader_name: str,
+        audit: DataSource = None,
+        convert_class: Optional[DataObjectToDataObjectOrUpdateConverter] = None,
+        object_filters: Optional[DataSourceFilter] = None,
+        group_statter_group_by: Optional[str] = None,
+        group_statter_stats_fields: Optional[List[str]] = [],
+        group_statter_stats: Optional[List[str]] = ['min', 'max'],
+        source_object_ids: Iterable[str] | None = None
+    ):
         if convert_class is None:
             convert_class = self.get_default_converter()
         super().__init__(
@@ -319,14 +324,79 @@ class GroupStatterDataLoader(DefaultDataLoader):
         self._group_statter_stats_fields = group_statter_stats_fields
         self._group_statter_stats = group_statter_stats
 
+        self.__source_ids = list(source_object_ids) if source_object_ids is not None else None
+
     def _get_source_objects(self) -> Iterable:
         source_objs = self._source.get_group_stats(
             self._source_object_type,
             group_by=self._group_statter_group_by,
             stats_fields=self._group_statter_stats_fields,
             stats=self._group_statter_stats,
-            object_filters=self._object_filters)
+            object_filters=self.__get_object_filters(),
+        )
         return source_objs
+
+    def __get_object_filters(self) -> DataSourceFilter:
+        if not self.__source_ids:
+            return self._object_filters
+
+        source_objs = list(
+            self._source.get_by_ids(
+                self._source_object_type,
+                self.__source_ids
+            )
+        )
+
+        if not source_objs:
+            return self._object_filters
+
+        rel_config = self._source.relationship_config.get(self._source_object_type)
+        if not rel_config:
+            return self._object_filters
+        rel_names = rel_config.to_one if rel_config.to_one else {}
+
+        and_extra = {}
+        for rel_name in rel_names:
+            and_extra |= self.__add_relationship_filter_term(
+                source_objs,
+                rel_name
+            )
+
+        if not self._object_filters:
+            return DataSourceFilter(
+                and_=and_extra
+            )
+
+        if self._object_filters.and_ is None:
+            self._object_filters.and_ = and_extra
+        else:
+            self._object_filters.and_ |= and_extra
+
+        return self._object_filters
+
+    def __add_relationship_filter_term(
+        self,
+        source_objs: list[DataObject],
+        relationship_name: str
+    ) -> dict[str, Any]:
+
+        rel_objs = (
+            getattr(source_obj, relationship_name)
+            for source_obj in source_objs
+        )
+        rel_ids = [
+            rel_obj.id
+            for rel_obj in rel_objs
+            if rel_obj is not None
+        ]
+
+        return {
+            f'{relationship_name}.id': {
+                'in_list': {
+                    'value': rel_ids
+                }
+            }
+        }
 
 
 class IdsDataLoader(DefaultDataLoader):

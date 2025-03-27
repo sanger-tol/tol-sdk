@@ -42,7 +42,7 @@ def get_prefix() -> str:
 
 
 def elastic_datasource(
-    class_: ElasticDataSource = ElasticDataSource
+    class_: type[ElasticDataSource] = ElasticDataSource
 ) -> ElasticDataSource:
 
     rc_root = RelationshipConfig()
@@ -63,7 +63,11 @@ def elastic_datasource(
                         field_type='boolean',
                         dependencies=['bool_column'],
                         function_body="emit(!doc['bool_column'].value)"
-                    ).to_dict()
+                    ).to_dict(),
+                },
+                'related': {
+                    'summarise_one_root_int_column_min': {'type': 'double'},
+                    'summarise_one_root_int_column_max': {'type': 'double'},
                 }
             }
         }
