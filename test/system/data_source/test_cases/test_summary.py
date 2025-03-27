@@ -66,11 +66,8 @@ class TestSummarise:
             }
         )
 
-        # summarise all `root` objects
-        data_source.summarise(
-            [summary_obj],
-            object_type='root',
-        )
+        # summarise all
+        data_source.summarise([summary_obj])
         ds_sleep(5)
 
         rel_obj = data_source.get_one(
