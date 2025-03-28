@@ -62,7 +62,7 @@ class ElasticSampleToBoldSampleConverter(
                 if data_object.sts_COUNTRY_OF_COLLECTION is not None else '',
             'province/state': '',
             'coord':
-                f'{data_object.sts_latitude},data_object.sts_longitude'
+                f'{data_object.sts_latitude},{data_object.sts_longitude}'
                 if data_object.sts_latitude is not None
                 and data_object.sts_longitude is not None else '',
             'elev': '',
