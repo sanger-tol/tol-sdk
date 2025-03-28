@@ -28,12 +28,12 @@ class ElasticSampleToBoldSampleConverter(
         else:
             project_code = ''
         upd_codes = {
-            'NHMG':'BNHMG',
-            'CARM':'BCARM',
-            'CAMP':'SCAMP',
-            'EWTA':'BEWTA',
-            'NTDB':'BNTDB',
-            'FMED':'BFMED'
+            'NHMG': 'BNHMG',
+            'CARM': 'BCARM',
+            'CAMP': 'SCAMP',
+            'EWTA': 'BEWTA',
+            'NTDB': 'BNTDB',
+            'FMED': 'BFMED'
         }
         if project_code in upd_codes.keys():
             project_code = upd_codes[project_code]
@@ -62,9 +62,9 @@ class ElasticSampleToBoldSampleConverter(
                 if data_object.sts_COUNTRY_OF_COLLECTION is not None else '',
             'province/state': '',
             'coord':
-                f'{data_object.sts_latitude},data_object.sts_longitude' 
-                if data_object.sts_latitude is not None and 
-                data_object.sts_longitude is not None else '',
+                f'{data_object.sts_latitude},data_object.sts_longitude'
+                if data_object.sts_latitude is not None
+                and data_object.sts_longitude is not None else '',
             'elev': '',
             'elev_accuracy': '',
             'collection_date_end': '',
