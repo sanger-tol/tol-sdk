@@ -23,42 +23,52 @@ class ElasticSampleToBoldSampleConverter(
             loc = 'dummy'
         if data_object.sts_gal_name is None:
             loc = ''
+        if data_object.sts_rackid is not None:
+            project_code = data_object.sts_rackid.split('_')[0]
+        else:
+            project_code = ''
+        upd_codes = {
+            'NHMG':'BNHMG',
+            'CARM':'BCARM',
+            'CAMP':'SCAMP',
+            'EWTA':'BEWTA',
+            'NTDB':'BNTDB',
+            'FMED':'BFMED'
+        }
+        if project_code in upd_codes.keys():
+            project_code = upd_codes[project_code]
         attributes = {
-            'projectcode':
-                data_object.sts_rackid.split('_')[0]
-                if data_object.sts_rackid is not None else '',
+            'bold_recordset_code_arr': project_code,
             'sampleid':
                 data_object.sts_specimen.id
                 if data_object.sts_specimen is not None else '',
             'fieldid': '',
-            'institutionstoring': 'Wellcome Sanger Institute',
+            'inst': 'Wellcome Sanger Institute',
             'phylum': 'Arthropoda',
             'class': '',
             'order': '',
-            'extrainfo': loc,
+            'short_note': loc,
             'notes': '',
-            'voucherstatus': '',
-            'tissuedescriptor':
+            'voucher_type': '',
+            'tissue_type':
                 ' | '.join(data_object.sts_organism_part)
                 if data_object.sts_organism_part is not None else '',
             'collectors': self.__extract_names_from_contributors(data_object.sts_CONTRIBUTORS),
-            'collectiondate':
+            'collection_date_start':
                 data_object.sts_col_date.strftime('%Y-%m-%d')
                 if data_object.sts_col_date is not None else '',
-            'countryocean':
+            'country/ocean':
                 data_object.sts_COUNTRY_OF_COLLECTION.title()
                 if data_object.sts_COUNTRY_OF_COLLECTION is not None else '',
-            'stateprovince': '',
-            'lat':
-                data_object.sts_latitude
-                if data_object.sts_latitude is not None else '',
-            'lon':
-                data_object.sts_longitude
-                if data_object.sts_longitude is not None else '',
+            'province/state': '',
+            'coord':
+                f'{data_object.sts_latitude},data_object.sts_longitude' 
+                if data_object.sts_latitude is not None and 
+                data_object.sts_longitude is not None else '',
             'elev': '',
-            'elevationprecision': '',
-            'collectiondateaccuracy': '',
-            'samplingprotocol':
+            'elev_accuracy': '',
+            'collection_date_end': '',
+            'sampling_protocol':
                 data_object.sts_COLLECTION_METHOD.replace('_', ' ').title()
                 if data_object.sts_COLLECTION_METHOD is not None else '',
         }
