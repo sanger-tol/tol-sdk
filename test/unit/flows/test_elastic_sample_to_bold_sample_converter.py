@@ -106,27 +106,26 @@ class TestElasticSampleToBoldSampleConverter(TestCase):
         self.assertEqual('1234', ret1.id)
         self.assertEqual(obj1.type, ret1.type)
         self.assertEqual(ret1.attributes, {
-            'projectcode': 'GAL',
+            'bold_recordset_code_arr': 'GAL',
             'sampleid': 'specimen1',
             'fieldid': '',
-            'institutionstoring': 'Wellcome Sanger Institute',
+            'inst': 'Wellcome Sanger Institute',
             'phylum': 'Arthropoda',
             'class': '',
             'order': '',
-            'extrainfo': 'GENOME ACQUISITION LABORATORY - GAL',
+            'short_note': 'GENOME ACQUISITION LABORATORY - GAL',
             'notes': '',
-            'voucherstatus': '',
-            'tissuedescriptor': 'LEG | ARM',
+            'voucher_type': '',
+            'tissue_type': 'LEG | ARM',
             'collectors': 'Person One, Person Two',
-            'collectiondate': '2024-01-01',
-            'countryocean': 'United Kingdom',
-            'stateprovince': '',
-            'lat': '1.23456',
-            'lon': '54.321123',
+            'collection_date_start': '2024-01-01',
+            'country/ocean': 'United Kingdom',
+            'province/state': '',
+            'coord': '1.23456,54.321123',
             'elev': '',
-            'elevationprecision': '',
-            'collectiondateaccuracy': '',
-            'samplingprotocol': 'Malaise Trap'
+            'elev_accuracy': '',
+            'collection_date_end': '',
+            'sampling_protocol': 'Malaise Trap'
         })
 
         with self.assertRaises(StopIteration):
@@ -137,27 +136,26 @@ class TestElasticSampleToBoldSampleConverter(TestCase):
         self.assertEqual('test2', ret1.id)
         self.assertEqual(obj1.type, ret1.type)
         self.assertEqual(ret1.attributes, {
-            'projectcode': '',
+            'bold_recordset_code_arr': '',
             'sampleid': '',
             'fieldid': '',
-            'institutionstoring': 'Wellcome Sanger Institute',
+            'inst': 'Wellcome Sanger Institute',
             'phylum': 'Arthropoda',
             'class': '',
             'order': '',
-            'extrainfo': '',
+            'short_note': '',
             'notes': '',
-            'voucherstatus': '',
-            'tissuedescriptor': '',
+            'voucher_type': '',
+            'tissue_type': '',
             'collectors': '',
-            'collectiondate': '',
-            'countryocean': '',
-            'stateprovince': '',
-            'lat': '',
-            'lon': '',
+            'collection_date_start': '',
+            'country/ocean': '',
+            'province/state': '',
+            'coord': '',
             'elev': '',
-            'elevationprecision': '',
-            'collectiondateaccuracy': '',
-            'samplingprotocol': ''
+            'elev_accuracy': '',
+            'collection_date_end': '',
+            'sampling_protocol': ''
         })
         with self.assertRaises(StopIteration):
             next(converteds)
