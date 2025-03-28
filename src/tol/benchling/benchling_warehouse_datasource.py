@@ -3,6 +3,7 @@
 # SPDX-License-Identifier: MIT
 
 import importlib.resources
+import itertools
 from typing import Dict, Iterable, List
 
 import psycopg2
@@ -81,12 +82,27 @@ class BenchlingWarehouseDataSource(DataSource, ListGetter):
         file_suffix = ''
         if object_filters is not None:
             if isinstance(object_filters.and_, dict):
-                if 'sequencing_platform' in object_filters.and_:
-                    file_suffix = '_sequencing_platform_' \
-                                  + object_filters.and_['sequencing_platform']['eq']['value']
-                elif 'extraction_type' in object_filters.and_:
-                    file_suffix = '_extraction_type_' \
-                                  + object_filters.and_['extraction_type']['eq']['value']
+                for field_name in ['sequencing_platform', 'extraction_type']:
+                    if field_name in object_filters.and_:
+                        # For an in_list, treat as multiple eq
+                        if 'in_list' in object_filters.and_[field_name]:
+                            return itertools.chain.from_iterable(
+                                self.get_list(
+                                    object_type,
+                                    DataSourceFilter(
+                                        and_={
+                                            field_name: {
+                                                'eq': {
+                                                    'value': val
+                                                }
+                                            }
+                                        }
+                                    )
+                                ) for val in object_filters.and_[field_name]['in_list']['value']
+                            )
+                        elif 'eq' in object_filters.and_[field_name]:
+                            file_suffix = '_' + field_name + '_' \
+                                          + object_filters.and_[field_name]['eq']['value']
             else:
                 raise DataSourceError('Filtering only on sequencing platform and extraction '
                                       'type currently supported on BenchlingDataSource')
