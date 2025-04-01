@@ -151,6 +151,7 @@ class MlwhDataSource(DataSource, DetailGetter, ListGetter):
                 ' IF(well_metrics.qc_seq_state_is_final = 1, true, false))'
             ),
             'cost_code': 'run.cost_code',
+            'pac_bio_library_tube_name': 'run.pac_bio_library_tube_name',
             'tag1_id': 'run.tag_identifier',
             'tag2_id': 'run.tag2_identifier',
             'library_id': 'run.pac_bio_library_tube_name',

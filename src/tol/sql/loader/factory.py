@@ -66,13 +66,12 @@ def create_loader_models(
 
         object_filters: Mapped[dict] = mapped_column(
             JSONB,
-            nullable=False,
-            default={}
+            nullable=True
         )
 
         prefix: Mapped[str] = mapped_column(nullable=False, default='')
         convert_class: Mapped[str] = mapped_column(nullable=True)
-        candidate_key: Mapped[str] = mapped_column(nullable=True)
+        candidate_key: Mapped[dict] = mapped_column(JSONB, nullable=True)
         date_last_run: Mapped[datetime] = mapped_column(nullable=True)
 
         source_data_source_instance_id: Mapped[int] = mapped_column(
