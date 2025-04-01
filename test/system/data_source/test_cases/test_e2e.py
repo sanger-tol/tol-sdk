@@ -180,14 +180,14 @@ class TestEndToEnd:
             for i in range(len(ids))
         ]
 
-        thisYear = datetime.now().year
+        this_year = datetime.now().year
         data_objects = [
             data_source.data_object_factory(
                 'root',
                 id_,
                 attributes={'str_column': f'test_{id_}',
                             'int_column': i,
-                            'datetime_column': datetime(thisYear - i, 1, 1),
+                            'datetime_column': datetime(this_year - i, 1, 1),
                             'bool_column': True if i % 2 == 0 else False,
                             'list_column': [0, 1, 2] if i % 2 == 0 else [4, 5, 6]},
                 to_one={
@@ -229,8 +229,8 @@ class TestEndToEnd:
         f = DataSourceFilter()
         f.and_ = {
             'datetime_column': {
-                'gte': {'value': f'{thisYear-1}-01-02'},
-                'lt': {'value': f'{thisYear}-01-03'}
+                'gte': {'value': f'{this_year-1}-01-02'},
+                'lt': {'value': f'{this_year}-01-03'}
             }
         }
         fifth = list(
