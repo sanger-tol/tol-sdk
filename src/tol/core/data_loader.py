@@ -3,13 +3,11 @@
 # SPDX-License-Identifier: MIT
 
 from abc import ABC, abstractmethod
-from datetime import datetime
+from datetime import datetime, timezone
 from itertools import chain, groupby
 from typing import Any, Dict, Iterable, List, Optional, Type
 
 from more_itertools import peekable
-
-import pytz
 
 from tol.core import is_iter
 
@@ -198,7 +196,7 @@ class DefaultDataLoader():
     def _record_time(self, start_or_end: str):
         if self._audit is None:
             return
-        new_datetime = datetime.now(pytz.UTC)
+        new_datetime = datetime.now(timezone.utc)
         CoreDataObject = self._audit.data_object_factory  # noqa N806
 
         destination_object_type = 'multiple' \

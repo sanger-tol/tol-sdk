@@ -18,7 +18,7 @@ from caseconverter import (
     snakecase
 )
 
-from dateutil import parser
+import dateparser
 
 from elasticsearch import (Elasticsearch, helpers)
 
@@ -788,7 +788,7 @@ class ElasticDataSource(
     def __make_dates(self, object_type, attribute_name, value):
         if self.attribute_types[object_type][attribute_name] == 'datetime' and \
                 isinstance(value, str):
-            return parser.parse(value)
+            return dateparser.parse(value)
         return value
 
     def get_aggregations(

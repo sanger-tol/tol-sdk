@@ -2,12 +2,10 @@
 #
 # SPDX-License-Identifier: MIT
 
-from datetime import datetime
+from datetime import datetime, timezone
 from unittest import (
     TestCase
 )
-
-import pytz
 
 from tol.sources.copo import (
     copo
@@ -49,7 +47,7 @@ class TestCopoDataSource(TestCase):
         assert '5fd21410f18d93000119ca24' == obj1.id
         # Just pick out a few attributes here to test
         assert obj1.biosampleAccession == 'SAMEA7703214'
-        assert obj1.time_created == datetime(2020, 12, 10, 12, 26, 56, tzinfo=pytz.UTC)
+        assert obj1.time_created == datetime(2020, 12, 10, 12, 26, 56, tzinfo=timezone.utc)
         assert obj1.tol_project == 'DTOL'
         assert obj1.manifest.id == '789c66d2-5487-450a-a091-471653876542'
         with self.assertRaises(StopIteration):
