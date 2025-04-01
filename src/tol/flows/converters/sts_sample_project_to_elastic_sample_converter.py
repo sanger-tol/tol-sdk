@@ -1,5 +1,4 @@
 # SPDX-FileCopyrightText: 2024 Genome Research Ltd.
-#
 # SPDX-License-Identifier: MIT
 
 import datetime
@@ -79,13 +78,18 @@ class StsSampleProjectToElasticSampleConverter(
             for sp in s.sample_persons:
                 person_attributes[f'{sp.action.lower()}_name'] = sp.person.fullname
 
+            sample_species_attributes = {}
+            for ss in s.sample_species:
+                if ss.target_or_symbiont == 'TARGET':
+                    sample_species_attributes = self.__convert_sample_species(ss)
+
         except DataSourceError:
             print(f'Problem with sample {s.id}')
 
         ret = self._data_object_factory(
             'sample',
             s.id,
-            attributes=attributes | person_attributes
+            attributes=attributes | person_attributes | sample_species_attributes
         )
         return iter([ret])
 
@@ -105,4 +109,22 @@ class StsSampleProjectToElasticSampleConverter(
         return {
             'country': splits[0],
             'locality': ' | '.join(splits[1:])
+        }
+
+    def __convert_sample_species(self, data_object: DataObject) -> Iterable[DataObject]:
+        organism_parts = []
+        for ssop in data_object.sample_species_organism_parts:
+            organism_parts.append(ssop.organism_part.name)
+
+        return {
+            'species': {
+                'id': str(data_object.species.id)
+            },
+            'lifestage':
+                data_object.lifestage.name
+                if data_object.lifestage is not None else None,
+            'sex':
+                data_object.sex.name
+                if data_object.sex is not None else None,
+            'organism_part': organism_parts
         }
