@@ -1,5 +1,4 @@
 # SPDX-FileCopyrightText: 2024 Genome Research Ltd.
-#
 # SPDX-License-Identifier: MIT
 
 import datetime
@@ -26,7 +25,8 @@ class _MockDataSourceRelational(DataSource, Relational):
         return ['sample_project', 'sample', 'project', 'sample_export_options',
                 'location', 'gal', 'preservation_approach', 'sampleset',
                 'specimen', 'preservative_solution', 'collection_method',
-                'sample_person', 'person', 'manifest', 'tissue_size']
+                'sample_person', 'person', 'manifest', 'tissue_size', 'sample_species',
+                'species', 'lifestage', 'sex', 'organism_part', 'sample_species_organism_part']
 
     @property
     def attribute_types(self):
@@ -53,17 +53,36 @@ class _MockDataSourceRelational(DataSource, Relational):
             'sample_export_options': 'sample_export_options'
         }
         rc_sample.to_many = {
-            'sample_persons': 'sample_person'
+            'sample_persons': 'sample_person',
+            'sample_species': 'sample_species'
         }
         rc_sample_person = RelationshipConfig()
         rc_sample_person.to_one = {
             'sample': 'sample',
             'person': 'person'
         }
+
+        rc_sample_species = RelationshipConfig()
+        rc_sample_species.to_one = {
+            'sample': 'sample',
+            'species': 'species',
+            'lifestage': 'lifestage',
+            'sex': 'sex'
+        }
+        rc_sample_species.to_many = {
+            'sample_species_organism_parts': 'sample_species_organism_part'
+        }
+        rc_sample_species_organism_part = RelationshipConfig()
+        rc_sample_species_organism_part.to_one = {
+            'organism_part': 'organism_part'
+        }
+
         return {
             'sample_project': rc_sample_project,
             'sample': rc_sample,
-            'sample_person': rc_sample_person
+            'sample_person': rc_sample_person,
+            'sample_species': rc_sample_species,
+            'sample_species_organism_part': rc_sample_species_organism_part
         }
 
     def get_to_one_relation(
@@ -78,41 +97,120 @@ class _MockDataSourceRelational(DataSource, Relational):
         source: DataObject,
         relationship_name: str
     ):
-        person1 = source._host.data_object_factory(
-            id_='test_person1',
-            type_='person',
-            attributes={
-                'fullname': 'full name1',
-            }
-        )
-        person2 = source._host.data_object_factory(
-            id_='test_person2',
-            type_='person',
-            attributes={
-                'fullname': 'full name2',
-            }
-        )
-        sample_person1 = source._host.data_object_factory(
-            id_='test_sample_person1',
-            type_='sample_person',
-            to_one={
-                'person': person1,
-            },
-            attributes={
-                'action': 'action1'
-            }
-        )
-        sample_person2 = source._host.data_object_factory(
-            id_='test_sample_person2',
-            type_='sample_person',
-            to_one={
-                'person': person2,
-            },
-            attributes={
-                'action': 'action2'
-            }
-        )
-        return [sample_person1, sample_person2]
+        if relationship_name == 'sample_persons':
+            person1 = source._host.data_object_factory(
+                id_='test_person1',
+                type_='person',
+                attributes={
+                    'fullname': 'full name1',
+                }
+            )
+            person2 = source._host.data_object_factory(
+                id_='test_person2',
+                type_='person',
+                attributes={
+                    'fullname': 'full name2',
+                }
+            )
+            sample_person1 = source._host.data_object_factory(
+                id_='test_sample_person1',
+                type_='sample_person',
+                to_one={
+                    'person': person1,
+                },
+                attributes={
+                    'action': 'action1'
+                }
+            )
+            sample_person2 = source._host.data_object_factory(
+                id_='test_sample_person2',
+                type_='sample_person',
+                to_one={
+                    'person': person2,
+                },
+                attributes={
+                    'action': 'action2'
+                }
+            )
+            return [sample_person1, sample_person2]
+        elif relationship_name == 'sample_species':
+            lifestage = source._host.data_object_factory(
+                id_='test_lifestage',
+                type_='lifestage',
+                attributes={'name': 'EMBRYO'}
+            )
+            sex = source._host.data_object_factory(
+                id_='test_sex',
+                type_='sex',
+                attributes={
+                    'name': 'FEMALE'
+                }
+            )
+            sample = source._host.data_object_factory(
+                id_='test_sample',
+                type_='sample',
+                attributes={}
+            )
+            species = source._host.data_object_factory(
+                id_='test_species',
+                type_='species',
+                attributes={}
+            )
+            sample_species = source._host.data_object_factory(
+                id_='test_sample_species',
+                type_='sample_species',
+                attributes={'target_or_symbiont': 'TARGET'},
+                to_one={
+                    'sample': sample,
+                    'species': species,
+                    'lifestage': lifestage,
+                    'sex': sex
+                }
+            )
+            sample_species_symbiont = source._host.data_object_factory(
+                id_='test_sample_species_symbiont',
+                type_='sample_species',
+                attributes={'target_or_symbiont': 'SYMBIONT'},
+                to_one={
+                    'sample': sample,
+                    'species': species,
+                    'lifestage': lifestage,
+                    'sex': sex
+                }
+            )
+            return [sample_species, sample_species_symbiont]
+        elif relationship_name == 'sample_species_organism_parts':
+            op1 = source._host.data_object_factory(
+                id_='test_op1',
+                type_='organism_part',
+                attributes={
+                    'name': 'LEG'
+                }
+            )
+            ssop1 = source._host.data_object_factory(
+                id_='test_ssop1',
+                type_='sample_species_organism_part',
+                attributes={},
+                to_one={
+                    'organism_part': op1
+                }
+            )
+            op2 = source._host.data_object_factory(
+                id_='test_op2',
+                type_='organism_part',
+                attributes={
+                    'name': 'HEAD'
+                }
+            )
+            ssop2 = source._host.data_object_factory(
+                id_='test_ssop2',
+                type_='sample_species_organism_part',
+                attributes={},
+                to_one={
+                    'organism_part': op2
+                }
+            )
+            return [ssop1, ssop2]
 
 
 class _MockDataSource(DataSource):
@@ -282,6 +380,10 @@ class TestStsSampleProjectToElasticSampleConverter(TestCase):
             'action2_name': 'full name2',
             'sequencescape_study_id': 'cf01ea23-ac45-67e8-9101-11b213141516',
             'cost_code': 'S12345',
+            'species': {'id': 'test_species'},
+            'lifestage': 'EMBRYO',
+            'sex': 'FEMALE',
+            'organism_part': ['LEG', 'HEAD']
         })
 
         with self.assertRaises(StopIteration):
