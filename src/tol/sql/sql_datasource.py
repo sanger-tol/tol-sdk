@@ -184,7 +184,8 @@ class SqlDataSource(
         page_size: Optional[int] = None,
         object_filters: Optional[DataSourceFilter] = None,
         sort_by: Optional[str] = None,
-        session: Optional[SqlDataSourceSession] = None
+        session: Optional[SqlDataSourceSession] = None,
+        requested_fields: list[str] | None = None
     ) -> Tuple[Iterable[DataObject], int]:
 
         tablename = self.__type_tablename_map[object_type]
@@ -218,7 +219,8 @@ class SqlDataSource(
         self,
         object_type: str,
         object_filters: Optional[DataSourceFilter] = None,
-        session: Optional[SqlDataSourceSession] = None
+        session: Optional[SqlDataSourceSession] = None,
+        requested_fields: list[str] | None = None
     ) -> Iterable[DataObject]:
 
         return self._get_list_by_cursor(
