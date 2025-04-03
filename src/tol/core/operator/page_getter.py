@@ -29,7 +29,8 @@ class PageGetter(_Filterable, ABC):
         page_size: Optional[int] = None,
         object_filters: Optional[DataSourceFilter] = None,
         sort_by: Optional[str] = None,
-        session: Optional[OperableSession] = None
+        session: Optional[OperableSession] = None,
+        requested_fields: list[str] | None = None
     ) -> Tuple[Iterable[DataObject], int]:
         """
         For a specified object_type, of the given page_size

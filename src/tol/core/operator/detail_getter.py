@@ -26,7 +26,8 @@ class DetailGetter(ABC):
         self,
         object_type: str,
         object_ids: Iterable[str],
-        session: Optional[OperableSession] = None
+        session: Optional[OperableSession] = None,
+        requested_fields: list[str] | None = None
     ) -> Iterable[Optional[DataObject]]:
         """
         Gets an Iterable of DataObject instances, of specified object_type,
@@ -43,7 +44,8 @@ class DetailGetter(ABC):
         self,
         object_type: str,
         object_ids: Iterable[str],
-        session: Optional[OperableSession] = None
+        session: Optional[OperableSession] = None,
+        requested_fields: list[str] | None = None
     ) -> Iterable[Optional[DataObject]]:
         """
         Gets an Iterable of DataObject instances, of specified object_type,
@@ -55,7 +57,8 @@ class DetailGetter(ABC):
         self,
         object_type: str,
         object_id: str,
-        session: Optional[OperableSession] = None
+        session: Optional[OperableSession] = None,
+        requested_fields: list[str] | None = None
     ) -> Optional[DataObject]:
         """
         Gets the individual `DataObject` instance, of specified object_type
