@@ -2,6 +2,8 @@
 #
 # SPDX-License-Identifier: MIT
 
+from __future__ import annotations
+
 from abc import ABC, abstractmethod
 from typing import Any, Dict, Iterable, List, Optional, Type
 
@@ -42,7 +44,7 @@ class Database(ABC):
         sort_by: Optional[DatabaseSorter] = None,
         offset: Optional[int] = None,
         limit: Optional[int] = None,
-        requested_fields: list[str] | None = None
+        requested_fields: dict | None = None
     ) -> Iterable[Model]:
         """
         Returns an Iterable of `Model` instances according
@@ -177,7 +179,7 @@ class DefaultDatabase(Database):
         sort_by: Optional[DatabaseSorter] = None,
         offset: Optional[int] = None,
         limit: Optional[int] = None,
-        requested_fields: list[str] | None = None,
+        requested_fields: dict | None = None,
     ) -> Iterable[Model]:
 
         _, query = self.__get_model_query(
@@ -309,7 +311,7 @@ class DefaultDatabase(Database):
         self,
         tablename: str,
         in_session: Session,
-        requested_fields: list[str] | None,
+        requested_fields: dict | None,
     ) -> tuple[Type[Model], Query]:
 
         model = self.__tablename_model_dict[tablename]
@@ -326,7 +328,7 @@ class DefaultDatabase(Database):
     def __apply_requested_fields(
         self,
         query: Query,
-        requested_fields: list[str]
+        requested_fields: dict
     ) -> Query:
 
         return query

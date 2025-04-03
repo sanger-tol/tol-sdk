@@ -206,7 +206,10 @@ class SqlDataSource(
             page_size,
             sorter,
             in_session,
-            requested_fields=requested_fields,
+            requested_fields=self.__format_requested_fields(
+                object_type,
+                requested_fields
+            ),
         )
         converter = self.__get_converter()
         return_list = list(
@@ -463,7 +466,7 @@ class SqlDataSource(
         page_size: Optional[int],
         sort_by: Optional[DatabaseSorter],
         in_session: SqlaSession,
-        requested_fields: list[str] | None = None,
+        requested_fields: dict | None = None,
     ) -> Iterable[Model]:
 
         offset = self.__get_offset(page_number, page_size)
@@ -474,7 +477,7 @@ class SqlDataSource(
             sort_by=sort_by,
             offset=offset,
             limit=page_size,
-            requested_fields=requested_fields
+            requested_fields=requested_fields,
         )
 
     def __get_offset(
@@ -496,3 +499,33 @@ class SqlDataSource(
         self.__user_id_getter = (
             (lambda: None) if user_id_getter is None else user_id_getter
         )
+
+    def __format_requested_fields(
+        self,
+        object_type: str,
+        requested_fields: list[str] | None
+    ) -> dict | None:
+
+        if requested_fields is None:
+            return None
+
+        fields_dict = {'__fields__': []}
+
+        for requested in requested_fields:
+            current_type = object_type
+            *relationships, column = requested.split('.')
+            current_dict = fields_dict
+
+            for r in relationships:
+                r_type = self.relationship_config[current_type].to_one[r]
+                if r_type in current_dict:
+                    current_dict = current_dict[r_type]
+                else:
+                    current_dict[r_type] = {'__fields__': []}
+                    current_dict = current_dict[r_type]
+
+                current_type = r_type
+
+            current_dict['__fields__'].append(column)
+
+        return fields_dict

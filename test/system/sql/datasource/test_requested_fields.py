@@ -107,14 +107,14 @@ class TestRequestedFields:
         # `get_list()`
         iter_r3 = sql_ds.get_list(
             'r3',
-            requested_fields=['r3.funny_r1.r2_d2.funny_string']
+            requested_fields=['funny_r1.r2_d2.funny_string']
         )
         __assert_required(iter_r3)
 
         # `get_list_page()`
         page_r3, count_r3 = sql_ds.get_list_page(
             'r3',
-            requested_fields=['r3.funny_r1.r2_d2.funny_string']
+            requested_fields=['funny_r1.r2_d2.funny_string']
         )
         assert count_r3 == 1
         __assert_required(page_r3)
