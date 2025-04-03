@@ -253,7 +253,8 @@ class ApiDataSource(
         page_size: Optional[int] = None,
         object_filters: Optional[DataSourceFilter] = None,
         search_after: list[str] | None = None,
-        session: Optional[OperableSession] = None
+        session: Optional[OperableSession] = None,
+        requested_fields: list[str] | None = None
     ) -> tuple[Iterable[DataObject], list[str] | None]:
 
         filter_string = self.__get_filter_string(object_filters)

@@ -47,7 +47,8 @@ class Cursor(_Filterable, ABC):
         page_size: Optional[int] = None,
         object_filters: Optional[DataSourceFilter] = None,
         search_after: list[str] | None = None,
-        session: Optional[OperableSession] = None
+        session: Optional[OperableSession] = None,
+        requested_fields: list[str] | None = None
     ) -> tuple[Iterable[DataObject], list[str] | None]:
         """
         Gets an `Iterable` of `DataObject` instances of the given
@@ -100,7 +101,8 @@ class Cursor(_Filterable, ABC):
         self,
         object_type: str,
         object_filters: Optional[DataSourceFilter] = None,
-        session: Optional[OperableSession] = None
+        session: Optional[OperableSession] = None,
+        requested_fields: list[str] | None = None
     ) -> Iterable[DataObject]:
         """
         A usable implementation for `ListGetter.get_list()`
@@ -116,7 +118,8 @@ class Cursor(_Filterable, ABC):
                 page_size=page_size,
                 object_filters=object_filters,
                 search_after=search_after,
-                session=session
+                session=session,
+                requested_fields=requested_fields,
             )
             objs = list(fetched)
 

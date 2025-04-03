@@ -42,6 +42,7 @@ class Database(ABC):
         sort_by: Optional[DatabaseSorter] = None,
         offset: Optional[int] = None,
         limit: Optional[int] = None,
+        requested_fields: list[str] | None = None
     ) -> Iterable[Model]:
         """
         Returns an Iterable of `Model` instances according
@@ -176,9 +177,14 @@ class DefaultDatabase(Database):
         sort_by: Optional[DatabaseSorter] = None,
         offset: Optional[int] = None,
         limit: Optional[int] = None,
+        requested_fields: list[str] | None = None,
     ) -> Iterable[Model]:
 
-        _, query = self.__get_model_query(tablename, in_session)
+        _, query = self.__get_model_query(
+            tablename,
+            in_session,
+            requested_fields
+        )
         if filters is not None:
             query = filters.filter(query, tablename, self.__tablename_model_dict)
         if sort_by is not None:
@@ -194,7 +200,7 @@ class DefaultDatabase(Database):
         filters: Optional[DatabaseFilter] = None
     ) -> int:
 
-        _, query = self.__get_model_query(tablename, in_session)
+        _, query = self.__get_model_query(tablename, in_session, None)
         if filters is not None:
             query = filters.filter(query, tablename, self.__tablename_model_dict)
         count = query.count()
@@ -302,7 +308,8 @@ class DefaultDatabase(Database):
     def __get_model_query(
         self,
         tablename: str,
-        in_session: Session
+        in_session: Session,
+        requested_fields: list[str] | None,
     ) -> tuple[Type[Model], Query]:
 
         model = self.__tablename_model_dict[tablename]
@@ -349,7 +356,7 @@ class DefaultDatabase(Database):
         Gets an instance by its tablename and id.
         """
 
-        model, query = self.__get_model_query(tablename, in_session)
+        model, query = self.__get_model_query(tablename, in_session, None)
         id_column = getattr(model, model.get_id_column_name())
         result = query.filter(id_column == instance_id).one_or_none()
         return result

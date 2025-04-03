@@ -205,7 +205,8 @@ class SqlDataSource(
             page_number,
             page_size,
             sorter,
-            in_session
+            in_session,
+            requested_fields=requested_fields,
         )
         converter = self.__get_converter()
         return_list = list(
@@ -226,7 +227,8 @@ class SqlDataSource(
         return self._get_list_by_cursor(
             object_type,
             object_filters=self._preprocess_filter(object_type, object_filters),
-            session=session
+            session=session,
+            requested_fields=requested_fields
         )
 
     def delete(
@@ -255,7 +257,8 @@ class SqlDataSource(
         page_size: Optional[int] = None,
         object_filters: Optional[DataSourceFilter] = None,
         search_after: list[str] | None = None,
-        session: Optional[OperableSession] = None
+        session: Optional[OperableSession] = None,
+        requested_fields: list[str] | None = None
     ) -> tuple[Iterable[DataObject], list[str] | None]:
 
         fetched, _ = self.get_list_page(
@@ -267,7 +270,8 @@ class SqlDataSource(
                 object_filters
             ),
             sort_by='id',
-            session=session
+            session=session,
+            requested_fields=requested_fields,
         )
 
         return self.__format_cursor_page(fetched)
@@ -458,7 +462,8 @@ class SqlDataSource(
         page_number: Optional[int],
         page_size: Optional[int],
         sort_by: Optional[DatabaseSorter],
-        in_session: SqlaSession
+        in_session: SqlaSession,
+        requested_fields: list[str] | None = None,
     ) -> Iterable[Model]:
 
         offset = self.__get_offset(page_number, page_size)
@@ -468,7 +473,8 @@ class SqlDataSource(
             filters=filters,
             sort_by=sort_by,
             offset=offset,
-            limit=page_size
+            limit=page_size,
+            requested_fields=requested_fields
         )
 
     def __get_offset(
