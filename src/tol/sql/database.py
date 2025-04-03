@@ -314,7 +314,22 @@ class DefaultDatabase(Database):
 
         model = self.__tablename_model_dict[tablename]
         query = in_session.query(model)
+
+        if requested_fields:
+            query = self.__apply_requested_fields(
+                query,
+                requested_fields
+            )
+
         return model, query
+
+    def __apply_requested_fields(
+        self,
+        query: Query,
+        requested_fields: list[str]
+    ) -> Query:
+
+        return query
 
     def __commit_session(
         self,
