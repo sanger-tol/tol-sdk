@@ -25,6 +25,8 @@ class R3(BaseModel):
 
     id: Mapped[str] = mapped_column(primary_key=True)  # noqa A003
 
+    another_string: Mapped[str] = mapped_column(nullable=True)
+
     ur_r1_id: Mapped[str] = mapped_column(
         ForeignKey('r1.id_override'),
         nullable=True,

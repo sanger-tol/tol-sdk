@@ -22,7 +22,7 @@ class TestRequestedFields:
     """
 
     def test_single(self, session_factory, models_list):
-        """Test a model without relationships"""
+        """Without relationships"""
 
         # add the objects
         session = session_factory()
@@ -62,3 +62,59 @@ class TestRequestedFields:
         )
         assert count_b == 3
         __assert_required(page_b)
+
+    def test_relations(self, session_factory, models_list):
+        """With relationships"""
+
+        # add the objects
+        session = session_factory()
+        session.add(
+            models.R2(
+                id='something comforting',
+                funny_string='yes'
+            )
+        )
+        session.add(
+            models.R1(
+                id_override='idk',
+            )
+        )
+        session.add(
+            models.R3(
+                id='neither',
+                another_string='look to the sky'
+            )
+        )
+        session.commit()
+        session.close()
+
+        # create the sql datasource (with default type function)
+        sql_ds = create_sql_datasource(models_list, DB_URI)
+        core_data_object(sql_ds)
+
+        def __assert_required(iter_r3: Iterable[DataObject]) -> None:
+            (r3,) = list(iter_r3)
+
+            # meant to be there
+            assert r3.id == 'neither'
+            assert r3.funny_r1.id == 'idk'
+            assert r3.funny_r1.r2_d2.id == 'something comforting'
+            assert r3.funny_r1.r2_d2.funny_string == 'yes'
+
+            # not meant to be there
+            assert not r3.another_string
+
+        # `get_list()`
+        iter_r3 = sql_ds.get_list(
+            'r3',
+            requested_fields=['r3.funny_r1.r2_d2.funny_string']
+        )
+        __assert_required(iter_r3)
+
+        # `get_list_page()`
+        page_r3, count_r3 = sql_ds.get_list_page(
+            'r3',
+            requested_fields=['r3.funny_r1.r2_d2.funny_string']
+        )
+        assert count_r3 == 1
+        __assert_required(page_r3)

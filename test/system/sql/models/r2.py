@@ -24,6 +24,8 @@ class R2(BaseModel):
 
     id: Mapped[str] = mapped_column(primary_key=True)  # noqa A003
 
+    funny_string: Mapped[str] = mapped_column(nullable=True)
+
     mine_r1s: Mapped[List['R1']] = relationship(
         back_populates='r2_d2'
     )
