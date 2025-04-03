@@ -71,6 +71,7 @@ def create_loader_models(
 
         prefix: Mapped[str] = mapped_column(nullable=False, default='')
         convert_class: Mapped[str] = mapped_column(nullable=True)
+        frequency: Mapped[str] = mapped_column(nullable=False, default='daily')
         candidate_key: Mapped[dict] = mapped_column(JSONB, nullable=True)
         date_last_run: Mapped[datetime] = mapped_column(nullable=True)
 
