@@ -680,9 +680,13 @@ def elastic():
                         doc['benchling_remaining_weight'].size() > 0) {
                         def value = doc['benchling_remaining_weight'].value;
                         if (!Double.isNaN(value)) {
-                            emit(value);
-                        }
-                    }
+                emit(value);
+            } else {
+                emit(-1.0);
+            }
+        } else {
+            emit(-1.0);
+        }
                 """
                 }
             },
@@ -727,9 +731,13 @@ def elastic():
                         doc['mlwh_volume_remaining'].size() > 0) {
                         def value = doc['mlwh_volume_remaining'].value;
                         if (!Double.isNaN(value)) {
-                            emit(value);
-                        }
-                    }
+                emit(value);
+            } else {
+                emit(-1.0);
+            }
+        } else {
+            emit(-1.0);
+        }
                 """
                 }
             },
@@ -751,9 +759,13 @@ def elastic():
                         doc['benchling_volume_ul'].size() > 0) {
                         def value = doc['benchling_volume_ul'].value;
                         if (!Double.isNaN(value)) {
-                            emit(value);
-                        }
-                    }
+                emit(value);
+            } else {
+                emit(-1.0);
+            }
+        } else {
+            emit(-1.0);
+        }
                 """
                 }
             },
@@ -770,9 +782,13 @@ def elastic():
                         doc['benchling_weight_mg'].size() > 0) {
                         def value = doc['benchling_weight_mg'].value;
                         if (!Double.isNaN(value)) {
-                            emit(value);
-                        }
-                    }
+                emit(value);
+            } else {
+                emit(-1.0);
+            }
+        } else {
+            emit(-1.0);
+        }
                 """
                 }
             }
