@@ -9,7 +9,8 @@ import pytest
 
 from tol.core import DataSource, DataSourceError, DefaultAttributeMetadata
 from tol.core.datasource_error import NoDataObjectFactoryError
-from tol.core.operator import PageGetter
+from tol.core.operator import PageGetter, Relational
+from tol.core.relationship import RelationshipConfig
 
 
 class _TestDataSourceExpected(DataSource):
@@ -72,12 +73,24 @@ class _TestAttributeMetadata(DefaultAttributeMetadata):
         return 'test_source'
 
 
-class _TestDataSourceAttributes(DataSource):
+class _TestDataSourceAttributes(DataSource, Relational):
     def __init__(self, config: Dict):
         super().__init__(
             config,
             expected=[],
             attribute_metadata=_TestAttributeMetadata)
+
+    @property
+    def relationship_config(self) -> dict[str, RelationshipConfig]:
+        return {
+            'object_type1': RelationshipConfig(to_one={'rel1': 'object_type2'})
+        }
+
+    def get_to_one_relation(self, source, relationship_name, session=None):
+        raise NotImplementedError()
+
+    def get_to_many_relations(self, source, relationship_name, session=None):
+        raise NotImplementedError()
 
     @property
     def supported_types(self):
@@ -166,5 +179,32 @@ class TestDataSource(TestCase):
                         'source': 'test_source'
                     }
                 }
+            }
+        )
+
+    def test_get_attribute_metadata_by_name(self):
+        ds = _TestDataSourceAttributes({})
+        self.assertEqual(
+            ds.get_attribute_metadata_by_name('object_type1', 'attribute1'),
+            {
+                'python_type': 'str',
+                'display_name': 'ATTRIBUTE1',
+                'description': 'Interesting attribute1',
+                'cardinality': 1000,
+                'available_on_relationships': True,
+                'authoritative': True,
+                'source': 'test_source'
+            }
+        )
+        self.assertEqual(
+            ds.get_attribute_metadata_by_name('object_type1', 'rel1.attribute3'),
+            {
+                'python_type': 'str',
+                'display_name': 'ATTRIBUTE3',
+                'description': 'Interesting attribute3',
+                'cardinality': 5,
+                'available_on_relationships': False,
+                'authoritative': False,
+                'source': 'test_source'
             }
         )
