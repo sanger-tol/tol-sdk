@@ -8,12 +8,14 @@ import typing
 from abc import ABC, abstractmethod
 from typing import Any, List, Optional
 
+from ._filterable import _Filterable
+
 if typing.TYPE_CHECKING:
     from ..datasource_filter import DataSourceFilter
     from ..session import OperableSession
 
 
-class Statter(ABC):
+class Statter(_Filterable, ABC):
     @abstractmethod
     def get_stats(
         self,

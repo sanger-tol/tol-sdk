@@ -8,13 +8,15 @@ import typing
 from abc import ABC, abstractmethod
 from typing import Iterable, Optional
 
+from ._filterable import _Filterable
+
 if typing.TYPE_CHECKING:
     from ..data_object import DataObject
     from ..datasource_filter import DataSourceFilter
     from ..session import OperableSession
 
 
-class ListGetter(ABC):
+class ListGetter(_Filterable, ABC):
     """
     Gets an Iterable of DataObject instances.
     """

@@ -8,12 +8,14 @@ import typing
 from abc import ABC, abstractmethod
 from typing import Any, Optional
 
+from ._filterable import _Filterable
+
 if typing.TYPE_CHECKING:
     from ..datasource_filter import DataSourceFilter
     from ..session import OperableSession
 
 
-class Aggregator(ABC):
+class Aggregator(_Filterable, ABC):
     """
     Gets aggregations according to the Elastic aggregation specification
     """
