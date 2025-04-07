@@ -238,18 +238,18 @@ class TestEndToEnd:
         )
         assert len(fifth) == 1
 
-        # Relative date - TODO
-        # f = DataSourceFilter()
-        # f.and_ = {
-        #     'datetime_column': {
-        #         'gte': {'value': 'one year ago'},
-        #         'lt': {'value': 'now'}
-        #     }
-        # }
-        # fifth = list(
-        #     data_source.get_list('root', object_filters=f)
-        # )
-        # assert len(fifth) == 1
+        # Relative date
+        f = DataSourceFilter()
+        f.and_ = {
+            'datetime_column': {
+                'gte': {'value': 'one year ago'},
+                'lt': {'value': 'now'}
+            }
+        }
+        fifth2 = list(
+            data_source.get_list('root', object_filters=f)
+        )
+        assert len(fifth2) == 1
 
         # Boolean equal
         f = DataSourceFilter()

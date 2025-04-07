@@ -532,6 +532,7 @@ class ElasticDataSource(
     def _build_elasticsearch_query(self, object_type: str,
                                    object_filters: DataSourceFilter = None):
         query = {'bool': {'must': [], 'must_not': []}}
+        # If we want to implement preprocessing of filters, call self._preprocess_filter() here
         if object_filters is None:
             return query
         if object_filters.exact is not None:

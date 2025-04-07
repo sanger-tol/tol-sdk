@@ -1,8 +1,9 @@
-# SPDX-FileCopyrightText: 2023 Genome Research Ltd.
+# SPDX-FileCopyrightText: 2025 Genome Research Ltd.
 #
 # SPDX-License-Identifier: MIT
 
 from abc import ABC
+from typing import Optional
 
 import dateparser
 
@@ -15,14 +16,16 @@ class _Filterable(ABC):
     e.g. ListGetter, PageGetter and Counter
     """
 
-    def preprocess_filter(
+    def _preprocess_filter(
         self,
         object_type: str,
-        object_filters: DataSourceFilter
+        object_filters: Optional[DataSourceFilter] = None,
     ) -> DataSourceFilter:
         """
         The main use of this is to convert relative dates into absolute dates
         """
+        if object_filters is None:
+            return None
         for name, value in object_filters.and_.items():
             metadata = self.get_attribute_metadata_by_name(object_type, name)
             if metadata is None:

@@ -143,7 +143,9 @@ class SqlDataSource(
         """
 
         tablename = self.__type_tablename_map[object_type]
-        database_filter = self.__filter_factory(object_filters)
+        database_filter = self.__filter_factory(
+            self._preprocess_filter(object_type, object_filters)
+        )
         in_session = self.__get_sqla_session(session)
         total_count = self.__db.count(
             tablename,
@@ -186,7 +188,9 @@ class SqlDataSource(
     ) -> Tuple[Iterable[DataObject], int]:
 
         tablename = self.__type_tablename_map[object_type]
-        database_filter = self.__filter_factory(object_filters)
+        database_filter = self.__filter_factory(
+            self._preprocess_filter(object_type, object_filters)
+        )
         sorter = self.__sorter_factory(sort_by)
         in_session = self.__get_sqla_session(session)
         total_count = self.__db.count(
@@ -219,7 +223,7 @@ class SqlDataSource(
 
         return self._get_list_by_cursor(
             object_type,
-            object_filters=object_filters,
+            object_filters=self._preprocess_filter(object_type, object_filters),
             session=session
         )
 
@@ -258,7 +262,7 @@ class SqlDataSource(
             page_size=page_size,
             object_filters=self.update_cursor_filters(
                 search_after,
-                object_filters
+                self._preprocess_filters(object_type, object_filters)
             ),
             sort_by='id',
             session=session

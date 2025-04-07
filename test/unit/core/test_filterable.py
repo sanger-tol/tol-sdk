@@ -93,7 +93,7 @@ class TestDataSource(TestCase):
                 }
             }
         }
-        processed_filter = ds.preprocess_filter('object_type1', f)
+        processed_filter = ds._preprocess_filter('object_type1', f)
         self.assertEqual('test_value', processed_filter.and_['attribute1']['eq']['value'])
         # Assert that the relative date has been preprocessed into a datetime with the correct year
         last_year = datetime.now().year - 1
