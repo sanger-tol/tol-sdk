@@ -262,7 +262,7 @@ class SqlDataSource(
             page_size=page_size,
             object_filters=self.update_cursor_filters(
                 search_after,
-                self._preprocess_filters(object_type, object_filters)
+                object_filters
             ),
             sort_by='id',
             session=session

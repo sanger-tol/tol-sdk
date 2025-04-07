@@ -145,7 +145,8 @@ class DataSource(ABC):
             if name in self.attribute_metadata[current_obj_type]:
                 return self.attribute_metadata[current_obj_type][name]
             # ...or a to_one relation
-            if self.relationship_config[current_obj_type].to_one is not None:
+            if current_obj_type in self.relationship_config and \
+                    self.relationship_config[current_obj_type].to_one is not None:
                 if name in self.relationship_config[current_obj_type].to_one:
                     current_obj_type = self.relationship_config[current_obj_type].to_one[name]
                     continue
