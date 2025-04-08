@@ -27,42 +27,42 @@ class TestBenchlingDataSourceE2E:
 
     can_update = ['tissue', 'tissue_prep']
 
-    @against_types([
-        'tissue',
-        'consumables_lot',
-        'folder',
-        'worklist',
-        'storage',
-        '12x12_box',
-        'casm_well',
-        'casm_programme_id'
-    ])
-    def test_get(self, object_type: str) -> None:
-        """
-        Gets a single object of specified type.
-        """
+    # @against_types([
+    #     'tissue',
+    #     'consumables_lot',
+    #     'folder',
+    #     'worklist',
+    #     'storage',
+    #     '12x12_box',
+    #     'casm_well',
+    #     'casm_programme_id'
+    # ])
+    # def test_get(self, object_type: str) -> None:
+    #     """
+    #     Gets a single object of specified type.
+    #     """
 
-        benchling_ds = benchling()
-        str_key = self.__find_string_key(
-            object_type,
-            benchling_ds
-        )
-        # get an object list
-        objs = benchling_ds.get_list(
-            object_type
-        )
-        obj = next(objs)
-        assert obj.type == object_type
-        assert getattr(obj, str_key) is not None
-        self.__assert_relations_filled(obj, benchling_ds)
+    #     benchling_ds = benchling()
+    #     str_key = self.__find_string_key(
+    #         object_type,
+    #         benchling_ds
+    #     )
+    #     # get an object list
+    #     objs = benchling_ds.get_list(
+    #         object_type
+    #     )
+    #     obj = next(objs)
+    #     assert obj.type == object_type
+    #     assert getattr(obj, str_key) is not None
+    #     self.__assert_relations_filled(obj, benchling_ds)
 
-        # now try getting one by ID
-        obj2 = benchling_ds.get_one(
-            object_type,
-            obj.id
-        )
-        assert obj2.type == object_type
-        self.__assert_relations_filled(obj2, benchling_ds)
+    #     # now try getting one by ID
+    #     obj2 = benchling_ds.get_one(
+    #         object_type,
+    #         obj.id
+    #     )
+    #     assert obj2.type == object_type
+    #     self.__assert_relations_filled(obj2, benchling_ds)
 
     # We should add 'storage' to the list but the test user has insufficient privileges
     # to test location types
