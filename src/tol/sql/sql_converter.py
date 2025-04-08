@@ -135,11 +135,6 @@ class DefaultModelConverter(ModelConverter):
         if not self.__requested_fields:
             return all_keys
 
-        import logging; logging.error(marker); logging.error([
-            k for k in all_keys
-            if self.__requested_to_one(k, marker)
-        ])
-
         return [
             k for k in all_keys
             if self.__requested_to_one(k, marker)
@@ -155,8 +150,6 @@ class DefaultModelConverter(ModelConverter):
             k,
             marker,
         )
-
-        import logging; logging.error(next_marker); logging.error(self.__requested_fields)
 
         return any(
             r.startswith(next_marker)

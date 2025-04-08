@@ -3,7 +3,6 @@
 # SPDX-License-Identifier: MIT
 
 import os
-from typing import Iterable
 
 from tol.api_client.view import DefaultView
 from tol.core import DataObject, core_data_object
