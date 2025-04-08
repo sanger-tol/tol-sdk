@@ -35,6 +35,7 @@ class TestBenchlingDataSourceE2E:
         'storage',
         '12x12_box',
         'casm_well',
+        # TODO restore (TOLP-8669)
         # 'casm_programme_id'
     ])
     def test_get(self, object_type: str) -> None:
