@@ -117,7 +117,9 @@ class TestRequestedFields:
 
             # meant to be there
             assert r3.id == 'neither'
+            assert 'funny_r1' in r3._to_one_objects
             assert r3.funny_r1.id == 'idk'
+            assert 'r2_d2' in r3.funny_r1._to_one_objects
             assert r3.funny_r1.r2_d2.id == 'something comforting'
             assert r3.funny_r1.r2_d2.funny_string == 'yes'
 
