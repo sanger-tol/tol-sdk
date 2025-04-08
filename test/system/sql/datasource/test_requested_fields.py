@@ -75,8 +75,11 @@ class TestRequestedFields:
             1,
             requested_fields=['int_column']
         )
+        page_b = list(page_b)
+
         assert count_b == 3
         __assert_requested(page_b)
+        __assert_requested_view(page_b)
 
     def test_relations(self, session_factory, models_list):
         """With relationships"""
