@@ -7,7 +7,6 @@ from typing import Iterable
 
 from tol.core import DataObject, core_data_object
 from tol.sql import create_sql_datasource
-from tol.sql.sql_converter import TypeFunction
 
 from .. import models
 

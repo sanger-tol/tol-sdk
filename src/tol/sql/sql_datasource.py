@@ -531,6 +531,4 @@ class SqlDataSource(
                 current_dict = current_dict[r]
                 current_type = r_type
 
-        import logging; logging.error(rel_dict)
-
         return rel_dict
