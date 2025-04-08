@@ -56,7 +56,8 @@ class DefaultView(View):
         self,
         prefix: str = '',
         include_all_to_ones: bool = False,
-        hop_limit: Optional[int] = None
+        hop_limit: Optional[int] = None,
+        requested_fields: list[str] | None = None,
     ) -> None:
         """
         Args:
@@ -75,6 +76,7 @@ class DefaultView(View):
         self.__prefix = prefix
         self.__all_to_ones = include_all_to_ones
         self.__hop_limit = hop_limit
+        self.__requested_fields = requested_fields
 
     def dump(
         self,

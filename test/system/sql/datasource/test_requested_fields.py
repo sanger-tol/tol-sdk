@@ -5,6 +5,7 @@
 import os
 from typing import Iterable
 
+from tol.api_client.view import DefaultView
 from tol.core import DataObject, core_data_object
 from tol.sql import create_sql_datasource
 
@@ -47,9 +48,26 @@ class TestRequestedFields:
                 assert b.id == letter
                 assert b.int_column == i
 
+        def __assert_requested_view(
+            iter_b: Iterable[DataObject]
+        ) -> None:
+
+            view = DefaultView(
+                requested_fields=['int_column']
+            )
+            dumped = view.dump_bulk(iter_b)['data']
+
+            for i, (b, letter) in enumerate(zip(dumped, 'abc')):
+                # requested fields are there
+                assert b['id'] == letter
+                assert b['attributes']['int_column'] == i
+
         # `get_list()`
-        iter_b = sql_ds.get_list('b', requested_fields=['int_column'])
+        iter_b = list(
+            sql_ds.get_list('b', requested_fields=['int_column'])
+        )
         __assert_requested(iter_b)
+        __assert_requested_view(iter_b)
 
         # `get_list_page()`
         page_b, count_b = sql_ds.get_list_page(
