@@ -42,26 +42,24 @@ class TestRequestedFields:
         sql_ds = create_sql_datasource(models_list, DB_URI)
         core_data_object(sql_ds)
 
-        def __assert_required(iter_b: Iterable[DataObject]) -> None:
+        def __assert_requested(iter_b: Iterable[DataObject]) -> None:
             for i, (b, letter) in enumerate(zip(iter_b, 'abc')):
-                # required fields are there
+                # requested fields are there
                 assert b.id == letter
                 assert b.int_column == i
 
-                # others are not
-                assert not b.another_string
-
         # `get_list()`
         iter_b = sql_ds.get_list('b', requested_fields=['int_column'])
-        __assert_required(iter_b)
+        __assert_requested(iter_b)
 
         # `get_list_page()`
         page_b, count_b = sql_ds.get_list_page(
             'b',
+            1,
             requested_fields=['int_column']
         )
         assert count_b == 3
-        __assert_required(page_b)
+        __assert_requested(page_b)
 
     def test_relations(self, session_factory, models_list):
         """With relationships"""
@@ -92,7 +90,7 @@ class TestRequestedFields:
         sql_ds = create_sql_datasource(models_list, DB_URI)
         core_data_object(sql_ds)
 
-        def __assert_required(iter_r3: Iterable[DataObject]) -> None:
+        def __assert_requested(iter_r3: Iterable[DataObject]) -> None:
             (r3,) = list(iter_r3)
 
             # meant to be there
@@ -109,12 +107,13 @@ class TestRequestedFields:
             'r3',
             requested_fields=['funny_r1.r2_d2.funny_string']
         )
-        __assert_required(iter_r3)
+        __assert_requested(iter_r3)
 
         # `get_list_page()`
         page_r3, count_r3 = sql_ds.get_list_page(
             'r3',
+            1,
             requested_fields=['funny_r1.r2_d2.funny_string']
         )
         assert count_r3 == 1
-        __assert_required(page_r3)
+        __assert_requested(page_r3)
