@@ -251,6 +251,19 @@ class TestEndToEnd:
         )
         assert len(fifth2) == 1
 
+        # Datetime, rather than string
+        f = DataSourceFilter()
+        f.and_ = {
+            'datetime_column': {
+                'gte': {'value': datetime(this_year - 1, 1, 2)},
+                'lt': {'value': datetime(this_year, 1, 3)}
+            }
+        }
+        fifth3 = list(
+            data_source.get_list('root', object_filters=f)
+        )
+        assert len(fifth3) == 1
+
         # Boolean equal
         f = DataSourceFilter()
         f.and_ = {
