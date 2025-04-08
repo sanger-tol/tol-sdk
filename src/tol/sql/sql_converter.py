@@ -35,7 +35,8 @@ class DefaultModelConverter(ModelConverter):
         self,
         type_function: TypeFunction,
         data_object_factory: DataObjectFactory,
-        max_depth: int = 1
+        max_depth: int = 1,
+        requested_fields: list[str] | None = None,
     ) -> None:
         """
         Takes a type_function Callable, which determines the type of the
@@ -44,15 +45,24 @@ class DefaultModelConverter(ModelConverter):
 
         self.__type_function = type_function
         self.__data_object_factory = data_object_factory
-        self.__max_depth = max_depth
+
+        self.__requested_fields = requested_fields
+        self.__max_depth = (
+            None
+            if self.__requested_fields
+            else max_depth
+        )
 
     def convert(self, model: Model) -> DataObject:
-        return self.__convert_to_max_depth(model, 0)
+        return self.__convert_to_max_depth(
+            model,
+            self.__initial_marker
+        )
 
     def __convert_to_max_depth(
         self,
         model: Model | None,
-        depth: int
+        marker: int
     ) -> DataObject:
 
         if model is None:
@@ -66,24 +76,92 @@ class DefaultModelConverter(ModelConverter):
             attributes=model.instance_attributes,
             to_one=self.__convert_to_ones(
                 model,
-                depth
+                marker
             )
+        )
+
+    @property
+    def __initial_marker(self) -> int | str:
+        return (
+            ''
+            if self.__requested_fields
+            else 0
         )
 
     def __convert_to_ones(
         self,
         model: Model,
-        depth: int
+        marker: int | str
     ) -> dict[str, Optional[DataObject]]:
 
-        if depth >= self.__max_depth:
+        if self.__max_depth and marker >= self.__max_depth:
             return {}
 
         return {
-            k: self.__convert_to_max_depth(v, depth + 1)
-            for k, v
-            in model.instance_to_one_relations.items()
+            k: self.__convert_to_max_depth(
+                model.instance_to_one_relations[k],
+                self.__get_next_marker(
+                    k,
+                    marker,
+                )
+            )
+            for k in self.__get_requested_to_ones(
+                model,
+                marker,
+            )
         }
+
+    def __get_next_marker(
+        self,
+        k: str,
+        marker: int | str
+    ) -> int | str:
+
+        if self.__requested_fields:
+            return f'{marker}.{k}' if marker else k
+        else:
+            return marker + 1
+
+    def __get_requested_to_ones(
+        self,
+        model_instance: Model,
+        marker: int | str
+    ) -> list[str]:
+
+        all_keys = list(
+            model_instance.get_to_one_relationship_config().keys()
+        )
+
+        if not self.__requested_fields:
+            return all_keys
+
+        import logging; logging.error(marker); logging.error([
+            k for k in all_keys
+            if self.__requested_to_one(k, marker)
+        ])
+
+        return [
+            k for k in all_keys
+            if self.__requested_to_one(k, marker)
+        ]
+
+    def __requested_to_one(
+        self,
+        k: str,
+        marker: int | str
+    ) -> bool:
+
+        next_marker = self.__get_next_marker(
+            k,
+            marker,
+        )
+
+        import logging; logging.error(next_marker); logging.error(self.__requested_fields)
+
+        return any(
+            r.startswith(next_marker)
+            for r in self.__requested_fields
+        )
 
 
 class DataObjectConverter(Converter[DataObject, Model], ABC):

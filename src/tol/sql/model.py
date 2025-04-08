@@ -251,7 +251,7 @@ def model_base() -> Type[DefaultModel]:
         @property
         def instance_to_one_relations(self) -> dict[str, Optional[Model]]:
             config = self.get_to_one_relationship_config()
-            return self.__get_attributes_map(config.keys())
+            return self.__get_attributes_map(config)
 
         @property
         def instance_to_many_relations(self) -> dict[str, Iterable[Model]]:

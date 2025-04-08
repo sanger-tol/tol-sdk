@@ -207,22 +207,43 @@ class DefaultView(View):
         if self.__hop_limit is not None and marker >= self.__hop_limit:
             return {}
 
-        if self.__requested_fields and not key.startswith(marker):
+        if self.__requested_fields and not self.__to_one_is_relevant(key, marker):
             return {}
 
         related_object = self.__get_related_to_one(data_object, key)
         if related_object is not None:
-            next_marker = (
-                f'{marker}.{key}'
-                if self.__requested_fields
-                else marker + 1
-            )
+            next_marker = self.__get_next_marker(marker, key)
             return {
                 'data': self.__dump_object(
                     related_object,
                     next_marker,
                 )
             }
+
+    def __get_next_marker(
+        self,
+        marker: int | str,
+        key: str,
+    ) -> int | str:
+
+        return (
+            (f'{marker}.{key}' if marker else key)
+            if self.__requested_fields
+            else marker + 1
+        )
+
+    def __to_one_is_relevant(
+        self,
+        key: str,
+        marker: str
+    ) -> bool:
+
+        next_marker = self.__get_next_marker(marker, key)
+
+        return any(
+            r for r in self.__requested_fields
+            if r.startswith(next_marker)
+        )
 
     def __get_related_to_one(
         self,

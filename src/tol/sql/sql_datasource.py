@@ -44,7 +44,7 @@ if typing.TYPE_CHECKING:
 
 
 ConverterFactory = Callable[
-    [DataObjectFactory],
+    [DataObjectFactory, list[str] | None],
     ModelConverter
 ]
 BackConverterFactory = Callable[[], DataObjectConverter]
@@ -211,7 +211,9 @@ class SqlDataSource(
                 requested_fields
             ),
         )
-        converter = self.__get_converter()
+        converter = self.__get_converter(
+            requested_fields=requested_fields
+        )
         return_list = list(
             converter.convert_iterable(models)
         )
@@ -391,34 +393,6 @@ class SqlDataSource(
         else:
             return [], None
 
-    def __get_page(
-        self,
-        page: int,
-        page_size: int,
-        tablename: str,
-        session: Optional[SqlDataSourceSession],
-        database_filter: Optional[DatabaseFilter],
-        database_sorter: Optional[DatabaseSorter]
-    ) -> list[DataObject]:
-
-        sqla_session = self.__get_sqla_session(session)
-
-        models = self.__db.get_page(
-            tablename,
-            sqla_session,
-            filters=database_filter,
-            sort_by=database_sorter,
-            offset=(page - 1) * page_size,
-            limit=page_size
-        )
-        converter = self.__get_converter()
-        objects = list(
-            converter.convert_iterable(models)
-        )
-        if session is None:
-            sqla_session.close()
-        return objects
-
     def __calculate_all_attribute_types(self) -> dict[str, dict[str, str]]:
         tablename_type_map = {
             v: k for k, v in self.__type_tablename_map.items()
@@ -439,8 +413,15 @@ class SqlDataSource(
             for k, v in types.items()
         }
 
-    def __get_converter(self) -> ModelConverter:
-        return self.__converter_factory(self.data_object_factory)
+    def __get_converter(
+        self,
+        requested_fields: list[str] | None = None,
+    ) -> ModelConverter:
+
+        return self.__converter_factory(
+            self.data_object_factory,
+            requested_fields=requested_fields,
+        )
 
     def __get_model_list_by_ids(
         self,
