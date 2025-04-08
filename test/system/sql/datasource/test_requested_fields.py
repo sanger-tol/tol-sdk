@@ -42,14 +42,14 @@ class TestRequestedFields:
         sql_ds = create_sql_datasource(models_list, DB_URI)
         core_data_object(sql_ds)
 
-        def __assert_requested(iter_b: Iterable[DataObject]) -> None:
+        def __assert_requested(iter_b: list[DataObject]) -> None:
             for i, (b, letter) in enumerate(zip(iter_b, 'abc')):
                 # requested fields are there
                 assert b.id == letter
                 assert b.int_column == i
 
         def __assert_requested_view(
-            iter_b: Iterable[DataObject]
+            iter_b: list[DataObject]
         ) -> None:
 
             view = DefaultView(
@@ -112,8 +112,8 @@ class TestRequestedFields:
         sql_ds = create_sql_datasource(models_list, DB_URI)
         core_data_object(sql_ds)
 
-        def __assert_requested(iter_r3: Iterable[DataObject]) -> None:
-            (r3,) = list(iter_r3)
+        def __assert_requested(iter_r3: list[DataObject]) -> None:
+            r3 = iter_r3[0]
 
             # meant to be there
             assert r3.id == 'neither'
@@ -121,12 +121,35 @@ class TestRequestedFields:
             assert r3.funny_r1.r2_d2.id == 'something comforting'
             assert r3.funny_r1.r2_d2.funny_string == 'yes'
 
+        def __assert_requested_view(
+            iter_r3: list[DataObject]
+        ) -> None:
+
+            view = DefaultView(
+                requested_fields=['funny_r1.r2_d2.funny_string'],
+            )
+            dumped = view.dump_bulk(iter_r3)
+
+            assert len(dumped['data']) == 1
+            dumped_r3 = dumped['data'][0]
+
+            # meant to be there
+            assert dumped_r3['id'] == 'neither'
+            dumped_r1 = dumped_r3['relationships']['funny_r1']['data']
+            assert dumped_r1['id'] == 'idk'
+            dumped_r2 = dumped_r1['relationships']['r2_d2']['data']
+            assert dumped_r2['id'] == 'something comforting'
+            assert dumped_r2['attributes']['funny_string'] == 'yes'
+
         # `get_list()`
-        iter_r3 = sql_ds.get_list(
-            'r3',
-            requested_fields=['funny_r1.r2_d2.funny_string']
+        iter_r3 = list(
+            sql_ds.get_list(
+                'r3',
+                requested_fields=['funny_r1.r2_d2.funny_string']
+            )
         )
         __assert_requested(iter_r3)
+        __assert_requested_view(iter_r3)
 
         # `get_list_page()`
         page_r3, count_r3 = sql_ds.get_list_page(
@@ -134,5 +157,8 @@ class TestRequestedFields:
             1,
             requested_fields=['funny_r1.r2_d2.funny_string']
         )
+        page_r3 = list(page_r3)
+
         assert count_r3 == 1
         __assert_requested(page_r3)
+        __assert_requested_view(page_r3)
