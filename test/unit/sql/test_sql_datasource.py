@@ -159,7 +159,7 @@ class TestSqlDataSource:
             _SingleRowDatabase(),
             {'tests': 'test'},
             MagicMock(),
-            lambda _: _MockBasicConverter(lambda m: f'{m.get_table_name()}s'),
+            lambda *_: _MockBasicConverter(lambda m: f'{m.get_table_name()}s'),
             MagicMock(),
             MagicMock(),
             MagicMock()
@@ -270,7 +270,7 @@ class TestSqlDataSource:
             _AutoIncrementDatabase(),
             {'tests': 'test'},
             MagicMock(),
-            lambda _: _MockBasicConverter(lambda m: f'{m.get_table_name()}s'),
+            lambda *_: _MockBasicConverter(lambda m: f'{m.get_table_name()}s'),
             MagicMock(),
             MagicMock(),
             MagicMock()
@@ -324,7 +324,7 @@ class TestSqlDataSource:
             mock_db,
             {'tests': 'test'},
             MagicMock(),
-            lambda _: _MockIdentityConverter(),
+            lambda *_: _MockIdentityConverter(),
             MagicMock(),
             MagicMock(),
             MagicMock()
@@ -355,7 +355,7 @@ class TestSqlDataSource:
             mock_db,
             {'tests': 'test'},
             MagicMock(),
-            lambda _: _MockIdentityConverter(),
+            lambda *_: _MockIdentityConverter(),
             MagicMock(),
             MagicMock(),
             MagicMock()
@@ -392,7 +392,7 @@ class TestSqlDataSource:
             mock_db,
             {'tests': 'test'},
             MagicMock(),
-            lambda _: _MockPrefixConverter('look... '),
+            lambda *_: _MockPrefixConverter('look... '),
             MagicMock(),
             MagicMock(),
             MagicMock()
@@ -440,7 +440,7 @@ class TestSqlDataSource:
             mock_db,
             {'tests': 'test'},
             MagicMock(),
-            lambda _: _MockPrefixConverter('look... '),
+            lambda *_: _MockPrefixConverter('look... '),
             MagicMock(),
             MagicMock(),
             MagicMock()
@@ -491,7 +491,7 @@ class TestSqlDataSource:
             mock_db,
             {'tests': 'test'},
             MagicMock(),
-            lambda _: _MockPrefixConverter(prefix),
+            lambda *_: _MockPrefixConverter(prefix),
             MagicMock(),
             MagicMock(),
             MagicMock()

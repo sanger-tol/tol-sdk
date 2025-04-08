@@ -420,7 +420,7 @@ class SqlDataSource(
 
         return self.__converter_factory(
             self.data_object_factory,
-            requested_fields=requested_fields,
+            requested_fields,
         )
 
     def __get_model_list_by_ids(
