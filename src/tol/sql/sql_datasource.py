@@ -206,7 +206,7 @@ class SqlDataSource(
             page_size,
             sorter,
             in_session,
-            requested_fields=self.__format_requested_fields(
+            requested_relationships=self.__format_requested_relationships(
                 object_type,
                 requested_fields
             ),
@@ -466,7 +466,7 @@ class SqlDataSource(
         page_size: Optional[int],
         sort_by: Optional[DatabaseSorter],
         in_session: SqlaSession,
-        requested_fields: dict | None = None,
+        requested_relationships: dict[str, str] | None = None,
     ) -> Iterable[Model]:
 
         offset = self.__get_offset(page_number, page_size)
@@ -477,7 +477,7 @@ class SqlDataSource(
             sort_by=sort_by,
             offset=offset,
             limit=page_size,
-            requested_fields=requested_fields,
+            requested_relationships=requested_relationships,
         )
 
     def __get_offset(
@@ -500,32 +500,37 @@ class SqlDataSource(
             (lambda: None) if user_id_getter is None else user_id_getter
         )
 
-    def __format_requested_fields(
+    def __format_requested_relationships(
         self,
         object_type: str,
-        requested_fields: list[str] | None
+        requested_relationships: list[str] | None
     ) -> dict | None:
 
-        if requested_fields is None:
+        if requested_relationships is None:
             return None
 
-        fields_dict = {'__fields__': []}
+        rel_dict = {
+            '__tablename__': self.__type_tablename_map[object_type]
+        }
 
-        for requested in requested_fields:
+        for requested in requested_relationships:
             current_type = object_type
-            *relationships, column = requested.split('.')
-            current_dict = fields_dict
+            # cut off the column
+            relationships = requested.split('.')[:-1]
+            current_dict = rel_dict
 
             for r in relationships:
                 r_type = self.relationship_config[current_type].to_one[r]
-                if r_type in current_dict:
-                    current_dict = current_dict[r_type]
-                else:
-                    current_dict[r_type] = {'__fields__': []}
-                    current_dict = current_dict[r_type]
+                r_tablename = self.__type_tablename_map[r_type]
 
+                if r not in current_dict:
+                    current_dict[r] = {
+                        '__tablename__': r_tablename
+                    }
+
+                current_dict = current_dict[r]
                 current_type = r_type
 
-            current_dict['__fields__'].append(column)
+        import logging; logging.error(rel_dict)
 
-        return fields_dict
+        return rel_dict

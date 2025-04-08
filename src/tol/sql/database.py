@@ -8,7 +8,7 @@ from abc import ABC, abstractmethod
 from typing import Any, Dict, Iterable, List, Optional, Type
 
 from sqlalchemy.exc import IntegrityError
-from sqlalchemy.orm import Query, Session
+from sqlalchemy.orm import Query, Session, joinedload
 from sqlalchemy.orm.attributes import flag_modified
 
 from .filter import DatabaseFilter
@@ -44,7 +44,7 @@ class Database(ABC):
         sort_by: Optional[DatabaseSorter] = None,
         offset: Optional[int] = None,
         limit: Optional[int] = None,
-        requested_fields: dict | None = None
+        requested_relationships: dict[str, str] | None = None
     ) -> Iterable[Model]:
         """
         Returns an Iterable of `Model` instances according
@@ -179,13 +179,13 @@ class DefaultDatabase(Database):
         sort_by: Optional[DatabaseSorter] = None,
         offset: Optional[int] = None,
         limit: Optional[int] = None,
-        requested_fields: dict | None = None,
+        requested_relationships: dict[str, str] | None = None,
     ) -> Iterable[Model]:
 
         _, query = self.__get_model_query(
             tablename,
             in_session,
-            requested_fields
+            requested_relationships
         )
         if filters is not None:
             query = filters.filter(query, tablename, self.__tablename_model_dict)
@@ -311,25 +311,39 @@ class DefaultDatabase(Database):
         self,
         tablename: str,
         in_session: Session,
-        requested_fields: dict | None,
+        requested_relationships: dict | None,
     ) -> tuple[Type[Model], Query]:
 
         model = self.__tablename_model_dict[tablename]
         query = in_session.query(model)
 
-        if requested_fields:
-            query = self.__apply_requested_fields(
+        if requested_relationships:
+            query = self.__apply_requested_relationships(
                 query,
-                requested_fields
+                requested_relationships
             )
 
         return model, query
 
-    def __apply_requested_fields(
+    def __apply_requested_relationships(
         self,
         query: Query,
-        requested_fields: dict
+        requested_relationships: dict[str, str]
     ) -> Query:
+
+        tablename = requested_relationships.pop('__tablename__')
+        if not requested_relationships:
+            return query
+
+        model = self.__tablename_model_dict[tablename]
+
+        for r_name, r_dict in requested_relationships.items():
+            relationship = getattr(model, r_name)
+            query.options(
+                joinedload(relationship)
+            )
+
+            query = self.__apply_requested_relationships(query, r_dict)
 
         return query
 
