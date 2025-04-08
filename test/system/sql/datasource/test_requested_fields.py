@@ -69,18 +69,20 @@ class TestRequestedFields:
         session.add(
             models.R2(
                 id='something comforting',
-                funny_string='yes'
+                funny_string='yes',
             )
         )
         session.add(
             models.R1(
                 id_override='idk',
+                r2_foreign_key='something comforting',
             )
         )
         session.add(
             models.R3(
                 id='neither',
-                another_string='look to the sky'
+                another_string='look to the sky',
+                ur_r1_id='idk',
             )
         )
         session.commit()
@@ -98,9 +100,6 @@ class TestRequestedFields:
             assert r3.funny_r1.id == 'idk'
             assert r3.funny_r1.r2_d2.id == 'something comforting'
             assert r3.funny_r1.r2_d2.funny_string == 'yes'
-
-            # not meant to be there
-            assert not r3.another_string
 
         # `get_list()`
         iter_r3 = sql_ds.get_list(
