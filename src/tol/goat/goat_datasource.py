@@ -97,7 +97,7 @@ class GoatDataSource(
                 'protection_of_badgers_act_1992': 'str',
                 'family_representative': 'List[str]',
                 'lineage': 'List[str]',
-                'sample_collected': 'str'
+                'sample_collected': 'List[str]',
             }
         }
 
