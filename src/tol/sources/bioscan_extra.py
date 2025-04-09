@@ -89,7 +89,7 @@ def bioscan_extra():
                 'header_row': 1,
                 'data_start_row': 2
             },
-            'species': {
+            'new_pantheon_species': {
                 'worksheet_name': 'NEW_PANTHEON',
                 'columns': {
                     'id': {
@@ -115,7 +115,7 @@ def bioscan_extra():
                     'broad_biotope_habitat_resources': {
                         'heading': 'Pantheon:Broad Biotope, Habiatat, Resources',
                         'type': 'str'
-                    }, 
+                    },
                     'specific_assemblage_type': {
                         'heading': 'Pantheon:Specific assemblage type',
                         'type': 'str'
