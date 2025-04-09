@@ -113,7 +113,7 @@ def bioscan_extra():
                         'type': 'str'
                     },
                     'broad_biotope_habitat_resources': {
-                        'heading': 'Pantheon:Broad Biotope, Habiatat, Resources',
+                        'heading': 'Pantheon:Broad Biotope, Habitat, Resources',
                         'type': 'str'
                     },
                     'specific_assemblage_type': {

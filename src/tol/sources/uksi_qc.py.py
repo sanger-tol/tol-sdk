@@ -13,12 +13,12 @@ from tol.google_sheets import (
 )
 
 
-def bioscan_flatfile_tabs():
+def uksi_qc():
     gsds = GoogleSheetDataSource({
         'client_secrets': json.loads(os.getenv('GOOGLE_CLIENT_SECRETS')),
         'sheet_key': '1_2lZ5nah_xadTQPhiTkNC5xNEa9VqK-u59Lu2okMD3U',
         'mappings': {
-            'specimen_id': {
+            'specimen': {
                 'worksheet_name': 'SANGER_QC',
                 'columns': {
                     'id': {
@@ -37,7 +37,7 @@ def bioscan_flatfile_tabs():
                 'header_row': 1,
                 'data_start_row': 2
             },
-            'recommended_scientific_name': {
+            'uksi_entry': {
                 'worksheet_name': 'UKSI_LIST',
                 'columns': {
                     'id': {
