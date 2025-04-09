@@ -58,7 +58,10 @@ WITH tissue_preps AS (
 			ELSE con.volume_si * 1000000
 		END AS weight_mg,
 		tube.tissue_prep_downstream_process AS downstream_protocol,
-		tube.tissue_prep_disruption_method AS disruption_method,
+		CASE
+			WHEN tube.tissue_prep_disruption_method = 'None' THEN NULL
+			ELSE tube.tissue_prep_disruption_method
+		END AS disruption_method,
 		tube.tissue_prep_type,
 		tube.sciops_protocol_required,
 		t.lab_work_category AS labwork_category_sts,
@@ -102,7 +105,7 @@ legacy_tissue_preps AS (
 			ELSE con.volume_si * 1000000 
 		END AS weight_mg,
 		tpr.downstream_protocol,
-		''::varchar AS disruption_method,
+		NULL::varchar AS disruption_method,
 		tube.tissue_prep_type,
 		tube.sciops_protocol_required,
 		t.lab_work_category AS labwork_category_sts,
