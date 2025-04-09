@@ -364,9 +364,10 @@ class ElasticDataSource(
         u = self._add_checksum(u)
         u = self._add_updated(u)
         f = DataSourceFilter()
-        f.exact = {}
+        f.and_ = {}
         for key in candidate_key:
-            f.exact[key] = u.pop(key)  # Don't want key in the upsert as it cannot change anyway
+            # Don't want key in the upsert as it cannot change anyway
+            f.and_[key] = {'eq': {'value': u.pop(key)}}
         u = self._prefix_fields(u, field_prefix)
         query = self._build_elasticsearch_query(
             self.__get_object_type(index),
@@ -532,35 +533,10 @@ class ElasticDataSource(
     def _build_elasticsearch_query(self, object_type: str,
                                    object_filters: DataSourceFilter = None):
         query = {'bool': {'must': [], 'must_not': []}}
+        object_filters = self._preprocess_filter(object_type, object_filters)
+        # If we want to implement preprocessing of filters, call self._preprocess_filter() here
         if object_filters is None:
             return query
-        if object_filters.exact is not None:
-            for k, v in object_filters.exact.items():
-                if v is None:
-                    query['bool']['must_not'].append({'exists': {'field': k}})
-                else:
-                    search_field = self._field_or_keyword(object_type, k)
-                    query['bool']['must'].append({'match': {search_field: v}})
-
-        if object_filters.contains is not None:
-            for k, v in object_filters.contains.items():
-                query = self._contains_filter(
-                    query,
-                    object_type,
-                    k,
-                    v
-                )
-
-        if object_filters.in_list is not None:
-            for k, v in object_filters.in_list.items():
-                search_field = self._field_or_keyword(object_type, k)
-                query['bool']['must'].append({'terms': {search_field: v, 'boost': 1.0}})
-
-        if object_filters.range is not None:
-            for k, v in object_filters.range.items():
-                search_field = self._field_or_keyword(object_type, k)
-                query['bool']['must'].append({'range': {search_field: {'gte': v['from'],
-                                                                       'lte': v['to']}}})
         if object_filters.and_ is not None:
             for k, v in object_filters.and_.items():
                 search_field = self._field_or_keyword(object_type, k)
@@ -1210,7 +1186,7 @@ class ElasticDataSource(
 
         # Get all the related objects that point to this source object
         f = DataSourceFilter()
-        f.exact = {related_object_fk_attribute: source.id}
+        f.and_ = {related_object_fk_attribute: {'eq': {'value': source.id}}}
         related_objects = self.get_list(related_object_type, object_filters=f)
         return related_objects
 

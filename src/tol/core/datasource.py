@@ -133,6 +133,26 @@ class DataSource(ABC):
                 }
         return ret
 
+    def get_attribute_metadata_by_name(self, obj_type: str, field_name: str) -> Any:
+        """
+        Get attribute_metadata by name, or return `None` if the field does not exist.
+        """
+        # Split by dots to allow for nested fields
+        field_names = field_name.split('.')
+        current_obj_type = obj_type
+        for name in field_names:
+            # It may be an attribute of the current object type
+            if name in self.attribute_metadata[current_obj_type]:
+                return self.attribute_metadata[current_obj_type][name]
+            # ...or a to_one relation
+            if current_obj_type in self.relationship_config and \
+                    self.relationship_config[current_obj_type].to_one is not None:
+                if name in self.relationship_config[current_obj_type].to_one:
+                    current_obj_type = self.relationship_config[current_obj_type].to_one[name]
+                    continue
+            return None
+        return None
+
     @property
     def data_object_factory(self) -> Optional[DataObjectFactory]:
         """A callable that returns a new DataObject for the given type."""

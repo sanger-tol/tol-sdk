@@ -8,13 +8,15 @@ import typing
 from abc import ABC, abstractmethod
 from typing import Iterable, Optional, Tuple
 
+from ._filterable import _Filterable
+
 if typing.TYPE_CHECKING:
     from ..data_object import DataObject
     from ..datasource_filter import DataSourceFilter
     from ..session import OperableSession
 
 
-class PageGetter(ABC):
+class PageGetter(_Filterable, ABC):
     """
     Gets pages of DataObject instances.
     """

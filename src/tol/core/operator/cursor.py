@@ -8,6 +8,7 @@ import typing
 from abc import ABC, abstractmethod
 from typing import Iterable, Optional
 
+from ._filterable import _Filterable
 from ..datasource_error import DataSourceError
 from ..datasource_filter import DataSourceFilter
 
@@ -16,7 +17,7 @@ if typing.TYPE_CHECKING:
     from ..session import OperableSession
 
 
-class Cursor(ABC):
+class Cursor(_Filterable, ABC):
     """
     Implements cursor pagination.
     """

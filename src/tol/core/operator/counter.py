@@ -8,12 +8,14 @@ import typing
 from abc import ABC, abstractmethod
 from typing import Optional
 
+from ._filterable import _Filterable
+
 if typing.TYPE_CHECKING:
     from ..datasource_filter import DataSourceFilter
     from ..session import OperableSession
 
 
-class Counter(ABC):
+class Counter(_Filterable, ABC):
     """
     Counts number of results that match a filter
     """
