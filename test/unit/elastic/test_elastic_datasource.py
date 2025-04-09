@@ -469,52 +469,9 @@ class TestElasticDataSource(TestCase):
         expected = {'bool': {'must': [], 'must_not': []}}
         self.assertEqual(expected, eds._build_elasticsearch_query('obj_type', None))
 
-        # Exact with relationship
         rc = RelationshipConfig()
         rc.to_one = {'relationship': 'reltype'}
         eds.relationship_cfg = {'obj_type': rc}
-        object_filters = DataSourceFilter()
-        object_filters.exact = {'relationship.field3': 'string1'}
-        expected = {'bool': {'must': [{'match': {'relationship.field3.keyword': 'string1'}}],
-                             'must_not': []}}
-        self.assertEqual(expected, eds._build_elasticsearch_query('obj_type', object_filters))
-
-        # Exact filtering
-        object_filters = DataSourceFilter()
-        object_filters.exact = {'field1': 'string1', 'field2': 3, 'field3': None}
-        expected = {'bool': {'must': [{'match': {'field1.keyword': 'string1'}},
-                                      {'match': {'field2.keyword': 3}}],
-                             'must_not': [{'exists': {'field': 'field3'}}]}}
-        self.assertEqual(expected, eds._build_elasticsearch_query('obj_type', object_filters))
-
-        # Wildcard filtering
-        object_filters = DataSourceFilter()
-        object_filters.contains = {'field1': 'string1', 'field2': 'string2'}
-        expected = {'bool': {'must': [
-            {'wildcard': {'field1.keyword': {'value': 'string1*', 'boost': 1.0}}},
-            {'wildcard': {'field2.keyword': {'value': 'string2*', 'boost': 1.0}}}],
-            'must_not': []}}
-        self.assertEqual(expected, eds._build_elasticsearch_query('obj_type', object_filters))
-
-        # In list filtering
-        object_filters = DataSourceFilter()
-        object_filters.in_list = {'field1': ['string1', 'string2'],
-                                  'field2': ['string3', 'string4']}
-        expected = {'bool': {'must': [
-            {'terms': {'field1.keyword': ['string1', 'string2'], 'boost': 1.0}},
-            {'terms': {'field2.keyword': ['string3', 'string4'], 'boost': 1.0}}],
-            'must_not': []}}
-        self.assertEqual(expected, eds._build_elasticsearch_query('obj_type', object_filters))
-
-        # Range filtering
-        object_filters = DataSourceFilter()
-        object_filters.range = {'field1': {'from': 'string1', 'to': 'string2'},
-                                'datefield': {'from': '2022-01-01', 'to': '2023-01-01'}}
-        expected = {'bool': {'must': [
-            {'range': {'field1.keyword': {'gte': 'string1', 'lte': 'string2'}}},
-            {'range': {'datefield': {'gte': '2022-01-01', 'lte': '2023-01-01'}}}],
-            'must_not': []}}
-        self.assertEqual(expected, eds._build_elasticsearch_query('obj_type', object_filters))
 
         # And filtering
         object_filters = DataSourceFilter()
@@ -549,6 +506,9 @@ class TestElasticDataSource(TestCase):
             'datefield': {
                 'gt': {'value': '2022-01-01'},
                 'lte': {'value': '2023-01-01'}
+            },
+            'relationship.field3': {
+                'eq': {'value': 'string1'}
             }
         }
         expected = {
@@ -560,10 +520,11 @@ class TestElasticDataSource(TestCase):
                     {'wildcard': {'field4.keyword': {'value': 'abc*', 'boost': 1.0}}},
                     {'terms': {'field5.keyword': ['one', 'two'], 'boost': 1.0}},
                     {'match': {'field6': 5}},
-                    {'range': {'field8': {'gt': '2022-01-01'}}},
-                    {'range': {'field8': {'lte': '2023-01-01'}}},
-                    {'range': {'datefield': {'gt': '2022-01-01'}}},
-                    {'range': {'datefield': {'lte': '2023-01-01'}}}
+                    {'range': {'field8': {'gt': datetime(2022, 1, 1, 0, 0)}}},
+                    {'range': {'field8': {'lte': datetime(2023, 1, 1, 0, 0)}}},
+                    {'range': {'datefield': {'gt': datetime(2022, 1, 1, 0, 0)}}},
+                    {'range': {'datefield': {'lte': datetime(2023, 1, 1, 0, 0)}}},
+                    {'match': {'relationship.field3.keyword': 'string1'}}
                 ],
                 'must_not': [
                     {'exists': {'field': 'field2.keyword'}},
@@ -574,6 +535,7 @@ class TestElasticDataSource(TestCase):
                 )
             }
         }
+
         self.assertEqual(expected, eds._build_elasticsearch_query('obj_type', object_filters))
 
     def test_build_sort(self):

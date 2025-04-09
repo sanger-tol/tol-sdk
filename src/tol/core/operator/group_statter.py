@@ -8,12 +8,14 @@ import typing
 from abc import ABC, abstractmethod
 from typing import Any, Iterable, Optional
 
+from ._filterable import _Filterable
+
 if typing.TYPE_CHECKING:
     from ..datasource_filter import DataSourceFilter
     from ..session import OperableSession
 
 
-class GroupStatter(ABC):
+class GroupStatter(_Filterable, ABC):
     @abstractmethod
     def get_group_stats(
         self,
