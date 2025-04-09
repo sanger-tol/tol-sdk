@@ -682,10 +682,10 @@ def elastic():
                         if (!Double.isNaN(value)) {
                 emit(value);
             } else {
-                emit(-1.0);
+                emit(0.5);
             }
         } else {
-            emit(-1.0);
+            emit(0.5);
         }
                 """
                 }
@@ -733,10 +733,10 @@ def elastic():
                         if (!Double.isNaN(value)) {
                 emit(value);
             } else {
-                emit(-1.0);
+                emit(0.5);
             }
         } else {
-            emit(-1.0);
+            emit(0.5);
         }
                 """
                 }
@@ -761,10 +761,10 @@ def elastic():
                         if (!Double.isNaN(value)) {
                 emit(value);
             } else {
-                emit(-1.0);
+                emit(0.5);
             }
         } else {
-            emit(-1.0);
+            emit(0.5);
         }
                 """
                 }
@@ -784,10 +784,10 @@ def elastic():
                         if (!Double.isNaN(value)) {
                 emit(value);
             } else {
-                emit(-1.0);
+                emit(0.5);
             }
         } else {
-            emit(-1.0);
+            emit(0.5);
         }
                 """
                 }
