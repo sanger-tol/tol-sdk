@@ -32,7 +32,8 @@ class TestGoatApiClient:
                             'ploidy': {'value': 2},
                             'isb_wildlife_act_1976': {'value': 'IWA-Sch5'},
                             'protection_of_badgers_act_1992': {'value': 'Badgers92'},
-                            'family_representative': {'value': 'DTOL'}
+                            'family_representative': {'value': 'DTOL'},
+                            'sample_collected': {'value': 'DTOL'}
                         }
                     }
                 },
@@ -50,7 +51,8 @@ class TestGoatApiClient:
                             'habreg_2017': {'value': 'Hab'},
                             'marhabreg-2017': {'value': 'Mar'},
                             'waca_1981': {'value': 'Shakira'},
-                            'family_representative': {'value': ['PROJ_A', 'PROJ_B']}
+                            'family_representative': {'value': ['PROJ_A', 'PROJ_B']},
+                            'sample_collected': {'value': 'ZOONOMIA'}
                         }
                     }
                 }
@@ -72,7 +74,8 @@ class TestGoatApiClient:
                         'ploidy': {'value': 2},
                         'isb_wildlife_act_1976': {'value': 'IWA-Sch5'},
                         'protection_of_badgers_act_1992': {'value': 'Badgers92'},
-                        'family_representative': {'value': 'DTOL'}
+                        'family_representative': {'value': 'DTOL'},
+                        'sample_collected': {'value': 'DTOL'}
                     }
                 }
             },
@@ -90,7 +93,8 @@ class TestGoatApiClient:
                         'habreg_2017': {'value': 'Hab'},
                         'marhabreg-2017': {'value': 'Mar'},
                         'waca_1981': {'value': 'Shakira'},
-                        'family_representative': {'value': ['PROJ_A', 'PROJ_B']}
+                        'family_representative': {'value': ['PROJ_A', 'PROJ_B']},
+                        'sample_collected': {'value': 'ZOONOMIA'}
                     }
                 }
             }
