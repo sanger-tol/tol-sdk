@@ -107,6 +107,10 @@ services:
       - ENA_CONTACT_EMAIL
       - PORTAL_URL
       - PORTAL_API_PATH
+      - ELASTIC_URI
+      - ELASTIC_USER
+      - ELASTIC_PASSWORD
+      - ELASTIC_INDEX_PREFIX
     networks:
       - api-base-test-network
 
