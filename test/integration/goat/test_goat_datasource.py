@@ -45,7 +45,6 @@ class TestGoatDataSource(TestCase):
         self.assertEqual(obj1.phylum.scientific_name, 'Streptophyta')
         self.assertIsNone(obj1.common_name)
         self.assertEqual(obj1.tolid_prefix, 'drCitLimo')
-        self.assertEqual(obj1.tolid_prefix, 'drCitLimo')
         with self.assertRaises(StopIteration):
             next(ret)
 
