@@ -53,6 +53,7 @@ SELECT DISTINCT
         WHEN con.archive_purpose$ IN ('Retired', 'Expended') THEN 0 -- Retired or expended RNA extractions have a weight of 0
         ELSE con.volume_si * 1000000
     END AS volume_ul,
+	con.volume_si * 1000000 AS volume_ul,
 	loc.name AS location,
 	box.barcode AS rack,
 	rna.bt_id AS bnt_id,
@@ -83,7 +84,7 @@ LEFT JOIN location$raw AS loc
 WHERE tube.type IS NULL -- Excluding vouchers
 	AND proj.name = 'ToL Core Lab'
 	AND f.name IN ('Routine Throughput', 'RNA', 'Core Lab Entities', 'Benchling MS Project Move', 'R&D', 'ToL Core Restricted Entities')
-    AND (rna.archive_purpose$ NOT IN ('Made in error', 'Expended') OR dna.archive_purpose$ IS NULL)
-    AND (con.archive_purpose$ NOT IN ('Made in error', 'Expended') OR con.archive_purpose$ IS NULL)
+	AND (rna.archive_purpose$ != ('Made in error') OR rna.archive_purpose$ IS NULL)
+	AND (con.archive_purpose$ != ('Made in error') OR con.archive_purpose$ IS NULL)
 	AND con.plate_id IS NULL -- Delete well rows.
 ORDER BY completion_date DESC;
