@@ -71,7 +71,8 @@ class TestGoatApiConverter:
                         'ploidy': {'value': 2},
                         'isb_wildlife_act_1976': {'value': 'IWA-Sch5'},
                         'protection_of_badgers_act_1992': {'value': 'Badgers92'},
-                        'family_representative': {'value': 'DTOL'}
+                        'family_representative': {'value': 'DTOL'},
+                        'sample_collected': {'value': 'DTOL'}
                     },
                     'names': {
                         'tolid_prefix': {
@@ -134,7 +135,8 @@ class TestGoatApiConverter:
                         'habreg_2017': {'value': 'Hab'},
                         'marhabreg-2017': {'value': 'Mar'},
                         'waca_1981': {'value': 'Shakira'},
-                        'family_representative': {'value': ['PROJ_A', 'PROJ_B']}
+                        'family_representative': {'value': ['PROJ_A', 'PROJ_B']},
+                        'sample_collected': {'value': 'ZOONOMIA'}
                     }
                 }
             }
@@ -155,7 +157,8 @@ class TestGoatApiConverter:
             'family_representative': 'List[str]',
             'lineage': 'List[str]',
             'tolid_prefix': 'str',
-            'common_name': 'str'
+            'common_name': 'str',
+            'sample_collected': 'List[str]'
         }}))
         converter = GoatApiConverter(parser)
         (out_, _) = converter.convert_list(in_)
@@ -174,6 +177,7 @@ class TestGoatApiConverter:
             'isb_wildlife_act_1976': ['IWA-Sch5'],
             'protection_of_badgers_act_1992': ['Badgers92'],
             'family_representative': ['DTOL'],
+            'sample_collected': ['DTOL'],
             'lineage': ['Mustelidae', 'Meles', 'Meles meles'],
             'tolid_prefix': 'mMelMel',
             'common_name': 'Melon'
@@ -196,5 +200,6 @@ class TestGoatApiConverter:
             'habreg_2017': ['Hab'],
             'marhabreg-2017': ['Mar'],
             'waca_1981': ['Shakira'],
-            'family_representative': ['PROJ_A', 'PROJ_B']
+            'family_representative': ['PROJ_A', 'PROJ_B'],
+            'sample_collected': ['ZOONOMIA']
         }

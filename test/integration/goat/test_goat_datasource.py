@@ -36,7 +36,6 @@ class TestGoatDataSource(TestCase):
         ret = gds.get_by_ids('taxon', ['2708'])
         obj1 = next(ret)
         self.assertEqual('2708', obj1.id)
-        print(obj1.attributes)
 
         # Just pick out a few attributes here to test
         self.assertEqual(obj1.scientific_name, 'Citrus x limon')
@@ -77,6 +76,7 @@ class TestGoatDataSource(TestCase):
                 self.assertEqual(obj.assembly_level, 'Chromosome')
                 self.assertEqual(obj.long_list, ['DTOL', 'PSYCHE'])
                 self.assertEqual(obj.phylum.scientific_name, 'Arthropoda')
+                self.assertEqual(obj.sample_collected, ['DTOL'])
 
     def test_get_list_tax_rank(self):
         gds = goat()
