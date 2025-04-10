@@ -123,6 +123,10 @@ SELECT DISTINCT
     COALESCE(DATE(dna.created_on), DATE(dna.created_at$)) AS completion_date, -- Homogenising BnT and Benchling dates
     dna.name$ AS extraction_name,
     con.barcode AS fluidx_id,
+    CASE
+        WHEN con.archive_purpose$ IN ('Retired', 'Expended') THEN 0 -- Retired or expended DNA extractions have a weight of 0
+        ELSE con.volume_si * 1000000
+    END AS volume_ul,
     con.volume_si * 1000000 AS volume_ul,
     loc.name AS location,
     box.barcode AS rack,
@@ -174,8 +178,8 @@ WHERE tube.type IS NULL -- Excluding vouchers
     AND con.volume_si * 1000000 != 10
     AND proj.name = 'ToL Core Lab'
     AND  (f.name IN ('Routine Throughput', 'DNA', 'Core Lab Entities', 'Benchling MS Project Move') OR f.name IS NULL)
-    AND (dna.archive_purpose$ NOT IN ('Made in error', 'Expended') OR dna.archive_purpose$ IS NULL)
-    AND (con.archive_purpose$ NOT IN ('Made in error', 'Expended') OR con.archive_purpose$ IS NULL)
+    AND (dna.archive_purpose$ != ('Made in error') OR con.archive_purpose$ IS NULL)
+    AND (con.archive_purpose$ != ('Made in error') OR con.archive_purpose$ IS NULL)
     AND con.barcode NOT LIKE 'CON%'
 ORDER BY completion_date DESC
  
