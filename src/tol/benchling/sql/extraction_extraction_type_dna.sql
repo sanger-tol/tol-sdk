@@ -127,7 +127,6 @@ SELECT DISTINCT
         WHEN con.archive_purpose$ IN ('Retired', 'Expended') THEN 0 -- Retired or expended DNA extractions have a weight of 0
         ELSE con.volume_si * 1000000
     END AS volume_ul,
-    con.volume_si * 1000000 AS volume_ul,
     loc.name AS location,
     box.barcode AS rack,
     dna.bt_id AS bnt_id,
