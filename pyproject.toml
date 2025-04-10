@@ -8,7 +8,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "tol-sdk"
-version = "1.4.28"
+version = "1.4.29"
 description = "SDK for interaction with ToL, Sanger and external services"
 readme = "README.md"
 authors = [
@@ -30,7 +30,8 @@ dependencies = [
   "python_dateutil >= 2.8.1",
   "python-dotenv >= 1.0.1",
   "requests == 2.31.0",
-  "setuptools == 69.0.3"
+  "setuptools == 69.0.3",
+  "dateparser == 1.2.1"
 ]
 
 [project.optional-dependencies]
