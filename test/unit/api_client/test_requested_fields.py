@@ -13,26 +13,46 @@ from tol.api_client.converter import (
     JsonApiConverter,
 )
 from tol.api_client.filter import ApiFilter
-from tol.core import (
-    DataObject,
-    core_data_object,
-)
+from tol.api_client.parser import DefaultParser
+from tol.core import DataObject, core_data_object
 
 
 @pytest.fixture
 def requested_api_client() -> JsonApiClient:
-    return create_autospec(
+    mock_client: JsonApiClient = create_autospec(
         JsonApiClient,
         spec_set=True
     )
 
+    mock_client.config_attribute_types.return_value = {
+        'a': {},
+        'b': {},
+        'c': {},
+    }
 
-@pytest.fixture
-def requested_json_converter() -> JsonApiConverter:
-    return create_autospec(
-        JsonApiConverter,
-        spec_set=True
-    )
+    mock_client.config_relationships.return_value = {
+        'a': {
+            'one': {
+                'b': 'b'
+            }
+        },
+        'b': {
+            'one': {
+                'c': 'c'
+            }
+        },
+    }
+
+    mock_client.config_operations.return_value = {
+        'a': {
+            'noauth': [
+                'detailGet',
+                'listGet',
+            ]
+        }
+    }
+
+    return mock_client
 
 
 @pytest.fixture
@@ -54,18 +74,33 @@ def requested_filter() -> ApiFilter:
 @pytest.fixture
 def requested_api_ds(
     requested_api_client: JsonApiClient,
-    requested_json_converter: JsonApiConverter,
     requested_do_converter: DataObjectConverter,
     requested_filter: ApiFilter,
 ) -> ApiDataSource:
 
+    class _Manager:
+        api_ds: ApiDataSource
+
+        def get_json_converter(self) -> JsonApiConverter:
+            parser = DefaultParser(
+                {
+                    'a': self.api_ds,
+                    'b': self.api_ds,
+                    'c': self.api_ds,
+                }
+            )
+            return JsonApiConverter(parser)
+
+    manager = _Manager()
+
     api_ds = ApiDataSource(
         lambda: requested_api_client,
-        lambda: requested_json_converter,
+        manager.get_json_converter,
         lambda: requested_do_converter,
         lambda: requested_filter,
     )
     core_data_object(api_ds)
+    manager.api_ds = api_ds
 
     return api_ds
 
@@ -79,13 +114,58 @@ class TestRequestedFields:
         self,
         requested_api_ds: ApiDataSource,
         requested_api_client: JsonApiClient,
-        requested_json_converter: JsonApiConverter,
     ):
 
-        pass
+        requested_api_client.get_detail.return_value = {
+            'data': self.__get_mock_dump()
+        }
+
+        ret_a = requested_api_ds.get_one('a', 'A')
+        self.__assert_no_further_fetches(
+            ret_a,
+            requested_api_client
+        )
 
     def test_get_list(self):
         pass
 
     def test_get_list_page(self):
         pass
+
+    def __assert_no_further_fetches(
+        self,
+        ret_a: DataObject,
+        requested_api_client: JsonApiClient,
+    ) -> None:
+
+        requested_api_client.get_detail.assert_called_once()
+
+        ret_b = ret_a.b
+        assert ret_b.id == 'B'
+        requested_api_client.get_detail.assert_called_once()
+
+        ret_c = ret_b.c
+        assert ret_c.id == 'C'
+        requested_api_client.get_detail.assert_called_once()
+
+    def __get_mock_dump(self):
+        return {
+            'type': 'a',
+            'id': 'A',
+            'relationships': {
+                'b': {
+                    'data': {
+                        'type': 'b',
+                        'id': 'B',
+                        'relationships': {
+                            'c': {
+                                'data': {
+                                    'type': 'c',
+                                    'id': 'C',
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
