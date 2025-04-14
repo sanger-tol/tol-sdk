@@ -158,8 +158,31 @@ class TestRequestedFields:
             requested_api_client
         )
 
-    def test_get_list_page(self):
-        pass
+    def test_get_list_page(
+        self,
+        requested_api_ds: ApiDataSource,
+        requested_api_client: JsonApiClient,
+    ):
+
+        requested_api_client.get_list_page.return_value = {
+            'data': [
+                self.__get_mock_dump(),
+            ],
+            'meta': {
+                'count': 1
+            }
+        }
+
+        (ret_a_iter, _) = requested_api_ds.get_list_page(
+            'a',
+            requested_fields=['b.id', 'b.c.id']
+        )
+        (ret_a,) = list(ret_a_iter)
+
+        self.__assert_no_further_fetches(
+            ret_a,
+            requested_api_client
+        )
 
     def __assert_no_further_fetches(
         self,
