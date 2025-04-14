@@ -27,7 +27,7 @@ class Database(ABC):
         tablename: str,
         instance_id: Any,
         in_session: Session,
-        requested_relationships: dict[str, str] | None,
+        requested_relationships: dict[str, str] | None = None,
     ) -> Optional[Model]:
         """
         Gets a single instance by its instance-ID, or None if not found.
@@ -163,7 +163,7 @@ class DefaultDatabase(Database):
         tablename: str,
         instance_id: Any,
         in_session: Session,
-        requested_relationships: dict[str, str] | None,
+        requested_relationships: dict[str, str] | None = None,
     ) -> Optional[Model]:
 
         result = self.__get_instance_by_id(

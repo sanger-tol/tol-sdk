@@ -144,7 +144,7 @@ class TestSqlDataSource:
                 raise NotImplementedError()
 
         class _SingleRowDatabase:
-            def get_by_id(self, tablename: str, id_: Any, session, **kwargs) -> Optional[Model]:
+            def get_by_id(self, tablename: str, id_: Any, session, *args, **kwargs) -> Optional[Model]:
                 return _MockModel() if id_ != '404' else None
 
             @property
