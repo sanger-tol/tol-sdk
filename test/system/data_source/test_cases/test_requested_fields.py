@@ -13,7 +13,7 @@ from ..dec import against
 from ..fixtures import api_sql, sql
 
 
-class TestRequestedFieldss:
+class TestRequestedFields:
     """
     Specifying `requested_fields` on various GET methods
     cuts down on lazy fetches.
