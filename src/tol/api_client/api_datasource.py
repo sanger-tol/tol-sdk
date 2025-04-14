@@ -138,7 +138,8 @@ class ApiDataSource(
         self,
         object_type: str,
         object_ids: Iterable[str],
-        session: Optional[OperableSession] = None
+        session: Optional[OperableSession] = None,
+        requested_fields: list[str] | None = None,
     ) -> Iterable[Optional[DataObject]]:
 
         client = self.__client_factory()
@@ -178,7 +179,8 @@ class ApiDataSource(
         self,
         object_type: str,
         object_filters: Optional[DataSourceFilter] = None,
-        session: Optional[OperableSession] = None
+        session: Optional[OperableSession] = None,
+        requested_fields: list[str] | None = None,
     ) -> Iterable[DataObject]:
 
         if 'cursor' in self.supported_operations[object_type]:

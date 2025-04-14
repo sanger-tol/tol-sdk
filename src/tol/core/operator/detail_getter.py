@@ -36,8 +36,13 @@ class DetailGetter(ABC):
         This splits up the request to get_by_id into sensible size
         batches, so we can safely pass a long list to this method
         """
+
         for chunk in chunked(object_ids, self.page_size):
-            yield from self.get_by_id(object_type, chunk)
+            yield from self.get_by_id(
+                object_type,
+                chunk,
+                requested_fields=requested_fields,
+            )
 
     @abstractmethod
     def get_by_id(
@@ -66,7 +71,11 @@ class DetailGetter(ABC):
         """
 
         return list(
-            self.get_by_id(object_type, [object_id])
+            self.get_by_id(
+                object_type,
+                [object_id],
+                requested_fields=requested_fields
+            )
         )[0]
 
     # A helper method to ensure that the order of the returned objects
@@ -76,6 +85,7 @@ class DetailGetter(ABC):
         data_objects: Iterable[DataObject],
         object_ids: Iterable[int | str]
     ) -> Iterable[DataObject | None]:
+
         seekable_objects = seekable(data_objects)
         for id_ in object_ids:
             seekable_objects.seek(0)

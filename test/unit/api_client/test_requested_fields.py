@@ -137,15 +137,20 @@ class TestRequestedFields:
         requested_api_client: JsonApiClient,
     ):
 
-        requested_api_client.get_detail.return_value = {
+        requested_api_client.get_list_page.return_value = {
             'data': [
                 self.__get_mock_dump(),
-            ]
+            ],
+            'meta': {
+                'count': 1
+            }
         }
 
-        ret_a = requested_api_ds.get_list(
-            'a',
-            requested_fields=['b.id', 'b.c.id']
+        (ret_a,) = list(
+            requested_api_ds.get_list(
+                'a',
+                requested_fields=['b.id', 'b.c.id']
+            )
         )
 
         self.__assert_no_further_fetches(
@@ -159,18 +164,16 @@ class TestRequestedFields:
     def __assert_no_further_fetches(
         self,
         ret_a: DataObject,
-        method: Mock
+        requested_api_client: JsonApiClient
     ) -> None:
-
-        method.assert_called_once()
 
         ret_b = ret_a.b
         assert ret_b.id == 'B'
-        method.assert_called_once()
+        requested_api_client.get_to_one_relation_recursive.assert_not_called()
 
         ret_c = ret_b.c
         assert ret_c.id == 'C'
-        method.assert_called_once()
+        requested_api_client.get_to_one_relation_recursive.assert_not_called()
 
     def __get_mock_dump(self):
         return {
