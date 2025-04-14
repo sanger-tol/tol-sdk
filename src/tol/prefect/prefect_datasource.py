@@ -75,7 +75,8 @@ class PrefectDataSource(
     def get_by_id(
         self,
         object_type: str,
-        object_ids: Iterable[str]
+        object_ids: Iterable[str],
+        **kwargs,
     ) -> Iterable[Optional[FlowRunObject]]:
 
         self.__validate_object_type(object_type)
