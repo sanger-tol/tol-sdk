@@ -160,14 +160,16 @@ class SqlDataSource(
         self,
         object_type: str,
         object_ids: Iterable[DataId],
-        session: Optional[SqlDataSourceSession] = None
+        session: Optional[SqlDataSourceSession] = None,
+        requested_fields: list[str] | None = None,
     ) -> Iterable[Optional[DataObject]]:
 
         in_session = self.__get_sqla_session(session)
         models = self.__get_model_list_by_ids(
             object_type,
             object_ids,
-            in_session
+            in_session,
+            requested_fields,
         )
         converter = self.__get_converter()
         return_list = list(
@@ -427,14 +429,21 @@ class SqlDataSource(
         self,
         object_type: str,
         object_ids: Iterable[DataId],
-        session: SqlaSession
+        session: SqlaSession,
+        requested_fields: list[str] | None,
     ) -> List[Optional[Model]]:
+
+        requested_relationships = self.__format_requested_relationships(
+            object_type,
+            requested_fields,
+        )
 
         return [
             self.__db.get_by_id(
                 self.__type_tablename_map[object_type],
                 id_,
-                session
+                session,
+                requested_relationships
             )
             for id_ in object_ids
         ]

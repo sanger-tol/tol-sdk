@@ -26,7 +26,8 @@ class Database(ABC):
         self,
         tablename: str,
         instance_id: Any,
-        in_session: Session
+        in_session: Session,
+        requested_relationships: dict[str, str] | None,
     ) -> Optional[Model]:
         """
         Gets a single instance by its instance-ID, or None if not found.
@@ -140,7 +141,7 @@ class Database(ABC):
         """
 
 
-class DefaultDatabase(Database):
+class DefaultDatabase(Database): 
     """A reasonable-default implementation of the Database ABC."""
 
     def __init__(
@@ -161,13 +162,15 @@ class DefaultDatabase(Database):
         self,
         tablename: str,
         instance_id: Any,
-        in_session: Session
+        in_session: Session,
+        requested_relationships: dict[str, str] | None,
     ) -> Optional[Model]:
 
         result = self.__get_instance_by_id(
             tablename,
             instance_id,
-            in_session
+            in_session,
+            requested_relationships,
         )
         return result
 
@@ -381,13 +384,18 @@ class DefaultDatabase(Database):
         self,
         tablename: str,
         instance_id: str,
-        in_session: Session
+        in_session: Session,
+        requested_relationships: dict[str, str] | None = None,
     ) -> Optional[Model]:
         """
         Gets an instance by its tablename and id.
         """
 
-        model, query = self.__get_model_query(tablename, in_session, None)
+        model, query = self.__get_model_query(
+            tablename,
+            in_session,
+            requested_relationships
+        )
         id_column = getattr(model, model.get_id_column_name())
         result = query.filter(id_column == instance_id).one_or_none()
         return result
