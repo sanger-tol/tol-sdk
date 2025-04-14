@@ -175,6 +175,7 @@ class TestRequestedFields:
 
         (ret_a_iter, _) = requested_api_ds.get_list_page(
             'a',
+            1,
             requested_fields=['b.id', 'b.c.id']
         )
         (ret_a,) = list(ret_a_iter)

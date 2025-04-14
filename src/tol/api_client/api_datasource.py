@@ -162,7 +162,8 @@ class ApiDataSource(
         page_size: Optional[int] = None,
         object_filters: Optional[DataSourceFilter] = None,
         sort_by: Optional[str] = None,
-        session: Optional[OperableSession] = None
+        session: Optional[OperableSession] = None,
+        requested_fields: list[str] | None = None,
     ) -> tuple[Iterable[DataObject], int]:
 
         filter_string = self.__get_filter_string(object_filters)
@@ -171,7 +172,8 @@ class ApiDataSource(
             page_number,
             page_size,
             filter_string=filter_string,
-            sort_string=sort_by
+            sort_string=sort_by,
+            requested_fields=requested_fields,
         )
         return self.__jc_factory().convert_list(transfer)
 
