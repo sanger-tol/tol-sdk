@@ -120,7 +120,12 @@ class TestRequestedFields:
             'data': self.__get_mock_dump()
         }
 
-        ret_a = requested_api_ds.get_one('a', 'A')
+        ret_a = requested_api_ds.get_one(
+            'a',
+            'A',
+            requested_fields=['b.id', 'b.c.id']
+        )
+
         self.__assert_no_further_fetches(
             ret_a,
             requested_api_client
