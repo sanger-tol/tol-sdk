@@ -141,7 +141,7 @@ class Database(ABC):
         """
 
 
-class DefaultDatabase(Database): 
+class DefaultDatabase(Database):
     """A reasonable-default implementation of the Database ABC."""
 
     def __init__(
