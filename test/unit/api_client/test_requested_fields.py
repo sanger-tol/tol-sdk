@@ -2,7 +2,7 @@
 #
 # SPDX-License-Identifier: MIT
 
-from unittest.mock import create_autospec
+from unittest.mock import Mock, create_autospec
 
 import pytest
 
@@ -131,8 +131,27 @@ class TestRequestedFields:
             requested_api_client
         )
 
-    def test_get_list(self):
-        pass
+    def test_get_list(
+        self,
+        requested_api_ds: ApiDataSource,
+        requested_api_client: JsonApiClient,
+    ):
+
+        requested_api_client.get_detail.return_value = {
+            'data': [
+                self.__get_mock_dump(),
+            ]
+        }
+
+        ret_a = requested_api_ds.get_list(
+            'a',
+            requested_fields=['b.id', 'b.c.id']
+        )
+
+        self.__assert_no_further_fetches(
+            ret_a,
+            requested_api_client
+        )
 
     def test_get_list_page(self):
         pass
@@ -140,18 +159,18 @@ class TestRequestedFields:
     def __assert_no_further_fetches(
         self,
         ret_a: DataObject,
-        requested_api_client: JsonApiClient,
+        method: Mock
     ) -> None:
 
-        requested_api_client.get_detail.assert_called_once()
+        method.assert_called_once()
 
         ret_b = ret_a.b
         assert ret_b.id == 'B'
-        requested_api_client.get_detail.assert_called_once()
+        method.assert_called_once()
 
         ret_c = ret_b.c
         assert ret_c.id == 'C'
-        requested_api_client.get_detail.assert_called_once()
+        method.assert_called_once()
 
     def __get_mock_dump(self):
         return {
