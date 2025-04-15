@@ -186,7 +186,8 @@ class TestApiDataSource:
             3489,
             8989,
             filter_string='I am a filter!!!',
-            sort_string='ludicrous_speed-'
+            sort_string='ludicrous_speed-',
+            requested_fields=None,
         )
         mock_api_filter.dumps.assert_called_once_with(
             mock_ds_filter
@@ -240,7 +241,8 @@ class TestApiDataSource:
             101,
             3,
             filter_string=None,
-            sort_string=None
+            sort_string=None,
+            requested_fields=None,
         )
         mock_api_filter.dumps.assert_not_called()
         mock_json_converter.convert_list.assert_called_once_with(

@@ -40,11 +40,11 @@ class _ExampleModel(Model):
 
     @classmethod
     def get_to_many_relationship_config(cls):
-        pass
+        return {}
 
     @classmethod
     def get_to_one_relationship_config(cls):
-        pass
+        return {}
 
     @classmethod
     def get_foreign_key_name(cls, relationship_name: str) -> str:

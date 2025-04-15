@@ -171,7 +171,8 @@ class Controller:
                 query_args.filter,
                 ext_and
             ),
-            sort_by=query_args.sort_by
+            sort_by=query_args.sort_by,
+            requested_fields=query_args.requested_fields
         )
         document_meta = {
             'total': total,

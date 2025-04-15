@@ -2,11 +2,13 @@
 #
 # SPDX-License-Identifier: MIT
 
+from __future__ import annotations
+
 from abc import ABC, abstractmethod
 from typing import Any, Dict, Iterable, List, Optional, Type
 
 from sqlalchemy.exc import IntegrityError
-from sqlalchemy.orm import Query, Session
+from sqlalchemy.orm import Query, Session, joinedload
 from sqlalchemy.orm.attributes import flag_modified
 
 from .filter import DatabaseFilter
@@ -24,7 +26,8 @@ class Database(ABC):
         self,
         tablename: str,
         instance_id: Any,
-        in_session: Session
+        in_session: Session,
+        requested_relationships: dict[str, str] | None = None,
     ) -> Optional[Model]:
         """
         Gets a single instance by its instance-ID, or None if not found.
@@ -42,6 +45,7 @@ class Database(ABC):
         sort_by: Optional[DatabaseSorter] = None,
         offset: Optional[int] = None,
         limit: Optional[int] = None,
+        requested_relationships: dict[str, str] | None = None
     ) -> Iterable[Model]:
         """
         Returns an Iterable of `Model` instances according
@@ -158,13 +162,15 @@ class DefaultDatabase(Database):
         self,
         tablename: str,
         instance_id: Any,
-        in_session: Session
+        in_session: Session,
+        requested_relationships: dict[str, str] | None = None,
     ) -> Optional[Model]:
 
         result = self.__get_instance_by_id(
             tablename,
             instance_id,
-            in_session
+            in_session,
+            requested_relationships,
         )
         return result
 
@@ -176,9 +182,14 @@ class DefaultDatabase(Database):
         sort_by: Optional[DatabaseSorter] = None,
         offset: Optional[int] = None,
         limit: Optional[int] = None,
+        requested_relationships: dict[str, str] | None = None,
     ) -> Iterable[Model]:
 
-        _, query = self.__get_model_query(tablename, in_session)
+        _, query = self.__get_model_query(
+            tablename,
+            in_session,
+            requested_relationships
+        )
         if filters is not None:
             query = filters.filter(query, tablename, self.__tablename_model_dict)
         if sort_by is not None:
@@ -194,7 +205,7 @@ class DefaultDatabase(Database):
         filters: Optional[DatabaseFilter] = None
     ) -> int:
 
-        _, query = self.__get_model_query(tablename, in_session)
+        _, query = self.__get_model_query(tablename, in_session, None)
         if filters is not None:
             query = filters.filter(query, tablename, self.__tablename_model_dict)
         count = query.count()
@@ -302,12 +313,42 @@ class DefaultDatabase(Database):
     def __get_model_query(
         self,
         tablename: str,
-        in_session: Session
+        in_session: Session,
+        requested_relationships: dict | None,
     ) -> tuple[Type[Model], Query]:
 
         model = self.__tablename_model_dict[tablename]
         query = in_session.query(model)
+
+        if requested_relationships:
+            query = self.__apply_requested_relationships(
+                query,
+                requested_relationships
+            )
+
         return model, query
+
+    def __apply_requested_relationships(
+        self,
+        query: Query,
+        requested_relationships: dict[str, str]
+    ) -> Query:
+
+        tablename = requested_relationships.pop('__tablename__')
+        if not requested_relationships:
+            return query
+
+        model = self.__tablename_model_dict[tablename]
+
+        for r_name, r_dict in requested_relationships.items():
+            relationship = getattr(model, r_name)
+            query.options(
+                joinedload(relationship)
+            )
+
+            query = self.__apply_requested_relationships(query, r_dict)
+
+        return query
 
     def __commit_session(
         self,
@@ -343,13 +384,18 @@ class DefaultDatabase(Database):
         self,
         tablename: str,
         instance_id: str,
-        in_session: Session
+        in_session: Session,
+        requested_relationships: dict[str, str] | None = None,
     ) -> Optional[Model]:
         """
         Gets an instance by its tablename and id.
         """
 
-        model, query = self.__get_model_query(tablename, in_session)
+        model, query = self.__get_model_query(
+            tablename,
+            in_session,
+            requested_relationships
+        )
         id_column = getattr(model, model.get_id_column_name())
         result = query.filter(id_column == instance_id).one_or_none()
         return result

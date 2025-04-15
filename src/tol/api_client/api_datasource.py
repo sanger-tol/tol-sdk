@@ -138,7 +138,8 @@ class ApiDataSource(
         self,
         object_type: str,
         object_ids: Iterable[str],
-        session: Optional[OperableSession] = None
+        session: Optional[OperableSession] = None,
+        requested_fields: list[str] | None = None,
     ) -> Iterable[Optional[DataObject]]:
 
         client = self.__client_factory()
@@ -161,7 +162,8 @@ class ApiDataSource(
         page_size: Optional[int] = None,
         object_filters: Optional[DataSourceFilter] = None,
         sort_by: Optional[str] = None,
-        session: Optional[OperableSession] = None
+        session: Optional[OperableSession] = None,
+        requested_fields: list[str] | None = None,
     ) -> tuple[Iterable[DataObject], int]:
 
         filter_string = self.__get_filter_string(object_filters)
@@ -170,7 +172,8 @@ class ApiDataSource(
             page_number,
             page_size,
             filter_string=filter_string,
-            sort_string=sort_by
+            sort_string=sort_by,
+            requested_fields=requested_fields,
         )
         return self.__jc_factory().convert_list(transfer)
 
@@ -178,7 +181,8 @@ class ApiDataSource(
         self,
         object_type: str,
         object_filters: Optional[DataSourceFilter] = None,
-        session: Optional[OperableSession] = None
+        session: Optional[OperableSession] = None,
+        requested_fields: list[str] | None = None,
     ) -> Iterable[DataObject]:
 
         if 'cursor' in self.supported_operations[object_type]:
@@ -253,7 +257,8 @@ class ApiDataSource(
         page_size: Optional[int] = None,
         object_filters: Optional[DataSourceFilter] = None,
         search_after: list[str] | None = None,
-        session: Optional[OperableSession] = None
+        session: Optional[OperableSession] = None,
+        requested_fields: list[str] | None = None
     ) -> tuple[Iterable[DataObject], list[str] | None]:
 
         filter_string = self.__get_filter_string(object_filters)

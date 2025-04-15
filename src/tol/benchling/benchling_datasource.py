@@ -334,7 +334,8 @@ class BenchlingDataSource(
         self,
         object_type: str,
         object_ids: Iterable[str],
-        session=None
+        session=None,
+        **kwargs,
     ) -> Iterable[DataObject | ErrorObject | None]:
         back_converter = self.__bc_factory()
         benchling_package = self.__get_benchling_package(object_type)
@@ -363,10 +364,11 @@ class BenchlingDataSource(
                     if benchling_object is not None else None
 
     def get_list(
-            self,
-            object_type: str,
-            object_filters: Optional[DataSourceFilter] = None,
-            session: Optional[OperableSession] = None
+        self,
+        object_type: str,
+        object_filters: Optional[DataSourceFilter] = None,
+        session: Optional[OperableSession] = None,
+        **kwargs,
     ) -> Iterable[DataObject]:
         # Currently only deals with filtering by eq/contains: name
         benchling_package = self.__get_benchling_package(object_type)

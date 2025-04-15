@@ -16,7 +16,7 @@ class _MockDataSource(DataSource, DetailGetter):
         super().__init__(config)
         self.call_count = 0
 
-    def get_by_id(self, object_type: str, object_ids: Iterable[str]):
+    def get_by_id(self, object_type: str, object_ids: Iterable[str], **kwargs):
         self.call_count += 1
         for object_id in object_ids:
             if int(object_id) <= 100:

@@ -105,7 +105,8 @@ class EnaDataSource(
     def get_by_id(
         self,
         object_type: str,
-        object_ids: Iterable[str]
+        object_ids: Iterable[str],
+        **kwargs,
     ) -> Iterable[Optional[DataObject]]:
         self.__validate_object_type(object_type)
 
