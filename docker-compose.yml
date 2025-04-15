@@ -107,6 +107,7 @@ services:
       - ENA_CONTACT_EMAIL
       - PORTAL_URL
       - PORTAL_API_PATH
+      - BOLD_API_KEY
     networks:
       - api-base-test-network
 

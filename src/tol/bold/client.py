@@ -5,12 +5,11 @@
 import json
 from typing import Dict, Optional
 
-import requests
-
 from .converter import BoldApiTransfer
+from ..core import HttpClient
 
 
-class BoldApiClient:
+class BoldApiClient(HttpClient):
     """
     Takes BOLD API transfers and connects to a remote
     BOLD API.
@@ -20,9 +19,10 @@ class BoldApiClient:
         self,
         bold_url: str,
         bold_api_key: str,
+        retries: int = 5
     ) -> None:
+        super().__init__(token=bold_api_key, token_header='api-key', retries=retries)
         self.__bold_url = bold_url
-        self.__bold_api_key = bold_api_key
 
     def get_detail(
         self,
@@ -35,15 +35,18 @@ class BoldApiClient:
         """
 
         url, params = self.__detail_url(object_type, object_ids)
-        return self.__fetch_detail(url, params)
+        headers = self._merge_headers()
+        return self.__fetch_detail(url, params=params, headers=headers)
 
     def __fetch_detail(
         self,
         url: str,
-        params: Dict = {}
+        params: Dict = {},
+        headers: Dict = {},
     ) -> Optional[BoldApiTransfer]:
 
-        r = requests.get(url, params=params, headers={'api-key': self.__bold_api_key})
+        session = self._get_session_with_retries()
+        r = session.get(url, params=params, headers=headers)
         if r.status_code in [400, 404]:
             return []
         r.raise_for_status()
