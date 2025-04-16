@@ -60,6 +60,23 @@ class ListGetParamaters:
 
         return self.__parse_to_sort_by_string('sort_by', sort_by)
 
+    @property
+    def requested_fields(self) -> list[str] | None:
+        """
+        The list of requested fields.
+        """
+
+        fields = self.__request_args.get('requested_fields')
+        if fields is None:
+            return None
+
+        return self.__parse_to_list_str(fields)
+
+    def __parse_to_list_str(self, __value: str) -> list[str]:
+        return list(
+            __value.split(',')
+        )
+
     def __parse_to_positive_int(self, __key: str, __value: str) -> int:
         self.__validate_is_digits(__key, __value)
         int_value = int(__value)

@@ -30,9 +30,11 @@ DatabaseFactory = Callable[
 def __model_converter_factory(
     type_function: TypeFunction
 ) -> ConverterFactory:
-    return lambda do_factory: DefaultModelConverter(
+
+    return lambda do_factory, requested_fields: DefaultModelConverter(
         type_function,
-        do_factory
+        do_factory,
+        requested_fields=requested_fields
     )
 
 

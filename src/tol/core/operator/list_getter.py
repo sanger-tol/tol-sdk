@@ -26,7 +26,8 @@ class ListGetter(_Filterable, ABC):
         self,
         object_type: str,
         object_filters: Optional[DataSourceFilter] = None,
-        session: Optional[OperableSession] = None
+        session: Optional[OperableSession] = None,
+        requested_fields: list[str] | None = None
     ) -> Iterable[DataObject]:
         """
         Gets an Iterable of DataObject instances of the given

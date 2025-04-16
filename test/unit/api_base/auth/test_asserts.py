@@ -330,6 +330,7 @@ class TestFilter:
                 }
             ),
             sort_by=None,
+            requested_fields=None
         )
 
         mock_ds.reset_mock()
@@ -372,6 +373,7 @@ class TestFilter:
                 }
             ),
             sort_by=None,
+            requested_fields=None
         )
 
     def test_none(
@@ -389,6 +391,7 @@ class TestFilter:
             page_size=None,
             object_filters=None,
             sort_by=None,
+            requested_fields=None
         )
 
         mock_ds.reset_mock()
@@ -426,4 +429,5 @@ class TestFilter:
                 }
             ),
             sort_by=None,
+            requested_fields=None
         )

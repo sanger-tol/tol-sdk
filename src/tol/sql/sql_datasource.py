@@ -44,7 +44,7 @@ if typing.TYPE_CHECKING:
 
 
 ConverterFactory = Callable[
-    [DataObjectFactory],
+    [DataObjectFactory, list[str] | None],
     ModelConverter
 ]
 BackConverterFactory = Callable[[], DataObjectConverter]
@@ -160,14 +160,16 @@ class SqlDataSource(
         self,
         object_type: str,
         object_ids: Iterable[DataId],
-        session: Optional[SqlDataSourceSession] = None
+        session: Optional[SqlDataSourceSession] = None,
+        requested_fields: list[str] | None = None,
     ) -> Iterable[Optional[DataObject]]:
 
         in_session = self.__get_sqla_session(session)
         models = self.__get_model_list_by_ids(
             object_type,
             object_ids,
-            in_session
+            in_session,
+            requested_fields,
         )
         converter = self.__get_converter()
         return_list = list(
@@ -184,7 +186,8 @@ class SqlDataSource(
         page_size: Optional[int] = None,
         object_filters: Optional[DataSourceFilter] = None,
         sort_by: Optional[str] = None,
-        session: Optional[SqlDataSourceSession] = None
+        session: Optional[SqlDataSourceSession] = None,
+        requested_fields: list[str] | None = None
     ) -> Tuple[Iterable[DataObject], int]:
 
         tablename = self.__type_tablename_map[object_type]
@@ -204,9 +207,15 @@ class SqlDataSource(
             page_number,
             page_size,
             sorter,
-            in_session
+            in_session,
+            requested_relationships=self.__format_requested_relationships(
+                object_type,
+                requested_fields
+            ),
         )
-        converter = self.__get_converter()
+        converter = self.__get_converter(
+            requested_fields=requested_fields
+        )
         return_list = list(
             converter.convert_iterable(models)
         )
@@ -218,13 +227,15 @@ class SqlDataSource(
         self,
         object_type: str,
         object_filters: Optional[DataSourceFilter] = None,
-        session: Optional[SqlDataSourceSession] = None
+        session: Optional[SqlDataSourceSession] = None,
+        requested_fields: list[str] | None = None
     ) -> Iterable[DataObject]:
 
         return self._get_list_by_cursor(
             object_type,
             object_filters=self._preprocess_filter(object_type, object_filters),
-            session=session
+            session=session,
+            requested_fields=requested_fields
         )
 
     def delete(
@@ -253,7 +264,8 @@ class SqlDataSource(
         page_size: Optional[int] = None,
         object_filters: Optional[DataSourceFilter] = None,
         search_after: list[str] | None = None,
-        session: Optional[OperableSession] = None
+        session: Optional[OperableSession] = None,
+        requested_fields: list[str] | None = None
     ) -> tuple[Iterable[DataObject], list[str] | None]:
 
         fetched, _ = self.get_list_page(
@@ -265,7 +277,8 @@ class SqlDataSource(
                 object_filters
             ),
             sort_by='id',
-            session=session
+            session=session,
+            requested_fields=requested_fields,
         )
 
         return self.__format_cursor_page(fetched)
@@ -382,34 +395,6 @@ class SqlDataSource(
         else:
             return [], None
 
-    def __get_page(
-        self,
-        page: int,
-        page_size: int,
-        tablename: str,
-        session: Optional[SqlDataSourceSession],
-        database_filter: Optional[DatabaseFilter],
-        database_sorter: Optional[DatabaseSorter]
-    ) -> list[DataObject]:
-
-        sqla_session = self.__get_sqla_session(session)
-
-        models = self.__db.get_page(
-            tablename,
-            sqla_session,
-            filters=database_filter,
-            sort_by=database_sorter,
-            offset=(page - 1) * page_size,
-            limit=page_size
-        )
-        converter = self.__get_converter()
-        objects = list(
-            converter.convert_iterable(models)
-        )
-        if session is None:
-            sqla_session.close()
-        return objects
-
     def __calculate_all_attribute_types(self) -> dict[str, dict[str, str]]:
         tablename_type_map = {
             v: k for k, v in self.__type_tablename_map.items()
@@ -430,21 +415,35 @@ class SqlDataSource(
             for k, v in types.items()
         }
 
-    def __get_converter(self) -> ModelConverter:
-        return self.__converter_factory(self.data_object_factory)
+    def __get_converter(
+        self,
+        requested_fields: list[str] | None = None,
+    ) -> ModelConverter:
+
+        return self.__converter_factory(
+            self.data_object_factory,
+            requested_fields,
+        )
 
     def __get_model_list_by_ids(
         self,
         object_type: str,
         object_ids: Iterable[DataId],
-        session: SqlaSession
+        session: SqlaSession,
+        requested_fields: list[str] | None,
     ) -> List[Optional[Model]]:
+
+        requested_relationships = self.__format_requested_relationships(
+            object_type,
+            requested_fields,
+        )
 
         return [
             self.__db.get_by_id(
                 self.__type_tablename_map[object_type],
                 id_,
-                session
+                session,
+                requested_relationships
             )
             for id_ in object_ids
         ]
@@ -456,7 +455,8 @@ class SqlDataSource(
         page_number: Optional[int],
         page_size: Optional[int],
         sort_by: Optional[DatabaseSorter],
-        in_session: SqlaSession
+        in_session: SqlaSession,
+        requested_relationships: dict[str, str] | None = None,
     ) -> Iterable[Model]:
 
         offset = self.__get_offset(page_number, page_size)
@@ -466,7 +466,8 @@ class SqlDataSource(
             filters=filters,
             sort_by=sort_by,
             offset=offset,
-            limit=page_size
+            limit=page_size,
+            requested_relationships=requested_relationships,
         )
 
     def __get_offset(
@@ -488,3 +489,36 @@ class SqlDataSource(
         self.__user_id_getter = (
             (lambda: None) if user_id_getter is None else user_id_getter
         )
+
+    def __format_requested_relationships(
+        self,
+        object_type: str,
+        requested_relationships: list[str] | None
+    ) -> dict | None:
+
+        if requested_relationships is None:
+            return None
+
+        rel_dict = {
+            '__tablename__': self.__type_tablename_map[object_type]
+        }
+
+        for requested in requested_relationships:
+            current_type = object_type
+            # cut off the column
+            relationships = requested.split('.')[:-1]
+            current_dict = rel_dict
+
+            for r in relationships:
+                r_type = self.relationship_config[current_type].to_one[r]
+                r_tablename = self.__type_tablename_map[r_type]
+
+                if r not in current_dict:
+                    current_dict[r] = {
+                        '__tablename__': r_tablename
+                    }
+
+                current_dict = current_dict[r]
+                current_type = r_type
+
+        return rel_dict

@@ -94,7 +94,8 @@ class LabwhereDataSource(
     def get_by_id(
         self,
         object_type: str,
-        object_ids: Iterable[str]
+        object_ids: Iterable[str],
+        **kwargs,
     ) -> Iterable[Optional[DataObject]]:
         if object_type not in self.supported_types:
             raise DataSourceError(f'{object_type} is not supported')

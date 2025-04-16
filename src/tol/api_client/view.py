@@ -56,7 +56,8 @@ class DefaultView(View):
         self,
         prefix: str = '',
         include_all_to_ones: bool = False,
-        hop_limit: Optional[int] = None
+        hop_limit: Optional[int] = None,
+        requested_fields: list[str] | None = None,
     ) -> None:
         """
         Args:
@@ -75,6 +76,7 @@ class DefaultView(View):
         self.__prefix = prefix
         self.__all_to_ones = include_all_to_ones
         self.__hop_limit = hop_limit
+        self.__requested_fields = requested_fields
 
     def dump(
         self,
@@ -83,7 +85,10 @@ class DefaultView(View):
     ) -> ResponseDict:
 
         response = {
-            'data': self.__dump_object(data_object, 0)
+            'data': self.__dump_object(
+                data_object,
+                self.__initial_marker,
+            )
         }
         if document_meta is not None:
             response['meta'] = document_meta
@@ -96,7 +101,10 @@ class DefaultView(View):
     ) -> ResponseDict:
 
         dumped = [
-            self.__dump_object(data_object, 0)
+            self.__dump_object(
+                data_object,
+                self.__initial_marker,
+            )
             for data_object in data_objects
         ]
         response = {
@@ -106,10 +114,17 @@ class DefaultView(View):
             response['meta'] = document_meta
         return response
 
+    @property
+    def __initial_marker(self) -> int | str:
+        if self.__requested_fields:
+            return ''
+        else:
+            return 0
+
     def __dump_object(
         self,
         data_object: DataObject,
-        depth: int
+        marker: int | str,
     ) -> DumpDict:
 
         dump = {
@@ -120,14 +135,14 @@ class DefaultView(View):
             dump['attributes'] = self.__convert_attributes(
                 data_object.attributes
             )
-        dump = self.__add_relationships(data_object, dump, depth)
+        dump = self.__add_relationships(data_object, dump, marker)
         return dump
 
     def __add_relationships(
         self,
         data_object: DataObject,
         dump: DumpDict,
-        depth: int
+        marker: int
     ) -> DumpDict:
 
         host = data_object._host
@@ -142,7 +157,7 @@ class DefaultView(View):
             to_one_keys,
             to_many_keys,
             data_object,
-            depth
+            marker
         )
         return dump
 
@@ -151,11 +166,11 @@ class DefaultView(View):
         to_one_relationships: list[str],
         to_many_relationships: list[str],
         data_object: DataObject,
-        depth: int
+        marker: int
     ) -> AllRelationshipsDump:
 
         dump = {
-            key: self.__dump_to_one_relationship(key, data_object, depth)
+            key: self.__dump_to_one_relationship(key, data_object, marker)
             for key in to_one_relationships
         } | {
             key: self.__dump_to_many_relationship(key, data_object.type,
@@ -186,17 +201,49 @@ class DefaultView(View):
         self,
         key: str,
         data_object: DataObject,
-        depth: int
+        marker: int | str
     ) -> Optional[RelationshipDump]:
 
-        if self.__hop_limit is not None and depth >= self.__hop_limit:
+        if self.__hop_limit is not None and marker >= self.__hop_limit:
+            return {}
+
+        if self.__requested_fields and not self.__to_one_is_relevant(key, marker):
             return {}
 
         related_object = self.__get_related_to_one(data_object, key)
         if related_object is not None:
+            next_marker = self.__get_next_marker(marker, key)
             return {
-                'data': self.__dump_object(related_object, depth + 1)
+                'data': self.__dump_object(
+                    related_object,
+                    next_marker,
+                )
             }
+
+    def __get_next_marker(
+        self,
+        marker: int | str,
+        key: str,
+    ) -> int | str:
+
+        return (
+            (f'{marker}.{key}' if marker else key)
+            if self.__requested_fields
+            else marker + 1
+        )
+
+    def __to_one_is_relevant(
+        self,
+        key: str,
+        marker: str
+    ) -> bool:
+
+        next_marker = self.__get_next_marker(marker, key)
+
+        return any(
+            r for r in self.__requested_fields
+            if r.startswith(next_marker)
+        )
 
     def __get_related_to_one(
         self,

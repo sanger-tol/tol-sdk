@@ -88,6 +88,49 @@ def bioscan_extra():
                 },
                 'header_row': 1,
                 'data_start_row': 2
+            },
+            'new_pantheon_species': {
+                'worksheet_name': 'NEW_PANTHEON',
+                'columns': {
+                    'id': {
+                        'heading': 'Species',
+                        'type': 'str'
+                    },
+                    'vernacular': {
+                        'heading': 'Pantheon:Vernacular',
+                        'type': 'str'
+                    },
+                    'current_conservation_status': {
+                        'heading': 'Pantheon:Conservation Status Description',
+                        'type': 'str'
+                    },
+                    'larval_feeding_guild': {
+                        'heading': 'Pantheon:Larval feeding guild',
+                        'type': 'str'
+                    },
+                    'adult_feeding_guide': {
+                        'heading': 'Pantheon:Adult feeding guild',
+                        'type': 'str'
+                    },
+                    'broad_biotope_habitat_resources': {
+                        'heading': 'Pantheon:Broad Biotope, Habitat, Resources',
+                        'type': 'str'
+                    },
+                    'specific_assemblage_type': {
+                        'heading': 'Pantheon:Specific assemblage type',
+                        'type': 'str'
+                    },
+                    'link_to_assemblage': {
+                        'heading': 'Link to assemblage',
+                        'type': 'str'
+                    },
+                    'associations': {
+                        'heading': 'Pantheon:Associations',
+                        'type': 'str'
+                    },
+                },
+                'header_row': 1,
+                'data_start_row': 2
             }
         }
     })

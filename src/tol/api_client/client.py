@@ -36,7 +36,8 @@ class JsonApiClient(HttpClient):
     def get_detail(
         self,
         object_type: str,
-        object_id: str
+        object_id: str,
+        requested_fields: list[str] | None = None,
     ) -> Optional[JsonApiTransfer]:
         """
         Gets a single JSON:API transfer for the object of specified
@@ -45,7 +46,14 @@ class JsonApiClient(HttpClient):
 
         url = self.__detail_url(object_type, object_id)
         headers = self._merge_headers()
-        return self.__fetch_detail(url, headers=headers)
+
+        return self.__fetch_detail(
+            url,
+            params={
+                'requested_fields': requested_fields,
+            },
+            headers=headers,
+        )
 
     def get_list_page(
         self,
@@ -53,7 +61,8 @@ class JsonApiClient(HttpClient):
         page: int,
         page_size: int,
         filter_string: Optional[str] = None,
-        sort_string: Optional[str] = None
+        sort_string: Optional[str] = None,
+        requested_fields: list[str] | None = None,
     ) -> JsonApiTransfer:
         """
         Gets a (paged) list-JSON:API transfer for the objects of specified
@@ -65,10 +74,15 @@ class JsonApiClient(HttpClient):
             page=page,
             page_size=page_size,
             filter=filter_string,
-            sort_by=sort_string
+            sort_by=sort_string,
+            requested_field=requested_fields
         )
         headers = self._merge_headers()
-        return self.__fetch_list(url, params=params, headers=headers)
+        return self.__fetch_list(
+            url,
+            params=params,
+            headers=headers
+        )
 
     def get_count(
         self,
@@ -136,14 +150,16 @@ class JsonApiClient(HttpClient):
         object_type: str,
         page_size: int,
         search_after: list[str] | None,
-        filter_string: Optional[str] = None
+        filter_string: Optional[str] = None,
+        requested_fields: list[str] | None = None,
     ) -> JsonApiTransfer:
         """Cursor-pagination."""
 
         url = self.__cursor_url(object_type)
         params = self.__no_none_value_dict(
             filter=filter_string,
-            page_size=page_size
+            page_size=page_size,
+            requested_fields=requested_fields,
         )
         headers = self._merge_headers()
         body = {'search_after': search_after}

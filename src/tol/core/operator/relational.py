@@ -36,7 +36,8 @@ class Relational(ABC):
         self,
         source: DataObject,
         relationship_name: str,
-        session: Optional[OperableSession] = None
+        session: Optional[OperableSession] = None,
+        requested_fields: list[str] | None = None
     ) -> Optional[DataObject]:
         """
         Gets the to-one relation DataObject, given a source DataObject and the
@@ -48,7 +49,8 @@ class Relational(ABC):
         self,
         source: DataObject,
         relationship_name: str,
-        session: Optional[OperableSession] = None
+        session: Optional[OperableSession] = None,
+        requested_fields: list[str] | None = None
     ) -> Iterable[DataObject]:
         """
         Gets the Iterable of to-many relation DataObject instances, given a source
@@ -61,7 +63,8 @@ class Relational(ABC):
         relationship_name: str,
         page: int,
         page_size: int,
-        session: Optional[OperableSession] = None
+        session: Optional[OperableSession] = None,
+        requested_fields: list[str] | None = None
     ) -> Iterable[DataObject]:
         """
         Slices the `Relational().get_to_many_relations()` `Iterable` into pages.
@@ -78,7 +81,8 @@ class Relational(ABC):
     def get_recursive_relation(
         self,
         source: DataObject,
-        relationship_hops: list[str]
+        relationship_hops: list[str],
+        requested_fields: list[str] | None = None
     ) -> DataObject:
         """
         Recursively get to-one relation `DataObject` instances, using the
