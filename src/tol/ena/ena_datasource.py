@@ -21,7 +21,6 @@ from .ena_methods import (
     assign_ena_ids,
     build_bundle_sample_xml,
     build_submission_xml,
-    convert_checklist_xml_to_dict,
     convert_xml_to_list_of_sample_dict,
 )
 from .filter import (

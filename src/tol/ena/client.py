@@ -177,7 +177,6 @@ class EnaApiClient(HttpClient):
         return fields
 
     def get_checklist(self, checklist_id: str) -> Dict[str, Tuple[str, str, object]]:
-        
         session = self._get_session_with_retries()
         r = session.get(
             f'{self.__ena_url}/ena/browser/api/xml/{checklist_id}'
