@@ -210,11 +210,8 @@ class EnaDataSource(
         return response
 
     def get_xml_checklist(self, checklist_id: str) -> Dict[str, Tuple[str, str, object]]:
-        output = self.get_request(f'/ena/browser/api/xml/{checklist_id}')
-
-        checklist_dict = convert_checklist_xml_to_dict(output.text)
-
-        return checklist_dict
+        client = self.__client_factory()
+        return client.get_checklist(checklist_id)
 
     def get_biosample_data_biosampleid(self, biosample_id: str):
         output = self.get_request(f'/ena/browser/api/xml/{biosample_id}')

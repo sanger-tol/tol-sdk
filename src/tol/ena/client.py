@@ -4,12 +4,16 @@
 
 from typing import Dict, Optional, Tuple
 
-import requests
-
 from .converter import EnaApiTransfer
+from .ena_methods import (
+    convert_checklist_xml_to_dict
+)
+from ..core import (
+    HttpClient
+)
 
 
-class EnaApiClient:
+class EnaApiClient(HttpClient):
     """
     Takes ENA API transfers and connects to a remote ENA API.
     """
@@ -22,6 +26,9 @@ class EnaApiClient:
         ena_contact_name: str,
         ena_contact_email: str,
     ) -> None:
+        super().__init__(
+            retries=5
+        )
         self.__ena_url = ena_url
         self.__ena_user = ena_user
         self.__ena_password = ena_password
@@ -65,7 +72,8 @@ class EnaApiClient:
         Fetches data from the ENA API.
         """
         headers = {'Content-Type': 'application/json'}
-        r = requests.get(url, params=params, headers=headers)
+        session = self._get_session_with_retries()
+        r = session.get(url, params=params, headers=headers)
         if r.status_code == 404:
             return []
         r.raise_for_status()
@@ -80,7 +88,8 @@ class EnaApiClient:
         Fetches data from the ENA API.
         """
         headers = {'Content-Type': 'application/json'}
-        r = requests.get(url, params=params, headers=headers)
+        session = self._get_session_with_retries()
+        r = session.get(url, params=params, headers=headers)
 
         if r.status_code == 404:
             return []
@@ -150,17 +159,32 @@ class EnaApiClient:
         """
         Returns the fields for a given object type from the ENA portal API.
         """
-        response = requests.get(
-            self.__ena_url + '/ena/portal/api/returnFields?result=' + object_type + '&format=json',
+        session = self._get_session_with_retries()
+        r = session.get(
+            f'{self.__ena_url}/ena/portal/api/returnFields',
+            params={'result': object_type, 'format': 'json'},
             headers={
                 'Content-Type': 'application/json'
             }
         )
         fields = {}
-        for field in response.json():
+        for field in r.json():
 
             type_ = field['type'] if 'type' in field else 'string'
             ena_type = self.__type_mappings[type_] if type_ in self.__type_mappings else 'str'
             fields[field['columnId']] = ena_type
 
         return fields
+
+    def get_checklist(self, checklist_id: str) -> Dict[str, Tuple[str, str, object]]:
+        
+        session = self._get_session_with_retries()
+        r = session.get(
+            f'{self.__ena_url}/ena/browser/api/xml/{checklist_id}'
+        )
+        if r.status_code == 404:
+            return []
+        r.raise_for_status()
+        checklist_dict = convert_checklist_xml_to_dict(r.text)
+
+        return checklist_dict
