@@ -18,31 +18,19 @@ class GapAssemblyToElasticAssemblyConverter(
             for d in assembly.assembly_details
         }
 
-    def convert(self, assembly: DataObject) -> Iterable[DataObject]:
-
-        pipeline_atts = {}
-        for p in assembly.pipelines:
-            prefix = p.id
-            pipeline_atts = {
-                f'{prefix}_analysis': p.analysis,
-                f'{prefix}_results': p.results,
-                f'{prefix}_s3': p.s3,
-                f'{prefix}_lustre_path_analysis': p.lustre_path_analysis,
-                **pipeline_atts,
-            }
-
-        details = self.convert_details(assembly)
+    def convert(self, data_object: DataObject) -> Iterable[DataObject]:
+        details = self.convert_details(data_object)
 
         to_one_relations = {
             'species': self._data_object_factory(
                 'species',
-                str(assembly.taxon_id)
+                str(data_object.taxon_id)
             ),
         }
 
         attributes = {
             k: v
-            for k, v in assembly.attributes.items()
+            for k, v in data_object.attributes.items()
             if k not in ['taxon_id', 'species', 'phylum_id', 'phylum']
         }
 
@@ -56,9 +44,8 @@ class GapAssemblyToElasticAssemblyConverter(
 
         ret = self._data_object_factory(
             'assembly',
-            assembly.id,
+            data_object.id,
             attributes={
-                **pipeline_atts,
                 **detail_attributes,
                 **attributes
             },
