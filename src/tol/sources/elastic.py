@@ -175,8 +175,20 @@ def elastic():
 
     rc_assembly = RelationshipConfig()
     rc_assembly.to_one = {'gap_species': 'species'}
-    rc_assembly.to_many = {'gn_genome_notes': 'genome_note'}
-    rc_assembly.foreign_keys = {'gn_genome_notes': 'gn_assembly.id'}
+    rc_assembly.to_many = {
+        'gn_genome_notes': 'genome_note',
+        'gap_assembly_analyses': 'assembly_analysis'
+    }
+    rc_assembly.foreign_keys = {
+        'gn_genome_notes': 'gn_assembly.id',
+        'gap_assembly_analyses': 'gap_assembly.id'
+    }
+
+    rc_assembly_analysis = RelationshipConfig()
+    rc_assembly_analysis.to_one = {
+        'gap_species': 'species',
+        'gap_assembly': 'assembly'
+    }
 
     rc_genome_note = RelationshipConfig()
     rc_genome_note.to_one = {
@@ -197,6 +209,7 @@ def elastic():
                            'tissue_prep': rc_tissue_prep,
                            'curation': rc_curation,
                            'assembly': rc_assembly,
+                           'assembly_analysis': rc_assembly_analysis,
                            'genome_note': rc_genome_note}
 
     runtime_fields = {
