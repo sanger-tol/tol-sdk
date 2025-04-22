@@ -28,6 +28,7 @@ from .elastic_tolid_to_elastic_curation_update_converter import ElasticTolidToEl
 from .elastic_tolid_to_elastic_genome_note_update_converter import ElasticTolidToElasticGenomeNoteUpdateConverter  # noqa F401
 from .elastic_tolid_to_elastic_sample_update_converter import ElasticTolidToElasticSampleUpdateConverter  # noqa F401
 from .gap_assembly_to_elastic_assembly_converter import GapAssemblyToElasticAssemblyConverter  # noqa F401
+from .gap_assembly_to_elastic_assembly_analysis_converter import GapAssemblyToElasticAssemblyAnalysisConverter  # noqa F401
 from .genome_notes_genome_note_to_elastic_genome_note_converter import GenomeNotesGenomeNoteToElasticGenomeNoteConverter  # noqa F401
 from .goat_taxon_to_elastic_species_converter import GoatTaxonToElasticSpeciesConverter  # noqa F401
 from .grit_issue_to_elastic_curation_converter import GritIssueToElasticCurationConverter  # noqa F401
