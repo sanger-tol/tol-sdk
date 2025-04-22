@@ -52,6 +52,7 @@ WITH tissue_preps AS (
 		tp.name$ AS eln_tissue_prep_name,
 		DATE(tp.created_at$) AS sampleprep_date,
 		con.barcode AS tissue_prep_fluidx_id,
+		loc.name AS tube_location,
 		CASE
 			WHEN con.archive_purpose$ IN ('Retired', 'Expended') THEN 0 -- Retired or expended tissue preps have a weight of 0
 			WHEN loc.name = 'SciOps ToL Lab' THEN 0 -- Tissue preps sent to LRES have a weight of 0
@@ -99,6 +100,7 @@ legacy_tissue_preps AS (
 		tp.name$ AS eln_tissue_prep_name,
 		DATE(tp.created_at$) AS sampleprep_date,
 		con.barcode AS tissue_prep_fluidx_id,
+		loc.name AS tube_location,
 		CASE
 			WHEN con.archive_purpose$ IN ('Retired', 'Expended') THEN 0 -- Retired or expended tissue preps have a weight of 0
 			WHEN loc.name = 'SciOps ToL Lab' THEN 0 -- Tissue preps sent to LRES have a weight of 0
