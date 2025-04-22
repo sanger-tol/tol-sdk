@@ -108,7 +108,7 @@ def bioscan_extra():
                         'heading': 'Pantheon:Larval feeding guild',
                         'type': 'str'
                     },
-                    'adult_feeding_guide': {
+                    'adult_feeding_guild': {
                         'heading': 'Pantheon:Adult feeding guild',
                         'type': 'str'
                     },
