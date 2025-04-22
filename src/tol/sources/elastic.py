@@ -177,7 +177,7 @@ def elastic():
     rc_assembly.to_one = {'gap_species': 'species'}
     rc_assembly.to_many = {
         'gn_genome_notes': 'genome_note',
-        'gap_assembly_analyses': 'assembly_analysis'   
+        'gap_assembly_analyses': 'assembly_analysis'
     }
     rc_assembly.foreign_keys = {
         'gn_genome_notes': 'gn_assembly.id',
