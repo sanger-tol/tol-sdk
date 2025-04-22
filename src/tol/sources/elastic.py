@@ -333,15 +333,15 @@ def elastic():
                 'script': {
                     'source': """
                         boolean isTopUpCountZero = (
-                            doc.containsKey('calc_topup_required_tolid_count') &&
-                            doc['calc_topup_required_tolid_count'].size() > 0 &&
-                            doc['calc_topup_required_tolid_count'].value == 0
+                            doc.containsKey('calc_topup_required_tolid_calc_topup_required_value_count') &&
+                            doc['calc_topup_required_tolid_calc_topup_required_value_count'].size() > 0 &&
+                            doc['calc_topup_required_tolid_calc_topup_required_value_count'].value == 0
                         );
 
                         boolean isIndividualExhaustedCountZero = (
-                            doc.containsKey('calc_individual_exhausted_tolid_count') &&
-                            doc['calc_individual_exhausted_tolid_count'].size() > 0 &&
-                            doc['calc_individual_exhausted_tolid_count'].value == 0
+                            doc.containsKey('calc_individual_exhausted_tolid_calc_individual_exhausted_value_count') &&
+                            doc['calc_individual_exhausted_tolid_calc_individual_exhausted_value_count'].size() > 0 &&
+                            doc['calc_individual_exhausted_tolid_calc_individual_exhausted_value_count'].value == 0
                         );
 
                         boolean isIndividualNovel = (
@@ -361,11 +361,11 @@ def elastic():
                         );
 
                         boolean isRecollectionNeeded = (
-                            doc.containsKey('calc_individual_exhausted_tolid_count') &&
+                            doc.containsKey('calc_individual_exhausted_tolid_calc_individual_exhausted_value_count') &&
                             doc.containsKey('tolid_tolid_count') &&
-                            doc['calc_individual_exhausted_tolid_count'].size() > 0 &&
+                            doc['calc_individual_exhausted_tolid_calc_individual_exhausted_value_count'].size() > 0 &&
                             doc['tolid_tolid_count'].size() > 0 &&
-                            doc['calc_individual_exhausted_tolid_count'].value -
+                            doc['calc_individual_exhausted_tolid_calc_individual_exhausted_value_count'].value -
                             doc['tolid_tolid_count'].value == 0
                         );
 
@@ -526,11 +526,11 @@ def elastic():
                             doc.containsKey(
                             'calc_sequencing_request_calc_mlwh_volume_remaining_max'
                             ) && doc.containsKey(
-                            'calc_extraction_calc_benchling_volume_ul_max'
+                            'calc_extraction_calc_benchling_volume_ul_dna_max'
                             ) && doc.containsKey(
                             'calc_tissue_prep_calc_benchling_weight_mg_max'
                             ) && doc.containsKey(
-                            'sts_tolid.calc_sample_calc_benchling_remaining_weight_max'
+                            'calc_sample_calc_benchling_remaining_weight_max'
                             ) && doc.containsKey(
                             'benchling_sample_count'
                             ) && doc.containsKey(
@@ -538,24 +538,25 @@ def elastic():
                             ) && doc[
                             'calc_sequencing_request_calc_mlwh_volume_remaining_max'
                             ].size() > 0 && doc[
-                            'calc_extraction_calc_benchling_volume_ul_max'
+                            'calc_extraction_calc_benchling_volume_ul_dna_max'
                             ].size() > 0 && doc[
                             'calc_tissue_prep_calc_benchling_weight_mg_max'
                             ].size() > 0 && doc[
-                            'sts_tolid.calc_sample_calc_benchling_remaining_weight_max'
+                            'calc_sample_calc_benchling_remaining_weight_max'
                             ].size() > 0 && doc[
                             'benchling_sample_count'
                             ].size() > 0 && doc[
                             'sts_sample_count'
-                            ].size() > 0 && doc[
+                            ].size() > 0 &&
+                            doc[
                             'calc_sequencing_request_calc_mlwh_volume_remaining_max'
-                            ].value == 0 &&
-                            doc['calc_extraction_calc_benchling_volume_ul_max'
-                            ].value == 0 && doc[
+                            ].value <= 0.5 &&
+                            doc['calc_extraction_calc_benchling_volume_ul_dna_max'
+                            ].value <= 0.5 && doc[
                             'calc_tissue_prep_calc_benchling_weight_mg_max'
-                            ].value == 0 && doc[
-                            'sts_tolid.calc_sample_calc_benchling_remaining_weight_max'
-                            ].value == 0 && doc[
+                            ].value <= 0.5 && doc[
+                            'calc_sample_calc_benchling_remaining_weight_max'
+                            ].value <= 0.5 && doc[
                             'benchling_sample_count'
                             ].value == doc[
                             'sts_sample_count'
@@ -572,7 +573,13 @@ def elastic():
                 'type': 'boolean',
                 'script': {
                     'source': """
-                        boolean isAtLeastOneOtherIndividualAvailable = (
+                        boolean isThereAtLeastAnotherIndividual = (
+                            doc.containsKey('tolid_species.tolid_tolid_count') &&
+                            doc['tolid_species.tolid_tolid_count'].size() > 0 &&
+                            doc['tolid_species.tolid_tolid_count'].value > 1
+                        );
+
+                        boolean isAtLeastOneIndividualInTopUp = (
                             doc.containsKey('tolid_species.calc_tolid_calc_topup_required_max') &&
                             doc['tolid_species.calc_tolid_calc_topup_required_max'].size() > 0 &&
                             doc['tolid_species.calc_tolid_calc_topup_required_max'].value == 1
@@ -580,16 +587,16 @@ def elastic():
                         );
 
                         boolean isSpeciesTopUpEqualsIndividualExhausted = (
-                            doc.containsKey('tolid_species.calc_topup_required_tolid_count') &&
-                            doc.containsKey('tolid_species.calc_individual_exhausted_tolid_count')
-                            && doc['tolid_species.calc_topup_required_tolid_count'].size() > 0 &&
-                            doc['tolid_species.calc_individual_exhausted_tolid_count'].size() > 0
-                            && (doc['tolid_species.calc_topup_required_tolid_count'].value -
-                            doc['tolid_species.calc_individual_exhausted_tolid_count'].value == 0)
+                            doc.containsKey('tolid_species.calc_topup_required_tolid_calc_topup_required_value_count') &&
+                            doc.containsKey('tolid_species.calc_individual_exhausted_tolid_calc_individual_exhausted_value_count')
+                            && doc['tolid_species.calc_topup_required_tolid_calc_topup_required_value_count'].size() > 0 &&
+                            doc['tolid_species.calc_individual_exhausted_tolid_calc_individual_exhausted_value_count'].size() > 0
+                            && (doc['tolid_species.calc_topup_required_tolid_calc_topup_required_value_count'].value -
+                            doc['tolid_species.calc_individual_exhausted_tolid_calc_individual_exhausted_value_count'].value == 0)
                         );
 
                         emit(
-                            isAtLeastOneOtherIndividualAvailable &&
+                            isAtLeastOneIndividualInTopUp &&
                             isSpeciesTopUpEqualsIndividualExhausted
                         );
                     """
