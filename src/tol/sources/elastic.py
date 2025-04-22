@@ -333,15 +333,22 @@ def elastic():
                 'script': {
                     'source': """
                         boolean isTopUpCountZero = (
-                            doc.containsKey('calc_topup_required_tolid_calc_topup_required_value_count') &&
-                            doc['calc_topup_required_tolid_calc_topup_required_value_count'].size() > 0 &&
-                            doc['calc_topup_required_tolid_calc_topup_required_value_count'].value == 0
+                            doc.containsKey
+                            ('calc_topup_required_tolid_calc_topup_required_value_count') &&
+                            doc['calc_topup_required_tolid_calc_topup_required_value_count']
+                            .size() > 0 &&
+                            doc['calc_topup_required_tolid_calc_topup_required_value_count']
+                            .value == 0
                         );
 
                         boolean isIndividualExhaustedCountZero = (
-                            doc.containsKey('calc_individual_exhausted_tolid_calc_individual_exhausted_value_count') &&
-                            doc['calc_individual_exhausted_tolid_calc_individual_exhausted_value_count'].size() > 0 &&
-                            doc['calc_individual_exhausted_tolid_calc_individual_exhausted_value_count'].value == 0
+                            doc.containsKey
+                            ('calc_individual_exhausted_tolid_calc_individual_exhausted_value_count')
+                            &&
+                            doc['calc_individual_exhausted_tolid_calc_individual_exhausted_value_count']
+                            .size() > 0 &&
+                            doc['calc_individual_exhausted_tolid_calc_individual_exhausted_value_count']
+                            .value == 0
                         );
 
                         boolean isIndividualNovel = (
@@ -361,12 +368,14 @@ def elastic():
                         );
 
                         boolean isRecollectionNeeded = (
-                            doc.containsKey('calc_individual_exhausted_tolid_calc_individual_exhausted_value_count') &&
-                            doc.containsKey('tolid_tolid_count') &&
-                            doc['calc_individual_exhausted_tolid_calc_individual_exhausted_value_count'].size() > 0 &&
+                            doc.containsKey
+                            ('calc_individual_exhausted_tolid_calc_individual_exhausted_value_count')
+                            && doc.containsKey('tolid_tolid_count') &&
+                            doc['calc_individual_exhausted_tolid_calc_individual_exhausted_value_count']
+                            .size() > 0 &&
                             doc['tolid_tolid_count'].size() > 0 &&
-                            doc['calc_individual_exhausted_tolid_calc_individual_exhausted_value_count'].value -
-                            doc['tolid_tolid_count'].value == 0
+                            doc['calc_individual_exhausted_tolid_calc_individual_exhausted_value_count']
+                            .value - doc['tolid_tolid_count'].value == 0
                         );
 
                         emit(
@@ -587,12 +596,19 @@ def elastic():
                         );
 
                         boolean isSpeciesTopUpEqualsIndividualExhausted = (
-                            doc.containsKey('tolid_species.calc_topup_required_tolid_calc_topup_required_value_count') &&
-                            doc.containsKey('tolid_species.calc_individual_exhausted_tolid_calc_individual_exhausted_value_count')
-                            && doc['tolid_species.calc_topup_required_tolid_calc_topup_required_value_count'].size() > 0 &&
-                            doc['tolid_species.calc_individual_exhausted_tolid_calc_individual_exhausted_value_count'].size() > 0
-                            && (doc['tolid_species.calc_topup_required_tolid_calc_topup_required_value_count'].value -
-                            doc['tolid_species.calc_individual_exhausted_tolid_calc_individual_exhausted_value_count'].value == 0)
+                            doc.containsKey
+                            ('tolid_species.calc_topup_required_tolid_calc_topup_required_value_count')
+                            && doc.containsKey
+                            ('tolid_species.calc_individual_exhausted_tolid_calc_individual_exhausted_value_count')
+                            &&
+                            doc['tolid_species.calc_topup_required_tolid_calc_topup_required_value_count']
+                            .size() > 0 &&
+                            doc['tolid_species.calc_individual_exhausted_tolid_calc_individual_exhausted_value_count']
+                            .size() > 0 &&
+                            (doc['tolid_species.calc_topup_required_tolid_calc_topup_required_value_count']
+                            .value - doc
+                            ['tolid_species.calc_individual_exhausted_tolid_calc_individual_exhausted_value_count']
+                            .value == 0)
                         );
 
                         emit(
