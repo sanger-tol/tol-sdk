@@ -347,20 +347,21 @@ def elastic():
                     'source': """
                         boolean isTopUpCountZero = (
                             doc.containsKey
-                            ('calc_topup_required_tolid_calc_topup_required_value_count') &&
-                            doc['calc_topup_required_tolid_calc_topup_required_value_count']
-                            .size() > 0 &&
-                            doc['calc_topup_required_tolid_calc_topup_required_value_count']
+                            ('calc_topup_required_tolid_calc_topup_required_value_count')
+                            && doc
+                            ['calc_topup_required_tolid_calc_topup_required_value_count']
+                            .size() > 0 && doc
+                            ['calc_topup_required_tolid_calc_topup_required_value_count']
                             .value == 0
                         );
 
                         boolean isIndividualExhaustedCountZero = (
                             doc.containsKey
                             ('calc_individual_exhausted_tolid_calc_individual_exhausted_value_count')
-                            &&
-                            doc['calc_individual_exhausted_tolid_calc_individual_exhausted_value_count']
-                            .size() > 0 &&
-                            doc['calc_individual_exhausted_tolid_calc_individual_exhausted_value_count']
+                            && doc
+                            ['calc_individual_exhausted_tolid_calc_individual_exhausted_value_count']
+                            .size() > 0 && doc
+                            ['calc_individual_exhausted_tolid_calc_individual_exhausted_value_count']
                             .value == 0
                         );
 
@@ -383,11 +384,10 @@ def elastic():
                         boolean isRecollectionNeeded = (
                             doc.containsKey
                             ('calc_individual_exhausted_tolid_calc_individual_exhausted_value_count')
-                            && doc.containsKey('tolid_tolid_count') &&
-                            doc['calc_individual_exhausted_tolid_calc_individual_exhausted_value_count']
-                            .size() > 0 &&
-                            doc['tolid_tolid_count'].size() > 0 &&
-                            doc['calc_individual_exhausted_tolid_calc_individual_exhausted_value_count']
+                            && doc.containsKey('tolid_tolid_count') && doc
+                            ['calc_individual_exhausted_tolid_calc_individual_exhausted_value_count']
+                            .size() > 0 && doc['tolid_tolid_count'].size() > 0 && doc
+                            ['calc_individual_exhausted_tolid_calc_individual_exhausted_value_count']
                             .value - doc['tolid_tolid_count'].value == 0
                         );
 
@@ -552,7 +552,7 @@ def elastic():
                             ) && doc.containsKey(
                             'calc_tissue_prep_calc_benchling_weight_mg_max'
                             ) && doc.containsKey(
-                            'calc_sample_calc_benchling_remaining_weight_max'
+                            'benchling_tolid.calc_sample_calc_benchling_remaining_weight_max'
                             ) && doc.containsKey(
                             'benchling_sample_count'
                             ) && doc.containsKey(
@@ -564,7 +564,7 @@ def elastic():
                             ].size() > 0 && doc[
                             'calc_tissue_prep_calc_benchling_weight_mg_max'
                             ].size() > 0 && doc[
-                            'calc_sample_calc_benchling_remaining_weight_max'
+                            'benchling_tolid.calc_sample_calc_benchling_remaining_weight_max'
                             ].size() > 0 && doc[
                             'benchling_sample_count'
                             ].size() > 0 && doc[
@@ -577,7 +577,7 @@ def elastic():
                             ].value <= 0.5 && doc[
                             'calc_tissue_prep_calc_benchling_weight_mg_max'
                             ].value <= 0.5 && doc[
-                            'calc_sample_calc_benchling_remaining_weight_max'
+                            'benchling_tolid.calc_sample_calc_benchling_remaining_weight_max'
                             ].value <= 0.5 && doc[
                             'benchling_sample_count'
                             ].value == doc[
@@ -613,12 +613,12 @@ def elastic():
                             ('tolid_species.calc_topup_required_tolid_calc_topup_required_value_count')
                             && doc.containsKey
                             ('tolid_species.calc_individual_exhausted_tolid_calc_individual_exhausted_value_count')
-                            &&
-                            doc['tolid_species.calc_topup_required_tolid_calc_topup_required_value_count']
-                            .size() > 0 &&
-                            doc['tolid_species.calc_individual_exhausted_tolid_calc_individual_exhausted_value_count']
-                            .size() > 0 &&
-                            (doc['tolid_species.calc_topup_required_tolid_calc_topup_required_value_count']
+                            && doc
+                            ['tolid_species.calc_topup_required_tolid_calc_topup_required_value_count']
+                            .size() > 0 && doc
+                            ['tolid_species.calc_individual_exhausted_tolid_calc_individual_exhausted_value_count']
+                            .size() > 0 && (doc
+                            ['tolid_species.calc_topup_required_tolid_calc_topup_required_value_count']
                             .value - doc
                             ['tolid_species.calc_individual_exhausted_tolid_calc_individual_exhausted_value_count']
                             .value == 0)
