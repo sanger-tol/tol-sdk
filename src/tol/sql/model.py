@@ -325,9 +325,25 @@ def model_base() -> Type[DefaultModel]:
             foreign_keys = set()
             for rel in inspect(cls).relationships:
                 for col in rel.local_columns:
-                    if len(col.foreign_keys) > 0:  # Test if it really is a foreign key
-                        foreign_keys.add(col.name)
+                    # Test if it really is a foreign key
+                    if len(col.foreign_keys) > 0:
+                        if attr_name := cls.__get_foreign_key_attribute_name(col.name):
+                            foreign_keys.add(attr_name)
             return foreign_keys
+
+        @classmethod
+        def __get_foreign_key_attribute_name(cls, foreign_key_name: str) -> str | None:
+            """
+            Gets the model's attribute name in the class definition from the schema's
+            `foreign_key_name`.
+            """
+
+            col_to_attr = {
+                col_prop.columns[0].name: col_prop.key
+                for col_prop in inspect(cls).column_attrs
+            }
+
+            return col_to_attr.get(foreign_key_name)
 
         @classmethod
         def __get_attribute_names(cls) -> list[str]:

@@ -49,7 +49,10 @@ SELECT DISTINCT
 	con.barcode AS fluidx_id,
 	rnadc.qc_passfail AS rna_qc_passfail,
 	rnay.yield AS rna_yield,
-	con.volume_si * 1000000 AS volume_ul,
+    CASE
+        WHEN con.archive_purpose$ IN ('Retired', 'Expended') THEN 0 -- Retired or expended RNA extractions have a weight of 0
+        ELSE con.volume_si * 1000000
+    END AS volume_ul,
 	loc.name AS location,
 	box.barcode AS rack,
 	rna.bt_id AS bnt_id,
