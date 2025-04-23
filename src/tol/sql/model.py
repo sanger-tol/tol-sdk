@@ -326,7 +326,8 @@ def model_base() -> Type[DefaultModel]:
             for rel in inspect(cls).relationships:
                 for col in rel.local_columns:
                     column_attr = cls.__table__.columns.get(col.name)
-                    if column_attr is not None and len(col.foreign_keys) > 0:  # Test if it really is a foreign key
+                    # Test if it really is a foreign key
+                    if column_attr is not None and len(col.foreign_keys) > 0:
                         foreign_keys.add(column_attr.name)
             return foreign_keys
 
