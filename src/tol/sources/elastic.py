@@ -432,14 +432,14 @@ def elastic():
             )
         },
         'tolid': {
-            'calc_coverage': RuntimeFields.math('mlwh_run_data_mlwh_hifi_read_bases_sum',
+            'calc_coverage_estimated': RuntimeFields.math('mlwh_run_data_mlwh_hifi_read_bases_sum',
                                                 'tolid_species.sts_genome_size',
                                                 operation='/'),
             'calc_ongoing_submissions': RuntimeFields.math(
                 'benchling_pacbio_sequencing_request_count',
                 'benchling_pacbio_completed_sequencing_request_count',
                 operation='-'),
-            'calc_coverage_met': {
+            'calc_coverage_estimated_met': {
                 'type': 'boolean',
                 'script': {
                     'source': """
