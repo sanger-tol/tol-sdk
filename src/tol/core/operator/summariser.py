@@ -31,12 +31,12 @@ class Summariser(
     @abstractmethod
     def _summarise(
         self,
-        summary_objects: Iterable[DataObject],
-        object_type: str | None = None,
-        object_ids: Iterable[str] | None = None,
+        summary_objects: list[DataObject],
+        source_object_type: str | None = None,
+        source_object_ids: Iterable[str] | None = None,
     ) -> None:
         """
-        Summarises according to the given `Iterable` of `DataObject`
+        Summarises according to the given `list` of `DataObject`
         summary instances.
         """
 
@@ -49,23 +49,33 @@ class Summariser(
         object-config instances.
         """
 
-        self._summarise(summary_objects)
+        self._summarise(list(summary_objects))
 
     def summarise_type(
         self,
         summary_objects: Iterable[DataObject],
-        object_type: str,
+        source_object_type: str,
     ) -> None:
         """
         Summarises, for only the given `object_type`, using the given summary
         object-config instances.
         """
 
+        filtered_summaries = self._filter_by_source_type(
+            summary_objects,
+            source_object_type,
+        )
+
+        self._summarise(
+            filtered_summaries,
+            source_object_type=source_object_type,
+        )
+
     def resummarise_by_ids(
         self,
         summary_objects: Iterable[DataObject],
-        object_type: str,
-        object_ids: Iterable[str],
+        source_object_type: str,
+        source_object_ids: Iterable[str],
     ) -> None:
         """
         More restrictive than `summarise_all()`
@@ -74,6 +84,17 @@ class Summariser(
         affecting the `DataObject` instances of given `object_type` and
         `object_ids`.
         """
+
+    def _filter_by_source_type(
+        self,
+        summary_objects: Iterable[DataObject],
+        source_object_type: str,
+    ) -> list[DataObject]:
+
+        return [
+            s for s in summary_objects
+            if s.source_object_type == source_object_type
+        ]
 
     def get_object_filters(
         self,

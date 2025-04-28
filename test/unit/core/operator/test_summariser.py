@@ -32,10 +32,16 @@ def __mock_summary(
 
 @pytest.fixture
 def mock_summariser() -> Summariser:
-    return create_autospec(
+    mock_sum: Summariser = create_autospec(
         Summariser,
         spec_set=True,
     )
+
+    mock_sum._filter_by_source_type.side_effect = (
+        lambda *args: Summariser._filter_by_source_type(mock_sum, *args)
+    )
+
+    return mock_sum
 
 
 @pytest.fixture
@@ -98,8 +104,8 @@ class TestSummariser:
         )
 
         mock_summariser._summarise.assert_called_once_with(
-            summary_objs[1],
-            object_type='second'
+            summary_objs[1:],
+            source_object_type='second'
         )
 
     def test_resummarise_by_ids(
@@ -118,7 +124,7 @@ class TestSummariser:
         )
 
         mock_summariser._summarise.assert_called_once_with(
-            summary_objs[1],
-            object_type='second',
-            object_ids=['a', 'b', 'c']
+            summary_objs[1:],
+            source_object_type='second',
+            source_object_ids=['a', 'b', 'c']
         )
