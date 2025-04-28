@@ -334,44 +334,6 @@ class GroupStatterDataLoader(DefaultDataLoader):
         )
         return source_objs
 
-    def __get_object_filters(self) -> DataSourceFilter:
-        if not self.__source_ids:
-            return self._object_filters
-
-        source_objs = list(
-            self._source.get_by_ids(
-                self._source_object_type,
-                self.__source_ids
-            )
-        )
-
-        if not source_objs:
-            return self._object_filters
-
-        rel_config = self._source.relationship_config.get(self._source_object_type)
-        if not rel_config:
-            return self._object_filters
-        rel_names = rel_config.to_one if rel_config.to_one else {}
-
-        and_extra = {}
-        for rel_name in rel_names:
-            and_extra |= self.__add_relationship_filter_term(
-                source_objs,
-                rel_name
-            )
-
-        if not self._object_filters:
-            return DataSourceFilter(
-                and_=and_extra
-            )
-
-        if self._object_filters.and_ is None:
-            self._object_filters.and_ = and_extra
-        else:
-            self._object_filters.and_ |= and_extra
-
-        return self._object_filters
-
     def __add_relationship_filter_term(
         self,
         source_objs: list[DataObject],
