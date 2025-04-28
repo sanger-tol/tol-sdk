@@ -23,7 +23,6 @@ DataObjectUpdate = tuple[str, dict[str, Any]]
 
 
 class Summariser(
-    _Writer,
     DetailGetter,
     Relational,
     ABC

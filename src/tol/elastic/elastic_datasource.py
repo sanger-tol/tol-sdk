@@ -62,6 +62,7 @@ if typing.TYPE_CHECKING:
 class ElasticDataSource(
     DataSource,
     Cursor,
+    Summariser,
     DetailGetter,
     Enricher,
     PageGetter,
@@ -72,7 +73,6 @@ class ElasticDataSource(
     Upserter,
     Counter,
     Statter,
-    Summariser,
     GroupStatter
 ):
 
