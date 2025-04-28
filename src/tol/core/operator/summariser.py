@@ -67,7 +67,7 @@ class Summariser(
             source_object_type,
         )
 
-        for obj in summary_objects:
+        for obj in filtered_summaries:
             self._summarise(obj)
 
     def resummarise_by_ids(
