@@ -331,30 +331,6 @@ class GroupStatterDataLoader(DefaultDataLoader):
         )
         return source_objs
 
-    def __add_relationship_filter_term(
-        self,
-        source_objs: list[DataObject],
-        relationship_name: str
-    ) -> dict[str, Any]:
-
-        rel_objs = (
-            getattr(source_obj, relationship_name)
-            for source_obj in source_objs
-        )
-        rel_ids = [
-            rel_obj.id
-            for rel_obj in rel_objs
-            if rel_obj is not None
-        ]
-
-        return {
-            f'{relationship_name}.id': {
-                'in_list': {
-                    'value': rel_ids
-                }
-            }
-        }
-
 
 class IdsDataLoader(DefaultDataLoader):
     def __init__(self, source: DataSource, destination: DataSource,
