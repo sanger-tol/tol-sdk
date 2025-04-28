@@ -6,12 +6,13 @@ from __future__ import annotations
 
 import typing
 from abc import ABC, abstractmethod
+from functools import reduce
 from typing import Any, Iterable
 
 from ._writer import _Writer
 from .detail_getter import DetailGetter
 from .relational import Relational
-from ..datasource_filter import DataSourceFilter
+from ..relationship import RelationshipConfig
 
 
 if typing.TYPE_CHECKING:
@@ -33,7 +34,7 @@ class Summariser(
         self,
         summary_objects: list[DataObject],
         source_object_type: str | None = None,
-        ext_and: DataSourceFilter | None = None,
+        ext_and: dict[str, Any] = None,
     ) -> None:
         """
         Summarises according to the given `list` of `DataObject`
@@ -85,6 +86,69 @@ class Summariser(
         `object_ids`.
         """
 
+        filtered_summaries = self._filter_by_source_type(
+            summary_objects,
+            source_object_type,
+        )
+        ids = list(source_object_ids)
+
+        def __reduce_func(
+            d: dict[str, list[DataObject]],
+            s: DataObject,
+        ) -> dict[str, list[DataObject]]:
+
+            s_existing: list[DataObject] = d.get(s.source_object_type, [])
+            d[s.source_object_type] = [*s_existing, s]
+
+            return d
+
+        d_summaries: dict[str, list[DataObject]] = reduce(
+            __reduce_func,
+            filtered_summaries,
+            {},
+        )
+
+        def __none_coalesce_to_many(
+            config: RelationshipConfig,
+        ) -> dict[str, str]:
+
+            if not config.to_many:
+                return {}
+            else:
+                return config.to_many
+
+        def __get_relationship_names(
+            d_type: str,
+        ) -> list[str]:
+
+            return [
+                rel_name
+                for k_d_type, rel_config in self.relationship_config.items()
+                for rel_name in __none_coalesce_to_many(rel_config)
+                if k_d_type == d_type
+            ]
+
+        for d_type, s_objs in d_summaries.items():
+            rel_names = __get_relationship_names(d_type)
+            import logging; logging.error(d_type); logging.error(rel_names)
+            if not rel_names:
+                continue
+
+            for rel_name in rel_names:
+                ext_and = {
+                    f'{rel_name}.id': {
+                        'in_list': {
+                            'value': ids
+                        }
+                    }
+                }
+
+                self._summarise(
+                    s_objs,
+                    source_object_type=source_object_type,
+                    ext_and=ext_and,
+                )
+
     def _filter_by_source_type(
         self,
         summary_objects: Iterable[DataObject],
@@ -95,46 +159,3 @@ class Summariser(
             s for s in summary_objects
             if s.source_object_type == source_object_type
         ]
-
-    def _get_object_filters(
-        self,
-        source_object_type: str | None,
-        source_object_ids: Iterable[str] | None,
-    ) -> Iterable[DataSourceFilter]:
-
-        if not self.__source_ids:
-            return [self._object_filters]
-
-        source_objs = list(
-            self.get_by_ids(
-                self._source_object_type,
-                self.__source_ids
-            )
-        )
-
-        if not source_objs:
-            return [self._object_filters]
-
-        rel_config = self.relationship_config.get(self._source_object_type)
-        if not rel_config:
-            return [self._object_filters]
-        rel_names = rel_config.to_one if rel_config.to_one else {}
-
-        and_extra = {}
-        for rel_name in rel_names:
-            and_extra |= self.__add_relationship_filter_term(
-                source_objs,
-                rel_name
-            )
-
-        if not self._object_filters:
-            return DataSourceFilter(
-                and_=and_extra
-            )
-
-        if self._object_filters.and_ is None:
-            self._object_filters.and_ = and_extra
-        else:
-            self._object_filters.and_ |= and_extra
-
-        return [self._object_filters]

@@ -71,9 +71,6 @@ def mock_summariser() -> Summariser:
     mock_sum._filter_by_source_type.side_effect = (
         lambda *args: Summariser._filter_by_source_type(mock_sum, *args)
     )
-    mock_sum._get_object_filters.side_effect = (
-        lambda *args: Summariser._get_object_filters(mock_sum, *args)
-    )
 
     return mock_sum
 
