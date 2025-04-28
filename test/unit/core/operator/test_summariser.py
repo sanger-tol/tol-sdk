@@ -34,31 +34,6 @@ def __mock_summary(
     return mock_obj
 
 
-def _mock_obj(
-    object_type: str,
-    object_id: str
-) -> DataObject:
-
-    obj: DataObject = create_autospec(DataObject)
-
-    obj.id = object_id
-    obj.type = object_type
-    obj.attributes = {}
-
-    return obj
-
-
-def _mock_objs(
-    object_type: str,
-    object_ids: Iterable[str]
-) -> list[DataObject]:
-
-    return [
-        _mock_obj(object_type, object_id)
-        for object_id in object_ids
-    ]
-
-
 @pytest.fixture
 def mock_summariser() -> Summariser:
     mock_sum: Summariser = create_autospec(
@@ -69,9 +44,11 @@ def mock_summariser() -> Summariser:
     mock_sum.relationship_config = {
         'rel_a': RelationshipConfig(
             to_many={
-                'first': 'first'
+                'first_one': 'first',
+                'do_not_forget_me': 'first',
             }
         ),
+        # irrelevant alternative
         'rel_b': RelationshipConfig(
             to_many={
                 'le_first': 'first'
@@ -207,32 +184,26 @@ class TestSummariser:
         assert mock_summariser._summarise.call_count == 2
 
         assert mock_summariser._summarise.call_args_list == [
-            # rel_a
+            # first_one
             call(
-                summary_objs[1:],
-                source_object_type='first',
-                ext_and=DataSourceFilter(
-                    and_={
-                        'a.id': {
-                            'in_list': {
-                                'value': ['e', 'f', 'g']
-                            }
+                summary_objs[0],
+                ext_and={
+                    'first_one.id': {
+                        'in_list': {
+                            'value': ['e', 'f', 'g']
                         }
                     }
-                )
+                }
             ),
-            # back_b
+            # do_not_forget_me
             call(
-                summary_objs[1:],
-                source_object_type='first',
-                ext_and=DataSourceFilter(
-                    and_={
-                        'b.id': {
-                            'in_list': {
-                                'value': ['e', 'f', 'g']
-                            }
+                summary_objs[0],
+                ext_and={
+                    'do_not_forget_me.id': {
+                        'in_list': {
+                            'value': ['e', 'f', 'g']
                         }
                     }
-                )
+                }
             )
         ]

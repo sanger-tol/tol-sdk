@@ -111,6 +111,7 @@ class Summariser(
 
         for s in filtered_summaries:
             rel_names = __get_relationship_names(s.destination_object_type)
+            import logging; logging.error(rel_names)
             if not rel_names:
                 continue
 
