@@ -6,7 +6,6 @@ from __future__ import annotations
 
 import typing
 from abc import ABC, abstractmethod
-from functools import reduce
 from typing import Any, Iterable
 
 from ._writer import _Writer
@@ -90,14 +89,14 @@ class Summariser(
         )
         ids = list(source_object_ids)
 
-        def __none_coalesce_ones(
+        def __none_coalesce_manys(
             config: RelationshipConfig,
         ) -> dict[str, str]:
 
-            if not config.to_one:
+            if not config.to_many:
                 return {}
             else:
-                return config.to_one
+                return config.to_many
 
         def __get_relationship_names(
             d_type: str,
@@ -106,7 +105,7 @@ class Summariser(
             return [
                 rel_name
                 for k_d_type, rel_config in self.relationship_config.items()
-                for rel_name in __none_coalesce_ones(rel_config)
+                for rel_name in __none_coalesce_manys(rel_config)
                 if k_d_type == d_type
             ]
 
@@ -126,7 +125,6 @@ class Summariser(
 
                 self._summarise(
                     s,
-                    source_object_type=source_object_type,
                     ext_and=ext_and,
                 )
 

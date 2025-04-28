@@ -14,6 +14,7 @@ from tol.core.relationship import RelationshipConfig
 
 def __mock_summary(
     source_object_type: str,
+    destination_object_type: str,
     filters: DataSourceFilter,
 ) -> DataObject:
 
@@ -21,17 +22,19 @@ def __mock_summary(
 
     mock_obj.type = 'summary'
     mock_obj.source_object_type = source_object_type
+    mock_obj.destination_object_type = destination_object_type
     mock_obj.object_filters = filters
 
     mock_obj.attributes = {
         'source_object_type': source_object_type,
         'object_filters': filters,
+        'destination_object_type': destination_object_type,
     }
 
     return mock_obj
 
 
-def __mock_obj(
+def _mock_obj(
     object_type: str,
     object_id: str
 ) -> DataObject:
@@ -45,13 +48,13 @@ def __mock_obj(
     return obj
 
 
-def __mock_objs(
+def _mock_objs(
     object_type: str,
     object_ids: Iterable[str]
 ) -> list[DataObject]:
 
     return [
-        __mock_obj(object_type, object_id)
+        _mock_obj(object_type, object_id)
         for object_id in object_ids
     ]
 
@@ -71,23 +74,23 @@ def mock_summariser() -> Summariser:
         ),
         'rel_b': RelationshipConfig(
             to_many={
-                'first': 'first'
+                'le_first': 'first'
             }
         ),
         'first': RelationshipConfig(
             to_one={
-                'back_a': 'a',
-                'back_b': 'b',
+                'back_a': 'rel_a',
+                'back_b': 'rel_b',
             }
         ),
         'rel_i': RelationshipConfig(
             to_many={
-                'second': 'second'
+                'le_second': 'second'
             }
         ),
         'second': RelationshipConfig(
             to_one={
-                'back_i': 'i',
+                'back_i': 'rel_i',
             }
         ),
     }
@@ -105,6 +108,7 @@ def summary_objs() -> Iterable[DataObject]:
     return [
         __mock_summary(
             'first',
+            'rel_a',
             {
                 'anything': {
                     'eq': {
@@ -115,6 +119,7 @@ def summary_objs() -> Iterable[DataObject]:
         ),
         __mock_summary(
             'second',
+            'rel_i',
             {
                 'please': {
                     'eq': {
@@ -167,7 +172,7 @@ class TestSummariser:
     ) -> None:
         """Only one relationship"""
 
-        mock_summariser.get_by_ids.return_value = __mock_objs(
+        mock_summariser.get_by_ids.return_value = _mock_objs(
             'rel_i',
             'flarg',
         )
@@ -180,10 +185,9 @@ class TestSummariser:
         )
 
         mock_summariser._summarise.assert_called_once_with(
-            summary_objs[1:],
-            source_object_type='second',
+            summary_objs[1],
             ext_and={
-                'id': {
+                'le_second.id': {
                     'in_list': {
                         'value': ['f', 'l', 'a', 'r', 'g']
                     }
