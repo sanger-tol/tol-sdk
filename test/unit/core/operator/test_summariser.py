@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: MIT
 
 from typing import Iterable
-from unittest.mock import create_autospec
+from unittest.mock import call, create_autospec
 
 import pytest
 
@@ -54,7 +54,17 @@ def mock_summariser() -> Summariser:
                 'back_a': 'a',
                 'back_b': 'b',
             }
-        )
+        ),
+        'rel_i': RelationshipConfig(
+            to_one={
+                'i': 'second'
+            }
+        ),
+        'second': RelationshipConfig(
+            to_many={
+                'back_i': 'i',
+            }
+        ),
     }
 
     # internal methods that still need to be concrete
@@ -143,7 +153,7 @@ class TestSummariser:
             mock_summariser,
             summary_objs,
             'second',
-            list('abc')
+            'abc',
         )
 
         mock_summariser._summarise.assert_called_once_with(
@@ -158,3 +168,43 @@ class TestSummariser:
         summary_objs: Iterable[DataObject],
     ) -> None:
         """Many relationships pointing to the target type"""
+
+        Summariser.resummarise_by_ids(
+            mock_summariser,
+            summary_objs,
+            'first',
+            'efg',
+        )
+
+        assert mock_summariser._summarise.call_count == 2
+
+        assert mock_summariser._summarise.call_args_list == [
+            # rel_a
+            call(
+                summary_objs[1:],
+                source_object_type='first',
+                ext_and=DataSourceFilter(
+                    and_={
+                        'rel_a.id': {
+                            'in_list': {
+                                'value': ['e', 'f', 'g']
+                            }
+                        }
+                    }
+                )
+            ),
+            # rel_b
+            call(
+                summary_objs[1:],
+                source_object_type='first',
+                ext_and=DataSourceFilter(
+                    and_={
+                        'rel_b.id': {
+                            'in_list': {
+                                'value': ['e', 'f', 'g']
+                            }
+                        }
+                    }
+                )
+            )
+        ]

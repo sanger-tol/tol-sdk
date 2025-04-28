@@ -33,7 +33,7 @@ class Summariser(
         self,
         summary_objects: list[DataObject],
         source_object_type: str | None = None,
-        source_object_ids: Iterable[str] | None = None,
+        ext_and: DataSourceFilter | None = None,
     ) -> None:
         """
         Summarises according to the given `list` of `DataObject`
