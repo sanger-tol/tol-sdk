@@ -32,7 +32,7 @@ class Summariser(
     @abstractmethod
     def _summarise(
         self,
-        summary_objects: DataObject,
+        summary_object: DataObject,
         ext_and: dict[str, Any] | None = None,
     ) -> None:
         """
