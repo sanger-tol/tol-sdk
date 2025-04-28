@@ -11,6 +11,7 @@ from typing import Any, Iterable
 from ._writer import _Writer
 from .detail_getter import DetailGetter
 from .relational import Relational
+from ..datasource_filter import DataSourceFilter
 from ..relationship import RelationshipConfig
 
 
@@ -128,6 +129,25 @@ class Summariser(
                     s,
                     ext_and=ext_and,
                 )
+
+    def _mix_in_ext_and(
+        object_filters: dict[str, Any] | None,
+        ext_and: dict[str, Any] | None = None,
+    ) -> DataSourceFilter | None:
+
+        if not ext_and:
+            return DataSourceFilter(
+                and_=object_filters,
+            )
+
+        if not object_filters:
+            return DataSourceFilter(
+                and_=ext_and,
+            )
+
+        return DataSourceFilter(
+            object_filters | ext_and,
+        )
 
     def _filter_by_source_type(
         self,
