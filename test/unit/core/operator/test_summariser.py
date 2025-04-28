@@ -128,13 +128,13 @@ def summary_objs() -> Iterable[DataObject]:
 
 class TestSummariser:
 
-    def test_summarse_all(
+    def test_summarise_all(
         self,
         mock_summariser: Summariser,
         summary_objs: Iterable[DataObject],
     ) -> None:
 
-        Summariser.summarse_all(
+        Summariser.summarise_all(
             mock_summariser,
             summary_objs,
         )

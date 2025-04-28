@@ -33,7 +33,6 @@ class Summariser(
     def _summarise(
         self,
         summary_objects: DataObject,
-        source_object_type: str | None = None,
         ext_and: dict[str, Any] | None = None,
     ) -> None:
         """
@@ -41,7 +40,7 @@ class Summariser(
         summary instances.
         """
 
-    def summarse_all(
+    def summarise_all(
         self,
         summary_objects: Iterable[DataObject],
     ) -> None:
@@ -68,11 +67,7 @@ class Summariser(
             source_object_type,
         )
 
-        for obj in filtered_summaries:
-            self._summarise(
-                obj,
-                source_object_type=source_object_type,
-            )
+        self.summarise_all(filtered_summaries)
 
     def resummarise_by_ids(
         self,
@@ -129,7 +124,7 @@ class Summariser(
                 }
 
                 self._summarise(
-                    [s],
+                    s,
                     source_object_type=source_object_type,
                     ext_and=ext_and,
                 )
