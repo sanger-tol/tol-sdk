@@ -5,7 +5,7 @@
 from abc import ABC, abstractmethod
 from datetime import datetime, timezone
 from itertools import chain, groupby
-from typing import Any, Dict, Iterable, List, Optional, Type
+from typing import Dict, Iterable, List, Optional, Type
 
 from more_itertools import peekable
 

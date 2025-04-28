@@ -8,7 +8,6 @@ import typing
 from abc import ABC, abstractmethod
 from typing import Any, Iterable
 
-from ._writer import _Writer
 from .detail_getter import DetailGetter
 from .relational import Relational
 from ..datasource_filter import DataSourceFilter
@@ -111,7 +110,6 @@ class Summariser(
 
         for s in filtered_summaries:
             rel_names = __get_relationship_names(s.destination_object_type)
-            import logging; logging.error(rel_names)
             if not rel_names:
                 continue
 
@@ -130,6 +128,7 @@ class Summariser(
                 )
 
     def _mix_in_ext_and(
+        self,
         object_filters: dict[str, Any] | None,
         ext_and: dict[str, Any] | None = None,
     ) -> DataSourceFilter | None:
