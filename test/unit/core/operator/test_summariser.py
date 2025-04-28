@@ -82,9 +82,7 @@ class TestSummariser:
         )
 
         mock_summariser._summarise.assert_called_once_with(
-            summary_objs,
-            object_type=None,
-            object_ids=None
+            summary_objs
         )
 
     def test_summarise_type(
@@ -101,8 +99,7 @@ class TestSummariser:
 
         mock_summariser._summarise.assert_called_once_with(
             summary_objs[1],
-            object_type='second',
-            object_ids=None
+            object_type='second'
         )
 
     def test_resummarise_by_ids(

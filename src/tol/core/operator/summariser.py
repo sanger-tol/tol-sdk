@@ -49,6 +49,8 @@ class Summariser(
         object-config instances.
         """
 
+        self._summarise(summary_objects)
+
     def summarise_type(
         self,
         summary_objects: Iterable[DataObject],
