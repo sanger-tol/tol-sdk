@@ -157,8 +157,7 @@ class TestSummariser:
         )
 
         mock_summariser._summarise.assert_called_once_with(
-            summary_objs[1],
-            source_object_type='second'
+            summary_objs[1]
         )
 
     def test_resummarise_by_ids__simple(
