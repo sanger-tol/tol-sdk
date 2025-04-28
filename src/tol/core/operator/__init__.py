@@ -19,6 +19,7 @@ from .operator_config import OperatorDict  # noqa
 from .page_getter import PageGetter
 from .relational import Relational
 from .statter import Statter
+from .summariser import Summariser
 from .updater import Updater
 from .upserter import Upserter
 
@@ -36,6 +37,7 @@ ALL_OPERATORS = (
     PageGetter,
     Relational,
     Statter,
+    Summariser,
     Updater,
     Upserter,
 )
@@ -50,14 +52,16 @@ Operator = Union[
     Cursor,
     Deleter,
     DetailGetter,
+    Enricher,
     GroupStatter,
     Inserter,
     ListGetter,
     PageGetter,
     Relational,
     Statter,
+    Summariser,
     Updater,
-    Upserter
+    Upserter,
 ]
 """
 A type hint, indicating that any number of operators are implemented
