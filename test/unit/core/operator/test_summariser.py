@@ -172,11 +172,6 @@ class TestSummariser:
     ) -> None:
         """Only one relationship"""
 
-        mock_summariser.get_by_ids.return_value = _mock_objs(
-            'rel_i',
-            'flarg',
-        )
-
         Summariser.resummarise_by_ids(
             mock_summariser,
             summary_objs,
@@ -189,7 +184,7 @@ class TestSummariser:
             ext_and={
                 'le_second.id': {
                     'in_list': {
-                        'value': ['f', 'l', 'a', 'r', 'g']
+                        'value': ['a', 'b', 'c']
                     }
                 }
             }
