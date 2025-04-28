@@ -92,11 +92,34 @@ class TestSummariser:
         mock_summariser: Summariser,
         summary_objs: Iterable[DataObject],
     ) -> None:
-        pass
+
+        Summariser.summarise_type(
+            mock_summariser,
+            summary_objs,
+            'second',
+        )
+
+        mock_summariser._summarise.assert_called_once_with(
+            summary_objs[1],
+            object_type='second',
+            object_ids=None
+        )
 
     def test_resummarise_by_ids(
         self,
         mock_summariser: Summariser,
         summary_objs: Iterable[DataObject],
     ) -> None:
-        pass
+
+        Summariser.resummarise_by_ids(
+            mock_summariser,
+            summary_objs,
+            'second',
+            list('abc')
+        )
+
+        mock_summariser._summarise.assert_called_once_with(
+            summary_objs[1],
+            object_type='second',
+            object_ids=['a', 'b', 'c']
+        )
