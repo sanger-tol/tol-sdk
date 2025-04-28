@@ -96,7 +96,7 @@ class Summariser(
             if s.source_object_type == source_object_type
         ]
 
-    def get_object_filters(
+    def _get_object_filters(
         self,
         source_object_type: str | None,
         source_object_ids: Iterable[str] | None,

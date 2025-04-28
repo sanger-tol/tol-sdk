@@ -40,6 +40,9 @@ def mock_summariser() -> Summariser:
     mock_sum._filter_by_source_type.side_effect = (
         lambda *args: Summariser._filter_by_source_type(mock_sum, *args)
     )
+    mock_sum._get_object_filters.side_effect = (
+        lambda *args: Summariser._get_object_filters(mock_sum, *args)
+    )
 
     return mock_sum
 
@@ -108,11 +111,12 @@ class TestSummariser:
             source_object_type='second'
         )
 
-    def test_resummarise_by_ids(
+    def test_resummarise_by_ids__simple(
         self,
         mock_summariser: Summariser,
         summary_objs: Iterable[DataObject],
     ) -> None:
+        """Only one relationship"""
 
         #TODO - this needs to be WAY more complicated
 
@@ -128,3 +132,10 @@ class TestSummariser:
             source_object_type='second',
             source_object_ids=['a', 'b', 'c']
         )
+
+    def test_resummarise_by_ids__many_relationships(
+        self,
+        mock_summariser: Summariser,
+        summary_objs: Iterable[DataObject],
+    ) -> None:
+        """Many relationships pointing to the target type"""
