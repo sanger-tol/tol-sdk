@@ -9,6 +9,7 @@ import pytest
 
 from tol.core import DataObject, DataSourceFilter
 from tol.core.operator import Summariser
+from tol.core.relationship import RelationshipConfig
 
 
 def __mock_summary(
@@ -37,6 +38,26 @@ def mock_summariser() -> Summariser:
         spec_set=True,
     )
 
+    mock_sum.relationship_config = {
+        'rel_a': RelationshipConfig(
+            to_one={
+                'a': 'first'
+            }
+        ),
+        'rel_b': RelationshipConfig(
+            to_one={
+                'b': 'first'
+            }
+        ),
+        'first': RelationshipConfig(
+            to_many={
+                'back_a': 'a',
+                'back_b': 'b',
+            }
+        )
+    }
+
+    # internal methods that still need to be concrete
     mock_sum._filter_by_source_type.side_effect = (
         lambda *args: Summariser._filter_by_source_type(mock_sum, *args)
     )
@@ -117,8 +138,6 @@ class TestSummariser:
         summary_objs: Iterable[DataObject],
     ) -> None:
         """Only one relationship"""
-
-        #TODO - this needs to be WAY more complicated
 
         Summariser.resummarise_by_ids(
             mock_summariser,
