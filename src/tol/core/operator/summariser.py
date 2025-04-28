@@ -32,9 +32,9 @@ class Summariser(
     @abstractmethod
     def _summarise(
         self,
-        summary_objects: list[DataObject],
+        summary_objects: DataObject,
         source_object_type: str | None = None,
-        ext_and: dict[str, Any] = None,
+        ext_and: dict[str, Any] | None = None,
     ) -> None:
         """
         Summarises according to the given `list` of `DataObject`
@@ -50,7 +50,8 @@ class Summariser(
         object-config instances.
         """
 
-        self._summarise(list(summary_objects))
+        for obj in summary_objects:
+            self._summarise(obj)
 
     def summarise_type(
         self,
@@ -67,10 +68,11 @@ class Summariser(
             source_object_type,
         )
 
-        self._summarise(
-            filtered_summaries,
-            source_object_type=source_object_type,
-        )
+        for obj in filtered_summaries:
+            self._summarise(
+                obj,
+                source_object_type=source_object_type,
+            )
 
     def resummarise_by_ids(
         self,
@@ -92,30 +94,14 @@ class Summariser(
         )
         ids = list(source_object_ids)
 
-        def __reduce_func(
-            d: dict[str, list[DataObject]],
-            s: DataObject,
-        ) -> dict[str, list[DataObject]]:
-
-            s_existing: list[DataObject] = d.get(s.source_object_type, [])
-            d[s.source_object_type] = [*s_existing, s]
-
-            return d
-
-        d_summaries: dict[str, list[DataObject]] = reduce(
-            __reduce_func,
-            filtered_summaries,
-            {},
-        )
-
-        def __none_coalesce_to_many(
+        def __none_coalesce_ones(
             config: RelationshipConfig,
         ) -> dict[str, str]:
 
-            if not config.to_many:
+            if not config.to_one:
                 return {}
             else:
-                return config.to_many
+                return config.to_one
 
         def __get_relationship_names(
             d_type: str,
@@ -124,13 +110,12 @@ class Summariser(
             return [
                 rel_name
                 for k_d_type, rel_config in self.relationship_config.items()
-                for rel_name in __none_coalesce_to_many(rel_config)
+                for rel_name in __none_coalesce_ones(rel_config)
                 if k_d_type == d_type
             ]
 
-        for d_type, s_objs in d_summaries.items():
-            rel_names = __get_relationship_names(d_type)
-            import logging; logging.error(d_type); logging.error(rel_names)
+        for s in filtered_summaries:
+            rel_names = __get_relationship_names(s.destination_object_type)
             if not rel_names:
                 continue
 
@@ -144,7 +129,7 @@ class Summariser(
                 }
 
                 self._summarise(
-                    s_objs,
+                    [s],
                     source_object_type=source_object_type,
                     ext_and=ext_and,
                 )

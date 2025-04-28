@@ -31,6 +31,31 @@ def __mock_summary(
     return mock_obj
 
 
+def __mock_obj(
+    object_type: str,
+    object_id: str
+) -> DataObject:
+
+    obj: DataObject = create_autospec(DataObject)
+
+    obj.id = object_id
+    obj.type = object_type
+    obj.attributes = {}
+
+    return obj
+
+
+def __mock_objs(
+    object_type: str,
+    object_ids: Iterable[str]
+) -> list[DataObject]:
+
+    return [
+        __mock_obj(object_type, object_id)
+        for object_id in object_ids
+    ]
+
+
 @pytest.fixture
 def mock_summariser() -> Summariser:
     mock_sum: Summariser = create_autospec(
@@ -40,28 +65,28 @@ def mock_summariser() -> Summariser:
 
     mock_sum.relationship_config = {
         'rel_a': RelationshipConfig(
-            to_one={
-                'a': 'first'
+            to_many={
+                'first': 'first'
             }
         ),
         'rel_b': RelationshipConfig(
-            to_one={
-                'b': 'first'
+            to_many={
+                'first': 'first'
             }
         ),
         'first': RelationshipConfig(
-            to_many={
+            to_one={
                 'back_a': 'a',
                 'back_b': 'b',
             }
         ),
         'rel_i': RelationshipConfig(
-            to_one={
-                'i': 'second'
+            to_many={
+                'second': 'second'
             }
         ),
         'second': RelationshipConfig(
-            to_many={
+            to_one={
                 'back_i': 'i',
             }
         ),
@@ -80,27 +105,23 @@ def summary_objs() -> Iterable[DataObject]:
     return [
         __mock_summary(
             'first',
-            DataSourceFilter(
-                and_={
-                    'anything': {
-                        'eq': {
-                            'value': True
-                        }
+            {
+                'anything': {
+                    'eq': {
+                        'value': True
                     }
                 }
-            )
+            }
         ),
         __mock_summary(
             'second',
-            DataSourceFilter(
-                and_={
-                    'please': {
-                        'eq': {
-                            'value': 'no'
-                        }
+            {
+                'please': {
+                    'eq': {
+                        'value': 'no'
                     }
                 }
-            )
+            }
         )
     ]
 
@@ -118,9 +139,10 @@ class TestSummariser:
             summary_objs,
         )
 
-        mock_summariser._summarise.assert_called_once_with(
-            summary_objs
-        )
+        assert mock_summariser._summarise.call_args_list == [
+            call(summary_objs[0]),
+            call(summary_objs[1]),
+        ]
 
     def test_summarise_type(
         self,
@@ -135,7 +157,7 @@ class TestSummariser:
         )
 
         mock_summariser._summarise.assert_called_once_with(
-            summary_objs[1:],
+            summary_objs[1],
             source_object_type='second'
         )
 
@@ -145,6 +167,11 @@ class TestSummariser:
         summary_objs: Iterable[DataObject],
     ) -> None:
         """Only one relationship"""
+
+        mock_summariser.get_by_ids.return_value = __mock_objs(
+            'rel_i',
+            'flarg',
+        )
 
         Summariser.resummarise_by_ids(
             mock_summariser,
@@ -156,7 +183,13 @@ class TestSummariser:
         mock_summariser._summarise.assert_called_once_with(
             summary_objs[1:],
             source_object_type='second',
-            source_object_ids=['a', 'b', 'c']
+            ext_and={
+                'id': {
+                    'in_list': {
+                        'value': ['f', 'l', 'a', 'r', 'g']
+                    }
+                }
+            }
         )
 
     def test_resummarise_by_ids__many_relationships(
@@ -182,7 +215,7 @@ class TestSummariser:
                 source_object_type='first',
                 ext_and=DataSourceFilter(
                     and_={
-                        'rel_a.id': {
+                        'a.id': {
                             'in_list': {
                                 'value': ['e', 'f', 'g']
                             }
@@ -190,13 +223,13 @@ class TestSummariser:
                     }
                 )
             ),
-            # rel_b
+            # back_b
             call(
                 summary_objs[1:],
                 source_object_type='first',
                 ext_and=DataSourceFilter(
                     and_={
-                        'rel_b.id': {
+                        'b.id': {
                             'in_list': {
                                 'value': ['e', 'f', 'g']
                             }
