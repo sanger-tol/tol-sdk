@@ -157,7 +157,7 @@ class TestSummariser:
         mock_summariser._summarise.assert_called_once_with(
             summary_objs[1],
             ext_and={
-                'le_second.id': {
+                'back_i.id': {
                     'in_list': {
                         'value': ['a', 'b', 'c']
                     }
