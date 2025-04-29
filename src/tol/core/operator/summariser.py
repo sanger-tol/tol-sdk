@@ -86,52 +86,33 @@ class Summariser(
             summary_objects,
             source_object_type,
         )
-        ids = list(source_object_ids)
 
-        def __none_coalesce_manys(
-            config: RelationshipConfig,
-        ) -> dict[str, str]:
-
-            if not config.to_many:
-                return {}
-            else:
-                return config.to_many
-
-        def __get_relationship_names(
-            d_type: str,
-        ) -> list[str]:
-
-            return [
-                rel_name
-                for k_d_type, rel_config in self.relationship_config.items()
-                for rel_name in __none_coalesce_manys(rel_config)
-                if k_d_type == d_type
-            ]
+        #objects that have changed
+        source_objs = list(
+            self.get_by_ids(
+                source_object_type,
+                source_object_ids,
+            )
+        )
 
         for s in filtered_summaries:
-            rel_names = __get_relationship_names(s.destination_object_type)
-            if not rel_names:
-                continue
 
-            for rel_name in rel_names:
-                ext_and = {
-                    f'{rel_name}.id': {
-                        'in_list': {
-                            'value': ids
-                        }
-                    }
-                }
+            # something missing here
+            # relationship_name comes from the first element of group_by
+            # group_by[0]
+            # get value for each source_obj using `get_field_by_name(group_by[0])`
 
-                self._summarise(
-                    s,
-                    ext_and=ext_and,
-                )
+
+            self._summarise(
+                s,
+                ext_and=ext_and, # `ext_and` is the group by value of changed objects (`in_list` value of all group_by values)
+            )
 
     def _mix_in_ext_and(
         self,
         object_filters: dict[str, Any] | None,
-        ext_and: dict[str, Any] | None = None,
-    ) -> DataSourceFilter | None:
+        ext_and: dict[str, Any] | None,
+    ) -> DataSourceFilter:
 
         if not ext_and:
             return DataSourceFilter(

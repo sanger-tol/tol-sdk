@@ -16,6 +16,7 @@ def __mock_summary(
     source_object_type: str,
     destination_object_type: str,
     filters: DataSourceFilter,
+    group_by_first: str,
 ) -> DataObject:
 
     mock_obj: DataObject = create_autospec(DataObject)
@@ -24,12 +25,7 @@ def __mock_summary(
     mock_obj.source_object_type = source_object_type
     mock_obj.destination_object_type = destination_object_type
     mock_obj.object_filters = filters
-
-    mock_obj.attributes = {
-        'source_object_type': source_object_type,
-        'object_filters': filters,
-        'destination_object_type': destination_object_type,
-    }
+    mock_obj.group_by = [group_by_first]
 
     return mock_obj
 
@@ -92,7 +88,8 @@ def summary_objs() -> Iterable[DataObject]:
                         'value': True
                     }
                 }
-            }
+            },
+            'back_a.id'
         ),
         __mock_summary(
             'second',
@@ -103,7 +100,8 @@ def summary_objs() -> Iterable[DataObject]:
                         'value': 'no'
                     }
                 }
-            }
+            },
+            'back_i.important_column'
         )
     ]
 
