@@ -222,29 +222,13 @@ class TestSummariser:
             'efg',
         )
 
-        assert mock_summariser._summarise.call_count == 2
-
-        assert mock_summariser._summarise.call_args_list == [
-            # first_one
-            call(
-                summary_objs[0],
-                ext_and={
-                    'first_one.id': {
-                        'in_list': {
-                            'value': ['e', 'f', 'g']
-                        }
+        mock_summariser._summarise.assert_called_once_with(
+            summary_objs[0],
+            ext_and={
+                'back_a.id': {
+                    'in_list': {
+                        'value': ['rel_e', 'rel_f', 'rel_g']
                     }
                 }
-            ),
-            # do_not_forget_me
-            call(
-                summary_objs[0],
-                ext_and={
-                    'do_not_forget_me.id': {
-                        'in_list': {
-                            'value': ['e', 'f', 'g']
-                        }
-                    }
-                }
-            )
-        ]
+            }
+        )
