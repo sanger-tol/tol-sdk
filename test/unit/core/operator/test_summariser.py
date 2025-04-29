@@ -91,23 +91,16 @@ def mock_summariser() -> Summariser:
         object_ids: Iterable[str],
         **kwargs
     ):
-        if object_type == 'first':
-            return [
-                __mock_obj(
-                    'back_a',
-                    f'rel_{id_}'
-                )
-                for id_ in object_ids
-            ]
-        # second
-        else:
-            return [
-                __mock_obj(
-                    'back_i',
-                    f'rel_{id_}'
-                )
-                for id_ in object_ids
-            ]
+
+        rel_name = 'back_a' if object_type == 'first' else 'back_i'
+
+        return [
+            __mock_obj(
+                rel_name,
+                f'rel_{id_}'
+            )
+            for id_ in object_ids
+        ]
 
     mock_sum.get_by_ids.side_effect = __get_by_ids
 
