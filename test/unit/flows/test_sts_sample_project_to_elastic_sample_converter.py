@@ -26,7 +26,8 @@ class _MockDataSourceRelational(DataSource, Relational):
                 'location', 'gal', 'preservation_approach', 'sampleset',
                 'specimen', 'preservative_solution', 'collection_method',
                 'sample_person', 'person', 'manifest', 'tissue_size', 'sample_species',
-                'species', 'lifestage', 'sex', 'organism_part', 'sample_species_organism_part']
+                'species', 'lifestage', 'sex', 'organism_part', 'sample_species_organism_part',
+                'ext_id', 'strain']
 
     @property
     def attribute_types(self):
@@ -54,7 +55,8 @@ class _MockDataSourceRelational(DataSource, Relational):
         }
         rc_sample.to_many = {
             'sample_persons': 'sample_person',
-            'sample_species': 'sample_species'
+            'sample_species': 'sample_species',
+            'ext_ids': 'ext_id'
         }
         rc_sample_person = RelationshipConfig()
         rc_sample_person.to_one = {
@@ -67,6 +69,7 @@ class _MockDataSourceRelational(DataSource, Relational):
             'sample': 'sample',
             'species': 'species',
             'lifestage': 'lifestage',
+            'strain': 'strain',
             'sex': 'sex'
         }
         rc_sample_species.to_many = {
@@ -139,6 +142,11 @@ class _MockDataSourceRelational(DataSource, Relational):
                 type_='lifestage',
                 attributes={'name': 'EMBRYO'}
             )
+            strain = source._host.data_object_factory(
+                id_='test_strain',
+                type_='strain',
+                attributes={'name': 'Strain'}
+            )
             sex = source._host.data_object_factory(
                 id_='test_sex',
                 type_='sex',
@@ -164,6 +172,7 @@ class _MockDataSourceRelational(DataSource, Relational):
                     'sample': sample,
                     'species': species,
                     'lifestage': lifestage,
+                    'strain': strain,
                     'sex': sex
                 }
             )
@@ -211,6 +220,24 @@ class _MockDataSourceRelational(DataSource, Relational):
                 }
             )
             return [ssop1, ssop2]
+        elif relationship_name == 'ext_ids':
+            ext_id1 = source._host.data_object_factory(
+                id_='ext_id1',
+                type_='ext_id',
+                attributes={
+                    'ext_id_type': 'type1',
+                    'value': 'ext_id1'
+                }
+            )
+            ext_id2 = source._host.data_object_factory(
+                id_='ext_id2',
+                type_='ext_id',
+                attributes={
+                    'ext_id_type': 'type2',
+                    'value': 'ext_id2'
+                }
+            )
+            return [ext_id1, ext_id2]
 
 
 class _MockDataSource(DataSource):
@@ -382,6 +409,9 @@ class TestStsSampleProjectToElasticSampleConverter(TestCase):
             'cost_code': 'S12345',
             'species': {'id': 'test_species'},
             'lifestage': 'EMBRYO',
+            'strain': 'Strain',
+            'type1': 'ext_id1',
+            'type2': 'ext_id2',
             'sex': 'FEMALE',
             'organism_part': ['LEG', 'HEAD']
         })
