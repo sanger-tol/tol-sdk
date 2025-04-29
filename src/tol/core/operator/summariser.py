@@ -87,7 +87,6 @@ class Summariser(
             source_object_type,
         )
 
-        #objects that have changed
         source_objs = list(
             self.get_by_ids(
                 source_object_type,
@@ -96,16 +95,33 @@ class Summariser(
         )
 
         for s in filtered_summaries:
+            first_group_by: str = s.group_by[0]
+            relationship_hops = '.'.join(
+                first_group_by.split('.')[:-1]
+            )
+            relationship_id_target = f'{relationship_hops}.id'
 
-            # something missing here
-            # relationship_name comes from the first element of group_by
-            # group_by[0]
-            # get value for each source_obj using `get_field_by_name(group_by[0])`
+            relationship_ids_raw = (
+                o.get_field_by_name(relationship_id_target)
+                for o in source_objs
+                if o is not None
+            )
+            relationship_ids: list[str] = [
+                i for i in relationship_ids_raw
+                if i is not None
+            ]
 
+            ext_and = {
+                relationship_id_target: {
+                    'in_list': {
+                        'value': relationship_ids
+                    }
+                }
+            }
 
             self._summarise(
                 s,
-                ext_and=ext_and, # `ext_and` is the group by value of changed objects (`in_list` value of all group_by values)
+                ext_and=ext_and,
             )
 
     def _mix_in_ext_and(
