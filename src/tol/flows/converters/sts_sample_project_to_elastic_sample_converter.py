@@ -93,8 +93,12 @@ class StsSampleProjectToElasticSampleConverter(
         ret = self._data_object_factory(
             'sample',
             s.id,
-            attributes=attributes | person_attributes | sample_species_attributes |
-                ext_id_attributes
+            attributes=(
+                attributes
+                | person_attributes
+                | sample_species_attributes
+                | ext_id_attributes
+            )
         )
         return iter([ret])
 
