@@ -2,7 +2,7 @@
 #
 # SPDX-License-Identifier: MIT
 
-from typing import Iterable
+from typing import Any, Iterable
 from unittest.mock import call, create_autospec
 
 import pytest
@@ -67,6 +67,49 @@ def mock_summariser() -> Summariser:
             }
         ),
     }
+
+    def __mock_obj(
+        to_one_name: str,
+        to_one_id: str,
+    ) -> DataObject:
+
+        mock_obj: DataObject = create_autospec(
+            DataObject,
+            spec_set=True
+        )
+
+        def __get_field_by_name(field_name: str) -> Any:
+            assert field_name == f'{to_one_name}.id'
+            return to_one_id
+
+        mock_obj.get_field_by_name.side_effect = __get_field_by_name
+
+        return mock_obj
+
+    def __get_by_ids(
+        object_type: str,
+        object_ids: Iterable[str],
+        **kwargs
+    ):
+        if object_type == 'first':
+            return [
+                __mock_obj(
+                    'back_a',
+                    f'rel_{id_}'
+                )
+                for id_ in object_ids
+            ]
+        # second
+        else:
+            return [
+                __mock_obj(
+                    'back_i',
+                    f'rel_{id_}'
+                )
+                for id_ in object_ids
+            ]
+
+    mock_sum.get_by_ids.side_effect = __get_by_ids
 
     # internal methods that still need to be concrete
     mock_sum._filter_by_source_type.side_effect = (
@@ -159,7 +202,7 @@ class TestSummariser:
             ext_and={
                 'back_i.id': {
                     'in_list': {
-                        'value': ['a', 'b', 'c']
+                        'value': ['rel_a', 'rel_b', 'rel_c']
                     }
                 }
             }

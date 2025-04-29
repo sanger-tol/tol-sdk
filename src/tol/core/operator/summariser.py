@@ -11,7 +11,6 @@ from typing import Any, Iterable
 from .detail_getter import DetailGetter
 from .relational import Relational
 from ..datasource_filter import DataSourceFilter
-from ..relationship import RelationshipConfig
 
 
 if typing.TYPE_CHECKING:
