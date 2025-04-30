@@ -552,7 +552,7 @@ def elastic():
                             ) && doc.containsKey(
                             'calc_tissue_prep_calc_benchling_weight_mg_max'
                             ) && doc.containsKey(
-                            'benchling_tolid.calc_sample_calc_benchling_remaining_weight_max'
+                            'calc_sample_calc_benchling_remaining_weight_max'
                             ) && doc.containsKey(
                             'benchling_sample_count'
                             ) && doc.containsKey(
@@ -564,7 +564,7 @@ def elastic():
                             ].size() > 0 && doc[
                             'calc_tissue_prep_calc_benchling_weight_mg_max'
                             ].size() > 0 && doc[
-                            'benchling_tolid.calc_sample_calc_benchling_remaining_weight_max'
+                            'calc_sample_calc_benchling_remaining_weight_max'
                             ].size() > 0 && doc[
                             'benchling_sample_count'
                             ].size() > 0 && doc[
@@ -577,7 +577,7 @@ def elastic():
                             ].value <= 0.5 && doc[
                             'calc_tissue_prep_calc_benchling_weight_mg_max'
                             ].value <= 0.5 && doc[
-                            'benchling_tolid.calc_sample_calc_benchling_remaining_weight_max'
+                            'calc_sample_calc_benchling_remaining_weight_max'
                             ].value <= 0.5 && doc[
                             'benchling_sample_count'
                             ].value == doc[
@@ -625,6 +625,7 @@ def elastic():
                         );
 
                         emit(
+                            isThereAtLeastAnotherIndividual &&
                             isAtLeastOneIndividualInTopUp &&
                             isSpeciesTopUpEqualsIndividualExhausted
                         );
