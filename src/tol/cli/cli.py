@@ -34,7 +34,7 @@ def cli(env_file):
               type=click.Choice(['python', 'license', 'ui', 'ui-fix']),
               help='type of lint')
 def lint(type_):
-    # service = get_app()
+    service = get_app()
     click.echo('Running lint...')
     if type_ == 'license':
         command = 'docker run --rm --volume $(pwd):/data fsfe/reuse:1.1.2 lint'
@@ -46,8 +46,7 @@ def lint(type_):
         click.secho(command, fg='green')
         run(command)
     if type_ == 'ui':
-        ui_linter = 'gitlab-registry.internal.sanger.ac.uk/tol/tol-core/ui-lint:1.0.9'
-        command = f'docker run --rm --volume $(pwd):/src {ui_linter}'
+        command = f'docker compose run --rm --build {service}-ui npx eslint .'
         click.secho(command, fg='green')
         run(command)
     if type_ == 'ui-fix':
