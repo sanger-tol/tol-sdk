@@ -30,8 +30,8 @@ class Summariser(
         ext_and: dict[str, Any] | None = None,
     ) -> None:
         """
-        Summarises according to the given `list` of `DataObject`
-        summary instances.
+        Summarises according to the given `DataObject`
+        summary instance.
         """
 
     def summarise_all(
