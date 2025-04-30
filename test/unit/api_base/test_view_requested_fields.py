@@ -84,7 +84,6 @@ class TestViewRequestedFields:
         assert 'deny_everything' in tree['data']['attributes']
         assert 'exclude' not in tree['data']['attributes']
 
-
     def __mock_object(
         self,
         type_: str,
