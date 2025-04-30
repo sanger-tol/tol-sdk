@@ -133,7 +133,8 @@ class DefaultView(View):
         }
         if data_object.attributes:
             dump['attributes'] = self.__convert_attributes(
-                data_object.attributes
+                data_object.attributes,
+                marker,
             )
         dump = self.__add_relationships(data_object, dump, marker)
         return dump
@@ -308,13 +309,42 @@ class DefaultView(View):
 
     def __convert_attributes(
         self,
-        attributes: dict[str, Any]
+        attributes: dict[str, Any],
+        marker: int | str,
     ) -> dict[str, Any]:
 
-        return {
+        converted = {
             k: self.__convert_value(v)
             for k, v in attributes.items()
         }
+
+        if not self.__requested_fields:
+            return converted
+
+        requested_keys = self.__get_requested_keys(
+            marker,
+        )
+
+        return {
+            k: v for k, v in converted.items()
+            if k in requested_keys
+        }
+
+    def __get_requested_keys(
+        self,
+        marker: str,
+    ) -> list[str]:
+
+        requested_below = (
+            f.lstrip(f'{marker}.')
+            for f in self.__requested_fields
+            if f.startswith(marker)
+        )
+
+        return [
+            f for f in requested_below
+            if '.' not in f
+        ]
 
     def __convert_value(self, __v: Any) -> Any:
         if isinstance(__v, (date, datetime)):
