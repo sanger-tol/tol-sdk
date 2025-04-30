@@ -14,7 +14,7 @@ from ..fixtures import elastic
 
 class TestSummarise:
     """
-    Tests `ElasticDataSource.summarise()`
+    Tests `ElasticDataSource` summarise methods
     for real `DataSource` instances.
     """
 
@@ -67,7 +67,7 @@ class TestSummarise:
         )
 
         # summarise all
-        data_source.summarise([summary_obj])
+        data_source.summarise_all([summary_obj])
         ds_sleep(5)
 
         rel_obj = data_source.get_one(
@@ -87,10 +87,10 @@ class TestSummarise:
         ds_sleep(5)
 
         # re-summarise from just the changed `root` instance
-        data_source.summarise(
+        data_source.resummarise_by_ids(
             [summary_obj],
-            object_type='root',
-            object_ids=['root_1_indeed']
+            source_object_type='root',
+            source_object_ids=['root_1_indeed']
         )
         ds_sleep(5)
 
