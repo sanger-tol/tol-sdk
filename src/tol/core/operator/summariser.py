@@ -17,9 +17,6 @@ if typing.TYPE_CHECKING:
     from ..data_object import DataObject
 
 
-DataObjectUpdate = tuple[str, dict[str, Any]]
-
-
 class Summariser(
     DetailGetter,
     Relational,
