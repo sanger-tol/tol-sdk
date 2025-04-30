@@ -154,12 +154,19 @@ def _core_blueprint(
 
     data_handler = DataBlueprint(url_prefix=url_prefix)
 
-    def __new_controller(object_type: str) -> Controller:
+    def __new_controller(
+        object_type: str,
+        requested_fields: list[str] | None = None,
+    ) -> Controller:
+
+        hop_limit = None if requested_fields else 1
+
         data_source = data_source_dict[object_type]
         view = DefaultView(
             prefix=url_prefix,
             include_all_to_ones=True,
-            hop_limit=1
+            hop_limit=hop_limit,
+            requested_fields=requested_fields,
         )
         return Controller(
             data_source,
@@ -175,8 +182,11 @@ def _core_blueprint(
 
     @data_handler.route('/<object_type>', methods=['GET'])
     def get_list(*, object_type: str):
-        controller = __new_controller(object_type)
         request_args = ListGetParamaters(request.args)
+        controller = __new_controller(
+            object_type,
+            requested_fields=request_args.requested_fields,
+        )
         return controller.get_list(object_type, request_args)
 
     @data_handler.route('/<object_type>:export', methods=['POST'])
