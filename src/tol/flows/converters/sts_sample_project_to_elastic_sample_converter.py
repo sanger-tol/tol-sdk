@@ -78,6 +78,10 @@ class StsSampleProjectToElasticSampleConverter(
             for sp in s.sample_persons:
                 person_attributes[f'{sp.action.lower()}_name'] = sp.person.fullname
 
+            ext_id_attributes = {}
+            for ext_id in s.ext_ids:
+                ext_id_attributes[f'{ext_id.ext_id_type.lower()}'] = ext_id.value
+
             sample_species_attributes = {}
             for ss in s.sample_species:
                 if ss.target_or_symbiont == 'TARGET':
@@ -89,7 +93,12 @@ class StsSampleProjectToElasticSampleConverter(
         ret = self._data_object_factory(
             'sample',
             s.id,
-            attributes=attributes | person_attributes | sample_species_attributes
+            attributes=(
+                attributes
+                | person_attributes
+                | sample_species_attributes
+                | ext_id_attributes
+            )
         )
         return iter([ret])
 
@@ -123,6 +132,9 @@ class StsSampleProjectToElasticSampleConverter(
             'lifestage':
                 data_object.lifestage.name
                 if data_object.lifestage is not None else None,
+            'strain':
+                data_object.strain.name
+                if data_object.strain is not None else None,
             'sex':
                 data_object.sex.name
                 if data_object.sex is not None else None,
