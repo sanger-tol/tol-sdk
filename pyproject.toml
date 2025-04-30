@@ -9,10 +9,14 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "tol-sdk"
 <<<<<<< HEAD
+<<<<<<< HEAD
 version = "1.4.39"
 =======
 version = "1.4.37"
 >>>>>>> 0db588b4 (reverting sdk version back)
+=======
+version = "1.4.38"
+>>>>>>> 24c8d655 (sdk bump)
 description = "SDK for interaction with ToL, Sanger and external services"
 readme = "README.md"
 authors = [
