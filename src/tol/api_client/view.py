@@ -321,7 +321,7 @@ class DefaultView(View):
         if not self.__requested_fields:
             return converted
 
-        requested_keys = self.__get_requested_keys(
+        requested_keys = self.__get_requested_attribute_keys(
             marker,
         )
 
@@ -330,13 +330,15 @@ class DefaultView(View):
             if k in requested_keys
         }
 
-    def __get_requested_keys(
+    def __get_requested_attribute_keys(
         self,
         marker: str,
     ) -> list[str]:
 
+        prefix_length = len(marker) + 1 if marker else 0
+
         requested_below = (
-            f.lstrip(f'{marker}.')
+            f[prefix_length:]
             for f in self.__requested_fields
             if f.startswith(marker)
         )
