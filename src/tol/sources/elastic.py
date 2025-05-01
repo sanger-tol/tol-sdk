@@ -404,7 +404,7 @@ def elastic():
                     'source': """
                         if (doc.containsKey('portaldb_date_marked_for_recollection') &&
                             doc['portaldb_date_marked_for_recollection'].size() > 0) {
-                            if (doc.containsKey('sts_sample_sts_submit_date_max') && 
+                            if (doc.containsKey('sts_sample_sts_submit_date_max') &&
                             doc['sts_sample_sts_submit_date_max'].size() > 0 &&
                             doc['portaldb_date_marked_for_recollection'].value.isBefore(
                             doc['sts_sample_sts_submit_date_max'].value)) {
@@ -596,9 +596,12 @@ def elastic():
                             doc['tolid_species.tolid_tolid_count'].value > 1
                         );
                         boolean isAtLeastOneIndividualExhausted = (
-                            doc.containsKey('tolid_species.calc_tolid_calc_individual_exhausted_max') &&
-                            doc['tolid_species.calc_tolid_calc_individual_exhausted_max'].size() > 0 &&
-                            doc['tolid_species.calc_tolid_calc_individual_exhausted_max'].value == 1
+                            doc.containsKey
+                            ('tolid_species.calc_tolid_calc_individual_exhausted_max') &&
+                            doc['tolid_species.calc_tolid_calc_individual_exhausted_max']
+                            .size() > 0 &&
+                            doc['tolid_species.calc_tolid_calc_individual_exhausted_max']
+                            .value == 1
 
                         );
 

@@ -76,7 +76,7 @@ class Summariser(
         Re-summarises, using the given summary instances, only the set of changes
         affecting the `DataObject` instances of given `object_type` and
         `object_ids`.
-        
+
         Returns None, but performs summarization operations.
         """
         objects_to_summarise = self.get_objects_to_summarise(
@@ -84,7 +84,7 @@ class Summariser(
             source_object_type,
             source_object_ids,
         )
-        
+
         for summary_obj, ext_and in objects_to_summarise:
             self._summarise(
                 summary_obj,
@@ -131,7 +131,7 @@ class Summariser(
         """
         Helper function that returns the objects to be summarised along with their
         extended filter conditions.
-        
+
         Returns:
             A tuple containing:
             - A list of tuples containing (summary_object, ext_and) pairs that can be used
@@ -150,10 +150,10 @@ class Summariser(
                 source_object_ids,
             )
         )
-        
+
         result = []
         relationship_ids_by_type = {}
-        
+
         for s in filtered_summaries:
             first_group_by: str = s.group_by[0]
             relationship_hops = '.'.join(
@@ -183,10 +183,10 @@ class Summariser(
                     }
                 }
             }
-            
+
             result.append((s, ext_and))
 
         for obj_type in relationship_ids_by_type:
             relationship_ids_by_type[obj_type] = list(set(relationship_ids_by_type[obj_type]))
-            
+
         return result, relationship_ids_by_type
