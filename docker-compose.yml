@@ -21,6 +21,7 @@ services:
 
   tol-sdk-python-elastic:
     image: elasticsearch:7.17.28
+    container_name: elastic
     ports:
       - 9200:9200
     environment:
