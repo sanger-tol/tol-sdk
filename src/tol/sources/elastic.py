@@ -369,7 +369,7 @@ def elastic():
                             isTopUpCountZero && isIndividualExhaustedCountZero
                         );
 
-                        boolean isTopUpRequiredAtSpeciesLevel = (
+                        boolean isAllTopUpRequired = (
                             doc.containsKey('calc_tolid_calc_topup_required_min') &&
                             doc['calc_tolid_calc_topup_required_min'].size() > 0 &&
                             doc['calc_tolid_calc_topup_required_min'].value == 1
@@ -392,34 +392,29 @@ def elastic():
                         );
 
                         emit(
-                            !isIndividualNovel && isTopUpRequiredAtSpeciesLevel
+                            !isIndividualNovel && isAllTopUpRequired
                             && isAllIndividualsExhausted && isRecollectionNeeded
                         );
                     """
                 }
             },
-            'calc_species_recollectable': {
+            'calc_species_out_for_recollection': {
                 'type': 'boolean',
                 'script': {
                     'source': """
-                        boolean isSpeciesNotBeenMarked = (
-                            !doc.containsKey('portaldb_date_marked_for_recollection') ||
-                            doc['portaldb_date_marked_for_recollection'].size() == 0 ||
-                            doc['portaldb_date_marked_for_recollection'].value == null
-                        );
-
-                        boolean isSpeciesMarkedBeforeRecollected = false;
-                        if (doc.containsKey('sts_sample_sts_submit_date_max') &&
-                            doc.containsKey('portaldb_date_marked_for_recollection') &&
-                            doc['sts_sample_sts_submit_date_max'].size() > 0 &&
+                        if (doc.containsKey('portaldb_date_marked_for_recollection') &&
                             doc['portaldb_date_marked_for_recollection'].size() > 0) {
-
-                            isSpeciesMarkedBeforeRecollected =
-                                doc['portaldb_date_marked_for_recollection'].value.isBefore(
-                                doc['sts_sample_sts_submit_date_max'].value);
+                            if (doc.containsKey('sts_sample_sts_submit_date_max') && 
+                            doc['sts_sample_sts_submit_date_max'].size() > 0 &&
+                            doc['portaldb_date_marked_for_recollection'].value.isBefore(
+                            doc['sts_sample_sts_submit_date_max'].value)) {
+                                emit (false);
+                            } else {
+                                emit (true);
+                            }
+                        } else {
+                            emit (false);
                         }
-
-                        emit(isSpeciesNotBeenMarked || isSpeciesMarkedBeforeRecollected);
                     """
                 }
             },
@@ -572,13 +567,13 @@ def elastic():
                             ].size() > 0 &&
                             doc[
                             'calc_sequencing_request_calc_mlwh_volume_remaining_max'
-                            ].value <= 0.5 &&
+                            ].value <= 0 &&
                             doc['calc_extraction_calc_benchling_volume_ul_dna_max'
-                            ].value <= 0.5 && doc[
+                            ].value <= 0 && doc[
                             'calc_tissue_prep_calc_benchling_weight_mg_max'
-                            ].value <= 0.5 && doc[
+                            ].value <= 0 && doc[
                             'calc_sample_calc_benchling_remaining_weight_max'
-                            ].value <= 0.5 && doc[
+                            ].value <= 0 && doc[
                             'benchling_sample_count'
                             ].value == doc[
                             'sts_sample_count'
@@ -600,11 +595,10 @@ def elastic():
                             doc['tolid_species.tolid_tolid_count'].size() > 0 &&
                             doc['tolid_species.tolid_tolid_count'].value > 1
                         );
-
-                        boolean isAtLeastOneIndividualInTopUp = (
-                            doc.containsKey('tolid_species.calc_tolid_calc_topup_required_max') &&
-                            doc['tolid_species.calc_tolid_calc_topup_required_max'].size() > 0 &&
-                            doc['tolid_species.calc_tolid_calc_topup_required_max'].value == 1
+                        boolean isAtLeastOneIndividualExhausted = (
+                            doc.containsKey('tolid_species.calc_tolid_calc_individual_exhausted_max') &&
+                            doc['tolid_species.calc_tolid_calc_individual_exhausted_max'].size() > 0 &&
+                            doc['tolid_species.calc_tolid_calc_individual_exhausted_max'].value == 1
 
                         );
 
@@ -626,7 +620,7 @@ def elastic():
 
                         emit(
                             isThereAtLeastAnotherIndividual &&
-                            isAtLeastOneIndividualInTopUp &&
+                            isAtLeastOneIndividualExhausted &&
                             isSpeciesTopUpEqualsIndividualExhausted
                         );
                     """
