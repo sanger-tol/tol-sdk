@@ -20,11 +20,11 @@ services:
       - api-base-test-network
 
   tol-sdk-python-elastic:
-    # NB - the below image is ARM/M1 only.
-    image: gitlab-registry.internal.sanger.ac.uk/tol/tol-core/elastic:0.1.0
-    container_name: elastic
+    image: elasticsearch:7.17.28
     ports:
       - 9200:9200
+    environment:
+      - discovery.type=single-node
     networks:
       - api-base-test-network
     
