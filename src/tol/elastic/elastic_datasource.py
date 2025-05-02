@@ -805,30 +805,24 @@ class ElasticDataSource(
             object_type=object_type,
             stats_fields=stats_fields,
             stats=stats
-        ) 
-    
+        )
+
     def __get_data_from_stats_aggregation(
-        self,
-        aggregation_result,
-        object_type,
-        stats_fields,
-        stats
+            self,
+            aggregation_result,
+            object_type,
+            stats_fields,
+            stats
     ):
         stats_values = {}
         for stats_field in stats_fields:
             stats_values[stats_field] = {}
             for stat in stats:
-                agg_key = f'{stats_field}_{stat}'
-                if stat == 'value_count':
-                    # For value_count, we use the doc_count from the filter aggregation
-                    stat_value = aggregation_result[agg_key]['doc_count']
-                else:
-                    # For other aggregations, use the value field
-                    stat_value = aggregation_result[agg_key]['value']
-                    python_type = self.attribute_types[object_type][stats_field]
-                    if python_type == 'datetime' and stat_value is not None \
-                            and stat in ['min', 'max']:
-                        stat_value = datetime.fromtimestamp(stat_value / 1000)
+                stat_value = aggregation_result[f'{stats_field}_{stat}']['value']
+                python_type = self.attribute_types[object_type][stats_field]
+                if python_type == 'datetime' and stat_value is not None \
+                        and stat in ['min', 'max']:
+                    stat_value = datetime.fromtimestamp(stat_value / 1000)
                 stats_values[stats_field][stat] = stat_value
         return {'stats': stats_values}
 
@@ -900,10 +894,10 @@ class ElasticDataSource(
         return after_key, buckets
 
     def __get_aggs(
-        self,
-        object_type: str,
-        stats_fields: List,
-        stats: List
+            self,
+            object_type: str,
+            stats_fields: List,
+            stats: List
     ):
         ret = {}
         for stats_field in stats_fields:
@@ -914,14 +908,12 @@ class ElasticDataSource(
                     agg = self.__get_union_aggregation(object_type, stats_field)
                 elif stat == 'unique':
                     agg = self.__get_unique_count_aggregation(object_type, stats_field)
-                elif stat == 'value_count':
-                    # Custom aggregation for counting true values
-                    agg = self.__get_value_count_aggregation(object_type, stats_field)
                 elif self.attribute_types[object_type][stats_field] == 'str' \
                         and stat in ['min', 'max']:
                     agg = self.__get_string_aggregation(object_type, stats_field, stat)
                 ret[f'{stats_field}_{stat}'] = agg
         return ret
+
     def __get_data_from_group_stats_aggregation(
             self,
             aggregation_result,
@@ -945,17 +937,11 @@ class ElasticDataSource(
             for stats_field in stats_fields:
                 stats_values[stats_field] = {}
                 for stat in stats:
-                    agg_key = f'{stats_field}_{stat}'
-                    if stat == 'value_count':
-                        # For value_count, we use the doc_count from the filter aggregation
-                        stat_value = v[f'{stats_field}_{stat}']['doc_count']
-                    else:
-                        # For other aggregations, use the value field
-                        stat_value = v[agg_key]['value']
-                        python_type = self.attribute_types[object_type][stats_field]
-                        if python_type == 'datetime' and stat_value is not None \
-                                and stat in ['min', 'max']:
-                            stat_value = datetime.fromtimestamp(stat_value / 1000)
+                    stat_value = v[f'{stats_field}_{stat}']['value']
+                    python_type = self.attribute_types[object_type][stats_field]
+                    if python_type == 'datetime' and stat_value is not None \
+                            and stat in ['min', 'max']:
+                        stat_value = datetime.fromtimestamp(stat_value / 1000)
                     stats_values[stats_field][stat] = stat_value
             all_stats.append({'key': v['key'], 'stats': stats_values})
 
@@ -1101,26 +1087,6 @@ class ElasticDataSource(
             runtime_mappings=runtime_mappings
         )
         return resp['hits']['total']['value']
-    
-    def __get_value_count_aggregation(self, object_type, stats_field):
-        """
-        This function creates an aggregation to count values that are true.
-        It uses a filter aggregation to count documents where the field is true.
-        
-        Args:
-            object_type: The type of object being aggregated
-            stats_field: The field to count values for
-        
-        Returns:
-            A dictionary representing the Elasticsearch aggregation
-        """
-        return {
-            'filter': {
-                'term': {
-                    self._field_or_keyword(object_type, stats_field): True
-                }
-            }
-        }
 
     @property
     @ttl_cache(ttl=3600)
