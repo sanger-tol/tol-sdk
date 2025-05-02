@@ -129,8 +129,8 @@ class Summariser(
         source_object_ids: Iterable[str],
     ) -> tuple[list[tuple[DataObject, dict[str, Any]]], list[str]]:
         """
-        Helper function for resummariser_by_ids that returns the objects to be summarised along with their
-        extended filter conditions.
+        Helper function for resummariser_by_ids that returns the objects to be summarised
+        along with their extended filter conditions.
 
         Returns:
             A tuple containing:

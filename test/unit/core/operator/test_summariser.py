@@ -117,13 +117,13 @@ def mock_summariser() -> Summariser:
 
         if not filtered_objs:
             return [], {}
-    
+
         summary_obj = filtered_objs[0]
-    
+
         # Create the expected filter based on object type and IDs
         rel_field = 'back_a.id' if source_object_type == 'first' else 'back_i.id'
         id_list = [f'rel_{c}' for c in source_object_ids]
-        
+
         ext_and = {
             rel_field: {
                 'in_list': {
@@ -131,7 +131,7 @@ def mock_summariser() -> Summariser:
                 }
             }
         }
-        
+
         return [(summary_obj, ext_and)], {}
 
     mock_sum.get_objects_to_summarise.side_effect = __get_objects_to_summarise
