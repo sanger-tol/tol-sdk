@@ -104,6 +104,38 @@ def mock_summariser() -> Summariser:
 
     mock_sum.get_by_ids.side_effect = __get_by_ids
 
+    def __get_objects_to_summarise(
+        summary_objects: Iterable[DataObject],
+        source_object_type: str,
+        source_object_ids: Iterable[str],
+    ):
+
+        filtered_objs = [
+            s for s in summary_objects
+            if s.source_object_type == source_object_type
+        ]
+
+        if not filtered_objs:
+            return [], {}
+    
+        summary_obj = filtered_objs[0]
+    
+        # Create the expected filter based on object type and IDs
+        rel_field = 'back_a.id' if source_object_type == 'first' else 'back_i.id'
+        id_list = [f'rel_{c}' for c in source_object_ids]
+        
+        ext_and = {
+            rel_field: {
+                'in_list': {
+                    'value': id_list
+                }
+            }
+        }
+        
+        return [(summary_obj, ext_and)], {}
+
+    mock_sum.get_objects_to_summarise.side_effect = __get_objects_to_summarise
+
     # internal methods that still need to be concrete
     mock_sum._filter_by_source_type.side_effect = (
         lambda *args: Summariser._filter_by_source_type(mock_sum, *args)
@@ -183,6 +215,16 @@ class TestSummariser:
     ) -> None:
         """Only one relationship"""
 
+        mock_summariser.get_objects_to_summarise.return_value = ([
+            (summary_objs[1], {
+                'back_i.id': {
+                    'in_list': {
+                        'value': ['rel_a', 'rel_b', 'rel_c']
+                    }
+                }
+            })
+        ], {})
+
         Summariser.resummarise_by_ids(
             mock_summariser,
             summary_objs,
@@ -207,6 +249,16 @@ class TestSummariser:
         summary_objs: Iterable[DataObject],
     ) -> None:
         """Many relationships pointing to the target type"""
+
+        mock_summariser.get_objects_to_summarise.return_value = ([
+            (summary_objs[1], {
+                'back_i.id': {
+                    'in_list': {
+                        'value': ['rel_a', 'rel_b', 'rel_c']
+                    }
+                }
+            })
+        ], {})
 
         Summariser.resummarise_by_ids(
             mock_summariser,

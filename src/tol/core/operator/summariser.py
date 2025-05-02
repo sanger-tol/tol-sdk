@@ -79,7 +79,7 @@ class Summariser(
 
         Returns None, but performs summarization operations.
         """
-        objects_to_summarise = self.get_objects_to_summarise(
+        objects_to_summarise, _ = self.get_objects_to_summarise(
             summary_objects,
             source_object_type,
             source_object_ids,
@@ -129,7 +129,7 @@ class Summariser(
         source_object_ids: Iterable[str],
     ) -> tuple[list[tuple[DataObject, dict[str, Any]]], list[str]]:
         """
-        Helper function that returns the objects to be summarised along with their
+        Helper function for resummariser_by_ids that returns the objects to be summarised along with their
         extended filter conditions.
 
         Returns:
