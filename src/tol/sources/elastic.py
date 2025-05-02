@@ -458,6 +458,12 @@ def elastic():
                 'type': 'boolean',
                 'script': {
                     'source': """
+                        boolean isTolidAbandoned = (
+                            doc.containsKey('portaldb_date_abandoned') &&
+                            doc['portaldb_date_abandoned'].size() > 0 &&
+                            doc['portaldb_date_abandoned'].value != null
+                        );
+
                         boolean isTotalSubmissionsGreaterThanZero = (
                             doc.containsKey('benchling_pacbio_sequencing_request_count') &&
                             doc['benchling_pacbio_sequencing_request_count'].size() > 0 &&
@@ -502,6 +508,7 @@ def elastic():
                                 }
                             }
                         emit(
+                            !isTolidAbandoned &&
                             isTotalSubmissionsGreaterThanZero &&
                             isOngoingSubmissionsEqualZero &&
                             !isTargetCoverageMet &&
