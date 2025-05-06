@@ -21,9 +21,7 @@ class TestBioscanExtraNewPantheonDataSource(TestCase):
         assert bds.attribute_types['pantheon_species']['current_conservation_status'] == 'str'
         assert bds.attribute_types['pantheon_species']['larval_feeding_guild'] == 'str'
         assert bds.attribute_types['pantheon_species']['adult_feeding_guild'] == 'str'
-        assert bds.attribute_types[
-            'pantheon_species']['broad_biotope_habitat_resources'
-                               ] == 'str'
+        assert bds.attribute_types['pantheon_species']['broad_biotope_habitat_resources'] == 'str'
         assert bds.attribute_types['pantheon_species']['specific_assemblage_type'] == 'str'
         assert bds.attribute_types['pantheon_species']['associations'] == 'str'
         assert bds.attribute_types['pantheon_species']['link_to_assemblage'] == 'str'
