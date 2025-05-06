@@ -16,7 +16,9 @@ services:
       - test-network
 
   elastic:
-    image: gitlab-registry.internal.sanger.ac.uk/tol/tol-core/elastic:0.2.0-ci
+    image: elasticsearch:7.17.28
+    environment:
+      - discovery.type=single-node
     networks:
       - test-network
     
