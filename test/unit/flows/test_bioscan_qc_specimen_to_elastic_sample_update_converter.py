@@ -9,7 +9,7 @@ from tol.core import (
     core_data_object
 )
 from tol.flows.converters import (
-    BioscanQcSpecimenToElasticSpeciesUpdateConverter,
+    BioscanQcSpecimenToElasticSampleUpdateConverter,
 )
 
 
@@ -23,20 +23,20 @@ class _MockDataSource(DataSource):
         raise NotImplementedError()
 
 
-class TestBioscanQcSpecimenToElasticSpeciesUpdateConverter(TestCase):
+class TestBioscanQcSpecimenToElasticSampleUpdateConverter(TestCase):
     def test_convert(self):
 
         source = _MockDataSource(config={})
         destination = _MockDataSource(config={})
         core_data_object(source)
         core_data_object(destination)
-        converter = BioscanQcSpecimenToElasticSpeciesUpdateConverter(
+        converter = BioscanQcSpecimenToElasticSampleUpdateConverter(
             data_object_factory=destination.data_object_factory
         )
 
         CoreDataObject = source.data_object_factory # noqa N806
         obj1 = CoreDataObject(
-            id_='Genus species',
+            id_='SPECIMEN1',
             type_='specimen',
             attributes={
                 'sanger_qc_result': '1',
@@ -47,7 +47,7 @@ class TestBioscanQcSpecimenToElasticSpeciesUpdateConverter(TestCase):
         converteds = converter.convert(obj1)
         ret1 = next(converteds)
         self.assertEqual(ret1, (None, {
-            'goat_scientific_name': 'Genus species',
+            'sts_specimen.id': 'SPECIMEN1',
             'sanger_qc_result': '1',
             'sanger_qc_description': '2'
         }))
