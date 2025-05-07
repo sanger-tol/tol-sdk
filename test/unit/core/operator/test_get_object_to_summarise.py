@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: MIT
 
 from typing import Any, Iterable
-from unittest.mock import call, create_autospec
+from unittest.mock import create_autospec
 
 import pytest
 
@@ -131,7 +131,7 @@ class TestGetObjectsToSummarise:
 
         assert 'rel_a' in relationship_ids
         assert set(relationship_ids['rel_a']) == {'rel_a', 'rel_b', 'rel_c'}
-    
+
     def test_get_objects_to_summarise_no_matching_summaries(
         self,
         mock_summariser_to_get_objects: Summariser,
@@ -140,7 +140,7 @@ class TestGetObjectsToSummarise:
 
         original_side_effect = mock_summariser_to_get_objects._filter_by_source_type.side_effect
         mock_summariser_to_get_objects._filter_by_source_type.side_effect = lambda *args: []
-        
+
         try:
             result, relationship_ids = Summariser.get_objects_to_summarise(
                 mock_summariser_to_get_objects,
@@ -152,5 +152,6 @@ class TestGetObjectsToSummarise:
             assert len(result) == 0
             assert len(relationship_ids) == 0
         finally:
-
-            mock_summariser_to_get_objects._filter_by_source_type.side_effect = original_side_effect
+            mock_summariser_to_get_objects._filter_by_source_type.side_effect = (
+                original_side_effect
+            )

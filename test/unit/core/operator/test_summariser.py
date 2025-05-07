@@ -111,7 +111,9 @@ def mock_summariser() -> Summariser:
 
     # get_objects_to_summarise method is tested elsewhere
     # but we need to mock it here
-    mock_sum.get_objects_to_summarise.side_effect = Summariser.get_objects_to_summarise.__get__(mock_sum)
+    mock_sum.get_objects_to_summarise.side_effect = (
+        Summariser.get_objects_to_summarise.__get__(mock_sum)
+    )
 
     return mock_sum
 
