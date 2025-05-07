@@ -31,11 +31,24 @@ def mock_elastic_ds() -> ElasticDataSource:
     return ds
 
 
+@pytest.fixture
+def mock_cache() -> dict[str, list[str]]:
+    return {}
+
+
 class TestTreeOfSexRestorer:
 
-    def test_cache_override(
+    def test_restore(
+        self,
+        mock_sql_ds: SqlDataSource,
+        mock_elastic_ds: ElasticDataSource,    
+    ) -> None:
+        pass
+
+    def test_restore__cache_override(
         self,
         mock_sql_ds: SqlDataSource,
         mock_elastic_ds: ElasticDataSource,
+        mock_cache: dict[str, list[str]],
     ) -> None:
         pass

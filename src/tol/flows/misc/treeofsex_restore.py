@@ -65,6 +65,6 @@ class TreeOfSexRestorer:
             return cached_ids
 
         # TODO more here
-        fetched_ids = []
+        fetched_ids: list[str] = []
         self.__cache[parent_id] = fetched_ids
         return fetched_ids
