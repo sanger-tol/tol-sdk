@@ -11,7 +11,7 @@ from ...core import (
 from ...core.operator.updater import DataObjectUpdate
 
 
-class BioscanExtraSpeciesToElasticSampleUpdateConverter(
+class BioscanExtraPantheonSpeciesToElasticSampleUpdateConverter(
         DataObjectToDataObjectOrUpdateConverter):
     def convert(self, data_object: DataObject) -> Iterable[DataObjectUpdate]:
         if data_object is not None:
