@@ -41,14 +41,19 @@ class TestTreeOfSexRestorer:
     def test_restore(
         self,
         mock_sql_ds: SqlDataSource,
-        mock_elastic_ds: ElasticDataSource,    
+        mock_elastic_ds: ElasticDataSource,
     ) -> None:
 
         restorer = TreeOfSexRestorer(
             mock_sql_ds,
             mock_elastic_ds,
         )
-        self.__test_restore(restorer)
+        restorer.restore()
+
+        self.__do_asserts(
+            mock_sql_ds,
+            mock_elastic_ds,
+        )
 
     def test_restore__cache_override(
         self,
@@ -62,11 +67,17 @@ class TestTreeOfSexRestorer:
             mock_elastic_ds,
             cache_override=mock_cache,
         )
-        self.__test_restore(restorer)
+        restorer.restore()
 
-    def __test_restore(
+        self.__do_asserts(
+            mock_sql_ds,
+            mock_elastic_ds,
+        )
+
+    def __do_asserts(
         self,
-        restorer: TreeOfSexRestorer,
+        mock_sql_ds: SqlDataSource,
+        mock_elastic_ds: ElasticDataSource,        
     ) -> None:
 
         pass
