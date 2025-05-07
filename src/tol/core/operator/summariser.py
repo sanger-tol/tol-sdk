@@ -127,7 +127,7 @@ class Summariser(
         summary_objects: Iterable[DataObject],
         source_object_type: str,
         source_object_ids: Iterable[str],
-    ) -> tuple[list[tuple[DataObject, dict[str, Any]]], list[str]]:
+    ) -> tuple[list[tuple[DataObject, dict[str, Any]]], dict[str, list[str]]]:
         """
         Helper function for resummariser_by_ids that returns the objects to be summarised
         along with their extended filter conditions.
@@ -143,6 +143,9 @@ class Summariser(
             summary_objects,
             source_object_type,
         )
+
+        if not filtered_summaries:
+            return [], {}
 
         source_objs = list(
             self.get_by_ids(
