@@ -18,78 +18,7 @@ def bioscan_extra():
         'client_secrets': json.loads(os.getenv('GOOGLE_CLIENT_SECRETS')),
         'sheet_key': '1XiKKnz8O-GcQ5ww19m1_1Gk7shidUTIvzidY47-F3hs',
         'mappings': {
-            'species': {
-                'worksheet_name': 'Sheet1',
-                'columns': {
-                    'id': {
-                        'heading': 'Species',
-                        'type': 'str'
-                    },
-                    'vernacular': {
-                        'heading': 'Vernacular',
-                        'type': 'str'
-                    },
-                    'family': {
-                        'heading': 'Family',
-                        'type': 'str'
-                    },
-                    'order': {
-                        'heading': 'Order',
-                        'type': 'str'
-                    },
-                    'sqs': {
-                        'heading': 'SQS',
-                        'type': 'int'
-                    },
-                    'conservation_status': {
-                        'heading': 'Conservation status',
-                        'type': 'str'
-                    },
-                    'current_conservation_status': {
-                        'heading': 'Current conservation status',
-                        'type': 'str'
-                    },
-                    'designation_summary': {
-                        'heading': 'Designation summary',
-                        'type': 'str'
-                    },
-                    'larval_feeding_guild': {
-                        'heading': 'Larval feeding guild',
-                        'type': 'str'
-                    },
-                    'adult_feeding_guild': {
-                        'heading': 'Adult feeding guild',
-                        'type': 'str'
-                    },
-                    'broad_biotope': {
-                        'heading': 'Broad biotope',
-                        'type': 'str'
-                    },
-                    'habitat': {
-                        'heading': 'Habitat',
-                        'type': 'str'
-                    },
-                    'resources': {
-                        'heading': 'Resources',
-                        'type': 'str'
-                    },
-                    'specific_assemblage_type': {
-                        'heading': 'Specific assemblage type',
-                        'type': 'str'
-                    },
-                    'habitat_score': {
-                        'heading': 'Habitat score',
-                        'type': 'str'
-                    },
-                    'associations': {
-                        'heading': 'Associations',
-                        'type': 'str'
-                    }
-                },
-                'header_row': 1,
-                'data_start_row': 2
-            },
-            'new_pantheon_species': {
+            'pantheon_species': {
                 'worksheet_name': 'NEW_PANTHEON',
                 'columns': {
                     'id': {
