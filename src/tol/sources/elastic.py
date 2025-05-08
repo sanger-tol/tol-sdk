@@ -597,7 +597,7 @@ def elastic():
                             doc['tolid_species.tolid_tolid_count'].size() > 0 &&
                             doc['tolid_species.tolid_tolid_count'].value > 1
                         );
-                        
+
                         boolean isAtLeastOneIndividualExhausted = (
                             doc.containsKey
                             ('tolid_species.calc_tolid_calc_individual_exhausted_max') &&
@@ -731,8 +731,9 @@ def elastic():
                 'type': 'double',
                 'script': {
                     'source': """
-                        if (doc.containsKey('portaldb_date_abandoned') && !doc.containsKey('sts_eln_id.keyword') &&
-                            doc['portaldb_date_abandoned'].size() > 0 ) {
+                        if (doc.containsKey('portaldb_date_abandoned') 
+                            && !doc.containsKey('sts_eln_id.keyword')
+                            && doc['portaldb_date_abandoned'].size() > 0 ) {
                             emit(0.0);
                         } else if (doc.containsKey('sts_tissue_remaining') &&
                             doc['sts_tissue_remaining'].size() > 0) {
