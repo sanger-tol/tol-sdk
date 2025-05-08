@@ -113,3 +113,16 @@ class TestMlwhDataSource(TestCase):
 
         with self.assertRaises(StopIteration):
             next(ret)
+
+    def test_get_list_study(self):
+        mds = mlwh()
+        f = DataSourceFilter()
+        f.and_ = {
+            'abbreviation': {'in_list': {'value': ['BIOSCAN']}}
+        }
+        ret = mds.get_list('study', object_filters=f)
+        obj1 = next(ret)
+        self.assertEqual(obj1.id_study_lims, '6798')
+
+        with self.assertRaises(StopIteration):
+            next(ret)
