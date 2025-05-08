@@ -24,7 +24,7 @@ def object_stream(
 
     return [
         create_autospec(DataObject),
-        ErrorObject({}, "test"),
+        ErrorObject({}, 'test'),
     ]
 
 
@@ -42,10 +42,11 @@ class TestValidator:
 
         assert len(results) == 2
 
-        # called only on the `DataObject`, ignoring error ones 
+        # called only on the `DataObject`, ignoring error ones
         mock_validator._validate_object.assert_called_once_with(
             object_stream[0],
         )
+
 
 class TestValidatorAdd:
 

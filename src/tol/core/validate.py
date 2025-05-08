@@ -11,8 +11,8 @@ from .data_object import DataObject, ErrorObject
 
 
 class ValidationSeverity(str, Enum):
-    ERROR = "error"
-    WARNING = "warning"
+    ERROR = 'error'
+    WARNING = 'warning'
 
 
 @dataclass(frozen=True, kw_only=True)
