@@ -334,16 +334,9 @@ def elastic():
                             doc['tolid_tolid_count'].size() > 0
                         );
 
-                        boolean isSampleCollected = (
-                            doc.containsKey('goat_sample_collected.keyword') &&
-                            doc['goat_sample_collected.keyword'].size() > 0 &&
-                            ['AG100PEST', 'i5K', 'CNGB', 'CANBP, 'CBP', 'ERGA-PIL', 'ERGA-BGE', 'ERGA-CH',
-                            'ENDEMIXIT'].contains(doc['goat_sample_collected.keyword'].value)
-                        );
-
                         emit(
                             isRecollectionRequired || (!isIncludedProject
-                            && !isChromosome && !isSpecimensAtSanger && !isSampleCollected)
+                            && !isChromosome && !isSpecimensAtSanger)
                         );
                     """
                 }
