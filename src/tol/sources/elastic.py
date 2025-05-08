@@ -335,10 +335,10 @@ def elastic():
                         );
 
                         boolean isSampleCollected = (
-                            doc.containsKey('goat_long_list.keyword') &&
-                            doc['goat_long_list.keyword'].size() > 0 &&
-                            ['AG100PEST', 'i5K', 'CNGB', 'CANBP, ''CBP', 'ERGA-PIL', 'ERGA-BGE', 'ERGA-CH',
-                            'ENDEMIXIT'].contains(doc['goat_long_list.keyword'].value)
+                            doc.containsKey('goat_sample_collected.keyword') &&
+                            doc['goat_sample_collected.keyword'].size() > 0 &&
+                            ['AG100PEST', 'i5K', 'CNGB', 'CANBP, 'CBP', 'ERGA-PIL', 'ERGA-BGE', 'ERGA-CH',
+                            'ENDEMIXIT'].contains(doc['goat_sample_collected.keyword'].value)
                         );
 
                         emit(
