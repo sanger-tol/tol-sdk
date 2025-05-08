@@ -10,7 +10,7 @@ from typing import Iterable
 from .data_object import DataObject, ErrorObject
 
 
-class ValidationSeverity(Enum, str):
+class ValidationSeverity(str, Enum):
     ERROR = "error"
     WARNING = "warning"
 
