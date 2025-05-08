@@ -36,8 +36,13 @@ class TestValidator:
         object_stream: Iterable[DataObject | ErrorObject],
     ) -> None:
 
-        Validator.validate(mock_validator, object_stream)
+        results = list(
+            Validator.validate(mock_validator, object_stream)
+        )
 
+        assert len(results) == 2
+
+        # called only on the `DataObject`, ignoring error ones 
         mock_validator._validate_object.assert_called_once_with(
             object_stream[0],
         )
