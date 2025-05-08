@@ -458,12 +458,6 @@ def elastic():
                 'type': 'boolean',
                 'script': {
                     'source': """
-                        boolean isTolidAbandoned = (
-                            doc.containsKey('portaldb_date_abandoned') &&
-                            doc['portaldb_date_abandoned'].size() > 0 &&
-                            doc['portaldb_date_abandoned'].value != null
-                        );
-
                         boolean isTotalSubmissionsGreaterThanZero = (
                             doc.containsKey('benchling_pacbio_sequencing_request_count') &&
                             doc['benchling_pacbio_sequencing_request_count'].size() > 0 &&
@@ -508,7 +502,6 @@ def elastic():
                                 }
                             }
                         emit(
-                            !isTolidAbandoned &&
                             isTotalSubmissionsGreaterThanZero &&
                             isOngoingSubmissionsEqualZero &&
                             !isTargetCoverageMet &&
@@ -546,6 +539,24 @@ def elastic():
                 'type': 'boolean',
                 'script': {
                     'source': """
+                        def benchling_new_sample_count = 0;
+                        def abandoned_count = 0;
+
+                        if (doc.containsKey('benchling_sample_count') && 
+                            doc['benchling_sample_count'].size() > 0) {
+                            benchling_new_sample_count = 
+                            doc['benchling_sample_count'].value;
+                        }
+
+                        if (doc.containsKey('sts_sample_calc_sample_abandoned_in_sts_count') && 
+                            doc['sts_sample_calc_sample_abandoned_in_sts_count'].size() > 0) {
+                            abandoned_count = 
+                            doc['sts_sample_calc_sample_abandoned_in_sts_count'].value;
+                            
+                            benchling_new_sample_count = 
+                            benchling_new_sample_count + abandoned_count;
+                        }
+
                         boolean isIndividualExhausted = (
                             doc.containsKey(
                             'calc_sequencing_request_calc_mlwh_volume_remaining_max'
@@ -555,8 +566,6 @@ def elastic():
                             'calc_tissue_prep_calc_benchling_weight_mg_max'
                             ) && doc.containsKey(
                             'calc_sample_calc_benchling_remaining_weight_max'
-                            ) && doc.containsKey(
-                            'benchling_sample_count'
                             ) && doc.containsKey(
                             'sts_sample_count'
                             ) && doc[
@@ -568,8 +577,6 @@ def elastic():
                             ].size() > 0 && doc[
                             'calc_sample_calc_benchling_remaining_weight_max'
                             ].size() > 0 && doc[
-                            'benchling_sample_count'
-                            ].size() > 0 && doc[
                             'sts_sample_count'
                             ].size() > 0 &&
                             doc[
@@ -580,9 +587,8 @@ def elastic():
                             'calc_tissue_prep_calc_benchling_weight_mg_max'
                             ].value <= 0 && doc[
                             'calc_sample_calc_benchling_remaining_weight_max'
-                            ].value <= 0 && doc[
-                            'benchling_sample_count'
-                            ].value == doc[
+                            ].value <= 0 && benchling_new_sample_count
+                             == doc[
                             'sts_sample_count'
                             ].value
                             );
@@ -602,6 +608,7 @@ def elastic():
                             doc['tolid_species.tolid_tolid_count'].size() > 0 &&
                             doc['tolid_species.tolid_tolid_count'].value > 1
                         );
+                        
                         boolean isAtLeastOneIndividualExhausted = (
                             doc.containsKey
                             ('tolid_species.calc_tolid_calc_individual_exhausted_max') &&
@@ -714,25 +721,46 @@ def elastic():
                 'type': 'double',
                 'script': {
                     'source': """
-                    if (doc.containsKey('portaldb_date_abandoned') &&
-                        doc['portaldb_date_abandoned'].size() > 0) {
-                        emit(0.0);
-                    } else if (doc.containsKey('benchling_remaining_weight') &&
-                        doc['benchling_remaining_weight'].size() > 0) {
-                        def value = doc['benchling_remaining_weight'].value;
-                        if (!Double.isNaN(value)) {
-                emit(value);
-            } else {
-                emit(0.5);
-            }
-        } else {
-            emit(0.5);
-        }
-                """
+                        if (doc.containsKey('portaldb_date_abandoned') &&
+                            doc['portaldb_date_abandoned'].size() > 0) {
+                            emit(0.0);
+                        } else if (doc.containsKey('benchling_remaining_weight') &&
+                            doc['benchling_remaining_weight'].size() > 0) {
+                            def value = doc['benchling_remaining_weight'].value;
+                            if (!Double.isNaN(value)) {
+                                emit(value);
+                            } else {
+                                emit(0.5);
+                            }
+                        } else {
+                            emit(0.5);
+                        }
+                    """
+                }
+            },
+            'calc_sample_abandoned_in_sts': {
+                'type': 'boolean',
+                'script': {
+                    'source': """
+                        boolean isSampleInBenchling = (
+                            doc.containsKey('sts_eln_id.keyword') &&
+                            doc['sts_eln_id.keyword'].size() > 0
+                        );
+
+                        boolean isSampleAbandoned = (
+                            doc.containsKey('portaldb_date_abandoned') &&
+                            doc['portaldb_date_abandoned'].size() > 0
+                        );
+
+                        if (!isSampleInBenchling && isSampleAbandoned) {
+                            emit(true);
+                        } else {
+                            emit(false);
+                        }
+                    """
                 }
             },
         },
-
         'sampleset': {
             'calc_tat': RuntimeFields.date_interval('sts_submit_date',
                                                     'sts_sample_sts_receive_date_min',
