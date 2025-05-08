@@ -49,7 +49,7 @@ class Validator(ABC):
         self,
         obj: DataObject
     ) -> DataObject:
-        """Validates a `DataObject` instance."""
+        """Validates a single `DataObject` instance."""
 
     def validate(
         self,
