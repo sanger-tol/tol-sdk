@@ -17,14 +17,14 @@ class ValidationSeverity(Enum, str):
 
 @dataclass(frozen=True, kw_only=True)
 class ValidationResult:
-    severity: ValidationSeverity
-    """Either `'warning'` or `'error'`"""
+    object_id: str
+    """Maps to the row number from the original spreadsheet"""
 
     detail: str
     """A helpful error message"""
 
-    object_id: str
-    """Maps to the row number from the original spreadsheet"""
+    severity: ValidationSeverity
+    """Either `'warning'` or `'error'`"""
 
     field: str | list[str] | None = None
     """
@@ -65,12 +65,39 @@ class Validator(ABC):
             else:
                 yield self._validate_object(obj)
 
-    def add_validation_result(
+    def add_warning(
         self,
-        result: ValidationResult,
+        *,
+        object_id: str,
+        detail: str,
+        field: str | list[str] | None = None,
+        code: str | None = None,
     ) -> None:
 
-        self.__results.append(result)
+        self._add_result(
+            object_id=object_id,
+            detail=detail,
+            severity=ValidationSeverity.WARNING,
+            field=field,
+            code=code,
+        )
+
+    def add_error(
+        self,
+        *,
+        object_id: str,
+        detail: str,
+        field: str | list[str] | None = None,
+        code: str | None = None,
+    ) -> None:
+
+        self._add_result(
+            object_id=object_id,
+            detail=detail,
+            severity=ValidationSeverity.ERROR,
+            field=field,
+            code=code,
+        )
 
     @property
     def results(self) -> list[ValidationResult]:
@@ -86,3 +113,23 @@ class Validator(ABC):
             r.severity == ValidationSeverity.ERROR
             for r in self.__results
         )
+
+    def _add_result(
+        self,
+        *,
+        object_id: str,
+        detail: str,
+        severity: ValidationSeverity,
+        field: str | list[str] | None = None,
+        code: str | None = None,
+    ) -> None:
+
+        result = ValidationResult(
+            object_id=object_id,
+            detail=detail,
+            severity=severity,
+            field=field,
+            code=code,
+        )
+
+        self.__results.append(result)
