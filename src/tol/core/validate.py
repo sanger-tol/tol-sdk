@@ -72,10 +72,8 @@ class Validator(ABC):
 
         self.__results.append(result)
 
-    def get_validation_results(
-        self,
-    ) -> list[ValidationResult]:
-
+    @property
+    def results(self) -> list[ValidationResult]:
         return self.__results
 
     @property
