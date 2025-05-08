@@ -731,7 +731,7 @@ def elastic():
                 'type': 'double',
                 'script': {
                     'source': """
-                        if (doc.containsKey('portaldb_date_abandoned') 
+                        if (doc.containsKey('portaldb_date_abandoned')
                             && !doc.containsKey('sts_eln_id.keyword')
                             && doc['portaldb_date_abandoned'].size() > 0 ) {
                             emit(0.0);
