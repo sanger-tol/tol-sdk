@@ -458,12 +458,6 @@ def elastic():
                 'type': 'boolean',
                 'script': {
                     'source': """
-                        boolean isTolidAbandoned = (
-                            doc.containsKey('portaldb_date_abandoned') &&
-                            doc['portaldb_date_abandoned'].size() > 0 &&
-                            doc['portaldb_date_abandoned'].value != null
-                        );
-
                         boolean isTotalSubmissionsGreaterThanZero = (
                             doc.containsKey('benchling_pacbio_sequencing_request_count') &&
                             doc['benchling_pacbio_sequencing_request_count'].size() > 0 &&
@@ -508,7 +502,6 @@ def elastic():
                                 }
                             }
                         emit(
-                            !isTolidAbandoned &&
                             isTotalSubmissionsGreaterThanZero &&
                             isOngoingSubmissionsEqualZero &&
                             !isTargetCoverageMet &&
@@ -581,6 +574,8 @@ def elastic():
                             ].value <= 0 && doc[
                             'calc_sample_calc_benchling_remaining_weight_max'
                             ].value <= 0 && doc[
+                            'calc_sts_tissue_remaining_max'
+                            ].value <= 0 && doc[
                             'benchling_sample_count'
                             ].value == doc[
                             'sts_sample_count'
@@ -602,6 +597,7 @@ def elastic():
                             doc['tolid_species.tolid_tolid_count'].size() > 0 &&
                             doc['tolid_species.tolid_tolid_count'].value > 1
                         );
+                        
                         boolean isAtLeastOneIndividualExhausted = (
                             doc.containsKey
                             ('tolid_species.calc_tolid_calc_individual_exhausted_max') &&
@@ -714,25 +710,45 @@ def elastic():
                 'type': 'double',
                 'script': {
                     'source': """
-                    if (doc.containsKey('portaldb_date_abandoned') &&
-                        doc['portaldb_date_abandoned'].size() > 0) {
-                        emit(0.0);
-                    } else if (doc.containsKey('benchling_remaining_weight') &&
-                        doc['benchling_remaining_weight'].size() > 0) {
-                        def value = doc['benchling_remaining_weight'].value;
-                        if (!Double.isNaN(value)) {
-                emit(value);
-            } else {
-                emit(0.5);
-            }
-        } else {
-            emit(0.5);
-        }
-                """
+                        if (doc.containsKey('portaldb_date_abandoned') &&
+                            doc['portaldb_date_abandoned'].size() > 0) {
+                            emit(0.0);
+                        } else if (doc.containsKey('benchling_remaining_weight') &&
+                            doc['benchling_remaining_weight'].size() > 0) {
+                            def value = doc['benchling_remaining_weight'].value;
+                            if (!Double.isNaN(value)) {
+                                emit(value);
+                            } else {
+                                emit(0.5);
+                            }
+                        } else {
+                            emit(0.5);
+                        }
+                    """
+                }
+            },
+            'calc_sts_tissue_remaining': {
+                'type': 'double',
+                'script': {
+                    'source': """
+                        if (doc.containsKey('portaldb_date_abandoned') && !doc.containsKey('sts_eln_id.keyword') &&
+                            doc['portaldb_date_abandoned'].size() > 0 ) {
+                            emit(0.0);
+                        } else if (doc.containsKey('sts_tissue_remaining') &&
+                            doc['sts_tissue_remaining'].size() > 0) {
+                            def value = doc['sts_tissue_remaining'].value;
+                            if (!Double.isNaN(value)) {
+                                emit(value);
+                            } else {
+                                emit(0.5);
+                            }
+                        } else {
+                            emit(0.5);
+                        }
+                    """
                 }
             },
         },
-
         'sampleset': {
             'calc_tat': RuntimeFields.date_interval('sts_submit_date',
                                                     'sts_sample_sts_receive_date_min',
