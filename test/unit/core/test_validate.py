@@ -2,11 +2,12 @@
 #
 # SPDX-License-Identifier: MIT
 
+from typing import Iterable
 from unittest.mock import create_autospec
 
 import pytest
 
-from tol.core import Validator
+from tol.core import DataObject, ErrorObject, Validator
 
 
 @pytest.fixture
@@ -16,6 +17,30 @@ def mock_validator() -> Validator:
         spec_set=True,
     )
 
+
+@pytest.fixture
+def object_stream(
+) -> Iterable[DataObject | ErrorObject]:
+
+    return [
+        create_autospec(DataObject),
+        ErrorObject({}, "test"),
+    ]
+
+
+class TestValidator:
+
+    def test_validate(
+        self,
+        mock_validator: Validator,
+        object_stream: Iterable[DataObject | ErrorObject],
+    ) -> None:
+
+        Validator.validate(mock_validator, object_stream)
+
+        mock_validator._validate_object.assert_called_once_with(
+            object_stream[0],
+        )
 
 class TestValidatorAdd:
 
