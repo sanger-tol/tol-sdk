@@ -8,7 +8,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "tol-sdk"
-version = "1.4.40"
+version = "1.4.41"
 description = "SDK for interaction with ToL, Sanger and external services"
 readme = "README.md"
 authors = [
@@ -43,7 +43,7 @@ jira = ["atlassian-python-api==3.41.14"]
 json = ["minio == 7.2.15"]
 mysql = ["mysql-connector-python"]
 postgresql = ["SQLAlchemy == 2.0.35", "psycopg2-binary == 2.9.9"]
-prefect = ["prefect == 2.20.16", "griffe < 1.0.0"]
+prefect = ["prefect == 2.20.18", "griffe < 1.0.0"]
 sciops = [
     "lab-share-lib @ git+https://github.com/sanger/lab-share-lib@v0.1.6#egg=lab-share-lib",
     "fastavro",

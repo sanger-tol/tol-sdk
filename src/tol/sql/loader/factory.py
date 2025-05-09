@@ -71,10 +71,23 @@ def create_loader_models(
 
         prefix: Mapped[str] = mapped_column(nullable=False, default='')
         convert_class: Mapped[str] = mapped_column(nullable=True)
-        frequency: Mapped[str] = mapped_column(nullable=False, default='daily')
         candidate_key: Mapped[dict] = mapped_column(JSONB, nullable=True)
         date_last_run: Mapped[datetime] = mapped_column(nullable=True)
 
+        # Frequency of loading
+        frequency_weekly: Mapped[bool] = mapped_column(nullable=True)
+        frequency_daily: Mapped[bool] = mapped_column(nullable=True)
+        frequency_hourly: Mapped[bool] = mapped_column(nullable=True)
+        frequency_quarter_hourly: Mapped[bool] = mapped_column(nullable=True)
+
+        # For loading by IDs
+        ids_object_type: Mapped[str] = mapped_column(nullable=True)
+        ids_attribute: Mapped[str] = mapped_column(nullable=True)
+        ids_object_filters: Mapped[dict] = mapped_column(JSONB, nullable=True)
+        ids_sort_by: Mapped[str] = mapped_column(nullable=True)
+        ids_attribute_in_source: Mapped[str] = mapped_column(nullable=True)
+
+        # Rerlationships
         source_data_source_instance_id: Mapped[int] = mapped_column(
             ForeignKey('data_source_instance.id'),
             nullable=False
@@ -92,6 +105,14 @@ def create_loader_models(
             back_populates='destination_loaders',
             foreign_keys=[destination_data_source_instance_id]
         )
+        ids_data_source_instance_id: Mapped[int] = mapped_column(
+            ForeignKey('data_source_instance.id'),
+            nullable=True
+        )
+        ids_data_source_instance: Mapped['DataSourceInstance'] = relationship(  # noqa F821
+            back_populates='ids_loaders',
+            foreign_keys=[ids_data_source_instance_id]
+        )
 
     class DataSourceInstance(base_model_class):
         __tablename__ = 'data_source_instance'
@@ -108,6 +129,10 @@ def create_loader_models(
         destination_loaders: Mapped[list['Loader']] = relationship(  # noqa F821
             back_populates='destination_data_source_instance',
             foreign_keys=[Loader.destination_data_source_instance_id]
+        )
+        ids_loaders: Mapped[list['Loader']] = relationship(  # noqa F821
+            back_populates='ids_data_source_instance',
+            foreign_keys=[Loader.ids_data_source_instance_id]
         )
 
     return LoaderModels(
