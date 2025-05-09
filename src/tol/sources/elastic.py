@@ -334,9 +334,17 @@ def elastic():
                             doc['tolid_tolid_count'].size() > 0
                         );
 
+                        boolean isSampleCollected = (
+                            doc.containsKey('goat_sample_collected.keyword') &&
+                            doc['goat_sample_collected.keyword'].size() > 0 &&
+                            ['AG100PEST', 'i5K', 'CNGB', 'CANBP', 'CBP',
+                            'ERGA-PIL', 'ERGA-BGE', 'ERGA-CH','ENDEMIXIT'].contains(
+                            doc['goat_sample_collected.keyword'].value)
+                        );
+
                         emit(
                             isRecollectionRequired || (!isIncludedProject
-                            && !isChromosome && !isSpecimensAtSanger)
+                            && !isChromosome && !isSpecimensAtSanger && !isSampleCollected)
                         );
                     """
                 }
@@ -369,7 +377,7 @@ def elastic():
                             isTopUpCountZero && isIndividualExhaustedCountZero
                         );
 
-                        boolean isTopUpRequiredAtSpeciesLevel = (
+                        boolean isAllTopUpRequired = (
                             doc.containsKey('calc_tolid_calc_topup_required_min') &&
                             doc['calc_tolid_calc_topup_required_min'].size() > 0 &&
                             doc['calc_tolid_calc_topup_required_min'].value == 1
@@ -392,34 +400,29 @@ def elastic():
                         );
 
                         emit(
-                            !isIndividualNovel && isTopUpRequiredAtSpeciesLevel
+                            !isIndividualNovel && isAllTopUpRequired
                             && isAllIndividualsExhausted && isRecollectionNeeded
                         );
                     """
                 }
             },
-            'calc_species_recollectable': {
+            'calc_species_out_for_recollection': {
                 'type': 'boolean',
                 'script': {
                     'source': """
-                        boolean isSpeciesNotBeenMarked = (
-                            !doc.containsKey('portaldb_date_marked_for_recollection') ||
-                            doc['portaldb_date_marked_for_recollection'].size() == 0 ||
-                            doc['portaldb_date_marked_for_recollection'].value == null
-                        );
-
-                        boolean isSpeciesMarkedBeforeRecollected = false;
-                        if (doc.containsKey('sts_sample_sts_submit_date_max') &&
-                            doc.containsKey('portaldb_date_marked_for_recollection') &&
-                            doc['sts_sample_sts_submit_date_max'].size() > 0 &&
+                        if (doc.containsKey('portaldb_date_marked_for_recollection') &&
                             doc['portaldb_date_marked_for_recollection'].size() > 0) {
-
-                            isSpeciesMarkedBeforeRecollected =
+                            if (doc.containsKey('sts_sample_sts_submit_date_max') &&
+                                doc['sts_sample_sts_submit_date_max'].size() > 0 &&
                                 doc['portaldb_date_marked_for_recollection'].value.isBefore(
-                                doc['sts_sample_sts_submit_date_max'].value);
+                                doc['sts_sample_sts_submit_date_max'].value)) {
+                                    emit (false);
+                            } else {
+                                emit (true);
+                            }
+                        } else {
+                            emit (false);
                         }
-
-                        emit(isSpeciesNotBeenMarked || isSpeciesMarkedBeforeRecollected);
                     """
                 }
             },
@@ -572,13 +575,13 @@ def elastic():
                             ].size() > 0 &&
                             doc[
                             'calc_sequencing_request_calc_mlwh_volume_remaining_max'
-                            ].value <= 0.5 &&
+                            ].value <= 0 &&
                             doc['calc_extraction_calc_benchling_volume_ul_dna_max'
-                            ].value <= 0.5 && doc[
+                            ].value <= 0 && doc[
                             'calc_tissue_prep_calc_benchling_weight_mg_max'
-                            ].value <= 0.5 && doc[
+                            ].value <= 0 && doc[
                             'calc_sample_calc_benchling_remaining_weight_max'
-                            ].value <= 0.5 && doc[
+                            ].value <= 0 && doc[
                             'benchling_sample_count'
                             ].value == doc[
                             'sts_sample_count'
@@ -601,10 +604,13 @@ def elastic():
                             doc['tolid_species.tolid_tolid_count'].value > 1
                         );
 
-                        boolean isAtLeastOneIndividualInTopUp = (
-                            doc.containsKey('tolid_species.calc_tolid_calc_topup_required_max') &&
-                            doc['tolid_species.calc_tolid_calc_topup_required_max'].size() > 0 &&
-                            doc['tolid_species.calc_tolid_calc_topup_required_max'].value == 1
+                         boolean isAtLeastOneIndividualExhausted = (
+                            doc.containsKey
+                            ('tolid_species.calc_tolid_calc_individual_exhausted_max') &&
+                            doc['tolid_species.calc_tolid_calc_individual_exhausted_max']
+                            .size() > 0 &&
+                            doc['tolid_species.calc_tolid_calc_individual_exhausted_max']
+                            .value == 1
 
                         );
 
@@ -626,7 +632,7 @@ def elastic():
 
                         emit(
                             isThereAtLeastAnotherIndividual &&
-                            isAtLeastOneIndividualInTopUp &&
+                            isAtLeastOneIndividualExhausted &&
                             isSpeciesTopUpEqualsIndividualExhausted
                         );
                     """
@@ -710,25 +716,42 @@ def elastic():
                 'type': 'double',
                 'script': {
                     'source': """
-                    if (doc.containsKey('portaldb_date_abandoned') &&
-                        doc['portaldb_date_abandoned'].size() > 0) {
-                        emit(0.0);
-                    } else if (doc.containsKey('benchling_remaining_weight') &&
-                        doc['benchling_remaining_weight'].size() > 0) {
-                        def value = doc['benchling_remaining_weight'].value;
-                        if (!Double.isNaN(value)) {
-                emit(value);
-            } else {
-                emit(0.5);
-            }
-        } else {
-            emit(0.5);
-        }
-                """
+                                            if (doc.containsKey('portaldb_date_abandoned') &&
+                            doc['portaldb_date_abandoned'].size() > 0) {
+                            emit(0.0);
+                        } else if (doc.containsKey('benchling_remaining_weight') &&
+                            doc['benchling_remaining_weight'].size() > 0) {
+                            def value = doc['benchling_remaining_weight'].value;
+                            if (!Double.isNaN(value)) {
+                                emit(value);
+                            } else {
+                                emit(0.5);
+                            }
+                        } else {
+                            emit(0.5);
+                        }
+                    """
+                }
+            },
+            'calc_sample_abandoned_in_sts': {
+                'type': 'boolean',
+                'script': {
+                    'source': """
+                        boolean isSampleAbandoned = doc.containsKey('portaldb_date_abandoned') &&
+                            doc['portaldb_date_abandoned'].size() > 0;
+
+                        boolean isSampleInBenchling = doc.containsKey('sts_eln_id.keyword') &&
+                            doc['sts_eln_id.keyword'].size() > 0;
+
+                        if (isSampleAbandoned && !isSampleInBenchling) {
+                            emit(true);
+                        } else {
+                            emit(false);
+                        }
+                    """
                 }
             },
         },
-
         'sampleset': {
             'calc_tat': RuntimeFields.date_interval('sts_submit_date',
                                                     'sts_sample_sts_receive_date_min',
