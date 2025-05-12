@@ -120,3 +120,5 @@ deploy-package:
 
 deploy-package-public:
   extends: .deploy-python-package-public
+  needs:
+    - deploy-package
