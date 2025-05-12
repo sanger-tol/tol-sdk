@@ -10,7 +10,8 @@ variables:
 
 include:
   - project: 'tol/tol-core'
-    ref: v1.6.0
+    # TODO change back!!!!
+    ref: TOLP-8757
     file: '/gitlab/main.yml'
 
 
