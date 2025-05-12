@@ -7,7 +7,7 @@ variables:
   GOOGLE_CLIENT_SECRETS: $GOOGLE_CLIENT_SECRETS_DEV
   BUILT_IMAGE: $CI_REGISTRY_IMAGE/tol-sdk-test-image:$CI_COMMIT_SHA
   UUID_PREFIX: $CI_JOB_ID
-  PYTHON_PACKAGE_NAME: tol-sdk
+  PYPI_PACKAGE_NAME: tol-sdk
 
 include:
   - project: 'tol/tol-core'
