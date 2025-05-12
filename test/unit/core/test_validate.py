@@ -43,7 +43,7 @@ class TestValidator:
         assert len(results) == 2
 
         # called only on the `DataObject`, ignoring error ones
-        mock_validator._validate_object.assert_called_once_with(
+        mock_validator._validate_data_object.assert_called_once_with(
             object_stream[0],
         )
 
@@ -51,7 +51,7 @@ class TestValidator:
 class TestValidatorAdd:
 
     class _TestValidator(Validator):
-        def _validate_object(self, obj):
+        def _validate_data_object(self, obj):
             raise NotImplementedError()
 
     def test_add_warning(self) -> None:

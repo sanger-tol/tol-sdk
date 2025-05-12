@@ -45,7 +45,7 @@ class Validator(ABC):
         self.__results: list[ValidationResult] = []
 
     @abstractmethod
-    def _validate_object(
+    def _validate_data_object(
         self,
         obj: DataObject
     ) -> DataObject:
@@ -63,7 +63,7 @@ class Validator(ABC):
             if isinstance(obj, ErrorObject):
                 yield obj
             else:
-                yield self._validate_object(obj)
+                yield self._validate_data_object(obj)
 
     def add_warning(
         self,
