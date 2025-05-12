@@ -117,3 +117,6 @@ integration-test-python-package:
 
 deploy-package:
   extends: .deploy-python-package
+
+deploy-package-public:
+  extends: .deploy-python-package-public
