@@ -312,6 +312,67 @@ class MlwhDataSource(DataSource, DetailGetter, ListGetter):
             """
         )
 
+    def _get_column_mappings_study(self):
+        return {
+            'id': 'id_study_tmp',
+            'id_lims': 'id_lims',
+            'uuid_study_lims': 'uuid_study_lims',
+            'id_study_lims': 'id_study_lims',
+            'last_updated': 'last_updated',
+            'recorded_at': 'recorded_at',
+            'deleted_at': 'deleted_at',
+            'created': 'created',
+            'name': 'name',
+            'reference_genome': 'reference_genome',
+            'ethically_approved': 'ethically_approved',
+            'faculty_sponsor': 'faculty_sponsor',
+            'state': 'state',
+            'study_type': 'study_type',
+            'abstract': 'abstract',
+            'abbreviation': 'abbreviation',
+            'accession_number': 'accession_number',
+            'description': 'description',
+            'contains_human_dna': 'contains_human_dna',
+            'contaminated_human_dna': 'contaminated_human_dna',
+            'data_release_strategy': 'data_release_strategy',
+            'data_release_sort_of_study': 'data_release_sort_of_study',
+            'ena_project_id': 'ena_project_id',
+            'study_title': 'study_title',
+            'study_visibility': 'study_visibility',
+            'ega_dac_accession_number': 'ega_dac_accession_number',
+            'array_express_accession_number': 'array_express_accession_number',
+            'ega_policy_accession_number': 'ega_policy_accession_number',
+            'data_release_timing': 'data_release_timing',
+            'data_release_delay_period': 'data_release_delay_period',
+            'data_release_delay_reason': 'data_release_delay_reason',
+            'aligned': 'aligned',
+            'separate_y_chromosome_data': 'separate_y_chromosome_data',
+            'prelim_id': 'prelim_id',
+            'hmdmc_number': 'hmdmc_number',
+            'data_destination': 'data_destination',
+            's3_email_list': 's3_email_list',
+            'data_deletion_period': 'data_deletion_period',
+            'contaminated_human_data_access_group':
+                'contaminated_human_data_access_group',
+            'programme': 'programme',
+            'ebi_library_strategy': 'ebi_library_strategy',
+            'ebi_library_source': 'ebi_library_source',
+            'ebi_library_selection': 'ebi_library_selection',
+        }
+
+    def _get_study_query(self, clause: str):
+        col_string = self._columns_string_from_mappings(
+            self._get_column_mappings_study()
+        )
+        return inspect.cleandoc(
+            f"""
+            SELECT {col_string}
+            FROM study
+            WHERE {clause}
+            ORDER BY id_study_tmp
+            """
+        )
+
     def _get_column_mappings_sequencing_request_volume(self):
         return {
             'id': 'aliquot.sample_name',
@@ -402,6 +463,8 @@ class MlwhDataSource(DataSource, DetailGetter, ListGetter):
             mappings = self._get_column_mappings_sequencing_request()
         if platform_type.lower() == 'sequencing_request_volume':
             mappings = self._get_column_mappings_sequencing_request_volume()
+        if platform_type.lower() == 'study':
+            mappings = self._get_column_mappings_study()
         for k, v in in_list.items():
             mapped_k = mappings[k]
             sql_conditions.append(f"{mapped_k} IN ('{self._join(v)}')")
@@ -465,9 +528,16 @@ class MlwhDataSource(DataSource, DetailGetter, ListGetter):
             )
             query = self._get_long_read_qc_result_query(sql_conditions)
             return self._execute_query(query, 'long_read_qc_result')
+        elif object_type == 'study':
+            sql_conditions = self._conditions_string(
+                'study',
+                self.__get_in_lists(object_filters)
+            )
+            query = self._get_study_query(sql_conditions)
+            return self._execute_query(query, 'study')
         else:
             raise DataSourceError(
-                'Only objects of type long_read_qc_result, run_data or '
+                'Only objects of type long_read_qc_result, run_data, study or '
                 'sequencing_request are supported'
             )
 
@@ -492,4 +562,4 @@ class MlwhDataSource(DataSource, DetailGetter, ListGetter):
     @property
     def supported_types(self) -> List[str]:
         return ['long_read_qc_result', 'sequencing_request', 'run_data',
-                'sequencing_request_volume']
+                'sequencing_request_volume', 'study']
