@@ -7,10 +7,11 @@ variables:
   GOOGLE_CLIENT_SECRETS: $GOOGLE_CLIENT_SECRETS_DEV
   BUILT_IMAGE: $CI_REGISTRY_IMAGE/tol-sdk-test-image:$CI_COMMIT_SHA
   UUID_PREFIX: $CI_JOB_ID
+  PYPI_PACKAGE_NAME: tol-sdk
 
 include:
   - project: 'tol/tol-core'
-    ref: v1.6.0
+    ref: v1.7.2
     file: '/gitlab/main.yml'
 
 
@@ -116,3 +117,8 @@ integration-test-python-package:
 
 deploy-package:
   extends: .deploy-python-package
+
+deploy-package-public:
+  extends: .deploy-python-package-public
+  needs:
+    - deploy-package
