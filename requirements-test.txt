@@ -4,15 +4,11 @@
 
 # Only put packages used by the testing code here.
 # Packages needed by the package under test should be
-# mentioned in setup.cfg
+# mentioned in pyproject.toml
 
--r ./requirements-sciops.txt
+-r ./requirements/sciops.txt
 
-#coverage>=4.0.3
 flask_testing==0.8.1
-#pluggy>=0.3.1
-#py>=1.4.31
 pytest==7.3.1
-#randomize>=0.13
 responses
 requests_mock
