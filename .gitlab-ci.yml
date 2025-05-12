@@ -121,7 +121,5 @@ deploy-package:
 
 deploy-package-public:
   extends: .deploy-python-package-public
-  # TODO put back!!!
-  needs: []
-  # needs:
-  #   - deploy-package
+  needs:
+    - deploy-package
