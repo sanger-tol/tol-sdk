@@ -6,6 +6,8 @@
 # Packages needed by the package under test should be
 # mentioned in setup.cfg
 
+-r ./requirements-sciops.txt
+
 #coverage>=4.0.3
 flask_testing==0.8.1
 #pluggy>=0.3.1

@@ -16,7 +16,8 @@ RUN mkdir -p src/tol && touch src/tol/__init__.py
 RUN pip install -e .[all]
 
 # install the testing requirements
-COPY requirements-test.txt .
+COPY requirements/test.txt requirements-test.txt
+COPY requirements/sciops.txt requirements-sciops.txt
 RUN pip install -r requirements-test.txt
 
 # copy in the source
