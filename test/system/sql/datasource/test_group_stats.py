@@ -9,7 +9,7 @@ from tol.sql import SqlDataSource
 class TestGroupStats:
 
     def test_min(self, sql_ds: SqlDataSource) -> None:
-        self.__insert_gs_objs(sql_ds)
+        self.__insert_numerical_gs_objs(sql_ds)
 
         observed = sql_ds.get_group_stats(
             'gs',
@@ -19,8 +19,10 @@ class TestGroupStats:
         )
 
         expected = [
-            # str_column = 'same'
             {
+                'key': {
+                    'str_column': 'same',
+                },
                 'stats': {
                     'int_column': {
                         'min': 1
@@ -32,7 +34,7 @@ class TestGroupStats:
         assert observed == expected
 
     def test_max(self, sql_ds: SqlDataSource) -> None:
-        self.__insert_gs_objs(sql_ds)
+        self.__insert_numerical_gs_objs(sql_ds)
 
         observed = sql_ds.get_group_stats(
             'gs',
@@ -42,8 +44,10 @@ class TestGroupStats:
         )
 
         expected = [
-            # str_column = 'same'
             {
+                'key': {
+                    'str_column': 'same',
+                },
                 'stats': {
                     'int_column': {
                         'max': 2
@@ -55,7 +59,7 @@ class TestGroupStats:
         assert observed == expected
 
     def test_sum(self, sql_ds: SqlDataSource) -> None:
-        self.__insert_gs_objs(sql_ds)
+        self.__insert_numerical_gs_objs(sql_ds)
 
         observed = sql_ds.get_group_stats(
             'gs',
@@ -65,8 +69,10 @@ class TestGroupStats:
         )
 
         expected = [
-            # str_column = 'same'
             {
+                'key': {
+                    'str_column': 'same',
+                },
                 'stats': {
                     'int_column': {
                         # =1+2
@@ -88,9 +94,9 @@ class TestGroupStats:
         pass
 
     def test_count(self, sql_ds: SqlDataSource) -> None:
-        self.__insert_gs_objs(sql_ds)
+        self.__insert_numerical_gs_objs(sql_ds)
 
-    def __insert_gs_objs(self, sql_ds: SqlDataSource) -> None:
+    def __insert_numerical_gs_objs(self, sql_ds: SqlDataSource) -> None:
         objs = (
             sql_ds.data_object_factory(
                 'gs',
@@ -98,6 +104,21 @@ class TestGroupStats:
                 {
                     'int_column': i,
                     'str_column': 'same'
+                }
+            )
+            for i in range(3)
+        )
+
+        sql_ds.insert_batch('gs', objs)
+
+    def __insert_unique_gs_objs(self, sql_ds: SqlDataSource) -> None:
+        objs = (
+            sql_ds.data_object_factory(
+                'gs',
+                str(i),
+                {
+                    'int_column': i,
+                    'str_column': 'unique'
                 }
             )
             for i in range(3)

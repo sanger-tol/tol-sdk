@@ -92,6 +92,7 @@ class TestGroupStats:
             stats=['min', 'max', 'unique', 'cardinality'],
             object_filters=f
         ))
+
         assert len(stats) == 2
         false_stats = stats[0]['stats']
         assert false_stats['count'] == 1
