@@ -7,14 +7,16 @@ from tol.sql import SqlDataSource
 
 
 class TestGroupStats:
+    """One grouping and one stat at a time."""
 
     def test_min(self, sql_ds: SqlDataSource) -> None:
-        self.__insert_numerical_gs_objs(sql_ds)
+        self.__insert_gs_objs(sql_ds)
 
         observed = sql_ds.get_group_stats(
             'gs',
             group_by=['str_column'],
-            stats_fields=['min'],
+            stats_fields=['int_column'],
+            stats=['min'],
             object_filters=self.__gs_filters,
         )
 
@@ -34,12 +36,13 @@ class TestGroupStats:
         assert observed == expected
 
     def test_max(self, sql_ds: SqlDataSource) -> None:
-        self.__insert_numerical_gs_objs(sql_ds)
+        self.__insert_gs_objs(sql_ds)
 
         observed = sql_ds.get_group_stats(
             'gs',
             group_by=['str_column'],
-            stats_fields=['max'],
+            stats_fields=['int_column'],
+            stats=['max'],
             object_filters=self.__gs_filters,
         )
 
@@ -59,12 +62,13 @@ class TestGroupStats:
         assert observed == expected
 
     def test_sum(self, sql_ds: SqlDataSource) -> None:
-        self.__insert_numerical_gs_objs(sql_ds)
+        self.__insert_gs_objs(sql_ds)
 
         observed = sql_ds.get_group_stats(
             'gs',
             group_by=['str_column'],
-            stats_fields=['sum'],
+            stats_fields=['int_column'],
+            stats=['sum'],
             object_filters=self.__gs_filters,
         )
 
@@ -94,9 +98,32 @@ class TestGroupStats:
         pass
 
     def test_count(self, sql_ds: SqlDataSource) -> None:
-        self.__insert_numerical_gs_objs(sql_ds)
+        self.__insert_gs_objs(sql_ds)
 
-    def __insert_numerical_gs_objs(self, sql_ds: SqlDataSource) -> None:
+        observed = sql_ds.get_group_stats(
+            'gs',
+            group_by=['str_column'],
+            stats_fields=['int_column'],
+            stats=['count'],
+            object_filters=self.__gs_filters,
+        )
+
+        expected = [
+            {
+                'key': {
+                    'str_column': 'same',
+                },
+                'stats': {
+                    'int_column': {
+                        'count': 2
+                    }
+                }
+            }
+        ]
+
+        assert observed == expected
+
+    def __insert_gs_objs(self, sql_ds: SqlDataSource) -> None:
         objs = (
             sql_ds.data_object_factory(
                 'gs',
