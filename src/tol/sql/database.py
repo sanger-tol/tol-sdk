@@ -443,8 +443,10 @@ class DefaultDatabase(Database):
 
         for i, field in enumerate(stats_fields):
             values = stats_values[i * num_stats:(i + 1) * num_stats]
-            values_dict = dict(stats, values)
+            values_dict = dict(zip(stats, values))
             stats_dict[field] = values_dict
+
+        stats_dict['count'] = stats_values[-1]
 
         return stats_dict
 
@@ -456,7 +458,7 @@ class DefaultDatabase(Database):
 
         group_values = result[:len(group_by)]
 
-        return dict(group_by, group_values)
+        return dict(zip(group_by, group_values))
 
     def __apply_stats(
         self,
@@ -478,24 +480,23 @@ class DefaultDatabase(Database):
             )
             stat_columns.extend(
                 self.__apply_stats_for_field(
-                    field,
                     column,
                     stats,
                 )
             )
 
+        stat_columns.append(func.count())
+
         return query, stat_columns
 
     def __apply_stats_for_field(
         self,
-        field: str,
         column: MappedColumn,
         stats: list[str],
     ) -> list[Any]:
 
         return [
             self.__get_stat_clause(
-                field,
                 column,
                 stat,
             )
@@ -521,23 +522,21 @@ class DefaultDatabase(Database):
 
     def __get_stat_clause(
         self,
-        field: str,
         column: MappedColumn,
         stat: str,
     ) -> Any:
 
-        label = f'{field} {stat}'
-
         if stat == 'min':
-            return func.min(column).label(label)
+            return func.min(column)
         elif stat == 'max':
-            return func.max(column).label(label)
+            return func.max(column)
         elif stat == 'sum':
-            return func.sum(column).label(label)
-        elif stat == 'count':
-            return func.count().label(label)
+            # don't try to sum datetimes
+            if column.type.python_type not in [int, float]:
+                return None
+            return func.sum(column)
         elif stat == 'unique':
-            return func.count(distinct(column)).label(label)
+            return func.count(distinct(column))
 
     def __apply_group_by(
         self,
@@ -557,7 +556,7 @@ class DefaultDatabase(Database):
                 g,
                 query
             )
-            g_columns.append(g_column.label(g))
+            g_columns.append(g_column)
 
         return query.group_by(*g_columns), g_columns
 
