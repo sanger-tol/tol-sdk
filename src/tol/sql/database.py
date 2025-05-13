@@ -7,9 +7,9 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 from typing import Any, Dict, Iterable, List, Optional, Type
 
-from sqlalchemy import distinct, func, select, union
+from sqlalchemy import distinct, func
 from sqlalchemy.exc import IntegrityError
-from sqlalchemy.orm import Query, MappedColumn, Session, joinedload
+from sqlalchemy.orm import MappedColumn, Query, Session, joinedload
 from sqlalchemy.orm.attributes import flag_modified
 
 from .filter import DatabaseFilter
@@ -378,7 +378,7 @@ class DefaultDatabase(Database):
             *stat_columns,
         )
         results = query.all()
-        
+
         return self.__parse_results(
             results,
             group_by,
@@ -443,11 +443,7 @@ class DefaultDatabase(Database):
 
         for i, field in enumerate(stats_fields):
             values = stats_values[i * num_stats:(i + 1) * num_stats]
-            values_dict = {
-                k: v
-                for k, v
-                in zip(stats, values)
-            }
+            values_dict = dict(stats, values)
             stats_dict[field] = values_dict
 
         return stats_dict
@@ -460,11 +456,7 @@ class DefaultDatabase(Database):
 
         group_values = result[:len(group_by)]
 
-        return {
-            g_key: g_value
-            for g_key, g_value
-            in zip(group_by, group_values)
-        }
+        return dict(group_by, group_values)
 
     def __apply_stats(
         self,
@@ -526,7 +518,6 @@ class DefaultDatabase(Database):
             )
 
         return column, query
-
 
     def __get_stat_clause(
         self,
