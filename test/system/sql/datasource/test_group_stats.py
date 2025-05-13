@@ -115,10 +115,6 @@ class TestGroupStats:
 
         assert observed == expected
 
-    def test_cardinality(self, sql_ds: SqlDataSource) -> None:
-        #TODO what about this one?????
-        pass
-
     def test_count(self, sql_ds: SqlDataSource) -> None:
         self.__insert_gs_objs(sql_ds)
 
