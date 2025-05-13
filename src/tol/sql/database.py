@@ -531,7 +531,7 @@ class DefaultDatabase(Database):
         elif stat == 'max':
             return func.max(column)
         elif stat == 'sum':
-            # don't try to sum datetimes
+            # don't try to sum datetimes
             if column.type.python_type not in [int, float]:
                 return None
             return func.sum(column)
