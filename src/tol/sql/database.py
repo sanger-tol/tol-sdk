@@ -558,7 +558,7 @@ class DefaultDatabase(Database):
             )
             g_columns.append(g_column)
 
-        return query.group_by(*g_columns), g_columns
+        return query.group_by(*g_columns).order_by(*g_columns), g_columns
 
     def __filter_query(
         self,
