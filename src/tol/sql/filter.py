@@ -29,6 +29,10 @@ class DatabaseFilter(ABC):
     ) -> Query:
         """Filter the Query object using the given model"""
 
+    @abstractmethod
+    def get_column(self, model: Type[Model], key: str) -> MappedColumn:
+        """Gets the column for the given `DataObject` key"""
+
 
 class DefaultDatabaseFilter(DatabaseFilter):
     """A reasonable-default database filter"""
@@ -177,7 +181,7 @@ class DefaultDatabaseFilter(DatabaseFilter):
         return reduce(
             lambda q, kv: self.__switch_and_term(
                 q,
-                self.__get_column(self.__base_model, column_key),
+                self.get_column(self.__base_model, column_key),
                 *kv
             ),
             term_dict.items(),
@@ -215,7 +219,7 @@ class DefaultDatabaseFilter(DatabaseFilter):
 
         if 'field' in term:
             field = term['field']
-            column = self.__get_column(
+            column = self.get_column(
                 self.__base_model,
                 field
             )
@@ -428,7 +432,7 @@ class DefaultDatabaseFilter(DatabaseFilter):
         if exact_filters is None:
             return query
         for k, v in exact_filters.items():
-            exact_column = self.__get_column(self.__base_model, k)
+            exact_column = self.get_column(self.__base_model, k)
             query = query.filter(exact_column == v)
         return query
 
@@ -437,7 +441,7 @@ class DefaultDatabaseFilter(DatabaseFilter):
         if contains_filters is None:
             return query
         for k, v in contains_filters.items():
-            contains_column = self.__get_column(self.__base_model, k)
+            contains_column = self.get_column(self.__base_model, k)
             term = self.__get_ilike_term(v)
             query = query.filter(contains_column.ilike(term))
         return query
@@ -447,7 +451,7 @@ class DefaultDatabaseFilter(DatabaseFilter):
         if in_filters is None:
             return query
         for k, v in in_filters.items():
-            in_column = self.__get_column(self.__base_model, k)
+            in_column = self.get_column(self.__base_model, k)
             query = query.filter(in_column.in_(v))
         return query
 
@@ -456,12 +460,12 @@ class DefaultDatabaseFilter(DatabaseFilter):
         if range_filters is None:
             return query
         for k, v in range_filters.items():
-            range_column = self.__get_column(self.__base_model, k)
+            range_column = self.get_column(self.__base_model, k)
             from_, to_ = self.__get_between_term(v)
             query = query.filter(range_column.between(from_, to_))
         return query
 
-    def __get_column(self, model: Type[Model], key: str) -> MappedColumn:
+    def get_column(self, model: Type[Model], key: str) -> MappedColumn:
         if key == 'id':
             return self.__get_id_column(model)
         elif '.' in key:
@@ -491,7 +495,7 @@ class DefaultDatabaseFilter(DatabaseFilter):
         end_model = self.__model_dict[end_tablename]
         end_key = split_keys[-1]
 
-        return self.__get_column(end_model, end_key)
+        return self.get_column(end_model, end_key)
 
     def __get_ilike_term(self, value: str) -> str:
         escaped = self.__escape_ilike(value)

@@ -393,7 +393,20 @@ class SqlDataSource(
         session: Optional[OperableSession] = None
     ) -> Iterable[dict[Any, int]]:
 
-        pass
+        tablename = self.__type_tablename_map[object_type]
+        in_session = self.__get_sqla_session(session)
+        filters = self.__filter_factory(
+            self._preprocess_filter(object_type, object_filters)
+        )
+
+        return self.__db.get_group_stats(
+            tablename,
+            group_by,
+            stats_fields,
+            stats,
+            in_session,
+            filters=filters,
+        )
 
     def __format_cursor_page(
         self,

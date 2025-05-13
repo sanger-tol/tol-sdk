@@ -5,10 +5,12 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
+from itertools import chain
 from typing import Any, Dict, Iterable, List, Optional, Type
 
+from sqlalchemy import distinct, func, union
 from sqlalchemy.exc import IntegrityError
-from sqlalchemy.orm import Query, Session, joinedload
+from sqlalchemy.orm import Query, MappedColumn, Session, joinedload
 from sqlalchemy.orm.attributes import flag_modified
 
 from .filter import DatabaseFilter
@@ -327,11 +329,136 @@ class DefaultDatabase(Database):
         in_session: Session,
         filters: DatabaseFilter | None = None,
     ) -> list[dict[str, dict[str, Any]]]:
-        pass
+
+        model, query = self.__get_model_query(
+            tablename,
+            in_session,
+            None,
+        )
+
+        query = self.__filter_query(query, tablename, filters)
+        query = self.__apply_stats(
+            query,
+            filters,
+            model,
+            stats_fields,
+            stats,
+        )
+        query = self.__apply_group_by(query, model, group_by)
+
+        return self.__get_stats_from_query(query)
 
     @property
     def attribute_types(self) -> dict[str, dict[str, type]]:
         return self.__attribute_types
+
+    def __get_stats_from_query(
+        self,
+        query: Query,
+    ) -> list[dict[str, dict[str, Any]]]:
+
+        results = query.all()
+        import logging
+        
+        for r in results:
+            logging.error(r)
+
+        assert False
+
+    def __apply_stats(
+        self,
+        query: Query,
+        filters: DatabaseFilter,
+        model: type[Model],
+        stats_fields: list[str],
+        stats: list[str],
+    ) -> Query:
+
+        stat_columns = chain.from_iterable(
+            self.__apply_stats_for_field(
+                filters,
+                model,
+                field,
+                stats,
+            )
+            for field in stats_fields
+        )
+        query = query.with_entities(*stat_columns)
+
+        return query
+
+    def __apply_stats_for_field(
+        self,
+        filters: DatabaseFilter,
+        model: type[Model],
+        field: str,
+        stats: list[str],
+    ) -> list[Any]:
+
+        column = filters.get_column(model, field)
+
+        return [
+            self.__get_stat_clause(
+                field,
+                column,
+                stat,
+            )
+            for stat in stats
+        ]
+
+    def __get_stat_clause(
+        self,
+        field: str,
+        column: MappedColumn,
+        stat: str,
+    ) -> Any:
+
+        label = f'{field} {stat}'
+
+        if stat == 'min':
+            return func.min(column).label(label)
+        elif stat == 'max':
+            return func.max(column).label(label)
+        elif stat == 'sum':
+            return func.sum(column).label(label)
+        elif stat == 'count':
+            return func.count().label(label)
+        elif stat == 'unique':
+            return func.count(distinct(column)).label(label)
+        elif stat == 'union':
+            return union(column).label(label)
+
+    def __apply_group_by(
+        self,
+        query: Query,
+        model: type[Model],
+        group_by: list[str]
+    ) -> Query:
+        """Must be done last in `get_group_stats()`."""
+
+        columns = (
+            getattr(model, g)
+            for g in group_by
+        )
+        query.group_by(*columns)
+
+        return query
+
+    def __filter_query(
+        self,
+        query: Query,
+        tablename: str,
+        filters: DatabaseFilter | None,
+    ) -> Query:
+
+        if filters:
+            filters.filter(
+                query,
+                tablename,
+                self.__tablename_model_dict,
+            )
+
+        return query
 
     def __get_attribute_types(self) -> dict[str, dict[str, type]]:
         return {
