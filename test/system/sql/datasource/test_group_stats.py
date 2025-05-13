@@ -34,8 +34,49 @@ class TestGroupStats:
     def test_max(self, sql_ds: SqlDataSource) -> None:
         self.__insert_gs_objs(sql_ds)
 
+        observed = sql_ds.get_group_stats(
+            'gs',
+            group_by=['str_column'],
+            stats_fields=['max'],
+            object_filters=self.__gs_filters,
+        )
+
+        expected = [
+            # str_column = 'same'
+            {
+                'stats': {
+                    'int_column': {
+                        'max': 2
+                    }
+                }
+            }
+        ]
+
+        assert observed == expected
+
     def test_sum(self, sql_ds: SqlDataSource) -> None:
         self.__insert_gs_objs(sql_ds)
+
+        observed = sql_ds.get_group_stats(
+            'gs',
+            group_by=['str_column'],
+            stats_fields=['sum'],
+            object_filters=self.__gs_filters,
+        )
+
+        expected = [
+            # str_column = 'same'
+            {
+                'stats': {
+                    'int_column': {
+                        # =1+2
+                        'sum': 3
+                    }
+                }
+            }
+        ]
+
+        assert observed == expected
 
     def test_unique(self, sql_ds: SqlDataSource) -> None:
         pass
