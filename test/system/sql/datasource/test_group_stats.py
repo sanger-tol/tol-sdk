@@ -89,9 +89,34 @@ class TestGroupStats:
         assert observed == expected
 
     def test_unique(self, sql_ds: SqlDataSource) -> None:
-        pass
+        self.__insert_gs_objs(sql_ds)
+
+        observed = sql_ds.get_group_stats(
+            'gs',
+            group_by=['str_column'],
+            stats_fields=['bool_column'],
+            stats=['unique'],
+            object_filters=self.__gs_filters,
+        )
+
+        expected = [
+            {
+                'key': {
+                    'str_column': 'same',
+                },
+                'stats': {
+                    'bool_column': {
+                        # all are `True`
+                        'unique': 1,
+                    }
+                }
+            }
+        ]
+
+        assert observed == expected
 
     def test_cardinality(self, sql_ds: SqlDataSource) -> None:
+        #TODO what about this one?????
         pass
 
     def test_union(self, sql_ds: SqlDataSource) -> None:
@@ -155,6 +180,7 @@ class TestGroupStats:
                     'int_column': i,
                     'str_column': 'same',
                     'list_column': [i, i + 1],
+                    'bool_column': True,
                 }
             )
             for i in range(3)
