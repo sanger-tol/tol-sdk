@@ -125,6 +125,24 @@ class Database(ABC):
         instances under the given relationship.
         """
 
+    @abstractmethod
+    def get_group_stats(
+        self,
+        tablename: str,
+        group_by: list[str],
+        stats_fields: list[str],
+        stats: list[str],
+        in_session: Session,
+        filters: DatabaseFilter | None = None,
+    ) -> list[dict[str, dict[str, Any]]]:
+        """
+        Provides the specified `stats`:
+
+        - grouped by the cartesian product of unique tuples
+          under `group_by`
+        - on the fields specified in `stats_fields`
+        """
+
     @property
     @abstractmethod
     def attribute_types(self) -> dict[str, dict[str, type]]:
