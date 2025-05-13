@@ -373,28 +373,33 @@ class DefaultDatabase(Database):
         stats: list[str],
     ) -> Query:
 
-        stat_columns = chain.from_iterable(
-            self.__apply_stats_for_field(
-                filters,
+        stat_columns = []
+
+        for field in stats_fields:
+            column, query = self.__get_column(
                 model,
+                filters,
                 field,
-                stats,
+                query,
             )
-            for field in stats_fields
-        )
+            stat_columns.extend(
+                self.__apply_stats_for_field(
+                    field,
+                    column,
+                    stats,
+                )
+            )
+
         query = query.with_entities(*stat_columns)
 
         return query
 
     def __apply_stats_for_field(
         self,
-        filters: DatabaseFilter,
-        model: type[Model],
         field: str,
+        column: MappedColumn,
         stats: list[str],
     ) -> list[Any]:
-
-        column = filters.get_column(model, field)
 
         return [
             self.__get_stat_clause(
@@ -404,6 +409,24 @@ class DefaultDatabase(Database):
             )
             for stat in stats
         ]
+
+    def __get_column(
+        self,
+        model: type[Model],
+        filters: DatabaseFilter,
+        field: str,
+        query: Query
+    ) -> tuple[MappedColumn, Query]:
+
+        column = filters.get_column(model, field)
+        if '.' in field:
+            query = filters.apply_joins_on_query(
+                query,
+                [column],
+            )
+
+        return column, query
+
 
     def __get_stat_clause(
         self,
@@ -436,7 +459,7 @@ class DefaultDatabase(Database):
         """Must be done last in `get_group_stats()`."""
 
         columns = (
-            getattr(model, g)
+            getattr(model, g).label(g)
             for g in group_by
         )
 
