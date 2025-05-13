@@ -360,8 +360,7 @@ class DefaultDatabase(Database):
         results = query.all()
         import logging
         
-        for r in results:
-            logging.error(r)
+        logging.error(results)
 
         assert False
 
@@ -452,7 +451,7 @@ class DefaultDatabase(Database):
     ) -> Query:
 
         if filters:
-            filters.filter(
+            query = filters.filter(
                 query,
                 tablename,
                 self.__tablename_model_dict,
