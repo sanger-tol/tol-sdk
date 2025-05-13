@@ -89,18 +89,19 @@ class Enricher(ABC):
         """
         Enriches the target object type with the enriching fields from the source object type
         """
-        updates = self.get_enrich_update(
-            self.enriching_fields[source_object_type],
-            source_objects,
-            target_object_type
-        )
-        candidate_key_possibilities = [
-            f'{rel}.id'
-            for rel in self.relationships_to_enrich[source_object_type][target_object_type]
-        ]
-        self.update(
-            target_object_type,
-            updates,
-            candidate_key_func=lambda x:
-                [next((key for key in candidate_key_possibilities if key in x))]
-        )
+        if source_object_type in self.enriching_fields:
+            updates = self.get_enrich_update(
+                self.enriching_fields[source_object_type],
+                source_objects,
+                target_object_type
+            )
+            candidate_key_possibilities = [
+                f'{rel}.id'
+                for rel in self.relationships_to_enrich[source_object_type][target_object_type]
+            ]
+            self.update(
+                target_object_type,
+                updates,
+                candidate_key_func=lambda x:
+                    [next((key for key in candidate_key_possibilities if key in x))]
+            )
