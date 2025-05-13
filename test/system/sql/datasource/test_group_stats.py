@@ -28,7 +28,8 @@ class TestGroupStats:
                 'stats': {
                     'int_column': {
                         'min': 1
-                    }
+                    },
+                    'count': 2,
                 }
             }
         ]
@@ -54,7 +55,8 @@ class TestGroupStats:
                 'stats': {
                     'int_column': {
                         'max': 2
-                    }
+                    },
+                    'count': 2,
                 }
             }
         ]
@@ -81,7 +83,8 @@ class TestGroupStats:
                     'int_column': {
                         # =1+2
                         'sum': 3
-                    }
+                    },
+                    'count': 2,
                 }
             }
         ]
@@ -108,33 +111,8 @@ class TestGroupStats:
                     'bool_column': {
                         # all are `True`
                         'unique': 1,
-                    }
-                }
-            }
-        ]
-
-        assert observed == expected
-
-    def test_count(self, sql_ds: SqlDataSource) -> None:
-        self.__insert_gs_objs(sql_ds)
-
-        observed = sql_ds.get_group_stats(
-            'gs',
-            group_by=['str_column'],
-            stats_fields=['int_column'],
-            stats=['count'],
-            object_filters=self.__gs_filters,
-        )
-
-        expected = [
-            {
-                'key': {
-                    'str_column': 'same',
-                },
-                'stats': {
-                    'int_column': {
-                        'count': 2
-                    }
+                    },
+                    'count': 2,
                 }
             }
         ]
