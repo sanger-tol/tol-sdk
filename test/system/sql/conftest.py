@@ -15,9 +15,13 @@ from sqlalchemy.orm import Session
 
 from tol.api_base import data_blueprint
 from tol.api_base.auth import OidcConfig, require_auth
-from tol.core import DataSource
+from tol.core import DataSource, core_data_object
 from tol.core.operator import DetailGetter
-from tol.sql import create_session_factory
+from tol.sql import (
+    SqlDataSource,
+    create_session_factory,
+    create_sql_datasource,
+)
 from tol.sql.auth import (
     DbAuthBlueprint,
     db_auth_blueprint,
@@ -110,6 +114,21 @@ def session_factory(db_uri: str, full_models_list: list[type[Any]]):
         __session_factory,
         reversed(full_models_list)
     )
+
+
+@fixture
+def sql_ds(
+    models_list,
+    db_uri,
+) -> SqlDataSource:
+
+    ds = create_sql_datasource(
+        models_list,
+        db_uri,
+    )
+    core_data_object(ds)
+
+    return ds
 
 
 @fixture(scope='function')

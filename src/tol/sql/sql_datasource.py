@@ -5,7 +5,7 @@
 from __future__ import annotations
 
 import typing
-from typing import Callable, Dict, Iterable, List, Optional, Tuple
+from typing import Any, Callable, Dict, Iterable, List, Optional, Tuple
 
 from sqlalchemy.orm import Session as SqlaSession
 
@@ -29,6 +29,7 @@ from ..core.operator import (
     Cursor,
     Deleter,
     DetailGetter,
+    GroupStatter,
     Inserter,
     ListGetter,
     PageGetter,
@@ -58,6 +59,7 @@ class SqlDataSource(
     DataSource,
     Deleter,
     DetailGetter,
+    GroupStatter,
     Inserter,
     ListGetter,
     PageGetter,
@@ -380,6 +382,18 @@ class SqlDataSource(
         if session is None:
             in_session.close()
         return return_list
+
+    def get_group_stats(
+        self,
+        object_type: str,
+        group_by: list[str],
+        stats_fields: list[str] = [],
+        stats: list[str] = ['min', 'max'],
+        object_filters: Optional[DataSourceFilter] = None,
+        session: Optional[OperableSession] = None
+    ) -> Iterable[dict[Any, int]]:
+
+        pass
 
     def __format_cursor_page(
         self,

@@ -2,26 +2,28 @@
 #
 # SPDX-License-Identifier: MIT
 
+from tol.sql import SqlDataSource
+
 
 class TestGroupStats:
 
-    def test_min(self, session_factory, models_list) -> None:
+    def test_min(self, sql_ds: SqlDataSource) -> None:
         pass
 
-    def test_max(self, session_factory, models_list) -> None:
+    def test_max(self, sql_ds: SqlDataSource) -> None:
         pass
 
-    def test_sum(self, session_factory, models_list) -> None:
+    def test_sum(self, sql_ds: SqlDataSource) -> None:
         pass
 
-    def test_unique(self, session_factory, models_list) -> None:
+    def test_unique(self, sql_ds: SqlDataSource) -> None:
         pass
 
-    def test_cardinality(self, session_factory, models_list) -> None:
+    def test_cardinality(self, sql_ds: SqlDataSource) -> None:
         pass
 
-    def test_union(self, session_factory, models_list) -> None:
+    def test_union(self, sql_ds: SqlDataSource) -> None:
         pass
 
-    def test_count(self, session_factory, models_list) -> None:
+    def test_count(self, sql_ds: SqlDataSource) -> None:
         pass
