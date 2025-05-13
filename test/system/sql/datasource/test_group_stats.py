@@ -119,32 +119,6 @@ class TestGroupStats:
         #TODO what about this one?????
         pass
 
-    def test_union(self, sql_ds: SqlDataSource) -> None:
-        self.__insert_gs_objs(sql_ds)
-
-        observed = sql_ds.get_group_stats(
-            'gs',
-            group_by=['str_column'],
-            stats_fields=['list_column'],
-            stats=['union'],
-            object_filters=self.__gs_filters,
-        )
-
-        expected = [
-            {
-                'key': {
-                    'str_column': 'same',
-                },
-                'stats': {
-                    'list_column': {
-                        'union': [1, 2, 3]
-                    }
-                }
-            }
-        ]
-
-        assert observed == expected
-
     def test_count(self, sql_ds: SqlDataSource) -> None:
         self.__insert_gs_objs(sql_ds)
 

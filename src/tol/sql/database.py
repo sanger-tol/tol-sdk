@@ -5,10 +5,9 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from itertools import chain
 from typing import Any, Dict, Iterable, List, Optional, Type
 
-from sqlalchemy import distinct, func, union
+from sqlalchemy import distinct, func, select, union
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Query, MappedColumn, Session, joinedload
 from sqlalchemy.orm.attributes import flag_modified
@@ -548,8 +547,6 @@ class DefaultDatabase(Database):
             return func.count().label(label)
         elif stat == 'unique':
             return func.count(distinct(column)).label(label)
-        elif stat == 'union':
-            return union(column).label(label)
 
     def __apply_group_by(
         self,
