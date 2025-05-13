@@ -318,6 +318,17 @@ class DefaultDatabase(Database):
         result = instance.instance_to_many_relations[relationship_name]
         return result
 
+    def get_group_stats(
+        self,
+        tablename: str,
+        group_by: list[str],
+        stats_fields: list[str],
+        stats: list[str],
+        in_session: Session,
+        filters: DatabaseFilter | None = None,
+    ) -> list[dict[str, dict[str, Any]]]:
+        pass
+
     @property
     def attribute_types(self) -> dict[str, dict[str, type]]:
         return self.__attribute_types
