@@ -33,6 +33,14 @@ class DatabaseFilter(ABC):
     def get_column(self, model: Type[Model], key: str) -> MappedColumn:
         """Gets the column for the given `DataObject` key"""
 
+    @abstractmethod
+    def apply_joins_on_query(
+        self,
+        query: Query,
+        join_columns: list[MappedColumn]
+    ) -> Query:
+        """Applys necessary joins on relation columns"""
+
 
 class DefaultDatabaseFilter(DatabaseFilter):
     """A reasonable-default database filter"""
@@ -84,7 +92,7 @@ class DefaultDatabaseFilter(DatabaseFilter):
     ) -> Query:
 
         return reduce(
-            lambda q, jc: self.__apply_joins_on_query(
+            lambda q, jc: self.apply_joins_on_query(
                 q,
                 jc
             ),
@@ -92,7 +100,7 @@ class DefaultDatabaseFilter(DatabaseFilter):
             query
         )
 
-    def __apply_joins_on_query(
+    def apply_joins_on_query(
         self,
         query: Query,
         join_columns: list[MappedColumn]

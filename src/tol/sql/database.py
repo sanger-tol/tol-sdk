@@ -439,9 +439,8 @@ class DefaultDatabase(Database):
             getattr(model, g)
             for g in group_by
         )
-        query.group_by(*columns)
 
-        return query
+        return query.group_by(*columns)
 
     def __filter_query(
         self,
