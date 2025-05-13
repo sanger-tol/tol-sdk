@@ -7,8 +7,9 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 from typing import Any, Dict, Iterable, List, Optional, Type
 
+from sqlalchemy import distinct, func
 from sqlalchemy.exc import IntegrityError
-from sqlalchemy.orm import Query, Session, joinedload
+from sqlalchemy.orm import MappedColumn, Query, Session, joinedload
 from sqlalchemy.orm.attributes import flag_modified
 
 from .filter import DatabaseFilter
@@ -123,6 +124,24 @@ class Database(ABC):
         """
         For the instance of given tablename and ID, gets the to-many
         instances under the given relationship.
+        """
+
+    @abstractmethod
+    def get_group_stats(
+        self,
+        tablename: str,
+        group_by: list[str],
+        stats_fields: list[str],
+        stats: list[str],
+        in_session: Session,
+        filters: DatabaseFilter | None = None,
+    ) -> list[dict[str, dict[str, Any]]]:
+        """
+        Provides the specified `stats`:
+
+        - grouped by the cartesian product of unique tuples
+          under `group_by`
+        - on the fields specified in `stats_fields`
         """
 
     @property
@@ -300,9 +319,262 @@ class DefaultDatabase(Database):
         result = instance.instance_to_many_relations[relationship_name]
         return result
 
+    def get_group_stats(
+        self,
+        tablename: str,
+        group_by: list[str],
+        stats_fields: list[str],
+        stats: list[str],
+        in_session: Session,
+        filters: DatabaseFilter | None = None,
+    ) -> list[dict[str, dict[str, Any]]]:
+
+        model, query = self.__get_model_query(
+            tablename,
+            in_session,
+            None,
+        )
+
+        query = self.__filter_query(query, tablename, filters)
+        query, s_columns = self.__apply_stats(
+            query,
+            filters,
+            model,
+            stats_fields,
+            stats,
+        )
+        query, g_columns = self.__apply_group_by(
+            query,
+            model,
+            group_by,
+            filters,
+        )
+
+        return self.__get_stats_from_query(
+            query,
+            group_by,
+            stats_fields,
+            stats,
+            g_columns,
+            s_columns,
+        )
+
     @property
     def attribute_types(self) -> dict[str, dict[str, type]]:
         return self.__attribute_types
+
+    def __get_stats_from_query(
+        self,
+        query: Query,
+        group_by: list[str],
+        stats_fields: list[str],
+        stats: list[str],
+        group_by_columns: list[MappedColumn],
+        stat_columns: list[MappedColumn],
+    ) -> list[dict[str, dict[str, Any]]]:
+
+        query = query.with_entities(
+            *group_by_columns,
+            *stat_columns,
+        )
+        results = query.all()
+
+        return self.__parse_results(
+            results,
+            group_by,
+            stats_fields,
+            stats,
+        )
+
+    def __parse_results(
+        self,
+        results: list[list[Any]],
+        group_by: list[str],
+        stats_fields: list[str],
+        stats: list[str],
+    ) -> list[dict[str, dict[str, Any]]]:
+
+        return [
+            self.__parse_row(
+                r,
+                group_by,
+                stats_fields,
+                stats,
+            )
+            for r in results
+        ]
+
+    def __parse_row(
+        self,
+        result: list[Any],
+        group_by: list[str],
+        stats_fields: list[str],
+        stats: list[str],
+    ) -> dict[str, dict[str, Any]]:
+
+        group_keys = self.__parse_group_keys(
+            result,
+            group_by,
+        )
+        stats_dict = self.__parse_stats_dict(
+            result,
+            group_by,
+            stats_fields,
+            stats,
+        )
+
+        return {
+            'key': group_keys,
+            'stats': stats_dict,
+        }
+
+    def __parse_stats_dict(
+        self,
+        result: list[Any],
+        group_by: list[str],
+        stats_fields: list[str],
+        stats: list[str],
+    ) -> dict[str, Any]:
+
+        stats_dict = {}
+
+        num_stats = len(stats)
+        stats_values = result[len(group_by):]
+
+        for i, field in enumerate(stats_fields):
+            values = stats_values[i * num_stats:(i + 1) * num_stats]
+            values_dict = dict(zip(stats, values))
+            stats_dict[field] = values_dict
+
+        stats_dict['count'] = stats_values[-1]
+
+        return stats_dict
+
+    def __parse_group_keys(
+        self,
+        result: list[Any],
+        group_by: list[str],
+    ) -> dict[str, Any]:
+
+        group_values = result[:len(group_by)]
+
+        return dict(zip(group_by, group_values))
+
+    def __apply_stats(
+        self,
+        query: Query,
+        filters: DatabaseFilter,
+        model: type[Model],
+        stats_fields: list[str],
+        stats: list[str],
+    ) -> tuple[Query, list[MappedColumn]]:
+
+        stat_columns = []
+
+        for field in stats_fields:
+            column, query = self.__get_column(
+                model,
+                filters,
+                field,
+                query,
+            )
+            stat_columns.extend(
+                self.__apply_stats_for_field(
+                    column,
+                    stats,
+                )
+            )
+
+        stat_columns.append(func.count())
+
+        return query, stat_columns
+
+    def __apply_stats_for_field(
+        self,
+        column: MappedColumn,
+        stats: list[str],
+    ) -> list[Any]:
+
+        return [
+            self.__get_stat_clause(
+                column,
+                stat,
+            )
+            for stat in stats
+        ]
+
+    def __get_column(
+        self,
+        model: type[Model],
+        filters: DatabaseFilter,
+        field: str,
+        query: Query
+    ) -> tuple[MappedColumn, Query]:
+
+        column = filters.get_column(model, field)
+        if '.' in field:
+            query = filters.apply_joins_on_query(
+                query,
+                [column],
+            )
+
+        return column, query
+
+    def __get_stat_clause(
+        self,
+        column: MappedColumn,
+        stat: str,
+    ) -> Any:
+
+        if stat == 'min':
+            return func.min(column)
+        elif stat == 'max':
+            return func.max(column)
+        elif stat == 'sum':
+            # don't try to sum datetimes
+            if column.type.python_type not in [int, float]:
+                return None
+            return func.sum(column)
+        elif stat == 'unique':
+            return func.count(distinct(column))
+
+    def __apply_group_by(
+        self,
+        query: Query,
+        model: type[Model],
+        group_by: list[str],
+        filters: DatabaseFilter,
+    ) -> tuple[Query, list[MappedColumn]]:
+        """Must be done last in `get_group_stats()`."""
+
+        g_columns = []
+
+        for g in group_by:
+            g_column, query = self.__get_column(
+                model,
+                filters,
+                g,
+                query
+            )
+            g_columns.append(g_column)
+
+        return query.group_by(*g_columns).order_by(*g_columns), g_columns
+
+    def __filter_query(
+        self,
+        query: Query,
+        tablename: str,
+        filters: DatabaseFilter | None,
+    ) -> Query:
+
+        if filters:
+            query = filters.filter(
+                query,
+                tablename,
+                self.__tablename_model_dict,
+            )
+
+        return query
 
     def __get_attribute_types(self) -> dict[str, dict[str, type]]:
         return {

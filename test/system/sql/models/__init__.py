@@ -8,6 +8,7 @@ from .b import B
 from .board import board_models
 from .c import C
 from .ext import ExtDefault, ExtOverride
+from .gs import GS
 from .inc import Inc
 from .r1 import R1
 from .r2 import R2
@@ -20,6 +21,7 @@ delete_models_list = [
     A,
     B,
     C,
+    GS,
     Inc,
     R3,  # must come before R1, as it points to it
     R4,  # must come before R3, as it points to it
