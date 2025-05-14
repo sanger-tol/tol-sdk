@@ -352,23 +352,15 @@ def elastic():
                 'script': {
                     'source': """
                         boolean isTopUpCountZero = (
-                            doc.containsKey
-                            ('calc_topup_required_tolid_count')
-                            && doc
-                            ['calc_topup_required_tolid_count']
-                            .size() > 0 && doc
-                            ['calc_topup_required_tolid_count']
-                            .value == 0
+                            doc.containsKey('calc_topup_required_tolid_count') &&
+                            doc['calc_topup_required_tolid_count'].size() > 0 &&
+                            doc['calc_topup_required_tolid_count'].value == 0
                         );
 
                         boolean isIndividualExhaustedCountZero = (
-                            doc.containsKey
-                            ('calc_individual_exhausted_tolid_count')
-                            && doc
-                            ['calc_individual_exhausted_tolid_count']
-                            .size() > 0 && doc
-                            ['calc_individual_exhausted_tolid_count']
-                            .value == 0
+                            doc.containsKey('calc_individual_exhausted_tolid_count') &&
+                            doc['calc_individual_exhausted_tolid_count'].size() > 0 &&
+                            doc['calc_individual_exhausted_tolid_count'].value == 0
                         );
 
                         boolean isIndividualNovel = (
@@ -467,8 +459,12 @@ def elastic():
                         boolean allRequiredFieldsPresent = (
                             doc.containsKey('benchling_pacbio_sequencing_request_count') &&
                             doc['benchling_pacbio_sequencing_request_count'].size() > 0 &&
-                            doc.containsKey('benchling_pacbio_completed_sequencing_request_count') &&
-                            doc['benchling_pacbio_completed_sequencing_request_count'].size() > 0 &&
+                            doc.containsKey(
+                                'benchling_pacbio_completed_sequencing_request_count'
+                            ) &&
+                            doc[
+                                'benchling_pacbio_completed_sequencing_request_count'
+                            ].size() > 0 &&
                             doc.containsKey('mlwh_run_data_mlwh_hifi_read_bases_sum') &&
                             doc['mlwh_run_data_mlwh_hifi_read_bases_sum'].size() > 0 &&
                             doc.containsKey('tolid_species.sts_genome_size') &&
@@ -482,14 +478,14 @@ def elastic():
                             return;
                         }
 
-                        boolean isTotalSubmissionsGreaterThanZero = 
+                        boolean isTotalSubmissionsGreaterThanZero =
                             doc['benchling_pacbio_sequencing_request_count'].value > 0;
 
-                        boolean isOngoingSubmissionsEqualZero = 
+                        boolean isOngoingSubmissionsEqualZero =
                             (doc['benchling_pacbio_sequencing_request_count'].value -
                             doc['benchling_pacbio_completed_sequencing_request_count'].value == 0);
 
-                        boolean isTargetCoverageMet = 
+                        boolean isTargetCoverageMet =
                             (doc['mlwh_run_data_mlwh_hifi_read_bases_sum'].value /
                             doc['tolid_species.sts_genome_size'].value >=
                             doc['sts_sample_sts_target_coverage_max'].value);
@@ -510,7 +506,7 @@ def elastic():
                                 }
                             }
                         }
-                        
+
                         emit(
                             isTotalSubmissionsGreaterThanZero &&
                             isOngoingSubmissionsEqualZero &&
@@ -534,7 +530,7 @@ def elastic():
 
                         if (isTolidNotBeenActioned) {
                             result = true;
-                        } 
+                        }
                         else if (doc.containsKey('mlwh_run_data_mlwh_run_complete_max') &&
                                 doc['mlwh_run_data_mlwh_run_complete_max'].size() > 0) {
 
