@@ -17,6 +17,7 @@ RUN pip install -e .[all]
 
 # install the testing requirements
 COPY requirements-test.txt .
+COPY requirements requirements
 RUN pip install -r requirements-test.txt
 
 # copy in the source

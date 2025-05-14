@@ -8,7 +8,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "tol-sdk"
-version = "1.4.42"
+version = "1.5.1"
 description = "SDK for interaction with ToL, Sanger and external services"
 readme = "README.md"
 authors = [
@@ -44,12 +44,6 @@ json = ["minio == 7.2.15"]
 mysql = ["mysql-connector-python"]
 postgresql = ["SQLAlchemy == 2.0.35", "psycopg2-binary == 2.9.9"]
 prefect = ["prefect == 2.20.18", "griffe < 1.0.0"]
-sciops = [
-    "lab-share-lib @ git+https://github.com/sanger/lab-share-lib@v0.1.6#egg=lab-share-lib",
-    "fastavro",
-    "pika",
-    "python-snappy"
-]
 sheets = [
     "pandas == 2.1.4",
     "openpyxl >= 3.0.10",
@@ -67,7 +61,6 @@ all = [
     "tol-sdk[mysql]",
     "tol-sdk[postgresql]",
     "tol-sdk[prefect]",
-    "tol-sdk[sciops]",
     "tol-sdk[sheets]"
 ]
 
