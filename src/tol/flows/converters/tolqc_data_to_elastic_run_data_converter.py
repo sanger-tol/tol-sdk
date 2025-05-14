@@ -21,6 +21,12 @@ class TolqcDataToElasticRunDataConverter(DataObjectToDataObjectOrUpdateConverter
         target_attributes['manual_qc'] = data_object.lims_qc
         target_attributes['auto_qc'] = data_object.auto_qc
         target_attributes['qc'] = data_object.qc
+        target_attributes['read_length_n50'] = data_object.read_length_n50
+        target_attributes['bases'] = data_object.bases
+        target_attributes['bases_a'] = data_object.bases_a
+        target_attributes['bases_c'] = data_object.bases_c
+        target_attributes['bases_g'] = data_object.bases_g
+        target_attributes['bases_t'] = data_object.bases_t
         if data_object.library is not None \
                 and data_object.library.library_type is not None:
             target_attributes['reporting_category'] = \

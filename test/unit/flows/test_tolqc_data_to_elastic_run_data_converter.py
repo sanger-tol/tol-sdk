@@ -193,8 +193,15 @@ class TestTolqcDataToElasticRunDataConverter(TestCase):
         obj1 = CoreDataObject(
             id_='data1_id',
             type_='data',
-            attributes={'tag_index': 'data1_tag_index',
-                        'lims_qc': 'data1_manual_qc'}
+            attributes={
+                'tag_index': 'data1_tag_index',
+                'lims_qc': 'data1_manual_qc',
+                'bases': 12345,
+                'bases_a': 123,
+                'bases_c': 234,
+                'bases_g': 345,
+                'bases_t': 456,
+                'read_length_n50': 12345.6}
         )
 
         # with data.run relationship
@@ -351,8 +358,10 @@ class TestTolqcDataToElasticRunDataConverter(TestCase):
         obj8 = CoreDataObject(
             id_='data8_id',
             type_='data',
-            attributes={'tag_index': 'data7_tag_index',
-                        'lims_qc': 'data7_manual_qc'},
+            attributes={
+                'tag_index': 'data7_tag_index',
+                'lims_qc': 'data7_manual_qc'
+            },
             to_one={'folder': folder1}
         )
 
@@ -369,7 +378,13 @@ class TestTolqcDataToElasticRunDataConverter(TestCase):
             'tag_sequence': None,
             'tag2_sequence': None,
             'auto_qc': None,
-            'qc': None
+            'qc': None,
+            'bases': 12345,
+            'bases_a': 123,
+            'bases_c': 234,
+            'bases_g': 345,
+            'bases_t': 456,
+            'read_length_n50': 12345.6
         })
 
         with self.assertRaises(StopIteration):
@@ -391,7 +406,13 @@ class TestTolqcDataToElasticRunDataConverter(TestCase):
             'qc': None,
             'run': 'run1_id',
             'position': None,
-            'run_complete': None
+            'run_complete': None,
+            'bases': None,
+            'bases_a': None,
+            'bases_c': None,
+            'bases_g': None,
+            'bases_t': None,
+            'read_length_n50': None
         })
 
         with self.assertRaises(StopIteration):
@@ -414,7 +435,13 @@ class TestTolqcDataToElasticRunDataConverter(TestCase):
             'run': 'run2_id',
             'position': None,
             'run_start': None,
-            'run_complete': None
+            'run_complete': None,
+            'bases': None,
+            'bases_a': None,
+            'bases_c': None,
+            'bases_g': None,
+            'bases_t': None,
+            'read_length_n50': None
         })
 
         with self.assertRaises(StopIteration):
@@ -434,6 +461,12 @@ class TestTolqcDataToElasticRunDataConverter(TestCase):
             'tag2_sequence': None,
             'auto_qc': None,
             'qc': None,
+            'bases': None,
+            'bases_a': None,
+            'bases_c': None,
+            'bases_g': None,
+            'bases_t': None,
+            'read_length_n50': None
         })
 
         with self.assertRaises(StopIteration):
@@ -454,7 +487,13 @@ class TestTolqcDataToElasticRunDataConverter(TestCase):
             'qc': None,
             'tolid': {'id': 'specimen1_id'},
             'specimen': {'id': None},
-            'sequencing_request': {'id': 'sample2_id'}
+            'sequencing_request': {'id': 'sample2_id'},
+            'bases': None,
+            'bases_a': None,
+            'bases_c': None,
+            'bases_g': None,
+            'bases_t': None,
+            'read_length_n50': None
         })
 
         with self.assertRaises(StopIteration):
@@ -477,6 +516,12 @@ class TestTolqcDataToElasticRunDataConverter(TestCase):
             'biospecimen_id': 'accession1_id',
             'tolid': {'id': 'specimen2_id'},
             'specimen': {'id': None},
+            'bases': None,
+            'bases_a': None,
+            'bases_c': None,
+            'bases_g': None,
+            'bases_t': None,
+            'read_length_n50': None
         })
 
         with self.assertRaises(StopIteration):
@@ -500,7 +545,13 @@ class TestTolqcDataToElasticRunDataConverter(TestCase):
             'qc': None,
             'tolid': {'id': 'specimen3_id'},
             'specimen': {'id': None},
-            'species': {'id': 'taxon_id1'}
+            'species': {'id': 'taxon_id1'},
+            'bases': None,
+            'bases_a': None,
+            'bases_c': None,
+            'bases_g': None,
+            'bases_t': None,
+            'read_length_n50': None
         })
 
         # with data.folder.folder_location relationship
@@ -516,6 +567,12 @@ class TestTolqcDataToElasticRunDataConverter(TestCase):
             'auto_qc': None,
             'qc': None,
             'reporting_category': 'rnaseq',
+            'bases': None,
+            'bases_a': None,
+            'bases_c': None,
+            'bases_g': None,
+            'bases_t': None,
+            'read_length_n50': None,
             'images': [
                 {
                     'url': 's3://test-bucket/folder1_id/file1',
