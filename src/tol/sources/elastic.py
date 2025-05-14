@@ -334,17 +334,15 @@ def elastic():
                             doc['tolid_tolid_count'].size() > 0
                         );
 
-                        boolean isSampleCollected = (
+                        boolean isSampleCollectedForPsyche = (
                             doc.containsKey('goat_sample_collected.keyword') &&
                             doc['goat_sample_collected.keyword'].size() > 0 &&
-                            ['AG100PEST', 'i5K', 'CNGB', 'CANBP', 'CBP',
-                            'ERGA-PIL', 'ERGA-BGE', 'ERGA-CH','ENDEMIXIT'].contains(
-                            doc['goat_sample_collected.keyword'].value)
+                            doc['goat_sample_collected.keyword'].value == 'PSYCHE'
                         );
 
                         emit(
                             isRecollectionRequired || (!isIncludedProject
-                            && !isChromosome && !isSpecimensAtSanger && !isSampleCollected)
+                            && !isChromosome && !isSpecimensAtSanger && isSampleCollectedForPsyche)
                         );
                     """
                 }
@@ -355,21 +353,21 @@ def elastic():
                     'source': """
                         boolean isTopUpCountZero = (
                             doc.containsKey
-                            ('calc_topup_required_tolid_calc_topup_required_value_count')
+                            ('calc_topup_required_tolid_count')
                             && doc
-                            ['calc_topup_required_tolid_calc_topup_required_value_count']
+                            ['calc_topup_required_tolid_count']
                             .size() > 0 && doc
-                            ['calc_topup_required_tolid_calc_topup_required_value_count']
+                            ['calc_topup_required_tolid_count']
                             .value == 0
                         );
 
                         boolean isIndividualExhaustedCountZero = (
                             doc.containsKey
-                            ('calc_individual_exhausted_tolid_calc_individual_exhausted_value_count')
+                            ('calc_individual_exhausted_tolid_count')
                             && doc
-                            ['calc_individual_exhausted_tolid_calc_individual_exhausted_value_count']
+                            ['calc_individual_exhausted_tolid_count']
                             .size() > 0 && doc
-                            ['calc_individual_exhausted_tolid_calc_individual_exhausted_value_count']
+                            ['calc_individual_exhausted_tolid_count']
                             .value == 0
                         );
 
@@ -391,11 +389,11 @@ def elastic():
 
                         boolean isRecollectionNeeded = (
                             doc.containsKey
-                            ('calc_individual_exhausted_tolid_calc_individual_exhausted_value_count')
+                            ('calc_individual_exhausted_tolid_count')
                             && doc.containsKey('tolid_tolid_count') && doc
-                            ['calc_individual_exhausted_tolid_calc_individual_exhausted_value_count']
+                            ['calc_individual_exhausted_tolid_count']
                             .size() > 0 && doc['tolid_tolid_count'].size() > 0 && doc
-                            ['calc_individual_exhausted_tolid_calc_individual_exhausted_value_count']
+                            ['calc_individual_exhausted_tolid_count']
                             .value - doc['tolid_tolid_count'].value == 0
                         );
 
@@ -466,49 +464,53 @@ def elastic():
                 'type': 'boolean',
                 'script': {
                     'source': """
-                        boolean isTotalSubmissionsGreaterThanZero = (
+                        boolean allRequiredFieldsPresent = (
                             doc.containsKey('benchling_pacbio_sequencing_request_count') &&
                             doc['benchling_pacbio_sequencing_request_count'].size() > 0 &&
-                            doc['benchling_pacbio_sequencing_request_count'].value > 0
-                        );
-
-                        boolean isOngoingSubmissionsEqualZero = (
-                            doc.containsKey('benchling_pacbio_sequencing_request_count') &&
-                            doc.containsKey('benchling_pacbio_completed_sequencing_request_count')
-                            && doc['benchling_pacbio_sequencing_request_count'].size() > 0 &&
-                            doc['benchling_pacbio_completed_sequencing_request_count'].size() > 0
-                            && (doc['benchling_pacbio_sequencing_request_count'].value -
-                            doc['benchling_pacbio_completed_sequencing_request_count'].value == 0)
-                        );
-
-                        boolean isTargetCoverageMet = (
+                            doc.containsKey('benchling_pacbio_completed_sequencing_request_count') &&
+                            doc['benchling_pacbio_completed_sequencing_request_count'].size() > 0 &&
                             doc.containsKey('mlwh_run_data_mlwh_hifi_read_bases_sum') &&
-                            doc.containsKey('tolid_species.sts_genome_size') &&
-                            doc.containsKey('sts_sample_sts_target_coverage_max') &&
                             doc['mlwh_run_data_mlwh_hifi_read_bases_sum'].size() > 0 &&
+                            doc.containsKey('tolid_species.sts_genome_size') &&
                             doc['tolid_species.sts_genome_size'].size() > 0 &&
-                            doc['sts_sample_sts_target_coverage_max'].size() > 0 &&
+                            doc.containsKey('sts_sample_sts_target_coverage_max') &&
+                            doc['sts_sample_sts_target_coverage_max'].size() > 0
+                        );
+
+                        if (!allRequiredFieldsPresent) {
+                            emit(false);
+                            return;
+                        }
+
+                        boolean isTotalSubmissionsGreaterThanZero = 
+                            doc['benchling_pacbio_sequencing_request_count'].value > 0;
+
+                        boolean isOngoingSubmissionsEqualZero = 
+                            (doc['benchling_pacbio_sequencing_request_count'].value -
+                            doc['benchling_pacbio_completed_sequencing_request_count'].value == 0);
+
+                        boolean isTargetCoverageMet = 
                             (doc['mlwh_run_data_mlwh_hifi_read_bases_sum'].value /
                             doc['tolid_species.sts_genome_size'].value >=
-                            doc['sts_sample_sts_target_coverage_max'].value)
-                            );
+                            doc['sts_sample_sts_target_coverage_max'].value);
 
                         boolean isSpecimenNotAtSequencingStage = false;
 
-                            if (doc.containsKey('informatics_status_summary.keyword') &&
-                                doc['informatics_status_summary.keyword'].size() > 0) {
+                        if (doc.containsKey('informatics_status_summary.keyword') &&
+                            doc['informatics_status_summary.keyword'].size() > 0) {
 
-                                for (String value : doc['informatics_status_summary.keyword']) {
-                                    if (value == '1 submitted' ||
-                                        value == '2 curated' ||
-                                        value == '3 curation' ||
-                                        value == '4 data complete' ||
-                                        value == '7 ignore') {
-                                        isSpecimenNotAtSequencingStage = true;
-                                        break;
-                                    }
+                            for (String value : doc['informatics_status_summary.keyword']) {
+                                if (value == '1 submitted' ||
+                                    value == '2 curated' ||
+                                    value == '3 curation' ||
+                                    value == '4 data complete' ||
+                                    value == '7 ignore') {
+                                    isSpecimenNotAtSequencingStage = true;
+                                    break;
                                 }
                             }
+                        }
+                        
                         emit(
                             isTotalSubmissionsGreaterThanZero &&
                             isOngoingSubmissionsEqualZero &&
@@ -522,24 +524,25 @@ def elastic():
                 'type': 'boolean',
                 'script': {
                     'source': """
+                        boolean result = false;
+
                         boolean isTolidNotBeenActioned = (
                             !doc.containsKey('portaldb_date_topup_actioned') ||
                             doc['portaldb_date_topup_actioned'].size() == 0 ||
                             doc['portaldb_date_topup_actioned'].value == null
                         );
 
-                        boolean isTolidActionedBeforeLastRun = false;
-                        if (doc.containsKey('mlwh_run_data_mlwh_run_complete_max') &&
-                            doc.containsKey('portaldb_date_topup_actioned') &&
-                            doc['mlwh_run_data_mlwh_run_complete_max'].size() > 0 &&
-                            doc['portaldb_date_topup_actioned'].size() > 0) {
+                        if (isTolidNotBeenActioned) {
+                            result = true;
+                        } 
+                        else if (doc.containsKey('mlwh_run_data_mlwh_run_complete_max') &&
+                                doc['mlwh_run_data_mlwh_run_complete_max'].size() > 0) {
 
-                            isTolidActionedBeforeLastRun =
-                                doc['portaldb_date_topup_actioned'].value.isBefore(
+                            result = doc['portaldb_date_topup_actioned'].value.isBefore(
                                 doc['mlwh_run_data_mlwh_run_complete_max'].value);
                         }
 
-                        emit(isTolidNotBeenActioned || isTolidActionedBeforeLastRun);
+                        emit(result);
                     """
                 }
             },
@@ -616,24 +619,42 @@ def elastic():
 
                         boolean isSpeciesTopUpEqualsIndividualExhausted = (
                             doc.containsKey
-                            ('tolid_species.calc_topup_required_tolid_calc_topup_required_value_count')
+                            ('tolid_species.calc_topup_required_tolid_count')
                             && doc.containsKey
-                            ('tolid_species.calc_individual_exhausted_tolid_calc_individual_exhausted_value_count')
+                            ('tolid_species.calc_individual_exhausted_tolid_count')
                             && doc
-                            ['tolid_species.calc_topup_required_tolid_calc_topup_required_value_count']
+                            ['tolid_species.calc_topup_required_tolid_count']
                             .size() > 0 && doc
-                            ['tolid_species.calc_individual_exhausted_tolid_calc_individual_exhausted_value_count']
+                            ['tolid_species.calc_individual_exhausted_tolid_count']
                             .size() > 0 && (doc
-                            ['tolid_species.calc_topup_required_tolid_calc_topup_required_value_count']
+                            ['tolid_species.calc_topup_required_tolid_count']
                             .value - doc
-                            ['tolid_species.calc_individual_exhausted_tolid_calc_individual_exhausted_value_count']
+                            ['tolid_species.calc_individual_exhausted_tolid_count']
                             .value == 0)
                         );
+
+                        boolean isSpecimenNotAtSequencingStage = false;
+
+                        if (doc.containsKey('informatics_status_summary.keyword') &&
+                            doc['informatics_status_summary.keyword'].size() > 0) {
+
+                            for (String value : doc['informatics_status_summary.keyword']) {
+                                if (value == '1 submitted' ||
+                                    value == '2 curated' ||
+                                    value == '3 curation' ||
+                                    value == '4 data complete' ||
+                                    value == '7 ignore') {
+                                    isSpecimenNotAtSequencingStage = true;
+                                    break;
+                                }
+                            }
+                        }
 
                         emit(
                             isThereAtLeastAnotherIndividual &&
                             isAtLeastOneIndividualExhausted &&
-                            isSpeciesTopUpEqualsIndividualExhausted
+                            isSpeciesTopUpEqualsIndividualExhausted &&
+                            !isSpecimenNotAtSequencingStage
                         );
                     """
                 }
@@ -716,7 +737,7 @@ def elastic():
                 'type': 'double',
                 'script': {
                     'source': """
-                                            if (doc.containsKey('portaldb_date_abandoned') &&
+                        if (doc.containsKey('portaldb_date_abandoned') &&
                             doc['portaldb_date_abandoned'].size() > 0) {
                             emit(0.0);
                         } else if (doc.containsKey('benchling_remaining_weight') &&
@@ -730,6 +751,24 @@ def elastic():
                         } else {
                             emit(0.5);
                         }
+                    """
+                }
+            },
+            'calc_sample_eligible_for_sts_table': {
+                'type': 'boolean',
+                'script': {
+                    'source': """
+                        boolean isSampleAbandoned = doc.containsKey('portaldb_date_abandoned') &&
+                            doc['portaldb_date_abandoned'].size() > 0;
+
+                        boolean isSampleInBenchling = doc.containsKey('sts_eln_id.keyword') &&
+                            doc['sts_eln_id.keyword'].size() > 0;
+
+                        boolean isInSTSNotInBenchling = !isSampleAbandoned && !isSampleInBenchling;
+
+                        boolean isAbandonedInBenchling = isSampleAbandoned && isSampleInBenchling;
+
+                        emit(isInSTSNotInBenchling || isAbandonedInBenchling);
                     """
                 }
             },
