@@ -2,6 +2,7 @@
 #
 # SPDX-License-Identifier: MIT
 
+from datetime import datetime
 from unittest import (TestCase)
 
 from tol.core import (
@@ -48,7 +49,9 @@ class _MockDataSourceRelational(DataSource, Relational):
             return source._host.data_object_factory(
                 id_='test1',
                 type_='sequencing_material_status',
-                attributes={'status': 'status1'}
+                attributes={
+                    'status': 'status1'
+                }
             )
 
     def get_to_many_relations(
@@ -61,12 +64,18 @@ class _MockDataSourceRelational(DataSource, Relational):
                 source._host.data_object_factory(
                     id_='test1',
                     type_='species_lab_work_status',
-                    attributes={'status': 'value1'}
+                    attributes={
+                        'status': 'lws1',
+                        'updated_at': datetime(2023, 1, 1)
+                    }
                 ),
                 source._host.data_object_factory(
                     id_='test2',
                     type_='species_lab_work_status',
-                    attributes={'status': 'value2'}
+                    attributes={
+                        'status': 'lws2',
+                        'updated_at': datetime(2024, 1, 1)
+                    }
                 )
             ]
         return []
@@ -118,7 +127,9 @@ class TestStsSpeciesToElasticSpeciesConverter(TestCase):
         self.assertEqual(ret1.attributes, {
             'attribute1': 'value1',
             'sequencing_material_status': 'status1',
-            'lab_work_status': ['value1', 'value2']
+            'lws1_date': datetime(2023, 1, 1),
+            'lws2_date': datetime(2024, 1, 1),
+            'lab_work_status': ['lws1', 'lws2']
         })
 
         with self.assertRaises(StopIteration):

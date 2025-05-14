@@ -27,7 +27,7 @@ class _MockDataSourceRelational(DataSource, Relational):
                 'specimen', 'preservative_solution', 'collection_method',
                 'sample_person', 'person', 'manifest', 'tissue_size', 'sample_species',
                 'species', 'lifestage', 'sex', 'organism_part', 'sample_species_organism_part',
-                'ext_id', 'strain']
+                'ext_id', 'strain', 'storage_rack', 'freezer_tray']
 
     @property
     def attribute_types(self):
@@ -51,7 +51,8 @@ class _MockDataSourceRelational(DataSource, Relational):
             'preservative_solution': 'preservative_solution',
             'collection_method': 'collection_method',
             'tissue_size': 'tissue_size',
-            'sample_export_options': 'sample_export_options'
+            'sample_export_options': 'sample_export_options',
+            'storage_rack': 'storage_rack',
         }
         rc_sample.to_many = {
             'sample_persons': 'sample_person',
@@ -79,13 +80,18 @@ class _MockDataSourceRelational(DataSource, Relational):
         rc_sample_species_organism_part.to_one = {
             'organism_part': 'organism_part'
         }
+        rc_storage_rack = RelationshipConfig()
+        rc_storage_rack.to_one = {
+            'freezer_tray': 'freezer_tray'
+        }
 
         return {
             'sample_project': rc_sample_project,
             'sample': rc_sample,
             'sample_person': rc_sample_person,
             'sample_species': rc_sample_species,
-            'sample_species_organism_part': rc_sample_species_organism_part
+            'sample_species_organism_part': rc_sample_species_organism_part,
+            'storage_rack': rc_storage_rack,
         }
 
     def get_to_one_relation(
@@ -331,6 +337,27 @@ class TestStsSampleProjectToElasticSampleConverter(TestCase):
                 'solution': 'solution'
             }
         )
+        freezer_tray = CoreDataObject(
+            id_='test_freezer_tray',
+            type_='freezer_tray',
+            attributes={}
+        )
+        storage_rack = CoreDataObject(
+            id_='test_storage_rack',
+            type_='storage_rack',
+            attributes={
+            },
+            to_one={
+                'freezer_tray': freezer_tray
+            }
+        )
+        solution = CoreDataObject(
+            id_='test_solution',
+            type_='preservative_solution',
+            attributes={
+                'solution': 'solution'
+            }
+        )
         method = CoreDataObject(
             id_='test_method',
             type_='collection_method',
@@ -360,9 +387,11 @@ class TestStsSampleProjectToElasticSampleConverter(TestCase):
                 'sampleset': sampleset,
                 'manifest': manifest,
                 'tissue_size': tissue_size,
-                'sample_export_options': sample_export_options
+                'sample_export_options': sample_export_options,
+                'storage_rack': storage_rack,
             }
         )
+
         sample_project = CoreDataObject(
             id_='test_sample_project',
             type_='sample_project',
@@ -413,7 +442,8 @@ class TestStsSampleProjectToElasticSampleConverter(TestCase):
             'type1': 'ext_id1',
             'type2': 'ext_id2',
             'sex': 'FEMALE',
-            'organism_part': ['LEG', 'HEAD']
+            'organism_part': ['LEG', 'HEAD'],
+            'location': 'test_freezer_tray',
         })
 
         with self.assertRaises(StopIteration):
