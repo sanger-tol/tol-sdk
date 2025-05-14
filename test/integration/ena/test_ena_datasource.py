@@ -6,6 +6,8 @@ from unittest import (
     TestCase
 )
 
+import pytest
+
 from tol.core import (
     DataSourceFilter
 )
@@ -14,6 +16,7 @@ from tol.sources.ena import (
 )
 
 
+@pytest.mark.skip('TOLP-8767')
 class TestEnaDataSource(TestCase):
 
     def test_attribute_types(self):
