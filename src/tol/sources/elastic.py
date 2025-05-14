@@ -363,7 +363,8 @@ def elastic():
                             doc['calc_individual_exhausted_tolid_count'].value == 0
                         );
 
-                        boolean isIndividualNovel = (
+                        boolean isIndividualNovel =
+                        (
                             isTopUpCountZero && isIndividualExhaustedCountZero
                         );
 
@@ -492,10 +493,13 @@ def elastic():
 
                         boolean isSpecimenNotAtSequencingStage = false;
 
-                        if (doc.containsKey('informatics_status_summary.keyword') &&
-                            doc['informatics_status_summary.keyword'].size() > 0) {
+                        String statusField =
+                        'tolid_species.informatics_tolid_informatics_status_summary_min.keyword';
 
-                            for (String value : doc['informatics_status_summary.keyword']) {
+                        if (doc.containsKey(statusField) &&
+                            doc[statusField].size() > 0) {
+
+                            for (String value : doc[statusField]) {
                                 if (value == '1 submitted' ||
                                     value == '2 curated' ||
                                     value == '3 curation' ||
