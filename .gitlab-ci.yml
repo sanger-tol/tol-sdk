@@ -113,7 +113,7 @@ integration-test-python-package:
       when: never
     - if: $CI_PIPELINE_SOURCE == 'merge_request_event'
       when: never
-    - when: always
+    - when: manual
 
 deploy-package:
   extends: .deploy-python-package
