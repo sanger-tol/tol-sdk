@@ -113,8 +113,9 @@ integration-test-python-package:
       when: never
     - if: $CI_PIPELINE_SOURCE == 'merge_request_event'
       when: never
-    - when: manual 
-  allow_failure: false
+    - if: $CI_COMMIT_REF_NAME == "dev"
+      when: always
+    - when: manual
 
 deploy-package:
   extends: .deploy-python-package
