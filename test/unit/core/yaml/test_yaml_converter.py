@@ -8,7 +8,10 @@ from pydantic import ValidationError
 
 import pytest
 
-from tol.core import DataObjectFactory
+from tol.core import (
+    DataObject,
+    DataObjectFactory,
+)
 from tol.core.yaml import YamlConverter
 
 
@@ -20,17 +23,38 @@ def data_object_factory() -> DataObjectFactory:
     )
 
 
+@pytest.fixture
+def in_object() -> DataObject:
+    obj: DataObject = create_autospec(DataObject)
+
+    attributes = {
+
+    }
+
+    obj.attributes = attributes
+    for k, v in attributes.items():
+        setattr(obj, k, v)
+
+    return obj
+
+
 class TestYamlConverterLoading:
 
     def test_good(
         self,
         data_object_factory: DataObjectFactory,
+        in_object: DataObject,
     ) -> None:
 
-        YamlConverter(
+        converter = YamlConverter(
             data_object_factory,
-            'core/yaml/good.yaml',
+            'unit/core/yaml/good.yaml',
         )
+
+        observed = list(
+            converter.convert([in_object])
+        )
+
 
     def test_bad(
         self,
@@ -40,5 +64,5 @@ class TestYamlConverterLoading:
         with pytest.raises(ValidationError):
             YamlConverter(
                 data_object_factory,
-                'core/yaml/bad.yaml',
+                'unit/core/yaml/bad.yaml',
             )
