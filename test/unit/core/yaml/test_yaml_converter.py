@@ -80,6 +80,15 @@ class TestYamlConverterLoading:
 
         assert observed == expected
 
+        data_object_factory.assert_called_once_with(
+            'tos',
+            id_='42',
+            attributes={
+                'sexual_system': 'i|d|k',
+                'sex_determination': 'shrug:-:too'
+            }
+        )
+
 
     def test_bad(
         self,

@@ -23,6 +23,7 @@ attributes:
 
   - column_name: Haplodiploidy
     reference: "source  Haplodiploidy"
+    separator: ":-:"
     destination:
       key: "sex_determination" 
       import_values:
