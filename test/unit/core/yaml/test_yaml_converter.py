@@ -16,14 +16,6 @@ from tol.core.yaml import YamlConverter
 
 
 @pytest.fixture
-def data_object_factory() -> DataObjectFactory:
-    return create_autospec(
-        DataObjectFactory,
-        spec_set=True,
-    )
-
-
-@pytest.fixture
 def in_object() -> DataObject:
     obj: DataObject = create_autospec(DataObject)
 
@@ -45,12 +37,34 @@ def in_object() -> DataObject:
     return obj
 
 
+@pytest.fixture
+def out_object() -> DataObject:
+    return create_autospec(
+        DataObject,
+    )
+
+
+@pytest.fixture
+def data_object_factory(
+    out_object: DataObject,
+) -> DataObjectFactory:
+
+    factory = create_autospec(
+        DataObjectFactory,
+        spec_set=True,
+    )
+    factory.return_value = out_object
+
+    return factory
+
+
 class TestYamlConverterLoading:
 
     def test_good(
         self,
         data_object_factory: DataObjectFactory,
         in_object: DataObject,
+        out_object: DataObject,
     ) -> None:
 
         converter = YamlConverter(
@@ -58,9 +72,13 @@ class TestYamlConverterLoading:
             'unit/core/yaml/good.yaml',
         )
 
+        expected = [out_object]
+
         observed = list(
             converter.convert_iterable([in_object])
         )
+
+        assert observed == expected
 
 
     def test_bad(
