@@ -2,17 +2,17 @@ file:
   format: csv
   header: true
   comment: "#"
-  # no name! - validation error!
+  #no `name` - raise `ValidationError`!
   submitter: "Tree of Sex 1"
   default reference header: "citation"
 
 attributes:
 
   - column_name: "Sexual System"
-    column_reference: "source  Sexual System"
+    reference: "source  Sexual System"
     destination:
       key: "sexual_system"
-      import:
+      import_values:
         - "gonochorous"
         - "parthenogenetic"
         - "hermaphrodite"
@@ -22,7 +22,7 @@ attributes:
     destination:
       key: "sex_chromosome_formula"
       separator: "|"
-      import:
+      import_values:
         - "XO"
         - "XY"
         - "hermaphrodite"
@@ -32,7 +32,7 @@ attributes:
     reference: "source  Haplodiploidy"
     destination:
       key: "sex_determination" 
-      import:
+      import_values:
         - "arrhenotoky"
         - "paternal genome elimination"
       ignore:
@@ -42,19 +42,19 @@ attributes:
     reference: "source  Predicted ploidy"
     destination:
       key: "ploidy" 
-      import:
+      import_values:
         - intigers
 
   - column_name: "Chromosome number  female  2N"
     reference: "source  Chromosome.number  female  2N"
     destination:
       key: "chromosome number (F - 2N)" 
-      import:
+      import_values:
         - intigers
 
   - column_name: "Chromosome number  male  2N"
     reference: "source  Chromosome.number  male  2N"
     destination:
       key: "chromosome number (M - 2N)" 
-      import:
+      import_values:
         - intigers
