@@ -24,7 +24,9 @@ class _MockDataSourceRelational(DataSource, Relational):
     @property
     def supported_types(self):
         return ['sampleset', 'sampleset_legal', 'sampleset_research_governance',
-                'compliance_status', 'sampleset_status', 'project', 'gal']
+                'compliance_status', 'sampleset_status', 'project', 'gal',
+                'legal_compliance_processor', 'sampleset_research_governance_processor',
+                'sampleset_manager', 'user']
 
     @property
     def attribute_types(self):
@@ -40,15 +42,33 @@ class _MockDataSourceRelational(DataSource, Relational):
         }
         rc_sampleset.to_many = {
             'sampleset_legals': 'sampleset_legal',
-            'sampleset_research_governances': 'sampleset_research_governance'
+            'sampleset_research_governances': 'sampleset_research_governance',
+            'legal_compliance_processors': 'legal_compliance_processor',
+            'sampleset_research_governance_processors': 'sampleset_research_governance_processor',
+            'sampleset_managers': 'sampleset_manager'
         }
         rc_sampleset_research_governance = RelationshipConfig()
         rc_sampleset_research_governance.to_one = {
             'compliance_status': 'compliance_status'
         }
+        rc_legal_compliance_processor = RelationshipConfig()
+        rc_legal_compliance_processor.to_one = {
+            'user': 'user'
+        }
+        rc_research_governance_processor = RelationshipConfig()
+        rc_research_governance_processor.to_one = {
+            'user': 'user'
+        }
+        rc_sampleset_managers = RelationshipConfig()
+        rc_sampleset_managers.to_one = {
+            'user': 'user'
+        }
         return {
             'sampleset': rc_sampleset,
-            'sampleset_research_governance': rc_sampleset_research_governance
+            'sampleset_research_governance': rc_sampleset_research_governance,
+            'legal_compliance_processor': rc_legal_compliance_processor,
+            'sampleset_research_governance_processor': rc_research_governance_processor,
+            'sampleset_manager': rc_sampleset_managers
         }
 
     def get_to_one_relation(
@@ -69,10 +89,55 @@ class _MockDataSourceRelational(DataSource, Relational):
                 type_='sampleset_legal',
                 attributes={
                     'status': 'PASSED',
-                    'status_updated_at': datetime.datetime(2024, 8, 8)
+                    'status_updated_at': datetime.datetime(2024, 8, 8),
+                    'contract': 'test_contract',
+                    'reference': 'test_reference',
+                    'comment': 'test_comment'
                 }
             )
 
+        if relationship_name == 'legal_compliance_processors':
+            yield source._host.data_object_factory(
+                id_='test_lcp',
+                type_='legal_compliance_processor',
+                attributes={
+                },
+                to_one={
+                    'user': source._host.data_object_factory(
+                        id_='test_user',
+                        type_='user',
+                        attributes={'fullname': 'Test User'}
+                    )
+                }
+            )
+        if relationship_name == 'sampleset_research_governance_processors':
+            yield source._host.data_object_factory(
+                id_='test_rgp',
+                type_='sampleset_research_governance_processor',
+                attributes={
+                },
+                to_one={
+                    'user': source._host.data_object_factory(
+                        id_='test_user',
+                        type_='user',
+                        attributes={'fullname': 'Test RGP User'}
+                    )
+                }
+            )
+        if relationship_name == 'sampleset_managers':
+            yield source._host.data_object_factory(
+                id_='test_ssm',
+                type_='sampleset_manager',
+                attributes={
+                },
+                to_one={
+                    'user': source._host.data_object_factory(
+                        id_='test_user',
+                        type_='user',
+                        attributes={'fullname': 'Test Manager User'}
+                    )
+                }
+            )
         if relationship_name == 'sampleset_research_governances':
             yield source._host.data_object_factory(
                 id_='test_rg',
@@ -171,8 +236,14 @@ class TestStsSamplesetToElasticSamplesetConverter(TestCase):
             'gal_abbreviation': 'test_gal',
             'legal_status': 'PASSED',
             'legal_status_updated_at': datetime.datetime(2024, 8, 8),
+            'legal_contract': 'test_contract',
+            'legal_reference': 'test_reference',
+            'legal_comment': 'test_comment',
             'rg_status_test': 'PASSED',
-            'rg_status_updated_at_test': datetime.datetime(2024, 9, 9)
+            'rg_status_updated_at_test': datetime.datetime(2024, 9, 9),
+            'legal_compliance_processors': ['Test User'],
+            'research_governance_processors': ['Test RGP User'],
+            'managers': ['Test Manager User']
         })
 
         with self.assertRaises(StopIteration):
