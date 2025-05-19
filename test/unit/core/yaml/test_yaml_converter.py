@@ -89,7 +89,6 @@ class TestYamlConverterLoading:
             }
         )
 
-
     def test_bad(
         self,
         data_object_factory: DataObjectFactory,
