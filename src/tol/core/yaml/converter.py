@@ -4,7 +4,10 @@
 
 from __future__ import annotations
 
+from typing import Iterable
+
 from .model import YamlConfig
+from ..data_object import DataObject
 from ..data_object_converter import (
     DataObjectToDataObjectOrUpdateConverter,
 )
@@ -26,3 +29,10 @@ class YamlConverter(DataObjectToDataObjectOrUpdateConverter):
     ) -> None:
 
         super().__init__(data_object_factory)
+
+    def convert(
+        self,
+        input_: DataObject
+    ) -> Iterable[DataObject]:
+
+        pass
