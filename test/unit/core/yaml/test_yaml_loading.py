@@ -29,7 +29,7 @@ class TestYamlConverterLoading:
 
         YamlConverter(
             data_object_factory,
-            'good.yaml',
+            'core/yaml/good.yaml',
         )
 
     def test_bad(
@@ -40,5 +40,5 @@ class TestYamlConverterLoading:
         with pytest.raises(ValidationError):
             YamlConverter(
                 data_object_factory,
-                'bad.yaml',
+                'core/yaml/bad.yaml',
             )

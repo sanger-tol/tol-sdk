@@ -5,6 +5,7 @@
 from __future__ import annotations
 
 from typing import Iterable
+from yaml import safe_load
 
 from .model import YamlConfig
 from ..data_object import DataObject
@@ -48,4 +49,7 @@ class YamlConverter(DataObjectToDataObjectOrUpdateConverter):
         pydantic_class: type[YamlConfig],
     ) -> YamlConfig:
 
-        pass
+        with open(yaml_path, 'r') as yaml_file:
+            loaded = safe_load(yaml_file)
+
+            return pydantic_class(**loaded)
