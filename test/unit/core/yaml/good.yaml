@@ -23,9 +23,9 @@ attributes:
 
   - column_name: Haplodiploidy
     reference: "source  Haplodiploidy"
-    separator: ":-:"
     destination:
       key: "sex_determination" 
+      separator: ":-:"
       import_values:
         - "arrhenotoky"
         - "paternal_genome_elimination"
