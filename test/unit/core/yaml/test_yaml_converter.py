@@ -16,6 +16,9 @@ from tol.core import (
 from tol.core.yaml import YamlConverter
 
 
+BASE_DIR = pathlib.Path(__file__).parent.resolve()
+
+
 @pytest.fixture
 def in_object() -> DataObject:
     obj: DataObject = create_autospec(DataObject)
@@ -72,7 +75,7 @@ class TestYamlConverterLoading:
         `good.yaml`.
         """
 
-        good_path = pathlib.Path(__file__).parent.resolve() / 'good.yaml'
+        good_path = BASE_DIR / 'good.yaml'
 
         converter = YamlConverter(
             data_object_factory,
@@ -105,7 +108,7 @@ class TestYamlConverterLoading:
         `ValidationError` being raised.
         """
 
-        bad_path = pathlib.Path(__file__).parent.resolve() / 'bad.yaml'
+        bad_path = BASE_DIR / 'bad.yaml'
 
         with pytest.raises(ValidationError):
             YamlConverter(
