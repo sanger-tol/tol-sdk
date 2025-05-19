@@ -5,6 +5,7 @@
 from __future__ import annotations
 
 from typing import Iterable
+
 from yaml import safe_load
 
 from .model import YamlConfig
