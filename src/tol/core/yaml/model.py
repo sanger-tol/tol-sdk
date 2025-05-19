@@ -32,6 +32,6 @@ class AttributeConfig(BaseModel):
     destination: DestinationConfig
 
 
-class YamlValidatorConfig(BaseModel):
+class YamlConfig(BaseModel):
     file: FileConfig
     attributes: list[AttributeConfig]

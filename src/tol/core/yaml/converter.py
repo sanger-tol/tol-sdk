@@ -4,7 +4,7 @@
 
 from __future__ import annotations
 
-from .model import YamlValidatorConfig
+from .model import YamlConfig
 from ..data_object_converter import (
     DataObjectToDataObjectOrUpdateConverter,
 )
@@ -22,7 +22,7 @@ class YamlConverter(DataObjectToDataObjectOrUpdateConverter):
         data_object_factory: DataObjectFactory,
         yaml_path: str,
         *,
-        config: type[YamlValidatorConfig] = YamlValidatorConfig,
+        config: type[YamlConfig] = YamlConfig,
     ) -> None:
 
         super().__init__(data_object_factory)
