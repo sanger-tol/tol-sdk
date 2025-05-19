@@ -42,23 +42,23 @@ attributes:
       ignore:
         - other
     
-  - column_name: "Predicted ploidy"
-    reference: "source  Predicted ploidy"
-    destination:
-      key: "ploidy" 
-      import_values:
-        - intigers
+  # - column_name: "Predicted ploidy"
+  #   reference: "source  Predicted ploidy"
+  #   destination:
+  #     key: "ploidy" 
+  #     import_values:
+  #       - intigers
 
-  - column_name: "Chromosome number  female  2N"
-    reference: "source  Chromosome.number  female  2N"
-    destination:
-      key: "chromosome number (F - 2N)" 
-      import_values:
-        - intigers
+  # - column_name: "Chromosome number  female  2N"
+  #   reference: "source  Chromosome.number  female  2N"
+  #   destination:
+  #     key: "chromosome number (F - 2N)" 
+  #     import_values:
+  #       - intigers
 
-  - column_name: "Chromosome number  male  2N"
-    reference: "source  Chromosome.number  male  2N"
-    destination:
-      key: "chromosome number (M - 2N)" 
-      import_values:
-        - intigers
+  # - column_name: "Chromosome number  male  2N"
+  #   reference: "source  Chromosome.number  male  2N"
+  #   destination:
+  #     key: "chromosome number (M - 2N)" 
+  #     import_values:
+  #       - intigers
