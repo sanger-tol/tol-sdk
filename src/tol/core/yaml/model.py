@@ -20,7 +20,9 @@ class FileConfig(BaseModel):
 
 class DestinationConfig(BaseModel):
     key: str
-    import_values: list[str]
+    import_values: list[str] = Field(
+        min_length=1,
+    )
 
     separator: str = '|'
     ignore: list[str] = []
@@ -34,4 +36,6 @@ class AttributeConfig(BaseModel):
 
 class YamlConfig(BaseModel):
     file: FileConfig
-    attributes: list[AttributeConfig]
+    attributes: list[AttributeConfig] = Field(
+        min_length=1,
+    )

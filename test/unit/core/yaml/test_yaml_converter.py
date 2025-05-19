@@ -59,7 +59,7 @@ class TestYamlConverterLoading:
         )
 
         observed = list(
-            converter.convert([in_object])
+            converter.convert_iterable([in_object])
         )
 
 
