@@ -156,7 +156,7 @@ class BenchlingConverter(Converter[BenchlingReturn, DataObject]):
         return self.__ds.data_object_factory(
             'worklist',
             id_=input_.id,
-            attributes={'name': input_.name}
+            attributes={'name': input_.name, 'worklist_type': input_.type},
         )
 
     def __convert_worklist_item(self, input_: WorklistItem) -> DataObject:
@@ -577,7 +577,7 @@ class DataObjectConverter(Converter[DataObject, BenchlingWrite]):
         }
         return WorklistCreate(
             name=input_.name,
-            type=mappings.get(input_.worklist_type, WorklistType.BIOENTITY)
+            type=mappings.get(input_.type, WorklistType.BIOENTITY)
         )
 
     def __convert_worklist_item(self, input_: DataObject) -> WorklistItemCreate:
