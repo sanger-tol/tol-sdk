@@ -27,8 +27,8 @@ class YamlConverter(DataObjectToDataObjectOrUpdateConverter):
         data_object_factory: DataObjectFactory,
         yaml_path: str,
         *,
-        pydantic_class: type[YamlConfig] = YamlConfig,
         destination_object_type: str | None = None,
+        pydantic_class: type[YamlConfig] = YamlConfig,
     ) -> None:
 
         super().__init__(data_object_factory)
