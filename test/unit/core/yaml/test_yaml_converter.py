@@ -66,6 +66,10 @@ class TestYamlConverterLoading:
         in_object: DataObject,
         out_object: DataObject,
     ) -> None:
+        """
+        Converted according to the (correctly-structured)
+        `good.yaml`.
+        """
 
         converter = YamlConverter(
             data_object_factory,
@@ -84,8 +88,8 @@ class TestYamlConverterLoading:
             'tos',
             id_='42',
             attributes={
-                'sexual_system': 'i|d|k',
-                'sex_determination': 'shrug:-:too'
+                'sexual_system': 'i|d|k',  # default `separator`
+                'sex_determination': 'shrug:-:too'  # overriden
             }
         )
 
@@ -93,6 +97,10 @@ class TestYamlConverterLoading:
         self,
         data_object_factory: DataObjectFactory,
     ) -> None:
+        """
+        Badly-structured `bad.yaml` leads to a Pydantic
+        `ValidationError` being raised.
+        """
 
         with pytest.raises(ValidationError):
             YamlConverter(
