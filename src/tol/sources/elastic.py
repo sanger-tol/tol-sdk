@@ -420,13 +420,13 @@ def elastic():
         },
         'specimen': {
             'calc_coverage_post_run': RuntimeFields.math(
-                'mlwh_run_data_mlwh_hifi_read_bases_sum',
+                'tolqc_run_data_tolqc_bases_sum',
                 'sts_estimated_genome_size',
                 operation='/'
             )
         },
         'tolid': {
-            'calc_coverage': RuntimeFields.math('mlwh_run_data_mlwh_hifi_read_bases_sum',
+            'calc_coverage': RuntimeFields.math('tolqc_run_data_tolqc_bases_sum',
                                                 'tolid_species.sts_genome_size',
                                                 operation='/'),
             'calc_ongoing_submissions': RuntimeFields.math(
@@ -437,13 +437,13 @@ def elastic():
                 'type': 'boolean',
                 'script': {
                     'source': """
-                        if (doc.containsKey('mlwh_run_data_mlwh_hifi_read_bases_sum') &&
+                        if (doc.containsKey('tolqc_run_data_tolqc_bases_sum') &&
                         doc.containsKey('tolid_species.sts_genome_size') &&
                         doc.containsKey('sts_sample_sts_target_coverage_max') &&
-                        doc['mlwh_run_data_mlwh_hifi_read_bases_sum'].size() > 0 &&
+                        doc['tolqc_run_data_tolqc_bases_sum'].size() > 0 &&
                         doc['tolid_species.sts_genome_size'].size() > 0 &&
                         doc['sts_sample_sts_target_coverage_max'].size() > 0) {
-                            emit(doc['mlwh_run_data_mlwh_hifi_read_bases_sum'].value /
+                            emit(doc['tolqc_run_data_tolqc_bases_sum'].value /
                                 doc['tolid_species.sts_genome_size'].value >=
                                 doc['sts_sample_sts_target_coverage_max'].value)
                         }
@@ -466,8 +466,8 @@ def elastic():
                             doc[
                                 'benchling_pacbio_completed_sequencing_request_count'
                             ].size() > 0 &&
-                            doc.containsKey('mlwh_run_data_mlwh_hifi_read_bases_sum') &&
-                            doc['mlwh_run_data_mlwh_hifi_read_bases_sum'].size() > 0 &&
+                            doc.containsKey('tolqc_run_data_tolqc_bases_sum') &&
+                            doc['tolqc_run_data_tolqc_bases_sum'].size() > 0 &&
                             doc.containsKey('tolid_species.sts_genome_size') &&
                             doc['tolid_species.sts_genome_size'].size() > 0 &&
                             doc.containsKey('sts_sample_sts_target_coverage_max') &&
@@ -487,7 +487,7 @@ def elastic():
                             doc['benchling_pacbio_completed_sequencing_request_count'].value == 0);
 
                         boolean isTargetCoverageMet =
-                            (doc['mlwh_run_data_mlwh_hifi_read_bases_sum'].value /
+                            (doc['tolqc_run_data_tolqc_bases_sum'].value /
                             doc['tolid_species.sts_genome_size'].value >=
                             doc['sts_sample_sts_target_coverage_max'].value);
 
