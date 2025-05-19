@@ -5,10 +5,10 @@
 from __future__ import annotations
 
 from .model import YamlValidatorConfig
-from ..datasource import DataObjectFactory
 from ..data_object_converter import (
     DataObjectToDataObjectOrUpdateConverter,
 )
+from ..datasource import DataObjectFactory
 
 
 class YamlConverter(DataObjectToDataObjectOrUpdateConverter):
