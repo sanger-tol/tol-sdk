@@ -2,6 +2,7 @@
 #
 # SPDX-License-Identifier: MIT
 
+import pathlib
 from unittest.mock import create_autospec
 
 from pydantic import ValidationError
@@ -71,9 +72,11 @@ class TestYamlConverterLoading:
         `good.yaml`.
         """
 
+        good_path = pathlib.Path(__file__).parent.resolve() / 'good.yaml'
+
         converter = YamlConverter(
             data_object_factory,
-            'unit/core/yaml/good.yaml',
+            good_path,
         )
 
         expected = [out_object]
@@ -102,8 +105,10 @@ class TestYamlConverterLoading:
         `ValidationError` being raised.
         """
 
+        bad_path = pathlib.Path(__file__).parent.resolve() / 'bad.yaml'
+
         with pytest.raises(ValidationError):
             YamlConverter(
                 data_object_factory,
-                'unit/core/yaml/bad.yaml',
+                bad_path,
             )
