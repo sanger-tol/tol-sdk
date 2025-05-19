@@ -27,8 +27,15 @@ def data_object_factory() -> DataObjectFactory:
 def in_object() -> DataObject:
     obj: DataObject = create_autospec(DataObject)
 
-    attributes = {
+    obj.type = 'tos'
+    obj.id = '42'
 
+    attributes = {
+        'gonochorous': 'i',
+        'parthenogenetic': 'd',
+        'hermaphrodite': 'k',
+        'arrhenotoky': 'shrug',
+        'paternal_genome_elimination': 'too',
     }
 
     obj.attributes = attributes

@@ -21,24 +21,13 @@ attributes:
         - "parthenogenetic"
         - "hermaphrodite"
 
-  - column_name: "Karyotype"
-    reference: "source  Karyotype"
-    destination:
-      key: "sex_chromosome_formula"
-      separator: "|"
-      import_values:
-        - "XO"
-        - "XY"
-        - "hermaphrodite"
-        - "homomorphic"
-
   - column_name: Haplodiploidy
     reference: "source  Haplodiploidy"
     destination:
       key: "sex_determination" 
       import_values:
         - "arrhenotoky"
-        - "paternal genome elimination"
+        - "paternal_genome_elimination"
       ignore:
         - other
     
