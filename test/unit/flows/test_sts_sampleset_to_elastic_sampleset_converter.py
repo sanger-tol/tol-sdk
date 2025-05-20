@@ -233,7 +233,7 @@ class TestStsSamplesetToElasticSamplesetConverter(TestCase):
             'num_expected_species': 10,
             'num_expected_samples': 20,
             'released_to_lab': True,
-            'gal_abbreviation': 'test_gal',
+            'gal_abbreviation': 'TESTGAL',
             'legal_status': 'PASSED',
             'legal_status_updated_at': datetime.datetime(2024, 8, 8),
             'legal_contract': 'test_contract',

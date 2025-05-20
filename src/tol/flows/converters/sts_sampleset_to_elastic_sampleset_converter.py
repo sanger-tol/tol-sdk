@@ -14,7 +14,7 @@ class StsSamplesetToElasticSamplesetConverter(
         DataObjectToDataObjectOrUpdateConverter):
     def convert(self, data_object: DataObject) -> Iterable[DataObject]:
         attributes = data_object.attributes
-        attributes['gal_abbreviation'] = data_object.gal.id \
+        attributes['gal_abbreviation'] = data_object.gal.abbreviation \
             if data_object.gal is not None else None
         attributes['project'] = data_object.project.id \
             if data_object.project is not None else None
