@@ -1089,7 +1089,7 @@ class ElasticDataSource(
         return resp['hits']['total']['value']
 
     @ttl_cache(ttl=3600)
-    def __get_indices(self) -> list[str]:
+    def _get_indices(self) -> dict[str, str]:
         # Get all as the actual indexes may not have the correct prefix
         results = self.es.indices.get_alias('*')
         aliased_indexes = {
@@ -1107,13 +1107,13 @@ class ElasticDataSource(
         return aliased_indexes | non_aliased_indexes
 
     def __real_index_to_object_type(self, index: str) -> str:
-        aliases = self.__get_indices()
+        aliases = self._get_indices()
         alias = next((k for k, v in aliases.items() if v == index), None)
         return self.__get_object_type(alias) if alias else None
 
     @property
     def supported_types(self):
-        indexes = self.__get_indices()
+        indexes = self._get_indices()
         return [self.__get_object_type(index_name)
                 for index_name in indexes.keys()]
 
@@ -1128,7 +1128,7 @@ class ElasticDataSource(
 
     def _get_attribute_types_for_object_type(self, object_type: str) -> Dict:
         index_or_alias_name = self.__get_index_or_alias(object_type)
-        real_index_name = self.__get_indices().get(index_or_alias_name)
+        real_index_name = self._get_indices().get(index_or_alias_name)
         mapping = self.es.indices.get_mapping(index=index_or_alias_name)
         if 'properties' not in mapping[real_index_name]['mappings']:
             return {}
