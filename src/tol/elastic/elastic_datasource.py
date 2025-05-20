@@ -239,7 +239,7 @@ class ElasticDataSource(
         **kwargs
     ) -> None:
 
-        index = self.__get_index(object_type)
+        index = self.__get_index_or_alias(object_type)
         (no_of_operations, no_of_errors) = \
             self.helpers.bulk(self.es,
                               self._action_for_upsert(index,
@@ -264,7 +264,7 @@ class ElasticDataSource(
         # This tries to find an object in the DataSource that matches
         # the candidate key. If found it will perform the update
 
-        index = self.__get_index(object_type)
+        index = self.__get_index_or_alias(object_type)
         for (_, update) in updates:
             # We can get the candidate key dynamically from the actual update
             if 'candidate_key_func' in kwargs:
@@ -376,7 +376,7 @@ class ElasticDataSource(
             },
         }
 
-    def __get_index(self, object_type: str) -> str:
+    def __get_index_or_alias(self, object_type: str) -> str:
         return f'{self.index_prefix}-{kebabcase(object_type)}'
 
     def __get_object_type(self, index: str) -> str:
@@ -460,7 +460,7 @@ class ElasticDataSource(
         search_after: list[Any] | None = None
     ) -> dict[str, Any]:
 
-        index = self.__get_index(object_type)
+        index = self.__get_index_or_alias(object_type)
         query = self._build_elasticsearch_query(object_type, object_filters)
         sort = self._build_elasticsearch_sort(object_type, sort_by)
         fields = list(self.runtime_fields[object_type].keys()) \
@@ -665,7 +665,7 @@ class ElasticDataSource(
         session: OperableSession | None = None,
         **kwargs
     ) -> Iterable[DataObject]:
-        index = self.__get_index(object_type)
+        index = self.__get_index_or_alias(object_type)
         query = self._build_elasticsearch_query(object_type, object_filters)
         fields = list(self.runtime_fields[object_type].keys()) \
             if object_type in self.runtime_fields else None
@@ -683,7 +683,7 @@ class ElasticDataSource(
     def _convert_dict_to_data_objects(self, objs: Dict) -> Iterable:
         for obj in objs:
             if '_source' in obj:
-                type_ = self.__get_object_type(obj['_index'])
+                type_ = self.__real_index_to_object_type(obj['_index'])
                 id_ = obj['_id']
                 attributes = obj['_source']
                 runtime_attributes = obj['fields'] if 'fields' in obj else {}
@@ -767,7 +767,7 @@ class ElasticDataSource(
         object_filters: DataSourceFilter = None,
         **kwargs
     ) -> Dict:
-        index = self.__get_index(object_type)
+        index = self.__get_index_or_alias(object_type)
         query = self._build_elasticsearch_query(object_type, object_filters)
         fields = list(self.runtime_fields[object_type].keys()) \
             if object_type in self.runtime_fields else None
@@ -1071,7 +1071,7 @@ class ElasticDataSource(
         object_filters: DataSourceFilter = None,
         **kwargs
     ) -> int:
-        index = self.__get_index(object_type)
+        index = self.__get_index_or_alias(object_type)
         query = self._build_elasticsearch_query(object_type, object_filters)
         fields = list(self.runtime_fields[object_type].keys()) \
             if object_type in self.runtime_fields else None
@@ -1088,13 +1088,34 @@ class ElasticDataSource(
         )
         return resp['hits']['total']['value']
 
-    @property
     @ttl_cache(ttl=3600)
+    def __get_indices(self) -> list[str]:
+        # Get all as the actual indexes may not have the correct prefix
+        results = self.es.indices.get_alias('*')
+        aliased_indexes = {
+            alias: index
+            for index, aliases in results.items()
+            for alias in aliases.get('aliases', {}).keys()
+            if alias.startswith(self.index_prefix)
+        }
+        # Non-aliased indexes
+        non_aliased_indexes = {
+            index: index
+            for index in results.keys()
+            if index.startswith(self.index_prefix)
+        }
+        return aliased_indexes | non_aliased_indexes
+
+    def __real_index_to_object_type(self, index: str) -> str:
+        aliases = self.__get_indices()
+        alias = next((k for k, v in aliases.items() if v == index), None)
+        return self.__get_object_type(alias) if alias else None
+
+    @property
     def supported_types(self):
-        index_names = self.es.cat.indices(h='index', s='index').split()
+        indexes = self.__get_indices()
         return [self.__get_object_type(index_name)
-                for index_name in index_names
-                if index_name.startswith(self.index_prefix)]
+                for index_name in indexes.keys()]
 
     def __map_type(self, type_: str) -> str:
         if type_ in ['text', 'keyword']:
@@ -1106,11 +1127,12 @@ class ElasticDataSource(
         return type_
 
     def _get_attribute_types_for_object_type(self, object_type: str) -> Dict:
-        index_name = self.__get_index(object_type)
-        mapping = self.es.indices.get_mapping(index=index_name)
-        if 'properties' not in mapping[index_name]['mappings']:
+        index_or_alias_name = self.__get_index_or_alias(object_type)
+        real_index_name = self.__get_indices().get(index_or_alias_name)
+        mapping = self.es.indices.get_mapping(index=index_or_alias_name)
+        if 'properties' not in mapping[real_index_name]['mappings']:
             return {}
-        properties = mapping[index_name]['mappings']['properties']
+        properties = mapping[real_index_name]['mappings']['properties']
         standard_types = {
             property_name: self.__map_type(properties[property_name]['type'])
             for property_name in properties
