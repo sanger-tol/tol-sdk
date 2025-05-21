@@ -93,7 +93,8 @@ class TestTOSConverter:
                 'sexual_system': 'X:-:Y:-:map_TO',
                 'include_only_strings': '1-_-2-_-3',
                 'first_out': '4.6,90.56',
-                'second_up': 'please'
+                'second_up': 'please',
+                'third_and_greatest': '4.6,yes,90.56',
             },
         )
 
