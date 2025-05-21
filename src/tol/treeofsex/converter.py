@@ -9,15 +9,17 @@ from typing import Any, Iterable
 from yaml import safe_load
 
 from .model import AttributeConfig, YamlConfig
-from ..data_object import DataObject
-from ..data_object_converter import (
+from ..core import (
+    DataObject,
+    DataObjectFactory,
     DataObjectToDataObjectOrUpdateConverter,
 )
-from ..datasource import DataObjectFactory
 
 
-class YamlConverter(DataObjectToDataObjectOrUpdateConverter):
+class TOSConverter(DataObjectToDataObjectOrUpdateConverter):
     """
+    Used for Tree of Sex.    
+
     Converts `DataObject` instances dynamically, according to
     a YAML specification.
     """

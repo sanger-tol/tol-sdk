@@ -13,7 +13,7 @@ from tol.core import (
     DataObject,
     DataObjectFactory,
 )
-from tol.core.yaml import YamlConverter
+from tol.treeofsex import TOSConverter
 
 
 BASE_DIR = pathlib.Path(__file__).parent.resolve()
@@ -62,7 +62,7 @@ def data_object_factory(
     return factory
 
 
-class TestYamlConverterLoading:
+class TestTOSConverter:
 
     def test_good(
         self,
@@ -77,7 +77,7 @@ class TestYamlConverterLoading:
 
         good_path = BASE_DIR / 'good.yaml'
 
-        converter = YamlConverter(
+        converter = TOSConverter(
             data_object_factory,
             good_path,
         )
@@ -111,7 +111,7 @@ class TestYamlConverterLoading:
         bad_path = BASE_DIR / 'bad.yaml'
 
         with pytest.raises(ValidationError):
-            YamlConverter(
+            TOSConverter(
                 data_object_factory,
                 bad_path,
             )

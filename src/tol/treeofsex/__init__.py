@@ -2,4 +2,4 @@
 #
 # SPDX-License-Identifier: MIT
 
-from .converter import YamlConverter  # noqa F401
+from .converter import TOSConverter  # noqa F401
