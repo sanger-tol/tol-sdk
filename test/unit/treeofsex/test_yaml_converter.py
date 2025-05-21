@@ -62,7 +62,7 @@ def data_object_factory(
     return factory
 
 
-class TestTOSConverter: 
+class TestTOSConverter:
 
     def test_good(
         self,
