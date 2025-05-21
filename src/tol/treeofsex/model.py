@@ -2,7 +2,7 @@
 #
 # SPDX-License-Identifier: MIT
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, computed_field
 
 
 class FileConfig(BaseModel):
@@ -26,6 +26,21 @@ class DestinationConfig(BaseModel):
 
     separator: str = '|'
     ignore: list[str] = []
+
+    @computed_field
+    @property
+    def magic_types(self) -> list[type]:
+        __TYPE_MAP = {
+            #TODO work out `string` with kamil
+            'int': int,
+            'double': float,
+        }
+
+        return list(
+            v
+            for k, v in __TYPE_MAP.items()
+            if k in self.imported_values
+        )
 
 
 class AttributeConfig(BaseModel):
