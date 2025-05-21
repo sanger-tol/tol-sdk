@@ -903,9 +903,7 @@ def elastic(environment: str = None) -> ElasticDataSource:
     # or not be set
     if environment is None:
         environment = os.getenv('ELASTIC_ENVIRONMENT')
-    index_suffix = ''
-    if environment is not None:
-        index_suffix = '-' + environment
+    index_suffix = f'-{environment}' if environment else ''
     elastic = ElasticDataSource({
         'uri': os.getenv('ELASTIC_URI'),
         'user': os.getenv('ELASTIC_USER'),
