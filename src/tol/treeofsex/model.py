@@ -2,8 +2,6 @@
 #
 # SPDX-License-Identifier: MIT
 
-from collections.abc import Mapping
-
 from pydantic import BaseModel, Field, computed_field
 
 
