@@ -80,65 +80,99 @@ class TOSConverter(DataObjectToDataObjectOrUpdateConverter):
         input_: DataObject
     ) -> dict[str, Any]:
 
-        attr_pairs = (
+        attr_dicts = [
             self.__convert_attribute(
                 input_,
                 attribute_config,
             )
             for attribute_config
             in self.__config.attributes
-        )
+        ]
 
-        return dict(attr_pairs)
+        return dict(
+            ChainMap(*attr_dicts)
+        )
 
     def __convert_attribute(
         self,
         input_: DataObject,
         attribute_config: AttributeConfig,
+    ) -> dict[str, Any]:
+
+        pairs = [
+            self.__convert_destination(
+                input_,
+                d,
+                attribute_config.imported_column_name,
+            )
+            for d in self.__get_destinations(
+                attribute_config,
+            )
+        ]
+
+        return dict(pairs)
+
+    def __get_destinations(
+        self,
+        attribute_config: AttributeConfig
+    ) -> list[DestinationConfig]:
+
+        if attribute_config.to_multiple:
+            return attribute_config.destination
+        else:
+            return [attribute_config.destination]
+
+    def __convert_destination(
+        self,
+        input_: DataObject,
+        destination_config: DestinationConfig,
+        imported_column_name: str,
     ) -> tuple[str, Any]:
 
         # TODO support one in, multiple out
 
         split_values = self.__get_split_values(
             input_,
-            attribute_config,
+            destination_config,
+            imported_column_name,
         )
 
-        seperator = attribute_config.destination.separator
+        seperator = destination_config.separator
 
         converted = seperator.join(
             self.__convert_split_values(
                 split_values,
-                attribute_config,
+                destination_config,
             )
         )
 
-        return attribute_config.destination.key, converted
+        return destination_config.key, converted
 
     def __get_split_values(
         self,
         input_: DataObject,
-        attribute_config: AttributeConfig,
+        destination_config: DestinationConfig,
+        imported_column_name: str,
     ) -> list[str]:
 
         value: str = getattr(
             input_,
-            attribute_config.imported_column_name,
+            imported_column_name,
         )
 
         return value.split(
-            attribute_config.destination.separator,
+            destination_config.separator,
         )
 
     def __get_value_map(
         self,
-        attribute_config: AttributeConfig,
+        destination_config: DestinationConfig,
     ) -> dict[str, str]:
 
         maps = [
             a
             for a
-            in attribute_config.destination.imported_values
+            in destination_config.imported_values
             if isinstance(a, Mapping)
         ]
 
@@ -149,11 +183,11 @@ class TOSConverter(DataObjectToDataObjectOrUpdateConverter):
     def __convert_split_values(
         self,
         values: list[str],
-        attribute_config: AttributeConfig,
+        destination_config: DestinationConfig,
     ) -> list[str]:
 
         value_map = self.__get_value_map(
-            attribute_config,
+            destination_config,
         )
 
         return [
@@ -161,7 +195,7 @@ class TOSConverter(DataObjectToDataObjectOrUpdateConverter):
             for v in values
             if self.__include_split_value(
                 v,
-                attribute_config,
+                destination_config,
                 value_map,
             )
         ]
@@ -169,21 +203,19 @@ class TOSConverter(DataObjectToDataObjectOrUpdateConverter):
     def __include_split_value(
         self,
         value: str,
-        attribute_config: AttributeConfig,
+        destination_config: DestinationConfig,
         value_map: dict[str, str],
     ) -> bool:
 
-        d = attribute_config.destination
-
-        if value in d.ignore:
+        if value in destination_config.ignore:
             return False
 
-        if value in d.imported_values or value in value_map:
+        if value in destination_config.imported_values or value in value_map:
             return True
 
         return self.__allowed_magic_type(
             value,
-            d,
+            destination_config,
         )
 
     def __allowed_magic_type(
