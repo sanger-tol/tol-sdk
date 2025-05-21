@@ -117,10 +117,10 @@ class TOSConverter(DataObjectToDataObjectOrUpdateConverter):
         attribute_config: AttributeConfig
     ) -> list[DestinationConfig]:
 
-        if attribute_config.to_multiple:
-            return attribute_config.destination
-        else:
+        if isinstance(attribute_config.destination, DestinationConfig):
             return [attribute_config.destination]
+        else:
+            return attribute_config.destination
 
     def __convert_destination(
         self,
