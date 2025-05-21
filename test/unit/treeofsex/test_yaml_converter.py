@@ -27,7 +27,7 @@ def in_object() -> DataObject:
     obj.id = '42'
 
     attributes = {
-        'sexual_system_in': 'X:-:Y:-:map_from:-:IGNORE_ME',
+        'sexual_system_in': 'X:-:Y:-:map_from:-:UN_MENTIONED',
         'include_only_strings': '1-_-2-_-LOL-_-3',
     }
 

@@ -20,9 +20,9 @@ attributes:
     destination:
       key: "sexual_system"
       separator: ":-:"
-      ignore:
-        - "IGNORE_ME"
       imported_values:
+        - X
+        - Y
         - map_from: "map_TO"
 
   - imported_column_name: "include_only_strings"

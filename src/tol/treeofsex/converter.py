@@ -4,13 +4,17 @@
 
 from __future__ import annotations
 
-from collections import ChainMap, defaultdict
+from collections import ChainMap
 from collections.abc import Mapping
 from typing import Any, Iterable
 
 from yaml import safe_load
 
-from .model import AttributeConfig, YamlConfig
+from .model import (
+    AttributeConfig,
+    DestinationConfig,
+    YamlConfig,
+)
 from ..core import (
     DataObject,
     DataObjectFactory,
@@ -155,22 +159,45 @@ class TOSConverter(DataObjectToDataObjectOrUpdateConverter):
         return [
             value_map[v] if v in value_map else v
             for v in values
-            if not self.__ignore_split_value(
+            if self.__include_split_value(
                 v,
                 attribute_config,
+                value_map,
             )
         ]
 
-    def __ignore_split_value(
+    def __include_split_value(
         self,
         value: str,
         attribute_config: AttributeConfig,
+        value_map: dict[str, str],
     ) -> bool:
 
-        if value in attribute_config.destination.ignore:
+        d = attribute_config.destination
+
+        if value in d.ignore:
+            return False
+
+        if value in d.imported_values or value in value_map:
             return True
 
-        #TODO implement!!! for both ignore and included literals/magic
+        return self.__allowed_magic_type(
+            value,
+            d,
+        )
+
+    def __allowed_magic_type(
+        self,
+        value: str,
+        destination_config: DestinationConfig,
+    ) -> bool:
+
+        for t in destination_config.magic_types:
+            try:
+                t(value)
+                return True
+            except ValueError:
+                continue
 
         return False
 
