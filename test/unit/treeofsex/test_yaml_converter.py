@@ -27,7 +27,8 @@ def in_object() -> DataObject:
     obj.id = '42'
 
     attributes = {
-        'sexual_system_in': 'X:-:Y:-:map_from:-:IGNORE_ME'
+        'sexual_system_in': 'X:-:Y:-:map_from:-:IGNORE_ME',
+        'include_only_strings': '1-_-2-_-LOL-_-3',
     }
 
     obj.attributes = attributes
@@ -39,9 +40,7 @@ def in_object() -> DataObject:
 
 @pytest.fixture
 def out_object() -> DataObject:
-    return create_autospec(
-        DataObject,
-    )
+    return create_autospec(DataObject)
 
 
 @pytest.fixture
@@ -91,6 +90,7 @@ class TestTOSConverter:
             id_='42',
             attributes={
                 'sexual_system': 'X:-:Y:-:map_TO',
+                'include_only_strings': '1-_-2-_-3',
             },
         )
 
