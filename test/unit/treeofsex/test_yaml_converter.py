@@ -90,7 +90,7 @@ class TestTOSConverter:
             'tos',
             id_='42',
             attributes={
-                'sexual_system': 'X:-:Y:-:map_TO'
+                'sexual_system': 'X:-:Y:-:map_TO',
             },
         )
 
