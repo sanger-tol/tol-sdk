@@ -167,6 +167,9 @@ class TOSConverter(DataObjectToDataObjectOrUpdateConverter):
         attribute_config: AttributeConfig,
     ) -> bool:
 
+        if value in attribute_config.destination.ignore:
+            return True
+
         #TODO implement!!! for both ignore and included literals/magic
 
         return False
