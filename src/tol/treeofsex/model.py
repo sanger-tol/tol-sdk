@@ -20,7 +20,7 @@ class FileConfig(BaseModel):
 
 class DestinationConfig(BaseModel):
     key: str
-    import_values: list[str] = Field(
+    imported_values: list[str| dict[str, str]] = Field(
         min_length=1,
     )
 
@@ -29,8 +29,8 @@ class DestinationConfig(BaseModel):
 
 
 class AttributeConfig(BaseModel):
-    column_name: str
-    reference: str
+    imported_column_name: str
+    column_reference: str
     destination: DestinationConfig
 
 
