@@ -31,3 +31,17 @@ attributes:
       separator: "-_-"
       imported_values:
         - "int" # magic import
+
+  - imported_column_name: "one_in"
+    column_reference: "source  Sexual System"
+    destination:
+      # multiple destinations
+      - key: "first_out"
+        separator: ","
+        imported_values:
+          - "double" # magic import
+
+      - key: "second_up"
+        separator: ","
+        imported_values:
+          - yes: "please"

@@ -29,6 +29,7 @@ def in_object() -> DataObject:
     attributes = {
         'sexual_system_in': 'X:-:Y:-:map_from:-:UN_MENTIONED',
         'include_only_strings': '1-_-2-_-LOL-_-3',
+        'one_in': '4.6,yes,90.56',
     }
 
     obj.attributes = attributes
@@ -91,6 +92,8 @@ class TestTOSConverter:
             attributes={
                 'sexual_system': 'X:-:Y:-:map_TO',
                 'include_only_strings': '1-_-2-_-3',
+                'first_out': '4.6,90.56',
+                'second_up': 'please'
             },
         )
 
