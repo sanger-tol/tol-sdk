@@ -18,7 +18,7 @@ from ..core import (
 
 class TOSConverter(DataObjectToDataObjectOrUpdateConverter):
     """
-    Used for Tree of Sex.    
+    Used for Tree of Sex.
 
     Converts `DataObject` instances dynamically, according to
     a YAML specification.
