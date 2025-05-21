@@ -44,4 +44,4 @@ attributes:
       - key: "second_up"
         separator: ","
         imported_values:
-          - yes: "please"
+          - "yes": "please"
