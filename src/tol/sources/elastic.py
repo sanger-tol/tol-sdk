@@ -342,7 +342,7 @@ def elastic():
 
                         emit(
                             isRecollectionRequired || (!isIncludedProject
-                            && !isChromosome && !isSpecimensAtSanger && isSampleCollectedForPsyche)
+                            && !isChromosome && !isSpecimensAtSanger && !isSampleCollectedForPsyche)
                         );
                     """
                 }

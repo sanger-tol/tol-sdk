@@ -61,7 +61,8 @@ class TestCreateGoatDatasource:
                         'assembly_level': {'value': 'Chromosome'},
                         'ploidy': {'value': 2},
                         'isb_wildlife_act_1976': {'value': 'IWA-Sch5'},
-                        'protection_of_badgers_act_1992': {'value': 'Badgers92'}
+                        'protection_of_badgers_act_1992': {'value': 'Badgers92'},
+                        'synonym': {'value': ['Meles alba', 'Meles britannicus']},
                     },
                     'names': {
                         'tolid_prefix': {
@@ -114,7 +115,8 @@ class TestCreateGoatDatasource:
                 'isb_wildlife_act_1976': ['IWA-Sch5'],
                 'protection_of_badgers_act_1992': ['Badgers92'],
                 'tolid_prefix': 'mMelMel',
-                'common_name': 'Melon'
+                'common_name': 'Melon',
+                'synonym': ['Meles alba', 'Meles britannicus']
             },
             to_one={}
         )
@@ -151,7 +153,8 @@ class TestCreateGoatDatasource:
                         'assembly_level': {'value': 'Chromosome'},
                         'ploidy': {'value': 2},
                         'isb_wildlife_act_1976': {'value': 'IWA-Sch5'},
-                        'protection_of_badgers_act_1992': {'value': 'Badgers92'}
+                        'protection_of_badgers_act_1992': {'value': 'Badgers92'},
+                        'synonym': {'value': ['Meles alba', 'Meles britannicus']}
                     },
                     'names': {
                         'tolid_prefix': {
@@ -206,7 +209,8 @@ class TestCreateGoatDatasource:
                 'isb_wildlife_act_1976': ['IWA-Sch5'],
                 'protection_of_badgers_act_1992': ['Badgers92'],
                 'tolid_prefix': 'mMelMel',
-                'common_name': 'Melon'
+                'common_name': 'Melon',
+                'synonym': ['Meles alba', 'Meles britannicus']
             },
             to_one={}
         )

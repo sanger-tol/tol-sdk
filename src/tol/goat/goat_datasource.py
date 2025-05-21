@@ -83,6 +83,7 @@ class GoatDataSource(
             'taxon': {
                 'scientific_name': 'str',
                 'common_name': 'str',
+                'synonym': 'List[str]',
                 'tolid_prefix': 'str',
                 'assembly_level': 'str',
                 'genome_size': 'int',
