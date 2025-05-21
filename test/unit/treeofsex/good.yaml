@@ -7,8 +7,7 @@ file:
   header: true
   comment: "#"
   name: TOS_data_2024-11-18_invertebrates.csv
-  submitter: "Tree of Sex 1" # source in GoaT
-  # source_date: 2021-03-03
+  submitter: "Tree of Sex 1"
   default reference header: "citation"
   species column: XXXX
   species format: XXXX
