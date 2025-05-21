@@ -28,7 +28,11 @@ class MockElasticDataSource(ElasticDataSource):
         self.es = mock.Mock()
         self.helpers = mock.Mock()
 
-        self.es.cat.indices.return_value = 'test_obj_type test_reltype'
+        self.es.indices.get_alias.return_value = {
+            'test-obj-type': {'aliases': {}},
+            'hidden-reltype': {'aliases': {'test-reltype': {}}}
+        }
+        self.index_prefix = 'test'
 
     def _add_updated(self, dict_):
         return {**dict_, 'tol_updated_at': dt.isoformat()}
@@ -138,7 +142,7 @@ class TestUidSubstitution:
 
         mock_ds.helpers.scan.return_value = [
             {
-                '_index': 'test_obj_type',
+                '_index': 'test-obj-type',
                 '_id': 'lol',
                 '_source': {
                     'field1': 'train',
@@ -209,13 +213,13 @@ class TestElasticDataSource(TestCase):
                 }
             )
         ]
-        generator = eds._action_for_upsert('index', objects, id_func=lambda x: x.id,
+        generator = eds._action_for_upsert('test-obj-type', objects, id_func=lambda x: x.id,
                                            field_prefix='')
         expected = {
             '_op_type': 'update',
             'scripted_upsert': True,
             'upsert': {},
-            '_index': 'index',
+            '_index': 'test-obj-type',
             '_id': 1,
             'script': {
                 'source': eds._upsert_script,
@@ -237,7 +241,7 @@ class TestElasticDataSource(TestCase):
             '_op_type': 'update',
             'scripted_upsert': True,
             'upsert': {},
-            '_index': 'index',
+            '_index': 'test-obj-type',
             '_id': 2,
             'script': {
                 'source': eds._upsert_script,
@@ -271,13 +275,13 @@ class TestElasticDataSource(TestCase):
                 attributes={'field1': 'value3', 'field2': 'value4'}
             )
         ]
-        generator = eds._action_for_upsert('index', objects, id_func=lambda x: x.field1,
+        generator = eds._action_for_upsert('test-obj-type', objects, id_func=lambda x: x.field1,
                                            field_prefix='pre')
         expected = {
             '_op_type': 'update',
             'scripted_upsert': True,
             'upsert': {},
-            '_index': 'index',
+            '_index': 'test-obj-type',
             '_id': 'value1',
             'script': {
                 'source': eds._upsert_script,
@@ -298,7 +302,7 @@ class TestElasticDataSource(TestCase):
             '_op_type': 'update',
             'scripted_upsert': True,
             'upsert': {},
-            '_index': 'index',
+            '_index': 'test-obj-type',
             '_id': 'value3',
             'script': {
                 'source': eds._upsert_script,
@@ -326,7 +330,7 @@ class TestElasticDataSource(TestCase):
                    {'field1': 'value3', 'field2': 'value4'}]
         eds.helpers.bulk.return_value = (2, 1)
         with self.assertRaises(DataSourceError):
-            eds.upsert('index', objects, id_func=lambda x: x.field1)
+            eds.upsert('obj_type', objects, id_func=lambda x: x.field1)
 
     def test_update(self):
         core_data_object, eds = mock_elastic_data_source()
@@ -338,7 +342,7 @@ class TestElasticDataSource(TestCase):
         updates = [(None, update1),
                    (None, update2)]
 
-        update_body = eds._action_for_update('test_obj_type',
+        update_body = eds._action_for_update('test-obj-type',
                                              update1,
                                              field_prefix='',
                                              candidate_key=['field1'])
@@ -817,21 +821,26 @@ class TestElasticDataSource(TestCase):
         _, eds = mock_elastic_data_source()
 
         expected = ['index_1', 'index_2']
-        eds.es.cat.indices.return_value = 'test-index-1\ntest-index-2'
+        eds.es.indices.get_alias.return_value = {
+            'test-index-1': {'aliases': {}},
+            'test-index-2': {'aliases': {}}
+        }
 
         returned = eds.supported_types
-        eds.es.cat.indices.assert_called_once()
+        eds.es.indices.get_alias.assert_called_once()
         self.assertEqual(expected, returned)
 
         # Test it doesn't call to Elastic the next time
         returned = eds.supported_types
-        eds.es.cat.indices.assert_called_once()
+        eds.es.indices.get_alias.assert_called_once()
         self.assertEqual(expected, returned)
 
     def test_get_attribute_types(self):
         _, eds = mock_elastic_data_source()
 
-        eds.es.cat.indices.return_value = 'test-index-name'
+        eds.es.indices.get_alias.return_value = {
+            'test-index-name': {'aliases': {}}
+        }
         eds.es.indices.get_mapping.return_value = {
             'test-index-name': {
                 'mappings': {
@@ -877,12 +886,15 @@ class TestElasticDataSource(TestCase):
                                         'field4': 'value4'}}
             }
         ]
-        eds.es.cat.indices.return_value = 'test-obj-type\ntest-reltype'
+        eds.es.indices.get_alias.return_value = {
+            'test-obj-type': {'aliases': {}},
+            'test-reltype': {'aliases': {}}
+        }
         source_objects = eds.get_by_id('obj_type', ['1234'])
         source_object = next(source_objects)
 
         related_object = source_object.to_one_relationships['relname']
-        eds.es.cat.indices.assert_called_once()
+        eds.es.indices.get_alias.assert_called_once()
         self.assertEqual(related_object.id, '5678')
         self.assertEqual(related_object.field3, 'value3')
 
@@ -950,20 +962,23 @@ class TestElasticDataSource(TestCase):
             'obj_type',
             {'id': '1'}
         )
-        eds.es.cat.indices.return_value = 'test-obj-type\ntest-reltype'
+        eds.es.indices.get_alias.return_value = {
+            'test-obj-type': {'aliases': {}},
+            'test-reltype': {'aliases': {}}
+        }
         eds.helpers.scan.return_value = [
             {'_source': {'field3': 'value1',
                          'field4': 'value2',
                          'relfk': {'id': '1'}},
-             '_id': '1', '_index': 'test-reltype'},
+             '_id': '1', '_index': 'hidden-reltype'},
             {'_source': {'field3': 'value3',
                          'field4': 'value4',
                          'relfk': {'id': '1'}},
-             '_id': '2', '_index': 'test-reltype'}
+             '_id': '2', '_index': 'hidden-reltype'}
         ]
 
         related_objects = source_object.to_many_relationships['relname']
-        eds.es.cat.indices.assert_called_once()
+        eds.es.indices.get_alias.assert_called_once()
         eds.helpers.scan.assert_called_once()
         first = next(related_objects)
         self.assertEqual({'field3': 'value1', 'field4': 'value2'}, first.attributes)

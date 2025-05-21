@@ -24,7 +24,8 @@ class _MockDataSourceRelational(DataSource, Relational):
     @property
     def supported_types(self):
         return ['manifest', 'compliance_status', 'manifest_status', 'project',
-                'sampleset', 'shipment_status']
+                'sampleset', 'shipment_status', 'wildlife_compliance_processor',
+                'user']
 
     @property
     def attribute_types(self):
@@ -40,8 +41,17 @@ class _MockDataSourceRelational(DataSource, Relational):
             'sampleset': 'sampleset',
             'shipment_status': 'shipment_status'
         }
+        rc_manifest.to_many = {
+            'wildlife_compliance_processors': 'wildlife_compliance_processor'
+        }
+        rc_wildlife_compliance_processor = RelationshipConfig()
+        rc_wildlife_compliance_processor.to_one = {
+            'user': 'user'
+        }
+
         return {
-            'manifest': rc_manifest
+            'manifest': rc_manifest,
+            'wildlife_compliance_processor': rc_wildlife_compliance_processor
         }
 
     def get_to_one_relation(
@@ -56,7 +66,20 @@ class _MockDataSourceRelational(DataSource, Relational):
         source: DataObject,
         relationship_name: str
     ):
-        pass
+        if relationship_name == 'wildlife_compliance_processors':
+            yield source._host.data_object_factory(
+                id_='test_wcp',
+                type_='wildlife_compliance_processor',
+                attributes={
+                },
+                to_one={
+                    'user': source._host.data_object_factory(
+                        id_='test_user',
+                        type_='user',
+                        attributes={'fullname': 'Test User'}
+                    )
+                }
+            )
 
 
 class _MockDataSource(DataSource, Relational):
@@ -182,7 +205,8 @@ class TestStsManifestToElasticManifestConverter(TestCase):
             'sts_bio_safety_overall_status': 'PASSED',
             'sts_bio_safety_overall_status_updated_at': datetime.datetime(2024, 12, 13),
             'sts_shipment_status': 'SHIPPED',
-            'sts_compliance_status': 'PASSED'
+            'sts_compliance_status': 'PASSED',
+            'sts_wildlife_compliance_processors': ['Test User'],
         })
         self.assertEqual(ret1.sts_sampleset.id, 'test_sampleset')
 
