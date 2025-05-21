@@ -17,7 +17,7 @@ from ..elastic import (
 )
 
 
-def elastic():
+def elastic(environment: str = None) -> ElasticDataSource:
     rc_run_data = RelationshipConfig()
     rc_run_data.to_one = {'benchling_extraction': 'extraction',
                           'benchling_sample': 'sample',
@@ -898,11 +898,17 @@ def elastic():
         portal_attributes()
     )
 
+    # Set up the correct environment. Can be passed in as a parameter
+    # or be ELASTIC_ENVIRONMENT environment variable
+    # or not be set
+    if environment is None:
+        environment = os.getenv('ELASTIC_ENVIRONMENT')
+    index_suffix = f'-{environment}' if environment else ''
     elastic = ElasticDataSource({
         'uri': os.getenv('ELASTIC_URI'),
         'user': os.getenv('ELASTIC_USER'),
         'password': os.getenv('ELASTIC_PASSWORD'),
-        'index_prefix': os.getenv('ELASTIC_INDEX_PREFIX'),
+        'index_prefix': os.getenv('ELASTIC_INDEX_PREFIX') + index_suffix,
         'relationship_cfg': relationship_config,
         'runtime_fields': runtime_fields},
         attribute_metadata=amd)

@@ -13,7 +13,7 @@ from tol.google_sheets import (
 )
 
 
-def bioscan_qc():
+def bioscan_qc(**kwargs) -> GoogleSheetDataSource:
     gsds = GoogleSheetDataSource({
         'client_secrets': json.loads(os.getenv('GOOGLE_CLIENT_SECRETS')),
         'sheet_key': '1_2lZ5nah_xadTQPhiTkNC5xNEa9VqK-u59Lu2okMD3U',

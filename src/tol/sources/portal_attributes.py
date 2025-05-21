@@ -13,7 +13,7 @@ from tol.google_sheets import (
 )
 
 
-def portal_attributes():
+def portal_attributes(**kwargs) -> GoogleSheetDataSource:
     gsds = GoogleSheetDataSource({
         'client_secrets': json.loads(os.getenv('GOOGLE_CLIENT_SECRETS')),
         'sheet_key': '1kKta1ziEqAqXd5-ZJmv3PA9lE4kxh6BD4Bpxh0HhxeQ',

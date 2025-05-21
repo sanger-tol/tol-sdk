@@ -12,7 +12,7 @@ from ..core import (
 )
 
 
-def benchling_warehouse():
+def benchling_warehouse(**kwargs) -> BenchlingWarehouseDataSource:
     benchling_warehouse = BenchlingWarehouseDataSource({
         'username': os.getenv('BENCHLING_USER'),
         'password': os.getenv('BENCHLING_PASSWORD'),

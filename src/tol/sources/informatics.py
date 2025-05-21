@@ -13,7 +13,7 @@ from ..google_sheets import (
 )
 
 
-def informatics():
+def informatics(**kwargs) -> GoogleSheetDataSource:
     gsds = GoogleSheetDataSource({
         'client_secrets': json.loads(os.getenv('GOOGLE_CLIENT_SECRETS')),
         'sheet_key': '1RKubj10g13INd4W7alHkwcSVX_0CRvNq0-SRe21m-GM',

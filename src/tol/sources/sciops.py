@@ -12,7 +12,7 @@ from ..sciops import (
 )
 
 
-def sciops():
+def sciops(**kwargs) -> SequencingDataSource:
     sciops = SequencingDataSource({
         'redpanda_url': os.getenv('REDPANDA_URL'),
         'redpanda_api_key': os.getenv('REDPANDA_API_KEY'),

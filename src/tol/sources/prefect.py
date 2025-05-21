@@ -16,7 +16,8 @@ if typing.TYPE_CHECKING:
 
 
 def prefect(
-    insecure: bool = False
+    insecure: bool = False,
+    **kwargs
 ) -> PrefectDataSource:
     """
     Note - this must be the main entrypoint to the prefect SDK.

@@ -5,7 +5,8 @@
 import os
 
 from .defaults import Defaults
-from ..api_client2 import (
+from ..api_client import (
+    ApiDataSource,
     create_api_datasource
 )
 from ..core import (
@@ -13,7 +14,7 @@ from ..core import (
 )
 
 
-def workflows(retries: int = 5):
+def workflows(retries: int = 5, **kwargs) -> ApiDataSource:
     workflows = create_api_datasource(
         api_url=os.getenv('WORKFLOWS_URL', Defaults.WORKFLOWS_URL)
         + os.getenv('WORKFLOWS_API_PATH', Defaults.WORKFLOWS_API_PATH),

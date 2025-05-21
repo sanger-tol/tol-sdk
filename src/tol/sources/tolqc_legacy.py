@@ -10,7 +10,7 @@ from ..json import (
 )
 
 
-def tolqc_legacy():
+def tolqc_legacy(**kwargs) -> JsonDataSource:
     tolqc_legacy = JsonDataSource({
         'uri': 'https://tolqc.cog.sanger.ac.uk/data.json',
         'type': 'species',
