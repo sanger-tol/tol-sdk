@@ -129,8 +129,6 @@ class TOSConverter(DataObjectToDataObjectOrUpdateConverter):
         imported_column_name: str,
     ) -> tuple[str, Any]:
 
-        # TODO support one in, multiple out
-
         split_values = self.__get_split_values(
             input_,
             destination_config,
