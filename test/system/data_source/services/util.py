@@ -75,13 +75,15 @@ def elastic_datasource(
 
 
 def __get_indices_names() -> list[str]:
+    # Returns dict of index_actual_name to index_alias_name
     prefix = get_prefix()
-    return [
-        f'{prefix}-{type_}' for type_ in (
+    prefix_base = prefix[:-1]  # So doesn't get detected with aliases
+    return {
+        f'{prefix_base}-{type_}': f'{prefix}-{type_}' for type_ in (
             'root',
             'related'
         )
-    ]
+    }
 
 
 def create_indices() -> None:
@@ -90,10 +92,8 @@ def create_indices() -> None:
     indices = __get_indices_names()
     elastic_ds = elastic_datasource()
 
-    elastic_ds.es.indices.create(
-        index=indices,
-        ignore=[400]
-    )
+    for index, alias in indices.items():
+        elastic_ds.es.indices.create(index=index, aliases={alias: {}}, ignore=[400])
 
 
 def empty_all_indices() -> None:
@@ -103,7 +103,7 @@ def empty_all_indices() -> None:
     elastic_ds = elastic_datasource()
 
     elastic_ds.es.delete_by_query(
-        index=indices,
+        index=list(indices.values()),
         body={'query': {'match_all': {}}}
     )
 
@@ -114,8 +114,11 @@ def delete_indices() -> None:
     indices = __get_indices_names()
     elastic_ds = elastic_datasource()
 
+    for index, alias in indices.items():
+        elastic_ds.es.indices.delete_alias(index=index, name=alias)
+
     elastic_ds.es.indices.delete(
-        index=indices,
+        index=list(indices.keys()),
         ignore=[400, 404]
     )
 

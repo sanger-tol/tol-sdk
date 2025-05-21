@@ -25,6 +25,13 @@ class StsManifestToElasticManifestConverter(
         attributes['sts_compliance_status'] = data_object.compliance_status.status \
             if data_object.compliance_status is not None else None
 
+        # wildlife_compliance_processors
+        wcp_attribute = []
+        if data_object.wildlife_compliance_processors is not None:
+            for wcp in data_object.wildlife_compliance_processors:
+                wcp_attribute.append(wcp.user.fullname)
+        attributes['sts_wildlife_compliance_processors'] = wcp_attribute
+
         ret = self._data_object_factory(
             'manifest',
             data_object.id,
