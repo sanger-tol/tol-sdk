@@ -27,11 +27,7 @@ def in_object() -> DataObject:
     obj.id = '42'
 
     attributes = {
-        'gonochorous': 'i',
-        'parthenogenetic': 'd',
-        'hermaphrodite': 'k',
-        'arrhenotoky': 'shrug',
-        'paternal_genome_elimination': 'too',
+        'sexual_system_in': 'X:-:Y:-:map_from:-:IGNORE_ME'
     }
 
     obj.attributes = attributes
@@ -90,13 +86,12 @@ class TestTOSConverter:
 
         assert observed == expected
 
-        data_object_factory.assert_called_once_with(
+        assert data_object_factory.called_once_with(
             'tos',
             id_='42',
             attributes={
-                'sexual_system': 'i|d|k',  # default `separator`
-                'sex_determination': 'shrug:-:too'  # overriden
-            }
+                'sexual_system': 'X:-:Y:-:map_TO'
+            },
         )
 
     def test_bad(

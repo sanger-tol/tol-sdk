@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2025 Genome Research Ltd.
+#
+# SPDX-License-Identifier: MIT
+
 file:
   format: csv
   header: true
@@ -11,17 +15,13 @@ file:
 
 attributes:
 
-  - imported_column_name: "Sexual System"
+  - imported_column_name: "sexual_system_in"
     column_reference: "source  Sexual System"
     destination:
       key: "sexual_system"
-      separator: "|"
+      separator: ":-:"
       ignore:
-        - "sadasd" # list import
+        - "IGNORE_ME" # list import
       imported_values:
+        - map_from: "map_TO"
         - "string" # magic import
-        - "int"  # magic import
-        - "double" # magic import
-        - parthenogenetic: asexual  # translated import
-        - "gonochorous" # list import
-        - "hermaphrodite"
