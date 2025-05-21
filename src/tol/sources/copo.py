@@ -14,7 +14,7 @@ from ..core import (
 )
 
 
-def copo() -> CopoDataSource:
+def copo(**kwargs) -> CopoDataSource:
     copo = create_copo_datasource(
         copo_url=os.getenv('COPO_URL', Defaults.COPO_URL)
         + os.getenv('COPO_API_PATH', Defaults.COPO_API_PATH)

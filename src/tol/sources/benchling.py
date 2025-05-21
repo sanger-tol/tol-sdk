@@ -12,7 +12,7 @@ from ..core import (
 )
 
 
-def benchling() -> BenchlingDataSource:
+def benchling(**kwargs) -> BenchlingDataSource:
     benchling = BenchlingDataSource(
         {
             'api_key': os.getenv('BENCHLING_API_KEY'),

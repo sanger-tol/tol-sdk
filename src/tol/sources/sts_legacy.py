@@ -12,7 +12,7 @@ from ..sts import (
 )
 
 
-def sts_legacy():
+def sts_legacy(**kwargs) -> StsDataSource:
     sts_legacy = StsDataSource({
         'url': os.getenv('STS_LEGACY_URL') + os.getenv('STS_LEGACY_API_PATH'),
         'key': os.getenv('STS_API_KEY')

@@ -6,6 +6,7 @@ import os
 
 from .defaults import Defaults
 from ..api_client import (
+    ApiDataSource,
     create_api_datasource
 )
 from ..core import (
@@ -13,7 +14,7 @@ from ..core import (
 )
 
 
-def tolid(retries: int = 5):
+def tolid(retries: int = 5, **kwargs) -> ApiDataSource:
     tolid = create_api_datasource(
         api_url=os.getenv('TOLID_URL', Defaults.TOLID_URL)
         + os.getenv('TOLID_API_PATH', Defaults.TOLID_API_PATH),

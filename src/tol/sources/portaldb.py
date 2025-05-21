@@ -5,6 +5,7 @@
 import os
 
 from ..api_client import (
+    ApiDataSource,
     create_api_datasource
 )
 from ..core import (
@@ -12,7 +13,7 @@ from ..core import (
 )
 
 
-def portaldb(retries: int = 5):
+def portaldb(retries: int = 5, **kwargs) -> ApiDataSource:
     portaldb = create_api_datasource(
         api_url=os.getenv('PORTAL_URL') + os.getenv('PORTAL_API_PATH') + '/local',
         token=os.getenv('PORTAL_API_KEY'),

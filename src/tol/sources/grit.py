@@ -14,7 +14,7 @@ from ..jira import (
 )
 
 
-def grit() -> JiraDataSource:
+def grit(**kwargs) -> JiraDataSource:
     grit = create_jira_datasource(
         jira_url=os.getenv('JIRA_URL', Defaults.JIRA_URL),
         jira_api_key=os.getenv('JIRA_API_KEY')

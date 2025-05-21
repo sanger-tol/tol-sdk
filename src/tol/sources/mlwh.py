@@ -12,7 +12,7 @@ from ..mlwh import (
 )
 
 
-def mlwh():
+def mlwh(**kwargs) -> MlwhDataSource:
     mlwh = MlwhDataSource({'uri': os.getenv('MLWH_URI')})
     core_data_object(mlwh)
     return mlwh

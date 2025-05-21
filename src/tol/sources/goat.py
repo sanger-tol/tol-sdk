@@ -14,7 +14,7 @@ from ..goat import (
 )
 
 
-def goat() -> GoatDataSource:
+def goat(**kwargs) -> GoatDataSource:
     goat = create_goat_datasource(
         goat_url=os.getenv('GOAT_URL', Defaults.GOAT_URL)
         + os.getenv('GOAT_API_PATH', Defaults.GOAT_API_PATH)
