@@ -48,19 +48,6 @@ class AttributeConfig(BaseModel):
     column_reference: str
     destination: DestinationConfig | list[DestinationConfig]
 
-    @computed_field
-    @property
-    def to_multiple(self) -> bool:
-        """
-        Whether this (imported) attribute maps to many
-        output ones.
-        """
-
-        return not isinstance(
-            self.destination,
-            DestinationConfig,
-        )
-
 
 class YamlConfig(BaseModel):
     file: FileConfig
