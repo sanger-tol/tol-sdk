@@ -4,6 +4,8 @@
 
 from __future__ import annotations
 
+from collections import ChainMap, defaultdict
+from collections.abc import Mapping
 from typing import Any, Iterable
 
 from yaml import safe_load
@@ -91,35 +93,83 @@ class TOSConverter(DataObjectToDataObjectOrUpdateConverter):
         attribute_config: AttributeConfig,
     ) -> tuple[str, Any]:
 
-        d = attribute_config.destination
+        # TODO support one in, multiple out
 
-        if len(d.imported_values) == 1:
-            value = getattr(input_, d.imported_values[0])
-        else:
-            value = self.__convert_compound_value(
-                input_,
-                attribute_config,
-            )
-
-        return d.key, value
-
-    def __convert_compound_value(
-        self,
-        input_: DataObject,
-        attribute_config: AttributeConfig,
-    ) -> str:
-
-        # TODO need to account for "magic" all/integers
+        split_values = self.__get_split_values(
+            input_,
+            attribute_config,
+        )
 
         seperator = attribute_config.destination.separator
 
-        values = (
-            getattr(input_, k)
-            for k
-            in attribute_config.destination.imported_values
+        converted = seperator.join(
+            self.__convert_split_values(
+                split_values,
+                attribute_config,
+            )
         )
 
-        return seperator.join(values)
+        return attribute_config.destination.key, converted
+
+    def __get_split_values(
+        self,
+        input_: DataObject,
+        attribute_config: AttributeConfig,
+    ) -> list[str]:
+
+        value: str = getattr(
+            input_,
+            attribute_config.imported_column_name,
+        )
+
+        return value.split(
+            attribute_config.destination.separator,
+        )
+
+    def __get_value_map(
+        self,
+        attribute_config: AttributeConfig,
+    ) -> dict[str, str]:
+
+        maps = [
+            a
+            for a
+            in attribute_config.destination.imported_values
+            if isinstance(a, Mapping)
+        ]
+
+        return dict(
+            ChainMap(*maps)
+        )
+
+    def __convert_split_values(
+        self,
+        values: list[str],
+        attribute_config: AttributeConfig,
+    ) -> list[str]:
+
+        value_map = self.__get_value_map(
+            attribute_config,
+        )
+
+        return [
+            value_map[v] if v in value_map else v
+            for v in values
+            if not self.__ignore_split_value(
+                v,
+                attribute_config,
+            )
+        ]
+
+    def __ignore_split_value(
+        self,
+        value: str,
+        attribute_config: AttributeConfig,
+    ) -> bool:
+
+        #TODO implement!!! for both ignore and included literals/magic
+
+        return False
 
     def __load_yaml(
         self,

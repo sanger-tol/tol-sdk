@@ -86,7 +86,7 @@ class TestTOSConverter:
 
         assert observed == expected
 
-        assert data_object_factory.called_once_with(
+        data_object_factory.assert_called_once_with(
             'tos',
             id_='42',
             attributes={
