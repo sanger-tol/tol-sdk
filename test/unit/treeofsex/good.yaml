@@ -1,54 +1,27 @@
-# SPDX-FileCopyrightText: 2025 Genome Research Ltd.
-#
-# SPDX-License-Identifier: MIT
-
 file:
   format: csv
   header: true
   comment: "#"
   name: TOS_data_2024-11-18_invertebrates.csv
-  submitter: "Tree of Sex 1"
+  submitter: "Tree of Sex 1" # source in GoaT
+  # source_date: 2021-03-03
   default reference header: "citation"
+  species column: XXXX
+  species format: XXXX
 
 attributes:
 
-  - column_name: "Sexual System"
-    reference: "source  Sexual System"
+  - imported_column_name: "Sexual System"
+    column_reference: "source  Sexual System"
     destination:
       key: "sexual_system"
-      import_values:
-        - "gonochorous"
-        - "parthenogenetic"
-        - "hermaphrodite"
-
-  - column_name: Haplodiploidy
-    reference: "source  Haplodiploidy"
-    destination:
-      key: "sex_determination" 
-      separator: ":-:"
-      import_values:
-        - "arrhenotoky"
-        - "paternal_genome_elimination"
+      separator: "|"
       ignore:
-        - other
-    
-  # - column_name: "Predicted ploidy"
-  #   reference: "source  Predicted ploidy"
-  #   destination:
-  #     key: "ploidy" 
-  #     import_values:
-  #       - intigers
-
-  # - column_name: "Chromosome number  female  2N"
-  #   reference: "source  Chromosome.number  female  2N"
-  #   destination:
-  #     key: "chromosome number (F - 2N)" 
-  #     import_values:
-  #       - intigers
-
-  # - column_name: "Chromosome number  male  2N"
-  #   reference: "source  Chromosome.number  male  2N"
-  #   destination:
-  #     key: "chromosome number (M - 2N)" 
-  #     import_values:
-  #       - intigers
+        - "sadasd" # list import
+      imported_values:
+        - "string" # magic import
+        - "int"  # magic import
+        - "double" # magic import
+        - parthenogenetic: asexual  # translated import
+        - "gonochorous" # list import
+        - "hermaphrodite"

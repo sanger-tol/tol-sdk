@@ -93,8 +93,8 @@ class TOSConverter(DataObjectToDataObjectOrUpdateConverter):
 
         d = attribute_config.destination
 
-        if len(d.import_values) == 1:
-            value = getattr(input_, d.import_values[0])
+        if len(d.imported_values) == 1:
+            value = getattr(input_, d.imported_values[0])
         else:
             value = self.__convert_compound_value(
                 input_,
@@ -116,7 +116,7 @@ class TOSConverter(DataObjectToDataObjectOrUpdateConverter):
         values = (
             getattr(input_, k)
             for k
-            in attribute_config.destination.import_values
+            in attribute_config.destination.imported_values
         )
 
         return seperator.join(values)
