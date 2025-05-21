@@ -45,6 +45,7 @@ class TestGoatDataSource(TestCase):
         self.assertEqual(obj1.phylum.scientific_name, 'Streptophyta')
         self.assertIsNone(obj1.common_name)
         self.assertEqual(obj1.tolid_prefix, 'drCitLimo')
+        self.assertIsInstance(obj1.synonym, list)
         with self.assertRaises(StopIteration):
             next(ret)
 
@@ -69,6 +70,7 @@ class TestGoatDataSource(TestCase):
                 self.assertEqual(obj.assembly_level, 'Chromosome')
                 self.assertEqual(obj.long_list, ['DTOL'])
                 self.assertEqual(obj.phylum.scientific_name, 'Streptophyta')
+                self.assertIsInstance(obj.synonym, list)
             elif obj.id == '1857951':
                 self.assertEqual('1857951', obj.id)
                 self.assertEqual(obj.scientific_name, 'Acrobasis suavella')
@@ -77,6 +79,7 @@ class TestGoatDataSource(TestCase):
                 self.assertEqual(obj.long_list, ['DTOL', 'PSYCHE'])
                 self.assertEqual(obj.phylum.scientific_name, 'Arthropoda')
                 self.assertEqual(obj.sample_collected, ['DTOL'])
+                self.assertIsInstance(obj.synonym, list)
 
     def test_get_list_tax_rank(self):
         gds = goat()

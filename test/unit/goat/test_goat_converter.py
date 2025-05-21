@@ -72,7 +72,8 @@ class TestGoatApiConverter:
                         'isb_wildlife_act_1976': {'value': 'IWA-Sch5'},
                         'protection_of_badgers_act_1992': {'value': 'Badgers92'},
                         'family_representative': {'value': 'DTOL'},
-                        'sample_collected': {'value': 'DTOL'}
+                        'sample_collected': {'value': 'DTOL'},
+                        'synonym': {'value': ['Meles alba', 'Meles britannicus']}
                     },
                     'names': {
                         'tolid_prefix': {
@@ -136,7 +137,8 @@ class TestGoatApiConverter:
                         'marhabreg-2017': {'value': 'Mar'},
                         'waca_1981': {'value': 'Shakira'},
                         'family_representative': {'value': ['PROJ_A', 'PROJ_B']},
-                        'sample_collected': {'value': 'ZOONOMIA'}
+                        'sample_collected': {'value': 'ZOONOMIA'},
+                        'synonym': {'value': ['Molos single']}
                     }
                 }
             }
@@ -158,7 +160,8 @@ class TestGoatApiConverter:
             'lineage': 'List[str]',
             'tolid_prefix': 'str',
             'common_name': 'str',
-            'sample_collected': 'List[str]'
+            'sample_collected': 'List[str]',
+            'synonym': 'List[str]'
         }}))
         converter = GoatApiConverter(parser)
         (out_, _) = converter.convert_list(in_)
@@ -180,7 +183,8 @@ class TestGoatApiConverter:
             'sample_collected': ['DTOL'],
             'lineage': ['Mustelidae', 'Meles', 'Meles meles'],
             'tolid_prefix': 'mMelMel',
-            'common_name': 'Melon'
+            'common_name': 'Melon',
+            'synonym': ['Meles alba', 'Meles britannicus']
         }
         assert first._to_one_objects['species'].id == '9662'
         assert first._to_one_objects['genus'].id == '9661'
@@ -201,5 +205,6 @@ class TestGoatApiConverter:
             'marhabreg-2017': ['Mar'],
             'waca_1981': ['Shakira'],
             'family_representative': ['PROJ_A', 'PROJ_B'],
-            'sample_collected': ['ZOONOMIA']
+            'sample_collected': ['ZOONOMIA'],
+            'synonym': ['Molos single']
         }

@@ -342,7 +342,7 @@ def elastic(environment: str = None) -> ElasticDataSource:
 
                         emit(
                             isRecollectionRequired || (!isIncludedProject
-                            && !isChromosome && !isSpecimensAtSanger && isSampleCollectedForPsyche)
+                            && !isChromosome && !isSpecimensAtSanger && !isSampleCollectedForPsyche)
                         );
                     """
                 }

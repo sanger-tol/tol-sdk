@@ -33,7 +33,8 @@ class TestGoatApiClient:
                             'isb_wildlife_act_1976': {'value': 'IWA-Sch5'},
                             'protection_of_badgers_act_1992': {'value': 'Badgers92'},
                             'family_representative': {'value': 'DTOL'},
-                            'sample_collected': {'value': 'DTOL'}
+                            'sample_collected': {'value': 'DTOL'},
+                            'synonym': {'value': ['Meles alba', 'Meles britannicus']}
                         }
                     }
                 },
@@ -52,7 +53,8 @@ class TestGoatApiClient:
                             'marhabreg-2017': {'value': 'Mar'},
                             'waca_1981': {'value': 'Shakira'},
                             'family_representative': {'value': ['PROJ_A', 'PROJ_B']},
-                            'sample_collected': {'value': 'ZOONOMIA'}
+                            'sample_collected': {'value': 'ZOONOMIA'},
+                            'synonym': {'value': ['Molos single']}
                         }
                     }
                 }
@@ -75,7 +77,8 @@ class TestGoatApiClient:
                         'isb_wildlife_act_1976': {'value': 'IWA-Sch5'},
                         'protection_of_badgers_act_1992': {'value': 'Badgers92'},
                         'family_representative': {'value': 'DTOL'},
-                        'sample_collected': {'value': 'DTOL'}
+                        'sample_collected': {'value': 'DTOL'},
+                        'synonym': {'value': ['Meles alba', 'Meles britannicus']}
                     }
                 }
             },
@@ -94,7 +97,8 @@ class TestGoatApiClient:
                         'marhabreg-2017': {'value': 'Mar'},
                         'waca_1981': {'value': 'Shakira'},
                         'family_representative': {'value': ['PROJ_A', 'PROJ_B']},
-                        'sample_collected': {'value': 'ZOONOMIA'}
+                        'sample_collected': {'value': 'ZOONOMIA'},
+                        'synonym': {'value': ['Molos single']}
                     }
                 }
             }
