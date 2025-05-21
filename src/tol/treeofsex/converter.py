@@ -205,6 +205,9 @@ class TOSConverter(DataObjectToDataObjectOrUpdateConverter):
         value_map: dict[str, str],
     ) -> bool:
 
+        if destination_config.magic_match_all:
+            return True
+
         if value in destination_config.ignore:
             return False
 
