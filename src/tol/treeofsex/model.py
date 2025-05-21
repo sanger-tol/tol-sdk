@@ -30,17 +30,17 @@ class DestinationConfig(BaseModel):
     @computed_field
     @property
     def magic_types(self) -> list[type]:
-        __TYPE_MAP = {
-            #TODO work out `string` with kamil
+        type_map = {
+            # TODO work out `string` with kamil
             'int': int,
             'double': float,
         }
 
-        return list(
+        return [
             v
-            for k, v in __TYPE_MAP.items()
+            for k, v in type_map.items()
             if k in self.imported_values
-        )
+        ]
 
 
 class AttributeConfig(BaseModel):
@@ -60,6 +60,7 @@ class AttributeConfig(BaseModel):
             self.destination,
             DestinationConfig,
         )
+
 
 class YamlConfig(BaseModel):
     file: FileConfig
