@@ -31,7 +31,6 @@ class DestinationConfig(BaseModel):
     @property
     def magic_types(self) -> list[type]:
         type_map = {
-            # TODO work out `string` with kamil
             'int': int,
             'double': float,
         }
@@ -41,6 +40,11 @@ class DestinationConfig(BaseModel):
             for k, v in type_map.items()
             if k in self.imported_values
         ]
+
+    @computed_field
+    @property
+    def magic_match_all(self) -> bool:
+        return 'all' in self.imported_values
 
 
 class AttributeConfig(BaseModel):

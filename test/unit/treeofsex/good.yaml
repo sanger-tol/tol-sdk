@@ -45,3 +45,8 @@ attributes:
         separator: ","
         imported_values:
           - "yes": "please"
+
+      - key: "third_and_greatest"
+        separator: ","
+        imported_values:
+          - "all"
