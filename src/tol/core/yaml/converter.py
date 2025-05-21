@@ -128,4 +128,4 @@ class YamlConverter(DataObjectToDataObjectOrUpdateConverter):
         with open(yaml_path, 'r') as yaml_file:
             loaded = safe_load(yaml_file)
 
-            return pydantic_class(**loaded)
+        return pydantic_class(**loaded)
