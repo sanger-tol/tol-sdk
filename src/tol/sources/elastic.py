@@ -691,15 +691,21 @@ def elastic(environment: str = None) -> ElasticDataSource:
                     """
                 }
             },
-            'no_null_calc_individual_exhausted_tolid_count': {
+            'calc_no_null_individual_exhausted_tolid_count': {
                 'type': 'double',
                 'script': {
                     'source': """
-                        if (doc.containsKey('calc_individual_exhausted_tolid_count') &&
-                        if (doc['calc_individual_exhausted_tolid_count'] == null) {
-                            emit(0.0);
+                    
+                        boolean isThereAValueNonNull = (
+                            doc.containsKey('tolid_species.calc_individual_exhausted_tolid_count') &&
+                            doc['tolid_species.calc_individual_exhausted_tolid_count'].size() > 0 &&
+                            doc['tolid_species.calc_individual_exhausted_tolid_count'].value != null
+                        );
+            
+                        if (isThereAValueNonNull) {
+                            emit(doc['tolid_species.calc_individual_exhausted_tolid_count'].value);
                         } else {
-                            emit(doc['calc_individual_exhausted_tolid_count'].value);
+                            emit(0.0);
                         }
                     """
                 }
