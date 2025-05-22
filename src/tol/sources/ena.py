@@ -14,7 +14,7 @@ from ..ena import (
 )
 
 
-def ena() -> EnaDataSource:
+def ena(**kwargs) -> EnaDataSource:
     ena = create_ena_datasource(
         ena_url=os.getenv('ENA_URL', Defaults.ENA_URL),
         ena_user=os.getenv('ENA_USER'),

@@ -14,7 +14,7 @@ from ..core import (
 )
 
 
-def bold() -> BoldDataSource:
+def bold(**kwargs) -> BoldDataSource:
     bold = create_bold_datasource(
         bold_url=os.getenv('BOLD_URL', Defaults.BOLD_URL)
         + os.getenv('BOLD_API_PATH', Defaults.BOLD_API_PATH),

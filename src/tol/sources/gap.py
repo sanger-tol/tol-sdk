@@ -11,7 +11,7 @@ from ..gap import (
 )
 
 
-def gap():
+def gap(**kwargs) -> GapDataSource:
     gap = GapDataSource({
         'uri': 's3://gap/data/assembly.json',
         'type': 'assembly',

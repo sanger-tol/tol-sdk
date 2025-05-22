@@ -13,7 +13,7 @@ from ..google_sheets import (
 )
 
 
-def genome_notes():
+def genome_notes(**kwargs) -> GoogleSheetDataSource:
     gsds = GoogleSheetDataSource({
         'client_secrets': json.loads(os.getenv('GOOGLE_CLIENT_SECRETS')),
         'sheet_key': '1OwMsyI8a5WfQf2Y0LHM-SqJ17exjTLjjUDG-ig3aHw0',

@@ -6,6 +6,7 @@ import os
 
 from .defaults import Defaults
 from ..api_client import (
+    ApiDataSource,
     create_api_datasource
 )
 from ..core import (
@@ -13,7 +14,7 @@ from ..core import (
 )
 
 
-def bioscan(retries: int = 5):
+def bioscan(retries: int = 5, **kwargs) -> ApiDataSource:
     bioscan = create_api_datasource(
         api_url=os.getenv('BIOSCAN_URL', Defaults.BIOSCAN_URL)
         + os.getenv('BIOSCAN_API_PATH', Defaults.BIOSCAN_API_PATH),

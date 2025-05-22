@@ -14,7 +14,7 @@ from ..core import (
 )
 
 
-def portal(retries: int = 5) -> ApiDataSource:
+def portal(retries: int = 5, **kwargs) -> ApiDataSource:
     portal = create_api_datasource(
         api_url=os.getenv('PORTAL_URL', Defaults.PORTAL_URL)
         + os.getenv('PORTAL_API_PATH', Defaults.PORTAL_API_PATH),
