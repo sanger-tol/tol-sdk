@@ -30,14 +30,14 @@ class TOSEmitter(Iterable[DataObject]):
         *,
         object_type: str = 'sheet_row',
         engine: str = 'openpyxl',
-        type_mappings: dict[str, str] | None = None,
+        type_mapping: dict[str, str] | None = None,
     ) -> None:
 
         self.__do_factory = data_object_factory
         self.__object_type = object_type
 
         self.__mappings = self.__get_mappings(
-            type_mappings,
+            type_mapping,
         )
 
         self.__df: pd.DataFrame = pd.read_excel(
@@ -111,5 +111,7 @@ class TOSEmitter(Iterable[DataObject]):
             return float
         elif __v == 'datetime':
             return datetime
+        elif __v == 'bool':
+            return bool
 
         raise DataSourceError(title='Bad Mapping Value')
