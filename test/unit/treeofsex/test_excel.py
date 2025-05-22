@@ -88,3 +88,8 @@ class TestTOSEmitter:
             'int_column': 42,
             'str_column': 'hello',
         }
+        assert dt1 == datetime(
+            year=2000,
+            month=2,
+            day=18,
+        )
