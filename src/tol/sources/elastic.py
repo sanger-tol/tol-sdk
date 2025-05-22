@@ -334,11 +334,16 @@ def elastic(environment: str = None) -> ElasticDataSource:
                             doc['tolid_tolid_count'].size() > 0
                         );
 
-                        boolean isSampleCollectedForPsyche = (
-                            doc.containsKey('goat_sample_collected.keyword') &&
-                            doc['goat_sample_collected.keyword'].size() > 0 &&
-                            doc['goat_sample_collected.keyword'].value == 'PSYCHE'
-                        );
+                        boolean isSampleCollectedForPsyche = false;
+                        if (doc.containsKey('goat_sample_collected.keyword') &&
+                            doc['goat_sample_collected.keyword'].size() > 0) {
+                            for (String value : doc['goat_sample_collected.keyword']) {
+                                if (value != null && value.contains('PSYCHE')) {
+                                    isSampleCollectedForPsyche = true;
+                                    break;
+                                }
+                            }
+                        }
 
                         emit(
                             isRecollectionRequired || (!isIncludedProject
@@ -348,22 +353,27 @@ def elastic(environment: str = None) -> ElasticDataSource:
                     """
                 }
             },
-            'calc_species_name': {
+            'calc_species_epithet': {
                 'type': 'keyword',
                 'script': {
                     'source': """
-                        if (doc.containsKey('goat_scientific_name.keyword') && 
-                            doc['goat_scientific_name.keyword'].size() > 0) {
-                            String scientificName = doc['goat_scientific_name.keyword'].value;
-                            String[] parts = scientificName.split("\\\\s+");
-                            if (parts.length > 1) {
-                                emit(parts[1]);
-                            } else {
-                                emit("");
+                        String result = "";
+                        if (doc.containsKey('goat_species_name.keyword')) {
+                            def values = doc['goat_species_name.keyword'];
+                            if (values.size() > 0) {
+                                String fullName = values.value;
+                                int firstSpace = fullName.indexOf(' ');
+                                if (firstSpace > 0 && firstSpace < fullName.length() - 1) {
+                                    int secondSpace = fullName.indexOf(' ', firstSpace + 1);
+                                    if (secondSpace > 0) {
+                                        result = fullName.substring(firstSpace + 1, secondSpace);
+                                    } else {
+                                        result = fullName.substring(firstSpace + 1);
+                                    }
+                                }
                             }
-                        } else {
-                            emit("");
                         }
+                        emit(result);
                     """
                 }
             },
