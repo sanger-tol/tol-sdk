@@ -4,7 +4,7 @@
 
 from collections import ChainMap
 from collections.abc import Mapping
-from functools import cache
+from functools import cached_property
 
 from pydantic import BaseModel, Field, computed_field
 
@@ -31,9 +31,8 @@ class DestinationConfig(BaseModel):
     separator: str = '|'
     ignore: list[str] = []
 
-    @computed_field
-    @property
-    @cache
+    @computed_field(return_type=list[type])
+    @cached_property
     def magic_types(self) -> list[type]:
         type_map = {
             'int': int,
@@ -51,9 +50,8 @@ class DestinationConfig(BaseModel):
     def magic_match_all(self) -> bool:
         return 'all' in self.imported_values
 
-    @computed_field
-    @property
-    @cache
+    @computed_field(return_type=dict[str, str])
+    @cached_property
     def imported_values_map(self) -> dict[str, str]:
         maps = [
             a
