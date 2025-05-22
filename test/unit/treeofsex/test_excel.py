@@ -8,8 +8,9 @@ from unittest.mock import create_autospec
 import pytest
 
 from tol.core import (
-    DataObject,
     DataObjectFactory,
+    DataSource,
+    core_data_object,
 )
 from tol.treeofsex.excel import TOSEmitter
 
@@ -23,26 +24,22 @@ def object_type() -> str:
 
 
 @pytest.fixture
-def data_object_factory(
-    object_type: str,
-) -> DataObjectFactory:
-    """Returns the given ID only."""
-
-    factory = create_autospec(
-        DataObjectFactory,
+def mock_ds(object_type: str) -> DataSource:
+    __ds: DataSource = create_autospec(
+        DataSource,
         spec_set=True,
     )
 
-    def __make(
-        type_: str,
-        id_: str | None = None,
-        *args,
-        **kwargs,
-    ) -> DataObject:
+    __ds.supported_types = [object_type]
 
-        assert type_ == object_type
+    return __ds
 
-        return id_
+
+@pytest.fixture
+def data_object_factory(mock_ds) -> DataObjectFactory:
+    """Returns the given ID only."""
+
+    return core_data_object(mock_ds)
 
 
 class TestTOSEmitter:
@@ -50,6 +47,7 @@ class TestTOSEmitter:
     def test_emit(
         self,
         data_object_factory: DataObjectFactory,
+        object_type: str,
     ) -> None:
         """
         Using a real spreadsheet, with an offset in
@@ -61,17 +59,10 @@ class TestTOSEmitter:
         emitter = TOSEmitter(
             data_object_factory,
             sheet_path,
-            column_offset=2,
-            row_offset=3,
+            'Sheet1',
+            object_type=object_type,
         )
 
-        expected = list(
-            range(2, 5)
-        )
-
-        observed = list(
-            emitter.emit()
-        )
-
-        assert observed == expected
+        observed = list(emitter)
+        import logging; logging.error(observed); assert False
 
