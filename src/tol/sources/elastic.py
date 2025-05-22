@@ -348,28 +348,6 @@ def elastic(environment: str = None) -> ElasticDataSource:
                     """
                 }
             },
-            'calc_species_only_name': {
-                'type': 'keyword',
-                'script': {
-                    'source': """
-                        if (doc.containsKey('goat_scientific_name.keyword') &&
-                            doc['goat_scientific_name.keyword'].size() > 0) {
-
-                            String scientificName =
-                            doc['goat_scientific_name.keyword'].value;
-
-                            String[] parts = scientificName.split("\\\\s+");
-                            if (parts.length > 1) {
-                                emit(parts[1]);
-                            } else {
-                                emit("");
-                            }
-                        } else {
-                            emit("");
-                        }
-                    """
-                }
-            },
             'calc_recollection_needed': {
                 'type': 'boolean',
                 'script': {
@@ -440,6 +418,26 @@ def elastic(environment: str = None) -> ElasticDataSource:
                     """
                 }
             },
+            'calc_no_null_tolid_tolid_count': {
+                'type': 'double',
+                'script': {
+                    'source': """
+
+                        boolean isThereAValueNonNull = (
+                            doc.containsKey('tolid_tolid_count') &&
+                            doc['tolid_tolid_count'].size() > 0 &&
+                            doc['tolid_tolid_count']
+                            .value != null
+                        );
+
+                        if (isThereAValueNonNull) {
+                            emit(doc['tolid_tolid_count'].value);
+                        } else {
+                            emit(0.0);
+                        }
+                    """
+                }
+            }
         },
         'specimen': {
             'calc_coverage_post_run': RuntimeFields.math(
@@ -690,7 +688,7 @@ def elastic(environment: str = None) -> ElasticDataSource:
                         );
                     """
                 }
-            },
+            }
         },
         'sample': {
             'calc_biospecimen_id': RuntimeFields.coalesce([
