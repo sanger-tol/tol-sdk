@@ -192,7 +192,7 @@ class TOSConverter(DataObjectToDataObjectOrUpdateConverter):
         if destination_config.magic_match_all:
             return True
 
-        if value in destination_config.imported_values or value in value_map:
+        if value in value_map:
             return True
 
         return self.__allowed_magic_type(
