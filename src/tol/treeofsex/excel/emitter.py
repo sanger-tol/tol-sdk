@@ -48,7 +48,7 @@ class TOSEmitter(Iterable[DataObject]):
 
     def __iter__(self) -> Iterator[DataObject]:
         return (
-            self.__marshal_row(row_index, row)
+            self.__marshal_row(row_index + 1, row)
             for row_index, row
             in self.__df.iterrows()
         )
