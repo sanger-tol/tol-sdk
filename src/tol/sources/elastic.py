@@ -710,28 +710,6 @@ def elastic(environment: str = None) -> ElasticDataSource:
                         );
                     """
                 }
-            },
-            'calc_no_null_individual_exhausted_tolid_count': {
-                'type': 'double',
-                'script': {
-                    'source': """
-
-                        boolean isThereAValueNonNull = (
-                            doc.containsKey(
-                                'tolid_species.calc_individual_exhausted_tolid_count') &&
-                            doc['tolid_species.calc_individual_exhausted_tolid_count']
-                            .size() > 0 &&
-                            doc['tolid_species.calc_individual_exhausted_tolid_count']
-                            .value != null
-                        );
-
-                        if (isThereAValueNonNull) {
-                            emit(doc['tolid_species.calc_individual_exhausted_tolid_count'].value);
-                        } else {
-                            emit(0.0);
-                        }
-                    """
-                }
             }
         },
         'sample': {
