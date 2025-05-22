@@ -691,6 +691,19 @@ def elastic(environment: str = None) -> ElasticDataSource:
                     """
                 }
             },
+            'no_null_calc_individual_exhausted_tolid_count': {
+                'type': 'double',
+                'script': {
+                    'source': """
+                        if (doc.containsKey('calc_individual_exhausted_tolid_count') &&
+                        if (doc['calc_individual_exhausted_tolid_count'] == null) {
+                            emit(0.0);
+                        } else {
+                            emit(doc['calc_individual_exhausted_tolid_count'].value);
+                        }
+                    """
+                }
+            }
         },
         'sample': {
             'calc_biospecimen_id': RuntimeFields.coalesce([
