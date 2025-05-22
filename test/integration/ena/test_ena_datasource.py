@@ -54,7 +54,8 @@ class TestEnaDataSource(TestCase):
         for obj in ret:
             if obj.id == '9925':
                 self.assertEqual(obj.id, '9925')
-                self.assertEqual(obj.common_name, 'domestic goat')
+                # keeps flip-flopping between these two values at ENA
+                self.assertIn(obj.common_name, ['domestic goat', 'goats'])
                 self.assertEqual(obj.merged_tax_id, '57076')
             elif obj.id == '10090':
                 self.assertEqual(obj.id, '10090')
