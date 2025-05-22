@@ -7,7 +7,7 @@ from typing import Iterable
 
 import pandas as pd
 
-from ...core import DataObject
+from ...core import DataObject, DataObjectFactory
 
 
 class TOSEmitter:
@@ -18,8 +18,11 @@ class TOSEmitter:
 
     def __init__(
         self,
+        data_object_factory: DataObjectFactory,
         sheet_path: str | Path,
         *,
+        column_offset: int = 0,
+        row_offset: int = 0,
         object_type: str = 'sheet_row',
         engine: str = 'openpyxl',
     ) -> None:
