@@ -97,7 +97,14 @@ class DefaultParser(Parser):
                             ret[att] = att_value['value']
         if 'names' in attributes:
             for att in attributes['names']:
-                ret[att] = attributes['names'][att]['name'][0]
+                if att == 'synonym':
+                    synonym_value = attributes['names'][att]['name']
+                    if isinstance(synonym_value, list):
+                        ret[att] = synonym_value
+                    else:
+                        ret[att] = [synonym_value]
+                else:
+                    ret[att] = attributes['names'][att]['name'][0]
 
         # Lineage
         if 'ranks' in attributes:

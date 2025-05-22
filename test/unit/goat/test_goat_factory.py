@@ -85,6 +85,18 @@ class TestCreateGoatDatasource:
                             'source': [
                                 'animal genome size database'
                             ]
+                        },
+                        'synonym': {
+                            'class': [
+                                'synonym'
+                            ],
+                            'name': [
+                                'Meles alba',
+                                'Meles britannicus'
+                            ],
+                            'source': [
+                                'some source'
+                            ]
                         }
                     },
                 }
@@ -114,7 +126,8 @@ class TestCreateGoatDatasource:
                 'isb_wildlife_act_1976': ['IWA-Sch5'],
                 'protection_of_badgers_act_1992': ['Badgers92'],
                 'tolid_prefix': 'mMelMel',
-                'common_name': 'Melon'
+                'common_name': 'Melon',
+                'synonym': ['Meles alba', 'Meles britannicus']
             },
             to_one={}
         )
@@ -175,6 +188,18 @@ class TestCreateGoatDatasource:
                             'source': [
                                 'animal genome size database'
                             ]
+                        },
+                        'synonym': {
+                            'class': [
+                                'synonym'
+                            ],
+                            'name': [
+                                'Meles alba',
+                                'Meles britannicus'
+                            ],
+                            'source': [
+                                'some source'
+                            ]
                         }
                     },
                 }
@@ -206,7 +231,8 @@ class TestCreateGoatDatasource:
                 'isb_wildlife_act_1976': ['IWA-Sch5'],
                 'protection_of_badgers_act_1992': ['Badgers92'],
                 'tolid_prefix': 'mMelMel',
-                'common_name': 'Melon'
+                'common_name': 'Melon',
+                'synonym': ['Meles alba', 'Meles britannicus']
             },
             to_one={}
         )

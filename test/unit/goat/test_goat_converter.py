@@ -96,6 +96,18 @@ class TestGoatApiConverter:
                             'source': [
                                 'animal genome size database'
                             ]
+                        },
+                        'synonym': {
+                            'class': [
+                                'synonym'
+                            ],
+                            'name': [
+                                'Meles alba',
+                                'Meles britannicus'
+                            ],
+                            'source': [
+                                'some source'
+                            ]
                         }
                     },
                     'ranks': {
@@ -158,7 +170,8 @@ class TestGoatApiConverter:
             'lineage': 'List[str]',
             'tolid_prefix': 'str',
             'common_name': 'str',
-            'sample_collected': 'List[str]'
+            'sample_collected': 'List[str]',
+            'synonym': 'List[str]'
         }}))
         converter = GoatApiConverter(parser)
         (out_, _) = converter.convert_list(in_)
@@ -180,7 +193,8 @@ class TestGoatApiConverter:
             'sample_collected': ['DTOL'],
             'lineage': ['Mustelidae', 'Meles', 'Meles meles'],
             'tolid_prefix': 'mMelMel',
-            'common_name': 'Melon'
+            'common_name': 'Melon',
+            'synonym': ['Meles alba', 'Meles britannicus']
         }
         assert first._to_one_objects['species'].id == '9662'
         assert first._to_one_objects['genus'].id == '9661'

@@ -342,8 +342,31 @@ def elastic(environment: str = None) -> ElasticDataSource:
 
                         emit(
                             isRecollectionRequired || (!isIncludedProject
-                            && !isChromosome && !isSpecimensAtSanger && isSampleCollectedForPsyche)
+                            && !isChromosome && !isSpecimensAtSanger
+                            && !isSampleCollectedForPsyche)
                         );
+                    """
+                }
+            },
+            'calc_species_only_name': {
+                'type': 'keyword',
+                'script': {
+                    'source': """
+                        if (doc.containsKey('goat_scientific_name.keyword') &&
+                            doc['goat_scientific_name.keyword'].size() > 0) {
+
+                            String scientificName =
+                            doc['goat_scientific_name.keyword'].value;
+
+                            String[] parts = scientificName.split("\\\\s+");
+                            if (parts.length > 1) {
+                                emit(parts[1]);
+                            } else {
+                                emit("");
+                            }
+                        } else {
+                            emit("");
+                        }
                     """
                 }
             },
@@ -550,50 +573,59 @@ def elastic(environment: str = None) -> ElasticDataSource:
                 'type': 'boolean',
                 'script': {
                     'source': """
-                        boolean isIndividualExhausted = (
-                            doc.containsKey(
-                            'calc_sequencing_request_calc_mlwh_volume_remaining_max'
-                            ) && doc.containsKey(
-                            'calc_extraction_calc_benchling_volume_ul_dna_max'
-                            ) && doc.containsKey(
-                            'calc_tissue_prep_calc_benchling_weight_mg_max'
-                            ) && doc.containsKey(
-                            'calc_sample_calc_benchling_remaining_weight_max'
-                            ) && doc.containsKey(
-                            'benchling_sample_count'
-                            ) && doc.containsKey(
-                            'sts_sample_count'
-                            ) && doc[
-                            'calc_sequencing_request_calc_mlwh_volume_remaining_max'
-                            ].size() > 0 && doc[
-                            'calc_extraction_calc_benchling_volume_ul_dna_max'
-                            ].size() > 0 && doc[
-                            'calc_tissue_prep_calc_benchling_weight_mg_max'
-                            ].size() > 0 && doc[
-                            'calc_sample_calc_benchling_remaining_weight_max'
-                            ].size() > 0 && doc[
-                            'benchling_sample_count'
-                            ].size() > 0 && doc[
-                            'sts_sample_count'
-                            ].size() > 0 &&
-                            doc[
-                            'calc_sequencing_request_calc_mlwh_volume_remaining_max'
-                            ].value <= 0 &&
-                            doc['calc_extraction_calc_benchling_volume_ul_dna_max'
-                            ].value <= 0 && doc[
-                            'calc_tissue_prep_calc_benchling_weight_mg_max'
-                            ].value <= 0 && doc[
-                            'calc_sample_calc_benchling_remaining_weight_max'
-                            ].value <= 0 && doc[
-                            'benchling_sample_count'
-                            ].value == doc[
-                            'sts_sample_count'
-                            ].value
-                            );
+                        def benchlingNewSampleCount = 0;
+                        if (doc.containsKey('benchling_sample_count')
+                            && doc['benchling_sample_count'].size() > 0) {
+                            benchlingNewSampleCount = doc['benchling_sample_count'].value;
+                        }
 
-                        emit(
-                            isIndividualExhausted
-                        );
+                        def abandonCount = 0;
+                        if (doc.containsKey('calc_sample_abandoned_in_sts_sample_count')
+                            && doc['calc_sample_abandoned_in_sts_sample_count'].size() > 0) {
+                            abandonCount = doc['calc_sample_abandoned_in_sts_sample_count'].value;
+                        }
+
+                        def totalSampleCount = benchlingNewSampleCount + abandonCount;
+
+                        boolean allSamplesAccountedFor = false;
+                        if (doc.containsKey('sts_sample_count') &&
+                            doc['sts_sample_count'].size() > 0 &&
+                            totalSampleCount == doc['sts_sample_count'].value) {
+                            allSamplesAccountedFor = true;
+                        }
+
+                        boolean allBenchlingMaterialExhausted = false;
+                        if (benchlingNewSampleCount > 0 &&
+                            doc.containsKey(
+                            'calc_sequencing_request_calc_mlwh_volume_remaining_max')
+                            && doc.containsKey('
+                            calc_extraction_calc_benchling_volume_ul_dna_max')
+                            && doc.containsKey('
+                            calc_tissue_prep_calc_benchling_weight_mg_max')
+                            && doc.containsKey(
+                            'calc_sample_calc_benchling_remaining_weight_max')
+                            && doc['
+                            calc_sequencing_request_calc_mlwh_volume_remaining_max'].size() > 0
+                            && doc['
+                            calc_extraction_calc_benchling_volume_ul_dna_max'].size() > 0
+                            && doc['
+                            calc_tissue_prep_calc_benchling_weight_mg_max'].size() > 0
+                            && doc['
+                            calc_sample_calc_benchling_remaining_weight_max'].size() > 0
+                            && doc['
+                            calc_sequencing_request_calc_mlwh_volume_remaining_max'].value <= 0
+                            && doc['
+                            calc_extraction_calc_benchling_volume_ul_dna_max'].value <= 0
+                            && doc['
+                            calc_tissue_prep_calc_benchling_weight_mg_max'].value <= 0
+                            && doc['
+                            calc_sample_calc_benchling_remaining_weight_max'].value <= 0)
+                            {
+                            allBenchlingMaterialExhausted = true;
+                        }
+
+                        emit(allSamplesAccountedFor &&
+                            (benchlingNewSampleCount == 0 || allBenchlingMaterialExhausted));
                     """
                 }
             },
