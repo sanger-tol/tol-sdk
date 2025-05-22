@@ -602,34 +602,34 @@ def elastic(environment: str = None) -> ElasticDataSource:
                 'script': {
                     'source': """
                         boolean isThereAtLeastAnotherIndividual = (
-                            doc.containsKey('sts_species.tolid_tolid_count') &&
-                            doc['sts_species.tolid_tolid_count'].size() > 0 &&
-                            doc['sts_species.tolid_tolid_count'].value > 1
+                            doc.containsKey('tolid_species.tolid_tolid_count') &&
+                            doc['tolid_species.tolid_tolid_count'].size() > 0 &&
+                            doc['tolid_species.tolid_tolid_count'].value > 1
                         );
 
                          boolean isAtLeastOneIndividualExhausted = (
                             doc.containsKey
-                            ('sts_species.calc_tolid_calc_individual_exhausted_max') &&
-                            doc['sts_species.calc_tolid_calc_individual_exhausted_max']
+                            ('tolid_species.calc_tolid_calc_individual_exhausted_max') &&
+                            doc['tolid_species.calc_tolid_calc_individual_exhausted_max']
                             .size() > 0 &&
-                            doc['sts_species.calc_tolid_calc_individual_exhausted_max']
+                            doc['tolid_species.calc_tolid_calc_individual_exhausted_max']
                             .value == 1
 
                         );
 
                         boolean isSpeciesTopUpEqualsIndividualExhausted = (
                             doc.containsKey
-                            ('sts_species.calc_tolid_calc_individual_exhausted_max')
+                            ('tolid_species.calc_topup_required_tolid_count')
                             && doc.containsKey
-                            ('sts_species.calc_tolid_calc_individual_exhausted_max')
+                            ('tolid_species.calc_individual_exhausted_tolid_count')
                             && doc
-                            ['sts_species.calc_tolid_calc_individual_exhausted_max']
+                            ['tolid_species.calc_topup_required_tolid_count']
                             .size() > 0 && doc
-                            ['sts_species.calc_tolid_calc_individual_exhausted_max']
+                            ['tolid_species.calc_individual_exhausted_tolid_count']
                             .size() > 0 && (doc
-                            ['sts_species.calc_topup_required_tolid_count']
+                            ['tolid_species.calc_topup_required_tolid_count']
                             .value - doc
-                            ['sts_species.calc_tolid_calc_individual_exhausted_max']
+                            ['tolid_species.calc_individual_exhausted_tolid_count']
                             .value == 0)
                         );
 
