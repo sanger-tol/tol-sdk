@@ -348,28 +348,6 @@ def elastic(environment: str = None) -> ElasticDataSource:
                     """
                 }
             },
-            'calc_species_only_name': {
-                'type': 'keyword',
-                'script': {
-                    'source': """
-                        if (doc.containsKey('goat_scientific_name.keyword') &&
-                            doc['goat_scientific_name.keyword'].size() > 0) {
-
-                            String scientificName =
-                            doc['goat_scientific_name.keyword'].value;
-
-                            String[] parts = scientificName.split("\\\\s+");
-                            if (parts.length > 1) {
-                                emit(parts[1]);
-                            } else {
-                                emit("");
-                            }
-                        } else {
-                            emit("");
-                        }
-                    """
-                }
-            },
             'calc_recollection_needed': {
                 'type': 'boolean',
                 'script': {
