@@ -2,15 +2,21 @@
 #
 # SPDX-License-Identifier: MIT
 
+from collections.abc import Iterable
+from datetime import datetime
 from pathlib import Path
-from typing import Iterable
+from typing import Any, Iterator
 
 import pandas as pd
 
-from ...core import DataObject, DataObjectFactory
+from ...core import (
+    DataObject,
+    DataObjectFactory,
+    DataSourceError,
+)
 
 
-class TOSEmitter:
+class TOSEmitter(Iterable[DataObject]):
     """
     Emits `DataObject` instances from a tabular
     spreadsheet (e.g. `.xlsx`).
@@ -19,15 +25,91 @@ class TOSEmitter:
     def __init__(
         self,
         data_object_factory: DataObjectFactory,
-        sheet_path: str | Path,
+        filepath: str | Path,
+        sheet_name: str,
         *,
-        column_offset: int = 0,
-        row_offset: int = 0,
         object_type: str = 'sheet_row',
         engine: str = 'openpyxl',
+        type_mappings: dict[str, str] | None = None,
     ) -> None:
 
-        pass
+        self.__do_factory = data_object_factory
+        self.__object_type = object_type
 
-    def emit(self) -> Iterable[DataObject]:
-        pass
+        self.__mappings = self.__get_mappings(
+            type_mappings,
+        )
+
+        self.__df: pd.DataFrame = pd.read_excel(
+            filepath,
+            sheet_name,
+            engine=engine,
+        )
+
+    def __iter__(self) -> Iterator[DataObject]:
+        return (
+            self.__marshal_row(row_index, row)
+            for row_index, row
+            in self.__df.iterrows()
+        )
+
+    def __marshal_row(
+        self,
+        row_index: int,
+        row: pd.Series,
+    ) -> DataObject:
+
+        attributes = self.__format_attributes(row)
+
+        return self.__do_factory(
+            self.__object_type,
+            id_=str(row_index),
+            attributes=attributes,
+        )
+
+    def __format_attributes(
+        self,
+        row: pd.Series,
+    ) -> dict[str, Any]:
+
+        return {
+            k: self.__format_attribute(k, v)
+            for k, v in row.items()
+        }
+
+    def __format_attribute(
+        self,
+        __k: str,
+        __v: Any,
+    ) -> Any:
+
+        if __k not in self.__mappings:
+            return __v
+
+        type_ = self.__mappings[__k]
+        return type_(__v)
+
+    def __get_mappings(
+        self,
+        type_mappings: dict[str, str] | None,
+    ) -> dict[str, type]:
+
+        if not type_mappings:
+            return {}
+
+        return {
+            k: self.__get_mapping(v)
+            for k, v in type_mappings.items()
+        }
+
+    def __get_mapping(self, __v: str) -> type:
+        if __v == 'int':
+            return int
+        elif __v == 'str':
+            return str
+        elif __v == 'float':
+            return float
+        elif __v == 'datetime':
+            return datetime
+
+        raise DataSourceError(title='Bad Mapping Value')
