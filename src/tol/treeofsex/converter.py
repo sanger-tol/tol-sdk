@@ -5,7 +5,6 @@
 from __future__ import annotations
 
 from collections import ChainMap
-from collections.abc import Mapping
 from typing import Any, Iterable
 
 from yaml import safe_load
