@@ -1,5 +1,6 @@
 # SPDX-FileCopyrightText: 2025 Genome Research Ltd.
 # SPDX-License-Identifier: MIT
+import logging
 import re
 from typing import Iterable
 
@@ -230,6 +231,23 @@ class StsSampleToCasmBenchlingConverterFactory:
             'converted_value_identifiers': [],
             'stored_values': {},
         },
+        'casm_bag': {
+            'attribute_map': {
+                'barcode': 'storage_rack',
+                'parent_storage_id': 'storage'
+            },
+            'primary_attribute': 'barcode',
+            'primary_attribute_type': 'attribute',
+            'benchling_relationships': [
+                'storage',
+            ],
+            'sts_relationships': [
+                'storage_rack'
+            ],
+            'polymorphic_benchling_relationships': [],
+            'converted_value_identifiers': [],
+            'stored_values': {},
+        },
         'casm_96_well_plate': {
             'attribute_map': {
                 'barcode': 'storage_rack',
@@ -250,15 +268,15 @@ class StsSampleToCasmBenchlingConverterFactory:
         'casm_tube': {
             'attribute_map': {
                 'barcode': 'tubeid',
-                'parent_storage_id': 'box_and_position'
+                'parent_storage_id': 'container_parent_concatenated'
             },
             'primary_attribute': 'barcode',
             'primary_attribute_type': 'schema_field',
             'benchling_relationships': [
-                '12x12_box',
+
             ],
             'sts_relationships': [],
-            'polymorphic_benchling_relationships': [],
+            'polymorphic_benchling_relationships': ['container_parent_concatenated'],
             'converted_value_identifiers': [],
             'concatenated_values': ['box_and_position'],
             'stored_values': {},
@@ -373,8 +391,12 @@ class StsSampleToCasmBenchlingConverterFactory:
     """
 
     DESTINATION_OBJECT_TYPES = {
-        'box_or_plate': {
-            'RACK_TUBE': '12x12_box',
+        'container_parent': {
+            'RACK_TUBE': {'box':'12x12_box','bag':'casm_bag'},
+            'PLATE_WELL': 'casm_96_well_plate'
+        },
+        'container_parent_concatenated': {
+            'RACK_TUBE': {'box': 'box_and_position', 'bag': 'casm_bag'},
             'PLATE_WELL': 'casm_96_well_plate'
         },
         'container': {
@@ -383,7 +405,7 @@ class StsSampleToCasmBenchlingConverterFactory:
         }
     }
     """
-        Map of the dynamic object types
+        Map of the destinatoin object types for a spesific destistination type
     """
 
     POLYMORPHIC_RELATIONSHIP_OBJECT_TYPES = {
@@ -467,15 +489,15 @@ class StsSampleToCasmBenchlingConverterFactory:
 
                     if 'naming_strategy' in object_map and object_map['naming_strategy']:
                         object_attributes['naming_strategy'] = object_map['naming_strategy']
-
+                    logging.exception(object_attributes)
                     yield self._data_object_factory(
                         factory.destination_object_type,
                         sample.id,
                         attributes=object_attributes
                     )
 
-            @staticmethod
             def _get_destination_object_type(
+                    self,
                     sample,
                     detect_destination_type: str,
                     raise_exception: bool = True
@@ -503,8 +525,23 @@ class StsSampleToCasmBenchlingConverterFactory:
                         and sample.manifest.manifest_type in factory.
                         DESTINATION_OBJECT_TYPES[detect_destination_type]
                 ):
-                    return factory.DESTINATION_OBJECT_TYPES[detect_destination_type][
-                        sample.manifest.manifest_type]
+                    destination_types = factory.DESTINATION_OBJECT_TYPES[detect_destination_type]
+                    destination_type = destination_types[sample.manifest.manifest_type]
+
+                    if not isinstance(destination_type, dict):
+                        return destination_type
+
+                    if (
+                            sample.manifest.manifest_type == "RACK_TUBE"
+                            and detect_destination_type in
+                            ['container_parent','container_parent_concatenated']
+                    ):
+                        if self.check_if_box(sample):
+                            destination_type = destination_type['box']
+                        else:
+                            destination_type = destination_type['bag']
+
+                    return destination_type
 
                 if raise_exception:
                     raise Exception(
@@ -513,6 +550,28 @@ class StsSampleToCasmBenchlingConverterFactory:
                     )
 
                 return None
+
+            @staticmethod
+            def check_if_box(sample) -> bool:
+                """
+                    Check if the given sample represents a box based on its attributes.
+
+                    Args:
+                       sample: An object with an 'attributes' dictionary containing sample metadata.
+
+                    Returns:
+                       bool: False if the sample's 'tubeid' starts with 'CBAG' or if
+                             'TUBE_WELL_POSITION' attribute is missing; True otherwise.
+                """
+                tube_id = sample.attributes.get('tubeid')
+                if tube_id.startswith('CBAG'):
+                    return False
+
+
+                if sample.attributes.get('TUBE_WELL_POSITION') is None:
+                    return False
+
+                return True
 
             @staticmethod
             def _sanitize_attribute(key: str, value: any, object_type_override: str = ''):
