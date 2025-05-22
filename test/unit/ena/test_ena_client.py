@@ -170,7 +170,7 @@ class TestEnaClient:
             },
             {
                 'columnId': 'synonym',
-                'description': 'synonym for taxon',
+                'description': 'Synonyms for taxon',
                 'type': 'text'
             },
             {
