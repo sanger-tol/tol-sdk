@@ -23,6 +23,7 @@ class TestGoatDataSource(TestCase):
         assert gds.attribute_types['taxon']['scientific_name'] == 'str'
         assert gds.attribute_types['taxon']['genome_size'] == 'int'
         assert gds.attribute_types['taxon']['family_representative'] == 'List[str]'
+        assert gds.attribute_types['taxon']['synonym'] == 'List[str]'
 
     def test_relationship_config(self):
         gds = goat()
@@ -95,6 +96,7 @@ class TestGoatDataSource(TestCase):
         self.assertEqual(obj1.scientific_name, 'Capra hircus')
         self.assertEqual(obj1.common_name, 'goat')
         self.assertEqual(obj1.tolid_prefix, 'mCapHir')
+        self.assertIsInstance(obj1.synonym, list)
 
         with self.assertRaises(StopIteration):
             next(ret)
@@ -112,6 +114,11 @@ class TestGoatDataSource(TestCase):
         assert '9925' in obj_ids
         assert '10090' in obj_ids
         assert len(obj_ids) == 2
+
+        for obj in ret:
+            self.assertIsInstance(obj.synonym, list)
+            if len(obj.synonym) > 0:
+                self.assertIsInstance(obj.synonym[0], str)
 
     def test_get_list_page_sort_custom(self):
         gds = goat()
@@ -138,16 +145,19 @@ class TestGoatDataSource(TestCase):
         self.assertEqual('687059', obj3.id)
         self.assertEqual(obj3.scientific_name, 'Psyche casta')
         self.assertEqual(obj3.phylum.scientific_name, 'Arthropoda')
+        self.assertIsInstance(obj3.synonym, list)
 
         obj2 = ret[1]
         self.assertEqual('62298', obj2.id)
         self.assertEqual(obj2.scientific_name, 'Desmarestia aculeata')
         self.assertEqual(obj2.family.scientific_name, 'Desmarestiaceae')
+        self.assertIsInstance(obj2.synonym, list)
 
         obj1 = ret[2]
         self.assertEqual('2708', obj1.id)
         self.assertEqual(obj1.scientific_name, 'Citrus x limon')
         self.assertEqual(obj1.phylum.scientific_name, 'Streptophyta')
+        self.assertIsInstance(obj1.synonym, list)
 
     def test_get_list_page_sort_id(self):
         gds = goat()
@@ -170,3 +180,6 @@ class TestGoatDataSource(TestCase):
         self.assertEqual('62298', ret[0].id)
         self.assertEqual('2708', ret[1].id)
         self.assertEqual('1857951', ret[2].id)
+
+        for obj in ret:
+            self.assertIsInstance(obj.synonym, list)

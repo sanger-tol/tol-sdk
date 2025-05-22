@@ -61,8 +61,7 @@ class TestCreateGoatDatasource:
                         'assembly_level': {'value': 'Chromosome'},
                         'ploidy': {'value': 2},
                         'isb_wildlife_act_1976': {'value': 'IWA-Sch5'},
-                        'protection_of_badgers_act_1992': {'value': 'Badgers92'},
-                        'synonym': {'value': ['Meles alba', 'Meles britannicus']},
+                        'protection_of_badgers_act_1992': {'value': 'Badgers92'}
                     },
                     'names': {
                         'tolid_prefix': {
@@ -85,6 +84,18 @@ class TestCreateGoatDatasource:
                             ],
                             'source': [
                                 'animal genome size database'
+                            ]
+                        },
+                        'synonym': {
+                            'class': [
+                                'synonym'
+                            ],
+                            'name': [
+                                'Meles alba',
+                                'Meles britannicus'
+                            ],
+                            'source': [
+                                'some source'
                             ]
                         }
                     },
@@ -153,8 +164,7 @@ class TestCreateGoatDatasource:
                         'assembly_level': {'value': 'Chromosome'},
                         'ploidy': {'value': 2},
                         'isb_wildlife_act_1976': {'value': 'IWA-Sch5'},
-                        'protection_of_badgers_act_1992': {'value': 'Badgers92'},
-                        'synonym': {'value': ['Meles alba', 'Meles britannicus']}
+                        'protection_of_badgers_act_1992': {'value': 'Badgers92'}
                     },
                     'names': {
                         'tolid_prefix': {
@@ -177,6 +187,18 @@ class TestCreateGoatDatasource:
                             ],
                             'source': [
                                 'animal genome size database'
+                            ]
+                        },
+                        'synonym': {
+                            'class': [
+                                'synonym'
+                            ],
+                            'name': [
+                                'Meles alba',
+                                'Meles britannicus'
+                            ],
+                            'source': [
+                                'some source'
                             ]
                         }
                     },

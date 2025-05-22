@@ -84,7 +84,7 @@ class DefaultParser(Parser):
         ]
         one_or_list_fields = ['echabs92', 'habreg_2017', 'marhabreg-2017', 'waca_1981',
                               'isb_wildlife_act_1976', 'protection_of_badgers_act_1992',
-                              'family_representative', 'long_list', 'sample_collected', 'synonym']
+                              'family_representative', 'long_list', 'sample_collected']
         if 'fields' in attributes:
             for att in normal_fields + one_or_list_fields:
                 if att in attributes['fields']:
@@ -97,7 +97,14 @@ class DefaultParser(Parser):
                             ret[att] = att_value['value']
         if 'names' in attributes:
             for att in attributes['names']:
-                ret[att] = attributes['names'][att]['name'][0]
+                if att == 'synonym':
+                    synonym_value = attributes['names'][att]['name']
+                    if isinstance(synonym_value, list):
+                        ret[att] = synonym_value
+                    else:
+                        ret[att] = [synonym_value]
+                else:
+                    ret[att] = attributes['names'][att]['name'][0]
 
         # Lineage
         if 'ranks' in attributes:
