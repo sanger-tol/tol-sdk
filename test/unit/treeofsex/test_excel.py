@@ -62,10 +62,7 @@ class TestTOSEmitter:
         object_type: str,
         type_mapping: dict[str, str],
     ) -> None:
-        """
-        Using a real spreadsheet, with an offset in
-        both row and column.
-        """
+        """Using a real spreadsheet."""
 
         sheet_path = BASE_DIR / 'objects.xlsx'
 
