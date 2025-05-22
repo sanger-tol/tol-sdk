@@ -3,6 +3,7 @@
 # SPDX-License-Identifier: MIT
 
 import pathlib
+from datetime import datetime
 from unittest.mock import create_autospec
 
 import pytest
@@ -76,6 +77,14 @@ class TestTOSEmitter:
             type_mapping=type_mapping,
         )
 
-        observed = list(emitter)
-        import logging; logging.error(observed[0].attributes); assert False
+        obj1, obj2 = list(emitter)
 
+        assert obj1.type == object_type
+        assert obj1.id == '1'
+        dt1 = obj1.attributes.pop('datetime_column')
+        assert obj1.attributes == {
+            'bool_column': True,
+            'float_column': 42.0,
+            'int_column': 42,
+            'str_column': 'hello',
+        }
