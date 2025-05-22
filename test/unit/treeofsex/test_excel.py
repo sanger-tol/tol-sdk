@@ -81,15 +81,30 @@ class TestTOSEmitter:
 
         assert obj1.type == object_type
         assert obj1.id == '1'
-        dt1 = obj1.attributes.pop('datetime_column')
+        dt2 = obj1.attributes.pop('datetime_column')
         assert obj1.attributes == {
             'bool_column': True,
             'float_column': 42.0,
             'int_column': 42,
             'str_column': 'hello',
         }
-        assert dt1 == datetime(
+        assert dt2 == datetime(
             year=2000,
+            month=2,
+            day=18,
+        )
+
+        assert obj2.type == object_type
+        assert obj2.id == '2'
+        dt2 = obj2.attributes.pop('datetime_column')
+        assert obj2.attributes == {
+            'bool_column': False,
+            'float_column': 9032.2,
+            'int_column': 9093,
+            'str_column': 'world',
+        }
+        assert dt2 == datetime(
+            year=2010,
             month=2,
             day=18,
         )
