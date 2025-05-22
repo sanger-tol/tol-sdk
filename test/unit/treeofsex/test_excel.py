@@ -49,8 +49,6 @@ def mock_ds(object_type: str) -> DataSource:
 
 @pytest.fixture
 def data_object_factory(mock_ds) -> DataObjectFactory:
-    """Returns the given ID only."""
-
     return core_data_object(mock_ds)
 
 
