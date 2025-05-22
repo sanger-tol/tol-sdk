@@ -2,6 +2,10 @@
 #
 # SPDX-License-Identifier: MIT
 
+from collections import ChainMap
+from collections.abc import Mapping
+from functools import cache
+
 from pydantic import BaseModel, Field, computed_field
 
 
@@ -45,6 +49,27 @@ class DestinationConfig(BaseModel):
     @property
     def magic_match_all(self) -> bool:
         return 'all' in self.imported_values
+
+    @computed_field
+    @property
+    @cache
+    def imported_values_map(self) -> dict[str, str]:
+        maps = [
+            a
+            for a
+            in self.imported_values
+            if isinstance(a, Mapping)
+        ]
+        chained_map = dict(
+            ChainMap(*maps)
+        )
+        literal_dict = {
+            a: a
+            for a in self.imported_values
+            if not isinstance(a, Mapping)
+        }
+
+        return chained_map | literal_dict
 
 
 class AttributeConfig(BaseModel):

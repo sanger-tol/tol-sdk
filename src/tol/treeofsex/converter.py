@@ -162,31 +162,13 @@ class TOSConverter(DataObjectToDataObjectOrUpdateConverter):
             destination_config.separator,
         )
 
-    def __get_value_map(
-        self,
-        destination_config: DestinationConfig,
-    ) -> dict[str, str]:
-
-        maps = [
-            a
-            for a
-            in destination_config.imported_values
-            if isinstance(a, Mapping)
-        ]
-
-        return dict(
-            ChainMap(*maps)
-        )
-
     def __convert_split_values(
         self,
         values: list[str],
         destination_config: DestinationConfig,
     ) -> list[str]:
 
-        value_map = self.__get_value_map(
-            destination_config,
-        )
+        value_map = destination_config.imported_values_map
 
         return [
             value_map[v] if v in value_map else v
