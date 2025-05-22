@@ -23,6 +23,17 @@ def object_type() -> str:
     return 'test_indeed'
 
 
+@pytest.fixture(scope='module')
+def type_mapping() -> dict[str, str]:
+    return {
+        'int_column': 'int',
+        'str_column': 'str',
+        'bool_column': 'bool',
+        'datetimecolumn': 'datetime',
+        'float_column': 'float',
+    }
+
+
 @pytest.fixture
 def mock_ds(object_type: str) -> DataSource:
     __ds: DataSource = create_autospec(
@@ -48,6 +59,7 @@ class TestTOSEmitter:
         self,
         data_object_factory: DataObjectFactory,
         object_type: str,
+        type_mapping: dict[str, str],
     ) -> None:
         """
         Using a real spreadsheet, with an offset in
@@ -61,8 +73,9 @@ class TestTOSEmitter:
             sheet_path,
             'Sheet1',
             object_type=object_type,
+            type_mapping=type_mapping,
         )
 
         observed = list(emitter)
-        import logging; logging.error(observed); assert False
+        import logging; logging.error(observed[0].attributes); assert False
 
