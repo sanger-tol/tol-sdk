@@ -33,6 +33,7 @@ class DestinationConfig(BaseModel):
 
     @computed_field
     @property
+    @cache
     def magic_types(self) -> list[type]:
         type_map = {
             'int': int,
