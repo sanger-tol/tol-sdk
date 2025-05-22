@@ -440,6 +440,26 @@ def elastic(environment: str = None) -> ElasticDataSource:
                     """
                 }
             },
+            'calc_no_null_tolid_tolid_count': {
+                'type': 'double',
+                'script': {
+                    'source': """
+
+                        boolean isThereAValueNonNull = (
+                            doc.containsKey('tolid_tolid_count') &&
+                            doc['tolid_tolid_count'].size() > 0 &&
+                            doc['tolid_tolid_count']
+                            .value != null
+                        );
+
+                        if (isThereAValueNonNull) {
+                            emit(doc['tolid_tolid_count'].value);
+                        } else {
+                            emit(0.0);
+                        }
+                    """
+                }
+            }
         },
         'specimen': {
             'calc_coverage_post_run': RuntimeFields.math(
