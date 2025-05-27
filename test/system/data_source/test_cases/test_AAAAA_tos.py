@@ -79,7 +79,6 @@ class TestTreeOfSex:
             )
         )
 
-        import logging; logging.error(obj1.attributes)
         assert obj1.id == '1'
         assert obj1.int_column is None
         assert obj1.str_column == 'X:-:map_TO'
