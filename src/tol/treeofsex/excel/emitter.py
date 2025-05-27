@@ -11,9 +11,9 @@ import pandas as pd
 
 from ...core import (
     DataObject,
-    DataObjectFactory,
     DataSource,
     DataSourceError,
+    core_data_object,
 )
 from ...core.operator import ListGetter
 
@@ -29,7 +29,6 @@ class TOSEmitter(
 
     def __init__(
         self,
-        data_object_factory: DataObjectFactory,
         filepath: str | Path,
         sheet_name: str,
         *,
@@ -38,7 +37,6 @@ class TOSEmitter(
         type_mapping: dict[str, str] | None = None,
     ) -> None:
 
-        self.__do_factory = data_object_factory
         self.__object_type = object_type
 
         self.__mappings = self.__get_mappings(
@@ -50,6 +48,8 @@ class TOSEmitter(
             sheet_name,
             engine=engine,
         )
+
+        core_data_object(self)
 
     @property
     def supported_types(self) -> list[str]:
@@ -75,7 +75,7 @@ class TOSEmitter(
 
         attributes = self.__format_attributes(row)
 
-        return self.__do_factory(
+        return self.data_object_factory(
             self.__object_type,
             id_=str(row_index),
             attributes=attributes,

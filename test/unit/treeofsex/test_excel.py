@@ -4,15 +4,10 @@
 
 import pathlib
 from datetime import datetime
-from unittest.mock import create_autospec
 
 import pytest
 
-from tol.core import (
-    DataObjectFactory,
-    DataSource,
-    core_data_object,
-)
+from tol.core import DataObjectFactory
 from tol.treeofsex.excel import TOSEmitter
 
 
@@ -35,31 +30,10 @@ def type_mapping() -> dict[str, str]:
     }
 
 
-@pytest.fixture
-def mock_ds(object_type: str) -> DataSource:
-    __ds: DataSource = create_autospec(
-        DataSource,
-        spec_set=True,
-    )
-
-    __ds.supported_types = [object_type]
-
-    return __ds
-
-
-@pytest.fixture
-def data_object_factory(
-    mock_ds: DataSource,
-) -> DataObjectFactory:
-
-    return core_data_object(mock_ds)
-
-
 class TestTOSEmitter:
 
     def test_emit(
         self,
-        data_object_factory: DataObjectFactory,
         object_type: str,
         type_mapping: dict[str, str],
     ) -> None:
@@ -68,7 +42,6 @@ class TestTOSEmitter:
         sheet_path = BASE_DIR / 'objects.xlsx'
 
         emitter = TOSEmitter(
-            data_object_factory,
             sheet_path,
             'Sheet1',
             object_type=object_type,
