@@ -31,7 +31,7 @@ def type_mapping() -> dict[str, str]:
 
 class TestTOSEmitter:
 
-    def test_emit(
+    def test_get_list(
         self,
         object_type: str,
         type_mapping: dict[str, str],
