@@ -7,7 +7,6 @@ from datetime import datetime
 
 import pytest
 
-from tol.core import DataObjectFactory
 from tol.treeofsex.excel import TOSEmitter
 
 
