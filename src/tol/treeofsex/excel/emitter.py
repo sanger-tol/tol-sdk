@@ -5,7 +5,7 @@
 from collections.abc import Iterable
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Iterator
+from typing import Any
 
 import pandas as pd
 
