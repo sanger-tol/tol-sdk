@@ -7,6 +7,8 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any
 
+import numpy as np
+
 import pandas as pd
 
 from ...core import (
@@ -43,10 +45,10 @@ class TOSEmitter(
             type_mapping,
         )
 
-        self.__df: pd.DataFrame = pd.read_excel(
+        self.__df = self.__get_dataframe(
             filepath,
             sheet_name,
-            engine=engine,
+            engine,
         )
 
         core_data_object(self)
@@ -66,6 +68,21 @@ class TOSEmitter(
             for row_index, row
             in self.__df.iterrows()
         )
+
+    def __get_dataframe(
+        self,
+        filepath: str | Path,
+        sheet_name: str,
+        engine: str,
+    ) -> pd.DataFrame:
+
+        __df: pd.DataFrame = pd.read_excel(
+            filepath,
+            sheet_name,
+            engine=engine,
+        )
+
+        return __df.replace(np.nan, None)
 
     def __marshal_row(
         self,

@@ -14,7 +14,7 @@ file:
 
 attributes:
 
-  - imported_column_name: "str_column"
+  - imported_column_name: "sexual_system_in"
     column_reference: "source  Sexual System"
     destination:
       key: "str_column"
@@ -24,7 +24,10 @@ attributes:
         - Y
         - map_from: "map_TO"
 
-  - imported_column_name: "int_column"
+  - imported_column_name: "include_only_ints"
     column_reference: "source  Sexual System"
     destination:
       key: "int_column"
+      separator: "-_-"
+      imported_values:
+        - "int"
