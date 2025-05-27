@@ -334,17 +334,46 @@ def elastic(environment: str = None) -> ElasticDataSource:
                             doc['tolid_tolid_count'].size() > 0
                         );
 
-                        boolean isSampleCollectedForPsyche = (
-                            doc.containsKey('goat_sample_collected.keyword') &&
-                            doc['goat_sample_collected.keyword'].size() > 0 &&
-                            doc['goat_sample_collected.keyword'].value == 'PSYCHE'
-                        );
+                        boolean isSampleCollectedForPsyche = false;
+                        if (doc.containsKey('goat_sample_collected.keyword') &&
+                            doc['goat_sample_collected.keyword'].size() > 0) {
+                            for (String value : doc['goat_sample_collected.keyword']) {
+                                if (value != null && value.contains('PSYCHE')) {
+                                    isSampleCollectedForPsyche = true;
+                                    break;
+                                }
+                            }
+                        }
 
                         emit(
                             isRecollectionRequired || (!isIncludedProject
                             && !isChromosome && !isSpecimensAtSanger
                             && !isSampleCollectedForPsyche)
                         );
+                    """
+                }
+            },
+            'calc_species_epithet': {
+                'type': 'keyword',
+                'script': {
+                    'source': """
+                        String result = "";
+                        if (doc.containsKey('goat_species_name.keyword')) {
+                            def values = doc['goat_species_name.keyword'];
+                            if (values.size() > 0) {
+                                String fullName = values.value;
+                                int firstSpace = fullName.indexOf(' ');
+                                if (firstSpace > 0 && firstSpace < fullName.length() - 1) {
+                                    int secondSpace = fullName.indexOf(' ', firstSpace + 1);
+                                    if (secondSpace > 0) {
+                                        result = fullName.substring(firstSpace + 1, secondSpace);
+                                    } else {
+                                        result = fullName.substring(firstSpace + 1);
+                                    }
+                                }
+                            }
+                        }
+                        emit(result);
                     """
                 }
             },
