@@ -24,10 +24,8 @@ class FileConfig(BaseModel):
 
 class DestinationConfig(BaseModel):
     key: str
-    imported_values: list[str | dict[str, str]] = Field(
-        min_length=1,
-    )
 
+    imported_values: list[str | dict[str, str]] = []
     separator: str = '|'
     ignore: list[str] = []
 

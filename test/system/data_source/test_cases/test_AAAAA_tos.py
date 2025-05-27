@@ -3,7 +3,6 @@
 # SPDX-License-Identifier: MIT
 
 import pathlib
-from datetime import datetime
 
 from tol.core import (
     DataSourceFilter,
@@ -34,14 +33,16 @@ class TestTreeOfSex:
 
         filepath = BASE_DIR / 'objects.xlsx'
         yaml_path = BASE_DIR / 'tos.yaml'
+        source_object_type = 'anything'
 
         emitter = TOSEmitter(
             filepath,
             'Sheet1',
+            object_type=source_object_type
         )
 
         converter = TOSConverter(
-            emitter.data_object_factory,
+            data_source.data_object_factory,
             yaml_path,
             destination_object_type='root',
         )
@@ -50,25 +51,33 @@ class TestTreeOfSex:
             emitter,
             data_source,
             [],
-            'ANYTHING_DOES_NOT_MATTER',
+            source_object_type,
             'loader_mine_tos',
+            destination_object_type='root',
             converter=converter,
         )
 
         loader.load(field_prefix='')
 
-        ds_sleep(2)
+        ds_sleep(5)
 
+        # exclude the archetype
         f = DataSourceFilter(
             and_={
-                'id': {
+                'str_column': {
                     'eq': {
-                        'value': '#YOLO',
+                        'value': 'abc',
                         'negate': True,
                     }
                 }
             }
         )
+        import logging; logging.error(list(
+            d.id for d in data_source.get_list(
+                'root',
+                object_filters=f,
+            )
+        ))
         obj1, obj2 = list(
             data_source.get_list(
                 'root',
