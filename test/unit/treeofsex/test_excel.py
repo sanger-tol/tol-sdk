@@ -75,7 +75,9 @@ class TestTOSEmitter:
             type_mapping=type_mapping,
         )
 
-        obj1, obj2 = list(emitter)
+        obj1, obj2 = list(
+            emitter.get_list(object_type)
+        )
 
         assert obj1.type == object_type
         assert obj1.id == '1'

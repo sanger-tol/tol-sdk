@@ -12,11 +12,16 @@ import pandas as pd
 from ...core import (
     DataObject,
     DataObjectFactory,
+    DataSource,
     DataSourceError,
 )
+from ...core.operator import ListGetter
 
 
-class TOSEmitter(Iterable[DataObject]):
+class TOSEmitter(
+    DataSource,
+    ListGetter,
+):
     """
     Emits `DataObject` instances from a tabular
     spreadsheet (e.g. `.xlsx`).
@@ -46,7 +51,16 @@ class TOSEmitter(Iterable[DataObject]):
             engine=engine,
         )
 
-    def __iter__(self) -> Iterator[DataObject]:
+    @property
+    def supported_types(self) -> list[str]:
+        return [self.__object_type]
+
+    def get_list(
+        self,
+        *args,
+        **kwargs
+    ) -> Iterable[DataObject]:
+
         return (
             self.__marshal_row(row_index + 1, row)
             for row_index, row
