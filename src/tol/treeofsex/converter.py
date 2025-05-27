@@ -107,6 +107,10 @@ class TOSConverter(DataObjectToDataObjectOrUpdateConverter):
             for d in self.__get_destinations(
                 attribute_config,
             )
+            if self.__should_convert_destination(
+                input_,
+                attribute_config.imported_column_name,
+            )
         ]
 
         return dict(pairs)
@@ -144,6 +148,18 @@ class TOSConverter(DataObjectToDataObjectOrUpdateConverter):
         )
 
         return destination_config.key, converted
+
+    def __should_convert_destination(
+        self,
+        input_: DataObject,
+        imported_column_name: str,
+    ) -> bool:
+
+        __v = getattr(input_, imported_column_name)
+
+        return (
+            __v is not None and isinstance(__v, str)
+        )
 
     def __get_split_values(
         self,
