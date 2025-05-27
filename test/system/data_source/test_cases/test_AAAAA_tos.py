@@ -72,12 +72,6 @@ class TestTreeOfSex:
                 }
             }
         )
-        import logging; logging.error(list(
-            d.id for d in data_source.get_list(
-                'root',
-                object_filters=f,
-            )
-        ))
         obj1, obj2 = list(
             data_source.get_list(
                 'root',
