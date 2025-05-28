@@ -13,7 +13,7 @@ from tol.treeofsex import TOSConverter
 from tol.treeofsex.excel import TOSEmitter
 
 from ..dec import against
-from ..fixtures import api_elastic, elastic
+from ..fixtures import all_fixtures
 
 
 BASE_DIR = pathlib.Path(__file__).parent.resolve()
@@ -24,7 +24,7 @@ class TestTreeOfSex:
     Tests a simple pipeline for Tree-of-Sex.
     """
 
-    @against(elastic, api_elastic)
+    @against(*all_fixtures)
     def test_pipeline(
         self,
         data_source: OperableDataSource,
