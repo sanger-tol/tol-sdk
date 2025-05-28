@@ -2,10 +2,9 @@
 #
 # SPDX-License-Identifier: MIT
 
-from collections.abc import Iterable
 from datetime import datetime
 from pathlib import Path
-from typing import Any
+from typing import Any, Iterable
 
 import numpy as np
 
