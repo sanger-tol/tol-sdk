@@ -195,7 +195,6 @@ class TOSConverter(DataObjectToDataObjectOrUpdateConverter):
             if self.__include_split_value(
                 v,
                 destination_config,
-                value_map,
             )
         ]
 
@@ -203,7 +202,6 @@ class TOSConverter(DataObjectToDataObjectOrUpdateConverter):
         self,
         value: str,
         destination_config: DestinationConfig,
-        value_map: dict[str, str],
     ) -> bool:
 
         if value in destination_config.ignore:
@@ -212,6 +210,7 @@ class TOSConverter(DataObjectToDataObjectOrUpdateConverter):
         if destination_config.magic_match_all:
             return True
 
+        value_map = destination_config.imported_values_map
         if value in value_map:
             return True
 
