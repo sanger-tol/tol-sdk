@@ -39,6 +39,8 @@ class TOSEmitter(
         type_mapping: dict[str, str] | None = None,
     ) -> None:
 
+        super().__init__({})
+
         self.__object_type = object_type
 
         self.__mappings = self.__get_mappings(
