@@ -30,7 +30,7 @@ class AllowedKeysValidator(Validator):
     def _validate_data_object(
         self,
         obj: DataObject
-    ) -> DataObject:
+    ) -> None:
 
         for key in obj.attributes:
             if key not in self.__keys:

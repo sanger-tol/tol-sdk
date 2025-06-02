@@ -48,7 +48,7 @@ class Validator(ABC):
     def _validate_data_object(
         self,
         obj: DataObject
-    ) -> DataObject:
+    ) -> None:
         """Validates a single `DataObject` instance."""
 
     def validate(
@@ -60,10 +60,10 @@ class Validator(ABC):
         """
 
         for obj in object_stream:
-            if isinstance(obj, ErrorObject):
-                yield obj
-            else:
-                yield self._validate_data_object(obj)
+            if not isinstance(obj, ErrorObject):
+                self._validate_data_object(obj)
+
+            yield obj
 
     def add_warning(
         self,

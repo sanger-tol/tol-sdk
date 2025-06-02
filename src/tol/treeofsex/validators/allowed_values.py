@@ -40,7 +40,7 @@ class AllowedValuesValidator(Validator):
     def _validate_data_object(
         self,
         obj: DataObject
-    ) -> DataObject:
+    ) -> None:
 
         for k, v in obj.attributes.items():
             self.__validate_attribute(obj, k, v)
