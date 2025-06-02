@@ -101,4 +101,27 @@ class TestAllowedValuesValidator:
         self,
         mock_objs: Iterable[DataObject]
     ) -> None:
-        pass
+
+        config = [
+            AllowedValues(
+                key='key1',
+                values=list('abc')
+            ),
+            # adds errors
+            AllowedValues(
+                key='key2',
+                values=list('xyz'),
+            ),
+        ]
+
+        validator = AllowedValuesValidator(
+            config,
+        )
+
+        # consume the `Iterable`
+        list(
+            validator.validate(mock_objs)
+        )
+
+        assert not validator.no_errors
+        assert len(validator.results) == 3
