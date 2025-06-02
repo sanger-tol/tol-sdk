@@ -8,6 +8,7 @@ from unittest.mock import create_autospec
 import pytest
 
 from tol.core import DataObject
+from tol.core.validate import ValidationResult
 from tol.treeofsex.validators import (
     AllowedValues,
     AllowedValuesValidator,
@@ -70,7 +71,31 @@ class TestAllowedValuesValidator:
         self,
         mock_objs: Iterable[DataObject]
     ) -> None:
-        pass
+
+        config = [
+            AllowedValues(
+                key='key1',
+                values=list('abc')
+            ),
+            # adds warnings
+            AllowedValues(
+                key='key2',
+                values=list('xyz'),
+                is_error=False,
+            ),
+        ]
+
+        validator = AllowedValuesValidator(
+            config,
+        )
+
+        # consume the `Iterable`
+        list(
+            validator.validate(mock_objs)
+        )
+
+        assert validator.no_errors
+        assert len(validator.results) == 3
 
     def test_errors(
         self,
