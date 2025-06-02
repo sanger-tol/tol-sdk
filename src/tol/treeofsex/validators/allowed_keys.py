@@ -16,6 +16,8 @@ class AllowedKeysValidator(Validator):
     def __init__(
         self,
         allowed_keys: list[str],
+        *,
+        is_error: bool = True,
     ) -> None:
 
         super().__init__()
