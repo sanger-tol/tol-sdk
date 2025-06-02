@@ -101,6 +101,71 @@ class TestSummarise:
         assert rel_obj.summarise_one_root_int_column_min == 2
         assert rel_obj.summarise_one_root_int_column_max == 42
 
+    @against(elastic)
+    def test_summarise_zero_counts(
+        self,
+        data_source: ElasticDataSource,
+        ds_sleep
+    ):
+        """
+        Test that count summarisation correctly handles zero counts.
+        Creates destination objects that should have zero counts
+        and verifies they get explicit 0 values instead of null.
+        """
+
+        rel_obj_1 = data_source.data_object_factory('related', 'related_with_data')
+        rel_obj_2 = data_source.data_object_factory('related', 'related_without_data')
+        rel_obj_3 = data_source.data_object_factory('related', 'related_also_without_data')
+
+        data_source.upsert('related', [rel_obj_1, rel_obj_2, rel_obj_3])
+
+        # root objects that only point to the first related object
+        root_objs = [
+            data_source.data_object_factory(
+                'root',
+                f'root_{i}_zero_test',
+                {'int_column': i},
+                to_one={'related_object': rel_obj_1}
+            )
+            for i in range(1, 4)
+        ]
+        data_source.upsert('root', root_objs)
+        ds_sleep(5)
+
+        summary_obj = self.__summary_obj(
+            'zero_count_summary',
+            {
+                'source_object_type': 'root',
+                'destination_object_type': 'related',
+                'object_filters': {},
+                'group_by': ['related_object.id'],
+                'stats_fields': [],
+                'stats': [],
+                'prefix': 'zero_test',
+            }
+        )
+
+        original_summarise = data_source._summarise
+
+        try:
+            data_source.summarise_all([summary_obj])
+            ds_sleep(5)
+        finally:
+            data_source._summarise = original_summarise
+
+        rel_with_data = data_source.get_one('related', 'related_with_data')
+        rel_without_data = data_source.get_one('related', 'related_without_data')
+        rel_also_without_data = data_source.get_one('related', 'related_also_without_data')
+
+        if rel_with_data is not None:
+            assert rel_with_data.zero_test_root_count == 3
+
+        if rel_without_data is not None:
+            assert rel_without_data.zero_test_root_count == 0
+
+        if rel_also_without_data is not None:
+            assert rel_also_without_data.zero_test_root_count == 0
+
     def __summary_obj(
         self,
         id_: str,

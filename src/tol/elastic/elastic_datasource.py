@@ -283,23 +283,124 @@ class ElasticDataSource(
         summary: DataObject,
         ext_and: dict[str, Any] | None = None,
     ) -> None:
+        """
+        Summarises according to the given `DataObject` summary instance.
+        """
 
-        loader = GroupStatterDataLoader(
-            self,
-            self,
-            [],
-            summary.source_object_type,
-            summary.destination_object_type,
-            'Unmanaged summariser (no audit)',
-            object_filters=self._mix_in_ext_and(
-                summary.object_filters,
-                ext_and,
-            ),
-            group_statter_group_by=summary.group_by,
-            group_statter_stats_fields=summary.stats_fields,
-            group_statter_stats=summary.stats,
-        )
-        loader.load(field_prefix=summary.prefix)
+        is_count_summarisation = not summary.stats
+
+        if is_count_summarisation:
+            all_destination_ids = self._get_all_destination_ids(summary)
+
+            # Track which destination IDs get processed by the normal summarisation
+            processed_ids = set()
+            original_upsert = self.upsert
+
+            def tracking_upsert(object_type: str, objects, **kwargs):
+                objects_list = list(objects)
+                for obj in objects_list:
+                    processed_ids.add(obj.id)
+                return original_upsert(object_type, objects_list, **kwargs)
+
+            self.upsert = tracking_upsert
+
+            try:
+                loader = GroupStatterDataLoader(
+                    self, self, [],
+                    summary.source_object_type,
+                    summary.destination_object_type,
+                    'Enhanced summariser with zero count handling',
+                    object_filters=self._mix_in_ext_and(summary.object_filters, ext_and),
+                    group_statter_group_by=summary.group_by,
+                    group_statter_stats_fields=summary.stats_fields,
+                    group_statter_stats=summary.stats,
+                )
+                loader.load(field_prefix=summary.prefix)
+            finally:
+                self.upsert = original_upsert
+
+            missing_ids = all_destination_ids - processed_ids
+            self._create_zero_count_objects(summary, missing_ids)
+        else:
+            loader = GroupStatterDataLoader(
+                self, self, [],
+                summary.source_object_type,
+                summary.destination_object_type,
+                'Unmanaged summariser (no audit)',
+                object_filters=self._mix_in_ext_and(summary.object_filters, ext_and),
+                group_statter_group_by=summary.group_by,
+                group_statter_stats_fields=summary.stats_fields,
+                group_statter_stats=summary.stats,
+            )
+            loader.load(field_prefix=summary.prefix)
+
+    def _get_all_destination_ids(self, summary: DataObject) -> set[str]:
+        """
+        Get ALL possible destination IDs from the destination object type.
+        """
+        all_destination_objects = self.get_list(summary.destination_object_type)
+        destination_ids = set()
+
+        for obj in all_destination_objects:
+            if obj and obj.id:
+                destination_ids.add(str(obj.id))
+
+        return destination_ids
+
+    def _get_group_by_value(self, obj: DataObject, field_name: str, object_type: str) -> Any:
+        """
+        Get the value for a group_by field, handling relationships properly.
+        Similar to how _field_or_keyword handles field resolution.
+        """
+        try:
+            if '.' in field_name:
+                relationship_name, attribute = field_name.split('.', 1)
+                related_obj = obj._to_one_objects.get(relationship_name)
+
+                if related_obj:
+                    if attribute == 'id':
+                        return related_obj.id
+                    else:
+                        return related_obj.attributes.get(attribute)
+            else:
+                return obj.attributes.get(field_name)
+        except (AttributeError, KeyError):
+            pass
+
+        return None
+
+    def _create_zero_count_objects(
+        self,
+        summary: DataObject,
+        missing_ids: set[str],
+    ) -> None:
+        """
+        Create zero count objects for missing destination IDs.
+        """
+        if not missing_ids:
+            return
+
+        zero_count_objects = []
+        dest_objects = list(self.get_by_id(summary.destination_object_type, list(missing_ids)))
+
+        for dest_obj in dest_objects:
+            if dest_obj:
+                attr_name = f'{summary.source_object_type}_count'
+                attributes = {attr_name: 0}
+
+                zero_obj = self.data_object_factory(
+                    summary.destination_object_type,
+                    id_=dest_obj.id,
+                    attributes=attributes
+                )
+                zero_count_objects.append(zero_obj)
+
+        if zero_count_objects:
+            self.upsert(
+                summary.destination_object_type,
+                zero_count_objects,
+                field_prefix=summary.prefix
+            )
 
     def __format_cursor_response(
         self,
@@ -697,9 +798,13 @@ class ElasticDataSource(
                 yield None
 
     def _convert_data_dict_to_data_object(self, type_, id_, data, runtime_data):
+        relationship_fields = set()
+        if type_ in self.relationship_config and self.relationship_config[type_].to_one:
+            relationship_fields = set(self.relationship_config[type_].to_one.keys())
         attributes = {
-            k: self.__make_dates(type_, k, v) for k, v in data.items()
-            if k in self.attribute_types[type_]
+            k: (self.__make_dates(type_, k, v) if k in self.attribute_types[type_] else v)
+            for k, v in data.items()
+            if k != 'uid' and k not in relationship_fields
         }
         runtime_attributes = {
             k: self.__make_dates(type_, k, v[0]) for k, v in runtime_data.items()
@@ -873,7 +978,7 @@ class ElasticDataSource(
                 },
             }
         }
-        if stats_fields is not None:
+        if stats_fields:
             aggregation['counts']['aggregations'] = self.__get_aggs(
                 object_type,
                 stats_fields,
