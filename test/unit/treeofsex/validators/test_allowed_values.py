@@ -8,7 +8,6 @@ from unittest.mock import create_autospec
 import pytest
 
 from tol.core import DataObject
-from tol.core.validate import ValidationResult
 from tol.treeofsex.validators import (
     AllowedValues,
     AllowedValuesValidator,
