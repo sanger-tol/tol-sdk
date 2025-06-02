@@ -136,9 +136,8 @@ class TestElasticSummariser(TestCase):
         eds._summarise(summary)
 
         zero_count_objects = [obj for obj in upserted_objects
-                      if (hasattr(obj, 'attributes')
-                          and obj.attributes.get('custom_source_count') == 0)]
-
+                              if (hasattr(obj, 'attributes')
+                                  and obj.attributes.get('custom_source_count') == 0)]
         self.assertEqual(len(zero_count_objects), 1)
         self.assertEqual(zero_count_objects[0].id, 'dest3')
 
