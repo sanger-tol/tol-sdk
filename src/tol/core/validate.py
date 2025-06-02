@@ -38,6 +38,12 @@ class ValidationResult:
 
 
 class Validator(ABC):
+    """
+    Validates a stream of `DataObject` instances.
+
+    Note - a `Validator` child does not alter
+    said stream.
+    """
 
     def __init__(self) -> None:
         super().__init__()
