@@ -110,7 +110,7 @@ class Validator(ABC):
         return self.__results
 
     @property
-    def no_errors(self) -> bool:
+    def has_no_errors(self) -> bool:
         """
         Returns `True` if there are no validation errors.
         """

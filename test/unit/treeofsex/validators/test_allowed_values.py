@@ -67,7 +67,7 @@ class TestAllowedValuesValidator:
             validator.validate(mock_objs)
         )
 
-        assert validator.no_errors
+        assert validator.has_no_errors
         assert len(validator.results) == 3
 
     def test_errors(
@@ -96,5 +96,5 @@ class TestAllowedValuesValidator:
             validator.validate(mock_objs)
         )
 
-        assert not validator.no_errors
+        assert not validator.has_no_errors
         assert len(validator.results) == 3

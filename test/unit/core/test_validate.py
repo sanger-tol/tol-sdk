@@ -63,7 +63,7 @@ class TestValidatorAdd:
         )
 
         assert len(val.results) == 1
-        assert val.no_errors
+        assert val.has_no_errors
 
     def test_add_error(self) -> None:
         val = self._TestValidator()
@@ -74,4 +74,4 @@ class TestValidatorAdd:
         )
 
         assert len(val.results) == 1
-        assert not val.no_errors
+        assert not val.has_no_errors
