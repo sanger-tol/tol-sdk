@@ -382,15 +382,19 @@ def elastic(environment: str = None) -> ElasticDataSource:
                 'script': {
                     'source': """
                         boolean isTopUpCountZero = (
-                            doc.containsKey('calc_topup_required_tolid_count') &&
+                            (!doc.containsKey('calc_topup_required_tolid_count') ||
+                            doc['calc_topup_required_tolid_count'].size() == 0) ||
+                            (doc.containsKey('calc_topup_required_tolid_count') &&
                             doc['calc_topup_required_tolid_count'].size() > 0 &&
-                            doc['calc_topup_required_tolid_count'].value == 0
+                            doc['calc_topup_required_tolid_count'].value == 0)
                         );
 
                         boolean isIndividualExhaustedCountZero = (
-                            doc.containsKey('calc_individual_exhausted_tolid_count') &&
+                            (!doc.containsKey('calc_individual_exhausted_tolid_count') ||
+                            doc['calc_individual_exhausted_tolid_count'].size() == 0) ||
+                            (doc.containsKey('calc_individual_exhausted_tolid_count') &&
                             doc['calc_individual_exhausted_tolid_count'].size() > 0 &&
-                            doc['calc_individual_exhausted_tolid_count'].value == 0
+                            doc['calc_individual_exhausted_tolid_count'].value == 0)
                         );
 
                         boolean isIndividualNovel =
@@ -411,13 +415,16 @@ def elastic(environment: str = None) -> ElasticDataSource:
                         );
 
                         boolean isRecollectionNeeded = (
-                            doc.containsKey
-                            ('calc_individual_exhausted_tolid_count')
-                            && doc.containsKey('tolid_tolid_count') && doc
-                            ['calc_individual_exhausted_tolid_count']
-                            .size() > 0 && doc['tolid_tolid_count'].size() > 0 && doc
-                            ['calc_individual_exhausted_tolid_count']
-                            .value - doc['tolid_tolid_count'].value == 0
+                            ((!doc.containsKey('calc_individual_exhausted_tolid_count')
+                            || doc['calc_individual_exhausted_tolid_count'].size() == 0)
+                            && (!doc.containsKey('tolid_tolid_count') ||
+                            doc['tolid_tolid_count'].size() == 0)) ||
+                            (doc.containsKey('calc_individual_exhausted_tolid_count') &&
+                            doc.containsKey('tolid_tolid_count') &&
+                            doc['calc_individual_exhausted_tolid_count'].size() > 0 &&
+                            doc['tolid_tolid_count'].size() > 0 &&
+                            doc['calc_individual_exhausted_tolid_count'].value
+                            - doc['tolid_tolid_count'].value == 0)
                         );
 
                         emit(
@@ -533,7 +540,16 @@ def elastic(environment: str = None) -> ElasticDataSource:
                             doc['benchling_pacbio_sequencing_request_count'].value > 0;
 
                         boolean isOngoingSubmissionsEqualZero =
-                            (doc['benchling_pacbio_sequencing_request_count'].value -
+                            ((!doc.containsKey('benchling_pacbio_sequencing_request_count') ||
+                            doc['benchling_pacbio_sequencing_request_count'].size() == 0) &&
+                            (!doc.containsKey('benchling_pacbio_completed_sequencing_request_count')
+                            || doc['benchling_pacbio_completed_sequencing_request_count']
+                            .size() == 0)) ||
+                            (doc.containsKey('benchling_pacbio_sequencing_request_count') &&
+                            doc.containsKey('benchling_pacbio_completed_sequencing_request_count')
+                            && doc['benchling_pacbio_sequencing_request_count'].size() > 0 &&
+                            doc['benchling_pacbio_completed_sequencing_request_count'].size() > 0
+                            && doc['benchling_pacbio_sequencing_request_count'].value -
                             doc['benchling_pacbio_completed_sequencing_request_count'].value == 0);
 
                         boolean isTargetCoverageMet =
@@ -677,18 +693,20 @@ def elastic(environment: str = None) -> ElasticDataSource:
                         );
 
                         boolean isSpeciesTopUpEqualsIndividualExhausted = (
-                            doc.containsKey
-                            ('tolid_species.calc_topup_required_tolid_count')
-                            && doc.containsKey
-                            ('tolid_species.calc_individual_exhausted_tolid_count')
-                            && doc
-                            ['tolid_species.calc_topup_required_tolid_count']
-                            .size() > 0 && doc
-                            ['tolid_species.calc_individual_exhausted_tolid_count']
-                            .size() > 0 && (doc
-                            ['tolid_species.calc_topup_required_tolid_count']
-                            .value - doc
-                            ['tolid_species.calc_individual_exhausted_tolid_count']
+                            ((!doc.containsKey('tolid_species.calc_topup_required_tolid_count') ||
+                            doc['tolid_species.calc_topup_required_tolid_count'].size() == 0) &&
+                            (!doc.containsKey(
+                            'tolid_species.calc_individual_exhausted_tolid_count') ||
+                            doc['tolid_species.calc_individual_exhausted_tolid_count']
+                            .size() == 0)) ||
+                            (doc.containsKey('tolid_species.calc_topup_required_tolid_count') &&
+                            doc.containsKey('tolid_species.calc_individual_exhausted_tolid_count')
+                            && doc['tolid_species.calc_topup_required_tolid_count']
+                            .size() > 0 &&
+                            doc['tolid_species.calc_individual_exhausted_tolid_count']
+                            .size() > 0 &&
+                            doc['tolid_species.calc_topup_required_tolid_count'].value -
+                            doc['tolid_species.calc_individual_exhausted_tolid_count']
                             .value == 0)
                         );
 
