@@ -6,19 +6,31 @@ from typing import Iterable
 
 from tol.core import DataObject
 from tol.treeofsex.validators import (
-    AllowedKeysValidator,
+    AllowedValues,
+    AllowedValuesValidator,
 )
 
 
-class TestAllowedKeysValidator:
+class TestAllowedValuesValidator:
 
     def test_no_results(
         self,
         mock_objs: Iterable[DataObject]
     ) -> None:
 
-        validator = AllowedKeysValidator(
-            ['key1', 'key2']
+        config = [
+            AllowedValues(
+                key='key1',
+                values=list('abc')
+            ),
+            AllowedValues(
+                key='key2',
+                values=list('abc')
+            ),
+        ]
+
+        validator = AllowedValuesValidator(
+            config,
         )
 
         # consume the `Iterable`
@@ -33,9 +45,21 @@ class TestAllowedKeysValidator:
         mock_objs: Iterable[DataObject]
     ) -> None:
 
-        validator = AllowedKeysValidator(
-            ['key1'],
-            is_error=False,
+        config = [
+            AllowedValues(
+                key='key1',
+                values=list('abc')
+            ),
+            # adds warnings
+            AllowedValues(
+                key='key2',
+                values=list('xyz'),
+                is_error=False,
+            ),
+        ]
+
+        validator = AllowedValuesValidator(
+            config,
         )
 
         # consume the `Iterable`
@@ -51,8 +75,20 @@ class TestAllowedKeysValidator:
         mock_objs: Iterable[DataObject]
     ) -> None:
 
-        validator = AllowedKeysValidator(
-            ['key2'],
+        config = [
+            AllowedValues(
+                key='key1',
+                values=list('abc')
+            ),
+            # adds errors
+            AllowedValues(
+                key='key2',
+                values=list('xyz'),
+            ),
+        ]
+
+        validator = AllowedValuesValidator(
+            config,
         )
 
         # consume the `Iterable`
