@@ -60,7 +60,7 @@ class Validator(ABC):
         """
 
         for obj in object_stream:
-            if not isinstance(obj, ErrorObject):
+            if isinstance(obj, DataObject):
                 self._validate_data_object(obj)
 
             yield obj
