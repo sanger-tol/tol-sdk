@@ -60,5 +60,5 @@ class TestAllowedKeysValidator:
             validator.validate(mock_objs)
         )
 
-        assert not validator.has_no_errors
-        assert len(validator.results) == 3
+        assert not validator.warnings
+        assert len(validator.errors) == 3
