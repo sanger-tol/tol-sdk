@@ -38,6 +38,12 @@ class ValidationResult:
 
 
 class Validator(ABC):
+    """
+    Validates a stream of `DataObject` instances.
+
+    Note - a `Validator` child does not alter
+    said stream.
+    """
 
     def __init__(self) -> None:
         super().__init__()
@@ -48,7 +54,7 @@ class Validator(ABC):
     def _validate_data_object(
         self,
         obj: DataObject
-    ) -> DataObject:
+    ) -> None:
         """Validates a single `DataObject` instance."""
 
     def validate(
@@ -60,10 +66,10 @@ class Validator(ABC):
         """
 
         for obj in object_stream:
-            if isinstance(obj, ErrorObject):
-                yield obj
-            else:
-                yield self._validate_data_object(obj)
+            if isinstance(obj, DataObject):
+                self._validate_data_object(obj)
+
+            yield obj
 
     def add_warning(
         self,
@@ -104,15 +110,32 @@ class Validator(ABC):
         return self.__results
 
     @property
-    def no_errors(self) -> bool:
+    def warnings(self) -> list[ValidationResult]:
+        return list(
+            self.__get_results_by_severity(
+                ValidationSeverity.WARNING
+            )
+        )
+
+    @property
+    def errors(self) -> list[ValidationResult]:
+        return list(
+            self.__get_results_by_severity(
+                ValidationSeverity.ERROR
+            )
+        )
+
+    @property
+    def has_no_errors(self) -> bool:
         """
         Returns `True` if there are no validation errors.
         """
 
-        return not any(
-            r.severity == ValidationSeverity.ERROR
-            for r in self.__results
+        error_results = self.__get_results_by_severity(
+            ValidationSeverity.ERROR,
         )
+
+        return not any(error_results)
 
     def _add_result(
         self,
@@ -133,3 +156,14 @@ class Validator(ABC):
         )
 
         self.__results.append(result)
+
+    def __get_results_by_severity(
+        self,
+        severity: ValidationSeverity
+    ) -> Iterable[ValidationResult]:
+
+        return (
+            r
+            for r in self.__results
+            if r.severity == severity
+        )
