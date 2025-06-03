@@ -157,9 +157,12 @@ class TestSummarise:
         rel_without_data = data_source.get_one('related', 'related_without_data')
         rel_also_without_data = data_source.get_one('related', 'related_also_without_data')
 
-        assert rel_with_data is not None and rel_with_data.zero_test_root_count == 3
-        assert rel_without_data is not None and rel_without_data.zero_test_root_count == 0
-        assert rel_also_without_data is not None and rel_also_without_data.zero_test_root_count == 0
+        assert rel_with_data is not None
+        assert rel_with_data.zero_test_root_count == 3
+        assert rel_without_data is not None
+        assert rel_without_data.zero_test_root_count == 0
+        assert rel_also_without_data is not None
+        assert rel_also_without_data.zero_test_root_count == 0
 
     def __summary_obj(
         self,
