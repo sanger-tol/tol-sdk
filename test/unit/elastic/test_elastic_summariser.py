@@ -26,6 +26,11 @@ class MockElasticDataSourceSummariser(ElasticDataSource):
         self.helpers.bulk.return_value = (1, 0)
         self.es.cat.indices.return_value = 'test-custom-source test-custom-dest'
 
+        self.es.indices.get_alias.return_value = {
+            'test-custom-source': {'aliases': {}},
+            'test-custom-dest': {'aliases': {}}
+        }        
+
     def _add_updated(self, dict_):
         return {**dict_, 'tol_updated_at': dt.isoformat()}
 
