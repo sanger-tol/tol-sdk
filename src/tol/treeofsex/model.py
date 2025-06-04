@@ -43,7 +43,7 @@ class DestinationConfig(BaseModel):
             if k in self.imported_values
         ]
 
-    @computed_field
+    @computed_field(return_type=bool)
     @property
     def magic_match_all(self) -> bool:
         return 'all' in self.imported_values
