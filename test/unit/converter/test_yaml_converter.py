@@ -9,11 +9,11 @@ from pydantic import ValidationError
 
 import pytest
 
+from tol.converter import YamlConverter
 from tol.core import (
     DataObject,
     DataObjectFactory,
 )
-from tol.converter import YamlConverter
 
 
 BASE_DIR = pathlib.Path(__file__).parent.resolve()
