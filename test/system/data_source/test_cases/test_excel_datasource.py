@@ -10,7 +10,7 @@ from tol.core import (
     OperableDataSource,
 )
 from tol.treeofsex import TOSConverter
-from tol.treeofsex.excel import TOSEmitter
+from tol.excel import ExcelDataSource
 
 from ..dec import against
 from ..fixtures import all_fixtures
@@ -35,7 +35,7 @@ class TestTreeOfSex:
         yaml_path = BASE_DIR / 'tos.yaml'
         source_object_type = 'anything'
 
-        emitter = TOSEmitter(
+        emitter = ExcelDataSource(
             filepath,
             'Sheet1',
             object_type=source_object_type

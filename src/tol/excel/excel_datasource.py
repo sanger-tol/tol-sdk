@@ -10,16 +10,16 @@ import numpy as np
 
 import pandas as pd
 
-from ...core import (
+from ..core import (
     DataObject,
     DataSource,
     DataSourceError,
     core_data_object,
 )
-from ...core.operator import ListGetter
+from ..core.operator import ListGetter
 
 
-class TOSEmitter(
+class ExcelDataSource(
     DataSource,
     ListGetter,
 ):

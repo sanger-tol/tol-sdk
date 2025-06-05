@@ -7,7 +7,7 @@ from datetime import datetime
 
 import pytest
 
-from tol.treeofsex.excel import TOSEmitter
+from tol.excel import ExcelDataSource
 
 
 BASE_DIR = pathlib.Path(__file__).parent.resolve()
@@ -40,7 +40,7 @@ class TestTOSEmitter:
 
         sheet_path = BASE_DIR / 'objects.xlsx'
 
-        emitter = TOSEmitter(
+        emitter = ExcelDataSource(
             sheet_path,
             'Sheet1',
             object_type=object_type,
