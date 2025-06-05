@@ -14,14 +14,14 @@ from .model import (
     DestinationConfig,
     YamlConfig,
 )
-from ..core import (
+from ...core import (
     DataObject,
     DataObjectFactory,
     DataObjectToDataObjectOrUpdateConverter,
 )
 
 
-class TOSConverter(DataObjectToDataObjectOrUpdateConverter):
+class YamlConverter(DataObjectToDataObjectOrUpdateConverter):
     """
     Used for Tree of Sex.
 
