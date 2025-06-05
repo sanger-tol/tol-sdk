@@ -257,16 +257,22 @@ class BenchlingConverter(Converter[BenchlingReturn, DataObject]):
             id_=input_.id,
             attributes=attributes
         )
-
+        
     def __convert_container_result(self, input_: Container):
         object_type = snakecase(input_.schema.name)
 
-        attributes = input_.to_dict()
+        attributes = self.__convert_attributes(input_.fields, object_type)
+        to_ones = self.__convert_relationships(input_.fields, object_type)
+        native_to_ones = {}
 
         return self.__ds.data_object_factory(
             object_type,
             id_=input_.id,
-            attributes=attributes
+            attributes=attributes | {
+               'parent_storage_id': input_.parent_storage_id,
+               'barcode': input_.barcode,
+            },
+            to_one=to_ones | native_to_ones
         )
 
     def __convert_return(self, input_: BenchlingReturn) -> DataObject:
