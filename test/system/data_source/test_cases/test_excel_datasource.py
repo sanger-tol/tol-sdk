@@ -9,8 +9,8 @@ from tol.core import (
     DefaultDataLoader,
     OperableDataSource,
 )
-from tol.treeofsex import TOSConverter
 from tol.excel import ExcelDataSource
+from tol.treeofsex import TOSConverter
 
 from ..dec import against
 from ..fixtures import all_fixtures
