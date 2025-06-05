@@ -5,6 +5,7 @@
 from __future__ import annotations
 
 from collections import ChainMap
+from pathlib import Path
 from typing import Any, Iterable
 
 from yaml import safe_load
@@ -32,7 +33,7 @@ class YamlConverter(DataObjectToDataObjectOrUpdateConverter):
     def __init__(
         self,
         data_object_factory: DataObjectFactory,
-        yaml_path: str,
+        yaml_path: str | Path,
         *,
         destination_object_type: str | None = None,
         pydantic_class: type[YamlConfig] = YamlConfig,
@@ -236,7 +237,7 @@ class YamlConverter(DataObjectToDataObjectOrUpdateConverter):
 
     def __load_yaml(
         self,
-        yaml_path: str,
+        yaml_path: str | Path,
         pydantic_class: type[YamlConfig],
     ) -> YamlConfig:
 
