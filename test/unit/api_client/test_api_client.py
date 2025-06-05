@@ -411,7 +411,7 @@ class TestJsonApiClient:
                 responses.GET,
                 f'{FAKE_API_URL}/data/test/hype',
                 json={'error': 'Temporary failure'},
-                status=500
+                status=503
             )
 
         responses.add(
