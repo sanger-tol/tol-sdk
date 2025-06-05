@@ -5,7 +5,7 @@
 from typing import Iterable
 
 from tol.core import DataObject
-from tol.treeofsex.validators import (
+from tol.validators import (
     AllowedValues,
     AllowedValuesValidator,
 )
