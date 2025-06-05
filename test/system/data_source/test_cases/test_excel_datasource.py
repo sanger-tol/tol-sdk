@@ -4,13 +4,13 @@
 
 import pathlib
 
+from tol.converter import YamlConverter
 from tol.core import (
     DataSourceFilter,
     DefaultDataLoader,
     OperableDataSource,
 )
 from tol.excel import ExcelDataSource
-from tol.treeofsex import TOSConverter
 
 from ..dec import against
 from ..fixtures import all_fixtures
@@ -41,7 +41,7 @@ class TestTreeOfSex:
             object_type=source_object_type
         )
 
-        converter = TOSConverter(
+        converter = YamlConverter(
             data_source.data_object_factory,
             yaml_path,
             destination_object_type='root',
