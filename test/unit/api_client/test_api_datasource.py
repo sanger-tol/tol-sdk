@@ -48,7 +48,8 @@ class TestApiDataSource:
 
         mock_client.get_detail.assert_called_once_with(
             'test',
-            'an ID'
+            'an ID',
+            requested_fields=None,
         )
         mock_jc_converter.convert.assert_called_once_with(
             mock_response
@@ -84,7 +85,8 @@ class TestApiDataSource:
 
         mock_client.get_detail.assert_called_once_with(
             'test',
-            'an ID'
+            'an ID',
+            requested_fields=None,
         )
         mock_jc_converter.convert.assert_not_called()
 
@@ -427,7 +429,8 @@ class TestApiDataSource:
             page: int,
             page_size: int,
             filter_string: Optional[str] = None,
-            sort_string: Optional[str] = None
+            sort_string: Optional[str] = None,
+            requested_fields: list[str] | None = None,
         ) -> list[Mock]:
 
             return [mock_objs[page - 1]] if page <= 3 else []
@@ -437,7 +440,8 @@ class TestApiDataSource:
                 'test_hype',
                 i,
                 1,
-                filter_string='akdfuom'
+                filter_string='akdfuom',
+                requested_fields=None,
             )
             for i in range(1, 5)
         ]
