@@ -93,6 +93,8 @@ class Summariser(
                 source_object_type,
                 list_ids,
             )
+            if not ext_and:
+                continue
             self._summarise(
                 summary_obj,
                 ext_and=ext_and,
