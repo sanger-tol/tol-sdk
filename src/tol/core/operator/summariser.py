@@ -117,7 +117,7 @@ class Summariser(
             )
 
         return DataSourceFilter(
-            object_filters | ext_and,
+            and_=object_filters | ext_and,
         )
 
     def _filter_by_source_type(
