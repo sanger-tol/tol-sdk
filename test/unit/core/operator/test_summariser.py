@@ -49,7 +49,8 @@ def mock_summariser() -> Summariser:
             to_many={
                 'le_first': 'first'
             }
-        ),        'first': RelationshipConfig(
+        ),
+        'first': RelationshipConfig(
             to_one={
                 'back_a': 'rel_a',
                 'back_b': 'rel_b',

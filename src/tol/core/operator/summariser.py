@@ -170,11 +170,11 @@ class Summariser(
 
         relationship_id_target = f'{relationship}.id'
 
-        relationship_ids_raw = set(
+        relationship_ids_raw = {
             o.get_field_by_name(relationship_id_target)
             for o in source_objs
             if o is not None
-        )
+        }
         relationship_ids: list[str] = [
             i for i in relationship_ids_raw
             if i is not None
