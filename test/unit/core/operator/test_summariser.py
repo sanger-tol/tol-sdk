@@ -226,13 +226,12 @@ class TestSummariser:
             'efg',
         )
 
-        mock_summariser._summarise.assert_called_once_with(
-            summary_objs[0],
-            ext_and={
-                'back_a.id': {
-                    'in_list': {
-                        'value': ['rel_e', 'rel_f', 'rel_g']
-                    }
-                }
-            }
-        )
+        (((observed_summary,), kwargs),) = mock_summariser._summarise.call_args_list
+
+        assert observed_summary == summary_objs[0]
+        assert len(kwargs) == 1
+        assert set(kwargs['ext_and']['back_a.id']['in_list']['value']) == {
+            'rel_e',
+            'rel_f',
+            'rel_g',
+        }

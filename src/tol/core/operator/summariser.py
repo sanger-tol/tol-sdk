@@ -159,7 +159,7 @@ class Summariser(
             to_ones,
         )
 
-        return dict(
+        pairs = (
             self._ext_and_for_relationship(
                 source_objs,
                 relationship,
@@ -167,11 +167,21 @@ class Summariser(
             for relationship in to_one_names
         )
 
+        return {
+            k: {
+                'in_list': {
+                    'value': v
+                }
+            }
+            for k, v in pairs
+            if v
+        }
+
     def _ext_and_for_relationship(
         self,
         source_objs: list[DataObject | None],
         relationship: str,
-    ) -> tuple[str, dict[str, dict[str, list[str]]]]:
+    ) -> tuple[str, list[str]]:
 
         relationship_id_target = f'{relationship}.id'
 
@@ -185,11 +195,7 @@ class Summariser(
             if i is not None
         ]
 
-        return relationship_id_target, {
-            'in_list': {
-                'value': relationship_ids
-            }
-        }
+        return relationship_id_target, relationship_ids
 
     def _get_resummarised_to_one_names(
         self,
