@@ -11,5 +11,6 @@ summaries = list(
 eds.resummarise_by_ids(
     summaries,
     source_object_type='sequencing_request',
-    source_object_ids=['2021acTZ11512777'],
+    # has a `benchling_extraction`
+    source_object_ids=['5976STDY13130848'],
 )
