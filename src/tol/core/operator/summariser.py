@@ -10,7 +10,7 @@ from typing import Any, Iterable
 
 from .detail_getter import DetailGetter
 from .relational import Relational
-from ..datasource_filter import DataSourceFilter
+from ..datasource_filter import AndFilter, DataSourceFilter
 
 
 if typing.TYPE_CHECKING:
@@ -79,13 +79,20 @@ class Summariser(
 
         Returns None, but performs summarization operations.
         """
-        objects_to_summarise, _ = self.get_objects_to_summarise(
+
+        list_ids = list(source_object_ids)
+
+        filtered_summaries = self._filter_by_source_type(
             summary_objects,
             source_object_type,
-            source_object_ids,
         )
 
-        for summary_obj, ext_and in objects_to_summarise:
+        for summary_obj in filtered_summaries:
+            ext_and = self.get_and_filter_to_summarise(
+                summary_obj,
+                source_object_type,
+                list_ids,
+            )
             self._summarise(
                 summary_obj,
                 ext_and=ext_and,
@@ -122,74 +129,59 @@ class Summariser(
             if s.source_object_type == source_object_type
         ]
 
-    def get_objects_to_summarise(
+    def get_and_filter_to_summarise(
         self,
-        summary_objects: Iterable[DataObject],
+        summary_object: DataObject,
         source_object_type: str,
         source_object_ids: Iterable[str],
-    ) -> tuple[list[tuple[DataObject, dict[str, Any]]], dict[str, list[str]]]:
-        """
-        Helper function for resummariser_by_ids that returns the objects to be summarised
-        along with their extended filter conditions.
+    ) -> AndFilter:
 
-        Returns:
-            A tuple containing:
-            - A list of tuples containing (summary_object, ext_and) pairs that can be used
-            for summarisation.
-            - A list of relationship IDs that were extracted during the process, which can
-            be used for subsequent operations like enrichment.
-        """
-        filtered_summaries = self._filter_by_source_type(
-            summary_objects,
-            source_object_type,
-        )
+        if not self.relationship_config:
+            return {}
 
-        if not filtered_summaries:
-            return [], {}
+        if source_object_type not in self.relationship_config:
+            return {}
+
+        to_ones = self.relationship_config[source_object_type].to_one
+        if not to_ones:
+            return {}
 
         source_objs = list(
             self.get_by_ids(
                 source_object_type,
                 source_object_ids,
+                requested_fields=summary_object.group_by,
             )
         )
 
-        result = []
-        relationship_ids_by_type = {}
-
-        for s in filtered_summaries:
-            first_group_by: str = s.group_by[0]
-            relationship_hops = '.'.join(
-                first_group_by.split('.')[:-1]
+        return dict(
+            self._ext_and_for_relationship(
+                source_objs,
+                relationship,
             )
-            relationship_id_target = f'{relationship_hops}.id'
+            for relationship in to_ones
+        )
 
-            relationship_ids_raw = (
-                o.get_field_by_name(relationship_id_target)
-                for o in source_objs
-                if o is not None
-            )
-            relationship_ids: list[str] = [
-                i for i in relationship_ids_raw
-                if i is not None
-            ]
+    def _ext_and_for_relationship(
+        self,
+        source_objs: list[DataObject | None],
+        relationship: str,
+    ) -> tuple[str, dict[str, dict[str, list[str]]]]:
 
-            dest_type = s.destination_object_type
-            if dest_type not in relationship_ids_by_type:
-                relationship_ids_by_type[dest_type] = []
-            relationship_ids_by_type[dest_type].extend(relationship_ids)
+        relationship_id_target = f'{relationship}.id'
 
-            ext_and = {
-                relationship_id_target: {
-                    'in_list': {
-                        'value': relationship_ids
-                    }
-                }
+        relationship_ids_raw = set(
+            o.get_field_by_name(relationship_id_target)
+            for o in source_objs
+            if o is not None
+        )
+        relationship_ids: list[str] = [
+            i for i in relationship_ids_raw
+            if i is not None
+        ]
+
+        return relationship_id_target, {
+            'in_list': {
+                'value': relationship_ids
             }
-
-            result.append((s, ext_and))
-
-        for obj_type in relationship_ids_by_type:
-            relationship_ids_by_type[obj_type] = list(set(relationship_ids_by_type[obj_type]))
-
-        return result, relationship_ids_by_type
+        }

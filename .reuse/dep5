@@ -7,3 +7,7 @@ License: MIT
 Files: .vscode/*
 Copyright: 2023 Genome Research Ltd.
 License: MIT
+
+Files: scripts/*
+Copyright: 2023 Genome Research Ltd.
+License: MIT
