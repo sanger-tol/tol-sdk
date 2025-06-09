@@ -89,6 +89,9 @@ def mock_summariser_to_get_objects() -> Summariser:
     mock_sum._ext_and_for_relationship.side_effect = (
         lambda *args: Summariser._ext_and_for_relationship(mock_sum, *args)
     )
+    mock_sum._get_resummarised_to_one_names.side_effect = (
+        lambda *args: Summariser._get_resummarised_to_one_names(mock_sum, *args)
+    )
 
     return mock_sum
 
