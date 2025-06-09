@@ -154,12 +154,17 @@ class Summariser(
             )
         )
 
+        to_one_names = self._get_resummarised_to_one_names(
+            summary_object,
+            to_ones,
+        )
+
         return dict(
             self._ext_and_for_relationship(
                 source_objs,
                 relationship,
             )
-            for relationship in to_ones
+            for relationship in to_one_names
         )
 
     def _ext_and_for_relationship(
@@ -185,3 +190,21 @@ class Summariser(
                 'value': relationship_ids
             }
         }
+
+    def _get_resummarised_to_one_names(
+        self,
+        summary_obj: DataObject,
+        to_ones: dict[str, str],
+    ) -> list[str]:
+
+        group_by: list[str] | None = summary_obj.group_by
+        if not group_by:
+            return list(to_ones)
+
+        return [
+            r for r in to_ones
+            if any(
+                g for g in group_by
+                if g.startswith(r)
+            )
+        ]
