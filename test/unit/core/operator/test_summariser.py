@@ -108,11 +108,17 @@ def mock_summariser() -> Summariser:
     mock_sum._filter_by_source_type.side_effect = (
         lambda *args: Summariser._filter_by_source_type(mock_sum, *args)
     )
+    mock_sum._ext_and_for_relationship.side_effect = (
+        lambda *args: Summariser._ext_and_for_relationship(mock_sum, *args)
+    )
+    mock_sum._get_resummarised_to_one_names.side_effect = (
+        lambda *args: Summariser._get_resummarised_to_one_names(mock_sum, *args)
+    )
 
     # get_objects_to_summarise method is tested elsewhere
     # but we need to mock it here
-    mock_sum.get_objects_to_summarise.side_effect = (
-        Summariser.get_objects_to_summarise.__get__(mock_sum)
+    mock_sum.get_and_filter_to_summarise.side_effect = (
+        Summariser.get_and_filter_to_summarise.__get__(mock_sum)
     )
 
     return mock_sum
@@ -196,16 +202,15 @@ class TestSummariser:
             'abc',
         )
 
-        mock_summariser._summarise.assert_called_once_with(
-            summary_objs[1],
-            ext_and={
-                'back_i.id': {
-                    'in_list': {
-                        'value': ['rel_a', 'rel_b', 'rel_c']
-                    }
-                }
-            }
-        )
+        (((observed_summary,), kwargs),) = mock_summariser._summarise.call_args_list
+
+        assert observed_summary == summary_objs[1]
+        assert len(kwargs) == 1
+        assert set(kwargs['ext_and']['back_i.id']['in_list']['value']) == {
+            'rel_a',
+            'rel_b',
+            'rel_c',
+        }
 
     def test_resummarise_by_ids__many_relationships(
         self,
@@ -221,13 +226,12 @@ class TestSummariser:
             'efg',
         )
 
-        mock_summariser._summarise.assert_called_once_with(
-            summary_objs[0],
-            ext_and={
-                'back_a.id': {
-                    'in_list': {
-                        'value': ['rel_e', 'rel_f', 'rel_g']
-                    }
-                }
-            }
-        )
+        (((observed_summary,), kwargs),) = mock_summariser._summarise.call_args_list
+
+        assert observed_summary == summary_objs[0]
+        assert len(kwargs) == 1
+        assert set(kwargs['ext_and']['back_a.id']['in_list']['value']) == {
+            'rel_e',
+            'rel_f',
+            'rel_g',
+        }
