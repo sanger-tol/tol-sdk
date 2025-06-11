@@ -261,9 +261,6 @@ class BenchlingConverter(Converter[BenchlingReturn, DataObject]):
         
     def __convert_container_result(self, input_: Container):
         object_type = snakecase(input_.schema.name)
-        
-        contents = self.__convert_container_contents(input_.contents)
-        print(next(contents))
 
         attributes = self.__convert_attributes(input_.fields, object_type)
         to_ones = self.__convert_relationships(input_.fields, object_type)
@@ -276,25 +273,26 @@ class BenchlingConverter(Converter[BenchlingReturn, DataObject]):
                'parent_storage_id': input_.parent_storage_id,
                'barcode': input_.barcode,
             },
-            to_one=to_ones | native_to_ones
+            to_one=to_ones | native_to_ones,
         )
         
-    def __convert_container_contents(self, input_: Iterable[ContainerContent]) -> Iterable[DataObject]:
-        #object_type = snakecase(input_.schema.name)
+    def convert_container_contents(self, input_: Iterable[ContainerContent]) -> Iterable[DataObject]:
         for container_content in input_:
-            print(container_content.entity)
-            # Add in the entities id and type here as attribute of each container content
+            entity = self.__convert_custom_entity(container_content.entity)
+
             attributes = {
                 'batch': container_content.batch,
                 'concentration': container_content.concentration.to_dict() if container_content.concentration else None
             }
-            to_ones = {}
-             
+            to_ones = {
+                'entity': entity
+            }
+
             yield self.__ds.data_object_factory(
                 'container_content',
                 id_=None,
                 attributes=attributes,
-                to_one=to_ones
+                to_one=to_ones,
             )
 
     def __convert_return(self, input_: BenchlingReturn) -> DataObject:

@@ -78,6 +78,15 @@ NATIVE_OBJECT_TYPES = {
     },
     'assay_result': {
         'attributes': {}
+    },
+    'container_content': {
+        'attributes': {
+            'batch': 'str',
+            'concentration': 'dict',
+        },
+        'to_one': {
+            'entity': 'custom_entity',
+        }
     }
 }
 BENCHLING_TYPE_SEARCH_WITH_SCHEMA_ID = [
@@ -873,6 +882,11 @@ class BenchlingDataSource(
             return back_converter.convert_worklist_items(
                 self.__get_benchling_package('worklist').get_by_id(source.id)
             )
+            
+        if source.type in self.schemas['container'].keys() and relationship_name =='container_contents':
+            back_converter = self.__bc_factory()
+            contents = self.get_container_contents(source.id)
+            return back_converter.convert_container_contents(contents)
 
     def __build_list_filter(self, list_filter: Optional[DataSourceFilter]):
         arg = ''
