@@ -23,10 +23,10 @@ class TestAllowedValuesValidator:
                 key='key1',
                 values=list('abc')
             ),
-            AllowedValues(
-                key='key2',
-                values=list('abc')
-            ),
+            {
+                'key': 'key2',
+                'values': list('abc')    
+            }
         ]
 
         validator = AllowedValuesValidator(
