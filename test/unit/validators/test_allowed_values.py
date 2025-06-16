@@ -21,12 +21,12 @@ class TestAllowedValuesValidator:
         config = [
             AllowedValues(
                 key='key1',
-                values=list('abc')
+                values=list('abc'),
             ),
             {
                 'key': 'key2',
-                'values': list('abc')    
-            }
+                'values': list('abc'),
+            },
         ]
 
         validator = AllowedValuesValidator(
