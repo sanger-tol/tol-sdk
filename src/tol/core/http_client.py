@@ -77,7 +77,7 @@ class HttpClient:
         retry_strategy = Retry(
             total=self.__retries,
             backoff_factor=1,
-            status_forcelist=[429, 500, 502, 503, 504]
+            status_forcelist=[429, 502, 503, 504]
         )
         session.mount('http://', HTTPAdapter(max_retries=retry_strategy))
         session.mount('https://', HTTPAdapter(max_retries=retry_strategy))

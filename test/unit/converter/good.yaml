@@ -1,0 +1,52 @@
+# SPDX-FileCopyrightText: 2025 Genome Research Ltd.
+#
+# SPDX-License-Identifier: MIT
+
+file:
+  format: csv
+  header: true
+  comment: "#"
+  name: TOS_data_2024-11-18_invertebrates.csv
+  submitter: "Tree of Sex 1"
+  default reference header: "citation"
+  species column: XXXX
+  species format: XXXX
+
+attributes:
+
+  - imported_column_name: "sexual_system_in"
+    column_reference: "source  Sexual System"
+    destination:
+      key: "sexual_system"
+      separator: ":-:"
+      imported_values:
+        - X
+        - Y
+        - map_from: "map_TO"
+
+  - imported_column_name: "include_only_strings"
+    column_reference: "source  Sexual System"
+    destination:
+      key: "include_only_strings"
+      separator: "-_-"
+      imported_values:
+        - "int" # magic import
+
+  - imported_column_name: "one_in"
+    column_reference: "source  Sexual System"
+    destination:
+      # multiple destinations
+      - key: "first_out"
+        separator: ","
+        imported_values:
+          - "double" # magic import
+
+      - key: "second_up"
+        separator: ","
+        imported_values:
+          - "yes": "please"
+
+      - key: "third_and_greatest"
+        separator: ","
+        imported_values:
+          - "all"

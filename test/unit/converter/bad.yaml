@@ -1,0 +1,43 @@
+# SPDX-FileCopyrightText: 2025 Genome Research Ltd.
+#
+# SPDX-License-Identifier: MIT
+
+file:
+  format: csv
+  header: true
+  comment: "#"
+  #no `name` - raise `ValidationError`!
+  submitter: "Tree of Sex 1"
+  default reference header: "citation"
+
+attributes:
+
+  - column_name: "Sexual System"
+    reference: "source  Sexual System"
+    destination:
+      key: "sexual_system"
+      import_values:
+        - "gonochorous"
+        - "parthenogenetic"
+        - "hermaphrodite"
+
+  - column_name: "Karyotype"
+    reference: "source  Karyotype"
+    destination:
+      key: "sex_chromosome_formula"
+      separator: "|"
+      import_values:
+        - "XO"
+        - "XY"
+        - "hermaphrodite"
+        - "homomorphic"
+
+  - column_name: Haplodiploidy
+    reference: "source  Haplodiploidy"
+    destination:
+      key: "sex_determination" 
+      import_values:
+        - "arrhenotoky"
+        - "paternal genome elimination"
+      ignore:
+        - other

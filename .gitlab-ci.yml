@@ -42,7 +42,7 @@ build-test-image:
       when: never
     - if: $CI_PIPELINE_SOURCE == 'merge_request_event'
       when: never
-    - when: always
+    - when: on_success
 
 unit-test-python-package:
   extends: .unit-test-python-package
@@ -56,7 +56,7 @@ unit-test-python-package:
       when: never
     - if: $CI_PIPELINE_SOURCE == 'merge_request_event'
       when: never
-    - when: always
+    - when: on_success
 
 system-test-python-package:
   extends: .test-python
@@ -94,7 +94,7 @@ system-test-python-package:
       when: never
     - if: $CI_PIPELINE_SOURCE == 'merge_request_event'
       when: never
-    - when: always
+    - when: on_success
 
 integration-test-python-package:
   extends: .unit-test-python-package
@@ -113,7 +113,7 @@ integration-test-python-package:
       when: never
     - if: $CI_PIPELINE_SOURCE == 'merge_request_event'
       when: never
-    - when: always
+    - when: on_success
 
 deploy-package:
   extends: .deploy-python-package
