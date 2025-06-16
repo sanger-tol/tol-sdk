@@ -30,5 +30,5 @@ class GoatTaxonToElasticSpeciesConverter(
                 rank_object = getattr(data_object, rank)
                 if rank_object is not None:
                     setattr(ret, f'{rank}_name', rank_object.scientific_name)
-            return iter([ret])
+            yield ret
         return iter([])

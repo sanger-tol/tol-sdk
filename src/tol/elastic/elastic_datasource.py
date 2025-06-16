@@ -4,8 +4,6 @@
 
 from __future__ import annotations
 
-import hashlib
-import json
 import typing
 from collections.abc import Callable
 from datetime import datetime
@@ -127,6 +125,15 @@ class ElasticDataSource(
         }
         return data_object.attributes | to_ones_dict
 
+    def _convert_data_objects_in_update_to_dict(self, dict_: Dict) -> Dict:
+        ret = {}
+        for k, v in dict_.items():
+            if isinstance(v, DataObject):
+                ret[k] = self._convert_to_one_relation(v)
+            else:
+                ret[k] = v
+        return ret
+
     def _convert_to_one_relation(
         self,
         one_relation: DataObject | None
@@ -147,15 +154,6 @@ class ElasticDataSource(
         for k, v in dict_.items():
             ret[prefix + '_' + k] = v
         return ret
-
-    def _add_updated(self, dict_: Dict) -> Dict:
-        return {**dict_, 'tol_updated_at': datetime.now().isoformat()}
-
-    def _add_checksum(self, dict_: Dict) -> Dict:
-        dhash = hashlib.sha256()
-        encoded = json.dumps(dict_, sort_keys=True, default=str).encode()
-        dhash.update(encoded)
-        return {**dict_, 'checksum': dhash.hexdigest()}
 
     def _add_uid(self, dict_: Dict, uid: Any) -> Dict:
         return {**dict_, 'uid': f'{uid}'}
@@ -183,11 +181,10 @@ class ElasticDataSource(
 
     def _action_for_upsert(self, index: str, objects: Iterable[DataObject], id_func: Callable,
                            field_prefix: str):
+        real_index_name = self._get_indices().get(index)
         for object_ in objects:
             obj = self._convert_data_object_to_dict(object_)
             obj = self._convert_dates(obj)
-            obj = self._add_checksum(obj)
-            obj = self._add_updated(obj)
             obj = self._prefix_fields(obj, field_prefix)
             obj = self._stringify_ids(obj)
             uid = id_func(object_)
@@ -196,7 +193,7 @@ class ElasticDataSource(
                 '_op_type': 'update',
                 'scripted_upsert': True,
                 'upsert': {},
-                '_index': index,
+                '_index': real_index_name,
                 '_id': uid,
                 'script': {
                     'source': self._upsert_script,
@@ -265,13 +262,14 @@ class ElasticDataSource(
         # the candidate key. If found it will perform the update
 
         index = self.__get_index_or_alias(object_type)
+        real_index_name = self._get_indices().get(index)
         for (_, update) in updates:
             # We can get the candidate key dynamically from the actual update
             if 'candidate_key_func' in kwargs:
                 candidate_key = kwargs['candidate_key_func'](update)
             self.es.update_by_query(
-                index=index,
-                body=self._action_for_update(index,
+                index=real_index_name,
+                body=self._action_for_update(object_type,
                                              update,
                                              field_prefix,
                                              candidate_key),
@@ -351,19 +349,18 @@ class ElasticDataSource(
         """
         return s.replace('\n', ' ')
 
-    def _action_for_update(self, index: str, update: Dict,
+    def _action_for_update(self, object_type: str, update: Dict,
                            field_prefix: str, candidate_key: Iterable[str]):
         u = self._convert_dates(update)
-        u = self._add_checksum(u)
-        u = self._add_updated(u)
         f = DataSourceFilter()
         f.and_ = {}
         for key in candidate_key:
             # Don't want key in the upsert as it cannot change anyway
             f.and_[key] = {'eq': {'value': u.pop(key)}}
         u = self._prefix_fields(u, field_prefix)
+        u = self._convert_data_objects_in_update_to_dict(u)
         query = self._build_elasticsearch_query(
-            self.__get_object_type(index),
+            object_type,
             object_filters=f)
         return {
             'query': query,
@@ -461,6 +458,7 @@ class ElasticDataSource(
     ) -> dict[str, Any]:
 
         index = self.__get_index_or_alias(object_type)
+        real_index_name = self._get_indices().get(index)
         query = self._build_elasticsearch_query(object_type, object_filters)
         sort = self._build_elasticsearch_sort(object_type, sort_by)
         fields = list(self.runtime_fields[object_type].keys()) \
@@ -473,7 +471,7 @@ class ElasticDataSource(
         return self.es.search(
             from_=from_,
             size=page_size,
-            index=index,
+            index=real_index_name,
             query=query,
             sort=sort,
             fields=fields,
@@ -666,13 +664,14 @@ class ElasticDataSource(
         **kwargs
     ) -> Iterable[DataObject]:
         index = self.__get_index_or_alias(object_type)
+        real_index_name = self._get_indices().get(index)
         query = self._build_elasticsearch_query(object_type, object_filters)
         fields = list(self.runtime_fields[object_type].keys()) \
             if object_type in self.runtime_fields else None
         runtime_mappings = self.runtime_fields[object_type] \
             if object_type in self.runtime_fields else None
         generator = self.helpers.scan(self.es,
-                                      index=index,
+                                      index=real_index_name,
                                       scroll='10m',
                                       size=500,
                                       query={'query': query},
@@ -768,6 +767,7 @@ class ElasticDataSource(
         **kwargs
     ) -> Dict:
         index = self.__get_index_or_alias(object_type)
+        real_index_name = self._get_indices().get(index)
         query = self._build_elasticsearch_query(object_type, object_filters)
         fields = list(self.runtime_fields[object_type].keys()) \
             if object_type in self.runtime_fields else None
@@ -775,7 +775,7 @@ class ElasticDataSource(
             if object_type in self.runtime_fields else None
         resp = self.es.search(
             size=0,
-            index=index,
+            index=real_index_name,
             query=query,
             aggregations=aggregations,
             fields=fields,
@@ -1072,6 +1072,7 @@ class ElasticDataSource(
         **kwargs
     ) -> int:
         index = self.__get_index_or_alias(object_type)
+        real_index_name = self._get_indices().get(index)
         query = self._build_elasticsearch_query(object_type, object_filters)
         fields = list(self.runtime_fields[object_type].keys()) \
             if object_type in self.runtime_fields else None
@@ -1079,7 +1080,7 @@ class ElasticDataSource(
             if object_type in self.runtime_fields else None
         # We are not using es.count so that we can use runtime fields
         resp = self.es.search(
-            index=index,
+            index=real_index_name,
             track_total_hits=True,
             size=0,
             query=query,

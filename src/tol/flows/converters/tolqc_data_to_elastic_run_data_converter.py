@@ -14,6 +14,7 @@ class TolqcDataToElasticRunDataConverter(DataObjectToDataObjectOrUpdateConverter
 
     def convert(self, data_object: DataObject) -> Iterable[DataObject]:
         target_attributes = {}
+        target_to_one = {}
 
         target_attributes['tag_index'] = data_object.tag_index
         target_attributes['tag_sequence'] = data_object.tag1_id
@@ -42,15 +43,27 @@ class TolqcDataToElasticRunDataConverter(DataObjectToDataObjectOrUpdateConverter
                 target_attributes['instrument_model'] = data_object.run.platform.model
 
         if data_object.sample is not None:
-            target_attributes['sequencing_request'] = {'id': data_object.sample.id}
+            target_to_one['sequencing_request'] = self._data_object_factory(
+                'sequencing_request',
+                data_object.sample.id
+            )
             if data_object.sample.specimen is not None:
-                target_attributes['tolid'] = {'id': data_object.sample.specimen.id}
-                target_attributes['specimen'] = {'id': data_object.sample.specimen.supplied_name}
+                target_to_one['tolid'] = self._data_object_factory(
+                    'tolid',
+                    data_object.sample.specimen.id
+                )
+                if data_object.sample.specimen.supplied_name is not None:
+                    target_to_one['specimen'] = self._data_object_factory(
+                        'specimen',
+                        data_object.sample.specimen.supplied_name
+                    )
                 if data_object.sample.specimen.accession is not None:
                     target_attributes['biospecimen_id'] = data_object.sample.specimen.accession.id
                 if data_object.sample.specimen.species is not None:
-                    target_attributes['species'] = {
-                        'id': data_object.sample.specimen.species.taxon_id}
+                    target_to_one['species'] = self._data_object_factory(
+                        'species',
+                        data_object.sample.specimen.species.taxon_id
+                    )
 
         if data_object.folder is not None:
             target_attributes['images'] = [
@@ -67,6 +80,7 @@ class TolqcDataToElasticRunDataConverter(DataObjectToDataObjectOrUpdateConverter
         ret = self._data_object_factory(
             'run_data',
             data_object.id,
-            attributes=target_attributes
+            attributes=target_attributes,
+            to_one=target_to_one
         )
         yield ret

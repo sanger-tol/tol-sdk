@@ -22,4 +22,4 @@ class StsBankedSampleToElasticSampleConverter(
         )
         if data_object.category is not None:
             ret.banked_sample_category = data_object.category.name
-        return iter([ret])
+        yield ret

@@ -14,19 +14,30 @@ class TolqcSampleToElasticSequencingRequestConverter(
         DataObjectToDataObjectOrUpdateConverter):
     def convert(self, data_object: DataObject) -> Iterable[DataObject]:
         target_attributes = {**data_object.attributes}
+        target_to_one = {}
 
         if data_object.specimen is not None:
-            target_attributes['tolid'] = {'id': data_object.specimen.id}
-            target_attributes['specimen'] = {'id': data_object.specimen.supplied_name}
+            target_to_one['tolid'] = self._data_object_factory(
+                'tolid',
+                data_object.specimen.id
+            )
+
+            target_to_one['specimen'] = self._data_object_factory(
+                'specimen',
+                data_object.specimen.supplied_name
+            )
             if data_object.specimen.accession is not None:
                 target_attributes['biospecimen_id'] = data_object.specimen.accession.id
             if data_object.specimen.species is not None:
-                target_attributes['species'] = {'id': data_object.specimen.species.id}
-
+                target_to_one['species'] = self._data_object_factory(
+                    'species',
+                    data_object.specimen.species.id
+                )
         ret = self._data_object_factory(
             'sequencing_request',
             data_object.id,
-            attributes=target_attributes
+            attributes=target_attributes,
+            to_one=target_to_one
         )
 
-        return iter([ret])
+        yield ret

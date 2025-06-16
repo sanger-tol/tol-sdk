@@ -74,14 +74,36 @@ class _MockDataSourceRelational(DataSource, Relational):
         raise NotImplementedError()
 
 
-class _MockDataSource(DataSource):
+class _MockDataSource(DataSource, Relational):
 
     @property
     def supported_types(self):
-        return ['sequencing_request']
+        return ['sequencing_request', 'specimen', 'species', 'tolid']
 
     @property
     def attribute_types(self):
+        raise NotImplementedError()
+
+    @property
+    def relationship_config(self):
+        rc_sequencing_request = RelationshipConfig()
+        rc_sequencing_request.to_one = {
+            'specimen': 'specimen',
+            'tolid': 'tolid',
+            'species': 'species'
+        }
+        return {'sequencing_request': rc_sequencing_request}
+
+    def get_to_one_relation(
+        self,
+        source: DataObject,
+        relationship_name: str
+    ):
+        raise NotImplementedError()
+
+    def get_to_many_relations(
+        self
+    ):
         raise NotImplementedError()
 
 
@@ -183,10 +205,10 @@ class TestTolqcSampleToElasticSequencingRequestConverter(TestCase):
         ret2 = next(converteds)
         self.assertEqual(ret2.attributes, {
             'hierarchy_name': 'name2',
-            'lims_id': 'lims_id2',
-            'tolid': {'id': 'specimen_id2'},
-            'specimen': {'id': 'supplied_name2'},
+            'lims_id': 'lims_id2'
         })
+        assert ret2.tolid.id == 'specimen_id2'
+        assert ret2.specimen.id == 'supplied_name2'
 
         with self.assertRaises(StopIteration):
             next(converteds)
@@ -196,11 +218,11 @@ class TestTolqcSampleToElasticSequencingRequestConverter(TestCase):
         ret3 = next(converteds)
         self.assertEqual(ret3.attributes, {
             'hierarchy_name': 'name3',
-            'lims_id': 'lims_id3',
-            'tolid': {'id': 'specimen_id3'},
-            'specimen': {'id': 'supplied_name3'},
-            'species': {'id': 'species_id3'}
+            'lims_id': 'lims_id3'
         })
+        assert ret3.species.id == 'species_id3'
+        assert ret3.tolid.id == 'specimen_id3'
+        assert ret3.specimen.id == 'supplied_name3'
 
         with self.assertRaises(StopIteration):
             next(converteds)
@@ -211,7 +233,7 @@ class TestTolqcSampleToElasticSequencingRequestConverter(TestCase):
         self.assertEqual(ret4.attributes, {
             'hierarchy_name': 'name4',
             'lims_id': 'lims_id4',
-            'tolid': {'id': 'specimen_id4'},
-            'specimen': {'id': 'supplied_name4'},
             'biospecimen_id': 'accession_id4',
         })
+        assert ret4.specimen.id == 'supplied_name4'
+        assert ret4.tolid.id == 'specimen_id4'

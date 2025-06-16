@@ -246,14 +246,38 @@ class _MockDataSourceRelational(DataSource, Relational):
             return [ext_id1, ext_id2]
 
 
-class _MockDataSource(DataSource):
+class _MockDataSource(DataSource, Relational):
 
     @property
     def supported_types(self):
-        return ['sample']
+        return ['sample', 'species', 'tolid', 'specimen', 'manifest', 'sampleset']
 
     @property
     def attribute_types(self):
+        raise NotImplementedError()
+
+    @property
+    def relationship_config(self):
+        rc_sample = RelationshipConfig()
+        rc_sample.to_one = {
+            'species': 'species',
+            'specimen': 'specimen',
+            'tolid': 'tolid',
+            'manifest': 'manifest',
+            'sampleset': 'sampleset'
+        }
+        return {'sample': rc_sample}
+
+    def get_to_one_relation(
+        self,
+        source: DataObject,
+        relationship_name: str
+    ):
+        return None
+
+    def get_to_many_relations(
+        self
+    ):
         raise NotImplementedError()
 
 
@@ -421,22 +445,17 @@ class TestStsSampleProjectToElasticSampleConverter(TestCase):
             'preservation_approach': 'approach',
             'preservative_solution': 'solution',
             'collection_method_desc': 'method_desc',
-            'specimen': {'id': 'test_specimen'},
-            'sampleset': {'id': 'test_sampleset'},
-            'manifest': {'id': 'test_manifest'},
             'tissue_size': 'huge',
             'lab_work_category': 'labwork1',
             'col_date': datetime.datetime(2020, 2, 2),
             'original_collection_date': datetime.datetime(2011, 1, 1, 12),
             'pre_date': datetime.datetime(2000, 12, 12),
-            'tolid': {'id': 'xxTesTest1'},
             'public_name': None,
             'other': 'another',
             'action1_name': 'full name1',
             'action2_name': 'full name2',
             'sequencescape_study_id': 'cf01ea23-ac45-67e8-9101-11b213141516',
             'cost_code': 'S12345',
-            'species': {'id': 'test_species'},
             'lifestage': 'EMBRYO',
             'strain': 'Strain',
             'type1': 'ext_id1',
@@ -445,6 +464,11 @@ class TestStsSampleProjectToElasticSampleConverter(TestCase):
             'organism_part': ['LEG', 'HEAD'],
             'location': 'test_freezer_tray',
         })
+        assert ret1.species.id == 'test_species'
+        assert ret1.tolid.id == 'xxTesTest1'
+        assert ret1.specimen.id == 'test_specimen'
+        assert ret1.manifest.id == 'test_manifest'
+        assert ret1.sampleset.id == 'test_sampleset'
 
         with self.assertRaises(StopIteration):
             next(converteds)

@@ -595,7 +595,25 @@ class TestEndToEnd:
             '1',
             attributes={'str_column': 'test_2'}
         )
+        rel1 = data_source.data_object_factory(
+            'related',
+            'rel1',
+            attributes={
+                'str_column': 'value2',
+                'int_column': 123
+            }
+        )
+        rel2 = data_source.data_object_factory(
+            'related',
+            'rel2',
+            attributes={
+                'int_column': 456,
+                'bool_column': False,
+                'datetime_column': datetime(2024, 6, 6)
+            }
+        )
         data_source.upsert('root', [obj1])
+        data_source.upsert('related', [rel1, rel2])
         ds_sleep(2)
         # they should all be present now
         first = list(
@@ -616,10 +634,7 @@ class TestEndToEnd:
             'int_column': 2,
             'datetime_column': datetime(2024, 1, 2),
             'bool_column': False,
-            'related_object': {
-                'id': 'rel1',
-                'str_column': 'value2',
-                'int_column': 123},
+            'related_object': rel1,
             'list_column': ['item1', 'item2']
         })
         data_source.update('root', [update],
@@ -647,12 +662,7 @@ class TestEndToEnd:
             'int_column': 2,
             'datetime_column': datetime(2024, 1, 3),
             'bool_column': True,
-            'related_object': {
-                'id': 'rel1',
-                'int_column': 456,
-                'bool_column': False,
-                'datetime_column': datetime(2024, 6, 6)
-            },
+            'related_object': rel2,
             'list_column': ['item1', 'item3']}
         )
         data_source.update('root', [update],
@@ -667,7 +677,7 @@ class TestEndToEnd:
         assert ret.int_column == 2
         assert ret.datetime_column == datetime(2024, 1, 3)
         assert ret.bool_column is True
-        assert ret.related_object.id == 'rel1'
+        assert ret.related_object.id == 'rel2'
         assert ret.related_object.str_column == 'value2'
         assert ret.related_object.int_column == 456
         assert ret.related_object.datetime_column == datetime(2024, 6, 6)
@@ -688,7 +698,7 @@ class TestEndToEnd:
         assert ret.int_column == 2
         assert ret.datetime_column == datetime(2024, 1, 3)
         assert ret.bool_column is True
-        assert ret.related_object.id == 'rel1'
+        assert ret.related_object.id == 'rel2'
         assert ret.related_object.str_column == 'value2'
         assert ret.related_object.int_column == 456
         assert ret.related_object.datetime_column == datetime(2024, 6, 6)

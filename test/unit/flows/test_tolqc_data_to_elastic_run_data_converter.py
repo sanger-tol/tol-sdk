@@ -165,14 +165,38 @@ class _MockDataSourceRelational(DataSource, Relational):
         raise NotImplementedError()
 
 
-class _MockDataSource(DataSource):
+class _MockDataSource(DataSource, Relational):
 
     @property
     def supported_types(self):
-        return ['run_data']
+        return ['run_data', 'sequencing_request', 'tolid', 'specimen',
+                'species']
 
     @property
     def attribute_types(self):
+        raise NotImplementedError()
+
+    @property
+    def relationship_config(self):
+        rc_run_data = RelationshipConfig()
+        rc_run_data.to_one = {
+            'sequencing_request': 'sequencing_request',
+            'specimen': 'specimen',
+            'tolid': 'tolid',
+            'species': 'species'
+        }
+        return {'run_data': rc_run_data}
+
+    def get_to_one_relation(
+        self,
+        source: DataObject,
+        relationship_name: str
+    ):
+        return None
+
+    def get_to_many_relations(
+        self
+    ):
         raise NotImplementedError()
 
 
@@ -456,7 +480,6 @@ class TestTolqcDataToElasticRunDataConverter(TestCase):
             'reporting_category': 'rnaseq',
             'tag_index': 'data4_tag_index',
             'manual_qc': 'data4_manual_qc',
-            'sequencing_request': {'id': 'sample1_id'},
             'tag_sequence': None,
             'tag2_sequence': None,
             'auto_qc': None,
@@ -468,6 +491,7 @@ class TestTolqcDataToElasticRunDataConverter(TestCase):
             'bases_t': None,
             'read_length_n50': None
         })
+        assert ret4.sequencing_request.id == 'sample1_id'
 
         with self.assertRaises(StopIteration):
             next(converteds)
@@ -485,9 +509,6 @@ class TestTolqcDataToElasticRunDataConverter(TestCase):
             'tag2_sequence': None,
             'auto_qc': None,
             'qc': None,
-            'tolid': {'id': 'specimen1_id'},
-            'specimen': {'id': None},
-            'sequencing_request': {'id': 'sample2_id'},
             'bases': None,
             'bases_a': None,
             'bases_c': None,
@@ -495,6 +516,9 @@ class TestTolqcDataToElasticRunDataConverter(TestCase):
             'bases_t': None,
             'read_length_n50': None
         })
+        assert ret5.tolid.id == 'specimen1_id'
+        assert ret5.specimen is None
+        assert ret5.sequencing_request.id == 'sample2_id'
 
         with self.assertRaises(StopIteration):
             next(converteds)
@@ -512,10 +536,7 @@ class TestTolqcDataToElasticRunDataConverter(TestCase):
             'qc': None,
             'tag_sequence': None,
             'tag2_sequence': None,
-            'sequencing_request': {'id': 'sample3_id'},
             'biospecimen_id': 'accession1_id',
-            'tolid': {'id': 'specimen2_id'},
-            'specimen': {'id': None},
             'bases': None,
             'bases_a': None,
             'bases_c': None,
@@ -523,6 +544,9 @@ class TestTolqcDataToElasticRunDataConverter(TestCase):
             'bases_t': None,
             'read_length_n50': None
         })
+        assert ret6.sequencing_request.id == 'sample3_id'
+        assert ret6.specimen is None
+        assert ret6.tolid.id == 'specimen2_id'
 
         with self.assertRaises(StopIteration):
             next(converteds)
@@ -538,14 +562,10 @@ class TestTolqcDataToElasticRunDataConverter(TestCase):
             'manual_qc': 'data7_manual_qc',
             'auto_qc': None,
             'qc': None,
-            'sequencing_request': {'id': 'sample4_id'},
             'tag_sequence': None,
             'tag2_sequence': None,
             'auto_qc': None,
             'qc': None,
-            'tolid': {'id': 'specimen3_id'},
-            'specimen': {'id': None},
-            'species': {'id': 'taxon_id1'},
             'bases': None,
             'bases_a': None,
             'bases_c': None,
@@ -553,6 +573,10 @@ class TestTolqcDataToElasticRunDataConverter(TestCase):
             'bases_t': None,
             'read_length_n50': None
         })
+        assert ret7.sequencing_request.id == 'sample4_id'
+        assert ret7.specimen is None
+        assert ret7.tolid.id == 'specimen3_id'
+        assert ret7.species.id == 'taxon_id1'
 
         # with data.folder.folder_location relationship
         converteds = converter.convert(obj8)

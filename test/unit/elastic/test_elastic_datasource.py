@@ -34,12 +34,6 @@ class MockElasticDataSource(ElasticDataSource):
         }
         self.index_prefix = 'test'
 
-    def _add_updated(self, dict_):
-        return {**dict_, 'tol_updated_at': dt.isoformat()}
-
-    def _add_checksum(self, dict_):
-        return {**dict_, 'tol_checksum': 'abc123'}
-
     @property
     def attribute_types(self):
         return {
@@ -80,6 +74,7 @@ def mock_elastic_data_source() -> tuple[Callable, ElasticDataSource]:
         'index_prefix': 'test',
         'relationship_cfg': {
             'obj_type': RelationshipConfig(
+                to_one={'relationship': 'reltype'},
                 to_many={'children': 'reltype'}
             ),
             'reltype': RelationshipConfig(
@@ -202,6 +197,12 @@ class TestElasticDataSource(TestCase):
                     'field1': 'value1',
                     'field2': 'value2',
                     'datefield': dt
+                },
+                to_one={
+                    'relationship': core_data_object(
+                        'reltype',
+                        id_='rel1'
+                    )
                 }
             ),
             core_data_object(
@@ -229,8 +230,9 @@ class TestElasticDataSource(TestCase):
                         'field1': 'value1',
                         'field2': 'value2',
                         'datefield': dt.isoformat(),
-                        'tol_updated_at': dt.isoformat(),
-                        'tol_checksum': 'abc123',
+                        'relationship': {
+                            'id': 'rel1'
+                        },
                         'uid': '1'
                     }
                 }
@@ -250,8 +252,6 @@ class TestElasticDataSource(TestCase):
                     'upsertWith': {
                         'field1': 'value3',
                         'field2': 'value4',
-                        'tol_updated_at': dt.isoformat(),
-                        'tol_checksum': 'abc123',
                         'uid': '2'
                     }
                 }
@@ -290,8 +290,6 @@ class TestElasticDataSource(TestCase):
                     'upsertWith': {
                         'pre_field1': 'value1',
                         'pre_field2': 'value2',
-                        'pre_tol_updated_at': dt.isoformat(),
-                        'pre_tol_checksum': 'abc123',
                         'uid': 'value1'
                     }
                 }
@@ -311,8 +309,6 @@ class TestElasticDataSource(TestCase):
                     'upsertWith': {
                         'pre_field1': 'value3',
                         'pre_field2': 'value4',
-                        'pre_tol_updated_at': dt.isoformat(),
-                        'pre_tol_checksum': 'abc123',
                         'uid': 'value3'
                     }
                 }
@@ -335,14 +331,22 @@ class TestElasticDataSource(TestCase):
     def test_update(self):
         core_data_object, eds = mock_elastic_data_source()
 
-        update1 = {'field1': 'value1',
-                   'field2': 'value2'}
+        update1 = {
+            'field1': 'value1',
+            'field2': 'value2',
+            'relationship': core_data_object(
+                'reltype',
+                id_='rel1',
+                attributes={'field3': 'string1', 'field4': 'string2'}
+            )
+        }
+
         update2 = {'field1': 'value3',
                    'field2': 'value4'}
         updates = [(None, update1),
                    (None, update2)]
 
-        update_body = eds._action_for_update('test-obj-type',
+        update_body = eds._action_for_update('obj_type',
                                              update1,
                                              field_prefix='',
                                              candidate_key=['field1'])
@@ -361,8 +365,11 @@ class TestElasticDataSource(TestCase):
                 'params': {
                     'upsertWith': {
                         'field2': 'value2',
-                        'tol_checksum': 'abc123',
-                        'tol_updated_at': dt.isoformat()
+                        'relationship': {
+                            'id': 'rel1',
+                            'field3': 'string1',
+                            'field4': 'string2'
+                        }
                     }
                 }
             }
@@ -472,10 +479,6 @@ class TestElasticDataSource(TestCase):
 
         expected = {'bool': {'must': [], 'must_not': []}}
         self.assertEqual(expected, eds._build_elasticsearch_query('obj_type', None))
-
-        rc = RelationshipConfig()
-        rc.to_one = {'relationship': 'reltype'}
-        eds.relationship_cfg = {'obj_type': rc}
 
         # And filtering
         object_filters = DataSourceFilter()
@@ -1081,6 +1084,7 @@ class TestElasticDataSource(TestCase):
         _, eds = mock_elastic_data_source()
 
         expected = {
+            'reltype': {'obj_type': ['relationship']},
             'obj_type': {'reltype': ['parent']}
         }
         self.assertEqual(expected, eds.relationships_to_enrich)

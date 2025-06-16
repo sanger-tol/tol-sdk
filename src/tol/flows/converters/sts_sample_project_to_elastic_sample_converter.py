@@ -24,6 +24,7 @@ class StsSampleProjectToElasticSampleConverter(
             'programme': [data_object.project.programme],
             **s.attributes
         }
+        to_one = {}
         try:
             if 'location' in s.to_one_relationships:
                 if s.location is not None:
@@ -56,13 +57,22 @@ class StsSampleProjectToElasticSampleConverter(
                     attributes['collection_method_desc'] = s.collection_method.method
             if 'specimen' in s.to_one_relationships:
                 if s.specimen is not None:
-                    attributes['specimen'] = {'id': s.specimen.id}
+                    to_one['specimen'] = self._data_object_factory(
+                        'specimen',
+                        s.specimen.id
+                    )
             if 'sampleset' in s.to_one_relationships:
                 if s.sampleset is not None:
-                    attributes['sampleset'] = {'id': s.sampleset.id}
+                    to_one['sampleset'] = self._data_object_factory(
+                        'sampleset',
+                        s.sampleset.id
+                    )
             if 'manifest' in s.to_one_relationships:
                 if s.manifest is not None:
-                    attributes['manifest'] = {'id': s.manifest.id}
+                    to_one['manifest'] = self._data_object_factory(
+                        'manifest',
+                        s.manifest.id
+                    )
             if 'tissue_size' in s.to_one_relationships:
                 if s.tissue_size is not None:
                     attributes['tissue_size'] = s.tissue_size.size
@@ -74,7 +84,10 @@ class StsSampleProjectToElasticSampleConverter(
                     attributes['location'] = s.storage_rack.freezer_tray.id
             # Make tolid a relationship
             if s.public_name is not None and s.public_name != '':
-                attributes['tolid'] = {'id': s.public_name}
+                to_one['tolid'] = self._data_object_factory(
+                    'tolid',
+                    s.public_name
+                )
                 attributes['public_name'] = None
 
             person_attributes = {}
@@ -88,7 +101,8 @@ class StsSampleProjectToElasticSampleConverter(
             sample_species_attributes = {}
             for ss in s.sample_species:
                 if ss.target_or_symbiont == 'TARGET':
-                    sample_species_attributes = self.__convert_sample_species(ss)
+                    sample_species_attributes, sample_species_to_one = \
+                        self.__convert_sample_species(ss)
 
         except DataSourceError:
             print(f'Problem with sample {s.id}')
@@ -101,9 +115,10 @@ class StsSampleProjectToElasticSampleConverter(
                 | person_attributes
                 | sample_species_attributes
                 | ext_id_attributes
-            )
+            ),
+            to_one=to_one | sample_species_to_one
         )
-        return iter([ret])
+        yield ret
 
     def __sanitise_date_field(self, date_field: str) -> datetime.datetime:
         if date_field is None or date_field == '':
@@ -129,9 +144,6 @@ class StsSampleProjectToElasticSampleConverter(
             organism_parts.append(ssop.organism_part.name)
 
         return {
-            'species': {
-                'id': str(data_object.species.id)
-            },
             'lifestage':
                 data_object.lifestage.name
                 if data_object.lifestage is not None else None,
@@ -142,4 +154,9 @@ class StsSampleProjectToElasticSampleConverter(
                 data_object.sex.name
                 if data_object.sex is not None else None,
             'organism_part': organism_parts
+        }, {
+            'species': self._data_object_factory(
+                'species',
+                data_object.species.id
+            )
         }
