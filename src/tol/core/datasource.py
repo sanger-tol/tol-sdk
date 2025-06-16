@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import typing
 from abc import ABC, abstractmethod
-from typing import Any, Callable, Dict, List, Optional, Tuple, TypeVar
+from typing import Any, Callable, Dict, List, Optional, Tuple
 
 from cachetools.func import ttl_cache
 
@@ -17,7 +17,7 @@ from .attribute_metadata import (
 from .data_object import DataDict
 from .datasource_error import DataSourceError, NoDataObjectFactoryError
 from .factory import DataObjectFactory
-from .operator import Operator
+from .operator import AllOperatorType
 from .session import DataSourceSession
 
 if typing.TYPE_CHECKING:
@@ -40,8 +40,8 @@ class DataSource(ABC):
     def __init__(
             self,
             config: DataSourceConfig,
-            expected: List[str] = None,
-            attribute_metadata: AttributeMetadata = DefaultAttributeMetadata):
+            expected: List[str] | None = None,
+            attribute_metadata: type[AttributeMetadata] = DefaultAttributeMetadata):
         self.__data_object_factory: Optional[DataObjectFactory] = None
         self.__attribute_metadata = attribute_metadata
         self.__validate_config(config, expected)
@@ -68,7 +68,7 @@ class DataSource(ABC):
     def __validate_config(
         self,
         config: DataSourceConfig,
-        expected: List[str]
+        expected: List[str] | None,
     ):
         if expected is None:
             return
@@ -82,7 +82,7 @@ class DataSource(ABC):
     def get_page_size(self) -> int:
         return getattr(self, 'page_size', self.DEFAULT_PAGE_SIZE)
 
-    def get_attribute_types(self, object_type: str) -> Dict:
+    def get_attribute_types(self, object_type: str) -> dict[str, str]:
         """
         DEPRECATED - use the `DataSource().attribute_types` property
         instead.
@@ -114,7 +114,7 @@ class DataSource(ABC):
             display_name
             available_on_relationships
         """
-        ret = {}
+        ret: dict[str, dict[str, dict[str, Any]]] = {}
         am = self.__attribute_metadata()
         for object_type, attribute in self.attribute_types.items():
             ret[object_type] = {}
@@ -154,7 +154,7 @@ class DataSource(ABC):
         return None
 
     @property
-    def data_object_factory(self) -> Optional[DataObjectFactory]:
+    def data_object_factory(self) -> DataObjectFactory:
         """A callable that returns a new DataObject for the given type."""
 
         if self.__data_object_factory is None:
@@ -177,9 +177,5 @@ class DataSource(ABC):
         self.__data_object_factory = data_object_factory
 
 
-OperableDataSource = TypeVar(
-    'OperableDataSource',
-    DataSource,
-    Operator
-)
-"""A type hint. For inheriting, use DataSource"""
+class OperableDataSource(DataSource, AllOperatorType):
+    """A type hint. For inheriting, use DataSource"""

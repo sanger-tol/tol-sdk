@@ -29,18 +29,43 @@ ALL_OPERATORS = (
     Counter,
     Cursor,
     Deleter,
+    Relational,
     DetailGetter,
+    Summariser,
     Enricher,
     GroupStatter,
     Inserter,
     ListGetter,
     PageGetter,
-    Relational,
     Statter,
-    Summariser,
     Updater,
     Upserter,
 )
+
+
+class AllOperatorType(
+    Aggregator,
+    Counter,
+    Cursor,
+    Deleter,
+    # The below 2 are covered by Summariser
+    #
+    # Relational,
+    # DetailGetter,
+    Summariser,
+    Enricher,
+    GroupStatter,
+    Inserter,
+    ListGetter,
+    PageGetter,
+    Statter,
+    Updater,
+    Upserter,
+):
+    """
+    A maximal, type-hint class that implements
+    all classes in `ALL_OPERATORS`.
+    """
 
 
 # TODO - deduplicate using python 3.11

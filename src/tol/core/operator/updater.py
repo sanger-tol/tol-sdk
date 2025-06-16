@@ -29,7 +29,7 @@ class Updater(_Writer, ABC):
         object_type: str,
         updates: Iterable[DataObjectUpdate],
         session: Optional[OperableSession] = None,
-        **kwargs
+        **kwargs: Any,
     ) -> Iterable[DataObject | ErrorObject] | None:
         """
         Takes a type and an `Iterable` of ID-`DataObjectUpdate` pairs.

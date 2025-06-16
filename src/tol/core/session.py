@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import typing
 from functools import cached_property, reduce, wraps
-from typing import Any, Callable, Union
+from typing import Any, Callable
 
 from .datasource_error import DataSourceError
 from .operator import (
@@ -15,19 +15,19 @@ from .operator import (
 )
 
 if typing.TYPE_CHECKING:
-    from .datasource import DataSource
+    from .datasource import OperableDataSource
 
 
 class DataSourceSession:
     """
-    A session for a `DataSource` instance.
+    A session for a `OperableDataSource` instance.
 
     Supports all operations that its `__host` does.
     """
 
     def __init__(
         self,
-        data_source: DataSource
+        data_source: OperableDataSource
     ) -> None:
 
         self.__host = data_source
@@ -154,11 +154,9 @@ class DataSourceSession:
 
 
 if typing.TYPE_CHECKING:
-    from .operator import Operator
 
-    OperableSession = Union[
-        DataSource,
+    class OperableSession(
+        OperableDataSource,
         DataSourceSession,
-        Operator
-    ]
-    """A type hint. For inheriting, use `DataSourceSession`."""
+    ):
+        """A type hint. For inheriting, use `DataSourceSession`."""
