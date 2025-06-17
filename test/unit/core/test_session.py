@@ -14,7 +14,7 @@ from tol.core import (
 from tol.core.operator import (
     Deleter,
     PageGetter,
-    Upserter
+    Upserter,
 )
 from tol.core.session import DataSourceSession
 

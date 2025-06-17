@@ -7,7 +7,7 @@ from __future__ import annotations
 import itertools
 import typing
 from abc import ABC
-from typing import Iterable, Optional
+from typing import Any, Iterable, Optional
 
 import more_itertools
 
@@ -30,7 +30,7 @@ class Inserter(_Writer, ABC):
         object_type: str,
         objects: Iterable[DataObject],
         session: Optional[OperableSession] = None,
-        **kwargs
+        **kwargs: Any,
     ) -> Iterable[DataObject | ErrorObject] | None:
         """
         Inserts the given `DataObject` instances
@@ -51,6 +51,6 @@ class Inserter(_Writer, ABC):
         object_type: str,
         objects: Iterable[DataObject],
         session: Optional[OperableSession] = None,
-        **kwargs
+        **kwargs: Any,
     ) -> Iterable[DataObject | ErrorObject] | None:
         raise NotImplementedError()

@@ -59,6 +59,14 @@ class AttributeMetadata(ABC):
         The source of the attribute i.e becnhling, sts etc
         """
 
+    @abstractmethod
+    def is_authoritative(
+        self,
+        object_type: str,
+        attribute_name: str
+    ) -> bool:
+        pass
+
 
 class DefaultAttributeMetadata(AttributeMetadata):
     def get_display_name(

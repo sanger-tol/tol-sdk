@@ -7,17 +7,28 @@ from __future__ import annotations
 import typing
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from typing import Any, Iterable, Optional, Union
+from typing import Any, Iterable, Optional, Protocol, Union
 
 if typing.TYPE_CHECKING:
     from .operator import Relational
     from .datasource import DataSource
 
 
+class _AnyKeyProtocol(Protocol):
+    """
+    Type hints that every key is valid for an attribute.
+
+    Useful for `DataObject`.
+    """
+
+    def __getattr__(self, name: str) -> Any | None:
+        ...
+
+
 DataDict = dict[str, Any]
 
 
-class DataObject(ABC):
+class DataObject(_AnyKeyProtocol, ABC):
     """
     The ABC for the unit of data on which a DataSource instance
     operates - representing the lingua franca of DataSource instances,
