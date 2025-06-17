@@ -86,4 +86,5 @@ WHERE tube.type IS NULL -- Excluding vouchers
 	AND (rna.archive_purpose$ != ('Made in error') OR rna.archive_purpose$ IS NULL)
 	AND (con.archive_purpose$ != ('Made in error') OR con.archive_purpose$ IS NULL)
 	AND con.plate_id IS NULL -- Delete well rows.
+	AND rna.extraction_protocol_deviation != 'PiMmS'
 ORDER BY completion_date DESC;
