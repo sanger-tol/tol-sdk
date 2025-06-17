@@ -20,7 +20,7 @@ if typing.TYPE_CHECKING:
 
 class DataSourceSession:
     """
-    A session for a `OperableDataSource` instance.
+    A session for a `DataSource` instance.
 
     Supports all operations that its `__host` does.
     """
