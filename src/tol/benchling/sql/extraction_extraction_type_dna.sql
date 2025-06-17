@@ -180,5 +180,4 @@ WHERE tube.type IS NULL -- Excluding vouchers
     AND (dna.archive_purpose$ != ('Made in error') OR dna.archive_purpose$ IS NULL)
     AND (con.archive_purpose$ != ('Made in error') OR con.archive_purpose$ IS NULL)
     AND con.barcode NOT LIKE 'CON%'
-    AND rna.extraction_protocol_deviation != 'PiMmS'
 ORDER BY completion_date DESC
