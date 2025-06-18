@@ -71,7 +71,7 @@ class Enricher(ABC):
             obj_dict = {'id': obj.id}
             # Get the values of the enriching fields
             for field in enriching_fields:
-                obj_dict[field] = getattr(obj, field)
+                obj_dict[field] = obj.get_field_by_name(field)
             for target_attribute in self.relationships_to_enrich[obj.type][target_object_type]:
                 yield (
                     None,

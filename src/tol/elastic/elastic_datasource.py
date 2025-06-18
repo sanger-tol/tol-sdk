@@ -1138,7 +1138,7 @@ class ElasticDataSource(
             property_name: self.__map_type(properties[property_name]['type'])
             for property_name in properties
             if 'type' in properties[property_name]
-            and 'type' != 'uid'
+            and property_name != 'uid'
         }
         runtime_types = {
             name: self.__map_type(self.runtime_fields[object_type][name]['type'])
