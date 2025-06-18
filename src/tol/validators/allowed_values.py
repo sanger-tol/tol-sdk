@@ -14,7 +14,6 @@ class AllowedValues:
     key: str
     values: list[Any]
 
-    is_error: bool = True
     detail: str = 'Value is not allowed for given key'
 
     def is_allowed(self, __v: Any) -> bool:
@@ -37,12 +36,14 @@ class AllowedValuesValidator(Validator):
 
     def __init__(
         self,
-        config: list[AllowedValues | AllowedValuesDict]
+        config: list[AllowedValues | AllowedValuesDict],
+        is_error: bool = True,
     ) -> None:
 
         super().__init__()
 
         self.__config = self.__get_config(config)
+        self.__is_error = is_error
 
     def _validate_data_object(
         self,
@@ -91,7 +92,7 @@ class AllowedValuesValidator(Validator):
         c: AllowedValues,
     ) -> None:
 
-        if c.is_error:
+        if self.__is_error:
             self.add_error(
                 object_id=obj.id,
                 detail=c.detail,
