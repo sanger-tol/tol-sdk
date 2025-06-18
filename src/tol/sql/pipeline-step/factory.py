@@ -122,7 +122,7 @@ def create_pipeline_step_models(
         step_order: Mapped[int] = mapped_column(
             nullable=False
         )
-        
+
         config: Mapped[dict[str, Any]] = mapped_column(
             JSONB,
             nullable=False,
@@ -181,7 +181,7 @@ def create_pipeline_step_models(
         )
 
         user: Mapped['User'] = relationship( # noqa F821
-            back_populates='uploads',
+            back_populates='user_uploads',
             foreign_keys=[user_id]
         )
 

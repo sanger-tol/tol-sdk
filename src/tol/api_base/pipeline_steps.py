@@ -5,7 +5,7 @@
 from __future__ import annotations
 
 import typing
-from datetime import datetime, timezone
+from datetime import datetime
 from typing import Any, List
 
 from flask import Blueprint, request
@@ -127,7 +127,5 @@ def pipeline_steps_blueprint(
         # destination = body['destination']
 
         pipeline = __get_pipeline(pipeline_name)
-
-        print(pipeline)
 
     return bp
