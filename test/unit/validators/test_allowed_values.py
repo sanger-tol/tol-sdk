@@ -50,16 +50,15 @@ class TestAllowedValuesValidator:
                 key='key1',
                 values=list('abc')
             ),
-            # adds warnings
             AllowedValues(
                 key='key2',
                 values=list('xyz'),
-                is_error=False,
             ),
         ]
 
         validator = AllowedValuesValidator(
             config,
+            is_error=False,
         )
 
         # consume the `Iterable`
