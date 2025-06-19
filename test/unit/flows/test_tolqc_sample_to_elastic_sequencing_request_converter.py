@@ -147,7 +147,9 @@ class TestTolqcSampleToElasticSequencingRequestConverter(TestCase):
         species = CoreDataObject(
             id_='species_id3',
             type_='species',
-            attributes={}
+            attributes={
+                'taxon_id': 'species_taxonid3'
+            }
         )
 
         specimen3 = CoreDataObject(
@@ -220,7 +222,7 @@ class TestTolqcSampleToElasticSequencingRequestConverter(TestCase):
             'hierarchy_name': 'name3',
             'lims_id': 'lims_id3'
         })
-        assert ret3.species.id == 'species_id3'
+        assert ret3.species.id == 'species_taxonid3'
         assert ret3.tolid.id == 'specimen_id3'
         assert ret3.specimen.id == 'supplied_name3'
 

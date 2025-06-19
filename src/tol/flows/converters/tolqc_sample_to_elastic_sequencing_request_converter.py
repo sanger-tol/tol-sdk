@@ -31,7 +31,7 @@ class TolqcSampleToElasticSequencingRequestConverter(
             if data_object.specimen.species is not None:
                 target_to_one['species'] = self._data_object_factory(
                     'species',
-                    data_object.specimen.species.id
+                    data_object.specimen.species.taxon_id
                 )
         ret = self._data_object_factory(
             'sequencing_request',
