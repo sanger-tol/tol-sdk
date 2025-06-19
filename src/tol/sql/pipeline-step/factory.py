@@ -164,7 +164,7 @@ def create_pipeline_step_models(
             default=datetime.now
         )
 
-        results: Mapped[List[Dict[str, Any]]] = mapped_column(
+        validation_results: Mapped[List[Dict[str, Any]]] = mapped_column(
             JSONB,
             nullable=False,
             default=[]
@@ -173,6 +173,10 @@ def create_pipeline_step_models(
         completed: Mapped[bool] = mapped_column(
             nullable=False,
             default=False
+        )
+
+        failure_message: Mapped[str | None] = mapped_column(
+            nullable=True,
         )
 
         pipeline: Mapped['Pipeline'] = relationship(

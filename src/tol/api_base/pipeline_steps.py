@@ -5,7 +5,7 @@
 from __future__ import annotations
 
 import typing
-from datetime import datetime
+from dataclasses import dataclass
 from typing import Any, List
 
 from flask import Blueprint, request
@@ -16,7 +16,6 @@ from .misc import (
     default_ctx_getter
 )
 from ..core import (
-    DataObject,
     DataSourceError,
     DataSourceFilter
 )
@@ -25,10 +24,21 @@ if typing.TYPE_CHECKING:
     from ..prefect import PrefectDataSource
     from ..sql import SqlDataSource
 
+
+@dataclass
+class UploadData:
+    s3_url: str
+    s3_filename: str
+    spreadsheet_config: str
+    pipeline_name: str
+    destination: str
+    user_id: int
+
+
 REQUIRED_FIELDS: List = [
     's3_url',
     's3_filename',
-    'spreadsheet_config',  # Are we always specifying this?
+    'spreadsheet_config',
     'pipeline_name',
     'destination',
 ]
@@ -70,7 +80,7 @@ def pipeline_steps_blueprint(
 
     def __get_pipeline(
         pipeline_name: str
-    ) -> DataObject:
+    ) -> str:
 
         f = DataSourceFilter(
             and_={
@@ -87,7 +97,7 @@ def pipeline_steps_blueprint(
                 'pipeline',
                 object_filters=f
             )
-        )
+        )[0]
 
         if not pipeline_list:
             raise DataSourceError(
@@ -96,22 +106,71 @@ def pipeline_steps_blueprint(
                 404
             )
 
-        return pipeline_list[0]
+        return pipeline_list.id
 
-    def __insert_upload_data():
-        pass
+    def __insert_upload_data(
+        upload_data: UploadData
+    ) -> str:
 
-    def __insert_flow_run():
-        pass
+        upload = sql_ds.data_object_factory(
+            'upload',
+            attributes={**upload_data.__dict__},
+        )
 
-    def __upsert_flow_run_id():
-        pass
+        inserted_upload_data = list(
+            sql_ds.insert(
+                'upload',
+                [upload]
+            )
+        )[0]
+
+        return inserted_upload_data.id
+
+    def __insert_flow_run(
+        upload_id: str,
+        pipeline_id: str,
+    ) -> str:
+
+        flow_run = prefect_ds.data_object_factory(
+            'flow_run',
+            attributes={
+                'upload_id': upload_id,
+                'pipeline_id': pipeline_id,
+            }
+        )
+
+        inserted_flow_data = list(
+            prefect_ds.insert(
+                'flow_run',
+                [flow_run]
+            )
+        )[0]
+
+        return inserted_flow_data.id
+
+    def __upsert_flow_run_id(
+        upload_id: str,
+        flow_run_id: str
+    ) -> None:
+
+        upload = sql_ds.data_object_factory(
+            'upload',
+            upload_id,
+            attributes={
+                'flow_run_id': flow_run_id
+            }
+        )
+
+        sql_ds.upsert(
+            'upload',
+            [upload]
+        )
 
     @bp.post('')
     def run_pipeline_steps() -> dict[str, Any]:
 
         ctx = ctx_getter()
-        # user_id = ctx.user_id
+        user_id = ctx.user_id
 
         if role is not None and role not in ctx.roles:
             raise ForbiddenError()
@@ -120,12 +179,31 @@ def pipeline_steps_blueprint(
 
         __check_required_fields(body)
 
-        # s3_url = body['s3_url']
-        # s3_filename = body['s3_filename']
-        # spreadsheet_config = body['spreadsheet_config']
-        pipeline_name = body['pipeline_name']
-        # destination = body['destination']
+        pipeline_name: str = body['pipeline_name']
 
-        pipeline = __get_pipeline(pipeline_name)
+        pipeline_id = __get_pipeline(pipeline_name)
+
+        upload_data = UploadData(
+            s3_url=body['s3_url'],
+            s3_filename=body['s3_filename'],
+            spreadsheet_config=body['spreadsheet_config'],
+            pipeline_name=pipeline_name,
+            destination=body['destination'],
+            user_id=user_id
+        )
+
+        upload_id = __insert_upload_data(upload_data)
+
+        flow_run_id = __insert_flow_run(
+            upload_id=upload_id,
+            pipeline_id=pipeline_id
+        )
+
+        __upsert_flow_run_id(
+            upload_id=upload_id,
+            flow_run_id=flow_run_id
+        )
+
+        return {'success': True}, 200
 
     return bp
