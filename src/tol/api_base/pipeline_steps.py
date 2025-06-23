@@ -4,6 +4,9 @@
 
 from __future__ import annotations
 
+import random
+import time
+import threading
 import typing
 from dataclasses import dataclass
 from typing import Any, List
@@ -131,22 +134,23 @@ def pipeline_steps_blueprint(
         pipeline_id: str,
     ) -> str:
 
-        flow_run = prefect_ds.data_object_factory(
-            'flow_run',
-            attributes={
-                'upload_id': upload_id,
-                'pipeline_id': pipeline_id,
-            }
-        )
+        # flow_run = prefect_ds.data_object_factory(
+        #     'flow_run',
+        #     attributes={
+        #         'upload_id': upload_id,
+        #         'pipeline_id': pipeline_id,
+        #     }
+        # )
 
-        inserted_flow_data = list(
-            prefect_ds.insert(
-                'flow_run',
-                [flow_run]
-            )
-        )[0]
+        # inserted_flow_data = list(
+        #     prefect_ds.insert(
+        #         'flow_run',
+        #         [flow_run]
+        #     )
+        # )[0]
 
-        return inserted_flow_data.id
+        # return inserted_flow_data.id
+        return f'mock_flow_run_id_{upload_id}_{pipeline_id}'
 
     def __upsert_flow_run_id(
         upload_id: str,
@@ -165,6 +169,86 @@ def pipeline_steps_blueprint(
             'upload',
             [upload]
         )
+
+    def __upsert_mock_results_data(
+        upload_id: str,
+    ) -> None:
+
+        time.sleep(random.randint(10, 15))
+
+        mock_step_name = [
+            'species_not_null',
+            'value_not_allowed',
+            'a_third_because_why_not',
+            'and_a_fourth'
+        ]
+
+        for step_name in mock_step_name:
+            mock_results = __create_mock_results(step_name)
+
+            upload = sql_ds.data_object_factory(
+                'upload',
+                upload_id,
+                attributes={
+                    'validation_results': mock_results
+                }
+            )
+
+            sql_ds.upsert(
+                'upload',
+                [upload]
+            )
+
+            time.sleep(random.randint(5, 10))
+
+    def __create_mock_results(
+        step_name: str,
+    ) -> list[dict[str, Any]]:
+        """
+        {
+        'code': r.code,
+        'detail': r.detail,
+        'field': r.field,
+        'object_id': r.object_id,
+        'severity': r.severity.value,
+        'step_name': name,
+        }
+        """
+
+        mock_severity = ['warning', 'error']
+        # mock_step_name = ['species_not_null', 'value_not_allowed']
+        mock_detail = [
+            'Species cannot be null.',
+            'Value is not allowed.',
+            'Invalid value provided.',
+            'Field is required.'
+        ]
+
+        def __mock_field_builder() -> str:
+            random_field_num = random.randint(1, 4)
+            random_fields = ['A', 'B', 'C', 'D', 'E', 'F']
+
+            if random_field_num == 1:
+                return None
+            elif random_field_num == 2:
+                return random.choice(random_fields)
+            else:
+                fields = random.sample(random_fields, random.randint(2, 4))
+                fields.sort()
+                return fields
+
+        results = []
+        for _ in range(5):
+            results.append({
+                'code': '',
+                'detail': random.choice(mock_detail),
+                'field': __mock_field_builder(),
+                'object_id': f'{random.randint(1, 10)}',
+                'severity': random.choice(mock_severity),
+                'step_name': step_name
+            })
+
+        return results
 
     @bp.post('')
     def run_pipeline_steps() -> dict[str, Any]:
@@ -203,6 +287,8 @@ def pipeline_steps_blueprint(
             upload_id=upload_id,
             flow_run_id=flow_run_id
         )
+
+        threading.Thread(target=__upsert_mock_results_data, args=(upload_id,), daemon=True).start()
 
         return {'success': True}, 200
 
