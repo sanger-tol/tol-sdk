@@ -25,7 +25,7 @@ class TestBenchlingDataSourceE2E:
     """
     _str_values = None
 
-    can_update = ['tissue', 'tissue_prep']
+    can_update = ['tissue', 'tissue_prep', 'tube']
 
     @against_types([
         'tissue',
@@ -36,7 +36,7 @@ class TestBenchlingDataSourceE2E:
         '12x12_box',
         'casm_well',
         # TODO restore (TOLP-8669)
-        # 'casm_programme_id'
+        'casm_programme_id'
     ])
     def test_get(self, object_type: str) -> None:
         """
@@ -496,6 +496,11 @@ class TestBenchlingDataSourceE2E:
     ) -> list[str]:
         if benchling_type == 'custom_entity':
             return {'folder': 'folder'}
+        elif benchling_type == 'container_content':
+            return {
+                'entity': 'custom_entity',
+                'container': 'container'
+            }
         return {}
 
     def __find_string_key(

@@ -889,22 +889,22 @@ class BenchlingDataSource(
             return back_converter.convert_worklist_items(
                 self.__get_benchling_package('worklist').get_by_id(source.id)
             )
-            
+
         if source.type in self.schemas['container'].keys() and relationship_name =='container_contents':
             back_converter = self.__bc_factory()
             contents = self.get_container_contents(source.id)
             return back_converter.convert_container_contents(contents)
-            
+
         if source.type in self.schemas['custom_entity'].keys() and relationship_name =='container_contents':
             back_converter = self.__bc_factory()
-            for container_type in self.schemas['container'].keys():
-                container_list = self.benchling_interface.containers.list()
-                for container in container_list:
-                    for individual_container in container:
-                        converted_container = back_converter.convert(individual_container)
-                        container_contents = self.get_to_many_relations(converted_container, 'container_contents')
-                        for content in container_contents:
-                            print(self.get_to_one_relation(next(container_contents), 'entity'))
+            container_list = self.benchling_interface.containers.list()
+            for container in container_list:
+                for individual_container in container:
+                    converted_container = back_converter.convert(individual_container)
+                    container_contents = self.get_to_many_relations(converted_container, 'container_contents')
+                    for content in container_contents:
+                        if content.to_one_relationships['entity'].id == source.id:
+                            yield content
 
     def __build_list_filter(self, list_filter: Optional[DataSourceFilter]):
         arg = ''
