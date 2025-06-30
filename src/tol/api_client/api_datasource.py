@@ -421,7 +421,7 @@ class ApiDataSource(
         if 'cursor' not in self.supported_operations[object_type]:
             return False
 
-        return self.can_use_cursor(object_filters)
+        return self.can_use_cursor(object_type, object_filters)
 
     def __get_list_regular(
         self,

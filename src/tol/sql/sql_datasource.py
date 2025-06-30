@@ -233,7 +233,7 @@ class SqlDataSource(
         requested_fields: list[str] | None = None
     ) -> Iterable[DataObject]:
 
-        if self.can_use_cursor(object_filters):
+        if self.can_use_cursor(object_type, object_filters):
             return self._get_list_by_cursor(
                 object_type,
                 object_filters=self._preprocess_filter(object_type, object_filters),
