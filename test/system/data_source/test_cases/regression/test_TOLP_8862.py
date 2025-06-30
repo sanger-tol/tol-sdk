@@ -17,6 +17,8 @@ class TestTOLP8862:
         ds_sleep
     ) -> None:
 
+        data_source.page_size = 1
+
         objs = [
             data_source.data_object_factory(
                 'inc',
@@ -41,6 +43,8 @@ class TestTOLP8862:
         data_source: OperableDataSource,
         ds_sleep
     ) -> None:
+
+        data_source.page_size = 1
 
         objs = [
             data_source.data_object_factory(
