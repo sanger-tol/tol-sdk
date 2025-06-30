@@ -229,7 +229,7 @@ class TestBoardDelete:
                 'title': f'component_{id_}',
                 'config': {},
                 'object_type': 'sample',
-                'base_url': 'local.lan',
+                'datasource': '{"api_prefix": "local", "base_url": "portal.com"}',
                 'component_type': 'table',
                 'widget_type': 'idk this is a test',
                 'filter_pass_through': False
@@ -239,7 +239,7 @@ class TestBoardDelete:
             return {
                 'title': f'zone_{id_}',
                 'object_type': 'sample',
-                'base_url': 'local.lan',
+                'datasource': '{"api_prefix": "local", "base_url": "portal.com"}',
             }
 
         elif type_ == 'view':
