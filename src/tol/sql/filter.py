@@ -4,7 +4,6 @@
 
 from abc import ABC, abstractmethod
 from collections import defaultdict
-from copy import deepcopy
 from functools import reduce
 from itertools import chain
 from typing import Any, Dict, Iterator, Optional, Tuple, Type

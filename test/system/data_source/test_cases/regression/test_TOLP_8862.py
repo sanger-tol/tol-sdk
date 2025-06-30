@@ -8,7 +8,7 @@ from ...dec import against
 from ...fixtures import api_sql, sql
 
 
-class TestTOLP_8862:
+class TestTOLP8862:
 
     @against(api_sql, sql)
     def test_filter_by_int_id(
