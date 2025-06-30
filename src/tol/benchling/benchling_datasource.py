@@ -897,12 +897,13 @@ class BenchlingDataSource(
 
         if source.type in self.schemas['custom_entity'].keys() and relationship_name =='container_contents':
             back_converter = self.__bc_factory()
-            container_list = self.benchling_interface.containers.list()
+            container_list = self.benchling_interface.containers.list(storage_contents_id=source.id)
             for container in container_list:
                 for individual_container in container:
                     converted_container = back_converter.convert(individual_container)
-                    container_contents = self.get_to_many_relations(converted_container, 'container_contents')
-                    for content in container_contents:
+                    contents = self.get_container_contents(converted_container.id)
+                    converted_contents = back_converter.convert_container_contents(contents)
+                    for content in converted_contents:
                         if content.to_one_relationships['entity'].id == source.id:
                             yield content
 
