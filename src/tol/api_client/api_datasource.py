@@ -185,7 +185,7 @@ class ApiDataSource(
         requested_fields: list[str] | None = None,
     ) -> Iterable[DataObject]:
 
-        if 'cursor' in self.supported_operations[object_type]:
+        if 'cursor' in self.supported_operations[object_type] and self.__can_cursor(object_filters):
             return self._get_list_by_cursor(
                 object_type,
                 object_filters
@@ -411,6 +411,16 @@ class ApiDataSource(
         client = self.__client_factory()
         transfer = client.config_operations()
         return self.__parse_operations(transfer)
+
+    def __can_cursor(
+        self,
+        object_filters: DataSourceFilter | None,
+    ) -> bool:
+
+        if object_filters is None or object_filters.and_ is None:
+            return True
+
+        return 'id' not in object_filters.and_
 
     def __get_list_regular(
         self,

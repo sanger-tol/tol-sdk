@@ -22,7 +22,7 @@ class TestTOLP_8862:
                 'inc',
                 id_=str(i),
             )
-            for i in range(3)
+            for i in range(1, 10)
         ]
         data_source.upsert('inc', objs)
 
