@@ -17,7 +17,7 @@ class TestTOLP8862:
         ds_sleep
     ) -> None:
 
-        data_source.page_size = 1
+        data_source.page_size = 2
 
         objs = [
             data_source.data_object_factory(
@@ -44,7 +44,7 @@ class TestTOLP8862:
         ds_sleep
     ) -> None:
 
-        data_source.page_size = 1
+        data_source.page_size = 2
 
         objs = [
             data_source.data_object_factory(

@@ -233,12 +233,20 @@ class SqlDataSource(
         requested_fields: list[str] | None = None
     ) -> Iterable[DataObject]:
 
-        return self._get_list_by_cursor(
-            object_type,
-            object_filters=self._preprocess_filter(object_type, object_filters),
-            session=session,
-            requested_fields=requested_fields
-        )
+        if self.can_use_cursor(object_filters):
+            return self._get_list_by_cursor(
+                object_type,
+                object_filters=self._preprocess_filter(object_type, object_filters),
+                session=session,
+                requested_fields=requested_fields
+            )
+        else:
+            return self.__get_list_limit_offset(
+                object_type,
+                object_filters=object_filters,
+                session=session,
+                requested_fields=requested_fields,
+            )
 
     def delete(
         self,
@@ -451,6 +459,34 @@ class SqlDataSource(
             self.data_object_factory,
             requested_fields,
         )
+
+    def __get_list_limit_offset(
+        self,
+        object_type: str,
+        object_filters: Optional[DataSourceFilter] = None,
+        session: Optional[SqlDataSourceSession] = None,
+        requested_fields: list[str] | None = None
+    ) -> Iterable[DataObject]:
+
+        page_number = 1
+
+        while True:
+            (results, _) = self.get_list_page(
+                object_type,
+                page_number,
+                object_filters=object_filters,
+                session=session,
+                requested_fields=requested_fields,
+            )
+            results = list(results)
+
+            yield from results
+
+            if len(results) < self.get_page_size():
+                return
+
+            page_number += 1
+            assert page_number < 100
 
     def __get_model_list_by_ids(
         self,
