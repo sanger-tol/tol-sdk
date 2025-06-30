@@ -36,32 +36,7 @@ class TestTOLP_8862:
         assert fetched.id == '1'
 
     @against(api_sql, sql)
-    def test_filter_by_str_id_with_int(
-        self,
-        data_source: OperableDataSource,
-        ds_sleep
-    ) -> None:
-
-        objs = [
-            data_source.data_object_factory(
-                'root',
-                id_=str(i),
-            )
-            for i in range(3)
-        ]
-        data_source.upsert('root', objs)
-
-        f = DataSourceFilter(
-            and_={
-                'id': {'gt': {'value': 0}, 'lt': {'value': 2}}
-            }
-        )
-        (fetched, ) = list(data_source.get_list('root', object_filters=f))
-
-        assert fetched.id == '1'
-
-    @against(api_sql, sql)
-    def test_filter_by_str_id_with_str(
+    def test_filter_by_str_id(
         self,
         data_source: OperableDataSource,
         ds_sleep
