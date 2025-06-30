@@ -80,7 +80,12 @@ def create_board_models(
 
         title: Mapped[str] = mapped_column(nullable=False)
         object_type: Mapped[str] = mapped_column(nullable=False)
-        base_url: Mapped[str] = mapped_column(nullable=True)
+        datasource = mapped_column(  # noqa A003
+            type_=JSONB(),
+            nullable=False,
+            default={},
+            server_default='{}'  # noqa P103
+        )
         component_type: Mapped[str] = mapped_column(nullable=False)
         widget_type: Mapped[str] = mapped_column(nullable=False)
         config = mapped_column(type_=JSONB(), nullable=False)
@@ -145,7 +150,12 @@ def create_board_models(
 
         title: Mapped[str] = mapped_column(nullable=False)
         object_type: Mapped[str] = mapped_column(nullable=False)
-        base_url: Mapped[str] = mapped_column(nullable=True)
+        datasource = mapped_column(  # noqa A003
+            type_=JSONB(),
+            nullable=False,
+            default={},
+            server_default='{}'  # noqa P103
+        )
         filter = mapped_column(  # noqa A003
             type_=JSONB(),
             nullable=False,
