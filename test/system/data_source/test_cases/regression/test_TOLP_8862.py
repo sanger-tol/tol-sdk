@@ -2,7 +2,6 @@
 #
 # SPDX-License-Identifier: MIT
 
-
 from tol.core import DataSourceFilter, OperableDataSource
 
 from ...dec import against
@@ -37,7 +36,7 @@ class TestTOLP_8862:
         assert fetched.id == '1'
 
     @against(api_sql, sql)
-    def test_filter_by_str_id(
+    def test_filter_by_str_id_with_int(
         self,
         data_source: OperableDataSource,
         ds_sleep
@@ -60,3 +59,28 @@ class TestTOLP_8862:
         (fetched, ) = list(data_source.get_list('root', object_filters=f))
 
         assert fetched.id == '1'
+
+    @against(api_sql, sql)
+    def test_filter_by_str_id_with_str(
+        self,
+        data_source: OperableDataSource,
+        ds_sleep
+    ) -> None:
+
+        objs = [
+            data_source.data_object_factory(
+                'root',
+                id_=c,
+            )
+            for c in 'abc'
+        ]
+        data_source.upsert('root', objs)
+
+        f = DataSourceFilter(
+            and_={
+                'id': {'gt': {'value': 'a'}, 'lt': {'value': 'c'}}
+            }
+        )
+        (fetched, ) = list(data_source.get_list('root', object_filters=f))
+
+        assert fetched.id == 'b'
