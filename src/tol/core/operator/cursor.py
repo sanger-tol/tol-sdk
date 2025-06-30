@@ -102,6 +102,8 @@ class Cursor(_Filterable, ABC):
         object_filters: DataSourceFilter | None,
     ) -> bool:
 
+        # TODO refactor to use `candidate_keys`
+
         if object_filters is None or object_filters.and_ is None:
             return True
 
