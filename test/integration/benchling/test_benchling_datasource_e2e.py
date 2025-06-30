@@ -444,6 +444,30 @@ class TestBenchlingDataSourceE2E:
             assert r.id is not None
 
         benchling_ds.delete(object_type, [obj.id for obj in res])
+    
+    def test_get_to_many_relations(self) -> None:
+        """
+        Tests getting to-many relations for a specific object type.
+        """
+
+        benchling_ds = benchling()
+        # Using a specific custom entity for testing as this one definitely has container contents
+        custom_entity = benchling_ds.get_one('temp_dna_extract', 'bfi_PfJozKsa')
+        container = benchling_ds.get_one('tube', 'con_5wnL41Xr')
+
+        entity_contents = list(benchling_ds.get_to_many_relations(custom_entity, 'container_contents'))
+        assert len(entity_contents) > 0
+        for content in entity_contents:
+            assert content.type == 'container_content'
+            assert content.entity.id == custom_entity.id
+            
+        container_contents_generator = benchling_ds.get_to_many_relations(container, 'container_contents')
+        for container_contents in container_contents_generator:
+            assert len(list(container_contents)) > 0
+            for content in container_contents:
+                assert content.type == 'container_content'
+                assert content.container.id == container.id
+
 
     def __get_example_object(self, object_type: str) -> DataObject:
         benchling_ds = benchling()
@@ -519,7 +543,7 @@ class TestBenchlingDataSourceE2E:
         if object_type in ['folder', 'worklist', 'storage']:
             return 'name'
         if benchling_ds.benchling_types[object_type] in ['box', 'plate', 'container']:
-            return 'barcode'
+            return 'barcode' # NEED TO ADD ANOTHER FIELD HERE AND TESTS FOR THE GET TO MANY RELATIONS
         if benchling_ds.benchling_types[object_type] == 'assay_result':
             return 'programme_id'
         if object_type == 'casm_sample':

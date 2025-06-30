@@ -893,7 +893,7 @@ class BenchlingDataSource(
         if source.type in self.schemas['container'].keys() and relationship_name =='container_contents':
             back_converter = self.__bc_factory()
             contents = self.get_container_contents(source.id)
-            return back_converter.convert_container_contents(contents)
+            yield back_converter.convert_container_contents(contents)
 
         if source.type in self.schemas['custom_entity'].keys() and relationship_name =='container_contents':
             back_converter = self.__bc_factory()
