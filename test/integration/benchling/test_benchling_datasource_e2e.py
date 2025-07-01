@@ -542,8 +542,10 @@ class TestBenchlingDataSourceE2E:
             return 'batch_lot_number'
         if object_type in ['folder', 'worklist', 'storage']:
             return 'name'
+        if benchling_ds.benchling_types[object_type] == 'tube':
+            return 'tissue_prep_type'
         if benchling_ds.benchling_types[object_type] in ['box', 'plate', 'container']:
-            return 'barcode' # NEED TO ADD ANOTHER FIELD HERE AND TESTS FOR THE GET TO MANY RELATIONS
+            return 'barcode'
         if benchling_ds.benchling_types[object_type] == 'assay_result':
             return 'programme_id'
         if object_type == 'casm_sample':

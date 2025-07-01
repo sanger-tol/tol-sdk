@@ -543,10 +543,17 @@ class DataObjectConverter(Converter[DataObject, BenchlingWrite]):
         )
 
     def __convert_container(self, input_: DataObject) -> ContainerCreate:
+        
+        container_fields = self.__convert_fields(
+            input_.type,
+            input_.attributes,
+            input_.to_one_relationships
+        )
+
         return ContainerCreate(
-            barcode=input_.attributes.get('barcode'),
             parent_storage_id=input_.attributes.get('parent_storage_id'),
-            schema_id=self.__ds.schema_ids[input_.type]
+            schema_id=self.__ds.schema_ids[input_.type],
+            fields=container_fields,
         )
 
     def __convert_worklist(self, input_: DataObject) -> WorklistCreate:
