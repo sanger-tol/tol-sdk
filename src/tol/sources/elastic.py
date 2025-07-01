@@ -869,20 +869,28 @@ def elastic(environment: str = None) -> ElasticDataSource:
             },
         },
         'sampleset': {
-            'calc_tat_days': RuntimeFields.date_interval('sts_submit_date',
-                                                    'sts_sample_sts_receive_date_min',
-                                                    'days'),
-            'calc_tat_weeks': RuntimeFields.date_interval('sts_submit_date',
-                                                    'sts_sample_sts_receive_date_min',
-                                                    'weeks')
+            'calc_tat_days': RuntimeFields.date_interval(
+                'sts_submit_date',
+                'sts_sample_sts_receive_date_min',
+                'days'
+            ),
+            'calc_tat_weeks': RuntimeFields.date_interval(
+                'sts_submit_date',
+                'sts_sample_sts_receive_date_min',
+                'weeks'
+            )
         },
         'manifest': {
-            'calc_tat_days': RuntimeFields.date_interval('sts_submit_date',
-                                                    'sts_receive_date',
-                                                    'days'),
-            'calc_tat_weeks': RuntimeFields.date_interval('sts_submit_date',
-                                                    'sts_receive_date',
-                                                    'weeks')
+            'calc_tat_days': RuntimeFields.date_interval(
+                'sts_submit_date',
+                'sts_receive_date',
+                'days'
+            ),
+            'calc_tat_weeks': RuntimeFields.date_interval(
+                'sts_submit_date',
+                'sts_receive_date',
+                'weeks'
+            )
         },
         'sequencing_request': {
             'calc_existing_library_oplc': {
