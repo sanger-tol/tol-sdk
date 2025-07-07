@@ -35,7 +35,7 @@ class TestToOneRelatedFiltering:
             }
         )
 
-        (rel_obj, ) = list(
+        (rel_obj,) = list(
             data_source.get_list('related', f)
         )
 
@@ -66,7 +66,7 @@ class TestToOneRelatedFiltering:
             }
         )
 
-        (rel_obj, ) = list(
+        (rel_obj,) = list(
             data_source.get_list('related', f)
         )
 
