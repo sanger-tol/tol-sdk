@@ -22,21 +22,21 @@ class TestToOneRelatedFiltering:
 
         f = DataSourceFilter(
             and_={
-                'my_root.id': {
+                'related_object.id': {
                     'eq': {
-                        'value': '1'
+                        'value': '1',
                     }
                 },
-                'str_column': {
-                    'int_column': {
-                        'value': [0, 42, 2099]
+                'int_column': {
+                    'in_list': {
+                        'value': [0, 42, 2099],
                     }
                 }
             }
         )
 
         (rel_obj,) = list(
-            data_source.get_list('related', f)
+            data_source.get_list('root', object_filters=f)
         )
 
         assert rel_obj.id == 'a'
@@ -53,18 +53,18 @@ class TestToOneRelatedFiltering:
 
         f = DataSourceFilter(
             and_={
-                'my_root.id': {
+                'related_object.id': {
                     'lt': {
                         'value': '4'
                     }
                 },
-                'my_root.str_column': {
+                'related_object.str_column': {
                     'eq': {
                         'value': 'hello, world'
                     }
                 },
                 'id': {
-                    'int_column': {
+                    'in_list': {
                         'value': list('cyz')
                     }
                 }
@@ -72,7 +72,7 @@ class TestToOneRelatedFiltering:
         )
 
         (rel_obj,) = list(
-            data_source.get_list('related', f)
+            data_source.get_list('root', f)
         )
 
         assert rel_obj.id == 'c'
@@ -83,23 +83,26 @@ class TestToOneRelatedFiltering:
         data_source: OperableDataSource,
     ) -> None:
 
-        root_obj = data_source.data_object_factory(
-            'root',
+        related_obj = data_source.data_object_factory(
+            'related',
             '1',
             {
                 'str_column': 'hello, world',
             }
         )
-        data_source.upsert('root', [root_obj])
+        data_source.upsert('related', [related_obj])
 
-        related_objs = [
+        root_objs = [
             data_source.data_object_factory(
-                'related',
+                'root',
                 c,
                 {
                     'int_column': i,
-                }
+                },
+                to_one={
+                    'related_object': related_obj,
+                },
             )
             for i, c in enumerate('abc')
         ]
-        data_source.upsert('related', related_objs)
+        data_source.upsert('root', root_objs)

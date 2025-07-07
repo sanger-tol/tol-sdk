@@ -138,6 +138,7 @@ class DefaultDatabaseFilter(DatabaseFilter):
         for next_ in k_split[:-1]:
             mid_model = self.__model_dict[mid_tablename]
             yield getattr(mid_model, next_)
+            import logging; logging.error(next_); logging.error(self.__r_dict)
             mid_type = self.__r_dict[mid_type].to_one[next_]
             mid_tablename = self.__type_tablename_dict[mid_type]
 
