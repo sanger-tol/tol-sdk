@@ -18,6 +18,22 @@ class TestToOneRelatedFiltering:
         ds_sleep
     ) -> None:
 
+        self.__upsert_objs(data_source)
+
+    @against(api_sql, sql)
+    def test_filter_by_to_related_attributes(
+        self,
+        data_source: OperableDataSource,
+        ds_sleep
+    ) -> None:
+
+        self.__upsert_objs(data_source)
+
+    def __upsert_objs(
+        self,
+        data_source: OperableDataSource,
+    ) -> None:
+
         root_obj = data_source.data_object_factory(
             'root',
             '1',
@@ -38,12 +54,3 @@ class TestToOneRelatedFiltering:
             for i, c in enumerate('abc')
         ]
         data_source.upsert('related', related_objs)
-
-    @against(api_sql, sql)
-    def test_filter_by_to_related_attributes(
-        self,
-        data_source: OperableDataSource,
-        ds_sleep
-    ) -> None:
-
-        pass
