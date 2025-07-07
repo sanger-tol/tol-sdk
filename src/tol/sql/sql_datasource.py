@@ -486,7 +486,6 @@ class SqlDataSource(
                 return
 
             page_number += 1
-            assert page_number < 100
 
     def __get_model_list_by_ids(
         self,
