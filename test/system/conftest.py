@@ -12,4 +12,7 @@ def pytest_sessionfinish(session, exitstatus):
     returning the exit status to the system.
     """
 
-    elastic.teardown()
+    try:
+        elastic.teardown()
+    except Exception:
+        pass
