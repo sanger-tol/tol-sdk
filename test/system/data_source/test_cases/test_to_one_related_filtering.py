@@ -18,7 +18,26 @@ class TestToOneRelatedFiltering:
         ds_sleep
     ) -> None:
 
-        pass
+        root_obj = data_source.data_object_factory(
+            'root',
+            '1',
+            {
+                'str_column': 'hello, world',
+            }
+        )
+        data_source.upsert('root', [root_obj])
+
+        related_objs = [
+            data_source.data_object_factory(
+                'related',
+                c,
+                {
+                    'int_column': i,
+                }
+            )
+            for i, c in enumerate('abc')
+        ]
+        data_source.upsert('related', related_objs)
 
     @against(api_sql, sql)
     def test_filter_by_to_related_attributes(
