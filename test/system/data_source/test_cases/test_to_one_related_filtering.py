@@ -43,7 +43,7 @@ class TestToOneRelatedFiltering:
         assert rel_obj.int_column == 0
 
     @against(sql, api_sql)
-    def test_filter_by_to_one_related_attribute(
+    def test_filter_by_to_one_related_id_and_attribute(
         self,
         data_source: OperableDataSource,
         ds_sleep
@@ -53,6 +53,11 @@ class TestToOneRelatedFiltering:
 
         f = DataSourceFilter(
             and_={
+                'my_root.id': {
+                    'lt': {
+                        'value': '4'
+                    }
+                },
                 'my_root.str_column': {
                     'eq': {
                         'value': 'hello, world'
