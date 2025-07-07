@@ -23,7 +23,7 @@ class Cursor(_Filterable, ABC):
     """
 
     @property
-    def candidate_keys(self) -> list[str]:
+    def candidate_keys(self) -> dict[str, list[str]]:
         """
         The names of the fields that form the
         candidate_key for cursor pagination on
@@ -96,6 +96,22 @@ class Cursor(_Filterable, ABC):
             }
         }
         return object_filters
+
+    def can_use_cursor(
+        self,
+        object_type: str,
+        object_filters: DataSourceFilter | None,
+    ) -> bool:
+
+        if object_filters is None or object_filters.and_ is None:
+            return True
+
+        keys = self.candidate_keys[object_type]
+
+        return not any(
+            True for k in keys
+            if k in object_filters.and_
+        )
 
     def _get_list_by_cursor(
         self,
