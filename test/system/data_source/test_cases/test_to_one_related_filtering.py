@@ -21,7 +21,7 @@ class TestToOneRelatedFiltering:
         pass
 
     @against(api_sql, sql)
-    def test_filter_by_str_id(
+    def test_filter_by_to_related_attributes(
         self,
         data_source: OperableDataSource,
         ds_sleep
