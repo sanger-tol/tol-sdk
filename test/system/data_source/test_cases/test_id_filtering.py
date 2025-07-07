@@ -4,11 +4,12 @@
 
 from tol.core import DataSourceFilter, OperableDataSource
 
-from ...dec import against
-from ...fixtures import api_sql, sql
+from ..dec import against
+from ..fixtures import api_sql, sql
 
 
-class TestTOLP8862:
+class TestIdFiltering:
+    """TOLP-8862"""
 
     @against(api_sql, sql)
     def test_filter_by_int_id(
