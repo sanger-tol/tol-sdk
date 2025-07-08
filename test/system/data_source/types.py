@@ -56,7 +56,17 @@ class Root(ModelBase):
         nullable=True
     )
     related_object: Mapped[Related] = relationship(
-        back_populates='my_root'
+        back_populates='my_root',
+        foreign_keys=[related_fkey]
+    )
+
+    another_fkey: Mapped[str] = mapped_column(
+        ForeignKey('related.id'),
+        nullable=True
+    )
+    another_related: Mapped[Related] = relationship(
+        back_populates='yet_still_root',
+        foreign_keys=[another_fkey]
     )
 
 
@@ -92,7 +102,13 @@ class Related(ModelBase):
     )
 
     my_root: Mapped[list[Root]] = relationship(
-        back_populates='related_object'
+        back_populates='related_object',
+        foreign_keys=[Root.related_fkey]
+    )
+
+    yet_still_root: Mapped[list[Root]] = relationship(
+        back_populates='another_related',
+        foreign_keys=[Root.another_fkey]
     )
 
 
