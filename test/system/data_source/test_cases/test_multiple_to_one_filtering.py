@@ -90,6 +90,6 @@ class TestMultipleToOneFiltering:
             },
         )
         data_source.upsert(
-            'root', 
+            'root',
             [first_root_obj, second_root_obj],
         )
