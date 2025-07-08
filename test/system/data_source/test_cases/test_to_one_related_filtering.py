@@ -59,8 +59,8 @@ class TestToOneRelatedFiltering:
                     }
                 },
                 'related_object.str_column': {
-                    'eq': {
-                        'value': 'hello, world'
+                    'contains': {
+                        'value': 'hello'
                     }
                 },
                 'id': {
