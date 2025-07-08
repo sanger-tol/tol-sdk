@@ -35,12 +35,12 @@ class TestToOneRelatedFiltering:
             }
         )
 
-        (rel_obj,) = list(
+        (root_obj,) = list(
             data_source.get_list('root', object_filters=f)
         )
 
-        assert rel_obj.id == 'a'
-        assert rel_obj.int_column == 0
+        assert root_obj.id == 'a'
+        assert root_obj.int_column == 0
 
     @against(sql, api_sql)
     def test_filter_by_to_one_related_id_and_attribute(
@@ -71,12 +71,12 @@ class TestToOneRelatedFiltering:
             }
         )
 
-        (rel_obj,) = list(
+        (root_obj,) = list(
             data_source.get_list('root', f)
         )
 
-        assert rel_obj.id == 'c'
-        assert rel_obj.int_column == 2
+        assert root_obj.id == 'c'
+        assert root_obj.int_column == 2
 
     def __upsert_objs(
         self,
