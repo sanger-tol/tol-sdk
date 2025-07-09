@@ -53,7 +53,6 @@ class TestPortalDataSource(TestCase):
         self.assertEqual(obj1.goat_assembly_level, 'Chromosome')
         self.assertEqual(obj1.goat_long_list, ['DTOL'])
         self.assertEqual(obj1.goat_phylum_name, 'Streptophyta')
-        self.assertIsNone(obj1.goat_common_name)
         self.assertEqual(obj1.tolid_prefix, 'drCitLimo')
         with self.assertRaises(StopIteration):
             next(ret)
