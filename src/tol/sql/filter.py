@@ -310,9 +310,7 @@ class DefaultDatabaseFilter(DatabaseFilter):
             )
 
     def __column_is_str(self, column: MappedColumn) -> bool:
-        types = self.__base_model.get_attribute_types()
-
-        return types[column.name] == str
+        return column.type.python_type == str
 
     def __filter_contains_str(
         self,

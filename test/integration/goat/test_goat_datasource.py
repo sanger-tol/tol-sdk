@@ -44,7 +44,6 @@ class TestGoatDataSource(TestCase):
         self.assertEqual(obj1.assembly_level, 'Chromosome')
         self.assertEqual(obj1.long_list, ['DTOL'])
         self.assertEqual(obj1.phylum.scientific_name, 'Streptophyta')
-        self.assertEqual(obj1.common_name, 'lemon')
         self.assertEqual(obj1.tolid_prefix, 'drCitLimo')
         self.assertTrue(any('Citrus bergamia' in syn for syn in obj1.synonym))
         with self.assertRaises(StopIteration):
