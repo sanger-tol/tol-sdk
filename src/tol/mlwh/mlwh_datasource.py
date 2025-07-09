@@ -184,7 +184,15 @@ class MlwhDataSource(DataSource, DetailGetter, ListGetter):
             'p2_num': 'well_metrics.p2_num',
             'adapter_dimer_percent': 'well_metrics.adapter_dimer_percent',
             'short_insert_percent': 'well_metrics.short_insert_percent',
-            'hifi_read_bases': 'well_metrics.hifi_read_bases',
+            'hifi_read_bases': (
+                "CASE"
+                "WHEN product_metrics.hifi_read_bases IS NOT NULL AND product_metrics.hifi_read_bases > 0"
+                "THEN product_metrics.hifi_read_bases"
+                "ELSE well_metrics.hifi_read_bases"
+                "END"
+            ),
+            'well_hifi_read_bases': 'well_metrics.hifi_read_bases',
+            'product_hifi_read_bases': 'product_metrics.hifi_read_bases',
             'hifi_num_reads': 'well_metrics.hifi_num_reads',
             'hifi_read_length_mean': 'well_metrics.hifi_read_length_mean',
             'hifi_read_quality_median': 'well_metrics.hifi_read_quality_median',
