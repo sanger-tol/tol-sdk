@@ -834,7 +834,7 @@ class BenchlingDataSource(
             'worklist_item': RelationshipConfig(
                 to_one={
                     'worklist': 'worklist',
-                    'item': list(self.schemas['custom_entity'].keys())
+                    'item': list(self.schemas['custom_entity'].keys()) + list(self.schemas['container'].keys()),
                 }
             ),
             'container_content': RelationshipConfig(
@@ -886,7 +886,8 @@ class BenchlingDataSource(
         """
         if source.type == 'worklist' and relationship_name == 'worklist_items':
             back_converter = self.__bc_factory()
-            return back_converter.convert_worklist_items(
+            v = self.__get_benchling_package('worklist').get_by_id(source.id)
+            yield from back_converter.convert_worklist_items(
                 self.__get_benchling_package('worklist').get_by_id(source.id)
             )
 

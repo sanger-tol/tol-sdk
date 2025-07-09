@@ -26,6 +26,8 @@ from benchling_sdk.models import (
     Box,
     BoxCreate,
     Container,
+    ContainerBulkUpdateItem,
+    ContainerUpdate,
     ContainerContent,
     ContainerCreate,
     ContainerQuantity,
@@ -168,16 +170,14 @@ class BenchlingConverter(Converter[BenchlingReturn, DataObject]):
         worklist_type = worklist.type
         worklist_items = worklist.worklist_items
         for worklist_item in worklist_items:
-            to_ones = {}
-            if worklist_type == 'bioentity':
-                to_ones = {
-                    'item': self.__ds.data_object_factory(
-                        None,
-                        id_=worklist_item.id,
-                        stub=True,  # We set the type as a list - this is sorted out when unstubbed
-                        stub_types=self.__ds.relationship_config['worklist_item'].to_one['item'],
-                    )
-                }
+            to_ones = {
+                'item': self.__ds.data_object_factory(
+                    None,
+                    id_=worklist_item.id,
+                    stub=True,  # We set the type as a list - this is sorted out when unstubbed
+                    stub_types=self.__ds.relationship_config['worklist_item'].to_one['item'],
+                )
+            }
 
             yield self.__ds.data_object_factory(
                 'worklist_item',
@@ -273,7 +273,7 @@ class BenchlingConverter(Converter[BenchlingReturn, DataObject]):
                'parent_storage_id': input_.parent_storage_id,
                'barcode': input_.barcode,
             },
-            to_one=to_ones | native_to_ones,
+            to_one=to_ones | native_to_ones
         )
         
     def convert_container_contents(self, input_: Iterable[ContainerContent]) -> Iterable[DataObject]:
@@ -466,6 +466,8 @@ class DataObjectConverter(Converter[DataObject, BenchlingWrite]):
     ) -> Iterable[Optional[BenchlingObjectUpdate]]:
         if destination_type in self.__ds.schemas['custom_entity'].keys():
             return self.__convert_update_custom_entity_bulk(inputs, destination_type)
+        elif destination_type in self.__ds.schemas['container'].keys():
+            return self.__convert_update_container_bulk(inputs, destination_type)
 
         raise DataSourceError(f'Cannot bulk update object type {destination_type}')
 
@@ -502,6 +504,8 @@ class DataObjectConverter(Converter[DataObject, BenchlingWrite]):
         # so we have consistency across board
         if destination_type in self.__ds.schemas['custom_entity'].keys():
             return self.__convert_update_custom_entity(input_, destination_type)
+        elif destination_type in self.__ds.schemas['container'].keys():
+            return self.__convert_update_container([input_], destination_type)
 
         raise ValueError(f'Unknown object type: {destination_type}')
 
@@ -554,6 +558,7 @@ class DataObjectConverter(Converter[DataObject, BenchlingWrite]):
             parent_storage_id=input_.attributes.get('parent_storage_id'),
             schema_id=self.__ds.schema_ids[input_.type],
             fields=container_fields,
+            barcode=input_.attributes.get('barcode'),
         )
 
     def __convert_worklist(self, input_: DataObject) -> WorklistCreate:
@@ -659,6 +664,31 @@ class DataObjectConverter(Converter[DataObject, BenchlingWrite]):
             )
 
         return return_iterable
+    
+    def __convert_update_container_bulk(
+            self,
+            inputs: Iterable[DataSourceUpdate],
+            object_type: str
+    ) -> Iterable[ContainerBulkUpdateItem]:
+        return_iterable = []
+        for input_ in inputs:
+            update_id, update_dict = input_
+            container_fields = self.__convert_fields(
+                object_type,
+                {
+                    k: v for k, v in update_dict.items()
+                    if k in self.__ds.schemas['container'][object_type].keys()
+                },
+            )
+            
+            return_iterable.append(
+                ContainerBulkUpdateItem(
+                    container_id=update_id,
+                    fields=container_fields,
+                )
+            )
+        
+        return return_iterable
 
     def __convert_insert_custom_entity(self, input_: DataObject) -> CustomEntityCreate:
         naming_strategy = input_.attributes.get('naming_strategy', None)
@@ -725,6 +755,24 @@ class DataObjectConverter(Converter[DataObject, BenchlingWrite]):
             schema_id=self.__ds.schema_ids[destination_type],
             **kwargs
         )
+    
+    def __convert_update_container(
+            self,
+            input_: DataSourceUpdate,
+            destination_type: str
+    ) -> ContainerUpdate:
+        update_id, update_dict = input_[0]
+        container_fields = self.__convert_fields(
+            destination_type,
+            {
+                k: v for k, v in update_dict.items()
+                if k in self.__ds.schemas['container'][destination_type].keys()
+            },
+        )
+
+        return ContainerUpdate(
+            fields=container_fields,
+        )
 
     def __convert_fields(
             self,
@@ -738,6 +786,7 @@ class DataObjectConverter(Converter[DataObject, BenchlingWrite]):
             for name, value in data_dict.items()
             if (
                 name not in self.IGNORE_FIELD_NAMES
+                and name in self.__ds.schemas[benchling_type][object_type].keys()
                 and self.__ds.schemas[benchling_type]
                 [object_type][name]['benchling_type'] != 'dropdown'
             )
@@ -763,6 +812,7 @@ class DataObjectConverter(Converter[DataObject, BenchlingWrite]):
             for name, value in data_dict.items()
             if (
                 name not in self.IGNORE_FIELD_NAMES
+                and name in self.__ds.schemas[benchling_type][object_type].keys()
                 and self.__ds.schemas[benchling_type]
                 [object_type][name]['benchling_type'] == 'dropdown'
             )
