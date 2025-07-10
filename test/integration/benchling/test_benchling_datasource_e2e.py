@@ -25,7 +25,7 @@ class TestBenchlingDataSourceE2E:
     """
     _str_values = None
 
-    can_update = ['tissue', 'tissue_prep', 'casm_sequencing_container',]
+    can_update = ['tissue', 'tissue_prep', 'casm_sequencing_container']
 
     @against_types([
         'tissue',
@@ -158,7 +158,7 @@ class TestBenchlingDataSourceE2E:
     @against_types([
         '12x12_box:casm_sequencing_container',
         '12x12_box:casm_tube'
-    ]) 
+    ])
     def test_many_insert_delete_update_storage_layers(self, object_type: str) -> None:
         benchling_ds = benchling()
         first_object_type, second_object_type = object_type.split(':', 1)
@@ -222,7 +222,6 @@ class TestBenchlingDataSourceE2E:
                 )
                 assert obj2.parent_storage_id == f'{obj.id}:a{i2}'
 
-            
             # Update containers
             if second_object_type in self.can_update:
                 str_key = self.__find_string_key(
@@ -249,7 +248,7 @@ class TestBenchlingDataSourceE2E:
                         for i, id_ in enumerate(second_ids, start=1)
                     ]
                 )
-            
+
                 # get them back
                 new_objs = list(
                     benchling_ds.get_by_id(
@@ -264,13 +263,13 @@ class TestBenchlingDataSourceE2E:
                     assert new_obj.id == id_
                     str_val = getattr(new_obj, str_key)
                     assert str_val == self.__get_string_value(second_object_type, str_key, i,)
-            
+
             benchling_ds.delete(second_object_type, [obj.id for obj in second_res])
 
         # ---- Clean Up ----
         benchling_ds.delete(first_object_type, first_ids)
 
-    @against_types([]) # tissue, folder
+    @against_types(['tissue', 'folder'])
     def test_many_insert_update_delete_with_errors(self, object_type: str) -> None:
         """
         Inserts several `DataObject` instances of specified type,
@@ -344,7 +343,7 @@ class TestBenchlingDataSourceE2E:
 
         benchling_ds.delete(object_type, [res[0].id, res[2].id])
 
-    @against_types(['tissue', 'tissue_prep','tube'])
+    @against_types(['tissue', 'tissue_prep', 'tube'])
     def test_worklists(self, object_type: str) -> None:
         """
         Creates a worklist, adds a tissue to it, and then
@@ -359,7 +358,8 @@ class TestBenchlingDataSourceE2E:
             None,
             attributes={
                 'name': 'Test Worklist',
-                'worklist_type': 'bioentity' if object_type in benchling_ds.schemas['custom_entity'].keys() else 'container',
+                'worklist_type': 'bioentity' if object_type in
+                benchling_ds.schemas['custom_entity'].keys() else 'container',
             }
         )
         # insert it
@@ -493,7 +493,7 @@ class TestBenchlingDataSourceE2E:
             assert r.id is not None
 
         benchling_ds.delete(object_type, [obj.id for obj in res])
-    
+
     def test_get_to_many_relations(self) -> None:
         """
         Tests getting to-many relations for a specific object type.
@@ -504,19 +504,23 @@ class TestBenchlingDataSourceE2E:
         custom_entity = benchling_ds.get_one('temp_dna_extract', 'bfi_PfJozKsa')
         container = benchling_ds.get_one('tube', 'con_5wnL41Xr')
 
-        entity_contents = list(benchling_ds.get_to_many_relations(custom_entity, 'container_contents'))
+        entity_contents = list(
+            benchling_ds.get_to_many_relations(custom_entity, 'container_contents')
+        )
         assert len(entity_contents) > 0
         for content in entity_contents:
             assert content.type == 'container_content'
             assert content.entity.id == custom_entity.id
-            
-        container_contents_generator = benchling_ds.get_to_many_relations(container, 'container_contents')
+
+        container_contents_generator = benchling_ds.get_to_many_relations(
+            container,
+            'container_contents'
+        )
         for container_contents in container_contents_generator:
             assert len(list(container_contents)) > 0
             for content in container_contents:
                 assert content.type == 'container_content'
                 assert content.container.id == container.id
-
 
     def __get_example_object(self, object_type: str) -> DataObject:
         benchling_ds = benchling()

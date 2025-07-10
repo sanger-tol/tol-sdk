@@ -777,16 +777,15 @@ class BenchlingDataSource(
 
         benchling_package = self.__get_benchling_package(object_type)
         benchling_type = self.benchling_types[object_type]
-        print(object_id, benchling_type, object_type, self.schema_ids.get(object_type))
         try:
             if benchling_type in BENCHLING_TYPE_SEARCH_WITH_SCHEMA_ID:
-                obj =  benchling_package.get_by_id(
+                obj = benchling_package.get_by_id(
                     object_id,
                 )
                 if snakecase(obj.schema.name) == object_type:
                     return obj
                 return None
-                    
+
             return benchling_package.get_by_id(
                 object_id
             )
@@ -838,7 +837,8 @@ class BenchlingDataSource(
             'worklist_item': RelationshipConfig(
                 to_one={
                     'worklist': 'worklist',
-                    'item': list(self.schemas['custom_entity'].keys()) + list(self.schemas['container'].keys()),
+                    'item': list(self.schemas['custom_entity'].keys())
+                    + list(self.schemas['container'].keys()),
                 }
             ),
             'container_content': RelationshipConfig(
@@ -890,19 +890,26 @@ class BenchlingDataSource(
         """
         if source.type == 'worklist' and relationship_name == 'worklist_items':
             back_converter = self.__bc_factory()
-            v = self.__get_benchling_package('worklist').get_by_id(source.id)
             yield from back_converter.convert_worklist_items(
                 self.__get_benchling_package('worklist').get_by_id(source.id)
             )
 
-        if source.type in self.schemas['container'].keys() and relationship_name =='container_contents':
+        if (
+            source.type in self.schemas['container'].keys()
+            and relationship_name == 'container_contents'
+        ):
             back_converter = self.__bc_factory()
             contents = self.get_container_contents(source.id)
             yield back_converter.convert_container_contents(contents)
 
-        if source.type in self.schemas['custom_entity'].keys() and relationship_name =='container_contents':
+        if (
+            source.type in self.schemas['custom_entity'].keys()
+            and relationship_name == 'container_contents'
+        ):
             back_converter = self.__bc_factory()
-            container_list = self.benchling_interface.containers.list(storage_contents_id=source.id)
+            container_list = self.benchling_interface.containers.list(
+                storage_contents_id=source.id
+            )
             for container in container_list:
                 for individual_container in container:
                     converted_container = back_converter.convert(individual_container)

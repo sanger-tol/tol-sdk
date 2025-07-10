@@ -27,11 +27,11 @@ from benchling_sdk.models import (
     BoxCreate,
     Container,
     ContainerBulkUpdateItem,
-    ContainerUpdate,
     ContainerContent,
     ContainerCreate,
     ContainerQuantity,
     ContainerQuantityUnits,
+    ContainerUpdate,
     CustomEntity,
     CustomEntityBulkCreate,
     CustomEntityBulkUpdate,
@@ -262,7 +262,7 @@ class BenchlingConverter(Converter[BenchlingReturn, DataObject]):
             id_=input_.id,
             attributes=attributes
         )
-        
+
     def __convert_container_result(self, input_: Container):
         object_type = snakecase(input_.schema.name)
 
@@ -274,19 +274,22 @@ class BenchlingConverter(Converter[BenchlingReturn, DataObject]):
             object_type,
             id_=input_.id,
             attributes=attributes | {
-               'parent_storage_id': input_.parent_storage_id,
-               'barcode': input_.barcode,
+                'parent_storage_id': input_.parent_storage_id,
+                'barcode': input_.barcode,
             },
             to_one=to_ones | native_to_ones
         )
-        
-    def convert_container_contents(self, input_: Iterable[ContainerContent]) -> Iterable[DataObject]:
+
+    def convert_container_contents(
+        self, input_: Iterable[ContainerContent]
+    ) -> Iterable[DataObject]:
         for container_content in input_:
             entity = self.__convert_custom_entity(container_content.entity)
 
             attributes = {
                 'batch': container_content.batch,
-                'concentration': container_content.concentration.to_dict() if container_content.concentration else None
+                'concentration': container_content.concentration.to_dict() if
+                container_content.concentration else None
             }
             to_ones = {
                 'entity': entity
@@ -551,7 +554,7 @@ class DataObjectConverter(Converter[DataObject, BenchlingWrite]):
         )
 
     def __convert_container(self, input_: DataObject) -> ContainerCreate:
-        
+
         container_fields = self.__convert_fields(
             input_.type,
             input_.attributes,
@@ -668,7 +671,7 @@ class DataObjectConverter(Converter[DataObject, BenchlingWrite]):
             )
 
         return return_iterable
-    
+
     def __convert_update_container_bulk(
             self,
             inputs: Iterable[DataSourceUpdate],
@@ -684,14 +687,14 @@ class DataObjectConverter(Converter[DataObject, BenchlingWrite]):
                     if k in self.__ds.schemas['container'][object_type].keys()
                 },
             )
-            
+
             return_iterable.append(
                 ContainerBulkUpdateItem(
                     container_id=update_id,
                     fields=container_fields,
                 )
             )
-        
+
         return return_iterable
 
     def __convert_insert_custom_entity(self, input_: DataObject) -> CustomEntityCreate:
@@ -759,7 +762,7 @@ class DataObjectConverter(Converter[DataObject, BenchlingWrite]):
             schema_id=self.__ds.schema_ids[destination_type],
             **kwargs
         )
-    
+
     def __convert_update_container(
             self,
             input_: DataSourceUpdate,
