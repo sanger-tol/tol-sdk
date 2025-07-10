@@ -108,7 +108,7 @@ class StsSampleToCasmBenchlingConverterFactory:
             'polymorphic_benchling_relationships': [],
             'converted_value_identifiers': [],
             'stored_values': {},
-            'naming_strategy': NamingStrategy.NEW_IDS
+            'naming_strategy': NamingStrategy.REPLACE_NAMES_FROM_PARTS
         },
         'casm_tissue_v1': {
             'attribute_map': {
@@ -128,7 +128,7 @@ class StsSampleToCasmBenchlingConverterFactory:
             'polymorphic_benchling_relationships': [],
             'converted_value_identifiers': [],
             'stored_values': {},
-            'naming_strategy': NamingStrategy.NEW_IDS
+            'naming_strategy': NamingStrategy.REPLACE_NAMES_FROM_PARTS
         },
         'casm_sample_metadata_v1': {
             'attribute_map': {
@@ -152,7 +152,7 @@ class StsSampleToCasmBenchlingConverterFactory:
             'polymorphic_benchling_relationships': [],
             'converted_value_identifiers': [],
             'stored_values': {},
-            'naming_strategy': NamingStrategy.NEW_IDS
+            'naming_strategy': NamingStrategy.REPLACE_NAMES_FROM_PARTS
         },
         'casm_sample_v1': {
             'attribute_map': {
@@ -176,7 +176,8 @@ class StsSampleToCasmBenchlingConverterFactory:
             ],
             'polymorphic_benchling_relationships': [],
             'converted_value_identifiers': [],
-            'stored_values': {}
+            'stored_values': {},
+            'naming_strategy': NamingStrategy.REPLACE_NAMES_FROM_PARTS
         },
         'casm_programme_id_v1': {
             'attribute_map': {
