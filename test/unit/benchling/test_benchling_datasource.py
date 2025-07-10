@@ -132,13 +132,18 @@ class TestBenchlingDataSource(TestCase):
                 'source_entity_id': 'str',
                 'destination_container_id': 'str'
             },
-            'assay_result': {}
+            'assay_result': {},
+            'container_content': {
+                'batch': 'str',
+                'concentration': 'dict',
+            }
         }
 
         self.assertEqual(expected, bds.attribute_types)
         self.assertEqual(
             ['test_entity_type', 'test_child_type', 'test_location_type',
-             'folder', 'worklist', 'worklist_item', 'transfer', 'assay_result'],
+             'folder', 'worklist', 'worklist_item', 'transfer', 'assay_result',
+             'container_content'],
             bds.supported_types
         )
 
