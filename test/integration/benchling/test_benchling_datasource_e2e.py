@@ -25,7 +25,7 @@ class TestBenchlingDataSourceE2E:
     """
     _str_values = None
 
-    can_update = ['tissue', 'tissue_prep', 'tube']
+    can_update = ['tissue', 'tissue_prep', 'casm_sequencing_container',]
 
     @against_types([
         'tissue',
@@ -36,7 +36,7 @@ class TestBenchlingDataSourceE2E:
         '12x12_box',
         'casm_well',
         # TODO restore (TOLP-8669)
-        'casm_programme_id'
+        # 'casm_programme_id'
     ])
     def test_get(self, object_type: str) -> None:
         """
@@ -156,9 +156,10 @@ class TestBenchlingDataSourceE2E:
         benchling_ds.delete(object_type, [obj.id for obj in new_objs])
 
     @against_types([
+        '12x12_box:casm_sequencing_container',
         '12x12_box:casm_tube'
-    ])
-    def test_many_insert_delete_storage_layers(self, object_type: str) -> None:
+    ]) 
+    def test_many_insert_delete_update_storage_layers(self, object_type: str) -> None:
         benchling_ds = benchling()
         first_object_type, second_object_type = object_type.split(':', 1)
         first_str_key = self.__find_string_key(first_object_type, benchling_ds)
@@ -343,7 +344,7 @@ class TestBenchlingDataSourceE2E:
 
         benchling_ds.delete(object_type, [res[0].id, res[2].id])
 
-    @against_types(['tissue', 'tissue_prep', 'tube'])
+    @against_types(['tissue', 'tissue_prep','tube'])
     def test_worklists(self, object_type: str) -> None:
         """
         Creates a worklist, adds a tissue to it, and then

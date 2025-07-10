@@ -168,6 +168,10 @@ class BenchlingConverter(Converter[BenchlingReturn, DataObject]):
         # This is a bit of a hack as we don't know exactly the type of the objects
         # in the worklist. More work will be needed here eventually
         worklist_type = worklist.type
+        if worklist_type == WorklistType.BIOENTITY:
+            stub_types = list(self.__ds.schemas['custom_entity'].keys())
+        elif worklist_type == WorklistType.CONTAINER:
+            stub_types = list(self.__ds.schemas['container'].keys())
         worklist_items = worklist.worklist_items
         for worklist_item in worklist_items:
             to_ones = {
@@ -175,7 +179,7 @@ class BenchlingConverter(Converter[BenchlingReturn, DataObject]):
                     None,
                     id_=worklist_item.id,
                     stub=True,  # We set the type as a list - this is sorted out when unstubbed
-                    stub_types=self.__ds.relationship_config['worklist_item'].to_one['item'],
+                    stub_types=stub_types,
                 )
             }
 

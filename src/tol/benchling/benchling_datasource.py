@@ -777,12 +777,16 @@ class BenchlingDataSource(
 
         benchling_package = self.__get_benchling_package(object_type)
         benchling_type = self.benchling_types[object_type]
+        print(object_id, benchling_type, object_type, self.schema_ids.get(object_type))
         try:
             if benchling_type in BENCHLING_TYPE_SEARCH_WITH_SCHEMA_ID:
-                return benchling_package.get_by_id(
+                obj =  benchling_package.get_by_id(
                     object_id,
-                    schema_id=self.schema_ids[object_type]
                 )
+                if snakecase(obj.schema.name) == object_type:
+                    return obj
+                return None
+                    
             return benchling_package.get_by_id(
                 object_id
             )
