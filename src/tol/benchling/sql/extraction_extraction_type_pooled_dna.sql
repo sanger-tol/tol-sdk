@@ -57,6 +57,7 @@ SELECT DISTINCT
 	DATE(dnap.created_at$) AS completion_date, -- Homogenising BnT and Benchling dates
 	dnap.name$ AS extraction_name,
 	con.barcode AS fluidx_id,
+	con.id AS fluidx_container_id,
 	dnadc.qc_passfail AS extraction_qc_result,
 	dnay.yield AS yield_ng,
 	femto.femto_profile_description AS femto_description,

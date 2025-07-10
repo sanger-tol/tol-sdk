@@ -123,6 +123,7 @@ SELECT DISTINCT
     COALESCE(DATE(dna.created_on), DATE(dna.created_at$)) AS completion_date, -- Homogenising BnT and Benchling dates
     dna.name$ AS extraction_name,
     con.barcode AS fluidx_id,
+    con.id AS fluidx_container_id,
     CASE
         WHEN con.archive_purpose$ IN ('Retired', 'Expended') THEN 0 -- Retired or expended DNA extractions have a weight of 0
         ELSE con.volume_si * 1000000
