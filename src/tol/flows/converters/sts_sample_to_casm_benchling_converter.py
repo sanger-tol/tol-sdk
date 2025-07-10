@@ -21,7 +21,7 @@ class StsSampleToCasmBenchlingConverterFactory:
             'relationship_identifier': 'target_species_sex',
         },
         'sampleset': {
-            'identifier': 'sampleset_id',
+            'identifier': 'name',
             'relationship_identifier': 'sampleset',
         },
         'sample_status': {
