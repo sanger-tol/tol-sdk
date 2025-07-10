@@ -197,7 +197,7 @@ class StsSampleToCasmBenchlingConverterFactory:
         },
         'casm_sample_status_v1': {
             'attribute_map': {
-                'sample_id_v1': 'casm_sample',
+                'sample_id_v1': 'casm_sample_v1',
                 'status_v1': 'sample_status'
             },
             'primary_attribute': 'sample_id_v1',
