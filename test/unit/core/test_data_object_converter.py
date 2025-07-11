@@ -18,7 +18,11 @@ from tol.core import (
 
 class TestDataObjectToDataObjectConverter(DataObjectToDataObjectOrUpdateConverter):
 
-    def convert(self, data_object: DataObject) -> Iterable[DataObject]:
+    def convert(
+        self,
+        data_object: DataObject,
+        id_field: str | None = None
+    ) -> Iterable[DataObject]:
         CoreDataObject = self._data_object_factory  # noqa N806
         # if data_object relations data = data else data.attributes
         ret1 = CoreDataObject(
@@ -161,3 +165,33 @@ class TestDataObjectConverter(TestCase):
 
         with self.assertRaises(StopIteration):
             next(converteds)
+            
+    def test_convert_with_id_field(self):
+        source = _MockDataSource(config={})
+        destination = _MockDataSource(config={})
+        core_data_object(source)
+        core_data_object(destination)
+        mock_dl = create_autospec(DataLoader)
+        type(mock_dl)._destination_object_type = PropertyMock(
+            return_value='destination_type'
+        )
+        converter = DefaultDataObjectToDataObjectConverter(
+            data_object_factory=destination.data_object_factory,
+        )
+        converter.data_loader = mock_dl
+        CoreDataObject = source.data_object_factory
+        
+        obj1 = CoreDataObject(
+            id_='test1',
+            type_='source_type',
+            attributes={
+                'attribute1': 'value1',
+                'id_field': 'test1_id'
+            }
+        )
+        
+        converteds = converter.convert(obj1, 'id_field')
+        ret1 = next(converteds)
+        self.assertEqual(obj1.attributes['id_field'], ret1.id)
+        self.assertEqual('destination_type', ret1.type)
+        self.assertEqual(obj1.attributes, ret1.attributes)
