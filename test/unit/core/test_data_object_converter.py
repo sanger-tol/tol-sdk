@@ -165,7 +165,7 @@ class TestDataObjectConverter(TestCase):
 
         with self.assertRaises(StopIteration):
             next(converteds)
-            
+
     def test_convert_with_id_field(self):
         source = _MockDataSource(config={})
         destination = _MockDataSource(config={})
@@ -179,8 +179,8 @@ class TestDataObjectConverter(TestCase):
             data_object_factory=destination.data_object_factory,
         )
         converter.data_loader = mock_dl
-        CoreDataObject = source.data_object_factory
-        
+        CoreDataObject = source.data_object_factory  # noqa N806
+
         obj1 = CoreDataObject(
             id_='test1',
             type_='source_type',
@@ -189,7 +189,7 @@ class TestDataObjectConverter(TestCase):
                 'id_field': 'test1_id'
             }
         )
-        
+
         converteds = converter.convert(obj1, 'id_field')
         ret1 = next(converteds)
         self.assertEqual(obj1.attributes['id_field'], ret1.id)

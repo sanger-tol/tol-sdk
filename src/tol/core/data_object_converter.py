@@ -78,7 +78,7 @@ class DefaultDataObjectToDataObjectConverter(DataObjectToDataObjectOrUpdateConve
                 else self.data_loader._destination_object_type
             )
             ret = self._data_object_factory(
-                id_=data_object.id if id_field == None else data_object.attributes.get(id_field),
+                id_=data_object.id if id_field is None else data_object.attributes.get(id_field),
                 type_=dest_type,
                 attributes={**data_object.attributes}
             )
