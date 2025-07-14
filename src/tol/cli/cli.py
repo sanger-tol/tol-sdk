@@ -8,7 +8,6 @@ import json
 import os
 import re
 import subprocess
-from uuid import uuid4
 
 import click
 
