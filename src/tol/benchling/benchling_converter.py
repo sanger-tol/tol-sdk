@@ -577,7 +577,7 @@ class DataObjectConverter(Converter[DataObject, BenchlingWrite]):
         }
         return WorklistCreate(
             name=input_.name,
-            type=mappings.get(input_.type, WorklistType.BIOENTITY)
+            type=mappings.get(input_.get_field_by_name('worklist_type'), WorklistType.BIOENTITY)
         )
 
     def __convert_worklist_item(self, input_: DataObject) -> WorklistItemCreate:
