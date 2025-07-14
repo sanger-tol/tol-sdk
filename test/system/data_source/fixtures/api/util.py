@@ -16,11 +16,10 @@ class ApiFixture(DataSourceFixture):
     def __init__(
         self,
         backing_fixture: DataSourceFixture,
-        host: str,
-        port: int = 5000
+        url: str,
     ) -> None:
 
-        self.__url = f'http://{host}:{port}'
+        self.__url = url
         self.__backer = backing_fixture
         self.__name = f'api -> {self.__backer.name}'
 
