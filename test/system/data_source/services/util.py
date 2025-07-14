@@ -37,8 +37,7 @@ def wait_for_ready(seconds: int = 60) -> None:
 
 def get_prefix() -> str:
     elastic_prefix = os.environ['ELASTIC_INDEX_PREFIX']
-    uuid_prefix = os.environ['UUID_PREFIX']
-    return f'{elastic_prefix}-test-{uuid_prefix}'
+    return f'{elastic_prefix}-test'
 
 
 def elastic_datasource(

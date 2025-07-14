@@ -28,7 +28,6 @@ services:
     environment:
       - DB_URI=postgresql://test-user:test-password@db:5432/test-db
       - GOOGLE_CLIENT_SECRETS=${GOOGLE_CLIENT_SECRETS}
-      - UUID_PREFIX=${UUID_PREFIX}
       - ELASTIC_URI=http://elastic:9200
       - ELASTIC_USER=elastic
       - ELASTIC_PASSWORD=anything
@@ -46,7 +45,6 @@ services:
     command: flask --app elastic run --host 0.0.0.0
     working_dir: /test/system/data_source/services
     environment:
-      - UUID_PREFIX=${UUID_PREFIX}
       - ELASTIC_URI=http://elastic:9200
       - ELASTIC_USER=elastic
       - ELASTIC_PASSWORD=anything
