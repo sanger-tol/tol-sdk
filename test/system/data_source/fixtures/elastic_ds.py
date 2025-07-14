@@ -14,13 +14,19 @@ from ..services.util import (
     elastic_datasource,
     upsert_archetypes,
     wait_for_ready,
+    get_prefix,
 )
 
 
 class ElasticFixture(DataSourceFixture):
     """A `DataSourceFixture` for `ElasticDataSource`"""
 
-    def __init__(self) -> None:
+    def __init__(
+        self,
+        prefix: str,
+    ) -> None:
+
+        self.__prefix = prefix
         wait_for_ready()
 
     @property
@@ -28,20 +34,22 @@ class ElasticFixture(DataSourceFixture):
         return 'elastic'
 
     def get_ds_instance(self) -> ElasticDataSource:
-        elastic_ds = elastic_datasource()
+        elastic_ds = elastic_datasource(self.__prefix)
         core_data_object(elastic_ds)
         return elastic_ds
 
     def after_test(self) -> None:
-        delete_indices()
+        delete_indices(self.__prefix)
 
     def before_test(self) -> None:
-        delete_indices()
-        create_indices()
-        upsert_archetypes()
+        delete_indices(self.__prefix)
+        create_indices(self.__prefix)
+        upsert_archetypes(self.__prefix)
 
     def sleep(self, time_: float) -> None:
         time.sleep(time_)
 
 
-elastic = ElasticFixture()
+elastic = ElasticFixture(
+    get_prefix()
+)

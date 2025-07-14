@@ -42,6 +42,7 @@ def get_prefix() -> str:
 
 
 def elastic_datasource(
+    prefix: str,
     class_: type[ElasticDataSource] = ElasticDataSource
 ) -> ElasticDataSource:
 
@@ -55,7 +56,7 @@ def elastic_datasource(
             'uri': os.environ['ELASTIC_URI'],
             'user': os.environ['ELASTIC_USER'],
             'password': os.environ['ELASTIC_PASSWORD'],
-            'index_prefix': get_prefix(),
+            'index_prefix': prefix,
             'relationship_cfg': {'root': rc_root},
             'runtime_fields': {
                 'root': {
@@ -74,9 +75,8 @@ def elastic_datasource(
     )
 
 
-def __get_indices_names() -> dict[str, str]:
+def __get_indices_names(prefix: str) -> dict[str, str]:
     # Returns dict of index_actual_name to index_alias_name
-    prefix = get_prefix()
     uuid = uuid4().hex
     return {
         f'{prefix}-{uuid}-{type_}': f'{prefix}-{type_}' for type_ in (
@@ -86,11 +86,11 @@ def __get_indices_names() -> dict[str, str]:
     }
 
 
-def create_indices() -> None:
+def create_indices(prefix: str) -> None:
     """Creates all indices."""
 
-    indices = __get_indices_names()
-    elastic_ds = elastic_datasource()
+    indices = __get_indices_names(prefix)
+    elastic_ds = elastic_datasource(prefix)
 
     for index, alias in indices.items():
         elastic_ds.es.indices.create(
@@ -99,11 +99,11 @@ def create_indices() -> None:
         )
 
 
-def delete_indices() -> None:
+def delete_indices(prefix: str) -> None:
     """Deletes all indices"""
-    elastic_ds = elastic_datasource()
+    elastic_ds = elastic_datasource(prefix)
 
-    matcher = f'{get_prefix()}*'
+    matcher = f'{prefix}*'
 
     elastic_ds.es.indices.delete_alias(
         index=[matcher],
@@ -117,7 +117,7 @@ def delete_indices() -> None:
     )
 
 
-def upsert_archetypes() -> None:
+def upsert_archetypes(prefix: str) -> None:
     """
     Ensures that `ElasticDataSource().attribute_types`
     is fully populated by upserting an archetypal
@@ -126,10 +126,12 @@ def upsert_archetypes() -> None:
     a chicken-and-egg situation
     """
 
-    elastic_ds = elastic_datasource()
+    elastic_ds = elastic_datasource(prefix)
+    import logging; logging.error(elastic_ds.es.indices.get_alias(index="*"))
+
 
     elastic_ds.es.index(
-        index=get_prefix() + '-root',
+        index=prefix + '-root',
         id='#YOLO',
         document={
             'str_column': 'abc',
@@ -145,7 +147,7 @@ def upsert_archetypes() -> None:
         }
     )
     elastic_ds.es.index(
-        index=get_prefix() + '-related',
+        index=prefix + '-related',
         id='#REL',
         document={
             'str_column': 'abc',
