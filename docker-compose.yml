@@ -60,7 +60,7 @@ services:
       - ELASTIC_USER=elastic
       # needs to be set, but doesn't matter at all
       - ELASTIC_PASSWORD=anything
-      - ELASTIC_INDEX_PREFIX=test
+      - ELASTIC_INDEX_PREFIX=test-api
       - FLASK_DEBUG=1
     depends_on:
       - tol-sdk-python-elastic

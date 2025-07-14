@@ -48,7 +48,7 @@ services:
       - ELASTIC_URI=http://elastic:9200
       - ELASTIC_USER=elastic
       - ELASTIC_PASSWORD=anything
-      - ELASTIC_INDEX_PREFIX=test
+      - ELASTIC_INDEX_PREFIX=test-api
     networks:
       - test-network
     depends_on:

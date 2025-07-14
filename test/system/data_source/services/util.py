@@ -5,6 +5,7 @@
 import os
 import time
 from datetime import datetime
+from uuid import uuid4
 
 import requests
 from requests.exceptions import ConnectionError
@@ -76,8 +77,9 @@ def elastic_datasource(
 def __get_indices_names() -> dict[str, str]:
     # Returns dict of index_actual_name to index_alias_name
     prefix = get_prefix()
+    uuid = uuid4().hex
     return {
-        f'{prefix}-{type_}-base': f'{prefix}-{type_}' for type_ in (
+        f'{prefix}-{uuid}-{type_}': f'{prefix}-{type_}' for type_ in (
             'root',
             'related'
         )
@@ -91,33 +93,27 @@ def create_indices() -> None:
     elastic_ds = elastic_datasource()
 
     for index, alias in indices.items():
-        elastic_ds.es.indices.create(index=index, aliases={alias: {}}, ignore=[400])
-
-
-def empty_all_indices() -> None:
-    """Empties all indices of all rows"""
-
-    indices = __get_indices_names()
-    elastic_ds = elastic_datasource()
-
-    elastic_ds.es.delete_by_query(
-        index=list(indices.values()),
-        body={'query': {'match_all': {}}}
-    )
+        elastic_ds.es.indices.create(
+            index=index,
+            aliases={alias: {}},
+        )
 
 
 def delete_indices() -> None:
     """Deletes all indices"""
-
-    indices = __get_indices_names()
     elastic_ds = elastic_datasource()
 
-    for index, alias in indices.items():
-        elastic_ds.es.indices.delete_alias(index=index, name=alias)
+    matcher = f'{get_prefix()}*'
+
+    elastic_ds.es.indices.delete_alias(
+        index=[matcher],
+        name=[matcher],
+        ignore=[400, 404],
+    )
 
     elastic_ds.es.indices.delete(
-        index=list(indices.keys()),
-        ignore=[400, 404]
+        index=[matcher],
+        ignore=[400, 404],
     )
 
 
