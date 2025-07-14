@@ -194,4 +194,7 @@ class TestDataObjectConverter(TestCase):
         ret1 = next(converteds)
         self.assertEqual(obj1.attributes['id_field'], ret1.id)
         self.assertEqual('destination_type', ret1.type)
-        self.assertEqual(obj1.attributes, ret1.attributes)
+        # Asserts that the id_field is not included in the attributes
+        self.assertEqual({k: v for k, v in obj1.attributes.items() if k != 'id_field'},
+                         ret1.attributes)
+        self.assertNotIn('id_field', ret1.attributes)
