@@ -305,7 +305,43 @@ def elastic(environment: str = None) -> ElasticDataSource:
                     """
                 }
             },
-            'calc_specimen_needed_psyche': {
+            'calc_specimen_needed_at_sanger_psyche': {
+                'type': 'boolean',
+                'script': {
+                    'source': """
+                        boolean isRecollectionRequired = (
+                            doc.containsKey('sts_sequencing_material_status.keyword') &&
+                            doc['sts_sequencing_material_status.keyword'].size() > 0 &&
+                            doc['sts_sequencing_material_status.keyword'].value
+                            == 'RECOLLECTION_REQUIRED'
+                        );
+
+                        boolean isIncludedProject = (
+                            doc.containsKey('goat_long_list.keyword') &&
+                            doc['goat_long_list.keyword'].size() > 0 &&
+                            ['AG100PEST', 'i5K', 'CBP', 'ERGA-PIL', 'ERGA-BGE', 'ERGA-CH',
+                            'ENDEMIXIT'].contains(doc['goat_long_list.keyword'].value)
+                        );
+
+                        boolean isChromosome = (
+                            doc.containsKey('goat_assembly_level.keyword') &&
+                            doc['goat_assembly_level.keyword'].size() > 0 &&
+                            doc['goat_assembly_level.keyword'].value == 'Chromosome'
+                        );
+
+                        boolean isSpecimensAtSanger = (
+                            doc.containsKey('tolid_tolid_count') &&
+                            doc['tolid_tolid_count'].size() > 0
+                        );
+
+                        emit(
+                            isRecollectionRequired || (!isIncludedProject
+                            && !isChromosome && !isSpecimensAtSanger)
+                        );
+                    """
+                }
+            },
+            'calc_specimen_collection_needed_psyche': {
                 'type': 'boolean',
                 'script': {
                     'source': """
@@ -869,14 +905,28 @@ def elastic(environment: str = None) -> ElasticDataSource:
             },
         },
         'sampleset': {
-            'calc_tat': RuntimeFields.date_interval('sts_submit_date',
-                                                    'sts_sample_sts_receive_date_min',
-                                                    'days')
+            'calc_tat_days': RuntimeFields.date_interval(
+                'sts_submit_date',
+                'sts_sample_sts_receive_date_min',
+                'days'
+            ),
+            'calc_tat_weeks': RuntimeFields.date_interval(
+                'sts_submit_date',
+                'sts_sample_sts_receive_date_min',
+                'weeks'
+            )
         },
         'manifest': {
-            'calc_tat': RuntimeFields.date_interval('sts_submit_date',
-                                                    'sts_receive_date',
-                                                    'days')
+            'calc_tat_days': RuntimeFields.date_interval(
+                'sts_submit_date',
+                'sts_receive_date',
+                'days'
+            ),
+            'calc_tat_weeks': RuntimeFields.date_interval(
+                'sts_submit_date',
+                'sts_receive_date',
+                'weeks'
+            )
         },
         'sequencing_request': {
             'calc_existing_library_oplc': {

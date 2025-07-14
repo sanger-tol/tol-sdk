@@ -21,7 +21,7 @@ class StsSampleToCasmBenchlingConverterFactory:
             'relationship_identifier': 'target_species_sex',
         },
         'sampleset': {
-            'identifier': 'sampleset_id',
+            'identifier': 'name',
             'relationship_identifier': 'sampleset',
         },
         'sample_status': {
@@ -46,13 +46,12 @@ class StsSampleToCasmBenchlingConverterFactory:
         These objects could are mainly used to query the
         relationships of the sample for a specific value
     """
-
     BENCHLING_OBJECT_MAP = {
-        'casm_species': {
+        'casm_species_v1': {
             'attribute_map': {
-                'species_name': 'target_species',
+                'species_name_v1': 'target_species',
             },
-            'primary_attribute': 'species_name',
+            'primary_attribute': 'species_name_v1',
             'primary_attribute_type': 'schema_field',
             'benchling_relationships': [],
             'sts_relationships': ['target_species'],
@@ -72,11 +71,11 @@ class StsSampleToCasmBenchlingConverterFactory:
             'converted_value_identifiers': [],
             'stored_values': {},
         },
-        'casm_compliance_agreement': {
+        'casm_compliance_agreement_v1': {
             'attribute_map': {
-                'compliance_agreement_id': 'HUMFRE_REFERENCE',
+                'compliance_agreement_id_v1': 'HUMFRE_REFERENCE',
             },
-            'primary_attribute': 'compliance_agreement_id',
+            'primary_attribute': 'compliance_agreement_id_v1',
             'primary_attribute_type': 'schema_field',
             'benchling_relationships': [],
             'sts_relationships': [],
@@ -84,11 +83,11 @@ class StsSampleToCasmBenchlingConverterFactory:
             'converted_value_identifiers': [],
             'stored_values': {},
         },
-        'casm_users': {
+        'casm_user_v1': {
             'attribute_map': {
-                'Email': 'SANGER_RESPONSIBLE_SCIENTIST',
+                'email_username_v1': 'SANGER_RESPONSIBLE_SCIENTIST',
             },
-            'primary_attribute': 'Email',
+            'primary_attribute': 'email_username_v1',
             'primary_attribute_type': 'schema_field',
             'benchling_relationships': [],
             'sts_relationships': [],
@@ -96,81 +95,80 @@ class StsSampleToCasmBenchlingConverterFactory:
             'converted_value_identifiers': [],
             'stored_values': {},
         },
-        'casm_donor': {
+        'casm_donor_v1': {
             'attribute_map': {
-                'id_donor_casm': 'ID_DONOR_CASM',
-                'species': 'casm_species',
-                'sex': 'sex',
+                'id_donor_casm_v1': 'ID_DONOR_CASM',
+                'species_v1': 'casm_species_v1',
+                'sex_v1': 'sex',
             },
-            'primary_attribute': 'id_donor_casm',
+            'primary_attribute': 'id_donor_casm_v1',
             'primary_attribute_type': 'schema_field',
-            'benchling_relationships': ['casm_species'],
+            'benchling_relationships': ['casm_species_v1'],
             'sts_relationships': ['sex'],
             'polymorphic_benchling_relationships': [],
             'converted_value_identifiers': [],
             'stored_values': {},
-            'naming_strategy': NamingStrategy.NEW_IDS
+            'naming_strategy': NamingStrategy.REPLACE_NAMES_FROM_PARTS
         },
-        'casm_tissue': {
+        'casm_tissue_v1': {
             'attribute_map': {
-                'donor_id': 'casm_donor',
-                'tissue_type': 'TISSUE_PHENOTYPE',
-                'age': 'SPECIMEN_AGE_YEARS',
-                'foetal_tissue': 'FETAL_TISSUE',
-                'disease_status': 'WILDTYPE_DISEASE',
-                'cancer_type': 'TISSUE_HISTOLOGY',
-                'id_tissue_casm': 'ID_TISSUE_CASM',
-                'country_of_origin': 'COUNTRY_OF_ORIGIN',
+                'donor_id_v1': 'casm_donor_v1',
+                'tissue_type_v1': 'TISSUE_PHENOTYPE',
+                'age_v1': 'SPECIMEN_AGE_YEARS',
+                'foetal_tissue_v1': 'FETAL_TISSUE',
+                'disease_status_v1': 'WILDTYPE_DISEASE',
+                'cancer_type_v1': 'TISSUE_HISTOLOGY',
+                'id_tissue_casm_v1': 'ID_TISSUE_CASM',
+                'country_of_origin_v1': 'COUNTRY_OF_ORIGIN',
             },
-            'primary_attribute': 'id_tissue_casm',
+            'primary_attribute': 'id_tissue_casm_v1',
             'primary_attribute_type': 'schema_field',
-            'benchling_relationships': ['casm_donor'],
+            'benchling_relationships': ['casm_donor_v1'],
             'sts_relationships': [],
             'polymorphic_benchling_relationships': [],
             'converted_value_identifiers': [],
             'stored_values': {},
-            'naming_strategy': NamingStrategy.NEW_IDS
+            'naming_strategy': NamingStrategy.REPLACE_NAMES_FROM_PARTS
         },
-        'casm_sample_metadata': {
+        'casm_sample_metadata_v1': {
             'attribute_map': {
-                'tissue_id': 'casm_tissue',
-                'compliance_agreement': 'casm_compliance_agreement',
-                'sample_owner': 'casm_users',
-                'tissue_preparation': 'TISSUE_PREPARATION',
-                'sts_id': 'id',
-                'collaborator_name': 'COLLABORATOR_NAME',
-                'responsible_pi': 'SANGER_RESPONSIBLE_PI',
-                'responsible_scientist': 'SANGER_RESPONSIBLE_SCIENTIST',
-                'sample_set_id': 'sampleset'
+                'tissue_id_v1': 'casm_tissue_v1',
+                'compliance_agreement_v1': 'casm_compliance_agreement_v1',
+                'responsible_scientist_v1': 'casm_user_v1',
+                'tissue_preparation_v1': 'TISSUE_PREPARATION',
+                'sts_id_v1': 'id',
+                'collaborator_name_v1': 'COLLABORATOR_NAME',
+                'responsible_pi_v1': 'SANGER_RESPONSIBLE_PI',
+                'sample_set_id_v1': 'sampleset'
             },
-            'primary_attribute': 'sts_id',
+            'primary_attribute': 'sts_id_v1',
             'primary_attribute_type': 'schema_field',
             'benchling_relationships': [
-                'casm_tissue',
-                'casm_compliance_agreement',
-                'casm_users'
+                'casm_tissue_v1',
+                'casm_compliance_agreement_v1',
+                'casm_user_v1'
             ],
             'sts_relationships': ['sampleset'],
             'polymorphic_benchling_relationships': [],
             'converted_value_identifiers': [],
             'stored_values': {},
-            'naming_strategy': NamingStrategy.NEW_IDS
+            'naming_strategy': NamingStrategy.REPLACE_NAMES_FROM_PARTS
         },
-        'casm_sample': {
+        'casm_sample_v1': {
             'attribute_map': {
-                'sample_metadata_id': 'casm_sample_metadata',
-                'sample_type': 'sample_format',
-                'date_created': 'created_on',
-                'safety_class': 'hazard_group',
-                'genetically_modified': 'genetically_modified',
-                'status_manual': 'sample_status',
-                'programme_id_manual': 'INTERNAL_CASM_SAMPLE_NAME',
-                'id_sample_casm_manual': 'ID_SAMPLE_CASM'
+                'sample_metadata_id_v1': 'casm_sample_metadata_v1',
+                'sample_type_v1': 'sample_format',
+                'date_created_v1': 'created_on',
+                'hazard_group_v1': 'hazard_group',
+                'genetically_modified_v1': 'genetically_modified',
+                'status_manual_v1': 'sample_status',
+                'programme_id_manual_v1': 'INTERNAL_CASM_SAMPLE_NAME',
+                'id_sample_casm_manual_v1': 'ID_SAMPLE_CASM'
             },
-            'primary_attribute': 'id_sample_casm_manual',
+            'primary_attribute': 'id_sample_casm_manual_v1',
             'primary_attribute_type': 'schema_field',
             'benchling_relationships': [
-                'casm_sample_metadata',
+                'casm_sample_metadata_v1',
             ],
             'sts_relationships': [
                 'sample_status',
@@ -178,33 +176,34 @@ class StsSampleToCasmBenchlingConverterFactory:
             ],
             'polymorphic_benchling_relationships': [],
             'converted_value_identifiers': [],
-            'stored_values': {}
+            'stored_values': {},
+            'naming_strategy': NamingStrategy.REPLACE_NAMES_FROM_PARTS
         },
-        'casm_programme_id': {
+        'casm_programme_id_v1': {
             'attribute_map': {
-                'sample_id': 'casm_sample',
-                'programme_id': 'INTERNAL_CASM_SAMPLE_NAME',
-                'id_sample_casm': 'ID_SAMPLE_CASM'
+                'sample_id_v1': 'casm_sample_v1',
+                'programme_id_v1': 'INTERNAL_CASM_SAMPLE_NAME',
+                'id_sample_casm_v1': 'ID_SAMPLE_CASM'
             },
-            'primary_attribute': 'sample_id',
+            'primary_attribute': 'sample_id_v1',
             'primary_attribute_type': 'schema_field',
             'benchling_relationships': [
-                'casm_sample',
+                'casm_sample_v1',
             ],
             'sts_relationships': [],
             'polymorphic_benchling_relationships': [],
             'converted_value_identifiers': [],
             'stored_values': {},
         },
-        'casm_sample_status': {
+        'casm_sample_status_v1': {
             'attribute_map': {
-                'sample_id': 'casm_sample',
-                'status': 'sample_status'
+                'sample_id_v1': 'casm_sample_v1',
+                'status_v1': 'sample_status'
             },
-            'primary_attribute': 'sample_id',
+            'primary_attribute': 'sample_id_v1',
             'primary_attribute_type': 'schema_field',
             'benchling_relationships': [
-                'casm_sample',
+                'casm_sample_v1',
             ],
             'sts_relationships': [
                 'sample_status'
@@ -230,7 +229,7 @@ class StsSampleToCasmBenchlingConverterFactory:
             'converted_value_identifiers': [],
             'stored_values': {},
         },
-        'casm_96_well_plate': {
+        'casm_96_well_plate_v1': {
             'attribute_map': {
                 'barcode': 'storage_rack',
                 'parent_storage_id': 'storage'
@@ -247,7 +246,7 @@ class StsSampleToCasmBenchlingConverterFactory:
             'converted_value_identifiers': [],
             'stored_values': {},
         },
-        'casm_tube': {
+        'casm_tube_v1': {
             'attribute_map': {
                 'barcode': 'tubeid',
                 'parent_storage_id': 'box_and_position'
@@ -263,7 +262,7 @@ class StsSampleToCasmBenchlingConverterFactory:
             'concatenated_values': ['box_and_position'],
             'stored_values': {},
         },
-        'casm_well': {
+        'casm_well_v1': {
             'attribute_map': {
                 'barcode': 'plate_and_location_non_relationship',
                 'parent_storage_id': 'plate_and_location'
@@ -271,7 +270,7 @@ class StsSampleToCasmBenchlingConverterFactory:
             'primary_attribute': 'barcode',
             'primary_attribute_type': 'schema_field',
             'benchling_relationships': [
-                'casm_96_well_plate',
+                'casm_96_well_plate_v1',
             ],
             'sts_relationships': ['storage_rack'],
             'polymorphic_benchling_relationships': [],
@@ -281,13 +280,13 @@ class StsSampleToCasmBenchlingConverterFactory:
         },
         'transfer': {
             'attribute_map': {
-                'source_entity_id': 'casm_sample',
+                'source_entity_id': 'casm_sample_v1',
                 'destination_container_id': 'container',
                 'transfer_quantity': 'VOLUME_UL',
                 'transfer_concentration': 'CONCENTRATION_NG_UL',
             },
             'primary_attribute': None,
-            'benchling_relationships': ['casm_sample'],
+            'benchling_relationships': ['casm_sample_v1'],
             'sts_relationships': [],
             'polymorphic_benchling_relationships': [
                 'container'
@@ -297,6 +296,7 @@ class StsSampleToCasmBenchlingConverterFactory:
             'stored_values': {},
         }
     }
+
     """
      Map of benchling objects to transform based on sts attributes.
      If only stored_values are present then the object is mainly used for storing results in memory
@@ -305,7 +305,7 @@ class StsSampleToCasmBenchlingConverterFactory:
     CONCATENATED_VALUES = {
         'plate_and_location': {
             'values': [
-                'casm_96_well_plate',
+                'casm_96_well_plate_v1',
                 'TUBE_WELL_POSITION'
             ],
             'separator': ':'
@@ -330,12 +330,12 @@ class StsSampleToCasmBenchlingConverterFactory:
     """
 
     VALUE_REPLACEMENTS = {
-        'sex': {
+        'sex_v1': {
             'MALE': 'Male',
             'FEMALE': 'Female',
             'NOT_PROVIDED': 'Unknown'
         },
-        'responsible_pi': {
+        'responsible_pi_v1': {
             'default': 'other',
             'da1': 'David Adams',
             'im3': 'Inigo Martincorena',
@@ -349,19 +349,19 @@ class StsSampleToCasmBenchlingConverterFactory:
             'sb31': 'Sam Behjati',
             'tjm': 'Thomas Mitchell',
         },
-        'genetically_modified': {
+        'genetically_modified_v1': {
             'default': 'No'
         },
-        'status_manual': {
+        'status_manual_v1': {
             'ACCEPTED': 'Available'
         },
-        'status': {
+        'status_v1': {
             'ACCEPTED': 'Available'
         },
-        'species_name': {
+        'species_name_v1': {
             'Canis lupus familiaris': 'Canis familiaris'
         },
-        'sample_type': {
+        'sample_type_v1': {
             'inactivated biological sample from infectious organism': 'Tissue',
             'live biological sample from infectious organism': 'Tissue',
             'biological sample / tissue from non-infectious organism': 'Tissue',
@@ -375,11 +375,11 @@ class StsSampleToCasmBenchlingConverterFactory:
     DESTINATION_OBJECT_TYPES = {
         'box_or_plate': {
             'RACK_TUBE': '12x12_box',
-            'PLATE_WELL': 'casm_96_well_plate'
+            'PLATE_WELL': 'casm_96_well_plate_v1'
         },
         'container': {
-            'RACK_TUBE': 'casm_tube',
-            'PLATE_WELL': 'casm_well'
+            'RACK_TUBE': 'casm_tube_v1',
+            'PLATE_WELL': 'casm_well_v1'
         }
     }
     """
@@ -388,8 +388,8 @@ class StsSampleToCasmBenchlingConverterFactory:
 
     POLYMORPHIC_RELATIONSHIP_OBJECT_TYPES = {
         'container': {
-            'RACK_TUBE': 'casm_tube',
-            'PLATE_WELL': 'casm_well'
+            'RACK_TUBE': 'casm_tube_v1',
+            'PLATE_WELL': 'casm_well_v1'
         }
     }
     """
@@ -631,7 +631,7 @@ class StsSampleToCasmBenchlingConverterFactory:
                             re.sub(
                                 r'([A-Za-z]+)0',
                                 r'\1',
-                                sample.attributes.get(attribute, '')
+                                sample.attributes.get(attribute, '') or ''
                             ) if attribute == 'TUBE_WELL_POSITION' else sample.attributes.get(
                                 attribute, ''
                             ) for attribute in factory.CONCATENATED_VALUES[
