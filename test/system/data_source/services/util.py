@@ -73,12 +73,11 @@ def elastic_datasource(
     )
 
 
-def __get_indices_names() -> list[str]:
+def __get_indices_names() -> dict[str, str]:
     # Returns dict of index_actual_name to index_alias_name
     prefix = get_prefix()
-    prefix_base = prefix[:-1]  # So doesn't get detected with aliases
     return {
-        f'{prefix_base}-{type_}': f'{prefix}-{type_}' for type_ in (
+        f'{prefix}-{type_}-base': f'{prefix}-{type_}' for type_ in (
             'root',
             'related'
         )
