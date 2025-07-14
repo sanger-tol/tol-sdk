@@ -19,7 +19,7 @@ from ..util import (
 
 def application() -> Flask:
     wait_for_ready()
-    prefix = get_prefix()
+    prefix = get_prefix(extra_prefix='')
 
     class _ProxyElasticDS(ElasticDataSource):
         def __init__(self, target: ElasticDataSource) -> None:
@@ -45,10 +45,6 @@ def application() -> Flask:
         spec_set=True,
     )
     initial_target.supported_types = ['root', 'related']
-    initial_target.attribute_types = {
-        'root': {},
-        'related': {},
-    }
 
     # instantiate the proxy
     proxy_ds = _ProxyElasticDS(initial_target)

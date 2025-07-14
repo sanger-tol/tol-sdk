@@ -1115,7 +1115,7 @@ class ElasticDataSource(
     @property
     def supported_types(self):
         indexes = self._get_indices()
-        import logging; logging.error('hiiii'); logging.error(indexes)
+        import logging; logging.error(self.index_prefix); logging.error(indexes)
         return [self.__get_object_type(index_name)
                 for index_name in indexes.keys()]
 
