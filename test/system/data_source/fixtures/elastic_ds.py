@@ -12,9 +12,10 @@ from ..services.util import (
     create_indices,
     delete_indices,
     elastic_datasource,
-    upsert_archetypes,
-    wait_for_ready,
     get_prefix,
+    upsert_archetypes,
+    wait_for_delete,
+    wait_for_ready,
 )
 
 
@@ -42,7 +43,10 @@ class ElasticFixture(DataSourceFixture):
         delete_indices(self.__prefix)
 
     def before_test(self) -> None:
-        delete_indices(self.__prefix)
+        wait_for_delete(
+            self.get_ds_instance().es,
+            self.__prefix,
+        )
         create_indices(self.__prefix)
         upsert_archetypes(self.__prefix)
 

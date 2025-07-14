@@ -14,6 +14,6 @@ def pytest_sessionfinish(session, exitstatus):
     """
 
     try:
-        delete_indices('')
+        delete_indices('', ignore=[404])
     except Exception as e:
         logging.error(e)

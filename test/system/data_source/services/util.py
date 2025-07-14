@@ -7,6 +7,9 @@ import time
 from datetime import datetime
 from uuid import uuid4
 
+from elasticsearch import Elasticsearch
+from elasticsearch.exceptions import NotFoundError
+
 import requests
 from requests.exceptions import ConnectionError
 
@@ -99,21 +102,22 @@ def create_indices(prefix: str) -> None:
         )
 
 
-def delete_indices(prefix: str) -> None:
-    """Deletes all indices"""
+def delete_indices(prefix: str, ignore: list[int] = []) -> None:
+    """Deletes all aliases then indices"""
+
     elastic_ds = elastic_datasource(prefix)
 
     matcher = f'{prefix}*'
 
     elastic_ds.es.indices.delete_alias(
-        index=[matcher],
+        index=['*'],
         name=[matcher],
-        ignore=[400, 404],
+        ignore=ignore,
     )
 
     elastic_ds.es.indices.delete(
-        index=[matcher],
-        ignore=[400, 404],
+        index=[f'index-{prefix}*'],
+        ignore=ignore,
     )
 
 
@@ -157,3 +161,34 @@ def upsert_archetypes(prefix: str) -> None:
             'list_column': ['item']
         }
     )
+
+
+def wait_for_delete(
+    es: Elasticsearch,
+    prefix: str,
+    timeout: float = 1.0,
+    poll_interval: float = 0.1
+) -> None:
+
+    start_time = time.time()
+    
+    while True:
+        aliases = es.indices.get_alias(name="*", ignore=[404])
+
+        matching_aliases = [
+            alias for alias_info in aliases.values()
+            for alias in alias_info.get('aliases', {})
+            if alias.startswith(prefix)
+        ]
+
+        if not matching_aliases:
+            return
+
+        if time.time() - start_time >= timeout:
+            raise Exception(
+                'Timed out waiting for there to be no aliases '
+                f'beginning with {prefix}. Matches:\n'
+                f'{matching_aliases}'
+            )
+
+        time.sleep(poll_interval)
