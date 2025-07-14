@@ -36,9 +36,9 @@ def wait_for_ready(seconds: int = 60) -> None:
     )
 
 
-def get_prefix() -> str:
+def get_prefix(extra_prefix: str = 'test') -> str:
     elastic_prefix = os.environ['ELASTIC_INDEX_PREFIX']
-    return f'{elastic_prefix}-test'
+    return f'{elastic_prefix}-{extra_prefix}'
 
 
 def elastic_datasource(
@@ -78,11 +78,10 @@ def elastic_datasource(
 def __get_indices_names(prefix: str) -> dict[str, str]:
     # Returns dict of index_actual_name to index_alias_name
     uuid = uuid4().hex
+
     return {
-        f'{prefix}-{uuid}-{type_}': f'{prefix}-{type_}' for type_ in (
-            'root',
-            'related'
-        )
+        f'{prefix[:-1]}-{uuid}-{type_}': f'{prefix}-{type_}'
+        for type_ in ('root', 'related')
     }
 
 

@@ -4,15 +4,33 @@
 
 import os
 
+import requests
+
 from .util import ApiFixture
 from ..elastic_ds import ElasticFixture
 from ...services.util import get_prefix
 
 
+class ElasticApiFixture(ApiFixture):
+    def before_test(self) -> None:
+        super().before_test()
+
+        import time; time.sleep(1)
+
+        # force an `elastic_ds` reset
+        requests.post(
+            f'{self.url}/resetz'
+        )
+
+        import time; time.sleep(1)
+
+
+# need to add `'api'` as an `extra_prefix`, as we're not
+# in the API container, so it's not already there on
+# the `ELASTIC_INDEX_PREFIX` env variable
+prefix = get_prefix(extra_prefix='api')
 url = (
     'http://localhost:9023' if 'LOCALHOST' in os.environ else 'http://system-test-api-elastic:5000'
 )
-elastic = ElasticFixture(
-    f'{get_prefix()}-api'
-)
-api_elastic = ApiFixture(elastic, url)
+elastic = ElasticFixture(prefix)
+api_elastic = ElasticApiFixture(elastic, url)
