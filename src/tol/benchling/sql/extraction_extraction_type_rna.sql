@@ -47,6 +47,7 @@ SELECT DISTINCT
 	COALESCE(DATE(rna.created_on), DATE(rna.created_at$)) AS completion_date, -- Homogenising BnT and Benchling dates
 	rna.name$ AS extraction_name,
 	con.barcode AS fluidx_id,
+	con.id AS fluidx_container_id,
 	rnadc.qc_passfail AS rna_qc_passfail,
 	rnay.yield AS rna_yield,
     CASE
