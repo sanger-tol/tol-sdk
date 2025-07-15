@@ -242,10 +242,12 @@ def model_base() -> Type[DefaultModel]:
 
         @classmethod
         def get_attribute_types(cls) -> dict[str, type]:
-            names = cls.__get_attribute_names()
+            # Add in exclUded columns here so that we get id columns
+            names = cls.__get_attribute_names() + cls.get_excluded_column_names()
             columns = inspect(cls).columns
             return {
-                k: columns[k].type.python_type for k in names
+                'id' if k == cls.get_id_column_name() else k:
+                    columns[k].type.python_type for k in names
             }
 
         @property
