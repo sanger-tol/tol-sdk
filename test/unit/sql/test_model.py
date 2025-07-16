@@ -243,6 +243,7 @@ class TestDefaultModel:
         """
 
         expected = {
+            'id': int,
             'string_column': str,
             'boolean_column': bool
         }
