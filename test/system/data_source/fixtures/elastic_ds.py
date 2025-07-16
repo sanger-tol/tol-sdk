@@ -43,6 +43,7 @@ class ElasticFixture(DataSourceFixture):
         delete_indices(self.__prefix)
 
     def before_test(self) -> None:
+        delete_indices(self.__prefix, ignore=[404])
         wait_for_delete(
             self.get_ds_instance().es,
             self.__prefix,

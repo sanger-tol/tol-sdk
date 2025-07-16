@@ -64,6 +64,9 @@ def application() -> Flask:
 
         import logging; logging.error(prefix)
 
+        # reset the `_get_indices` cache
+        ElasticDataSource._get_indices.cache_clear()
+
         new_ds = elastic_datasource(prefix)
         core_data_object(new_ds)
 

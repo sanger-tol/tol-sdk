@@ -8,7 +8,6 @@ from datetime import datetime
 from uuid import uuid4
 
 from elasticsearch import Elasticsearch
-from elasticsearch.exceptions import NotFoundError
 
 import requests
 from requests.exceptions import ConnectionError
@@ -89,7 +88,26 @@ def __get_indices_names(prefix: str) -> dict[str, str]:
     }
 
 
-def create_indices(prefix: str) -> None:
+def __wait_for_alias(
+    es: Elasticsearch,
+    alias: str,
+    expected_index: str,
+    timeout: float
+) -> None:
+
+    start = time.time()
+    while time.time() - start < timeout:
+        try:
+            result = es.indices.get_alias(name=alias)
+            if list(result.keys()) == [expected_index]:
+                return
+        except:
+            pass
+        time.sleep(0.05)
+    raise TimeoutError(f"Alias {alias} did not point to {expected_index} in time.")
+
+
+def create_indices(prefix: str, timeout: float = 5) -> None:
     """Creates all indices."""
 
     indices = __get_indices_names(prefix)
@@ -98,12 +116,23 @@ def create_indices(prefix: str) -> None:
     for index, alias in indices.items():
         elastic_ds.es.indices.create(
             index=index,
-            aliases={alias: {}},
         )
+        elastic_ds.es.indices.update_aliases(body={
+            "actions": [
+                {"remove": {"alias": alias, "index": "*"}},
+                {"add": {"alias": alias, "index": index}},
+            ]
+        })
+
+    for index, alias in indices.items():
+        __wait_for_alias(elastic_ds.es, alias, index, timeout)
+        elastic_ds.es.indices.refresh(index=index)
+
+    elastic_ds.es.indices.refresh(index=['*'])
 
 
 def delete_indices(prefix: str, ignore: list[int] = []) -> None:
-    """Deletes all aliases then indices"""
+    """Deletes all aliases, leaves the indices"""
 
     elastic_ds = elastic_datasource(prefix)
 
@@ -116,8 +145,7 @@ def delete_indices(prefix: str, ignore: list[int] = []) -> None:
     )
 
     elastic_ds.es.indices.delete(
-        index=[f'index-{prefix}*'],
-        ignore=ignore,
+        index=[f'*{prefix}*']
     )
 
 
@@ -131,8 +159,6 @@ def upsert_archetypes(prefix: str) -> None:
     """
 
     elastic_ds = elastic_datasource(prefix)
-    import logging; logging.error(elastic_ds.es.indices.get_alias(index="*"))
-
 
     elastic_ds.es.index(
         index=prefix + '-root',
@@ -182,6 +208,7 @@ def wait_for_delete(
         ]
 
         if not matching_aliases:
+            es.indices.refresh(index=['*'])
             return
 
         if time.time() - start_time >= timeout:

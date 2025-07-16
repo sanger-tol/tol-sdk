@@ -3,6 +3,7 @@
 # SPDX-License-Identifier: MIT
 
 import os
+import time
 
 import requests
 
@@ -15,14 +16,10 @@ class ElasticApiFixture(ApiFixture):
     def before_test(self) -> None:
         super().before_test()
 
-        import time; time.sleep(1)
-
         # force an `elastic_ds` reset
         requests.post(
             f'{self.url}/resetz'
         )
-
-        import time; time.sleep(1)
 
 
 # need to add `'api'` as an `extra_prefix`, as we're not
