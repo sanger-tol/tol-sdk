@@ -21,7 +21,7 @@ class ElasticApiFixture(ApiFixture):
         )
 
 
-# need to add `'api'` as an `extra_prefix`, as we're not
+# need to add `'api'` as an `extra_prefix`, as we're not
 # in the API container, so it's not already there on
 # the `ELASTIC_INDEX_PREFIX` env variable
 prefix = get_prefix(extra_prefix='api')

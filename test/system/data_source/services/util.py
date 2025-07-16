@@ -101,10 +101,10 @@ def __wait_for_alias(
             result = es.indices.get_alias(name=alias)
             if list(result.keys()) == [expected_index]:
                 return
-        except:
+        except Exception:
             pass
         time.sleep(0.05)
-    raise TimeoutError(f"Alias {alias} did not point to {expected_index} in time.")
+    raise TimeoutError(f'Alias {alias} did not point to {expected_index} in time.')
 
 
 def create_indices(prefix: str, timeout: float = 5) -> None:
@@ -117,12 +117,14 @@ def create_indices(prefix: str, timeout: float = 5) -> None:
         elastic_ds.es.indices.create(
             index=index,
         )
-        elastic_ds.es.indices.update_aliases(body={
-            "actions": [
-                {"remove": {"alias": alias, "index": "*"}},
-                {"add": {"alias": alias, "index": index}},
-            ]
-        })
+        elastic_ds.es.indices.update_aliases(
+            body={
+                'actions': [
+                    {'remove': {'alias': alias, 'index': '*'}},
+                    {'add': {'alias': alias, 'index': index}},
+                ]
+            }
+        )
 
     for index, alias in indices.items():
         __wait_for_alias(elastic_ds.es, alias, index, timeout)
@@ -193,9 +195,9 @@ def wait_for_delete(
 ) -> None:
 
     start_time = time.time()
-    
+
     while True:
-        aliases = es.indices.get_alias(name="*", ignore=[404])
+        aliases = es.indices.get_alias(name='*', ignore=[404])
 
         matching_aliases = [
             alias for alias_info in aliases.values()

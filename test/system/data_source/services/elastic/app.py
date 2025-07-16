@@ -32,14 +32,14 @@ def application() -> Flask:
         @target.setter
         def target(self, new_val: ElasticDataSource) -> None:
             self._target = new_val
-        
+
         def __getattr__(self, name: str):
             if name == 'target':
                 return object.__getattribute__(self, 'target')
 
             return getattr(self._target, name)
 
-    # create an initial target, just enough
+    # create an initial target, just enough
     initial_target: ElasticDataSource = create_autospec(
         ElasticDataSource,
         spec_set=True,
@@ -52,7 +52,6 @@ def application() -> Flask:
 
     app = Flask(__name__)
     app.register_blueprint(data_bp)
-
 
     @app.post('/resetz')
     def resetz():
