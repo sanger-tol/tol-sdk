@@ -53,6 +53,7 @@ services:
       - test-network
     depends_on:
       - elastic
+    restart: always
 
   system-test-api-sql:
     image: ${BUILT_IMAGE}
@@ -64,6 +65,7 @@ services:
       - test-network
     depends_on:
       - db
+    restart: always
 
 networks:
   test-network:
