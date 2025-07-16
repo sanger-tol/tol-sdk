@@ -131,7 +131,7 @@ def create_indices(prefix: str, timeout: float = 5) -> None:
     elastic_ds.es.indices.refresh(index=['*'])
 
 
-def delete_indices(prefix: str, ignore: list[int] = []) -> None:
+def delete_aliases(prefix: str, ignore: list[int] = []) -> None:
     """Deletes all aliases, leaves the indices"""
 
     elastic_ds = elastic_datasource(prefix)
@@ -142,10 +142,6 @@ def delete_indices(prefix: str, ignore: list[int] = []) -> None:
         index=['*'],
         name=[matcher],
         ignore=ignore,
-    )
-
-    elastic_ds.es.indices.delete(
-        index=[f'*{prefix}*']
     )
 
 

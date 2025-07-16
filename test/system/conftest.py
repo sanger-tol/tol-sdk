@@ -4,7 +4,7 @@
 
 import logging
 
-from .data_source.services.util import delete_indices
+from .data_source.services.util import delete_aliases
 
 
 def pytest_sessionfinish(session, exitstatus):
@@ -14,6 +14,6 @@ def pytest_sessionfinish(session, exitstatus):
     """
 
     try:
-        delete_indices('', ignore=[404])
+        delete_aliases('', ignore=[404])
     except Exception as e:
         logging.error(e)

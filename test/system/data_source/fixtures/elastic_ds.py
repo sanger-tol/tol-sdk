@@ -10,7 +10,7 @@ from tol.elastic import ElasticDataSource
 from .base import DataSourceFixture
 from ..services.util import (
     create_indices,
-    delete_indices,
+    delete_aliases,
     elastic_datasource,
     get_prefix,
     upsert_archetypes,
@@ -40,10 +40,10 @@ class ElasticFixture(DataSourceFixture):
         return elastic_ds
 
     def after_test(self) -> None:
-        delete_indices(self.__prefix)
+        delete_aliases(self.__prefix)
 
     def before_test(self) -> None:
-        delete_indices(self.__prefix, ignore=[404])
+        delete_aliases(self.__prefix, ignore=[404])
         wait_for_delete(
             self.get_ds_instance().es,
             self.__prefix,

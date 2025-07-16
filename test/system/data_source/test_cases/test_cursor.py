@@ -139,8 +139,6 @@ class TestListGetCursor:
         `get_list()`.
         """
 
-        import logging; logging.error(data_source.get_count('root'))
-
         # override `page_size`
         data_source.page_size = 3
 

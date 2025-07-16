@@ -3,7 +3,6 @@
 # SPDX-License-Identifier: MIT
 
 import os
-import time
 
 import requests
 

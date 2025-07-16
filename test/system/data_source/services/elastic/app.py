@@ -59,18 +59,14 @@ def application() -> Flask:
         """
         `ElasticDataSource` caches alias->index lookup
 
-        Need to re-instantiate before every test
+        Need to clear cache and re-instantiate before every test
         """
-
-        import logging; logging.error(prefix)
 
         # reset the `_get_indices` cache
         ElasticDataSource._get_indices.cache_clear()
 
         new_ds = elastic_datasource(prefix)
         core_data_object(new_ds)
-
-        import logging; logging.error(new_ds.es.indices.get(index="*")); logging.error(new_ds.supported_types)
 
         proxy_ds.target = new_ds
 
