@@ -1135,10 +1135,10 @@ class ElasticDataSource(
             return {}
         properties = mapping[real_index_name]['mappings']['properties']
         standard_types = {
-            property_name: self.__map_type(properties[property_name]['type'])
+            'id' if property_name == 'uid' else property_name:
+                self.__map_type(properties[property_name]['type'])
             for property_name in properties
             if 'type' in properties[property_name]
-            and property_name != 'uid'
         }
         runtime_types = {
             name: self.__map_type(self.runtime_fields[object_type][name]['type'])
