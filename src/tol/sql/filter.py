@@ -120,7 +120,7 @@ class DefaultDatabaseFilter(DatabaseFilter):
         return query
 
     def add_field(self, field: str) -> None:
-        self.__
+        self.__rel_keys.add(field)
 
     def __build_join_trie(self, paths: Iterable[str]) -> JoinTrie:
         trie: JoinTrie = {}
@@ -162,6 +162,9 @@ class DefaultDatabaseFilter(DatabaseFilter):
         return aliases
 
     def __generate_relational_keys(self) -> Iterator[str]:
+        if not self.__filter:
+            return []
+
         chained = chain(
             self.__none_coalesce(self.__filter.exact),
             self.__none_coalesce(self.__filter.contains),
@@ -509,19 +512,11 @@ class DefaultDatabaseFilter(DatabaseFilter):
         key: str
     ) -> MappedColumn:
 
-        split_keys = key.split('.')
+        (*split_initial, column) = key.split('.')
+        initial = '.'.join(split_initial)
+        alias = self.__aliases[(initial,)]
 
-        base_tablename = model.get_table_name()
-        mid_type = self.__inverted_dict[base_tablename]
-
-        for split_ in split_keys[:-1]:
-            mid_type = self.__r_dict[mid_type].to_one[split_]
-
-        end_tablename = self.__type_tablename_dict[mid_type]
-        end_model = aliased(self.__model_dict[end_tablename])
-        end_key = split_keys[-1]
-
-        return self.get_column(end_model, end_key)
+        return self.get_column(alias, column)
 
     def __get_ilike_term(self, value: str) -> str:
         escaped = self.__escape_ilike(value)
