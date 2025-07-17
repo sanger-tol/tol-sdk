@@ -43,9 +43,7 @@ class TestDefaultDatabaseFilter:
 
         # check the evens [0, 2, 4, 6]
         even_filter = DefaultDatabaseFilter(
-            DataSourceFilter(exact={'string_column': 'even'}),
-            type_tablename_dict,
-            Mock()
+            DataSourceFilter(exact={'string_column': 'even'})
         )
         count = db.count('a', sess, filters=even_filter)
         assert count == 4
@@ -56,9 +54,7 @@ class TestDefaultDatabaseFilter:
 
         # check the odds [1, 3, 5]
         odd_filter = DefaultDatabaseFilter(
-            DataSourceFilter(exact={'string_column': 'odd'}),
-            type_tablename_dict,
-            Mock()
+            DataSourceFilter(exact={'string_column': 'odd'})
         )
         count = db.count('a', sess, filters=odd_filter)
         assert count == 3
@@ -96,7 +92,7 @@ class TestDefaultDatabaseFilter:
             },
             range={'int_column': {'from': 2, 'to': 100}}  # spill over on right side
         )
-        db_filter = DefaultDatabaseFilter(ds_filter, type_tablename_dict, Mock())
+        db_filter = DefaultDatabaseFilter(ds_filter)
 
         # there can be only one
         count = db.count('b', sess, filters=db_filter)
@@ -132,9 +128,7 @@ class TestDefaultDatabaseFilter:
 
         def __make_db_and_filter(and_: AndFilter) -> DatabaseFilter:
             return DefaultDatabaseFilter(
-                DataSourceFilter(and_=and_),
-                type_tablename_dict,
-                create_autospec(SqlRelationshipConfig, spec_set=True)
+                DataSourceFilter(and_=and_)
             )
 
         def __assert_count(and_: AndFilter, expected_count: int) -> None:
@@ -351,8 +345,6 @@ class TestDefaultDatabaseFilter:
         )
         db_filter = DefaultDatabaseFilter(
             ds_filter,
-            type_tablename_dict,
-            mock_relationship_config
         )
 
         # there can be only one

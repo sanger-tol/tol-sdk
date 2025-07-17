@@ -55,18 +55,10 @@ class DefaultDatabaseFilter(DatabaseFilter):
 
     def __init__(
         self,
-        datasource_filter: Optional[DataSourceFilter],
-        type_tablename_dict: dict[str, str],
-        relationship_config: SqlRelationshipConfig
+        datasource_filter: Optional[DataSourceFilter]
     ) -> None:
 
         self.__filter = datasource_filter
-        self.__type_tablename_dict = type_tablename_dict
-        self.__r_dict = relationship_config.to_dict()
-        self.__inverted_dict = {
-            v: k for k, v in type_tablename_dict.items()
-        }
-
         self.__rel_keys: set[str] = set()
 
     def filter(  # noqa A003

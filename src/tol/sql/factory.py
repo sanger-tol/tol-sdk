@@ -68,15 +68,10 @@ def __type_tablename_dict(
     }
 
 
-def __filter_factory(
-    type_tablename_dict: dict[str, str],
-    relationship_config: SqlRelationshipConfig
-) -> FilterFactory:
+def __filter_factory() -> FilterFactory:
 
     return lambda ds_filter: DefaultDatabaseFilter(
         ds_filter,
-        type_tablename_dict,
-        relationship_config
     )
 
 
@@ -114,10 +109,7 @@ def create_sql_datasource(
     sorter_factory = __sorter_factory()
     type_tablename_dict = __type_tablename_dict(models, type_function)
     sql_relationship_config = DefaultSqlRelationshipConfig(models, type_function)
-    filter_factory = __filter_factory(
-        type_tablename_dict,
-        sql_relationship_config
-    )
+    filter_factory = __filter_factory()
     db = database_factory(models, db_uri)
 
     user_id_getter = api_user_id_getter if behind_api else None
