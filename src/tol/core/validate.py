@@ -70,7 +70,6 @@ class Validator(ABC):
                 self._validate_data_object(obj)
 
             yield obj
-        
 
         self._post_validation(obj)
 

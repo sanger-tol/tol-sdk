@@ -42,7 +42,6 @@ class UniqueValuesValidator(Validator):
                 else:
                     self.__existing_values[key].add(obj.attributes[key])
 
-    
     def _post_validation(
         self,
         obj: DataObject,
