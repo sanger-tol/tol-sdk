@@ -19,7 +19,8 @@ from .relationship import SqlRelationshipConfig
 from ..core import DataSourceFilter
 
 
-JoinTrie = Dict[str, "JoinTrie"]
+JoinTrie = dict[str, 'JoinTrie']
+"""A prefix tree, for aliasing relationship attribute traversal"""
 
 
 class DatabaseFilter(ABC):
@@ -90,7 +91,7 @@ class DefaultDatabaseFilter(DatabaseFilter):
         query = self.__filter_top_range(query)
 
         return query
-    
+
     def __join_on_relations(
         self,
         query: Query[Model]
@@ -130,7 +131,7 @@ class DefaultDatabaseFilter(DatabaseFilter):
         trie: JoinTrie = {}
 
         for path in paths:
-            parts = path.split(".")
+            parts = path.split('.')
             current = trie
             for part in parts:
                 current = current.setdefault(part, {})
@@ -150,7 +151,10 @@ class DefaultDatabaseFilter(DatabaseFilter):
             attr = getattr(model, rel_name)
             current_path = path + (rel_name,)
 
-            if not hasattr(attr, "property") or not isinstance(attr.property, RelationshipProperty):
+            if not hasattr(attr, 'property'):
+                continue
+
+            if not isinstance(attr.property, RelationshipProperty):
                 continue
 
             alias = aliased(attr.property.mapper.class_)
