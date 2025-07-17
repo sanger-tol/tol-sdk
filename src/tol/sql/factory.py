@@ -7,7 +7,7 @@ from typing import Callable, Dict, List, Type
 from .database import Database, DefaultDatabase
 from .filter import DefaultDatabaseFilter
 from .model import Model
-from .relationship import DefaultSqlRelationshipConfig, SqlRelationshipConfig
+from .relationship import DefaultSqlRelationshipConfig
 from .session import create_session_factory
 from .sort import DefaultDatabaseSorter
 from .sql_converter import DefaultDataObjectConverter, DefaultModelConverter, TypeFunction

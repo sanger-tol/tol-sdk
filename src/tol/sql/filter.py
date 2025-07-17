@@ -15,7 +15,6 @@ from sqlalchemy.orm.properties import RelationshipProperty
 from sqlalchemy.orm.util import AliasedClass
 
 from .model import Model
-from .relationship import SqlRelationshipConfig
 from ..core import DataSourceFilter
 
 

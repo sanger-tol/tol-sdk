@@ -6,7 +6,7 @@ from __future__ import annotations
 
 from string import ascii_lowercase
 from typing import Any, List, Tuple
-from unittest.mock import MagicMock, Mock, call
+from unittest.mock import MagicMock, call
 
 from tol.core import DataSourceFilter
 from tol.sql.filter import DefaultDatabaseFilter
