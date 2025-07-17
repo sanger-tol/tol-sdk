@@ -40,7 +40,7 @@ class ElasticFixture(DataSourceFixture):
         return elastic_ds
 
     def after_test(self) -> None:
-        delete_aliases(self.__prefix)
+        delete_aliases(self.__prefix, ignore=[404])
 
     def before_test(self) -> None:
         delete_aliases(self.__prefix, ignore=[404])

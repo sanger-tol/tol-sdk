@@ -43,12 +43,11 @@ class DatabaseFilter(ABC):
         """Gets the column for the given `DataObject` key"""
 
     @abstractmethod
-    def apply_joins_on_query(
+    def add_field(
         self,
-        query: Query[Model],
-        join_columns: list[MappedColumn]
-    ) -> Query[Model]:
-        """Applys necessary joins on relation columns"""
+        field: str,
+    ) -> None:
+        """Adds a relation field to the filter, for joining later"""
 
 
 class DefaultDatabaseFilter(DatabaseFilter):
@@ -71,6 +70,8 @@ class DefaultDatabaseFilter(DatabaseFilter):
             v: k for k, v in type_tablename_dict.items()
         }
 
+        self.__rel_keys: set[str] = set()
+
     def filter(  # noqa A003
         self,
         query: Query[Model],
@@ -78,14 +79,25 @@ class DefaultDatabaseFilter(DatabaseFilter):
         model_dict: Dict[str, Type[Model]]
     ) -> Query[Model]:
 
-        if self.__filter is None:
-            return query
-
         # TODO this is not thread safe
         self.__base_model = model_dict[tablename]
         self.__model_dict = model_dict
 
-        query = self.__join_on_relations(query)
+        self.__rel_keys.update(
+            self.__generate_relational_keys()
+        )
+
+        join_trie = self.__build_join_trie(self.__rel_keys)
+        self.__aliases = self.__build_aliases(
+            self.__base_model,
+            join_trie,
+            (),
+        )
+
+        query = self.__apply_joins(query)
+
+        if self.__filter is None:
+            return query
 
         query = self.__filter_top_and_(query)
         query = self.__filter_top_exact(query)
@@ -95,48 +107,23 @@ class DefaultDatabaseFilter(DatabaseFilter):
 
         return query
 
-    def __join_on_relations(
-        self,
-        query: Query[Model]
-    ) -> Query[Model]:
-
-        relational_keys = self.__generate_relational_keys()
-        join_trie = self.__build_join_trie(relational_keys)
-        aliases = self.__build_aliases(
-            self.__base_model,
-            join_trie,
-            (),
-        )
-
-        return self.__apply_joins(query, aliases)
-
     def __apply_joins(
         self,
         query: Query[Model],
-        aliases: AliasDict,
     ) -> Query[Model]:
 
-        for path, alias in aliases.items():
+        for path, alias in self.__aliases.items():
             current_model = self.__base_model
             current_path: list[str] = []
             for step in path:
                 current_path.append(step)
-                parent_alias = aliases.get(tuple(current_path[:-1]), current_model)
+                parent_alias = self.__aliases.get(tuple(current_path[:-1]), current_model)
                 query = query.join(alias, getattr(parent_alias, step))
 
         return query
 
-    def apply_joins_on_query(
-        self,
-        query: Query[Model],
-        join_columns: list[MappedColumn]
-    ) -> Query[Model]:
-
-        return reduce(
-            self.__apply_join_on_query,
-            join_columns,
-            query
-        )
+    def add_field(self, field: str) -> None:
+        self.__
 
     def __build_join_trie(self, paths: Iterable[str]) -> JoinTrie:
         trie: JoinTrie = {}

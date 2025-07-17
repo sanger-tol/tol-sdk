@@ -344,7 +344,6 @@ class DefaultDatabase(Database):
             None,
         )
 
-        query = self.__filter_query(query, tablename, filters)
         query, s_columns = self.__apply_stats(
             query,
             filters,
@@ -358,6 +357,7 @@ class DefaultDatabase(Database):
             group_by,
             filters,
         )
+        query = self.__filter_query(query, tablename, filters)
 
         return self.__get_stats_from_query(
             query,
@@ -485,11 +485,10 @@ class DefaultDatabase(Database):
         stat_columns = []
 
         for field in stats_fields:
-            column, query = self.__get_column(
+            column = self.__get_column(
                 model,
                 filters,
                 field,
-                query,
             )
             stat_columns.extend(
                 self.__apply_stats_for_field(
@@ -520,18 +519,14 @@ class DefaultDatabase(Database):
         self,
         model: type[Model],
         filters: DatabaseFilter,
-        field: str,
-        query: Query
-    ) -> tuple[MappedColumn, Query]:
+        field: str
+    ) -> MappedColumn:
 
         column = filters.get_column(model, field)
         if '.' in field:
-            query = filters.apply_joins_on_query(
-                query,
-                [column],
-            )
+            filters.add_field(field)
 
-        return column, query
+        return column
 
     def __get_stat_clause(
         self,
@@ -563,11 +558,10 @@ class DefaultDatabase(Database):
         g_columns = []
 
         for g in group_by:
-            g_column, query = self.__get_column(
+            g_column = self.__get_column(
                 model,
                 filters,
-                g,
-                query
+                g
             )
             g_columns.append(g_column)
 
