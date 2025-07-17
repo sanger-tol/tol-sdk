@@ -16,6 +16,8 @@ services:
       - POSTGRES_USER=test-user
       - POSTGRES_PASSWORD=test-password
       - POSTGRES_DB=test-db
+    ports:
+      - 5556:5432
     networks:
       - api-base-test-network
 
@@ -35,7 +37,6 @@ services:
     command: pytest -vvvx system
     environment:
       - DB_URI=postgresql://test-user:test-password@tol-sdk-python-db:5432/test-db
-      - UUID_PREFIX=${UUID_PREFIX}
       - ELASTIC_URI=http://tol-sdk-python-elastic:9200
       - ELASTIC_USER=elastic
       # needs to be set, but doesn't matter at all
@@ -55,12 +56,11 @@ services:
     command: flask --app elastic run --host 0.0.0.0 --debugger
     working_dir: /test/system/data_source/services
     environment:
-      - UUID_PREFIX=${UUID_PREFIX}
       - ELASTIC_URI=http://tol-sdk-python-elastic:9200
       - ELASTIC_USER=elastic
       # needs to be set, but doesn't matter at all
       - ELASTIC_PASSWORD=anything
-      - ELASTIC_INDEX_PREFIX=test
+      - ELASTIC_INDEX_PREFIX=test-api
       - FLASK_DEBUG=1
     depends_on:
       - tol-sdk-python-elastic
@@ -90,7 +90,6 @@ services:
     command: pytest -vvvx integration
     environment:
       - GOOGLE_CLIENT_SECRETS
-      - UUID_PREFIX=${UUID_PREFIX}
       - JIRA_URL
       - JIRA_API_KEY
       - GOAT_URL

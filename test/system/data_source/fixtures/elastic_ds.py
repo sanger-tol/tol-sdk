@@ -10,10 +10,11 @@ from tol.elastic import ElasticDataSource
 from .base import DataSourceFixture
 from ..services.util import (
     create_indices,
-    delete_indices,
+    delete_aliases,
     elastic_datasource,
-    empty_all_indices,
+    get_prefix,
     upsert_archetypes,
+    wait_for_delete,
     wait_for_ready,
 )
 
@@ -21,38 +22,39 @@ from ..services.util import (
 class ElasticFixture(DataSourceFixture):
     """A `DataSourceFixture` for `ElasticDataSource`"""
 
-    def __init__(self) -> None:
+    def __init__(
+        self,
+        prefix: str,
+    ) -> None:
+
+        self.__prefix = prefix
         wait_for_ready()
-
-        # prevent race condition with the
-        # `api -> elastic` fixture/container
-        time.sleep(5)
-
-        create_indices()
-        upsert_archetypes()
 
     @property
     def name(self) -> str:
         return 'elastic'
 
     def get_ds_instance(self) -> ElasticDataSource:
-        elastic_ds = elastic_datasource()
+        elastic_ds = elastic_datasource(self.__prefix)
         core_data_object(elastic_ds)
         return elastic_ds
 
     def after_test(self) -> None:
-        empty_all_indices()
-
-    def teardown(self) -> None:
-        delete_indices()
+        delete_aliases(self.__prefix)
 
     def before_test(self) -> None:
-        # prevent race condition with previous test
-        time.sleep(5)
-        upsert_archetypes()
+        delete_aliases(self.__prefix, ignore=[404])
+        wait_for_delete(
+            self.get_ds_instance().es,
+            self.__prefix,
+        )
+        create_indices(self.__prefix)
+        upsert_archetypes(self.__prefix)
 
     def sleep(self, time_: float) -> None:
         time.sleep(time_)
 
 
-elastic = ElasticFixture()
+elastic = ElasticFixture(
+    get_prefix()
+)

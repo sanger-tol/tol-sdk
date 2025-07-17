@@ -8,7 +8,6 @@ import json
 import os
 import re
 import subprocess
-from uuid import uuid4
 
 import click
 
@@ -248,20 +247,18 @@ def test(ctx, type_):
     if type_ == 'system':
         docker_compose_entry = f'{service}-python-system-test'
         db_entry = f'{service}-python-db'
-        uuid_prefix = uuid4().hex
         command = (
             f'docker compose build {docker_compose_entry} && '
             f'docker compose --env-file {env_file} up -d {db_entry} && '
-            f'UUID_PREFIX={uuid_prefix} docker compose --env-file {env_file} '
+            f'docker compose --env-file {env_file} '
             f'run --rm --build {docker_compose_entry} '
             f'sh -c "[ -d system ] && pytest -vvvx system || echo \'No system tests found\'"'
         )
     if type_ == 'integration':
         docker_compose_entry = f'{service}-python-integration-test'
-        uuid_prefix = uuid4().hex
         command = (
             f'docker compose build {docker_compose_entry} && '
-            f'UUID_PREFIX={uuid_prefix} docker compose --env-file {env_file} '
+            f'docker compose --env-file {env_file} '
             f'run --rm --build {docker_compose_entry} '
             f'sh -c "[ -d system ] && pytest -vvvx integration || '
             'echo \'No integration tests found\'"'

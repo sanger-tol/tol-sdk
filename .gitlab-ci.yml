@@ -6,7 +6,6 @@
 variables:
   GOOGLE_CLIENT_SECRETS: $GOOGLE_CLIENT_SECRETS_DEV
   BUILT_IMAGE: $CI_REGISTRY_IMAGE/tol-sdk-test-image:$CI_COMMIT_SHA
-  UUID_PREFIX: $CI_JOB_ID
   PYPI_PACKAGE_NAME: tol-sdk
 
 include:
@@ -81,7 +80,6 @@ system-test-python-package:
   before_script:
     - cd test/system
     - docker-compose up -d db elastic
-    - sleep 20s
     - docker-compose up -d system-test-api-sql system-test-api-elastic
   script:
     - docker-compose run system-test
