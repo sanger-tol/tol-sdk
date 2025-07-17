@@ -38,8 +38,9 @@ def application() -> Flask:
         Need to clear this cache before every test
         """
 
-        # reset the `_get_indices` cache
+        # reset the caches
         ElasticDataSource._get_indices.cache_clear()
+        ElasticDataSource.attribute_types.cache_clear()
 
         return {}, 200
 
