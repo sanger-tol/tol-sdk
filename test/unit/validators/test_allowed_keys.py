@@ -16,7 +16,7 @@ class TestAllowedKeysValidator:
     ) -> None:
 
         validator = AllowedKeysValidator(
-            ['key1', 'key2']
+            ['key1', 'key2', 'key3']
         )
 
         # consume the `Iterable`
@@ -32,7 +32,7 @@ class TestAllowedKeysValidator:
     ) -> None:
 
         validator = AllowedKeysValidator(
-            ['key1'],
+            ['key1', 'key3'],
             is_error=False,
         )
 
@@ -50,7 +50,7 @@ class TestAllowedKeysValidator:
     ) -> None:
 
         validator = AllowedKeysValidator(
-            ['key2'],
+            ['key2', 'key3'],
         )
 
         # consume the `Iterable`
