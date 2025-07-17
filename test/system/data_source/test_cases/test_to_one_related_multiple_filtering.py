@@ -37,9 +37,11 @@ class TestMultipleToOneFiltering:
             }
         )
 
-        (root_obj,) = list(
+        l = list(
             data_source.get_list('root', object_filters=f)
         )
+
+        (root_obj,) = l
 
         assert root_obj.id == '1'
         assert root_obj.int_column == 1
