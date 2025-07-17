@@ -69,7 +69,6 @@ class DefaultDatabaseFilter(DatabaseFilter):
 
         # TODO this is not thread safe
         self.__base_model = model_dict[tablename]
-        self.__model_dict = model_dict
 
         self.__rel_keys.update(
             self.__generate_relational_keys()
