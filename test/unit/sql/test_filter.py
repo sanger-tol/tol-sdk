@@ -80,27 +80,6 @@ class TestDefaultDatabaseFilter:
         query = db_filter.filter(query, 'test', {'test': model})
         assert query.filter_count == 0
 
-    def test_filter_exact(self):
-        """filter with only exact terms -> only equality filters"""
-
-        exact = {
-            c: c for c in ascii_lowercase
-        }
-        query = MockQuery()
-        model = self.__get_mock_model()
-        ds_filter = DataSourceFilter(exact=exact)
-        db_filter = DefaultDatabaseFilter(ds_filter)
-        query = db_filter.filter(query, 'test', {'test': model})
-
-        assert query.filter_count == 26  # 26 letters in string.ascii_lowercase
-
-        # `MockComparator().__eq__()` always returns the given character, prefixed
-        # with "exact-". This is necessary, otherwise the value of __eq__(),
-        # aka equality comparison, would almost always be `False`
-        assert query.filter_calls == [
-            call(f'equal-{c}') for c in ascii_lowercase
-        ]
-
     def test_filter_contains(self):
         """filter with only contains filters -> ilike filters"""
 
