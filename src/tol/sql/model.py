@@ -204,7 +204,7 @@ def model_base() -> Type[DefaultModel]:
 
         @classmethod
         def get_column(cls, name: str) -> MappedColumn:
-            if name not in inspect(cls).attrs:
+            if name not in inspect(cls).mapper.attrs:
                 raise BadColumnError(cls, name)
             return getattr(cls, name)
 

@@ -10,7 +10,7 @@ from typing import Any, Dict, Iterator, Optional, Tuple, Type
 
 from sqlalchemy import BinaryExpression, cast, not_
 from sqlalchemy.dialects.postgresql import JSONB
-from sqlalchemy.orm import MappedColumn, Query
+from sqlalchemy.orm import MappedColumn, Query, aliased
 
 from .model import Model
 from .relationship import SqlRelationshipConfig
@@ -107,10 +107,22 @@ class DefaultDatabaseFilter(DatabaseFilter):
     ) -> Query:
 
         return reduce(
-            lambda q, c: q.join(c),
+            self.__apply_join_on_query,
             join_columns,
             query
         )
+
+    def __apply_join_on_query(
+        self,
+        query: Query,
+        join_column: MappedColumn,
+    ) -> Query:
+
+        model_alias = aliased(
+            join_column.property.mapper.class_
+        )
+
+        return query.join(model_alias, join_column)
 
     def __get_join_columns_lists(self) -> Iterator[list[MappedColumn]]:
         base_tablename = self.__base_model.get_table_name()
@@ -136,7 +148,9 @@ class DefaultDatabaseFilter(DatabaseFilter):
         mid_type = self.__inverted_dict[mid_tablename]
 
         for next_ in k_split[:-1]:
-            mid_model = self.__model_dict[mid_tablename]
+            mid_model = aliased(
+                self.__model_dict[mid_tablename]
+            )
             yield getattr(mid_model, next_)
             mid_type = self.__r_dict[mid_type].to_one[next_]
             mid_tablename = self.__type_tablename_dict[mid_type]
@@ -477,7 +491,7 @@ class DefaultDatabaseFilter(DatabaseFilter):
         elif '.' in key:
             return self.__get_relation_column(model, key)
         else:
-            return model.get_column(key)
+            return getattr(aliased(model), key)
 
     def __get_id_column(self, model: type[Model]) -> MappedColumn:
         id_key = model.get_id_column_name()
@@ -498,7 +512,7 @@ class DefaultDatabaseFilter(DatabaseFilter):
             mid_type = self.__r_dict[mid_type].to_one[split_]
 
         end_tablename = self.__type_tablename_dict[mid_type]
-        end_model = self.__model_dict[end_tablename]
+        end_model = aliased(self.__model_dict[end_tablename])
         end_key = split_keys[-1]
 
         return self.get_column(end_model, end_key)
