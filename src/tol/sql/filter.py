@@ -23,6 +23,9 @@ JoinTrie = dict[str, 'JoinTrie']
 """A prefix tree, for aliasing relationship attribute traversal"""
 
 
+AliasDict = dict[tuple[str, ...], type[AliasedClass[Model]]]
+
+
 class DatabaseFilter(ABC):
     """Filters an `sqlalchemy.orm` `Query` object"""
 
@@ -105,6 +108,14 @@ class DefaultDatabaseFilter(DatabaseFilter):
             (),
         )
 
+        return self.__apply_joins(query, aliases)
+
+    def __apply_joins(
+        self,
+        query: Query[Model],
+        aliases: AliasDict,
+    ) -> Query[Model]:
+
         for path, alias in aliases.items():
             current_model = self.__base_model
             current_path: list[str] = []
@@ -143,9 +154,9 @@ class DefaultDatabaseFilter(DatabaseFilter):
         model: type[Model],
         trie: JoinTrie,
         path: tuple[str, ...],
-    ) -> dict[tuple[str, ...], type[AliasedClass[Model]]]:
+    ) -> AliasDict:
 
-        aliases: dict[tuple[str, ...], type[AliasedClass[Model]]] = {}
+        aliases: AliasDict = {}
 
         for rel_name, subtree in trie.items():
             attr = getattr(model, rel_name)
