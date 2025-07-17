@@ -40,7 +40,7 @@ def application() -> Flask:
 
         # reset the caches
         ElasticDataSource._get_indices.cache_clear()
-        ElasticDataSource.attribute_types.cache_clear()
+        ElasticDataSource.attribute_types.fget.cache_clear()
 
         return {}, 200
 
