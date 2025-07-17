@@ -71,6 +71,8 @@ class Validator(ABC):
 
             yield obj
 
+        self.post_validation()
+
     def add_warning(
         self,
         *,
@@ -136,6 +138,12 @@ class Validator(ABC):
         )
 
         return not any(error_results)
+
+    def post_validation(self) -> None:
+        """
+        Override if you need code to run after
+        all objects have been validated.
+        """
 
     def _add_result(
         self,
