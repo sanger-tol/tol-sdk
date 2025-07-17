@@ -131,6 +131,10 @@ class TestSqlDataSource:
             def get_attribute_types(cls) -> dict[str, type]:
                 raise NotImplementedError()
 
+            @classmethod
+            def get_attribute_types_including_id(cls) -> dict[str, type]:
+                raise NotImplementedError()
+
             @property
             def instance_to_one_relations(self) -> dict[str, Optional[Model]]:
                 pass
@@ -149,6 +153,10 @@ class TestSqlDataSource:
 
             @property
             def attribute_types(self):
+                return {}
+
+            @property
+            def attribute_types_including_id(self):
                 return {}
 
             @property
@@ -257,6 +265,10 @@ class TestSqlDataSource:
             def attribute_types(self):
                 return {}
 
+            @property
+            def attribute_types_including_id(self):
+                return {}
+
             def count(
                 self,
                 tablename: str,
@@ -305,6 +317,10 @@ class TestSqlDataSource:
             def attribute_types(self):
                 return {}
 
+            @property
+            def attribute_types_including_id(self):
+                return {}
+
             def count(
                 self,
                 tablename: str,
@@ -346,6 +362,10 @@ class TestSqlDataSource:
                 return {}
 
             @property
+            def attribute_types_including_id(self):
+                return {}
+
+            @property
             def session_factory(self):
                 return MagicMock()
 
@@ -377,6 +397,10 @@ class TestSqlDataSource:
         class _MockDatabase:
             def get_to_one_relation(self, *args, **kwargs):
                 return 'I found one!!!!'
+
+            @property
+            def attribute_types_including_id(self):
+                return {}
 
             @property
             def attribute_types(self):
@@ -434,6 +458,10 @@ class TestSqlDataSource:
             def attribute_types(self):
                 return {}
 
+            @property
+            def attribute_types_including_id(self):
+                return {}
+
         mock_db = _MockDatabase()
 
         ds = SqlDataSource(
@@ -483,6 +511,10 @@ class TestSqlDataSource:
 
             @property
             def attribute_types(self):
+                return {}
+
+            @property
+            def attribute_types_including_id(self):
                 return {}
 
         mock_db = _MockDatabase()
@@ -584,7 +616,7 @@ class TestSqlDataSource:
                 }
             }
         )
-        type(mock_db).attribute_types = mock_attribute_types
+        type(mock_db).attribute_types_including_id = mock_attribute_types
 
         ds = SqlDataSource(
             mock_db,
@@ -696,6 +728,7 @@ class TestSqlDataSource:
 
         mock_db = create_autospec(Database, spec_set=True)
         mock_db.attribute_types = {'test': {}}
+        mock_db.attribute_types_including_id = {'test': {}}
         mock_db.session_factory.return_value = mock_sess
 
         mock_model = create_autospec(Model, spec_set=True)

@@ -243,11 +243,20 @@ class TestDefaultModel:
         """
 
         expected = {
-            'id': int,
+
             'string_column': str,
             'boolean_column': bool
         }
         observed = _Example.get_attribute_types()
+        assert expected == observed
+
+    def test_id_attribute_type(self):
+        """
+        `Model.get_id_attribute_type()` works
+        """
+
+        expected = str
+        observed = _OverrideId.get_id_attribute_type()
         assert expected == observed
 
 

@@ -154,6 +154,14 @@ class Database(ABC):
 
     @property
     @abstractmethod
+    def attribute_types_including_id(self) -> dict[str, dict[str, type]]:
+        """
+        The mapping of attribute name to type for each model under
+        this `Database` instance, including the ID attribute.
+        """
+
+    @property
+    @abstractmethod
     def session_factory(self) -> SessionFactory:
         """
         Returns a `Callable` that returns a `Session` instance.
@@ -171,6 +179,7 @@ class DefaultDatabase(Database):
 
         self.__session_factory = session_factory
         self.__tablename_model_dict = self.__get_tablename_model_dict(models)
+        self.__attribute_types_including_id = self.__get_attribute_types_including_id()
         self.__attribute_types = self.__get_attribute_types()
 
     @property
@@ -362,6 +371,10 @@ class DefaultDatabase(Database):
     @property
     def attribute_types(self) -> dict[str, dict[str, type]]:
         return self.__attribute_types
+
+    @property
+    def attribute_types_including_id(self) -> dict[str, dict[str, type]]:
+        return self.__attribute_types_including_id
 
     def __get_stats_from_query(
         self,
@@ -578,7 +591,16 @@ class DefaultDatabase(Database):
 
     def __get_attribute_types(self) -> dict[str, dict[str, type]]:
         return {
-            t: m.get_attribute_types()
+            t: {
+                k: v for k, v in self.__attribute_types_including_id[t].items()
+                if k != 'id'  # Exclude ID attribute
+            }
+            for t in self.__attribute_types_including_id.keys()
+        }
+
+    def __get_attribute_types_including_id(self) -> dict[str, dict[str, type]]:
+        return {
+            t: m.get_attribute_types() | {'id': m.get_id_attribute_type()}
             for t, m in self.__tablename_model_dict.items()
         }
 
@@ -805,7 +827,6 @@ class DefaultDatabase(Database):
         key: str,
         type_: type[Any]
     ) -> bool:
-
         value = getattr(instance, key)
         return isinstance(value, type_)
 

@@ -36,7 +36,11 @@ class _TestModel:
 
     @classmethod
     def get_attribute_types(cls):
-        pass
+        return {}
+
+    @classmethod
+    def get_id_attribute_type(cls):
+        return int
 
     @classmethod
     def get_table_name(cls):
@@ -68,6 +72,14 @@ class _OverrideIdModel:
 
     @classmethod
     def get_attribute_types(cls):
+        return {}
+
+    @classmethod
+    def get_id_attribute_type(cls):
+        return str
+
+    @property
+    def instance_id(self):
         pass
 
 

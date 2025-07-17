@@ -242,13 +242,16 @@ def model_base() -> Type[DefaultModel]:
 
         @classmethod
         def get_attribute_types(cls) -> dict[str, type]:
-            # Add in exclUded columns here so that we get id columns
-            names = cls.__get_attribute_names() + cls.get_excluded_column_names()
+            names = cls.__get_attribute_names()
             columns = inspect(cls).columns
             return {
-                'id' if k == cls.get_id_column_name() else k:
-                    columns[k].type.python_type for k in names
+                k: columns[k].type.python_type for k in names
             }
+
+        @classmethod
+        def get_id_attribute_type(cls) -> dict[str, type]:
+            columns = inspect(cls).columns
+            return columns[cls.get_id_column_name()].type.python_type
 
         @property
         def instance_to_one_relations(self) -> dict[str, Optional[Model]]:

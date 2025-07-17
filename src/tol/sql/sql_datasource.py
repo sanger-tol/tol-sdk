@@ -437,7 +437,7 @@ class SqlDataSource(
 
         return {
             tablename_type_map[k]: self.__calculate_attribute_types(v)
-            for k, v in self.__db.attribute_types.items()
+            for k, v in self.__db.attribute_types_including_id.items()
         }
 
     def __calculate_attribute_types(
