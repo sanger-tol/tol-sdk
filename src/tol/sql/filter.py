@@ -43,10 +43,7 @@ class DatabaseFilter(ABC):
         """Gets the column for the given `DataObject` key"""
 
     @abstractmethod
-    def add_field(
-        self,
-        field: str,
-    ) -> None:
+    def add_field(self, field: str) -> None:
         """Adds a relation field to the filter, for joining later"""
 
 
