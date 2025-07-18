@@ -2,4 +2,6 @@
 #
 # SPDX-License-Identifier: MIT
 
-from .model import Model  # noqa
+from .input_processor import InputProcessor  # noqa
+from .model_training import ModelTraining  # noqa
+from .dataset_generator import DatasetGenerator  # noqa

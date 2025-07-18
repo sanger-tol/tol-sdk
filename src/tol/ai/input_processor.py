@@ -12,24 +12,18 @@ from nltk.stem import WordNetLemmatizer
 nltk.download('punkt')  # Tokenizers for sentence and word tokenization
 nltk.download('stopwords')  # List of common stop words
 nltk.download('wordnet')  # WordNet lexical database for lemmatization
-nltk.download('averaged_perceptron_tagger_eng')  # Part-of-speech tagger
-nltk.download('maxent_ne_chunker_tab')  # Named Entity Recognition model
-nltk.download('words')  # Word corpus for NER
 nltk.download('punkt_tab')
 
 
-class Model:
+class InputProcessor:
     """
     Base class for boards models.
     """
 
     def __init__(self) -> None:
         pass
-
-    def build_board(self, request: str) -> None:
-        self._preprocess_text(request)
     
-    def _preprocess_text(self, text: str) -> str:
+    def process_text(self, text: str) -> str:
         tokenized_text = self._tokenize_text(text)
         filtered_text = self._remove_stopwords(tokenized_text)
         stemmed_text = self._lemmatize_words(filtered_text)
