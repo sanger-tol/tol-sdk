@@ -117,7 +117,7 @@ def pipeline_steps_blueprint(
 
         upload = sql_ds.data_object_factory(
             'upload',
-            attributes={**upload_data.__dict__},
+            attributes={**upload_data.__dict__}, # TODO: Change
         )
 
         inserted_upload_data = list(
@@ -178,9 +178,10 @@ def pipeline_steps_blueprint(
 
         mock_step_name = [
             'species_not_null',
-            'value_not_allowed',
-            'a_third_because_why_not',
-            'and_a_fourth'
+            'value_not_null',
+            'value_allowed',
+            'species_type',
+            # 'need_a_converter'
         ]
 
         for step_name in mock_step_name:
@@ -200,6 +201,17 @@ def pipeline_steps_blueprint(
             )
 
             time.sleep(random.randint(5, 10))
+
+        sql_ds.upsert(
+            'upload',
+            [sql_ds.data_object_factory(
+                'upload',
+                upload_id,
+                attributes={
+                    'completed': True,
+                }
+            )]
+        )
 
     def __create_mock_results(
         step_name: str,
@@ -290,6 +302,6 @@ def pipeline_steps_blueprint(
 
         threading.Thread(target=__upsert_mock_results_data, args=(upload_id,), daemon=True).start()
 
-        return {'success': True}, 200
+        return {'success': True, 'upload_id': upload_id}, 200
 
     return bp

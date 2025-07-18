@@ -74,12 +74,10 @@ def create_pipeline_step_models(
             unique=True,
         )
 
-        source: Mapped[dict[str, Any]] = mapped_column(
+        config: Mapped[dict[str, Any]] = mapped_column(
             nullable=False,
             default={}
         )
-
-        destination: Mapped[dict[str, Any] | None] = mapped_column()
 
         uploads: Mapped[list[Upload]] = relationship(
             'Upload',
