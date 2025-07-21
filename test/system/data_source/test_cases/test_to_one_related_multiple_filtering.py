@@ -49,6 +49,7 @@ class TestMultipleToOneFiltering:
         assert root_obj.int_column == 1
         assert root_obj.another_related.str_column == 'hello to you too'
 
+    @against(sql, api_sql)
     def test_request_unfiltered_and_unsorted_field(
         self,
         data_source: OperableDataSource,
