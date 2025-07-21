@@ -49,6 +49,19 @@ class TestMultipleToOneFiltering:
         assert root_obj.int_column == 1
         assert root_obj.another_related.str_column == 'hello to you too'
 
+    def test_request_unfiltered_and_unsorted_field(
+        self,
+        data_source: OperableDataSource,
+        ds_sleep
+    ) -> None:
+        """
+        Requesting a field that is otherwise not mentioned.
+
+        e.g. by sorting/filtering
+        """
+
+        self.__upsert_objs(data_source)
+
     def __upsert_objs(
         self,
         data_source: OperableDataSource,
