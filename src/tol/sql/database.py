@@ -348,6 +348,7 @@ class DefaultDatabase(Database):
             filters=filters,
         )
 
+        query = self.__filter_query(query, tablename, filters)
         query, s_columns = self.__apply_stats(
             query,
             filters,
@@ -361,7 +362,6 @@ class DefaultDatabase(Database):
             group_by,
             filters,
         )
-        query = self.__filter_query(query, tablename, filters)
 
         return self.__get_stats_from_query(
             query,
