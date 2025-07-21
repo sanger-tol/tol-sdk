@@ -2,16 +2,12 @@
 #
 # SPDX-License-Identifier: MIT
 
-from unittest.mock import create_autospec
-
 from pytest import fixture
 
 from tol.core import DataSourceFilter
 from tol.core.datasource_filter import AndFilter
-from tol.core.relationship import RelationshipConfig
 from tol.sql.database import DefaultDatabase
 from tol.sql.filter import DatabaseFilter, DefaultDatabaseFilter
-from tol.sql.relationship import SqlRelationshipConfig
 
 from .. import models
 
