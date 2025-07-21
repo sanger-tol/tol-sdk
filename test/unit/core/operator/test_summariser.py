@@ -195,13 +195,12 @@ class TestSummariser:
     ) -> None:
         """Only one relationship"""
 
-        Summariser.resummarise_by_ids(
+        ret = Summariser.resummarise_by_ids(
             mock_summariser,
             summary_objs,
             'second',
             'abc',
         )
-
         (((observed_summary,), kwargs),) = mock_summariser._summarise.call_args_list
 
         assert observed_summary == summary_objs[1]
@@ -211,6 +210,9 @@ class TestSummariser:
             'rel_b',
             'rel_c',
         }
+        assert ret == {
+            'rel_i': {'rel_a', 'rel_b', 'rel_c'},
+        }
 
     def test_resummarise_by_ids__many_relationships(
         self,
@@ -219,7 +221,7 @@ class TestSummariser:
     ) -> None:
         """Many relationships pointing to the target type"""
 
-        Summariser.resummarise_by_ids(
+        ret = Summariser.resummarise_by_ids(
             mock_summariser,
             summary_objs,
             'first',
@@ -234,4 +236,7 @@ class TestSummariser:
             'rel_e',
             'rel_f',
             'rel_g',
+        }
+        assert ret == {
+            'rel_a': {'rel_e', 'rel_f', 'rel_g'},
         }
