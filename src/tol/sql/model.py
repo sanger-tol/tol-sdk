@@ -160,7 +160,6 @@ def model_base() -> Type[DefaultModel]:
     Creates a new base for Model classes that implement the Model ABC.
     """
 
-
     class ModelMeta(DeclarativeMeta, ABCMeta):
         pass
 

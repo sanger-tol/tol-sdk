@@ -92,4 +92,4 @@ class DefaultDatabaseSorter(DatabaseSorter):
         if self.__desc:
             return query.order_by(column.desc())
         else:
-            return query.order_by(column) 
+            return query.order_by(column)
