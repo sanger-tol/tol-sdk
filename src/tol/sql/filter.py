@@ -2,27 +2,48 @@
 #
 # SPDX-License-Identifier: MIT
 
+from __future__ import annotations
+
 from abc import ABC, abstractmethod
 from collections import defaultdict
+from collections.abc import MutableMapping
 from functools import reduce
 from itertools import chain
-from typing import Any, Dict, Iterable, Iterator, Optional, Tuple, Type
+from typing import Any, Dict, Iterable, Iterator, Optional, Tuple, Type, cast as t_cast
 
-from sqlalchemy import BinaryExpression, cast, not_
+from sqlalchemy import BinaryExpression, cast, inspect, not_
 from sqlalchemy.dialects.postgresql import JSONB
-from sqlalchemy.orm import MappedColumn, Query, aliased
-from sqlalchemy.orm.properties import RelationshipProperty
+from sqlalchemy.orm import MappedColumn, Query, Session, aliased
 from sqlalchemy.orm.util import AliasedClass
 
 from .model import Model
 from ..core import DataSourceFilter
 
 
-JoinTrie = dict[str, 'JoinTrie']
-"""A prefix tree, for aliasing relationship attribute traversal"""
+class AliasTrie(MutableMapping[str, 'AliasTree']):
 
+    def __init__(self, alias: AliasedClass[Model]) -> None:
+        self.__alias = alias
+        self.__dict: dict[str, AliasTrie] = {}
 
-AliasDict = dict[tuple[str, ...], type[AliasedClass[Model]]]
+    @property
+    def alias(self) -> AliasedClass[Model]:
+        return self.__alias
+
+    def __getitem__(self, k: str) -> AliasTrie:
+        return self.__dict[k]
+
+    def __setitem__(self, key: str, value: AliasTrie) -> None:
+        self.__dict[key] = value
+
+    def __delitem__(self, key: str) -> None:
+        raise NotImplementedError()
+
+    def __iter__(self) -> Iterator[str]:
+        return iter(self.__dict)
+
+    def __len__(self) -> int:
+        return len(self.__dict)
 
 
 class DatabaseFilter(ABC):
@@ -38,12 +59,16 @@ class DatabaseFilter(ABC):
         """Filter the Query object using the given model"""
 
     @abstractmethod
-    def get_column(self, model: Type[Model], key: str) -> MappedColumn:
+    def get_column(self, key: str) -> MappedColumn:
         """Gets the column for the given `DataObject` key"""
 
     @abstractmethod
     def add_field(self, field: str) -> None:
         """Adds a relation field to the filter, for joining later"""
+
+    @abstractmethod
+    def get_query(self, session: Session, base_model: type[Model]) -> Query[Model]:
+        """Gets an aliased query"""
 
 
 class DefaultDatabaseFilter(DatabaseFilter):
@@ -63,25 +88,23 @@ class DefaultDatabaseFilter(DatabaseFilter):
     def filter(  # noqa A003
         self,
         query: Query[Model],
-        tablename: str,
-        model_dict: Dict[str, Type[Model]]
+        __tablename: str,
+        __model_dict: Dict[str, Type[Model]]
     ) -> Query[Model]:
-
-        # TODO this is not thread safe
-        self.__base_model = model_dict[tablename]
 
         self.__rel_keys.update(
             self.__generate_relational_keys()
         )
 
-        join_trie = self.__build_join_trie(self.__rel_keys)
-        self.__aliases = self.__build_aliases(
-            self.__base_model,
-            join_trie,
-            (),
+        self.__alias_trie = self.__build_alias_trie(
+            self.__rel_keys,
         )
 
-        query = self.__apply_joins(query)
+        query = self.__apply_joins(
+            query,
+            self.__alias_trie,
+            self.__base_alias,
+        )
 
         if self.__filter is None:
             return query
@@ -94,62 +117,67 @@ class DefaultDatabaseFilter(DatabaseFilter):
 
         return query
 
+    def get_query(self, session: Session, base_model: Model) -> Query[Model]:
+        # TODO this is not thread safe
+        self.__base_alias: AliasedClass[Model] = aliased(
+            base_model,
+        )
+
+        return session.query(self.__base_alias)
+
     def __apply_joins(
         self,
         query: Query[Model],
+        parent_trie: AliasTrie,
+        parent_alias: AliasedClass[Model],
     ) -> Query[Model]:
 
-        for path, alias in self.__aliases.items():
-            current_model = self.__base_model
-            current_path: list[str] = []
-            for step in path:
-                current_path.append(step)
-                parent_alias = self.__aliases.get(tuple(current_path[:-1]), current_model)
-                query = query.join(alias, getattr(parent_alias, step))
+        for part, trie in parent_trie.items():
+            alias = trie.alias
+
+
+            query = query.join(alias, getattr(parent_alias, part))
+
+            query = self.__apply_joins(
+                query,
+                trie,
+                alias,
+            )
 
         return query
+
+    def __create_alias(
+        self,
+        parent_alias: AliasedClass[Model],
+        relationship_name: str,
+    ) -> AliasedClass[Model]:
+
+        mapper = inspect(parent_alias).mapper
+        rel_prop = mapper.relationships[relationship_name]
+        target_model = rel_prop.mapper.class_
+        return aliased(target_model)
 
     def add_field(self, field: str) -> None:
         self.__rel_keys.add(field)
 
-    def __build_join_trie(self, paths: Iterable[str]) -> JoinTrie:
-        trie: JoinTrie = {}
+    def __build_alias_trie(self, paths: Iterable[str]) -> AliasTrie:
+        trie = AliasTrie(self.__base_alias)
 
         for path in paths:
             parts = path.split('.')
+            current_alias = self.__base_alias
             current = trie
-            for part in parts:
-                current = current.setdefault(part, {})
+            for part in parts[:-1]:
+                if part not in current:
+                    current[part] = AliasTrie(
+                        self.__create_alias(
+                            current_alias,
+                            part,
+                        )
+                    )
+                current_alias = current.alias
 
         return trie
-
-    def __build_aliases(
-        self,
-        model: type[Model],
-        trie: JoinTrie,
-        path: tuple[str, ...],
-    ) -> AliasDict:
-
-        aliases: AliasDict = {}
-
-        for rel_name, subtree in trie.items():
-            attr = getattr(model, rel_name)
-            current_path = path + (rel_name,)
-
-            if not hasattr(attr, 'property'):
-                continue
-
-            if not isinstance(attr.property, RelationshipProperty):
-                continue
-
-            alias = aliased(attr.property.mapper.class_)
-            aliases[current_path] = alias
-
-            if subtree:
-                child_aliases = self.__build_aliases(alias, subtree, current_path)
-                aliases.update(child_aliases)
-
-        return aliases
 
     def __generate_relational_keys(self) -> Iterator[str]:
         if not self.__filter:
@@ -202,7 +230,7 @@ class DefaultDatabaseFilter(DatabaseFilter):
         return reduce(
             lambda q, kv: self.__switch_and_term(
                 q,
-                self.get_column(self.__base_model, column_key),
+                self.get_column(column_key),
                 *kv
             ),
             term_dict.items(),
@@ -240,10 +268,7 @@ class DefaultDatabaseFilter(DatabaseFilter):
 
         if 'field' in term:
             field = term['field']
-            column = self.get_column(
-                self.__base_model,
-                field
-            )
+            column = self.get_column(field)
             return column, negate
         else:
             return term.get('value'), negate
@@ -451,7 +476,7 @@ class DefaultDatabaseFilter(DatabaseFilter):
         if exact_filters is None:
             return query
         for k, v in exact_filters.items():
-            exact_column = self.get_column(self.__base_model, k)
+            exact_column = self.get_column(k)
             query = query.filter(exact_column == v)
         return query
 
@@ -460,7 +485,7 @@ class DefaultDatabaseFilter(DatabaseFilter):
         if contains_filters is None:
             return query
         for k, v in contains_filters.items():
-            contains_column = self.get_column(self.__base_model, k)
+            contains_column = self.get_column(k)
             term = self.__get_ilike_term(v)
             query = query.filter(contains_column.ilike(term))
         return query
@@ -470,7 +495,7 @@ class DefaultDatabaseFilter(DatabaseFilter):
         if in_filters is None:
             return query
         for k, v in in_filters.items():
-            in_column = self.get_column(self.__base_model, k)
+            in_column = self.get_column(k)
             query = query.filter(in_column.in_(v))
         return query
 
@@ -479,34 +504,49 @@ class DefaultDatabaseFilter(DatabaseFilter):
         if range_filters is None:
             return query
         for k, v in range_filters.items():
-            range_column = self.get_column(self.__base_model, k)
+            range_column = self.get_column(k)
             from_, to_ = self.__get_between_term(v)
             query = query.filter(range_column.between(from_, to_))
         return query
 
-    def get_column(self, model: Type[Model], key: str) -> MappedColumn:
+    def get_column(self, key: str, model: type[Any] | None = None) -> MappedColumn:
+        model = self.__alias_trie.alias if model is None else model
         if key == 'id':
             return self.__get_id_column(model)
         elif '.' in key:
-            return self.__get_relation_column(model, key)
+            return self.__get_relation_column(key)
         else:
-            return getattr(model, key)
+            return self.__get_column_attr(model, key)
 
     def __get_id_column(self, model: type[Model]) -> MappedColumn:
-        id_key = model.get_id_column_name()
-        return model.get_column(id_key)
+        og_model: type[Model] = model._aliased_insp.mapper.class_
+        id_key = og_model.get_id_column_name()
+        return self.__get_column_attr(model, id_key)
+
+    def __get_column_attr(self, model: AliasedClass[Model], key: str) -> MappedColumn:
+        columns = {
+            col.key: col
+            for col in model._aliased_insp.selectable.c
+        }
+        return columns[key]
 
     def __get_relation_column(
         self,
-        model: Type[Model],
         key: str
     ) -> MappedColumn:
 
-        (*split_initial, column) = key.split('.')
-        initial = '.'.join(split_initial)
-        alias = self.__aliases[(initial,)]
+        (*initial, column) = key.split('.')
 
-        return self.get_column(alias, column)
+        if not initial:
+            return self.get_column(key)
+
+        for i in initial:
+            trie = self.__alias_trie[i]
+
+        return self.get_column(
+            column,
+            model=trie.alias,
+        )
 
     def __get_ilike_term(self, value: str) -> str:
         escaped = self.__escape_ilike(value)

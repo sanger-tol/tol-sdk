@@ -216,12 +216,13 @@ class DefaultDatabase(Database):
         _, query = self.__get_model_query(
             tablename,
             in_session,
-            requested_relationships
+            requested_relationships,
+            filters=filters,
         )
         if filters is not None:
             query = filters.filter(query, tablename, self.__tablename_model_dict)
         if sort_by is not None:
-            query = sort_by.sort(query, tablename, self.__tablename_model_dict)
+            query = sort_by.sort(query, tablename, self.__tablename_model_dict, filters)
         query = query.limit(limit).offset(offset)
         results = query.all()
         return results
@@ -233,7 +234,7 @@ class DefaultDatabase(Database):
         filters: Optional[DatabaseFilter] = None
     ) -> int:
 
-        _, query = self.__get_model_query(tablename, in_session, None)
+        _, query = self.__get_model_query(tablename, in_session, None, filters=filters)
         if filters is not None:
             query = filters.filter(query, tablename, self.__tablename_model_dict)
         count = query.count()
@@ -342,6 +343,7 @@ class DefaultDatabase(Database):
             tablename,
             in_session,
             None,
+            filters=filters,
         )
 
         query, s_columns = self.__apply_stats(
@@ -486,7 +488,6 @@ class DefaultDatabase(Database):
 
         for field in stats_fields:
             column = self.__get_column(
-                model,
                 filters,
                 field,
             )
@@ -517,12 +518,11 @@ class DefaultDatabase(Database):
 
     def __get_column(
         self,
-        model: type[Model],
         filters: DatabaseFilter,
         field: str
     ) -> MappedColumn:
 
-        column = filters.get_column(model, field)
+        column = filters.get_column(field)
         if '.' in field:
             filters.add_field(field)
 
@@ -559,7 +559,6 @@ class DefaultDatabase(Database):
 
         for g in group_by:
             g_column = self.__get_column(
-                model,
                 filters,
                 g
             )
@@ -603,10 +602,11 @@ class DefaultDatabase(Database):
         tablename: str,
         in_session: Session,
         requested_relationships: dict | None,
+        filters: DatabaseFilter | None = None,
     ) -> tuple[Type[Model], Query]:
 
         model = self.__tablename_model_dict[tablename]
-        query = in_session.query(model)
+        query = in_session.query(model) if not filters else filters.get_query(in_session, model)
 
         if requested_relationships:
             query = self.__apply_requested_relationships(
