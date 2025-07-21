@@ -220,7 +220,8 @@ class DefaultDatabase(Database):
             filters=filters,
         )
         if filters is not None:
-            filters.add_field(sort_by.term)
+            if sort_by is not None:
+                filters.add_field(sort_by.term)
             query = filters.filter(query, tablename, self.__tablename_model_dict)
         if sort_by is not None:
             query = sort_by.sort(query, tablename, self.__tablename_model_dict, filters)
