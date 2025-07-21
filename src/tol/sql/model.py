@@ -4,11 +4,15 @@
 
 from __future__ import annotations
 
+from abc import ABCMeta
 from datetime import datetime
 from typing import Any, Iterable, Optional, Type
 
 from sqlalchemy import JSON, inspect
-from sqlalchemy.ext.declarative import AbstractConcreteBase
+from sqlalchemy.ext.declarative import (
+    AbstractConcreteBase,
+    DeclarativeMeta,
+)
 from sqlalchemy.orm import (
     Mapped,
     MappedColumn,
@@ -156,7 +160,12 @@ def model_base() -> Type[DefaultModel]:
     Creates a new base for Model classes that implement the Model ABC.
     """
 
+
+    class ModelMeta(DeclarativeMeta, ABCMeta):
+        pass
+
     DeclarativeBase = declarative_base(  # noqa N806
+        metaclass=ModelMeta,
         type_annotation_map={
             dict: JSON,
             dict[str, Any]: JSON
