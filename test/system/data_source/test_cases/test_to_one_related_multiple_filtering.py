@@ -38,11 +38,16 @@ class TestMultipleToOneFiltering:
         )
 
         (root_obj,) = list(
-            data_source.get_list('root', object_filters=f)
+            data_source.get_list(
+                'root',
+                object_filters=f,
+                requested_fields=['id', 'int_column', 'another_related.str_column'],
+            )
         )
 
         assert root_obj.id == '1'
         assert root_obj.int_column == 1
+        assert root_obj.another_related.str_column == 'hello to you too'
 
     def __upsert_objs(
         self,
