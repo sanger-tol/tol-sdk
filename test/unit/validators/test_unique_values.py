@@ -5,18 +5,18 @@
 from typing import Iterable
 
 from tol.core import DataObject
-from tol.validators import AllowedKeysValidator
+from tol.validators import UniqueValuesValidator
 
 
-class TestAllowedKeysValidator:
+class TestUniqueValuesValidator:
 
     def test_no_results(
         self,
         mock_objs: Iterable[DataObject]
     ) -> None:
 
-        validator = AllowedKeysValidator(
-            ['key1', 'key2', 'key3']
+        validator = UniqueValuesValidator(
+            ['key1']
         )
 
         # consume the `Iterable`
@@ -31,8 +31,8 @@ class TestAllowedKeysValidator:
         mock_objs: Iterable[DataObject]
     ) -> None:
 
-        validator = AllowedKeysValidator(
-            ['key1', 'key3'],
+        validator = UniqueValuesValidator(
+            ['key3'],
             is_error=False,
         )
 
@@ -42,15 +42,15 @@ class TestAllowedKeysValidator:
         )
 
         assert validator.has_no_errors
-        assert len(validator.results) == 3
+        assert len(validator.results) == 1
 
     def test_errors(
         self,
         mock_objs: Iterable[DataObject]
     ) -> None:
 
-        validator = AllowedKeysValidator(
-            ['key2', 'key3'],
+        validator = UniqueValuesValidator(
+            ['key3'],
         )
 
         # consume the `Iterable`
@@ -59,4 +59,4 @@ class TestAllowedKeysValidator:
         )
 
         assert not validator.warnings
-        assert len(validator.errors) == 3
+        assert len(validator.errors) == 1
