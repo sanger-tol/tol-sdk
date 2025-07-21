@@ -70,6 +70,11 @@ class TestMultipleToOneFiltering:
                         'value': '1',
                     }
                 },
+                'related_object.id': {
+                    'eq': {
+                        'value': '1',
+                    }
+                },
             }
         )
 
