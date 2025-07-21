@@ -9,7 +9,7 @@ from collections import defaultdict
 from collections.abc import MutableMapping
 from functools import reduce
 from itertools import chain
-from typing import Any, Dict, Iterable, Iterator, Optional, Tuple, Type, cast as t_cast
+from typing import Any, Dict, Iterable, Iterator, Optional, Tuple, Type
 
 from sqlalchemy import BinaryExpression, cast, inspect, not_
 from sqlalchemy.dialects.postgresql import JSONB
@@ -134,7 +134,6 @@ class DefaultDatabaseFilter(DatabaseFilter):
 
         for part, trie in parent_trie.items():
             alias = trie.alias
-
 
             query = query.join(alias, getattr(parent_alias, part))
 

@@ -10,7 +10,6 @@ from typing import Any, Iterable, Optional, Type
 from sqlalchemy import JSON, inspect
 from sqlalchemy.ext.declarative import AbstractConcreteBase
 from sqlalchemy.orm import (
-    DeclarativeMeta,
     Mapped,
     MappedColumn,
     RelationshipDirection,
