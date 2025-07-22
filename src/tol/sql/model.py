@@ -4,13 +4,16 @@
 
 from __future__ import annotations
 
-from abc import ABC, ABCMeta, abstractmethod
+from abc import ABCMeta
 from datetime import datetime
 from typing import Any, Iterable, Optional, Type
 
 from sqlalchemy import JSON, inspect
-from sqlalchemy.orm import (
+from sqlalchemy.ext.declarative import (
+    AbstractConcreteBase,
     DeclarativeMeta,
+)
+from sqlalchemy.orm import (
     Mapped,
     MappedColumn,
     RelationshipDirection,
@@ -24,7 +27,7 @@ from .relationship import InstanceRelationDict
 from ..core import DataSourceError
 
 
-class Model(ABC):
+class Model:
     """
     A model that can be converted to DataObject instances.
 
@@ -37,12 +40,10 @@ class Model(ABC):
     """
 
     @classmethod
-    @abstractmethod
     def get_table_name(cls) -> str:  # noqa
         """The name of the Model"""
 
     @classmethod
-    @abstractmethod
     def get_id_column_name(cls) -> str:  # noqa
         """
         The name of the column that serves as the "id".
@@ -50,33 +51,28 @@ class Model(ABC):
         """
 
     @classmethod
-    @abstractmethod
     def get_column(cls, name: str) -> MappedColumn:
         """The (attribute) column for the given name."""
 
     @classmethod
-    @abstractmethod
     def get_to_one_relationship_config(cls) -> dict[str, str]:
         """
         The mapping of relationship names to tablenames for to-one relationships
         """
 
     @classmethod
-    @abstractmethod
     def get_to_many_relationship_config(cls) -> dict[str, str]:
         """
         The mapping of relationship names to tablenames for to-many relationships
         """
 
     @classmethod
-    @abstractmethod
     def get_attribute_types(cls) -> dict[str, type]:
         """
         The mapping of attribute names to their datatype in python
         """
 
     @classmethod
-    @abstractmethod
     def get_foreign_key_name(cls, relationship_name: str) -> str:
         """
         The name of the foreign key column for the given relationship name
@@ -106,26 +102,22 @@ class Model(ABC):
         ]
 
     @property
-    @abstractmethod
     def instance_to_one_relations(self) -> dict[str, Optional[Model]]:
         """
         The mapping of relationship names to to-one relation rows
         """
 
     @property
-    @abstractmethod
     def instance_to_many_relations(self) -> dict[str, Iterable[Model]]:
         """
         The mapping of relationship names to to-many relation rows
         """
 
     @property
-    @abstractmethod
     def instance_id(self) -> Optional[str]:
         """The (potentially None) id of this model instance"""
 
     @property
-    @abstractmethod
     def instance_attributes(self) -> dict[str, Any]:
         """The Dict of attribute key to values"""
 
@@ -154,7 +146,7 @@ class InstanceToManyDict(
         return self.source.get_to_many_relationship_config()
 
 
-class DefaultModel(Model, ABC):
+class DefaultModel(Model):
     Log: Model
     """
     An inherited class that logs changes to its fields:
@@ -179,7 +171,7 @@ def model_base() -> Type[DefaultModel]:
         }
     )
 
-    class ModelBase(DeclarativeBase, DefaultModel, ABC):
+    class ModelBase(AbstractConcreteBase, DeclarativeBase, DefaultModel):
         """
         An ABC that implements the Model ABC, using reasonable defaults.
 
@@ -204,7 +196,7 @@ def model_base() -> Type[DefaultModel]:
 
         @classmethod
         def get_column(cls, name: str) -> MappedColumn:
-            if name not in inspect(cls).attrs:
+            if name not in inspect(cls).mapper.attrs:
                 raise BadColumnError(cls, name)
             return getattr(cls, name)
 
