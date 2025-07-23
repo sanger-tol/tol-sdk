@@ -424,3 +424,29 @@ class TestJsonApiClient:
         response = client.get_detail('test', 'hype')
 
         assert response == {'success': True}
+
+    @responses.activate
+    def test_get_funky_id(self):
+        """
+        Octothorps (`#`) and other funky characters
+        are quoted in object_id
+        """
+
+        client = JsonApiClient(FAKE_API_URL, token='')
+
+        responses.add(
+            responses.GET,
+            f'{FAKE_API_URL}/data/test:to-many/hype%23jank/relation?page=1&page_size=1',
+            json={'success': True},
+            status=200
+        )
+
+        response = client.get_to_many_relations_page(
+            'test',
+            'hype#jank',
+            'relation',
+            1,
+            1,
+        )
+
+        assert response == {'success': True}
