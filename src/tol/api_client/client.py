@@ -405,7 +405,7 @@ class JsonApiClient(HttpClient):
 
         hop_string = '/'.join(relationship_hops)
         base_url = (
-            f'{self.__data_url}/{object_type}:to-one/{object_id}'
+            f'{self.__data_url}/{object_type}:to-one/{quote(object_id)}'
         )
         return f'{base_url}/{hop_string}'
 
@@ -417,7 +417,7 @@ class JsonApiClient(HttpClient):
     ) -> str:
 
         base_url = (
-            f'{self.__data_url}/{object_type}:to-many/{object_id}'
+            f'{self.__data_url}/{object_type}:to-many/{quote(object_id)}'
         )
         return f'{base_url}/{relationship_name}'
 
