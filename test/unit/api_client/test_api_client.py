@@ -436,7 +436,7 @@ class TestJsonApiClient:
 
         responses.add(
             responses.GET,
-            f'{FAKE_API_URL}/data/test:to-many/hype#jank',
+            f'{FAKE_API_URL}/data/test:to-many/hype%23jank/relation?page=1&page_size=1',
             json={'success': True},
             status=200
         )
