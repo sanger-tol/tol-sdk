@@ -51,8 +51,9 @@ class Upserter(_Writer, ABC):
     def upsert_arbitary_type(
         self,
         objects: Iterable[DataObject],
+        session: Optional[OperableSession] = None,
         **kwargs: Any,
-    ) -> Iterable[DataObject | ErrorObject]:
+    ) -> Iterable[DataObject | ErrorObject] | None:
         """
         Calls `upsert()` internally, using contiguous slices of
         `DataObject` instances with the same `type`.
@@ -61,11 +62,34 @@ class Upserter(_Writer, ABC):
         current_type: str | None = None
         current_objs: list[DataObject] = []
 
+        iter_upserted: list[Iterable[DataObject | ErrorObject]] = []
+
+        def __upsert_current() -> None:
+            if not current_objs:
+                return
+
+            upserted = self.upsert(
+                current_type,
+                current_objs,
+                session=session,
+            )
+
+            if upserted is not None:
+                iter_upserted.append(upserted)
+
         for obj in objects:
             if obj.type == current_type:
                 current_objs.append(obj)
             else:
+                __upsert_current()
                 current_type = obj.type
+                current_objs = [obj]
+
+        __upsert_current()
+
+        return itertools.chain.from_iterable(
+            iter_upserted
+        )
 
     def upsert_batch(
         self,
