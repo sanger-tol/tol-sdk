@@ -32,7 +32,7 @@ class TestUpserter:
 
         objs = self.__create_objs(types_)
 
-        upserter.upsert_arbitary_type(objs)
+        Upserter.upsert_arbitary_type(upserter, objs)
 
         self.__assert_correct(upserter)
 
@@ -50,7 +50,7 @@ class TestUpserter:
 
         observed = [
             len(list(iter_obj))
-            for ((iter_obj,), _)
+            for ((_, iter_obj,), _)
             in upserter.upsert.call_args_list
         ]
 
