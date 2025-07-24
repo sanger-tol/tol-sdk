@@ -33,7 +33,9 @@ class TestUpserter:
 
         objs = self.__create_objs(types_)
 
-        Upserter.upsert_arbitary_type(upserter, objs)
+        list(
+            Upserter.upsert_arbitary_type(upserter, objs)
+        )
 
         self.__assert_correct(upserter)
 

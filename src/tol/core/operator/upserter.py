@@ -53,42 +53,34 @@ class Upserter(_Writer, ABC):
         objects: Iterable[DataObject],
         session: Optional[OperableSession] = None,
         **kwargs: Any,
-    ) -> Iterable[DataObject | ErrorObject] | None:
+    ) -> Iterable[DataObject | ErrorObject]:
         """
         Calls `upsert()` internally, using contiguous slices of
         `DataObject` instances with the same `type`.
+
+        Unlike with other `upsert*` methods, you always need to
+        exhuast the iterable returned by this method (e.g. by a `for`
+        loop or using `list()`).
         """
 
-        current_type: str | None = None
-        current_objs: list[DataObject] = []
+        split_iter = more_itertools.split_when(
+            objects,
+            lambda x, y: x.type != y.type,
+        )
 
-        iter_upserted: list[Iterable[DataObject | ErrorObject]] = []
-
-        def __upsert_current() -> None:
-            if current_type is None:
-                return
-
-            upserted = self.upsert(
-                current_type,
-                current_objs,
+        upserted_iter = (
+            self.upsert(
+                split[0].type,
+                split,
                 session=session,
             )
-
-            if upserted is not None:
-                iter_upserted.append(upserted)
-
-        for obj in objects:
-            if obj.type == current_type:
-                current_objs.append(obj)
-            else:
-                __upsert_current()
-                current_type = obj.type
-                current_objs = [obj]
-
-        __upsert_current()
+            for split in split_iter
+        )
 
         return itertools.chain.from_iterable(
-            iter_upserted
+            upserted
+            for upserted in upserted_iter
+            if upserted is not None
         )
 
     def upsert_batch(
