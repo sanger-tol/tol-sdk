@@ -84,7 +84,11 @@ class DefaultDataObjectToDataObjectConverter(DataObjectToDataObjectOrUpdateConve
                     else data_object.get_field_by_name(self.__id_field)
                 ),
                 type_=dest_type,
-                attributes={k: v for k, v in data_object.attributes.items() if k != self.__id_field}
+                attributes={
+                    k: v
+                    for k, v in data_object.attributes.items()
+                    if k != self.__id_field
+                }
             )
             return iter([ret])
         return iter([])
