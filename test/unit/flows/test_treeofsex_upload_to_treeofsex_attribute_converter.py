@@ -31,7 +31,7 @@ class _MockDataSource(DataSource):
 class _MockDataSourceDestination(DataSource, Relational):
     @property
     def supported_types(self):
-        return ['attribute', 'source', 'species', 'attribute_key']
+        return ['attribute', 'source', 'species', 'attribute_key', 'user']
 
     @property
     def attribute_types(self):
@@ -44,6 +44,7 @@ class _MockDataSourceDestination(DataSource, Relational):
             'attribute_key': 'attribute_key',
             'source': 'source',
             'species': 'species',
+            'user': 'user'
         }
         return {'attribute': rc_attribute}
 
@@ -61,14 +62,20 @@ class _MockDataSourceDestination(DataSource, Relational):
 
 
 class TestTreeofsexUploadToTreeofsexAttributeConverter(TestCase):
-    def test_convert(self):
+    def test_convert_iterable(self):
 
         source = _MockDataSource(config={})
         destination = _MockDataSourceDestination(config={})
         core_data_object(source)
         core_data_object(destination)
+        user = destination.data_object_factory(
+            id_=100,
+            type_='user',
+            attributes={'name': 'test_user'}
+        )
         converter = TreeofsexUploadToTreeofsexAttributeConverter(
-            data_object_factory=destination.data_object_factory
+            data_object_factory=destination.data_object_factory,
+            user=user
         )
 
         obj1 = source.data_object_factory(
@@ -129,6 +136,8 @@ class TestTreeofsexUploadToTreeofsexAttributeConverter(TestCase):
         assert ret3.source.id == 'source1'
         assert ret3.species.type == 'species'
         assert ret3.species.id == 'species1'
+        assert ret3.user.type == 'user'
+        assert ret3.user.id == 100
 
         ret4 = next(converteds)
         assert ret4.type == 'species'
@@ -148,6 +157,8 @@ class TestTreeofsexUploadToTreeofsexAttributeConverter(TestCase):
         assert ret5.source.id == 'source1'
         assert ret5.species.type == 'species'
         assert ret5.species.id == 'species2'
+        assert ret5.user.type == 'user'
+        assert ret5.user.id == 100
 
         ret6 = next(converteds)
 
@@ -168,6 +179,8 @@ class TestTreeofsexUploadToTreeofsexAttributeConverter(TestCase):
         assert ret7.source.id == 'source2'
         assert ret7.species.type == 'species'
         assert ret7.species.id == 'species1'
+        assert ret7.user.type == 'user'
+        assert ret7.user.id == 100
 
         with self.assertRaises(StopIteration):
             next(converteds)

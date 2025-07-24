@@ -13,16 +13,16 @@ from ...core import (
 class TreeofsexUploadToTreeofsexAttributeConverter(
         DataObjectToDataObjectOrUpdateConverter):
 
-    def __init__(self, data_object_factory):
+    def __init__(self, data_object_factory, user=None):
         super().__init__(data_object_factory)
         self.__sources_seen = set()
         self.__species_seen = set()
+        self.__user = user
 
     def convert_iterable(self, inputs):
         return super().convert_iterable(inputs)
 
     def convert(self, data_object: DataObject) -> Iterable[DataObject]:
-        print()
         # Have we seen the source before?
         if data_object.source not in self.__sources_seen:
             self.__sources_seen.add(data_object.source)
@@ -58,6 +58,7 @@ class TreeofsexUploadToTreeofsexAttributeConverter(
                 'attribute_key': self._data_object_factory(
                     'attribute_key',
                     data_object.attribute_key
-                )
+                ),
+                'user': self.__user
             }
         )
