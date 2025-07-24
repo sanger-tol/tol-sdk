@@ -48,6 +48,21 @@ class Upserter(_Writer, ABC):
             ))
         return upserted
 
+    def upsert_arbitary_type(
+        self,
+        objects: Iterable[DataObject],
+        **kwargs: Any,
+    ) -> Iterable[DataObject | ErrorObject]:
+
+        current_type: str | None = None
+        current_objs: list[DataObject] = []
+
+        for obj in objects:
+            if obj.type == current_type:
+                current_objs.append(obj)
+            else:
+                current_type = obj.type
+
     def upsert_batch(
         self,
         object_type: str,
