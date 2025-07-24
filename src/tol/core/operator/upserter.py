@@ -65,7 +65,7 @@ class Upserter(_Writer, ABC):
         iter_upserted: list[Iterable[DataObject | ErrorObject]] = []
 
         def __upsert_current() -> None:
-            if not current_objs:
+            if current_type is None:
                 return
 
             upserted = self.upsert(
