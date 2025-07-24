@@ -53,6 +53,10 @@ class Upserter(_Writer, ABC):
         objects: Iterable[DataObject],
         **kwargs: Any,
     ) -> Iterable[DataObject | ErrorObject]:
+        """
+        Calls `upsert()` internally, using contiguous slices of
+        `DataObject` instances with the same `type`.
+        """
 
         current_type: str | None = None
         current_objs: list[DataObject] = []
