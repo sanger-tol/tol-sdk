@@ -9,10 +9,7 @@ from datetime import datetime
 from typing import Any, Iterable, Optional, Type
 
 from sqlalchemy import JSON, inspect
-from sqlalchemy.ext.declarative import (
-    AbstractConcreteBase,
-    DeclarativeMeta,
-)
+from sqlalchemy.ext.declarative import DeclarativeMeta
 from sqlalchemy.orm import (
     Mapped,
     MappedColumn,
@@ -171,7 +168,7 @@ def model_base() -> Type[DefaultModel]:
         }
     )
 
-    class ModelBase(AbstractConcreteBase, DeclarativeBase, DefaultModel):
+    class ModelBase(DeclarativeBase, DefaultModel):
         """
         An ABC that implements the Model ABC, using reasonable defaults.
 
