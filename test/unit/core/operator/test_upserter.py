@@ -8,6 +8,7 @@ from unittest.mock import create_autospec
 from tol.core import DataObject
 from tol.core.operator import Upserter
 
+
 class TestUpserter:
 
     def test_upsert_arbitary_type(self) -> None:
