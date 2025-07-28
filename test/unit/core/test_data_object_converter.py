@@ -20,8 +20,7 @@ class TestDataObjectToDataObjectConverter(DataObjectToDataObjectOrUpdateConverte
 
     def convert(
         self,
-        data_object: DataObject,
-        id_field: str | None = None
+        data_object: DataObject
     ) -> Iterable[DataObject]:
         CoreDataObject = self._data_object_factory  # noqa N806
         # if data_object relations data = data else data.attributes
@@ -177,6 +176,7 @@ class TestDataObjectConverter(TestCase):
         )
         converter = DefaultDataObjectToDataObjectConverter(
             data_object_factory=destination.data_object_factory,
+            id_field='id_field'
         )
         converter.data_loader = mock_dl
         CoreDataObject = source.data_object_factory  # noqa N806
@@ -190,7 +190,7 @@ class TestDataObjectConverter(TestCase):
             }
         )
 
-        converteds = converter.convert(obj1, 'id_field')
+        converteds = converter.convert(obj1)
         ret1 = next(converteds)
         self.assertEqual(obj1.attributes['id_field'], ret1.id)
         self.assertEqual('destination_type', ret1.type)
