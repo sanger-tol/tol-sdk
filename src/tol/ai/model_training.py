@@ -70,17 +70,4 @@ class ModelTraining:
         
         trainer.save_model("src/tol/ai/t5-jsongen-finetuned")
         tokenizer.save_pretrained("src/tol/ai/t5-jsongen-finetuned")
-
-
-        trainer = Trainer(
-            model=model,
-            args=training_args,
-            train_dataset=train_dataset,
-            tokenizer=tokenizer
-        )
-
-        trainer.train()
-        
-        trainer.save_model("src/tol/ai/t5-jsongen-finetuned")
-        tokenizer.save_pretrained("src/tol/ai/t5-jsongen-finetuned")
     
