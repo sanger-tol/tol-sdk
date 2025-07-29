@@ -29,18 +29,22 @@ class ElasticObjectToPortaldbObjectConverter(
 
     def convert(self, data_object: DataObject) -> Iterable[DataObject]:
         if data_object is not None:
-            if self.__incremental and self.__destination_object_type == 'tolid_event':
-                count_field_value = data_object.get_field_by_name('tol_tum_steps_count')
-                new_count = count_field_value + 1 if count_field_value else 1
-
+            
             ret = self._data_object_factory(
                 self.__destination_object_type,
                 data_object.get_field_by_name(self.__id_field),
-                attributes={
-                    **self.__fields,
-                    'tol_tum_steps_count': new_count if self.__incremental else None
-                }
+                attributes=self.__fields
             )
+            
+            if self.__incremental and self.__destination_object_type == 'tolid_event':
+                obj = ret._host.get_by_id(
+                    'tolid_event',
+                    [data_object.get_field_by_name(self.__id_field)]
+                )
+                count_field_value = obj.attributes['tol_tum_steps_count']
+                new_count = count_field_value + 1 if count_field_value else 1
+                ret.attributes['tol_tum_steps_count'] = new_count if self.__incremental else None
+
             yield ret
         else:
             yield None
