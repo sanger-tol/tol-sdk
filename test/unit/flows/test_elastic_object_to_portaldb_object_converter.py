@@ -21,7 +21,7 @@ class _MockDataSource(DataSource):
     @property
     def attribute_types(self):
         raise NotImplementedError()
-    
+
     def get_by_id(self, type_, ids):
         return self.data_object_factory(
             id_=ids[0],
@@ -58,7 +58,7 @@ class TestElasticObjectToPortaldbObjectConverter(TestCase):
         self.assertEqual('different_id1', ret1.id)
         self.assertEqual('tissue_prep_event', ret1.type)
         self.assertEqual(ret1.attributes, {'test_field_1': 'test1'})
-        
+
         # Test incremental conversion for tolid_event
         converter2 = ElasticObjectToPortaldbObjectConverter(
             data_object_factory=destination.data_object_factory,
@@ -67,7 +67,7 @@ class TestElasticObjectToPortaldbObjectConverter(TestCase):
             id_field='different_id',
             incremental=True
         )
-        
+
         CoreDataObject = source.data_object_factory # noqa N806
         obj2 = CoreDataObject(
             id_='tolid_id1',
@@ -76,7 +76,7 @@ class TestElasticObjectToPortaldbObjectConverter(TestCase):
                 'different_id': 'different_id2',
             }
         )
-        
+
         converteds2 = converter2.convert(obj2)
         ret1 = next(converteds2)
         self.assertEqual('different_id2', ret1.id)
