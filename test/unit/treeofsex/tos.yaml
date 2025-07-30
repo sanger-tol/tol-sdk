@@ -1,0 +1,30 @@
+file:
+  header: True
+  name: anything
+  submitter: anyone
+
+attributes:
+  - imported_column_name: source
+    column_reference: idk
+    destination:
+      - source
+
+  - imported_column_name: taxon_id
+    column_reference: idk
+    destination:
+      - taxon_id_lol
+
+  - imported_column_name: attribute_key
+    column_reference: idk
+    destination:
+      - attribute_key
+
+  - imported_column_name: attribute_value
+    column_reference: idk
+    destination:
+      - attribute_value
+
+  - imported_column_name: attribute_state
+    column_reference: idk
+    destination:
+      - attribute_state_yeaahhhhhh
