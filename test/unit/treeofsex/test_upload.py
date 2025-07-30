@@ -82,7 +82,7 @@ class TestTOSUpload:
             ]
 
             for k in needed_keys:
-                assert getattr(obj, k) is not None
+                assert getattr(obj, k)
 
         first = converted[0]
 
