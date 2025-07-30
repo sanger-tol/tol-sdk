@@ -211,6 +211,9 @@ class YamlConverter(DataObjectToDataObjectOrUpdateConverter):
         if destination_config.magic_match_all:
             return True
 
+        if not destination_config.imported_values:
+            return True
+
         value_map = destination_config.imported_values_map
         if value in value_map:
             return True

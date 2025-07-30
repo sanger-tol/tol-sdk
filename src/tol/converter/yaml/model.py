@@ -32,7 +32,7 @@ class DestinationConfig(BaseModel):
     @computed_field(return_type=list[type])
     @cached_property
     def magic_types(self) -> list[type]:
-        type_map = {
+        type_map: dict[str, type] = {
             'int': int,
             'double': float,
         }
