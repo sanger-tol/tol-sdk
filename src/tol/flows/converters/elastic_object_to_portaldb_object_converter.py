@@ -38,9 +38,9 @@ class ElasticObjectToPortaldbObjectConverter(
                     'tolid_event',
                     [data_object.get_field_by_name(self.__id_field)]
                 )
-                count_field_value = obj.attributes['tol_tum_steps_count']
+                count_field_value = obj.attributes['tol_tum_action_count']
                 new_count = count_field_value + 1 if count_field_value else 1
-                ret.attributes['tol_tum_steps_count'] = new_count if self.__incremental else None
+                ret.attributes['tol_tum_action_count'] = new_count if self.__incremental else None
 
             yield ret
         else:

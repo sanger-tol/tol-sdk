@@ -26,7 +26,7 @@ class _MockDataSource(DataSource):
         return self.data_object_factory(
             id_=ids[0],
             type_=type_,
-            attributes={'tol_tum_steps_count': None}
+            attributes={'tol_tum_action_count': None}
         )
 
 
@@ -81,4 +81,4 @@ class TestElasticObjectToPortaldbObjectConverter(TestCase):
         ret1 = next(converteds2)
         self.assertEqual('different_id2', ret1.id)
         self.assertEqual('tolid_event', ret1.type)
-        self.assertEqual(ret1.attributes, {'test_field_2': 'test2', 'tol_tum_steps_count': 1})
+        self.assertEqual(ret1.attributes, {'test_field_2': 'test2', 'tol_tum_action_count': 1})
