@@ -14,12 +14,12 @@ from tol.excel import ExcelDataSource
 
 @pytest.fixture(scope='class')
 def base_dir() -> Path:
-    return Path().resolve(__file__).parent.resolve()
+    return Path(__file__).resolve().parent.resolve()
 
 
 @pytest.fixture(scope='class')
 def xlsx_filename(base_dir: Path) -> str:
-    xlsx_path = base_dir / 'test_upload.py'
+    xlsx_path = base_dir / 'tos_test_upload.xlsx'
 
     return str(xlsx_path)
 
@@ -52,4 +52,22 @@ class TestTOSUpload:
         mock_ds: OperableDataSource,
     ) -> None:
 
-        pass
+        excel_ds = ExcelDataSource(
+            xlsx_filename,
+            'attribute',
+            object_type='test',
+        )
+
+        converter = YamlConverter(
+            excel_ds.data_object_factory,
+            yaml_filename,
+        )
+
+        objects = excel_ds.get_list(
+            'test',
+        )
+        converted = list(
+            converter.convert_iterable(objects)
+        )
+
+        assert len(converted) == 4
