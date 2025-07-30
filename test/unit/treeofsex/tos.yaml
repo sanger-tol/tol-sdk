@@ -2,29 +2,30 @@ file:
   header: True
   name: anything
   submitter: anyone
+  format: anything
 
 attributes:
   - imported_column_name: source
     column_reference: idk
     destination:
-      - source
+      - key: source
 
   - imported_column_name: taxon_id
     column_reference: idk
     destination:
-      - taxon_id_lol
+      - key: taxon_id_lol
 
   - imported_column_name: attribute_key
     column_reference: idk
     destination:
-      - attribute_key
+      - key: attribute_key
 
   - imported_column_name: attribute_value
     column_reference: idk
     destination:
-      - attribute_value
+      - key: attribute_value
 
   - imported_column_name: attribute_state
     column_reference: idk
     destination:
-      - attribute_state_yeaahhhhhh
+      - key: attribute_state_yeaahhhhhh
