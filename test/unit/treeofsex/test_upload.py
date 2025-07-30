@@ -71,3 +71,15 @@ class TestTOSUpload:
         )
 
         assert len(converted) == 4
+
+        for obj in objects:
+            needed_keys = [
+                'source',
+                'taxon_id_lol',
+                'attribute_key',
+                'attribute_value',
+                'attribute_state_yeaahhhhhh',
+            ]
+
+            for k in needed_keys:
+                assert getattr(obj, k) is not None
