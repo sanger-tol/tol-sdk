@@ -14,7 +14,7 @@ from tol.excel import ExcelDataSource
 
 @pytest.fixture(scope='class')
 def base_dir() -> Path:
-    return Path.resolve(__file__).parent.resolve()
+    return Path().resolve(__file__).parent.resolve()
 
 
 @pytest.fixture(scope='class')
