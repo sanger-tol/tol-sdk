@@ -215,10 +215,7 @@ class ElasticDataSource(
 
         resp = self.__get_page_response(
             object_type,
-            self.update_cursor_filters(
-                search_after,
-                object_filters
-            ),
+            object_filters,
             'id',
             page_size,
             search_after=search_after
