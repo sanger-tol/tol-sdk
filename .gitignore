@@ -12,5 +12,6 @@ dist/
 .DS_Store
 .dccache
 .virtualenv/
+virtualenv/
 
 scripts/

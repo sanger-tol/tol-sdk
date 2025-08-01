@@ -4,7 +4,7 @@
 
 from transformers import T5Tokenizer, T5ForConditionalGeneration, Trainer, TrainingArguments
 from datasets import load_dataset
-from .dataset_generator import DatasetGenerator
+from .dataset_processor import DatasetProcessor
 import torch
 
 class ModelTraining:
@@ -24,7 +24,7 @@ class ModelTraining:
                 "target_text": item["target_text"]
             })
         return prepared_data
-    
+
     def train_model(self) -> None:
         # Load your dataset
         dataset = load_dataset('csv', data_files={'train': 'src/tol/ai/expanded_training_data.csv'})
@@ -37,8 +37,8 @@ class ModelTraining:
         train_list = self.prepare_data(train_data['train'])
         val_list = self.prepare_data(train_data['test'])
 
-        train_dataset = DatasetGenerator(train_list, tokenizer)
-        val_dataset = DatasetGenerator(val_list, tokenizer)
+        train_dataset = DatasetProcessor(train_list, tokenizer)
+        val_dataset = DatasetProcessor(val_list, tokenizer)
 
         training_args = TrainingArguments(
             output_dir="src/tol/ai/t5-jsongen-finetuned",
