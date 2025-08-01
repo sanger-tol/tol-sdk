@@ -5,7 +5,6 @@
 from transformers import T5Tokenizer, T5ForConditionalGeneration, Trainer, TrainingArguments
 from datasets import load_dataset
 from .dataset_processor import DatasetProcessor
-import torch
 
 class ModelTraining:
     """

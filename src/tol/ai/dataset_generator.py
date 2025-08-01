@@ -16,36 +16,38 @@ class DatasetGenerator():
         dataset = load_dataset('csv', data_files='src/tol/ai/attribute_data.csv')
         dataset = dataset.remove_columns(['id', 'authoritative', 'available_on_relationships','description', 'Keep/Remove', 'Reason', 'Comment'])
         dataset = dataset.filter(lambda x: x['display_name'] is not None)
-        return dataset['train']
+        return dataset
 
     def generate_training_data(self):
         """Generate more training examples for JSON generation"""
         
-        dataset = self.__get_dataset()
-        
-        # Available attributes from your domain
-        attributes = dataset['name']
-        display_names = dataset['display_name']
-        
-        # Template phrases for input
         input_templates = [
-            "generate a board that has a table showing {}",
-            "make a board with a table including {}",
-            "create a board with a table that displays {}",
-            "build a board with a table containing {}",
-            "show me a board with a table that includes {}",
-            "create a dashboard with a table showing {}",
-            "make a dashboard that displays {}",
-            "generate a table with {}",
-            "create a table showing {}",
-            "build a table that contains {}"
+            'make a board with a {} zone that has a table showing {}',
+            'create a board with a {} zone that has a table showing {}',
+            'generate a board with a {} zone that has a table showing {}',
+            'build a board with a {} zone that has a table showing {}',
+            'show me a board with a {} zone that has a table showing {}',
+            'create a dashboard with a {} zone that has a table showing {}',
+            'make a dashboard with a {} zone that has a table showing {}',
+            'build a {} zone that has a table showing {}',
+            'generate a {} zone that has a table showing {}',
         ]
         
         data = []
+        dataset = self.__get_dataset()
+        object_types = dataset['train']['object_type']
+        unique_object_types = set(object_types)
         
-        for i in range(500):
+        for i in range(10000):
             # Randomly select 1-4 attributes
             num_attrs = random.randint(1, 4)
+            selected_object_type = random.choice(list(unique_object_types))
+            dataset = dataset.filter(lambda x: x['object_type'] == selected_object_type)
+            
+            # Available attributes from your domain
+            attributes = dataset['train']['name']
+            display_names = dataset['train']['display_name']
+            filtered_attributes = [attr for attr, obj_type in zip(attributes, object_types) if obj_type == selected_object_type]
             selected_indices = random.sample(range(len(display_names)), num_attrs)
             selected_display_names = [display_names[i] for i in selected_indices]
             selected_names = [attributes[i] for i in selected_indices]
@@ -83,4 +85,4 @@ class DatasetGenerator():
             for row in data:
                 writer.writerow(row)
         
-        print(f"Generated 500 training examples in expanded_training_data.csv")
+        print(f"Generated 1000 training examples in expanded_training_data.csv")
