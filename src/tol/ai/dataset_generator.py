@@ -40,14 +40,14 @@ class DatasetGenerator():
         
         for i in range(10000):
             # Randomly select 1-4 attributes
-            num_attrs = random.randint(1, 4)
             selected_object_type = random.choice(list(unique_object_types))
-            dataset = dataset.filter(lambda x: x['object_type'] == selected_object_type)
+            new_dataset = dataset.filter(lambda x: x['object_type'] == selected_object_type)
             
             # Available attributes from your domain
-            attributes = dataset['train']['name']
-            display_names = dataset['train']['display_name']
-            filtered_attributes = [attr for attr, obj_type in zip(attributes, object_types) if obj_type == selected_object_type]
+            attributes = new_dataset['train']['name']
+            display_names = new_dataset['train']['display_name']
+            max_choice = min(4, len(attributes))  # Ensure we don't exceed available attributes
+            num_attrs = random.randint(1, max_choice)
             selected_indices = random.sample(range(len(display_names)), num_attrs)
             selected_display_names = [display_names[i] for i in selected_indices]
             selected_names = [attributes[i] for i in selected_indices]
@@ -62,13 +62,19 @@ class DatasetGenerator():
 
             # Generate input text
             template = random.choice(input_templates)
-            input_text = template.format(attr_text)
+            input_text = template.format(selected_object_type, attr_text)
 
             # Generate target JSON
             target_json = {
-                "table": {
-                    "title": "random",
-                    "attributes": selected_names
+                "zone": {
+                    "object_type": selected_object_type,
+                    "components": [
+                        {
+                            "table": {
+                            "title": "random",
+                            "attributes": selected_names
+                        }}, 
+                    ]   
                 }
             }
             
