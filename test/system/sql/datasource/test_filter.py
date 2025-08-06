@@ -59,6 +59,38 @@ class TestDefaultDatabaseFilter:
             assert odd.instance_id == str(i * 2 + 1)
             assert odd.instance_attributes == {'string_column': 'odd'}
 
+    def test_multi_level_relations_filter(self, session_factory, models_list, sess):
+        """Multiple level query returns row"""
+
+        # Store R3 -> R1 -> R2 chain of objects
+        session = session_factory()
+        session.add(
+            models.R3(
+                id='an-r3-id',
+                funny_r1=models.R1(
+                    id_override='an-r1-id',
+                    r2_d2=models.R2(
+                        id='an-r2-id',
+                    ),
+                ),
+            )
+        )
+        session.commit()
+        session.close()
+
+        deep_filt = DefaultDatabaseFilter(
+            DataSourceFilter(
+                exact={'funny_r1.r2_d2.id': 'an-r2-id'},
+            )
+        )
+
+        # Fetch the R3 object by ID of R2 object
+        db = DefaultDatabase(session_factory, models_list)
+        count = db.count('r3', sess, filters=deep_filt)
+        assert count == 1
+        (r3_obj,) = db.get_page('r3', sess, filters=deep_filt)
+        assert r3_obj.id == 'an-r3-id'
+
     def test_all_filters(self, session_factory, models_list, type_tablename_dict, sess):
         """
         4 filters on 5 extant rows - each removes a different one - the db should fetch
