@@ -19,6 +19,7 @@ if typing.TYPE_CHECKING:
 class R3(BaseModel):
     """
     to-one -> r1
+    to-one -> r4
     """
 
     __tablename__ = 'r3'
@@ -31,8 +32,7 @@ class R3(BaseModel):
         ForeignKey('r1.id_override'),
         nullable=True,
     )
-
-    funny_r1: Mapped['R1'] = relationship(
+    funny_r1: Mapped[R1] = relationship(
         back_populates='r3_plz'
     )
 
@@ -40,6 +40,6 @@ class R3(BaseModel):
         ForeignKey('r4.id_r4'),
         nullable=True
     )
-    r4_mine: Mapped['R4'] = relationship(
+    r4_mine: Mapped[R4] = relationship(
         back_populates='le_r3s'
     )

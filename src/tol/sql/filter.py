@@ -20,7 +20,7 @@ from .model import Model
 from ..core import DataSourceFilter
 
 
-class AliasTrie(MutableMapping[str, 'AliasTree']):
+class AliasTrie(MutableMapping[str, 'AliasTrie']):
 
     def __init__(self, alias: AliasedClass[Model]) -> None:
         self.__alias = alias
@@ -168,12 +168,14 @@ class DefaultDatabaseFilter(DatabaseFilter):
             current = trie
             for part in parts[:-1]:
                 if part not in current:
-                    current[part] = AliasTrie(
+                    step = AliasTrie(
                         self.__create_alias(
                             current_alias,
                             part,
                         )
                     )
+                    current[part] = step
+                    current = step
                 current_alias = current.alias
 
         return trie
@@ -347,7 +349,7 @@ class DefaultDatabaseFilter(DatabaseFilter):
             )
 
     def __column_is_str(self, column: MappedColumn) -> bool:
-        return column.type.python_type == str
+        return column.type.python_type is str
 
     def __filter_contains_str(
         self,
@@ -539,8 +541,9 @@ class DefaultDatabaseFilter(DatabaseFilter):
         if not initial:
             return self.get_column(key)
 
+        trie = self.__alias_trie
         for i in initial:
-            trie = self.__alias_trie[i]
+            trie = trie[i]
 
         return self.get_column(
             column,
