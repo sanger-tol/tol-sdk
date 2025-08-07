@@ -7,4 +7,5 @@ from .blueprint import (  # noqa
     custom_blueprint,
     data_blueprint
 )
+from .pipeline_steps import pipeline_steps_blueprint # noqa
 from .system import system_blueprint  # noqa
