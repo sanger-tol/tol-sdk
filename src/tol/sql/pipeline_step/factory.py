@@ -90,7 +90,7 @@ def create_pipeline_step_models(
         )
 
     class PipelineStep(base_model_class):
-        __tablename__ = 'pipeline_step'
+        __tablename__ = 'pipeline_steps'
         __table_args__ = (
             UniqueConstraint(
                 'pipeline_id',
@@ -142,15 +142,15 @@ def create_pipeline_step_models(
 
         s3_url: Mapped[str] = mapped_column(nullable=False,)
         s3_filename: Mapped[str] = mapped_column(nullable=False)
-        spreadsheet_config: Mapped[str] = mapped_column(nullable=False)
+        spreadsheet_config: Mapped[str] = mapped_column(nullable=True)
 
         user_id: Mapped[int] = mapped_column(
             ForeignKey('user.id'),
             nullable=False
         )
 
-        pipeline_name: Mapped[str] = mapped_column(
-            ForeignKey('pipeline.name'),
+        pipeline_id: Mapped[int] = mapped_column(
+            ForeignKey('pipeline.id'),
             nullable=False
         )
 
@@ -179,7 +179,7 @@ def create_pipeline_step_models(
 
         pipeline: Mapped['Pipeline'] = relationship(
             back_populates='uploads',
-            foreign_keys=[pipeline_name]
+            foreign_keys=[pipeline_id]
         )
 
         user: Mapped['User'] = relationship( # noqa F821
