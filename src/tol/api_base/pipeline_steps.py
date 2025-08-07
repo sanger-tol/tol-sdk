@@ -73,7 +73,7 @@ def pipeline_steps_blueprint(
         if not all(field in body for field in required_fields):
             raise DataSourceError(
                 'Bad Request',
-                f'You must specify all of: "{", ".join(required_fields)}"',
+                f'You must specify all of: {", ".join(required_fields)}',
                 400
             )
 
@@ -88,8 +88,8 @@ def pipeline_steps_blueprint(
 
         if not pipeline:
             raise DataSourceError(
-                "Not Found",
-                "The specified pipeline was not found.",
+                'Not Found',
+                'The specified pipeline was not found.',
                 404
             )
 
@@ -120,8 +120,8 @@ def pipeline_steps_blueprint(
 
         if not inserted_upload_data:
             raise DataSourceError(
-                "Insertion Error",
-                "Failed to insert upload data.",
+                'Insertion Error',
+                'Failed to insert upload data.',
                 500
             )
 
