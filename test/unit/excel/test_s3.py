@@ -71,9 +71,9 @@ class TestS3Excel:
         """Using a real spreadsheet (and mock S3)."""
 
         emitter = s3_excel_datasource_factory(
-            mock_s3_filename,
-            mock_s3_bucket,
-            'Sheet1',
+            s3_filename=mock_s3_filename,
+            s3_bucket=mock_s3_bucket,
+            sheetname='Sheet1',
             s3_fetcher=mock_s3_fetcher,
             object_type=object_type,
         )

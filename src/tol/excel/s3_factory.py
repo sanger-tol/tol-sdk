@@ -40,6 +40,7 @@ def fetch_from_s3(
 
 
 def s3_excel_datasource_factory(
+    *,
     s3_filename: str,
     s3_bucket: str,
     sheetname: str,
