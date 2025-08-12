@@ -32,6 +32,7 @@ from .gap_assembly_to_elastic_assembly_analysis_converter import GapAssemblyToEl
 from .genome_notes_genome_note_to_elastic_genome_note_converter import GenomeNotesGenomeNoteToElasticGenomeNoteConverter  # noqa F401
 from .goat_taxon_to_elastic_species_converter import GoatTaxonToElasticSpeciesConverter  # noqa F401
 from .grit_issue_to_elastic_curation_converter import GritIssueToElasticCurationConverter  # noqa F401
+from .informatics_tolid_to_elastic_tolid_converter import InformaticsTolidToElasticTolidConverter  # noqa F401
 from .labwhere_location_to_elastic_sample_update_converter import LabwhereLocationToElasticSampleUpdateConverter  # noqa F401
 from .labwhere_location_to_sts_tray_converter import LabwhereLocationToStsTrayConverter  # noqa F401
 from .mlwh_extraction_to_elastic_extraction_converter import MlwhExtractionToElasticExtractionConverter  # noqa F401

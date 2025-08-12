@@ -6,14 +6,11 @@ from __future__ import annotations
 
 from typing import Any, Callable, Iterable, Optional, Type
 
-from flask import make_response
-
 from .auth import AuthInspector
 from .misc import (
     AggregationBody,
     AggregationParameters,
     GroupStatsParameters,
-    JsonApiRequestBody,
     ListGetParamaters,
     StatsParameters
 )
@@ -37,7 +34,6 @@ from ..core.operator import (
     DetailGetter,
     GroupStatter,
     Inserter,
-    ListGetter,
     Operator,
     OperatorMethod,
     PageGetter,
@@ -47,7 +43,6 @@ from ..core.operator import (
     Upserter
 )
 from ..core.operator.updater import DataObjectUpdate
-from ..excel import convert_data_objects_to_excel
 
 
 EmptySuccessResponse = dict[str, bool]
@@ -179,42 +174,6 @@ class Controller:
             'types': self.__data_source.get_attribute_types(object_type)
         }
         return self.__view.dump_bulk(data_objects, document_meta=document_meta)
-
-    @validate(ListGetter, 'post_list_export', OperatorMethod.EXPORT)
-    def post_list_export(
-        self,
-        object_type: str,
-        query_args: ListGetParamaters,
-        body: JsonApiRequestBody,
-        ext_and: Optional[AndFilter],
-    ) -> ResponseDict:
-        """
-        Gets all the list results of the specified type.
-        """
-
-        page_number = self.__get_page_number_or_1(query_args)
-        data_objects, _ = self.__data_source.get_list_page(
-            object_type,
-            page_number,
-            page_size=query_args.page_size,
-            object_filters=self.__combine_filters(
-                query_args.filter,
-                ext_and
-            ),
-            sort_by=query_args.sort_by
-        )
-
-        output_stream = convert_data_objects_to_excel(
-            self.data_source,
-            object_type,
-            data_objects,
-            body.data,
-            'Sheet1'
-        )
-        response = make_response(output_stream.getvalue())
-        response.headers['Content-Disposition'] = 'attachment; filename=download_table.xlsx'
-        response.headers['Content-type'] = 'application/vnd.ms-excel'
-        return response
 
     @validate(Counter, 'get_count', OperatorMethod.COUNT)
     def get_count(

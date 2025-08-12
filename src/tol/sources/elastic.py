@@ -17,7 +17,7 @@ from ..elastic import (
 )
 
 
-def elastic(environment: str = None) -> ElasticDataSource:
+def elastic(environment: str = None, product: str = None) -> ElasticDataSource:
     rc_run_data = RelationshipConfig()
     rc_run_data.to_one = {'benchling_extraction': 'extraction',
                           'benchling_sample': 'sample',
@@ -513,13 +513,13 @@ def elastic(environment: str = None) -> ElasticDataSource:
         },
         'specimen': {
             'calc_coverage_post_run': RuntimeFields.math(
-                'tolqc_run_data_tolqc_bases_sum',
+                'tolqc_run_data_tolqc_bases_pacbio_sum',
                 'sts_estimated_genome_size',
                 operation='/'
             )
         },
         'tolid': {
-            'calc_coverage': RuntimeFields.math('tolqc_run_data_tolqc_bases_sum',
+            'calc_coverage': RuntimeFields.math('tolqc_run_data_tolqc_bases_pacbio_sum',
                                                 'tolid_species.sts_genome_size',
                                                 operation='/'),
             'calc_ongoing_submissions': RuntimeFields.math(
@@ -530,13 +530,13 @@ def elastic(environment: str = None) -> ElasticDataSource:
                 'type': 'boolean',
                 'script': {
                     'source': """
-                        if (doc.containsKey('tolqc_run_data_tolqc_bases_sum') &&
+                        if (doc.containsKey('tolqc_run_data_tolqc_bases_pacbio_sum') &&
                         doc.containsKey('tolid_species.sts_genome_size') &&
                         doc.containsKey('sts_sample_sts_target_coverage_max') &&
-                        doc['tolqc_run_data_tolqc_bases_sum'].size() > 0 &&
+                        doc['tolqc_run_data_tolqc_bases_pacbio_sum'].size() > 0 &&
                         doc['tolid_species.sts_genome_size'].size() > 0 &&
                         doc['sts_sample_sts_target_coverage_max'].size() > 0) {
-                            emit(doc['tolqc_run_data_tolqc_bases_sum'].value /
+                            emit(doc['tolqc_run_data_tolqc_bases_pacbio_sum'].value /
                                 doc['tolid_species.sts_genome_size'].value >=
                                 doc['sts_sample_sts_target_coverage_max'].value)
                         }
@@ -559,8 +559,8 @@ def elastic(environment: str = None) -> ElasticDataSource:
                             doc[
                                 'benchling_pacbio_completed_sequencing_request_count'
                             ].size() > 0 &&
-                            doc.containsKey('tolqc_run_data_tolqc_bases_sum') &&
-                            doc['tolqc_run_data_tolqc_bases_sum'].size() > 0 &&
+                            doc.containsKey('tolqc_run_data_tolqc_bases_pacbio_sum') &&
+                            doc['tolqc_run_data_tolqc_bases_pacbio_sum'].size() > 0 &&
                             doc.containsKey('tolid_species.sts_genome_size') &&
                             doc['tolid_species.sts_genome_size'].size() > 0 &&
                             doc.containsKey('sts_sample_sts_target_coverage_max') &&
@@ -589,7 +589,7 @@ def elastic(environment: str = None) -> ElasticDataSource:
                             doc['benchling_pacbio_completed_sequencing_request_count'].value == 0);
 
                         boolean isTargetCoverageMet =
-                            (doc['tolqc_run_data_tolqc_bases_sum'].value /
+                            (doc['tolqc_run_data_tolqc_bases_pacbio_sum'].value /
                             doc['tolid_species.sts_genome_size'].value >=
                             doc['sts_sample_sts_target_coverage_max'].value);
 
@@ -1029,15 +1029,18 @@ def elastic(environment: str = None) -> ElasticDataSource:
     # or be ELASTIC_ENVIRONMENT environment variable
     # or not be set
     if environment is None:
-        environment = os.getenv('ELASTIC_ENVIRONMENT')
-    index_suffix = f'-{environment}' if environment else ''
+        environment = os.getenv('ELASTIC_ENVIRONMENT', 'production')
+    if product is None:
+        product = os.getenv('ELASTIC_PRODUCT', 'portal')
+    index_suffix = f'-{product}' if product else ''
+    index_suffix += f'-{environment}' if environment else ''
     elastic = ElasticDataSource({
         'uri': os.getenv('ELASTIC_URI'),
         'user': os.getenv('ELASTIC_USER'),
         'password': os.getenv('ELASTIC_PASSWORD'),
         'index_prefix': os.getenv('ELASTIC_INDEX_PREFIX') + index_suffix,
-        'relationship_cfg': relationship_config,
-        'runtime_fields': runtime_fields},
+        'relationship_cfg': relationship_config if product == 'portal' else {},
+        'runtime_fields': runtime_fields if product == 'portal' else {}},
         attribute_metadata=amd)
     core_data_object(elastic)
     return elastic
