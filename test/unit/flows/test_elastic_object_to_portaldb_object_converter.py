@@ -22,9 +22,9 @@ class _MockDataSource(DataSource):
     def attribute_types(self):
         raise NotImplementedError()
 
-    def get_by_id(self, type_, ids):
+    def get_one(self, type_, id_):
         return self.data_object_factory(
-            id_=ids[0],
+            id_=id_,
             type_=type_,
             attributes={'tol_tum_action_count': None}
         )

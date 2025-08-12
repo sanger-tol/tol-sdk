@@ -34,9 +34,9 @@ class ElasticObjectToPortaldbObjectConverter(
             )
 
             if self.__incremental and self.__destination_object_type == 'tolid_event':
-                obj = ret._host.get_by_id(
+                obj = ret._host.get_one(
                     'tolid_event',
-                    [data_object.get_field_by_name(self.__id_field)]
+                    data_object.get_field_by_name(self.__id_field)
                 )
                 count_field_value = obj.attributes['tol_tum_action_count']
                 new_count = count_field_value + 1 if count_field_value else 1
