@@ -75,6 +75,7 @@ class TolqcDataToElasticRunDataConverter(DataObjectToDataObjectOrUpdateConverter
                     'caption': file.get('caption')
                 }
                 for file in data_object.folder.image_file_list
+                if data_object.folder.image_file_list is not None
             ]
 
         ret = self._data_object_factory(

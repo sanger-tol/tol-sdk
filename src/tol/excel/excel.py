@@ -2,14 +2,11 @@
 #
 # SPDX-License-Identifier: MIT
 
-import io
-from typing import Iterable
-
 import numpy as np
 
 import pandas as pd
 
-from tol.core import DataObject, OperableDataSource
+from tol.core import OperableDataSource
 
 
 def convert_excel_to_json(file, sheet_name):
@@ -83,45 +80,3 @@ def __make_tz_unaware(
         df.loc[datetime_mask, column] = coerced[datetime_mask].dt.tz_convert(None)
 
     return df
-
-
-def convert_data_objects_to_excel(
-    host: OperableDataSource,
-    object_type: str,
-    data_objects: Iterable[DataObject],
-    body: list[dict[str, str]],
-    sheet_name: str
-):
-    # Create a binary stream to where Excel data will be written to
-    output_stream = io.BytesIO()
-    writer = pd.ExcelWriter(output_stream, engine='xlsxwriter')
-
-    # Extract the visible columns and their order for the excel column headers
-    column_order = [field['display_name'] for field in body if not field['hidden']]
-    df = pd.DataFrame(columns=column_order)
-
-    for data_object in data_objects:
-        data = {}
-
-        for field in body:
-            if not field['hidden']:
-                display_name = field['display_name']
-                key = field['key']
-                data[display_name] = data_object.get_field_by_name(key)
-
-        # Append to data frame
-        df = pd.concat([df, pd.DataFrame([data])], ignore_index=True)
-
-    keys = [field['key'] for field in body if not field['hidden']]
-
-    # remove tz info from datetime columns
-    dt_keys = __get_datetime_keys(host, object_type, keys)
-    both = dict(zip(keys, column_order))
-    dt_columns = [both[k] for k in dt_keys]
-    df = __make_tz_unaware(df, dt_columns)
-
-    # Convert the data frame to Excel
-    df.to_excel(excel_writer=writer, index=False, sheet_name=sheet_name)
-    writer.close()
-
-    return output_stream
