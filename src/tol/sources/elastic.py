@@ -572,6 +572,11 @@ def elastic(environment: str = None, product: str = None) -> ElasticDataSource:
                             return;
                         }
 
+                        boolean isInReview =
+                            doc.containsKey('portaldb_in_review') &&
+                            doc['portaldb_in_review'].size() > 0 &&
+                            doc['portaldb_in_review'].value == true;
+
                         boolean isTotalSubmissionsGreaterThanZero =
                             doc['benchling_pacbio_sequencing_request_count'].value > 0;
 
@@ -617,7 +622,8 @@ def elastic(environment: str = None, product: str = None) -> ElasticDataSource:
                             isTotalSubmissionsGreaterThanZero &&
                             isOngoingSubmissionsEqualZero &&
                             !isTargetCoverageMet &&
-                            !isSpecimenNotAtSequencingStage
+                            !isSpecimenNotAtSequencingStage &&
+                            !isInReview
                         );
                     """
                 }
