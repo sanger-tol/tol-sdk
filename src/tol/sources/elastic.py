@@ -654,57 +654,48 @@ def elastic(environment: str = None, product: str = None) -> ElasticDataSource:
                     'source': """
                         def benchlingNewSampleCount = 0;
                         if (doc.containsKey('benchling_sample_count')
-                            && doc['benchling_sample_count'].size() > 0) {
-                            benchlingNewSampleCount = doc['benchling_sample_count'].value;
+                          && doc['benchling_sample_count'].size() > 0) {
+                          benchlingNewSampleCount = doc['benchling_sample_count'].value;
+                        }
+                        def abandonCnt = 0;
+                        if (doc.containsKey('calc_sample_calc_sample_abandoned_in_sts_count')
+                          && doc['calc_sample_calc_sample_abandoned_in_sts_count'].size() > 0) {
+                          abandonCnt = doc['calc_sample_calc_sample_abandoned_in_sts_count'].value;
                         }
 
-                        def abandonCount = 0;
-                        if (doc.containsKey('calc_sample_abandoned_in_sts_sample_count')
-                            && doc['calc_sample_abandoned_in_sts_sample_count'].size() > 0) {
-                            abandonCount = doc['calc_sample_abandoned_in_sts_sample_count'].value;
-                        }
-
-                        def totalSampleCount = benchlingNewSampleCount + abandonCount;
+                        def totalSampleCount = benchlingNewSampleCount + abandonCnt;
 
                         boolean allSamplesAccountedFor = false;
                         if (doc.containsKey('sts_sample_count') &&
-                            doc['sts_sample_count'].size() > 0 &&
-                            totalSampleCount == doc['sts_sample_count'].value) {
-                            allSamplesAccountedFor = true;
+                          doc['sts_sample_count'].size() > 0 &&
+                          totalSampleCount == doc['sts_sample_count'].value) {
+                          allSamplesAccountedFor = true;
                         }
 
                         boolean allBenchlingMaterialExhausted = false;
-                        if (benchlingNewSampleCount > 0 &&
-                            doc.containsKey(
-                            'calc_sequencing_request_calc_mlwh_volume_remaining_max')
-                            && doc.containsKey('
-                            calc_extraction_calc_benchling_volume_ul_dna_max')
-                            && doc.containsKey('
-                            calc_tissue_prep_calc_benchling_weight_mg_max')
-                            && doc.containsKey(
-                            'calc_sample_calc_benchling_remaining_weight_max')
-                            && doc['
-                            calc_sequencing_request_calc_mlwh_volume_remaining_max'].size() > 0
-                            && doc['
-                            calc_extraction_calc_benchling_volume_ul_dna_max'].size() > 0
-                            && doc['
-                            calc_tissue_prep_calc_benchling_weight_mg_max'].size() > 0
-                            && doc['
-                            calc_sample_calc_benchling_remaining_weight_max'].size() > 0
-                            && doc['
-                            calc_sequencing_request_calc_mlwh_volume_remaining_max'].value <= 0
-                            && doc['
-                            calc_extraction_calc_benchling_volume_ul_dna_max'].value <= 0
-                            && doc['
-                            calc_tissue_prep_calc_benchling_weight_mg_max'].value <= 0
-                            && doc['
-                            calc_sample_calc_benchling_remaining_weight_max'].value <= 0)
-                            {
-                            allBenchlingMaterialExhausted = true;
+                        if (
+                          benchlingNewSampleCount > 0 &&
+                          doc.containsKey('calc_sequencing_request_calc_mlwh_volume_remaining_max')
+                          &&
+                          doc.containsKey('calc_extraction_calc_benchling_volume_ul_dna_max') &&
+                          doc.containsKey('calc_tissue_prep_calc_benchling_weight_mg_max') &&
+                          doc.containsKey('calc_sample_calc_benchling_remaining_weight_max') &&
+                          doc['calc_sequencing_request_calc_mlwh_volume_remaining_max'].size() > 0
+                          &&
+                          doc['calc_extraction_calc_benchling_volume_ul_dna_max'].size() > 0 &&
+                          doc['calc_tissue_prep_calc_benchling_weight_mg_max'].size() > 0 &&
+                          doc['calc_sample_calc_benchling_remaining_weight_max'].size() > 0 &&
+                          doc['calc_sequencing_request_calc_mlwh_volume_remaining_max'].value <= 0
+                          &&
+                          doc['calc_extraction_calc_benchling_volume_ul_dna_max'].value <= 0 &&
+                          doc['calc_tissue_prep_calc_benchling_weight_mg_max'].value <= 0 &&
+                          doc['calc_sample_calc_benchling_remaining_weight_max'].value <= 0
+                        ) {
+                          allBenchlingMaterialExhausted = true;
                         }
 
                         emit(allSamplesAccountedFor &&
-                            (benchlingNewSampleCount == 0 || allBenchlingMaterialExhausted));
+                          (benchlingNewSampleCount == 0 || allBenchlingMaterialExhausted));
                     """
                 }
             },
@@ -864,24 +855,6 @@ def elastic(environment: str = None, product: str = None) -> ElasticDataSource:
                         } else {
                             emit(0.5);
                         }
-                    """
-                }
-            },
-            'calc_sample_eligible_for_sts_table': {
-                'type': 'boolean',
-                'script': {
-                    'source': """
-                        boolean isSampleAbandoned = doc.containsKey('portaldb_date_abandoned') &&
-                            doc['portaldb_date_abandoned'].size() > 0;
-
-                        boolean isSampleInBenchling = doc.containsKey('sts_eln_id.keyword') &&
-                            doc['sts_eln_id.keyword'].size() > 0;
-
-                        boolean isInSTSNotInBenchling = !isSampleAbandoned && !isSampleInBenchling;
-
-                        boolean isAbandonedInBenchling = isSampleAbandoned && isSampleInBenchling;
-
-                        emit(isInSTSNotInBenchling || isAbandonedInBenchling);
                     """
                 }
             },
