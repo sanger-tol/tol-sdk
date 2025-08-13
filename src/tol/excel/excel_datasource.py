@@ -60,8 +60,8 @@ class ExcelDataSource(
 
     def get_list(
         self,
-        *args,
-        **kwargs
+        *args: Any,
+        **kwargs: Any,
     ) -> Iterable[DataObject]:
 
         return (
