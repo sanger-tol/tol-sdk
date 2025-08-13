@@ -3,6 +3,7 @@
 # SPDX-License-Identifier: MIT
 
 from datetime import datetime
+import os
 from unittest.mock import create_autospec
 
 from flask.testing import FlaskClient
@@ -19,6 +20,8 @@ class TestRunningPipelinesWithDataSources:
     """
     `pipeline_steps_blueprint()` using stub `DataSource` mocks.
     """
+
+    os.environ['UPLOAD_S3_BUCKET'] = 'some_bucket'
 
     def test__404(
         self,
@@ -46,6 +49,7 @@ class TestRunningPipelinesWithDataSources:
                         'spreadsheet_config': 'some_config',
                         'pipeline_id': '123123',
                         'destination': 'some_destination',
+                        'dry_run': False
                     }
                 }
             )
@@ -74,13 +78,18 @@ class TestRunningPipelinesWithDataSources:
 
         sql_ds.insert.return_value = [self.__mock_upload('123456')]
 
+        flow_params = {
+            'upload_id': '123456',
+            'pipeline_id': '123123',
+            'dry_run': False,
+        }
+
         prefect_ds.insert.return_value = [
             self.__do_factory(
                 type_='pipeline_run',
                 id_='run_123456',
                 attributes={
-                    'pipeline_id': '123123',
-                    'upload_id': '123456',
+                    'parameters': flow_params,
                 },
             )
         ]
@@ -94,6 +103,7 @@ class TestRunningPipelinesWithDataSources:
                     'spreadsheet_config': 'some_config',
                     'pipeline_id': '123123',
                     'destination': 'some_destination',
+                    'dry_run': False
                 }
             }
         )
@@ -111,8 +121,9 @@ class TestRunningPipelinesWithDataSources:
         args, kwargs = prefect_calls[0]
         assert args[0] == 'flow_run'
 
-        assert kwargs['attributes']['pipeline_id'] == '123123'
-        assert kwargs['attributes']['upload_id'] == '123456'
+        assert kwargs['attributes']['parameters']['pipeline_id'] == '123123'
+        assert kwargs['attributes']['parameters']['upload_id'] == '123456'
+        assert kwargs['attributes']['parameters']['dry_run'] is False
 
         assert prefect_ds.insert.call_count == 1
 
