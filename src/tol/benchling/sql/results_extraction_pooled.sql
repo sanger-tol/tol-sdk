@@ -69,6 +69,7 @@ SELECT DISTINCT
 	qbit.qubit_concentration_ngul AS dnapool_qubit_ngul,
 	femto.gqn_dnaex AS dnapool_gqn,
 	dnay.yield AS dnapool_yield,
+	tube.type AS tube_type,
 	femto.femto_profile_description AS dnapool_femto_description,
 	dnap.samples AS source_dna_extract_id,
 	'pooled_dna'::varchar AS extraction_type
@@ -97,9 +98,7 @@ LEFT JOIN tube$raw AS tube
 	ON cc.container_id = tube.id 
 LEFT JOIN folder$raw AS f 
 	ON dnap.folder_id$ = f.id
-WHERE tube.type IS NULL -- Excluding vouchers
-	AND con.volume_si * 1000000 != 10
-	AND (f.name IN ('Routine Throughput', 'DNA', 'Core Lab Entities', 'Benchling MS Project Move') OR f.name IS NULL)
+WHERE (f.name IN ('Routine Throughput', 'DNA', 'Core Lab Entities', 'Benchling MS Project Move') OR f.name IS NULL)
 	AND (dnap.archive_purpose$ != ('Made in error') OR dnap.archive_purpose$ IS NULL)
 	AND (con.archive_purpose$ != ('Made in error') OR con.archive_purpose$ IS NULL)
 	AND con.barcode NOT LIKE 'CON%'

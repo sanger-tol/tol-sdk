@@ -5,7 +5,7 @@ This SQL query retrieves all the information of DNA extractions performed by the
 
 The table produced also contains the eln_dna_extract_id and eln_file_registry_id which uniquely idenfied each dna extract entity in Benchling Warehouse (BWH). 
 
-The eln_dna_extract_id should be used as the foreign key to the DNA extract entity thesubmission is derived from.
+The eln_dna_extract_id should be used as the foreign key to the DNA extract entity the submission is derived from.
 
 Output: Table with cols: 
 
@@ -26,23 +26,23 @@ Output: Table with cols:
 15) bnt_id: [character] Batches and Tracking legacy id.
 16) manual_vs_automatic: [character].
 17) extraction_protocol: [character] DNA extraction protocol as recorded at the time of extraction
-18) extraction_type: [character] dna.
-19) name: [character] Folder name.
-20) archive_purpose: [character] Reason for archiving the DNA extraction.
-21) nanodrop_concentration_ngul: [double] Concentration of DNA as measured by Nanodrop.
-22) dna_260_280_ratio: [double] Ratio of absorbance at 260:280nm as measured by spectrophotometer.
-23) dna_260_230_ratio: [double] Ratio of absorbance at 260:230nm as measured by spectrophotometer.
-24) qubit_concentration_ngul: [double] Concentration of DNA as measured by Qubit.
-25) yield_ng: [double] DNA yield after extraction.
-26) femto_date_code: [character] Femto date code.
-27) femto_description:[character] Categorical description of the femto pulse profile. 
-28) gqn_index: [character] Genomic Quality Number (GQN) index, calculated by the Femto software.
-29) extraction_qc_result: [character] QC result: Yes = Extraction passed; No = Extraction failed. 
+18) tube_type: [character] Type of tube. Marked NULL or voucher.
+19) extraction_type: [character] dna.
+20) name: [character] Folder name.
+21) archive_purpose: [character] Reason for archiving the DNA extraction.
+22) nanodrop_concentration_ngul: [double] Concentration of DNA as measured by Nanodrop.
+23) dna_260_280_ratio: [double] Ratio of absorbance at 260:280nm as measured by spectrophotometer.
+24) dna_260_230_ratio: [double] Ratio of absorbance at 260:230nm as measured by spectrophotometer.
+25) qubit_concentration_ngul: [double] Concentration of DNA as measured by Qubit.
+26) yield_ng: [double] DNA yield after extraction.
+27) femto_date_code: [character] Femto date code.
+28) femto_description:[character] Categorical description of the femto pulse profile. 
+29) gqn_index: [character] Genomic Quality Number (GQN) index, calculated by the Femto software.
+30) extraction_qc_result: [character] QC result: Yes = Extraction passed; No = Extraction failed. 
 
 NOTES: 
 1) Data types were casted explicitly to conserved the data type stored in BWH.
-2) To add the Fluidx ID of the original DNA extract a few filters were applied to delete Vouchers, tubes archived because they were made in error, and invalid container names. 
-3) Vouchers: The volume filter is risky but necessary. A few container might be excluded.
+2) To add the Fluidx ID of the original DNA extract a few filters were applied to delete Vouchers, tubes archived because they were made in error, and invalid container names.
 
 */
 
@@ -133,6 +133,7 @@ SELECT DISTINCT
     dna.bt_id AS bnt_id,
 	dna.manual_vs_automatic AS manual_vs_automatic,
     dna.extraction_protocol,
+    tube.type AS tube_type,
     'dna'::varchar AS extraction_type,
     f.name, dna.archive_purpose$,
     latest_nanodrop_conc.nanodrop_concentration_ngul,
@@ -174,9 +175,7 @@ LEFT JOIN box$raw AS box -- Location chunk
     ON con.box_id = box.id
 LEFT JOIN location$raw AS loc
     ON loc.id = box.location_id -- End of location chunk
-WHERE tube.type IS NULL -- Excluding vouchers
-    AND con.volume_si * 1000000 != 10
-    AND proj.name = 'ToL Core Lab'
+WHERE proj.name = 'ToL Core Lab'
     AND  (f.name IN ('Routine Throughput', 'DNA', 'Core Lab Entities', 'Benchling MS Project Move') OR f.name IS NULL)
     AND (dna.archive_purpose$ != ('Made in error') OR dna.archive_purpose$ IS NULL)
     AND (con.archive_purpose$ != ('Made in error') OR con.archive_purpose$ IS NULL)

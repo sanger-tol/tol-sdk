@@ -28,19 +28,19 @@ Output: Table with cols:
 13) yield_ng: [double] DNA yield after extraction. 
 14) femto_description:[character] Categorical description of the femto pulse profile. 
 15) volume_ul: [double] volume of DNA available in the fluidx tube.
-16) location: [character] Physical locationo of the DNA extraction. Freezer shelf.
-17) rack: [character] Physical locationo of the DNA extraction. Rack barcode.
-18) source_extractions_id: [jsonb] List of ids for pooled dna extracts.
-19) extraction_type: [character] pooled_dna.
+16) tube_type: [character] Type of tube. Marked NULL or voucher.
+17) location: [character] Physical locationo of the DNA extraction. Freezer shelf.
+18) rack: [character] Physical locationo of the DNA extraction. Rack barcode.
+19) source_extractions_id: [jsonb] List of ids for pooled dna extracts.
+20) extraction_type: [character] pooled_dna.
 
 NOTES: 
 
 1) Data types were casted explicitly to conserved the data type stored in BWH.
 2) To add the Fluidx ID of the original DNA extract a few filters were applied to
 delete Vouchers, tubes archived because they were made in error, and 
-invalid container names. 
-3) Vouchers: The volume filter is risky but necessary. A few container might be excluded. 
-4) Tissue metadata is retrieved using the first dna extract listed in source_dna_extract_id
+invalid container names.
+3) Tissue metadata is retrieved using the first dna extract listed in source_dna_extract_id
 as a link to the tissue prep and tissue entities. 
 
 */
@@ -62,6 +62,7 @@ SELECT DISTINCT
 	dnay.yield AS yield_ng,
 	femto.femto_profile_description AS femto_description,
 	con.volume_si * 1000000 AS volume_ul,
+	tube.type AS tube_type,
 	loc.name AS location,
 	box.barcode AS rack, 
 	dnap.samples AS source_extractions_id,
@@ -91,9 +92,7 @@ LEFT JOIN box$raw AS box -- Location chunk
 	ON con.box_id = box.id 
 LEFT JOIN location$raw AS loc
 	ON loc.id = box.location_id -- End of location chunk
-WHERE tube.type IS NULL -- Excluding vouchers
-	AND con.volume_si * 1000000 != 10
-	AND (f.name IN ('Routine Throughput', 'DNA', 'Core Lab Entities', 'Benchling MS Project Move') OR f.name IS NULL)
+WHERE (f.name IN ('Routine Throughput', 'DNA', 'Core Lab Entities', 'Benchling MS Project Move') OR f.name IS NULL)
 	AND (dnap.archive_purpose$ != ('Made in error') OR dnap.archive_purpose$ IS NULL)
 	AND (con.archive_purpose$ != ('Made in error') OR con.archive_purpose$ IS NULL)
 	AND con.barcode NOT LIKE 'CON%'
