@@ -571,7 +571,7 @@ def elastic(environment: str = None, product: str = None) -> ElasticDataSource:
                             emit(false);
                             return;
                         }
-                        
+
                         boolean isNotInReview = (
                             doc.containsKey('portaldb_in_review') &&
                             doc['portaldb_in_review'].value != true
