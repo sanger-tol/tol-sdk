@@ -2,8 +2,8 @@
 #
 # SPDX-License-Identifier: MIT
 
-from datetime import datetime
 import os
+from datetime import datetime
 from unittest.mock import create_autospec
 
 from flask.testing import FlaskClient
