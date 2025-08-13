@@ -1,5 +1,6 @@
 # SPDX-FileCopyrightText: 2025 Genome Research Ltd.
 # SPDX-License-Identifier: MIT
+import logging
 import re
 from typing import Iterable
 
@@ -40,6 +41,10 @@ class StsSampleToCasmBenchlingConverterFactory:
             'identifier': 'labwhere_id',
             'relationship_identifier': 'storage_rack',
         },
+        'gal': {
+            'identifier': 'name',
+            'relationship_identifier': 'gal',
+        }
     }
     """
         Map of sts relationship objects to call to.
@@ -47,253 +52,494 @@ class StsSampleToCasmBenchlingConverterFactory:
         relationships of the sample for a specific value
     """
     BENCHLING_OBJECT_MAP = {
-        'casm_species_v1': {
-            'attribute_map': {
-                'species_name_v1': 'target_species',
+        'production': {
+            'casm_species_v1': {
+                'attribute_map': {
+                    'species_name_v1': 'target_species',
+                },
+                'primary_attribute': 'species_name_v1',
+                'primary_attribute_type': 'schema_field',
+                'benchling_relationships': [],
+                'sts_relationships': ['target_species'],
+                'polymorphic_benchling_relationships': [],
+                'converted_value_identifiers': [],
+                'stored_values': {},
             },
-            'primary_attribute': 'species_name_v1',
-            'primary_attribute_type': 'schema_field',
-            'benchling_relationships': [],
-            'sts_relationships': ['target_species'],
-            'polymorphic_benchling_relationships': [],
-            'converted_value_identifiers': [],
-            'stored_values': {},
+            'storage': {
+                'attribute_map': {
+                    'barcode': 'labwhere',
+                },
+                'primary_attribute': 'barcode',
+                'primary_attribute_type': 'attribute',
+                'benchling_relationships': [],
+                'sts_relationships': ['labwhere'],
+                'polymorphic_benchling_relationships': [],
+                'converted_value_identifiers': [],
+                'stored_values': {},
+            },
+            'casm_user_v1': {
+                'attribute_map': {
+                    'email_username_v1': 'SANGER_RESPONSIBLE_SCIENTIST',
+                },
+                'primary_attribute': 'email_username_v1',
+                'primary_attribute_type': 'schema_field',
+                'benchling_relationships': [],
+                'sts_relationships': [],
+                'polymorphic_benchling_relationships': [],
+                'converted_value_identifiers': [],
+                'stored_values': {},
+            },
+            'casm_donor_v1': {
+                'attribute_map': {
+                    'id_donor_casm_v1': 'ID_DONOR_CASM',
+                    'species_v1': 'casm_species_v1',
+                    'sex_v1': 'sex',
+                },
+                'primary_attribute': 'id_donor_casm_v1',
+                'primary_attribute_type': 'schema_field',
+                'benchling_relationships': ['casm_species_v1'],
+                'sts_relationships': ['sex'],
+                'polymorphic_benchling_relationships': [],
+                'converted_value_identifiers': [],
+                'stored_values': {},
+                'naming_strategy': NamingStrategy.REPLACE_NAMES_FROM_PARTS,                
+            },
+            'casm_tissue_v1': {
+                'attribute_map': {
+                    'donor_id_v1': 'casm_donor_v1',
+                    'tissue_type_v1': 'TISSUE_PHENOTYPE',
+                    'age_v1': 'SPECIMEN_AGE_YEARS',
+                    'foetal_tissue_v1': 'FETAL_TISSUE',
+                    'disease_status_v1': 'WILDTYPE_DISEASE',
+                    'cancer_type_v1': 'TISSUE_HISTOLOGY',
+                    'id_tissue_casm_v1': 'ID_TISSUE_CASM',
+                    'country_of_origin_v1': 'COUNTRY_OF_ORIGIN',
+                },
+                'primary_attribute': 'id_tissue_casm_v1',
+                'primary_attribute_type': 'schema_field',
+                'benchling_relationships': ['casm_donor_v1'],
+                'sts_relationships': [],
+                'polymorphic_benchling_relationships': [],
+                'converted_value_identifiers': [],
+                'stored_values': {},
+                'naming_strategy': NamingStrategy.REPLACE_NAMES_FROM_PARTS,
+                
+            },
+            'casm_sample_metadata_v1': {
+                'attribute_map': {
+                    'tissue_id_v1': 'casm_tissue_v1',
+                    'compliance_agreement_v1': 'casm_compliance_agreement_v1',
+                    'responsible_scientist_v1': 'casm_user_v1',
+                    'tissue_preparation_v1': 'TISSUE_PREPARATION',
+                    'sts_id_v1': 'id',
+                    'collaborator_name_v1': 'COLLABORATOR_NAME',
+                    'responsible_pi_v1': 'SANGER_RESPONSIBLE_PI',
+                    'sample_set_id_v1': 'sampleset',
+                    'gal_v1': 'gal'
+                },
+                'primary_attribute': 'sts_id_v1',
+                'primary_attribute_type': 'schema_field',
+                'benchling_relationships': [
+                    'casm_tissue_v1',
+                    'casm_user_v1'
+                ],
+                'benchling_multiselect_relationships': [
+                    'casm_compliance_agreement_v1'
+                ],
+                'sts_relationships': ['sampleset', 'gal'],
+                'polymorphic_benchling_relationships': [],
+                'converted_value_identifiers': [],
+                'stored_values': {},
+                'naming_strategy': NamingStrategy.REPLACE_NAMES_FROM_PARTS,
+            },
+            'casm_sample_v1': {
+                'attribute_map': {
+                    'sample_metadata_id_v1': 'casm_sample_metadata_v1',
+                    'sample_type_v1': 'sample_format',
+                    'date_created_v1': 'created_on',
+                    'hazard_group_v1': 'hazard_group',
+                    'genetically_modified_v1': 'genetically_modified',
+                    'status_manual_v1': 'sample_status',
+                    'programme_id_manual_v1': 'INTERNAL_CASM_SAMPLE_NAME',
+                    'id_sample_casm_manual_v1': 'ID_SAMPLE_CASM'
+                },
+                'primary_attribute': 'id_sample_casm_manual_v1',
+                'primary_attribute_type': 'schema_field',
+                'benchling_relationships': [
+                    'casm_sample_metadata_v1',
+                ],
+                'sts_relationships': [
+                    'sample_status',
+                    'hazard_group',
+                ],
+                'polymorphic_benchling_relationships': [],
+                'converted_value_identifiers': [],
+                'stored_values': {},
+                'naming_strategy': NamingStrategy.REPLACE_NAMES_FROM_PARTS,
+                
+            },
+            'casm_programme_id_v1': {
+                'attribute_map': {
+                    'sample_id_v1': 'casm_sample_v1',
+                    'programme_id_v1': 'INTERNAL_CASM_SAMPLE_NAME',
+                    'id_sample_casm_v1': 'ID_SAMPLE_CASM'
+                },
+                'primary_attribute': 'sample_id_v1',
+                'primary_attribute_type': 'schema_field',
+                'benchling_relationships': [
+                    'casm_sample_v1',
+                ],
+                'sts_relationships': [],
+                'polymorphic_benchling_relationships': [],
+                'converted_value_identifiers': [],
+                'stored_values': {},
+            },
+            'casm_sample_status_v1': {
+                'attribute_map': {
+                    'sample_id_v1': 'casm_sample_v1',
+                    'status_v1': 'sample_status'
+                },
+                'primary_attribute': 'sample_id_v1',
+                'primary_attribute_type': 'schema_field',
+                'benchling_relationships': [
+                    'casm_sample_v1',
+                ],
+                'sts_relationships': [
+                    'sample_status'
+                ],
+                'polymorphic_benchling_relationships': [],
+                'converted_value_identifiers': [],
+                'stored_values': {},
+            },
+            '12x12_box': {
+                'attribute_map': {
+                    'barcode': 'storage_rack',
+                    'parent_storage_id': 'storage'
+                },
+                'primary_attribute': 'barcode',
+                'primary_attribute_type': 'attribute',
+                'benchling_relationships': [
+                    'storage',
+                ],
+                'sts_relationships': [
+                    'storage_rack'
+                ],
+                'polymorphic_benchling_relationships': [],
+                'converted_value_identifiers': [],
+                'stored_values': {},
+            },
+            'casm_96_well_plate_v1': {
+                'attribute_map': {
+                    'barcode': 'storage_rack',
+                    'parent_storage_id': 'storage'
+                },
+                'primary_attribute': 'barcode',
+                'primary_attribute_type': 'attribute',
+                'benchling_relationships': [
+                    'storage',
+                ],
+                'sts_relationships': [
+                    'storage_rack'
+                ],
+                'polymorphic_benchling_relationships': [],
+                'converted_value_identifiers': [],
+                'stored_values': {},
+            },
+            'casm_tube_v1': {
+                'attribute_map': {
+                    'barcode': 'tubeid',
+                    'parent_storage_id': 'box_and_position'
+                },
+                'primary_attribute': 'barcode',
+                'primary_attribute_type': 'schema_field',
+                'benchling_relationships': [
+                    '12x12_box',
+                ],
+                'sts_relationships': [],
+                'polymorphic_benchling_relationships': [],
+                'converted_value_identifiers': [],
+                'concatenated_values': ['box_and_position'],
+                'stored_values': {},
+            },
+            'casm_well_v1': {
+                'attribute_map': {
+                    'barcode': 'plate_and_location_non_relationship',
+                    'parent_storage_id': 'plate_and_location'
+                },
+                'primary_attribute': 'barcode',
+                'primary_attribute_type': 'schema_field',
+                'benchling_relationships': [
+                    'casm_96_well_plate_v1',
+                ],
+                'sts_relationships': ['storage_rack'],
+                'polymorphic_benchling_relationships': [],
+                'converted_value_identifiers': [],
+                'concatenated_values': ['plate_and_location_non_relationship', 'plate_and_location'],
+                'stored_values': {},
+            },
+            'transfer': {
+                'attribute_map': {
+                    'source_entity_id': 'casm_sample_v1',
+                    'destination_container_id': 'container',
+                    'transfer_quantity': 'VOLUME_UL',
+                    'transfer_concentration': 'CONCENTRATION_NG_UL',
+                },
+                'primary_attribute': None,
+                'benchling_relationships': ['casm_sample_v1'],
+                'sts_relationships': [],
+                'polymorphic_benchling_relationships': [
+                    'container'
+                ],
+                'converted_value_identifiers': [],
+                'concatenated_values': [],
+                'stored_values': {},
+            }
         },
-        'storage': {
-            'attribute_map': {
-                'barcode': 'labwhere',
+        'staging': {
+            'casm_species': {
+                'attribute_map': {
+                    'species_name': 'target_species',
+                },
+                'primary_attribute': 'species_name',
+                'primary_attribute_type': 'schema_field',
+                'benchling_relationships': [],
+                'sts_relationships': ['target_species'],
+                'polymorphic_benchling_relationships': [],
+                'converted_value_identifiers': [],
+                'stored_values': {},
             },
-            'primary_attribute': 'barcode',
-            'primary_attribute_type': 'attribute',
-            'benchling_relationships': [],
-            'sts_relationships': ['labwhere'],
-            'polymorphic_benchling_relationships': [],
-            'converted_value_identifiers': [],
-            'stored_values': {},
-        },
-        'casm_compliance_agreement_v1': {
-            'attribute_map': {
-                'compliance_agreement_id_v1': 'HUMFRE_REFERENCE',
+            'storage': {
+                'attribute_map': {
+                    'barcode': 'labwhere',
+                },
+                'primary_attribute': 'barcode',
+                'primary_attribute_type': 'attribute',
+                'benchling_relationships': [],
+                'sts_relationships': ['labwhere'],
+                'polymorphic_benchling_relationships': [],
+                'converted_value_identifiers': [],
+                'stored_values': {},
             },
-            'primary_attribute': 'compliance_agreement_id_v1',
-            'primary_attribute_type': 'schema_field',
-            'benchling_relationships': [],
-            'sts_relationships': [],
-            'polymorphic_benchling_relationships': [],
-            'converted_value_identifiers': [],
-            'stored_values': {},
-        },
-        'casm_user_v1': {
-            'attribute_map': {
-                'email_username_v1': 'SANGER_RESPONSIBLE_SCIENTIST',
+            'casm_users': {
+                'attribute_map': {
+                    'Email': 'SANGER_RESPONSIBLE_SCIENTIST',
+                },
+                'primary_attribute': 'Email',
+                'primary_attribute_type': 'schema_field',
+                'benchling_relationships': [],
+                'sts_relationships': [],
+                'polymorphic_benchling_relationships': [],
+                'converted_value_identifiers': [],
+                'stored_values': {},
             },
-            'primary_attribute': 'email_username_v1',
-            'primary_attribute_type': 'schema_field',
-            'benchling_relationships': [],
-            'sts_relationships': [],
-            'polymorphic_benchling_relationships': [],
-            'converted_value_identifiers': [],
-            'stored_values': {},
-        },
-        'casm_donor_v1': {
-            'attribute_map': {
-                'id_donor_casm_v1': 'ID_DONOR_CASM',
-                'species_v1': 'casm_species_v1',
-                'sex_v1': 'sex',
+            'casm_donor': {
+                'attribute_map': {
+                    'id_donor_casm': 'ID_DONOR_CASM',
+                    'species': 'casm_species',
+                    'sex': 'sex',
+                },
+                'primary_attribute': 'id_donor_casm',
+                'primary_attribute_type': 'schema_field',
+                'benchling_relationships': ['casm_species'],
+                'sts_relationships': ['sex'],
+                'polymorphic_benchling_relationships': [],
+                'converted_value_identifiers': [],
+                'stored_values': {},
+                'naming_strategy': NamingStrategy.NEW_IDS,
+                
             },
-            'primary_attribute': 'id_donor_casm_v1',
-            'primary_attribute_type': 'schema_field',
-            'benchling_relationships': ['casm_species_v1'],
-            'sts_relationships': ['sex'],
-            'polymorphic_benchling_relationships': [],
-            'converted_value_identifiers': [],
-            'stored_values': {},
-            'naming_strategy': NamingStrategy.REPLACE_NAMES_FROM_PARTS
-        },
-        'casm_tissue_v1': {
-            'attribute_map': {
-                'donor_id_v1': 'casm_donor_v1',
-                'tissue_type_v1': 'TISSUE_PHENOTYPE',
-                'age_v1': 'SPECIMEN_AGE_YEARS',
-                'foetal_tissue_v1': 'FETAL_TISSUE',
-                'disease_status_v1': 'WILDTYPE_DISEASE',
-                'cancer_type_v1': 'TISSUE_HISTOLOGY',
-                'id_tissue_casm_v1': 'ID_TISSUE_CASM',
-                'country_of_origin_v1': 'COUNTRY_OF_ORIGIN',
+            'casm_tissue': {
+                'attribute_map': {
+                    'donor_id': 'casm_donor',
+                    'tissue_type': 'TISSUE_PHENOTYPE',
+                    'age': 'SPECIMEN_AGE_YEARS',
+                    'foetal_tissue': 'FETAL_TISSUE',
+                    'disease_status': 'WILDTYPE_DISEASE',
+                    'cancer_type': 'TISSUE_HISTOLOGY',
+                    'id_tissue_casm': 'ID_TISSUE_CASM',
+                    'country_of_origin': 'COUNTRY_OF_ORIGIN',
+                },
+                'primary_attribute': 'id_tissue_casm',
+                'primary_attribute_type': 'schema_field',
+                'benchling_relationships': ['casm_donor'],
+                'sts_relationships': [],
+                'polymorphic_benchling_relationships': [],
+                'converted_value_identifiers': [],
+                'stored_values': {},
+                'naming_strategy': NamingStrategy.NEW_IDS,
+                
             },
-            'primary_attribute': 'id_tissue_casm_v1',
-            'primary_attribute_type': 'schema_field',
-            'benchling_relationships': ['casm_donor_v1'],
-            'sts_relationships': [],
-            'polymorphic_benchling_relationships': [],
-            'converted_value_identifiers': [],
-            'stored_values': {},
-            'naming_strategy': NamingStrategy.REPLACE_NAMES_FROM_PARTS
-        },
-        'casm_sample_metadata_v1': {
-            'attribute_map': {
-                'tissue_id_v1': 'casm_tissue_v1',
-                'compliance_agreement_v1': 'casm_compliance_agreement_v1',
-                'responsible_scientist_v1': 'casm_user_v1',
-                'tissue_preparation_v1': 'TISSUE_PREPARATION',
-                'sts_id_v1': 'id',
-                'collaborator_name_v1': 'COLLABORATOR_NAME',
-                'responsible_pi_v1': 'SANGER_RESPONSIBLE_PI',
-                'sample_set_id_v1': 'sampleset'
+            'casm_sample_metadata': {
+                'attribute_map': {
+                    'tissue_id': 'casm_tissue',
+                    'compliance_agreement': 'casm_compliance_agreement',
+                    'sample_owner': 'casm_users',
+                    'tissue_preparation': 'TISSUE_PREPARATION',
+                    'sts_id': 'id',
+                    'collaborator_name': 'COLLABORATOR_NAME',
+                    'responsible_pi': 'SANGER_RESPONSIBLE_PI',
+                    'responsible_scientist': 'SANGER_RESPONSIBLE_SCIENTIST',
+                    'sample_set_id': 'sampleset',
+                    'gal': 'gal'
+                },
+                'primary_attribute': 'sts_id',
+                'primary_attribute_type': 'schema_field',
+                'benchling_relationships': [
+                    'casm_tissue',
+                    'casm_users'
+                ],
+                'benchling_multiselect_relationships': [
+                    'casm_compliance_agreement'
+                ],
+                'sts_relationships': ['sampleset', 'gal'],
+                'polymorphic_benchling_relationships': [],
+                'converted_value_identifiers': [],
+                'stored_values': {},
+                'naming_strategy': NamingStrategy.NEW_IDS,
+                
             },
-            'primary_attribute': 'sts_id_v1',
-            'primary_attribute_type': 'schema_field',
-            'benchling_relationships': [
-                'casm_tissue_v1',
-                'casm_compliance_agreement_v1',
-                'casm_user_v1'
-            ],
-            'sts_relationships': ['sampleset'],
-            'polymorphic_benchling_relationships': [],
-            'converted_value_identifiers': [],
-            'stored_values': {},
-            'naming_strategy': NamingStrategy.REPLACE_NAMES_FROM_PARTS
-        },
-        'casm_sample_v1': {
-            'attribute_map': {
-                'sample_metadata_id_v1': 'casm_sample_metadata_v1',
-                'sample_type_v1': 'sample_format',
-                'date_created_v1': 'created_on',
-                'hazard_group_v1': 'hazard_group',
-                'genetically_modified_v1': 'genetically_modified',
-                'status_manual_v1': 'sample_status',
-                'programme_id_manual_v1': 'INTERNAL_CASM_SAMPLE_NAME',
-                'id_sample_casm_manual_v1': 'ID_SAMPLE_CASM'
+            'casm_sample': {
+                'attribute_map': {
+                    'sample_metadata_id': 'casm_sample_metadata',
+                    'sample_type': 'sample_format',
+                    'date_created': 'created_on',
+                    'safety_class': 'hazard_group',
+                    'genetically_modified': 'genetically_modified',
+                    'status_manual': 'sample_status',
+                    'programme_id_manual': 'INTERNAL_CASM_SAMPLE_NAME',
+                    'id_sample_casm_manual': 'ID_SAMPLE_CASM'
+                },
+                'primary_attribute': 'id_sample_casm_manual',
+                'primary_attribute_type': 'schema_field',
+                'benchling_relationships': [
+                    'casm_sample_metadata',
+                ],
+                'sts_relationships': [
+                    'sample_status',
+                    'hazard_group',
+                ],
+                'polymorphic_benchling_relationships': [],
+                'converted_value_identifiers': [],
+                'stored_values': {},
+                'naming_strategy': NamingStrategy.REPLACE_NAMES_FROM_PARTS,
+                
             },
-            'primary_attribute': 'id_sample_casm_manual_v1',
-            'primary_attribute_type': 'schema_field',
-            'benchling_relationships': [
-                'casm_sample_metadata_v1',
-            ],
-            'sts_relationships': [
-                'sample_status',
-                'hazard_group',
-            ],
-            'polymorphic_benchling_relationships': [],
-            'converted_value_identifiers': [],
-            'stored_values': {},
-            'naming_strategy': NamingStrategy.REPLACE_NAMES_FROM_PARTS
-        },
-        'casm_programme_id_v1': {
-            'attribute_map': {
-                'sample_id_v1': 'casm_sample_v1',
-                'programme_id_v1': 'INTERNAL_CASM_SAMPLE_NAME',
-                'id_sample_casm_v1': 'ID_SAMPLE_CASM'
+            'casm_programme_id': {
+                'attribute_map': {
+                    'sample_id': 'casm_sample',
+                    'programme_id': 'INTERNAL_CASM_SAMPLE_NAME',
+                    'id_sample_casm': 'ID_SAMPLE_CASM'
+                },
+                'primary_attribute': 'sample_id',
+                'primary_attribute_type': 'schema_field',
+                'benchling_relationships': [
+                    'casm_sample',
+                ],
+                'sts_relationships': [],
+                'polymorphic_benchling_relationships': [],
+                'converted_value_identifiers': [],
+                'stored_values': {},
             },
-            'primary_attribute': 'sample_id_v1',
-            'primary_attribute_type': 'schema_field',
-            'benchling_relationships': [
-                'casm_sample_v1',
-            ],
-            'sts_relationships': [],
-            'polymorphic_benchling_relationships': [],
-            'converted_value_identifiers': [],
-            'stored_values': {},
-        },
-        'casm_sample_status_v1': {
-            'attribute_map': {
-                'sample_id_v1': 'casm_sample_v1',
-                'status_v1': 'sample_status'
+            'casm_sample_status': {
+                'attribute_map': {
+                    'sample_id': 'casm_sample',
+                    'status': 'sample_status'
+                },
+                'primary_attribute': 'sample_id',
+                'primary_attribute_type': 'schema_field',
+                'benchling_relationships': [
+                    'casm_sample',
+                ],
+                'sts_relationships': [
+                    'sample_status'
+                ],
+                'polymorphic_benchling_relationships': [],
+                'converted_value_identifiers': [],
+                'stored_values': {},
             },
-            'primary_attribute': 'sample_id_v1',
-            'primary_attribute_type': 'schema_field',
-            'benchling_relationships': [
-                'casm_sample_v1',
-            ],
-            'sts_relationships': [
-                'sample_status'
-            ],
-            'polymorphic_benchling_relationships': [],
-            'converted_value_identifiers': [],
-            'stored_values': {},
-        },
-        '12x12_box': {
-            'attribute_map': {
-                'barcode': 'storage_rack',
-                'parent_storage_id': 'storage'
+            '12x12_box': {
+                'attribute_map': {
+                    'barcode': 'storage_rack',
+                    'parent_storage_id': 'storage'
+                },
+                'primary_attribute': 'barcode',
+                'primary_attribute_type': 'attribute',
+                'benchling_relationships': [
+                    'storage',
+                ],
+                'sts_relationships': [
+                    'storage_rack'
+                ],
+                'polymorphic_benchling_relationships': [],
+                'converted_value_identifiers': [],
+                'stored_values': {},
             },
-            'primary_attribute': 'barcode',
-            'primary_attribute_type': 'attribute',
-            'benchling_relationships': [
-                'storage',
-            ],
-            'sts_relationships': [
-                'storage_rack'
-            ],
-            'polymorphic_benchling_relationships': [],
-            'converted_value_identifiers': [],
-            'stored_values': {},
-        },
-        'casm_96_well_plate_v1': {
-            'attribute_map': {
-                'barcode': 'storage_rack',
-                'parent_storage_id': 'storage'
+            'casm_96_well_plate': {
+                'attribute_map': {
+                    'barcode': 'storage_rack',
+                    'parent_storage_id': 'storage'
+                },
+                'primary_attribute': 'barcode',
+                'primary_attribute_type': 'attribute',
+                'benchling_relationships': [
+                    'storage',
+                ],
+                'sts_relationships': [
+                    'storage_rack'
+                ],
+                'polymorphic_benchling_relationships': [],
+                'converted_value_identifiers': [],
+                'stored_values': {},
             },
-            'primary_attribute': 'barcode',
-            'primary_attribute_type': 'attribute',
-            'benchling_relationships': [
-                'storage',
-            ],
-            'sts_relationships': [
-                'storage_rack'
-            ],
-            'polymorphic_benchling_relationships': [],
-            'converted_value_identifiers': [],
-            'stored_values': {},
-        },
-        'casm_tube_v1': {
-            'attribute_map': {
-                'barcode': 'tubeid',
-                'parent_storage_id': 'box_and_position'
+            'casm_tube': {
+                'attribute_map': {
+                    'barcode': 'tubeid',
+                    'parent_storage_id': 'box_and_position'
+                },
+                'primary_attribute': 'barcode',
+                'primary_attribute_type': 'schema_field',
+                'benchling_relationships': [
+                    '12x12_box',
+                ],
+                'sts_relationships': [],
+                'polymorphic_benchling_relationships': [],
+                'converted_value_identifiers': [],
+                'concatenated_values': ['box_and_position'],
+                'stored_values': {},
             },
-            'primary_attribute': 'barcode',
-            'primary_attribute_type': 'schema_field',
-            'benchling_relationships': [
-                '12x12_box',
-            ],
-            'sts_relationships': [],
-            'polymorphic_benchling_relationships': [],
-            'converted_value_identifiers': [],
-            'concatenated_values': ['box_and_position'],
-            'stored_values': {},
-        },
-        'casm_well_v1': {
-            'attribute_map': {
-                'barcode': 'plate_and_location_non_relationship',
-                'parent_storage_id': 'plate_and_location'
+            'casm_well': {
+                'attribute_map': {
+                    'barcode': 'plate_and_location_non_relationship',
+                    'parent_storage_id': 'plate_and_location'
+                },
+                'primary_attribute': 'barcode',
+                'primary_attribute_type': 'schema_field',
+                'benchling_relationships': [
+                    'casm_96_well_plate',
+                ],
+                'sts_relationships': ['storage_rack'],
+                'polymorphic_benchling_relationships': [],
+                'converted_value_identifiers': [],
+                'concatenated_values': ['plate_and_location_non_relationship', 'plate_and_location'],
+                'stored_values': {},
             },
-            'primary_attribute': 'barcode',
-            'primary_attribute_type': 'schema_field',
-            'benchling_relationships': [
-                'casm_96_well_plate_v1',
-            ],
-            'sts_relationships': ['storage_rack'],
-            'polymorphic_benchling_relationships': [],
-            'converted_value_identifiers': [],
-            'concatenated_values': ['plate_and_location_non_relationship', 'plate_and_location'],
-            'stored_values': {},
-        },
-        'transfer': {
-            'attribute_map': {
-                'source_entity_id': 'casm_sample_v1',
-                'destination_container_id': 'container',
-                'transfer_quantity': 'VOLUME_UL',
-                'transfer_concentration': 'CONCENTRATION_NG_UL',
-            },
-            'primary_attribute': None,
-            'benchling_relationships': ['casm_sample_v1'],
-            'sts_relationships': [],
-            'polymorphic_benchling_relationships': [
-                'container'
-            ],
-            'converted_value_identifiers': [],
-            'concatenated_values': [],
-            'stored_values': {},
+            'transfer': {
+                'attribute_map': {
+                    'source_entity_id': 'casm_sample',
+                    'destination_container_id': 'container',
+                    'transfer_quantity': 'VOLUME_UL',
+                    'transfer_concentration': 'CONCENTRATION_NG_UL',
+                },
+                'primary_attribute': None,
+                'benchling_relationships': ['casm_sample'],
+                'sts_relationships': [],
+                'polymorphic_benchling_relationships': [
+                    'container'
+                ],
+                'converted_value_identifiers': [],
+                'concatenated_values': [],
+                'stored_values': {},
+            }
         }
     }
 
@@ -303,26 +549,51 @@ class StsSampleToCasmBenchlingConverterFactory:
     """
 
     CONCATENATED_VALUES = {
-        'plate_and_location': {
-            'values': [
-                'casm_96_well_plate_v1',
-                'TUBE_WELL_POSITION'
-            ],
-            'separator': ':'
+        'production': {
+            'plate_and_location': {
+                'values': [
+                    'casm_96_well_plate_v1',
+                    'TUBE_WELL_POSITION'
+                ],
+                'separator': ':'
+            },
+            'plate_and_location_non_relationship': {
+                'values': [
+                    'storage_rack',
+                    'TUBE_WELL_POSITION'
+                ],
+                'separator': ':'
+            },
+            'box_and_position': {
+                'values': [
+                    '12x12_box',
+                    'TUBE_WELL_POSITION'
+                ],
+                'separator': ':'
+            }
         },
-        'plate_and_location_non_relationship': {
-            'values': [
-                'storage_rack',
-                'TUBE_WELL_POSITION'
-            ],
-            'separator': ':'
-        },
-        'box_and_position': {
-            'values': [
-                '12x12_box',
-                'TUBE_WELL_POSITION'
-            ],
-            'separator': ':'
+        'staging': {
+            'plate_and_location': {
+                'values': [
+                    'casm_96_well_plate',
+                    'TUBE_WELL_POSITION'
+                ],
+                'separator': ':'
+            },
+            'plate_and_location_non_relationship': {
+                'values': [
+                    'storage_rack',
+                    'TUBE_WELL_POSITION'
+                ],
+                'separator': ':'
+            },
+            'box_and_position': {
+                'values': [
+                    '12x12_box',
+                    'TUBE_WELL_POSITION'
+                ],
+                'separator': ':'
+            }
         }
     }
     """
@@ -330,42 +601,83 @@ class StsSampleToCasmBenchlingConverterFactory:
     """
 
     VALUE_REPLACEMENTS = {
-        'sex_v1': {
-            'MALE': 'Male',
-            'FEMALE': 'Female',
-            'NOT_PROVIDED': 'Unknown'
+        'production': {
+            'sex_v1': {
+                'MALE': 'Male',
+                'FEMALE': 'Female',
+                'NOT_PROVIDED': 'Unknown'
+            },
+            'responsible_pi_v1': {
+                'default': 'other',
+                'da1': 'David Adams',
+                'im3': 'Inigo Martincorena',
+                'jn5': 'Jyoti Nangalia',
+                'ly2': 'Lucy Yates',
+                'mg12': 'Mathew Garnett',
+                'mrs': 'Mike Stratton',
+                'pc8': 'Peter Campbell',
+                'pj3': 'Phil Jones',
+                'rr11': 'Raheleh Rahbari',
+                'sb31': 'Sam Behjati',
+                'tjm': 'Thomas Mitchell',
+            },
+            'genetically_modified_v1': {
+                'default': 'No'
+            },
+            'status_manual_v1': {
+                'ACCEPTED': 'Available'
+            },
+            'status_v1': {
+                'ACCEPTED': 'Available'
+            },
+            'species_name_v1': {
+                'Canis lupus familiaris': 'Canis familiaris'
+            },
+            'sample_type_v1': {
+                'inactivated biological sample from infectious organism': 'Tissue',
+                'live biological sample from infectious organism': 'Tissue',
+                'biological sample/tissue from non-infectious organism': 'Tissue',
+                'default': 'DNA'
+            }
         },
-        'responsible_pi_v1': {
-            'default': 'other',
-            'da1': 'David Adams',
-            'im3': 'Inigo Martincorena',
-            'jn5': 'Jyoti Nangalia',
-            'ly2': 'Lucy Yates',
-            'mg12': 'Mathew Garnett',
-            'mrs': 'Mike Stratton',
-            'pc8': 'Peter Campbell',
-            'pj3': 'Phil Jones',
-            'rr11': 'Raheleh Rahbari',
-            'sb31': 'Sam Behjati',
-            'tjm': 'Thomas Mitchell',
-        },
-        'genetically_modified_v1': {
-            'default': 'No'
-        },
-        'status_manual_v1': {
-            'ACCEPTED': 'Available'
-        },
-        'status_v1': {
-            'ACCEPTED': 'Available'
-        },
-        'species_name_v1': {
-            'Canis lupus familiaris': 'Canis familiaris'
-        },
-        'sample_type_v1': {
-            'inactivated biological sample from infectious organism': 'Tissue',
-            'live biological sample from infectious organism': 'Tissue',
-            'biological sample / tissue from non-infectious organism': 'Tissue',
-            'default': 'DNA'
+        'staging': {
+            'sex': {
+                'MALE': 'Male',
+                'FEMALE': 'Female',
+                'NOT_PROVIDED': 'Unknown'
+            },
+            'responsible_pi': {
+                'default': 'other',
+                'da1': 'David Adams',
+                'im3': 'Inigo Martincorena',
+                'jn5': 'Jyoti Nangalia',
+                'ly2': 'Lucy Yates',
+                'mg12': 'Mathew Garnett',
+                'mrs': 'Mike Stratton',
+                'pc8': 'Peter Campbell',
+                'pj3': 'Phil Jones',
+                'rr11': 'Raheleh Rahbari',
+                'sb31': 'Sam Behjati',
+                'tjm': 'Thomas Mitchell',
+            },
+            'genetically_modified': {
+                'default': 'No'
+            },
+            'status_manual': {
+                'ACCEPTED': 'Available'
+            },
+            'status': {
+                'ACCEPTED': 'Available'
+            },
+            'species_name': {
+                'Canis lupus familiaris': 'Canis familiaris'
+            },
+            'sample_type': {
+                'inactivated biological sample from infectious organism': 'Tissue',
+                'live biological sample from infectious organism': 'Tissue',
+                'biological sample/tissue from non-infectious organism': 'Tissue',
+                'default': 'DNA'
+            }
         }
     }
     """
@@ -373,28 +685,97 @@ class StsSampleToCasmBenchlingConverterFactory:
     """
 
     DESTINATION_OBJECT_TYPES = {
-        'box_or_plate': {
-            'RACK_TUBE': '12x12_box',
-            'PLATE_WELL': 'casm_96_well_plate_v1'
+        'production': {
+            'box_or_plate': {
+                'RACK_TUBE': '12x12_box',
+                'PLATE_WELL': 'casm_96_well_plate_v1'
+            },
+            'container': {
+                'RACK_TUBE': 'casm_tube_v1',
+                'PLATE_WELL': 'casm_well_v1'
+            }
         },
-        'container': {
-            'RACK_TUBE': 'casm_tube_v1',
-            'PLATE_WELL': 'casm_well_v1'
+        'staging': {
+            'box_or_plate': {
+                'RACK_TUBE': '12x12_box',
+                'PLATE_WELL': 'casm_96_well_plate'
+            },
+            'container': {
+                'RACK_TUBE': 'casm_tube',
+                'PLATE_WELL': 'casm_well'
+            }
         }
     }
     """
         Map of the dynamic object types
     """
 
-    POLYMORPHIC_RELATIONSHIP_OBJECT_TYPES = {
-        'container': {
-            'RACK_TUBE': 'casm_tube_v1',
-            'PLATE_WELL': 'casm_well_v1'
+    MULTISELECT_BENCHLING_RELATIONSHIPS = {
+        'production': {
+            'casm_compliance_agreement_v1': {
+                'legal': {
+                    'attribute_map': {
+                        'compliance_agreement_id_v1': 'LEGAL_AGREEMENT',
+                    },
+                    'primary_attribute': 'compliance_agreement_id_v1',
+                    'primary_attribute_type': 'schema_field',
+                    'secondary_attribute': 'compliance_agreement_type_v1',
+                    'secondary_attribute_value': 'Legal',
+                    'benchling_relationships': [],
+                    'sts_relationships': [],
+                    'polymorphic_benchling_relationships': [],
+                    'converted_value_identifiers': [],
+                    'stored_values': {},
+                },
+                'humfre': {
+                    'attribute_map': {
+                        'compliance_agreement_id_v1': 'HUMFRE_REFERENCE',
+                    },
+                    'primary_attribute': 'compliance_agreement_id_v1',
+                    'primary_attribute_type': 'schema_field',
+                    'secondary_attribute': 'compliance_agreement_type_v1',
+                    'secondary_attribute_value': 'HuMFre',
+                    'benchling_relationships': [],
+                    'sts_relationships': [],
+                    'polymorphic_benchling_relationships': [],
+                    'converted_value_identifiers': [],
+                    'stored_values': {},
+                }
+            }
+        },
+        'staging': {
+            'casm_compliance_agreement': {
+                'legal': {
+                    'attribute_map': {
+                        'compliance_agreement_id': 'LEGAL_AGREEMENT',
+                    },
+                    'primary_attribute': 'compliance_agreement_id',
+                    'primary_attribute_type': 'schema_field',
+                    'secondary_attribute': 'compliance_agreement_type',
+                    'secondary_attribute_value': 'Legal',
+                    'benchling_relationships': [],
+                    'sts_relationships': [],
+                    'polymorphic_benchling_relationships': [],
+                    'converted_value_identifiers': [],
+                    'stored_values': {},
+                },
+                'humfre': {
+                    'attribute_map': {
+                        'compliance_agreement_id': 'HUMFRE_REFERENCE',
+                    },
+                    'primary_attribute': 'compliance_agreement_id',
+                    'primary_attribute_type': 'schema_field',
+                    'secondary_attribute': 'compliance_agreement_type',
+                    'secondary_attribute_value': 'HuMFre',
+                    'benchling_relationships': [],
+                    'sts_relationships': [],
+                    'polymorphic_benchling_relationships': [],
+                    'converted_value_identifiers': [],
+                    'stored_values': {},
+                }
+            }
         }
     }
-    """
-        Map of the polymorphic relationship objects
-    """
 
     destination_object_type: str
     fields: Iterable[any]
@@ -406,9 +787,14 @@ class StsSampleToCasmBenchlingConverterFactory:
             previous_objects: list = None,
             detect_destination: bool = False,
             detect_destination_type: str = '',
+            mode: str = 'staging',
     ):
+        if mode not in ['production', 'staging']:
+            raise ValueError('Mode must be either "production" or "staging"')
+
         self.detect_destination = detect_destination
         self.benchling = benchling()
+        self.mode = mode
         if not detect_destination:
             self.populate_destination(destination_object_type)
         elif detect_destination_type == '':
@@ -421,7 +807,7 @@ class StsSampleToCasmBenchlingConverterFactory:
 
         if previous_object_type and previous_objects:
             for previous_object in previous_objects:
-                object_map = self.BENCHLING_OBJECT_MAP[previous_object_type]
+                object_map = self.BENCHLING_OBJECT_MAP[self.mode][previous_object_type]
                 identifier = object_map['primary_attribute']
                 key = getattr(previous_object, identifier)
                 object_map['stored_values'][key] = previous_object
@@ -447,11 +833,11 @@ class StsSampleToCasmBenchlingConverterFactory:
                     )
                     factory.populate_destination(destination_object_type)
 
-                object_map = factory.BENCHLING_OBJECT_MAP[factory.destination_object_type]
+                object_map = factory.BENCHLING_OBJECT_MAP[factory.mode][factory.destination_object_type]
                 if not self._does_object_exist(
-                    factory.destination_object_type,
-                    sample,
-                    object_map
+                        factory.destination_object_type,
+                        sample,
+                        object_map
                 ):
                     self._populate_relationships(sample, object_map)
 
@@ -467,6 +853,9 @@ class StsSampleToCasmBenchlingConverterFactory:
 
                     if 'naming_strategy' in object_map and object_map['naming_strategy']:
                         object_attributes['naming_strategy'] = object_map['naming_strategy']
+
+                    print('object_attributes')
+                    print(object_attributes)
 
                     yield self._data_object_factory(
                         factory.destination_object_type,
@@ -501,9 +890,9 @@ class StsSampleToCasmBenchlingConverterFactory:
                         hasattr(sample, 'manifest')
                         and hasattr(sample.manifest, 'manifest_type')
                         and sample.manifest.manifest_type in factory.
-                        DESTINATION_OBJECT_TYPES[detect_destination_type]
+                        DESTINATION_OBJECT_TYPES[factory.mode][detect_destination_type]
                 ):
-                    return factory.DESTINATION_OBJECT_TYPES[detect_destination_type][
+                    return factory.DESTINATION_OBJECT_TYPES[factory.mode][detect_destination_type][
                         sample.manifest.manifest_type]
 
                 if raise_exception:
@@ -533,7 +922,7 @@ class StsSampleToCasmBenchlingConverterFactory:
                         Any - depends on the value provided and the cleanup performed
                 """
                 fields = getattr(factory, 'fields', [])
-
+                
                 if '' != object_type_override:
                     benchling_type = factory.benchling.benchling_types[object_type_override]
                     if (
@@ -549,21 +938,28 @@ class StsSampleToCasmBenchlingConverterFactory:
                         else:
                             value = 0
 
-                    if 'str' == fields[key]['type']:
+                    if 'str' == fields[key]['type'] and not isinstance(value, (list, tuple, set)):
                         if value:
                             value = str(value)
 
-                        if key in factory.VALUE_REPLACEMENTS:
-                            if value in factory.VALUE_REPLACEMENTS[key]:
-                                value = factory.VALUE_REPLACEMENTS[key][value]
-                            elif 'default' in factory.VALUE_REPLACEMENTS[key]:
-                                value = factory.VALUE_REPLACEMENTS[key]['default']
+                        if key in factory.VALUE_REPLACEMENTS[factory.mode]:
+                            if value in factory.VALUE_REPLACEMENTS[factory.mode][key]:
+                                value = factory.VALUE_REPLACEMENTS[factory.mode][key][value]
+                            elif 'default' in factory.VALUE_REPLACEMENTS[factory.mode][key]:
+                                value = factory.VALUE_REPLACEMENTS[factory.mode][key]['default']
 
                         if fields[key]['is_multi']:
                             value = [value]
 
+                    if fields[key]['is_multi'] and isinstance(value, (list, tuple, set)):
+                        for v in value:
+                            if 'str' == fields[key]['type']:
+                                v = str(v)
+                            elif 'int' == fields[key]['type']:
+                                v = int(v)
+                            
                     if 'genetically_modified' == key:
-                        value = factory.VALUE_REPLACEMENTS[key]['default']
+                        value = factory.VALUE_REPLACEMENTS[factory.mode][key]['default']
 
                 return value
 
@@ -588,8 +984,8 @@ class StsSampleToCasmBenchlingConverterFactory:
                 )
 
                 if (
-                    isinstance(sts_relationship, Iterable)
-                    and not isinstance(sts_relationship, str)
+                        isinstance(sts_relationship, Iterable)
+                        and not isinstance(sts_relationship, str)
                 ):
                     relationship_object = next(iter(sts_relationship), None)
                 else:
@@ -620,10 +1016,10 @@ class StsSampleToCasmBenchlingConverterFactory:
 
                 for key, attribute_mapping in object_map['attribute_map'].items():
                     if (
-                        attribute_mapping in factory.CONCATENATED_VALUES
-                        and sample.attributes.get(attribute_mapping, None) is None
+                            attribute_mapping in factory.CONCATENATED_VALUES[factory.mode]
+                            and sample.attributes.get(attribute_mapping, None) is None
                     ):
-                        separator = factory.CONCATENATED_VALUES[attribute_mapping]['separator']
+                        separator = factory.CONCATENATED_VALUES[factory.mode][attribute_mapping]['separator']
 
                         # Strip out any trailing 0 for the TUBE_WELL_POSITION as benchling strips
                         # this out on save so it breaks any search queries for bar codes
@@ -634,7 +1030,7 @@ class StsSampleToCasmBenchlingConverterFactory:
                                 sample.attributes.get(attribute, '') or ''
                             ) if attribute == 'TUBE_WELL_POSITION' else sample.attributes.get(
                                 attribute, ''
-                            ) for attribute in factory.CONCATENATED_VALUES[
+                            ) for attribute in factory.CONCATENATED_VALUES[factory.mode][
                                 attribute_mapping]['values']
                         ]
 
@@ -690,7 +1086,7 @@ class StsSampleToCasmBenchlingConverterFactory:
                     )
 
                     if benchling_object_id is not None:
-                        factory.BENCHLING_OBJECT_MAP[factory.destination_object_type][
+                        factory.BENCHLING_OBJECT_MAP[factory.mode][factory.destination_object_type][
                             'stored_values'][attribute] = benchling_object_id
 
                         return True
@@ -757,8 +1153,8 @@ class StsSampleToCasmBenchlingConverterFactory:
                 ):
                     self._populate_sts_relationships(sample, object_map)
                 elif (
-                    'concatenated_values' in object_map
-                    and sts_attribute_identifier in object_map['concatenated_values']
+                        'concatenated_values' in object_map
+                        and sts_attribute_identifier in object_map['concatenated_values']
                 ):
                     self._populate_concatenated_attributes(sample, object_map)
 
@@ -786,6 +1182,7 @@ class StsSampleToCasmBenchlingConverterFactory:
                     None
                 """
                 self._populate_benchling_relationships(sample, object_map)
+                self._populate_multiselect_benchling_relationships(sample, object_map)
                 self._populate_sts_relationships(sample, object_map)
 
             def _populate_benchling_relationships(self, sample, object_map):
@@ -806,7 +1203,7 @@ class StsSampleToCasmBenchlingConverterFactory:
                 self._populate_polymorphic_benchling_relationships(sample, object_map)
 
                 for benchling_object_identifier in object_map['benchling_relationships']:
-                    relationship_object_map = factory.BENCHLING_OBJECT_MAP[
+                    relationship_object_map = factory.BENCHLING_OBJECT_MAP[factory.mode][
                         benchling_object_identifier]
                     if sample.attributes.get(benchling_object_identifier, None) is None:
                         search_value = self._get_object_primary_attribute_value(
@@ -882,8 +1279,8 @@ class StsSampleToCasmBenchlingConverterFactory:
                     )
 
                     if (
-                        relationship_object_type
-                        and relationship_object_type not in object_map['benchling_relationships']
+                            relationship_object_type
+                            and relationship_object_type not in object_map['benchling_relationships']
                     ):
 
                         key_for_relationship_object_type = next(
@@ -900,24 +1297,46 @@ class StsSampleToCasmBenchlingConverterFactory:
                                 relationship_object_type
 
             def _get_benchling_object_id(
-                self,
-                object_type: str,
-                search_identifier: str,
-                search_value: str,
-                add_to_return: bool = False
+                    self,
+                    object_type: str,
+                    search_identifier: str,
+                    search_value: str,
+                    add_to_return: bool = False,
+                    secondary_search_identifier: str = None,
+                    secondary_search_value: str = None,
             ) -> str | None:
                 """
-                This method is used to get the benchling object id for its given args
+                Retrieves the Benchling object ID based on provided search criteria. This function queries
+                Benchling to fetch object IDs using specified search parameters, with support for additional
+                filters including secondary search criteria.
 
-                Args:
-                    object_type: String identifying the benchling object type
-                    search_identifier: The identifier of the attribute of the benchling object
-                    search_value: The values we are searching for
+                Parameters:
+                    object_type (str): The type of Benchling object to search for.
+                    search_identifier (str): The identifier to filter the search by (e.g., barcode, schema fields).
+                    search_value (str): The value to match the search identifier against.
+                    add_to_return (bool): Specifies whether the object should be added to the return list.
+                                          Defaults to False.
+                    secondary_search_identifier (str, optional): A secondary identifier for extended filtering.
+                    secondary_search_value (str, optional): The value to match the secondary search identifier
+                                                            against.
+
+                Returns:
+                    str | None: The ID of the Benchling object if found, otherwise None.
+
+                Raises:
+                    Exception: If an unsupported object type is provided for the search.
+
+                Notes:
+                    - This function supports a variety of Benchling object types like custom entities,
+                      containers (box, plate, etc.), and assay results.
+                    - For unsupported object types, an exception is raised indicating a configuration error.
                 """
                 filter_object = DataSourceFilter()
                 if 'custom_entity' == factory.benchling.benchling_types[object_type]:
                     schema_filter = DataSourceFilter()
                     schema_filter.and_ = {search_identifier: {'eq': {'value': search_value}}}
+                    if secondary_search_identifier and secondary_search_value:
+                        schema_filter.and_ = {secondary_search_identifier: {'eq': {'value': secondary_search_value}}}
                     filter_object.and_ = {'schema_fields': schema_filter}
                 elif (factory.benchling.benchling_types[object_type]
                       in ['box', 'plate', 'container', 'location']):
@@ -953,5 +1372,42 @@ class StsSampleToCasmBenchlingConverterFactory:
             def _sanitize_attributes(self, object_attributes):
                 for key, value in object_attributes.items():
                     object_attributes[key] = self._sanitize_attribute(key, value)
+
+            def _populate_multiselect_benchling_relationships(self, sample, object_map):
+                if 'benchling_multiselect_relationships' in object_map and object_map[
+                    'benchling_multiselect_relationships']:
+                    for relationship_object_identifier in object_map['benchling_multiselect_relationships']:
+                        if (
+                            relationship_object_identifier in factory.MULTISELECT_BENCHLING_RELATIONSHIPS[factory.mode] and
+                            factory.MULTISELECT_BENCHLING_RELATIONSHIPS[factory.mode][relationship_object_identifier]
+                        ):
+                            for relationship_object_map in factory.MULTISELECT_BENCHLING_RELATIONSHIPS[factory.mode][relationship_object_identifier].values():
+                                search_value = self._get_object_primary_attribute_value(
+                                    relationship_object_map,
+                                    sample
+                                )
+                                
+                                if search_value is not None:
+                                    if search_value in relationship_object_map['stored_values']:
+                                        benchling_object_id = relationship_object_map['stored_values'][
+                                            search_value]
+                                    else:
+                                        benchling_object_id = self._get_benchling_object_id(
+                                            object_type=relationship_object_identifier,
+                                            search_identifier=relationship_object_map['primary_attribute'],
+                                            search_value=search_value,
+                                            secondary_search_identifier=relationship_object_map['secondary_attribute'],
+                                            secondary_search_value=relationship_object_map['secondary_attribute_value'],
+                                        )
+                                        if benchling_object_id is not None:
+                                            relationship_object_map['stored_values'][search_value] = benchling_object_id
+
+                                    if benchling_object_id is not None:
+                                        if not relationship_object_identifier in sample.attributes:
+                                            sample.attributes[relationship_object_identifier] = []
+
+                                        if benchling_object_id not in sample.attributes[relationship_object_identifier]:
+                                            sample.attributes[relationship_object_identifier].append(
+                                                benchling_object_id)
 
         return StsSampleToCasmBenchlingConverter
