@@ -31,6 +31,7 @@ Output: Table with cols:
 18) dna_gqn: [double precision] GQN index.
 19) dna_yield: [double precision] yield.
 20) dna_femto_profile_description: [jsonb] Qualitative description of femto profiles.
+21) tube_type: [character] Type of tube. Marked NULL or voucher.
 21) dna_bnt_id: [character] Batches and Tracking legacy id.
 22) extraction_type: [character] dna
 
@@ -38,9 +39,7 @@ NOTES:
 
 1) Data types were casted explicitly to conserved the data type stored in BWH.
 2) To add the Fluidx ID of the original DNA extract a few filters were applied to
-delete Vouchers, tubes archived because they were made in error, and 
-invalid container names. 
-3) Vouchers: The volume filter is risky but necessary. A few container might be excluded. 
+delete Vouchers, tubes archived because they were made in error, and invalid container names. 
 4) This query follows only Benchling Data Model version 2: Results attached to the entity.
 
 */
@@ -67,6 +66,7 @@ SELECT DISTINCT
 	femto.gqn_dnaex AS dna_gqn,
 	dnay.yield AS dna_yield,
 	femto.femto_profile_description AS dna_femto_description,
+	tube.type AS tube_type,
 	dna.bt_id AS dna_bnt_id,
 	'dna'::varchar AS extraction_type
 FROM dna_extract$raw AS dna
@@ -92,11 +92,8 @@ LEFT JOIN tube$raw AS tube
 	ON cc.container_id = tube.id 
 LEFT JOIN folder£raw AS f 
 	ON dna.folder_id$ = f.id
-WHERE tube.type IS NULL -- Excluding vouchers
-	AND con.volume_si * 1000000 != 10
-	AND (f.name IN ('Routine Throughput', 'DNA', 'Core Lab Entities', 'Benchling MS Project Move') OR f.name IS NULL)
+WHERE (f.name IN ('Routine Throughput', 'DNA', 'Core Lab Entities', 'Benchling MS Project Move') OR f.name IS NULL)
 	AND (dna.archive_purpose$ != ('Made in error') OR dna.archive_purpose$ IS NULL)
 	AND (con.archive_purpose$ != ('Made in error') OR con.archive_purpose$ IS NULL)
 	AND con.barcode NOT LIKE 'CON%'
 ORDER BY dna_extraction_date DESC;
-
