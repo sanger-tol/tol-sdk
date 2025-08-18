@@ -4,6 +4,7 @@
 
 from __future__ import annotations
 
+import os
 import typing
 from dataclasses import dataclass
 from typing import Any, List
@@ -32,6 +33,7 @@ class UploadData:
     pipeline_id: int
     destination: str
     user_id: int
+    dry_run: bool
 
 
 REQUIRED_FIELDS: List = [
@@ -40,6 +42,7 @@ REQUIRED_FIELDS: List = [
     'spreadsheet_config',
     'pipeline_id',
     'destination',
+    'dry_run'
 ]
 
 
@@ -130,13 +133,30 @@ def pipeline_steps_blueprint(
     def __insert_flow_run(
         upload_id: str,
         pipeline_id: str,
+        s3_filename: str,
+        dry_run: bool = False,
+        flow_name: str = 'pipeline',
     ) -> str | None:
+
+        flow_params = {
+            'upload_id': upload_id,
+            'pipeline_id': pipeline_id,
+            'dry_run': dry_run,
+            'source_kwargs': {
+                's3_filename': s3_filename,
+                's3_bucket': os.environ['UPLOAD_S3_BUCKET'],
+            }
+        }
 
         flow_run = prefect_ds.data_object_factory(
             'flow_run',
             attributes={
-                'upload_id': upload_id,
-                'pipeline_id': pipeline_id,
+                'flow_name': flow_name,
+                'deployment_name': flow_name,
+                'parameters': flow_params,
+                'tags': [
+                    'app_name:treeofsex',
+                ],
             }
         )
 
@@ -146,7 +166,6 @@ def pipeline_steps_blueprint(
                 [flow_run]
             )
         )[0]
-
         return inserted_flow_data.id
 
     def __upsert_flow_run_id(
@@ -190,14 +209,17 @@ def pipeline_steps_blueprint(
             spreadsheet_config=body['spreadsheet_config'],
             pipeline_id=pipeline_id,
             destination=body['destination'],
-            user_id=user_id
+            user_id=user_id,
+            dry_run=body['dry_run']
         )
 
         upload_id = __insert_upload_data(upload_data)
 
         flow_run_id = __insert_flow_run(
             upload_id=upload_id,
-            pipeline_id=pipeline_id
+            pipeline_id=pipeline_id,
+            s3_filename=upload_data.s3_filename,
+            dry_run=upload_data.dry_run
         )
 
         __upsert_flow_run_id(
