@@ -2,8 +2,9 @@
 #
 # SPDX-License-Identifier: MIT
 
+from unittest.mock import MagicMock, patch
+
 import pytest
-from unittest.mock import patch, MagicMock
 
 from tol.services.s3_client import S3Client
 
