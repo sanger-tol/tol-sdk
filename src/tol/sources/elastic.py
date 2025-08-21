@@ -17,7 +17,11 @@ from ..elastic import (
 )
 
 
-def elastic(environment: str = None, product: str = None) -> ElasticDataSource:
+def elastic(
+        environment: str = None,
+        product: str = None,
+        **kwargs
+) -> ElasticDataSource:
     rc_run_data = RelationshipConfig()
     rc_run_data.to_one = {'benchling_extraction': 'extraction',
                           'benchling_sample': 'sample',

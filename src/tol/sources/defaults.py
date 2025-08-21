@@ -5,7 +5,7 @@
 class Defaults:
     PORTAL_URL = 'https://portal.tol.sanger.ac.uk'
     PORTAL_API_PATH = '/api/v1'
-    PORTAL_API_DATA_PATH = ''
+    PORTAL_API_DATA_PATH = '/data'
 
     STS_URL = 'https://sts.tol.sanger.ac.uk'
     STS_API_PATH = '/api/v2'
