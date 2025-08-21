@@ -17,11 +17,11 @@ class DataSourceUtils:
     def get_datasource_by_name(
         cls,
         name: str,
-        environment: str
+        **kwargs
     ) -> DataSource:
         module = importlib.import_module(f'tol.sources.{name}')
         class_ = getattr(module, name)
-        return class_(environment=environment)
+        return class_(**kwargs)
 
     @classmethod
     def get_ids(

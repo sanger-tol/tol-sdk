@@ -49,4 +49,5 @@ from .tolqc_data_to_elastic_run_data_converter import TolqcDataToElasticRunDataC
 from .tolqc_sample_to_elastic_sequencing_request_converter import TolqcSampleToElasticSequencingRequestConverter  # noqa F401
 from .tolqc_species_to_elastic_species_converter import TolqcSpeciesToElasticSpeciesConverter  # noqa F401
 from .sts_sample_to_casm_benchling_converter import StsSampleToCasmBenchlingConverterFactory # noqa F401
+from .treeofsex_species_to_treeofsexwh_species_converter import TreeofsexSpeciesToTreeofsexwhSpeciesConverter  # noqa F401
 from .treeofsex_upload_to_treeofsex_attribute_converter import TreeofsexUploadToTreeofsexAttributeConverter  # noqa F401
