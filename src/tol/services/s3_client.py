@@ -40,7 +40,7 @@ class S3Client:
     ) -> None:
 
         self.client.fget_object(bucket_name, object_name, file_path)
-    
+
     def list_objects(
         self,
         bucket_name: str,
