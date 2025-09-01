@@ -8,14 +8,17 @@ from tol.core import (
     DataSource,
     core_data_object
 )
-from ....src.tol.flows.converters import BioscanImageToElasticSampleUpdateConverter
 # This import will only work once BioscanImageToElasticSampleUpdateConverter is in an sdk build
 # from tol.flows.converters import BioscanImageToElasticSampleUpdateConverter
+
+from ....src.tol.flows.converters import BioscanImageToElasticSampleUpdateConverter
+
+
 class _MockDataSource(DataSource):
     @property
     def supported_types(self):
         return ['object', 'species']
-    
+
     @property
     def attribute_types(self):
         raise NotImplementedError()
@@ -37,8 +40,9 @@ class TestBioscanImageToElasticSampleUpdateConverter(TestCase):
         )
 
         # TODO: Explain this line
-        CoreDataObject = source_data_source.data_object_factory
-        
+        # noqa N806 tells the linter to ignore that CoreDataObject should be in lowercase
+        CoreDataObject = source_data_source.data_object_factory  # noqa N806
+
         # Create the data objects that will be put through the converter
         unconverted1 = CoreDataObject(
             id_='sample_one.jpeg',

@@ -59,7 +59,7 @@ class BioscanImageToElasticSampleUpdateConverter(
         }
 
         yield (None, attributes)  # type: ignore (Linter does not properly recognise type here)
-    
+
     def __extract_sample_id_from_s3_file_name(self, file_name: str) -> str:
         """
         Extracts the sample id of a Bioscan image from its S3 file name,
