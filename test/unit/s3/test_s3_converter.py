@@ -10,7 +10,7 @@ from minio.datatypes import Object as MinioObject
 
 from tol.core import DataObject, DataSource
 from tol.core.data_source_dict import DataSourceDict
-from tol.s3.converter import S3ApiConverter
+from tol.s3.converter import S3Converter
 from tol.s3.parser import DefaultParser
 
 
@@ -52,8 +52,8 @@ def _get_mock_ds_dict(
     )
 
 
-class TestS3ApiConverter:
-    """Tests `GoatApiConverter().convert()`"""
+class TestS3Converter:
+    """Tests `S3Converter().convert()`"""
 
     def test_conversion(self):
         # S3 minio objects we'll try to convert to data sources
@@ -67,7 +67,7 @@ class TestS3ApiConverter:
             'bucket_name': 'str',
             'last_modified': 'datetime'
         }}))
-        converter = S3ApiConverter(parser)
+        converter = S3Converter(parser)
         out_ = converter.convert_list(in_)
 
         # Ensure first output data source matches manual conversion

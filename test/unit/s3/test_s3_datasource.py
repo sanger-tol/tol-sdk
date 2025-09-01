@@ -5,13 +5,10 @@
 from typing import Any, Optional
 from unittest.mock import Mock
 
-import pytest
-
 from tol.core import (
-    DataObject,
-    DataSourceError
+    DataObject
 )
-from tol.goat import GoatDataSource
+from tol.s3 import S3DataSource
 
 
 def _get_mock_data_object(
@@ -31,90 +28,12 @@ def _get_mock_data_object(
     return data_object
 
 
-class TestGoatDataSource:
-    def test_get_by_id_found(self):
-        """200 response, no token"""
-
-        mock_client = Mock()
-
-        mock_response = {'result': {'taxon_id': 'an ID'}}
-        mock_client.get_detail.return_value = ([mock_response], 1)
-
-        mock_lc_converter = Mock()
-
-        ds = GoatDataSource(
-            lambda: mock_client,
-            lambda: mock_lc_converter,
-            None
-        )
-        ds.data_object_factory = lambda: Mock()
-
-        mock_data_object = _get_mock_data_object(
-            type_='taxon',
-            id_='an ID'
-        )
-        mock_lc_converter.convert_list.return_value = ([mock_data_object], 1)
-
-        observed = list(ds.get_by_id('taxon', ['an ID']))
-        assert observed == [mock_data_object]
-
-        mock_client.get_detail.assert_called_once_with(
-            'taxon',
-            ['an ID']
-        )
-        mock_lc_converter.convert_list.assert_called_once_with(
-            [mock_response]
-        )
-
-    def test_get_by_id_not_found(self):
-        """404 response"""
-
-        mock_client = Mock()
-
-        # mock a 404 returning `None`
-        mock_client.get_detail.return_value = ([], 0)
-
-        mock_lc_converter = Mock()
-        mock_lc_converter.convert_list.return_value = ([], 0)
-
-        ds = GoatDataSource(
-            lambda: mock_client,
-            lambda: mock_lc_converter,
-            None
-        )
-        ds.data_object_factory = lambda: Mock()
-
-        observed = list(ds.get_by_id('taxon', ['an ID']))
-        assert observed == [None]
-
-        mock_client.get_detail.assert_called_once_with(
-            'taxon',
-            ['an ID']
-        )
-        mock_lc_converter.convert_list.assert_called_once_with(
-            []
-        )
-
-    def test_bad_object_type(self):
-        """A bad object type -> raise `DataSourceError()`"""
-
-        ds = GoatDataSource(
-            lambda: None,
-            lambda: None,
-            None
-        )
-        with pytest.raises(DataSourceError):
-            list(ds.get_by_id('test', ['does not matter at all']))
+class TestS3DataSource:
 
     def test_supported_types(self):
-        """
-        `GoatDataSource().supported_types` calls
-        `config_attribute_types()` on client
-        """
-        expected = ['taxon']
+        expected = ['object']
 
-        ds = GoatDataSource(
-            None,
+        ds = S3DataSource(
             None,
             None
         )

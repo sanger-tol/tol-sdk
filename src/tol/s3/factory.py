@@ -5,21 +5,21 @@
 from collections.abc import Mapping
 from typing import Callable, Iterator, Optional
 
-from ..services.s3_client import S3Client
 from .converter import (
-    S3ApiConverter
+    S3Converter
 )
+from .parser import DefaultParser
 from .s3_datasource import (
     S3ConverterFactory,
     S3DataSource
 )
-from .parser import DefaultParser
 from ..core import DataSource
+from ..services.s3_client import S3Client
 
 
 class _S3DSDict(Mapping):
-    def __init__(self, api_ds: S3DataSource) -> None:
-        self.__ds = api_ds
+    def __init__(self, s3_ds: S3DataSource) -> None:
+        self.__ds = s3_ds
 
     def __getitem__(self, __k: str) -> S3DataSource:
         if __k not in self.__ds.supported_types:
@@ -37,7 +37,7 @@ class _ConverterFactory:
     """
     Manages the instantation of:
 
-    - `S3ApiConverter`
+    - `S3Converter`
     """
 
     def __init__(self) -> None:
@@ -57,32 +57,29 @@ class _ConverterFactory:
 
     def s3_converter_factory(self) -> S3ConverterFactory:
         """
-        Returns an instantiated `S3ApiConverter`.
+        Returns an instantiated `S3Converter`.
         """
 
         parser = DefaultParser(self.__ds_dict)
-        return S3ApiConverter(parser)
+        return S3Converter(parser)
 
     @property
     def __ds_dict(self) -> dict[str, DataSource]:
         return _S3DSDict(self.data_source)
 
 
-def _get_client_factory(
-    bucket_name: str
-) -> Callable[[], S3Client]:
+def _get_client_factory() -> Callable[[], S3Client]:
     """
     A resonable default for creating
     an `S3Client` instance
     """
 
-    return lambda: S3Client(
-        bucket_name
-    )
+    return lambda: S3Client()
 
 
 def create_s3_datasource(
-    bucket_name: str
+    bucket_name: str,
+    prefix: str = None
 ) -> S3DataSource:
     """
     Instantiates `S3DataSource` using the given:
@@ -90,13 +87,13 @@ def create_s3_datasource(
     - `bucket_name`
     """
 
-    client_factory = _get_client_factory(
-        bucket_name
-    )
+    client_factory = _get_client_factory()
     manager = _ConverterFactory()
     s3_ds = S3DataSource(
         client_factory,
-        manager.s3_converter_factory
+        manager.s3_converter_factory,
+        bucket_name,
+        prefix
     )
 
     manager.data_source = s3_ds

@@ -10,13 +10,13 @@ from .parser import Parser
 from ..core import DataObject
 
 
-S3ApiObject = MinioObject
-S3ApiTransfer = Iterable[S3ApiObject]
+S3Object = MinioObject
+S3Transfer = Iterable[S3Object]
 
 
-class S3ApiConverter():
+class S3Converter():
     """
-    Converts from S3 API transfers to instances of
+    Converts from S3 Minio objects to instances of
     `DataObject`.
     """
 
@@ -26,18 +26,18 @@ class S3ApiConverter():
     ) -> None:
         self.__parser = parser
 
-    def convert(self, input_: S3ApiObject) -> DataObject:
+    def convert(self, input_: S3Object) -> DataObject:
         """
-        Converts a single S3ApiObject to a DataObject
+        Converts a single S3Object to a DataObject
         """
         return self.__parser.parse(input_)
 
     def convert_list(
         self,
-        input_: S3ApiTransfer
+        input_: S3Transfer
     ) -> Iterable[DataObject]:
         """
-        Converts an S3 ApiTransfer containing a list of results
+        Converts an S3Transfer containing a list of results
         """
         # S3 buckets can be quite big, so we want to make sure that
         # we're staying in generator land

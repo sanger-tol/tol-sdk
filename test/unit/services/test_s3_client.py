@@ -44,8 +44,8 @@ def test_list_objects_calls_list_objects(mock_minio):
     mock_instance = MagicMock()
     mock_minio.return_value = mock_instance
     client = S3Client()
-    client.list_objects('bucket')
-    mock_instance.list_objects.assert_called_once_with('bucket')
+    client.list_objects('bucket', 'prefix')
+    mock_instance.list_objects.assert_called_once_with('bucket', prefix='prefix')
 
 
 @patch('tol.services.s3_client.Minio')

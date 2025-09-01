@@ -8,11 +8,8 @@ import typing
 from functools import cache
 from typing import Callable, Iterable, Optional
 
-from more_itertools import seekable
-
-from ..services.s3_client import S3Client
 from .converter import (
-    S3ApiConverter
+    S3Converter
 )
 from ..core import (
     DataObject,
@@ -21,12 +18,13 @@ from ..core import (
 from ..core.operator import (
     ListGetter
 )
+from ..services.s3_client import S3Client
 
 if typing.TYPE_CHECKING:
     from ..core.session import OperableSession
 
 ClientFactory = Callable[[], S3Client]
-S3ConverterFactory = Callable[[], S3ApiConverter]
+S3ConverterFactory = Callable[[], S3Converter]
 
 
 class S3DataSource(
@@ -36,7 +34,7 @@ class S3DataSource(
     ListGetter,
 ):
     """
-    A `DataSource` that connects to a remote S3 API.
+    A `DataSource` that connects to a remote S3.
 
     Developers should likely use `create_s3_datasource`
     instead of this directly.
@@ -46,10 +44,14 @@ class S3DataSource(
         self,
         client_factory: ClientFactory,
         s3_converter_factory: S3ConverterFactory,
+        bucket_name: str,
+        prefix: str
     ) -> None:
 
         self.__client_factory = client_factory
         self.__gc_factory = s3_converter_factory
+        self.bucket_name = bucket_name
+        self.prefix = prefix
         super().__init__({})
 
     @property
@@ -74,6 +76,7 @@ class S3DataSource(
         object_type: str,
         session: Optional[OperableSession] = None
     ) -> Iterable[DataObject]:
-        objects = self.__client_factory().list_objects(self.bucket_name)
+        client = self.__client_factory()
+        objects = client.list_objects(self.bucket_name, self.prefix)
         converted_objects = self.__gc_factory().convert_list(objects)
         return converted_objects
