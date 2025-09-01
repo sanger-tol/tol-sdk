@@ -27,6 +27,9 @@ class Defaults:
     BIOSCAN_API_PATH = '/api/v1'
     BIOSCAN_API_DATA_PATH = ''
 
+    BIOSCAN_IMAGE_BUCKET_NAME = 'tol-bioscan-images'
+    BIOSCAN_IMAGE_PREFIX = 'processed_images/'
+
     WORKFLOWS_URL = 'https://workflows.tol.sanger.ac.uk'
     WORKFLOWS_API_PATH = '/api/v2'
     WORKFLOWS_API_DATA_PATH = ''

@@ -63,41 +63,6 @@ def create_loader_models(
     Returns a `LoaderModels` instance that functions like an
     `Iterable`.
     """
-
-    class Loader(base_model_class):
-        __tablename__ = 'loader'
-
-        id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)  # noqa A003
-
-        source_object_type: Mapped[str] = mapped_column(nullable=False)
-        destination_object_type: Mapped[str] = mapped_column(nullable=False)
-
-        object_filters: Mapped[dict] = mapped_column(
-            JSONB,
-            nullable=True
-        )
-
-        prefix: Mapped[str] = mapped_column(nullable=False, default='')
-        convert_class: Mapped[str] = mapped_column(nullable=True)
-        candidate_key: Mapped[dict] = mapped_column(JSONB, nullable=True)
-        date_last_run: Mapped[datetime] = mapped_column(nullable=True)
-
-        # For loading by IDs
-        ids_object_type: Mapped[str] = mapped_column(nullable=True)
-        ids_attribute: Mapped[str] = mapped_column(nullable=True)
-        ids_object_filters: Mapped[dict] = mapped_column(JSONB, nullable=True)
-        ids_sort_by: Mapped[str] = mapped_column(nullable=True)
-        ids_attribute_in_source: Mapped[str] = mapped_column(nullable=True)
-
-        ids_data_source_instance_id: Mapped[int] = mapped_column(
-            ForeignKey('data_source_instance.id'),
-            nullable=True
-        )
-        ids_data_source_instance: Mapped['DataSourceInstance'] = relationship(  # noqa F821
-            back_populates='ids_loaders',
-            foreign_keys=[ids_data_source_instance_id]
-        )
-
     class LoaderInstance(base_model_class):
         __tablename__ = 'loader_instance'
 
@@ -108,6 +73,17 @@ def create_loader_models(
         frequency_daily: Mapped[bool] = mapped_column(nullable=True)
         frequency_hourly: Mapped[bool] = mapped_column(nullable=True)
         frequency_quarter_hourly: Mapped[bool] = mapped_column(nullable=True)
+        date_last_run: Mapped[datetime] = mapped_column(nullable=True)
+
+        # Loader
+        loader_id: Mapped[int] = mapped_column(
+            ForeignKey('loader.id'),
+            nullable=False
+        )
+        loader: Mapped['Loader'] = relationship(  # noqa F821
+            back_populates='loader_instances',
+            foreign_keys=[loader_id]
+        )
 
         # Relationships
         source_data_source_instance_id: Mapped[int] = mapped_column(
@@ -126,6 +102,44 @@ def create_loader_models(
         destination_data_source_instance: Mapped['DataSourceInstance'] = relationship(  # noqa F821
             back_populates='destination_loader_instances',
             foreign_keys=[destination_data_source_instance_id]
+        )
+
+    class Loader(base_model_class):
+        __tablename__ = 'loader'
+
+        id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)  # noqa A003
+
+        source_object_type: Mapped[str] = mapped_column(nullable=False)
+        destination_object_type: Mapped[str] = mapped_column(nullable=False)
+
+        object_filters: Mapped[dict] = mapped_column(
+            JSONB,
+            nullable=True
+        )
+
+        prefix: Mapped[str] = mapped_column(nullable=False, default='')
+        convert_class: Mapped[str] = mapped_column(nullable=True)
+        candidate_key: Mapped[dict] = mapped_column(JSONB, nullable=True)
+
+        # For loading by IDs
+        ids_object_type: Mapped[str] = mapped_column(nullable=True)
+        ids_attribute: Mapped[str] = mapped_column(nullable=True)
+        ids_object_filters: Mapped[dict] = mapped_column(JSONB, nullable=True)
+        ids_sort_by: Mapped[str] = mapped_column(nullable=True)
+        ids_attribute_in_source: Mapped[str] = mapped_column(nullable=True)
+
+        ids_data_source_instance_id: Mapped[int] = mapped_column(
+            ForeignKey('data_source_instance.id'),
+            nullable=True
+        )
+        ids_data_source_instance: Mapped['DataSourceInstance'] = relationship(  # noqa F821
+            back_populates='ids_loaders',
+            foreign_keys=[ids_data_source_instance_id]
+        )
+
+        loader_instances: Mapped[list['LoaderInstance']] = relationship(  # noqa F821
+            back_populates='loader',
+            foreign_keys=[LoaderInstance.loader_id]
         )
 
     class DataSourceInstance(base_model_class):

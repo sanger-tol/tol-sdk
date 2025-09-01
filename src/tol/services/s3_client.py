@@ -4,7 +4,7 @@
 
 
 import os
-from typing import Optional
+from typing import Iterable, Optional
 
 from minio import Minio
 
@@ -40,6 +40,13 @@ class S3Client:
     ) -> None:
 
         self.client.fget_object(bucket_name, object_name, file_path)
+
+    def list_objects(
+        self,
+        bucket_name: str,
+        prefix: str = None
+    ) -> Iterable:
+        yield from self.client.list_objects(bucket_name, prefix=prefix, recursive=True)
 
     def put_object(
         self,
