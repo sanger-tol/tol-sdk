@@ -2,6 +2,8 @@
 #
 # SPDX-License-Identifier: MIT
 
+from datetime import datetime
+
 from unittest import TestCase
 
 from tol.core import (
@@ -47,7 +49,7 @@ class TestBioscanImageToElasticSampleUpdateConverter(TestCase):
             type_='object',
             attributes={
                 'bucket_name': 'BUCKET_NAME_ONE',
-                'last_modified': 'LAST_MODIFIED_ONE',
+                'last_modified': datetime(2020, 1, 1),
             }
         )
         unconverted2 = CoreDataObject(
@@ -55,7 +57,7 @@ class TestBioscanImageToElasticSampleUpdateConverter(TestCase):
             type_='object',
             attributes={
                 'bucket_name': 'BUCKET_NAME_TWO',
-                'last_modified': 'LAST_MODIFIED_TWO',
+                'last_modified': datetime(2023, 5, 7),
             }
         )
 
@@ -67,12 +69,12 @@ class TestBioscanImageToElasticSampleUpdateConverter(TestCase):
         expected1 = (None, {
             'sts_specimen.id': 'sample_one',
             'bioscan_image_url': 'https://BUCKET_NAME_ONE.cog.sanger.ac.uk/sample_one.jpeg',
-            'bioscan_image_modified': 'LAST_MODIFIED_ONE',
+            'bioscan_image_modified': datetime(2020, 1, 1),
         })
         expected2 = (None, {
             'sts_specimen.id': 'sample_two',
             'bioscan_image_url': 'https://BUCKET_NAME_TWO.cog.sanger.ac.uk/prefix/sample_two.png',
-            'bioscan_image_modified': 'LAST_MODIFIED_TWO',
+            'bioscan_image_modified': datetime(2023, 5, 7),
         })
 
         # Check whether the converted data objects are the same as we expected
