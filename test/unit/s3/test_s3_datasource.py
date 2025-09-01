@@ -35,6 +35,8 @@ class TestS3DataSource:
 
         ds = S3DataSource(
             None,
+            None,
+            None,
             None
         )
 
