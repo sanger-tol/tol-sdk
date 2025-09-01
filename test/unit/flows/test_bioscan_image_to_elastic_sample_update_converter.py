@@ -8,10 +8,7 @@ from tol.core import (
     DataSource,
     core_data_object
 )
-# This import will only work once BioscanImageToElasticSampleUpdateConverter is in an sdk build
-# from tol.flows.converters import BioscanImageToElasticSampleUpdateConverter
-
-from ....src.tol.flows.converters import BioscanImageToElasticSampleUpdateConverter
+from tol.flows.converters import BioscanImageToElasticSampleUpdateConverter
 
 
 class _MockDataSource(DataSource):
