@@ -36,7 +36,8 @@ class TestBioscanImageToElasticSampleUpdateConverter(TestCase):
             data_object_factory=destination_data_source.data_object_factory
         )
 
-        # TODO: Explain this line
+        # Make a "mock class" that's actually the data_object_factory of the source data source
+        # to allow data objects to be created from this data source (to go into the converter)
         # noqa N806 tells the linter to ignore that CoreDataObject should be in lowercase
         CoreDataObject = source_data_source.data_object_factory  # noqa N806
 
