@@ -11,23 +11,23 @@ from ...core import (
 from ...core.operator.updater import DataObjectUpdate
 
 
-def extract_data_from_s3_url(s3_url: str) -> Tuple[str, str, str]:
+def extract_sample_id_from_s3_file_name(file_name: str) -> str:
     """
-    Extracts the file name, bucket name, and sample id of a Bioscan image
-    from its S3 path, which is assumed to be in the format
+    Extracts the sample id of a Bioscan image from its S3 file name,
+    which is assumed to be in the format
 
-    'S3://`<bucket name>`/`<prefix>`/`<sample id>`.`<suffix>`'
+    '`<prefix>`/`<sample id>`.`<suffix>`',
+    were `<prefix>/` is optional
 
-    :returns: bucket_name, file_name, sample_id
+    :returns: sample_id
     """
-    split_url = s3_url.split('/')
+    # Remove file prefix (even if not present)
+    file_name_without_prefix = file_name.split('/')[-1]
 
-    # TODO: Do this better with regular expressions
-    bucket_name = split_url[2]
-    file_name = split_url[-1]
-    sample_id = file_name.split('.')[0]
+    # Remove file suffix
+    sample_id = file_name_without_prefix.split('.')[0]
 
-    return bucket_name, file_name, sample_id
+    return sample_id
 
 
 class BioscanImageToElasticSampleUpdateConverter(
@@ -56,15 +56,18 @@ class BioscanImageToElasticSampleUpdateConverter(
         if input_.id is None:
             return
 
-        # The id of an S3 bucket data object is its S3 URL
-        # This URL contains the bucket name, as well as the sample id
-        # (within the file name at the end)
-        # The following function extracts these.
-        # TODO: Can't you just get `bucket_name` from `input_` itself?
-        bucket_name, file_name, sample_id = extract_data_from_s3_url(input_.id)
+        # Get bucket name from input Bioscan image data object
+        bucket_name = input_.bucket_name
+
+        # The id of an S3 bucket data object is its S3 file name
+        bioscan_image_file_name = input_.id
+
+        # This file name contains the sample id of the Bioscan image
+        # The following function extracts this
+        sample_id = extract_sample_id_from_s3_file_name(bioscan_image_file_name)
 
         # Construct the URL for the Bioscan image using this information
-        bioscan_image_url = f'https://{bucket_name}.cog.sanger.ac.uk/{file_name}'
+        bioscan_image_url = f'https://{bucket_name}.cog.sanger.ac.uk/{bioscan_image_file_name}'
 
         attributes = {
             # For a Bioscan image, the specimen id and sample id are the same,
