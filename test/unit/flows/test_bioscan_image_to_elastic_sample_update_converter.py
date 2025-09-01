@@ -70,7 +70,7 @@ class TestBioscanImageToElasticSampleUpdateConverter(TestCase):
         })
         expected2 = (None, {
             'sts_specimen.id': 'sample_two',
-            'bioscan-image_url': 'https://BUCKET_NAME_TWO.cog.sanger.ac.uk/prefix/sample_two.png',
+            'bioscan_image_url': 'https://BUCKET_NAME_TWO.cog.sanger.ac.uk/prefix/sample_two.png',
             'bioscan_image_modified': 'LAST_MODIFIED_TWO',
         })
 
