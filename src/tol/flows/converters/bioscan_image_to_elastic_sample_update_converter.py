@@ -2,7 +2,7 @@
 #
 # SPDX-License-Identifier: MIT
 
-from typing import Iterable, Tuple
+from typing import Iterable
 
 from ...core import (
     DataObject,
