@@ -11,25 +11,6 @@ from ...core import (
 from ...core.operator.updater import DataObjectUpdate
 
 
-def extract_sample_id_from_s3_file_name(file_name: str) -> str:
-    """
-    Extracts the sample id of a Bioscan image from its S3 file name,
-    which is assumed to be in the format
-
-    '`<prefix>`/`<sample id>`.`<suffix>`',
-    were `<prefix>/` is optional
-
-    :returns: sample_id
-    """
-    # Remove file prefix (even if not present)
-    file_name_without_prefix = file_name.split('/')[-1]
-
-    # Remove file suffix
-    sample_id = file_name_without_prefix.split('.')[0]
-
-    return sample_id
-
-
 class BioscanImageToElasticSampleUpdateConverter(
     DataObjectToDataObjectOrUpdateConverter
 ):
@@ -64,7 +45,7 @@ class BioscanImageToElasticSampleUpdateConverter(
 
         # This file name contains the sample id of the Bioscan image
         # The following function extracts this
-        sample_id = extract_sample_id_from_s3_file_name(bioscan_image_file_name)
+        sample_id = self.__extract_sample_id_from_s3_file_name(bioscan_image_file_name)
 
         # Construct the URL for the Bioscan image using this information
         bioscan_image_url = f'https://{bucket_name}.cog.sanger.ac.uk/{bioscan_image_file_name}'
@@ -78,3 +59,21 @@ class BioscanImageToElasticSampleUpdateConverter(
         }
 
         yield (None, attributes)  # type: ignore (Linter does not properly recognise type here)
+    
+    def __extract_sample_id_from_s3_file_name(self, file_name: str) -> str:
+        """
+        Extracts the sample id of a Bioscan image from its S3 file name,
+        which is assumed to be in the format
+
+        '`<prefix>`/`<sample id>`.`<suffix>`',
+        where `<prefix>/` is optional
+
+        :returns: sample_id
+        """
+        # Remove file prefix (even if not present)
+        file_name_without_prefix = file_name.split('/')[-1]
+
+        # Remove file suffix
+        sample_id = file_name_without_prefix.split('.')[0]
+
+        return sample_id
