@@ -37,10 +37,10 @@ class BioscanImageToElasticSampleUpdateConverter(
         if input_.id is None:
             return
 
-        # Get bucket name from input Bioscan image data object
+        # Get S3 bucket name from input Bioscan image data object
         bucket_name = input_.bucket_name
 
-        # The id of an S3 bucket data object is its S3 file name
+        # The id of a Bioscan image is its S3 file name
         bioscan_image_file_name = input_.id
 
         # This file name contains the sample id of the Bioscan image
