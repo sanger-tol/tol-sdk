@@ -38,7 +38,7 @@ class BioscanImageToElasticSampleUpdateConverter(
             return
 
         # Get S3 bucket name from input Bioscan image data object
-        bucket_name = input_.bucket_name
+        bucket_name = input_.attributes['bucket_name']
 
         # The id of a Bioscan image is its S3 file name
         bioscan_image_file_name = input_.id
@@ -55,7 +55,7 @@ class BioscanImageToElasticSampleUpdateConverter(
             # because a Bioscan sample is the whole specimen (an entire insect)
             'sts_specimen.id': sample_id,
             'bioscan_image_url': bioscan_image_url,
-            'bioscan_image_modified': input_.last_modifed
+            'bioscan_image_modified': input_.attributes['last_modified']
         }
 
         yield (None, attributes)  # type: ignore (Linter does not properly recognise type here)
