@@ -111,6 +111,10 @@ services:
       - PORTAL_URL
       - PORTAL_API_PATH
       - BOLD_API_KEY
+      - S3_URI
+      - S3_ACCESS_KEY
+      - S3_SECRET_KEY
+      - S3_SECURE
     networks:
       - api-base-test-network
 
