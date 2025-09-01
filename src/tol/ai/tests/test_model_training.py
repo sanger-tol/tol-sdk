@@ -8,7 +8,7 @@
 
 import pytest
 from unittest.mock import Mock, patch
-from ..model_training import ModelTraining  # Adjust import path
+from ..T5_model_training import T5ModelTraining  # Adjust import path
 
 
 class TestModelTraining:
@@ -16,7 +16,7 @@ class TestModelTraining:
 
     def setup_method(self):
         """Set up test fixtures"""
-        self.model_training = ModelTraining()
+        self.model_training = ModelTT5ModelTrainingraining()
         
         # Sample training data that matches your use case
         self.sample_data = [
@@ -32,8 +32,8 @@ class TestModelTraining:
 
     def test_init(self):
         """Test ModelTraining initialization"""
-        mt = ModelTraining()
-        assert isinstance(mt, ModelTraining)
+        mt = T5ModelTraining()
+        assert isinstance(mt, T5ModelTraining)
 
     def test_prepare_data_with_json_output(self):
         """Test prepare_data with realistic text-to-JSON data"""
@@ -135,7 +135,7 @@ class TestModelTraining:
 ])
 def test_prepare_data_patterns(input_text, expected_object_type):
     """Test prepare_data maintains data patterns correctly"""
-    mt = ModelTraining()
+    mt = T5ModelTraining()
     test_data = [{
         "input_text": input_text,
         "target_text": f'{{"zone": {{"object_type": "{expected_object_type}"}}}}'
@@ -165,7 +165,7 @@ def json_training_data():
 
 def test_prepare_data_with_fixture(json_training_data):
     """Test prepare_data using fixture data"""
-    mt = ModelTraining()
+    mt = T5ModelTraining()
     result = mt.prepare_data(json_training_data)
     
     assert len(result) == 2

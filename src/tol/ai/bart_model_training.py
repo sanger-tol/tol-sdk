@@ -2,13 +2,13 @@
 #
 # SPDX-License-Identifier: MIT
 
-from transformers import T5Tokenizer, T5ForConditionalGeneration, Trainer, TrainingArguments
+from transformers import BartTokenizer, BartForConditionalGeneration, Trainer, TrainingArguments
 from datasets import load_dataset
 from .dataset_processor import DatasetProcessor
 
-class ModelTraining:
+class BartModelTraining:
     """
-    
+    Fine-tune BART model for conditional generation using CSV dataset.
     """
 
     def __init__(self) -> None:
@@ -29,8 +29,8 @@ class ModelTraining:
         dataset = load_dataset('csv', data_files={'train': 'src/tol/ai/expanded_training_data.csv'})
         train_data = dataset['train'].train_test_split(test_size=0.2)
 
-        tokenizer = T5Tokenizer.from_pretrained("t5-small")
-        model = T5ForConditionalGeneration.from_pretrained("t5-small")
+        tokenizer = BartTokenizer.from_pretrained("facebook/bart-base")
+        model = BartForConditionalGeneration.from_pretrained("facebook/bart-base")
 
         # Convert to proper format
         train_list = self.prepare_data(train_data['train'])
@@ -40,11 +40,11 @@ class ModelTraining:
         val_dataset = DatasetProcessor(val_list, tokenizer)
 
         training_args = TrainingArguments(
-            output_dir="src/tol/ai/t5-jsongen-finetuned",
+            output_dir="src/tol/ai/bart-jsongen-finetuned",
             per_device_train_batch_size=2,
             per_device_eval_batch_size=2,
-            num_train_epochs=5,  # Increased epochs
-            learning_rate=5e-5,  # Explicit learning rate
+            num_train_epochs=5,
+            learning_rate=5e-5,
             warmup_steps=100,
             logging_steps=10,
             eval_steps=50,
@@ -54,7 +54,7 @@ class ModelTraining:
             greater_is_better=False,
             remove_unused_columns=False,
             dataloader_pin_memory=False,
-            gradient_checkpointing=True,  # Save memory
+            gradient_checkpointing=True,
         )
 
         trainer = Trainer(
@@ -67,6 +67,5 @@ class ModelTraining:
 
         trainer.train()
         
-        trainer.save_model("src/tol/ai/t5-jsongen-finetuned")
-        tokenizer.save_pretrained("src/tol/ai/t5-jsongen-finetuned")
-    
+        trainer.save_model("src/tol/ai/bart-jsongen-finetuned")
+        tokenizer.save_pretrained("src/tol/ai/bart-jsongen-finetuned")
