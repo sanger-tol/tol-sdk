@@ -113,7 +113,6 @@ def create_loader_models(
             foreign_keys=[ids_data_source_instance_id]
         )
 
-
     class Loader(base_model_class):
         __tablename__ = 'loader'
 
