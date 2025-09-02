@@ -22,6 +22,7 @@ from ..services.s3_client import S3Client
 
 if typing.TYPE_CHECKING:
     from ..core.session import OperableSession
+    from ..core.datasource_filter import DataSourceFilter
 
 ClientFactory = Callable[[], S3Client]
 S3ConverterFactory = Callable[[], S3Converter]
@@ -74,7 +75,9 @@ class S3DataSource(
     def get_list(
         self,
         object_type: str,
-        session: Optional[OperableSession] = None
+        object_filters: Optional[DataSourceFilter] = None,
+        session: Optional[OperableSession] = None,
+        requested_fields: list[str] | None = None
     ) -> Iterable[DataObject]:
         client = self.__client_factory()
         objects = client.list_objects(self.bucket_name, self.prefix)
