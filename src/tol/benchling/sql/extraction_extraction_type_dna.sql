@@ -109,75 +109,128 @@ latest_decision_making AS (
         FROM dna_decision_making_v2$raw AS sub
         WHERE sub.sample_id = dnad.sample_id
     )
+),
+
+main_query AS (
+    SELECT DISTINCT
+        t.sts_id,
+        t.taxon_id,
+        t.id AS eln_tissue_id,
+        tp.id AS eln_tissue_prep_id,
+        dna.file_registry_id$ AS eln_file_registry_id,
+        dna.id AS extraction_id,
+        t.programme_id,
+        t.specimen_id,
+        COALESCE(DATE(dna.created_on), DATE(dna.created_at$)) AS completion_date, -- Homogenising BnT and Benchling dates
+        dna.name$ AS extraction_name,
+        con.barcode AS fluidx_id,
+        con.id AS fluidx_container_id,
+        CASE
+            WHEN con.archive_purpose$ IN ('Retired', 'Expended') THEN 0 -- Retired or expended DNA extractions have a weight of 0
+            ELSE con.volume_si * 1000000
+        END AS volume_ul,
+        loc.name AS location,
+        box.barcode AS rack,
+        dna.bt_id AS bnt_id,
+        dna.manual_vs_automatic AS manual_vs_automatic,
+        dna.extraction_protocol,
+        tube.type AS tube_type,
+        'dna'::varchar AS extraction_type,
+        f.name,
+        dna.archive_purpose$,
+        latest_nanodrop_conc.nanodrop_concentration_ngul,
+        latest_nanodrop_conc.dna_260_280_ratio,
+        latest_nanodrop_conc.dna_260_230_ratio,
+        latest_qubit_conc.qubit_concentration_ngul,
+        latest_yield.yield AS yield_ng,
+        latest_femto.femto_date_code,
+        latest_femto.femto_description,
+        latest_femto.gqn_dnaex AS gqn_index,
+        latest_decision_making.next_step,
+        latest_decision_making.extraction_qc_result
+    FROM dna_extract$raw AS dna
+    LEFT JOIN container_content$raw AS cc
+        ON cc.entity_id = dna.id
+    LEFT JOIN container$raw AS con
+        ON con.id = cc.container_id
+    LEFT JOIN tissue_prep$raw AS tp
+        ON tp.id = dna.tissue_prep
+    LEFT JOIN tissue$raw AS t
+        ON t.id = tp.tissue
+    LEFT JOIN tube$raw AS tube
+        ON cc.container_id = tube.id
+    LEFT JOIN folder$raw AS f
+        ON dna.folder_id$ = f.id
+    LEFT JOIN project$raw AS proj
+        ON dna.project_id$ = proj.id
+    LEFT JOIN latest_nanodrop_conc -- Results chunk
+        ON dna.id = latest_nanodrop_conc.sample_id
+    LEFT JOIN latest_qubit_conc
+        ON dna.id = latest_qubit_conc.sample_id
+    LEFT JOIN latest_yield
+        ON dna.id = latest_yield.sample_id
+    LEFT JOIN latest_femto
+        ON dna.id = latest_femto.sample_id
+    LEFT JOIN latest_decision_making
+        ON dna.id = latest_decision_making.sample_id -- End Results chunk
+    LEFT JOIN box$raw AS box -- Location chunk
+        ON con.box_id = box.id
+    LEFT JOIN location$raw AS loc
+        ON loc.id = box.location_id -- End of location chunk
+    WHERE proj.name = 'ToL Core Lab'
+        AND  (f.name IN ('Routine Throughput', 'DNA', 'Core Lab Entities', 'Benchling MS Project Move') OR f.name IS NULL)
+        AND (dna.archive_purpose$ != ('Made in error') OR dna.archive_purpose$ IS NULL)
+        AND (con.archive_purpose$ != ('Made in error') OR con.archive_purpose$ IS NULL)
+        AND con.barcode NOT LIKE 'CON%'
+),
+
+ranked_extractions AS (
+    SELECT *,
+        ROW_NUMBER() OVER (
+            PARTITION BY extraction_id 
+            ORDER BY 
+                CASE WHEN tube_type = 'voucher' THEN 2 ELSE 1 END,
+                completion_date ASC
+        ) as row_rank
+    FROM main_query
 )
 
-SELECT DISTINCT
-    t.sts_id,
-    t.taxon_id,
-    t.id AS eln_tissue_id,
-    tp.id AS eln_tissue_prep_id,
-    dna.file_registry_id$ AS eln_file_registry_id,
-    dna.id AS extraction_id,
-    t.programme_id,
-    t.specimen_id,
-    COALESCE(DATE(dna.created_on), DATE(dna.created_at$)) AS completion_date, -- Homogenising BnT and Benchling dates
-    dna.name$ AS extraction_name,
-    con.barcode AS fluidx_id,
-    con.id AS fluidx_container_id,
-    CASE
-        WHEN con.archive_purpose$ IN ('Retired', 'Expended') THEN 0 -- Retired or expended DNA extractions have a weight of 0
-        ELSE con.volume_si * 1000000
-    END AS volume_ul,
-    loc.name AS location,
-    box.barcode AS rack,
-    dna.bt_id AS bnt_id,
-	dna.manual_vs_automatic AS manual_vs_automatic,
-    dna.extraction_protocol,
-    tube.type AS tube_type,
-    'dna'::varchar AS extraction_type,
-    f.name, dna.archive_purpose$,
-    latest_nanodrop_conc.nanodrop_concentration_ngul,
-    latest_nanodrop_conc.dna_260_280_ratio,
-    latest_nanodrop_conc.dna_260_230_ratio,
-    latest_qubit_conc.qubit_concentration_ngul,
-    latest_yield.yield AS yield_ng,
-    latest_femto.femto_date_code,
-    latest_femto.femto_description,
-    latest_femto.gqn_dnaex AS gqn_index,
-    latest_decision_making.next_step,
-    latest_decision_making.extraction_qc_result
-FROM dna_extract$raw AS dna
-LEFT JOIN container_content$raw AS cc
-     ON cc.entity_id = dna.id
-LEFT JOIN container$raw AS con
-     ON con.id = cc.container_id
-LEFT JOIN tissue_prep$raw AS tp
-     ON tp.id = dna.tissue_prep
-LEFT JOIN tissue$raw AS t
-     ON t.id = tp.tissue
-LEFT JOIN tube$raw AS tube
-     ON cc.container_id = tube.id
-LEFT JOIN folder$raw AS f
-     ON dna.folder_id$ = f.id
-LEFT JOIN project$raw AS proj
-    ON dna.project_id$ = proj.id
-LEFT JOIN latest_nanodrop_conc -- Results chunk
-    ON dna.id = latest_nanodrop_conc.sample_id
-LEFT JOIN latest_qubit_conc
-    ON dna.id = latest_qubit_conc.sample_id
-LEFT JOIN latest_yield
-    ON dna.id = latest_yield.sample_id
-LEFT JOIN latest_femto
-    ON dna.id = latest_femto.sample_id
-LEFT JOIN latest_decision_making
-    ON dna.id = latest_decision_making.sample_id -- End Results chunk
-LEFT JOIN box$raw AS box -- Location chunk
-    ON con.box_id = box.id
-LEFT JOIN location$raw AS loc
-    ON loc.id = box.location_id -- End of location chunk
-WHERE proj.name = 'ToL Core Lab'
-    AND  (f.name IN ('Routine Throughput', 'DNA', 'Core Lab Entities', 'Benchling MS Project Move') OR f.name IS NULL)
-    AND (dna.archive_purpose$ != ('Made in error') OR dna.archive_purpose$ IS NULL)
-    AND (con.archive_purpose$ != ('Made in error') OR con.archive_purpose$ IS NULL)
-    AND con.barcode NOT LIKE 'CON%'
-ORDER BY completion_date DESC
+SELECT 
+    sts_id,
+    taxon_id,
+    eln_tissue_id,
+    eln_tissue_prep_id,
+    eln_file_registry_id,
+    CASE 
+		WHEN tube_type = 'voucher' AND voucher_rank = 1 THEN extraction_id || '_voucher'
+        WHEN tube_type = 'voucher' THEN extraction_id || '_voucher-' || voucher_rank
+        ELSE extraction_id
+    END AS extraction_id,
+    programme_id,
+    specimen_id,
+    completion_date,
+    extraction_name,
+    fluidx_id,
+    fluidx_container_id,
+    volume_ul,
+    location,
+    rack,
+    bnt_id,
+    manual_vs_automatic,
+    extraction_protocol,
+    tube_type,
+    extraction_type,
+    name,
+    archive_purpose$,
+    nanodrop_concentration_ngul,
+    dna_260_280_ratio,
+    dna_260_230_ratio,
+    qubit_concentration_ngul,
+    yield_ng,
+    femto_date_code,
+    femto_description,
+    gqn_index,
+    next_step,
+    extraction_qc_result
+FROM ranked_extractions
+WHERE row_rank = 1 OR (row_rank = 2 AND tube_type = 'voucher')
