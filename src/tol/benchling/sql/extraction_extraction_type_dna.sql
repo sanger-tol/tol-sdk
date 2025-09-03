@@ -184,16 +184,27 @@ main_query AS (
         AND con.barcode NOT LIKE 'CON%'
 ),
 
-ranked_extractions AS (
-    SELECT *,
-        ROW_NUMBER() OVER (
-            PARTITION BY extraction_id 
-            ORDER BY 
-                CASE WHEN tube_type = 'voucher' THEN 2 ELSE 1 END,
-                completion_date ASC
-        ) as row_rank
-    FROM main_query
-)
+ranked_extractions AS ( 
+    SELECT *, 
+    ROW_NUMBER() OVER ( 
+        PARTITION BY extraction_id 
+        ORDER BY CASE WHEN tube_type = 'voucher' THEN 2 ELSE 1 END, 
+        completion_date ASC 
+    ) as row_rank, 
+    ROW_NUMBER() OVER ( 
+        PARTITION BY extraction_id 
+        ORDER BY completion_date ASC 
+    ) as global_rank, 
+    ROW_NUMBER() OVER ( 
+        PARTITION BY extraction_id 
+        ORDER BY completion_date ASC 
+    ) as extraction_order, 
+    CASE WHEN tube_type = 'voucher' 
+    THEN ROW_NUMBER() OVER ( 
+        PARTITION BY extraction_id, tube_type 
+        ORDER BY completion_date ASC 
+    ) END as voucher_rank 
+    FROM main_query )
 
 SELECT 
     sts_id,
