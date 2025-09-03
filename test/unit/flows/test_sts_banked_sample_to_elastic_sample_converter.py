@@ -22,7 +22,7 @@ class _MockDataSourceRelational(DataSource, Relational):
 
     @property
     def supported_types(self):
-        return ['banked_sample', 'banked_sample_category']
+        return ['banked_sample', 'banked_sample_category', 'sample']
 
     @property
     def attribute_types(self):
@@ -32,7 +32,8 @@ class _MockDataSourceRelational(DataSource, Relational):
     def relationship_config(self):
         rc_banked_sample = RelationshipConfig()
         rc_banked_sample.to_one = {
-            'category': 'banked_sample_category'
+            'category': 'banked_sample_category',
+            'sample': 'sample'
         }
         return {'banked_sample': rc_banked_sample}
 
@@ -41,12 +42,7 @@ class _MockDataSourceRelational(DataSource, Relational):
         source: DataObject,
         relationship_name: str
     ):
-        if source.id == 'test1':
-            return source._host.data_object_factory(
-                id_='test1',
-                type_='banked_sample_category',
-                attributes={'name': 'category1'}
-            )
+        pass
 
     def get_to_many_relations(
         self
@@ -78,24 +74,35 @@ class TestStsSpeciesToElasticSpeciesConverter(TestCase):
 
         CoreDataObject = source.data_object_factory  # noqa N806
         banked_sample_category = CoreDataObject(
-            id_='test1',
+            id_='cat1',
             type_='banked_sample_category',
             attributes={'name': 'category1'}
+        )
+        sample = CoreDataObject(
+            id_='sample1',
+            type_='sample',
+            attributes={}
         )
         obj1 = CoreDataObject(
             id_='test1',
             type_='banked_sample',
             attributes={'attribute1': 'value1'},
-            to_one={'category': banked_sample_category}
+            to_one={
+                'category': banked_sample_category,
+                'sample': sample
+            }
         )
         obj2 = CoreDataObject(
             id_='test2',
             type_='banked_sample',
-            attributes={'attribute1': 'value2'}
+            attributes={'attribute1': 'value2'},
+            to_one={
+                'sample': sample
+            }
         )
         converteds = converter.convert(obj1)
         ret1 = next(converteds)
-        self.assertEqual(obj1.id, ret1.id)
+        self.assertEqual('sample1', ret1.id)
         self.assertEqual('sample', ret1.type)
         self.assertEqual(ret1.attributes, {
             'attribute1': 'value1',
@@ -107,7 +114,7 @@ class TestStsSpeciesToElasticSpeciesConverter(TestCase):
 
         converteds = converter.convert(obj2)
         ret2 = next(converteds)
-        self.assertEqual(obj2.id, ret2.id)
+        self.assertEqual('sample1', ret2.id)
         self.assertEqual('sample', ret2.type)
         self.assertEqual(ret2.attributes, {
             'attribute1': 'value2'
