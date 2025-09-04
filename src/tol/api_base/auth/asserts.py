@@ -3,6 +3,7 @@
 # SPDX-License-Identifier: MIT
 
 from functools import wraps
+from inspect import BoundArguments
 from typing import Any, Callable, Optional, Protocol
 
 from .error import ForbiddenError
@@ -26,7 +27,8 @@ class AuthInspector(Protocol):
     def __call__(
         self,
         object_type: str,
-        method: OperatorMethod
+        method: OperatorMethod,
+        bound_args: BoundArguments
     ) -> Optional[AndFilter]:
         ...
 
