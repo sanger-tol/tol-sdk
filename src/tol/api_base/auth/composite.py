@@ -1,7 +1,6 @@
 # SPDX-FileCopyrightText: 2024 Genome Research Ltd.
 #
 # SPDX-License-Identifier: MIT
-import logging
 from abc import ABC, abstractmethod
 from collections import defaultdict
 from functools import reduce, wraps
@@ -18,11 +17,7 @@ from typing import (
 
 from .asserts import AuthInspector
 from .error import ForbiddenError
-from ..misc import (
-    AuthContext,
-    CtxGetter,
-    default_ctx_getter
-)
+from ..misc import AuthContext, CtxGetter, default_ctx_getter
 from ...core import DataSource
 from ...core.datasource_filter import AndFilter
 from ...core.operator import OperatorMethod
@@ -32,7 +27,7 @@ class InspectorHook(Protocol):
     """
     Protocol for authorisation hook functions that can be decorated
     by methods of `CompositeAuthInspector`.
-    
+
     Hook functions are called during authorisation inspection to determine
     whether operations should be permitted, forbidden, or require additional
     filtering.
@@ -43,14 +38,14 @@ class InspectorHook(Protocol):
         object_type: str,
         op: OperatorMethod,
         auth_ctx: Optional[AuthContext] = None,
-        bound_args: Optional[BoundArguments] = None
+        bound_args: Optional[BoundArguments] = None,
     ) -> Optional[AndFilter]:
         """
         Authorize an operation and optionally return additional filters.
 
         Args:
             object_type: The type of object being accessed (e.g., 'users', 'orders').
-            op: The operation being performed (e.g., OperatorMethod.DETAIL, 
+            op: The operation being performed (e.g., OperatorMethod.DETAIL,
                 OperatorMethod.INSERT).
             auth_ctx: Authentication context containing user information and roles.
                      None for unauthenticated requests.
@@ -66,16 +61,10 @@ class InspectorHook(Protocol):
         """
 
 
-_TypeHandlerDict = dict[
-    str,
-    list[InspectorHook]
-]
+_TypeHandlerDict = dict[str, list[InspectorHook]]
 
 
-_HookDecorator = Union[
-    InspectorHook,
-    Callable[[InspectorHook], InspectorHook]
-]
+_HookDecorator = Union[InspectorHook, Callable[[InspectorHook], InspectorHook]]
 
 
 class CompositeAuthInspector(AuthInspector):
@@ -102,15 +91,13 @@ class CompositeAuthInspector(AuthInspector):
         - Admin users bypass all hooks and restrictions
 
     Attributes:
-        admin_role: The name of the role that grants administrative privileges. 
+        admin_role: The name of the role that grants administrative privileges.
                    Users with this role bypass all authorisation restrictions.
         ctx_getter: A callable used to retrieve the current authorisation context.
     """
 
     def __init__(
-        self,
-        admin_role: str = 'admin',
-        ctx_getter: CtxGetter = default_ctx_getter
+        self, admin_role: str = "admin", ctx_getter: CtxGetter = default_ctx_getter
     ) -> None:
         """
         Initialize the CompositeAuthInspector.
@@ -132,24 +119,21 @@ class CompositeAuthInspector(AuthInspector):
         self.__typed_auths = self.__new_type_handler_dict()
 
     def __call__(
-        self,
-        object_type: str,
-        method: OperatorMethod,
-        bound_args: BoundArguments
+        self, object_type: str, method: OperatorMethod, bound_args: BoundArguments
     ) -> Optional[AndFilter]:
         """
         Execute authorisation inspection for a given object type and operation.
 
         This is the main entry point called by the authorisation system. It
         determines the user's authentication status and invokes the appropriate
-        hooks, combining their results into a single filter or raising 
+        hooks, combining their results into a single filter or raising
         ForbiddenError if access should be denied.
 
         Args:
             object_type: The type of object being accessed (e.g., 'users', 'orders').
             method: The operation being performed (e.g., OperatorMethod.DETAIL,
                    OperatorMethod.INSERT).
-            bound_args: BoundArguments object containing the arguments bound to 
+            bound_args: BoundArguments object containing the arguments bound to
                        the original request, used by hooks for authorisation decisions.
 
         Returns:
@@ -170,24 +154,12 @@ class CompositeAuthInspector(AuthInspector):
             if self.__admin_role in ctx.roles:
                 return
             else:
-                return self.__invoke_auth(
-                    object_type,
-                    method,
-                    ctx,
-                    bound_args
-                )
+                return self.__invoke_auth(object_type, method, ctx, bound_args)
         else:
-            return self.__invoke_noauth(
-                object_type,
-                method,
-                bound_args
-            )
+            return self.__invoke_noauth(object_type, method, bound_args)
 
     def noauth(
-        self,
-        hook: Optional[InspectorHook] = None,
-        *,
-        object_type: str | list[str] | None = None
+        self, hook: Optional[InspectorHook] = None, *, object_type: str | list[str] | None = None
     ) -> _HookDecorator:
         """
         Register a hook for unauthenticated requests.
@@ -220,19 +192,10 @@ class CompositeAuthInspector(AuthInspector):
             ```
         """
 
-        return self.__hook_decorator(
-            hook,
-            lambda h: self.__noauth_append(
-                h,
-                object_type
-            )
-        )
+        return self.__hook_decorator(hook, lambda h: self.__noauth_append(h, object_type))
 
     def auth(
-        self,
-        hook: Optional[InspectorHook] = None,
-        *,
-        object_type: str | list[str] | None = None
+        self, hook: Optional[InspectorHook] = None, *, object_type: str | list[str] | None = None
     ) -> _HookDecorator:
         """
         Register a hook for authenticated requests.
@@ -266,19 +229,10 @@ class CompositeAuthInspector(AuthInspector):
             ```
         """
 
-        return self.__hook_decorator(
-            hook,
-            lambda h: self.__auth_append(
-                h,
-                object_type
-            )
-        )
+        return self.__hook_decorator(hook, lambda h: self.__auth_append(h, object_type))
 
     def always(
-        self,
-        hook: Optional[InspectorHook] = None,
-        *,
-        object_type: str | list[str] | None = None
+        self, hook: Optional[InspectorHook] = None, *, object_type: str | list[str] | None = None
     ) -> _HookDecorator:
         """
         Register a hook that executes for both authenticated and unauthenticated requests.
@@ -314,18 +268,9 @@ class CompositeAuthInspector(AuthInspector):
             ```
         """
 
-        return self.__hook_decorator(
-            hook,
-            lambda h: self.__always_append(
-                h,
-                object_type
-            )
-        )
+        return self.__hook_decorator(hook, lambda h: self.__always_append(h, object_type))
 
-    def forbid(
-        self,
-        object_type: str | list[str]
-    ) -> None:
+    def forbid(self, object_type: str | list[str]) -> None:
         """
         Unconditionally forbid all operations on specified object types for non-admin users.
 
@@ -356,10 +301,7 @@ class CompositeAuthInspector(AuthInspector):
         def __hook(*args, **kwargs) -> None:
             raise ForbiddenError
 
-    def forbid_noauth(
-        self,
-        object_type: str | list[str]
-    ) -> None:
+    def forbid_noauth(self, object_type: str | list[str]) -> None:
         """
         Forbid operations on specified object types for unauthenticated users only.
 
@@ -405,11 +347,7 @@ class CompositeAuthInspector(AuthInspector):
         if object_type is None:
             self.__noauths.append(hook)
         else:
-            self.__append_to_dict(
-                hook,
-                object_type,
-                self.__typed_noauths
-            )
+            self.__append_to_dict(hook, object_type, self.__typed_noauths)
 
     def __auth_append(
         self,
@@ -427,11 +365,7 @@ class CompositeAuthInspector(AuthInspector):
         if object_type is None:
             self.__auths.append(hook)
         else:
-            self.__append_to_dict(
-                hook,
-                object_type,
-                self.__typed_auths
-            )
+            self.__append_to_dict(hook, object_type, self.__typed_auths)
 
     def __always_append(
         self,
@@ -453,9 +387,7 @@ class CompositeAuthInspector(AuthInspector):
         self.__auth_append(hook, object_type)
 
     def __hook_decorator(
-        self,
-        hook: InspectorHook | None,
-        append_func: Callable[[InspectorHook], None]
+        self, hook: InspectorHook | None, append_func: Callable[[InspectorHook], None]
     ) -> InspectorHook:
         """
         Internal method that implements the decorator pattern for hook registration.
@@ -471,9 +403,7 @@ class CompositeAuthInspector(AuthInspector):
             InspectorHook: The decorated hook function or decorator function.
         """
 
-        def decorator(
-            arg_hook: InspectorHook
-        ) -> _HookDecorator:
+        def decorator(arg_hook: InspectorHook) -> _HookDecorator:
 
             append_func(arg_hook)
 
@@ -482,15 +412,10 @@ class CompositeAuthInspector(AuthInspector):
                 __type: str,
                 __op: OperatorMethod,
                 auth_ctx: AuthContext | None = None,
-                bound_args: BoundArguments | None = None
+                bound_args: BoundArguments | None = None,
             ):
 
-                return arg_hook(
-                    __type,
-                    __op,
-                    auth_ctx=auth_ctx,
-                    bound_args=bound_args
-                )
+                return arg_hook(__type, __op, auth_ctx=auth_ctx, bound_args=bound_args)
 
             return wrapper
 
@@ -503,7 +428,7 @@ class CompositeAuthInspector(AuthInspector):
         self,
         hook: InspectorHook,
         object_type: str | list[str],
-        target: dict[str, list[InspectorHook]]
+        target: dict[str, list[InspectorHook]],
     ) -> None:
         """
         Internal method to append a hook to a type-specific hook dictionary.
@@ -528,15 +453,13 @@ class CompositeAuthInspector(AuthInspector):
                 __append_single(__type)
 
     def __accumulate(
-        self,
-        existing: Optional[AndFilter],
-        add: Optional[AndFilter]
+        self, existing: Optional[AndFilter], add: Optional[AndFilter]
     ) -> Optional[AndFilter]:
         """
         Internal method to combine filters from multiple hooks.
 
-        Combines filters using OR logic (| operator), meaning if multiple hooks 
-        return filters, the user only needs to satisfy at least one of them to 
+        Combines filters using OR logic (| operator), meaning if multiple hooks
+        return filters, the user only needs to satisfy at least one of them to
         gain access. This allows for flexible authorisation where different
         conditions can grant access.
 
@@ -545,7 +468,7 @@ class CompositeAuthInspector(AuthInspector):
             add: New filter to add, or None.
 
         Returns:
-            Optional[AndFilter]: Combined filter using OR logic, or None if no 
+            Optional[AndFilter]: Combined filter using OR logic, or None if no
                                filters to combine.
         """
 
@@ -558,10 +481,7 @@ class CompositeAuthInspector(AuthInspector):
                 return existing | add
 
     def __invoke_noauth(
-        self,
-        object_type: str,
-        op: OperatorMethod,
-        bound_args: BoundArguments
+        self, object_type: str, op: OperatorMethod, bound_args: BoundArguments
     ) -> Optional[AndFilter]:
         """
         Internal method to invoke all applicable hooks for unauthenticated requests.
@@ -582,21 +502,12 @@ class CompositeAuthInspector(AuthInspector):
             ForbiddenError: If any hook raises this exception.
         """
 
-        hooks = self.__get_noauth_hooks(
-            object_type
-        )
+        hooks = self.__get_noauth_hooks(object_type)
 
         return reduce(
-            lambda d, h: self.__accumulate(
-                d,
-                h(
-                    object_type,
-                    op,
-                    bound_args=bound_args
-                )
-            ),
+            lambda d, h: self.__accumulate(d, h(object_type, op, bound_args=bound_args)),
             hooks,
-            None
+            None,
         )
 
     def __invoke_auth(
@@ -604,7 +515,7 @@ class CompositeAuthInspector(AuthInspector):
         object_type: str,
         op: OperatorMethod,
         auth_ctx: AuthContext,
-        bound_args: BoundArguments
+        bound_args: BoundArguments,
     ) -> Optional[AndFilter]:
         """
         Internal method to invoke all applicable hooks for authenticated requests.
@@ -626,27 +537,17 @@ class CompositeAuthInspector(AuthInspector):
             ForbiddenError: If any hook raises this exception.
         """
 
-        hooks = self.__get_auth_hooks(
-            object_type
-        )
+        hooks = self.__get_auth_hooks(object_type)
 
         return reduce(
             lambda d, h: self.__accumulate(
-                d,
-                h(
-                    object_type,
-                    op,
-                    auth_ctx=auth_ctx,
-                    bound_args=bound_args
-                )
+                d, h(object_type, op, auth_ctx=auth_ctx, bound_args=bound_args)
             ),
             hooks,
-            None
+            None,
         )
 
-    def __new_type_handler_dict(
-        self
-    ) -> _TypeHandlerDict:
+    def __new_type_handler_dict(self) -> _TypeHandlerDict:
         """
         Internal method to create a new type handler dictionary.
 
@@ -657,14 +558,9 @@ class CompositeAuthInspector(AuthInspector):
             _TypeHandlerDict: A defaultdict for storing hooks by object type.
         """
 
-        return defaultdict(
-            lambda: []
-        )
+        return defaultdict(lambda: [])
 
-    def __get_auth_hooks(
-        self,
-        object_type: str
-    ) -> Iterable[InspectorHook]:
+    def __get_auth_hooks(self, object_type: str) -> Iterable[InspectorHook]:
         """
         Internal method to get all hooks applicable for authenticated requests.
 
@@ -679,15 +575,9 @@ class CompositeAuthInspector(AuthInspector):
                                    in execution order (global first, then type-specific).
         """
 
-        return chain(
-            self.__auths,
-            self.__typed_auths[object_type]
-        )
+        return chain(self.__auths, self.__typed_auths[object_type])
 
-    def __get_noauth_hooks(
-        self,
-        object_type: str
-    ) -> Iterable[InspectorHook]:
+    def __get_noauth_hooks(self, object_type: str) -> Iterable[InspectorHook]:
         """
         Internal method to get all hooks applicable for unauthenticated requests.
 
@@ -702,10 +592,7 @@ class CompositeAuthInspector(AuthInspector):
                                    in execution order (global first, then type-specific).
         """
 
-        return chain(
-            self.__noauths,
-            self.__typed_noauths[object_type]
-        )
+        return chain(self.__noauths, self.__typed_noauths[object_type])
 
 
 class BaseAuthInspectorHelper(ABC):
@@ -730,7 +617,8 @@ class BaseAuthInspectorHelper(ABC):
         which OperatorMethod values (e.g., PAGE, DETAIL, COUNT, CREATE, UPDATE, DELETE)
         are permitted for the specific object type handled by this helper.
 
-        The implementation should use the inspector's @auth, @noauth and @always decorators to register
+        The implementation should use the inspector's @auth,
+        @noauth and @always decorators to register
         functions that:
         - Accept parameters: object_type (str), op (OperatorMethod),
           auth_ctx (Optional[AuthContext]), bound_args (BoundArguments)
@@ -762,13 +650,15 @@ class BaseAuthInspectorHelper(ABC):
         This method should define and register authorisation rules that control
         access to CREATE operations for the specific object type handled by this helper.
 
-        The implementation should use the inspector's @auth, @noauth and @always decorators to register
+        The implementation should use the inspector's @auth,
+        @noauth and @always decorators to register
         functions that:
         - Accept parameters: object_type (str), op (OperatorMethod),
           auth_ctx (Optional[AuthContext]), bound_args (BoundArguments)
         - Validate the auth_ctx and user roles for create permissions
         - Check if the requested operation is CREATE
-        - Validate any additional create-specific requirements (e.g., data ownership, resource limits)
+        - Validate any additional create-specific requirements
+            (e.g., data ownership, resource limits)
         - Use bound_args to access request data for validation
         - Raise ForbiddenError if the operation is not permitted
 
@@ -792,7 +682,6 @@ class BaseAuthInspectorHelper(ABC):
                 by concrete subclasses.
         """
 
-
     @abstractmethod
     def _add_read_rules(self):
         """Add authorisation rules for read operations.
@@ -801,7 +690,8 @@ class BaseAuthInspectorHelper(ABC):
         access to READ operations (PAGE, DETAIL, COUNT) for the specific object type
         handled by this helper.
 
-        The implementation should use the inspector's @auth, @noauth and @always decorators to register
+        The implementation should use the inspector's
+        @auth, @noauth and @always decorators to register
         functions that:
         - Accept parameters: object_type (str), op (OperatorMethod),
           auth_ctx (Optional[AuthContext]), bound_args (BoundArguments)
@@ -829,7 +719,6 @@ class BaseAuthInspectorHelper(ABC):
                 by concrete subclasses.
         """
 
-
     @abstractmethod
     def _add_update_rules(self):
         """Add authorisation rules for update operations.
@@ -837,14 +726,16 @@ class BaseAuthInspectorHelper(ABC):
         This method should define and register authorisation rules that control
         access to UPDATE operations for the specific object type handled by this helper.
 
-        The implementation should use the inspector's @auth, @noauth and @always decorators to register
+        The implementation should use the inspector's
+        @auth, @noauth and @always decorators to register
         functions that:
         - Accept parameters: object_type (str), op (OperatorMethod),
           auth_ctx (Optional[AuthContext]), bound_args (BoundArguments)
         - Validate the auth_ctx and user roles for update permissions
         - Check if the requested operation is UPDATE
         - Use bound_args to access update data and target record information
-        - Validate any additional update-specific requirements (e.g., data ownership, field restrictions)
+        - Validate any additional update-specific requirements
+            (e.g., data ownership, field restrictions)
         - Raise ForbiddenError if the operation is not permitted
 
         Example implementation pattern:
@@ -875,14 +766,16 @@ class BaseAuthInspectorHelper(ABC):
         This method should define and register authorisation rules that control
         access to DELETE operations for the specific object type handled by this helper.
 
-        The implementation should use the inspector's @auth, @noauth and @always decorators to register
+        The implementation should use the inspector's @auth,
+        @noauth and @always decorators to register
         functions that:
         - Accept parameters: object_type (str), op (OperatorMethod),
           auth_ctx (Optional[AuthContext]), bound_args (BoundArguments)
         - Validate the auth_ctx and user roles for delete permissions
         - Check if the requested operation is DELETE
         - Use bound_args to access target record information for ownership validation
-        - Validate any additional delete-specific requirements (e.g., data ownership, cascade effects)
+        - Validate any additional delete-specific requirements
+            (e.g., data ownership, cascade effects)
         - Raise ForbiddenError if the operation is not permitted
 
         Example implementation pattern:

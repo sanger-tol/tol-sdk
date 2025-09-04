@@ -22,20 +22,17 @@ from .misc import (
     AggregationParameters,
     GroupStatsParameters,
     ListGetParamaters,
-    StatsParameters
+    StatsParameters,
 )
 from ..api_client.exception import (
     ObjectNotFoundByIdException,
     RecursiveRelationNotFoundException,
     UninheritedOperationError,
-    UnsupportedOperationError
+    UnsupportedOperationError,
 )
 from ..api_client.view import ResponseDict, View
 from ..core import DataObject, OperableDataSource
-from ..core.datasource_filter import (
-    AndFilter,
-    DataSourceFilter
-)
+from ..core.datasource_filter import AndFilter, DataSourceFilter
 from ..core.operator import (
     Aggregator,
     Counter,
@@ -50,7 +47,7 @@ from ..core.operator import (
     Relational,
     ReturnMode,
     Updater,
-    Upserter
+    Upserter,
 )
 from ..core.operator.updater import DataObjectUpdate
 
@@ -65,7 +62,7 @@ def __is_supported(
 ) -> bool:
     """
     Check if a given DataSource instance supports the specified Operator class.
-    
+
     This function determines whether the data source implements the required operator
     by checking instance relationships and method availability. It handles inheritance
     validation to ensure proper operator implementation.
@@ -85,22 +82,18 @@ def __is_supported(
     if isinstance(data_source, operator_class):
         return True
     if hasattr(data_source, operator_method):
-        raise UninheritedOperationError(
-            data_source,
-            operator_class,
-            operator_method
-        )
+        raise UninheritedOperationError(data_source, operator_class, operator_method)
     return False
 
 
 def validate(
     operator_class: Type[Operator],
     object_method_name: str,
-    operator_method: OperatorMethod
+    operator_method: OperatorMethod,
 ) -> Callable:
     """
     Decorator factory for validating Controller method operations.
-    
+
     This decorator ensures that a Controller method's corresponding operation is
     supported by its DataSource. It performs comprehensive validation including
     inheritance checking and authorisation inspection.
@@ -118,6 +111,7 @@ def validate(
             is not inherited from.
         UnsupportedOperationError: If the operation is not supported by the data source.
     """
+
     def decorator(method: Callable) -> Callable:
         sig = inspect.signature(method)
 
@@ -126,14 +120,9 @@ def validate(
             bound_args.apply_defaults()
 
             if not __is_supported(
-                operator_class,
-                object_method_name,
-                controller.data_source
+                operator_class, object_method_name, controller.data_source
             ):
-                raise UnsupportedOperationError(
-                    object_type,
-                    str(operator_method)
-                )
+                raise UnsupportedOperationError(object_type, str(operator_method))
 
             ext_and = controller.inspect_auth(object_type, operator_method, bound_args)
             return method(
@@ -143,19 +132,21 @@ def validate(
                 ext_and=ext_and,
                 **kwargs,
             )
+
         return wrapper
+
     return decorator
 
 
 class Controller:
     """
     MVC-style Controller class for handling API requests and coordinating data operations.
-    
+
     The Controller serves as an intermediary between the data source layer and the view
     layer, providing a consistent interface for various operations including CRUD operations,
     aggregations, statistics, and relationship management. It handles validation,
     authorisation, and error management for all supported operations.
-    
+
     The controller supports a wide range of operations:
     - Detail retrieval and listing with pagination
     - Counting and statistics generation
@@ -169,7 +160,7 @@ class Controller:
         self,
         data_source: OperableDataSource,
         view: View,
-        auth_inspector: Optional[AuthInspector] = None
+        auth_inspector: Optional[AuthInspector] = None,
     ) -> None:
         """
         Initialise the Controller with required dependencies.
@@ -188,21 +179,18 @@ class Controller:
     def data_source(self) -> OperableDataSource:
         """
         Get the configured data source instance.
-        
+
         Returns:
             The OperableDataSource instance used by this controller.
         """
         return self.__data_source
 
     def inspect_auth(
-        self,
-        object_type: str,
-        operation: OperatorMethod,
-        bound_args: BoundArguments
+        self, object_type: str, operation: OperatorMethod, bound_args: BoundArguments
     ) -> Optional[AndFilter]:
         """
         Perform authorisation inspection for the given operation.
-        
+
         This method delegates to the configured AuthInspector to determine if the
         current context has permission to perform the specified operation on the
         given object type.
@@ -219,11 +207,11 @@ class Controller:
         if self.__inspector is not None:
             return self.__inspector(object_type, operation, bound_args)
 
-    @validate(DetailGetter, 'get_by_id', OperatorMethod.DETAIL)
+    @validate(DetailGetter, "get_by_id", OperatorMethod.DETAIL)
     def get_detail(self, object_type: str, object_id: str, **kwargs) -> ResponseDict:
         """
         Retrieve an individual object of the specified type and identifier.
-        
+
         This method fetches a single data object by its unique identifier and
         returns it in a format suitable for API responses.
 
@@ -242,16 +230,16 @@ class Controller:
         data_object = self.__get_detail_object(object_type, object_id)
         return self.__view.dump(data_object)
 
-    @validate(PageGetter, 'get_list_page', OperatorMethod.PAGE)
+    @validate(PageGetter, "get_list_page", OperatorMethod.PAGE)
     def get_list(
         self,
         object_type: str,
         query_args: ListGetParamaters,
-        ext_and: Optional[AndFilter] = None
+        ext_and: Optional[AndFilter] = None,
     ) -> ResponseDict:
         """
         Retrieve a paginated list of objects of the specified type.
-        
+
         This method fetches a page of objects based on the provided query parameters,
         including filters, sorting, and field selection. It returns both the data
         and metadata about the total count and available types.
@@ -273,20 +261,17 @@ class Controller:
             object_type,
             page_number,
             page_size=query_args.page_size,
-            object_filters=self.__combine_filters(
-                query_args.filter,
-                ext_and
-            ),
+            object_filters=self.__combine_filters(query_args.filter, ext_and),
             sort_by=query_args.sort_by,
-            requested_fields=query_args.requested_fields
+            requested_fields=query_args.requested_fields,
         )
         document_meta = {
-            'total': total,
-            'types': self.__data_source.get_attribute_types(object_type)
+            "total": total,
+            "types": self.__data_source.get_attribute_types(object_type),
         }
         return self.__view.dump_bulk(data_objects, document_meta=document_meta)
 
-    @validate(Counter, 'get_count', OperatorMethod.COUNT)
+    @validate(Counter, "get_count", OperatorMethod.COUNT)
     def get_count(
         self,
         object_type: str,
@@ -295,7 +280,7 @@ class Controller:
     ) -> ResponseDict:
         """
         Get the count of objects of the specified type matching the given filters.
-        
+
         This method returns only the total count of objects without retrieving
         the actual data, which is more efficient for counting operations.
 
@@ -312,17 +297,12 @@ class Controller:
         """
         total = self.__data_source.get_count(
             object_type,
-            object_filters=self.__combine_filters(
-                query_args.filter,
-                ext_and
-            ),
+            object_filters=self.__combine_filters(query_args.filter, ext_and),
         )
-        document_meta = {
-            'total': total
-        }
+        document_meta = {"total": total}
         return self.__view.dump_bulk([], document_meta=document_meta)
 
-    @validate(Counter, 'get_stats', OperatorMethod.STATS)
+    @validate(Counter, "get_stats", OperatorMethod.STATS)
     def get_stats(
         self,
         object_type: str,
@@ -331,7 +311,7 @@ class Controller:
     ) -> ResponseDict:
         """
         Generate statistical information for objects of the specified type.
-        
+
         This method calculates various statistics (such as min, max, average, sum)
         for specified fields on objects matching the given filters.
 
@@ -350,15 +330,12 @@ class Controller:
             object_type,
             stats=query_args.stats,
             stats_fields=query_args.stats_fields,
-            object_filters=self.__combine_filters(
-                query_args.filter,
-                ext_and
-            ),
+            object_filters=self.__combine_filters(query_args.filter, ext_and),
         )
-        document_meta = {**stats, 'type': object_type}
+        document_meta = {**stats, "type": object_type}
         return self.__view.dump_bulk([], document_meta=document_meta)
 
-    @validate(GroupStatter, 'get_group_stats', OperatorMethod.GROUP_STATS)
+    @validate(GroupStatter, "get_group_stats", OperatorMethod.GROUP_STATS)
     def get_group_stats(
         self,
         object_type: str,
@@ -367,7 +344,7 @@ class Controller:
     ) -> ResponseDict:
         """
         Generate grouped statistical information for objects of the specified type.
-        
+
         This method calculates statistics grouped by one or more fields, allowing
         for analysis of data distribution across different categories.
 
@@ -387,27 +364,18 @@ class Controller:
             query_args.group_by,
             stats=query_args.stats,
             stats_fields=query_args.stats_fields,
-            object_filters=self.__combine_filters(
-                query_args.filter,
-                ext_and
-            ),
+            object_filters=self.__combine_filters(query_args.filter, ext_and),
         )
-        document_meta = {
-            'stats': list(stats),
-            'type': object_type
-        }
+        document_meta = {"stats": list(stats), "type": object_type}
         return self.__view.dump_bulk([], document_meta=document_meta)
 
-    @validate(Deleter, 'delete', OperatorMethod.DELETE)
+    @validate(Deleter, "delete", OperatorMethod.DELETE)
     def delete_detail(
-        self,
-        object_type: str,
-        object_id: str,
-        **kwargs
+        self, object_type: str, object_id: str, **kwargs
     ) -> EmptySuccessResponse:
         """
         Delete the DataObject of the specified type and identifier.
-        
+
         This method removes a single object from the data source. The operation
         is permanent and cannot be undone.
 
@@ -423,18 +391,15 @@ class Controller:
             UnsupportedOperationError: If the data source doesn't support deletion.
         """
         self.data_source.delete(object_type, [object_id])
-        return {'success': True}
+        return {"success": True}
 
-    @validate(Updater, 'update', OperatorMethod.UPDATE)
+    @validate(Updater, "update", OperatorMethod.UPDATE)
     def patch_list(
-        self,
-        object_type: str,
-        updates: Iterable[DataObjectUpdate],
-        **kwargs
+        self, object_type: str, updates: Iterable[DataObjectUpdate], **kwargs
     ) -> EmptySuccessResponse:
         """
         Update multiple objects of the same type using the provided update specifications.
-        
+
         This method applies updates to existing objects based on their identifiers
         and the update data provided. All objects must be of the same type.
 
@@ -451,18 +416,15 @@ class Controller:
             UnsupportedOperationError: If the data source doesn't support updates.
         """
         self.data_source.update(object_type, updates)
-        return {'success': True}
+        return {"success": True}
 
-    @validate(Inserter, 'insert', OperatorMethod.INSERT)
+    @validate(Inserter, "insert", OperatorMethod.INSERT)
     def post_inserts(
-        self,
-        object_type: str,
-        objects: Iterable[DataObject],
-        **kwargs
+        self, object_type: str, objects: Iterable[DataObject], **kwargs
     ) -> EmptySuccessResponse:
         """
         Insert new objects of the specified type into the data source.
-        
+
         This method creates new objects in the data source. The return value
         depends on the data source's return mode configuration.
 
@@ -482,18 +444,15 @@ class Controller:
         if self.data_source.return_mode[object_type] == ReturnMode.POPULATED:
             return self.__view.dump_bulk(returned)
         else:
-            return {'success': True}
+            return {"success": True}
 
-    @validate(Upserter, 'post_upserts', OperatorMethod.UPSERT)
+    @validate(Upserter, "post_upserts", OperatorMethod.UPSERT)
     def post_upserts(
-        self,
-        object_type: str,
-        objects: Iterable[DataObject],
-        **kwargs
+        self, object_type: str, objects: Iterable[DataObject], **kwargs
     ) -> EmptySuccessResponse:
         """
         Upsert (insert or update) objects of the specified type.
-        
+
         This method performs an upsert operation, which will insert new objects
         or update existing ones based on their identifiers. The return value
         depends on the data source's return mode configuration.
@@ -514,9 +473,9 @@ class Controller:
         if self.data_source.return_mode[object_type] == ReturnMode.POPULATED:
             return self.__view.dump_bulk(returned)
         else:
-            return {'success': True}
+            return {"success": True}
 
-    @validate(Aggregator, 'get_aggregations', OperatorMethod.AGGREGATE)
+    @validate(Aggregator, "get_aggregations", OperatorMethod.AGGREGATE)
     def post_aggregations(
         self,
         object_type: str,
@@ -526,7 +485,7 @@ class Controller:
     ) -> ResponseDict:
         """
         Perform aggregation operations on objects of the specified type.
-        
+
         This method executes complex aggregation queries such as grouping,
         bucketing, and statistical calculations on the data set.
 
@@ -544,33 +503,26 @@ class Controller:
         """
         aggregation_results = self.__data_source.get_aggregations(
             object_type,
-            object_filters=self.__combine_filters(
-                query_args.filter,
-                ext_and
-            ),
-            aggregations=body.aggs
+            object_filters=self.__combine_filters(query_args.filter, ext_and),
+            aggregations=body.aggs,
         )
         document_meta = {
-            'aggregations': aggregation_results,
-            'types': self.__data_source.get_attribute_types(object_type)
+            "aggregations": aggregation_results,
+            "types": self.__data_source.get_attribute_types(object_type),
         }
         return self.__view.dump_bulk([], document_meta=document_meta)
 
-    @validate(
-        Cursor,
-        'get_cursor_page',
-        OperatorMethod.CURSOR
-    )
+    @validate(Cursor, "get_cursor_page", OperatorMethod.CURSOR)
     def get_cursor_page(
         self,
         object_type: str,
         query_args: ListGetParamaters,
         search_after: list[str] | None,
-        ext_and: Optional[AndFilter] = None
+        ext_and: Optional[AndFilter] = None,
     ) -> ResponseDict:
         """
         Retrieve a page of objects using cursor-based pagination.
-        
+
         This method provides an alternative pagination mechanism using cursors,
         which is more efficient for large datasets and provides consistent
         results even when the underlying data changes.
@@ -591,33 +543,20 @@ class Controller:
         data_objects, new_search_after = self.data_source.get_cursor_page(
             object_type,
             query_args.page_size,
-            self.__combine_filters(
-                query_args.filter,
-                ext_and
-            ),
-            search_after
+            self.__combine_filters(query_args.filter, ext_and),
+            search_after,
         )
-        meta = {'search_after': new_search_after}
+        meta = {"search_after": new_search_after}
 
-        return self.__view.dump_bulk(
-            data_objects,
-            document_meta=meta
-        )
+        return self.__view.dump_bulk(data_objects, document_meta=meta)
 
-    @validate(
-        Relational,
-        'get_recursive_relation',
-        OperatorMethod.TO_ONE
-    )
+    @validate(Relational, "get_recursive_relation", OperatorMethod.TO_ONE)
     def get_recursive_relation(
-        self,
-        data_object: DataObject,
-        relationship_hops: list[str],
-        **kwargs
+        self, data_object: DataObject, relationship_hops: list[str], **kwargs
     ) -> ResponseDict:
         """
         Retrieve a nested to-one relationship by following multiple relationship hops.
-        
+
         This method allows traversal of complex object relationships by following
         a chain of to-one relationships defined by the relationship_hops parameter.
 
@@ -634,29 +573,22 @@ class Controller:
                 be followed or the final object is None.
             UnsupportedOperationError: If the data source doesn't support relationships.
         """
-        related_object = self.__get_to_one_relation(
-            data_object,
-            relationship_hops
-        )
+        related_object = self.__get_to_one_relation(data_object, relationship_hops)
         if related_object is None:
             raise RecursiveRelationNotFoundException()
         return self.__view.dump(related_object)
 
-    @validate(
-        Relational,
-        'get_to_many_relations_page',
-        OperatorMethod.TO_MANY
-    )
+    @validate(Relational, "get_to_many_relations_page", OperatorMethod.TO_MANY)
     def get_many_relations_page(
         self,
         data_object: DataObject,
         relationship_name: str,
         query_args: ListGetParamaters,
-        **kwargs
+        **kwargs,
     ) -> ResponseDict:
         """
         Retrieve a paginated list of objects from a to-many relationship.
-        
+
         This method fetches related objects that are connected through a
         to-many relationship, with support for pagination.
 
@@ -673,21 +605,18 @@ class Controller:
             UnsupportedOperationError: If the data source doesn't support relationships.
         """
         page = self.data_source.get_to_many_relations_page(
-            data_object,
-            relationship_name,
-            query_args.page,
-            query_args.page_size
+            data_object, relationship_name, query_args.page, query_args.page_size
         )
         return self.__view.dump_bulk(page)
 
     def __combine_filters(
         self,
         object_filters: Optional[DataSourceFilter] = None,
-        ext_and: Optional[AndFilter] = None
+        ext_and: Optional[AndFilter] = None,
     ) -> Optional[DataSourceFilter]:
         """
         Combine user-provided filters with authorisation filters.
-        
+
         This private method merges filters from query parameters with additional
         filters imposed by the authorisation system, ensuring that both sets
         of constraints are properly applied.
@@ -703,9 +632,7 @@ class Controller:
             return object_filters
         else:
             if object_filters is None:
-                return DataSourceFilter(
-                    and_=ext_and
-                )
+                return DataSourceFilter(and_=ext_and)
             elif object_filters.and_ is None:
                 object_filters.and_ = ext_and
             else:
@@ -716,7 +643,7 @@ class Controller:
     def __get_detail_object(self, object_type: str, object_id: str) -> DataObject:
         """
         Retrieve a single DataObject by type and identifier.
-        
+
         This private method fetches an object and handles the case where
         the object doesn't exist or is None.
 
@@ -738,7 +665,7 @@ class Controller:
     def __get_page_number_or_1(self, query_args: ListGetParamaters) -> int:
         """
         Extract the page number from query arguments or return 1 as default.
-        
+
         This private method provides a safe way to get the page number,
         defaulting to page 1 if no page is specified.
 
@@ -754,13 +681,11 @@ class Controller:
         return page_number
 
     def __get_to_one_relation(
-        self,
-        source: DataObject,
-        relationship_hops: list[str]
+        self, source: DataObject, relationship_hops: list[str]
     ) -> Optional[DataObject]:
         """
         Traverse a to-one relationship chain and return the final related object.
-        
+
         This private method validates the relationship chain and performs
         the actual traversal through the data source.
 
@@ -771,11 +696,5 @@ class Controller:
         Returns:
             The final related DataObject, or None if the chain cannot be followed.
         """
-        self.__data_source.validate_to_one_recurse(
-            source.type,
-            relationship_hops
-        )
-        return self.__data_source.get_recursive_relation(
-            source,
-            relationship_hops
-        )
+        self.__data_source.validate_to_one_recurse(source.type, relationship_hops)
+        return self.__data_source.get_recursive_relation(source, relationship_hops)
