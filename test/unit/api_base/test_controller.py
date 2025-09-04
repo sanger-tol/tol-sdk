@@ -17,7 +17,7 @@ from tol.api_client.exception import (
     ObjectNotFoundByIdException,
     RecursiveRelationNotFoundException,
     UninheritedOperationError,
-    UnsupportedOpertionError
+    UnsupportedOperationError
 )
 from tol.api_client.view import DefaultView, View
 from tol.core import (
@@ -263,11 +263,11 @@ class TestController:
         bad_ds = _BadDataSource()
         controller = Controller(bad_ds, DefaultView())
 
-        with pytest.raises(UnsupportedOpertionError):
+        with pytest.raises(UnsupportedOperationError):
             controller.get_detail('test', 'hype')
-        with pytest.raises(UnsupportedOpertionError):
+        with pytest.raises(UnsupportedOperationError):
             controller.get_list('test')
-        with pytest.raises(UnsupportedOpertionError):
+        with pytest.raises(UnsupportedOperationError):
             controller.post_aggregations(
                 'test',
                 MagicMock(),
