@@ -129,7 +129,7 @@ class DbAuthManager(AuthManager):
         user_id, user_ext = self.__get_or_create_user(oidc_id, oidc_ext)
         token_extra = self.__get_or_create_token(token, user_id)
 
-        return {**token_extra, **user_ext, "oidc_id": oidc_id}
+        return {**token_extra, **user_ext, 'oidc_id': oidc_id}
 
     def authenticate(
         self,
@@ -197,9 +197,9 @@ class DbAuthManager(AuthManager):
         r = requests.post(
             self.__config.revoke_url,
             data={
-                "token": token,
-                "client_id": self.__config.client_id,
-                "client_secret": self.__config.client_secret,
+                'token': token,
+                'client_id': self.__config.client_id,
+                'client_secret': self.__config.client_secret,
             },
         )
         r.raise_for_status()
@@ -222,7 +222,7 @@ class DbAuthManager(AuthManager):
         Raises:
             requests.HTTPError: If the user info request fails
         """
-        headers = {"Authorization": f"Bearer {token}"}
+        headers = {'Authorization': f'Bearer {token}'}
 
         r = requests.get(self.__config.user_info_url, headers=headers)
         r.raise_for_status()
@@ -320,7 +320,7 @@ class DbAuthManager(AuthManager):
         Returns:
             bool: True if the user model has a get_userinfo_ext method, False otherwise
         """
-        return hasattr(user, "get_userinfo_ext") and callable(user.get_userinfo_ext)
+        return hasattr(user, 'get_userinfo_ext') and callable(user.get_userinfo_ext)
 
     def __get_or_create_token(self, token: str, user_id: int) -> str:
         """
@@ -423,9 +423,9 @@ class DbAuthManager(AuthManager):
             dict: Form data for token request
         """
         return {
-            "grant_type": "authorization_code",
-            "code": code,
-            "redirect_uri": self.__config.redirect_uri,
+            'grant_type': 'authorization_code',
+            'code': code,
+            'redirect_uri': self.__config.redirect_uri,
         }
 
     def __delete_old_states(self) -> None:
@@ -491,9 +491,9 @@ class DbAuthManager(AuthManager):
             dict: Dictionary containing 'loginUrl' with the complete authorization URL
         """
         encoded = self.__encode_params(state_uuid)
-        login_url = f"{self.__config.auth_url}?{encoded}"
+        login_url = f'{self.__config.auth_url}?{encoded}'
 
-        return {"loginUrl": login_url}
+        return {'loginUrl': login_url}
 
     def __encode_params(self, state_uuid: str) -> str:
         """
@@ -508,11 +508,11 @@ class DbAuthManager(AuthManager):
             str: URL-encoded query string with all OIDC parameters
         """
         params = {
-            "client_id": self.__config.client_id,
-            "response_type": "code",
-            "state": state_uuid,
-            "redirect_uri": self.__config.redirect_uri,
-            "scope": "openid profile email",
+            'client_id': self.__config.client_id,
+            'response_type': 'code',
+            'state': state_uuid,
+            'redirect_uri': self.__config.redirect_uri,
+            'scope': 'openid profile email',
         }
 
         return urlencode(params)
@@ -638,18 +638,18 @@ def db_auth_blueprint(
     model_base: ModelClass,
     db_uri: str,
     authorisation_manager: AuthorisationManager,
-    url_prefix: str = "/auth",
+    url_prefix: str = '/auth',
     prefix_with_name: bool = False,
     oidc_config_factory: Callable[[], OidcConfig] = env_oidc_config,
     user_mixin_class: ModelClass = object,
-    user_model_name: str = "user",
+    user_model_name: str = 'user',
     token_mixin_class: ModelClass = object,
     token_is_pk: bool = False,
     role_mixin_class: ModelClass = object,
-    oidc_id_column_name: str = "oidc_id",
+    oidc_id_column_name: str = 'oidc_id',
     state_delete_delta: timedelta = timedelta(hours=1),
     token_expiry_delta: timedelta = timedelta(days=7),
-    oidc_id_target: str = "email",
+    oidc_id_target: str = 'email',
     oidc_ext_mapping: dict[str, str] = {},
 ) -> DbAuthBlueprint:
     """

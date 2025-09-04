@@ -207,7 +207,7 @@ class Controller:
         if self.__inspector is not None:
             return self.__inspector(object_type, operation, bound_args)
 
-    @validate(DetailGetter, "get_by_id", OperatorMethod.DETAIL)
+    @validate(DetailGetter, 'get_by_id', OperatorMethod.DETAIL)
     def get_detail(self, object_type: str, object_id: str, **kwargs) -> ResponseDict:
         """
         Retrieve an individual object of the specified type and identifier.
@@ -230,7 +230,7 @@ class Controller:
         data_object = self.__get_detail_object(object_type, object_id)
         return self.__view.dump(data_object)
 
-    @validate(PageGetter, "get_list_page", OperatorMethod.PAGE)
+    @validate(PageGetter, 'get_list_page', OperatorMethod.PAGE)
     def get_list(
         self,
         object_type: str,
@@ -266,12 +266,12 @@ class Controller:
             requested_fields=query_args.requested_fields,
         )
         document_meta = {
-            "total": total,
-            "types": self.__data_source.get_attribute_types(object_type),
+            'total': total,
+            'types': self.__data_source.get_attribute_types(object_type),
         }
         return self.__view.dump_bulk(data_objects, document_meta=document_meta)
 
-    @validate(Counter, "get_count", OperatorMethod.COUNT)
+    @validate(Counter, 'get_count', OperatorMethod.COUNT)
     def get_count(
         self,
         object_type: str,
@@ -299,10 +299,10 @@ class Controller:
             object_type,
             object_filters=self.__combine_filters(query_args.filter, ext_and),
         )
-        document_meta = {"total": total}
+        document_meta = {'total': total}
         return self.__view.dump_bulk([], document_meta=document_meta)
 
-    @validate(Counter, "get_stats", OperatorMethod.STATS)
+    @validate(Counter, 'get_stats', OperatorMethod.STATS)
     def get_stats(
         self,
         object_type: str,
@@ -332,10 +332,10 @@ class Controller:
             stats_fields=query_args.stats_fields,
             object_filters=self.__combine_filters(query_args.filter, ext_and),
         )
-        document_meta = {**stats, "type": object_type}
+        document_meta = {**stats, 'type': object_type}
         return self.__view.dump_bulk([], document_meta=document_meta)
 
-    @validate(GroupStatter, "get_group_stats", OperatorMethod.GROUP_STATS)
+    @validate(GroupStatter, 'get_group_stats', OperatorMethod.GROUP_STATS)
     def get_group_stats(
         self,
         object_type: str,
@@ -366,10 +366,10 @@ class Controller:
             stats_fields=query_args.stats_fields,
             object_filters=self.__combine_filters(query_args.filter, ext_and),
         )
-        document_meta = {"stats": list(stats), "type": object_type}
+        document_meta = {'stats': list(stats), 'type': object_type}
         return self.__view.dump_bulk([], document_meta=document_meta)
 
-    @validate(Deleter, "delete", OperatorMethod.DELETE)
+    @validate(Deleter, 'delete', OperatorMethod.DELETE)
     def delete_detail(
         self, object_type: str, object_id: str, **kwargs
     ) -> EmptySuccessResponse:
@@ -391,9 +391,9 @@ class Controller:
             UnsupportedOperationError: If the data source doesn't support deletion.
         """
         self.data_source.delete(object_type, [object_id])
-        return {"success": True}
+        return {'success': True}
 
-    @validate(Updater, "update", OperatorMethod.UPDATE)
+    @validate(Updater, 'update', OperatorMethod.UPDATE)
     def patch_list(
         self, object_type: str, updates: Iterable[DataObjectUpdate], **kwargs
     ) -> EmptySuccessResponse:
@@ -416,9 +416,9 @@ class Controller:
             UnsupportedOperationError: If the data source doesn't support updates.
         """
         self.data_source.update(object_type, updates)
-        return {"success": True}
+        return {'success': True}
 
-    @validate(Inserter, "insert", OperatorMethod.INSERT)
+    @validate(Inserter, 'insert', OperatorMethod.INSERT)
     def post_inserts(
         self, object_type: str, objects: Iterable[DataObject], **kwargs
     ) -> EmptySuccessResponse:
@@ -444,9 +444,9 @@ class Controller:
         if self.data_source.return_mode[object_type] == ReturnMode.POPULATED:
             return self.__view.dump_bulk(returned)
         else:
-            return {"success": True}
+            return {'success': True}
 
-    @validate(Upserter, "post_upserts", OperatorMethod.UPSERT)
+    @validate(Upserter, 'post_upserts', OperatorMethod.UPSERT)
     def post_upserts(
         self, object_type: str, objects: Iterable[DataObject], **kwargs
     ) -> EmptySuccessResponse:
@@ -473,9 +473,9 @@ class Controller:
         if self.data_source.return_mode[object_type] == ReturnMode.POPULATED:
             return self.__view.dump_bulk(returned)
         else:
-            return {"success": True}
+            return {'success': True}
 
-    @validate(Aggregator, "get_aggregations", OperatorMethod.AGGREGATE)
+    @validate(Aggregator, 'get_aggregations', OperatorMethod.AGGREGATE)
     def post_aggregations(
         self,
         object_type: str,
@@ -507,12 +507,12 @@ class Controller:
             aggregations=body.aggs,
         )
         document_meta = {
-            "aggregations": aggregation_results,
-            "types": self.__data_source.get_attribute_types(object_type),
+            'aggregations': aggregation_results,
+            'types': self.__data_source.get_attribute_types(object_type),
         }
         return self.__view.dump_bulk([], document_meta=document_meta)
 
-    @validate(Cursor, "get_cursor_page", OperatorMethod.CURSOR)
+    @validate(Cursor, 'get_cursor_page', OperatorMethod.CURSOR)
     def get_cursor_page(
         self,
         object_type: str,
@@ -546,11 +546,11 @@ class Controller:
             self.__combine_filters(query_args.filter, ext_and),
             search_after,
         )
-        meta = {"search_after": new_search_after}
+        meta = {'search_after': new_search_after}
 
         return self.__view.dump_bulk(data_objects, document_meta=meta)
 
-    @validate(Relational, "get_recursive_relation", OperatorMethod.TO_ONE)
+    @validate(Relational, 'get_recursive_relation', OperatorMethod.TO_ONE)
     def get_recursive_relation(
         self, data_object: DataObject, relationship_hops: list[str], **kwargs
     ) -> ResponseDict:
@@ -578,7 +578,7 @@ class Controller:
             raise RecursiveRelationNotFoundException()
         return self.__view.dump(related_object)
 
-    @validate(Relational, "get_to_many_relations_page", OperatorMethod.TO_MANY)
+    @validate(Relational, 'get_to_many_relations_page', OperatorMethod.TO_MANY)
     def get_many_relations_page(
         self,
         data_object: DataObject,

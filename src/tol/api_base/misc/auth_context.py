@@ -17,9 +17,9 @@ class NotAuthenticatedError(DataSourceError):
 
     def __init__(self) -> None:
         """Initialize a NotAuthenticatedError with appropriate error details."""
-        detail = "No user has authenticated for this request"
+        detail = 'No user has authenticated for this request'
 
-        super().__init__(title="Unauthorized", detail=detail, status_code=401)
+        super().__init__(title='Unauthorized', detail=detail, status_code=401)
 
 
 class AuthContext:
@@ -115,4 +115,4 @@ def default_ctx_getter() -> AuthContext:
         AuthContext: The auth context stored in Flask's global context,
                     or a new instance if none exists.
     """
-    return flask.g.setdefault("auth_context", default=AuthContext())
+    return flask.g.setdefault('auth_context', default=AuthContext())

@@ -55,7 +55,7 @@ class DataBlueprint(Blueprint):
         Args:
             url_prefix (str): URL prefix for all routes in this blueprint.
         """
-        super().__init__("data_source_handler", __name__, url_prefix=url_prefix)
+        super().__init__('data_source_handler', __name__, url_prefix=url_prefix)
 
 
 class ConfigBlueprint(Blueprint):
@@ -76,7 +76,7 @@ class ConfigBlueprint(Blueprint):
         Args:
             url_prefix (str): URL prefix for configuration routes.
         """
-        super().__init__("data_source_config", __name__, url_prefix=url_prefix)
+        super().__init__('data_source_config', __name__, url_prefix=url_prefix)
 
 
 class CustomBlueprint(Blueprint):
@@ -131,7 +131,7 @@ def _config_blueprint(
     """
     config_handler = ConfigBlueprint(url_prefix)
 
-    @config_handler.route("/relationships", methods=["GET"])
+    @config_handler.route('/relationships', methods=['GET'])
     def get_relationships():
         """Get relationship configurations from all relational data sources."""
         relationship_configs = chain(
@@ -139,33 +139,33 @@ def _config_blueprint(
         )
         return {t: d.to_dict() for t, d in relationship_configs if not d.empty}
 
-    @config_handler.route("/attribute_types", methods=["GET"])
+    @config_handler.route('/attribute_types', methods=['GET'])
     def get_attribute_types():
         """Get combined attribute types from all data sources."""
         types_list = [d.attribute_types for d in data_sources]
         chain_map = ChainMap(*types_list)
         return dict(chain_map)
 
-    @config_handler.route("/attribute_metadata", methods=["GET"])
+    @config_handler.route('/attribute_metadata', methods=['GET'])
     def get_attribute_metadata():
         """Get combined attribute metadata from all data sources."""
         types_list = [d.attribute_metadata for d in data_sources]
         chain_map = ChainMap(*types_list)
         return dict(chain_map)
 
-    @config_handler.route("/operations", methods=["GET"])
+    @config_handler.route('/operations', methods=['GET'])
     def get_operations():
         """Get available operations configuration."""
         return operator_config.to_dict()
 
-    @config_handler.get("/write_mode")
+    @config_handler.get('/write_mode')
     def get_relation_write_mode():
         """Get write mode configurations for all data sources."""
         modes_list = [d.write_mode for d in data_sources]
         chain_map = ChainMap(*modes_list)
         return dict(chain_map)
 
-    @config_handler.get("/return_mode")
+    @config_handler.get('/return_mode')
     def get_return_mode():
         """Get return mode configurations for all data sources."""
         modes_list = [d.return_mode for d in data_sources]
@@ -239,14 +239,14 @@ def _core_blueprint(
         )
         return Controller(data_source, view, auth_inspector=auth_inspector)
 
-    @data_handler.route("/<object_type>/<path:object_id>", methods=["GET"])  # Allow slashes
+    @data_handler.route('/<object_type>/<path:object_id>', methods=['GET'])  # Allow slashes
     def get_detail(*, object_type: str, object_id: str):
         """Get details of a specific object by ID."""
         controller = __new_controller(object_type)
         object_id_unencoded = urllib.parse.unquote(object_id)
         return controller.get_detail(object_type, object_id_unencoded)
 
-    @data_handler.route("/<object_type>", methods=["GET"])
+    @data_handler.route('/<object_type>', methods=['GET'])
     def get_list(*, object_type: str):
         """Get a paginated list of objects of the specified type."""
         request_args = ListGetParamaters(request.args)
@@ -256,42 +256,42 @@ def _core_blueprint(
         )
         return controller.get_list(object_type, request_args)
 
-    @data_handler.route("/<object_type>:count", methods=["GET"])
+    @data_handler.route('/<object_type>:count', methods=['GET'])
     def get_count(*, object_type: str):
         """Get the count of objects matching the specified filters."""
         controller = __new_controller(object_type)
         request_args = ListGetParamaters(request.args)
         return controller.get_count(object_type, request_args)
 
-    @data_handler.route("/<object_type>:stats", methods=["GET"])
+    @data_handler.route('/<object_type>:stats', methods=['GET'])
     def get_stats(*, object_type: str):
         """Get statistical information about objects of the specified type."""
         controller = __new_controller(object_type)
         request_args = StatsParameters(request.args)
         return controller.get_stats(object_type, request_args)
 
-    @data_handler.get("/<object_type>:group-stats")
+    @data_handler.get('/<object_type>:group-stats')
     def get_group_stats(*, object_type: str):
         """Get grouped statistical information about objects."""
         controller = __new_controller(object_type)
         request_args = GroupStatsParameters(request.args)
         return controller.get_group_stats(object_type, request_args)
 
-    @data_handler.route("/<object_type>/<path:object_id>", methods=["DELETE"])
+    @data_handler.route('/<object_type>/<path:object_id>', methods=['DELETE'])
     def delete_detail(*, object_type: str, object_id: str):
         """Delete a specific object by ID."""
         controller = __new_controller(object_type)
         object_id_unencoded = urllib.parse.unquote(object_id)
         return controller.delete_detail(object_type, object_id_unencoded)
 
-    @data_handler.route("/<object_type>", methods=["PATCH"])
+    @data_handler.route('/<object_type>', methods=['PATCH'])
     def patch_list(*, object_type: str):
         """Update multiple objects of the specified type."""
         controller = __new_controller(object_type)
         request_body = JsonApiRequestBody(request.json)
         return controller.patch_list(object_type, request_body.data)
 
-    @data_handler.post("/<object_type>:insert")
+    @data_handler.post('/<object_type>:insert')
     def post_inserts(*, object_type: str):
         """Insert new objects of the specified type."""
         controller = __new_controller(object_type)
@@ -300,7 +300,7 @@ def _core_blueprint(
         objects = parser.parse_iterable(request_body.data)
         return controller.post_inserts(object_type, objects)
 
-    @data_handler.route("/<object_type>:upsert", methods=["POST"])
+    @data_handler.route('/<object_type>:upsert', methods=['POST'])
     def post_upserts(*, object_type: str):
         """Insert or update objects of the specified type."""
         controller = __new_controller(object_type)
@@ -309,7 +309,7 @@ def _core_blueprint(
         objects = parser.parse_iterable(request_body.data)
         return controller.post_upserts(object_type, objects)
 
-    @data_handler.route("/<object_type>:aggregations", methods=["POST"])
+    @data_handler.route('/<object_type>:aggregations', methods=['POST'])
     def get_aggregations(*, object_type: str):
         """Get aggregated data for objects of the specified type."""
         controller = __new_controller(object_type)
@@ -317,15 +317,15 @@ def _core_blueprint(
         body = AggregationBody(request.json)
         return controller.post_aggregations(object_type, request_args, body)
 
-    @data_handler.post("/<object_type>:cursor")
+    @data_handler.post('/<object_type>:cursor')
     def get_cursor_page(*, object_type: str):
         """Get a page of results using cursor-based pagination."""
         controller = __new_controller(object_type)
         request_args = ListGetParamaters(request.args)
-        search_after = request.json.get("search_after")
+        search_after = request.json.get('search_after')
         return controller.get_cursor_page(object_type, request_args, search_after)
 
-    @data_handler.route("/<object_type>:to-one/<object_id>/<path:hops_suffix>", methods=["GET"])
+    @data_handler.route('/<object_type>:to-one/<object_id>/<path:hops_suffix>', methods=['GET'])
     def get_to_one_relation(*, object_type: str, object_id: str, hops_suffix: str):
         """Navigate through to-one relationships following the specified path."""
         controller = __new_controller(object_type)
@@ -333,7 +333,7 @@ def _core_blueprint(
         hops = RelataionshipHopsParser(hops_suffix).relationship_hops
         return controller.get_recursive_relation(source, hops)
 
-    @data_handler.route("/<object_type>:to-many/<object_id>/<relationship_name>", methods=["GET"])
+    @data_handler.route('/<object_type>:to-many/<object_id>/<relationship_name>', methods=['GET'])
     def get_to_many_relations(*, object_type: str, object_id: str, relationship_name: str):
         """Get objects related through a to-many relationship."""
         controller = __new_controller(object_type)
@@ -344,25 +344,25 @@ def _core_blueprint(
     @data_handler.app_errorhandler(BaseRuntimeException)
     def handle_runtime_error(error: BaseRuntimeException):
         """Handle base runtime exceptions and format error responses."""
-        return {"errors": error.errors}, error.status_code
+        return {'errors': error.errors}, error.status_code
 
     @data_handler.app_errorhandler(DataSourceError)
     def handle_datasource_error(error: DataSourceError):
         """Handle data source errors and format error responses."""
-        return {"errors": [{"title": error.title, "detail": error.detail}]}, error.status_code
+        return {'errors': [{'title': error.title, 'detail': error.detail}]}, error.status_code
 
     @data_handler.app_errorhandler(AuthError)
     def handle_auth_error(error: AuthError):
         """Handle authentication/authorization errors and format error responses."""
-        return {"errors": error.errors}, error.status_code
+        return {'errors': error.errors}, error.status_code
 
     return data_handler
 
 
 def data_blueprint(
     *data_sources: DataSource,
-    url_prefix: str = "/data",
-    config_prefix: str = "/_config",
+    url_prefix: str = '/data',
+    config_prefix: str = '/_config',
     auth_inspector: Optional[AuthInspector] = None,
 ) -> DataBlueprint:
     """
@@ -407,7 +407,7 @@ def data_blueprint(
     return core_bp
 
 
-def custom_blueprint(url_prefix: str = "/custom", name: str = "custom") -> DataBlueprint:
+def custom_blueprint(url_prefix: str = '/custom', name: str = 'custom') -> DataBlueprint:
     """
     Create a Flask Blueprint instance for adding custom endpoints.
 

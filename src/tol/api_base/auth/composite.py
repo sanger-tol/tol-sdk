@@ -97,7 +97,7 @@ class CompositeAuthInspector(AuthInspector):
     """
 
     def __init__(
-        self, admin_role: str = "admin", ctx_getter: CtxGetter = default_ctx_getter
+        self, admin_role: str = 'admin', ctx_getter: CtxGetter = default_ctx_getter
     ) -> None:
         """
         Initialize the CompositeAuthInspector.
@@ -182,13 +182,13 @@ class CompositeAuthInspector(AuthInspector):
             def global_noauth_check(object_type, op, auth_ctx=None, bound_args=None):
                 # Allow read-only operations, forbid writes
                 if op in [OperatorMethod.INSERT, OperatorMethod.DELETE]:
-                    raise ForbiddenError("Authentication required for write operations")
+                    raise ForbiddenError('Authentication required for write operations')
                 return None
 
             # Register for specific object types
             @inspector.noauth(object_type=['sensitive_data', 'admin_panel'])
             def sensitive_noauth_check(object_type, op, auth_ctx=None, bound_args=None):
-                raise ForbiddenError("Authentication required")
+                raise ForbiddenError('Authentication required')
             ```
         """
 
@@ -224,7 +224,7 @@ class CompositeAuthInspector(AuthInspector):
             @inspector.auth(object_type='financial_reports')
             def financial_access(object_type, op, auth_ctx=None, bound_args=None):
                 if 'finance' not in auth_ctx.roles:
-                    raise ForbiddenError("Finance role required")
+                    raise ForbiddenError('Finance role required')
                 return None
             ```
         """
@@ -263,7 +263,7 @@ class CompositeAuthInspector(AuthInspector):
             def maintenance_hours(object_type, op, auth_ctx=None, bound_args=None):
                 # Only allow access during maintenance hours
                 if not is_maintenance_hours():
-                    raise ForbiddenError("Access only during maintenance hours")
+                    raise ForbiddenError('Access only during maintenance hours')
                 return None
             ```
         """
