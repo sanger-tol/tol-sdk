@@ -15,7 +15,7 @@ class StsBankedSampleToElasticSampleConverter(
     def convert(self, data_object: DataObject) -> Iterable[DataObject]:
         ret = self._data_object_factory(
             'sample',
-            data_object.id,
+            data_object.sample.id,
             attributes={
                 **data_object.attributes
             }

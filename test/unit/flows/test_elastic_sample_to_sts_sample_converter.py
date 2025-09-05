@@ -2,6 +2,7 @@
 #
 # SPDX-License-Identifier: MIT
 
+from datetime import datetime
 from unittest import (TestCase)
 
 from tol.core import (
@@ -77,7 +78,7 @@ class TestElasticSampleToStsSampleConverter(TestCase):
             id_='1234',
             type_='sample',
             attributes={
-                'benchling_eln_tissue_id': 'tissue_id'
+                'benchling_eln_tissue_id': 'tissue_id',
             },
             to_one={
                 'tolid_tolid': tolid
@@ -87,18 +88,32 @@ class TestElasticSampleToStsSampleConverter(TestCase):
             id_='test2',
             type_='sample',
             attributes={
-                'benchling_eln_tissue_id': 'tissue_id2'
+                'benchling_eln_tissue_id': 'tissue_id2',
+                'sts_eln_updated_at': datetime(2020, 1, 1),
+                'sts_ep_exported': True
+            }
+        )
+
+        obj3 = CoreDataObject(
+            id_='test3',
+            type_='sample',
+            attributes={
+                'sts_eln_updated_at': None,
+                'sts_ep_exported': False
             }
         )
 
         converteds = converter.convert(obj1)
+        dt = datetime.now()
         ret1 = next(converteds)
         self.assertEqual('1234', ret1.id)
         self.assertEqual(obj1.type, ret1.type)
-        self.assertEqual(ret1.attributes, {
-            'public_name': 'tolid1',
-            'eln_id': 'tissue_id'
-        })
+        self.assertEqual('tolid1', ret1.attributes['public_name'])
+        self.assertEqual('tissue_id', ret1.attributes['eln_id'])
+        self.assertTrue(ret1.attributes['ep_exported'])
+        self.assertTrue(
+            ret1.attributes['eln_updated_at'] >= dt
+        )
 
         with self.assertRaises(StopIteration):
             next(converteds)
@@ -109,7 +124,23 @@ class TestElasticSampleToStsSampleConverter(TestCase):
         self.assertEqual(obj1.type, ret1.type)
         self.assertEqual(ret1.attributes, {
             'public_name': None,
-            'eln_id': 'tissue_id2'
+            'eln_id': 'tissue_id2',
+            'eln_updated_at': datetime(2020, 1, 1),
+            'ep_exported': True
+        })
+
+        with self.assertRaises(StopIteration):
+            next(converteds)
+
+        converteds = converter.convert(obj3)
+        ret3 = next(converteds)
+        self.assertEqual('test3', ret3.id)
+        self.assertEqual(obj3.type, ret3.type)
+        self.assertEqual(ret3.attributes, {
+            'public_name': None,
+            'eln_id': None,
+            'eln_updated_at': None,
+            'ep_exported': False
         })
 
         with self.assertRaises(StopIteration):

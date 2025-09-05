@@ -14,12 +14,17 @@ from ..core import (
 )
 
 
-def portal(retries: int = 5, **kwargs) -> ApiDataSource:
+def portal(
+        retries: int = 5,
+        dataspace: str = 'tol_production',
+        **kwargs
+) -> ApiDataSource:
     portal = create_api_datasource(
         api_url=os.getenv('PORTAL_URL', Defaults.PORTAL_URL)
         + os.getenv('PORTAL_API_PATH', Defaults.PORTAL_API_PATH),
         token=os.getenv('PORTAL_API_KEY'),
-        data_prefix=os.getenv('PORTAL_API_DATA_PATH', Defaults.PORTAL_API_DATA_PATH),
+        data_prefix=os.getenv('PORTAL_API_DATA_PATH', Defaults.PORTAL_API_DATA_PATH)
+        + f'/{dataspace}',
         retries=retries
     )
     core_data_object(portal)

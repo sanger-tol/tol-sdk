@@ -112,6 +112,20 @@ class TestGroupStats:
         assert true_stats['datetime_column']['min'] == datetime(2020, 1, 1, 0, 0, 0)
         assert true_stats['datetime_column']['max'] == datetime(2020, 1, 1, 0, 0, 0)
 
+        # The following pattern is used in getting unique ids
+        stats = list(data_source.get_group_stats(
+            'root',
+            ['int_column'],
+            stats_fields=[],
+            stats=[],
+            object_filters=None
+        ))
+        assert len(stats) == 4
+        assert stats[0]['key']['int_column'] == 0
+        assert stats[1]['key']['int_column'] == 1
+        assert stats[2]['key']['int_column'] == 2
+        assert stats[3]['key']['int_column'] == 42
+
     @against(elastic, api_elastic)
     def test_group_stats_advanced(self, data_source: OperableDataSource, ds_sleep):
         """

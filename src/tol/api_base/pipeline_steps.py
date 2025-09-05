@@ -213,7 +213,8 @@ def pipeline_steps_blueprint(
             dry_run=body['dry_run']
         )
 
-        upload_id = __insert_upload_data(upload_data)
+        upload_id = body.get('upload_id') if body.get('upload_id') is not None \
+            else __insert_upload_data(upload_data)
 
         flow_run_id = __insert_flow_run(
             upload_id=upload_id,

@@ -38,13 +38,13 @@ class TestGapDataSource(TestCase):
         obj1 = next(ret)
         self.assertEqual('GCA_002706865.2', obj1.id)
         self.assertEqual({
-            'project': 'Lepidoptera',
+            'project': None,
             'phylum': 'Arthropoda',
             'species': 'Spodoptera litura',
             'assembly_name': 'ASM270686v2',
             'results': (
-                "<a href='https://gap.cog.sanger.ac.uk/browser.html?"
-                "shared=GCA_002706865.2/base_content/'>Base Content</a><br>"
+                "<a href='https://gap.cog.sanger.ac.uk/browser.html?shared=GCA_002706865.2/"
+                "Spodoptera_litura/analysis/GCA_002706865.2/base_content/'>Base Content</a><br>"
                 "<a href='https://blobtoolkit.genomehubs.org/view/dataset/"
                 "GCA_002706865.1/dataset/MTZO01.1/blob#Filters'>BlobToolKit</a>"
             ),
@@ -55,15 +55,15 @@ class TestGapDataSource(TestCase):
             ),
             'image_caption': '<i>Spodoptera litura</i><br> (Phylum Arthropoda)',
             'lustre_path_analysis_base': (
-                '/lustre/scratch123/tol/projects/lepidoptera/data/insects/'
-                'Spodoptera_litura/analysis/ASM270686v2'
+                '/lustre/scratch122/tol/data/4/1/3/3/e/1/Spodoptera_litura/'
+                'analysis/GCA_002706865.2'
             ),
             'lustre_path_assembly': (
-                '/lustre/scratch123/tol/projects/lepidoptera/data/insects/'
-                'Spodoptera_litura/assembly/release/ASM270686v2/insdc'
+                '/lustre/scratch122/tol/data/4/1/3/3/e/1/Spodoptera_litura/assembly/'
+                'release/GCA_002706865.2/insdc'
             ),
             'lustre_path_species': (
-                '/lustre/scratch123/tol/projects/lepidoptera/data/insects/Spodoptera_litura'
+                '/lustre/scratch122/tol/data/4/1/3/3/e/1/Spodoptera_litura'
             )
         }, obj1.attributes)
         with self.assertRaises(StopIteration):
@@ -84,11 +84,12 @@ class TestGapDataSource(TestCase):
                 "k-mer files\u003C/a\u003E" # noqa
             ),
             's3': (
-                'https://gap.cog.sanger.ac.uk/browser.html?shared=GCA_002706865.2/base_content/'
+                'https://gap.cog.sanger.ac.uk/browser.html?shared=GCA_002706865.2/'
+                'Spodoptera_litura/analysis/GCA_002706865.2/base_content/'
             ),
             'lustre_path_analysis': (
-                '/lustre/scratch123/tol/projects/lepidoptera/data/insects/Spodoptera_litura/'
-                'analysis/ASM270686v2/base_content'
+                '/lustre/scratch122/tol/data/4/1/3/3/e/1/Spodoptera_litura/analysis/'
+                'GCA_002706865.2/base_content'
             )
         }, pipeline1.attributes)
 

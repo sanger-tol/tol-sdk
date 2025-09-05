@@ -459,7 +459,7 @@ class MlwhDataSource(DataSource, DetailGetter, ListGetter):
         )
 
     def _join(self, values: List) -> str:
-        return "','".join(values)
+        return "','".join([str(s) for s in values])
 
     def _conditions_string(self, platform_type: str, in_list: Dict):
         if in_list is None:
