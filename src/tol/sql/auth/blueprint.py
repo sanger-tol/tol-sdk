@@ -259,7 +259,10 @@ class DbAuthManager(AuthManager):
             else:
                 user = instance.user
 
-                memberships = self.__authorisation_manager.get_user_memberships(user)
+                if self.__authorisation_manager:
+                    memberships = self.__authorisation_manager.get_user_memberships(user)
+                else:
+                    memberships = []
 
                 return str(user.id), user.role_names, memberships
 
@@ -580,7 +583,7 @@ def __db_auth_manager(
     oidc_id_target: str,
     oidc_ext_mapping: dict[str, str],
     prefix_with_name: bool,
-    authorisation_manager: AuthorisationManager,
+    authorisation_manager: Optional[AuthorisationManager] = None
 ) -> tuple[DbAuthManager, ModelTuple]:
     """
     Create a database authentication manager with all required components.
@@ -637,7 +640,7 @@ def __db_auth_manager(
 def db_auth_blueprint(
     model_base: ModelClass,
     db_uri: str,
-    authorisation_manager: AuthorisationManager,
+    authorisation_manager: Optional[AuthorisationManager] = None,
     url_prefix: str = '/auth',
     prefix_with_name: bool = False,
     oidc_config_factory: Callable[[], OidcConfig] = env_oidc_config,
