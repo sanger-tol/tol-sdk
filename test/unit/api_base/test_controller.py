@@ -146,7 +146,7 @@ class TestController:
                 'page': '90',
                 'page_size': '10',
                 'filter': """
-                {'exact': {'column1': 'value1'}}
+                {"exact": {"column1": "value1"}}
             """,
                 'sort_by': '-column1',
             }
@@ -177,7 +177,7 @@ class TestController:
         parsed = AggregationParameters(
             {
                 'filter': """
-                {'exact': {'column1': 'value1'}}
+                {"exact": {"column1": "value1"}}
             """
             }
         )
