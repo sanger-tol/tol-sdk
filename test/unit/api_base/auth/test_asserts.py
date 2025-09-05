@@ -3,6 +3,7 @@
 # SPDX-License-Identifier: MIT
 
 import json
+from inspect import BoundArguments
 from typing import Optional
 from unittest.mock import create_autospec
 
@@ -108,7 +109,8 @@ def inspector() -> AuthInspector:
 
     def __inspect(
         object_type: str,
-        operation: str
+        operation: str,
+        bound_args: BoundArguments
     ) -> Optional[AndFilter]:
 
         if object_type == 'a' and operation != OperatorMethod.DETAIL:

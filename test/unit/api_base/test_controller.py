@@ -262,14 +262,15 @@ class TestController:
 
         bad_ds = _BadDataSource()
         controller = Controller(bad_ds, DefaultView())
-
+        query_args = ListGetParamaters({'page':'1','page_size':'10'})
         with pytest.raises(UnsupportedOperationError):
             controller.get_detail('test', 'hype')
         with pytest.raises(UnsupportedOperationError):
-            controller.get_list('test')
+            controller.get_list('test', query_args=query_args)
         with pytest.raises(UnsupportedOperationError):
             controller.post_aggregations(
                 'test',
+                MagicMock(),
                 MagicMock(),
                 MagicMock()
             )

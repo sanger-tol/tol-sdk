@@ -22,8 +22,6 @@ class AuthInspector(Protocol):
     lock down access to a user's objects by their ID).
     """
 
-    # TODO support segementation within `object_type` - e.g. by programme/project
-
     def __call__(
         self,
         object_type: str,
