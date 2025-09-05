@@ -3,14 +3,11 @@
 # SPDX-License-Identifier: MIT
 from inspect import BoundArguments
 from typing import Optional
-from unittest.mock import create_autospec, Mock, MagicMock
+from unittest.mock import Mock, create_autospec
 
 import pytest
 
-from tol.api_base.auth import (
-    CompositeAuthInspector,
-    ForbiddenError
-)
+from tol.api_base.auth import CompositeAuthInspector, ForbiddenError
 from tol.api_base.misc import AuthContext
 from tol.core.datasource_filter import AndFilter
 from tol.core.operator import OperatorMethod
@@ -23,31 +20,17 @@ def admin_role() -> str:
 
 @pytest.fixture(scope='function')
 def _auth_ctx() -> AuthContext:
-    return create_autospec(
-        AuthContext,
-        spec_set=True
-    )
+    return create_autospec(AuthContext, spec_set=True)
 
 
 @pytest.fixture(scope='function')
-def auth_inspector(
-    admin_role: str,
-        _auth_ctx: AuthContext
-) -> CompositeAuthInspector:
-
-    return CompositeAuthInspector(
-        admin_role=admin_role,
-        ctx_getter=lambda: _auth_ctx
-    )
+def auth_inspector(admin_role: str, _auth_ctx: AuthContext) -> CompositeAuthInspector:
+    return CompositeAuthInspector(admin_role=admin_role, ctx_getter=lambda: _auth_ctx)
 
 
 class TestCompositeAuthInspector:
 
-    def test_noauth(
-        self,
-            _auth_ctx: AuthContext,
-        auth_inspector: CompositeAuthInspector
-    ) -> None:
+    def test_noauth(self, _auth_ctx: AuthContext, auth_inspector: CompositeAuthInspector) -> None:
         """
         `CompositeAuthInspector().noauth()`
         in isolation
@@ -56,95 +39,47 @@ class TestCompositeAuthInspector:
         _auth_ctx.authenticated = False
 
         @auth_inspector.noauth
-        def __raise_error(
-            object_type: str,
-            op: OperatorMethod,
-            **kwargs
-        ) -> Optional[AndFilter]:
-
+        def __raise_error(object_type: str, op: OperatorMethod, **kwargs) -> Optional[AndFilter]:
             if object_type == 'forbidden':
                 raise ForbiddenError()
 
         @auth_inspector.noauth
-        def __return_dict1(
-            object_type: str,
-            op: OperatorMethod,
-            **kwargs
-        ) -> Optional[AndFilter]:
-
-            return {
-                'user.id': {
-                    'eq': {
-                        'value': 'yes'
-                    }
-                }
-            }
+        def __return_dict1(object_type: str, op: OperatorMethod, **kwargs) -> Optional[AndFilter]:
+            return {'user.id': {'eq': {'value': 'yes'}}}
 
         @auth_inspector.noauth
-        def __return_dict2(
-            object_type: str,
-            op: OperatorMethod,
-            **kwargs
-        ) -> Optional[AndFilter]:
-
-            return {
-                'no_its_not': {
-                    'eq': {
-                        'value': 'nooo',
-                        'negate': True
-                    }
-                }
-            }
+        def __return_dict2(object_type: str, op: OperatorMethod, **kwargs) -> Optional[AndFilter]:
+            return {'no_its_not': {'eq': {'value': 'nooo', 'negate': True}}}
 
         bound_args = Mock(spec=BoundArguments)
         bound_args.arguments = {
             'object_type': 'forbidden',
             'op': OperatorMethod.DETAIL,
-            'auth_context': _auth_ctx
+            'auth_context': _auth_ctx,
         }
         bound_args.kwargs = {'additional_param': 'value'}
 
         with pytest.raises(ForbiddenError):
-            auth_inspector(
-                'forbidden',
-                OperatorMethod.DETAIL,
-                bound_args
-            )
+            auth_inspector('forbidden', OperatorMethod.DETAIL, bound_args)
 
         expected = {
-            'user.id': {
-                'eq': {
-                    'value': 'yes'
-                }
-            },
-            'no_its_not': {
-                'eq': {
-                    'value': 'nooo',
-                    'negate': True
-                }
-            }
+            'user.id': {'eq': {'value': 'yes'}},
+            'no_its_not': {'eq': {'value': 'nooo', 'negate': True}},
         }
 
         bound_args = Mock(spec=BoundArguments)
         bound_args.arguments = {
             'object_type': 'permitted',
             'op': OperatorMethod.DELETE,
-            'auth_context': _auth_ctx
+            'auth_context': _auth_ctx,
         }
         bound_args.kwargs = {'additional_param': 'value'}
 
-        observed = auth_inspector(
-            'permitted',
-            OperatorMethod.DELETE,
-            bound_args
-        )
+        observed = auth_inspector('permitted', OperatorMethod.DELETE, bound_args)
         assert observed == expected
 
     def test_admin(
-        self,
-        admin_role: str,
-            _auth_ctx: AuthContext,
-        auth_inspector: CompositeAuthInspector
+            self, admin_role: str, _auth_ctx: AuthContext, auth_inspector: CompositeAuthInspector
     ) -> None:
         """
         Users with the admin role can do anything,
@@ -162,23 +97,15 @@ class TestCompositeAuthInspector:
         bound_args.arguments = {
             'object_type': 'does_not_matter',
             'op': OperatorMethod.UPSERT,
-            'auth_context': _auth_ctx
+            'auth_context': _auth_ctx,
         }
         bound_args.kwargs = {'additional_param': 'value'}
 
-        ext_and = auth_inspector(
-            'does_not_matter',
-            OperatorMethod.UPSERT,
-            bound_args
-        )
+        ext_and = auth_inspector('does_not_matter', OperatorMethod.UPSERT, bound_args)
 
         assert not ext_and
 
-    def test_auth(
-        self,
-        _auth_ctx: AuthContext,
-        auth_inspector: CompositeAuthInspector
-    ) -> None:
+    def test_auth(self, _auth_ctx: AuthContext, auth_inspector: CompositeAuthInspector) -> None:
         """
         `CompositeAuthInspector().auth()`
         in isolation
@@ -197,10 +124,10 @@ class TestCompositeAuthInspector:
 
         @auth_inspector.auth
         def __dict_if_nice(
-            object_type: str,
-            op: OperatorMethod,
-            auth_ctx: Optional[AuthContext] = None,
-            bound_args: Optional[BoundArguments] = None,
+                object_type: str,
+                op: OperatorMethod,
+                auth_ctx: Optional[AuthContext] = None,
+                bound_args: Optional[BoundArguments] = None,
         ):
 
             assert auth_ctx.roles == ['hi']
@@ -208,53 +135,34 @@ class TestCompositeAuthInspector:
             if object_type != 'nice':
                 return None
             else:
-                return {
-                    'nicely_done': {
-                        'exists': {}
-                    }
-                }
+                return {'nicely_done': {'exists': {}}}
 
         _bound_args = Mock(spec=BoundArguments)
         _bound_args.arguments = {
             'object_type': 'nasty',
             'op': OperatorMethod.COUNT,
-            'auth_context': _auth_ctx
+            'auth_context': _auth_ctx,
         }
         _bound_args.kwargs = {'additional_param': 'value'}
 
-        observed_empty = auth_inspector(
-            'nasty',
-            OperatorMethod.COUNT,
-            _bound_args
-        )
+        observed_empty = auth_inspector('nasty', OperatorMethod.COUNT, _bound_args)
         assert not observed_empty
 
-        expected = {
-            'nicely_done': {
-                'exists': {}
-            }
-        }
+        expected = {'nicely_done': {'exists': {}}}
 
         _bound_args = Mock(spec=BoundArguments)
         _bound_args.arguments = {
             'object_type': 'nice',
             'op': OperatorMethod.EXPORT,
-            'auth_context': _auth_ctx
+            'auth_context': _auth_ctx,
         }
         _bound_args.kwargs = {'additional_param': 'value'}
 
-        observed = auth_inspector(
-            'nice',
-            OperatorMethod.EXPORT,
-            _bound_args
-        )
+        observed = auth_inspector('nice', OperatorMethod.EXPORT, _bound_args)
         assert observed == expected
 
     def test_forbid_noauth(
-        self,
-            _auth_ctx: AuthContext,
-        auth_inspector: CompositeAuthInspector,
-        admin_role: str
+            self, _auth_ctx: AuthContext, auth_inspector: CompositeAuthInspector, admin_role: str
     ):
         """
         `CompositeAuthInspector().forbid_noauth` only
@@ -270,7 +178,7 @@ class TestCompositeAuthInspector:
         bound_args.arguments = {
             'object_type': 'verboten',
             'op': OperatorMethod.COUNT,
-            'auth_context': _auth_ctx
+            'auth_context': _auth_ctx,
         }
         bound_args.kwargs = {'additional_param': 'value'}
 
@@ -285,7 +193,7 @@ class TestCompositeAuthInspector:
         bound_args.arguments = {
             'object_type': 'verboten',
             'op': OperatorMethod.TO_MANY,
-            'auth_context': _auth_ctx
+            'auth_context': _auth_ctx,
         }
         bound_args.kwargs = {'additional_param': 'value'}
 
@@ -298,17 +206,14 @@ class TestCompositeAuthInspector:
         bound_args.arguments = {
             'object_type': 'verboten',
             'op': OperatorMethod.DETAIL,
-            'auth_context': _auth_ctx
+            'auth_context': _auth_ctx,
         }
         bound_args.kwargs = {'additional_param': 'value'}
 
         auth_inspector('verboten', OperatorMethod.DETAIL, bound_args)
 
     def test_forbid(
-        self,
-            _auth_ctx: AuthContext,
-        auth_inspector: CompositeAuthInspector,
-        admin_role: str
+            self, _auth_ctx: AuthContext, auth_inspector: CompositeAuthInspector, admin_role: str
     ):
         """
         `CompositeAuthInspector().forbid` only
@@ -321,7 +226,7 @@ class TestCompositeAuthInspector:
         bound_args.arguments = {
             'object_type': 'c',
             'op': OperatorMethod.COUNT,
-            'auth_context': _auth_ctx
+            'auth_context': _auth_ctx,
         }
         bound_args.kwargs = {'additional_param': 'value'}
 
@@ -338,7 +243,7 @@ class TestCompositeAuthInspector:
         bound_args.arguments = {
             'object_type': 'b',
             'op': OperatorMethod.TO_MANY,
-            'auth_context': _auth_ctx
+            'auth_context': _auth_ctx,
         }
         bound_args.kwargs = {'additional_param': 'value'}
 
@@ -352,94 +257,62 @@ class TestCompositeAuthInspector:
         bound_args.arguments = {
             'object_type': 'a',
             'op': OperatorMethod.DETAIL,
-            'auth_context': _auth_ctx
+            'auth_context': _auth_ctx,
         }
         bound_args.kwargs = {'additional_param': 'value'}
 
         auth_inspector('a', OperatorMethod.DETAIL, bound_args)
 
     def test_ensemble(
-        self,
-            _auth_ctx: AuthContext,
-        auth_inspector: CompositeAuthInspector
+            self, _auth_ctx: AuthContext, auth_inspector: CompositeAuthInspector
     ) -> None:
         """All methods together"""
 
         auth_inspector.forbid('fail')
 
-        @auth_inspector.noauth(
-            object_type=['a', 'b', 'c']
-        )
+        @auth_inspector.noauth(object_type=['a', 'b', 'c'])
         def __noauth(*args, **kwargs):
             raise ForbiddenError()
 
         @auth_inspector.auth
         def __fine(*args, **kwargs):
-            return {
-                'fine': {
-                    'in_list': {
-                        'value': [
-                            'excellent'
-                        ]
-                    }
-                }
-            }
+            return {'fine': {'in_list': {'value': ['excellent']}}}
 
         bound_args = Mock(spec=BoundArguments)
         bound_args.arguments = {
             'object_type': 'a',
             'op': OperatorMethod.STATS,
-            'auth_context': _auth_ctx
+            'auth_context': _auth_ctx,
         }
         bound_args.kwargs = {'additional_param': 'value'}
 
         _auth_ctx.authenticated = False
 
         with pytest.raises(ForbiddenError):
-            auth_inspector(
-                'a',
-                OperatorMethod.STATS,
-                bound_args
-            )
+            auth_inspector('a', OperatorMethod.STATS, bound_args)
 
         bound_args = Mock(spec=BoundArguments)
         bound_args.arguments = {
             'object_type': 'fail',
             'op': OperatorMethod.UPDATE,
-            'auth_context': _auth_ctx
+            'auth_context': _auth_ctx,
         }
         bound_args.kwargs = {'additional_param': 'value'}
 
         _auth_ctx.authenticated = True
 
         with pytest.raises(ForbiddenError):
-            auth_inspector(
-                'fail',
-                OperatorMethod.UPDATE,
-                bound_args
-            )
+            auth_inspector('fail', OperatorMethod.UPDATE, bound_args)
 
-        expected = {
-            'fine': {
-                'in_list': {
-                    'value': [
-                        'excellent'
-                    ]
-                }
-            }
-        }
+        expected = {'fine': {'in_list': {'value': ['excellent']}}}
 
         bound_args = Mock(spec=BoundArguments)
         bound_args.arguments = {
             'object_type': 'whatever',
             'op': OperatorMethod.TO_ONE,
-            'auth_context': _auth_ctx
+            'auth_context': _auth_ctx,
         }
         bound_args.kwargs = {'additional_param': 'value'}
 
-        observed = auth_inspector(
-            'whatever',
-            OperatorMethod.TO_ONE,
-            bound_args
-        )
+        observed = auth_inspector('whatever', OperatorMethod.TO_ONE, bound_args)
         assert observed == expected
