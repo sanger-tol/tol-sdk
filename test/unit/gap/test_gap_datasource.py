@@ -188,12 +188,12 @@ class TestGapDataSource(TestCase):
                 "#sequence-composition-files'>Sequence composition k-mer files</a>"
             ),
             's3': (
-                'https://gap.cog.sanger.ac.uk/browser.html?shared=GCA_002706865.2/'
-                'Spodoptera_litura/analysis/GCA_002706865.2/base_content/'
+                'https://gap.cog.sanger.ac.uk/browser.html?shared='
+                'GCA_002706865.2/Spodoptera_litura/analysis/GCA_002706865.2/base_content/'
             ),
             'lustre_path_analysis': (
-                '/lustre/scratch122/tol/data/4/1/3/3/e/1/Spodoptera_litura/'
-                'analysis/GCA_002706865.2/base_content'
+                '/lustre/scratch122/tol/data/4/1/3/3/e/1/'
+                'Spodoptera_litura/analysis/GCA_002706865.2/base_content'
             )
         }, obj1.attributes)
 
