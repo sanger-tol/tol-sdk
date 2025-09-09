@@ -10,7 +10,6 @@ from typing import Any, Dict, Iterable, List, Optional, Type
 from sqlalchemy import distinct, func
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import MappedColumn, Query, Session, joinedload
-from sqlalchemy.orm.attributes import flag_modified
 
 from .filter import DatabaseFilter
 from .model import Model

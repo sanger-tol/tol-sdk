@@ -408,7 +408,6 @@ class TestEndToEnd:
         )
         assert len(seventeenth) == 1  # The archetype
 
-
     @against(*all_fixtures)
     def test_upsert(self, data_source: OperableDataSource, ds_sleep):
         """
