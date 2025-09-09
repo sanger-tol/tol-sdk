@@ -408,6 +408,7 @@ class TestEndToEnd:
         )
         assert len(seventeenth) == 1  # The archetype
 
+
     @against(*all_fixtures)
     def test_upsert(self, data_source: OperableDataSource, ds_sleep):
         """
@@ -503,8 +504,7 @@ class TestEndToEnd:
             '1',
             attributes={'int_column': 3,
                         'datetime_column': datetime(2024, 1, 3),
-                        'bool_column': True,
-                        'list_column': ['item1', 'item3']},
+                        'bool_column': True},
             to_one={
                 'related_object': rel1
             }
@@ -531,7 +531,7 @@ class TestEndToEnd:
         assert ret.related_object.datetime_column == datetime(2024, 6, 6)
         assert ret.related_object.bool_column is False
         assert ret.related_object.list_column is None
-        assert ret.list_column == ['item1', 'item2', 'item3']
+        assert ret.list_column == ['item1', 'item2']
 
         obj1 = data_source.data_object_factory(
             'root',
@@ -556,7 +556,7 @@ class TestEndToEnd:
         assert ret.related_object.datetime_column == datetime(2024, 6, 6)
         assert ret.related_object.bool_column is False
         assert ret.related_object.list_column is None
-        assert ret.list_column == ['item1', 'item2', 'item3']
+        assert ret.list_column == ['item1', 'item2']
 
         obj1 = data_source.data_object_factory(
             'root',
@@ -584,6 +584,45 @@ class TestEndToEnd:
         assert ret.bool_column is None
         assert ret.related_object is None
         assert ret.list_column is None
+
+    @against(elastic, api_elastic)
+    def test_upsert_alter_list(self, data_source: OperableDataSource, ds_sleep):
+        """
+        Upsert a `DataObject` instance and test merging behaviour of list attribute
+        """
+
+        obj1 = data_source.data_object_factory(
+            'root',
+            '1',
+            attributes={'list_column': ['item1', 'item2']},
+        )
+        data_source.upsert('root', [obj1])
+
+        ds_sleep(2)  # Let Elastic settle down after the upsert
+
+        first = list(
+            data_source.get_by_ids('root', ['1'])
+        )
+        assert len(first) == 1
+        ret = first[0]
+        assert ret.list_column == ['item1', 'item2']
+
+        obj2 = data_source.data_object_factory(
+            'root',
+            '1',
+            attributes={'list_column': ['item1', 'item3']},
+        )
+        data_source.upsert('root', [obj2])
+
+        ds_sleep(2)  # Let Elastic settle down after the upsert
+
+        second = list(
+            data_source.get_by_ids('root', ['1'])
+        )
+        assert len(second) == 1
+        ret = second[0]
+        # Test that array contents have been merged
+        assert ret.list_column == ['item1', 'item2', 'item3']
 
     @against(elastic)  # `Updater` not implemented on `Api`- or `SqlDataSource`
     def test_update(self, data_source: OperableDataSource, ds_sleep):
