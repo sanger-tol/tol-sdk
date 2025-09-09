@@ -723,13 +723,8 @@ class DefaultDatabase(Database):
 
     def __handle_difference(self, old: Model, new: Model) -> Model:
         """
-        Performs various pre-merge operations, including:
-
-        - merging `list`s and `dict`s like `ElasticDataSource`.
+        Performs various pre-merge operations
         """
-
-        self.__handle_diff_dict(old, new)
-        self.__handle_diff_list(old, new)
 
         __keys = [
             *new.get_attribute_types(),
@@ -773,38 +768,6 @@ class DefaultDatabase(Database):
             return False
 
         return k in instance._sa_instance_state.dict
-
-    def __handle_diff_list(self, old: Model, new: Model) -> None:
-        for k in self.__get_type_column_keys(new, list):
-            merge_list = getattr(old, k, [])
-            if merge_list is None:
-                continue
-
-            new_list = getattr(new, k, [])
-
-            for el in new_list:
-                if el not in merge_list:
-                    merge_list.append(el)
-
-            setattr(new, k, merge_list)
-
-            flag_modified(old, k)
-
-    def __handle_diff_dict(self, old: Model, new: Model) -> None:
-        for k in self.__get_type_column_keys(new, dict):
-            merge_dict = getattr(old, k, {})
-            if merge_dict is None:
-                continue
-
-            new_dict = getattr(new, k, {})
-
-            setattr(
-                new,
-                k,
-                merge_dict | new_dict
-            )
-
-            flag_modified(old, k)
 
     def __get_type_column_keys(
         self,
