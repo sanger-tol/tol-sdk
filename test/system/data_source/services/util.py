@@ -10,7 +10,6 @@ from uuid import uuid4
 from elasticsearch import Elasticsearch
 
 import requests
-from requests.exceptions import ConnectionError
 
 from tol.core.relationship import RelationshipConfig
 from tol.elastic import (
@@ -24,18 +23,19 @@ def wait_for_ready(seconds: int = 60) -> None:
 
     for _ in range(seconds):
         try:
-            r = requests.get(elastic_uri)
-            if r.ok:
-                return
-        except ConnectionError:
+            # When a tuple is passed to the timeout parameter of get(), the first
+            # element is the connect timeout, and the second is the read
+            # timeout.
+            r = requests.get(elastic_uri, timeout=(0.1, 5))
+            r.raise_for_status()
+            return
+        except requests.exceptions.ConnectionError:
             pass
         finally:
             time.sleep(1)
 
-    raise Exception(
-        'The elasticsearch cluster was not ready after '
-        f'{seconds} seconds.'
-    )
+    msg = f'The elasticsearch cluster was not ready after {seconds} seconds.'
+    raise Exception(msg)
 
 
 def get_prefix(extra_prefix: str = 'test') -> str:

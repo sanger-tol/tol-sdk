@@ -30,7 +30,11 @@ services:
       - discovery.type=single-node
     networks:
       - api-base-test-network
-    
+    healthcheck:
+      test: curl -f http://localhost:9200/_cluster/health || exit 1
+      interval: 1s
+      retries: 120
+
   tol-sdk-python-system-test:
     build: .
     container_name: system-test
@@ -43,8 +47,6 @@ services:
       - ELASTIC_PASSWORD=anything
       - ELASTIC_INDEX_PREFIX=test
     depends_on:
-      - tol-sdk-python-db
-      - tol-sdk-python-elastic
       - system-test-api-elastic
       - system-test-api-sql
     networks:
@@ -63,7 +65,8 @@ services:
       - ELASTIC_INDEX_PREFIX=test-api
       - FLASK_DEBUG=1
     depends_on:
-      - tol-sdk-python-elastic
+      tol-sdk-python-elastic:
+        condition: service_healthy
     networks:
       - api-base-test-network
     ports:
@@ -116,4 +119,4 @@ services:
       - api-base-test-network
 
 networks:
-  api-base-test-network:
+  api-base-test-network: {}
