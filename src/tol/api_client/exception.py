@@ -51,7 +51,7 @@ class RecursiveRelationNotFoundException(BaseRuntimeException):
         super().__init__(errors, status_code=404)
 
 
-class UnsupportedOpertionError(BaseRuntimeException):
+class UnsupportedOperationError(BaseRuntimeException):
     def __init__(self, object_type: str, operation: str) -> None:
         errors = [{
             'title': 'Unsupported Operation',
