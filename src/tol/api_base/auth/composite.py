@@ -119,7 +119,7 @@ class CompositeAuthInspector(AuthInspector):
         self.__typed_auths = self.__new_type_handler_dict()
 
     def __call__(
-        self, object_type: str, method: OperatorMethod, bound_args: BoundArguments
+        self, object_type: str, method: OperatorMethod, bound_args: Optional[BoundArguments] = None
     ) -> Optional[AndFilter]:
         """
         Execute authorisation inspection for a given object type and operation.
@@ -130,10 +130,10 @@ class CompositeAuthInspector(AuthInspector):
         ForbiddenError if access should be denied.
 
         Args:
-            object_type: The type of object being accessed (e.g., 'users', 'orders').
-            method: The operation being performed (e.g., OperatorMethod.DETAIL,
+            object_type(str): The type of object being accessed (e.g., 'users', 'orders').
+            method(OperatorMethod): The operation being performed (e.g., OperatorMethod.DETAIL,
                    OperatorMethod.INSERT).
-            bound_args: BoundArguments object containing the arguments bound to
+            bound_args(Optional[BoundArguments]): Optional[BoundArguments] object containing the arguments bound to
                        the original request, used by hooks for authorisation decisions.
 
         Returns:
@@ -481,7 +481,7 @@ class CompositeAuthInspector(AuthInspector):
                 return existing | add
 
     def __invoke_noauth(
-        self, object_type: str, op: OperatorMethod, bound_args: BoundArguments
+        self, object_type: str, op: OperatorMethod, bound_args: Optional[BoundArguments] = None
     ) -> Optional[AndFilter]:
         """
         Internal method to invoke all applicable hooks for unauthenticated requests.
@@ -491,9 +491,9 @@ class CompositeAuthInspector(AuthInspector):
         executed before type-specific hooks.
 
         Args:
-            object_type: The object type being accessed.
-            op: The operation being performed.
-            bound_args: Arguments bound to the original request.
+            object_type(str): The object type being accessed.
+            op(OperatorMethod): The operation being performed.
+            bound_args(Optional[BoundArguments]): Arguments bound to the original request.
 
         Returns:
             Optional[AndFilter]: Combined filter from all hooks, or None.
@@ -515,7 +515,7 @@ class CompositeAuthInspector(AuthInspector):
         object_type: str,
         op: OperatorMethod,
         auth_ctx: AuthContext,
-        bound_args: BoundArguments,
+        bound_args: Optional[BoundArguments] = None,
     ) -> Optional[AndFilter]:
         """
         Internal method to invoke all applicable hooks for authenticated requests.
