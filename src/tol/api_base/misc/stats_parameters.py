@@ -50,7 +50,7 @@ class StatsParameters:
         return self.__request_args
 
     def _parse_to_list(self, __key: str, __value: str) -> int:
-        return __value.split(',')
+        return __value.split(',') if __value != '' else []
 
 
 class GroupStatsParameters(StatsParameters):

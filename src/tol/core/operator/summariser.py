@@ -77,7 +77,7 @@ class Summariser(
         affecting the `DataObject` instances of given `object_type` and
         `object_ids`.
 
-        Returns None, but performs summarization operations.
+        Returns types and IDs of what might have changed.
         """
 
         list_ids = list(source_object_ids)
@@ -87,6 +87,7 @@ class Summariser(
             source_object_type,
         )
 
+        changed_ids: dict[str, list[str]] = {}
         for summary_obj in filtered_summaries:
             ext_and = self.get_and_filter_to_summarise(
                 summary_obj,
@@ -99,6 +100,13 @@ class Summariser(
                 summary_obj,
                 ext_and=ext_and,
             )
+            for k, v in ext_and.items():
+                rel_name = k.split('.')[0]
+                object_type = self.relationship_config[source_object_type].to_one[rel_name]
+                if object_type not in changed_ids:
+                    changed_ids[object_type] = set()
+                changed_ids[object_type].update(v['in_list']['value'])
+        return changed_ids
 
     def _mix_in_ext_and(
         self,

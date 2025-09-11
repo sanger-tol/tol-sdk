@@ -179,12 +179,22 @@ class MlwhDataSource(DataSource, DetailGetter, ListGetter):
             'insert_length_n50': 'well_metrics.insert_length_n50',
             'unique_molecular_bases': 'well_metrics.unique_molecular_bases',
             'productive_zmws_num': 'well_metrics.productive_zmws_num',
-            'p0_num': 'well_metrics.p0_num',
-            'p1_num': 'well_metrics.p1_num',
-            'p2_num': 'well_metrics.p2_num',
+            'p0_num': """
+                (well_metrics.p0_num * 100) /
+                NULLIF((well_metrics.p0_num + well_metrics.p1_num + well_metrics.p2_num), 0)
+            """,
+            'p1_num': """
+                (well_metrics.p1_num * 100) /
+                NULLIF((well_metrics.p0_num + well_metrics.p1_num + well_metrics.p2_num), 0)
+            """,
+            'p2_num': """
+                (well_metrics.p2_num * 100) /
+                NULLIF((well_metrics.p0_num + well_metrics.p1_num + well_metrics.p2_num), 0)
+            """,
             'adapter_dimer_percent': 'well_metrics.adapter_dimer_percent',
             'short_insert_percent': 'well_metrics.short_insert_percent',
-            'hifi_read_bases': 'well_metrics.hifi_read_bases',
+            'well_hifi_read_bases': 'well_metrics.hifi_read_bases',
+            'product_hifi_read_bases': 'product_metrics.hifi_read_bases',
             'hifi_num_reads': 'well_metrics.hifi_num_reads',
             'hifi_read_length_mean': 'well_metrics.hifi_read_length_mean',
             'hifi_read_quality_median': 'well_metrics.hifi_read_quality_median',
@@ -449,7 +459,7 @@ class MlwhDataSource(DataSource, DetailGetter, ListGetter):
         )
 
     def _join(self, values: List) -> str:
-        return "','".join(values)
+        return "','".join([str(s) for s in values])
 
     def _conditions_string(self, platform_type: str, in_list: Dict):
         if in_list is None:

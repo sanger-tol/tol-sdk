@@ -154,6 +154,14 @@ class Database(ABC):
 
     @property
     @abstractmethod
+    def attribute_types_including_id(self) -> dict[str, dict[str, type]]:
+        """
+        The mapping of attribute name to type for each model under
+        this `Database` instance, including the ID attribute.
+        """
+
+    @property
+    @abstractmethod
     def session_factory(self) -> SessionFactory:
         """
         Returns a `Callable` that returns a `Session` instance.
@@ -171,6 +179,7 @@ class DefaultDatabase(Database):
 
         self.__session_factory = session_factory
         self.__tablename_model_dict = self.__get_tablename_model_dict(models)
+        self.__attribute_types_including_id = self.__get_attribute_types_including_id()
         self.__attribute_types = self.__get_attribute_types()
 
     @property
@@ -207,12 +216,15 @@ class DefaultDatabase(Database):
         _, query = self.__get_model_query(
             tablename,
             in_session,
-            requested_relationships
+            requested_relationships,
+            filters=filters,
         )
         if filters is not None:
+            if sort_by is not None:
+                filters.add_field(sort_by.term)
             query = filters.filter(query, tablename, self.__tablename_model_dict)
         if sort_by is not None:
-            query = sort_by.sort(query, tablename, self.__tablename_model_dict)
+            query = sort_by.sort(query, tablename, self.__tablename_model_dict, filters)
         query = query.limit(limit).offset(offset)
         results = query.all()
         return results
@@ -224,7 +236,7 @@ class DefaultDatabase(Database):
         filters: Optional[DatabaseFilter] = None
     ) -> int:
 
-        _, query = self.__get_model_query(tablename, in_session, None)
+        _, query = self.__get_model_query(tablename, in_session, None, filters=filters)
         if filters is not None:
             query = filters.filter(query, tablename, self.__tablename_model_dict)
         count = query.count()
@@ -333,6 +345,7 @@ class DefaultDatabase(Database):
             tablename,
             in_session,
             None,
+            filters=filters,
         )
 
         query = self.__filter_query(query, tablename, filters)
@@ -362,6 +375,10 @@ class DefaultDatabase(Database):
     @property
     def attribute_types(self) -> dict[str, dict[str, type]]:
         return self.__attribute_types
+
+    @property
+    def attribute_types_including_id(self) -> dict[str, dict[str, type]]:
+        return self.__attribute_types_including_id
 
     def __get_stats_from_query(
         self,
@@ -472,11 +489,9 @@ class DefaultDatabase(Database):
         stat_columns = []
 
         for field in stats_fields:
-            column, query = self.__get_column(
-                model,
+            column = self.__get_column(
                 filters,
                 field,
-                query,
             )
             stat_columns.extend(
                 self.__apply_stats_for_field(
@@ -505,20 +520,15 @@ class DefaultDatabase(Database):
 
     def __get_column(
         self,
-        model: type[Model],
         filters: DatabaseFilter,
-        field: str,
-        query: Query
-    ) -> tuple[MappedColumn, Query]:
+        field: str
+    ) -> MappedColumn:
 
-        column = filters.get_column(model, field)
+        column = filters.get_column(field)
         if '.' in field:
-            query = filters.apply_joins_on_query(
-                query,
-                [column],
-            )
+            filters.add_field(field)
 
-        return column, query
+        return column
 
     def __get_stat_clause(
         self,
@@ -550,11 +560,9 @@ class DefaultDatabase(Database):
         g_columns = []
 
         for g in group_by:
-            g_column, query = self.__get_column(
-                model,
+            g_column = self.__get_column(
                 filters,
-                g,
-                query
+                g
             )
             g_columns.append(g_column)
 
@@ -578,7 +586,16 @@ class DefaultDatabase(Database):
 
     def __get_attribute_types(self) -> dict[str, dict[str, type]]:
         return {
-            t: m.get_attribute_types()
+            t: {
+                k: v for k, v in self.__attribute_types_including_id[t].items()
+                if k != 'id'  # Exclude ID attribute
+            }
+            for t in self.__attribute_types_including_id.keys()
+        }
+
+    def __get_attribute_types_including_id(self) -> dict[str, dict[str, type]]:
+        return {
+            t: m.get_attribute_types() | {'id': m.get_id_attribute_type()}
             for t, m in self.__tablename_model_dict.items()
         }
 
@@ -587,10 +604,11 @@ class DefaultDatabase(Database):
         tablename: str,
         in_session: Session,
         requested_relationships: dict | None,
+        filters: DatabaseFilter | None = None,
     ) -> tuple[Type[Model], Query]:
 
         model = self.__tablename_model_dict[tablename]
-        query = in_session.query(model)
+        query = in_session.query(model) if not filters else filters.get_query(in_session, model)
 
         if requested_relationships:
             query = self.__apply_requested_relationships(
@@ -805,7 +823,6 @@ class DefaultDatabase(Database):
         key: str,
         type_: type[Any]
     ) -> bool:
-
         value = getattr(instance, key)
         return isinstance(value, type_)
 

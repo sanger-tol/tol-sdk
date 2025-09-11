@@ -83,7 +83,7 @@ class RuntimeFields:
     def latest_date(cls, date_fields: list[str], allow_missing: bool = True):
         deps = date_fields if not allow_missing else []
         rf = RuntimeField(
-            field_type='long',
+            field_type='date',
             dependencies=deps,
             params={'dates': date_fields},
             function_body="""

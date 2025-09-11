@@ -25,7 +25,7 @@ class TestBenchlingDataSourceE2E:
     """
     _str_values = None
 
-    can_update = ['tissue', 'tissue_prep']
+    can_update = ['tissue', 'tissue_prep', 'casm_sequencing_container']
 
     @against_types([
         'tissue',
@@ -156,9 +156,10 @@ class TestBenchlingDataSourceE2E:
         benchling_ds.delete(object_type, [obj.id for obj in new_objs])
 
     @against_types([
+        '12x12_box:casm_sequencing_container',
         '12x12_box:casm_tube'
     ])
-    def test_many_insert_delete_storage_layers(self, object_type: str) -> None:
+    def test_many_insert_delete_update_storage_layers(self, object_type: str) -> None:
         benchling_ds = benchling()
         first_object_type, second_object_type = object_type.split(':', 1)
         first_str_key = self.__find_string_key(first_object_type, benchling_ds)
@@ -178,7 +179,7 @@ class TestBenchlingDataSourceE2E:
         # Insert in a single batch call
         res = list(benchling_ds.insert(first_object_type, first_objs))
         assert len(res) == 3
-        ids = [r.id for r in res]
+        first_ids = [r.id for r in res]
 
         # Confirm inserted values in one loop
         for i, obj in enumerate(res, start=1):
@@ -199,7 +200,12 @@ class TestBenchlingDataSourceE2E:
                         object_type=second_object_type
                     ),
                     str_key=second_str_key,
-                    parent_storage_id=f'{obj.id}:a{i}'
+                    parent_storage_id=f'{obj.id}:a{i}',
+                    barcode=self.__populate_string_value(
+                        str_key='barcode',
+                        counter=i,
+                        object_type=second_object_type
+                    ) if second_str_key != 'barcode' else None,
                 )
                 for i in range(1, 4)
             ]
@@ -216,10 +222,52 @@ class TestBenchlingDataSourceE2E:
                 )
                 assert obj2.parent_storage_id == f'{obj.id}:a{i2}'
 
+            # Update containers
+            if second_object_type in self.can_update:
+                str_key = self.__find_string_key(
+                    second_object_type,
+                    benchling_ds
+                )
+                second_ids = [
+                    r.id for r in second_res
+                ]
+                # update each `str` attribute
+                res = benchling_ds.update(
+                    second_object_type,
+                    [
+                        (
+                            id_,
+                            {
+                                str_key: self.__populate_string_value(
+                                    str_key,
+                                    i,
+                                    second_object_type,
+                                )
+                            }
+                        )
+                        for i, id_ in enumerate(second_ids, start=1)
+                    ]
+                )
+
+                # get them back
+                new_objs = list(
+                    benchling_ds.get_by_id(
+                        second_object_type,
+                        second_ids
+                    )
+                )
+
+                # assert everything is right (and `str` key is updated if allowed)
+                for i, (id_, new_obj) in enumerate(zip(second_ids, new_objs), start=1):
+                    assert new_obj.type == second_object_type
+                    assert new_obj.id == id_
+                    str_val = getattr(new_obj, str_key)
+                    assert str_val == self.__get_string_value(second_object_type, str_key, i,)
+
             benchling_ds.delete(second_object_type, [obj.id for obj in second_res])
 
         # ---- Clean Up ----
-        benchling_ds.delete(first_object_type, ids)
+        benchling_ds.delete(first_object_type, first_ids)
 
     @against_types(['tissue', 'folder'])
     def test_many_insert_update_delete_with_errors(self, object_type: str) -> None:
@@ -295,7 +343,7 @@ class TestBenchlingDataSourceE2E:
 
         benchling_ds.delete(object_type, [res[0].id, res[2].id])
 
-    @against_types(['tissue', 'tissue_prep'])
+    @against_types(['tissue', 'tissue_prep', 'tube'])
     def test_worklists(self, object_type: str) -> None:
         """
         Creates a worklist, adds a tissue to it, and then
@@ -310,7 +358,8 @@ class TestBenchlingDataSourceE2E:
             None,
             attributes={
                 'name': 'Test Worklist',
-                'worklist_type': 'bioentity'
+                'worklist_type': 'bioentity' if object_type in
+                benchling_ds.schemas['custom_entity'].keys() else 'container',
             }
         )
         # insert it
@@ -445,6 +494,34 @@ class TestBenchlingDataSourceE2E:
 
         benchling_ds.delete(object_type, [obj.id for obj in res])
 
+    def test_get_to_many_relations(self) -> None:
+        """
+        Tests getting to-many relations for a specific object type.
+        """
+
+        benchling_ds = benchling()
+        # Using a specific custom entity for testing as this one definitely has container contents
+        custom_entity = benchling_ds.get_one('temp_dna_extract', 'bfi_PfJozKsa')
+        container = benchling_ds.get_one('tube', 'con_5wnL41Xr')
+
+        entity_contents = list(
+            benchling_ds.get_to_many_relations(custom_entity, 'container_contents')
+        )
+        assert len(entity_contents) > 0
+        for content in entity_contents:
+            assert content.type == 'container_content'
+            assert content.entity.id == custom_entity.id
+
+        container_contents_generator = benchling_ds.get_to_many_relations(
+            container,
+            'container_contents'
+        )
+        for container_contents in container_contents_generator:
+            assert len(list(container_contents)) > 0
+            for content in container_contents:
+                assert content.type == 'container_content'
+                assert content.container.id == container.id
+
     def __get_example_object(self, object_type: str) -> DataObject:
         benchling_ds = benchling()
         f = DataSourceFilter()
@@ -452,9 +529,6 @@ class TestBenchlingDataSourceE2E:
             f.and_ = {'name': {'eq': {'value': 'Core Lab Entities'}}}
         if object_type == 'tissue':
             f.and_ = {'project': {'eq': {'value': 'DTOL'}}}
-        if object_type == 'tissue_prep':
-            # A specific tissue prep
-            return benchling_ds.get_one('tissue_prep', 'bfi_ZNh4kTQZ')
         if object_type == 'location':
             # A specific storage location used for testing
             return benchling_ds.get_one('storage', 'loc_9rnbkEzo')
@@ -496,6 +570,11 @@ class TestBenchlingDataSourceE2E:
     ) -> list[str]:
         if benchling_type == 'custom_entity':
             return {'folder': 'folder'}
+        elif benchling_type == 'container_content':
+            return {
+                'entity': 'custom_entity',
+                'container': 'container'
+            }
         return {}
 
     def __find_string_key(
@@ -513,6 +592,8 @@ class TestBenchlingDataSourceE2E:
             return 'batch_lot_number'
         if object_type in ['folder', 'worklist', 'storage']:
             return 'name'
+        if object_type == 'casm_sequencing_container':
+            return 'platform'
         if benchling_ds.benchling_types[object_type] in ['box', 'plate', 'container']:
             return 'barcode'
         if benchling_ds.benchling_types[object_type] == 'assay_result':
@@ -574,7 +655,8 @@ class TestBenchlingDataSourceE2E:
         int_value: int = 1,
         float_value: float = 1.0,
         datetime_value: datetime.datetime = datetime.datetime(2021, 1, 1),
-        parent_storage_id: str | None = None
+        parent_storage_id: str | None = None,
+        barcode: str | None = None
     ) -> str:
         """Creates test data for an example object"""
         atts = {}
@@ -620,9 +702,11 @@ class TestBenchlingDataSourceE2E:
         if str_key is not None:
             atts[str_key] = string_value
 
-        # Explicitly set the parent_storage_id
+        # Explicitly set the parent_storage_id and barcode
         if parent_storage_id is not None:
             atts['parent_storage_id'] = parent_storage_id
+        if barcode is not None:
+            atts['barcode'] = barcode
         return benchling_ds.data_object_factory(
             object_type,
             None,

@@ -5,7 +5,7 @@
 class Defaults:
     PORTAL_URL = 'https://portal.tol.sanger.ac.uk'
     PORTAL_API_PATH = '/api/v1'
-    PORTAL_API_DATA_PATH = ''
+    PORTAL_API_DATA_PATH = '/data'
 
     STS_URL = 'https://sts.tol.sanger.ac.uk'
     STS_API_PATH = '/api/v2'
@@ -26,6 +26,9 @@ class Defaults:
     BIOSCAN_URL = 'https://bioscan.tol.sanger.ac.uk'
     BIOSCAN_API_PATH = '/api/v1'
     BIOSCAN_API_DATA_PATH = ''
+
+    BIOSCAN_IMAGE_BUCKET_NAME = 'tol-bioscan-images'
+    BIOSCAN_IMAGE_PREFIX = 'processed_images/'
 
     WORKFLOWS_URL = 'https://workflows.tol.sanger.ac.uk'
     WORKFLOWS_API_PATH = '/api/v2'

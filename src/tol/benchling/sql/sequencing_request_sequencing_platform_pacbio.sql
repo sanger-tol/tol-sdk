@@ -55,8 +55,7 @@ NOTES:
 2) To add the Fluidx ID of the origininal DNA extract a few filters were applied to
 delete Vouchers, tubes archived because they were made in error, and 
 invalid container names. 
-3) Vouchers: The volume filter is risky but necessary. A few container might be excluded. 
-4) Pooled samples must be added as an independent CTE because the filters for DNA fluidx tubes
+3) Pooled samples must be added as an independent CTE because the filters for DNA fluidx tubes
 delete them from the query output. Two CTEs are used, one for the container based and the other
 for the plate based submissions.
 
@@ -121,7 +120,6 @@ WITH pacbio_submissions_v1 AS (
 	WHERE pbsum.archived$ = FALSE -- Excluding archived submission containers
 		-- Filters to add DNA extract fluidx tubes
 		AND tube.type IS NULL  -- Selecting non-Voucher containers
-		AND c_dna.volume_si * 1000000 != 10 -- Excluding vouchers without Voucher type in tube.type
 	    AND (c_dna.archive_purpose$ != ('Made in error') OR c_dna.archive_purpose$ IS NULL) -- Excluding containers made by mistake
 		AND c_dna.barcode LIKE 'F%' -- Selecting only valid FluidX IDs
 		AND proj.name = 'ToL Core Lab' -- Selecting ToL Core Lab sbmissions only
@@ -185,7 +183,6 @@ pacbio_legacy_submissions AS (
 		AND con.archived$ = FALSE -- Excluding submission-containers made by mistake
 		-- Filters to add DNA extract fluidx tubes
 		AND tube.type IS NULL -- Selecting non-Voucher containers
-		AND c_dna.volume_si * 1000000 != 10 -- Excluding vouchers without Voucher type in tube.type
 	    AND (c_dna.archive_purpose$ != ('Made in error') OR c_dna.archive_purpose$ IS NULL) -- Excluding containers made by mistake
 		AND c_dna.barcode LIKE 'F%' -- Selecting only valid FluidX IDs
 		AND proj.name = 'ToL Core Lab' -- Selecting ToL Core Lab sbmissions only
@@ -251,7 +248,6 @@ pacbio_submissions_v2 AS (
 		AND pbsubm_p.archived$ = FALSE -- Exclusing archived submissions
 		-- Filters to add DNA extract fluidx tubes
 		AND tube.type IS NULL -- Selecting non-Voucher containers
-		-- AND c_dna.volume_si * 1000000 != 10 -- Excluding vouchers without Voucher type in tube.type (commented out as some tubes do have 10ul volume!)
 		AND (c_dna.archive_purpose$ != ('Made in error') OR c_dna.archive_purpose$ IS NULL) -- Excluding containers made by mistake
 		AND c_dna.barcode LIKE 'F%' -- Selecting only valid FluidX IDs
 		AND proj.name = 'ToL Core Lab' -- Selecting ToL Core Lab sbmissions only

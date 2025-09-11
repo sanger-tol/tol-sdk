@@ -65,7 +65,7 @@ class TolqcDataToElasticRunDataConverter(DataObjectToDataObjectOrUpdateConverter
                         data_object.sample.specimen.species.taxon_id
                     )
 
-        if data_object.folder is not None:
+        if data_object.folder is not None and data_object.folder.image_file_list is not None:
             target_attributes['images'] = [
                 {
                     'url':

@@ -7,6 +7,7 @@ from typing import Dict, Optional, Type
 
 from sqlalchemy.orm import MappedColumn, Query
 
+from .filter import DatabaseFilter
 from .model import Model
 
 
@@ -18,7 +19,8 @@ class DatabaseSorter(ABC):
         self,
         query: Query,
         tablename: str,
-        model_dict: Dict[str, Type[Model]]
+        model_dict: Dict[str, Type[Model]],
+        filters: DatabaseFilter,
     ) -> Query:
         """Sorts a query using the given models"""
 
@@ -27,28 +29,32 @@ class DefaultDatabaseSorter(DatabaseSorter):
 
     def __init__(self, sort_term: Optional[str]) -> None:
         if sort_term is None:
-            self.__desc = None
-            self.__term = None
+            self.__desc = False
+            self.term = 'id'
         elif sort_term.startswith('-'):
             self.__desc = True
-            self.__term = sort_term[1:]
+            self.term = sort_term[1:]
         else:
             self.__desc = False
-            self.__term = sort_term
+            self.term = sort_term
 
     def sort(
         self,
         query: Query,
         tablename: str,
-        model_dict: Dict[str, Type[Model]]
+        model_dict: Dict[str, Type[Model]],
+        filters: DatabaseFilter | None = None,
     ) -> Query:
 
-        base_model = model_dict[tablename]
-        if self.__term is None:
-            return self.__apply_default_sort(query, base_model)
-
-        column, query = self.__join_and_get_column(query, base_model, model_dict)
-        return self.__apply_default_sort(self.__apply_sort(query, column), base_model)
+        if filters is not None:
+            column = filters.get_column(self.term)
+        else:
+            column, query = self.__join_and_get_column(
+                query,
+                model_dict[tablename],
+                model_dict,
+            )
+        return self.__apply_sort(query, column)
 
     def __join_and_get_column(
         self,
@@ -59,7 +65,7 @@ class DefaultDatabaseSorter(DatabaseSorter):
 
         model = base_model
 
-        relations = self.__term.split('.')[:-1]
+        relations = self.term.split('.')[:-1]
         for relation in relations:
             column = getattr(model, relation)
             query = query.join(column)
@@ -70,7 +76,7 @@ class DefaultDatabaseSorter(DatabaseSorter):
 
         column = self.__get_column(
             model,
-            self.__term.split('.')[-1]
+            self.term.split('.')[-1]
         )
 
         return column, query
@@ -87,11 +93,3 @@ class DefaultDatabaseSorter(DatabaseSorter):
             return query.order_by(column.desc())
         else:
             return query.order_by(column)
-
-    def __apply_default_sort(self, query: Query, model: Type[Model]):
-        if self.__term != 'id':
-            # Add a default sort by id after the other sort
-            id_key = model.get_id_column_name()
-            id_column = model.get_column(id_key)
-            return query.order_by(id_column)
-        return query

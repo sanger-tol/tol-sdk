@@ -17,7 +17,7 @@ from tol.sources.portal import (
 class TestPortalDataSource(TestCase):
 
     def test_supported_types(self):
-        pds = portal()
+        pds = portal(dataspace='tol_production')
         assert 'species' in pds.supported_types
         assert 'sample' in pds.supported_types
         assert 'extraction' in pds.supported_types
@@ -26,8 +26,11 @@ class TestPortalDataSource(TestCase):
         assert 'assembly' in pds.supported_types
         assert 'assembly_analysis' in pds.supported_types
 
+        pds = portal(dataspace='test')
+        assert 'record' in pds.supported_types
+
     def test_attribute_types(self):
-        pds = portal()
+        pds = portal(dataspace='tol_production')
 
         assert 'species' in pds.attribute_types
         assert pds.attribute_types['species']['goat_scientific_name'] == 'str'
@@ -35,13 +38,13 @@ class TestPortalDataSource(TestCase):
         assert pds.attribute_types['species']['sts_sample_sts_submit_date_max'] == 'datetime'
 
     def test_relationship_config(self):
-        pds = portal()
+        pds = portal(dataspace='tol_production')
 
         assert 'sample' in pds.relationship_config
         assert pds.relationship_config['sample'].to_one['sts_species'] == 'species'
 
     def test_get_by_id(self):
-        pds = portal()
+        pds = portal(dataspace='tol_production')
 
         ret = pds.get_by_ids('species', ['2708'])
         obj1 = next(ret)
@@ -58,7 +61,7 @@ class TestPortalDataSource(TestCase):
             next(ret)
 
     def test_get_list(self):
-        pds = portal()
+        pds = portal(dataspace='tol_production')
 
         f = DataSourceFilter()
         f.and_ = {

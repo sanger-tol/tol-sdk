@@ -78,6 +78,15 @@ NATIVE_OBJECT_TYPES = {
     },
     'assay_result': {
         'attributes': {}
+    },
+    'container_content': {
+        'attributes': {
+            'batch': 'str',
+            'concentration': 'dict',
+        },
+        'to_one': {
+            'entity': 'custom_entity',
+        }
     }
 }
 BENCHLING_TYPE_SEARCH_WITH_SCHEMA_ID = [
@@ -93,7 +102,7 @@ BENCHLING_PARENT_TYPES_WITH_SCHEMAS = {
         'attributes': {},
         'to_one': {},
         'to_one_native': {'folder': 'folder'},
-        'to_many': {}
+        'to_many': {'container_contents': 'container_content'}
     },
     'location': {
         'attributes': {'name': 'str', 'barcode': 'str'},
@@ -111,7 +120,7 @@ BENCHLING_PARENT_TYPES_WITH_SCHEMAS = {
         'attributes': {'barcode': 'str', 'parent_storage_id': 'str'},
         'to_one': {},
         'to_one_native': {},
-        'to_many': {}
+        'to_many': {'container_contents': 'container_contents'}
     },
     'box': {
         'attributes': {'barcode': 'str'},
@@ -770,10 +779,13 @@ class BenchlingDataSource(
         benchling_type = self.benchling_types[object_type]
         try:
             if benchling_type in BENCHLING_TYPE_SEARCH_WITH_SCHEMA_ID:
-                return benchling_package.get_by_id(
+                obj = benchling_package.get_by_id(
                     object_id,
-                    schema_id=self.schema_ids[object_type]
                 )
+                if snakecase(obj.schema.name) == object_type:
+                    return obj
+                return None
+
             return benchling_package.get_by_id(
                 object_id
             )
@@ -826,7 +838,15 @@ class BenchlingDataSource(
                 to_one={
                     'worklist': 'worklist',
                     'item': list(self.schemas['custom_entity'].keys())
+                    + list(self.schemas['container'].keys()),
                 }
+            ),
+            'container_content': RelationshipConfig(
+                to_one={
+                    'entity': list(self.schemas['custom_entity'].keys()),
+                    'container': list(self.schemas['container'].keys()),
+                },
+                to_many={}
             )
         } | {
             k: RelationshipConfig(
@@ -870,9 +890,34 @@ class BenchlingDataSource(
         """
         if source.type == 'worklist' and relationship_name == 'worklist_items':
             back_converter = self.__bc_factory()
-            return back_converter.convert_worklist_items(
+            yield from back_converter.convert_worklist_items(
                 self.__get_benchling_package('worklist').get_by_id(source.id)
             )
+
+        if (
+            source.type in self.schemas['container'].keys()
+            and relationship_name == 'container_contents'
+        ):
+            back_converter = self.__bc_factory()
+            contents = self.get_container_contents(source.id)
+            yield back_converter.convert_container_contents(contents)
+
+        if (
+            source.type in self.schemas['custom_entity'].keys()
+            and relationship_name == 'container_contents'
+        ):
+            back_converter = self.__bc_factory()
+            container_list = self.benchling_interface.containers.list(
+                storage_contents_id=source.id
+            )
+            for container in container_list:
+                for individual_container in container:
+                    converted_container = back_converter.convert(individual_container)
+                    contents = self.get_container_contents(converted_container.id)
+                    converted_contents = back_converter.convert_container_contents(contents)
+                    for content in converted_contents:
+                        if content.to_one_relationships['entity'].id == source.id:
+                            yield content
 
     def __build_list_filter(self, list_filter: Optional[DataSourceFilter]):
         arg = ''

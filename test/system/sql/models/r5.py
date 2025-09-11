@@ -5,7 +5,6 @@
 from __future__ import annotations
 
 import typing
-from typing import List
 
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -26,6 +25,6 @@ class R5(BaseModel):
 
     funny_word: Mapped[str] = mapped_column()
 
-    no_more_r1s: Mapped[List['R1']] = relationship(
+    no_more_r1s: Mapped[list[R1]] = relationship(
         back_populates='this_lovely_r5'
     )

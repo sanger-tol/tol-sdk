@@ -4,3 +4,4 @@
 
 from .allowed_values import AllowedValues, AllowedValuesValidator  # noqa
 from .allowed_keys import AllowedKeysValidator  # noqa
+from .unique_values import UniqueValuesValidator  # noqa

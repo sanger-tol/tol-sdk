@@ -201,7 +201,7 @@ class ApiDataSource(
         self,
         object_type: str,
         object_filters: Optional[DataSourceFilter] = None,
-        session: Optional[OperableSession] = None
+        session: Optional[OperableSession] = None,
     ) -> int:
         filter_string = self.__get_filter_string(object_filters)
         transfer = self.__client_factory().get_count(

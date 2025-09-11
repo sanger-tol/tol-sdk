@@ -17,7 +17,11 @@ from ..elastic import (
 )
 
 
-def elastic(environment: str = None) -> ElasticDataSource:
+def elastic(
+        environment: str = None,
+        product: str = None,
+        **kwargs
+) -> ElasticDataSource:
     rc_run_data = RelationshipConfig()
     rc_run_data.to_one = {'benchling_extraction': 'extraction',
                           'benchling_sample': 'sample',
@@ -513,13 +517,13 @@ def elastic(environment: str = None) -> ElasticDataSource:
         },
         'specimen': {
             'calc_coverage_post_run': RuntimeFields.math(
-                'tolqc_run_data_tolqc_bases_sum',
+                'tolqc_run_data_tolqc_bases_pacbio_sum',
                 'sts_estimated_genome_size',
                 operation='/'
             )
         },
         'tolid': {
-            'calc_coverage': RuntimeFields.math('tolqc_run_data_tolqc_bases_sum',
+            'calc_coverage': RuntimeFields.math('tolqc_run_data_tolqc_bases_pacbio_sum',
                                                 'tolid_species.sts_genome_size',
                                                 operation='/'),
             'calc_ongoing_submissions': RuntimeFields.math(
@@ -530,13 +534,13 @@ def elastic(environment: str = None) -> ElasticDataSource:
                 'type': 'boolean',
                 'script': {
                     'source': """
-                        if (doc.containsKey('tolqc_run_data_tolqc_bases_sum') &&
+                        if (doc.containsKey('tolqc_run_data_tolqc_bases_pacbio_sum') &&
                         doc.containsKey('tolid_species.sts_genome_size') &&
                         doc.containsKey('sts_sample_sts_target_coverage_max') &&
-                        doc['tolqc_run_data_tolqc_bases_sum'].size() > 0 &&
+                        doc['tolqc_run_data_tolqc_bases_pacbio_sum'].size() > 0 &&
                         doc['tolid_species.sts_genome_size'].size() > 0 &&
                         doc['sts_sample_sts_target_coverage_max'].size() > 0) {
-                            emit(doc['tolqc_run_data_tolqc_bases_sum'].value /
+                            emit(doc['tolqc_run_data_tolqc_bases_pacbio_sum'].value /
                                 doc['tolid_species.sts_genome_size'].value >=
                                 doc['sts_sample_sts_target_coverage_max'].value)
                         }
@@ -559,8 +563,8 @@ def elastic(environment: str = None) -> ElasticDataSource:
                             doc[
                                 'benchling_pacbio_completed_sequencing_request_count'
                             ].size() > 0 &&
-                            doc.containsKey('tolqc_run_data_tolqc_bases_sum') &&
-                            doc['tolqc_run_data_tolqc_bases_sum'].size() > 0 &&
+                            doc.containsKey('tolqc_run_data_tolqc_bases_pacbio_sum') &&
+                            doc['tolqc_run_data_tolqc_bases_pacbio_sum'].size() > 0 &&
                             doc.containsKey('tolid_species.sts_genome_size') &&
                             doc['tolid_species.sts_genome_size'].size() > 0 &&
                             doc.containsKey('sts_sample_sts_target_coverage_max') &&
@@ -571,6 +575,11 @@ def elastic(environment: str = None) -> ElasticDataSource:
                             emit(false);
                             return;
                         }
+
+                        boolean isInReview =
+                            doc.containsKey('portaldb_in_review') &&
+                            doc['portaldb_in_review'].size() > 0 &&
+                            doc['portaldb_in_review'].value == true;
 
                         boolean isTotalSubmissionsGreaterThanZero =
                             doc['benchling_pacbio_sequencing_request_count'].value > 0;
@@ -589,7 +598,7 @@ def elastic(environment: str = None) -> ElasticDataSource:
                             doc['benchling_pacbio_completed_sequencing_request_count'].value == 0);
 
                         boolean isTargetCoverageMet =
-                            (doc['tolqc_run_data_tolqc_bases_sum'].value /
+                            (doc['tolqc_run_data_tolqc_bases_pacbio_sum'].value /
                             doc['tolid_species.sts_genome_size'].value >=
                             doc['sts_sample_sts_target_coverage_max'].value);
 
@@ -617,7 +626,8 @@ def elastic(environment: str = None) -> ElasticDataSource:
                             isTotalSubmissionsGreaterThanZero &&
                             isOngoingSubmissionsEqualZero &&
                             !isTargetCoverageMet &&
-                            !isSpecimenNotAtSequencingStage
+                            !isSpecimenNotAtSequencingStage &&
+                            !isInReview
                         );
                     """
                 }
@@ -654,57 +664,48 @@ def elastic(environment: str = None) -> ElasticDataSource:
                     'source': """
                         def benchlingNewSampleCount = 0;
                         if (doc.containsKey('benchling_sample_count')
-                            && doc['benchling_sample_count'].size() > 0) {
-                            benchlingNewSampleCount = doc['benchling_sample_count'].value;
+                          && doc['benchling_sample_count'].size() > 0) {
+                          benchlingNewSampleCount = doc['benchling_sample_count'].value;
+                        }
+                        def abandonCnt = 0;
+                        if (doc.containsKey('calc_sample_calc_sample_abandoned_in_sts_count')
+                          && doc['calc_sample_calc_sample_abandoned_in_sts_count'].size() > 0) {
+                          abandonCnt = doc['calc_sample_calc_sample_abandoned_in_sts_count'].value;
                         }
 
-                        def abandonCount = 0;
-                        if (doc.containsKey('calc_sample_abandoned_in_sts_sample_count')
-                            && doc['calc_sample_abandoned_in_sts_sample_count'].size() > 0) {
-                            abandonCount = doc['calc_sample_abandoned_in_sts_sample_count'].value;
-                        }
-
-                        def totalSampleCount = benchlingNewSampleCount + abandonCount;
+                        def totalSampleCount = benchlingNewSampleCount + abandonCnt;
 
                         boolean allSamplesAccountedFor = false;
                         if (doc.containsKey('sts_sample_count') &&
-                            doc['sts_sample_count'].size() > 0 &&
-                            totalSampleCount == doc['sts_sample_count'].value) {
-                            allSamplesAccountedFor = true;
+                          doc['sts_sample_count'].size() > 0 &&
+                          totalSampleCount == doc['sts_sample_count'].value) {
+                          allSamplesAccountedFor = true;
                         }
 
                         boolean allBenchlingMaterialExhausted = false;
-                        if (benchlingNewSampleCount > 0 &&
-                            doc.containsKey(
-                            'calc_sequencing_request_calc_mlwh_volume_remaining_max')
-                            && doc.containsKey('
-                            calc_extraction_calc_benchling_volume_ul_dna_max')
-                            && doc.containsKey('
-                            calc_tissue_prep_calc_benchling_weight_mg_max')
-                            && doc.containsKey(
-                            'calc_sample_calc_benchling_remaining_weight_max')
-                            && doc['
-                            calc_sequencing_request_calc_mlwh_volume_remaining_max'].size() > 0
-                            && doc['
-                            calc_extraction_calc_benchling_volume_ul_dna_max'].size() > 0
-                            && doc['
-                            calc_tissue_prep_calc_benchling_weight_mg_max'].size() > 0
-                            && doc['
-                            calc_sample_calc_benchling_remaining_weight_max'].size() > 0
-                            && doc['
-                            calc_sequencing_request_calc_mlwh_volume_remaining_max'].value <= 0
-                            && doc['
-                            calc_extraction_calc_benchling_volume_ul_dna_max'].value <= 0
-                            && doc['
-                            calc_tissue_prep_calc_benchling_weight_mg_max'].value <= 0
-                            && doc['
-                            calc_sample_calc_benchling_remaining_weight_max'].value <= 0)
-                            {
-                            allBenchlingMaterialExhausted = true;
+                        if (
+                          benchlingNewSampleCount > 0 &&
+                          doc.containsKey('calc_sequencing_request_calc_mlwh_volume_remaining_max')
+                          &&
+                          doc.containsKey('calc_extraction_calc_benchling_volume_ul_dna_max') &&
+                          doc.containsKey('calc_tissue_prep_calc_benchling_weight_mg_max') &&
+                          doc.containsKey('calc_sample_calc_benchling_remaining_weight_max') &&
+                          doc['calc_sequencing_request_calc_mlwh_volume_remaining_max'].size() > 0
+                          &&
+                          doc['calc_extraction_calc_benchling_volume_ul_dna_max'].size() > 0 &&
+                          doc['calc_tissue_prep_calc_benchling_weight_mg_max'].size() > 0 &&
+                          doc['calc_sample_calc_benchling_remaining_weight_max'].size() > 0 &&
+                          doc['calc_sequencing_request_calc_mlwh_volume_remaining_max'].value <= 0
+                          &&
+                          doc['calc_extraction_calc_benchling_volume_ul_dna_max'].value <= 0 &&
+                          doc['calc_tissue_prep_calc_benchling_weight_mg_max'].value <= 0 &&
+                          doc['calc_sample_calc_benchling_remaining_weight_max'].value <= 0
+                        ) {
+                          allBenchlingMaterialExhausted = true;
                         }
 
                         emit(allSamplesAccountedFor &&
-                            (benchlingNewSampleCount == 0 || allBenchlingMaterialExhausted));
+                          (benchlingNewSampleCount == 0 || allBenchlingMaterialExhausted));
                     """
                 }
             },
@@ -867,24 +868,6 @@ def elastic(environment: str = None) -> ElasticDataSource:
                     """
                 }
             },
-            'calc_sample_eligible_for_sts_table': {
-                'type': 'boolean',
-                'script': {
-                    'source': """
-                        boolean isSampleAbandoned = doc.containsKey('portaldb_date_abandoned') &&
-                            doc['portaldb_date_abandoned'].size() > 0;
-
-                        boolean isSampleInBenchling = doc.containsKey('sts_eln_id.keyword') &&
-                            doc['sts_eln_id.keyword'].size() > 0;
-
-                        boolean isInSTSNotInBenchling = !isSampleAbandoned && !isSampleInBenchling;
-
-                        boolean isAbandonedInBenchling = isSampleAbandoned && isSampleInBenchling;
-
-                        emit(isInSTSNotInBenchling || isAbandonedInBenchling);
-                    """
-                }
-            },
             'calc_sample_abandoned_in_sts': {
                 'type': 'boolean',
                 'script': {
@@ -1029,15 +1012,18 @@ def elastic(environment: str = None) -> ElasticDataSource:
     # or be ELASTIC_ENVIRONMENT environment variable
     # or not be set
     if environment is None:
-        environment = os.getenv('ELASTIC_ENVIRONMENT')
-    index_suffix = f'-{environment}' if environment else ''
+        environment = os.getenv('ELASTIC_ENVIRONMENT', 'production')
+    if product is None:
+        product = os.getenv('ELASTIC_PRODUCT', 'portal')
+    index_suffix = f'-{product}' if product else ''
+    index_suffix += f'-{environment}' if environment else ''
     elastic = ElasticDataSource({
         'uri': os.getenv('ELASTIC_URI'),
         'user': os.getenv('ELASTIC_USER'),
         'password': os.getenv('ELASTIC_PASSWORD'),
         'index_prefix': os.getenv('ELASTIC_INDEX_PREFIX') + index_suffix,
-        'relationship_cfg': relationship_config,
-        'runtime_fields': runtime_fields},
+        'relationship_cfg': relationship_config if product == 'portal' else {},
+        'runtime_fields': runtime_fields if product == 'portal' else {}},
         attribute_metadata=amd)
     core_data_object(elastic)
     return elastic

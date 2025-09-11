@@ -3,6 +3,7 @@
 # SPDX-License-Identifier: MIT
 
 from functools import wraps
+from inspect import BoundArguments
 from typing import Any, Callable, Optional, Protocol
 
 from .error import ForbiddenError
@@ -21,12 +22,11 @@ class AuthInspector(Protocol):
     lock down access to a user's objects by their ID).
     """
 
-    # TODO support segementation within `object_type` - e.g. by programme/project
-
     def __call__(
         self,
         object_type: str,
-        method: OperatorMethod
+        method: OperatorMethod,
+        bound_args: BoundArguments
     ) -> Optional[AndFilter]:
         ...
 

@@ -8,38 +8,24 @@ from unittest.mock import MagicMock, Mock, PropertyMock, create_autospec
 import pytest
 
 from tol.api_base.controller import Controller
-from tol.api_base.misc import (
-    AggregationBody,
-    AggregationParameters,
-    ListGetParamaters
-)
+from tol.api_base.misc import AggregationBody, AggregationParameters, ListGetParamaters
 from tol.api_client.exception import (
     ObjectNotFoundByIdException,
     RecursiveRelationNotFoundException,
     UninheritedOperationError,
-    UnsupportedOpertionError
+    UnsupportedOperationError,
 )
 from tol.api_client.view import DefaultView, View
-from tol.core import (
-    DataSource,
-    DataSourceFilter,
-    core_data_object
-)
+from tol.core import DataSource, DataSourceFilter, core_data_object
 from tol.core.data_object import DataObject
-from tol.core.operator import (
-    Aggregator,
-    DetailGetter,
-    PageGetter,
-    Relational
-)
+from tol.core.operator import Aggregator, DetailGetter, PageGetter, Relational
 
 
 class _TestDataSource1(DataSource, DetailGetter):
 
     def get_by_id(self, object_type: str, object_ids: Iterable[str], *args, **kwargs):
         return [
-            self.data_object_factory(object_type, {'id': object_id})
-            for object_id in object_ids
+            self.data_object_factory(object_type, {'id': object_id}) for object_id in object_ids
         ]
 
     @property
@@ -53,10 +39,7 @@ class _TestDataSource1(DataSource, DetailGetter):
 
 class _TestDataSource2(DataSource, PageGetter):
     def get_list_page(self, object_type: str, *args, **kwargs):
-        return [
-            self.data_object_factory(object_type, id_=str(i))
-            for i in range(20)
-        ], 20
+        return [self.data_object_factory(object_type, id_=str(i)) for i in range(20)], 20
 
     @property
     def supported_types(self):
@@ -64,10 +47,7 @@ class _TestDataSource2(DataSource, PageGetter):
 
     @property
     def attribute_types(self) -> Dict:
-        return {
-            'test_A': {},
-            'test_B': {}
-        }
+        return {'test_A': {}, 'test_B': {}}
 
 
 class _TestDataSource3(DataSource, Aggregator, PageGetter):
@@ -80,7 +60,7 @@ class _TestDataSource3(DataSource, Aggregator, PageGetter):
         page_size: int = None,
         object_filters: DataSourceFilter = None,
         sort_by: str = None,
-        **kwargs
+        **kwargs,
     ):
         return [
             self.data_object_factory(
@@ -90,17 +70,14 @@ class _TestDataSource3(DataSource, Aggregator, PageGetter):
                     'page': page_number,
                     'page_size': page_size,
                     'filter': object_filters.exact['column1'],
-                    'sort_by': sort_by
-                }
+                    'sort_by': sort_by,
+                },
             )
             for i in range(page_size)
         ], 560  # a very arbitrary number
 
     def get_aggregations(
-            self,
-            object_type: str,
-            aggregations: Dict,
-            object_filters: DataSourceFilter = None
+        self, object_type: str, aggregations: Dict, object_filters: DataSourceFilter = None
     ) -> Dict:
         return {
             'completed_over_time': {
@@ -108,12 +85,12 @@ class _TestDataSource3(DataSource, Aggregator, PageGetter):
                     {
                         'key_as_string': '2015-04-01T00:00:00.000Z',
                         'key': 1427846400000,
-                        'doc_count': 3
+                        'doc_count': 3,
                     },
                     {
                         'key_as_string': '2015-05-01T00:00:00.000Z',
                         'key': 1430438400000,
-                        'doc_count': 0
+                        'doc_count': 0,
                     },
                 ]
             }
@@ -139,15 +116,8 @@ CoreDataObject = core_data_object(ds_1, ds_2, ds_3)
 class TestController:
     def test_good_object_type(self):
         expected = {
-            'meta': {'total': 20,
-                     'types': {}},
-            'data': [
-                {
-                    'type': 'test_B',
-                    'id': str(i)
-                }
-                for i in range(20)
-            ]
+            'meta': {'total': 20, 'types': {}},
+            'data': [{'type': 'test_B', 'id': str(i)} for i in range(20)],
         }
         controller = Controller(ds_2, DefaultView())
         observed = controller.get_list('test_B', ListGetParamaters({}))
@@ -171,17 +141,18 @@ class TestController:
         """Check that page_size and page_number are passed in correctly"""
 
         controller = Controller(ds_3, DefaultView())
-        parsed = ListGetParamaters({
-            'page': '90',
-            'page_size': '10',
-            'filter': """
+        parsed = ListGetParamaters(
+            {
+                'page': '90',
+                'page_size': '10',
+                'filter': """
                 {"exact": {"column1": "value1"}}
             """,
-            'sort_by': '-column1'
-        })
+                'sort_by': '-column1',
+            }
+        )
         expected = {
-            'meta': {'total': 560,
-                     'types': {}},
+            'meta': {'total': 560, 'types': {}},
             'data': [
                 {
                     'type': 'test_X',
@@ -190,12 +161,11 @@ class TestController:
                         'page': 90,
                         'page_size': 10,
                         'filter': 'value1',
-                        'sort_by': '-column1'
-
-                    }
+                        'sort_by': '-column1',
+                    },
                 }
                 for i in range(10)
-            ]
+            ],
         }
         observed = controller.get_list('test_X', parsed)
         assert expected == observed
@@ -204,38 +174,43 @@ class TestController:
         """Check that aggregations are working"""
 
         controller = Controller(ds_3, DefaultView())
-        parsed = AggregationParameters({
-            'filter': """
+        parsed = AggregationParameters(
+            {
+                'filter': """
                 {"exact": {"column1": "value1"}}
             """
-        })
-        body = AggregationBody({
-            'aggs': {
-                'completed_over_time': {
-                    'date_histogram': {
-                        'field': 'complete_date',
-                        'calendar_interval': 'month'
+            }
+        )
+        body = AggregationBody(
+            {
+                'aggs': {
+                    'completed_over_time': {
+                        'date_histogram': {'field': 'complete_date', 'calendar_interval': 'month'}
                     }
                 }
             }
-        })
+        )
         expected = {
             'meta': {
-                'aggregations': {'completed_over_time': {
-                    'buckets': [
-                        {
-                            'key_as_string': '2015-04-01T00:00:00.000Z',
-                            'key': 1427846400000,
-                            'doc_count': 3
-                        },
-                        {
-                            'key_as_string': '2015-05-01T00:00:00.000Z',
-                            'key': 1430438400000,
-                            'doc_count': 0
-                        },
-                    ]}},
-                'types': {}},
-            'data': []
+                'aggregations': {
+                    'completed_over_time': {
+                        'buckets': [
+                            {
+                                'key_as_string': '2015-04-01T00:00:00.000Z',
+                                'key': 1427846400000,
+                                'doc_count': 3,
+                            },
+                            {
+                                'key_as_string': '2015-05-01T00:00:00.000Z',
+                                'key': 1430438400000,
+                                'doc_count': 0,
+                            },
+                        ]
+                    }
+                },
+                'types': {},
+            },
+            'data': [],
         }
         observed = controller.post_aggregations('test_X', parsed, body)
         assert expected == observed
@@ -262,17 +237,13 @@ class TestController:
 
         bad_ds = _BadDataSource()
         controller = Controller(bad_ds, DefaultView())
-
-        with pytest.raises(UnsupportedOpertionError):
+        query_args = ListGetParamaters({'page': '1', 'page_size': '10'})
+        with pytest.raises(UnsupportedOperationError):
             controller.get_detail('test', 'hype')
-        with pytest.raises(UnsupportedOpertionError):
-            controller.get_list('test')
-        with pytest.raises(UnsupportedOpertionError):
-            controller.post_aggregations(
-                'test',
-                MagicMock(),
-                MagicMock()
-            )
+        with pytest.raises(UnsupportedOperationError):
+            controller.get_list('test', query_args=query_args)
+        with pytest.raises(UnsupportedOperationError):
+            controller.post_aggregations('test', MagicMock(), MagicMock(), MagicMock())
 
     def test_operation_implemented_no_abc(self):
         """
@@ -326,19 +297,10 @@ class TestController:
         mock_ds.get_recursive_relation.return_value = expected
 
         controller = Controller(mock_ds, mock_view)
-        observed = controller.get_recursive_relation(
-            mock_object,
-            ['a', 'b']
-        )
+        observed = controller.get_recursive_relation(mock_object, ['a', 'b'])
 
-        mock_ds.validate_to_one_recurse.assert_called_once_with(
-            'test',
-            ['a', 'b']
-        )
-        mock_ds.get_recursive_relation.assert_called_once_with(
-            mock_object,
-            ['a', 'b']
-        )
+        mock_ds.validate_to_one_recurse.assert_called_once_with('test', ['a', 'b'])
+        mock_ds.get_recursive_relation.assert_called_once_with(mock_object, ['a', 'b'])
         mock_view.dump.assert_called_once_with(expected)
 
         assert observed == expected
@@ -360,19 +322,10 @@ class TestController:
         controller = Controller(mock_ds, mock_view)
 
         with pytest.raises(RecursiveRelationNotFoundException):
-            controller.get_recursive_relation(
-                mock_object,
-                ['a', 'b']
-            )
+            controller.get_recursive_relation(mock_object, ['a', 'b'])
 
-        mock_ds.validate_to_one_recurse.assert_called_once_with(
-            'test',
-            ['a', 'b']
-        )
-        mock_ds.get_recursive_relation.assert_called_once_with(
-            mock_object,
-            ['a', 'b']
-        )
+        mock_ds.validate_to_one_recurse.assert_called_once_with('test', ['a', 'b'])
+        mock_ds.get_recursive_relation.assert_called_once_with(mock_object, ['a', 'b'])
         mock_view.dump.assert_not_called()
 
     def test_get_many_relations_page(self):
@@ -395,16 +348,9 @@ class TestController:
 
         controller = Controller(mock_ds, mock_view)
 
-        controller.get_many_relations_page(
-            mock_object,
-            'test_relation',
-            mock_params
-        )
+        controller.get_many_relations_page(mock_object, 'test_relation', mock_params)
 
         mock_ds.get_to_many_relations_page.assert_called_once_with(
-            mock_object,
-            'test_relation',
-            3,
-            5
+            mock_object, 'test_relation', 3, 5
         )
         mock_view.dump_bulk.assert_called_once_with(expected)
