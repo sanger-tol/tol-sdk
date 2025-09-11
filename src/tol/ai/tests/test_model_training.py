@@ -16,7 +16,7 @@ class TestModelTraining:
 
     def setup_method(self):
         """Set up test fixtures"""
-        self.model_training = ModelTT5ModelTrainingraining()
+        self.model_training = T5ModelTraining()
         
         # Sample training data that matches your use case
         self.sample_data = [

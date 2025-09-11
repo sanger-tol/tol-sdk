@@ -44,7 +44,7 @@ class BartModelTraining:
             per_device_train_batch_size=2,
             per_device_eval_batch_size=2,
             num_train_epochs=5,
-            learning_rate=5e-5,
+            learning_rate=7e-5,
             warmup_steps=100,
             logging_steps=10,
             eval_steps=50,

@@ -38,7 +38,7 @@ class DatasetGenerator():
         object_types = dataset['train']['object_type']
         unique_object_types = set(object_types)
         
-        for i in range(10000):
+        for i in range(20000):
             # Randomly select 1-4 attributes
             selected_object_type = random.choice(list(unique_object_types))
             new_dataset = dataset.filter(lambda x: x['object_type'] == selected_object_type)

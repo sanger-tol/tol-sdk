@@ -34,11 +34,11 @@ def evaluate_exact_match(test_data: List[Dict[str, str]]):
     
     # Initialize pipelines
     print("Loading models...")
-    # t5_model = T5ForConditionalGeneration.from_pretrained("src/tol/ai/t5-jsongen-finetuned/checkpoint-20000")
-    # t5_tokenizer = T5Tokenizer.from_pretrained("src/tol/ai/t5-jsongen-finetuned/checkpoint-20000", local_files_only=True)
-    # t5_pipeline = pipeline("text2text-generation", model=t5_model, tokenizer=t5_tokenizer)
-    bart_model = BartForConditionalGeneration.from_pretrained("src/tol/ai/bart-jsongen-finetuned/checkpoint-20000")
-    bart_tokenizer = BartTokenizer.from_pretrained("src/tol/ai/bart-jsongen-finetuned/checkpoint-20000", local_files_only=True)
+    t5_model = T5ForConditionalGeneration.from_pretrained("src/tol/ai/t5-jsongen-finetuned/checkpoint-20000")
+    t5_tokenizer = T5Tokenizer.from_pretrained("src/tol/ai/t5-jsongen-finetuned/checkpoint-20000", local_files_only=True)
+    t5_pipeline = pipeline("text2text-generation", model=t5_model, tokenizer=t5_tokenizer)
+    bart_model = BartForConditionalGeneration.from_pretrained("src/tol/ai/bart-jsongen-finetuned/checkpoint-40000")
+    bart_tokenizer = BartTokenizer.from_pretrained("src/tol/ai/bart-jsongen-finetuned/checkpoint-40000", local_files_only=True)
     bart_pipeline = pipeline("text2text-generation", model=bart_model, tokenizer=bart_tokenizer)
     
     # Initialize counters
@@ -54,21 +54,22 @@ def evaluate_exact_match(test_data: List[Dict[str, str]]):
         input_text = sample['input_text']
         expected_output = sample['target_text']
         
-        # Generate predictions
-        # t5_pred = t5_pipeline(input_text, max_length=512, do_sample=False)[0]['generated_text']
+        # Generate predictions  
+        t5_pred = t5_pipeline(input_text, max_length=512, do_sample=False)[0]['generated_text']
         bart_pred = bart_pipeline(input_text, max_length=512, do_sample=False)[0]['generated_text']
         
         # Normalize for comparison
         expected_norm = normalize_json(expected_output)
-        # t5_norm = normalize_json(t5_pred)
+        t5_norm = normalize_json(t5_pred)
         bart_norm = normalize_json(bart_pred)
         
         # Check exact matches
-        # t5_match = (expected_norm == t5_norm)
+        t5_match = (expected_norm == t5_norm)
         bart_match = (expected_norm == bart_norm)
         
-        # if t5_match:
-        #     t5_exact_matches += 1
+        
+        if t5_match:
+            t5_exact_matches += 1
         if bart_match:
             bart_exact_matches += 1
         
@@ -76,9 +77,9 @@ def evaluate_exact_match(test_data: List[Dict[str, str]]):
         results.append({
             'input': input_text,
             'expected': expected_output,
-            # 't5_prediction': t5_pred,
+            't5_prediction': t5_pred,
             'bart_prediction': bart_pred,
-            # 't5_exact_match': t5_match,
+            't5_exact_match': t5_match,
             'bart_exact_match': bart_match
         })
         
@@ -86,16 +87,16 @@ def evaluate_exact_match(test_data: List[Dict[str, str]]):
             print(f"Processed {i + 1}/{total_samples} samples")
     
     # Calculate final accuracies
-    # t5_accuracy = t5_exact_matches / total_samples
+    t5_accuracy = t5_exact_matches / total_samples
     bart_accuracy = bart_exact_matches / total_samples
     
     # Print results
     print("\n" + "="*50)
     print("EXACT MATCH RESULTS")
     print("="*50)
-    # print(f"T5 Exact Match Accuracy:   {t5_accuracy:.3f} ({t5_exact_matches}/{total_samples})")
+    print(f"T5 Exact Match Accuracy:   {t5_accuracy:.3f} ({t5_exact_matches}/{total_samples})")
     print(f"BART Exact Match Accuracy: {bart_accuracy:.3f} ({bart_exact_matches}/{total_samples})")
-    # print(f"Difference (T5 - BART):    {t5_accuracy - bart_accuracy:.3f}")
+    print(f"Difference (T5 - BART):    {t5_accuracy - bart_accuracy:.3f}")
     
     # Save detailed results
     results_df = pd.DataFrame(results)
@@ -103,7 +104,7 @@ def evaluate_exact_match(test_data: List[Dict[str, str]]):
     print(f"\nDetailed results saved to 'model_comparison_results.csv'")
     
     return {
-        # 't5_accuracy': t5_accuracy,
+        't5_accuracy': t5_accuracy,
         'bart_accuracy': bart_accuracy,
         'detailed_results': results_df
     }
