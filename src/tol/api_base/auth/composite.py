@@ -133,8 +133,9 @@ class CompositeAuthInspector(AuthInspector):
             object_type(str): The type of object being accessed (e.g., 'users', 'orders').
             method(OperatorMethod): The operation being performed (e.g., OperatorMethod.DETAIL,
                    OperatorMethod.INSERT).
-            bound_args(Optional[BoundArguments]): Optional[BoundArguments] object containing the arguments bound to
-                       the original request, used by hooks for authorisation decisions.
+            bound_args(Optional[BoundArguments]): Optional[BoundArguments]
+                    object containing the arguments bound to
+                    the original request, used by hooks for authorisation decisions.
 
         Returns:
             Optional[AndFilter]: Combined filter from all applicable hooks, or None
