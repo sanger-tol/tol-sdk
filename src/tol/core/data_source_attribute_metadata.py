@@ -4,26 +4,20 @@
 
 from __future__ import annotations
 
-from typing import Optional, Type
+from typing import Iterable, Optional, Type
 
 from cachetools.func import ttl_cache
 
 from .attribute_metadata import (AttributeMetadata, DefaultAttributeMetadata)
-from .data_source_dict import DataSourceDict
-from .datasource import DataSource
-from .factory import DataSourceDictFactory
 
 
 def data_source_attribute_metadata(
-    *data_sources: DataSource,
-    data_source_dict_factory: DataSourceDictFactory = lambda *d: DataSourceDict(*d)
+    attributes: Iterable,
 ) -> Type[AttributeMetadata]:
     """
     Takes a tuple of DataSource instances, and creates an AbstractMetadata
     implementation that refers to all of them.
     """
-
-    data_source_dict = data_source_dict_factory(*data_sources)
 
     class DataSourceAttributeMetadata(DefaultAttributeMetadata):
         """
@@ -31,8 +25,6 @@ def data_source_attribute_metadata(
         """
         @ttl_cache(ttl=3600)
         def __read_attributes_from_datasource(self):
-            ds = data_source_dict['attribute']
-            attributes = ds.get_list('attribute')
             ret = {}
             for attribute in attributes:
                 if attribute.object_type not in ret:
@@ -86,7 +78,7 @@ def data_source_attribute_metadata(
             attribute = self.__get_attribute(object_type, attribute_name)
             if attribute is None:
                 return False  # authoritative attributes must be in DataSource
-            return attribute.authoritative
+            return attribute.is_authoritative
 
         def get_cardinality(
                 self,

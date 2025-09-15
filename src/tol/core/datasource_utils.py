@@ -5,12 +5,14 @@
 import importlib
 from typing import Iterator
 
+from dacite import from_dict
+
 from .data_object import DataObject
+from .data_source_attribute_metadata import data_source_attribute_metadata
 from .datasource import DataSource
 from .datasource_error import DataSourceError
 from .datasource_filter import DataSourceFilter
-
-
+from .relationship import RelationshipConfig
 class DataSourceUtils:
 
     @classmethod
@@ -22,6 +24,56 @@ class DataSourceUtils:
         module = importlib.import_module(f'tol.sources.{name}')
         class_ = getattr(module, name)
         return class_(**kwargs)
+
+    @classmethod
+    def get_datasource_by_datasource_instance(
+        cls,
+        datasource_instance: DataObject
+    ) -> DataSource:
+        datasource_config = datasource_instance.data_source_config
+        kwargs = datasource_instance.kwargs or {}
+        if datasource_config:
+            relationship_config = cls.get_relationship_config_from_data_source_config(
+                datasource_config
+            )
+            amd = data_source_attribute_metadata(
+                datasource_config.data_source_config_attributes
+            )
+            runtime_fields = datasource_config.runtime_fields or {}
+            kwargs.update({
+                'relationship_cfg': relationship_config,
+                'attribute_metadata': amd,
+                'runtime_fields': runtime_fields
+            })
+        return DataSourceUtils.get_datasource_by_name(
+            datasource_instance.builtin_name,
+            **kwargs
+        )
+
+    @classmethod
+    def get_relationship_config_from_data_source_config(
+        cls,
+        datasource_config: DataObject
+    ) -> dict:
+        relationship_cfg = {}
+        for rel in datasource_config.data_source_config_relationships:
+            for obj_type in [rel.object_type, rel.foreign_object_type]:
+                if obj_type not in relationship_cfg:
+                    relationship_cfg[obj_type] = {
+                        'to_one': {},
+                        'to_many': {},
+                        'foreign_keys': {}
+                    }
+            relationship_cfg[rel.object_type]['to_one'][rel.name] = rel.foreign_object_type
+            relationship_cfg[rel.foreign_object_type]['to_many'][rel.foreign_name] = \
+                rel.object_type
+            relationship_cfg[rel.foreign_object_type]['foreign_keys'][rel.foreign_name] = \
+                f'{rel.name}.id'
+        return {
+            k: from_dict(data_class=RelationshipConfig, data=v)
+            for k, v in relationship_cfg.items()
+        }
+
 
     @classmethod
     def get_ids(

@@ -18,7 +18,7 @@ from tol.elastic import (
 )
 
 
-def wait_for_ready(seconds: int = 60) -> None:
+def wait_for_ready(seconds: int = 120) -> None:
     elastic_uri = os.environ['ELASTIC_URI']
 
     for _ in range(seconds):

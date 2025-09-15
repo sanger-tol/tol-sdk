@@ -40,13 +40,16 @@ class DataSource(ABC):
     def __init__(
             self,
             config: DataSourceConfig,
+            *args,
             expected: List[str] | None = None,
-            attribute_metadata: type[AttributeMetadata] = DefaultAttributeMetadata):
+            attribute_metadata: type[AttributeMetadata] = DefaultAttributeMetadata,
+            **kwargs):
         self.__data_object_factory: Optional[DataObjectFactory] = None
         self.__attribute_metadata = attribute_metadata
         self.__validate_config(config, expected)
         for k, v in config.items():
             setattr(self, k, v)
+        super().__init__(*args, **kwargs)
 
     @property
     @abstractmethod
