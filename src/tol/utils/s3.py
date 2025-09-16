@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2023 Genome Research Ltd.
+# SPDX-FileCopyrightText: 2025 Genome Research Ltd.
 #
 # SPDX-License-Identifier: MIT
 
@@ -9,8 +9,8 @@ def convert_s3_to_https(s3_path):
         parts = no_prefix.split('/', 1)
         if len(parts) == 2:
             bucket, path = parts
-            return f"https://{bucket}.cog.sanger.ac.uk/{path}"
+            return f'https://{bucket}.cog.sanger.ac.uk/{path}'
         else:
             # Only bucket, no path
-            return f"https://{parts[0]}.cog.sanger.ac.uk/"
+            return f'https://{parts[0]}.cog.sanger.ac.uk/'
     return s3_path
