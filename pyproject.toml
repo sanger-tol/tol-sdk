@@ -33,6 +33,7 @@ dependencies = [
   "setuptools == 69.0.3",
   "dateparser == 1.2.1",
   "pydantic == 2.11.4",
+
 ]
 
 [project.optional-dependencies]
@@ -63,6 +64,11 @@ all = [
     "tol-sdk[postgresql]",
     "tol-sdk[prefect]",
     "tol-sdk[sheets]"
+]
+docs = [
+    "sphinx",
+    "sphinx_rtd_theme",
+    "sphinx-autobuild"
 ]
 
 [tool.setuptools.packages.find]
