@@ -3,3 +3,4 @@
 # SPDX-License-Identifier: MIT
 
 from .csv import *  # noqa
+from .s3 import *  # noqa
