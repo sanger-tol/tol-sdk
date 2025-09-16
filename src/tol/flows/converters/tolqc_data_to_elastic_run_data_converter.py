@@ -8,7 +8,7 @@ from ...core import (
     DataObject,
     DataObjectToDataObjectOrUpdateConverter
 )
-from ..utils import convert_s3_to_https
+from ...utils import convert_s3_to_https
 
 class TolqcDataToElasticRunDataConverter(DataObjectToDataObjectOrUpdateConverter):
 
