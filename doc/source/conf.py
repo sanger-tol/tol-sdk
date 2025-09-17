@@ -46,5 +46,6 @@ autodoc_default_options = {
 autodoc_member_order = 'bysource'
 autodoc_mock_imports = [
     'flask', 'sqlalchemy', 'pandas', 'cachetools', "numpy",
-    'dateparser', 'dateutil'
+    'dateparser', 'dateutil', 'more_itertools', 'minio',
+    'gspread', 
 ]
