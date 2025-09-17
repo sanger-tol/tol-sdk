@@ -120,3 +120,16 @@ deploy-package-public:
   extends: .deploy-python-package-public
   needs:
     - deploy-package
+
+deploy-doc:
+  stage: deploy
+  image: python:3.12
+  script:
+  - pip install sphinx sphinx-rtd-theme
+  - sphinx-apidoc -o doc/source/ src/tol
+  - sphinx-build -b html doc/source public
+  artifacts:
+    paths:
+    - public
+  # only:
+  # - production

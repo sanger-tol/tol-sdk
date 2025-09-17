@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2025 Genome Research Ltd.
+#
+# SPDX-License-Identifier: MIT
+
 # Configuration file for the Sphinx documentation builder.
 #
 # For the full list of built-in configuration values, see the documentation:
@@ -10,9 +14,9 @@ import sys
 
 
 project = 'Tree of Life SDK'
-copyright = '2025, TOLP'
-author = 'TOLP'
-release = '1.6.30'
+copyright = '2025 Genome Research Ltd'
+author = 'ToL Enabling Platforms Team'
+#release = '1.6.30'
 
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
