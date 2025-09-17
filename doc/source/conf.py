@@ -14,17 +14,17 @@ import sys
 
 
 project = 'Tree of Life SDK'
-copyright = '2025 Genome Research Ltd'
+copyright = '2025 Genome Research Ltd'  # noqa A001
 author = 'ToL Enabling Platforms Team'
-#release = '1.6.30'
+# release = '1.6.30'
 
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
 
 extensions = [
-    "sphinx.ext.autodoc",
-    "sphinx.ext.napoleon",
-    "sphinx.ext.viewcode",
+    'sphinx.ext.autodoc',
+    'sphinx.ext.napoleon',
+    'sphinx.ext.viewcode',
 ]
 
 templates_path = ['_templates']
@@ -33,15 +33,15 @@ exclude_patterns = []
 # -- Options for HTML output -------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#options-for-html-output
 
-html_theme = "sphinx_rtd_theme"
-html_static_path = ["_static"]
+html_theme = 'sphinx_rtd_theme'
+html_static_path = ['_static']
 
 
-sys.path.insert(0, os.path.abspath("../../src/tol"))
+sys.path.insert(0, os.path.abspath('../../src/tol'))
 
 autodoc_default_options = {
-    "members": True,
-    "undoc-members": True,
-    "show-inheritance": True,
+    'members': True,
+    'undoc-members': True,
+    'show-inheritance': True,
 }
-autodoc_member_order = "bysource"
+autodoc_member_order = 'bysource'
