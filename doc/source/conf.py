@@ -48,5 +48,7 @@ autodoc_mock_imports = [
     'flask', 'sqlalchemy', 'pandas', 'cachetools', "numpy",
     'dateparser', 'dateutil', 'more_itertools', 'minio',
     'gspread', 'lab_share_lib', 'mysql', 'caseconverter',
-    'benchling_sdk', 'prefect', 'atlassian', 'irods', 'yaml'
+    'benchling_sdk', 'prefect', 'atlassian', 'irods', 'yaml',
+    'benchling_api_client', 'elasticsearch', 'pydantic',
+    'click', 'marshmallow'
 ]
