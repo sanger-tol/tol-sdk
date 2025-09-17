@@ -44,4 +44,7 @@ autodoc_default_options = {
     'show-inheritance': True,
 }
 autodoc_member_order = 'bysource'
-autodoc_mock_imports = ["flask", "sqlalchemy", "pandas"]
+autodoc_mock_imports = [
+    'flask', 'sqlalchemy', 'pandas', 'cachetools', "numpy",
+
+]
