@@ -129,6 +129,7 @@ deploy-doc:
   - sphinx-apidoc -o doc/source/ src/tol
   - sphinx-build -b html doc/source .public
   - mv .public public
+  - ls public
 
   artifacts:
     paths:
