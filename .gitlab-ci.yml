@@ -122,8 +122,8 @@ deploy-package-public:
     - deploy-package
 
 deploy-doc:
-  stage: lint
-  image: python:3.12
+  stage: test
+  image: $BUILT_IMAGE
   script:
   - pip install sphinx sphinx-rtd-theme
   - sphinx-apidoc -o doc/source/ src/tol
