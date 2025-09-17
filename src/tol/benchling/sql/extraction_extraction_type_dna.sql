@@ -217,6 +217,7 @@ vouchers AS (
         'dna'::varchar AS extraction_type,
         f.name,
         dna.archive_purpose$,
+<<<<<<< HEAD
         NULL::double precision AS nanodrop_concentration_ngul,
         NULL::double precision AS dna_260_280_ratio,
         NULL::double precision AS dna_260_230_ratio,
