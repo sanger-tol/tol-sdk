@@ -130,9 +130,7 @@ deploy-doc:
   - sphinx-build -b html doc/source .public
   - mv .public public
   - ls public
-
-  artifacts:
-    paths:
-    - public
+  pages:
+    publish: public
   # only:
   # - production
