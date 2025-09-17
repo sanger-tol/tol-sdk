@@ -44,11 +44,3 @@ autodoc_default_options = {
     'show-inheritance': True,
 }
 autodoc_member_order = 'bysource'
-# autodoc_mock_imports = [
-#     'flask', 'sqlalchemy', 'pandas', 'cachetools', 'numpy',
-#     'dateparser', 'dateutil', 'more_itertools', 'minio',
-#     'gspread', 'lab_share_lib', 'mysql', 'caseconverter',
-#     'benchling_sdk', 'prefect', 'atlassian', 'irods', 'yaml',
-#     'benchling_api_client', 'elasticsearch', 'pydantic',
-#     'click', 'marshmallow'
-# ]
