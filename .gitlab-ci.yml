@@ -131,5 +131,5 @@ deploy-doc:
   - mv .public public
   pages:
     publish: public
-  only:
-  - production
+  # only:
+  # - production
