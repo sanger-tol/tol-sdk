@@ -10,7 +10,7 @@ from flask import Blueprint
 def system_blueprint(
     url_prefix: str = '/system',
     env_map: dict[str, str] = {'environment': 'ENVIRONMENT'},
-    env_vars: dict[str, str] = os.environ
+    env_vars: dict[str, str] = {}
 ) -> Blueprint:
     """
     A flask Blueprint that groups system endpoints.
