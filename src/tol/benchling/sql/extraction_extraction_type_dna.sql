@@ -217,16 +217,16 @@ vouchers AS (
         'dna'::varchar AS extraction_type,
         f.name,
         dna.archive_purpose$,
-        CAST(NULL AS double precision) as nanodrop_concentration_ngul,
-        CAST(NULL AS double precision) AS dna_260_280_ratio,
-        CAST(NULL AS double precision) AS dna_260_230_ratio,
-        CAST(NULL AS double precision) AS qubit_concentration_ngul,
-        CAST(NULL AS double precision) AS yield_ng,
-        CAST(NULL AS varchar) AS femto_date_code,
-        CAST(NULL AS jsonb) AS femto_description,
-        CAST(NULL AS double precision) AS gqn_index,
-        CAST(NULL AS jsonb) AS next_step,
-        CAST(NULL AS varchar) AS extraction_qc_result
+        NULL::double precision AS nanodrop_concentration_ngul,
+        NULL::double precision AS dna_260_280_ratio,
+        NULL::double precision AS dna_260_230_ratio,
+        NULL::double precision AS qubit_concentration_ngul,
+        NULL::double precision AS yield_ng,
+        NULL::varchar AS femto_date_code,
+        NULL::jsonb AS femto_description,
+        NULL::double precision AS gqn_index,
+        NULL::jsonb AS next_step,
+        NULL::varchar AS extraction_qc_result
     FROM dna_extract$raw AS dna
     LEFT JOIN container_content$raw AS cc
         ON cc.entity_id = dna.id
