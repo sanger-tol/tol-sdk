@@ -122,7 +122,7 @@ deploy-package-public:
     - deploy-package
 
 deploy-doc:
-  stage: lint
+  stage: test
   image: $BUILT_IMAGE
   script:
   - pip install sphinx sphinx-rtd-theme
