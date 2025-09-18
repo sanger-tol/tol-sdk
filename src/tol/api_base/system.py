@@ -2,8 +2,6 @@
 #
 # SPDX-License-Identifier: MIT
 
-import os
-
 from flask import Blueprint
 
 
