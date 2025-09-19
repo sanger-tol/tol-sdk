@@ -13,6 +13,8 @@ from .datasource import DataSource
 from .datasource_error import DataSourceError
 from .datasource_filter import DataSourceFilter
 from .relationship import RelationshipConfig
+
+
 class DataSourceUtils:
 
     @classmethod
@@ -37,9 +39,11 @@ class DataSourceUtils:
                 datasource_config
             )
             amd = data_source_attribute_metadata(
-                datasource_config.data_source_config_attributes
+                datasource_config
             )
-            runtime_fields = datasource_config.runtime_fields or {}
+            runtime_fields = cls.get_runtime_fields_from_data_source_config(
+                datasource_config
+            )
             kwargs.update({
                 'relationship_cfg': relationship_config,
                 'attribute_metadata': amd,
@@ -74,6 +78,32 @@ class DataSourceUtils:
             for k, v in relationship_cfg.items()
         }
 
+    @classmethod
+    def get_runtime_fields_from_data_source_config(
+        cls,
+        datasource_config: DataObject
+    ) -> dict:
+        from ..elastic.runtime_fields import RuntimeFields  # Break circular import cycle
+        runtime_fields = {}
+        f = DataSourceFilter()
+        f.and_ = {
+            'runtime_definition': {'exists': {}}
+        }
+        for dsa in datasource_config.data_source_config_attributes:
+            if dsa.runtime_definition is None:
+                continue
+            if dsa.object_type not in runtime_fields:
+                runtime_fields[dsa.object_type] = {}
+            if 'function' in dsa.runtime_definition:
+                method = getattr(RuntimeFields, dsa.runtime_definition['function'])
+                runtime_fields[dsa.object_type][dsa.name] = \
+                    method(**dsa.runtime_definition.get('function_kwargs', {}))
+            if 'script' in dsa.runtime_definition:
+                runtime_fields[dsa.object_type][dsa.name] = {
+                    'type': dsa.runtime_definition.get('type', 'keyword'),
+                    'script': {'source': dsa.runtime_definition['script']}
+                }
+        return runtime_fields
 
     @classmethod
     def get_ids(

@@ -4,18 +4,19 @@
 
 from __future__ import annotations
 
-from typing import Iterable, Optional, Type
+from typing import Optional, Type
 
 from cachetools.func import ttl_cache
 
 from .attribute_metadata import (AttributeMetadata, DefaultAttributeMetadata)
+from .data_object import DataObject
 
 
 def data_source_attribute_metadata(
-    attributes: Iterable,
+    data_source_config: DataObject,
 ) -> Type[AttributeMetadata]:
     """
-    Takes a tuple of DataSource instances, and creates an AbstractMetadata
+    Takes a DataSource instance, and creates an AbstractMetadata
     implementation that refers to all of them.
     """
 
@@ -26,7 +27,11 @@ def data_source_attribute_metadata(
         @ttl_cache(ttl=3600)
         def __read_attributes_from_datasource(self):
             ret = {}
-            for attribute in attributes:
+            # Recreate the data_source_config
+            dsc = data_source_config._host.get_one(
+                'data_source_config', data_source_config.id
+            )
+            for attribute in dsc.data_source_config_attributes:
                 if attribute.object_type not in ret:
                     ret[attribute.object_type] = {}
                 ret[attribute.object_type][attribute.name] = attribute
