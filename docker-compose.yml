@@ -115,6 +115,10 @@ services:
       - S3_ACCESS_KEY
       - S3_SECRET_KEY
       - S3_SECURE
+      - ELASTIC_URI
+      - ELASTIC_USER
+      - ELASTIC_PASSWORD
+      - ELASTIC_INDEX_PREFIX
     networks:
       - api-base-test-network
 

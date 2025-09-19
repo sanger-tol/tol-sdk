@@ -9,14 +9,14 @@ from unittest import (
 from tol.core import (
     DataSourceUtils
 )
-from tol.sources import (
+from tol.sources.portaldb import (
     portaldb
 )
 
 
 class TestDataSourceUtils(TestCase):
 
-    def __get_ds():
+    def __get_ds(self):
         dsi = portaldb().get_one('data_source_instance', '18')
         return DataSourceUtils.get_datasource_by_datasource_instance(dsi)
 
@@ -24,7 +24,7 @@ class TestDataSourceUtils(TestCase):
         ds = self.__get_ds()
 
         assert 'record' in ds.attribute_types
-        assert ds.attribute_types['record']['name'] == 'str'
+        assert ds.attribute_types['record']['string'] == 'str'
         assert ds.attribute_metadata['record']['big_string']['display_name'] == 'Big String'
         assert ds.attribute_metadata['record']['big_string']['description'] is not None
 
