@@ -62,8 +62,8 @@ class TestRuntimeFields:
 
     def test_date_interval(self):
         rf = RuntimeFields.date_interval(
-            start_name='field1',
-            end_name='field2'
+            start_date='field1',
+            end_date='field2'
         )
         assert ''.join(rf['script']['source'].split()) == ''.join("""
             if (doc.containsKey('field1') && doc['field1'].size() > 0 &&

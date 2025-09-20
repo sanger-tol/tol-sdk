@@ -67,12 +67,14 @@ class MockAttributeMetadata(DefaultAttributeMetadata):
 
 
 def mock_elastic_data_source() -> tuple[Callable, ElasticDataSource]:
-    eds = MockElasticDataSource({
-        'uri': 'test',
-        'user': 'user',
-        'password': 'password',
-        'index_prefix': 'test',
-        'relationship_cfg': {
+    eds = MockElasticDataSource(
+        {
+            'uri': 'test',
+            'user': 'user',
+            'password': 'password',
+            'index_prefix': 'test'
+        },
+        relationship_cfg={
             'obj_type': RelationshipConfig(
                 to_one={'relationship': 'reltype'},
                 to_many={'children': 'reltype'}
@@ -81,7 +83,7 @@ def mock_elastic_data_source() -> tuple[Callable, ElasticDataSource]:
                 to_one={'parent': 'obj_type'}
             )
         },
-        'runtime_fields': {
+        runtime_fields={
             'obj_type': {
                 'field7': RuntimeField(
                     field_type='keyword',
@@ -94,8 +96,9 @@ def mock_elastic_data_source() -> tuple[Callable, ElasticDataSource]:
                     function_body="emit(doc['datefield'].value.toEpochMilli())"
                 )
             }
-        }
-    }, attribute_metadata=MockAttributeMetadata)
+        },
+        attribute_metadata=MockAttributeMetadata
+    )
     core_data_object_mock = core_data_object(eds)
     return core_data_object_mock, eds
 
@@ -878,7 +881,7 @@ class TestElasticDataSource(TestCase):
         _, eds = mock_elastic_data_source()
         rc = RelationshipConfig()
         rc.to_one = {'relname': 'reltype'}
-        eds.relationship_cfg = {'obj_type': rc}
+        eds._relationship_cfg = {'obj_type': rc}
         eds.helpers.scan.return_value = [
             {
                 '_index': 'test-obj-type',
@@ -960,7 +963,7 @@ class TestElasticDataSource(TestCase):
         rc1.foreign_keys = {'relname': 'relfk.id'}
         rc2 = RelationshipConfig()
         rc2.to_one = {'relfk': 'obj_type'}
-        eds.relationship_cfg = {'obj_type': rc1, 'reltype': rc2}
+        eds._relationship_cfg = {'obj_type': rc1, 'reltype': rc2}
         source_object = core_data_object(
             'obj_type',
             {'id': '1'}

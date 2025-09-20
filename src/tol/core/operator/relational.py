@@ -23,15 +23,6 @@ class Relational(ABC):
     DataObject types.
     """
 
-    def __init__(
-            self,
-            *args,
-            relationship_cfg: dict[str, RelationshipConfig] | None = None,
-            **kwargs
-    ):
-        super().__init__(*args, **kwargs)
-        self._relationship_cfg = relationship_cfg
-
     @property
     @abstractmethod
     def relationship_config(self) -> dict[str, RelationshipConfig]:

@@ -83,7 +83,6 @@ class ElasticDataSource(
             config,
             expected=['uri', 'user', 'password', 'index_prefix'],
             attribute_metadata=attribute_metadata,
-            relationship_cfg=relationship_cfg,
         )
         """
         relationship_cfg is also supported if we want to handle relationships
@@ -93,6 +92,7 @@ class ElasticDataSource(
         self.runtime_fields = runtime_fields
         self._initialise_elasticsearch()
         self.__lazy = False
+        self._relationship_cfg = relationship_cfg
 
     @property
     def lazy_fetch(self) -> bool:

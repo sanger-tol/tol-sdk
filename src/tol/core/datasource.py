@@ -49,7 +49,6 @@ class DataSource(ABC):
         self.__validate_config(config, expected)
         for k, v in config.items():
             setattr(self, k, v)
-        super().__init__(*args, **kwargs)
 
     @property
     @abstractmethod
