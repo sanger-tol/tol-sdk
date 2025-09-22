@@ -16,8 +16,8 @@ def data_source_attribute_metadata(
     data_source_config: DataObject,
 ) -> Type[AttributeMetadata]:
     """
-    Takes a DataSource instance, and creates an AbstractMetadata
-    implementation that refers to all of them.
+    Takes a DataSourceConfig, and creates an AbstractMetadata
+    implementation that refers to all of the child DataSourceConfigAttributes.
     """
 
     class DataSourceAttributeMetadata(DefaultAttributeMetadata):
