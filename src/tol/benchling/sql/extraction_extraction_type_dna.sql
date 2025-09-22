@@ -52,67 +52,67 @@ NOTES:
 
 WITH latest_nanodrop_conc AS (    
     SELECT
-        nanod.sample_id,
-        nanod.nanodrop_concentration_ngul,
-        nanod._260_280_ratio AS "dna_260_280_ratio",
-        nanod._260_230_ratio AS "dna_260_230_ratio"
-    FROM nanodrop_measurements_v2$raw AS nanod
-    WHERE nanod.created_at$ = (        
-        SELECT MAX(sub.created_at$)
-        FROM nanodrop_measurements_v2$raw AS sub
-        WHERE sub.sample_id = nanod.sample_id
-    )
+        sample_id,
+        nanodrop_concentration_ngul,
+        _260_280_ratio AS "dna_260_280_ratio",
+        _260_230_ratio AS "dna_260_230_ratio"
+    FROM (
+        SELECT *,
+            ROW_NUMBER() OVER (PARTITION BY sample_id ORDER BY created_at$ DESC) AS rn
+        FROM nanodrop_measurements_v2$raw
+    ) ranked_nanod
+    WHERE rn = 1
 ),
 
 latest_qubit_conc AS (
     SELECT
-        qbit.sample_id,
-        qbit.qubit_concentration_ngul
-    FROM qubit_measurements_v2$raw as qbit
-    WHERE qbit.created_at$ = (
-        SELECT MAX(sub.created_at$)
-        FROM qubit_measurements_v2$raw AS sub
-        WHERE sub.sample_id = qbit.sample_id
-    )
+        sample_id,
+        qubit_concentration_ngul
+    FROM (
+        SELECT *,
+            ROW_NUMBER() OVER (PARTITION BY sample_id ORDER BY created_at$ DESC) AS rn
+        FROM qubit_measurements_v2$raw
+    ) ranked_qubit
+    WHERE rn = 1
 ),
 
 latest_yield AS (
     SELECT
-        dnay.sample_id,
-        dnay.yield
-    FROM yield_v2$raw as dnay
-    WHERE dnay.created_at$ = (
-        SELECT MAX(sub.created_at$)
-        FROM yield_v2$raw AS sub
-        WHERE sub.sample_id = dnay.sample_id
-    )
+        sample_id,
+        yield
+    FROM (
+        SELECT *,
+            ROW_NUMBER() OVER (PARTITION BY sample_id ORDER BY created_at$ DESC) AS rn
+        FROM yield_v2$raw
+    ) ranker_yield
+    WHERE rn = 1
 ),
 
 latest_femto AS (
     SELECT
-        femto.sample_id,
-        femto.femto_date_code,
-        femto.femto_profile_description AS femto_description,
-        femto.gqn_dnaex
-    FROM femto_dna_extract_v2$raw AS femto
-    WHERE femto.created_at$ = (
-        SELECT MAX(sub.created_at$)
-        FROM femto_dna_extract_v2$raw as sub
-        WHERE sub.sample_id = femto.sample_id
-    )
+        sample_id,
+        femto_date_code,
+        femto_profile_description AS femto_description,
+        gqn_dnaex
+    FROM (
+        SELECT *,
+            ROW_NUMBER() OVER (PARTITION BY sample_id ORDER BY created_at$ DESC) AS rn
+        FROM femto_dna_extract_v2$raw
+    ) ranked_femto
+    WHERE rn = 1
 ),
 
 latest_decision_making AS (
     SELECT
-        dnad.sample_id,
-        dnad.next_step,
+        sample_id,
+        next_step,
         qc_passfail AS extraction_qc_result
-    FROM dna_decision_making_v2$raw AS dnad
-    WHERE dnad.created_at$ = (
-        SELECT MAX(sub.created_at$)
-        FROM dna_decision_making_v2$raw AS sub
-        WHERE sub.sample_id = dnad.sample_id
-    )
+    FROM (
+        SELECT *,
+            ROW_NUMBER() OVER (PARTITION BY sample_id ORDER BY created_at$ DESC) AS rn
+        FROM dna_decision_making_v2$raw
+    ) ranked_dnad
+    WHERE rn = 1
 ),
 
 dna_extractions AS (
@@ -221,7 +221,7 @@ vouchers AS (
         NULL::double precision AS nanodrop_concentration_ngul,
         NULL::double precision AS dna_260_280_ratio,
         NULL::double precision AS dna_260_230_ratio,
-        NULL::double precision AS qubit_concentration_ngul,
+        latest_qubit_conc.qubit_concentration_ngul,
         NULL::double precision AS yield_ng,
         NULL::varchar AS femto_date_code,
         NULL::jsonb AS femto_description,
@@ -247,6 +247,8 @@ vouchers AS (
         ON con.box_id = box.id
     LEFT JOIN location$raw AS loc
         ON loc.id = box.location_id -- End of location chunk
+    LEFT JOIN latest_qubit_conc -- Results chunk
+        ON dna.id = latest_qubit_conc.sample_id -- End of results chunk
     WHERE proj.name = 'ToL Core Lab'
 		AND tube.type = 'voucher'
         AND (f.name IN ('Routine Throughput', 'DNA', 'Core Lab Entities', 'Benchling MS Project Move') OR f.name IS NULL)
