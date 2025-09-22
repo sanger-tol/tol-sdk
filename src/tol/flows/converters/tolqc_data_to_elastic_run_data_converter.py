@@ -8,6 +8,7 @@ from ...core import (
     DataObject,
     DataObjectToDataObjectOrUpdateConverter
 )
+from ...utils import convert_s3_to_https
 
 
 class TolqcDataToElasticRunDataConverter(DataObjectToDataObjectOrUpdateConverter):
@@ -69,9 +70,11 @@ class TolqcDataToElasticRunDataConverter(DataObjectToDataObjectOrUpdateConverter
             target_attributes['images'] = [
                 {
                     'url':
-                        f'{data_object.folder.folder_location.uri_prefix}'
-                        f'/{data_object.folder.id}'
-                        '/' + file.get('file', ''),
+                        convert_s3_to_https(
+                            f'{data_object.folder.folder_location.uri_prefix}'
+                            f'/{data_object.folder.id}'
+                            '/' + file.get('file', '')
+                        ),
                     'caption': file.get('caption')
                 }
                 for file in data_object.folder.image_file_list
