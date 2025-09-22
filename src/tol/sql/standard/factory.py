@@ -283,7 +283,7 @@ def create_standard_models(
         )
         data_source_instance = relationship(
             'DataSourceInstance',
-            back_populates='components',
+            back_populates='zones',
             foreign_keys=[data_source_instance_id]
         )
 
