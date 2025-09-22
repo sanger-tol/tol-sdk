@@ -18,7 +18,7 @@ from tol.elastic import (
 )
 
 
-def wait_for_ready(seconds: int = 60) -> None:
+def wait_for_ready(seconds: int = 120) -> None:
     elastic_uri = os.environ['ELASTIC_URI']
 
     for _ in range(seconds):
@@ -59,20 +59,20 @@ def elastic_datasource(
             'uri': os.environ['ELASTIC_URI'],
             'user': os.environ['ELASTIC_USER'],
             'password': os.environ['ELASTIC_PASSWORD'],
-            'index_prefix': prefix,
-            'relationship_cfg': {'root': rc_root},
-            'runtime_fields': {
-                'root': {
-                    'runtime_column': RuntimeField(
-                        field_type='boolean',
-                        dependencies=['bool_column'],
-                        function_body="emit(!doc['bool_column'].value)"
-                    ).to_dict(),
-                },
-                'related': {
-                    'summarise_one_root_int_column_min': {'type': 'double'},
-                    'summarise_one_root_int_column_max': {'type': 'double'},
-                }
+            'index_prefix': prefix
+        },
+        relationship_cfg={'root': rc_root},
+        runtime_fields={
+            'root': {
+                'runtime_column': RuntimeField(
+                    field_type='boolean',
+                    dependencies=['bool_column'],
+                    function_body="emit(!doc['bool_column'].value)"
+                ).to_dict(),
+            },
+            'related': {
+                'summarise_one_root_int_column_min': {'type': 'double'},
+                'summarise_one_root_int_column_max': {'type': 'double'},
             }
         }
     )

@@ -66,13 +66,13 @@ class RuntimeField:
 
 class RuntimeFields:
     @classmethod
-    def date_interval(cls, start_name: str, end_name: str, unit: str = 'days'):
+    def date_interval(cls, start_date: str, end_date: str, unit: str = 'days'):
         rf = RuntimeField(
             field_type='long',
-            dependencies=[start_name, end_name],
+            dependencies=[start_date, end_date],
             function_body=f"""
-                ZonedDateTime start = doc['{start_name}'].value;
-                ZonedDateTime end = doc['{end_name}'].value;
+                ZonedDateTime start = doc['{start_date}'].value;
+                ZonedDateTime end = doc['{end_date}'].value;
                 long differenceInMillis = ChronoUnit.{unit.upper()}.between(start, end);
                 emit(differenceInMillis);
             """

@@ -11,27 +11,53 @@ from tol.core import (
 from tol.core.data_source_attribute_metadata import (
     data_source_attribute_metadata
 )
+from tol.core.operator import (
+    Relational
+)
+from tol.core.relationship import RelationshipConfig
 
 
-class _MockDataSource(DataSource):
+class _MockDataSource(DataSource, Relational):
     @property
     def supported_types(self):
-        return ['attribute']
+        return ['data_source_config', 'data_source_config_attribute']
 
     @property
     def attribute_types(self):
         raise NotImplementedError()
 
+    def get_one(self, object_type: str, id_: str):
+        return self.data_object_factory(
+            'data_source_config',
+            17
+        )
+
     def get_list(self, object_type: str, *args, **kwargs):
-        CoreDataObject = self.data_object_factory  # noqa N806
+        raise NotImplementedError()
+
+    @property
+    def relationship_config(self) -> dict[str, RelationshipConfig]:
+        return {
+            'data_source_config_attribute': RelationshipConfig(
+                to_one={'data_source_config': 'data_source_config'}
+            ),
+            'data_source_config': RelationshipConfig(
+                to_many={'data_source_config_attributes': 'data_source_config_attribute'}
+            )
+        }
+
+    def get_to_one_relation(self, source, relationship_name, session=None):
+        raise NotImplementedError()
+
+    def get_to_many_relations(self, source, relationship_name, session=None):
         return [
-            CoreDataObject(
-                'attribute',
+            self.data_object_factory(
+                'data_source_config_attribute',
                 str(i),
                 attributes={
                     'display_name': f'Display name {i}',
                     'available_on_relationships': False if i == 15 else True,
-                    'authoritative': True if i == 15 else False,
+                    'is_authoritative': True if i == 15 else False,
                     'description': f'Description {i}',
                     'object_type': 'object_type1',
                     'name': f'attribute_{i}'
@@ -71,7 +97,8 @@ class TestDataSourceAttributeMetadata(TestCase):
     def test_attribute_metadata(self):
         mock_ds = _MockDataSource({})
         core_data_object(mock_ds)
-        dsam = data_source_attribute_metadata(mock_ds)()
+        mock_ds_config = mock_ds.get_one('data_source_config', 17)
+        dsam = data_source_attribute_metadata(mock_ds_config)()
         dsam.host = _MockDataSourceHost({})
         # Given attributes for attribute15
         self.assertEqual('Display name 15', dsam.get_display_name('object_type1', 'attribute_15'))
