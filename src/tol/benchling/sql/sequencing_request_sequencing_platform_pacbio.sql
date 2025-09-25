@@ -3,7 +3,7 @@
 
 This SQL query retrieves all the information of PacBio submissions that is 
 relevant for the messaging queueu. 
-It consists of 4 different SQL CTEs, each for a different data/submission model version:
+It consists of 6 different SQL CTEs, each for a different data/submission model version:
 
 	1. v1: Container based submission.
 	2. v2: Plate based submission.
@@ -95,7 +95,7 @@ pacbio_submissions_container_routine AS (
 		NULL::varchar AS priority,
 		pbsum.submission_date AS completion_date, 
 		'pacbio'::varchar AS sequencing_platform,
-		'v2'::varchar AS source
+		'v1'::varchar AS source
 	FROM pacbio_sequencing_submission2$raw AS pbsum
 	LEFT JOIN container$raw AS con 
 		ON pbsum.sample_tube_id = con.id
@@ -227,7 +227,7 @@ pacbio_submissions_container_pooled AS (
 		pbsubm_p.priority,
 		DATE(pbsubm_p.created_at$) AS completion_date, 
 		'pacbio'::varchar AS sequencing_platform,
-		'v2_pooled'::varchar AS source
+		'v1_pooled'::varchar AS source
 	FROM pacbio_submission_plate_output$raw AS pbsubm_p
 	LEFT JOIN submission_samples$raw AS subsam 
 		ON pbsubm_p.sample_name = subsam.id
