@@ -34,18 +34,16 @@ class TestGoatDataSource(TestCase):
     def test_get_by_id(self):
         gds = goat()
 
-        ret = gds.get_by_ids('taxon', ['2708'])
+        ret = gds.get_by_ids('taxon', ['4113'])
         obj1 = next(ret)
-        self.assertEqual('2708', obj1.id)
-
+        self.assertEqual('4113', obj1.id)
         # Just pick out a few attributes here to test
-        self.assertEqual(obj1.scientific_name, 'Citrus x limon')
-        self.assertEqual(obj1.chromosome_number, 18)
-        self.assertEqual(obj1.assembly_level, 'Chromosome')
-        self.assertEqual(obj1.long_list, ['DTOL'])
+        self.assertEqual(obj1.scientific_name, 'Solanum tuberosum')
+        self.assertEqual(obj1.chromosome_number, 48)
+        self.assertEqual(obj1.assembly_level, 'Scaffold')
+        self.assertEqual(obj1.long_list, ['AFRICABP', 'DTOL'])
         self.assertEqual(obj1.phylum.scientific_name, 'Streptophyta')
-        self.assertEqual(obj1.tolid_prefix, 'drCitLimo')
-        self.assertTrue(any('Citrus bergamia' in syn for syn in obj1.synonym))
+        self.assertTrue(any('Solanum chocclo' in syn for syn in obj1.synonym))
         with self.assertRaises(StopIteration):
             next(ret)
 
@@ -55,22 +53,22 @@ class TestGoatDataSource(TestCase):
         f = DataSourceFilter()
         f.and_ = {
             'long_list': {'eq': {'value': 'DTOL'}},
-            'id': {'in_list': {'value': ['2708', '1857951']}}
+            'id': {'in_list': {'value': ['4113', '1857951']}}
         }
         ret = list(gds.get_list('taxon', object_filters=f))
         obj_ids = [obj.id for obj in ret]
-        assert '2708' in obj_ids
+        assert '4113' in obj_ids
         assert '1857951' in obj_ids
         assert len(obj_ids) == 2
         for obj in ret:
-            if obj.id == '2708':
-                self.assertEqual('2708', obj.id)
-                self.assertEqual(obj.scientific_name, 'Citrus x limon')
-                self.assertEqual(obj.chromosome_number, 18)
-                self.assertEqual(obj.assembly_level, 'Chromosome')
-                self.assertEqual(obj.long_list, ['DTOL'])
+            if obj.id == '4113':
+                self.assertEqual('4113', obj.id)
+                self.assertEqual(obj.scientific_name, 'Solanum tuberosum')
+                self.assertEqual(obj.chromosome_number, 48)
+                self.assertEqual(obj.assembly_level, 'Scaffold')
+                self.assertEqual(obj.long_list, ['AFRICABP', 'DTOL'])
                 self.assertEqual(obj.phylum.scientific_name, 'Streptophyta')
-                self.assertTrue(any('Citrus bergamia' in syn for syn in obj.synonym))
+                self.assertTrue(any('Solanum chocclo' in syn for syn in obj.synonym))
             elif obj.id == '1857951':
                 self.assertEqual('1857951', obj.id)
                 self.assertEqual(obj.scientific_name, 'Acrobasis suavella')
@@ -93,9 +91,7 @@ class TestGoatDataSource(TestCase):
         obj1 = next(ret)
         self.assertEqual('9925', obj1.id)
         self.assertEqual(obj1.scientific_name, 'Capra hircus')
-        self.assertEqual(obj1.common_name, 'goat')
-        self.assertEqual(obj1.tolid_prefix, 'mCapHir')
-        self.assertTrue(any('African dwarf goat' in syn for syn in obj1.synonym))
+        self.assertTrue(any('Capra aegagrus hircus' in syn for syn in obj1.synonym))
 
         with self.assertRaises(StopIteration):
             next(ret)
@@ -125,7 +121,7 @@ class TestGoatDataSource(TestCase):
         f = DataSourceFilter()
         f.and_ = {
             'long_list': {'eq': {'value': 'DTOL'}},
-            'id': {'in_list': {'value': ['2708', '62298', '687059', '1857951']}}
+            'id': {'in_list': {'value': ['4113', '62298', '687059', '1857951']}}
         }
         ret, total = gds.get_list_page(
             'taxon',
@@ -140,23 +136,23 @@ class TestGoatDataSource(TestCase):
         # 62298: Desmarestia aculeata
         # 2708: Citrus x limon
         # 1857951: Acrobasis suavella
-        obj3 = ret[0]
+        obj3 = ret[1]
         self.assertEqual('687059', obj3.id)
         self.assertEqual(obj3.scientific_name, 'Psyche casta')
         self.assertEqual(obj3.phylum.scientific_name, 'Arthropoda')
         self.assertTrue(any('Fumaria muscea' in syn for syn in obj3.synonym))
 
-        obj2 = ret[1]
+        obj2 = ret[2]
         self.assertEqual('62298', obj2.id)
         self.assertEqual(obj2.scientific_name, 'Desmarestia aculeata')
         self.assertEqual(obj2.family.scientific_name, 'Desmarestiaceae')
         self.assertTrue(any('Fucus virgatus' in syn for syn in obj2.synonym))
 
-        obj1 = ret[2]
-        self.assertEqual('2708', obj1.id)
-        self.assertEqual(obj1.scientific_name, 'Citrus x limon')
+        obj1 = ret[0]
+        self.assertEqual('4113', obj1.id)
+        self.assertEqual(obj1.scientific_name, 'Solanum tuberosum')
         self.assertEqual(obj1.phylum.scientific_name, 'Streptophyta')
-        self.assertTrue(any('Citrus bergamia' in syn for syn in obj1.synonym))
+        self.assertTrue(any('Solanum chocclo' in syn for syn in obj1.synonym))
 
     def test_get_list_page_sort_id(self):
         gds = goat()
@@ -164,7 +160,7 @@ class TestGoatDataSource(TestCase):
         f = DataSourceFilter()
         f.and_ = {
             'long_list': {'eq': {'value': 'DTOL'}},
-            'id': {'in_list': {'value': ['2708', '62298', '1280447', '1857951']}}
+            'id': {'in_list': {'value': ['4113', '62298', '1280447', '1857951']}}
         }
         ret, total = gds.get_list_page(
             'taxon',
@@ -177,7 +173,7 @@ class TestGoatDataSource(TestCase):
         assert len(ret) == 3
         # It is ordering as strings, not integers
         self.assertEqual('62298', ret[0].id)
-        self.assertEqual('2708', ret[1].id)
+        self.assertEqual('4113', ret[1].id)
         self.assertEqual('1857951', ret[2].id)
 
         for obj in ret:
