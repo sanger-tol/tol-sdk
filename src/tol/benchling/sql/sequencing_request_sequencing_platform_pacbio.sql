@@ -76,7 +76,12 @@ pacbio_submissions_container_routine AS (
 		c_dna.barcode AS fluidx_id,
 		t.programme_id, 
 		t.specimen_id, 
-		con.name AS sanger_sample_id, 
+		con.name AS tube_name,
+		CASE
+			WHEN pbsum.submission_date < DATE '2025-09-01'
+				THEN con.name
+			ELSE ssid.sanger_sample_id
+		END AS sanger_sample_id,
 		NULL::varchar AS plate_name,
 		NULL::varchar AS pipeline,
 		pbsum.sequencing_type_please_fill AS library_type,
@@ -119,6 +124,8 @@ pacbio_submissions_container_routine AS (
 		ON subsam.project_id$ = proj.id
 	 LEFT JOIN folder$raw AS f 
         ON subsam.folder_id$ = f.id
+	LEFT JOIN sanger_sample_id$raw AS ssid 
+		ON con.id = ssid.sample_tube
 	WHERE pbsum.archived$ = FALSE -- Excluding archived submission containers
 		-- Filters to add DNA extract fluidx tubes
 		AND tube.type IS NULL  -- Selecting non-Voucher containers
@@ -128,7 +135,7 @@ pacbio_submissions_container_routine AS (
 		AND f.name IN ('Routine Throughput', 'PacBio prep', 'Submissions', 'Core Lab Entities', 'Benchling MS Project Move')
 ),
 
-pacbio_submissions_container_pooled_deprecated AS (
+pacbio_submissions_container_pooled AS (
 	
 	SELECT DISTINCT
 		t.sts_id,
@@ -140,7 +147,8 @@ pacbio_submissions_container_pooled_deprecated AS (
 		subsam.name$ AS eln_submission_sample_name,
 		c_pool.barcode AS fluidx_id,
 		t.programme_id, 
-		t.specimen_id, 
+		t.specimen_id,
+		con.name AS tube_name,
 		con.name AS sanger_sample_id, 
 		NULL::varchar AS plate_name,
 		NULL::varchar AS pipeline,
@@ -195,70 +203,6 @@ pacbio_submissions_container_pooled_deprecated AS (
 		AND f.name IN ('Routine Throughput', 'PacBio prep', 'Submissions', 'Core Lab Entities', 'Benchling MS Project Move')
 ),
 
-pacbio_submissions_container_pooled AS (
-
-	SELECT DISTINCT	
-		t.sts_id,
-		t.taxon_id,
-		tp.id AS tissue_prep_id,
-		subsam.id AS eln_submission_sample_id,
-		subsam.file_registry_id$ AS eln_file_registry_id,
-		subsam.pooled_sample AS extraction_id,
-		subsam.name$ AS submission_sample_name,
-		c_pool.barcode AS fluidx_id,
-		t.programme_id,
-		t.specimen_id,
-		con.name AS sanger_sample_id,
-		plt.name AS plate_name,
-		pbsubm_p.pipeline,
-		pbsubm_p.library_type,
-		pbsubm_p.retention_instructions,
-		pbsubm_p.gb_yield_of_ccs_data_required,
-		pbsubm_p.number_of_smrt_cells_required,
-		pbsubm_p.sheared_femto_fragment_size_bp,
-		pbsubm_p.post_spri_concentration_ngul,
-		pbsubm_p.post_spri_volume_ul,
-		pbsubm_p.nanodrop_260280, 
-		pbsubm_p.nanodrop_260230,
-		pbsubm_p.nanodrop_concentration_ngul,
-		pbsubm_p.sample_prep_additional_requirements,
-		pbsubm_p.include_5mc_cells_in_cpg_motifs,
-		pbsubm_p.cc5_output_includes_kinetics_information,
-		pbsubm_p.priority,
-		DATE(pbsubm_p.created_at$) AS completion_date, 
-		'pacbio'::varchar AS sequencing_platform,
-		'v1_pooled'::varchar AS source
-	FROM pacbio_submission_plate_output$raw AS pbsubm_p
-	LEFT JOIN submission_samples$raw AS subsam 
-		ON pbsubm_p.sample_name = subsam.id
-	LEFT JOIN pooled_samples$raw AS pool 
-		ON subsam.pooled_sample = pool.id
-	LEFT JOIN dna_extract$raw AS dna -- Chunk to add Tissue metadata
-		ON pool.samples ->> 0 = dna.id
-	LEFT JOIN tissue_prep$raw AS tp 
-		ON dna.tissue_prep = tp.id
-	LEFT JOIN tissue$raw AS t 
-		ON tp.tissue = t.id -- End of Tissue metadata Chunk
-	LEFT JOIN container_content$raw AS cc_pool -- Chunk to add DNA fluidx id
-		ON pool.id = cc_pool.entity_id
-	LEFT JOIN container$raw AS c_pool 
-		ON cc_pool.container_id = c_pool.id
-	LEFT JOIN tube$raw AS tube 
-		ON c_pool.id = tube.id -- End of DNA fluidx id Chunk
-	LEFT JOIN container$raw AS con -- To add sanger uuid
-		ON pbsubm_p.sanger_uuid ->> 0 = con.id
-	LEFT JOIN plate$raw AS plt 
-		ON con.plate_id = plt.id
-	LEFT JOIN project$raw AS proj
-		ON subsam.project_id$ = proj.id
-	LEFT JOIN folder$raw AS f 
-		ON subsam.folder_id$ = f.id
-	WHERE subsam.pooled_sample IS NOT NULL
-		AND proj.name = 'ToL Core Lab'
-		AND f.name IN ('Routine Throughput', 'PacBio prep', 'Submissions', 'Core Lab Entities', 'Benchling MS Project Move', 'R&D Sample Processing Requests')
-		AND pbsubm_p.archived$ = FALSE	
-),
-
 pacbio_submissions_container_legacy_deprecated AS (
 	
 	SELECT DISTINCT
@@ -272,6 +216,7 @@ pacbio_submissions_container_legacy_deprecated AS (
 		c_dna.barcode AS fluidx_id,
 		t.programme_id,
 		t.specimen_id,
+		con.name AS tube_name,
 		con.name AS sanger_sample_id,
 		NULL::varchar AS plate_name,
 		NULL::varchar AS pipeline,
@@ -335,6 +280,7 @@ pacbio_submissions_plate_automated_manifest AS (
 		c_dna.barcode AS fluidx_id,
 		t.programme_id,
 		t.specimen_id,
+		NULL::varchar AS tube_name,
 		con.name AS sanger_sample_id,
 		plt.name AS plate_name,
 		pbsubm_p.pipeline,
@@ -388,6 +334,71 @@ pacbio_submissions_plate_automated_manifest AS (
 		AND f.name IN ('Routine Throughput', 'PacBio prep', 'Submissions', 'Core Lab Entities', 'Benchling MS Project Move', 'R&D Sample Processing Requests')		
 ),
 
+pacbio_submissions_plate_automated_manifest_pooled AS (
+
+	SELECT DISTINCT	
+		t.sts_id,
+		t.taxon_id,
+		tp.id AS tissue_prep_id,
+		subsam.id AS eln_submission_sample_id,
+		subsam.file_registry_id$ AS eln_file_registry_id,
+		subsam.pooled_sample AS extraction_id,
+		subsam.name$ AS submission_sample_name,
+		c_pool.barcode AS fluidx_id,
+		t.programme_id,
+		t.specimen_id,
+		con.name AS tube_name,
+		con.name AS sanger_sample_id,
+		plt.name AS plate_name,
+		pbsubm_p.pipeline,
+		pbsubm_p.library_type,
+		pbsubm_p.retention_instructions,
+		pbsubm_p.gb_yield_of_ccs_data_required,
+		pbsubm_p.number_of_smrt_cells_required,
+		pbsubm_p.sheared_femto_fragment_size_bp,
+		pbsubm_p.post_spri_concentration_ngul,
+		pbsubm_p.post_spri_volume_ul,
+		pbsubm_p.nanodrop_260280, 
+		pbsubm_p.nanodrop_260230,
+		pbsubm_p.nanodrop_concentration_ngul,
+		pbsubm_p.sample_prep_additional_requirements,
+		pbsubm_p.include_5mc_cells_in_cpg_motifs,
+		pbsubm_p.cc5_output_includes_kinetics_information,
+		pbsubm_p.priority,
+		DATE(pbsubm_p.created_at$) AS completion_date, 
+		'pacbio'::varchar AS sequencing_platform,
+		'v2_pooled'::varchar AS source
+	FROM pacbio_submission_plate_output$raw AS pbsubm_p
+	LEFT JOIN submission_samples$raw AS subsam 
+		ON pbsubm_p.sample_name = subsam.id
+	LEFT JOIN pooled_samples$raw AS pool 
+		ON subsam.pooled_sample = pool.id
+	LEFT JOIN dna_extract$raw AS dna -- Chunk to add Tissue metadata
+		ON pool.samples ->> 0 = dna.id
+	LEFT JOIN tissue_prep$raw AS tp 
+		ON dna.tissue_prep = tp.id
+	LEFT JOIN tissue$raw AS t 
+		ON tp.tissue = t.id -- End of Tissue metadata Chunk
+	LEFT JOIN container_content$raw AS cc_pool -- Chunk to add DNA fluidx id
+		ON pool.id = cc_pool.entity_id
+	LEFT JOIN container$raw AS c_pool 
+		ON cc_pool.container_id = c_pool.id
+	LEFT JOIN tube$raw AS tube 
+		ON c_pool.id = tube.id -- End of DNA fluidx id Chunk
+	LEFT JOIN container$raw AS con -- To add sanger uuid
+		ON pbsubm_p.sanger_uuid ->> 0 = con.id
+	LEFT JOIN plate$raw AS plt 
+		ON con.plate_id = plt.id
+	LEFT JOIN project$raw AS proj
+		ON subsam.project_id$ = proj.id
+	LEFT JOIN folder$raw AS f 
+		ON subsam.folder_id$ = f.id
+	WHERE subsam.pooled_sample IS NOT NULL
+		AND proj.name = 'ToL Core Lab'
+		AND f.name IN ('Routine Throughput', 'PacBio prep', 'Submissions', 'Core Lab Entities', 'Benchling MS Project Move', 'R&D Sample Processing Requests')
+		AND pbsubm_p.archived$ = FALSE	
+),
+
 pacbio_submissions_plate_routine AS (
 	SELECT 
 		t.sts_id,
@@ -400,6 +411,7 @@ pacbio_submissions_plate_routine AS (
 		NULL::varchar AS fluidx_id,
 		t.programme_id,
 		t.specimen_id,
+		NULL::varchar AS tube_name,
 		CAST(pbsubm_p.sanger_sample_id ->>0 AS varchar) AS sanger_sample_id,
 		plate.name$ AS plate_name,
 		NULL::varchar AS pipeline,
@@ -442,7 +454,7 @@ SELECT *
 FROM pacbio_submissions_container_pooled_deprecated
 UNION 
 SELECT *
-FROM pacbio_submissions_container_pooled
+FROM pacbio_submissions_plate_pooled
 UNION 
 SELECT *
 FROM pacbio_submissions_container_legacy_deprecated
