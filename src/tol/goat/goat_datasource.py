@@ -202,5 +202,5 @@ class GoatDataSource(
         return []
 
     def get_ranks(self) -> List[str]:
-        return ['species', 'genus', 'family', 'order', 'class',
+        return ['species', 'genus', 'family', 'superfamily', 'order', 'class',
                 'phylum', 'kingdom', 'superkingdom']
