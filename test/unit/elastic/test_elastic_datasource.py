@@ -865,6 +865,9 @@ class TestElasticDataSource(TestCase):
                         },
                         'field_3': {
                             'type': 'long'
+                        },
+                        'field_4': {
+                            'type': 'boolean'
                         }
                     }
                 }
@@ -872,7 +875,8 @@ class TestElasticDataSource(TestCase):
         }
         expected = {'field_1': 'str',
                     'field_2': 'datetime',
-                    'field_3': 'int'}
+                    'field_3': 'int',
+                    'field_4': 'bool'}
         returned = eds._get_attribute_types_for_object_type('index_name')
         eds.es.indices.get_mapping.assert_called_once()
         self.assertEqual(expected, returned)

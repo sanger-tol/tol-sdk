@@ -1128,6 +1128,8 @@ class ElasticDataSource(
             return 'int'
         if type_ == 'date':
             return 'datetime'
+        if type_ == 'boolean':
+            return 'bool'
         return type_
 
     def _get_attribute_types_for_object_type(self, object_type: str) -> Dict:
