@@ -33,7 +33,7 @@ class DataSourceUtils:
         datasource_instance: DataObject
     ) -> DataSource:
         datasource_config = datasource_instance.data_source_config
-        kwargs = datasource_instance.kwargs or {}
+        kwargs = dict(datasource_instance.kwargs) if datasource_instance.kwargs else {}
         if datasource_config:
             relationship_config = cls.get_relationship_config_from_data_source_config(
                 datasource_config
