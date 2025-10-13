@@ -469,7 +469,7 @@ class Controller:
         Raises:
             UnsupportedOperationError: If the data source doesn't support upsertion.
         """
-        returned = self.data_source.upsert(object_type, objects)
+        returned = self.data_source.upsert(object_type, objects, **kwargs)
         if self.data_source.return_mode[object_type] == ReturnMode.POPULATED:
             return self.__view.dump_bulk(returned)
         else:

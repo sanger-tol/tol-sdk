@@ -235,8 +235,12 @@ class ElasticDataSource(
         chunk_size: int = 100,
         id_func=lambda x: x.id,
         field_prefix: str = '',
+        merge_collections: bool | None = None,
         **kwargs
     ) -> None:
+        if merge_collections is False:
+            msg = 'ElasticDataSource does not support turning off merge_collections'
+            raise DataSourceError(msg)
 
         index = self.__get_index_or_alias(object_type)
         (no_of_operations, no_of_errors) = \

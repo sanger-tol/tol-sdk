@@ -11,7 +11,7 @@ from sqlalchemy.exc import ProgrammingError
 from tol.core import DataSource, core_data_object
 from tol.sql import (
     create_session_factory,
-    create_sql_datasource
+    create_sql_datasource,
 )
 
 from .base import DataSourceFixture
@@ -38,10 +38,7 @@ class SqlFixture(DataSourceFixture):
         return 'sql'
 
     def get_ds_instance(self) -> DataSource:
-        sql_ds = create_sql_datasource(
-            ALL_MODELS,
-            DB_URI
-        )
+        sql_ds = create_sql_datasource(ALL_MODELS, DB_URI)
         core_data_object(sql_ds)
         return sql_ds
 
@@ -60,9 +57,7 @@ class SqlFixture(DataSourceFixture):
 
         session = session_factory()
         for model in delete_order:
-            session.execute(
-                delete(model)
-            )
+            session.execute(delete(model))
         session.commit()
 
     def __insert_archetypes(self) -> None:
@@ -74,7 +69,7 @@ class SqlFixture(DataSourceFixture):
                     int_column=42,
                     datetime_column=datetime(2021, 1, 1, 0, 0, 0),
                     bool_column=True,
-                    list_column=['item']
+                    list_column=['item'],
                 )
             )
             sess.add(
@@ -85,7 +80,7 @@ class SqlFixture(DataSourceFixture):
                     datetime_column=datetime(2020, 1, 1, 0, 0, 0),
                     bool_column=True,
                     list_column=['item'],
-                    related_fkey='#REL'
+                    related_fkey='#REL',
                 )
             )
             sess.commit()

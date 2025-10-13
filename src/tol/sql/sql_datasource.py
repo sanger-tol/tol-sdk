@@ -298,7 +298,8 @@ class SqlDataSource(
         object_type: str,
         objects: Iterable[DataObject],
         session: Optional[SqlDataSourceSession] = None,
-        **kwargs
+        merge_collections: bool | None = None,
+        **kwargs,
     ) -> list[DataObject]:
         back_converter = self.__back_converter_factory()
         model_instances = back_converter.convert_iterable(objects)
@@ -308,7 +309,8 @@ class SqlDataSource(
             self.__db.upsert(
                 instance,
                 in_session,
-                user_id=user_id
+                user_id=user_id,
+                merge_collections=merge_collections,
             )
             for instance in model_instances
         ]

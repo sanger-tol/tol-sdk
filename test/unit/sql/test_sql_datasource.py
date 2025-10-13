@@ -592,11 +592,16 @@ class TestSqlDataSource:
             MagicMock(),
             lambda: mock_back_converter,
             MagicMock(),
-            MagicMock()
+            MagicMock(),
         )
         ds.data_object_factory = MagicMock()
         ds.upsert('tests', [mock_object])
-        mock_db.upsert.assert_called_once_with(mock_model, mock_sess, user_id=None)
+        mock_db.upsert.assert_called_once_with(
+            mock_model,
+            mock_sess,
+            user_id=None,
+            merge_collections=None,
+        )
 
     def test_get_attribute_types(self):
         """
@@ -718,7 +723,8 @@ class TestSqlDataSource:
         mock_db.upsert.assert_called_once_with(
             mock_model_instance,
             mock_sess,
-            user_id='a user ID'
+            user_id='a user ID',
+            merge_collections=None,
         )
 
     def test_insert(self):

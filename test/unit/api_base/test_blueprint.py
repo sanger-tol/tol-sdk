@@ -347,7 +347,8 @@ class TestBlueprintUpsert(TestCase):
             def upsert(
                 self,
                 object_type: str,
-                objects: Iterable[DataObject]
+                objects: Iterable[DataObject],
+                **kwargs,
             ) -> None:
 
                 # correct type

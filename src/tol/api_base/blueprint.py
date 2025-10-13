@@ -304,10 +304,15 @@ def _core_blueprint(
     def post_upserts(*, object_type: str):
         """Insert or update objects of the specified type."""
         controller = __new_controller(object_type)
+        request_args = ListGetParamaters(request.args)
         request_body = JsonApiRequestBody(request.json)
         parser = DefaultParser(data_source_dict)
         objects = parser.parse_iterable(request_body.data)
-        return controller.post_upserts(object_type, objects)
+        return controller.post_upserts(
+            object_type,
+            objects,
+            merge_collections=request_args.merge_collections,
+        )
 
     @data_handler.route('/<object_type>:aggregations', methods=['POST'])
     def get_aggregations(*, object_type: str):

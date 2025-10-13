@@ -408,7 +408,7 @@ class TestApiDataSource:
             mock_objects
         )
         assert mock_client.upsert.call_args_list == [
-            call('test', mock_objects)
+            call('test', mock_objects, merge_collections=None)
         ]
 
     def test_get_list(self):

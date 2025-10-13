@@ -81,3 +81,20 @@ class TestListGetParameters:
         })
         assert parsed.page_size == 1002
         assert parsed.page == 2
+
+    def test_good_merge_collections(self):
+        """Test true and false parameters are parsed"""
+        parsed = ListGetParamaters({'merge_collections': 'True'})
+        assert parsed.merge_collections is True
+        parsed = ListGetParamaters({'merge_collections': 'False'})
+        assert parsed.merge_collections is False
+        parsed = ListGetParamaters({'merge_collections': 'TRUE'})
+        assert parsed.merge_collections is True
+        parsed = ListGetParamaters({'merge_collections': 'false'})
+        assert parsed.merge_collections is False
+
+    def test_bad_merge_collections(self):
+        with pytest.raises(BadQueryArgError) as e:
+            ListGetParamaters({'merge_collections': 'null'}).merge_collections
+        assert 'merge_collections' in str(e.value)
+        assert 'null' in str(e.value)
