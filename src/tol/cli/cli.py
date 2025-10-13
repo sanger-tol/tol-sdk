@@ -7,6 +7,7 @@ import importlib
 import json
 import os
 import re
+import shlex
 import subprocess
 
 import click
@@ -20,20 +21,30 @@ from ..core import (
 
 @click.group()
 @click.option(
-    '--env-file', default='.env.dev',
-    type=click.Path(), help='set a custom .env file'
+    '--env-file',
+    default='.env.dev',
+    type=click.Path(),
+    help='Use a custom environment file.',
+    show_default=True,
 )
 def cli(env_file):
     pass
 
 
-# Lint
 @cli.command()
-@click.option('--type', 'type_', default='python',
-              type=click.Choice(['python', 'license', 'ui', 'ui-fix']),
-              help='type of lint')
+@click.option(
+    '--type',
+    'type_',
+    default='python',
+    type=click.Choice(['python', 'license', 'ui', 'ui-fix']),
+    help='Type of lint.',
+    show_default=True,
+)
 def lint(type_):
-    # service = get_app()
+    """
+    Run linting.
+    """
+
     click.echo('Running lint...')
     if type_ == 'license':
         command = 'docker run --rm --volume $(pwd):/data fsfe/reuse:1.1.2 lint'
@@ -66,37 +77,43 @@ def lint(type_):
         run(command_1 + command_2)
 
 
-# Scan
 @cli.command()
-@click.option('--type', 'type_', default='sast',
-              type=click.Choice(['sast', 'dependencies']),
-              help='type of scan')
+@click.option(
+    '--type',
+    'type_',
+    default='sast',
+    type=click.Choice(['sast', 'dependencies']),
+    help='Type of scan to run.',
+    show_default=True,
+)
 def scan(type_):
+    """
+    Perform a Snyk security scan.
+    """
     token = os.getenv('SNYK_TOKEN')
     if token is None:
         click.secho('SNYK_TOKEN environment variable must be set', fg='red')
         return
     # service = get_app()
     click.echo('Running scan...')
+    snyc_common = 'docker run --env SNYK_TOKEN --rm --volume $(pwd):/app'
     if type_ == 'sast':
-        command = 'docker run --env SNYK_TOKEN --rm --volume $(pwd):/app ' \
-            'snyk/snyk:python snyk code test'
-        click.secho(command, fg='green')
-        run(command)
-    if type_ == 'dependencies':
-        command = 'docker run --env SNYK_TOKEN --rm --volume $(pwd):/app ' \
-            'snyk/snyk:python snyk test'
-        click.secho(command, fg='green')
-        run(command)
+        command = f'{snyc_common} snyk/snyk:python snyk code test'
+    elif type_ == 'dependencies':
+        command = f'{snyc_common} snyk/snyk:python snyk test'
+    click.secho(command, fg='green')
+    run(command)
 
 
-# Start a ToL service
 @cli.command()
-@click.option('--ui/--no-ui', default=True, help='build the UI container')
-@click.option('--db/--no-db', default=True, help='build the DB container')
-@click.option('--api/--no-api', default=True, help='build the API container')
+@click.option('--ui/--no-ui', default=True, help='Build and run the UI container.')
+@click.option('--db/--no-db', default=True, help='Build and run the DB container.')
+@click.option('--api/--no-api', default=True, help='Build and run the API container.')
 @click.pass_context
 def up(ctx, ui, db, api):
+    """
+    Start ToL services.
+    """
     env_file = ctx.parent.params['env_file']
     service = get_app()
     click.echo(f'Starting {service}...')
@@ -107,24 +124,26 @@ def up(ctx, ui, db, api):
         containers.append(f'{service}-db')
     if api:
         containers.append(f'{service}-api')
-    command = f'docker compose --env-file {env_file} up --build --detach ' \
-        + ' '.join(containers)
+    command = f'docker compose --env-file {env_file} up --build --detach ' + ' '.join(containers)
     click.secho(command, fg='green')
     run(command)
     if api:
         click.secho('API: ' + ' '.join(get_container_urls(f'{service}-api')), fg='yellow')
     if ui:
-        click.secho('UI: ' + ' '.join(get_container_urls(f'{service}-ui', protocol='https')),
-                    fg='yellow')
+        click.secho(
+            'UI: ' + ' '.join(get_container_urls(f'{service}-ui', protocol='https')), fg='yellow'
+        )
 
 
-# Log a ToL service
 @cli.command()
-@click.option('--ui/--no-ui', default=True, help='build the UI container')
-@click.option('--db/--no-db', default=True, help='build the DB container')
-@click.option('--api/--no-api', default=True, help='build the API container')
+@click.option('--ui/--no-ui', default=True, help='Log the UI container.')
+@click.option('--db/--no-db', default=True, help='Log the DB container.')
+@click.option('--api/--no-api', default=True, help='Log the API container.')
 @click.pass_context
 def log(ctx, ui, db, api):
+    """
+    Log ToL services.
+    """
     env_file = ctx.parent.params['env_file']
     service = get_app()
     containers = []
@@ -134,16 +153,20 @@ def log(ctx, ui, db, api):
         containers.append(f'{service}-db')
     if api:
         containers.append(f'{service}-api')
-    command = f'docker compose --env-file {env_file} logs --tail=0 --follow ' \
+    command = (
+        f'docker compose --env-file {env_file} logs --tail=0 --follow '
         + ' '.join(containers)
+    )
     click.secho(command, fg='green')
     run(command)
 
 
-# Stop a ToL service
 @cli.command()
 @click.pass_context
 def down(ctx):
+    """
+    Stop ToL services.
+    """
     env_file = ctx.parent.params['env_file']
     service = get_app()
     click.echo(f'Stopping {service}...')
@@ -152,9 +175,11 @@ def down(ctx):
     run(command)
 
 
-# Prune
 @cli.command()
 def prune():
+    """
+    Prune all non-running Docker containers and volumes.
+    """
     click.echo('Pruning all Docker containers, volumes, etc...')
     command = 'docker system prune -af'
     click.secho(command, fg='green')
@@ -164,10 +189,12 @@ def prune():
     run(command)
 
 
-# Restore a database from backup
 @cli.command()
 @click.pass_context
 def restore(ctx):
+    """
+    Restore a database from backup.
+    """
     env_file = ctx.parent.params['env_file']
     service = get_app()
     click.echo('Restoring database...')
@@ -179,113 +206,165 @@ def restore(ctx):
     run(command)
 
 
-# The Alembic group
 @cli.group
 @click.pass_context
 def alembic(ctx):
-    pass
+    """
+    Run Alembic.
+    """
 
 
-# Run an Alembic upgrade on the databse
 @alembic.command()
 @click.pass_context
 def upgrade(ctx):
+    """
+    Run migrations on the database.
+    """
     env_file = ctx.parent.parent.params['env_file']
     service = get_app()
     click.echo('Running alembic upgrade...')
-    command = f'docker compose build {service}-api && docker compose --env-file {env_file} ' \
-        + f'run --rm {service}-alembic alembic upgrade head'
+    command = (
+        f'docker compose build {service}-api && docker compose --env-file {env_file}'
+        f' run --rm {service}-alembic alembic upgrade head'
+    )
     click.secho(command, fg='green')
     run(command)
 
 
-# Create a new database migration
 @alembic.command()
 @click.option('--message', required=True, help='migration message')
 @click.pass_context
 def migration(ctx, message):
+    """
+    Create a new database migration.
+    """
     env_file = ctx.parent.parent.params['env_file']
     service = get_app()
     click.echo('Creating alembic migration...')
-    command = f'docker compose build {service}-api && docker compose --env-file {env_file} ' \
-        + f'run --rm {service}-alembic alembic revision -m "{message}"'
+    command = (
+        f'docker compose build {service}-api && docker compose --env-file {env_file}'
+        f' run --rm {service}-alembic alembic revision -m "{message}"'
+    )
     click.secho(command, fg='green')
     run(command)
 
 
-# Merge heads
 @alembic.command()
 @click.pass_context
 def merge(ctx):
+    """
+    Merge heads.
+    """
     env_file = ctx.parent.parent.params['env_file']
     service = get_app()
     click.echo('Merging heads...')
-    command = f'docker compose build {service}-api && docker compose --env-file {env_file} ' \
-        + f'run --rm {service}-alembic alembic merge heads -m "merge heads"'
+    command = (
+        f'docker compose build {service}-api && docker compose --env-file {env_file}'
+        f' run --rm {service}-alembic alembic merge heads -m "merge heads"'
+    )
     click.secho(command, fg='green')
     run(command)
 
 
-# Run tests
-@cli.command()
-@click.option('--type', 'type_', default='unit',
-              type=click.Choice(['unit', 'system', 'integration', 'ui', 'playwright']),
-              help='type of test')
+@cli.command(
+    context_settings={
+        # For passing unknown options to pytest
+        'ignore_unknown_options': True,
+    }
+)
+@click.option(
+    '--type',
+    'type_',
+    default='unit',
+    type=click.Choice(
+        [
+            'unit',
+            'system',
+            'integration',
+            'ui',
+            'playwright',
+        ]
+    ),
+    help='Type of test to run.',
+    show_default=True,
+)
+@click.argument(
+    'pytest_options',
+    nargs=-1,
+    type=click.UNPROCESSED,
+)
 @click.pass_context
-def test(ctx, type_):
+def test(ctx, type_, pytest_options):
+    """
+    Run tests. Any unrecognised options on the command line are accumulated in
+    `PYTEST_OPTIONS` and passed to `pytest` for the "unit", "system"
+    and "integration" test types.
+
+    For example, to run just the system test `my_test`:
+
+       tol test --type system -k my_test
+    """
     env_file = ctx.parent.params['env_file']
     service = get_app()
 
     click.echo('Running tests...')
-    if type_ == 'unit':
-        docker_compose_entry = f'{service}-python-unit-test'
-        command = (
-            f'docker compose build {docker_compose_entry} && '
-            f'docker compose --env-file {env_file} run --rm {docker_compose_entry} '
-            f'sh -c "[ -d unit ] && pytest -v unit || echo \'No unit tests found\'"'
+    if type_ in {'unit', 'system', 'integration'}:
+        verbosity = '-v' if type_ == 'unit' else '-vvvx'
+        # shlex will correctly re-quote any quoted arguments from the command
+        # line:
+        pytest_cmd = shlex.join(['pytest', verbosity, type_, *pytest_options])
+        pytest_sh = (
+            f'sh -c "if [ -d {type_} ]; then {pytest_cmd};'
+            f' else echo \'No {type_} tests found\'; fi"'
         )
-    if type_ == 'system':
-        docker_compose_entry = f'{service}-python-system-test'
-        db_entry = f'{service}-python-db'
-        command = (
-            f'docker compose build {docker_compose_entry} && '
-            f'docker compose --env-file {env_file} up -d {db_entry} && '
-            f'docker compose --env-file {env_file} '
-            f'run --rm --build {docker_compose_entry} '
-            f'sh -c "[ -d system ] && pytest -vvvx system || echo \'No system tests found\'"'
-        )
-    if type_ == 'integration':
-        docker_compose_entry = f'{service}-python-integration-test'
-        command = (
-            f'docker compose build {docker_compose_entry} && '
-            f'docker compose --env-file {env_file} '
-            f'run --rm --build {docker_compose_entry} '
-            f'sh -c "[ -d system ] && pytest -vvvx integration || '
-            'echo \'No integration tests found\'"'
-        )
-    if type_ == 'ui':
+        if type_ == 'unit':
+            docker_compose_entry = f'{service}-python-unit-test'
+            command = (
+                f'docker compose build {docker_compose_entry}'
+                f' && docker compose --env-file {env_file}'
+                f' run --rm {docker_compose_entry} {pytest_sh}'
+            )
+        elif type_ == 'system':
+            docker_compose_entry = f'{service}-python-system-test'
+            db_entry = f'{service}-python-db'
+            command = (
+                f'docker compose build {docker_compose_entry}'
+                f' && docker compose --env-file {env_file} up -d {db_entry}'
+                f' && docker compose --env-file {env_file}'
+                f' run --rm --build {docker_compose_entry} {pytest_sh}'
+            )
+        elif type_ == 'integration':
+            docker_compose_entry = f'{service}-python-integration-test'
+            command = (
+                f'docker compose build {docker_compose_entry}'
+                f' && docker compose --env-file {env_file}'
+                f' run --rm --build {docker_compose_entry} {pytest_sh}'
+            )
+    elif type_ == 'ui':
         docker_compose_entry = f'{service}-ui-test'
         command = (
-            f'docker compose build {docker_compose_entry} && '
-            f'docker compose --env-file {env_file} run --rm {docker_compose_entry} '
-            f'npm run test'
+            f'docker compose build {docker_compose_entry}'
+            f' && docker compose --env-file {env_file}'
+            f' run --rm {docker_compose_entry} npm run test'
         )
-    if type_ == 'playwright':
+    elif type_ == 'playwright':
         docker_compose_entry = f'{service}-playwright-test'
         command = (
-            f'docker compose build {docker_compose_entry} && '
-            f'docker compose --env-file {env_file} run --rm {docker_compose_entry} '
-            f'npx playwright test'
+            f'docker compose build {docker_compose_entry}'
+            f' && docker compose --env-file {env_file} '
+            f' run --rm {docker_compose_entry} npx playwright test'
         )
     click.secho(command, fg='green')
     run(command)
 
 
-# Run flow
 @cli.command()
 @click.argument('filename', type=click.Path(exists=True))
 @click.pass_context
 def flow(ctx, filename):
+    """
+    Run a flow.
+    """
     entry = f'{get_app()}-flow'
     env_file = ctx.parent.params['env_file']
     click.echo('Running flow...')
@@ -297,27 +376,67 @@ def flow(ctx, filename):
     run(command)
 
 
-# Data
 @cli.command()
-@click.option('--source', default='portal',
-              type=click.Choice(['portal', 'goat', 'grit', 'sts', 'tolid', 'tolqc', 'workflows']),
-              help='source DataSource')
-@click.option('--operation', default='list',
-              type=click.Choice(['list']),
-              help='operation to run')
-@click.option('--type', 'type_', required=True,
-              help='object type')
-@click.option('--filter', 'filter_', default=None,
-              help='filter')
-@click.option('--fields', default='',
-              help='fields to output')
-@click.option('--converter', default=None,
-              help='converter function')
-@click.option('--output', default='ndjson',
-              type=click.Choice(['ndjson', 'tsv']),
-              help='output type')
+@click.option(
+    '--source',
+    default='portal',
+    type=click.Choice(
+        [
+            'portal',
+            'goat',
+            'grit',
+            'sts',
+            'tolid',
+            'tolqc',
+            'workflows',
+        ]
+    ),
+    help='Source DataSource',
+    show_default=True,
+)
+@click.option(
+    '--operation',
+    default='list',
+    type=click.Choice(['list']),
+    help='Operation to run.',
+    show_default=True,
+)
+@click.option(
+    '--type',
+    'type_',
+    required=True,
+    help='Object type.',
+)
+@click.option(
+    '--filter',
+    'filter_',
+    default=None,
+    help='Filter to apply.',
+)
+@click.option(
+    '--fields',
+    default='',
+    help='Fields to output.',
+)
+@click.option(
+    '--converter',
+    default=None,
+    help='Converter function,',
+)
+@click.option(
+    '--output',
+    default='ndjson',
+    type=click.Choice(
+        ['ndjson', 'tsv'],
+    ),
+    help='Format of the output.',
+    show_default=True,
+)
 @click.pass_context
 def data(ctx, source, operation, type_, filter_, fields, converter, output):
+    """
+    Fetch data from a DataSource.
+    """
     env_file = ctx.parent.params['env_file']
     if os.path.exists(env_file):
         load_dotenv(ctx.parent.params['env_file'])
