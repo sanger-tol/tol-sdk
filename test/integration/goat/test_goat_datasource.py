@@ -43,6 +43,7 @@ class TestGoatDataSource(TestCase):
         self.assertEqual(obj1.assembly_level, 'Scaffold')
         self.assertEqual(obj1.long_list, ['AFRICABP', 'DTOL'])
         self.assertEqual(obj1.phylum.scientific_name, 'Streptophyta')
+        self.assertEqual(obj1.domain.scientific_name, 'Eukaryota')
         self.assertTrue(any('Solanum chocclo' in syn for syn in obj1.synonym))
         with self.assertRaises(StopIteration):
             next(ret)

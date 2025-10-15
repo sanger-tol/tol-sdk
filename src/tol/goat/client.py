@@ -82,7 +82,7 @@ class GoatApiClient:
                       'protection_of_badgers_act_1992,family_representative,long_list,'
                       'sample_collected',
             'ranks': 'subspecies,species,genus,family,superfamily,order,class,phylum,kingdom,'
-                     'superkingdom'
+                     'superkingdom,domain'
         } | self.__get_sort_params(sort_by) | self.__get_page_params(page, page_size)
         return url, params
 
