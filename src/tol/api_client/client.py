@@ -77,7 +77,7 @@ class JsonApiClient(HttpClient):
             page_size=page_size,
             filter=filter_string,
             sort_by=sort_string,
-            requested_field=requested_fields
+            requested_fields=requested_fields
         )
         headers = self._merge_headers()
         return self.__fetch_list(
@@ -455,7 +455,9 @@ class JsonApiClient(HttpClient):
         return f'{self.__config_url}/return_mode'
 
     def __no_none_value_dict(self, **kwargs) -> dict[str, Any]:
-        return {
-            k: v for k, v in kwargs.items()
-            if v is not None
-        }
+        str_params = {}
+        for k, v in kwargs.items():
+            if v is None:
+                continue
+            str_params[k] = ','.join([str(x) for x in v]) if isinstance(v, list) else str(v)
+        return str_params

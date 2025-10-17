@@ -6,6 +6,8 @@ from __future__ import annotations
 
 from abc import ABCMeta
 from datetime import datetime
+from functools import cache
+from types import MappingProxyType  # A read-only dict
 from typing import Any, Iterable, Optional, Type
 
 from sqlalchemy import JSON, inspect
@@ -198,30 +200,32 @@ def model_base() -> Type[DefaultModel]:
             return getattr(cls, name)
 
         @classmethod
-        def get_to_many_relationship_config(cls) -> dict[str, str]:
+        @cache
+        def get_to_many_relationship_config(cls) -> MappingProxyType[str, str]:
             relationships = inspect(cls).relationships
             all_ = {
-                cls.__get_relationshship_name(r): cls.__get_relationship_target(r)
+                r.key: cls.__get_relationship_target(r)
                 for r in relationships
                 if cls.__is_to_many_relationship(r)
             }
-            return {
+            return MappingProxyType({
                 k: v for k, v in all_.items()
                 if not k.startswith('_')
-            }
+            })
 
         @classmethod
-        def get_to_one_relationship_config(cls) -> dict[str, str]:
+        @cache
+        def get_to_one_relationship_config(cls) -> MappingProxyType[str, str]:
             relationships = inspect(cls).relationships
             all_ = {
-                cls.__get_relationshship_name(r): cls.__get_relationship_target(r)
+                r.key: cls.__get_relationship_target(r)
                 for r in relationships
                 if cls.__is_to_one_relationship(r)
             }
-            return {
+            return MappingProxyType({
                 k: v for k, v in all_.items()
                 if not k.startswith('_')
-            }
+            })
 
         @classmethod
         def get_foreign_key_name(cls, relationship_name: str) -> str:
@@ -230,12 +234,13 @@ def model_base() -> Type[DefaultModel]:
             return foreign_key.name
 
         @classmethod
-        def get_attribute_types(cls) -> dict[str, type]:
+        @cache
+        def get_attribute_types(cls) -> MappingProxyType[str, type]:
             names = cls.__get_attribute_names()
             columns = inspect(cls).columns
-            return {
+            return MappingProxyType({
                 k: columns[k].type.python_type for k in names
-            }
+            })
 
         @classmethod
         def get_id_attribute_type(cls) -> dict[str, type]:
@@ -268,13 +273,15 @@ def model_base() -> Type[DefaultModel]:
             cls,
             relationship_name: str
         ) -> MappedColumn:
+            """
+            Returns the local foreign key column given a relationship name
+            """
 
-            relationships = inspect(cls).relationships
-            all_keys = relationships[relationship_name]._calculated_foreign_keys
-            if len(all_keys) != 1:
+            rel = inspect(cls).relationships[relationship_name]
+            all_cols = tuple(rel.local_columns)
+            if len(all_cols) != 1:
                 raise NotImplementedError('Composite keys are not supported.')
-            (foreign_key, ) = all_keys
-            return foreign_key
+            return all_cols[0]
 
         def __get_attributes_map(
             self,
@@ -286,12 +293,8 @@ def model_base() -> Type[DefaultModel]:
             }
 
         @classmethod
-        def __get_relationshship_name(cls, relationship) -> str:
-            return str(relationship).split('.')[-1]
-
-        @classmethod
         def __get_relationship_target(cls, relationship) -> str:
-            return list(relationship.remote_side)[0].table.name
+            return relationship.entity.tables[0].name
 
         @classmethod
         def __get_all_relationship_names(cls) -> list[str]:
@@ -310,47 +313,49 @@ def model_base() -> Type[DefaultModel]:
             )
 
         @classmethod
-        def get_all_foreign_key_names(cls) -> set[str]:
+        @cache
+        def get_all_foreign_key_names(cls) -> frozenset[str]:
             """
             Returns only the names of columns which are foreign keys used in
-            relationsips.
+            relationsips. i.e. To-one relationships.
             """
+
+            col_to_attr = cls.__get_column_name_to_attribute_map()
 
             foreign_keys = set()
             for rel in inspect(cls).relationships:
                 for col in rel.local_columns:
-                    # Test if it really is a foreign key
-                    if len(col.foreign_keys) > 0:
-                        if attr_name := cls.__get_foreign_key_attribute_name(col.name):
-                            foreign_keys.add(attr_name)
-            return foreign_keys
+                    # If it is really a foreign key, get the name of the
+                    # attribute in the model
+                    if len(col.foreign_keys) > 0 and (attr_name := col_to_attr.get(col.name)):
+                        foreign_keys.add(attr_name)
+            return frozenset(foreign_keys)
 
         @classmethod
-        def __get_foreign_key_attribute_name(cls, foreign_key_name: str) -> str | None:
+        def __get_column_name_to_attribute_map(cls) -> dict[str, str]:
             """
-            Gets the model's attribute name in the class definition from the schema's
-            `foreign_key_name`.
+            Returns a dict mapping database column names to this model's
+            attribute names.
             """
 
-            col_to_attr = {
+            return {
                 col_prop.columns[0].name: col_prop.key
                 for col_prop in inspect(cls).column_attrs
             }
 
-            return col_to_attr.get(foreign_key_name)
-
         @classmethod
-        def __get_attribute_names(cls) -> list[str]:
+        @cache
+        def __get_attribute_names(cls) -> tuple[str]:
             excluded = cls.get_excluded_column_names()
             mapper = inspect(cls)
             relationships = cls.__get_all_relationship_names()
             foreign_keys = cls.get_all_foreign_key_names()
-            return [
-                k for k in mapper.attrs.keys()
+            return tuple(
+                k for k in mapper.attrs.keys()  # noqa: SIM118
                 if k not in excluded
                 and k not in relationships
                 and k not in foreign_keys
-            ]
+            )
 
     class LogBase(ModelBase):
         """

@@ -69,7 +69,7 @@ class DefaultSqlRelationshipConfig(ABC):
         else:
             return object_type, RelationshipConfig(
                 to_one=self.__map_config(to_one),
-                to_many=self.__map_config(to_many)
+                to_many=self.__map_config(to_many),
             )
 
     def __map_config(self, config: Dict[str, str]) -> Dict[str, str]:

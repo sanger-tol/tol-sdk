@@ -21,7 +21,7 @@ from tol.api_base.auth import (
 )
 from tol.api_base.auth.error import ForbiddenError
 from tol.api_base.misc import AuthContext
-from tol.core import DataObject, DataSource, OperableDataSource
+from tol.core import DataObject, DataSource, OperableDataSource, ReqFieldsTree
 from tol.core.datasource_filter import AndFilter, DataSourceFilter
 from tol.core.operator import (
     Deleter,
@@ -336,7 +336,7 @@ class TestFilter:
                 }
             ),
             sort_by=None,
-            requested_fields=None
+            requested_tree=ReqFieldsTree('b', mock_ds),
         )
 
         mock_ds.reset_mock()
@@ -379,7 +379,7 @@ class TestFilter:
                 }
             ),
             sort_by=None,
-            requested_fields=None
+            requested_tree=ReqFieldsTree('b', mock_ds),
         )
 
     def test_none(
@@ -397,7 +397,7 @@ class TestFilter:
             page_size=None,
             object_filters=None,
             sort_by=None,
-            requested_fields=None
+            requested_tree=ReqFieldsTree('c', mock_ds),
         )
 
         mock_ds.reset_mock()
@@ -435,5 +435,5 @@ class TestFilter:
                 }
             ),
             sort_by=None,
-            requested_fields=None
+            requested_tree=ReqFieldsTree('c', mock_ds),
         )

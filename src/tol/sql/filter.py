@@ -6,10 +6,10 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from collections import defaultdict
-from collections.abc import MutableMapping
+from collections.abc import Iterable, Iterator, MutableMapping
 from functools import reduce
 from itertools import chain
-from typing import Any, Dict, Iterable, Iterator, Optional, Tuple, Type
+from typing import Any, Dict, Optional, Tuple, Type
 
 from sqlalchemy import BinaryExpression, cast, inspect, not_
 from sqlalchemy.dialects.postgresql import JSONB
@@ -30,8 +30,8 @@ class AliasTrie(MutableMapping[str, 'AliasTrie']):
     def alias(self) -> AliasedClass[Model]:
         return self.__alias
 
-    def __getitem__(self, k: str) -> AliasTrie:
-        return self.__dict[k]
+    def __getitem__(self, key: str) -> AliasTrie:
+        return self.__dict[key]
 
     def __setitem__(self, key: str, value: AliasTrie) -> None:
         self.__dict[key] = value
@@ -67,7 +67,9 @@ class DatabaseFilter(ABC):
         """Adds a relation field to the filter, for joining later"""
 
     @abstractmethod
-    def get_query(self, session: Session, base_model: type[Model]) -> Query[Model]:
+    def get_query(
+        self, session: Session, base_model: type[Model]
+    ) -> tuple[Query[Model], AliasedClass[Model]]:
         """Gets an aliased query"""
 
 
@@ -103,7 +105,7 @@ class DefaultDatabaseFilter(DatabaseFilter):
         query = self.__apply_joins(
             query,
             self.__alias_trie,
-            self.__base_alias,
+            self.__base_model,
         )
 
         if self.__filter is None:
@@ -117,13 +119,10 @@ class DefaultDatabaseFilter(DatabaseFilter):
 
         return query
 
-    def get_query(self, session: Session, base_model: Model) -> Query[Model]:
-        # TODO this is not thread safe
-        self.__base_alias: AliasedClass[Model] = aliased(
-            base_model,
-        )
+    def get_query(self, session: Session, base_model: Model) -> [Query[Model]]:
+        self.__base_model = base_model
 
-        return session.query(self.__base_alias)
+        return session.query(base_model)
 
     def __apply_joins(
         self,
@@ -135,6 +134,7 @@ class DefaultDatabaseFilter(DatabaseFilter):
         for part, trie in parent_trie.items():
             alias = trie.alias
 
+            # Probably want an outerjoin() here
             query = query.join(alias, getattr(parent_alias, part))
 
             query = self.__apply_joins(
@@ -160,11 +160,11 @@ class DefaultDatabaseFilter(DatabaseFilter):
         self.__rel_keys.add(field)
 
     def __build_alias_trie(self, paths: Iterable[str]) -> AliasTrie:
-        trie = AliasTrie(self.__base_alias)
+        trie = AliasTrie(self.__base_model)
 
         for path in paths:
             parts = path.split('.')
-            current_alias = self.__base_alias
+            current_alias = self.__base_model
             current = trie
             for part in parts[:-1]:
                 if part not in current:
@@ -176,6 +176,8 @@ class DefaultDatabaseFilter(DatabaseFilter):
                     )
                     current[part] = step
                     current = step
+                else:
+                    current = current[part]
                 current_alias = current.alias
 
         return trie
@@ -520,16 +522,16 @@ class DefaultDatabaseFilter(DatabaseFilter):
             return self.__get_column_attr(model, key)
 
     def __get_id_column(self, model: type[Model]) -> MappedColumn:
-        og_model: type[Model] = model._aliased_insp.mapper.class_
+        og_model: type[Model] = inspect(model).mapper.class_
         id_key = og_model.get_id_column_name()
         return self.__get_column_attr(model, id_key)
 
     def __get_column_attr(self, model: AliasedClass[Model], key: str) -> MappedColumn:
-        columns = {
-            col.key: col
-            for col in model._aliased_insp.selectable.c
-        }
-        return columns[key]
+        for col in inspect(model).selectable.c:
+            if col.key == key:
+                return col
+        msg = f"Failed to find column '{key}' in '{model}'"
+        raise ValueError(msg)
 
     def __get_relation_column(
         self,

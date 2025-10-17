@@ -2,7 +2,6 @@
 #
 # SPDX-License-Identifier: MIT
 
-from typing import Optional
 from unittest.mock import Mock, PropertyMock, call, create_autospec
 
 import pytest
@@ -48,7 +47,8 @@ class TestApiDataSource:
 
         mock_client.get_detail.assert_called_once_with(
             'test',
-            'an ID'
+            'an ID',
+            requested_fields=None,
         )
         mock_jc_converter.convert.assert_called_once_with(
             mock_response
@@ -84,7 +84,8 @@ class TestApiDataSource:
 
         mock_client.get_detail.assert_called_once_with(
             'test',
-            'an ID'
+            'an ID',
+            requested_fields=None,
         )
         mock_jc_converter.convert.assert_not_called()
 
@@ -426,8 +427,9 @@ class TestApiDataSource:
             object_type: str,
             page: int,
             page_size: int,
-            filter_string: Optional[str] = None,
-            sort_string: Optional[str] = None
+            filter_string: str | None = None,
+            sort_string: str | None = None,
+            requested_fields: list[str] | None = None,
         ) -> list[Mock]:
 
             return [mock_objs[page - 1]] if page <= 3 else []
@@ -437,7 +439,8 @@ class TestApiDataSource:
                 'test_hype',
                 i,
                 1,
-                filter_string='akdfuom'
+                filter_string='akdfuom',
+                requested_fields=None,
             )
             for i in range(1, 5)
         ]
@@ -463,7 +466,7 @@ class TestApiDataSource:
             lambda: mock_client,
             lambda: mock_json_converter,
             None,
-            lambda: mock_api_filter
+            lambda: mock_api_filter,
         )
         api_ds.page_size = 1
 

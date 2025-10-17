@@ -13,6 +13,7 @@ from ._filterable import _Filterable
 if typing.TYPE_CHECKING:
     from ..data_object import DataObject
     from ..datasource_filter import DataSourceFilter
+    from ..requested_fields import ReqFieldsTree
     from ..session import OperableSession
 
 
@@ -30,7 +31,8 @@ class PageGetter(_Filterable, ABC):
         object_filters: Optional[DataSourceFilter] = None,
         sort_by: Optional[str] = None,
         session: Optional[OperableSession] = None,
-        requested_fields: list[str] | None = None
+        requested_fields: list[str] | None = None,
+        requested_tree: ReqFieldsTree | None = None,
     ) -> Tuple[Iterable[DataObject], int]:
         """
         For a specified object_type, of the given page_size
