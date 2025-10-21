@@ -17,10 +17,10 @@ class TestBoldApiClient:
     """The `BoldApiClient` and its methods"""
 
     @responses.activate
-    def test_get_detail(self):
+    def test_get_detail_data(self):
         """Default values, no token"""
 
-        client = BoldApiClient(FAKE_API_URL, FAKE_API_KEY)
+        client = BoldApiClient(FAKE_API_URL, FAKE_API_URL, FAKE_API_KEY)
         objs = [
             {
                 'processid': f'PROCESS{i}',
@@ -112,4 +112,39 @@ class TestBoldApiClient:
         )
 
         observed = client.get_detail('sample', ['SAMPLE1', 'SAMPLE2'])
+        assert observed == expected
+
+    @responses.activate
+    def test_get_detail_portal(self):
+        """Default values, no token"""
+
+        client = BoldApiClient(FAKE_API_URL, FAKE_API_URL, FAKE_API_KEY)
+        query_response = {
+            'query_id': 'FAKEQUERYID12345'
+        }
+        taxonomy_response = {
+            'taxonomy': {
+                'kingdom': {'Animalia': 937},
+                'phylum': {'Arthropoda': 937},
+                'class': {'Insecta': 937},
+                'order': {'Diptera': 937},
+                'family': {'Anthomyiidae': 936},
+                'subfamily': {},
+                'tribe': {},
+                'genus': {'Botanophila': 913},
+                'species': {'Botanophila fugax': 887, 'Botanophila sp. O111': 1},
+                'subspecies': {}
+            }
+        }
+
+        responses.get(
+            f'{FAKE_API_URL}/query',
+            json=query_response
+        )
+        responses.get(
+            f'{FAKE_API_URL}/taxonomy/FAKEQUERYID12345',
+            json=taxonomy_response
+        )
+        observed = list(client.get_detail('bin', ['BIN1234']))
+        expected = [taxonomy_response['taxonomy'] | {'binid': 'BIN1234'}]
         assert observed == expected

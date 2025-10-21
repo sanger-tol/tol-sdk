@@ -70,6 +70,7 @@ class _ConverterFactory:
 
 def _get_client_factory(
     api_url: str,
+    api_portal_url: str,
     api_key: str
 ) -> Callable[[], BoldApiClient]:
     """
@@ -79,12 +80,14 @@ def _get_client_factory(
 
     return lambda: BoldApiClient(
         api_url,
+        api_portal_url,
         api_key
     )
 
 
 def create_bold_datasource(
     bold_url: str,
+    bold_portal_url: str,
     bold_api_key: str
 ) -> BoldDataSource:
     """
@@ -96,6 +99,7 @@ def create_bold_datasource(
 
     client_factory = _get_client_factory(
         bold_url,
+        bold_portal_url,
         bold_api_key
     )
     manager = _ConverterFactory()

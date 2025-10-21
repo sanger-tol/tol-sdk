@@ -54,7 +54,7 @@ def _get_mock_ds_dict(
 class TestBoldApiConverter:
     """Tests `BoldApiConverter().convert()`"""
 
-    def test_convert(self):
+    def test_convert_sample(self):
         """Test the converter"""
 
         in_ = [
@@ -229,3 +229,37 @@ class TestBoldApiConverter:
         assert second.id == 'SAMPLE2'
         expected = in_[1] | dates[1]
         assert second.attributes == {k: v for k, v in expected.items() if k != 'sampleid'}
+
+    def test_convert_bin(self):
+        """Test the converter for bin objects"""
+
+        in_ = [
+            {
+                'phylum': {'phylum1': 10},
+                'class': {'class1': 20},
+                'order': {'order1': 30},
+                'family': {'family1': 40},
+                'genus': {'genus1': 50},
+                'species': {'species1': 60}
+            }
+        ]
+        parser = DefaultParser(_get_mock_ds_dict({'bin': {
+            'kingdom': 'Dict[str, int]',
+            'phylum': 'Dict[str, int]',
+            'class': 'Dict[str, int]',
+            'order': 'Dict[str, int]',
+            'family': 'Dict[str, int]',
+            'subfamily': 'Dict[str, int]',
+            'tribe': 'Dict[str, int]',
+            'genus': 'Dict[str, int]',
+            'species': 'Dict[str, int]',
+            'subspecies': 'Dict[str, int]'
+        }}))
+        converter = BoldApiConverter(parser)
+        (out_, _) = converter.convert_list(in_)
+        assert len(out_) == 1
+        first = out_[0]
+        assert first.type == 'bin'
+        assert first.id is None
+        expected = in_[0]
+        assert first.attributes == expected
