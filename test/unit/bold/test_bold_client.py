@@ -146,5 +146,5 @@ class TestBoldApiClient:
             json=taxonomy_response
         )
         observed = list(client.get_detail('bin', ['BIN1234']))
-        expected = [taxonomy_response['taxonomy'] | {'binid': 'BIN1234'}]
+        expected = [taxonomy_response | {'binid': 'BIN1234'}]
         assert observed == expected

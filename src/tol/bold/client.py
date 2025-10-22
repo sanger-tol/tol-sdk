@@ -143,7 +143,7 @@ class BoldApiClient(HttpClient):
         r.raise_for_status()
         results = r.json()
         # Unmatched queries just return empty dicts
-        return results['taxonomy'] | {'binid': object_id} \
+        return results | {'binid': object_id} \
             if 'taxonomy' in results \
             and 'kingdom' in results['taxonomy'] \
             and results['taxonomy']['kingdom'] != {} \

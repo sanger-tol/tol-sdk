@@ -40,7 +40,7 @@ class TestBoldDataSource(TestCase):
         ret = bds.get_by_id('bin', ['BOLD:AAG2462', 'Rubbish'])
         obj1 = next(ret)
         assert 'BOLD:AAG2462' == obj1.id
-        assert 'Animalia' in obj1.kingdom
+        assert 'Animalia' in obj1.taxonomy['kingdom']
 
         obj2 = next(ret)
         assert obj2 is None

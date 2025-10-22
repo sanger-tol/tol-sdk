@@ -71,7 +71,7 @@ class TestBoldDataSource:
 
         mock_client = Mock()
 
-        mock_response = {'phylum': {'phylum1': 10}}
+        mock_response = {'taxonomy': {'phylum': {'phylum1': 10}}}
         mock_client.get_detail.return_value = [mock_response]
 
         mock_lc_converter = Mock()
@@ -85,7 +85,7 @@ class TestBoldDataSource:
         mock_data_object = _get_mock_data_object(
             type_='bin',
             id_='an ID',
-            attributes={'phylum': {'phylum1': 10}}
+            attributes={'taxonomy': {'phylum': {'phylum1': 10}}}
         )
         mock_lc_converter.convert_list.return_value = ([mock_data_object], 1)
 

@@ -107,10 +107,12 @@ class TestCreateBoldDatasource:
             'bin',
             id_='BIN1',
             attributes={
-                'kingdom': {'kingdom1': 10},
-                'phylum': {'phylum1': 10},
-                'class': {'class1': 5},
-                'order': {'order1': 2}
+                'taxonomy': {
+                    'kingdom': {'kingdom1': 10},
+                    'phylum': {'phylum1': 10},
+                    'class': {'class1': 5},
+                    'order': {'order1': 2}
+                }
             }
         )
         assert observed == [mock_data_object]

@@ -118,16 +118,7 @@ class BoldDataSource(
                 'collection_date_end': 'datetime'
             },
             'bin': {
-                'kingdom': 'Dict[str, int]',
-                'phylum': 'Dict[str, int]',
-                'class': 'Dict[str, int]',
-                'order': 'Dict[str, int]',
-                'family': 'Dict[str, int]',
-                'subfamily': 'Dict[str, int]',
-                'tribe': 'Dict[str, int]',
-                'genus': 'Dict[str, int]',
-                'species': 'Dict[str, int]',
-                'subspecies': 'Dict[str, int]'
+                'taxonomy': 'Dict[str, Dict[str, int]]'
             }
         }
 
