@@ -15,6 +15,7 @@ from .bioscan_extra_pantheon_species_to_elastic_sample_update_converter import B
 from .bioscan_image_to_elastic_sample_update_converter import BioscanImageToElasticSampleUpdateConverter  # noqa F401
 from .bioscan_qc_specimen_to_elastic_sample_update_converter import BioscanQcSpecimenToElasticSampleUpdateConverter  # noqa F401
 from .bioscan_qc_uksi_entry_to_elastic_sample_update_converter import BioscanQcUksiEntryToElasticSampleUpdateConverter # noqa F401
+from .bold_bin_to_elastic_sample_update_converter import BoldBinToElasticSampleUpdateConverter  # noqa F401
 from .bold_sample_to_elastic_sample_update_converter import BoldSampleToElasticSampleUpdateConverter  # noqa F401
 from .elastic_object_to_portaldb_object_converter import ElasticObjectToPortaldbObjectConverter  # noqa F401
 from .elastic_sample_to_benchling_tissue_converter import ElasticSampleToBenchlingTissueConverter  # noqa F401

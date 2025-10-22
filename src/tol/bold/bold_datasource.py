@@ -116,6 +116,9 @@ class BoldDataSource(
                 'province/state': 'str',
                 'bold_recordset_code_arr': 'List[str]',
                 'collection_date_end': 'datetime'
+            },
+            'bin': {
+                'taxonomy': 'Dict[str, Dict[str, int]]'
             }
         }
 

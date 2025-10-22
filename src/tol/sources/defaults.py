@@ -38,6 +38,7 @@ class Defaults:
     GOAT_API_PATH = '/api/v2'
 
     BOLD_URL = 'https://data.boldsystems.org'
+    BOLD_PORTAL_URL = 'https://portal.boldsystems.org'
     BOLD_API_PATH = '/api'
 
     COPO_URL = 'https://copo-project.org'
