@@ -408,7 +408,7 @@ def create_standard_models(
             back_populates='boards',
             foreign_keys=[user_id]
         )
-    
+
     class DataSourceInstance(base_model_class):
         __tablename__ = 'data_source_instance'
 
