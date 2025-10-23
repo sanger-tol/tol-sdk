@@ -8,6 +8,6 @@ from .authenticate import Authenticator, quick_and_dirty_auth  # noqa
 from .auth_context import AuthContext, CtxGetter, default_ctx_getter  # noqa
 from .data_body import RequestBody, JsonApiRequestBody  # noqa
 from .filter_utils import FilterUtils  # noqa
-from .list_get_parameters import ListGetParamaters  # noqa
+from .list_get_parameters import ListGetParameters  # noqa
 from .relation_url import RelataionshipHopsParser  # noqa
 from .stats_parameters import GroupStatsParameters, StatsParameters  # noqa

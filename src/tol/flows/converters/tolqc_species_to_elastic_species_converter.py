@@ -37,6 +37,12 @@ class TolqcSpeciesToElasticSpeciesConverter(
         target_attributes['scientific_name'] = data_object.id
         target_attributes.pop('taxon_id', None)
 
+        # Accessions
+        if data_object.data_accession:
+            target_attributes['bioproject_accession'] = data_object.data_accession.id
+        if data_object.umbrella_accession:
+            target_attributes['umbrella_bioproject_accession'] = data_object.umbrella_accession.id
+
         ret = self._data_object_factory(
             'species',
             data_object.attributes['taxon_id'],

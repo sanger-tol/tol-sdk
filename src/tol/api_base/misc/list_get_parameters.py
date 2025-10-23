@@ -9,7 +9,7 @@ from .filter_utils import FilterUtils
 from ...api_client.exception import BadQueryArgError
 
 
-class ListGetParamaters:
+class ListGetParameters:
     """
     Parses the parameters from a query string for a List GET
     endpoint.

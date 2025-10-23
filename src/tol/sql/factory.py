@@ -94,7 +94,8 @@ def create_sql_datasource(
     api_user_id_getter: Callable[[], str] = lambda: default_ctx_getter().user_id,
     database_factory: DatabaseFactory = __database,
     model_factory: BackConverterFactory = __back_converter_factory,
-    do_factory: ConverterFactory = __model_converter_factory
+    do_factory: ConverterFactory = __model_converter_factory,
+    **kwargs
 ) -> SqlDataSource:
     """
     Creates an SqlDataSource instance using:
@@ -122,5 +123,6 @@ def create_sql_datasource(
         back_converter_factory,
         filter_factory,
         sorter_factory,
-        user_id_getter=user_id_getter
+        user_id_getter=user_id_getter,
+        **kwargs
     )
