@@ -72,7 +72,8 @@ class TestGoatApiConverter:
                         'isb_wildlife_act_1976': {'value': 'IWA-Sch5'},
                         'protection_of_badgers_act_1992': {'value': 'Badgers92'},
                         'family_representative': {'value': 'DTOL'},
-                        'sample_collected': {'value': 'DTOL'}
+                        'sample_collected': {'value': 'DTOL'},
+                        'country_list': {'value': ['AT', 'BE']}
                     },
                     'names': {
                         'tolid_prefix': {
@@ -148,7 +149,8 @@ class TestGoatApiConverter:
                         'marhabreg-2017': {'value': 'Mar'},
                         'waca_1981': {'value': 'Shakira'},
                         'family_representative': {'value': ['PROJ_A', 'PROJ_B']},
-                        'sample_collected': {'value': 'ZOONOMIA'}
+                        'sample_collected': {'value': 'ZOONOMIA'},
+                        'country_list': {'value': ['BG', 'CA']}
                     }
                 }
             }
@@ -171,6 +173,7 @@ class TestGoatApiConverter:
             'tolid_prefix': 'str',
             'common_name': 'str',
             'sample_collected': 'List[str]',
+            'country_list': 'List[str]',
             'synonym': 'List[str]'
         }}))
         converter = GoatApiConverter(parser)
@@ -191,6 +194,7 @@ class TestGoatApiConverter:
             'protection_of_badgers_act_1992': ['Badgers92'],
             'family_representative': ['DTOL'],
             'sample_collected': ['DTOL'],
+            'country_list': ['AT', 'BE'],
             'lineage': ['Mustelidae', 'Meles', 'Meles meles'],
             'tolid_prefix': 'mMelMel',
             'common_name': 'Melon',
@@ -215,5 +219,6 @@ class TestGoatApiConverter:
             'marhabreg-2017': ['Mar'],
             'waca_1981': ['Shakira'],
             'family_representative': ['PROJ_A', 'PROJ_B'],
-            'sample_collected': ['ZOONOMIA']
+            'sample_collected': ['ZOONOMIA'],
+            'country_list': ['BG', 'CA']
         }

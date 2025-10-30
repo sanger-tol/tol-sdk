@@ -99,6 +99,7 @@ class GoatDataSource(
                 'family_representative': 'List[str]',
                 'lineage': 'List[str]',
                 'sample_collected': 'List[str]',
+                'country_list': 'List[str]',
             }
         }
 
