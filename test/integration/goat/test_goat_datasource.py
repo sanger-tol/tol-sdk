@@ -80,10 +80,8 @@ class TestGoatDataSource(TestCase):
                 self.assertEqual(obj.sample_collected, ['DTOL'])
                 self.assertEqual(
                     obj.country_list,
-                    [
-                        'AT', 'BE', 'BG', 'CA', 'CH', 'DE', 'DK', 'ES', 'FI',
-                         'FR', 'GB', 'GR', 'HR', 'IT', 'LU', 'NL', 'PT','SE', 'UA', 'US'
-                    ]
+                    ['AT', 'BE', 'BG', 'CA', 'CH', 'DE', 'DK', 'ES', 'FI',
+                     'FR', 'GB', 'GR', 'HR', 'IT', 'LU', 'NL', 'PT','SE', 'UA', 'US']
                 )
                 self.assertTrue(any('Phycis suavella' in syn for syn in obj.synonym))
 
