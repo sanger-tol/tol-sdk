@@ -92,7 +92,7 @@ class TestPortalDataSource(TestCase):
                 self.assertEqual(
                     obj.goat_country_list,
                     [
-                        'AT', 'BE', 'BG', 'CA', 'CH', 'DE', 'DK', 'ES', 'FI',
+                        'AT', 'BE', 'BG', 'CA', 'CH', 'DE', 'DK', 'ES', 'FI', 
                         'FR', 'GB', 'GR', 'HR', 'IT', 'LU', 'NL', 'PT','SE', 'UA', 'US'
                     ]
                 )

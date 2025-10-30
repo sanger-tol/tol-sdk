@@ -82,7 +82,7 @@ class TestGoatDataSource(TestCase):
                     obj.country_list,
                     [
                         'AT', 'BE', 'BG', 'CA', 'CH', 'DE', 'DK', 'ES', 'FI',
-                        'FR', 'GB', 'GR', 'HR', 'IT', 'LU', 'NL', 'PT','SE', 'UA', 'US'
+                         'FR', 'GB', 'GR', 'HR', 'IT', 'LU', 'NL', 'PT','SE', 'UA', 'US'
                     ]
                 )
                 self.assertTrue(any('Phycis suavella' in syn for syn in obj.synonym))
