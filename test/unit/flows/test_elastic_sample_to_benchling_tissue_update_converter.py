@@ -137,6 +137,7 @@ class TestElasticSampleToBenchlingTissueUpdateConverter(TestCase):
                 'sts_lifestage': 'lifestage1',
                 'sts_sex': 'sex1',
                 'sts_tissue_size': 'size1',
+                'sts_hazard_group': 'level1',
                 'sts_preservation_approach': 'approach1',
                 'sts_receive_date': datetime(2022, 1, 1),
                 'sts_tollab_assign_date': datetime(2023, 1, 1),
@@ -162,9 +163,9 @@ class TestElasticSampleToBenchlingTissueUpdateConverter(TestCase):
         )
 
         converteds = converter.convert(obj1)
+
         id1, attributes1 = next(converteds)
         self.assertEqual('benchling1', id1)
-        self.maxDiff = None
         self.assertEqual(attributes1, {
             'rack_id': 'rack1',
             'tube_well_id': 'tube1',
@@ -183,6 +184,7 @@ class TestElasticSampleToBenchlingTissueUpdateConverter(TestCase):
             'lifestage': 'lifestage1',
             'sex': 'sex1',
             'preservation_approach': 'approach1',
+            'hazard_group': 'level1',
             'size_of_tissue_in_tube': 'size1',
             'family_representative': 'family1, family2',
             'date_sample_received_at_sanger': '2022-01-01',
