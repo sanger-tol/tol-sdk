@@ -78,6 +78,11 @@ class TestGoatDataSource(TestCase):
                 self.assertEqual(obj.long_list, ['DTOL', 'PSYCHE'])
                 self.assertEqual(obj.phylum.scientific_name, 'Arthropoda')
                 self.assertEqual(obj.sample_collected, ['DTOL'])
+                self.assertEqual(
+                    obj.country_list,
+                    ['AT', 'BE', 'BG', 'CA', 'CH', 'DE', 'DK', 'ES', 'FI',
+                     'FR', 'GB', 'GR', 'HR', 'IT', 'LU', 'NL', 'PT', 'SE', 'UA', 'US']
+                )
                 self.assertTrue(any('Phycis suavella' in syn for syn in obj.synonym))
 
     def test_get_list_tax_rank(self):

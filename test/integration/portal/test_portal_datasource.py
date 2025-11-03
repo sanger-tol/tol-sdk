@@ -89,3 +89,8 @@ class TestPortalDataSource(TestCase):
                 self.assertEqual(obj.goat_long_list, ['DTOL', 'PSYCHE'])
                 self.assertEqual(obj.goat_phylum_name, 'Arthropoda')
                 self.assertEqual(obj.goat_sample_collected, ['DTOL'])
+                self.assertEqual(
+                    obj.goat_country_list,
+                    ['AT', 'BE', 'BG', 'CA', 'CH', 'DE', 'DK', 'ES', 'FI',
+                     'FR', 'GB', 'GR', 'HR', 'IT', 'LU', 'NL', 'PT', 'SE', 'UA', 'US']
+                )

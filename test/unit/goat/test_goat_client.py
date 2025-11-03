@@ -34,6 +34,7 @@ class TestGoatApiClient:
                             'protection_of_badgers_act_1992': {'value': 'Badgers92'},
                             'family_representative': {'value': 'DTOL'},
                             'sample_collected': {'value': 'DTOL'},
+                            'country_list': {'value': ['AT', 'BE']},
                             'synonym': {'value': ['Meles alba', 'Meles britannicus']}
                         }
                     }
@@ -54,6 +55,7 @@ class TestGoatApiClient:
                             'waca_1981': {'value': 'Shakira'},
                             'family_representative': {'value': ['PROJ_A', 'PROJ_B']},
                             'sample_collected': {'value': 'ZOONOMIA'},
+                            'country_list': {'value': ['BG', 'CA']},
                             'synonym': {'value': ['Molos single']}
                         }
                     }
@@ -78,6 +80,7 @@ class TestGoatApiClient:
                         'protection_of_badgers_act_1992': {'value': 'Badgers92'},
                         'family_representative': {'value': 'DTOL'},
                         'sample_collected': {'value': 'DTOL'},
+                        'country_list': {'value': ['AT', 'BE']},
                         'synonym': {'value': ['Meles alba', 'Meles britannicus']}
                     }
                 }
@@ -98,6 +101,7 @@ class TestGoatApiClient:
                         'waca_1981': {'value': 'Shakira'},
                         'family_representative': {'value': ['PROJ_A', 'PROJ_B']},
                         'sample_collected': {'value': 'ZOONOMIA'},
+                        'country_list': {'value': ['BG', 'CA']},
                         'synonym': {'value': ['Molos single']}
                     }
                 }
