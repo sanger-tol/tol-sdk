@@ -55,6 +55,9 @@ class StsSampleProjectToElasticSampleConverter(
             if 'collection_method' in s.to_one_relationships:
                 if s.collection_method is not None:
                     attributes['collection_method_desc'] = s.collection_method.method
+            if 'hazard_group' in s.to_one_relationships:
+                if s.hazard_group is not None:
+                    attributes['hazard_group'] = s.hazard_group.level
             if 'specimen' in s.to_one_relationships:
                 if s.specimen is not None:
                     to_one['specimen'] = self._data_object_factory(

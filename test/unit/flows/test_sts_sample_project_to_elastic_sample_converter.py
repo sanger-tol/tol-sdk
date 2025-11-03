@@ -27,7 +27,7 @@ class _MockDataSourceRelational(DataSource, Relational):
                 'specimen', 'preservative_solution', 'collection_method',
                 'sample_person', 'person', 'manifest', 'tissue_size', 'sample_species',
                 'species', 'lifestage', 'sex', 'organism_part', 'sample_species_organism_part',
-                'ext_id', 'strain', 'storage_rack', 'freezer_tray']
+                'ext_id', 'strain', 'storage_rack', 'freezer_tray', 'hazard_group']
 
     @property
     def attribute_types(self):
@@ -50,6 +50,7 @@ class _MockDataSourceRelational(DataSource, Relational):
             'preservation_approach': 'preservation_approach',
             'preservative_solution': 'preservative_solution',
             'collection_method': 'collection_method',
+            'hazard_group': 'hazard_group',
             'tissue_size': 'tissue_size',
             'sample_export_options': 'sample_export_options',
             'storage_rack': 'storage_rack',
@@ -389,6 +390,13 @@ class TestStsSampleProjectToElasticSampleConverter(TestCase):
                 'method': 'method_desc'
             }
         )
+        hazard_group = CoreDataObject(
+            id_='test_hazard_group',
+            type_='hazard_group',
+            attributes={
+                'level': 'level1'
+            }
+        )
         sample = CoreDataObject(
             id_='test_sample',
             type_='sample',
@@ -407,6 +415,7 @@ class TestStsSampleProjectToElasticSampleConverter(TestCase):
                 'preservation_approach': approach,
                 'preservative_solution': solution,
                 'collection_method': method,
+                'hazard_group': hazard_group,
                 'specimen': specimen,
                 'sampleset': sampleset,
                 'manifest': manifest,
@@ -445,6 +454,7 @@ class TestStsSampleProjectToElasticSampleConverter(TestCase):
             'preservation_approach': 'approach',
             'preservative_solution': 'solution',
             'collection_method_desc': 'method_desc',
+            'hazard_group': 'level1',
             'tissue_size': 'huge',
             'lab_work_category': 'labwork1',
             'col_date': datetime.datetime(2020, 2, 2),

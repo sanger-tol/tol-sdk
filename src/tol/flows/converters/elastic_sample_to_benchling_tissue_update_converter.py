@@ -47,6 +47,7 @@ class ElasticSampleToBenchlingTissueUpdateConverter(
                     'sex': data_object.sts_sex,
                     'preservation_approach': data_object.sts_preservation_approach,
                     'size_of_tissue_in_tube': data_object.sts_tissue_size,
+                    'hazard_group': data_object.sts_hazard_group,
                     'date_sample_received_at_sanger':
                         data_object.sts_receive_date.strftime('%Y-%m-%d')
                         if data_object.sts_receive_date is not None else '1970-01-01',
