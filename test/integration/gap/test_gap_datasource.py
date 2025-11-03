@@ -50,10 +50,8 @@ class TestGapDataSource(TestCase):
             ),
             'taxon_id': 69820,
             'phylum_id': '6656',
-            'image_url': (
-                'https://inaturalist-open-data.s3.amazonaws.com/photos/253028015/medium.jpg'
-            ),
-            'image_caption': '<i>Spodoptera litura</i><br> (Phylum Arthropoda)',
+            'image_url': '',
+            'image_caption': '',
             'lustre_path_analysis_base': (
                 '/lustre/scratch122/tol/data/4/1/3/3/e/1/Spodoptera_litura/'
                 'analysis/GCA_002706865.2'
