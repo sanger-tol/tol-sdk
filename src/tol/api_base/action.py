@@ -4,6 +4,9 @@
 
 from __future__ import annotations
 
+import importlib
+import inspect
+
 import typing
 from datetime import datetime
 from typing import Any
@@ -150,23 +153,44 @@ def action_blueprint(
             if action.params
             else {}
         )
+        
+        if action.flow_name:
+            flow_params = {
+                'extra_params': {
+                    **params,
+                    **action_params,
+                },
+                'user_id': user_id,
+                'object_type': object_type,
+                'ids': ids
+            }
 
-        flow_params = {
-            'extra_params': {
-                **params,
-                **action_params,
-            },
-            'user_id': user_id,
-            'object_type': object_type,
-            'ids': ids
-        }
-
-        flow_run_id, flow_run_name = __insert_flow_run(
-            action,
-            flow_params,
-            user_id
-        )
-
+            flow_run_id, flow_run_name = __insert_flow_run(
+                action,
+                flow_params,
+                user_id
+            )
+            
+        elif action.action_name:
+            module = importlib.import_module(action.action_name)
+            # Gets all classes defined in the module (should only be the action class)
+            module_classes = inspect.getmembers(module, inspect.isclass)
+            action_class = next(
+                cls for _, cls in module_classes
+                if cls.__module__ == module.__name__
+            )
+            action_instance = action_class(datasource=sql_ds)
+            status = action_instance.run(ids=ids, params=params)
+            if status[1] != 200:
+                return status
+    
+        else:
+            raise DataSourceError(
+                'Invalid Action',
+                'No Actions are defined',
+                400
+            )
+            
         user = sql_ds.get_one('user', user_id)
 
         user_action_params = {

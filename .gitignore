@@ -13,7 +13,7 @@ dist/
 .dccache
 .venv/
 .virtualenv/
-
+virtualenv
 scripts/
 
 doc/build/*

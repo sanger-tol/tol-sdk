@@ -1,0 +1,33 @@
+# SPDX-FileCopyrightText: 2025 Genome Research Ltd.
+#
+# SPDX-License-Identifier: MIT
+
+from __future__ import annotations
+
+from typing import Any
+from abc import ABC, abstractmethod
+from ..core import DataSource
+
+
+class Action(ABC):
+    """
+    The central class for running local actions.
+    """
+    def __init__(
+            self,
+            datasource: DataSource,
+    ):
+        self.datasource = datasource
+
+    @abstractmethod
+    def run(
+        self,
+        ids: list[str],
+        params: dict[str, Any] | None = None
+    ) -> tuple[dict[str, bool], int]:
+        """
+        Run the action on the given IDs and return status in
+        format ({'success': True}, 200).
+        """
+
+        pass
