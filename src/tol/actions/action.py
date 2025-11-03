@@ -15,13 +15,13 @@ class Action(ABC):
     """
     def __init__(
             self,
-            datasource: DataSource,
     ):
-        self.datasource = datasource
+        pass
 
     @abstractmethod
     def run(
         self,
+        datasource: DataSource,
         ids: list[str],
         params: dict[str, Any] | None = None
     ) -> tuple[dict[str, bool], int]:
