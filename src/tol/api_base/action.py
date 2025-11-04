@@ -171,7 +171,15 @@ def action_blueprint(
                 user_id
             )
             
-        elif action.action_name:
+            user_action_params = {
+                **params,
+                **action_params,
+                'ids': ids,
+                'flow_run_id': flow_run_id,
+                'flow_run_name': flow_run_name
+            }
+            
+        if action.action_name:
             module = importlib.import_module(action.action_name)
             # Gets all classes defined in the module (should only be the action class)
             module_classes = inspect.getmembers(module, inspect.isclass)
@@ -179,10 +187,17 @@ def action_blueprint(
                 cls for _, cls in module_classes
                 if cls.__module__ == module.__name__
             )
-            action_instance = action_class(datasource=sql_ds)
-            status = action_instance.run(ids=ids, params=params)
+            action_instance = action_class()
+            status = action_instance.run(ids=ids, params=params, object_type=object_type, datasource=sql_ds)
             if status[1] != 200:
                 return status
+
+            user_action_params = {
+                **params,
+                **action_params,
+                'ids': ids,
+                'status': status
+            }
     
         else:
             raise DataSourceError(
@@ -193,13 +208,6 @@ def action_blueprint(
             
         user = sql_ds.get_one('user', user_id)
 
-        user_action_params = {
-            **params,
-            **action_params,
-            'ids': ids,
-            'flow_run_id': flow_run_id,
-            'flow_run_name': flow_run_name
-        }
 
         user_action = sql_ds.data_object_factory(
             'user_action',

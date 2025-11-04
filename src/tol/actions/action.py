@@ -23,6 +23,7 @@ class Action(ABC):
         self,
         datasource: DataSource,
         ids: list[str],
+        object_type: str,
         params: dict[str, Any] | None = None
     ) -> tuple[dict[str, bool], int]:
         """
