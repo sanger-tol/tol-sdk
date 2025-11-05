@@ -246,12 +246,6 @@ def create_standard_models(
 
         title: Mapped[str] = mapped_column(nullable=False)
         object_type: Mapped[str] = mapped_column(nullable=False)
-        datasource = mapped_column(  # noqa A003
-            type_=JSONB(),
-            nullable=False,
-            default={},
-            server_default='{}'  # noqa P103
-        )
         filter = mapped_column(  # noqa A003
             type_=JSONB(),
             nullable=False,
