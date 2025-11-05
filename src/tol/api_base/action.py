@@ -5,9 +5,9 @@
 from __future__ import annotations
 
 import importlib
-from typing import Any
-
+import typing
 from datetime import datetime
+from typing import Any
 
 from flask import Blueprint, request
 
@@ -207,7 +207,8 @@ def action_blueprint(
             class_params = {**action_params, **params}
 
             action_instance = action_class()
-            status = action_instance.run(ids=ids, params=class_params, object_type=object_type, datasource=sql_ds)
+            status = action_instance.run(ids=ids, params=class_params,
+                                         object_type=object_type, datasource=sql_ds)
             if status[1] != 200:
                 return status
 
@@ -226,7 +227,6 @@ def action_blueprint(
             )
 
         user = sql_ds.get_one('user', user_id)
-
 
         user_action = sql_ds.data_object_factory(
             'user_action',
