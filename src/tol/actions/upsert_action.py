@@ -33,6 +33,7 @@ class UpsertAction(Action):
             object_type=object_type,
             params=params
         )
+
         try:
             datasource.upsert_batch(object_type=object_type, objects=data_objects)
             return {'success': True}, 200

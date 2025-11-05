@@ -5,7 +5,6 @@
 from __future__ import annotations
 
 import importlib
-import inspect
 
 import typing
 from datetime import datetime
@@ -179,16 +178,37 @@ def action_blueprint(
                 'flow_run_name': flow_run_name
             }
             
-        if action.action_name:
-            module = importlib.import_module(action.action_name)
-            # Gets all classes defined in the module (should only be the action class)
-            module_classes = inspect.getmembers(module, inspect.isclass)
-            action_class = next(
-                cls for _, cls in module_classes
-                if cls.__module__ == module.__name__
-            )
+        elif action.class_name:
+            # Try to import the class from tol.actions first, then fall back to main.actions
+            action_class = None
+            try:
+                tol_actions_module = importlib.import_module('tol.actions')
+                if hasattr(tol_actions_module, action.class_name):
+                    action_class = getattr(tol_actions_module, action.class_name)
+            
+                if action_class is None:
+                    main_actions_module = importlib.import_module('main.actions')
+                    if hasattr(main_actions_module, action.class_name):
+                        action_class = getattr(main_actions_module, action.class_name)
+            
+            except:
+                raise DataSourceError(
+                    'Action Class Import Error',
+                    'Class not found in tol.actions or main.actions',
+                    500
+                )
+            
+            if action_class is None:
+                raise DataSourceError(
+                    'Action Class Not Found',
+                    f'Action class "{action.class_name}" not found in tol.actions or main.actions',
+                    404
+                )
+            
+            class_params = {**action_params, **params}
+
             action_instance = action_class()
-            status = action_instance.run(ids=ids, params=action_params, object_type=object_type, datasource=sql_ds)
+            status = action_instance.run(ids=ids, params=class_params, object_type=object_type, datasource=sql_ds)
             if status[1] != 200:
                 return status
 

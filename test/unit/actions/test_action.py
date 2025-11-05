@@ -29,7 +29,8 @@ class MockAction(Action):
     def run(self,
             ids: list[str],
             datasource: DataSource,
-            params: dict[str, Any] | None = None,
+            object_type: str,
+            params: dict[str, Any] | None = None
         ) -> tuple[Dict[str, bool], int]:
         return {'success': True}, 200
 
@@ -41,7 +42,8 @@ class TestAction(TestCase):
             action.run(
                 ids=['id1', 'id2'],
                 datasource=_MockDataSource({}),
-                params=None
+                params=None,
+                object_type='test_type'
             ),
             ({'success': True}, 200)
         )
