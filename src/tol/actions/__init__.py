@@ -3,4 +3,4 @@
 # SPDX-License-Identifier: MIT
 
 from .action import Action  # noqa
-from .upsert_column_value import UpsertColumnValue  # noqa
+from .upsert_action import UpsertAction  # noqa

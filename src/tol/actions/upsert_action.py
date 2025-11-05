@@ -10,7 +10,7 @@ from .action import Action
 from ..core import DataSource
 
 
-class UpsertColumnValue(Action):
+class UpsertAction(Action):
     """
     The central class for running local actions.
     """
