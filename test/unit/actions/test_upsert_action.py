@@ -12,10 +12,10 @@ from tol.core import DataSource
 
 class _MockDataSource(DataSource):
     """Empty DataSource for testing"""
-    
+
     def upsert_batch(self, object_type: str, objects: Any) -> None:
         if object_type != 'test_type':
-            raise ValueError("Unsupported object type")
+            raise ValueError('Unsupported object type')
         else:
             pass
 
@@ -29,16 +29,18 @@ class _MockDataSource(DataSource):
             'non-relational': {}
         }
 
+
 class MockAction(UpsertAction):
     def __init__(self):
         super().__init__()
 
-    def run(self,
-            ids: list[str],
-            datasource: DataSource,
-            object_type: str,
-            params: dict[str, Any] | None = None
-        ) -> tuple[Dict[str, bool], int]:
+    def run(
+        self,
+        ids: list[str],
+        datasource: DataSource,
+        object_type: str,
+        params: dict[str, Any] | None = None
+    ) -> tuple[Dict[str, bool], int]:
         data_objects = self.__convert_to_data_objects(
             datasource=datasource,
             ids=ids,
@@ -50,15 +52,14 @@ class MockAction(UpsertAction):
             return {'success': True}, 200
         except Exception as e:
             return {'error': str(e)}, 500
-    
-    def __convert_to_data_objects(self, datasource, ids, object_type, params = None):
-        for id in ids:
+
+    def __convert_to_data_objects(self, datasource, ids, object_type, params=None):
+        for id_ in ids:
             data_object = Mock()
             data_object.type_ = object_type
-            data_object.id_ = id
+            data_object.id_ = id_
             data_object.attributes = params
             yield data_object
-    
 
 
 class TestAction(TestCase):
@@ -73,7 +74,7 @@ class TestAction(TestCase):
             ),
             ({'success': True}, 200)
         )
-    
+
     def test_run_failure(self):
         action = MockAction()
         self.assertEqual(

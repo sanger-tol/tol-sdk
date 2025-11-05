@@ -22,16 +22,18 @@ class _MockDataSource(DataSource):
             'non-relational': {}
         }
 
+
 class MockAction(Action):
     def __init__(self):
         super().__init__()
 
-    def run(self,
-            ids: list[str],
-            datasource: DataSource,
-            object_type: str,
-            params: dict[str, Any] | None = None
-        ) -> tuple[Dict[str, bool], int]:
+    def run(
+        self,
+        ids: list[str],
+        datasource: DataSource,
+        object_type: str,
+        params: dict[str, Any] | None = None
+    ) -> tuple[Dict[str, bool], int]:
         return {'success': True}, 200
 
 

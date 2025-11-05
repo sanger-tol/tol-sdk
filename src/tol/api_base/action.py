@@ -5,10 +5,9 @@
 from __future__ import annotations
 
 import importlib
-
-import typing
-from datetime import datetime
 from typing import Any
+
+from datetime import datetime
 
 from flask import Blueprint, request
 
@@ -152,7 +151,7 @@ def action_blueprint(
             if action.params
             else {}
         )
-        
+
         if action.flow_name:
             flow_params = {
                 'extra_params': {
@@ -169,7 +168,7 @@ def action_blueprint(
                 flow_params,
                 user_id
             )
-            
+
             user_action_params = {
                 **params,
                 **action_params,
@@ -177,7 +176,7 @@ def action_blueprint(
                 'flow_run_id': flow_run_id,
                 'flow_run_name': flow_run_name
             }
-            
+
         elif action.class_name:
             # Try to import the class from tol.actions first, then fall back to main.actions
             action_class = None
@@ -185,26 +184,26 @@ def action_blueprint(
                 tol_actions_module = importlib.import_module('tol.actions')
                 if hasattr(tol_actions_module, action.class_name):
                     action_class = getattr(tol_actions_module, action.class_name)
-            
+
                 if action_class is None:
                     main_actions_module = importlib.import_module('main.actions')
                     if hasattr(main_actions_module, action.class_name):
                         action_class = getattr(main_actions_module, action.class_name)
-            
-            except:
+
+            except ImportError:
                 raise DataSourceError(
                     'Action Class Import Error',
                     'Class not found in tol.actions or main.actions',
                     500
                 )
-            
+
             if action_class is None:
                 raise DataSourceError(
                     'Action Class Not Found',
                     f'Action class "{action.class_name}" not found in tol.actions or main.actions',
                     404
                 )
-            
+
             class_params = {**action_params, **params}
 
             action_instance = action_class()
@@ -218,14 +217,14 @@ def action_blueprint(
                 'ids': ids,
                 'status': status
             }
-    
+
         else:
             raise DataSourceError(
                 'Invalid Action',
                 'No Actions are defined',
                 400
             )
-            
+
         user = sql_ds.get_one('user', user_id)
 
 

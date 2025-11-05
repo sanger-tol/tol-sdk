@@ -26,7 +26,7 @@ class UpsertAction(Action):
         object_type: str,
         params: dict[str, Any] | None = None
     ) -> tuple[dict[str, bool], int]:
-        
+
         data_objects = self.__convert_to_data_objects(
             datasource=datasource,
             ids=ids,
@@ -39,7 +39,6 @@ class UpsertAction(Action):
             return {'success': True}, 200
         except Exception as e:
             return {'error': str(e)}, 500
-    
 
     def __convert_to_data_objects(
         self,
@@ -48,14 +47,11 @@ class UpsertAction(Action):
         object_type: str,
         params: dict[str, Any] | None = None
     ) -> Any:
-        CoreDataObject = datasource.data_object_factory
-        
-        for id in ids:
+        CoreDataObject = datasource.data_object_factory # noqa N806
+
+        for id_ in ids:
             yield CoreDataObject(
                 type_=object_type,
-                id_=id,
+                id_=id_,
                 attributes=params
             )
-        
-        
-        

@@ -75,7 +75,8 @@ class TestActionsWithDataSources:
         ctx.roles = [role]
 
         sql_ds.data_object_factory.side_effect = self.__do_factory
-        sql_ds.get_list.return_value = [self.__mock_action('123', 'flow'), self.__mock_action('124', 'action')]
+        sql_ds.get_list.return_value = [self.__mock_action('123', 'flow'),
+                                        self.__mock_action('124', 'action')]
         sql_ds.get_one.return_value = self.__mock_user('100')
         prefect_ds.insert.return_value = [
             self.__do_factory(
