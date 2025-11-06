@@ -75,7 +75,8 @@ class TestActionsWithDataSources:
         ctx.roles = [role]
 
         sql_ds.data_object_factory.side_effect = self.__do_factory
-        sql_ds.get_list.return_value = [self.__mock_action('123')]
+        sql_ds.get_list.return_value = [self.__mock_action('123', 'flow'),
+                                        self.__mock_action('124', 'action')]
         sql_ds.get_one.return_value = self.__mock_user('100')
         prefect_ds.insert.return_value = [
             self.__do_factory(
@@ -174,14 +175,15 @@ class TestActionsWithDataSources:
 
         return mock_obj
 
-    def __mock_action(self, id_: str) -> DataObject:
+    def __mock_action(self, id_: str, flow_or_action: str) -> DataObject:
         mock_obj: DataObject = create_autospec(DataObject)
 
         mock_obj.type = 'action'
         mock_obj.id = id_
 
         attributes = {
-            'flow_name': 'example_flow',
+            'flow_name': 'example_flow' if flow_or_action == 'flow' else 'example_action',
+            'class_name': None,
             'params': {
                 'bool': True,
                 'answer': 42
