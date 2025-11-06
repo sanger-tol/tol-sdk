@@ -227,7 +227,7 @@ class SqlDataSource(
                 converter.convert_iterable(models)
             )
             if session is None:
-              in_session.close()  
+                in_session.close()
             return return_list, total_count
         except KeyError:
             in_session.close()
