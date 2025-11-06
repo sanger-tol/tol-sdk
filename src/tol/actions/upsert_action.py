@@ -14,7 +14,7 @@ class UpsertAction(Action):
     """
     The central class for running local actions.
     """
-    
+
     def __init__(self):
         super().__init__()
 
