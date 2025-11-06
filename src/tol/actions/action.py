@@ -14,10 +14,6 @@ class Action(ABC):
     """
     The central class for running local actions.
     """
-    def __init__(
-            self,
-    ):
-        pass
 
     @abstractmethod
     def run(
