@@ -202,32 +202,35 @@ class SqlDataSource(
         )
         sorter = self.__sorter_factory(sort_by)
         in_session = self.__get_sqla_session(session)
-        total_count = self.__db.count(
-            tablename,
-            in_session,
-            filters=database_filter
-        )
-        models = self.__get_list_page_models(
-            tablename,
-            database_filter,
-            page_number,
-            page_size,
-            sorter,
-            in_session,
-            requested_relationships=self.__format_requested_relationships(
-                object_type,
-                requested_fields
-            ),
-        )
-        converter = self.__get_converter(
-            requested_fields=requested_fields
-        )
-        return_list = list(
-            converter.convert_iterable(models)
-        )
-        if session is None:
+        try:
+            total_count = self.__db.count(
+                tablename,
+                in_session,
+                filters=database_filter
+            )
+            models = self.__get_list_page_models(
+                tablename,
+                database_filter,
+                page_number,
+                page_size,
+                sorter,
+                in_session,
+                requested_relationships=self.__format_requested_relationships(
+                    object_type,
+                    requested_fields
+                ),
+            )
+            converter = self.__get_converter(
+                requested_fields=requested_fields
+            )
+            return_list = list(
+                converter.convert_iterable(models)
+            )
+            if session is None:
+              in_session.close()  
+            return return_list, total_count
+        except KeyError:
             in_session.close()
-        return return_list, total_count
 
     def get_list(
         self,
