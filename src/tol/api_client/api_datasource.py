@@ -288,12 +288,15 @@ class ApiDataSource(
         object_type: str,
         objects: Iterable[DataObject],
         session: Optional[OperableSession] = None,
-        **kwargs
+        merge_collections: bool | None = None,
+        **kwargs,
     ) -> Iterable[DataObject] | None:
-        transfer = self.__dc_factory().convert_list(
-            list(objects)
+        transfer = self.__dc_factory().convert_list(list(objects))
+        returned = self.__client_factory().upsert(
+            object_type,
+            transfer,
+            merge_collections=merge_collections,
         )
-        returned = self.__client_factory().upsert(object_type, transfer)
         if self.return_mode[object_type] == ReturnMode.POPULATED:
             converted, _ = self.__jc_factory().convert_list(returned)
             return converted

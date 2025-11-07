@@ -18,7 +18,7 @@ from tol.elastic import (
 )
 
 
-def wait_for_ready(seconds: int = 60) -> None:
+def wait_for_ready(seconds: int = 120) -> None:
     elastic_uri = os.environ['ELASTIC_URI']
 
     for _ in range(seconds):
@@ -59,20 +59,20 @@ def elastic_datasource(
             'uri': os.environ['ELASTIC_URI'],
             'user': os.environ['ELASTIC_USER'],
             'password': os.environ['ELASTIC_PASSWORD'],
-            'index_prefix': prefix,
-            'relationship_cfg': {'root': rc_root},
-            'runtime_fields': {
-                'root': {
-                    'runtime_column': RuntimeField(
-                        field_type='boolean',
-                        dependencies=['bool_column'],
-                        function_body="emit(!doc['bool_column'].value)"
-                    ).to_dict(),
-                },
-                'related': {
-                    'summarise_one_root_int_column_min': {'type': 'double'},
-                    'summarise_one_root_int_column_max': {'type': 'double'},
-                }
+            'index_prefix': prefix
+        },
+        relationship_cfg={'root': rc_root},
+        runtime_fields={
+            'root': {
+                'runtime_column': RuntimeField(
+                    field_type='boolean',
+                    dependencies=['bool_column'],
+                    function_body="emit(!doc['bool_column'].value)"
+                ).to_dict(),
+            },
+            'related': {
+                'summarise_one_root_int_column_min': {'type': 'double'},
+                'summarise_one_root_int_column_max': {'type': 'double'},
             }
         }
     )
@@ -133,8 +133,11 @@ def create_indices(prefix: str, timeout: float = 5) -> None:
     elastic_ds.es.indices.refresh(index=['*'])
 
 
-def delete_aliases(prefix: str, ignore: list[int] = []) -> None:
+def delete_aliases(prefix: str, ignore: list[int] | None = None) -> None:
     """Deletes all aliases, leaves the indices"""
+
+    if ignore is None:
+        ignore = []
 
     elastic_ds = elastic_datasource(prefix)
 
@@ -167,6 +170,7 @@ def upsert_archetypes(prefix: str) -> None:
             'datetime_column': datetime(2020, 1, 1, 0, 0, 0),
             'bool_column': True,
             'list_column': ['item'],
+            # 'dict_column': {'key1': 1},  # dict columns not yet supported in API
             'related_object': {
                 'id': '#REL',
                 'int_column': 42,
@@ -182,7 +186,8 @@ def upsert_archetypes(prefix: str) -> None:
             'int_column': 42,
             'datetime_column': datetime(2020, 1, 1, 0, 0, 0),
             'bool_column': True,
-            'list_column': ['item']
+            'list_column': ['item'],
+            # 'dict_column': {'key1': 1},
         }
     )
 

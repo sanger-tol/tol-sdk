@@ -4,6 +4,7 @@
 
 from __future__ import annotations
 
+import importlib
 import typing
 from datetime import datetime
 from typing import Any
@@ -151,31 +152,81 @@ def action_blueprint(
             else {}
         )
 
-        flow_params = {
-            'extra_params': {
+        if action.flow_name:
+            flow_params = {
+                'extra_params': {
+                    **params,
+                    **action_params,
+                },
+                'user_id': user_id,
+                'object_type': object_type,
+                'ids': ids
+            }
+
+            flow_run_id, flow_run_name = __insert_flow_run(
+                action,
+                flow_params,
+                user_id
+            )
+
+            user_action_params = {
                 **params,
                 **action_params,
-            },
-            'user_id': user_id,
-            'object_type': object_type,
-            'ids': ids
-        }
+                'ids': ids,
+                'flow_run_id': flow_run_id,
+                'flow_run_name': flow_run_name
+            }
 
-        flow_run_id, flow_run_name = __insert_flow_run(
-            action,
-            flow_params,
-            user_id
-        )
+        elif action.class_name:
+            # Try to import the class from tol.actions first, then fall back to main.actions
+            action_class = None
+            try:
+                tol_actions_module = importlib.import_module('tol.actions')
+                if hasattr(tol_actions_module, action.class_name):
+                    action_class = getattr(tol_actions_module, action.class_name)
+
+                if action_class is None:
+                    main_actions_module = importlib.import_module('main.actions')
+                    if hasattr(main_actions_module, action.class_name):
+                        action_class = getattr(main_actions_module, action.class_name)
+
+            except ImportError:
+                raise DataSourceError(
+                    'Action Class Import Error',
+                    'Class not found in tol.actions or main.actions',
+                    500
+                )
+
+            if action_class is None:
+                raise DataSourceError(
+                    'Action Class Not Found',
+                    f'Action class "{action.class_name}" not found in tol.actions or main.actions',
+                    404
+                )
+
+            class_params = {**action_params, **params}
+
+            action_instance = action_class()
+            status = action_instance.run(ids=ids, params=class_params,
+                                         object_type=object_type, datasource=sql_ds)
+            if status[1] != 200:
+                return status
+
+            user_action_params = {
+                **params,
+                **action_params,
+                'ids': ids,
+                'status': status
+            }
+
+        else:
+            raise DataSourceError(
+                'Invalid Action',
+                'No Actions are defined',
+                400
+            )
 
         user = sql_ds.get_one('user', user_id)
-
-        user_action_params = {
-            **params,
-            **action_params,
-            'ids': ids,
-            'flow_run_id': flow_run_id,
-            'flow_run_name': flow_run_name
-        }
 
         user_action = sql_ds.data_object_factory(
             'user_action',

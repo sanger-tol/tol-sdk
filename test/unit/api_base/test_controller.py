@@ -8,7 +8,7 @@ from unittest.mock import MagicMock, Mock, PropertyMock, create_autospec
 import pytest
 
 from tol.api_base.controller import Controller
-from tol.api_base.misc import AggregationBody, AggregationParameters, ListGetParamaters
+from tol.api_base.misc import AggregationBody, AggregationParameters, ListGetParameters
 from tol.api_client.exception import (
     ObjectNotFoundByIdException,
     RecursiveRelationNotFoundException,
@@ -120,7 +120,7 @@ class TestController:
             'data': [{'type': 'test_B', 'id': str(i)} for i in range(20)],
         }
         controller = Controller(ds_2, DefaultView())
-        observed = controller.get_list('test_B', ListGetParamaters({}))
+        observed = controller.get_list('test_B', ListGetParameters({}))
         assert observed == expected
 
     def test_not_found(self):
@@ -141,7 +141,7 @@ class TestController:
         """Check that page_size and page_number are passed in correctly"""
 
         controller = Controller(ds_3, DefaultView())
-        parsed = ListGetParamaters(
+        parsed = ListGetParameters(
             {
                 'page': '90',
                 'page_size': '10',
@@ -237,7 +237,7 @@ class TestController:
 
         bad_ds = _BadDataSource()
         controller = Controller(bad_ds, DefaultView())
-        query_args = ListGetParamaters({'page': '1', 'page_size': '10'})
+        query_args = ListGetParameters({'page': '1', 'page_size': '10'})
         with pytest.raises(UnsupportedOperationError):
             controller.get_detail('test', 'hype')
         with pytest.raises(UnsupportedOperationError):

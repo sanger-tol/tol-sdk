@@ -38,6 +38,7 @@ class Upserter(_Writer, ABC):
 
         We previde a default implementation that calls `upsert_batch`
         """
+
         upserted = ()
         for batch in more_itertools.chunked(objects, self.write_batch_size):
             upserted = itertools.chain(upserted, self.upsert_batch(

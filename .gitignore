@@ -11,6 +11,9 @@ venv/
 dist/
 .DS_Store
 .dccache
+.venv/
 .virtualenv/
-
+virtualenv
 scripts/
+
+doc/build/*

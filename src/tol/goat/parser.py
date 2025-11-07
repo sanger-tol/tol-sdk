@@ -84,7 +84,8 @@ class DefaultParser(Parser):
         ]
         one_or_list_fields = ['echabs92', 'habreg_2017', 'marhabreg-2017', 'waca_1981',
                               'isb_wildlife_act_1976', 'protection_of_badgers_act_1992',
-                              'family_representative', 'long_list', 'sample_collected']
+                              'family_representative', 'long_list', 'sample_collected',
+                              'country_list']
         if 'fields' in attributes:
             for att in normal_fields + one_or_list_fields:
                 if att in attributes['fields']:

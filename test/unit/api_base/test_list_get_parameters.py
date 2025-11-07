@@ -4,14 +4,14 @@
 
 import pytest
 
-from tol.api_base.misc import ListGetParamaters
+from tol.api_base.misc import ListGetParameters
 from tol.api_client.exception import BadQueryArgError
 
 
 class TestListGetParameters:
     def test_no_parameters(self):
         """No page size or page key specified returns None"""
-        parsed = ListGetParamaters({'irrelevent': 'so?'})
+        parsed = ListGetParameters({'irrelevent': 'so?'})
         assert parsed.page_size is None
         assert parsed.page is None
         assert parsed.filter is None
@@ -19,27 +19,27 @@ class TestListGetParameters:
 
     def test_good_page_size(self):
         """Just page size, confirm that an integer is returned"""
-        parsed = ListGetParamaters({'page_size': '409504'})
+        parsed = ListGetParameters({'page_size': '409504'})
         assert parsed.page_size == 409504
 
     def test_bad_page_size(self):
         """non-positive integer page size raises Exception"""
         for __val in ['0', 'sjdklsjd', '', ' ']:
             with pytest.raises(BadQueryArgError) as e:
-                ListGetParamaters({'page_size': __val}).page_size
+                ListGetParameters({'page_size': __val}).page_size
             assert 'page_size' in str(e.value)
             assert __val in str(e.value)
 
     def test_good_page_number(self):
         """Just page number, confirm that an integer is returned"""
-        parsed = ListGetParamaters({'page': '409504'})
+        parsed = ListGetParameters({'page': '409504'})
         assert parsed.page == 409504
 
     def test_bad_page_number(self):
         """non-positive integer page number raises Exception"""
         for __val in ['0', 'sjdklsjd', '', ' ']:
             with pytest.raises(BadQueryArgError) as e:
-                ListGetParamaters({'page': __val}).page
+                ListGetParameters({'page': __val}).page
             assert 'page' in str(e.value)
             assert __val in str(e.value)
 
@@ -48,36 +48,53 @@ class TestListGetParameters:
         filter_string = """
             {"exact": {"column1": "value1"}}
         """
-        parsed = ListGetParamaters({'filter': filter_string})
+        parsed = ListGetParameters({'filter': filter_string})
         assert parsed.filter.exact == {'column1': 'value1'}
 
     def test_bad_filter(self):
         """non-JSON raises Exception"""
         for __val in ['0', 'sjdklsjd', '', ' ']:
             with pytest.raises(BadQueryArgError) as e:
-                ListGetParamaters({'filter': __val}).filter
+                ListGetParameters({'filter': __val}).filter
             assert 'filter' in str(e.value)
             assert __val in str(e.value)
 
     def test_good_sort_by(self):
         """Just page number, confirm that an integer is returned"""
-        parsed = ListGetParamaters({'sort_by': '-column1'})
+        parsed = ListGetParameters({'sort_by': '-column1'})
         assert parsed.sort_by == '-column1'
 
     def test_bad_sort_by(self):
         """non-positive integer page number raises Exception"""
         for __val in ['0', '+sjdklsjd', '', ' ']:
             with pytest.raises(BadQueryArgError) as e:
-                ListGetParamaters({'sort_by': __val}).sort_by
+                ListGetParameters({'sort_by': __val}).sort_by
             assert 'sort_by' in str(e.value)
             assert __val in str(e.value)
 
     def test_page_size_and_number(self):
         """Page size and number specified -> returned correctly"""
-        parsed = ListGetParamaters({
+        parsed = ListGetParameters({
             'irrelevent': 'so?',
             'page': '2',
             'page_size': '1002'
         })
         assert parsed.page_size == 1002
         assert parsed.page == 2
+
+    def test_good_merge_collections(self):
+        """Test true and false parameters are parsed"""
+        parsed = ListGetParameters({'merge_collections': 'True'})
+        assert parsed.merge_collections is True
+        parsed = ListGetParameters({'merge_collections': 'False'})
+        assert parsed.merge_collections is False
+        parsed = ListGetParameters({'merge_collections': 'TRUE'})
+        assert parsed.merge_collections is True
+        parsed = ListGetParameters({'merge_collections': 'false'})
+        assert parsed.merge_collections is False
+
+    def test_bad_merge_collections(self):
+        with pytest.raises(BadQueryArgError) as e:
+            ListGetParameters({'merge_collections': 'null'}).merge_collections
+        assert 'merge_collections' in str(e.value)
+        assert 'null' in str(e.value)

@@ -99,6 +99,7 @@ class GoatDataSource(
                 'family_representative': 'List[str]',
                 'lineage': 'List[str]',
                 'sample_collected': 'List[str]',
+                'country_list': 'List[str]',
             }
         }
 
@@ -202,5 +203,5 @@ class GoatDataSource(
         return []
 
     def get_ranks(self) -> List[str]:
-        return ['species', 'genus', 'family', 'order', 'class',
-                'phylum', 'kingdom', 'superkingdom']
+        return ['species', 'genus', 'family', 'superfamily', 'order', 'class',
+                'phylum', 'kingdom', 'superkingdom', 'domain']

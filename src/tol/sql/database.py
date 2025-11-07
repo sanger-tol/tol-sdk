@@ -268,12 +268,14 @@ class DefaultDatabase(Database):
         self,
         instance: Model,
         in_session: Session,
-        user_id: Optional[str] = None
+        user_id: Optional[str] = None,
+        merge_collections: bool | None = None,
     ) -> Model:
 
         instance = self.__upsert_to_session(
             instance,
-            in_session
+            in_session,
+            merge_collections,
         )
         in_session.flush()
         return self.__commit_session(
@@ -702,7 +704,8 @@ class DefaultDatabase(Database):
     def __upsert_to_session(
         self,
         instance: Model,
-        in_session: Session
+        in_session: Session,
+        merge_collections: bool | None,
     ) -> Model:
 
         old_instance = self.__get_instance_by_id(
@@ -713,7 +716,8 @@ class DefaultDatabase(Database):
         if old_instance is not None:
             instance = self.__handle_difference(
                 old_instance,
-                instance
+                instance,
+                merge_collections,
             )
             in_session.flush()
             return instance
@@ -721,19 +725,25 @@ class DefaultDatabase(Database):
         in_session.add(instance)
         return instance
 
-    def __handle_difference(self, old: Model, new: Model) -> Model:
+    def __handle_difference(
+        self,
+        old: Model,
+        new: Model,
+        merge_collections: bool | None,
+    ) -> Model:
         """
         Performs various pre-merge operations, including:
 
         - merging `list`s and `dict`s like `ElasticDataSource`.
         """
 
-        self.__handle_diff_dict(old, new)
-        self.__handle_diff_list(old, new)
+        if merge_collections is not False:
+            self.__handle_diff_dict(old, new)
+            self.__handle_diff_list(old, new)
 
         __keys = [
             *new.get_attribute_types(),
-            *new.get_all_foreign_key_names()
+            *new.get_all_foreign_key_names(),
         ]
 
         for k in __keys:

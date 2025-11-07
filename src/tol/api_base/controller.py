@@ -21,7 +21,7 @@ from .misc import (
     AggregationBody,
     AggregationParameters,
     GroupStatsParameters,
-    ListGetParamaters,
+    ListGetParameters,
     StatsParameters,
 )
 from ..api_client.exception import (
@@ -234,7 +234,7 @@ class Controller:
     def get_list(
         self,
         object_type: str,
-        query_args: ListGetParamaters,
+        query_args: ListGetParameters,
         ext_and: Optional[AndFilter] = None,
     ) -> ResponseDict:
         """
@@ -275,7 +275,7 @@ class Controller:
     def get_count(
         self,
         object_type: str,
-        query_args: ListGetParamaters,
+        query_args: ListGetParameters,
         ext_and: Optional[AndFilter] = None,
     ) -> ResponseDict:
         """
@@ -469,7 +469,7 @@ class Controller:
         Raises:
             UnsupportedOperationError: If the data source doesn't support upsertion.
         """
-        returned = self.data_source.upsert(object_type, objects)
+        returned = self.data_source.upsert(object_type, objects, **kwargs)
         if self.data_source.return_mode[object_type] == ReturnMode.POPULATED:
             return self.__view.dump_bulk(returned)
         else:
@@ -516,7 +516,7 @@ class Controller:
     def get_cursor_page(
         self,
         object_type: str,
-        query_args: ListGetParamaters,
+        query_args: ListGetParameters,
         search_after: list[str] | None,
         ext_and: Optional[AndFilter] = None,
     ) -> ResponseDict:
@@ -583,7 +583,7 @@ class Controller:
         self,
         data_object: DataObject,
         relationship_name: str,
-        query_args: ListGetParamaters,
+        query_args: ListGetParameters,
         **kwargs,
     ) -> ResponseDict:
         """
@@ -662,7 +662,7 @@ class Controller:
             raise ObjectNotFoundByIdException(object_type, object_id)
         return data_objects[0]
 
-    def __get_page_number_or_1(self, query_args: ListGetParamaters) -> int:
+    def __get_page_number_or_1(self, query_args: ListGetParameters) -> int:
         """
         Extract the page number from query arguments or return 1 as default.
 

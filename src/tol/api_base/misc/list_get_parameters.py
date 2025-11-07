@@ -9,7 +9,7 @@ from .filter_utils import FilterUtils
 from ...api_client.exception import BadQueryArgError
 
 
-class ListGetParamaters:
+class ListGetParameters:
     """
     Parses the parameters from a query string for a List GET
     endpoint.
@@ -61,6 +61,17 @@ class ListGetParamaters:
         return self.__parse_to_sort_by_string('sort_by', sort_by)
 
     @property
+    def merge_collections(self) -> bool | None:
+        """
+        Whether or not to merge dict and list properties when updating
+        records.
+        """
+        merge_cllctns = self.__request_args.get('merge_collections')
+        if merge_cllctns is None:
+            return None
+        return self.__parse_to_boolean('merge_collections', merge_cllctns)
+
+    @property
     def requested_fields(self) -> list[str] | None:
         """
         The list of requested fields.
@@ -104,3 +115,16 @@ class ListGetParamaters:
                 message=f'The {__key} must be a column name, with or without leading -.'
             )
         return __value
+
+    def __parse_to_boolean(self, __key: str, __value: str) -> bool:
+        match __value.lower():
+            case 'true':
+                return True
+            case 'false':
+                return False
+            case _:
+                raise BadQueryArgError(
+                    __key,
+                    __value,
+                    message=f"The {__key} must be either 'True' or 'False'"
+                )

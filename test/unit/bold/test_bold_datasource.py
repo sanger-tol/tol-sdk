@@ -32,7 +32,7 @@ def _get_mock_data_object(
 
 
 class TestBoldDataSource:
-    def test_get_by_id_found(self):
+    def test_get_by_id_found_sample(self):
         """200 response, no token"""
 
         mock_client = Mock()
@@ -60,6 +60,40 @@ class TestBoldDataSource:
 
         mock_client.get_detail.assert_called_once_with(
             'sample',
+            ['an ID']
+        )
+        mock_lc_converter.convert_list.assert_called_once_with(
+            [mock_response]
+        )
+
+    def test_get_by_id_found_bin(self):
+        """200 response, no token"""
+
+        mock_client = Mock()
+
+        mock_response = {'taxonomy': {'phylum': {'phylum1': 10}}}
+        mock_client.get_detail.return_value = [mock_response]
+
+        mock_lc_converter = Mock()
+
+        ds = BoldDataSource(
+            lambda: mock_client,
+            lambda: mock_lc_converter
+        )
+        ds.data_object_factory = lambda: Mock()
+
+        mock_data_object = _get_mock_data_object(
+            type_='bin',
+            id_='an ID',
+            attributes={'taxonomy': {'phylum': {'phylum1': 10}}}
+        )
+        mock_lc_converter.convert_list.return_value = ([mock_data_object], 1)
+
+        (observed,) = list(ds.get_by_id('bin', ['an ID']))
+        assert observed == mock_data_object
+
+        mock_client.get_detail.assert_called_once_with(
+            'bin',
             ['an ID']
         )
         mock_lc_converter.convert_list.assert_called_once_with(
@@ -109,7 +143,7 @@ class TestBoldDataSource:
         `BoldDataSource().supported_types` calls
         `config_attribute_types()` on client
         """
-        expected = ['sample']
+        expected = ['sample', 'bin']
 
         ds = BoldDataSource(
             None,

@@ -52,14 +52,18 @@ class DefaultParser(Parser):
         self.__dict = data_source_dict
 
     def parse(self, transfer: BoldApiResource) -> DataObject:
-        type_ = 'sample'
+        type_ = 'bin'
+        id_ = id_ = transfer.get('binid')
+        if 'sampleid' in transfer:
+            type_ = 'sample'
+            id_ = transfer.get('sampleid')
         ds = self.__get_data_source(type_)
         raw_attributes = transfer
         attributes = self.__convert_attributes(type_, raw_attributes)
 
         return ds.data_object_factory(
             type_,
-            id_=transfer.get('sampleid'),
+            id_=id_,
             attributes=attributes
         )
 
@@ -90,7 +94,7 @@ class DefaultParser(Parser):
                 else v
             )
             for k, v in attributes.items()
-            if k in attribute_types and k != 'sampleid'
+            if k in attribute_types and k not in ['sampleid', 'binid']
         }
 
     def __get_datetime_keys(self, type_: str) -> list[str]:

@@ -80,8 +80,9 @@ class GoatApiClient:
             'fields': 'genome_size,chromosome_number,assembly_level,haploid_number,ploidy,'
                       'echabs92,habreg_2017,marhabreg-2017,waca_1981,isb_wildlife_act_1976,'
                       'protection_of_badgers_act_1992,family_representative,long_list,'
-                      'sample_collected',
-            'ranks': 'subspecies,species,genus,family,order,class,phylum,kingdom,superkingdom'
+                      'sample_collected,country_list',
+            'ranks': 'subspecies,species,genus,family,superfamily,order,class,phylum,kingdom,'
+                     'superkingdom,domain'
         } | self.__get_sort_params(sort_by) | self.__get_page_params(page, page_size)
         return url, params
 

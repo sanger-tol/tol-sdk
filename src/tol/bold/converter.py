@@ -44,4 +44,5 @@ class BoldApiConverter():
         return [
             self.__parser.parse(json_obj)
             for json_obj in input_
-        ], len(input_)
+            if json_obj is not None
+        ], None

@@ -75,19 +75,24 @@ class ElasticDataSource(
 ):
 
     def __init__(self, config: Dict,
-                 attribute_metadata: AttributeMetadata = DefaultAttributeMetadata):
-        super().__init__(config,
-                         expected=['uri', 'user', 'password',
-                                   'index_prefix', 'relationship_cfg',
-                                   'runtime_fields'],
-                         attribute_metadata=attribute_metadata)
+                 attribute_metadata: AttributeMetadata = DefaultAttributeMetadata,
+                 relationship_cfg: dict[str, RelationshipConfig] = None,
+                 runtime_fields: dict[str, Any] = {},
+                 **kwargs):
+        super().__init__(
+            config,
+            expected=['uri', 'user', 'password', 'index_prefix'],
+            attribute_metadata=attribute_metadata,
+        )
         """
         relationship_cfg is also supported if we want to handle relationships
         Only FKs pointing to IDs are currently supported
         """
         attribute_metadata.host = self
+        self.runtime_fields = runtime_fields
         self._initialise_elasticsearch()
         self.__lazy = False
+        self._relationship_cfg = relationship_cfg
 
     @property
     def lazy_fetch(self) -> bool:
@@ -230,8 +235,12 @@ class ElasticDataSource(
         chunk_size: int = 100,
         id_func=lambda x: x.id,
         field_prefix: str = '',
+        merge_collections: bool | None = None,
         **kwargs
     ) -> None:
+        if merge_collections is False:
+            msg = 'ElasticDataSource does not support turning off merge_collections'
+            raise DataSourceError(msg)
 
         index = self.__get_index_or_alias(object_type)
         (no_of_operations, no_of_errors) = \
@@ -270,6 +279,7 @@ class ElasticDataSource(
                                              update,
                                              field_prefix,
                                              candidate_key),
+                conflicts='proceed',
                 wait_for_completion=False
             )
 
@@ -1122,6 +1132,8 @@ class ElasticDataSource(
             return 'int'
         if type_ == 'date':
             return 'datetime'
+        if type_ == 'boolean':
+            return 'bool'
         return type_
 
     def _get_attribute_types_for_object_type(self, object_type: str) -> Dict:
@@ -1153,7 +1165,7 @@ class ElasticDataSource(
 
     @property
     def relationship_config(self) -> dict[str, RelationshipConfig]:
-        return self.relationship_cfg
+        return self._relationship_cfg
 
     def get_to_one_relation(
         self,

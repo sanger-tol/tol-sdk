@@ -8,7 +8,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "tol-sdk"
-version = "1.6.30"
+version = "1.6.38"
 
 description = "SDK for interaction with ToL, Sanger and external services"
 readme = "README.md"
@@ -27,6 +27,7 @@ dependencies = [
   "cachetools == 5.3.3",
   "case-converter == 1.1.0",
   "Click == 8.1.7",
+  "dacite == 1.9.2",
   "more-itertools == 10.2.0",
   "python_dateutil >= 2.8.1",
   "python-dotenv >= 1.0.1",
@@ -64,6 +65,11 @@ all = [
     "tol-sdk[postgresql]",
     "tol-sdk[prefect]",
     "tol-sdk[sheets]"
+]
+docs = [
+    "sphinx",
+    "sphinx_rtd_theme",
+    "sphinx-autobuild"
 ]
 
 [tool.setuptools.packages.find]

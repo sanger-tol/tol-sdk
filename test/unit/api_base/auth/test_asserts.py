@@ -223,7 +223,7 @@ def basic_inspector(
 
     return basic_auth_inspector(
         basic_role,
-        ctx_getter=lambda: auth_ctx
+        ctx_getter=lambda: auth_ctx,
     )
 
 
@@ -247,7 +247,8 @@ class TestBasicAuthInspector:
 
         basic_inspector(
             'does-not-matter',
-            OperatorMethod.COUNT
+            OperatorMethod.COUNT,
+            bound_args=None,
         )
 
     def test_readonly_with_good_role(
@@ -265,7 +266,8 @@ class TestBasicAuthInspector:
 
         basic_inspector(
             'does-not-matter',
-            OperatorMethod.AGGREGATE
+            OperatorMethod.AGGREGATE,
+            bound_args=None,
         )
 
     def test_write_bad_roles(
@@ -283,7 +285,8 @@ class TestBasicAuthInspector:
         with pytest.raises(ForbiddenError):
             basic_inspector(
                 'no-delete----only-read',
-                OperatorMethod.DELETE
+                OperatorMethod.DELETE,
+                bound_args=None,
             )
 
     def test_write_good_role(
@@ -300,7 +303,8 @@ class TestBasicAuthInspector:
 
         basic_inspector(
             'does-not-matter',
-            OperatorMethod.UPSERT
+            OperatorMethod.UPSERT,
+            bound_args=None,
         )
 
 

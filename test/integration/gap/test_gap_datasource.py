@@ -44,16 +44,14 @@ class TestGapDataSource(TestCase):
             'assembly_name': 'ASM270686v2',
             'results': (
                 "<a href='https://gap.cog.sanger.ac.uk/browser.html?shared=GCA_002706865.2/"
-                "Spodoptera_litura/analysis/GCA_002706865.2/base_content/'>Base Content</a><br>"
+                "base_content/'>Base Content</a><br>"
                 "<a href='https://blobtoolkit.genomehubs.org/view/dataset/"
                 "GCA_002706865.1/dataset/MTZO01.1/blob#Filters'>BlobToolKit</a>"
             ),
             'taxon_id': 69820,
             'phylum_id': '6656',
-            'image_url': (
-                'https://inaturalist-open-data.s3.amazonaws.com/photos/253028015/medium.jpg'
-            ),
-            'image_caption': '<i>Spodoptera litura</i><br> (Phylum Arthropoda)',
+            'image_url': '',
+            'image_caption': '',
             'lustre_path_analysis_base': (
                 '/lustre/scratch122/tol/data/4/1/3/3/e/1/Spodoptera_litura/'
                 'analysis/GCA_002706865.2'
@@ -81,11 +79,10 @@ class TestGapDataSource(TestCase):
             'description': (
                 "\u003Ca href='https://pipelines.tol.sanger.ac.uk/sequencecomposition/"
                 "output#sequence-composition-files'\u003ESequence composition "
-                "k-mer files\u003C/a\u003E" # noqa
+                'k-mer files\u003C/a\u003E\u003Cbr/\u003EAssembly gap track (using seqtk)'
             ),
             's3': (
-                'https://gap.cog.sanger.ac.uk/browser.html?shared=GCA_002706865.2/'
-                'Spodoptera_litura/analysis/GCA_002706865.2/base_content/'
+                'https://gap.cog.sanger.ac.uk/browser.html?shared=GCA_002706865.2/base_content/'
             ),
             'lustre_path_analysis': (
                 '/lustre/scratch122/tol/data/4/1/3/3/e/1/Spodoptera_litura/analysis/'

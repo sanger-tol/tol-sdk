@@ -17,10 +17,12 @@ from .relationship import SqlRelationshipConfig
 from .sort import DatabaseSorter
 from .sql_converter import DataObjectConverter, ModelConverter
 from ..core import (
+    AttributeMetadata,
     DataId,
     DataObject,
     DataSource,
     DataSourceFilter,
+    DefaultAttributeMetadata,
     UserIdGetter
 )
 from ..core.factory import DataObjectFactory
@@ -80,7 +82,8 @@ class SqlDataSource(
         back_converter_factory: BackConverterFactory,
         filter_factory: FilterFactory,
         sorter_factory: SorterFactory,
-        user_id_getter: Optional[UserIdGetter] = None
+        user_id_getter: Optional[UserIdGetter] = None,
+        attribute_metadata: AttributeMetadata = DefaultAttributeMetadata,
     ) -> None:
 
         self.__db = db
@@ -94,8 +97,9 @@ class SqlDataSource(
         self.__all_attribute_types = self.__calculate_all_attribute_types()
         self.__set_user_id_getter(user_id_getter)
         self.write_batch_size = 100
+        attribute_metadata.host = self
 
-        super().__init__({})
+        super().__init__({}, attribute_metadata=attribute_metadata)
 
     def create_sqla_session(self) -> SqlaSession:
         return self.__db.session_factory()
@@ -298,7 +302,8 @@ class SqlDataSource(
         object_type: str,
         objects: Iterable[DataObject],
         session: Optional[SqlDataSourceSession] = None,
-        **kwargs
+        merge_collections: bool | None = None,
+        **kwargs,
     ) -> list[DataObject]:
         back_converter = self.__back_converter_factory()
         model_instances = back_converter.convert_iterable(objects)
@@ -308,7 +313,8 @@ class SqlDataSource(
             self.__db.upsert(
                 instance,
                 in_session,
-                user_id=user_id
+                user_id=user_id,
+                merge_collections=merge_collections,
             )
             for instance in model_instances
         ]

@@ -599,11 +599,11 @@ class TestTolqcDataToElasticRunDataConverter(TestCase):
             'read_length_n50': None,
             'images': [
                 {
-                    'url': 's3://test-bucket/folder1_id/file1',
+                    'url': 'https://test-bucket.cog.sanger.ac.uk/folder1_id/file1',
                     'caption': 'caption1'
                 },
                 {
-                    'url': 's3://test-bucket/folder1_id/file2',
+                    'url': 'https://test-bucket.cog.sanger.ac.uk/folder1_id/file2',
                     'caption': 'caption2'
                 }
             ],

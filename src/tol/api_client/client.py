@@ -27,11 +27,13 @@ class JsonApiClient(HttpClient):
         data_prefix: str = '/data',
         config_prefix: str = '/_config',
         token_header: str = 'token',
-        retries: int = 5
+        retries: int = 5,
+        merge_collections: bool | None = None,
     ) -> None:
         super().__init__(token=token, token_header=token_header, retries=retries)
         self.__data_url = f'{api_url}{data_prefix}'
         self.__config_url = f'{self.__data_url}{config_prefix}'
+        self.__merge_collections = merge_collections
 
     def get_detail(
         self,
@@ -183,17 +185,30 @@ class JsonApiClient(HttpClient):
     def upsert(
         self,
         object_type: str,
-        transfer: JsonApiTransfer
+        transfer: JsonApiTransfer,
+        merge_collections: bool | None = None,
     ) -> None:
         """
         Takes a `JsonApiTransfer` containing a `list` of
         serialized `DataObject` instances to be upserted.
         """
 
+        if merge_collections is None:
+            merge_collections = self.__merge_collections
+
         url = self.__upsert_url(object_type)
+        params = self.__no_none_value_dict(
+            merge_collections=merge_collections,
+        )
+
         headers = self._merge_headers()
         session = self._get_session()
-        r = session.post(url, headers=headers, json=transfer)
+        r = session.post(
+            url,
+            headers=headers,
+            params=params,
+            json=transfer,
+        )
         self.__assert_no_error(r)
         return r.json()
 

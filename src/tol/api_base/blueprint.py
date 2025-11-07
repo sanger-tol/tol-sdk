@@ -24,7 +24,7 @@ from .misc import (
     AggregationParameters,
     GroupStatsParameters,
     JsonApiRequestBody,
-    ListGetParamaters,
+    ListGetParameters,
     RelataionshipHopsParser,
     StatsParameters,
 )
@@ -249,7 +249,7 @@ def _core_blueprint(
     @data_handler.route('/<object_type>', methods=['GET'])
     def get_list(*, object_type: str):
         """Get a paginated list of objects of the specified type."""
-        request_args = ListGetParamaters(request.args)
+        request_args = ListGetParameters(request.args)
         controller = __new_controller(
             object_type,
             requested_fields=request_args.requested_fields,
@@ -260,7 +260,7 @@ def _core_blueprint(
     def get_count(*, object_type: str):
         """Get the count of objects matching the specified filters."""
         controller = __new_controller(object_type)
-        request_args = ListGetParamaters(request.args)
+        request_args = ListGetParameters(request.args)
         return controller.get_count(object_type, request_args)
 
     @data_handler.route('/<object_type>:stats', methods=['GET'])
@@ -304,10 +304,15 @@ def _core_blueprint(
     def post_upserts(*, object_type: str):
         """Insert or update objects of the specified type."""
         controller = __new_controller(object_type)
+        request_args = ListGetParameters(request.args)
         request_body = JsonApiRequestBody(request.json)
         parser = DefaultParser(data_source_dict)
         objects = parser.parse_iterable(request_body.data)
-        return controller.post_upserts(object_type, objects)
+        return controller.post_upserts(
+            object_type,
+            objects,
+            merge_collections=request_args.merge_collections,
+        )
 
     @data_handler.route('/<object_type>:aggregations', methods=['POST'])
     def get_aggregations(*, object_type: str):
@@ -321,7 +326,7 @@ def _core_blueprint(
     def get_cursor_page(*, object_type: str):
         """Get a page of results using cursor-based pagination."""
         controller = __new_controller(object_type)
-        request_args = ListGetParamaters(request.args)
+        request_args = ListGetParameters(request.args)
         search_after = request.json.get('search_after')
         return controller.get_cursor_page(object_type, request_args, search_after)
 
@@ -338,7 +343,7 @@ def _core_blueprint(
         """Get objects related through a to-many relationship."""
         controller = __new_controller(object_type)
         source = data_source_dict[object_type].data_object_factory(object_type, object_id)
-        params = ListGetParamaters(request.args)
+        params = ListGetParameters(request.args)
         return controller.get_many_relations_page(source, relationship_name, params)
 
     @data_handler.app_errorhandler(BaseRuntimeException)

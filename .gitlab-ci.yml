@@ -10,7 +10,7 @@ variables:
 
 include:
   - project: 'tol/tol-core'
-    ref: v1.7.2
+    ref: v1.7.5
     file: '/gitlab/main.yml'
 
 
@@ -120,3 +120,16 @@ deploy-package-public:
   extends: .deploy-python-package-public
   needs:
     - deploy-package
+
+deploy-doc:
+  stage: deploy
+  image: $BUILT_IMAGE
+  script:
+  - pip install sphinx sphinx-rtd-theme
+  - sphinx-apidoc -o doc/source/ src/tol
+  - sphinx-build -b html doc/source .public
+  - mv .public public
+  pages:
+    publish: public
+  only:
+  - production

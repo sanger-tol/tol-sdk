@@ -557,6 +557,8 @@ class BenchlingDataSource(
         try:
             if isinstance(obj, DataObject):
                 converted_object = converter.convert(obj)
+                import logging
+                logging.exception(converted_object)
                 ret = method(converted_object)
             else:
                 converted_object = converter.convert_update(obj, object_type)

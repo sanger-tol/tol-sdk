@@ -104,7 +104,8 @@ def basic_auth_inspector(
 
     def auth_inspector(
         __object_type: str,
-        method: OperatorMethod
+        method: OperatorMethod,
+        bound_args: BoundArguments | None,
     ) -> None:
 
         if method in NO_AUTH:
