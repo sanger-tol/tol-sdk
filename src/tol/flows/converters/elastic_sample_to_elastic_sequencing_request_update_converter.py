@@ -19,7 +19,10 @@ class ElasticSampleToElasticSequencingRequestUpdateConverter(
         yield (
             None,
             {
-                'mlwh_sample': {'id': data_object.id},
+                'mlwh_sample': self._data_object_factory(
+                    'sample',
+                    data_object.id
+                ),
                 'mlwh_specimen.id': specimen.id
             }
         )

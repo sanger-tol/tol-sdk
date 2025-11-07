@@ -114,11 +114,9 @@ class TestElasticTolidToElasticSampleUpdateConverter(TestCase):
         converteds = converter.convert(obj1)
         id1, attributes1 = next(converteds)
         self.assertIsNone(id1)
-        self.assertEqual(attributes1, {
-            'tolid_tolid': {'id': 'tolid1'},
-            'sts_species.id': 'species1',
-            'sts_specimen.id': 'specimen1',
-        })
+        self.assertEqual(attributes1.get('tolid_tolid').id, 'tolid1')
+        self.assertEqual(attributes1.get('sts_species.id'), 'species1')
+        self.assertEqual(attributes1.get('sts_specimen.id'), 'specimen1')
 
         with self.assertRaises(StopIteration):
             next(converteds)
@@ -126,11 +124,9 @@ class TestElasticTolidToElasticSampleUpdateConverter(TestCase):
         converteds = converter.convert(obj2)
         id1, attributes1 = next(converteds)
         self.assertIsNone(id1)
-        self.assertEqual(attributes1, {
-            'tolid_tolid': {'id': 'tolid2'},
-            'sts_species.id': 'subspecies1',
-            'sts_specimen.id': 'specimen1',
-        })
+        self.assertEqual(attributes1.get('tolid_tolid').id, 'tolid2')
+        self.assertEqual(attributes1.get('sts_species.id'), 'subspecies1')
+        self.assertEqual(attributes1.get('sts_specimen.id'), 'specimen1')
 
         with self.assertRaises(StopIteration):
             next(converteds)

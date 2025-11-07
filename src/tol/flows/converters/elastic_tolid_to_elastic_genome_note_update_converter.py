@@ -19,7 +19,10 @@ class ElasticTolidToElasticGenomeNoteUpdateConverter(
         yield (
             None,
             {
-                'gn_species': {'id': species.id},
+                'gn_species': self._data_object_factory(
+                    'species',
+                    species.id
+                ),
                 'gn_tolid.id': data_object.id
             }
         )
