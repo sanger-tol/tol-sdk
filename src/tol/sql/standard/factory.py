@@ -406,13 +406,12 @@ def create_standard_models(
     class DataSourceInstance(base_model_class):
         __tablename__ = 'data_source_instance'
 
-        id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)  # noqa A003
+        id: Mapped[str] = mapped_column(primary_key=True)  # noqa A003
 
-        name: Mapped[str] = mapped_column(nullable=False)
         builtin_name: Mapped[str] = mapped_column(nullable=False)
         kwargs: Mapped[dict] = mapped_column(JSONB, nullable=True)
         publish: Mapped[bool] = mapped_column(nullable=False, default=False)
-        api_details: Mapped[dict] = mapped_column(JSONB, nullable=True)
+        ui_api_details: Mapped[dict] = mapped_column(JSONB, nullable=True)
 
         data_source_config_id: Mapped[int] = mapped_column(
             ForeignKey('data_source_config.id'),
