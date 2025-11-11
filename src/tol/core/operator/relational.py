@@ -14,6 +14,7 @@ from ...core.datasource_error import DataSourceError
 if typing.TYPE_CHECKING:
     from ..data_object import DataObject
     from ..relationship import RelationshipConfig
+    from ..requested_fields import ReqFieldsTree
     from ..session import OperableSession
 
 
@@ -37,7 +38,8 @@ class Relational(ABC):
         source: DataObject,
         relationship_name: str,
         session: Optional[OperableSession] = None,
-        requested_fields: list[str] | None = None
+        requested_fields: list[str] | None = None,
+        requested_tree: ReqFieldsTree | None = None,
     ) -> Optional[DataObject]:
         """
         Gets the to-one relation DataObject, given a source DataObject and the
@@ -50,7 +52,8 @@ class Relational(ABC):
         source: DataObject,
         relationship_name: str,
         session: Optional[OperableSession] = None,
-        requested_fields: list[str] | None = None
+        requested_fields: list[str] | None = None,
+        requested_tree: ReqFieldsTree | None = None,
     ) -> Iterable[DataObject]:
         """
         Gets the Iterable of to-many relation DataObject instances, given a source
@@ -64,7 +67,8 @@ class Relational(ABC):
         page: int,
         page_size: int,
         session: Optional[OperableSession] = None,
-        requested_fields: list[str] | None = None
+        requested_fields: list[str] | None = None,
+        requested_tree: ReqFieldsTree | None = None,
     ) -> Iterable[DataObject]:
         """
         Slices the `Relational().get_to_many_relations()` `Iterable` into pages.
@@ -82,7 +86,8 @@ class Relational(ABC):
         self,
         source: DataObject,
         relationship_hops: list[str],
-        requested_fields: list[str] | None = None
+        requested_fields: list[str] | None = None,
+        requested_tree: ReqFieldsTree | None = None,
     ) -> DataObject:
         """
         Recursively get to-one relation `DataObject` instances, using the

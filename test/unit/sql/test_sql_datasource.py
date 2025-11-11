@@ -163,6 +163,9 @@ class TestSqlDataSource:
             def session_factory(self):
                 return MagicMock()
 
+            def build_requests_tree(self, *args):
+                return Mock()
+
         ds = SqlDataSource(
             _SingleRowDatabase(),
             {'tests': 'test'},
@@ -268,6 +271,9 @@ class TestSqlDataSource:
             @property
             def attribute_types_including_id(self):
                 return {}
+
+            def build_requests_tree(self, *args):
+                return Mock()
 
             def count(
                 self,

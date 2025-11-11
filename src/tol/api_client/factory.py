@@ -17,7 +17,6 @@ from .converter import (
 )
 from .filter import DefaultApiFilter
 from .parser import DefaultParser
-from .view import DefaultView
 from ..core import DataSource
 
 
@@ -66,8 +65,7 @@ class _ConverterFactory:
         Returns an instantiated `DataObjectConverter`.
         """
 
-        view = DefaultView(prefix=self.__prefix)
-        return DataObjectConverter(view)
+        return DataObjectConverter(self.__data_source, prefix=self.__prefix)
 
     def json_converter_factory(self) -> JsonConverterFactory:
         """

@@ -35,6 +35,7 @@ from ..core import DataSource, DataSourceError, OperableDataSource
 from ..core.data_source_dict import DataSourceDict
 from ..core.operator import Relational
 from ..core.operator.operator_config import DefaultOperatorConfig, OperatorConfig
+from ..core.requested_fields import ReqFieldsTree
 
 
 class DataBlueprint(Blueprint):
@@ -179,6 +180,7 @@ def _core_blueprint(
     data_source_dict: dict[str, DataSource],
     url_prefix: str,
     auth_inspector: Optional[AuthInspector] = None,
+    include_all_to_ones: bool = True,
 ) -> DataBlueprint:
     """
     Create the core blueprint responsible for managing DataSource endpoints.
@@ -193,6 +195,8 @@ def _core_blueprint(
         url_prefix (str): URL prefix for all data endpoints.
         auth_inspector (Optional[AuthInspector], optional): Authentication
             inspector for request authorisation.
+        include_all_to_ones (bool): Whether to fetch or store all to-one related objects
+            when fetching or serialising DataObjects.
 
     Returns:
         DataBlueprint: A configured blueprint with all data endpoints and error handlers.
@@ -231,18 +235,30 @@ def _core_blueprint(
         hop_limit = None if requested_fields else 1
 
         data_source = data_source_dict[object_type]
-        view = DefaultView(
-            prefix=url_prefix,
-            include_all_to_ones=True,
-            hop_limit=hop_limit,
-            requested_fields=requested_fields,
+
+        # Build a ReqFieldsTree template for the request
+        req_fields_tree = ReqFieldsTree(
+            object_type,
+            data_source,
+            requested_fields,
+            include_all_to_ones=include_all_to_ones,
         )
-        return Controller(data_source, view, auth_inspector=auth_inspector)
+
+        view = DefaultView(
+            requested_tree=req_fields_tree,
+            prefix=url_prefix,
+            hop_limit=hop_limit,
+        )
+        return Controller(data_source, view, req_fields_tree, auth_inspector=auth_inspector)
 
     @data_handler.route('/<object_type>/<path:object_id>', methods=['GET'])  # Allow slashes
     def get_detail(*, object_type: str, object_id: str):
         """Get details of a specific object by ID."""
-        controller = __new_controller(object_type)
+        request_args = ListGetParameters(request.args)
+        controller = __new_controller(
+            object_type,
+            requested_fields=request_args.requested_fields,
+        )
         object_id_unencoded = urllib.parse.unquote(object_id)
         return controller.get_detail(object_type, object_id_unencoded)
 
@@ -325,8 +341,11 @@ def _core_blueprint(
     @data_handler.post('/<object_type>:cursor')
     def get_cursor_page(*, object_type: str):
         """Get a page of results using cursor-based pagination."""
-        controller = __new_controller(object_type)
         request_args = ListGetParameters(request.args)
+        controller = __new_controller(
+            object_type,
+            requested_fields=request_args.requested_fields,
+        )
         search_after = request.json.get('search_after')
         return controller.get_cursor_page(object_type, request_args, search_after)
 
@@ -369,6 +388,7 @@ def data_blueprint(
     url_prefix: str = '/data',
     config_prefix: str = '/_config',
     auth_inspector: Optional[AuthInspector] = None,
+    include_all_to_ones: bool = True,
 ) -> DataBlueprint:
     """
     Create a complete data blueprint with both core and configuration endpoints.
@@ -405,7 +425,10 @@ def data_blueprint(
         config_prefix, data_sources, DefaultOperatorConfig(*data_sources)
     )
     core_bp = _core_blueprint(
-        DataSourceDict(*data_sources), url_prefix, auth_inspector=auth_inspector
+        DataSourceDict(*data_sources),
+        url_prefix,
+        auth_inspector=auth_inspector,
+        include_all_to_ones=include_all_to_ones,
     )
     core_bp.register_blueprint(config_bp)
 

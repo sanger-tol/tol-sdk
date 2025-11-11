@@ -3,12 +3,9 @@
 # SPDX-License-Identifier: MIT
 
 from typing import Any, Dict, Iterable, Optional
-from unittest.mock import MagicMock, PropertyMock
+from unittest.mock import MagicMock, Mock, PropertyMock
 
-from tol.core import (
-    Converter,
-    DataObject
-)
+from tol.core import Converter, DataObject, ReqFieldsTree
 from tol.sql.model import Model
 from tol.sql.sql_converter import (
     DefaultDataObjectConverter,
@@ -106,7 +103,11 @@ class _ExampleDataObject(DataObject):
         raise NotImplementedError()
 
 
-def factory(type_, id_=None, attributes=None, to_one=None):
+def tests_req_fields_tree():
+    return ReqFieldsTree('tests', Mock(), include_all_to_ones=False)
+
+
+def factory(type_, id_=None, attributes=None, to_one=None, to_many=None):
     return _ExampleDataObject(type_, id_, attributes)
 
 
@@ -159,7 +160,8 @@ class TestDefaultModelConverter:
             'meaningLife': 42.0
         }
         example = _ExampleModel(attributes, id_='909')
-        converter = DefaultModelConverter(lambda e: f'{e.get_table_name()}s', factory)
+        rft = tests_req_fields_tree()
+        converter = DefaultModelConverter(lambda e: f'{e.get_table_name()}s', factory, rft)
         observed = list(converter.convert_iterable([example]))
 
         assert len(observed) == 1
@@ -181,9 +183,11 @@ class TestDefaultModelConverter:
             )
             for i in range(9)
         ]
+        rft = tests_req_fields_tree()
         converter = DefaultModelConverter(
             lambda e: f'{e.get_table_name()}s are the best',
-            factory
+            factory,
+            rft,
         )
         observed = list(converter.convert_iterable(examples))
 
@@ -201,9 +205,11 @@ class TestDefaultModelConverter:
         """Converting None returns None"""
 
         examples = [None]
+        rft = tests_req_fields_tree()
         converter = DefaultModelConverter(
             lambda e: f'{e.get_table_name()}s are the best',
-            factory
+            factory,
+            rft,
         )
         observed = converter.convert_iterable(examples)
         assert list(observed) == [None]
