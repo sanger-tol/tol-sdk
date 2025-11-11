@@ -6,7 +6,6 @@ import os
 
 from tol.core import core_data_object
 from tol.sql import create_sql_datasource
-from tol.sql.sql_converter import TypeFunction
 
 from .. import models
 
@@ -66,7 +65,8 @@ class TestCreateSqlDataSource:
         session.close()
 
         # override type function
-        type_function: TypeFunction = lambda m: f'type-{m.get_table_name()}'
+        def type_function(m):
+            return m.get_table_name()
 
         # create the sql datasource (with default type function)
         sql_ds = create_sql_datasource(
@@ -81,7 +81,7 @@ class TestCreateSqlDataSource:
         # iterate through pages of 2
         for i in range(3):
             data_objects, count = sql_ds.get_list_page(
-                'type-a',
+                'a',
                 i + 1,  # page number starts from 1
                 page_size=2
             )
@@ -90,25 +90,25 @@ class TestCreateSqlDataSource:
             # right pair of objects
             [first, second] = list(data_objects)
             for j, data_object in enumerate([first, second], start=i * 2):
-                assert data_object.type == 'type-a'
+                assert data_object.type == 'a'
                 assert data_object.id == str(65 + j)
                 assert data_object.attributes == {
                     'string_column': chr(65 + j)
                 }
 
         # final page should have just 1 item
-        data_objects, count = sql_ds.get_list_page('type-a', 4, page_size=2)
+        data_objects, count = sql_ds.get_list_page('a', 4, page_size=2)
         # count the same
         assert count == 7
         # right object, and only one
         [final] = list(data_objects)
-        assert final.type == 'type-a'
+        assert final.type == 'a'
         assert final.id == '71'
         assert final.attributes == {'string_column': 'G'}
 
         # check the next few pages are empty
         for i in range(5, 9):
-            data_objects, count = sql_ds.get_list_page('type-a', i, page_size=2)
+            data_objects, count = sql_ds.get_list_page('a', i, page_size=2)
             # count still the same
             assert count == 7
             # empty page

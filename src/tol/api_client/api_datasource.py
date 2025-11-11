@@ -144,7 +144,11 @@ class ApiDataSource(
 
         client = self.__client_factory()
         json_responses = (
-            client.get_detail(object_type, id_)
+            client.get_detail(
+                object_type,
+                id_,
+                requested_fields=requested_fields,
+            )
             for id_ in object_ids
         )
         json_converter = self.__jc_factory()
@@ -184,16 +188,17 @@ class ApiDataSource(
         session: Optional[OperableSession] = None,
         requested_fields: list[str] | None = None,
     ) -> Iterable[DataObject]:
-
         if self.__can_cursor(object_type, object_filters):
             return self._get_list_by_cursor(
                 object_type,
-                object_filters
+                object_filters,
+                requested_fields=requested_fields,
             )
         else:
             return self.__get_list_regular(
                 object_type,
-                object_filters
+                object_filters,
+                requested_fields=requested_fields,
             )
 
     @validate('count')
@@ -266,7 +271,8 @@ class ApiDataSource(
             object_type,
             page_size,
             search_after,
-            filter_string=filter_string
+            filter_string=filter_string,
+            requested_fields=requested_fields,
         )
         return self.__jc_factory().convert_cursor_page(transfer)
 
@@ -429,7 +435,8 @@ class ApiDataSource(
     def __get_list_regular(
         self,
         object_type: str,
-        object_filters: Optional[DataSourceFilter]
+        object_filters: Optional[DataSourceFilter],
+        requested_fields: list[str] | None = None,
     ) -> Iterable[DataObject]:
 
         page = 1
@@ -443,7 +450,8 @@ class ApiDataSource(
                 object_type,
                 page,
                 page_size,
-                filter_string=filter_string
+                filter_string=filter_string,
+                requested_fields=requested_fields,
             )
             (results_page, _) = jc_converter.convert_list(transfer)
 

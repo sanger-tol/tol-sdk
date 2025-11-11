@@ -31,7 +31,7 @@ from ..api_client.exception import (
     UnsupportedOperationError,
 )
 from ..api_client.view import ResponseDict, View
-from ..core import DataObject, OperableDataSource
+from ..core import DataObject, OperableDataSource, ReqFieldsTree
 from ..core.datasource_filter import AndFilter, DataSourceFilter
 from ..core.operator import (
     Aggregator,
@@ -160,6 +160,7 @@ class Controller:
         self,
         data_source: OperableDataSource,
         view: View,
+        requested_tree: ReqFieldsTree | None = None,
         auth_inspector: Optional[AuthInspector] = None,
     ) -> None:
         """
@@ -173,6 +174,7 @@ class Controller:
         """
         self.__data_source = data_source
         self.__view = view
+        self.__requested_tree = requested_tree
         self.__inspector = auth_inspector
 
     @property
@@ -263,13 +265,13 @@ class Controller:
             page_size=query_args.page_size,
             object_filters=self.__combine_filters(query_args.filter, ext_and),
             sort_by=query_args.sort_by,
-            requested_fields=query_args.requested_fields,
+            requested_tree=self.__requested_tree,
         )
-        document_meta = {
+        meta = {
             'total': total,
             'types': self.__data_source.get_attribute_types(object_type),
         }
-        return self.__view.dump_bulk(data_objects, document_meta=document_meta)
+        return self.__view.dump_bulk(data_objects, document_meta=meta)
 
     @validate(Counter, 'get_count', OperatorMethod.COUNT)
     def get_count(
@@ -545,6 +547,7 @@ class Controller:
             query_args.page_size,
             self.__combine_filters(query_args.filter, ext_and),
             search_after,
+            requested_tree=self.__requested_tree,
         )
         meta = {'search_after': new_search_after}
 
@@ -657,7 +660,13 @@ class Controller:
         Raises:
             ObjectNotFoundByIdException: If no object with the given ID exists.
         """
-        data_objects = list(self.__data_source.get_by_id(object_type, [object_id]))
+        data_objects = list(
+            self.__data_source.get_by_id(
+                object_type,
+                [object_id],
+                requested_tree=self.__requested_tree,
+            )
+        )
         if len(data_objects) == 0 or data_objects[0] is None:
             raise ObjectNotFoundByIdException(object_type, object_id)
         return data_objects[0]
