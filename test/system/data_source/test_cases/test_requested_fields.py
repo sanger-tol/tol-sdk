@@ -101,7 +101,8 @@ class TestRequestedFields:
             'related',
             'anything',
             {
-                'str_column': 'hype'
+                'str_column': 'hype',
+                'int_column': 7,
             }
         )
         data_source.upsert('related', [rel])
@@ -133,4 +134,9 @@ class TestRequestedFields:
 
         assert 'related_object' in root._to_one_objects
 
+        assert root.related_object.id == 'anything'
         assert root.related_object.str_column == 'hype'
+
+        # The default behaviour is to fetch filled to-one objects, so test
+        # that the unrequested `int_column` attribute is not filled.
+        assert root.related_object.int_column is None

@@ -209,8 +209,6 @@ def action_blueprint(
             action_instance = action_class()
             status = action_instance.run(ids=ids, params=class_params,
                                          object_type=object_type, datasource=sql_ds)
-            if status[1] != 200:
-                return status
 
             user_action_params = {
                 **params,

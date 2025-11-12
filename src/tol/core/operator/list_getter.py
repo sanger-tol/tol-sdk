@@ -13,6 +13,7 @@ from ._filterable import _Filterable
 if typing.TYPE_CHECKING:
     from ..data_object import DataObject
     from ..datasource_filter import DataSourceFilter
+    from ..requested_fields import ReqFieldsTree
     from ..session import OperableSession
 
 
@@ -27,7 +28,8 @@ class ListGetter(_Filterable, ABC):
         object_type: str,
         object_filters: Optional[DataSourceFilter] = None,
         session: Optional[OperableSession] = None,
-        requested_fields: list[str] | None = None
+        requested_fields: list[str] | None = None,
+        requested_tree: ReqFieldsTree | None = None,
     ) -> Iterable[DataObject]:
         """
         Gets an Iterable of DataObject instances of the given

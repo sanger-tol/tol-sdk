@@ -215,7 +215,8 @@ class ElasticDataSource(
         page_size: Optional[int] = None,
         object_filters: Optional[DataSourceFilter] = None,
         search_after: list[str] | None = None,
-        session: Optional[OperableSession] = None
+        session: Optional[OperableSession] = None,
+        **kwargs,
     ) -> tuple[Iterable[DataObject], list[str] | None]:
 
         resp = self.__get_page_response(

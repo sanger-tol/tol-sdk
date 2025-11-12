@@ -5,8 +5,8 @@
 from typing import Any, Dict, Optional, Union
 
 from .parser import Parser
-from .view import View
-from ..core import DataObject
+from .view import DefaultView
+from ..core import DataObject, DataSource, ReqFieldsTree
 from ..core.relationship import RelationshipConfig
 
 
@@ -25,7 +25,7 @@ JsonRelationshipConfig = dict[
 ]
 
 
-class JsonApiConverter():
+class JsonApiConverter:
 
     """
     Converts from JSON:API transfers to instances of
@@ -142,26 +142,40 @@ class JsonApiConverter():
         )
 
 
-class DataObjectConverter():
+class DataObjectConverter:
 
     """
     Converts from instances of `DataObject` to
     JSON:API transfers.
     """
 
-    def __init__(self, view: View) -> None:
-        self.__view = view
+    def __init__(
+        self,
+        data_source: DataSource,
+        prefix: str | None = None,
+    ) -> None:
+        self.__data_source = data_source
+        self.__prefix = prefix
+
+    def __build_view(self, object_type):
+        req_fields_tree = ReqFieldsTree(object_type, self.__data_source)
+        return DefaultView(req_fields_tree, self.__prefix)
 
     def convert(self, input_: DataObject) -> JsonApiTransfer:
         """
         Converts a single `DataObject` instance to a JsonApiTransfer
         """
 
-        return self.__view.dump(input_)
+        view = self.__build_view(input_.type)
+        return view.dump(input_)
 
     def convert_list(self, input_: list[DataObject]) -> JsonApiTransfer:
         """
         Converts a `list` of `DataObject` instances to a JsonApiTransfer
         """
 
-        return self.__view.dump_bulk(input_)
+        if not input_:
+            msg = 'Cannot convert empty list'
+            raise ValueError(msg)
+        view = self.__build_view(input_[0].type)
+        return view.dump_bulk(input_)
