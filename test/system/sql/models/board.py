@@ -2,7 +2,7 @@
 #
 # SPDX-License-Identifier: MIT
 
-from tol.sql.board import create_board_models
+from tol.sql.standard import create_board_models
 
 from .base import BaseModel
 
