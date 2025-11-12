@@ -5,7 +5,7 @@
 
 from .a import A
 from .b import B
-from .board import board_models
+from .standard import standard_models
 from .c import C
 from .ext import ExtDefault, ExtOverride
 from .gs import GS
@@ -30,7 +30,7 @@ delete_models_list = [
     R2,
     ExtDefault,
     ExtOverride,
-    *board_models  # these are already in deletion order
+    *standard_models  # these are already in deletion order
 ]
 
 create_models_list = list(reversed(delete_models_list))

@@ -14,7 +14,7 @@ from sqlalchemy.orm import (
     relationship
 )
 
-from .board import board_user_mixin
+from .standard import board_user_mixin
 
 if typing.TYPE_CHECKING:
     from .r1 import R1
