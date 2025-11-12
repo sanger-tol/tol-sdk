@@ -14,13 +14,17 @@ from ..core import (
 )
 
 
-def sts(retries: int = 5, **kwargs) -> ApiDataSource:
+def sts(
+    retries: int = 5,
+    status_forcelist: list[int] | None = [429, 500, 502, 503, 504]
+) -> ApiDataSource:
     sts = create_api_datasource(
         api_url=os.getenv('STS_URL', Defaults.STS_URL)
         + os.getenv('STS_API_PATH', Defaults.STS_API_PATH),
         token=os.getenv('STS_API_KEY'),
         data_prefix=os.getenv('STS_API_DATA_PATH', Defaults.STS_API_DATA_PATH),
-        retries=retries
+        retries=retries,
+        status_forcelist=status_forcelist,
     )
     core_data_object(sts)
     return sts

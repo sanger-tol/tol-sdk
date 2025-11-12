@@ -85,6 +85,7 @@ def _get_client_factory(
     token: Optional[str],
     data_prefix: str,
     retries: int,
+    status_forcelist: list[int],
     merge_collections: bool | None,
 ) -> Callable[[], JsonApiClient]:
     """
@@ -97,6 +98,7 @@ def _get_client_factory(
         token=token,
         data_prefix=data_prefix,
         retries=retries,
+        status_forcelist=status_forcelist,
         merge_collections=merge_collections,
     )
 
@@ -111,6 +113,7 @@ def create_api_datasource(
 
     data_prefix: str = '/data',
     retries: int = 5,
+    status_forcelist: Optional[list[int]] = None,
     merge_collections: bool | None = None,
 ) -> ApiDataSource:
     """
@@ -125,6 +128,7 @@ def create_api_datasource(
         token=token,
         data_prefix=data_prefix,
         retries=retries,
+        status_forcelist=status_forcelist,
         merge_collections=merge_collections,
     )
     manager = _ConverterFactory(data_prefix)
