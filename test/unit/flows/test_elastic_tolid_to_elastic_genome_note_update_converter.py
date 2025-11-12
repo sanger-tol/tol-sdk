@@ -86,7 +86,7 @@ class TestElasticTolidToElasticGenomeNoteUpdateConverter(TestCase):
         self.assertIsNone(id1)
         print(attributes1)
         assert attributes1['gn_tolid.id'] == 'tolid1'
-        assert attributes1['gn_species'] == {'id': 'species1'}
+        assert attributes1['gn_species'].id == 'species1'
 
         with self.assertRaises(StopIteration):
             next(converteds)
