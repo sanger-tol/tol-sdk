@@ -102,8 +102,12 @@ class _ExampleDataObject(DataObject):
     def _to_one_objects(self) -> None:
         raise NotImplementedError()
 
+    @property
+    def _to_many_objects(self) -> None:
+        raise NotImplementedError()
 
-def tests_req_fields_tree():
+
+def _tests_req_fields_tree():
     return ReqFieldsTree('tests', Mock(), include_all_to_ones=False)
 
 
@@ -160,7 +164,7 @@ class TestDefaultModelConverter:
             'meaningLife': 42.0
         }
         example = _ExampleModel(attributes, id_='909')
-        rft = tests_req_fields_tree()
+        rft = _tests_req_fields_tree()
         converter = DefaultModelConverter(lambda e: f'{e.get_table_name()}s', factory, rft)
         observed = list(converter.convert_iterable([example]))
 
@@ -183,7 +187,7 @@ class TestDefaultModelConverter:
             )
             for i in range(9)
         ]
-        rft = tests_req_fields_tree()
+        rft = _tests_req_fields_tree()
         converter = DefaultModelConverter(
             lambda e: f'{e.get_table_name()}s are the best',
             factory,
@@ -205,7 +209,7 @@ class TestDefaultModelConverter:
         """Converting None returns None"""
 
         examples = [None]
-        rft = tests_req_fields_tree()
+        rft = _tests_req_fields_tree()
         converter = DefaultModelConverter(
             lambda e: f'{e.get_table_name()}s are the best',
             factory,

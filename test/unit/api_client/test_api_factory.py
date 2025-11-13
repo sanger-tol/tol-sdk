@@ -54,7 +54,8 @@ class TestCreateApiDatasource:
             'test',
             id_='hype',
             attributes={'yes': False},
-            to_one={}
+            to_one={},
+            to_many={},
         )
         assert observed == [mock_data_object]
 
@@ -108,7 +109,8 @@ class TestCreateApiDatasource:
             'test',
             id_='200',
             attributes={'yes': False},
-            to_one={}
+            to_one={},
+            to_many={},
         )
         assert observed == [None, mock_data_object]
 

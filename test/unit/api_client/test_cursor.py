@@ -65,7 +65,7 @@ def api_ds(
 
     api_ds = ApiDataSource(
         lambda: client,
-        lambda: json_api_converter,
+        lambda obj_type=None, requested_fields=None: json_api_converter,
         lambda: data_object_converter,
         lambda: api_filter
     )

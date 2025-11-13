@@ -36,7 +36,7 @@ class TestApiDataSource:
 
         ds = ApiDataSource(
             lambda: mock_client,
-            lambda: mock_jc_converter,
+            lambda obj_type, requested_fields: mock_jc_converter,
             None,
             None
         )
@@ -73,7 +73,7 @@ class TestApiDataSource:
 
         ds = ApiDataSource(
             lambda: mock_client,
-            lambda: mock_jc_converter,
+            lambda obj_type, requested_fields: mock_jc_converter,
             None,
             None
         )
@@ -169,7 +169,7 @@ class TestApiDataSource:
 
         api_ds = ApiDataSource(
             lambda: mock_client,
-            lambda: mock_json_converter,
+            lambda obj_type, requested_fields: mock_json_converter,
             None,
             lambda: mock_api_filter
         )
@@ -226,7 +226,7 @@ class TestApiDataSource:
 
         api_ds = ApiDataSource(
             lambda: mock_client,
-            lambda: mock_json_converter,
+            lambda obj_type, requested_fields: mock_json_converter,
             None,
             lambda: mock_api_filter
         )
@@ -464,7 +464,7 @@ class TestApiDataSource:
 
         api_ds = ApiDataSource(
             lambda: mock_client,
-            lambda: mock_json_converter,
+            lambda obj_type, requested_fields: mock_json_converter,
             None,
             lambda: mock_api_filter,
         )
@@ -485,9 +485,7 @@ class TestApiDataSource:
 
         expected = Mock()
 
-        source = Mock()
-        type(source).type = PropertyMock(return_value='a')
-        type(source).id = PropertyMock(return_value='id_MINE')
+        source = Mock(type='a', id='id_MINE')
 
         mock_client = create_autospec(JsonApiClient)
         mock_client.config_attribute_types.return_value = {
@@ -513,7 +511,7 @@ class TestApiDataSource:
 
         api_ds = ApiDataSource(
             lambda: mock_client,
-            lambda: mock_jc,
+            lambda obj_type=None, requested_fields=None: mock_jc,
             None,
             None
         )
@@ -580,7 +578,7 @@ class TestApiDataSource:
 
         api_ds = ApiDataSource(
             lambda: mock_client,
-            lambda: mock_jc,
+            lambda obj_type=None, requested_fields=None: mock_jc,
             None,
             None
         )
@@ -659,11 +657,7 @@ class TestApiDataSource:
 
         expected = [Mock() for _ in range(3)]
 
-        mock_obj = Mock()
-        type(mock_obj).type = PropertyMock(return_value='hype')
-        type(mock_obj).id = PropertyMock(
-            return_value='neverending_hype'
-        )
+        mock_obj = Mock(type='hype', id='neverending_hype')
 
         mock_client = create_autospec(JsonApiClient)
         mock_client.get_to_many_relations_page.return_value = expected
@@ -684,7 +678,7 @@ class TestApiDataSource:
 
         api_ds = ApiDataSource(
             lambda: mock_client,
-            lambda: mock_jc,
+            lambda obj_type=None, requested_fields=None: mock_jc,
             None,
             None
         )
@@ -737,7 +731,7 @@ class TestApiDataSource:
 
         api_ds = ApiDataSource(
             lambda: mock_client,
-            lambda: mock_jc,
+            lambda obj_type, requested_fields: mock_jc,
             None,
             None
         )
@@ -762,9 +756,7 @@ class TestApiDataSource:
         by its client -> returns `None` and doesn't convert
         """
 
-        mock_obj = Mock()
-        type(mock_obj).type = PropertyMock(return_value='a')
-        type(mock_obj).id = PropertyMock(return_value='id')
+        mock_obj = Mock(type='a', id='id')
 
         mock_client = create_autospec(JsonApiClient)
         mock_client.get_to_one_relation_recursive.return_value = None
@@ -784,7 +776,7 @@ class TestApiDataSource:
 
         api_ds = ApiDataSource(
             lambda: mock_client,
-            lambda: mock_jc,
+            lambda obj_type=None, requested_fields=None: mock_jc,
             None,
             None
         )
@@ -803,9 +795,7 @@ class TestApiDataSource:
         client -> returns `None` and doesn't convert
         """
 
-        mock_obj = Mock()
-        type(mock_obj).type = PropertyMock(return_value='a')
-        type(mock_obj).id = PropertyMock(return_value='id')
+        mock_obj = Mock(type='a', id='id')
 
         mock_client = create_autospec(JsonApiClient)
         mock_client.get_to_one_relation_recursive.return_value = None
