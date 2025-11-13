@@ -16,7 +16,6 @@ import sys
 project = 'Tree of Life SDK'
 copyright = '2025 Genome Research Ltd'  # noqa A001
 author = 'ToL Enabling Platforms Team'
-# release = '1.6.30'
 
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
