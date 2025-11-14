@@ -28,9 +28,13 @@ class JsonApiClient(HttpClient):
         config_prefix: str = '/_config',
         token_header: str = 'token',
         retries: int = 5,
+        status_forcelist: Optional[list[int]] = None,
         merge_collections: bool | None = None,
     ) -> None:
-        super().__init__(token=token, token_header=token_header, retries=retries)
+        kwargs = {'token': token, 'token_header': token_header, 'retries': retries}
+        if status_forcelist is not None:
+            kwargs['status_forcelist'] = status_forcelist
+        super().__init__(**kwargs)
         self.__data_url = f'{api_url}{data_prefix}'
         self.__config_url = f'{self.__data_url}{config_prefix}'
         self.__merge_collections = merge_collections
