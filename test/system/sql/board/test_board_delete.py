@@ -179,6 +179,37 @@ class TestBoardDelete:
         }
         board_ds.insert('user', list(users.values()))
 
+        # build up the data_source_config and data_source_instance
+        data_source_config = board_ds.data_object_factory(
+            'data_source_config',
+            id_='tol',
+            attributes={
+                'name': 'tol-test',
+                'description': 'Test data source config',
+            }
+        )
+        board_ds.insert('data_source_config', [data_source_config])
+
+        data_source_instance = board_ds.data_object_factory(
+            'data_source_instance',
+            id_='tol_production',
+            attributes={
+                'builtin_name': 'elastic-test',
+                'kwargs': {},
+                'publish': True,
+                'ui_api_details': {
+                    'url': 'http://example.com',
+                    'apiPath': '/v1/data',
+                    'apiDataPath': '/data',
+                    'dataspace': 'test_dataspace'
+                }
+            },
+            to_one={
+                'data_source_config': data_source_config
+            }
+        )
+        board_ds.insert('data_source_instance', [data_source_instance])
+
         objs: dict[str, dict[str, DataObject]] = {}
 
         # build up the exposed types
