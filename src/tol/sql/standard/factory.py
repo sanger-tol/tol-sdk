@@ -107,7 +107,7 @@ def create_standard_models(
         )
 
         # Relationships
-        source_data_source_instance_id: Mapped[int] = mapped_column(
+        source_data_source_instance_id: Mapped[str] = mapped_column(
             ForeignKey('data_source_instance.id'),
             nullable=False
         )
@@ -116,7 +116,7 @@ def create_standard_models(
             foreign_keys=[source_data_source_instance_id]
         )
 
-        destination_data_source_instance_id: Mapped[int] = mapped_column(
+        destination_data_source_instance_id: Mapped[str] = mapped_column(
             ForeignKey('data_source_instance.id'),
             nullable=False
         )
@@ -125,7 +125,7 @@ def create_standard_models(
             foreign_keys=[destination_data_source_instance_id]
         )
 
-        ids_data_source_instance_id: Mapped[int] = mapped_column(
+        ids_data_source_instance_id: Mapped[str] = mapped_column(
             ForeignKey('data_source_instance.id'),
             nullable=True
         )
@@ -193,7 +193,7 @@ def create_standard_models(
             foreign_keys=[user_id]
         )
 
-        data_source_instance_id: Mapped[int] = mapped_column(
+        data_source_instance_id: Mapped[str] = mapped_column(
             ForeignKey('data_source_instance.id'),
             nullable=False
         )
@@ -271,7 +271,7 @@ def create_standard_models(
             foreign_keys=[user_id]
         )
 
-        data_source_instance_id: Mapped[int] = mapped_column(
+        data_source_instance_id: Mapped[str] = mapped_column(
             ForeignKey('data_source_instance.id'),
             nullable=False
         )
