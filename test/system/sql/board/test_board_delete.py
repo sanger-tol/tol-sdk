@@ -182,7 +182,7 @@ class TestBoardDelete:
         # build up the data_source_config and data_source_instance
         data_source_config = board_ds.data_object_factory(
             'data_source_config',
-            id_='tol',
+            id_=1,
             attributes={
                 'name': 'tol-test',
                 'description': 'Test data source config',
