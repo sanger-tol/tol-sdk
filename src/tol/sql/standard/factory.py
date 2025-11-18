@@ -526,7 +526,7 @@ def create_standard_models(
             ForeignKey('data_source_config.id'),
             nullable=False
         )
-        
+
         data_source_config: Mapped['DataSourceConfig'] = relationship(  # noqa F821
             back_populates='data_source_config_summaries',
             foreign_keys=[data_source_config_id]
