@@ -62,6 +62,7 @@ class StandardModels(IterableABC[type[Model]]):
                 self.view_board,
                 self.view,
                 self.board,
+                self.data_source_config_summary,
                 self.data_source_config_relationship,
                 self.data_source_config_attribute,
                 self.loader_instance,
