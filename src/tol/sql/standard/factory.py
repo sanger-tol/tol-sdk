@@ -460,7 +460,6 @@ def create_standard_models(
 
         name: Mapped[str] = mapped_column(nullable=False)
         object_type: Mapped[str] = mapped_column(nullable=False)
-        name: Mapped[str] = mapped_column(nullable=False)
         display_name: Mapped[str] = mapped_column(nullable=True)
         description: Mapped[str] = mapped_column(nullable=True)
         available_on_relationships: Mapped[bool] = mapped_column(nullable=False, default=True)
@@ -526,6 +525,11 @@ def create_standard_models(
         data_source_config_id: Mapped[int] = mapped_column(
             ForeignKey('data_source_config.id'),
             nullable=False
+        )
+        
+        data_source_config: Mapped['DataSourceConfig'] = relationship(  # noqa F821
+            back_populates='data_source_config_summaries',
+            foreign_keys=[data_source_config_id]
         )
 
     class DataSourceConfig(base_model_class):
