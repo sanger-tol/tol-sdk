@@ -182,7 +182,7 @@ class TestBoardDelete:
         # build up the data_source_config and data_source_instance
         data_source_config = board_ds.data_object_factory(
             'data_source_config',
-            id_='tol',
+            id_=1,
             attributes={
                 'name': 'tol-test',
                 'description': 'Test data source config',
@@ -192,7 +192,7 @@ class TestBoardDelete:
 
         data_source_instance = board_ds.data_object_factory(
             'data_source_instance',
-            id_='tol_production',
+            id_='tol_system_test',
             attributes={
                 'builtin_name': 'elastic-test',
                 'kwargs': {},
@@ -260,7 +260,7 @@ class TestBoardDelete:
                 'title': f'component_{id_}',
                 'config': {},
                 'object_type': 'sample',
-                'data_source_instance_id': 'tol_production',
+                'data_source_instance_id': 'tol_system_test',
                 'component_type': 'table',
                 'widget_type': 'idk this is a test',
                 'filter_pass_through': False
@@ -270,7 +270,7 @@ class TestBoardDelete:
             return {
                 'title': f'zone_{id_}',
                 'object_type': 'sample',
-                'data_source_instance_id': 'tol_production',
+                'data_source_instance_id': 'tol_system_test',
             }
 
         elif type_ == 'view':
