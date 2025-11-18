@@ -37,6 +37,7 @@ class StandardModels(IterableABC[type[Model]]):
     data_source_config: type[Model]
     data_source_config_attribute: type[Model]
     data_source_config_relationship: type[Model]
+    data_source_config_summary: type[Model]
     component: type[Model]
     component_zone: type[Model]
     zone: type[Model]
@@ -61,6 +62,7 @@ class StandardModels(IterableABC[type[Model]]):
                 self.view_board,
                 self.view,
                 self.board,
+                self.data_source_config_summary,
                 self.data_source_config_relationship,
                 self.data_source_config_attribute,
                 self.data_source_config,
@@ -484,6 +486,48 @@ def create_standard_models(
             foreign_keys=[data_source_config_id]
         )
 
+    class DataSourceConfigSummary(base_model_class):
+        __tablename__ = 'data_source_config_summary'
+
+        id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)  # noqa A003
+
+        source_object_type: Mapped[str] = mapped_column(nullable=False)
+        destination_object_type: Mapped[str] = mapped_column(nullable=True)
+
+        object_filters: Mapped[dict] = mapped_column(
+            JSONB,
+            nullable=False,
+            default={}
+        )
+
+        group_by: Mapped[dict] = mapped_column(
+            JSONB,
+            nullable=False,
+            default=[]
+        )
+
+        stats_fields: Mapped[dict] = mapped_column(
+            JSONB,
+            nullable=False,
+            default=[]
+        )
+
+        stats: Mapped[dict] = mapped_column(
+            JSONB,
+            nullable=False,
+            default=[]
+        )
+
+        prefix: Mapped[str] = mapped_column(
+            nullable=False,
+            default=''
+        )
+
+        data_source_config_id: Mapped[int] = mapped_column(
+            ForeignKey('data_source_config.id'),
+            nullable=False
+        )
+
     class DataSourceConfig(base_model_class):
         __tablename__ = 'data_source_config'
 
@@ -503,6 +547,10 @@ def create_standard_models(
         data_source_config_relationships: Mapped[list['DataSourceConfigRelationship']] = relationship(  # noqa F821
             back_populates='data_source_config',
             foreign_keys=[DataSourceConfigRelationship.data_source_config_id]
+        )
+        data_source_config_summaries: Mapped[list['DataSourceConfigSummary']] = relationship(
+            back_populates='data_source_config',
+            foreign_keys=[DataSourceConfigSummary.data_source_config_id]
         )
 
     class _UserMixin:
@@ -538,6 +586,7 @@ def create_standard_models(
         data_source_config=DataSourceConfig,
         data_source_config_attribute=DataSourceConfigAttribute,
         data_source_config_relationship=DataSourceConfigRelationship,
+        data_source_config_summary=DataSourceConfigSummary,
         component=Component,
         component_zone=ComponentZone,
         zone=Zone,
