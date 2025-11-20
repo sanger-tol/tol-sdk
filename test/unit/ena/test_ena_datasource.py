@@ -171,7 +171,7 @@ class TestEnaDataSource:
         assert observed == (list(mock_objs))
 
     def test_supported_types(self):
-        expected = ['assembly', 'read_run', 'sample', 'study', 'taxon']
+        expected = ['assembly', 'read_run', 'sample', 'study', 'taxon', 'checklist']
         mock_client = Mock()
         mock_response = {}
 

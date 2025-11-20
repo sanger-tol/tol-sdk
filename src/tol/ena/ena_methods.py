@@ -30,51 +30,52 @@ submission_xml_template = """<?xml version="1.0" encoding="UTF-8"?>
 
 def convert_checklist_xml_to_dict(checklist_xml: str) -> Dict[str, Tuple[str, str, object]]:
     # key label, val [mandatory_status, ]
-
-    fields = {}
-
+    checklists = []
     root = ElementTree.fromstring(checklist_xml)
-    for field_group_node in root.findall('./CHECKLIST/DESCRIPTOR/FIELD_GROUP'):
-        for field_node in field_group_node.findall('./FIELD'):
+    for checklist_node in root.findall('./CHECKLIST'):
+        checklist_id = checklist_node.get('accession')
+        fields = {}
+        for field_group_node in checklist_node.findall('./DESCRIPTOR/FIELD_GROUP'):
+            for field_node in field_group_node.findall('./FIELD'):
 
-            label, mandatory_status = None, None
+                label, mandatory_status = None, None
 
-            label_node = field_node.find('./LABEL')
+                label_node = field_node.find('./LABEL')
 
-            if label_node is not None:
-                label = label_node.text
+                if label_node is not None:
+                    label = label_node.text
 
-            mandatory_node = field_node.find('./MANDATORY')
+                mandatory_node = field_node.find('./MANDATORY')
 
-            if mandatory_node is not None:
-                mandatory_status = mandatory_node.text
+                if mandatory_node is not None:
+                    mandatory_status = mandatory_node.text
 
-            regex_node = field_node.find('./FIELD_TYPE/TEXT_FIELD/REGEX_VALUE')
-            if regex_node is not None:
-                regex_str = regex_node.text
-                fields[label] = [mandatory_status, 'restricted text', regex_str]
-                continue
+                regex_node = field_node.find('./FIELD_TYPE/TEXT_FIELD/REGEX_VALUE')
+                if regex_node is not None:
+                    regex_str = regex_node.text
+                    fields[label] = [mandatory_status, 'restricted text', regex_str]
+                    continue
 
-            text_choice_node = field_node.find('./FIELD_TYPE/TEXT_CHOICE_FIELD')
+                text_choice_node = field_node.find('./FIELD_TYPE/TEXT_CHOICE_FIELD')
 
-            if text_choice_node is not None:
-                text_options = []
-                for text_option_node in text_choice_node.findall('./TEXT_VALUE/VALUE'):
-                    text_options.append(text_option_node.text)
+                if text_choice_node is not None:
+                    text_options = []
+                    for text_option_node in text_choice_node.findall('./TEXT_VALUE/VALUE'):
+                        text_options.append(text_option_node.text)
 
-                fields[label] = [mandatory_status, 'text choice', text_options]
-                continue
+                    fields[label] = [mandatory_status, 'text choice', text_options]
+                    continue
 
-            taxon_node = field_node.find('./FIELD_TYPE/TEXT_FIELD/TAXON_FIELD')
+                taxon_node = field_node.find('./FIELD_TYPE/TEXT_FIELD/TAXON_FIELD')
 
-            if taxon_node is not None:
-                regex_str = regex_node.text
-                fields[label] = [mandatory_status, 'valid taxonomy', '']
-                continue
+                if taxon_node is not None:
+                    regex_str = regex_node.text
+                    fields[label] = [mandatory_status, 'valid taxonomy', '']
+                    continue
 
-            fields[label] = [mandatory_status, 'free text', '']
-
-    return fields
+                fields[label] = [mandatory_status, 'free text', '']
+        checklists.append({'checklist_id': checklist_id, 'checklist': fields})
+    return checklists
 
 
 def convert_xml_to_list_of_sample_dict(response_xml: str) -> List[Dict[str, List[str]]]:

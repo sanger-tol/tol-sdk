@@ -46,7 +46,7 @@ class EnaApiClient:
         `object_type` and `object_id` or returns None if not found.
         """
         url, params = self.__detail_url(object_type, object_ids, filter_string)
-        return self.__fetch_detail(url, params)
+        return self.__fetch_detail(url, params, text=(object_type == 'checklist'))
 
     def get_list(
         self,
@@ -59,7 +59,8 @@ class EnaApiClient:
     def __fetch_detail(
         self,
         url: str,
-        params: Dict = {}
+        params: Dict = {},
+        text: bool = False
     ) -> Optional[EnaApiTransfer]:
         """
         Fetches data from the ENA API.
@@ -69,7 +70,7 @@ class EnaApiClient:
         if r.status_code == 404:
             return []
         r.raise_for_status()
-        return r.json() if r.json else []
+        return r.text if text else r.json() if r.json else []
 
     def __fetch_list(
         self,
@@ -96,6 +97,12 @@ class EnaApiClient:
         """
         Returns the URL and parameters for a detail query.
         """
+        if object_type == 'checklist':
+            ids = ','.join(object_ids)
+            url = f'{self.__ena_url}/ena/browser/api/xml/{ids}'
+            params = {}
+            return url, params
+
         url = f'{self.__ena_url}/ena/portal/api/search'
 
         if object_type == 'assembly':
@@ -150,6 +157,8 @@ class EnaApiClient:
         """
         Returns the fields for a given object type from the ENA portal API.
         """
+        if object_type == 'checklist':
+            return {'checklist': 'dict[str, Any]'}
         response = requests.get(
             self.__ena_url + '/ena/portal/api/returnFields?result=' + object_type + '&format=json',
             headers={
