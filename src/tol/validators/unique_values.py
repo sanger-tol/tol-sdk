@@ -28,7 +28,7 @@ class UniqueValuesValidator(Validator):
         self.__is_error = is_error
         self.__duplicates: dict[str, list[str]] = {}
         self.__existing_values: dict[str, set] = {}
-        for key in unique_keys:
+        for key in self.__keys:
             if isinstance(key, str):
                 self.__existing_values[key] = set()
             elif isinstance(key, list):
@@ -41,26 +41,23 @@ class UniqueValuesValidator(Validator):
     ) -> None:
 
         for unique_key in self.__keys:
-            if isinstance(unique_key, list[str]):
-                for key_group in self.__keys:
-                    concat = ''
-                    for key in key_group:
-                        concat = concat + '/' + (str(obj.attributes[key]))
-                        
-                    if concat in self.__existing_values[key_group]:
-                        self._duplicate_checks(
-                            key=key,
-                            value=concat
-                        )
+            if isinstance(unique_key, list):
+                concat = ''
+                for key in unique_key:
+                    concat = concat + '/' + (str(obj.attributes[key]))
+                if concat in self.__existing_values['/'.join(unique_key)]:
+                    self._duplicate_checks(
+                        key=key,
+                        value=concat
+                    )
             else:
-                for key in obj.attributes:
-                    if obj.attributes[key] in self.__existing_values[key]:
-                        self._duplicate_checks(
-                            key=key,
-                            value=obj.attributes[key]
-                        )
-                    else:
-                        self.__existing_values[key].add(obj.attributes[key])
+                if obj.attributes[unique_key] in self.__existing_values[unique_key]:
+                    self._duplicate_checks(
+                        key=unique_key,
+                        value=obj.attributes[unique_key]
+                    )
+                else:
+                    self.__existing_values[unique_key].add(obj.attributes[unique_key])
                     
 
     def _duplicate_checks(

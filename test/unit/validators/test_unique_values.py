@@ -60,3 +60,20 @@ class TestUniqueValuesValidator:
 
         assert not validator.warnings
         assert len(validator.errors) == 1
+        
+    def test_multiple_keys(
+        self,
+        mock_objs: Iterable[DataObject]
+    ) -> None:
+
+        validator = UniqueValuesValidator(
+            [['key1', 'key2']],
+        )
+
+        # consume the `Iterable`
+        list(
+            validator.validate(mock_objs)
+        )
+
+        assert not validator.warnings
+        assert not validator.errors
