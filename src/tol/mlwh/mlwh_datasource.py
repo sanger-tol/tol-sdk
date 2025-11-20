@@ -462,7 +462,7 @@ class MlwhDataSource(DataSource, DetailGetter, ListGetter):
         return "','".join([str(s) for s in values])
 
     def _conditions_string(self, platform_type: str, in_list: Dict):
-        if in_list is None:
+        if not in_list:
             return '1=1'  # Something to go with the where clause
         sql_conditions = []
         if platform_type.lower() == 'illumina':
@@ -484,7 +484,7 @@ class MlwhDataSource(DataSource, DetailGetter, ListGetter):
     def _execute_query(self, query, object_type):
         cur_mlwh = self.mlwh.cursor(dictionary=True)
         cur_mlwh.execute(query)
-        for row in cur_mlwh.fetchall():
+        for row in cur_mlwh:
             yield self._format_mlwh_row(object_type, row)
 
     def __get_in_lists(self, f: DataSourceFilter):

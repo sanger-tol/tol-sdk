@@ -14,7 +14,7 @@ from tol.mlwh import MlwhDataSource
 
 class MockMlwhDataSource(MlwhDataSource):
     def _initialise_mlwh(self):
-        self.mlwh = mock.Mock()
+        self.mlwh = mock.MagicMock()
 
 
 class TestMlwhDataSource(TestCase):
@@ -76,8 +76,8 @@ class TestMlwhDataSource(TestCase):
             'study_id': {'in_list': {'value': ['one', 'two']}},
             'sample_ref': {'in_list': {'value': ['three', 'four']}}
         }
-        mocked_function = mds.mlwh.cursor.return_value.fetchall
-        mocked_function.return_value = [
+        mocked_function = mds.mlwh.cursor
+        mocked_function.return_value.__iter__.return_value = [
             {'id': 'ABC', 'run_id': '1', 'position': '1', 'tag': '1', 'donor_id': 'Donor 1'},
             {'id': 'DEF', 'run_id': '1', 'position': '2', 'tag': '1', 'donor_id': 'Donor 2'},
             {'id': 'GHI', 'run_id': '2', 'position': '1', 'tag': '2', 'donor_id': 'Donor 3'}
@@ -109,8 +109,8 @@ class TestMlwhDataSource(TestCase):
         f.and_ = {
             'platform_type': {'eq': {'value': 'PacBio'}}
         }
-        mocked_function = mds.mlwh.cursor.return_value.fetchall
-        mocked_function.return_value = [
+        mocked_function = mds.mlwh.cursor
+        mocked_function.return_value.__iter__.return_value = [
             {'id': 'ABC', 'run_id': '1', 'position': '1', 'tag': '1', 'donor_id': 'Donor 1'},
             {'id': 'DEF', 'run_id': '1', 'position': '2', 'tag': '1', 'donor_id': 'Donor 2'},
             {'id': 'GHI', 'run_id': '2', 'position': '1', 'tag': '2', 'donor_id': 'Donor 3'}
@@ -163,8 +163,8 @@ class TestMlwhDataSource(TestCase):
             'study_id': {'in_list': {'value': ['one', 'two']}},
             'sample_ref': {'in_list': {'value': ['three', 'four']}}
         }
-        mocked_function = mds.mlwh.cursor.return_value.fetchall
-        mocked_function.return_value = [
+        mocked_function = mds.mlwh.cursor
+        mocked_function.return_value.__iter__.return_value = [
             {'sample_ref': '1', 'supplier_name': 'Supplier1', 'donor_id': 'Donor 1'},
             {'sample_ref': '2', 'supplier_name': 'Supplier2', 'donor_id': 'Donor 2'},
             {'sample_ref': '3', 'supplier_name': 'Supplier3', 'donor_id': 'Donor 3'}
@@ -190,8 +190,8 @@ class TestMlwhDataSource(TestCase):
         })
         core_data_object(mds)
         f = DataSourceFilter()
-        mocked_function = mds.mlwh.cursor.return_value.fetchall
-        mocked_function.return_value = [
+        mocked_function = mds.mlwh.cursor
+        mocked_function.return_value.__iter__.return_value = [
             {'id': 1, 'sample_id': '1', 'assay_type': 'test1', 'value': 'value1'},
             {'id': 2, 'sample_id': '1', 'assay_type': 'test2', 'value': 'value2'},
             {'id': 3, 'sample_id': '2', 'assay_type': 'test1', 'value': 'value3'},
@@ -216,8 +216,8 @@ class TestMlwhDataSource(TestCase):
             'uri': 'mysql://user:pass@host:1234/db'
         })
         core_data_object(mds)
-        mocked_function = mds.mlwh.cursor.return_value.fetchall
-        mocked_function.return_value = [
+        mocked_function = mds.mlwh.cursor
+        mocked_function.return_value.__iter__.return_value = [
             {'id': 1, 'original_volume': 10, 'insert_size': 5, 'concentration': 1,
              'remaining_volume': 5},
             {'id': 2, 'original_volume': 11, 'insert_size': 6, 'concentration': 2,
