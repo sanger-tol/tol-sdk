@@ -50,6 +50,9 @@ class UniqueValuesValidator(Validator):
                         key=key,
                         value=concat
                     )
+                else:
+                    self.__existing_values['/'.join(unique_key)].add(concat)
+
             else:
                 if obj.attributes[unique_key] in self.__existing_values[unique_key]:
                     self._duplicate_checks(

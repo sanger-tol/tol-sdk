@@ -61,13 +61,13 @@ class TestUniqueValuesValidator:
         assert not validator.warnings
         assert len(validator.errors) == 1
         
-    def test_multiple_keys(
+    def test_multiple_keys_pass(
         self,
         mock_objs: Iterable[DataObject]
     ) -> None:
 
         validator = UniqueValuesValidator(
-            [['key1', 'key2']],
+            [['key1', 'key2'], ['key3', 'key2']],
         )
 
         # consume the `Iterable`
@@ -77,3 +77,21 @@ class TestUniqueValuesValidator:
 
         assert not validator.warnings
         assert not validator.errors
+
+    def test_multiple_keys_error(
+        self,
+        mock_objs: Iterable[DataObject]
+    ) -> None:
+
+        validator = UniqueValuesValidator(
+            [['key3', 'key4']],
+            is_error=True,
+        )
+
+        # consume the `Iterable`
+        list(
+            validator.validate(mock_objs)
+        )
+
+        assert not validator.warnings
+        assert len(validator.errors) == 1
