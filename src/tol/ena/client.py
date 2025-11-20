@@ -4,12 +4,11 @@
 
 from typing import Dict, Optional, Tuple
 
-import requests
-
 from .converter import EnaApiTransfer
+from ..core import HttpClient
 
 
-class EnaApiClient:
+class EnaApiClient(HttpClient):
     """
     Takes ENA API transfers and connects to a remote ENA API.
     """
@@ -22,6 +21,9 @@ class EnaApiClient:
         ena_contact_name: str,
         ena_contact_email: str,
     ) -> None:
+        super().__init__(
+            retries=5
+        )
         self.__ena_url = ena_url
         self.__ena_user = ena_user
         self.__ena_password = ena_password
@@ -65,8 +67,9 @@ class EnaApiClient:
         """
         Fetches data from the ENA API.
         """
+        session = self._get_session_with_retries()
         headers = {'Content-Type': 'application/json'}
-        r = requests.get(url, params=params, headers=headers)
+        r = session.get(url, params=params, headers=headers)
         if r.status_code == 404:
             return []
         r.raise_for_status()
@@ -80,8 +83,9 @@ class EnaApiClient:
         """
         Fetches data from the ENA API.
         """
+        session = self._get_session_with_retries()
         headers = {'Content-Type': 'application/json'}
-        r = requests.get(url, params=params, headers=headers)
+        r = session.get(url, params=params, headers=headers)
 
         if r.status_code == 404:
             return []
@@ -159,14 +163,16 @@ class EnaApiClient:
         """
         if object_type == 'checklist':
             return {'checklist': 'dict[str, Any]'}
-        response = requests.get(
-            self.__ena_url + '/ena/portal/api/returnFields?result=' + object_type + '&format=json',
+        session = self._get_session_with_retries()
+        r = session.get(
+            self.__ena_url + '/ena/portal/api/returnFields',
+            params={'result': object_type, 'format': 'json'},
             headers={
                 'Content-Type': 'application/json'
             }
         )
         fields = {}
-        for field in response.json():
+        for field in r.json():
 
             type_ = field['type'] if 'type' in field else 'string'
             ena_type = self.__type_mappings[type_] if type_ in self.__type_mappings else 'str'
