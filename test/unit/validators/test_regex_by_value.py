@@ -2,7 +2,6 @@
 #
 # SPDX-License-Identifier: MIT
 
-import re
 from typing import Iterable
 
 from tol.core import DataObject

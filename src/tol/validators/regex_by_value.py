@@ -2,8 +2,6 @@
 #
 # SPDX-License-Identifier: MIT
 
-import re
-from dataclasses import dataclass
 from typing import Any
 
 from tol.core import DataObject
