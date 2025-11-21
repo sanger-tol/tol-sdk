@@ -434,9 +434,8 @@ class JsonApiClient(HttpClient):
         object_id: str,
         relationship_name: str
     ) -> str:
-
         base_url = (
-            f'{self.__data_url}/{object_type}:to-many/{quote(object_id)}'
+            f'{self.__data_url}/{object_type}:to-many/{quote(str(object_id))}'
         )
         return f'{base_url}/{relationship_name}'
 
