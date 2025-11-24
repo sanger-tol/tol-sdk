@@ -7,5 +7,5 @@ from typing import Iterable
 from tol.core import DataObject
 
 
-class TestBarcodingFields:
+class TestConditionAssertValidator:
     pass
