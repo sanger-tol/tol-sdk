@@ -9,36 +9,30 @@ from tol.validators import AssertOnConditionValidator
 
 
 class TestAssertOnConditionValidator:
-    def test_condition_false(
+    def test_no_results(
         self, mock_objs: Iterable[DataObject]
-    ):
+    ) -> None:
         config = {
             'condition': {
                 'field': 'key1',
                 'operator': '==',
-                'value': None
+                'value': 'b',
             },
             'assert': [
                 {
                     'field': 'key2',
-                    'operator': '!=',
-                    'value': None,
-                    'is_error': True,
-                    'message': 'key2 cannot be None' 
+                    'operator': '==',
+                    'value': 'b',
                 },
                 {
                     'field': 'key3',
                     'operator': '!=',
                     'value': None,
-                    'is_error': True,
-                    'message': 'key3 cannot be None'
-                }
-            ]
+                },
+            ],
         }
-    
-        validator = AssertOnConditionValidator(
-            config,
-        )
+
+        validator = AssertOnConditionValidator(config)
 
         # consume the `Iterable`
         list(
@@ -47,122 +41,73 @@ class TestAssertOnConditionValidator:
 
         # There should be no warnings or errors
         assert not validator.results
-
-    def test_condition_true_and_all_assertions_pass(
+    
+    def test_warnings(
         self, mock_objs: Iterable[DataObject]
-    ):
+    ) -> None:
         config = {
             'condition': {
                 'field': 'key1',
                 'operator': '!=',
-                'value': None
+                'value': None,
             },
             'assert': [
                 {
                     'field': 'key2',
-                    'operator': '!=',
-                    'value': None,
-                    'is_error': True,
-                    'message': 'key2 cannot be None' 
+                    'operator': '==',
+                    'value': 'b',
+                    'is_error': False
                 },
                 {
                     'field': 'key3',
                     'operator': '!=',
                     'value': None,
-                    'is_error': True,
-                    'message': 'key3 cannot be None'
-                }
-            ]
+                },
+            ],
         }
-    
-        validator = AssertOnConditionValidator(
-            config,
-        )
+
+        validator = AssertOnConditionValidator(config)
 
         # consume the `Iterable`
         list(
             validator.validate(mock_objs)
         )
 
-        # There should be no warnings or errors
-        assert not validator.results
-
-    def test_condition_true_and_some_assertions_fail(
+        # Should be 2 warnings, from data objects 1 and 3, from key2
+        assert validator.has_no_errors
+        assert len(validator.results) == 2
+    
+    def test_errors(
         self, mock_objs: Iterable[DataObject]
-    ):
+    ) -> None:
         config = {
             'condition': {
                 'field': 'key1',
                 'operator': '!=',
-                'value': None
+                'value': None,
             },
             'assert': [
                 {
                     'field': 'key2',
                     'operator': '==',
-                    'value': None,
-                    'is_error': False,
-                    'message': 'key2 cannot be None' 
+                    'value': 'b',
+                    'is_error': True,
                 },
                 {
                     'field': 'key3',
                     'operator': '!=',
                     'value': None,
-                    'is_error': False,
-                    'message': 'key3 cannot be None'
-                }
-            ]
-        }
-    
-        validator = AssertOnConditionValidator(
-            config,
-        )
-
-        # consume the `Iterable`
-        list(
-            validator.validate(mock_objs)
-        )
-
-        # There should be one warning and one error (for each of the 3 data objects)
-        assert len(validator.warnings) == 1 * 3
-        assert len(validator.errors) == 0
-
-    def test_condition_true_and_all_assertions_fail(
-        self, mock_objs: Iterable[DataObject]
-    ):
-        config = {
-            'condition': {
-                'field': 'key1',
-                'operator': '!=',
-                'value': None
-            },
-            'assert': [
-                {
-                    'field': 'key2',
-                    'operator': '==',
-                    'value': None,
-                    'is_error': True,
-                    'message': 'key2 cannot be None' 
                 },
-                {
-                    'field': 'key3',
-                    'operator': '==',
-                    'value': None,
-                    'is_error': True,
-                    'message': 'key3 cannot be None'
-                }
-            ]
+            ],
         }
-    
-        validator = AssertOnConditionValidator(
-            config,
-        )
+
+        validator = AssertOnConditionValidator(config)
 
         # consume the `Iterable`
         list(
             validator.validate(mock_objs)
         )
 
-        # There should be no warnings and two errors (for each of the 3 data objects)
-        assert len(validator.warnings) == 0
-        assert len(validator.errors) == 2 * 3
+        # Should be 2 errors, from data objects 1 and 3, from key2
+        assert not validator.warnings
+        assert len(validator.errors) == 2

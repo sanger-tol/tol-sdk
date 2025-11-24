@@ -50,28 +50,32 @@ class AssertOnConditionValidator(Validator):
     def __perform_assertion(self, obj: DataObject, assertion: AssertConfig) -> None:
         # Extract data from assertion
         # TODO: Use .get instead of square brackets in all these situations
-        attribute_value = obj.attributes.get(cast(str, assertion['field']))
+        attribute = cast(str, assertion['field'])
+        attribute_value = obj.attributes.get(attribute)
         if attribute_value is None:
             # TODO validation here
             return
         # TODO: Validation where cast is used too
         operator = cast(str, assertion['operator'])
+        expected_value = assertion['value']
 
         # Only an error or warning if the assertion condition fails
-        if not self.__check_condition(attribute_value, operator, assertion['value']):
+        if not self.__check_condition(attribute_value, operator, expected_value):
             # Check whether this is an error or a warning
-            is_error = cast(bool, assertion['is_error'])
-            message = cast(str, assertion['message'])
+            is_error = assertion.get('is_error', True)
+            # message = cast(str, assertion['message'])  # TODO Allow optional
 
             if is_error:
                 self.add_error(
                     object_id=obj.id,
-                    detail=message
+                    detail=f'Expected {attribute} {operator} {expected_value}',
+                    field=attribute,
                 )
             else:
                 self.add_warning(
                     object_id=obj.id,
-                    detail=message
+                    detail=f'Expected {attribute} {operator} {expected_value}',
+                    field=attribute,
                 )
 
     def __check_condition(self, left: Any, operator: str, right: Any) -> bool:
