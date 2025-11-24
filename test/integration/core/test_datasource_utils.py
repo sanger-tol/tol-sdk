@@ -17,7 +17,7 @@ from tol.sources.portaldb import (
 class TestDataSourceUtils(TestCase):
 
     def __get_ds(self):
-        dsi = portaldb().get_one('data_source_instance', '18')
+        dsi = portaldb().get_one('data_source_instance', 'test')
         return DataSourceUtils.get_datasource_by_datasource_instance(dsi)
 
     def test_attribute_types(self):

@@ -392,7 +392,7 @@ class JsonApiClient(HttpClient):
         return r.json()
 
     def __detail_url(self, object_type: str, object_id: str) -> str:
-        return f'{self.__data_url}/{object_type}/{quote(object_id)}'
+        return f'{self.__data_url}/{object_type}/{quote(str(object_id))}'
 
     def __list_url(self, object_type: str) -> str:
         return f'{self.__data_url}/{object_type}'
@@ -424,7 +424,7 @@ class JsonApiClient(HttpClient):
 
         hop_string = '/'.join(relationship_hops)
         base_url = (
-            f'{self.__data_url}/{object_type}:to-one/{quote(object_id)}'
+            f'{self.__data_url}/{object_type}:to-one/{quote(str(object_id))}'
         )
         return f'{base_url}/{hop_string}'
 
@@ -434,9 +434,8 @@ class JsonApiClient(HttpClient):
         object_id: str,
         relationship_name: str
     ) -> str:
-
         base_url = (
-            f'{self.__data_url}/{object_type}:to-many/{quote(object_id)}'
+            f'{self.__data_url}/{object_type}:to-many/{quote(str(object_id))}'
         )
         return f'{base_url}/{relationship_name}'
 
