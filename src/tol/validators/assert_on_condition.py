@@ -21,7 +21,7 @@ class ConditionAssertValidator(Validator):
     """
     def __init__(self, config: Config) -> None:
         super().__init__()
-    
+
     def _validate_data_object(self, obj: DataObject) -> None:
         pass
 
