@@ -41,7 +41,7 @@ class TestAssertOnConditionValidator:
 
         # There should be no warnings or errors
         assert not validator.results
-    
+
     def test_warnings(
         self, mock_objs: Iterable[DataObject]
     ) -> None:
@@ -76,7 +76,7 @@ class TestAssertOnConditionValidator:
         # Should be 2 warnings, from data objects 1 and 3, from key2
         assert validator.has_no_errors
         assert len(validator.results) == 2
-    
+
     def test_errors(
         self, mock_objs: Iterable[DataObject]
     ) -> None:

@@ -2,7 +2,7 @@
 #
 # SPDX-License-Identifier: MIT
 
-from typing import Any, cast, Dict, List
+from typing import Any, Dict, List, cast
 
 from tol.core import DataObject, Validator
 
