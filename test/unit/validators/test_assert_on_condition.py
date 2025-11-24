@@ -23,14 +23,14 @@ class TestAssertOnConditionValidator:
                     'field': 'key2',
                     'operator': '!=',
                     'value': None,
-                    'type': 'error',
+                    'is_error': True,
                     'message': 'key2 cannot be None' 
                 },
                 {
                     'field': 'key3',
                     'operator': '!=',
                     'value': None,
-                    'type': 'error',
+                    'is_error': True,
                     'message': 'key3 cannot be None'
                 }
             ]
@@ -62,14 +62,14 @@ class TestAssertOnConditionValidator:
                     'field': 'key2',
                     'operator': '!=',
                     'value': None,
-                    'type': 'error',
+                    'is_error': True,
                     'message': 'key2 cannot be None' 
                 },
                 {
                     'field': 'key3',
                     'operator': '!=',
                     'value': None,
-                    'type': 'error',
+                    'is_error': True,
                     'message': 'key3 cannot be None'
                 }
             ]
@@ -101,14 +101,14 @@ class TestAssertOnConditionValidator:
                     'field': 'key2',
                     'operator': '==',
                     'value': None,
-                    'type': 'warning',
+                    'is_error': False,
                     'message': 'key2 cannot be None' 
                 },
                 {
                     'field': 'key3',
                     'operator': '!=',
                     'value': None,
-                    'type': 'error',
+                    'is_error': False,
                     'message': 'key3 cannot be None'
                 }
             ]
@@ -141,14 +141,14 @@ class TestAssertOnConditionValidator:
                     'field': 'key2',
                     'operator': '==',
                     'value': None,
-                    'type': 'error',
+                    'is_error': True,
                     'message': 'key2 cannot be None' 
                 },
                 {
                     'field': 'key3',
                     'operator': '==',
                     'value': None,
-                    'type': 'error',
+                    'is_error': True,
                     'message': 'key3 cannot be None'
                 }
             ]
