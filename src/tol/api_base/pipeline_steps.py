@@ -49,7 +49,7 @@ REQUIRED_FIELDS: List = [
 def pipeline_steps_blueprint(
     sql_ds: SqlDataSource,
     prefect_ds: PrefectDataSource,
-    role: str | None = 'exporter',
+    role: str | None = None,
     url_prefix: str = '/run-pipeline',
 
     ctx_getter: CtxGetter = default_ctx_getter,
@@ -186,11 +186,11 @@ def pipeline_steps_blueprint(
             [upload]
         )
 
-    @bp.post('')
+    @bp.get('')
     def run_pipeline_steps() -> tuple[dict[str, Any], int]:
 
         ctx = ctx_getter()
-        user_id = ctx.user_id
+        user_id = ctx.user_id if ctx else None
 
         if role is not None and role not in ctx.roles:
             raise ForbiddenError()
