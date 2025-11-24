@@ -123,9 +123,9 @@ class TestAssertOnConditionValidator:
             validator.validate(mock_objs)
         )
 
-        # There should be one warning and one error
-        assert len(validator.warnings) == 1
-        assert len(validator.errors) == 1
+        # There should be one warning and one error (for each of the 3 data objects)
+        assert len(validator.warnings) == 1 * 3
+        assert len(validator.errors) == 0
 
     def test_condition_true_and_all_assertions_fail(
         self, mock_objs: Iterable[DataObject]
@@ -163,6 +163,6 @@ class TestAssertOnConditionValidator:
             validator.validate(mock_objs)
         )
 
-        # There should be no warnings and two errors
+        # There should be no warnings and two errors (for each of the 3 data objects)
         assert len(validator.warnings) == 0
-        assert len(validator.errors) == 2
+        assert len(validator.errors) == 2 * 3
