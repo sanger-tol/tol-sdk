@@ -61,7 +61,7 @@ class AssertOnConditionValidator(Validator):
 
         # Only an error or warning if the assertion condition fails
         if not self.__check_condition(attribute_value, operator, expected_value):
-            # Check whether this is an error or a warning
+            # Check whether this is an error or a warning (defaulting to an error)
             is_error = assertion.get('is_error', True)
             # message = cast(str, assertion['message'])  # TODO Allow optional
 
