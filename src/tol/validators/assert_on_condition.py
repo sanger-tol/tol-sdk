@@ -38,12 +38,12 @@ class AssertOnConditionValidator(Validator):
 
         # Check condition attribute
         # (only perform the assertions if the condition passes)
-        if self.__check_condition(*self.__get_condition(obj, condition)):
+        if self.__check_condition(*self.__extract_condition(obj, condition)):
             # Perform each assertion
             for assertion in self.__config['assert']:
                 self.__perform_assertion(obj, cast(AssertConfig, assertion))
 
-    def __get_condition(self, obj: DataObject, condition: Dict) -> Tuple[str, Any, str, Any]:
+    def __extract_condition(self, obj: DataObject, condition: Dict) -> Tuple[str, Any, str, Any]:
         condition_field = cast(
             str, self.__extract_config_value(obj, condition, 'field')
         )
@@ -62,7 +62,7 @@ class AssertOnConditionValidator(Validator):
 
     def __perform_assertion(self, obj: DataObject, assertion: AssertConfig) -> None:
         # Extract data from assertion
-        field, field_value, operator, expected_value = self.__get_condition(obj, assertion)
+        field, field_value, operator, expected_value = self.__extract_condition(obj, assertion)
 
         # There's only an error or warning if the assertion condition fails
         if not self.__check_condition(field, field_value, operator, expected_value):
