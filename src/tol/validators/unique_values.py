@@ -19,7 +19,6 @@ class UniqueValuesValidator(Validator):
         detail: str = 'Value is not unique',
         is_error: bool = True,
     ) -> None:
-        
 
         super().__init__()
 
@@ -61,7 +60,6 @@ class UniqueValuesValidator(Validator):
                     )
                 else:
                     self.__existing_values[unique_key].add(obj.attributes[unique_key])
-                    
 
     def _duplicate_checks(
         self,

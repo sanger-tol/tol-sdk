@@ -60,7 +60,7 @@ class TestUniqueValuesValidator:
 
         assert not validator.warnings
         assert len(validator.errors) == 1
-        
+
     def test_multiple_keys_pass(
         self,
         mock_objs: Iterable[DataObject]
