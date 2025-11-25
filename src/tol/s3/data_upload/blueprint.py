@@ -7,7 +7,7 @@ from typing import Any
 
 from flask import Blueprint, request, send_file
 
-from tol.api_base import (
+from ...api_base import (
     custom_blueprint,
 )
 from ...services.s3_client import S3Client

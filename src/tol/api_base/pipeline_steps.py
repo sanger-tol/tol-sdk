@@ -186,14 +186,17 @@ def pipeline_steps_blueprint(
             [upload]
         )
 
-    @bp.get('')
+    @bp.post('')
     def run_pipeline_steps() -> tuple[dict[str, Any], int]:
 
         ctx = ctx_getter()
-        user_id = ctx.user_id if ctx else None
+        if role is not None:
+            if not ctx or not ctx.authenticated:
+                raise ForbiddenError()
+            if role not in ctx.roles:
+                raise ForbiddenError()
 
-        if role is not None and role not in ctx.roles:
-            raise ForbiddenError()
+        user_id = ctx.user_id if ctx and ctx.authenticated else None
 
         body: dict[str, Any] = request.json.get('data', {})
 
