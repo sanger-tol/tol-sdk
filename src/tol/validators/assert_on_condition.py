@@ -2,7 +2,7 @@
 #
 # SPDX-License-Identifier: MIT
 
-from typing import Any, Dict, List, cast
+from typing import Any, Dict, List, Tuple, cast
 
 from tol.core import DataObject, Validator
 
@@ -31,55 +31,62 @@ class AssertOnConditionValidator(Validator):
         """
         Called for each DataObject in the validation stream
         """
-        # Extract the condition from the config
-        condition = cast(ConditionConfig, self.__config['condition'])
-        condition_attribute_value = obj.attributes.get(condition['field'])
-        if condition_attribute_value is None:
-            # TODO: Config validation?
-            return
+        # Get condition
+        condition = cast(
+            ConditionConfig, self.__extract_config_value(obj, self.__config, 'condition')
+        )
 
         # Check condition attribute
         # (only perform the assertions if the condition passes)
-        if self.__check_condition(
-            condition_attribute_value, condition['operator'], condition['value']
-        ):
+        if self.__check_condition(*self.__get_condition(obj, condition)):
             # Perform each assertion
             for assertion in self.__config['assert']:
                 self.__perform_assertion(obj, cast(AssertConfig, assertion))
+    
+    def __get_condition(self, obj: DataObject, condition: Dict) -> Tuple[str, Any, str, Any]:
+        # condition = cast(
+        #     ConditionConfig, self.__extract_config_value(obj, self.__config, key)
+        # )
+        condition_field = cast(
+            str, self.__extract_config_value(obj, condition, 'field')
+        )
+        condition_field_value = obj.attributes.get(condition_field)
+        if condition_field_value is None:
+            # TODO ERROR THAT THERE'S NO FIELD
+            pass
+        operator = cast(
+            str, self.__extract_config_value(obj, condition, 'operator')
+        )
+        expected_value = cast(
+            Any, self.__extract_config_value(obj, condition, 'value')
+        )
+
+        return (condition_field, condition_field_value, operator, expected_value)
 
     def __perform_assertion(self, obj: DataObject, assertion: AssertConfig) -> None:
         # Extract data from assertion
-        # TODO: Use .get instead of square brackets in all these situations
-        attribute = cast(str, assertion['field'])
-        attribute_value = obj.attributes.get(attribute)
-        if attribute_value is None:
-            # TODO validation here
-            return
-        # TODO: Validation where cast is used too
-        operator = cast(str, assertion['operator'])
-        expected_value = assertion['value']
+        field, field_value, operator, expected_value = self.__get_condition(obj, assertion)
 
-        # Only an error or warning if the assertion condition fails
-        if not self.__check_condition(attribute_value, operator, expected_value):
+        # There's only an error or warning if the assertion condition fails
+        if not self.__check_condition(field, field_value, operator, expected_value):
             # Check whether this is an error or a warning (defaulting to an error)
             is_error = assertion.get('is_error', True)
-            # message = cast(str, assertion['message'])  # TODO Allow optional
 
             if is_error:
                 self.add_error(
                     object_id=obj.id,
-                    detail=f'Expected {attribute} {operator} {expected_value}',
-                    field=attribute,
+                    detail=f'Expected {field} {operator} {expected_value}',
+                    field=field,
                 )
             else:
                 self.add_warning(
                     object_id=obj.id,
-                    detail=f'Expected {attribute} {operator} {expected_value}',
-                    field=attribute,
+                    detail=f'Expected {field} {operator} {expected_value}',
+                    field=field,
                 )
 
-    def __check_condition(self, left: Any, operator: str, right: Any) -> bool:
-        # TODO: In total, which operators are supported? Is it more than these?
+    def __check_condition(self, field: str, left: Any, operator: str, right: Any) -> bool:
+        # TODO: In total, which operators are supported? Is it more than/different to these?
         match operator:
             case '==':
                 return left == right
@@ -93,10 +100,18 @@ class AssertOnConditionValidator(Validator):
                 return left > right
             case '>=':
                 return left >= right
-            # TODO: Use == with [] instead?
             case 'in':
                 return left in right
             case _:
                 # TODO: Error invalid config
                 # Operator is unsupported or invalid
                 return False
+    
+    def __extract_config_value(self, obj: DataObject, dictionary: Dict, key: str):
+        try:
+            return dictionary[key]
+        except KeyError:
+            # TODO: Figure out how to handle config errors. A custom exception? self.add_error?
+            # Although if exceptions are used instead of a detailed error why not just use
+            # [] to access in the first place?
+            raise Exception(f'CONFIG ERROR IN VALIDATOR: {key} is None in {dictionary} dict')
