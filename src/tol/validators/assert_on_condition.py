@@ -44,9 +44,6 @@ class AssertOnConditionValidator(Validator):
                 self.__perform_assertion(obj, cast(AssertConfig, assertion))
 
     def __get_condition(self, obj: DataObject, condition: Dict) -> Tuple[str, Any, str, Any]:
-        # condition = cast(
-        #     ConditionConfig, self.__extract_config_value(obj, self.__config, key)
-        # )
         condition_field = cast(
             str, self.__extract_config_value(obj, condition, 'field')
         )
