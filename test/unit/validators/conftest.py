@@ -24,6 +24,8 @@ def mock_objs() -> Iterable[DataObject]:
             'key2': c,
             # key 3 is used to test unique_values
             'key3': 'duplicate',
+            # key 4 is used to test unique combinations
+            'key4': 'other_duplicate'
         }
         __o.key1 = c
         __o.key2 = c
