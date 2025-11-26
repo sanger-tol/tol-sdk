@@ -3,11 +3,11 @@
 # SPDX-License-Identifier: MIT
 
 from typing import Iterable
-
 from unittest.mock import create_autospec
 
 from tol.core import DataObject
 from tol.validators import UniqueWholeOrganismsValidator
+
 
 class TestUniqueWholeOrganismsValidator:
     def test_valid(
@@ -40,12 +40,12 @@ class TestUniqueWholeOrganismsValidator:
         validator = UniqueWholeOrganismsValidator(config)
 
         # consume the `Iterable`
-        list (
+        list(
             validator.validate(iter([mock_one, mock_two]))
         )
 
         assert not validator.results
-    
+
     def test_whole_organisms_clash(
         self,
         mock_objs: Iterable[DataObject]
@@ -76,17 +76,17 @@ class TestUniqueWholeOrganismsValidator:
         validator = UniqueWholeOrganismsValidator(config)
 
         # consume the `Iterable`
-        list (
+        list(
             validator.validate(iter([mock_one, mock_two]))
         )
 
         assert len(validator.errors) == 1
-    
+
     def test_whole_organism_then_part_organism_with_same_specimen_id(
         self,
         mock_objs: Iterable[DataObject],
     ) -> None:
-                # Discard the sample mock objects (which won't be useful for this test)
+        # Discard the sample mock objects (which won't be useful for this test)
         mock_one: DataObject = create_autospec(DataObject)
         mock_one.id = 'a'
         mock_one.attributes = {
@@ -112,17 +112,17 @@ class TestUniqueWholeOrganismsValidator:
         validator = UniqueWholeOrganismsValidator(config)
 
         # consume the `Iterable`
-        list (
+        list(
             validator.validate(iter([mock_one, mock_two]))
         )
 
         assert len(validator.errors) == 1
-    
+
     def test_part_organism_then_whole_organism_with_same_specimen_id(
         self,
         mock_objs: Iterable[DataObject],
     ) -> None:
-                # Discard the sample mock objects (which won't be useful for this test)
+        # Discard the sample mock objects (which won't be useful for this test)
         mock_one: DataObject = create_autospec(DataObject)
         mock_one.id = 'a'
         mock_one.attributes = {
@@ -148,7 +148,7 @@ class TestUniqueWholeOrganismsValidator:
         validator = UniqueWholeOrganismsValidator(config)
 
         # consume the `Iterable`
-        list (
+        list(
             validator.validate(iter([mock_one, mock_two]))
         )
 

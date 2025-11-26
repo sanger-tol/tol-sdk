@@ -21,7 +21,7 @@ class UniqueWholeOrganismsValidator(Validator):
         self.__whole_organisms = []
         self.__part_organisms = []
         self.__config = config
-    
+
     def _validate_data_object(self, obj: DataObject) -> None:
         if obj.attributes.get(self.__config['symbiont_field']) != 'SYMBIONT':
             specimen_id = cast(str, obj.attributes.get(self.__config['specimen_id_field']))
@@ -40,7 +40,7 @@ class UniqueWholeOrganismsValidator(Validator):
                         detail='This WHOLE_ORGANISM has a SPECIMEN_ID already used elsewhere',
                         field=self.__config['specimen_id_field']
                     )
-                
+
                 self.__whole_organisms.append(specimen_id)
             else:
                 if specimen_id in self.__whole_organisms:
@@ -49,5 +49,5 @@ class UniqueWholeOrganismsValidator(Validator):
                         detail='Cannot reuse a specimen ID that as been used for WHOLE_ORGANISM',
                         field='SPECIMEN_ID'
                     )
-                
+
                 self.__part_organisms.append(specimen_id)
