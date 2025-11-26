@@ -146,7 +146,7 @@ def create_pipeline_step_models(
 
         user_id: Mapped[int] = mapped_column(
             ForeignKey('user.id'),
-            nullable=False
+            nullable=True
         )
 
         pipeline_id: Mapped[int] = mapped_column(
