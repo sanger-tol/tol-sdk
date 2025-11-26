@@ -155,7 +155,7 @@ def pipeline_steps_blueprint(
                 'deployment_name': flow_name,
                 'parameters': flow_params,
                 'tags': [
-                    'app_name:treeofsex',
+                    f'app_name: {os.environ.get("APP_NAME", "tol")}',
                 ],
             }
         )
