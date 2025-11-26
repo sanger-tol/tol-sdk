@@ -49,8 +49,7 @@ class AssertOnConditionValidator(Validator):
         )
         condition_field_value = obj.attributes.get(condition_field)
         if condition_field_value is None:
-            # TODO ERROR THAT THERE'S NO FIELD
-            pass
+            raise Exception(f'CONFIG ERROR IN VALIDATOR: no key {condition_field} in config')
         operator = cast(
             str, self.__extract_config_value(obj, condition, 'operator')
         )
@@ -83,7 +82,6 @@ class AssertOnConditionValidator(Validator):
                 )
 
     def __check_condition(self, field: str, left: Any, operator: str, right: Any) -> bool:
-        # TODO: In total, which operators are supported? Is it more than/different to these?
         match operator:
             case '==':
                 return left == right
@@ -100,15 +98,10 @@ class AssertOnConditionValidator(Validator):
             case 'in':
                 return left in right
             case _:
-                # TODO: Error invalid config
-                # Operator is unsupported or invalid
-                return False
+                raise Exception(f'CONFIG ERROR IN VALIDATOR: operator {operator} is not supported')
 
     def __extract_config_value(self, obj: DataObject, dictionary: Dict, key: str):
         try:
             return dictionary[key]
         except KeyError:
-            # TODO: Figure out how to handle config errors. A custom exception? self.add_error?
-            # Although if exceptions are used instead of a detailed error why not just use
-            # [] to access in the first place?
-            raise Exception(f'CONFIG ERROR IN VALIDATOR: {key} is None in {dictionary} dict')
+            raise Exception(f'CONFIG ERROR IN VALIDATOR: {key} not present in {dictionary} dict')
