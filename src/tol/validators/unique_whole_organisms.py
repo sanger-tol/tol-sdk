@@ -2,7 +2,7 @@
 #
 # SPDX-License-Identifier: MIT
 
-from typing import Any, Dict, List, cast
+from typing import Any, Dict, List
 
 from tol.core import Validator
 from tol.core.data_object import DataObject
@@ -34,7 +34,7 @@ class UniqueWholeOrganismsValidator(Validator):
         # This function uses a bit of a confusing method for its validation, so I'm going to
         # leave an explanation here as to how it works for anyone who needs to modify it
         # in the future!
-        # 
+        #
         # In the original code to be adapted, two loops were used. The first looped over each
         # data object whose ORGANISM_PART was 'WHOLE_ORGANISM', adding them to a list. Before it
         # did this though, it would check to see if the SPECIMEN_ID of this data object was already
@@ -44,12 +44,12 @@ class UniqueWholeOrganismsValidator(Validator):
         # (the one containing the whole organisms). In all, this ensures that all whole organisms
         # have unique specimen IDs, and all part organisms do not share the specimen IDs of any of
         # the whole organisms.
-        # 
+        #
         # The issue when adapting this to a Validator to be used in a pipeline, is that this
         # function only takes in one data object at a time, via a generator (to save needing to
         # load many into memory at once). The problem this left us with is that we could no longer
         # achieve the same result by using two passes of the data, as only one pass was feasible.
-        # 
+        #
         # So here's what I ended up with. This validator stores the SPECIMEN_IDs of both all of the
         # whole organisms *and* part organisms. From this, detecting duplicate whole organisms is
         # the same, but detecting whether a part organism shared the SPECIMEN_ID of a whole
@@ -66,9 +66,9 @@ class UniqueWholeOrganismsValidator(Validator):
         #      so the duplicate is detected.
         #   3. A part organism is checked, then a whole organism with the same SPECIMEN_ID is
         #      checked. In this case, self.__part_organisms will contain the same SPECIMEN_ID,
-        #      sp the duplicate is detected.
-        # 
-        # From Thomas :) 
+        #      so the duplicate is detected.
+        #
+        # From Thomas :)
 
         # Ensure the data object is not a SYMBIONT, because organism part checks do not apply
         if obj.attributes.get(self.__config_value('symbiont_field')) != 'SYMBIONT':
@@ -100,7 +100,7 @@ class UniqueWholeOrganismsValidator(Validator):
                     )
 
                 self.__part_organisms.append(specimen_id)
-    
+
     def __config_value(self, key: str) -> Any:
         """
         A reusable function that handles extracting a key from the config, handling the case
