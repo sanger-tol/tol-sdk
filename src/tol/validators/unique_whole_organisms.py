@@ -95,7 +95,7 @@ class UniqueWholeOrganismsValidator(Validator):
                 if specimen_id in self.__whole_organisms:
                     self.add_error(
                         object_id=obj.id,
-                        detail='Cannot reuse a specimen ID that as been used for WHOLE_ORGANISM',
+                        detail='Cannot reuse a specimen ID that has been used for WHOLE_ORGANISM',
                         field='SPECIMEN_ID'
                     )
 
