@@ -2,7 +2,7 @@
 #
 # SPDX-License-Identifier: MIT
 
-from typing import Dict, List, cast
+from typing import Any, Dict, List, cast
 
 from tol.core import Validator
 from tol.core.data_object import DataObject
@@ -62,21 +62,24 @@ class UniqueWholeOrganismsValidator(Validator):
         # 
         # From Thomas :) 
 
-        if obj.attributes.get(self.__config['symbiont_field']) != 'SYMBIONT':
-            specimen_id = cast(str, obj.attributes.get(self.__config['specimen_id_field']))
+        # Ensure the data object is not a SYMBIONT, because organism part checks do not apply
+        if obj.attributes.get(self.__config_value('symbiont_field')) != 'SYMBIONT':
+            specimen_id = obj.attributes.get(self.__config_value('specimen_id_field'))
+            if specimen_id is None:
+                return
 
-            if obj.attributes.get(self.__config['organism_part_field']) == 'WHOLE_ORGANISM':
+            if obj.attributes.get(self.__config_value('organism_part_field')) == 'WHOLE_ORGANISM':
                 if specimen_id in self.__whole_organisms:
                     self.add_error(
                         object_id=obj.id,
                         detail='WHOLE_ORGANISM can only be used once',
-                        field=self.__config['specimen_id_field'],
+                        field=self.__config_value('specimen_id_field'),
                     )
                 if specimen_id in self.__part_organisms:
                     self.add_error(
                         object_id=obj.id,
                         detail='This WHOLE_ORGANISM has a SPECIMEN_ID already used elsewhere',
-                        field=self.__config['specimen_id_field']
+                        field=self.__config_value('specimen_id_field')
                     )
 
                 self.__whole_organisms.append(specimen_id)
@@ -89,3 +92,14 @@ class UniqueWholeOrganismsValidator(Validator):
                     )
 
                 self.__part_organisms.append(specimen_id)
+    
+    def __config_value(self, key: str) -> Any:
+        """
+        A reusable function that handles extracting a key from the config, handling the case
+        that it is not present.
+        """
+        try:
+            return self.__config[key]
+        except KeyError:
+            raise Exception(f'VALIDATOR SETUP ERROR: '
+                            f'{key} not present in the config for UniqueWholeOrganismValidator')
