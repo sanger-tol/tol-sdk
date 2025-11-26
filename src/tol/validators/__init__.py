@@ -7,3 +7,4 @@ from .allowed_keys import AllowedKeysValidator  # noqa
 from .regex import Regex, RegexValidator  # noqa
 from .regex_by_value import RegexByValueValidator  # noqa
 from .unique_values import UniqueValuesValidator  # noqa
+from .tolid_validator import TolidValidator  # noqa
