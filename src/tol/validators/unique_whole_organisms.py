@@ -12,9 +12,17 @@ Config = Dict[str, str]
 
 
 class UniqueWholeOrganismsValidator(Validator):
-    __slots__ = ('__whole_organisms', '__config')
-    __whole_organisms: List[str]
+    """
+    Validates an incoming stream of `DataObject` instances.
+    For each data object (sample) not a SYMBIONT, it checks:
+    1. There are no two samples with organism part WHOLE_ORGANISM with the same SPECIMEN_ID
+    2. There are no samples with organism part *not* WHOLE_ORGANISM that have a SPECIMEN_ID
+       the same as a WHOLE_ORGANISM in the manifest.
+    """
+    __slots__ = ['__config', '__whole_organisms', '__part_organisms']
     __config: Config
+    __whole_organisms: List[str]
+    __part_organisms: List[str]
 
     def __init__(self, config: Config) -> None:
         super().__init__()
