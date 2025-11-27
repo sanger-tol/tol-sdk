@@ -54,10 +54,8 @@ class TolidValidator(Validator):
         if self._config.species_id_field in obj.attributes:
             try:
                 if obj_species_id not in self._cached_species_id:
-                    if self._datasource.get_one('species', obj_species_id) is not None:
-                        self._cached_species_id[obj_species_id] = True
-                    else:
-                        self._cached_species_id[obj_species_id] = False
+                    self._cached_species_id[obj_species_id] = (
+                        self._datasource.get_one('species', obj_species_id) is not None)
 
             except DataSourceError as e:
                 if e.status_code == 404:
