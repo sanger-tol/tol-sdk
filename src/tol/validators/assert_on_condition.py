@@ -5,6 +5,7 @@
 from typing import Any, Dict, List, Tuple, cast
 
 from tol.core import DataObject, Validator
+from .condition_checking import check_condition
 
 
 ConditionConfig = Dict[str, str]
@@ -38,7 +39,7 @@ class AssertOnConditionValidator(Validator):
 
         # Check condition attribute
         # (only perform the assertions if the condition passes)
-        if self.__check_condition(*self.__extract_condition(obj, condition)):
+        if check_condition(self, *self.__extract_condition(obj, condition)):
             # Perform each assertion
             for assertion in self.__config['assert']:
                 self.__perform_assertion(obj, cast(AssertConfig, assertion))
@@ -69,7 +70,7 @@ class AssertOnConditionValidator(Validator):
         field, field_value, operator, expected_value = self.__extract_condition(obj, assertion)
 
         # There's only an error or warning if the assertion condition fails
-        if not self.__check_condition(field, field_value, operator, expected_value):
+        if not check_condition(self, field, field_value, operator, expected_value):
             # Check whether this is an error or a warning (defaulting to an error)
             is_error = assertion.get('is_error', True)
 
@@ -85,26 +86,6 @@ class AssertOnConditionValidator(Validator):
                     detail=f'Expected {field} {operator} {expected_value}',
                     field=field,
                 )
-
-    def __check_condition(self, field: str, left: Any, operator: str, right: Any) -> bool:
-        match operator:
-            case '==':
-                return left == right
-            case '!=':
-                return left != right
-            case '<':
-                return left < right
-            case '<=':
-                return left <= right
-            case '>':
-                return left > right
-            case '>=':
-                return left >= right
-            case 'in':
-                return left in right
-            case _:
-                raise Exception(f'VALIDATOR SETUP ERROR: {operator}` is not a supported operator'
-                                 'for AssertOnConditionValidator')
 
     def __extract_config_value(self, obj: DataObject, dictionary: Dict, key: str):
         """
