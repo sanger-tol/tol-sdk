@@ -5,6 +5,7 @@
 from abc import ABC
 from typing import Any
 
+
 class ConditionEvaluator(ABC):
     def _evaluate_condition(self, left: Any, operator: str, right: Any) -> bool:
         match operator:

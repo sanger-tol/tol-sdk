@@ -53,7 +53,7 @@ class AssertOnConditionValidator(Validator, ConditionEvaluator):
             self.add_error(
                 object_id=obj.id,
                 detail=f'The requested condition field {condition_field}'
-                        'was not found in the DataObject',
+                        'was not found in the DataObject',  # noqa E131
                 field=condition_field,
             )
         operator = cast(
