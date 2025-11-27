@@ -61,7 +61,6 @@ class AssertOnConditionValidator(Validator, ConditionEvaluator):
             Any, self.__extract_config_value(condition, 'value')
         )
 
-        # return (condition_field, condition_field_value, operator, expected_value)
         return (condition_field_value, operator, expected_value)
 
     def __perform_assertion(self, obj: DataObject, assertion: AssertConfig) -> None:
