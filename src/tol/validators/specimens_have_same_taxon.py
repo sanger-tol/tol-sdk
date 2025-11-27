@@ -2,7 +2,7 @@
 #
 # SPDX-License-Identifier: MIT
 
-from typing import Any, Dict, List
+from typing import Any, Dict
 
 from tol.core import Validator
 from tol.core.data_object import DataObject
@@ -15,9 +15,7 @@ class SpecimensHaveSameTaxonValidator(Validator):
     """
     Validates an incoming stream of `DataObject` instances.
     For each data object (sample) not a SYMBIONT, it checks:
-    1. There are no two samples with organism part WHOLE_ORGANISM with the same SPECIMEN_ID
-    2. There are no samples with organism part *not* WHOLE_ORGANISM that have a SPECIMEN_ID
-       the same as a WHOLE_ORGANISM in the manifest.
+    1. There are no samples with SPECIMEN_ID which has different TAXON_ID
     """
     __slots__ = ['__config', '__seen']
     __config: Config
@@ -40,7 +38,7 @@ class SpecimensHaveSameTaxonValidator(Validator):
         #               Flag error 
         # From Nithin :)
 
-        # Ensure the data object is not a SYMBIONT, because organism part checks do not apply
+        # Ensure the data object is not a SYMBIONT
         if obj.attributes.get(self.__config_value('symbiont_field')) != 'SYMBIONT':
             specimen_id = obj.attributes.get(self.__config_value('specimen_id_field'))
             if specimen_id is None:
@@ -66,4 +64,4 @@ class SpecimensHaveSameTaxonValidator(Validator):
             return self.__config[key]
         except KeyError:
             raise Exception(f'VALIDATOR SETUP ERROR: '
-                            f'{key} not present in the config for UniqueWholeOrganismValidator')
+                            f'{key} not present in the config for SpecimensHaveSameTaxonValidator')
