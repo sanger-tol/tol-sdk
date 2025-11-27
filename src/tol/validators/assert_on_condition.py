@@ -5,6 +5,7 @@
 from typing import Any, Dict, List, Tuple, cast
 
 from tol.core import DataObject, Validator
+
 from .interfaces import ConditionEvaluator
 
 
