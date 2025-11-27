@@ -34,7 +34,7 @@ class AssertOnConditionValidator(Validator, ConditionEvaluator):
         """
         # Get condition
         condition = cast(
-            ConditionConfig, self.__extract_config_value(obj, self.__config, 'condition')
+            ConditionConfig, self.__extract_config_value(self.__config, 'condition')
         )
 
         # Check condition attribute
@@ -46,7 +46,7 @@ class AssertOnConditionValidator(Validator, ConditionEvaluator):
 
     def __extract_condition(self, obj: DataObject, condition: Dict) -> Tuple[Any, str, Any]:
         condition_field = cast(
-            str, self.__extract_config_value(obj, condition, 'field')
+            str, self.__extract_config_value(condition, 'field')
         )
         condition_field_value = obj.attributes.get(condition_field)
         if condition_field_value is None:
@@ -57,10 +57,10 @@ class AssertOnConditionValidator(Validator, ConditionEvaluator):
                 field=condition_field,
             )
         operator = cast(
-            str, self.__extract_config_value(obj, condition, 'operator')
+            str, self.__extract_config_value(condition, 'operator')
         )
         expected_value = cast(
-            Any, self.__extract_config_value(obj, condition, 'value')
+            Any, self.__extract_config_value(condition, 'value')
         )
 
         # return (condition_field, condition_field_value, operator, expected_value)
@@ -69,7 +69,7 @@ class AssertOnConditionValidator(Validator, ConditionEvaluator):
     def __perform_assertion(self, obj: DataObject, assertion: AssertConfig) -> None:
         # Extract data from assertion
         field = cast(
-            str, self.__extract_config_value(obj, assertion, 'field')
+            str, self.__extract_config_value(assertion, 'field')
         )
         field_value, operator, expected_value = self.__extract_condition(obj, assertion)
 
@@ -91,7 +91,7 @@ class AssertOnConditionValidator(Validator, ConditionEvaluator):
                     field=field,
                 )
 
-    def __extract_config_value(self, obj: DataObject, dictionary: Dict, key: str):
+    def __extract_config_value(self, dictionary: Dict, key: str):
         """
         A reusable function that handles extracting a key from the config, handling the case
         that it is not present. It takes in a `dictionary` to look in, because the key may not
