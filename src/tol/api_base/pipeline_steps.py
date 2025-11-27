@@ -49,7 +49,7 @@ REQUIRED_FIELDS: List = [
 def pipeline_steps_blueprint(
     sql_ds: SqlDataSource,
     prefect_ds: PrefectDataSource,
-    role: str | None = 'exporter',
+    role: str | None = None,
     url_prefix: str = '/run-pipeline',
 
     ctx_getter: CtxGetter = default_ctx_getter,
@@ -155,7 +155,7 @@ def pipeline_steps_blueprint(
                 'deployment_name': flow_name,
                 'parameters': flow_params,
                 'tags': [
-                    'app_name:treeofsex',
+                    f'app_name: {os.environ.get("APP_NAME", "tol")}',
                 ],
             }
         )
@@ -190,10 +190,13 @@ def pipeline_steps_blueprint(
     def run_pipeline_steps() -> tuple[dict[str, Any], int]:
 
         ctx = ctx_getter()
-        user_id = ctx.user_id
+        if role is not None:
+            if not ctx or not ctx.authenticated:
+                raise ForbiddenError()
+            if role not in ctx.roles:
+                raise ForbiddenError()
 
-        if role is not None and role not in ctx.roles:
-            raise ForbiddenError()
+        user_id = ctx.user_id if ctx and ctx.authenticated else None
 
         body: dict[str, Any] = request.json.get('data', {})
 

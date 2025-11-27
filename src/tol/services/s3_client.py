@@ -26,7 +26,7 @@ class S3Client:
             secure = os.getenv('S3_SECURE', 'true').lower() == 'true'
 
         self.client = Minio(
-            self.s3_uri,
+            endpoint=self.s3_uri,
             access_key=self.access_key,
             secret_key=self.secret_key,
             secure=secure
@@ -39,7 +39,8 @@ class S3Client:
         file_path: str
     ) -> None:
 
-        self.client.fget_object(bucket_name, object_name, file_path)
+        self.client.fget_object(bucket_name=bucket_name,
+                                object_name=object_name, file_path=file_path)
 
     def list_objects(
         self,
@@ -55,4 +56,5 @@ class S3Client:
         file_path: str
     ) -> None:
 
-        self.client.fput_object(bucket_name, object_name, file_path)
+        self.client.fput_object(bucket_name=bucket_name,
+                                object_name=object_name, file_path=file_path)
