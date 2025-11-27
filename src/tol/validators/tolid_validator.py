@@ -33,22 +33,10 @@ class TolidValidator(Validator):
         super().__init__()
 
         self._datasource = datasource
-        self._config = self.__get_config(config)
+        self._config = config
         self._cached_species_id = {}
         self._cached_tolids = {}
-        
-    def __get_config(
-        self,
-        config: TolidConfig
-        ):
-        return {
-            'species_id_field': config.species_id_field,
-            'error_ignore_field': config.error_ignore_field,
-            'error_ignore_value': config.error_ignore_value,
-            'specimen_id_field': config.specimen_id_field,
-            'warning_detail': config.warning_detail,
-        }
-        
+
     def _validate_data_object(
         self,
         obj: DataObject
@@ -61,8 +49,8 @@ class TolidValidator(Validator):
         obj: DataObject,
     ) -> None:
 
-        obj_species_id = obj.get_field_by_name(self._config['species_id_field'])
-        if self._config['species_id_field'] in obj.attributes:
+        obj_species_id = obj.get_field_by_name(self._config.species_id_field)
+        if self._config.species_id_field in obj.attributes:
             try:
                 if obj_species_id not in self._cached_species_id:
                     if self._datasource.get_one('species', obj_species_id) is not None:
@@ -78,20 +66,20 @@ class TolidValidator(Validator):
         if species_in_tolid == False:
             self.add_warning(
                 object_id=obj.id,
-                detail=self._config['warning_detail'],
-                field=self._config['species_id_field'],
+                detail=self._config.warning_detail,
+                field=self._config.species_id_field,
             )
-            
+
     def _error_on_specimen_id_and_taxon_not_matching_tolid(
         self,
         obj: DataObject,
     ) -> None:
-        
-        if obj.get_field_by_name(self._config['error_ignore_field']) is self._config['error_ignore_value']:
+
+        if obj.get_field_by_name(self._config.error_ignore_field) is self._config.error_ignore_value:
             return
 
-        if self._config['specimen_id_field'] in obj.attributes:
-            specimen_id = obj.get_field_by_name(self._config['specimen_id_field'])
+        if self._config.specimen_id_field in obj.attributes:
+            specimen_id = obj.get_field_by_name(self._config.specimen_id_field)
             if specimen_id not in self._cached_tolids:
                 f = DataSourceFilter()
                 f.and_ = {'specimen_id': {'eq': {'value': specimen_id}}}
@@ -107,10 +95,11 @@ class TolidValidator(Validator):
                 for tolid_ in self._cached_tolids[specimen_id]:
                     taxons.add(str(tolid_.species.id))
 
-                if str(obj.get_field_by_name(self._config['species_id_field'])) not in taxons:
+                if str(obj.get_field_by_name(self._config.species_id_field)) not in taxons:
                     self.add_error(
                         object_id=obj.id,
-                        detail=f"Specimen ID {specimen_id} does not match Taxon ID {obj.get_field_by_name(self._config['species_id_field'])} in TolID source",
-                        field=[self._config['specimen_id_field'], self._config['species_id_field']]
+                        detail=f"Specimen ID {specimen_id} does not match Taxon ID "
+                               f"{obj.get_field_by_name(self._config.species_id_field)}"
+                               "in TolID source",
+                        field=[self._config.specimen_id_field, self._config.species_id_field]
                     )
-                

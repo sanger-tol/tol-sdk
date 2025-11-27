@@ -4,17 +4,20 @@
 
 from typing import Any
 
+from unittest.mock import PropertyMock, create_autospec
+
 from pytest import fixture
-from unittest.mock import create_autospec, PropertyMock
+
 from tol.core import DataObject, DataSource, DataSourceFilter
 from tol.core.operator import DetailGetter
-from tol.validators import TolidValidator, TolidConfig
+from tol.validators import TolidConfig, TolidValidator
+
 
 class _MockDataSource(DataSource, DetailGetter):
 
     def __init__(self, config: dict[str, Any]):
         super().__init__(config, [])
-        
+
     def get_by_id(self):
         pass
 
@@ -68,15 +71,16 @@ class _MockDataSource(DataSource, DetailGetter):
     def supported_types(self) -> list[str]:
         return ['species']
 
+
 class TestTolidValidator:
 
     def test_warning_and_error(
         self,
         data_objects
     ) -> None:
-        
+
         mock_datasource = _MockDataSource(config={})
-        
+
         test_config = TolidConfig(
             species_id_field='TAXON_ID',
             specimen_id_field='SPECIMEN_ID',
@@ -90,7 +94,7 @@ class TestTolidValidator:
             datasource=mock_datasource,
         )
 
-        list (
+        list(
             validator.validate(data_objects)
         )
 
@@ -98,23 +102,21 @@ class TestTolidValidator:
         assert len(validator.errors) == 1
         assert len(validator.warnings) == 1
 
-
     def __make_side_effect(self, object_id):
         # Helper to create side effect function for get_field_by_name
         # name is the value passed to get_field_by_name
         def side_effect(name):
             values = {
-                "TAXON_ID": object_id,
-                "SPECIMEN_ID": f"SPEC{object_id}"
+                'TAXON_ID': object_id,
+                'SPECIMEN_ID': f'SPEC{object_id}'
             }
-            if object_id == "FAIL":
+            if object_id == 'FAIL':
                 values = {
-                    "TAXON_ID": 'FAIL',
-                    "SPECIMEN_ID": 'FAIL'
+                    'TAXON_ID': 'FAIL',
+                    'SPECIMEN_ID': 'FAIL'
                 }
             return values.get(name)
         return side_effect
-
 
     @fixture
     def data_objects(
@@ -125,19 +127,19 @@ class TestTolidValidator:
             return_value={'TAXON_ID': 'ABC', 'SPECIMEN_ID': 'SPECABC'}
         )
         mock_object.get_field_by_name.side_effect = self.__make_side_effect('ABC')
-        
+
         mock_object2 = create_autospec(DataObject, instance=True)
         type(mock_object2).attributes = PropertyMock(
             return_value={'TAXON_ID': 'DEF', 'SPECIMEN_ID': 'SPECDEF'}
         )
         mock_object2.get_field_by_name.side_effect = self.__make_side_effect('DEF')
-        
+
         mock_object3 = create_autospec(DataObject, instance=True)
         type(mock_object3).attributes = PropertyMock(
             return_value={'TAXON_ID': 'FAIL', 'SPECIMEN_ID': 'SPECFAIL'}
         )
         mock_object3.get_field_by_name.side_effect = self.__make_side_effect('FAIL')
-        
+
         return [
             mock_object,
             mock_object2,
