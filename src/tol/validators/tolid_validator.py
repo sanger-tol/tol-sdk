@@ -5,8 +5,8 @@
 from dataclasses import dataclass
 
 from tol.core import DataObject
-from tol.core.validate import Validator
 from tol.core import DataSourceError, DataSourceFilter
+from tol.core.validate import Validator
 from tol.sources.tolid import tolid
 
 
@@ -76,7 +76,7 @@ class TolidValidator(Validator):
         obj: DataObject,
     ) -> None:
 
-        if (obj.get_field_by_name(self._config.error_ignore_field) is 
+        if (obj.get_field_by_name(self._config.error_ignore_field) is
                 self._config.error_ignore_value):
             return
 
