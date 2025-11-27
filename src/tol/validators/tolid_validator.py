@@ -6,8 +6,8 @@ from dataclasses import dataclass
 
 from tol.core import DataObject
 from tol.core.validate import Validator
-from tol.sources.tolid import tolid
 from tol.core import DataSourceError, DataSourceFilter
+from tol.sources.tolid import tolid
 
 
 @dataclass
@@ -18,6 +18,7 @@ class TolidConfig:
     error_ignore_value: str
     warning_detail: str = 'Species not found in Tol ID source'
 
+
 class TolidValidator(Validator):
     """
     Validates that a stream of `DataObject` instances
@@ -27,7 +28,7 @@ class TolidValidator(Validator):
     def __init__(
         self,
         config: TolidConfig,
-        datasource = tolid(),
+        datasource=tolid(),
     ) -> None:
 
         super().__init__()
@@ -63,7 +64,7 @@ class TolidValidator(Validator):
                     self._cached_species_id[obj_species_id] = False
 
         species_in_tolid = self._cached_species_id[obj_species_id]
-        if species_in_tolid == False:
+        if species_in_tolid is False:
             self.add_warning(
                 object_id=obj.id,
                 detail=self._config.warning_detail,
@@ -75,7 +76,8 @@ class TolidValidator(Validator):
         obj: DataObject,
     ) -> None:
 
-        if obj.get_field_by_name(self._config.error_ignore_field) is self._config.error_ignore_value:
+        if (obj.get_field_by_name(self._config.error_ignore_field) is 
+                self._config.error_ignore_value):
             return
 
         if self._config.specimen_id_field in obj.attributes:
@@ -98,8 +100,8 @@ class TolidValidator(Validator):
                 if str(obj.get_field_by_name(self._config.species_id_field)) not in taxons:
                     self.add_error(
                         object_id=obj.id,
-                        detail=f"Specimen ID {specimen_id} does not match Taxon ID "
-                               f"{obj.get_field_by_name(self._config.species_id_field)}"
-                               "in TolID source",
+                        detail=f'Specimen ID {specimen_id} does not match Taxon ID '
+                               f'{obj.get_field_by_name(self._config.species_id_field)}'
+                               'in TolID source',
                         field=[self._config.specimen_id_field, self._config.species_id_field]
                     )

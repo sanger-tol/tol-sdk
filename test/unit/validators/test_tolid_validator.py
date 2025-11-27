@@ -3,7 +3,6 @@
 # SPDX-License-Identifier: MIT
 
 from typing import Any
-
 from unittest.mock import PropertyMock, create_autospec
 
 from pytest import fixture
