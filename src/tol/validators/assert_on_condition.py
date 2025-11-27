@@ -30,9 +30,6 @@ class AssertOnConditionValidator(Validator, ConditionEvaluator):
         self.__config = config
 
     def _validate_data_object(self, obj: DataObject) -> None:
-        """
-        Called for each DataObject in the validation stream
-        """
         # Get condition
         condition = cast(
             ConditionConfig, self.__extract_config_value(self.__config, 'condition')

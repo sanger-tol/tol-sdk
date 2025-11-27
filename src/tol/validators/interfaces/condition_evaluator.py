@@ -7,7 +7,15 @@ from typing import Any
 
 
 class ConditionEvaluator(ABC):
+    """
+    Interface to be inherited by validators. Evaluates the provided condition given its
+    operator and operands
+    """
     def _evaluate_condition(self, left: Any, operator: str, right: Any) -> bool:
+        """
+        Evaluates the provided condition given its operator and operands.
+        If `operator` is not one of the supported operators, an exception is thrown.
+        """
         match operator:
             case '==':
                 return left == right
