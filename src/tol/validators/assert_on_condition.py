@@ -5,7 +5,7 @@
 from typing import Any, Dict, List, Tuple, cast
 
 from tol.core import DataObject, Validator
-from .condition_checking import check_condition
+from .interfaces import ConditionEvaluator
 
 
 ConditionConfig = Dict[str, str]
@@ -13,7 +13,7 @@ AssertConfig = Dict[str, str | List[Any]]
 Config = Dict[str, ConditionConfig | List[AssertConfig]]
 
 
-class AssertOnConditionValidator(Validator):
+class AssertOnConditionValidator(Validator, ConditionEvaluator):
     """
     Validates an incoming stream of `DataObject` instances,
     using a condition to check a specific attrbiute. If this
@@ -39,12 +39,12 @@ class AssertOnConditionValidator(Validator):
 
         # Check condition attribute
         # (only perform the assertions if the condition passes)
-        if check_condition(self, *self.__extract_condition(obj, condition)):
+        if self._evaluate_condition(*self.__extract_condition(obj, condition)):
             # Perform each assertion
             for assertion in self.__config['assert']:
                 self.__perform_assertion(obj, cast(AssertConfig, assertion))
 
-    def __extract_condition(self, obj: DataObject, condition: Dict) -> Tuple[str, Any, str, Any]:
+    def __extract_condition(self, obj: DataObject, condition: Dict) -> Tuple[Any, str, Any]:
         condition_field = cast(
             str, self.__extract_config_value(obj, condition, 'field')
         )
@@ -63,14 +63,18 @@ class AssertOnConditionValidator(Validator):
             Any, self.__extract_config_value(obj, condition, 'value')
         )
 
-        return (condition_field, condition_field_value, operator, expected_value)
+        # return (condition_field, condition_field_value, operator, expected_value)
+        return (condition_field_value, operator, expected_value)
 
     def __perform_assertion(self, obj: DataObject, assertion: AssertConfig) -> None:
         # Extract data from assertion
-        field, field_value, operator, expected_value = self.__extract_condition(obj, assertion)
+        field = cast(
+            str, self.__extract_config_value(obj, assertion, 'field')
+        )
+        field_value, operator, expected_value = self.__extract_condition(obj, assertion)
 
         # There's only an error or warning if the assertion condition fails
-        if not check_condition(self, field, field_value, operator, expected_value):
+        if not self._evaluate_condition(field_value, operator, expected_value):
             # Check whether this is an error or a warning (defaulting to an error)
             is_error = assertion.get('is_error', True)
 
