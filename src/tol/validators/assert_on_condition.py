@@ -49,7 +49,12 @@ class AssertOnConditionValidator(Validator):
         )
         condition_field_value = obj.attributes.get(condition_field)
         if condition_field_value is None:
-            raise Exception(f'CONFIG ERROR IN VALIDATOR: no key {condition_field} in config')
+            self.add_error(
+                object_id=obj.id,
+                detail=f'The requested condition field {condition_field}'
+                        'was not found in the DataObject',
+                field=condition_field,
+            )
         operator = cast(
             str, self.__extract_config_value(obj, condition, 'operator')
         )
@@ -98,10 +103,17 @@ class AssertOnConditionValidator(Validator):
             case 'in':
                 return left in right
             case _:
-                raise Exception(f'CONFIG ERROR IN VALIDATOR: operator {operator} is not supported')
+                raise Exception(f'VALIDATOR SETUP ERROR: {operator}` is not a supported operator'
+                                 'for AssertOnConditionValidator')
 
     def __extract_config_value(self, obj: DataObject, dictionary: Dict, key: str):
+        """
+        A reusable function that handles extracting a key from the config, handling the case
+        that it is not present. It takes in a `dictionary` to look in, because the key may not
+        be at the top-level of the config
+        """
         try:
             return dictionary[key]
         except KeyError:
-            raise Exception(f'CONFIG ERROR IN VALIDATOR: {key} not present in {dictionary} dict')
+            raise Exception(f'VALIDATOR SETUP ERROR: '
+                            f'{key} not present in the config for AssertOnConditionValidator')
