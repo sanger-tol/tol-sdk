@@ -4,6 +4,8 @@
 
 from typing import Dict, Optional, Tuple
 
+import requests
+
 from .converter import EnaApiTransfer
 from ..core import HttpClient
 
@@ -73,7 +75,13 @@ class EnaApiClient(HttpClient):
         if r.status_code == 404:
             return []
         r.raise_for_status()
-        return r.text if text else r.json() if r.json else []
+        if text:
+            return r.text
+        try:
+            data = r.json()
+            return data if data else []
+        except requests.exceptions.JSONDecodeError:
+            return []
 
     def __fetch_list(
         self,
@@ -90,7 +98,11 @@ class EnaApiClient(HttpClient):
         if r.status_code == 404:
             return []
         r.raise_for_status()
-        return r.json() if r.json else []
+        try:
+            data = r.json()
+            return data if data else []
+        except requests.exceptions.JSONDecodeError:
+            return []
 
     def __detail_url(
         self,
