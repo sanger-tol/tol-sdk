@@ -35,7 +35,7 @@ class SpecimensHaveSameTaxonValidator(Validator):
         # 2nd pass=>    element['specimen_id']  =   A
         #               element['taxon_id']     =   AB
         #               AB != AA
-        #               Flag error 
+        #               Flag error
         # From Nithin :)
 
         # Ensure the data object is not a SYMBIONT
@@ -47,11 +47,11 @@ class SpecimensHaveSameTaxonValidator(Validator):
             if taxon_id is None:
                 return
             if specimen_id in self.__seen and taxon_id != self.__seen[specimen_id]:
-                    self.add_error(
-                        object_id=obj.id,
-                        detail='A specimen must have the same taxonomy ID',
-                        field=self.__config_value('specimen_id_field'),
-                    )
+                self.add_error(
+                    object_id=obj.id,
+                    detail='A specimen must have the same taxonomy ID',
+                    field=self.__config_value('specimen_id_field'),
+                )
             if specimen_id not in self.__seen:
                 self.__seen[specimen_id] = taxon_id
 
