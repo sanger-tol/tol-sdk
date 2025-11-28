@@ -6,12 +6,12 @@ from __future__ import annotations
 
 import typing
 from abc import ABC, abstractmethod
-from collections.abc import Mapping
-from typing import Any, Iterable, Optional
+from collections.abc import Iterable
+from typing import Any
 
 from dateutil.parser import parse as dateutil_parse
 
-from ..core import DataObject
+from ..core import DataObject, ReqFieldsTree
 
 if typing.TYPE_CHECKING:
     from ..core import DataSource
@@ -27,23 +27,12 @@ class Parser(ABC):
     instances
     """
 
-    def parse_iterable(
-        self,
-        transfers: Iterable[JsonApiResource]
-    ) -> Iterable[DataObject]:
-        """
-        Parses an `Iterable` of JSON:API transfer resources
-        """
-
-        return (
-            self.parse(t) for t in transfers
-        )
-
     @abstractmethod
-    def parse(self, transfer: JsonApiResource) -> DataObject:
+    def parse_json_doc(self, transfer: JsonApiDoc) -> Iterable[DataObject]:
         """
-        Parses an individual JSON:API transfer resource to a
-        `DataObject` instance
+        Parses a JSON:API document, which includes a `data` array and possibly
+        an `included` array of related objects, returning an list of
+        `DataObject`.
         """
 
     @abstractmethod
@@ -62,22 +51,75 @@ class Parser(ABC):
 
 
 class DefaultParser(Parser):
+    def __init__(
+        self,
+        data_source_dict: dict[str, DataSource],
+        requested_tree: ReqFieldsTree | None = None,
+    ) -> None:
+        self.__ds_dict = data_source_dict
+        self.__requested_tree = requested_tree
 
-    def __init__(self, data_source_dict: dict[str, DataSource]) -> None:
-        self.__dict = data_source_dict
+    def parse_json_doc(
+        self,
+        transfer: JsonApiDoc,
+    ) -> Iterable[DataObject]:
+        data_objects = list(self.__parse_iterable(transfer['data']))
+        if tree := self.__requested_tree:
+            included = DataObjectCatalog(self.__parse_iterable(transfer.get('included')))
+            for obj in data_objects:
+                self.__link_related_obejcts(tree, included, obj)
+        return data_objects
 
-    def parse(self, transfer: JsonApiResource) -> DataObject:
+    def __link_related_obejcts(
+        self,
+        tree: ReqFieldsTree,
+        included: DataObjectCatalog,
+        data_object: DataObject,
+    ) -> None:
+        """
+        Using the `ReqFieldsTree` recursively replaces related stub
+        `DataObject`s with `DataObject`s from the `incldued`
+        `DataObjectCatalog` which were built from the JSON:API "included"
+        array.
+        """
+        for name, sub_tree in tree.sub_trees():
+            if name in tree.to_one_names():
+                if (related := data_object._to_one_objects.get(name)) and (
+                    inc := included.fetch(related)
+                ):
+                    # Link the to-one object
+                    setattr(data_object, name, inc)
+                    self.__link_related_obejcts(sub_tree, included, inc)
+            elif related := data_object._to_many_objects.get(name):
+                # Link each to-many object
+                for i, rel in enumerate(related):
+                    if inc := included.fetch(rel):
+                        related[i] = inc
+                        self.__link_related_obejcts(sub_tree, included, inc)
+
+    def __parse_iterable(
+        self,
+        transfer: list[JsonApiResource],
+    ) -> Iterable[DataObject]:
+        if transfer:
+            if isinstance(transfer, list):
+                for json_res in transfer:
+                    yield self.__parse(json_res)
+            else:
+                yield self.__parse(transfer)
+
+    def __parse(self, transfer: JsonApiResource) -> DataObject:
         type_ = transfer['type']
         ds = self.__get_data_source(type_)
-        raw_attributes = transfer.get('attributes')
-
-        attributes = self.__convert_attributes(type_, raw_attributes)
+        attributes = self.__convert_attributes(type_, transfer.get('attributes'))
+        to_one, to_many = self.__parse_relationships(transfer.get('relationships'))
 
         return ds.data_object_factory(
-            transfer.get('type'),
+            type_,
             id_=transfer.get('id'),
             attributes=attributes,
-            to_one=self.__parse_to_ones(transfer)
+            to_one=to_one,
+            to_many=to_many,
         )
 
     def parse_stats(self, transfer: JsonApiResource) -> dict:
@@ -90,73 +132,54 @@ class DefaultParser(Parser):
         type_ = transfer.get('type')
         raw_stats = transfer.get('stats')
 
-        return [
-            self.__convert_group_stats(type_, raw_stat)
-            for raw_stat in raw_stats
-        ]
+        return [self.__convert_group_stats(type_, raw_stat) for raw_stat in raw_stats]
 
     def __get_data_source(self, type_: str) -> DataSource:
-        return self.__dict[type_]
+        return self.__ds_dict[type_]
 
-    def __parse_to_ones(
-        self,
-        transfer: JsonApiResource
-    ) -> dict[str, DataObject]:
+    def __parse_relationships(
+        self, related: dict[str, JsonApiResource] | None
+    ) -> tuple[dict[str, DataObject | None], dict[str, list[DataObject]]]:
+        to_one = {}
+        to_many = {}
+        if related:
+            for name, value in related.items():
+                if value is None:
+                    # This must be a to-one relation because to-many relations
+                    # are never null.  (If the to-many has been fetched it
+                    # will be an empty list. If it has not been fetched it
+                    # will be a dict containing a "links" key.)
+                    to_one[name] = None
+                elif data := value.get('data'):
+                    if isinstance(data, list):
+                        to_many[name] = [self.__make_stub_data_object(x) for x in data]
+                    else:
+                        to_one[name] = None if data is None else self.__make_stub_data_object(data)
+        return to_one, to_many
 
-        return {
-            k: self.__parse_to_one(v)
-            for k, v in transfer.get('relationships', {}).items()
-            if self.__relationship_is_to_one(v)
-        }
-
-    def __parse_to_one(
-        self,
-        v: dict[str, Any] | None
-    ) -> DataObject | None:
-
-        if v is None:
-            return None
-        else:
-            return self.parse(v.get('data', {}))
-
-    def __relationship_is_to_one(
-        self,
-        relation: dict[str, Any] | None
-    ) -> bool:
-
-        if relation is None:
-            return True
-
-        return isinstance(
-            relation.get('data'),
-            Mapping
+    def __make_stub_data_object(self, transfer: JsonApiResource):
+        type_ = transfer['type']
+        ds = self.__get_data_source(type_)
+        return ds.data_object_factory(
+            type_,
+            id_=transfer['id'],
+            stub=True,
         )
 
     def __convert_attributes(
-        self,
-        type_: str,
-        attributes: Optional[dict[str, Any]]
+        self, type_: str, attributes: dict[str, Any] | None
     ) -> dict[str, Any]:
-
         if not attributes:
             return {}
 
         datetime_keys = self.__get_datetime_keys(type_)
 
         return {
-            k: (
-                dateutil_parse(v)
-                if k in datetime_keys and v is not None
-                else v
-            )
+            k: (dateutil_parse(v) if k in datetime_keys and v is not None else v)
             for k, v in attributes.items()
         }
 
-    def __convert_stats(
-        self,
-        type_: str,
-        stats: Optional[dict[str, Any]]
-    ) -> dict[str, Any]:
+    def __convert_stats(self, type_: str, stats: dict[str, Any] | None) -> dict[str, Any]:
         # {'field': {'min': value, 'max': value}
         if not stats:
             return {}
@@ -167,9 +190,7 @@ class DefaultParser(Parser):
             fieldname: {
                 k: (
                     dateutil_parse(v, ignoretz=True)
-                    if fieldname in datetime_keys
-                    and v is not None
-                    and k in ['min', 'max']
+                    if fieldname in datetime_keys and v is not None and k in ['min', 'max']
                     else v
                 )
                 for k, v in fieldstats.items()
@@ -178,11 +199,8 @@ class DefaultParser(Parser):
         }
 
     def __convert_group_stats(
-        self,
-        type_: str,
-        raw_stats: dict[str, dict[str, Any]]
+        self, type_: str, raw_stats: dict[str, dict[str, Any]]
     ) -> dict[str, dict[str, Any]]:
-
         st = raw_stats.pop('stats')
         count = st.pop('count', None)
 
@@ -193,19 +211,41 @@ class DefaultParser(Parser):
 
         return raw_stats
 
-    def __get_datetime_keys(self, type_: str) -> list[str]:
+    def __get_datetime_keys(self, type_: str) -> set[str]:
+        """
+        Gets called on each object, which is somewhat inefficient.  Should be
+        cached for each object type, but don't want `self` in a cache because
+        it could leak memory.
+        """
         ds = self.__get_data_source(type_)
-        attribute_types = ds.attribute_types.get(
-            type_,
-            {}
-        )
+        attribute_types = ds.attribute_types.get(type_, {})
 
-        return [
-            k for k, v in attribute_types.items()
-            if self.__value_is_datetime(v)
-        ]
+        return {attr for attr, typ in attribute_types.items() if self.__type_is_datetime(typ)}
 
-    def __value_is_datetime(self, __v: str) -> bool:
-        lower_ = __v.lower()
+    def __type_is_datetime(self, typ: str, /) -> bool:
+        lc_type = typ.lower()
 
-        return 'date' in lower_ or 'time' in lower_
+        return 'date' in lc_type or 'time' in lc_type
+
+
+class DataObjectCatalog:
+    """
+    A catalog of `DataObject`s keyed by their `type` and `id` attributes.
+    """
+
+    def __init__(self, data_obj_list: Iterable[DataObject] | None):
+        self.__obj_index = {}
+        if data_obj_list:
+            for obj in data_obj_list:
+                self.store(obj)
+
+    def __len__(self):
+        return len(self.__obj_index)
+
+    def store(self, obj) -> None:
+        key = obj.type, obj.id
+        self.__obj_index[key] = obj
+
+    def fetch(self, obj) -> DataObject | None:
+        key = obj.type, obj.id
+        return self.__obj_index.get(key)

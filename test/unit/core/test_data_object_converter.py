@@ -16,7 +16,7 @@ from tol.core import (
 )
 
 
-class TestDataObjectToDataObjectConverter(DataObjectToDataObjectOrUpdateConverter):
+class _TestDataObjectToDataObjectConverter(DataObjectToDataObjectOrUpdateConverter):
 
     def convert(
         self,
@@ -105,7 +105,7 @@ class TestDataObjectConverter(TestCase):
         destination = _MockDataSource(config={})
         core_data_object(source)
         core_data_object(destination)
-        converter = TestDataObjectToDataObjectConverter(
+        converter = _TestDataObjectToDataObjectConverter(
             data_object_factory=destination.data_object_factory
         )
         CoreDataObject = source.data_object_factory  # noqa N806

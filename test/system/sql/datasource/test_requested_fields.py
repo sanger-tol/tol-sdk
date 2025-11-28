@@ -137,15 +137,21 @@ class TestRequestedFields:
                 ),
             )
             dumped = view.dump_bulk(iter_r3)
+            included = {(x['type'], x['id']): x for x in dumped['included']}
 
             assert len(dumped['data']) == 1
             dumped_r3 = dumped['data'][0]
 
             # meant to be there
             assert dumped_r3['id'] == 'neither'
-            dumped_r1 = dumped_r3['relationships']['funny_r1']['data']
+            assert dumped_r3['relationships']['funny_r1']['data'] == {'type': 'r1', 'id': 'idk'}
+            dumped_r1 = included['r1', 'idk']
             assert dumped_r1['id'] == 'idk'
-            dumped_r2 = dumped_r1['relationships']['r2_d2']['data']
+            assert dumped_r1['relationships']['r2_d2']['data'] == {
+                'type': 'r2',
+                'id': 'something comforting',
+            }
+            dumped_r2 = included['r2', 'something comforting']
             assert dumped_r2['id'] == 'something comforting'
             assert dumped_r2['attributes']['funny_string'] == 'yes'
 
