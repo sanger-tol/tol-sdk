@@ -2,6 +2,8 @@
 #
 # SPDX-License-Identifier: MIT
 
+import os
+import uuid
 from tempfile import NamedTemporaryFile
 from typing import Any
 
@@ -18,6 +20,16 @@ ALLOWED_EXTENSIONS: set[str] = {'csv', 'json', 'xlsx'}
 
 def allowed_file(filename: str) -> bool:
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
+
+def set_filename(filename: str) -> str:
+    environment = os.getenv('ENVIRONMENT', 'dev')
+    unique_id = str(uuid.uuid4())[:8]
+    return f'{environment}_{unique_id}_{filename}'
+
+
+def get_original_filename(s3_filename: str) -> str:
+    return s3_filename.split('_', maxsplit=2)[2]
 
 
 def data_upload_blueprint(
@@ -45,11 +57,13 @@ def data_upload_blueprint(
 
         try:
             s3_client = S3Client()
+            new_filename = set_filename(file.filename)
+
             with NamedTemporaryFile() as temp_file:
                 file.save(temp_file.name)
-                s3_client.put_object(s3_bucket, file.filename, temp_file.name)
+                s3_client.put_object(s3_bucket, new_filename, temp_file.name)
 
-            return {'message': 'File uploaded successfully'}, 200
+            return {'message': 'File uploaded successfully', 'file_name': new_filename}, 200
 
         except Exception as e:
             return {'error': f'Failed to upload file: {str(e)}'}, 500
@@ -69,12 +83,13 @@ def data_upload_blueprint(
 
             with NamedTemporaryFile() as temp_file:
                 s3_client.get_object(bucket_name, file_name, temp_file.name)
-                download_name = request.json.get('download_name', file_name)
+
+                original = get_original_filename(file_name)
 
                 return send_file(
                     temp_file.name,
                     as_attachment=True,
-                    download_name=download_name,
+                    download_name=original,
                     mimetype='application/octet-stream'
                 )
         except Exception as e:
