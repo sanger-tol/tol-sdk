@@ -5,19 +5,12 @@
 from collections.abc import Mapping
 from typing import Callable, Iterator, Optional
 
-from .api_datasource import (
-    ApiDataSource,
-    DOConverterFactory,
-    JsonConverterFactory
-)
+from .api_datasource import ApiDataSource, DOConverterFactory, JsonConverterFactory
 from .client import JsonApiClient
-from .converter import (
-    DataObjectConverter,
-    JsonApiConverter
-)
+from .converter import DataObjectConverter, JsonApiConverter
 from .filter import DefaultApiFilter
 from .parser import DefaultParser
-from ..core import DataSource
+from ..core import DataSource, ReqFieldsTree
 
 
 class _ApiDSDict(Mapping):
@@ -53,11 +46,7 @@ class _ConverterFactory:
         return self.__data_source
 
     @data_source.setter
-    def data_source(
-        self,
-        ds: DataSource
-    ) -> None:
-
+    def data_source(self, ds: DataSource) -> None:
         self.__data_source = ds
 
     def do_converter_factory(self) -> DOConverterFactory:
@@ -67,12 +56,26 @@ class _ConverterFactory:
 
         return DataObjectConverter(self.__data_source, prefix=self.__prefix)
 
-    def json_converter_factory(self) -> JsonConverterFactory:
+    def json_converter_factory(
+        self,
+        object_type: str | None = None,
+        requested_fields: list[str] | None = None,
+    ) -> JsonConverterFactory:
         """
         Returns an instantiated `JsonApiConverter`.
         """
 
-        parser = DefaultParser(self.__ds_dict)
+        req_fields_tree = (
+            ReqFieldsTree(
+                object_type,
+                self.__data_source,
+                requested_fields=requested_fields,
+            )
+            if object_type
+            else None
+        )
+
+        parser = DefaultParser(self.__ds_dict, req_fields_tree)
         return JsonApiConverter(parser)
 
     @property
@@ -110,7 +113,6 @@ def _filter_factory() -> DefaultApiFilter:
 def create_api_datasource(
     api_url: str,
     token: Optional[str] = None,
-
     data_prefix: str = '/data',
     retries: int = 5,
     status_forcelist: Optional[list[int]] = None,
@@ -137,7 +139,7 @@ def create_api_datasource(
         client_factory,
         manager.json_converter_factory,
         manager.do_converter_factory,
-        _filter_factory
+        _filter_factory,
     )
 
     manager.data_source = api_ds

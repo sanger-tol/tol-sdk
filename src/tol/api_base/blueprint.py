@@ -251,6 +251,18 @@ def _core_blueprint(
         )
         return Controller(data_source, view, req_fields_tree, auth_inspector=auth_inspector)
 
+    def __new_parser(
+        object_type: str,
+    ):
+        data_source = data_source_dict[object_type]
+        # Build a ReqFieldsTree template for the request
+        req_fields_tree = ReqFieldsTree(
+            object_type,
+            data_source,
+            include_all_to_ones=include_all_to_ones,
+        )
+        return DefaultParser(data_source_dict, requested_tree=req_fields_tree)
+
     @data_handler.route('/<object_type>/<path:object_id>', methods=['GET'])  # Allow slashes
     def get_detail(*, object_type: str, object_id: str):
         """Get details of a specific object by ID."""
@@ -311,19 +323,17 @@ def _core_blueprint(
     def post_inserts(*, object_type: str):
         """Insert new objects of the specified type."""
         controller = __new_controller(object_type)
-        request_body = JsonApiRequestBody(request.json)
-        parser = DefaultParser(data_source_dict)
-        objects = parser.parse_iterable(request_body.data)
+        parser = __new_parser(object_type)
+        objects = parser.parse_json_doc(request.json)
         return controller.post_inserts(object_type, objects)
 
     @data_handler.route('/<object_type>:upsert', methods=['POST'])
     def post_upserts(*, object_type: str):
         """Insert or update objects of the specified type."""
-        controller = __new_controller(object_type)
         request_args = ListGetParameters(request.args)
-        request_body = JsonApiRequestBody(request.json)
-        parser = DefaultParser(data_source_dict)
-        objects = parser.parse_iterable(request_body.data)
+        controller = __new_controller(object_type)
+        parser = __new_parser(object_type)
+        objects = parser.parse_json_doc(request.json)
         return controller.post_upserts(
             object_type,
             objects,
@@ -347,7 +357,8 @@ def _core_blueprint(
             requested_fields=request_args.requested_fields,
         )
         search_after = request.json.get('search_after')
-        return controller.get_cursor_page(object_type, request_args, search_after)
+        page = controller.get_cursor_page(object_type, request_args, search_after)
+        return page
 
     @data_handler.route('/<object_type>:to-one/<object_id>/<path:hops_suffix>', methods=['GET'])
     def get_to_one_relation(*, object_type: str, object_id: str, hops_suffix: str):

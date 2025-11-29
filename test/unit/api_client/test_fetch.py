@@ -11,98 +11,82 @@ from tol.api_client.client import JsonApiClient
 from tol.api_client.converter import DataObjectConverter, JsonApiConverter
 from tol.api_client.filter import ApiFilter
 from tol.api_client.parser import DefaultParser, Parser
-from tol.core import core_data_object
+from tol.core import ReqFieldsTree, core_data_object
 
 
-@pytest.fixture(scope='function')
+@pytest.fixture
 def api_client() -> JsonApiClient:
-    mock = create_autospec(
-        JsonApiClient,
-        spec_set=True
-    )
+    mock = create_autospec(JsonApiClient, spec_set=True)
 
     mock.config_attribute_types.return_value = {
         'root': {},
-        'rel': {'str_column': 'str'}
+        'rel': {'str_column': 'str'},
     }
     mock.config_operations.return_value = {
         'root': {
-            'noauth': ['detailGet', 'relational']
+            'noauth': ['detailGet', 'relational'],
         },
         'rel': {
-            'noauth': ['detailGet', 'relational']
-        }
+            'noauth': ['detailGet', 'relational'],
+        },
     }
     mock.config_relationships.return_value = {
         'root': {
-            'one': {
-                'relation': 'rel'
-            }
+            'one': {'relation': 'rel'},
         }
     }
 
     return mock
 
 
-@pytest.fixture(scope='function')
+@pytest.fixture
 def parser() -> Parser:
     return create_autospec(
         Parser,
-        spec_set=True
+        spec_set=True,
     )
 
 
-@pytest.fixture(scope='function')
-def json_api_converter(
-    parser: Parser
-) -> JsonApiConverter:
-
-    return JsonApiConverter(
-        parser
-    )
+@pytest.fixture
+def json_api_converter(parser: Parser) -> JsonApiConverter:
+    return JsonApiConverter(parser)
 
 
-@pytest.fixture(scope='function')
+@pytest.fixture
 def data_object_converter() -> DataObjectConverter:
     return create_autospec(
         DataObjectConverter,
-        spec_set=True
+        spec_set=True,
     )
 
 
-@pytest.fixture(scope='function')
+@pytest.fixture
 def api_filter() -> ApiFilter:
-    return create_autospec(
-        ApiFilter,
-        spec_set=True
-    )
+    return create_autospec(ApiFilter, spec_set=True)
 
 
-@pytest.fixture(scope='function')
+@pytest.fixture
 def api_ds(
     api_client: JsonApiClient,
     json_api_converter: JsonApiConverter,
     data_object_converter: DataObjectConverter,
     api_filter: ApiFilter,
-    parser: Parser
+    parser: Parser,
 ) -> ApiDataSource:
-
     ds = ApiDataSource(
         lambda: api_client,
-        lambda: json_api_converter,
+        lambda obj_type=None, requested_fields=None: json_api_converter,
         lambda: data_object_converter,
-        lambda: api_filter
+        lambda: api_filter,
     )
     core_data_object(ds)
 
     # resolves a chicken-and-the-egg problem
     parser_override = DefaultParser(
-        {
-            'root': ds,
-            'rel': ds
-        }
+        {'root': ds, 'rel': ds},
+        ReqFieldsTree('root', ds),
     )
-    parser.parse.side_effect = parser_override.parse
+    parser.parse_json_doc.side_effect = parser_override.parse_json_doc
 
     return ds
 
@@ -113,7 +97,7 @@ class TestNoFetch:
     def test_none(
         self,
         api_ds: ApiDataSource,
-        api_client: JsonApiClient
+        api_client: JsonApiClient,
     ):
         """
         A `to_one` relation is None ->
@@ -123,14 +107,12 @@ class TestNoFetch:
         api_client.get_detail.return_value = {
             'data': {
                 'type': 'root',
-                'id': '404',
-                'relationships': {
-                    'relation': None
-                }
+                'id': '7',
+                'relationships': {'relation': None},
             }
         }
 
-        obj = api_ds.get_one('root', '404')
+        obj = api_ds.get_one('root', '7')
 
         assert obj is not None
         api_client.get_detail.assert_called_once()
@@ -143,7 +125,7 @@ class TestNoFetch:
     def test_get_by_id(
         self,
         api_ds: ApiDataSource,
-        api_client: JsonApiClient
+        api_client: JsonApiClient,
     ):
         """
         Endpoint returns relations +
@@ -158,22 +140,26 @@ class TestNoFetch:
         api_client.get_detail.return_value = {
             'data': {
                 'type': 'root',
-                'id': '400',
+                'id': '7',
                 'relationships': {
                     'relation': {
                         'data': {
                             'type': 'rel',
-                            'id': '408',
-                            'attributes': {
-                                'str_column': 'NO FETCH!'
-                            }
+                            'id': '8',
                         }
                     }
-                }
-            }
+                },
+            },
+            'included': [
+                {
+                    'type': 'rel',
+                    'id': '8',
+                    'attributes': {'str_column': 'NO FETCH!'},
+                },
+            ],
         }
 
-        obj = api_ds.get_one('root', '400')
+        obj = api_ds.get_one('root', '7')
 
         assert obj is not None
         api_client.get_detail.assert_called_once()

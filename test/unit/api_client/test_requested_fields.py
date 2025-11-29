@@ -14,7 +14,7 @@ from tol.api_client.converter import (
 )
 from tol.api_client.filter import ApiFilter
 from tol.api_client.parser import DefaultParser
-from tol.core import DataObject, core_data_object
+from tol.core import DataObject, ReqFieldsTree, core_data_object
 
 
 @pytest.fixture
@@ -25,9 +25,9 @@ def requested_api_client() -> JsonApiClient:
     )
 
     mock_client.config_attribute_types.return_value = {
-        'a': {},
-        'b': {},
-        'c': {},
+        'a': {'id': 'str'},
+        'b': {'id': 'str'},
+        'c': {'id': 'str'},
     }
 
     mock_client.config_relationships.return_value = {
@@ -81,13 +81,27 @@ def requested_api_ds(
     class _Manager:
         api_ds: ApiDataSource
 
-        def get_json_converter(self) -> JsonApiConverter:
+        def get_json_converter(
+            self,
+            obj_type=None,
+            requested_fields=None,
+        ) -> JsonApiConverter:
+            rft = (
+                ReqFieldsTree(
+                    obj_type,
+                    api_ds,
+                    requested_fields=requested_fields,
+                )
+                if obj_type
+                else None
+            )
             parser = DefaultParser(
                 {
                     'a': self.api_ds,
                     'b': self.api_ds,
                     'c': self.api_ds,
-                }
+                },
+                rft,
             )
             return JsonApiConverter(parser)
 
@@ -115,11 +129,7 @@ class TestRequestedFields:
         requested_api_ds: ApiDataSource,
         requested_api_client: JsonApiClient,
     ):
-
-        requested_api_client.get_detail.return_value = {
-            'data': self.__get_mock_dump()
-        }
-
+        requested_api_client.get_detail.return_value = self.__get_mock_dump()
         ret_a = requested_api_ds.get_one(
             'a',
             'A',
@@ -136,11 +146,12 @@ class TestRequestedFields:
         requested_api_ds: ApiDataSource,
         requested_api_client: JsonApiClient,
     ):
-
+        md = self.__get_mock_dump()
         requested_api_client.get_list_page.return_value = {
             'data': [
-                self.__get_mock_dump(),
+                md['data']
             ],
+            'included': md['included'],
             'meta': {
                 'count': 1
             }
@@ -163,11 +174,9 @@ class TestRequestedFields:
         requested_api_ds: ApiDataSource,
         requested_api_client: JsonApiClient,
     ):
-
+        md = self.__get_mock_dump()
         requested_api_client.get_list_page.return_value = {
-            'data': [
-                self.__get_mock_dump(),
-            ],
+            **md,
             'meta': {
                 'count': 1
             }
@@ -201,22 +210,28 @@ class TestRequestedFields:
 
     def __get_mock_dump(self):
         return {
-            'type': 'a',
-            'id': 'A',
-            'relationships': {
-                'b': {
-                    'data': {
-                        'type': 'b',
-                        'id': 'B',
-                        'relationships': {
-                            'c': {
-                                'data': {
-                                    'type': 'c',
-                                    'id': 'C',
-                                }
-                            }
-                        }
+            'data': {
+                'type': 'a',
+                'id': 'A',
+                'relationships': {
+                    'b': {
+                        'data': {'type': 'b', 'id': 'B'},
                     }
-                }
-            }
+                },
+            },
+            'included': [
+                {
+                    'type': 'b',
+                    'id': 'B',
+                    'relationships': {
+                        'c': {
+                            'data': {'type': 'c', 'id': 'C'},
+                        }
+                    },
+                },
+                {
+                    'type': 'c',
+                    'id': 'C',
+                },
+            ],
         }
