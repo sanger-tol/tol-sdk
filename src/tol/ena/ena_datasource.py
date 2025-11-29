@@ -100,7 +100,7 @@ class EnaDataSource(
     @property
     @cache
     def supported_types(self) -> list[str]:
-        return ['assembly', 'read_run', 'sample', 'study', 'taxon']
+        return ['assembly', 'read_run', 'sample', 'study', 'taxon', 'checklist']
 
     def get_by_id(
         self,
@@ -112,6 +112,9 @@ class EnaDataSource(
 
         client = self.__client_factory()
         ena_response = client.get_detail(object_type, object_ids)
+        # For a checklist we need to convert into a list of dicts
+        if object_type == 'checklist':
+            ena_response = convert_checklist_xml_to_dict(ena_response)
         ena_converter = self.__ec_factory()
 
         converted_objects, _ = ena_converter.convert_list(object_type, ena_response) \
@@ -198,7 +201,6 @@ class EnaDataSource(
         return response
 
     def get_request(self, command: str, headers=None, params=None) -> requests.Response:
-
         response = requests.get(self.uri + command,
                                 params=params, headers=headers,
                                 auth=HTTPBasicAuth(self.user, self.password))
@@ -208,13 +210,6 @@ class EnaDataSource(
                                   detail=f"(status code '{str(response.status_code)}')'")
 
         return response
-
-    def get_xml_checklist(self, checklist_id: str) -> Dict[str, Tuple[str, str, object]]:
-        output = self.get_request(f'/ena/browser/api/xml/{checklist_id}')
-
-        checklist_dict = convert_checklist_xml_to_dict(output.text)
-
-        return checklist_dict
 
     def get_biosample_data_biosampleid(self, biosample_id: str):
         output = self.get_request(f'/ena/browser/api/xml/{biosample_id}')

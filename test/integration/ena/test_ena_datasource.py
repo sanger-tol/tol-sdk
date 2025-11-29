@@ -39,6 +39,24 @@ class TestEnaDataSource(TestCase):
         with self.assertRaises(StopIteration):
             next(ret)
 
+    def test_get_by_id_checklist(self):
+        eds = ena()
+
+        ret = eds.get_by_id('checklist', ['ERC000053', 'ERC000036'])
+        obj1 = next(ret)
+        obj2 = next(ret)
+
+        self.assertEqual(obj1.id, 'ERC000053')
+        # Just pick out a few attributes to test
+        self.assertEqual(obj1.checklist.get('specimen_id'), [
+            'optional',
+            'free text',
+            ''
+        ])
+        self.assertEqual(obj2.type, 'checklist')
+        with self.assertRaises(StopIteration):
+            next(ret)
+
     def test_get_list(self):
         eds = ena()
 
