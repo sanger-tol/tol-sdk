@@ -9,10 +9,10 @@ from typing import Any
 
 from flask import Blueprint, request, send_file
 
-from ...api_base import (
+from .blueprint import (
     custom_blueprint,
 )
-from ...services.s3_client import S3Client
+from ..services.s3_client import S3Client
 
 
 ALLOWED_EXTENSIONS: set[str] = {'csv', 'json', 'xlsx'}
