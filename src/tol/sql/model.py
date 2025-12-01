@@ -255,7 +255,7 @@ def model_base() -> Type[DefaultModel]:
         @property
         def instance_to_many_relations(self) -> dict[str, Iterable[Model]]:
             config = self.get_to_many_relationship_config()
-            return self.__get_attributes_map(config.keys())
+            return self.__get_attributes_map(config)
 
         @property
         def instance_id(self) -> Optional[str]:

@@ -6,8 +6,9 @@ from __future__ import annotations
 
 import typing
 from abc import ABC, abstractmethod
+from collections.abc import Iterable
 from dataclasses import dataclass
-from typing import Any, Iterable, Optional, Protocol, Union
+from typing import Any, Protocol
 
 if typing.TYPE_CHECKING:
     from .operator import Relational
@@ -44,7 +45,7 @@ class DataObject(_AnyKeyProtocol, ABC):
 
     @property
     @abstractmethod
-    def id(self) -> Optional[str]:  # noqa
+    def id(self) -> str | None:  # noqa
         """
         A unique ID by which to identify this object within
         its type.
@@ -61,7 +62,7 @@ class DataObject(_AnyKeyProtocol, ABC):
 
     @property
     @abstractmethod
-    def to_one_relationships(self) -> dict[str, Optional[DataObject]]:
+    def to_one_relationships(self) -> dict[str, DataObject | None]:
         """
         A dictionary of relationships, where this object refers to
         precisely one other.
@@ -77,20 +78,37 @@ class DataObject(_AnyKeyProtocol, ABC):
 
     @property
     @abstractmethod
-    def _host(self) -> Union[DataSource, Relational]:
+    def _host(self) -> DataSource | Relational:
         """
         The DataSource instance that manages DataObject instances of this type
         """
 
     @property
     @abstractmethod
-    def _to_one_objects(self) -> dict[str, Optional[DataObject]]:
+    def _to_one_objects(self) -> dict[str, DataObject | None]:
         """
-        The name: attribute mapping for `DataObject`s set on this instance.
+        The name: attribute mapping for to-one `DataObject`s set on this
+        instance.
 
-        N.B. - This is not equivalent to `to_one_relationships`, as that merges
-        both set `DataObject` instances and fetched relations from the
-        `DataSource`. Most users will not need (or want) to use this property.
+        Can used to inspect which relations are set on the object without
+        triggering auto-fetching of to-one related objects from the `_host`
+        `DataSource`.
+
+        Most users should use `to_one_relationships` instead.
+        """
+
+    @property
+    @abstractmethod
+    def _to_many_objects(self) -> dict[str, Iterable[DataObject]]:
+        """
+        The name: attribute mapping for to-many `DataObject`s set on this
+        instance.
+
+        Can used to inspect which relations are set on the object without
+        triggering auto-fetching of to-many related objects from the `_host`
+        `DataSource`.
+
+        Most users should use `to_many_relationships` instead.
         """
 
     def get_field_by_name(self, field_name: str) -> Any:
