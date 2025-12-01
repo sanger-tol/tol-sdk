@@ -2,7 +2,7 @@
 #
 # SPDX-License-Identifier: MIT
 
-from typing import Any, Dict
+from typing import Dict
 
 from tol.core import Validator
 from tol.core.data_object import DataObject
@@ -39,29 +39,26 @@ class SpecimensHaveSameTaxonValidator(Validator):
         # From Nithin :)
 
         # Ensure the data object is not a SYMBIONT
-        if obj.attributes.get(self.__config_value('symbiont_field')) != 'SYMBIONT':
-            specimen_id = obj.attributes.get(self.__config_value('specimen_id_field'))
+        if obj.attributes.get(self.get_config(self.__config,
+                                              'symbiont_field',
+                                              'SpecimensHaveSameTaxonValidator')) != 'SYMBIONT':
+            specimen_id = obj.attributes.get(self.get_config(self.__config,
+                                                             'specimen_id_field',
+                                                             'SpecimensHaveSameTaxonValidator'))
             if specimen_id is None:
                 return
-            taxon_id = obj.attributes.get(self.__config_value('taxon_id_field'))
+            taxon_id = obj.attributes.get(self.get_config(self.__config,
+                                                          'taxon_id_field',
+                                                          'SpecimensHaveSameTaxonValidator'))
             if taxon_id is None:
                 return
             if specimen_id in self.__seen and taxon_id != self.__seen[specimen_id]:
                 self.add_error(
                     object_id=obj.id,
                     detail='A specimen must have the same taxonomy ID',
-                    field=self.__config_value('specimen_id_field'),
+                    field=self.get_config(self.__config,
+                                          'specimen_id_field',
+                                          'SpecimensHaveSameTaxonValidator'),
                 )
             if specimen_id not in self.__seen:
                 self.__seen[specimen_id] = taxon_id
-
-    def __config_value(self, key: str) -> Any:
-        """
-        A reusable function that handles extracting a key from the config, handling the case
-        that it is not present.
-        """
-        try:
-            return self.__config[key]
-        except KeyError:
-            raise Exception(f'VALIDATOR SETUP ERROR: '
-                            f'{key} not present in the config for SpecimensHaveSameTaxonValidator')
