@@ -7,9 +7,10 @@ from typing import Dict, Optional, Tuple
 import requests
 
 from .converter import EnaApiTransfer
+from ..core import HttpClient
 
 
-class EnaApiClient:
+class EnaApiClient(HttpClient):
     """
     Takes ENA API transfers and connects to a remote ENA API.
     """
@@ -22,6 +23,9 @@ class EnaApiClient:
         ena_contact_name: str,
         ena_contact_email: str,
     ) -> None:
+        super().__init__(
+            retries=5
+        )
         self.__ena_url = ena_url
         self.__ena_user = ena_user
         self.__ena_password = ena_password
@@ -46,7 +50,7 @@ class EnaApiClient:
         `object_type` and `object_id` or returns None if not found.
         """
         url, params = self.__detail_url(object_type, object_ids, filter_string)
-        return self.__fetch_detail(url, params)
+        return self.__fetch_detail(url, params, text=(object_type == 'checklist'))
 
     def get_list(
         self,
@@ -59,17 +63,25 @@ class EnaApiClient:
     def __fetch_detail(
         self,
         url: str,
-        params: Dict = {}
+        params: Dict = {},
+        text: bool = False
     ) -> Optional[EnaApiTransfer]:
         """
         Fetches data from the ENA API.
         """
+        session = self._get_session_with_retries()
         headers = {'Content-Type': 'application/json'}
-        r = requests.get(url, params=params, headers=headers)
+        r = session.get(url, params=params, headers=headers)
         if r.status_code == 404:
             return []
         r.raise_for_status()
-        return r.json() if r.json else []
+        if text:
+            return r.text
+        try:
+            data = r.json()
+            return data if data else []
+        except requests.exceptions.JSONDecodeError:
+            return []
 
     def __fetch_list(
         self,
@@ -79,13 +91,18 @@ class EnaApiClient:
         """
         Fetches data from the ENA API.
         """
+        session = self._get_session_with_retries()
         headers = {'Content-Type': 'application/json'}
-        r = requests.get(url, params=params, headers=headers)
+        r = session.get(url, params=params, headers=headers)
 
         if r.status_code == 404:
             return []
         r.raise_for_status()
-        return r.json() if r.json else []
+        try:
+            data = r.json()
+            return data if data else []
+        except requests.exceptions.JSONDecodeError:
+            return []
 
     def __detail_url(
         self,
@@ -96,6 +113,12 @@ class EnaApiClient:
         """
         Returns the URL and parameters for a detail query.
         """
+        if object_type == 'checklist':
+            ids = ','.join(object_ids)
+            url = f'{self.__ena_url}/ena/browser/api/xml/{ids}'
+            params = {}
+            return url, params
+
         url = f'{self.__ena_url}/ena/portal/api/search'
 
         if object_type == 'assembly':
@@ -150,14 +173,18 @@ class EnaApiClient:
         """
         Returns the fields for a given object type from the ENA portal API.
         """
-        response = requests.get(
-            self.__ena_url + '/ena/portal/api/returnFields?result=' + object_type + '&format=json',
+        if object_type == 'checklist':
+            return {'checklist': 'dict[str, Any]'}
+        session = self._get_session_with_retries()
+        r = session.get(
+            self.__ena_url + '/ena/portal/api/returnFields',
+            params={'result': object_type, 'format': 'json'},
             headers={
                 'Content-Type': 'application/json'
             }
         )
         fields = {}
-        for field in response.json():
+        for field in r.json():
 
             type_ = field['type'] if 'type' in field else 'string'
             ena_type = self.__type_mappings[type_] if type_ in self.__type_mappings else 'str'

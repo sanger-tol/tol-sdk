@@ -83,7 +83,13 @@ class DefaultModelConverter(ModelConverter):
         return to_ones if to_ones else None
 
     def __convert_to_many_requested(self, model, tree):
-        return None
+        to_manys = {}
+        for rel_name in model.get_to_many_relationship_config():
+            if sub_tree := tree.get_sub_tree(rel_name):
+                to_manys[rel_name] = [
+                    self.__convert_requested(x, sub_tree) for x in getattr(model, rel_name)
+                ]
+        return to_manys if to_manys else None
 
 
 class DataObjectConverter(Converter[DataObject, Model], ABC):

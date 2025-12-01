@@ -19,7 +19,8 @@ def _get_mock_data_object(
     type_: str,
     id_: Optional[str],
     attributes: dict[str, Any] = {},
-    to_one: dict[str, Any] = {}
+    to_one: dict[str, Any] = {},
+    to_many: dict[str, Any] = {},
 ) -> DataObject:
 
     data_object = Mock()
@@ -85,18 +86,9 @@ class TestJsonApiConverter:
     def test_no_optional(self):
         """Optional fields not specified"""
 
-        in_ = {
-            'data_lol': {
-                'type': 'hype'
-            }
-        }
-        parser = DefaultParser(
-            _get_mock_ds_dict({'hype': {}})
-        )
-        converter = JsonApiConverter(
-            parser,
-            data_key='data_lol'
-        )
+        in_ = {'data': {'type': 'hype'}}
+        parser = DefaultParser(_get_mock_ds_dict({'hype': {}}))
+        converter = JsonApiConverter(parser)
         out_ = converter.convert(in_)
 
         assert out_.type == 'hype'

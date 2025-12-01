@@ -337,8 +337,7 @@ class TestCoreDataObject:
     def test_setattr_to_many_relationships(self):
         """
         `CoreDataObject().__setattr__()` with to_many
-        relationship names -> `DataSourceError` raised
-        (this is not permitted by design)
+        relationship.
         """
 
         mock_ds = create_autospec(_RelationalDS)
@@ -356,9 +355,21 @@ class TestCoreDataObject:
 
         CoreDataObject = core_data_object(mock_ds)  # noqa N806
         obj = CoreDataObject('test_type')
+        mock_to_manys = [Mock() for _ in range(3)]
 
-        with pytest.raises(DataSourceError):
-            obj.friendos = [Mock()]
+        # Set the to-many relation and check it hasn't fallen back to the
+        # DataSource to fetch it.
+        obj.friendos = mock_to_manys
+        first_observerd = obj.friendos
+        mock_ds.get_to_many_relations.assert_not_called()
+        assert first_observerd == mock_to_manys
+
+        # Set to new value
+        new_many = [Mock() for _ in range(5)]
+        obj.friendos = new_many
+        second_observed = obj.friendos
+        mock_ds.get_to_many_relations.assert_not_called()
+        assert second_observed == new_many
 
     def test_get_field_by_name(self):
 

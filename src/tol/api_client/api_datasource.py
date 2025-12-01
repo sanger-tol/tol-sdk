@@ -151,7 +151,7 @@ class ApiDataSource(
             )
             for id_ in object_ids
         )
-        json_converter = self.__jc_factory()
+        json_converter = self.__jc_factory(object_type, requested_fields)
         return (
             json_converter.convert(r)
             if r is not None else None
@@ -179,7 +179,7 @@ class ApiDataSource(
             sort_string=sort_by,
             requested_fields=requested_fields,
         )
-        return self.__jc_factory().convert_list(transfer)
+        return self.__jc_factory(object_type, requested_fields).convert_list(transfer)
 
     def get_list(
         self,
@@ -274,7 +274,7 @@ class ApiDataSource(
             filter_string=filter_string,
             requested_fields=requested_fields,
         )
-        return self.__jc_factory().convert_cursor_page(transfer)
+        return self.__jc_factory(object_type, requested_fields).convert_cursor_page(transfer)
 
     @validate('delete')
     def delete(
@@ -304,7 +304,7 @@ class ApiDataSource(
             merge_collections=merge_collections,
         )
         if self.return_mode[object_type] == ReturnMode.POPULATED:
-            converted, _ = self.__jc_factory().convert_list(returned)
+            converted, _ = self.__jc_factory(object_type).convert_list(returned)
             return converted
         return []  # when the underlying DataSource doesn't return anything
 
@@ -325,7 +325,7 @@ class ApiDataSource(
         )
         if transfer is None:
             return None
-        return self.__jc_factory().convert(transfer)
+        return self.__jc_factory(source.type).convert(transfer)
 
     @validate('relational', direct_object=True)
     @validate_id
@@ -359,7 +359,7 @@ class ApiDataSource(
             page,
             page_size
         )
-        return self.__jc_factory().convert_list(transfer)
+        return self.__jc_factory(source.type).convert_list(transfer)
 
     @validate('relational', direct_object=True)
     @validate_id
@@ -406,7 +406,7 @@ class ApiDataSource(
             transfer
         )
         if self.return_mode[object_type] == ReturnMode.POPULATED:
-            converted, _ = self.__jc_factory().convert_list(returned)
+            converted, _ = self.__jc_factory(object_type).convert_list(returned)
             return converted
 
     @property
@@ -442,7 +442,7 @@ class ApiDataSource(
         page = 1
         page_size = self.get_page_size()
         client = self.__client_factory()
-        jc_converter = self.__jc_factory()
+        jc_converter = self.__jc_factory(object_type, requested_fields)
         filter_string = self.__get_filter_string(object_filters)
 
         while True:
