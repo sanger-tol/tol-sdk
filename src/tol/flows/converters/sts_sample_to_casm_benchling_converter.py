@@ -1021,14 +1021,14 @@ class StsSampleToCasmBenchlingConverterFactory:
                     ):
                         separator = factory.CONCATENATED_VALUES[factory.mode][attribute_mapping]['separator']
 
-                        # Strip out any trailing 0 for the TUBE_WELL_POSITION as benchling strips
+                        # Strip out any trailing 0 for the pos_in_rack as benchling strips
                         # this out on save so it breaks any search queries for bar codes
                         values = [
                             re.sub(
                                 r'([A-Za-z]+)0',
                                 r'\1',
                                 sample.attributes.get(attribute, '') or ''
-                            ) if attribute == 'TUBE_WELL_POSITION' else sample.attributes.get(
+                            ) if attribute == 'pos_in_rack' else sample.attributes.get(
                                 attribute, ''
                             ) for attribute in factory.CONCATENATED_VALUES[factory.mode][
                                 attribute_mapping]['values']

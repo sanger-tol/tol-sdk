@@ -596,7 +596,7 @@ class DataObjectConverter(Converter[DataObject, BenchlingWrite]):
         source_concentration = None
         if input_.attributes.get('transfer_concentration'):
             source_concentration = Measurement(
-                units='uL',
+                units="ng/uL",
                 value=float(input_.attributes.get('transfer_concentration'))
             )
 
