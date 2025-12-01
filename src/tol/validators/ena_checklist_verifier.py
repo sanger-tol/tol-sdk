@@ -20,5 +20,9 @@ class UniqueWholeOrganismsValidator(Validator):
         super().__init__()
     
     def _validate_data_object(self, obj: DataObject) -> None:
-        ena_checklist = DataSource.get_list("checklist")
+        ena_checklist = DataSource.get_by_id("checklist", ['ERC000053', 'ERC000036'])
+        
+        for check in ena_checklist:
+            field_name = check
+            if 'field' in ena_checklist[check]:
         
