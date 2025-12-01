@@ -8,7 +8,6 @@ import typing
 from abc import ABC, abstractmethod
 from typing import Any, Iterable, Optional
 
-
 from ..core import DataObject
 
 if typing.TYPE_CHECKING:
@@ -88,6 +87,8 @@ class DefaultParser(Parser):
             return transfer['study_accession']
         elif type_ == 'taxon':
             return transfer['tax_id']
+        elif type_ == 'checklist':
+            return transfer['checklist_id']
 
     def __convert_attributes(
         self,

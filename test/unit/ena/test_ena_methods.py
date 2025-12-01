@@ -141,19 +141,25 @@ as 'Y'</DESCRIPTION>
 </CHECKLIST_SET>
 """
 
-        expected = {
-            'organism part': ['mandatory', 'free text', ''],
-            'project name': ['mandatory', 'free text', ''],
-            'collected_by': ['mandatory', 'free text', ''],
-            'collection date': ['mandatory', 'restricted text', '(^[12][0-9]{3}(-(0[1-9]|\
-1[0-2])(-(0[1-9]|[12][0-9]|3[01])(T[0-9]{2}:[0-9]{2}(:[0-9]{2})?Z?([+-][0-9]{1,2})?)?)?)?\
-(/[0-9]{4}(-[0-9]{2}(-[0-9]{2}(T[0-9]{2}:[0-9]{2}(:[0-9]{2})?Z?([+-][0-9]{1,2})?)?)?)?)?$)\
-|(^not collected$)|(^not provided$)|(^restricted access$)'],
-            'sex': ['mandatory', 'free text', ''],
-            'relationship': ['optional', 'free text', ''],
-            'symbiont': ['optional', 'text choice', ['N', 'Y']]
-        }
-
+        expected = [{
+            'checklist_id': 'ERC000053',
+            'checklist': {
+                'organism part': ['mandatory', 'free text', ''],
+                'project name': ['mandatory', 'free text', ''],
+                'collected_by': ['mandatory', 'free text', ''],
+                'collection date': [
+                    'mandatory',
+                    'restricted text',
+                    '(^[12][0-9]{3}(-(0[1-9]|1[0-2])(-(0[1-9]|[12][0-9]|3[01])(T[0-9]{2}:[0-9]'
+                    '{2}(:[0-9]{2})?Z?([+-][0-9]{1,2})?)?)?)?(/[0-9]{4}(-[0-9]{2}(-[0-9]{2}'
+                    '(T[0-9]{2}:[0-9]{2}(:[0-9]{2})?Z?([+-][0-9]{1,2})?)?)?)?)?$)'
+                    '|(^not collected$)|(^not provided$)|(^restricted access$)'
+                ],
+                'sex': ['mandatory', 'free text', ''],
+                'relationship': ['optional', 'free text', ''],
+                'symbiont': ['optional', 'text choice', ['N', 'Y']]
+            }
+        }]
         self.assertEqual(expected, convert_checklist_xml_to_dict(checklist_xml))
 
     def test_convert_xml_to_list_of_sample_dict(self):

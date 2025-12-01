@@ -24,7 +24,7 @@ from tol.core.operator import (
 )
 
 
-class TestDataObjectToDataObjectConverter(DataObjectToDataObjectOrUpdateConverter):
+class _TestDataObjectToDataObjectConverter(DataObjectToDataObjectOrUpdateConverter):
 
     def convert(self, data_object: DataObject) -> Iterable[DataObject]:
         CoreDataObject = self._data_object_factory  # noqa N806
@@ -250,7 +250,7 @@ class TestDataLoader(TestCase):
             dependencies=[],
             loader_name='test_loader',
             object_filters=object_filters,
-            convert_class=TestDataObjectToDataObjectConverter
+            convert_class=_TestDataObjectToDataObjectConverter
         )
 
         loader.load()
