@@ -57,6 +57,26 @@ class TestEnaDataSource(TestCase):
         with self.assertRaises(StopIteration):
             next(ret)
 
+    def test_get_by_id_submittable_taxon(self):
+        eds = ena()
+
+        ret = eds.get_by_id('submittable_taxon', ['9606', '12345678', '9605'])
+        obj1 = next(ret)
+        obj2 = next(ret)
+        obj3 = next(ret)
+
+        self.assertEqual(obj1.id, '9606')
+        # Just pick out a few attributes to test
+        self.assertEqual(obj1.submittable, True)
+        self.assertEqual(obj1.division, 'HUM')
+        self.assertTrue(obj2 is None)
+        self.assertEqual(obj3.id, '9605')
+        # Just pick out a few attributes to test
+        self.assertEqual(obj3.submittable, False)
+        self.assertEqual(obj3.division, 'MAM')
+        with self.assertRaises(StopIteration):
+            next(ret)
+
     def test_get_list(self):
         eds = ena()
 

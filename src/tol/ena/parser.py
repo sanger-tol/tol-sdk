@@ -8,6 +8,8 @@ import typing
 from abc import ABC, abstractmethod
 from typing import Any, Iterable, Optional
 
+from caseconverter import snakecase
+
 from ..core import DataObject
 
 if typing.TYPE_CHECKING:
@@ -89,6 +91,8 @@ class DefaultParser(Parser):
             return transfer['tax_id']
         elif type_ == 'checklist':
             return transfer['checklist_id']
+        elif type_ == 'submittable_taxon':
+            return transfer['taxId']
 
     def __convert_attributes(
         self,
@@ -100,6 +104,14 @@ class DefaultParser(Parser):
             return ret
 
         for k, v in attributes.items():
-            if k not in ['key'] and k in self.__dict[type_].attribute_types[type_]:
-                ret[k] = v
+            if k not in ['key'] and snakecase(k) in self.__dict[type_].attribute_types[type_]:
+                ret[snakecase(k)] = self.__convert_value(type_, snakecase(k), v)
         return ret
+
+    def __convert_value(self, type_: str, attribute_name: str, value: Any) -> Any:
+        attribute_type = self.__dict[type_].attribute_types[type_][attribute_name]
+        if attribute_type == 'boolean':
+            if isinstance(value, str):
+                return value.lower() == 'true'
+            return bool(value)
+        return value

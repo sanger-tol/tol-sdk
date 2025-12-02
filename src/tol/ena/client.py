@@ -79,7 +79,9 @@ class EnaApiClient(HttpClient):
             return r.text
         try:
             data = r.json()
-            return data if data else []
+            if isinstance(data, list):
+                return data
+            return [] if not data else [data]
         except requests.exceptions.JSONDecodeError:
             return []
 
@@ -116,6 +118,11 @@ class EnaApiClient(HttpClient):
         if object_type == 'checklist':
             ids = ','.join(object_ids)
             url = f'{self.__ena_url}/ena/browser/api/xml/{ids}'
+            params = {}
+            return url, params
+        if object_type == 'submittable_taxon':
+            ids = ','.join(object_ids)
+            url = f'{self.__ena_url}/ena/taxonomy/rest/tax-id/{ids}'
             params = {}
             return url, params
 
@@ -175,6 +182,22 @@ class EnaApiClient(HttpClient):
         """
         if object_type == 'checklist':
             return {'checklist': 'dict[str, Any]'}
+        if object_type == 'submittable_taxon':
+            return {
+                'scientific_name': 'str',
+                'formal_name': 'str',
+                'rank': 'str',
+                'division': 'str',
+                'lineage': 'str',
+                'genetic_code': 'str',
+                'mitochondrial_genetic_code': 'str',
+                'submittable': 'boolean',
+                'binomial': 'boolean',
+                'merged': 'str',
+                'authority': 'str',
+                'other_names': 'list[str]',
+                'metagenome': 'str'
+            }
         session = self._get_session_with_retries()
         r = session.get(
             self.__ena_url + '/ena/portal/api/returnFields',

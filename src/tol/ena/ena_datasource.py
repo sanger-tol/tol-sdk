@@ -100,7 +100,10 @@ class EnaDataSource(
     @property
     @cache
     def supported_types(self) -> list[str]:
-        return ['assembly', 'read_run', 'sample', 'study', 'taxon', 'checklist']
+        return [
+            'assembly', 'read_run', 'sample', 'study', 'taxon', 'checklist',
+            'submittable_taxon'
+        ]
 
     def get_by_id(
         self,
@@ -111,7 +114,15 @@ class EnaDataSource(
         self.__validate_object_type(object_type)
 
         client = self.__client_factory()
-        ena_response = client.get_detail(object_type, object_ids)
+        # For a submittable_taxon we need to make multiple calls
+        if object_type == 'submittable_taxon':
+            ena_response = []
+            for object_id in object_ids:
+                response = client.get_detail(object_type, [object_id])
+                if response and isinstance(response, list):
+                    ena_response.extend(response)
+        else:
+            ena_response = client.get_detail(object_type, object_ids)
         # For a checklist we need to convert into a list of dicts
         if object_type == 'checklist':
             ena_response = convert_checklist_xml_to_dict(ena_response)
