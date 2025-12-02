@@ -57,7 +57,7 @@ class MutuallyExclusiveValidator(Validator, ConditionEvaluator):
                     object_id=obj.id,
                     detail=self.__config._get_error_message()
                 )
-            
+
             # Add the values of the target fields to the first list
             self.__first_list.append(
                 [
@@ -76,7 +76,7 @@ class MutuallyExclusiveValidator(Validator, ConditionEvaluator):
                     object_id=obj.id,
                     detail=self.__config._get_error_message()
                 )
-            
+
             # Add the values of the target fields to the second list
             self.__second_list.append(
                 [
