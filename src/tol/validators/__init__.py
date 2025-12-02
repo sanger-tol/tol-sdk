@@ -12,3 +12,6 @@ from .unique_values import UniqueValuesValidator  # noqa
 from .tolid_validator import TolidValidator, TolidConfig  # noqa
 from .unique_whole_organisms import UniqueWholeOrganismsValidator  # noqa
 from .specimens_have_same_taxon import SpecimensHaveSameTaxonValidator  # noqa
+
+# Conditions are used where validators are defined, not just within validators
+from .interfaces import Condition
