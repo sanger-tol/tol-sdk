@@ -10,24 +10,6 @@ from tol.core import DataObject, Validator
 from .interfaces import Condition, ConditionEvaluator
 
 
-# TODO: Move to be local class of validator
-@dataclass(slots=True, frozen=True, kw_only=True)
-class MutuallyExclusiveConfig:
-    first_field_where: Condition
-    second_field_where: Condition
-    target_fields: List[str]
-    error_message: str | None = None
-
-    def _get_error_message(self) -> str:
-        if self.error_message is None:
-            return (
-                f'The conditions {self.first_field_where} and {self.second_field_where} '
-                f'must be mutually exclusive'
-            )
-        else:
-            return self.error_message
-
-
 class MutuallyExclusiveValidator(Validator, ConditionEvaluator):
     """
     Validates an incoming stream of `DataObject` instances,
@@ -35,14 +17,30 @@ class MutuallyExclusiveValidator(Validator, ConditionEvaluator):
     have the same values for target_fields as the resultant
     field from field_two_condition
     """
+    @dataclass(slots=True, frozen=True, kw_only=True)
+    class Config:
+        first_field_where: Condition
+        second_field_where: Condition
+        target_fields: List[str]
+        error_message: str | None = None
+
+        def _get_error_message(self) -> str:
+            if self.error_message is None:
+                return (
+                    f'The conditions {self.first_field_where} and {self.second_field_where} '
+                    f'must be mutually exclusive'
+                )
+            else:
+                return self.error_message
+
     __slots__ = [
         '__config', '__target_fields_seen_for_first_field', '__target_fields_seen_for_second_field'
     ]
-    __config: MutuallyExclusiveConfig
+    __config: Config
     __target_field_values_seen_for_first_field: List[Any]
     __target_field_values_seen_for_second_field: List[Any]
 
-    def __init__(self, config: MutuallyExclusiveConfig) -> None:
+    def __init__(self, config: Config) -> None:
         super().__init__()
         
         self.__config = config
