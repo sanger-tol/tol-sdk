@@ -29,6 +29,12 @@ class MutuallyExclusiveConfig:
 
 
 class MutuallyExclusiveValidator(Validator, ConditionEvaluator):
+    """
+    Validates an incoming stream of `DataObject` instances,
+    where the resultant field from field_one_condition must not
+    have the same values for target_fields as the resultant
+    field from field_two_condition
+    """
     __slots__ = [
         '__config', '__target_fields_seen_for_first_field', '__target_fields_seen_for_second_field'
     ]
