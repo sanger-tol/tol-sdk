@@ -13,6 +13,9 @@ class Condition:
     operator: str
     right: Any
 
+    def __repr__(self) -> str:
+        return f"{self.left} {self.operator} {self.right}"
+
 
 class ConditionEvaluator(ABC):
     """
