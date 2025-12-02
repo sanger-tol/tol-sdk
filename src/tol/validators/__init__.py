@@ -12,3 +12,4 @@ from .specimens_have_same_taxon import SpecimensHaveSameTaxonValidator # noqa
 from .tolid_validator import TolidValidator, TolidConfig  # noqa
 from .unique_values import UniqueValuesValidator  # noqa
 from .unique_whole_organisms import UniqueWholeOrganismsValidator # noqa
+from .min_one_valid_value import MinOneValidValueValidator  # noqa
