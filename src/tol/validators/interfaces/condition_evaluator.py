@@ -6,15 +6,17 @@ from abc import ABC
 from dataclasses import dataclass
 from typing import Any
 
+from tol.core import DataObject
+
 
 @dataclass(slots=True)
 class Condition:
-    left: Any
+    field: str
     operator: str
-    right: Any
+    value: Any
 
     def __repr__(self) -> str:
-        return f'{self.left} {self.operator} {self.right}'
+        return f'{self.field} {self.operator} {self.value}'
 
 
 class ConditionEvaluator(ABC):
@@ -22,26 +24,28 @@ class ConditionEvaluator(ABC):
     Interface to be inherited by validators. Evaluates the provided condition given its
     operator and operands
     """
-    def _evaluate_condition(self, condition: Condition) -> bool:
+    def _evaluate_condition(self, condition: Condition, obj: DataObject) -> bool:
         """
         Evaluates the provided condition given its operator and operands.
         If `operator` is not one of the supported operators, an exception is thrown.
         """
+        value_to_test = obj.get_field_by_name(condition.field)
+
         match condition.operator:
             case '==':
-                return condition.left == condition.right
+                return value_to_test == condition.value
             case '!=':
-                return condition.left != condition.right
+                return value_to_test != condition.value
             case '<':
-                return condition.left < condition.right
+                return value_to_test < condition.value
             case '<=':
-                return condition.left <= condition.right
+                return value_to_test <= condition.value
             case '>':
-                return condition.left > condition.right
+                return value_to_test > condition.value
             case '>=':
-                return condition.left >= condition.right
+                return value_to_test >= condition.value
             case 'in':
-                return condition.left in condition.right
+                return value_to_test in condition.value
             case _:
                 raise Exception(f'VALIDATOR SETUP ERROR: `{condition.operator}` is not '
                                 f'a supported operator for {type(self).__name__}')
