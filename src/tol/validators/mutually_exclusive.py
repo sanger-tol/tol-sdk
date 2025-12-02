@@ -33,31 +33,55 @@ class MutuallyExclusiveValidator(Validator, ConditionEvaluator):
             else:
                 return self.error_message
 
-    __slots__ = [
-        '__config', '__target_fields_seen_for_first_field', '__target_fields_seen_for_second_field'
-    ]
+    __slots__ = ['__config', '__first_list', '__second_list']
     __config: Config
-    __target_field_values_seen_for_first_field: List[Any]
-    __target_field_values_seen_for_second_field: List[Any]
+    __first_list: List[Any]
+    __second_list: List[Any]
 
     def __init__(self, config: Config) -> None:
         super().__init__()
 
         self.__config = config
-        self.__target_field_values_seen_for_first_field = []
-        self.__target_field_values_seen_for_second_field = []
+        self.__first_list = []
+        self.__second_list = []
 
     def _validate_data_object(self, obj: DataObject) -> None:
-        # if self._evaluate_condition(self.__config.first_field_where, obj):
-        #     self.__target_field_values_seen_for_first_field.append(
-        #         [
-        #             obj.get_field_by_name(target_field)
-        #             for target_field in self.__config.target_fields
-        #         ]
-        #     )
-        # elif self._evaluate_condition(self.__config.second_field_where, obj):
-        #     self.add_error(
-        #         object_id=obj.id,
-        #         detail=self.__config._get_error_message()
-        #     )
-        pass
+        # Check first field
+        if self._evaluate_condition(self.__config.first_field_where, obj):
+            # Check whether the values of the target fields were found in the second list
+            if [
+                obj.get_field_by_name(target_field)
+                for target_field in self.__config.target_fields
+            ] in self.__second_list:
+                self.add_error(
+                    object_id=obj.id,
+                    detail=self.__config._get_error_message()
+                )
+            
+            # Add the values of the target fields to the first list
+            self.__first_list.append(
+                [
+                    obj.get_field_by_name(target_field)
+                    for target_field in self.__config.target_fields
+                ]
+            )
+        # Check second field (same as the first condition, but for the second!)
+        elif self._evaluate_condition(self.__config.second_field_where, obj):
+            # Check whether the values of the target fields were found in the first list
+            if [
+                obj.get_field_by_name(target_field)
+                for target_field in self.__config.target_fields
+            ] in self.__first_list:
+                self.add_error(
+                    object_id=obj.id,
+                    detail=self.__config._get_error_message()
+                )
+            
+            # Add the values of the target fields to the second list
+            self.__second_list.append(
+                [
+                    obj.get_field_by_name(target_field)
+                    for target_field in self.__config.target_fields
+                ]
+            )
+        # If neither condition passes, the data object must be valid (for this validator anyway!)
