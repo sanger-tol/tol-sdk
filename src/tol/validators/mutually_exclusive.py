@@ -7,7 +7,7 @@ from typing import List
 
 from tol.core import DataObject, Validator
 
-from .interfaces import ConditionEvaluator, Condition
+from .interfaces import Condition, ConditionEvaluator
 
 
 @dataclass(slots=True, frozen=True)
@@ -20,7 +20,7 @@ class MutuallyExclusiveConfig:
     def _get_error_message(self) -> str:
         if self.error_message is None:
             return (
-                f'The conditions {self.first_field_where} and {self.second_field_where} ' 
+                f'The conditions {self.first_field_where} and {self.second_field_where} '
                 f'must be mutually exclusive'
             )
         else:
@@ -30,9 +30,9 @@ class MutuallyExclusiveConfig:
 class MutuallyExclusiveValidator(Validator, ConditionEvaluator):
     __slots__ = ['__config']
     __config: MutuallyExclusiveConfig
-    
+
     def __init__(self, config: MutuallyExclusiveConfig) -> None:
         super().__init__()
-    
+
     def _validate_data_object(self, obj: DataObject) -> None:
         pass

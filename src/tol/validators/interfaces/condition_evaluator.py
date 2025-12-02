@@ -14,7 +14,7 @@ class Condition:
     right: Any
 
     def __repr__(self) -> str:
-        return f"{self.left} {self.operator} {self.right}"
+        return f'{self.left} {self.operator} {self.right}'
 
 
 class ConditionEvaluator(ABC):
