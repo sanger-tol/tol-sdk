@@ -14,6 +14,9 @@ class Condition:
     field: str
     operator: str
     value: Any
+    # If this condition fails, should it be an error or a warning?
+    # The reporting of this error or warning is done in the calling validator
+    is_error: bool = True
 
     def __repr__(self) -> str:
         return f'{self.field} {self.operator} {self.value}'
