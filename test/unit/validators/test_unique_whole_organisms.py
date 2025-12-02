@@ -148,7 +148,7 @@ class TestUniqueWholeOrganismsValidator:
             organism_part_field='ORGANISM_PART',
             specimen_id_field='SPECIMEN_ID',
         )
-        
+
         validator = UniqueWholeOrganismsValidator(config)
 
         # consume the `Iterable`

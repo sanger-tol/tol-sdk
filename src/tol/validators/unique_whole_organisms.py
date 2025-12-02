@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: MIT
 
 from dataclasses import dataclass
-from typing import Dict, List
+from typing import List
 
 from tol.core import Validator
 from tol.core.data_object import DataObject
