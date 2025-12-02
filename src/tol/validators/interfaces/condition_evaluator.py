@@ -52,7 +52,7 @@ class ConditionEvaluator(ABC):
             case _:
                 raise Exception(f'VALIDATOR SETUP ERROR: `{condition.operator}` is not '
                                 f'a supported operator for {type(self).__name__}')
-    
+
     def _does_condition_pass(self, condition: Condition, obj: DataObject) -> bool:
         """
         Helper function for when you only want to know whether the condition passes,
