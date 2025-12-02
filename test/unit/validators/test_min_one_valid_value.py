@@ -18,7 +18,7 @@ class TestMinOneValidValueValidator:
     ) -> None:
 
         config = MinOneValidValueValidator.Config(
-            blank_values=['', 'NA', 'N/A'],
+            non_valid_values=['', 'NA', 'N/A'],
             keys=['key1', 'key2'],
         )
 
@@ -38,7 +38,7 @@ class TestMinOneValidValueValidator:
     ) -> None:
 
         config = MinOneValidValueValidator.Config(
-            blank_values=['a', 'b', 'c'],
+            non_valid_values=['a', 'b', 'c'],
             keys=['key1', 'key2'],
         )
 

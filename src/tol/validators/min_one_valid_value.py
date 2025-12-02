@@ -16,7 +16,7 @@ class MinOneValidValueValidator(Validator):
 
     @dataclass
     class Config:
-        blank_values: list[str]
+        non_valid_values: list[str]
         keys: list[str]
 
     def __init__(
@@ -37,7 +37,7 @@ class MinOneValidValueValidator(Validator):
         for key in self._config.keys:
             value = obj.attributes[key]
 
-            if value is not None and value not in self._config.blank_values:
+            if value is not None and value not in self._config.non_valid_values:
                 found_valid_value = True
                 break
 
@@ -45,8 +45,9 @@ class MinOneValidValueValidator(Validator):
             self.add_error(
                 object_id=obj.id,
                 detail=(
-                    f'None of the specified columns {self._config.keys} '
-                    'contain a valid value.'
+                    f'At least one of: {self._config.keys} '
+                    'must not be: ' + ', '.join(self._config.non_valid_values)
+                    + ' or empty.'
                 ),
                 field=', '.join(self._config.keys),
             )
