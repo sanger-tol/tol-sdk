@@ -4,7 +4,7 @@
 
 from abc import ABC
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, Tuple
 
 from tol.core import DataObject
 
@@ -27,7 +27,7 @@ class ConditionEvaluator(ABC):
     Interface to be inherited by validators. Evaluates the provided condition given its
     operator and operands
     """
-    def _evaluate_condition(self, condition: Condition, obj: DataObject) -> bool:
+    def _evaluate_condition(self, condition: Condition, obj: DataObject) -> Tuple[bool, Any]:
         """
         Evaluates the provided condition given its operator and operands.
         If `operator` is not one of the supported operators, an exception is thrown.
@@ -36,19 +36,26 @@ class ConditionEvaluator(ABC):
 
         match condition.operator:
             case '==':
-                return value_to_test == condition.value
+                return (value_to_test == condition.value, value_to_test)
             case '!=':
-                return value_to_test != condition.value
+                return (value_to_test != condition.value, value_to_test)
             case '<':
-                return value_to_test < condition.value
+                return (value_to_test < condition.value, value_to_test)
             case '<=':
-                return value_to_test <= condition.value
+                return (value_to_test <= condition.value, value_to_test)
             case '>':
-                return value_to_test > condition.value
+                return (value_to_test > condition.value, value_to_test)
             case '>=':
-                return value_to_test >= condition.value
+                return (value_to_test >= condition.value, value_to_test)
             case 'in':
-                return value_to_test in condition.value
+                return (value_to_test in condition.value, value_to_test)
             case _:
                 raise Exception(f'VALIDATOR SETUP ERROR: `{condition.operator}` is not '
                                 f'a supported operator for {type(self).__name__}')
+    
+    def _does_condition_pass(self, condition: Condition, obj: DataObject) -> bool:
+        """
+        Helper function for when you only want to know whether the condition passes,
+        and don't need the actual value
+        """
+        return self._evaluate_condition(condition, obj)[0]

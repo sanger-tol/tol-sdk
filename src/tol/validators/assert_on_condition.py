@@ -33,23 +33,24 @@ class AssertOnConditionValidator(Validator, ConditionEvaluator):
     def _validate_data_object(self, obj: DataObject) -> None:
         # Check condition atribute
         # (only perform the assertions if the condition passes)
-        if self._evaluate_condition(self.__config.condition, obj):
+        if self._does_condition_pass(self.__config.condition, obj):
             # Perform each assertion
             for assertion in self.__config.assertions:
                 self.__perform_assertion(obj, assertion)
 
     def __perform_assertion(self, obj: DataObject, assertion: Condition) -> None:
         # There's only an error or warning if the assertion condition fails
-        if not self._evaluate_condition(assertion, obj):
+        condition_passed, found_value = self._evaluate_condition(assertion, obj)
+        if not condition_passed:
             if assertion.is_error:
                 self.add_error(
                     object_id=obj.id,
-                    detail=f'Expected {assertion}',
+                    detail=f'Expected {assertion} (found value {found_value})',
                     field=assertion.field,
                 )
             else:
                 self.add_warning(
                     object_id=obj.id,
-                    detail=f'Expected {assertion}',
+                    detail=f'Expected {assertion} (found value {found_value})',
                     field=assertion.field,
                 )

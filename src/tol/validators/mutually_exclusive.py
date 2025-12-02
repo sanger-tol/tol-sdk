@@ -47,7 +47,7 @@ class MutuallyExclusiveValidator(Validator, ConditionEvaluator):
 
     def _validate_data_object(self, obj: DataObject) -> None:
         # Check first field
-        if self._evaluate_condition(self.__config.first_field_where, obj):
+        if self._does_condition_pass(self.__config.first_field_where, obj):
             # Check whether the values of the target fields were found in the second list
             if [
                 obj.get_field_by_name(target_field)
@@ -66,7 +66,7 @@ class MutuallyExclusiveValidator(Validator, ConditionEvaluator):
                 ]
             )
         # Check second field (same as the first condition, but for the second!)
-        elif self._evaluate_condition(self.__config.second_field_where, obj):
+        elif self._does_condition_pass(self.__config.second_field_where, obj):
             # Check whether the values of the target fields were found in the first list
             if [
                 obj.get_field_by_name(target_field)
