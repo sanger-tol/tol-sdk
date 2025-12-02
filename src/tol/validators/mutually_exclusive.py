@@ -42,7 +42,7 @@ class MutuallyExclusiveValidator(Validator, ConditionEvaluator):
 
     def __init__(self, config: Config) -> None:
         super().__init__()
-        
+
         self.__config = config
         self.__target_field_values_seen_for_first_field = []
         self.__target_field_values_seen_for_second_field = []

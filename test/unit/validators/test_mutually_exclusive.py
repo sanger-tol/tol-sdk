@@ -30,7 +30,7 @@ class TestMutuallyExcludiveValidator:
             ],
             error_message='All symbionts must have a TARGET with same rack/plate and tube/well'
         )
-        
+
         validator = MutuallyExclusiveValidator(config)
 
         # consume the `Iterable`
