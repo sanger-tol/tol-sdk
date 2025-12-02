@@ -109,18 +109,6 @@ class Validator(ABC):
             code=code,
         )
 
-    def get_config(self, config: dict, key: str, validator_name: str = None) -> Any:
-        """
-        A reusable function that handles extracting a key from the config, handling the case
-        that it is not present.
-        """
-        try:
-            return config[key]
-        except KeyError:
-            name = validator_name or self.__class__.__name__
-            raise Exception(f'VALIDATOR SETUP ERROR: '
-                            f'{key} not present in the config for {name}')
-
     @property
     def results(self) -> list[ValidationResult]:
         return self.__results
