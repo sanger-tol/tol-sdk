@@ -6,7 +6,7 @@ from typing import Any, Dict, List, Tuple, cast
 
 from tol.core import DataObject, Validator
 
-from .interfaces import ConditionEvaluator
+from .interfaces import ConditionEvaluator, Condition
 
 
 ConditionConfig = Dict[str, str]
@@ -37,7 +37,8 @@ class AssertOnConditionValidator(Validator, ConditionEvaluator):
 
         # Check condition attribute
         # (only perform the assertions if the condition passes)
-        if self._evaluate_condition(*self.__extract_condition(obj, condition)):
+        # TODO: Temporary solution for new way of handling conditions
+        if self._evaluate_condition(Condition(*self.__extract_condition(obj, condition))):
             # Perform each assertion
             for assertion in self.__config['assert']:
                 self.__perform_assertion(obj, cast(AssertConfig, assertion))
@@ -71,7 +72,8 @@ class AssertOnConditionValidator(Validator, ConditionEvaluator):
         field_value, operator, expected_value = self.__extract_condition(obj, assertion)
 
         # There's only an error or warning if the assertion condition fails
-        if not self._evaluate_condition(field_value, operator, expected_value):
+        # TODO: Temporary solution for new way of handling conditions
+        if not self._evaluate_condition(Condition(field_value, operator, expected_value)):
             # Check whether this is an error or a warning (defaulting to an error)
             is_error = assertion.get('is_error', True)
 
