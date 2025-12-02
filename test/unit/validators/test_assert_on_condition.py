@@ -5,32 +5,32 @@
 from typing import Iterable
 
 from tol.core import DataObject
-from tol.validators import AssertOnConditionValidator
+from tol.validators import AssertOnConditionValidator, Condition
 
 
 class TestAssertOnConditionValidator:
     def test_no_results(
         self, mock_objs: Iterable[DataObject]
     ) -> None:
-        config = {
-            'condition': {
-                'field': 'key1',
-                'operator': '==',
-                'value': 'b',
-            },
-            'assert': [
-                {
-                    'field': 'key2',
-                    'operator': '==',
-                    'value': 'b',
-                },
-                {
-                    'field': 'key3',
-                    'operator': '!=',
-                    'value': None,
-                },
+        config = AssertOnConditionValidator.Config(
+            condition=Condition(
+                field='key1',
+                operator='==',
+                value='b',
+            ),
+            assertions=[
+                Condition(
+                    field='key2',
+                    operator='==',
+                    value='b',
+                ),
+                Condition(
+                    field='key3',
+                    operator='!=',
+                    value=None,
+                ),
             ],
-        }
+        )
 
         validator = AssertOnConditionValidator(config)
 
@@ -45,26 +45,26 @@ class TestAssertOnConditionValidator:
     def test_warnings(
         self, mock_objs: Iterable[DataObject]
     ) -> None:
-        config = {
-            'condition': {
-                'field': 'key1',
-                'operator': '!=',
-                'value': None,
-            },
-            'assert': [
-                {
-                    'field': 'key2',
-                    'operator': '==',
-                    'value': 'b',
-                    'is_error': False
-                },
-                {
-                    'field': 'key3',
-                    'operator': '!=',
-                    'value': None,
-                },
+        config = AssertOnConditionValidator.Config(
+            condition=Condition(
+                field='key1',
+                operator='!=',
+                value=None,
+            ),
+            assertions=[
+                Condition(
+                    field='key2',
+                    operator='==',
+                    value='b',
+                    is_error=False,
+                ),
+                Condition(
+                    field='key3',
+                    operator='!=',
+                    value=None,
+                ),
             ],
-        }
+        )
 
         validator = AssertOnConditionValidator(config)
 
@@ -80,26 +80,26 @@ class TestAssertOnConditionValidator:
     def test_errors(
         self, mock_objs: Iterable[DataObject]
     ) -> None:
-        config = {
-            'condition': {
-                'field': 'key1',
-                'operator': '!=',
-                'value': None,
-            },
-            'assert': [
-                {
-                    'field': 'key2',
-                    'operator': '==',
-                    'value': 'b',
-                    'is_error': True,
-                },
-                {
-                    'field': 'key3',
-                    'operator': '!=',
-                    'value': None,
-                },
+        config = AssertOnConditionValidator.Config(
+            condition=Condition(
+                field='key1',
+                operator='!=',
+                value=None,
+            ),
+            assertions=[
+                Condition(
+                    field='key2',
+                    operator='==',
+                    value='b',
+                    is_error=True,
+                ),
+                Condition(
+                    field='key3',
+                    operator='!=',
+                    value=None,
+                ),
             ],
-        }
+        )
 
         validator = AssertOnConditionValidator(config)
 
