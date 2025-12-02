@@ -9,7 +9,7 @@ from tol.validators import MutuallyExclusiveValidator
 from tol.validators.interfaces import Condition
 
 
-class TestMutuallyExcludiveValidator:
+class TestMutuallyExclusiveValidator:
     def test_valid(
         self, mock_objs: Iterable[DataObject]
     ) -> None:
