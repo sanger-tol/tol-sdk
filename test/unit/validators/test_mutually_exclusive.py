@@ -2,7 +2,7 @@
 #
 # SPDX-License-Identifier: MIT
 
-from typing import Iterable
+from typing import Any, Iterable
 from unittest.mock import create_autospec
 
 from tol.core import DataObject
@@ -22,6 +22,15 @@ class TestMutuallyExclusiveValidator:
             'RACK_OR_PLATE_ID': 'a',
             'TUBE_OR_WELL_ID': 'b',
         }
+        def __get_field_by_name_one(name: str) -> Any:
+            match name:
+                case 'SYMBIONT':
+                    return 'SYMBIONT'
+                case 'RACK_OR_PLATE_ID':
+                    return 'a'
+                case 'TUBE_OR_WELL_ID':
+                    return 'b'
+        mock_one.get_field_by_name.side_effect = __get_field_by_name_one
         mock_two: DataObject = create_autospec(DataObject)
         mock_two.id = 'a'
         mock_two.attributes = {
@@ -29,6 +38,15 @@ class TestMutuallyExclusiveValidator:
             'RACK_OR_PLATE_ID': 'c',
             'TUBE_OR_WELL_ID': 'd',
         }
+        def __get_field_by_name_two(name: str) -> Any:
+            match name:
+                case 'SYMBIONT':
+                    return 'NOT SYMBIONT'
+                case 'RACK_OR_PLATE_ID':
+                    return 'c'
+                case 'TUBE_OR_WELL_ID':
+                    return 'd'
+        mock_two.get_field_by_name.side_effect = __get_field_by_name_two
 
         config = MutuallyExclusiveValidator.Config(
             first_field_where=Condition(
@@ -68,6 +86,15 @@ class TestMutuallyExclusiveValidator:
             'RACK_OR_PLATE_ID': 'a',
             'TUBE_OR_WELL_ID': 'b',
         }
+        def __get_field_by_name_one(name: str) -> Any:
+            match name:
+                case 'SYMBIONT':
+                    return 'NOT SYMBIONT'
+                case 'RACK_OR_PLATE_ID':
+                    return 'a'
+                case 'TUBE_OR_WELL_ID':
+                    return 'b'
+        mock_one.get_field_by_name.side_effect = __get_field_by_name_one
         mock_two: DataObject = create_autospec(DataObject)
         mock_two.id = 'a'
         mock_two.attributes = {
@@ -75,6 +102,15 @@ class TestMutuallyExclusiveValidator:
             'RACK_OR_PLATE_ID': 'a',
             'TUBE_OR_WELL_ID': 'b',
         }
+        def __get_field_by_name_two(name: str) -> Any:
+            match name:
+                case 'SYMBIONT':
+                    return 'SYMBIONT'
+                case 'RACK_OR_PLATE_ID':
+                    return 'a'
+                case 'TUBE_OR_WELL_ID':
+                    return 'b'
+        mock_two.get_field_by_name.side_effect = __get_field_by_name_two
 
         config = MutuallyExclusiveValidator.Config(
             first_field_where=Condition(
@@ -114,6 +150,15 @@ class TestMutuallyExclusiveValidator:
             'RACK_OR_PLATE_ID': 'a',
             'TUBE_OR_WELL_ID': 'b',
         }
+        def __get_field_by_name_one(name: str) -> Any:
+            match name:
+                case 'SYMBIONT':
+                    return 'SYMBIONT'
+                case 'RACK_OR_PLATE_ID':
+                    return 'a'
+                case 'TUBE_OR_WELL_ID':
+                    return 'b'
+        mock_one.get_field_by_name.side_effect = __get_field_by_name_one
         mock_two: DataObject = create_autospec(DataObject)
         mock_two.id = 'a'
         mock_two.attributes = {
@@ -121,6 +166,15 @@ class TestMutuallyExclusiveValidator:
             'RACK_OR_PLATE_ID': 'a',
             'TUBE_OR_WELL_ID': 'b',
         }
+        def __get_field_by_name_two(name: str) -> Any:
+            match name:
+                case 'SYMBIONT':
+                    return 'NOT SYMBIONT'
+                case 'RACK_OR_PLATE_ID':
+                    return 'a'
+                case 'TUBE_OR_WELL_ID':
+                    return 'b'
+        mock_two.get_field_by_name.side_effect = __get_field_by_name_two
 
         config = MutuallyExclusiveValidator.Config(
             first_field_where=Condition(
