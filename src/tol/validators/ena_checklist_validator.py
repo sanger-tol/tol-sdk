@@ -2,38 +2,44 @@
 #
 # SPDX-License-Identifier: MIT
 
-from typing import Dict
 import re
 
 from dataclasses import dataclass
 from tol.core.validate import Validator
 from tol.core.data_object import DataObject
 from tol.sources.ena import ena
+from tol.core import DataSource
 
 @dataclass
 class EnaChecklistConfig:
     ena_checklist_id: list[str]
-
+    
 class EnaChecklistValidator(Validator):
     """
     validates the ENA_CHECKLIST for each samples 
     """
     __slots__ = ['__config']
     
-    def __init__(self, config: EnaChecklistConfig) -> None:
+    def __init__(self, config: EnaChecklistConfig, datasource:DataSource = ena()) -> None:
         super().__init__()
         self._config = config
+        self._datasource = datasource
 
     def _validate_data_object(self, obj: DataObject) -> None:
-        ena_datasource = ena()
-        ena_checklist = ena_datasource.get_by_id("checklist", self._config["ena_checklist_id"])
+        ena_datasource = self._datasource
+        ena_checklist = ena_datasource.get_by_id("checklist", self._config.ena_checklist_id)
+        
         for checklist in ena_checklist:
             validations = checklist.attributes['checklist']
             for key in validations:
                 field_name = key
                 if 'field' in validations[key]:
                     field_name = validations[key]['field']
+                print(obj.attributes)
                 if 'mandatory' in validations[key] and key not in obj.attributes:
+                    self.add_error(object_id=obj.id, detail='Must be given', field=[field_name])
+                    continue
+                if 'mandatory' in validations[key] and obj.attributes[key] is None:
                     self.add_error(object_id=obj.id, detail='Must be given', field=[field_name])
                     continue
                 if 'mandatory' in validations[key] and obj.attributes.get(key) == "":

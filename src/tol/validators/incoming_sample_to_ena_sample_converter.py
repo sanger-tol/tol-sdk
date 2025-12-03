@@ -4,11 +4,16 @@
 from typing import Iterable
 import re
 
+from dataclasses import dataclass
 from tol.core import DataObject, DataObjectToDataObjectOrUpdateConverter
+
+@dataclass
+class EnaChecklistConverterConfig:
+    project_name: str
 
 class IncomingSampleToEnaSampleConverter(DataObjectToDataObjectOrUpdateConverter):
     
-    def convert(self, data_object: DataObject) -> Iterable[DataObject]:
+    def convert(self, data_object: DataObject, config:EnaChecklistConverterConfig) -> Iterable[DataObject]:
         """
         converting the samples DataObject into ENA format
         """
@@ -20,7 +25,7 @@ class IncomingSampleToEnaSampleConverter(DataObjectToDataObjectOrUpdateConverter
                 'spore-bearing structure' if s.attributes.get('LIFESTAGE') == 'SPORE_BEARING_STRUCTURE'
                 else self.__replace_underscores(s.attributes.get('LIFESTAGE'))
             ),
-            # 'project name': self._project_name 
+            'project name': config.project_name, 
             'collected by': self.__replace_underscores(s.attributes.get('COLLECTED_BY')),
             'collection date': self.__replace_underscores(s.attributes.get('DATE_OF_COLLECTION')).lower(),
             'geographic location (country and/or sea)': self.__collection_country(s).replace('_', ' '),
