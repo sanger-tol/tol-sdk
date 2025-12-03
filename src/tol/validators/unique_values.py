@@ -2,6 +2,9 @@
 #
 # SPDX-License-Identifier: MIT
 
+from dataclasses import dataclass
+from typing import Dict, List, Set
+
 from tol.core import DataObject
 from tol.core.validate import Validator
 
@@ -11,23 +14,28 @@ class UniqueValuesValidator(Validator):
     Validates that a stream of `DataObject` instances
     contains unique values for specified keys.
     """
+    @dataclass(slots=True, frozen=True, kw_only=True)
+    class Config:
+        unique_keys: List[List[str] | str]
+        detail: str = 'Value is not unique'
+        is_error: bool = True
+
+    __slots__ = ['__config', '__duplicates', '__existing_values']
+    __config: Config
+    __duplicates: Dict[str, List[str]]
+    __existing_values: Dict[str, Set]
 
     def __init__(
         self,
-        unique_keys: list[list[str] | str],
-        *,
-        detail: str = 'Value is not unique',
-        is_error: bool = True,
+        config: Config
     ) -> None:
 
         super().__init__()
 
-        self.__keys = unique_keys
-        self.__detail = detail
-        self.__is_error = is_error
-        self.__duplicates: dict[str, list[str]] = {}
-        self.__existing_values: dict[str, set] = {}
-        for key in self.__keys:
+        self.__config = config
+        self.__duplicates = {}
+        self.__existing_values = {}
+        for key in self.__config.unique_keys:
             if isinstance(key, str):
                 self.__existing_values[key] = set()
             elif isinstance(key, list):
@@ -39,7 +47,7 @@ class UniqueValuesValidator(Validator):
         obj: DataObject
     ) -> None:
 
-        for unique_key in self.__keys:
+        for unique_key in self.__config.unique_keys:
             if isinstance(unique_key, list):
                 concat = ''
                 for key in unique_key:
@@ -86,15 +94,15 @@ class UniqueValuesValidator(Validator):
         key: str,
     ) -> None:
 
-        if self.__is_error:
+        if self.__config.is_error:
             self.add_error(
                 object_id=obj.id,
-                detail=self.__detail,
+                detail=self.__config.detail,
                 field=key,
             )
         else:
             self.add_warning(
                 object_id=obj.id,
-                detail=self.__detail,
+                detail=self.__config.detail,
                 field=key,
             )

@@ -15,8 +15,12 @@ class TestUniqueValuesValidator:
         mock_objs: Iterable[DataObject]
     ) -> None:
 
+        config = UniqueValuesValidator.Config(
+            unique_keys=['key1']
+        )
+
         validator = UniqueValuesValidator(
-            ['key1']
+            config
         )
 
         # consume the `Iterable`
@@ -31,9 +35,13 @@ class TestUniqueValuesValidator:
         mock_objs: Iterable[DataObject]
     ) -> None:
 
-        validator = UniqueValuesValidator(
-            ['key3'],
+        config = UniqueValuesValidator.Config(
+            unique_keys=['key3'],
             is_error=False,
+        )
+
+        validator = UniqueValuesValidator(
+            config
         )
 
         # consume the `Iterable`
@@ -49,8 +57,12 @@ class TestUniqueValuesValidator:
         mock_objs: Iterable[DataObject]
     ) -> None:
 
+        config = UniqueValuesValidator.Config(
+            unique_keys=['key3'],
+        )
+
         validator = UniqueValuesValidator(
-            ['key3'],
+            config
         )
 
         # consume the `Iterable`
@@ -66,8 +78,12 @@ class TestUniqueValuesValidator:
         mock_objs: Iterable[DataObject]
     ) -> None:
 
+        config = UniqueValuesValidator.Config(
+            unique_keys=[['key1', 'key2'], ['key3', 'key2']],
+        )
+
         validator = UniqueValuesValidator(
-            [['key1', 'key2'], ['key3', 'key2']],
+            config
         )
 
         # consume the `Iterable`
@@ -83,9 +99,13 @@ class TestUniqueValuesValidator:
         mock_objs: Iterable[DataObject]
     ) -> None:
 
-        validator = UniqueValuesValidator(
-            [['key3', 'key4']],
+        config = UniqueValuesValidator.Config(
+            unique_keys=[['key3', 'key4']],
             is_error=True,
+        )
+
+        validator = UniqueValuesValidator(
+            config
         )
 
         # consume the `Iterable`
