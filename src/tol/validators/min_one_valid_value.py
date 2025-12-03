@@ -13,11 +13,12 @@ class MinOneValidValueValidator(Validator):
     Validates that a stream of `DataObject` instances
     have at least one valid value present in a list of specified keys.
     """
-
     @dataclass(slots=True, frozen=True, kw_only=True)
     class Config:
         non_valid_values: list[str]
         keys: list[str]
+
+    __slots__ = ['__config']
 
     def __init__(
         self,
@@ -25,7 +26,7 @@ class MinOneValidValueValidator(Validator):
     ) -> None:
 
         super().__init__()
-        self._config = config
+        self.__config = config
 
     def _validate_data_object(
         self,
@@ -34,10 +35,10 @@ class MinOneValidValueValidator(Validator):
 
         found_valid_value = False
 
-        for key in self._config.keys:
+        for key in self.__config.keys:
             value = obj.attributes[key]
 
-            if value is not None and value not in self._config.non_valid_values:
+            if value is not None and value not in self.__config.non_valid_values:
                 found_valid_value = True
                 break
 
@@ -45,9 +46,9 @@ class MinOneValidValueValidator(Validator):
             self.add_error(
                 object_id=obj.id,
                 detail=(
-                    f'At least one of: {self._config.keys} '
-                    'must not be: ' + ', '.join(self._config.non_valid_values)
+                    f'At least one of: {self.__config.keys} '
+                    'must not be: ' + ', '.join(self.__config.non_valid_values)
                     + ' or empty.'
                 ),
-                field=', '.join(self._config.keys),
+                field=', '.join(self.__config.keys),
             )
