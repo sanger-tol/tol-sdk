@@ -2,20 +2,13 @@
 #
 # SPDX-License-Identifier: MIT
 
-from typing import Any
+from dataclasses import dataclass
+from typing import Any, Dict, List
 
 from tol.core import DataObject
 from tol.core.validate import Validator
 
 from .regex import Regex
-
-RegexDict = dict[
-    str,
-    str | bool | list[Any],
-]
-Config = dict[str, str | dict[str, list[Regex | RegexDict]]]
-
-"""Can also specify `Regex` as a `dict`"""
 
 
 class RegexByValueValidator(Validator):
@@ -24,46 +17,34 @@ class RegexByValueValidator(Validator):
     according to the specified allowed values for a given
     key.
     """
+    @dataclass(slots=True, frozen=True, kw_only=True)
+    class Config:
+        key_column: str
+        regexes: Dict[str, List[Regex]]
+    
+    __slots__ = ['__config']
+    config: Config
 
     def __init__(
         self,
-        config: dict[str, str | list[str]]
+        config: Config
     ) -> None:
 
         super().__init__()
 
-        self.__config = self.__get_config(config)
-
-    def __get_config(
-        self,
-        config: Config,
-    ) -> Config:
-
-        return {
-            'key_column': config['key_column'],
-            'regexes': {
-                k: [
-                    # Ensure they're all in Regex format
-                    # (as you can either pass in a list of Regex or a RegexDict,
-                    # which can be used to initialize a Regex)
-                    c if isinstance(c, Regex) else Regex(**c)
-                    for c in v
-                ]
-                for k, v in config['regexes'].items()
-            }
-        }
+        self.__config = config
 
     def _validate_data_object(
         self,
         obj: DataObject
     ) -> None:
         # Pull out value of the 'key_column' attribute
-        key_column_value = obj.attributes.get(self.__config['key_column'])
+        key_column_value = obj.attributes.get(self.__config.key_column)
         if not key_column_value:
             return
 
         # Pull out relevant regex list based on this value: {[{'name': 'regex'}]}
-        regex_list = self.__config['regexes'].get(key_column_value)
+        regex_list = self.__config.regexes.get(key_column_value)
         if not regex_list:
             return
         self.__validate_attribute(obj, regex_list)
@@ -71,7 +52,7 @@ class RegexByValueValidator(Validator):
     def __validate_attribute(
         self,
         obj: DataObject,
-        regexes: list[Regex],
+        regexes: List[Regex],
     ) -> None:
         for r in regexes:
             attribute_name = r.key
