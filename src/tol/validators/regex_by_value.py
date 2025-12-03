@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: MIT
 
 from dataclasses import dataclass
-from typing import Any, Dict, List
+from typing import Dict, List
 
 from tol.core import DataObject
 from tol.core.validate import Validator
@@ -21,7 +21,7 @@ class RegexByValueValidator(Validator):
     class Config:
         key_column: str
         regexes: Dict[str, List[Regex]]
-    
+
     __slots__ = ['__config']
     config: Config
 

@@ -17,7 +17,7 @@ class TestRegexByValueValidator:
         self,
         mock_objs: Iterable[DataObject]
     ) -> None:
-        
+
         config = RegexByValueValidator.Config(
             key_column='key1',
             regexes={
