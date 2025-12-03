@@ -15,8 +15,9 @@ class AllowedValuesFromDataSourceValidator(Validator):
     Validates that a stream of `DataObject` instances
     contains field that is part of a list.
     """
-    @dataclass
+    @dataclass(slots=True, frozen=True, kw_only=True)
     class Config:
+        allowed_values: List[str | int | float] | None = None
         datasource_instance_id: int
         datasource_object_type: str
         datasource_field_name: str
@@ -29,16 +30,15 @@ class AllowedValuesFromDataSourceValidator(Validator):
     def __init__(
         self,
         config: Config,
-        allowed_values: List[str | int | float] | None = None,  # For testing
     ) -> None:
 
         super().__init__()
 
         self.__config = config
-        if allowed_values is None:
+        if self.__config.allowed_values is None:
             self.__cached_list = self.__initialize_list_from_datasource()
         else:
-            self.__cached_list = allowed_values
+            self.__cached_list = self.__config.allowed_values
 
     def __initialize_list_from_datasource(self) -> List[str | int | float]:
         dsi = portaldb().get_one('data_source_instance', self.__config.datasource_instance_id)
