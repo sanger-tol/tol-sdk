@@ -29,6 +29,7 @@ def mock_objs() -> Iterable[DataObject]:
         }
         __o.key1 = c
         __o.key2 = c
+
         def __get_field_by_name(name: str) -> Any:
             match name:
                 case 'key1' | 'key2':

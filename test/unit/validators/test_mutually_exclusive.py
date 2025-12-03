@@ -22,6 +22,7 @@ class TestMutuallyExclusiveValidator:
             'RACK_OR_PLATE_ID': 'a',
             'TUBE_OR_WELL_ID': 'b',
         }
+
         def __get_field_by_name_one(name: str) -> Any:
             match name:
                 case 'SYMBIONT':
@@ -38,6 +39,7 @@ class TestMutuallyExclusiveValidator:
             'RACK_OR_PLATE_ID': 'c',
             'TUBE_OR_WELL_ID': 'd',
         }
+
         def __get_field_by_name_two(name: str) -> Any:
             match name:
                 case 'SYMBIONT':
@@ -74,7 +76,7 @@ class TestMutuallyExclusiveValidator:
         )
 
         assert len(validator.results) == 0
-    
+
     def test_clash_first_then_second(
         self, mock_objs: Iterable[DataObject]
     ) -> None:
@@ -86,6 +88,7 @@ class TestMutuallyExclusiveValidator:
             'RACK_OR_PLATE_ID': 'a',
             'TUBE_OR_WELL_ID': 'b',
         }
+
         def __get_field_by_name_one(name: str) -> Any:
             match name:
                 case 'SYMBIONT':
@@ -102,6 +105,7 @@ class TestMutuallyExclusiveValidator:
             'RACK_OR_PLATE_ID': 'a',
             'TUBE_OR_WELL_ID': 'b',
         }
+
         def __get_field_by_name_two(name: str) -> Any:
             match name:
                 case 'SYMBIONT':
@@ -138,7 +142,7 @@ class TestMutuallyExclusiveValidator:
         )
 
         assert len(validator.errors) == 1
-    
+
     def test_clash_second_then_first(
         self, mock_objs: Iterable[DataObject]
     ) -> None:
@@ -150,6 +154,7 @@ class TestMutuallyExclusiveValidator:
             'RACK_OR_PLATE_ID': 'a',
             'TUBE_OR_WELL_ID': 'b',
         }
+
         def __get_field_by_name_one(name: str) -> Any:
             match name:
                 case 'SYMBIONT':
@@ -166,6 +171,7 @@ class TestMutuallyExclusiveValidator:
             'RACK_OR_PLATE_ID': 'a',
             'TUBE_OR_WELL_ID': 'b',
         }
+
         def __get_field_by_name_two(name: str) -> Any:
             match name:
                 case 'SYMBIONT':
