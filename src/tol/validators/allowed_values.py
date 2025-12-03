@@ -27,12 +27,16 @@ class AllowedValuesValidator(Validator):
     according to the specified allowed values for a given
     key.
     """
+    @dataclass(slots=True, frozen=True, kw_only=True)
+    class Config:
+        allowed_values: List[AllowedValues]
+
     __slots__ = ['__config']
-    __config: List[AllowedValues]
+    __config: Config
 
     def __init__(
         self,
-        config: List[AllowedValues]
+        config: Config
     ) -> None:
 
         super().__init__()
@@ -66,7 +70,7 @@ class AllowedValuesValidator(Validator):
     ) -> list[AllowedValues]:
 
         return [
-            a for a in self.__config
+            a for a in self.__config.allowed_values
             if a.key == key
         ]
 
