@@ -22,8 +22,9 @@ class AllowedValuesFromDataSourceValidator(Validator):
         datasource_field_name: str
         field_name: str
 
-    __slots__ = ['__config']
+    __slots__ = ['__config', '__cached_list']
     __config: Config
+    __cached_list: List[str | int | float]
 
     def __init__(
         self,
