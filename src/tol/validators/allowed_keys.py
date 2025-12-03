@@ -19,7 +19,7 @@ class AllowedKeysValidator(Validator):
     class Config:
         allowed_keys: List[str]
         is_error: bool = True
-        error_message: str = 'Key is not allowed'
+        detail: str = 'Key is not allowed'
 
     __slots__ = ['__config']
     __config: Config
@@ -53,12 +53,12 @@ class AllowedKeysValidator(Validator):
         if self.__config.is_error:
             self.add_error(
                 object_id=obj.id,
-                detail=self.__config.error_message,
+                detail=self.__config.detail,
                 field=key,
             )
         else:
             self.add_warning(
                 object_id=obj.id,
-                detail=self.__config.error_message,
+                detail=self.__config.detail,
                 field=key,
             )

@@ -22,16 +22,16 @@ class MutuallyExclusiveValidator(Validator, ConditionEvaluator):
         first_field_where: Condition
         second_field_where: Condition
         target_fields: List[str]
-        error_message: str | None = None
+        detail: str | None = None
 
         def _get_error_message(self) -> str:
-            if self.error_message is None:
+            if self.detail is None:
                 return (
                     f'The conditions {self.first_field_where} and {self.second_field_where} '
                     f'must be mutually exclusive'
                 )
             else:
-                return self.error_message
+                return self.detail
 
     __slots__ = ['__config', '__first_list', '__second_list']
     __config: Config
