@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: MIT
 
 from dataclasses import dataclass
-from typing import Any, List
+from typing import Any, List, Set
 
 from tol.core import DataObject, Validator
 
@@ -35,8 +35,8 @@ class MutuallyExclusiveValidator(Validator, ConditionEvaluator):
 
     __slots__ = ['__config', '__first_list', '__second_list']
     __config: Config
-    __first_list: List[Any]
-    __second_list: List[Any]
+    __first_list: Set[Any]
+    __second_list: Set[Any]
 
     def __init__(self, config: Config) -> None:
         super().__init__()
