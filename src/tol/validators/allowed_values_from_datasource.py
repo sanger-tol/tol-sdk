@@ -35,6 +35,9 @@ class AllowedValuesFromDataSourceValidator(Validator):
         super().__init__()
 
         self.__config = config
+        self.__cached_list = self.__config.allowed_values \
+            or self.__initialize_list_from_datasource()
+
         if self.__config.allowed_values is None:
             self.__cached_list = self.__initialize_list_from_datasource()
         else:
@@ -43,7 +46,7 @@ class AllowedValuesFromDataSourceValidator(Validator):
     def __initialize_list_from_datasource(self) -> List[str | int | float]:
         dsi = portaldb().get_one('data_source_instance', self.__config.datasource_instance_id)
         ds = DataSourceUtils.get_data_source_by_data_source_instance(dsi)
-        self._cached_list = [
+        return [
             obj.get_field_by_name(
                 self.__config.datasource_field_name
             ) for obj in ds.get_list(
