@@ -32,6 +32,7 @@ def mock_objs() -> Iterable[DataObject]:
         __o.get_field_by_name.side_effect = lambda field_name: __o.attributes.get(field_name)
 
         return __o
+
     return [
         __mock_obj(c) for c in 'abc'
     ]
