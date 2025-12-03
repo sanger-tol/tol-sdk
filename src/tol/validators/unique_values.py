@@ -45,7 +45,7 @@ class UniqueValuesValidator(Validator):
                 for key in unique_key:
                     concat = concat + '/' + (str(obj.attributes[key]))
                 if concat in self.__existing_values['/'.join(unique_key)]:
-                    self._duplicate_checks(
+                    self.__duplicate_checks(
                         key=key,
                         value=concat
                     )
@@ -54,14 +54,14 @@ class UniqueValuesValidator(Validator):
 
             else:
                 if obj.attributes[unique_key] in self.__existing_values[unique_key]:
-                    self._duplicate_checks(
+                    self.__duplicate_checks(
                         key=unique_key,
                         value=obj.attributes[unique_key]
                     )
                 else:
                     self.__existing_values[unique_key].add(obj.attributes[unique_key])
 
-    def _duplicate_checks(
+    def __duplicate_checks(
         self,
         key: str,
         value: str
