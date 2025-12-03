@@ -1,8 +1,7 @@
 # SPDX-FileCopyrightText: 2025 Genome Research Ltd.
 #
 # SPDX-License-Identifier: MIT
-
-from typing import Any, Iterable
+from typing import Iterable
 from unittest.mock import create_autospec
 
 import pytest
@@ -30,18 +29,9 @@ def mock_objs() -> Iterable[DataObject]:
         __o.key1 = c
         __o.key2 = c
 
-        def __get_field_by_name(name: str) -> Any:
-            match name:
-                case 'key1' | 'key2':
-                    return c
-                case 'key3':
-                    return 'duplicate'
-                case 'key4':
-                    return 'other_duplicate'
-        __o.get_field_by_name.side_effect = __get_field_by_name
+        __o.get_field_by_name.side_effect = lambda field_name: __o.attributes.get(field_name)
 
         return __o
-
     return [
         __mock_obj(c) for c in 'abc'
     ]
