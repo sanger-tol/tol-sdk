@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: MIT
 
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, List
 
 from tol.core import DataObject
 from tol.core.validate import Validator
@@ -12,7 +12,7 @@ from tol.core.validate import Validator
 @dataclass(frozen=True, kw_only=True)
 class AllowedValues:
     key: str
-    values: list[Any]
+    values: List[Any]
 
     is_error: bool = True
     detail: str = 'Value is not allowed for given key'
@@ -23,7 +23,7 @@ class AllowedValues:
 
 AllowedValuesDict = dict[
     str,
-    str | bool | list[Any],
+    str | bool | List[Any],
 ]
 """Can also specify `AllowedValues` as a `dict`"""
 
@@ -34,10 +34,12 @@ class AllowedValuesValidator(Validator):
     according to the specified allowed values for a given
     key.
     """
+    __slots__ = ['__config']
+    __config: List[AllowedValues]
 
     def __init__(
         self,
-        config: list[AllowedValues | AllowedValuesDict]
+        config: List[AllowedValues | AllowedValuesDict]
     ) -> None:
 
         super().__init__()
