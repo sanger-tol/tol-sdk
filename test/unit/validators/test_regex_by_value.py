@@ -24,6 +24,10 @@ class TestRegexByValueValidator:
                 'a': [
                     Regex(
                         key='key2',
+                        regex='[a]?'
+                    ),
+                    Regex(
+                        key='key2',
                         regex='[^z]'
                     ),
                 ],
