@@ -26,7 +26,8 @@ from .data_object import (  # noqa F401
 )
 from .data_object_converter import (  # noqa F401
     DataObjectToDataObjectOrUpdateConverter,
-    DefaultDataObjectToDataObjectConverter
+    DefaultDataObjectToDataObjectConverter,
+    SanitisingConverter
 )
 from .factory import core_data_object  # noqa F401
 from .http_client import HttpClient  # noqa F401
