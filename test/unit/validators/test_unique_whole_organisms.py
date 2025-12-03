@@ -32,11 +32,12 @@ class TestUniqueWholeOrganismsValidator:
         mock_two.ORGANISM_PART = 'PART_ORGANISM'
         mock_two.SPECIMEN_ID = 'two'
 
-        config = {
-            'symbiont_field': 'SYMBIONT',
-            'organism_part_field': 'ORGANISM_PART',
-            'specimen_id_field': 'SPECIMEN_ID',
-        }
+        config = UniqueWholeOrganismsValidator.Config(
+            symbiont_field='SYMBIONT',
+            organism_part_field='ORGANISM_PART',
+            specimen_id_field='SPECIMEN_ID',
+        )
+
         validator = UniqueWholeOrganismsValidator(config)
 
         # consume the `Iterable`
@@ -68,11 +69,12 @@ class TestUniqueWholeOrganismsValidator:
         mock_two.ORGANISM_PART = 'WHOLE_ORGANISM'
         mock_two.SPECIMEN_ID = 'one'
 
-        config = {
-            'symbiont_field': 'SYMBIONT',
-            'organism_part_field': 'ORGANISM_PART',
-            'specimen_id_field': 'SPECIMEN_ID',
-        }
+        config = UniqueWholeOrganismsValidator.Config(
+            symbiont_field='SYMBIONT',
+            organism_part_field='ORGANISM_PART',
+            specimen_id_field='SPECIMEN_ID',
+        )
+
         validator = UniqueWholeOrganismsValidator(config)
 
         # consume the `Iterable`
@@ -104,11 +106,12 @@ class TestUniqueWholeOrganismsValidator:
         mock_two.ORGANISM_PART = 'PART_ORGANISM'
         mock_two.SPECIMEN_ID = 'one'
 
-        config = {
-            'symbiont_field': 'SYMBIONT',
-            'organism_part_field': 'ORGANISM_PART',
-            'specimen_id_field': 'SPECIMEN_ID',
-        }
+        config = UniqueWholeOrganismsValidator.Config(
+            symbiont_field='SYMBIONT',
+            organism_part_field='ORGANISM_PART',
+            specimen_id_field='SPECIMEN_ID',
+        )
+
         validator = UniqueWholeOrganismsValidator(config)
 
         # consume the `Iterable`
@@ -140,11 +143,12 @@ class TestUniqueWholeOrganismsValidator:
         mock_two.ORGANISM_PART = 'WHOLE_ORGANISM'
         mock_two.SPECIMEN_ID = 'one'
 
-        config = {
-            'symbiont_field': 'SYMBIONT',
-            'organism_part_field': 'ORGANISM_PART',
-            'specimen_id_field': 'SPECIMEN_ID',
-        }
+        config = UniqueWholeOrganismsValidator.Config(
+            symbiont_field='SYMBIONT',
+            organism_part_field='ORGANISM_PART',
+            specimen_id_field='SPECIMEN_ID',
+        )
+
         validator = UniqueWholeOrganismsValidator(config)
 
         # consume the `Iterable`

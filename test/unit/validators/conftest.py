@@ -1,7 +1,6 @@
 # SPDX-FileCopyrightText: 2025 Genome Research Ltd.
 #
 # SPDX-License-Identifier: MIT
-
 from typing import Iterable
 from unittest.mock import create_autospec
 
@@ -25,7 +24,9 @@ def mock_objs() -> Iterable[DataObject]:
             # key 3 is used to test unique_values
             'key3': 'duplicate',
             # key 4 is used to test unique combinations
-            'key4': 'other_duplicate'
+            'key4': 'other_duplicate',
+            'key5': 10 if c in 'ac' else 20,
+            'key6': 'present' if c in 'ab' else None,
         }
         __o.key1 = c
         __o.key2 = c
