@@ -29,12 +29,16 @@ class RegexValidator(Validator):
     according to the specified allowed values for a given
     key.
     """
+    @dataclass(slots=True, frozen=True, kw_only=True)
+    class Config:
+        regexes: List[Regex]
+
     __slots__ = ['__config']
-    __config: List[Regex]
+    __config: Config
 
     def __init__(
         self,
-        config: List[Regex]
+        config: Config
     ) -> None:
 
         super().__init__()
@@ -67,7 +71,7 @@ class RegexValidator(Validator):
         key: str,
     ) -> list[Regex]:
         return [
-            a for a in self.__config
+            a for a in self.__config.regexes
             if a.key == key
         ]
 
