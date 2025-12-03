@@ -23,7 +23,7 @@ class TolidValidator(Validator):
         error_ignore_field: str
         error_ignore_value: str
         warning_detail: str = 'Species not found in Tol ID source'
-    
+
     __slots__ = ['__config', '__datasource', '__cached_species_id', '__cached_tolids']
     __config: Config
     __datasource: DataSource
