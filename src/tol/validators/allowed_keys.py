@@ -2,6 +2,7 @@
 #
 # SPDX-License-Identifier: MIT
 
+from dataclasses import dataclass
 from typing import List
 
 from tol.core import DataObject
@@ -14,24 +15,22 @@ class AllowedKeysValidator(Validator):
     ensuring that they only have attributes of the given
     allowed keys.
     """
-    __slots__ = ['__allowed_keys', '__is_error', '__detail']
-    __allowed_keys: List[str]
-    __is_error: bool
-    __detail: str
+    @dataclass(slots=True, frozen=True, kw_only=True)
+    class Config:
+        allowed_keys: List[str]
+        is_error: bool = True
+        error_message: str = 'Key is not allowed'
+
+    __slots__ = ['__config']
+    __config: Config
 
     def __init__(
         self,
-        allowed_keys: List[str],
-        *,
-        is_error: bool = True,
-        detail: str = 'Key is not allowed'
+        config: Config
     ) -> None:
 
         super().__init__()
-
-        self.__allowed_keys = allowed_keys
-        self.__is_error = is_error
-        self.__detail = detail
+        self.__config = config
 
     def _validate_data_object(
         self,
@@ -39,7 +38,7 @@ class AllowedKeysValidator(Validator):
     ) -> None:
 
         for key in obj.attributes:
-            if key not in self.__allowed_keys:
+            if key not in self.__config.allowed_keys:
                 self.__add_result(
                     obj,
                     key,
@@ -51,15 +50,15 @@ class AllowedKeysValidator(Validator):
         key: str,
     ) -> None:
 
-        if self.__is_error:
+        if self.__config.is_error:
             self.add_error(
                 object_id=obj.id,
-                detail=self.__detail,
+                detail=self.__config.error_message,
                 field=key,
             )
         else:
             self.add_warning(
                 object_id=obj.id,
-                detail=self.__detail,
+                detail=self.__config.error_message,
                 field=key,
             )
