@@ -29,6 +29,7 @@ def mock_objs() -> Iterable[DataObject]:
         }
         __o.key1 = c
         __o.key2 = c
+        __o.get_field_by_name.return_value = c
 
         return __o
 
