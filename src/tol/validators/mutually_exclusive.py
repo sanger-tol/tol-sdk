@@ -35,8 +35,8 @@ class MutuallyExclusiveValidator(Validator, ConditionEvaluator):
 
     __slots__ = ['__config', '__first_list', '__second_list']
     __config: Config
-    __first_list: Set[Any]
-    __second_list: Set[Any]
+    __first_list: List[Any]
+    __second_list: List[Any]
 
     def __init__(self, config: Config) -> None:
         super().__init__()
