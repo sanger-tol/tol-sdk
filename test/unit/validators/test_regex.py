@@ -23,10 +23,10 @@ class TestRegexValidator:
                 key='key1',
                 regex='[abc]',
             ),
-            {
-                'key': 'key2',
-                'regex': '[abc][def]?',
-            },
+            Regex(
+                key='key2',
+                regex='[abc][def]?',
+            ),
         ]
 
         validator = RegexValidator(
