@@ -2,13 +2,11 @@
 #
 # SPDX-License-Identifier: MIT
 
-from typing import Dict, List
+from dataclasses import dataclass
+from typing import List
 
 from tol.core import Validator
 from tol.core.data_object import DataObject
-
-
-Config = Dict[str, str]
 
 
 class UniqueWholeOrganismsValidator(Validator):
@@ -19,6 +17,12 @@ class UniqueWholeOrganismsValidator(Validator):
     2. There are no samples with organism part *not* WHOLE_ORGANISM that have a SPECIMEN_ID
        the same as a WHOLE_ORGANISM in the manifest.
     """
+    @dataclass(slots=True, frozen=True, kw_only=True)
+    class Config:
+        symbiont_field: str
+        organism_part_field: str
+        specimen_id_field: str
+
     __slots__ = ['__config', '__whole_organisms', '__part_organisms']
     __config: Config
     __whole_organisms: List[str]
@@ -71,32 +75,24 @@ class UniqueWholeOrganismsValidator(Validator):
         # From Thomas :)
 
         # Ensure the data object is not a SYMBIONT, because organism part checks do not apply
-        if obj.attributes.get(self.get_config(self.__config,
-                                              'symbiont_field',
-                                              'UniqueWholeOrganismsValidator')) != 'SYMBIONT':
-            specimen_id = obj.attributes.get(self.get_config(self.__config,
-                                                             'specimen_id_field',
-                                                             'UniqueWholeOrganismsValidator'))
+        if obj.attributes.get(self.__config.symbiont_field) != 'SYMBIONT':
+            specimen_id = obj.attributes.get(self.__config.specimen_id_field)
             if specimen_id is None:
                 return
 
-            organism_part = obj.attributes.get(self.get_config(self.__config,
-                                                               'organism_part_field',
-                                                               'UniqueWholeOrganismsValidator'))
+            organism_part = obj.attributes.get(self.__config.organism_part_field)
             if organism_part == 'WHOLE_ORGANISM':
                 if specimen_id in self.__whole_organisms:
                     self.add_error(
                         object_id=obj.id,
                         detail='WHOLE_ORGANISM can only be used once',
-                        field=self.get_config(self.__config,
-                                              'specimen_id_field', 'UniqueWholeOrganismsValidator')
+                        field=self.__config.specimen_id_field,
                     )
                 if specimen_id in self.__part_organisms:
                     self.add_error(
                         object_id=obj.id,
                         detail='This WHOLE_ORGANISM has a SPECIMEN_ID already used elsewhere',
-                        field=self.get_config(self.__config,
-                                              'specimen_id_field', 'UniqueWholeOrganismsValidator')
+                        field=self.__config.specimen_id_field,
                     )
 
                 self.__whole_organisms.append(specimen_id)
@@ -105,7 +101,7 @@ class UniqueWholeOrganismsValidator(Validator):
                     self.add_error(
                         object_id=obj.id,
                         detail='Cannot reuse a specimen ID that has been used for WHOLE_ORGANISM',
-                        field='SPECIMEN_ID'
+                        field=self.__config.specimen_id_field,
                     )
 
                 self.__part_organisms.append(specimen_id)

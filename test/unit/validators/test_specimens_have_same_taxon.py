@@ -1,4 +1,3 @@
-
 # SPDX-FileCopyrightText: 2025 Genome Research Ltd.
 #
 # SPDX-License-Identifier: MIT
@@ -33,11 +32,11 @@ class TestSpecimensHaveSameTaxonValidator:
         mock_one.SPECIMEN_ID = 'A'
         mock_one.TAXON_ID = 'AA'
 
-        config = {
-            'taxon_id_field': 'TAXON_ID',
-            'symbiont_field': 'SYMBIONT',
-            'specimen_id_field': 'SPECIMEN_ID',
-        }
+        config = SpecimensHaveSameTaxonValidator.Config(
+            taxon_id_field='TAXON_ID',
+            symbiont_field='SYMBIONT',
+            specimen_id_field='SPECIMEN_ID',
+        )
         validator = SpecimensHaveSameTaxonValidator(config)
 
         # consume the `Iterable`
@@ -69,11 +68,11 @@ class TestSpecimensHaveSameTaxonValidator:
         mock_one.SPECIMEN_ID = 'A'
         mock_one.TAXON_ID = 'AB'
 
-        config = {
-            'taxon_id_field': 'TAXON_ID',
-            'symbiont_field': 'SYMBIONT',
-            'specimen_id_field': 'SPECIMEN_ID',
-        }
+        config = SpecimensHaveSameTaxonValidator.Config(
+            taxon_id_field='TAXON_ID',
+            symbiont_field='SYMBIONT',
+            specimen_id_field='SPECIMEN_ID',
+        )
         validator = SpecimensHaveSameTaxonValidator(config)
 
         # consume the `Iterable`
