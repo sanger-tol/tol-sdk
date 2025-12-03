@@ -15,7 +15,7 @@ class EnaSubmittableValidator(Validator):
     contains field that is part of a list.
     """
 
-    @dataclass
+    @dataclass(slots=True, frozen=True, kw_only=True)
     class Config:
         field_name: str
 
