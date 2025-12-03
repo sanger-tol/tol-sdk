@@ -14,7 +14,7 @@ class MinOneValidValueValidator(Validator):
     have at least one valid value present in a list of specified keys.
     """
 
-    @dataclass
+    @dataclass(slots=True, frozen=True, kw_only=True)
     class Config:
         non_valid_values: list[str]
         keys: list[str]
