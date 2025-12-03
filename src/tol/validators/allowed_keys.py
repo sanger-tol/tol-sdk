@@ -2,6 +2,8 @@
 #
 # SPDX-License-Identifier: MIT
 
+from typing import List
+
 from tol.core import DataObject
 from tol.core.validate import Validator
 
@@ -12,10 +14,14 @@ class AllowedKeysValidator(Validator):
     ensuring that they only have attributes of the given
     allowed keys.
     """
+    __slots__ = ['__allowed_keys', '__is_error', '__detail']
+    __allowed_keys: List[str]
+    __is_error: bool
+    __detail: str
 
     def __init__(
         self,
-        allowed_keys: list[str],
+        allowed_keys: List[str],
         *,
         is_error: bool = True,
         detail: str = 'Key is not allowed'
@@ -23,7 +29,7 @@ class AllowedKeysValidator(Validator):
 
         super().__init__()
 
-        self.__keys = allowed_keys
+        self.__allowed_keys = allowed_keys
         self.__is_error = is_error
         self.__detail = detail
 
@@ -33,7 +39,7 @@ class AllowedKeysValidator(Validator):
     ) -> None:
 
         for key in obj.attributes:
-            if key not in self.__keys:
+            if key not in self.__allowed_keys:
                 self.__add_result(
                     obj,
                     key,
