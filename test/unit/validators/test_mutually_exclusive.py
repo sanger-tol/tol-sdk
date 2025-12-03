@@ -3,6 +3,7 @@
 # SPDX-License-Identifier: MIT
 
 from typing import Iterable
+from unittest.mock import create_autospec
 
 from tol.core import DataObject
 from tol.validators import MutuallyExclusiveValidator
@@ -13,6 +14,22 @@ class TestMutuallyExclusiveValidator:
     def test_valid(
         self, mock_objs: Iterable[DataObject]
     ) -> None:
+        # Discard the sample mock objects (which won't be useful for this test)
+        mock_one: DataObject = create_autospec(DataObject)
+        mock_one.id = 'a'
+        mock_one.attributes = {
+            'SYMBIONT': 'SYMBIONT',
+            'RACK_OR_PLATE_ID': 'a',
+            'TUBE_OR_WELL_ID': 'b',
+        }
+        mock_one: DataObject = create_autospec(DataObject)
+        mock_one.id = 'a'
+        mock_one.attributes = {
+            'SYMBIONT': 'NOT SYMBIONT',
+            'RACK_OR_PLATE_ID': 'c',
+            'TUBE_OR_WELL_ID': 'd',
+        }
+
         config = MutuallyExclusiveValidator.Config(
             first_field_where=Condition(
                 field='SYMBIONT',
