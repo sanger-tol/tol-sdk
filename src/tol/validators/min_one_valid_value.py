@@ -19,6 +19,7 @@ class MinOneValidValueValidator(Validator):
         keys: list[str]
 
     __slots__ = ['__config']
+    __config: Config
 
     def __init__(
         self,
