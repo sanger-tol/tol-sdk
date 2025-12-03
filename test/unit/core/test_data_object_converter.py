@@ -12,6 +12,7 @@ from tol.core import (
     DataObjectToDataObjectOrUpdateConverter,
     DataSource,
     DefaultDataObjectToDataObjectConverter,
+    SanitisingConverter,
     core_data_object
 )
 
@@ -198,3 +199,42 @@ class TestDataObjectConverter(TestCase):
         self.assertEqual({k: v for k, v in obj1.attributes.items() if k != 'id_field'},
                          ret1.attributes)
         self.assertNotIn('id_field', ret1.attributes)
+
+    def test_sanitise_convert(self):
+
+        source = _MockDataSource(config={})
+        destination = _MockDataSource(config={})
+        core_data_object(source)
+        core_data_object(destination)
+        mock_dl = create_autospec(DataLoader)
+        converter = SanitisingConverter(
+            data_object_factory=destination.data_object_factory
+        )
+        converter.data_loader = mock_dl
+
+        CoreDataObject = source.data_object_factory  # noqa N806
+        # if data_object relations data = data else data.attributes
+        obj1 = CoreDataObject(
+            id_='test1',
+            type_='source_type',
+            attributes={
+                'attribute1': ' value1 \n ',
+                'attribute2': '  value2  ',
+                'attribute3': None,
+                'attribute4': 1234
+            }
+        )
+
+        converteds = converter.convert(obj1)
+        ret1 = next(converteds)
+        self.assertEqual(obj1.id, ret1.id)
+        self.assertEqual('source_type', ret1.type)
+        self.assertEqual({
+            'attribute1': 'value1',
+            'attribute2': 'value2',
+            'attribute3': None,
+            'attribute4': 1234
+        }, ret1.attributes)
+
+        with self.assertRaises(StopIteration):
+            next(converteds)
