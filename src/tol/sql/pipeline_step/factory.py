@@ -140,7 +140,7 @@ def create_pipeline_step_models(
             autoincrement=True
         )
 
-        s3_url: Mapped[str] = mapped_column(nullable=False,)
+        s3_bucket: Mapped[str] = mapped_column(nullable=False,)
         s3_filename: Mapped[str] = mapped_column(nullable=False)
         spreadsheet_config: Mapped[str] = mapped_column(nullable=True)
 

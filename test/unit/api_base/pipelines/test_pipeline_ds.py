@@ -44,7 +44,7 @@ class TestRunningPipelinesWithDataSources:
                 '/run-pipeline',
                 json={
                     'data': {
-                        's3_url': 's3://bucket/path/to/file',
+                        's3_bucket': 's3://bucket/path/to/file',
                         's3_filename': 'file.xlsx',
                         'spreadsheet_config': 'some_config',
                         'pipeline_id': '123123',
@@ -98,7 +98,7 @@ class TestRunningPipelinesWithDataSources:
             '/run-pipeline',
             json={
                 'data': {
-                    's3_url': 's3://bucket/path/to/file',
+                    's3_bucket': 's3://bucket/path/to/file',
                     's3_filename': 'file.xlsx',
                     'spreadsheet_config': 'some_config',
                     'pipeline_id': '123123',
@@ -172,7 +172,7 @@ class TestRunningPipelinesWithDataSources:
         mock_obj.id = id_
 
         attributes = {
-            's3_url': 's3://bucket/path/to/file',
+            's3_bucket': 's3://bucket/path/to/file',
             's3_filename': 'file.xlsx',
             'spreadsheet_config': 'some_config',
             'pipeline_id': '123123',
