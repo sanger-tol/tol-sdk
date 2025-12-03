@@ -21,13 +21,6 @@ class AllowedValues:
         return __v in self.values
 
 
-AllowedValuesDict = dict[
-    str,
-    str | bool | List[Any],
-]
-"""Can also specify `AllowedValues` as a `dict`"""
-
-
 class AllowedValuesValidator(Validator):
     """
     Validates an incoming stream of `DataObject` instances
@@ -39,12 +32,12 @@ class AllowedValuesValidator(Validator):
 
     def __init__(
         self,
-        config: List[AllowedValues | AllowedValuesDict]
+        config: List[AllowedValues]
     ) -> None:
 
         super().__init__()
 
-        self.__config = self.__get_config(config)
+        self.__config = config
 
     def _validate_data_object(
         self,
@@ -53,16 +46,6 @@ class AllowedValuesValidator(Validator):
 
         for k, v in obj.attributes.items():
             self.__validate_attribute(obj, k, v)
-
-    def __get_config(
-        self,
-        config: list[AllowedValues | AllowedValuesDict],
-    ) -> list[AllowedValues]:
-
-        return [
-            c if isinstance(c, AllowedValues) else AllowedValues(**c)
-            for c in config
-        ]
 
     def __validate_attribute(
         self,
