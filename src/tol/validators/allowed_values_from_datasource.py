@@ -3,6 +3,7 @@
 # SPDX-License-Identifier: MIT
 
 from dataclasses import dataclass
+from typing import List
 
 from tol.core import DataObject, DataSourceUtils
 from tol.core.validate import Validator
@@ -14,7 +15,6 @@ class AllowedValuesFromDataSourceValidator(Validator):
     Validates that a stream of `DataObject` instances
     contains field that is part of a list.
     """
-
     @dataclass
     class Config:
         datasource_instance_id: int
@@ -22,28 +22,31 @@ class AllowedValuesFromDataSourceValidator(Validator):
         datasource_field_name: str
         field_name: str
 
+    __slots__ = ['__config']
+    __config: Config
+
     def __init__(
         self,
         config: Config,
-        allowed_values: list[str | int | float] | None = None,  # For testing
+        allowed_values: List[str | int | float] | None = None,  # For testing
     ) -> None:
 
         super().__init__()
 
-        self._config = config
+        self.__config = config
         if allowed_values is None:
             self.__cached_list = self.__initialize_list_from_datasource()
         else:
             self.__cached_list = allowed_values
 
-    def __initialize_list_from_datasource(self) -> list[str | int | float]:
-        dsi = portaldb().get_one('data_source_instance', self._config.datasource_instance_id)
+    def __initialize_list_from_datasource(self) -> List[str | int | float]:
+        dsi = portaldb().get_one('data_source_instance', self.__config.datasource_instance_id)
         ds = DataSourceUtils.get_data_source_by_data_source_instance(dsi)
         self._cached_list = [
             obj.get_field_by_name(
-                self._config.datasource_field_name
+                self.__config.datasource_field_name
             ) for obj in ds.get_list(
-                object_type=self._config.datasource_object_type
+                object_type=self.__config.datasource_object_type
             )
         ]
 
@@ -51,12 +54,12 @@ class AllowedValuesFromDataSourceValidator(Validator):
         self,
         obj: DataObject
     ) -> None:
-        field_value = obj.get_field_by_name(self._config.field_name)
+        field_value = obj.get_field_by_name(self.__config.field_name)
         if field_value not in self.__cached_list:
             self.add_error(
                 object_id=obj.id,
-                detail=f'Field {self._config.field_name} value '
+                detail=f'Field {self.__config.field_name} value '
                        f'"{field_value}" not found in list '
                        f'{self.__cached_list}',
-                field=self._config.field_name,
+                field=self.__config.field_name,
             )
