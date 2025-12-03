@@ -10,24 +10,23 @@ from tol.core.validate import Validator
 from tol.sources.tolid import tolid
 
 
-@dataclass
-class TolidConfig:
-    species_id_field: str
-    specimen_id_field: str
-    error_ignore_field: str
-    error_ignore_value: str
-    warning_detail: str = 'Species not found in Tol ID source'
-
-
 class TolidValidator(Validator):
     """
     Validates that a stream of `DataObject` instances
     contains unique Tol IDs.
     """
 
+    @dataclass(slots=True, frozen=True, kw_only=True)
+    class Config:
+        species_id_field: str
+        specimen_id_field: str
+        error_ignore_field: str
+        error_ignore_value: str
+        warning_detail: str = 'Species not found in Tol ID source'
+
     def __init__(
         self,
-        config: TolidConfig,
+        config: Config,
         datasource=tolid(),
     ) -> None:
 
