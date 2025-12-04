@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: MIT
 
 from dataclasses import dataclass
-from typing import Any, Dict, List
+from typing import Any, List
 
 from tol.core import DataObject
 from tol.core.validate import Validator
@@ -40,7 +40,7 @@ class AllowedValuesValidator(Validator):
     ) -> None:
 
         for key, value in obj.attributes.items():
-            if key == self.__config.field and not value in self.__config.allowed_values:
+            if key == self.__config.field and value not in self.__config.allowed_values:
                 self.__add_result(obj, key)
 
     def __add_result(
