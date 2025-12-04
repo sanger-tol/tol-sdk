@@ -27,7 +27,7 @@ class MutuallyExclusiveValidator(Validator, ConditionEvaluator):
         def _get_error_message(self) -> str:
             # Use a pre-defined, hard-coded detail message if one was not provided
             if self.detail is None:
-                multiple_target_fields = len(self.target_fields) < 2
+                multiple_target_fields = len(self.target_fields) > 1
                 possible_plural = 's' if multiple_target_fields else ''
 
                 target_fields = ''
@@ -35,7 +35,7 @@ class MutuallyExclusiveValidator(Validator, ConditionEvaluator):
                     for index, field in enumerate(self.target_fields):
                         if index == 0:
                             # First field in the list
-                            target_fields += f' {field}'
+                            target_fields += f'{field}'
                         elif index == len(self.target_fields) - 1:
                             # Last field in the list
                             target_fields += f' and {field}'
