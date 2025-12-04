@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: MIT
 
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, List
 
 from tol.core import DataObject
 from tol.core.validate import Validator
@@ -12,7 +12,7 @@ from tol.core.validate import Validator
 @dataclass(frozen=True, kw_only=True)
 class AllowedValues:
     key: str
-    values: list[Any]
+    values: List[Any]
 
     is_error: bool = True
     detail: str = 'Value is not allowed for given key'
@@ -21,28 +21,27 @@ class AllowedValues:
         return __v in self.values
 
 
-AllowedValuesDict = dict[
-    str,
-    str | bool | list[Any],
-]
-"""Can also specify `AllowedValues` as a `dict`"""
-
-
 class AllowedValuesValidator(Validator):
     """
     Validates an incoming stream of `DataObject` instances
     according to the specified allowed values for a given
     key.
     """
+    @dataclass(slots=True, frozen=True, kw_only=True)
+    class Config:
+        allowed_values: List[AllowedValues]
+
+    __slots__ = ['__config']
+    __config: Config
 
     def __init__(
         self,
-        config: list[AllowedValues | AllowedValuesDict]
+        config: Config
     ) -> None:
 
         super().__init__()
 
-        self.__config = self.__get_config(config)
+        self.__config = config
 
     def _validate_data_object(
         self,
@@ -51,16 +50,6 @@ class AllowedValuesValidator(Validator):
 
         for k, v in obj.attributes.items():
             self.__validate_attribute(obj, k, v)
-
-    def __get_config(
-        self,
-        config: list[AllowedValues | AllowedValuesDict],
-    ) -> list[AllowedValues]:
-
-        return [
-            c if isinstance(c, AllowedValues) else AllowedValues(**c)
-            for c in config
-        ]
 
     def __validate_attribute(
         self,
@@ -81,7 +70,7 @@ class AllowedValuesValidator(Validator):
     ) -> list[AllowedValues]:
 
         return [
-            a for a in self.__config
+            a for a in self.__config.allowed_values
             if a.key == key
         ]
 
