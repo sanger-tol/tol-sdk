@@ -34,6 +34,7 @@ from .gap_assembly_to_elastic_assembly_analysis_converter import GapAssemblyToEl
 from .genome_notes_genome_note_to_elastic_genome_note_converter import GenomeNotesGenomeNoteToElasticGenomeNoteConverter  # noqa F401
 from .goat_taxon_to_elastic_species_converter import GoatTaxonToElasticSpeciesConverter  # noqa F401
 from .grit_issue_to_elastic_curation_converter import GritIssueToElasticCurationConverter  # noqa F401
+from .incoming_sample_to_ena_sample_converter import IncomingSampleToEnaSampleConverter # noqa
 from .informatics_tolid_to_elastic_tolid_converter import InformaticsTolidToElasticTolidConverter  # noqa F401
 from .labwhere_location_to_elastic_sample_update_converter import LabwhereLocationToElasticSampleUpdateConverter  # noqa F401
 from .labwhere_location_to_sts_tray_converter import LabwhereLocationToStsTrayConverter  # noqa F401
@@ -53,4 +54,3 @@ from .tolqc_species_to_elastic_species_converter import TolqcSpeciesToElasticSpe
 from .sts_sample_to_casm_benchling_converter import StsSampleToCasmBenchlingConverterFactory # noqa F401
 from .treeofsex_species_to_treeofsexwh_species_converter import TreeofsexSpeciesToTreeofsexwhSpeciesConverter  # noqa F401
 from .treeofsex_upload_to_treeofsex_attribute_converter import TreeofsexUploadToTreeofsexAttributeConverter  # noqa F401
-from .incoming_sample_to_ena_sample_converter import IncomingSampleToEnaSampleConverter # noqa

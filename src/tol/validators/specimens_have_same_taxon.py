@@ -12,8 +12,8 @@ from tol.core.data_object import DataObject
 class SpecimensHaveSameTaxonValidator(Validator):
     """
     Validates an incoming stream of `DataObject` instances.
-    For each data object (sample) not a SYMBIONT, it checks:
-    1. There are no samples with SPECIMEN_ID which has different TAXON_ID
+    For each data object (sample) not a SYMBIONT, it checks that
+    there are no samples with SPECIMEN_ID which has different TAXON_ID
     """
     @dataclass(slots=True, frozen=True, kw_only=True)
     class Config:
@@ -53,7 +53,7 @@ class SpecimensHaveSameTaxonValidator(Validator):
             if specimen_id in self.__seen and taxon_id != self.__seen[specimen_id]:
                 self.add_error(
                     object_id=obj.id,
-                    detail='A specimen must have the same taxonomy ID',
+                    detail='A non-symbiont must have a matching Specimen ID and Taxon ID',
                     field=self.__config.specimen_id_field,
                 )
             if specimen_id not in self.__seen:

@@ -12,6 +12,7 @@ class IncomingSampleToEnaSampleConverter(DataObjectToDataObjectOrUpdateConverter
 
     @dataclass(slots=True, frozen=True, kw_only=True)
     class Config:
+        ena_checklist_id: str,
         project_name: str
 
     __slots__ = ['__config']
@@ -28,7 +29,7 @@ class IncomingSampleToEnaSampleConverter(DataObjectToDataObjectOrUpdateConverter
         """
         s = data_object
         attributes = {
-            'ENA-CHECKLIST': 'ERC000053',
+            'ENA-CHECKLIST': self.__config.ena_checklist_id,
             'organism part': self.__replace_underscores(
                 s.attributes.get('ORGANISM_PART')),
             'lifestage': (

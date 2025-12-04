@@ -34,3 +34,6 @@ class TestAllowedValuesFromDataSourceValidator:
         assert validator.results
         assert len(validator.errors) == 1
         assert len(validator.warnings) == 0
+        assert validator.errors[0].detail == (
+            'The value of the field key1 must be one of a, b, 1, 2 or 3 (found value c)'
+        )
