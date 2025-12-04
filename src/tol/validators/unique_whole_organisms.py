@@ -91,7 +91,7 @@ class UniqueWholeOrganismsValidator(Validator):
                 if specimen_id in self.__part_organisms:
                     self.add_error(
                         object_id=obj.id,
-                        detail='A whole organism cannot have a Specimen ID already used for' \
+                        detail='A whole organism cannot have a Specimen ID already used for'
                                'a non-whole organism',
                         field=self.__config.specimen_id_field,
                     )
@@ -101,7 +101,7 @@ class UniqueWholeOrganismsValidator(Validator):
                 if specimen_id in self.__whole_organisms:
                     self.add_error(
                         object_id=obj.id,
-                        detail='A non-whole organism cannot have a Specimen ID already used for' \
+                        detail='A non-whole organism cannot have a Specimen ID already used for'
                                'a whole organism',
                         field=self.__config.specimen_id_field,
                     )

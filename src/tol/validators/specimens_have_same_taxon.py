@@ -12,7 +12,7 @@ from tol.core.data_object import DataObject
 class SpecimensHaveSameTaxonValidator(Validator):
     """
     Validates an incoming stream of `DataObject` instances.
-    For each data object (sample) not a SYMBIONT, it checks that 
+    For each data object (sample) not a SYMBIONT, it checks that
     there are no samples with SPECIMEN_ID which has different TAXON_ID
     """
     @dataclass(slots=True, frozen=True, kw_only=True)
