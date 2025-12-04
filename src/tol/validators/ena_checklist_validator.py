@@ -4,6 +4,7 @@
 
 import re
 from dataclasses import dataclass
+from typing import List
 
 from tol.core import DataSource
 from tol.core.data_object import DataObject
@@ -11,25 +12,26 @@ from tol.core.validate import Validator
 from tol.sources.ena import ena
 
 
-@dataclass
-class EnaChecklistConfig:
-    ena_checklist_id: list[str]
-
-
 class EnaChecklistValidator(Validator):
     """
     validates the ENA_CHECKLIST for each samples
     """
-    __slots__ = ['__config']
 
-    def __init__(self, config: EnaChecklistConfig, datasource: DataSource = ena()) -> None:
+    @dataclass(slots=True, frozen=True, kw_only=True)
+    class Config:
+        ena_checklist_id: List[str]
+        
+    __slots__ = ['__config']
+    __config:Config
+
+    def __init__(self, config: Config, datasource: DataSource = ena()) -> None:
         super().__init__()
-        self._config = config
+        self.__config = config
         self._datasource = datasource
 
     def _validate_data_object(self, obj: DataObject) -> None:
         ena_datasource = self._datasource
-        ena_checklist = ena_datasource.get_by_id('checklist', self._config.ena_checklist_id)
+        ena_checklist = ena_datasource.get_by_id('checklist', self.__config.ena_checklist_id)
 
         for checklist in ena_checklist:
             validations = checklist.attributes['checklist']

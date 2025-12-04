@@ -7,7 +7,7 @@ from unittest.mock import PropertyMock, create_autospec
 
 from tol.core import DataObject, DataSource
 from tol.sources.ena import ena
-from tol.validators.ena_checklist_validator import EnaChecklistConfig, EnaChecklistValidator
+from tol.validators import EnaChecklistValidator
 from tol.validators.incoming_sample_to_ena_sample_converter import (
     EnaChecklistConverterConfig,
     IncomingSampleToEnaSampleConverter,
@@ -221,7 +221,7 @@ class TestEnaChecklistVerifier(TestCase):
         self,
     ) -> None:
 
-        config = EnaChecklistConfig(
+        config = EnaChecklistValidator.Config(
             ena_checklist_id=['ERC000053'],
         )
 
@@ -269,7 +269,7 @@ class TestEnaChecklistVerifier(TestCase):
         self,
     ) -> None:
 
-        config = EnaChecklistConfig(
+        config = EnaChecklistValidator.Config(
             ena_checklist_id=['ERC000053'],
         )
 
