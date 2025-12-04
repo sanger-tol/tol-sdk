@@ -283,5 +283,5 @@ class TestMutuallyExclusiveValidator:
         assert len(validator.errors) == 1
         assert validator.errors[0].detail == (
             f'The fields ham and eggs cannot have the same values both when spam == False '
-            f'and spam == True'
+            f'and when spam == True'
         )
