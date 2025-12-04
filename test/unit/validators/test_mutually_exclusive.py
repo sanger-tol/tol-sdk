@@ -65,7 +65,7 @@ class TestMutuallyExclusiveValidator:
                 'RACK_OR_PLATE_ID',
                 'TUBE_OR_WELL_ID',
             ],
-            error_message='All symbionts must have a TARGET with same rack/plate and tube/well'
+            detail='All symbionts must have a TARGET with same rack/plate and tube/well'
         )
 
         validator = MutuallyExclusiveValidator(config)
@@ -131,7 +131,7 @@ class TestMutuallyExclusiveValidator:
                 'RACK_OR_PLATE_ID',
                 'TUBE_OR_WELL_ID',
             ],
-            error_message='All symbionts must have a TARGET with same rack/plate and tube/well'
+            detail='All symbionts must have a TARGET with same rack/plate and tube/well'
         )
 
         validator = MutuallyExclusiveValidator(config)
@@ -197,7 +197,7 @@ class TestMutuallyExclusiveValidator:
                 'RACK_OR_PLATE_ID',
                 'TUBE_OR_WELL_ID',
             ],
-            error_message='All symbionts must have a TARGET with same rack/plate and tube/well'
+            detail='All symbionts must have a TARGET with same rack/plate and tube/well'
         )
 
         validator = MutuallyExclusiveValidator(config)

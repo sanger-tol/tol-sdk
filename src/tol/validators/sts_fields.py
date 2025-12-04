@@ -3,6 +3,7 @@
 # SPDX-License-Identifier: MIT
 
 from dataclasses import dataclass
+from typing import List
 
 from tol.core import DataObject, DataSource
 from tol.core.validate import Validator
@@ -14,10 +15,14 @@ class StsFieldsValidator(Validator):
     Validates that a stream of `DataObject` instances
     contains fields that observe the validations in STS
     """
-
-    @dataclass
+    @dataclass(slots=True, frozen=True, kw_only=True)
     class Config:
         project_code: str
+
+    __slots__ = ['__config', '__datasource', '__fields']
+    __config: Config
+    __datasource: DataSource
+    __fields: List[str | int | float]
 
     def __init__(
         self,
@@ -27,15 +32,15 @@ class StsFieldsValidator(Validator):
 
         super().__init__()
 
-        self._config = config
+        self.__config = config
         self.__datasource = datasource
         self.__fields = self.__initialize_fields_from_datasource()
 
-    def __initialize_fields_from_datasource(self) -> list[str | int | float]:
+    def __initialize_fields_from_datasource(self) -> List[str | int | float]:
         return {
             field.get('data_input_key'): field
             for field in self.__datasource.get_one(
-                'project', self._config.project_code
+                'project', self.__config.project_code
             ).template.get('data_fields', [])
             if field.get('in_manifest')
         }
@@ -51,7 +56,7 @@ class StsFieldsValidator(Validator):
                 self.add_error(
                     object_id=obj.id,
                     detail=f'Field {field.get("data_input_key")} is required '
-                           f'for project {self._config.project_code}',
+                           f'for project {self.__config.project_code}',
                     field=field.get('data_input_key'),
                 )
             elif field.get('allowed_values') and field_value not in field.get('allowed_values'):
@@ -60,7 +65,7 @@ class StsFieldsValidator(Validator):
                     detail=f'Field {field.get("data_input_key")} value '
                            f'"{field_value}" not found in allowed values '
                            f'{field.get("allowed_values")} for project '
-                           f'{self._config.project_code}',
+                           f'{self.__config.project_code}',
                     field=field.get('data_input_key'),
                 )
             elif field.get('min') and field_value < field.get('min'):
@@ -69,7 +74,7 @@ class StsFieldsValidator(Validator):
                     detail=f'Field {field.get("data_input_key")} value '
                            f'"{field_value}" is less than minimum value '
                            f'"{field.get("min")}" for project '
-                           f'{self._config.project_code}',
+                           f'{self.__config.project_code}',
                     field=field.get('data_input_key'),
                 )
             elif field.get('max') and field_value > field.get('max'):
@@ -78,6 +83,6 @@ class StsFieldsValidator(Validator):
                     detail=f'Field {field.get("data_input_key")} value '
                            f'"{field_value}" is greater than maximum value '
                            f'"{field.get("max")}" for project '
-                           f'{self._config.project_code}',
+                           f'{self.__config.project_code}',
                     field=field.get('data_input_key'),
                 )

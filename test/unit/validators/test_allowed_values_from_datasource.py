@@ -15,8 +15,8 @@ class TestAllowedValuesFromDataSourceValidator:
         mock_objs: Iterable[DataObject]
     ) -> None:
 
-        allowed_values = ['a', 'b', 1, 2, 3]
         test_config = AllowedValuesFromDataSourceValidator.Config(
+            allowed_values=['a', 'b', 1, 2, 3],
             datasource_instance_id=1,
             datasource_object_type='test',
             datasource_field_name='test',
@@ -25,7 +25,6 @@ class TestAllowedValuesFromDataSourceValidator:
 
         validator = AllowedValuesFromDataSourceValidator(
             config=test_config,
-            allowed_values=allowed_values,
         )
 
         list(

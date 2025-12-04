@@ -15,8 +15,12 @@ class TestAllowedKeysValidator:
         mock_objs: Iterable[DataObject]
     ) -> None:
 
+        config = AllowedKeysValidator.Config(
+            allowed_keys=['key1', 'key2', 'key3', 'key4', 'key5', 'key6'],
+        )
+
         validator = AllowedKeysValidator(
-            ['key1', 'key2', 'key3', 'key4', 'key5', 'key6']
+            config
         )
 
         # consume the `Iterable`
@@ -31,9 +35,13 @@ class TestAllowedKeysValidator:
         mock_objs: Iterable[DataObject]
     ) -> None:
 
-        validator = AllowedKeysValidator(
-            ['key1', 'key3', 'key4', 'key5', 'key6'],
+        config = AllowedKeysValidator.Config(
+            allowed_keys=['key1', 'key3', 'key4', 'key5', 'key6'],
             is_error=False,
+        )
+
+        validator = AllowedKeysValidator(
+            config
         )
 
         # consume the `Iterable`
@@ -49,8 +57,12 @@ class TestAllowedKeysValidator:
         mock_objs: Iterable[DataObject]
     ) -> None:
 
+        config = AllowedKeysValidator.Config(
+            allowed_keys=['key2', 'key3', 'key4', 'key5', 'key6'],
+        )
+
         validator = AllowedKeysValidator(
-            ['key2', 'key3', 'key4', 'key5', 'key6'],
+            config
         )
 
         # consume the `Iterable`

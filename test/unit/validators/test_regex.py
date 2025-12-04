@@ -18,16 +18,18 @@ class TestRegexValidator:
         mock_objs: Iterable[DataObject]
     ) -> None:
 
-        config = [
-            Regex(
-                key='key1',
-                regex='[abc]',
-            ),
-            {
-                'key': 'key2',
-                'regex': '[abc][def]?',
-            },
-        ]
+        config = RegexValidator.Config(
+            regexes=[
+                Regex(
+                    key='key1',
+                    regex='[abc]',
+                ),
+                Regex(
+                    key='key2',
+                    regex='[abc][def]?',
+                ),
+            ]
+        )
 
         validator = RegexValidator(
             config,
@@ -45,18 +47,20 @@ class TestRegexValidator:
         mock_objs: Iterable[DataObject]
     ) -> None:
 
-        config = [
-            Regex(
-                key='key1',
-                regex='[abc]'
-            ),
-            # adds warnings
-            Regex(
-                key='key2',
-                regex='[pqr][xyz]',
-                is_error=False,
-            ),
-        ]
+        config = RegexValidator.Config(
+            regexes=[
+                Regex(
+                    key='key1',
+                    regex='[abc]'
+                ),
+                # adds warnings
+                Regex(
+                    key='key2',
+                    regex='[pqr][xyz]',
+                    is_error=False,
+                ),
+            ]
+        )
 
         validator = RegexValidator(
             config,
@@ -75,17 +79,19 @@ class TestRegexValidator:
         mock_objs: Iterable[DataObject]
     ) -> None:
 
-        config = [
-            Regex(
-                key='key1',
-                regex='[abc]'
-            ),
-            # adds errors
-            Regex(
-                key='key2',
-                regex='[pqr][xyz]',
-            ),
-        ]
+        config = RegexValidator.Config(
+            regexes=[
+                Regex(
+                    key='key1',
+                    regex='[abc]'
+                ),
+                # adds errors
+                Regex(
+                    key='key2',
+                    regex='[pqr][xyz]',
+                ),
+            ]
+        )
 
         validator = RegexValidator(
             config,

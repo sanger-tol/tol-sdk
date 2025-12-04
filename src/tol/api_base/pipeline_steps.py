@@ -27,7 +27,7 @@ if typing.TYPE_CHECKING:
 
 @dataclass
 class UploadData:
-    s3_url: str
+    s3_bucket: str
     s3_filename: str
     spreadsheet_config: str
     pipeline_id: int
@@ -37,7 +37,7 @@ class UploadData:
 
 
 REQUIRED_FIELDS: List = [
-    's3_url',
+    's3_bucket',
     's3_filename',
     'spreadsheet_config',
     'pipeline_id',
@@ -105,7 +105,7 @@ def pipeline_steps_blueprint(
         upload = sql_ds.data_object_factory(
             'upload',
             attributes={
-                's3_url': upload_data.s3_url,
+                's3_bucket': upload_data.s3_bucket,
                 's3_filename': upload_data.s3_filename,
                 'spreadsheet_config': upload_data.spreadsheet_config,
                 'pipeline_id': upload_data.pipeline_id,
@@ -207,7 +207,7 @@ def pipeline_steps_blueprint(
         __get_pipeline(pipeline_id)
 
         upload_data = UploadData(
-            s3_url=body['s3_url'],
+            s3_bucket=body['s3_bucket'],
             s3_filename=body['s3_filename'],
             spreadsheet_config=body['spreadsheet_config'],
             pipeline_id=pipeline_id,

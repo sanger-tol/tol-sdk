@@ -18,16 +18,18 @@ class TestAllowedValuesValidator:
         mock_objs: Iterable[DataObject]
     ) -> None:
 
-        config = [
-            AllowedValues(
-                key='key1',
-                values=list('abc'),
-            ),
-            {
-                'key': 'key2',
-                'values': list('abc'),
-            },
-        ]
+        config = AllowedValuesValidator.Config(
+            allowed_values=[
+                AllowedValues(
+                    key='key1',
+                    values=list('abc'),
+                ),
+                AllowedValues(
+                    key='key2',
+                    values=list('abc'),
+                ),
+            ]
+        )
 
         validator = AllowedValuesValidator(
             config,
@@ -45,18 +47,20 @@ class TestAllowedValuesValidator:
         mock_objs: Iterable[DataObject]
     ) -> None:
 
-        config = [
-            AllowedValues(
-                key='key1',
-                values=list('abc')
-            ),
-            # adds warnings
-            AllowedValues(
-                key='key2',
-                values=list('xyz'),
-                is_error=False,
-            ),
-        ]
+        config = AllowedValuesValidator.Config(
+            allowed_values=[
+                AllowedValues(
+                    key='key1',
+                    values=list('abc')
+                ),
+                # adds warnings
+                AllowedValues(
+                    key='key2',
+                    values=list('xyz'),
+                    is_error=False,
+                ),
+            ]
+        )
 
         validator = AllowedValuesValidator(
             config,
@@ -75,17 +79,19 @@ class TestAllowedValuesValidator:
         mock_objs: Iterable[DataObject]
     ) -> None:
 
-        config = [
-            AllowedValues(
-                key='key1',
-                values=list('abc')
-            ),
-            # adds errors
-            AllowedValues(
-                key='key2',
-                values=list('xyz'),
-            ),
-        ]
+        config = AllowedValuesValidator.Config(
+            allowed_values=[
+                AllowedValues(
+                    key='key1',
+                    values=list('abc')
+                ),
+                # adds errors
+                AllowedValues(
+                    key='key2',
+                    values=list('xyz'),
+                ),
+            ]
+        )
 
         validator = AllowedValuesValidator(
             config,

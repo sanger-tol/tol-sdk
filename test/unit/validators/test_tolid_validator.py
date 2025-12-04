@@ -9,7 +9,7 @@ from pytest import fixture
 
 from tol.core import DataObject, DataSource, DataSourceFilter
 from tol.core.operator import DetailGetter
-from tol.validators import TolidConfig, TolidValidator
+from tol.validators import TolidValidator
 
 
 class _MockDataSource(DataSource, DetailGetter):
@@ -80,7 +80,7 @@ class TestTolidValidator:
 
         mock_datasource = _MockDataSource(config={})
 
-        test_config = TolidConfig(
+        test_config = TolidValidator.Config(
             species_id_field='TAXON_ID',
             specimen_id_field='SPECIMEN_ID',
             error_ignore_field='IGNORE_FIELD',

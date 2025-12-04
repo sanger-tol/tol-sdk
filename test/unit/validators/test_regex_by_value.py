@@ -18,11 +18,14 @@ class TestRegexByValueValidator:
         mock_objs: Iterable[DataObject]
     ) -> None:
 
-        config = {
-            'key_column': 'key1',
-            'regexes': {
+        config = RegexByValueValidator.Config(
+            key_column='key1',
+            regexes={
                 'a': [
-                    {'key': 'key2', 'regex': '[a]?'},
+                    Regex(
+                        key='key2',
+                        regex='[a]?'
+                    ),
                     Regex(
                         key='key2',
                         regex='[^z]'
@@ -41,7 +44,8 @@ class TestRegexByValueValidator:
                     ),
                 ],
             },
-        }
+        )
+
         validator = RegexByValueValidator(
             config,
         )
@@ -58,9 +62,9 @@ class TestRegexByValueValidator:
         mock_objs: Iterable[DataObject]
     ) -> None:
 
-        config = {
-            'key_column': 'key1',
-            'regexes': {
+        config = RegexByValueValidator.Config(
+            key_column='key1',
+            regexes={
                 'a': [
                     Regex(
                         key='key2',
@@ -87,7 +91,7 @@ class TestRegexByValueValidator:
                     ),
                 ],
             },
-        }
+        )
 
         validator = RegexByValueValidator(
             config,
@@ -106,9 +110,9 @@ class TestRegexByValueValidator:
         mock_objs: Iterable[DataObject]
     ) -> None:
 
-        config = {
-            'key_column': 'key1',
-            'regexes': {
+        config = RegexByValueValidator.Config(
+            key_column='key1',
+            regexes={
                 'a': [
                     Regex(
                         key='key2',
@@ -132,7 +136,7 @@ class TestRegexByValueValidator:
                     ),
                 ],
             },
-        }
+        )
 
         validator = RegexByValueValidator(
             config,
