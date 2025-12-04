@@ -78,10 +78,14 @@ class AllowedValuesFromDataSourceValidator(Validator):
             else:  # Only one field
                 cached_list_str = self.__cached_list[0]
 
+            # This is extracted rather than being evaluated in the f-string
+            # because otherwise the linter doesn't like it!
+            pluralisation = ' one of' if multiple_cached_values else ''
+
             self.add_error(
                 object_id=obj.id,
                 detail=f'The value of the field {self.__config.field_name} '
-                       f'must be{' one of' if multiple_cached_values else ''} {cached_list_str} '
+                       f'must be{pluralisation} {cached_list_str} '
                        f'(found value {field_value})',
                 field=self.__config.field_name,
             )
