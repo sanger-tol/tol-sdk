@@ -5,10 +5,7 @@
 from typing import Iterable
 
 from tol.core import DataObject
-from tol.validators import (
-    AllowedValues,
-    AllowedValuesValidator,
-)
+from tol.validators import AllowedValuesValidator
 
 
 class TestAllowedValuesValidator:
@@ -19,16 +16,8 @@ class TestAllowedValuesValidator:
     ) -> None:
 
         config = AllowedValuesValidator.Config(
-            allowed_values=[
-                AllowedValues(
-                    key='key1',
-                    values=list('abc'),
-                ),
-                AllowedValues(
-                    key='key2',
-                    values=list('abc'),
-                ),
-            ]
+            field='key1',
+            allowed_values=list('abc')
         )
 
         validator = AllowedValuesValidator(
@@ -48,18 +37,9 @@ class TestAllowedValuesValidator:
     ) -> None:
 
         config = AllowedValuesValidator.Config(
-            allowed_values=[
-                AllowedValues(
-                    key='key1',
-                    values=list('abc')
-                ),
-                # adds warnings
-                AllowedValues(
-                    key='key2',
-                    values=list('xyz'),
-                    is_error=False,
-                ),
-            ]
+            field='key1',
+            allowed_values=list('xyz'),
+            is_error=False  # adds warnings
         )
 
         validator = AllowedValuesValidator(
@@ -80,17 +60,9 @@ class TestAllowedValuesValidator:
     ) -> None:
 
         config = AllowedValuesValidator.Config(
-            allowed_values=[
-                AllowedValues(
-                    key='key1',
-                    values=list('abc')
-                ),
-                # adds errors
-                AllowedValues(
-                    key='key2',
-                    values=list('xyz'),
-                ),
-            ]
+            field='key1',
+            allowed_values=list('xyz'),
+            is_error=True  # adds errors
         )
 
         validator = AllowedValuesValidator(

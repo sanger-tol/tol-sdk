@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: MIT
 
 from .allowed_keys import AllowedKeysValidator  # noqa
-from .allowed_values import AllowedValues, AllowedValuesValidator  # noqa
+from .allowed_values import AllowedValuesValidator  # noqa
 from .allowed_values_from_datasource import AllowedValuesFromDataSourceValidator  # noqa
 from .assert_on_condition import AssertOnConditionValidator  # noqa
 from .mutually_exclusive import MutuallyExclusiveValidator  # noqa
