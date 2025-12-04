@@ -12,7 +12,7 @@ class IncomingSampleToEnaSampleConverter(DataObjectToDataObjectOrUpdateConverter
 
     @dataclass(slots=True, frozen=True, kw_only=True)
     class Config:
-        ena_checklist_id: str,
+        ena_checklist_id: str
         project_name: str
 
     __slots__ = ['__config']

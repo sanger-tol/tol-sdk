@@ -15,7 +15,7 @@ class MockEnaDataSource(DataSource):
     def __init__(self, config: dict[str, Any]):
         super().__init__(config, [])
 
-    def get_by_id(self, type_, id_):
+    def get_one(self, type_, id_):
         mock_object = create_autospec(DataObject, instance=True)
         type(mock_object).attributes = PropertyMock(
             return_value=self.mock_ena_checklist()
@@ -24,7 +24,7 @@ class MockEnaDataSource(DataSource):
             return_value=id_
         )
 
-        return [mock_object]
+        return mock_object
 
     @property
     def supported_types(self) -> list[str]:
@@ -212,17 +212,18 @@ class MockEnaDataSource(DataSource):
         }
 
 
-class TestEnaChecklistVerifier(TestCase):
+class TestEnaChecklistValidator(TestCase):
 
     def test_pass(
         self,
     ) -> None:
 
         config = EnaChecklistValidator.Config(
-            ena_checklist_id=['ERC000053'],
+            ena_checklist_id='ERC000053',
         )
 
         converter_config = IncomingSampleToEnaSampleConverter.Config(
+            ena_checklist_id='ERC000053',
             project_name='TOL',
         )
 
@@ -267,10 +268,11 @@ class TestEnaChecklistVerifier(TestCase):
     ) -> None:
 
         config = EnaChecklistValidator.Config(
-            ena_checklist_id=['ERC000053'],
+            ena_checklist_id='ERC000053',
         )
 
         converter_config = IncomingSampleToEnaSampleConverter.Config(
+            ena_checklist_id='ERC000053',
             project_name='TOL',
         )
 

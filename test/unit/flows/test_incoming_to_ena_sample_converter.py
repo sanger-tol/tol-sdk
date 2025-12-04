@@ -41,6 +41,7 @@ class TestIncomingSampleToEnaSampleConverter(TestCase):
     mock_one.id = 'ABC123'
     eds = ena()
     config = IncomingSampleToEnaSampleConverter.Config(
+        ena_checklist_id='ERC000053',
         project_name='TOL',
     )
     converter = IncomingSampleToEnaSampleConverter(eds.data_object_factory, config)
