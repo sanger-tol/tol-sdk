@@ -6,12 +6,9 @@ from unittest import TestCase
 from unittest.mock import PropertyMock, create_autospec
 
 from tol.core import DataObject, DataSource
+from tol.flows.converters import IncomingSampleToEnaSampleConverter
 from tol.sources.ena import ena
 from tol.validators import EnaChecklistValidator
-from tol.validators.incoming_sample_to_ena_sample_converter import (
-    EnaChecklistConverterConfig,
-    IncomingSampleToEnaSampleConverter,
-)
 
 
 class MockEnaDataSource(DataSource):
@@ -225,7 +222,7 @@ class TestEnaChecklistVerifier(TestCase):
             ena_checklist_id=['ERC000053'],
         )
 
-        converter_config = EnaChecklistConverterConfig(
+        converter_config = IncomingSampleToEnaSampleConverter.Config(
             project_name='TOL',
         )
 
@@ -257,8 +254,8 @@ class TestEnaChecklistVerifier(TestCase):
         }
         mock_one.id = 'ABC123'
         eds = ena()
-        converter = IncomingSampleToEnaSampleConverter(eds.data_object_factory)
-        result = converter.convert(mock_one, config=converter_config)
+        converter = IncomingSampleToEnaSampleConverter(eds.data_object_factory, converter_config)
+        result = converter.convert(mock_one)
         mds = MockEnaDataSource({})
         validator = EnaChecklistValidator(config=config, datasource=mds)
         list(validator.validate(result))
@@ -273,7 +270,7 @@ class TestEnaChecklistVerifier(TestCase):
             ena_checklist_id=['ERC000053'],
         )
 
-        converter_config = EnaChecklistConverterConfig(
+        converter_config = IncomingSampleToEnaSampleConverter.Config(
             project_name='TOL',
         )
 
@@ -304,8 +301,8 @@ class TestEnaChecklistVerifier(TestCase):
         }
         mock_one.id = 'ABC123'
         eds = ena()
-        converter = IncomingSampleToEnaSampleConverter(eds.data_object_factory)
-        result = converter.convert(mock_one, config=converter_config)
+        converter = IncomingSampleToEnaSampleConverter(eds.data_object_factory, converter_config)
+        result = converter.convert(mock_one)
         mds = MockEnaDataSource({})
         validator = EnaChecklistValidator(config=config, datasource=mds)
         list(validator.validate(result))

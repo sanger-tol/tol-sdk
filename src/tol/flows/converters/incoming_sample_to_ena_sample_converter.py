@@ -8,15 +8,21 @@ from typing import Iterable
 from tol.core import DataObject, DataObjectToDataObjectOrUpdateConverter
 
 
-@dataclass
-class EnaChecklistConverterConfig:
-    project_name: str
-
-
 class IncomingSampleToEnaSampleConverter(DataObjectToDataObjectOrUpdateConverter):
 
-    def convert(self, data_object: DataObject,
-                config: EnaChecklistConverterConfig) -> Iterable[DataObject]:
+    @dataclass(slots=True, frozen=True, kw_only=True)
+    class Config:
+        project_name: str
+
+    __slots__ = ['__config']
+    __config: Config
+
+    def __init__(self, data_object_factory, config: Config) -> None:
+        super().__init__(data_object_factory)
+        self.__config = config
+        self._data_object_factory = data_object_factory
+
+    def convert(self, data_object: DataObject) -> Iterable[DataObject]:
         """
         converting the samples DataObject into ENA format
         """
@@ -32,7 +38,7 @@ class IncomingSampleToEnaSampleConverter(DataObjectToDataObjectOrUpdateConverter
                     s.attributes.get('LIFESTAGE'))
             ),
             'project name':
-                config.project_name,
+                self.__config.project_name,
             'collected by':
                 self.__replace_underscores(
                     s.attributes.get('COLLECTED_BY')),

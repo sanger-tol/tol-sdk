@@ -20,9 +20,9 @@ class EnaChecklistValidator(Validator):
     @dataclass(slots=True, frozen=True, kw_only=True)
     class Config:
         ena_checklist_id: List[str]
-        
+
     __slots__ = ['__config']
-    __config:Config
+    __config: Config
 
     def __init__(self, config: Config, datasource: DataSource = ena()) -> None:
         super().__init__()

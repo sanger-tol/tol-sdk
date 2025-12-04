@@ -6,11 +6,8 @@ from unittest import TestCase
 from unittest.mock import create_autospec
 
 from tol.core import DataObject
+from tol.flows.converters import IncomingSampleToEnaSampleConverter
 from tol.sources.ena import ena
-from tol.validators.incoming_sample_to_ena_sample_converter import (
-    EnaChecklistConverterConfig,
-    IncomingSampleToEnaSampleConverter,
-)
 
 
 class TestIncomingSampleToEnaSampleConverter(TestCase):
@@ -43,13 +40,12 @@ class TestIncomingSampleToEnaSampleConverter(TestCase):
     }
     mock_one.id = 'ABC123'
     eds = ena()
-    converter = IncomingSampleToEnaSampleConverter(eds.data_object_factory)
-
-    config = EnaChecklistConverterConfig(
+    config = IncomingSampleToEnaSampleConverter.Config(
         project_name='TOL',
     )
+    converter = IncomingSampleToEnaSampleConverter(eds.data_object_factory, config)
 
-    result = converter.convert(mock_one, config=config)
+    result = converter.convert(mock_one)
     for element in result:
         attrs = element.attributes
         # Check a few key fields

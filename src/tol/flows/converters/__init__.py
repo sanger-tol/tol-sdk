@@ -53,3 +53,4 @@ from .tolqc_species_to_elastic_species_converter import TolqcSpeciesToElasticSpe
 from .sts_sample_to_casm_benchling_converter import StsSampleToCasmBenchlingConverterFactory # noqa F401
 from .treeofsex_species_to_treeofsexwh_species_converter import TreeofsexSpeciesToTreeofsexwhSpeciesConverter  # noqa F401
 from .treeofsex_upload_to_treeofsex_attribute_converter import TreeofsexUploadToTreeofsexAttributeConverter  # noqa F401
+from .incoming_sample_to_ena_sample_converter import IncomingSampleToEnaSampleConverter # noqa
