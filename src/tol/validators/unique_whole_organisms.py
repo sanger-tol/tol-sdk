@@ -85,13 +85,14 @@ class UniqueWholeOrganismsValidator(Validator):
                 if specimen_id in self.__whole_organisms:
                     self.add_error(
                         object_id=obj.id,
-                        detail='WHOLE_ORGANISM can only be used once',
+                        detail='No two whole organisms can have the same Specimen ID',
                         field=self.__config.specimen_id_field,
                     )
                 if specimen_id in self.__part_organisms:
                     self.add_error(
                         object_id=obj.id,
-                        detail='This WHOLE_ORGANISM has a SPECIMEN_ID already used elsewhere',
+                        detail='A whole organism cannot have a Specimen ID already used for' \
+                               'a non-whole organism',
                         field=self.__config.specimen_id_field,
                     )
 
@@ -100,7 +101,8 @@ class UniqueWholeOrganismsValidator(Validator):
                 if specimen_id in self.__whole_organisms:
                     self.add_error(
                         object_id=obj.id,
-                        detail='Cannot reuse a specimen ID that has been used for WHOLE_ORGANISM',
+                        detail='A non-whole organism cannot have a Specimen ID already used for' \
+                               'a whole organism',
                         field=self.__config.specimen_id_field,
                     )
 
