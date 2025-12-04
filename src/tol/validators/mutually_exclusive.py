@@ -30,23 +30,23 @@ class MutuallyExclusiveValidator(Validator, ConditionEvaluator):
                 multiple_target_fields = len(self.target_fields) > 1
                 possible_plural = 's' if multiple_target_fields else ''
 
-                target_fields = ''
+                target_fields_str = ''
                 if multiple_target_fields:
                     for index, field in enumerate(self.target_fields):
                         if index == 0:
                             # First field in the list
-                            target_fields += f'{field}'
+                            target_fields_str += f'{field}'
                         elif index == len(self.target_fields) - 1:
                             # Last field in the list
-                            target_fields += f' and {field}'
+                            target_fields_str += f' and {field}'
                         else:
                             # Middle fields
-                            target_fields += f', {field}'
+                            target_fields_str += f', {field}'
                 else:  # Only one field
-                    target_fields = self.target_fields[0]
+                    target_fields_str = self.target_fields[0]
 
                 return (
-                    f'The field{possible_plural} {target_fields} cannot have the same '
+                    f'The field{possible_plural} {target_fields_str} cannot have the same '
                     f'value{possible_plural} both when {self.first_field_where} and when '
                     f'{self.second_field_where}'
                 )
