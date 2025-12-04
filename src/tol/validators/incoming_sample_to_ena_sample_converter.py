@@ -1,46 +1,78 @@
 # SPDX-FileCopyrightText: 2024 Genome Research Ltd.
 # SPDX-License-Identifier: MIT
 
-from typing import Iterable
 import re
-
 from dataclasses import dataclass
+from typing import Iterable
+
 from tol.core import DataObject, DataObjectToDataObjectOrUpdateConverter
+
 
 @dataclass
 class EnaChecklistConverterConfig:
     project_name: str
 
+
 class IncomingSampleToEnaSampleConverter(DataObjectToDataObjectOrUpdateConverter):
-    
-    def convert(self, data_object: DataObject, config:EnaChecklistConverterConfig) -> Iterable[DataObject]:
+
+    def convert(self, data_object: DataObject,
+                config: EnaChecklistConverterConfig) -> Iterable[DataObject]:
         """
         converting the samples DataObject into ENA format
         """
         s = data_object
         attributes = {
             'ENA-CHECKLIST': 'ERC000053',
-            'organism part': self.__replace_underscores(s.attributes.get('ORGANISM_PART')),
+            'organism part': self.__replace_underscores(
+                s.attributes.get('ORGANISM_PART')),
             'lifestage': (
-                'spore-bearing structure' if s.attributes.get('LIFESTAGE') == 'SPORE_BEARING_STRUCTURE'
-                else self.__replace_underscores(s.attributes.get('LIFESTAGE'))
+                'spore-bearing structure'
+                if s.attributes.get('LIFESTAGE') == 'SPORE_BEARING_STRUCTURE'
+                else self.__replace_underscores(
+                    s.attributes.get('LIFESTAGE'))
             ),
-            'project name': config.project_name, 
-            'collected by': self.__replace_underscores(s.attributes.get('COLLECTED_BY')),
-            'collection date': self.__replace_underscores(s.attributes.get('DATE_OF_COLLECTION')).lower(),
-            'geographic location (country and/or sea)': self.__collection_country(s).replace('_', ' '),
-            'geographic location (latitude)': self.__replace_underscores(s.attributes.get('DECIMAL_LATITUDE')).lower(),
-            'geographic location (latitude) units': 'DD',
-            'geographic location (longitude)': self.__replace_underscores(s.attributes.get('DECIMAL_LONGITUDE')).lower(),
-            'geographic location (longitude) units': 'DD',
-            'geographic location (region and locality)': self.__collection_region(s).replace('_', ' '),
-            'identified_by': self.__replace_underscores(s.attributes.get('IDENTIFIED_BY')),
-            'habitat': self.__replace_underscores(s.attributes.get('HABITAT')),
-            'identifier_affiliation': self.__replace_underscores(s.attributes.get('IDENTIFIER_AFFILIATION')),
-            'sex': self.__replace_underscores(s.attributes.get('SEX')),
-            'relationship': self.__replace_underscores(s.attributes.get('RELATIONSHIP')),
-            'SYMBIONT': 'Y' if s.attributes.get('SYMBIONT') == 'SYMBIONT' else 'N',
-            'collecting institution': self.__replace_underscores(s.attributes.get('COLLECTOR_AFFILIATION'))
+            'project name':
+                config.project_name,
+            'collected by':
+                self.__replace_underscores(
+                    s.attributes.get('COLLECTED_BY')),
+            'collection date':
+                self.__replace_underscores(
+                    s.attributes.get('DATE_OF_COLLECTION')).lower(),
+            'geographic location (country and/or sea)':
+                self.__collection_country(s).replace('_', ' '),
+            'geographic location (latitude)':
+                self.__replace_underscores(
+                    s.attributes.get('DECIMAL_LATITUDE')).lower(),
+            'geographic location (latitude) units':
+                'DD',
+            'geographic location (longitude)':
+                self.__replace_underscores(
+                    s.attributes.get('DECIMAL_LONGITUDE')).lower(),
+            'geographic location (longitude) units':
+                'DD',
+            'geographic location (region and locality)':
+                self.__collection_region(s).replace('_', ' '),
+            'identified_by':
+                self.__replace_underscores(
+                    s.attributes.get('IDENTIFIED_BY')),
+            'habitat':
+                self.__replace_underscores(
+                    s.attributes.get('HABITAT')),
+            'identifier_affiliation':
+                self.__replace_underscores(
+                    s.attributes.get('IDENTIFIER_AFFILIATION')),
+            'sex':
+                self.__replace_underscores(
+                    s.attributes.get('SEX')),
+            'relationship':
+                self.__replace_underscores(
+                    s.attributes.get('RELATIONSHIP')),
+            'SYMBIONT':
+                'Y' if s.attributes.get('SYMBIONT') == 'SYMBIONT' else 'N',
+            'collecting institution':
+                self.__replace_underscores(
+                    s.attributes.get('COLLECTOR_AFFILIATION'))
         }
         if self.__sanitise(s.attributes.get('DEPTH')) != '':
             attributes['geographic location (depth)'] = s.attributes.get('DEPTH')
@@ -63,7 +95,6 @@ class IncomingSampleToEnaSampleConverter(DataObjectToDataObjectOrUpdateConverter
         if s.attributes.get('CULTURE_OR_STRAIN_ID') is not None:
             attributes['culture_or_strain_id'] = s.attributes.get('CULTURE_OR_STRAIN_ID')
 
-        
         ret = self._data_object_factory(
             'sample',
             s.id,
@@ -71,11 +102,15 @@ class IncomingSampleToEnaSampleConverter(DataObjectToDataObjectOrUpdateConverter
         )
         yield ret
 
-    def __collection_country(self, data_object:DataObject):
-        return re.split(r'\s*\|\s*', data_object.attributes.get('COLLECTION_LOCATION'))[0]
-    
-    def __collection_region(self, data_object:DataObject):
-        return ' | '.join(re.split(r'\s*\|\s*', data_object.attributes.get('COLLECTION_LOCATION'))[1:])
+    def __collection_country(self, data_object: DataObject):
+        return re.split(
+            r'\s*\|\s*',
+            data_object.attributes.get('COLLECTION_LOCATION'))[0]
+
+    def __collection_region(self, data_object: DataObject):
+        return ' | '.join(re.split(
+            r'\s*\|\s*',
+            data_object.attributes.get('COLLECTION_LOCATION'))[1:])
 
     def __replace_underscores(self, value):
         if type(value) != str:
