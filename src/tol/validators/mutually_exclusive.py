@@ -25,10 +25,30 @@ class MutuallyExclusiveValidator(Validator, ConditionEvaluator):
         detail: str | None = None
 
         def _get_error_message(self) -> str:
+            # Use a pre-defined, hard-coded detail message if one was not provided
             if self.detail is None:
+                multiple_target_fields = len(self.target_fields) < 2
+                possible_plural = 's' if multiple_target_fields else ''
+
+                target_fields = ''
+                if multiple_target_fields:
+                    for index, field in enumerate(self.target_fields):
+                        if index == 0:
+                            # First field in the list
+                            target_fields += f' {field}'
+                        elif index == len(self.target_fields) - 1:
+                            # Last field in the list
+                            target_fields += f' and {field}'
+                        else:
+                            # Middle fields
+                            target_fields += f', {field}'
+                else:  # Only one field
+                    target_fields = self.target_fields[0]
+
                 return (
-                    f'The conditions {self.first_field_where} and {self.second_field_where} '
-                    f'must be mutually exclusive'
+                    f'The field{possible_plural} {target_fields} cannot have the same '
+                    f'value{possible_plural} both when {self.first_field_where} and when '
+                    f'{self.second_field_where}'
                 )
             else:
                 return self.detail
