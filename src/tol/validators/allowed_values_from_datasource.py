@@ -60,10 +60,32 @@ class AllowedValuesFromDataSourceValidator(Validator):
     ) -> None:
         field_value = obj.get_field_by_name(self.__config.field_name)
         if field_value not in self.__cached_list:
+            print(self.__cached_list)
+            multiple_cached_values = len(self.__cached_list) > 1
+
+            cached_list_str = ''
+            if multiple_cached_values:
+                for index, field in enumerate(self.__cached_list):
+                    if index == 0:
+                        # First item in the list
+                        cached_list_str += f'{field}'
+                    elif index == len(self.__cached_list) - 1:
+                        # Last item in the list
+                        cached_list_str += f' or {field}'
+                    else:
+                        # Middle items
+                        cached_list_str += f', {field}'
+            else:  # Only one field
+                cached_list_str = self.__cached_list[0]
+
+            # This is extracted rather than being evaluated in the f-string
+            # because otherwise the linter doesn't like it!
+            pluralisation = ' one of' if multiple_cached_values else ''
+
             self.add_error(
                 object_id=obj.id,
-                detail=f'Field {self.__config.field_name} value '
-                       f'"{field_value}" not found in list '
-                       f'{self.__cached_list}',
+                detail=f'The value of the field {self.__config.field_name} '
+                       f'must be{pluralisation} {cached_list_str} '
+                       f'(found value {field_value})',
                 field=self.__config.field_name,
             )
