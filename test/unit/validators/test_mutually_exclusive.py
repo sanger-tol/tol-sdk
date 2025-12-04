@@ -142,6 +142,8 @@ class TestMutuallyExclusiveValidator:
         )
 
         assert len(validator.errors) == 1
+        assert validator.errors[0].detail == \
+            'All symbionts must have a TARGET with same rack/plate and tube/well'
 
     def test_clash_second_then_first(
         self, mock_objs: Iterable[DataObject]
@@ -208,3 +210,5 @@ class TestMutuallyExclusiveValidator:
         )
 
         assert len(validator.errors) == 1
+        assert validator.errors[0].detail == \
+            'All symbionts must have a TARGET with same rack/plate and tube/well'
