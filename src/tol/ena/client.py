@@ -116,12 +116,13 @@ class EnaApiClient(HttpClient):
         Returns the URL and parameters for a detail query.
         """
         if object_type == 'checklist':
-            ids = ','.join(object_ids)
+            ids = ','.join(str(id_) for id_ in object_ids)
             url = f'{self.__ena_url}/ena/browser/api/xml/{ids}'
             params = {}
             return url, params
         if object_type == 'submittable_taxon':
-            ids = ','.join(object_ids)
+            # This is actually called separately for each taxon id
+            ids = ','.join(str(id_) for id_ in object_ids)
             url = f'{self.__ena_url}/ena/taxonomy/rest/tax-id/{ids}'
             params = {}
             return url, params

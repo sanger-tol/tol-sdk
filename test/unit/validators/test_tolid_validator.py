@@ -35,8 +35,8 @@ class _MockDataSource(DataSource, DetailGetter):
                 mock_object
             ]
 
-    def get_list(self, object_type: str, filters: list[DataSourceFilter] = [], **kwargs):
-        value = filters.and_['specimen_id']['eq']['value']
+    def get_list(self, object_type: str, object_filters: DataSourceFilter, **kwargs):
+        value = object_filters.and_['specimen_id']['eq']['value']
         if value == 'FAIL':
             mock_object = create_autospec(DataObject, instance=True)
             type(mock_object).attributes = PropertyMock(
