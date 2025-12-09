@@ -45,17 +45,20 @@ class TestConvertorAndValidateValidator:
     ) -> None:
 
         config = ConvertorAndValidateValidator.Config(
-            converter_class=TestConverter,
-            converter_config={
-                'original_field_name': 'key1',
-                'new_field_name': 'key1_renamed',
-            },
-            validator_class=AllowedKeysValidator,
-            validator_config={
-                'allowed_keys': ['key1_renamed', 'key2', 'key3', 'key4', 'key5', 'key6', 'key7'],
-            },
+            converters=[{
+                'cls': 'TestConverter',
+                'config': {
+                    'original_field_name': 'key1',
+                    'new_field_name': 'key1_renamed',
+                }
+            }],
+            validators=[{
+                'cls': AllowedKeysValidator,
+                'config': {
+                    'allowed_keys': ['key1_renamed', 'key2', 'key3', 'key4', 'key5', 'key6', 'key7'],
+                }
+            }]
         )
-
         validator = ConvertorAndValidateValidator(
             config=config,
             data_object_factory=mock_data_source.data_object_factory,
@@ -75,15 +78,24 @@ class TestConvertorAndValidateValidator:
     ) -> None:
 
         config = ConvertorAndValidateValidator.Config(
-            converter_class=TestConverter,
-            converter_config={
-                'original_field_name': 'key1',
-                'new_field_name': 'key1_renamed',
-            },
-            validator_class=AllowedKeysValidator,
-            validator_config={
-                'allowed_keys': ['key1', 'key2', 'key3', 'key4', 'key5', 'key6', 'key7'],
-            },
+            converters=[{
+                'cls': 'TestConverter',
+                'config': {
+                    'original_field_name': 'key1',
+                    'new_field_name': 'key1_renamed',
+                }
+            }],
+            validators=[{
+                'cls': AllowedKeysValidator,
+                'config': {
+                    'allowed_keys': ['key1', 'key2', 'key3', 'key4', 'key5', 'key6', 'key7'],
+                }
+            }]
+        )
+
+        validator = ConvertorAndValidateValidator(
+            config=config,
+            data_object_factory=mock_data_source.data_object_factory,
         )
 
         validator = ConvertorAndValidateValidator(

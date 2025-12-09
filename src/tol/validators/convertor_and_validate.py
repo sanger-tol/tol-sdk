@@ -2,6 +2,8 @@
 #
 # SPDX-License-Identifier: MIT
 
+import importlib
+import itertools
 from dataclasses import dataclass, field
 from typing import Iterable
 
@@ -15,53 +17,80 @@ class ConvertorAndValidateValidator(Validator):
     """
     Convert DataObjects, validate the converted ones, and return the original
     input unchanged. Inner validator results are not merged here.
+
+    {
+        "converters": [{
+            "module": "<path.to.module>",
+            "class_name": "<path.to.ConverterClass>",
+            "config": { ... }
+        }],
+        "validators": [{
+            "module": "<path.to.module>",
+            "class_name": "<path.to.ValidatorClass>",
+            "config": { ... }
+        }]
+    }
+
     """
     @dataclass(slots=True, frozen=True, kw_only=True)
     class Config:
-        converter_class: type[DataObjectToDataObjectOrUpdateConverter]
-        converter_config: dict = field(default_factory=dict)
-        validator_class: type[Validator]
-        validator_config: dict = field(default_factory=dict)
+        converters: list[dict]
+        validators: list[dict]
 
     __slots__ = [
-        '__converter',
-        '__validator'
+        '__converters',
+        '__validators'
     ]
+    converters = []
+    validators = []
 
     def __init__(
         self,
         config: Config,
         data_object_factory: DataObjectFactory,
+        **kwargs
     ) -> None:
         super().__init__()
 
-        converter_conf = config.converter_class.Config(
-            **config.converter_config
-        )
-        self.__converter = config.converter_class(
-            data_object_factory=data_object_factory,
-            config=converter_conf,
-        )
-        validator_conf = config.validator_class.Config(
-            **config.validator_config
-        )
-        self.__validator = config.validator_class(
-            config=validator_conf
-        )
+        for conv in config.converters:
+            __module = importlib.import_module(conv.get('module'))
+            converter_class = getattr(__module, conv.get('class_name'))
+
+            converter_conf = converter_class.Config(
+                **conv.config
+            )
+            self.__converters.append(converter_class(
+                data_object_factory=data_object_factory,
+                config=converter_conf,
+            ))
+        for val in config.validators:
+            __module = importlib.import_module(val.get('module'))
+            validator_class = getattr(__module, val.get('class_name'))
+
+            validator_conf = validator_class.Config(
+                **val.config
+            )
+            self.__validators.append(validator_class(
+                data_object_factory=data_object_factory,
+                config=validator_conf,
+            ))
 
     def _validate_data_object(self, obj: DataObject) -> None:
-        converted_iterable: Iterable[DataObject] = self.__converter.convert(obj)
+        converted_iterable = itertools.chain(
+            converter.convert(obj) for converter in self.__converters
+        )
         for obj in converted_iterable:
-            self.__validator._validate_data_object(obj)
+            for validator in self.__validators:
+                validator._validate_data_object(obj)
 
     @property
     def results(self) -> list[ValidationResult]:
-        return self.__validator.results
+        return [result for validator in self.__validators for result in validator.results]
 
     @property
     def warnings(self) -> list[ValidationResult]:
-        return self.__validator.warnings
+        return [warning for validator in self.__validators for warning in validator.warnings]
 
     @property
     def errors(self) -> list[ValidationResult]:
-        return self.__validator.errors
+        return [error for validator in self.__validators for error in validator.errors]

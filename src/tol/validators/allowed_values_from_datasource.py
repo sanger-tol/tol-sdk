@@ -29,7 +29,8 @@ class AllowedValuesFromDataSourceValidator(Validator):
     def __init__(
         self,
         config: Config,
-        allowed_values: List[str | int | float] | None = None  # For testing
+        allowed_values: List[str | int | float] | None = None,  # For testing
+        **kwargs
     ) -> None:
 
         super().__init__()

@@ -25,7 +25,7 @@ class AssertOnConditionValidator(Validator, ConditionEvaluator):
     __slots__ = ['__config']
     __config: Config
 
-    def __init__(self, config: Config) -> None:
+    def __init__(self, config: Config, **kwargs) -> None:
         super().__init__()
 
         self.__config = config

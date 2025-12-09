@@ -62,7 +62,7 @@ class MutuallyExclusiveValidator(Validator, ConditionEvaluator):
     __first_list: List[Any]
     __second_list: List[Any]
 
-    def __init__(self, config: Config) -> None:
+    def __init__(self, config: Config, **kwargs) -> None:
         super().__init__()
 
         self.__config = config

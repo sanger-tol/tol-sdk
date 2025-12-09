@@ -24,6 +24,7 @@ class MinOneValidValueValidator(Validator):
     def __init__(
         self,
         config: Config,
+        **kwargs
     ) -> None:
 
         super().__init__()

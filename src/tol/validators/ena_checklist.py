@@ -23,7 +23,7 @@ class EnaChecklistValidator(Validator):
     __slots__ = ['__config']
     __config: Config
 
-    def __init__(self, config: Config, datasource: DataSource = ena()) -> None:
+    def __init__(self, config: Config, datasource: DataSource = ena(), **kwargs) -> None:
         super().__init__()
         self.__config = config
         self._datasource = datasource

@@ -28,6 +28,7 @@ class StsFieldsValidator(Validator):
         self,
         config: Config,
         datasource: DataSource = sts(),  # For testing
+        **kwargs
     ) -> None:
 
         super().__init__()

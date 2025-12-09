@@ -25,7 +25,7 @@ class SpecimensHaveSameTaxonValidator(Validator):
     __config: Config
     __seen: Dict[str, str]
 
-    def __init__(self, config: Config) -> None:
+    def __init__(self, config: Config, **kwargs) -> None:
         super().__init__()
         self.__seen = {}
         self.__config = config
