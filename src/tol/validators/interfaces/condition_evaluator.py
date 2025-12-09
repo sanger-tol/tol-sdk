@@ -4,9 +4,16 @@
 
 from abc import ABC
 from dataclasses import dataclass
-from typing import Any, Dict, Tuple
+from typing import Any, Dict, Tuple, cast
 
 from tol.core import DataObject
+
+
+ConditionDict = Dict[str, str | Any | bool]
+"""
+The dict representation of a Condition. Conditions can be constructed
+from such a dict through Condition.from_dict(condition_dict)
+"""
 
 
 @dataclass(slots=True)
@@ -21,12 +28,33 @@ class Condition:
     def __repr__(self) -> str:
         return f'{self.field} {self.operator} {self.value}'
 
+    @staticmethod
+    def from_dict(condition_dict: ConditionDict) -> 'Condition':
+        try:
+            # Extract fields
+            field = condition_dict['field']
+            operator = condition_dict['operator']
+            value = condition_dict['value']
+            is_error = condition_dict.get('is_error', True)
 
-ConditionDict = Dict[str, str | Any]
-"""
-The dict representation of a Condition. Conditions can be constructed
-from such a dict through Condition(**condition_dict)
-"""
+            # Ensure fields are the correct type
+            if not isinstance(field, str) and not isinstance(operator, str):
+                raise Exception(
+                    f'Dictionary {condition_dict} not in valid format '
+                    f'to convert to Condition'
+                )
+
+            return Condition(
+                cast(str, field),
+                cast(str, operator),
+                value,
+                cast(bool, is_error),
+            )
+        except IndexError:
+            raise Exception(
+                f'Dictionary {condition_dict} not in valid format '
+                f'to convert to Condition'
+            )
 
 
 class ConditionEvaluator(ABC):
