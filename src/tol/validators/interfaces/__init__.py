@@ -2,4 +2,4 @@
 #
 # SPDX-License-Identifier: MIT
 
-from .condition_evaluator import Condition, ConditionEvaluator  # noqa
+from .condition_evaluator import Condition, ConditionDict, ConditionEvaluator  # noqa

@@ -4,7 +4,7 @@
 
 from abc import ABC
 from dataclasses import dataclass
-from typing import Any, Tuple
+from typing import Any, Dict, Tuple
 
 from tol.core import DataObject
 
@@ -20,6 +20,13 @@ class Condition:
 
     def __repr__(self) -> str:
         return f'{self.field} {self.operator} {self.value}'
+
+
+ConditionDict = Dict[str, str | Any]
+"""
+The dict representation of a Condition. Conditions can be constructed
+from such a dict through Condition(**condition_dict)
+"""
 
 
 class ConditionEvaluator(ABC):
