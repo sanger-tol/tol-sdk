@@ -47,7 +47,7 @@ class Condition:
             if not isinstance(field, str) and not isinstance(operator, str):
                 raise Exception(
                     f'Dictionary {condition_dict} not in valid format '
-                    f'to convert to Condition'
+                    f'to convert to Condition (type of condition dict incorrect)'
                 )
 
             return Condition(
@@ -56,10 +56,10 @@ class Condition:
                 value,
                 cast(bool, is_error),
             )
-        except IndexError:
+        except IndexError as e:
             raise Exception(
                 f'Dictionary {condition_dict} not in valid format '
-                f'to convert to Condition'
+                f'to convert to Condition (key "{e.args[0]}" not found)'
             )
 
 
