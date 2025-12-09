@@ -8,7 +8,7 @@ from typing import Dict, List
 from tol.core import DataObject
 from tol.core.validate import Validator
 
-from .regex import Regex
+from .regex import Regex, RegexDict
 
 
 class RegexByValueValidator(Validator):
@@ -20,7 +20,7 @@ class RegexByValueValidator(Validator):
     @dataclass(slots=True, frozen=True, kw_only=True)
     class Config:
         key_column: str
-        regexes: Dict[str, List[Regex]]
+        regexes: Dict[str, List[Regex | RegexDict]]
 
     __slots__ = ['__config']
     config: Config
@@ -32,7 +32,7 @@ class RegexByValueValidator(Validator):
 
         super().__init__()
 
-        self.__config = config
+        self.__config = self.__get_config(config)
 
     def _validate_data_object(
         self,
@@ -78,3 +78,22 @@ class RegexByValueValidator(Validator):
                 detail=c.detail,
                 field=c.key,
             )
+
+    def __get_config(
+        self,
+        config: Config,
+    ) -> Config:
+
+        # Ensure config is in Regex format
+        # (as you can either pass in a list of Regex or a RegexDict,
+        # which can be used to initialize a Regex)
+        return self.Config(
+            key_column=config.key_column,
+            regexes={
+                k: [
+                    c if isinstance(c, Regex) else Regex(**c)
+                    for c in v
+                ]
+                for k, v in config.regexes.items()
+            }
+        )
