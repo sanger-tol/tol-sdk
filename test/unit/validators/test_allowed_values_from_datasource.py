@@ -35,5 +35,34 @@ class TestAllowedValuesFromDataSourceValidator:
         assert len(validator.errors) == 1
         assert len(validator.warnings) == 0
         assert validator.errors[0].detail == (
-            'The value of the field key1 must be one of a, b, 1, 2 or 3 (found value c)'
+            "The value of the field key1 must be one of a, b, 1, 2 or 3 (found value ['c'])"
+        )
+
+    def test_warning_and_error_list_field(
+        self,
+        mock_objs: Iterable[DataObject]
+    ) -> None:
+
+        test_config = AllowedValuesFromDataSourceValidator.Config(
+            datasource_instance_id=1,
+            datasource_object_type='test',
+            datasource_field_name='test',
+            field_name='key7',
+        )
+
+        validator = AllowedValuesFromDataSourceValidator(
+            config=test_config,
+            allowed_values=['a', 'b', 'x', 'y', 'z'],
+        )
+
+        list(
+            validator.validate(mock_objs)
+        )
+
+        assert validator.results
+        assert len(validator.errors) == 1
+        assert len(validator.warnings) == 0
+        assert validator.errors[0].detail == (
+            'The value of the field key7 must be one of a, b, x, y or z '
+            "(found value ['c', 'y', 'z'])"
         )

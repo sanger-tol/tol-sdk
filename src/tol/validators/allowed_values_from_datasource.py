@@ -54,7 +54,11 @@ class AllowedValuesFromDataSourceValidator(Validator):
         obj: DataObject
     ) -> None:
         field_value = obj.get_field_by_name(self.__config.field_name)
-        if field_value and field_value not in self.__cached_list:
+        if not field_value:
+            return
+        if not isinstance(field_value, list):
+            field_value = [field_value]
+        if any(value not in self.__cached_list for value in field_value):
             multiple_cached_values = len(self.__cached_list) > 1
 
             cached_list_str = ''

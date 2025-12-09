@@ -27,6 +27,7 @@ def mock_objs() -> Iterable[DataObject]:
             'key4': 'other_duplicate',
             'key5': 10 if c in 'ac' else 20,
             'key6': 'present' if c in 'ab' else None,
+            'key7': [c, 'y', 'z']
         }
         __o.key1 = c
         __o.key2 = c
