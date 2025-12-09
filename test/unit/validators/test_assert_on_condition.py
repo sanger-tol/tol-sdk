@@ -5,7 +5,7 @@
 from typing import Iterable
 
 from tol.core import DataObject
-from tol.validators import AssertOnConditionValidator, Condition
+from tol.validators import AssertOnConditionValidator
 
 
 class TestAssertOnConditionValidator:
@@ -13,22 +13,22 @@ class TestAssertOnConditionValidator:
         self, mock_objs: Iterable[DataObject]
     ) -> None:
         config = AssertOnConditionValidator.Config(
-            condition=Condition(
-                field='key1',
-                operator='==',
-                value='b',
-            ),
+            condition={
+                'field': 'key1',
+                'operator': '==',
+                'value': 'b',
+            },
             assertions=[
-                Condition(
-                    field='key2',
-                    operator='==',
-                    value='b',
-                ),
-                Condition(
-                    field='key3',
-                    operator='!=',
-                    value=None,
-                ),
+                {
+                    'field': 'key2',
+                    'operator': '==',
+                    'value': 'b',
+                },
+                {
+                    'field': 'key3',
+                    'operator': '!=',
+                    'value': None,
+                },
             ],
         )
 
@@ -46,23 +46,23 @@ class TestAssertOnConditionValidator:
         self, mock_objs: Iterable[DataObject]
     ) -> None:
         config = AssertOnConditionValidator.Config(
-            condition=Condition(
-                field='key1',
-                operator='!=',
-                value=None,
-            ),
+            condition={
+                'field': 'key1',
+                'operator': '!=',
+                'value': None,
+            },
             assertions=[
-                Condition(
-                    field='key2',
-                    operator='==',
-                    value='b',
-                    is_error=False,
-                ),
-                Condition(
-                    field='key3',
-                    operator='!=',
-                    value=None,
-                ),
+                {
+                    'field': 'key2',
+                    'operator': '==',
+                    'value': 'b',
+                    'is_error': False,
+                },
+                {
+                    'field': 'key3',
+                    'operator': '!=',
+                    'value': None,
+                },
             ],
         )
 
@@ -81,23 +81,23 @@ class TestAssertOnConditionValidator:
         self, mock_objs: Iterable[DataObject]
     ) -> None:
         config = AssertOnConditionValidator.Config(
-            condition=Condition(
-                field='key1',
-                operator='!=',
-                value=None,
-            ),
+            condition={
+                'field': 'key1',
+                'operator': '!=',
+                'value': None,
+            },
             assertions=[
-                Condition(
-                    field='key2',
-                    operator='==',
-                    value='b',
-                    is_error=True,
-                ),
-                Condition(
-                    field='key3',
-                    operator='!=',
-                    value=None,
-                ),
+                {
+                    'field': 'key2',
+                    'operator': '==',
+                    'value': 'b',
+                    'is_error': True,
+                },
+                {
+                    'field': 'key3',
+                    'operator': '!=',
+                    'value': None,
+                },
             ],
         )
 

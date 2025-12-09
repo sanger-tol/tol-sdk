@@ -7,7 +7,6 @@ from unittest.mock import create_autospec
 
 from tol.core import DataObject
 from tol.validators import MutuallyExclusiveValidator
-from tol.validators.interfaces import Condition
 
 
 class TestMutuallyExclusiveValidator:
@@ -52,16 +51,16 @@ class TestMutuallyExclusiveValidator:
         mock_two.get_field_by_name.side_effect = __get_field_by_name_two
 
         config = MutuallyExclusiveValidator.Config(
-            first_field_where=Condition(
-                field='SYMBIONT',
-                operator='!=',
-                value='SYMBIONT',
-            ),
-            second_field_where=Condition(
-                field='SYMBIONT',
-                operator='==',
-                value='SYMBIONT',
-            ),
+            first_field_where={
+                'field': 'SYMBIONT',
+                'operator': '!=',
+                'value': 'SYMBIONT',
+            },
+            second_field_where={
+                'field': 'SYMBIONT',
+                'operator': '==',
+                'value': 'SYMBIONT',
+            },
             target_fields=[
                 'RACK_OR_PLATE_ID',
                 'TUBE_OR_WELL_ID',
@@ -119,16 +118,16 @@ class TestMutuallyExclusiveValidator:
         mock_two.get_field_by_name.side_effect = __get_field_by_name_two
 
         config = MutuallyExclusiveValidator.Config(
-            first_field_where=Condition(
-                field='SYMBIONT',
-                operator='!=',
-                value='SYMBIONT',
-            ),
-            second_field_where=Condition(
-                field='SYMBIONT',
-                operator='==',
-                value='SYMBIONT',
-            ),
+            first_field_where={
+                'field': 'SYMBIONT',
+                'operator': '!=',
+                'value': 'SYMBIONT',
+            },
+            second_field_where={
+                'field': 'SYMBIONT',
+                'operator': '==',
+                'value': 'SYMBIONT',
+            },
             target_fields=[
                 'RACK_OR_PLATE_ID',
                 'TUBE_OR_WELL_ID',
@@ -188,16 +187,16 @@ class TestMutuallyExclusiveValidator:
         mock_two.get_field_by_name.side_effect = __get_field_by_name_two
 
         config = MutuallyExclusiveValidator.Config(
-            first_field_where=Condition(
-                field='SYMBIONT',
-                operator='!=',
-                value='SYMBIONT',
-            ),
-            second_field_where=Condition(
-                field='SYMBIONT',
-                operator='==',
-                value='SYMBIONT',
-            ),
+            first_field_where={
+                'field': 'SYMBIONT',
+                'operator': '!=',
+                'value': 'SYMBIONT',
+            },
+            second_field_where={
+                'field': 'SYMBIONT',
+                'operator': '==',
+                'value': 'SYMBIONT',
+            },
             target_fields=[
                 'RACK_OR_PLATE_ID',
                 'TUBE_OR_WELL_ID',
@@ -257,16 +256,16 @@ class TestMutuallyExclusiveValidator:
         mock_two.get_field_by_name.side_effect = __get_field_by_name_two
 
         config = MutuallyExclusiveValidator.Config(
-            first_field_where=Condition(
-                field='spam',
-                operator='==',
-                value=False,
-            ),
-            second_field_where=Condition(
-                field='spam',
-                operator='==',
-                value=True,
-            ),
+            first_field_where={
+                'field': 'spam',
+                'operator': '==',
+                'value': False,
+            },
+            second_field_where={
+                'field': 'spam',
+                'operator': '==',
+                'value': True,
+            },
             target_fields=[
                 'ham',
                 'eggs',
