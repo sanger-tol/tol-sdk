@@ -7,7 +7,7 @@ from typing import List
 
 from tol.core import DataObject, Validator
 
-from .interfaces import Condition, ConditionEvaluator
+from .interfaces import Condition, ConditionDict, ConditionEvaluator
 
 
 class AssertOnConditionValidator(Validator, ConditionEvaluator):
@@ -19,8 +19,8 @@ class AssertOnConditionValidator(Validator, ConditionEvaluator):
     """
     @dataclass(slots=True, frozen=True, kw_only=True)
     class Config:
-        condition: Condition
-        assertions: List[Condition]
+        condition: ConditionDict
+        assertions: List[ConditionDict]
 
     __slots__ = ['__config']
     __config: Config
@@ -33,10 +33,10 @@ class AssertOnConditionValidator(Validator, ConditionEvaluator):
     def _validate_data_object(self, obj: DataObject) -> None:
         # Check condition atribute
         # (only perform the assertions if the condition passes)
-        if self._does_condition_pass(self.__config.condition, obj):
+        if self._does_condition_pass(Condition.from_dict(self.__config.condition), obj):
             # Perform each assertion
             for assertion in self.__config.assertions:
-                self.__perform_assertion(obj, assertion)
+                self.__perform_assertion(obj, Condition.from_dict(assertion))
 
     def __perform_assertion(self, obj: DataObject, assertion: Condition) -> None:
         # There's only an error or warning if the assertion condition fails

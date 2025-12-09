@@ -7,7 +7,7 @@ from typing import Any, List
 
 from tol.core import DataObject, Validator
 
-from .interfaces import Condition, ConditionEvaluator
+from .interfaces import Condition, ConditionDict, ConditionEvaluator
 
 
 class MutuallyExclusiveValidator(Validator, ConditionEvaluator):
@@ -19,8 +19,8 @@ class MutuallyExclusiveValidator(Validator, ConditionEvaluator):
     """
     @dataclass(slots=True, frozen=True, kw_only=True)
     class Config:
-        first_field_where: Condition
-        second_field_where: Condition
+        first_field_where: ConditionDict
+        second_field_where: ConditionDict
         target_fields: List[str]
         detail: str | None = None
 
@@ -67,7 +67,7 @@ class MutuallyExclusiveValidator(Validator, ConditionEvaluator):
 
     def _validate_data_object(self, obj: DataObject) -> None:
         # Check first field
-        if self._does_condition_pass(self.__config.first_field_where, obj):
+        if self._does_condition_pass(Condition.from_dict(self.__config.first_field_where), obj):
             # Check whether the values of the target fields were found in the second list
             if [
                 obj.get_field_by_name(target_field)
@@ -86,7 +86,7 @@ class MutuallyExclusiveValidator(Validator, ConditionEvaluator):
                 ]
             )
         # Check second field (same as the first condition, but for the second!)
-        elif self._does_condition_pass(self.__config.second_field_where, obj):
+        elif self._does_condition_pass(Condition.from_dict(self.__config.second_field_where), obj):
             # Check whether the values of the target fields were found in the first list
             if [
                 obj.get_field_by_name(target_field)
