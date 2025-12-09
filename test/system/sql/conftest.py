@@ -3,7 +3,8 @@
 # SPDX-License-Identifier: MIT
 
 import os
-from typing import Any, Iterable
+from collections.abc import Iterable
+from typing import Any
 from unittest.mock import create_autospec
 
 from flask import Blueprint, Flask
@@ -11,7 +12,7 @@ from flask import Blueprint, Flask
 from pytest import fixture
 
 from sqlalchemy import create_engine, delete, event
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import ORMExecuteState, Session
 
 from tol.api_base import data_blueprint
 from tol.api_base.auth import OidcConfig, require_auth
@@ -102,13 +103,13 @@ def models_list(full_models_list):
 
 
 @event.listens_for(Session, 'do_orm_execute')
-def __count_select_statements(orm_execute_state):
+def __count_select_statements(oes: ORMExecuteState):
     """
     Accumulates a running total of SELECT statements issued by an SQLAlchemy
     `Session` in its `info` hash.
     """
-    if orm_execute_state.is_select:
-        ssn = orm_execute_state.session
+    if oes.is_select:
+        ssn = oes.session
         key = 'select-count'
         n = ssn.info.setdefault(key, 0)
         ssn.info[key] = n + 1
