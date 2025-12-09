@@ -6,7 +6,6 @@ from typing import Iterable
 
 from tol.core import DataObject
 from tol.validators import (
-    Regex,
     RegexByValueValidator,
 )
 
@@ -22,26 +21,14 @@ class TestRegexByValueValidator:
             key_column='key1',
             regexes={
                 'a': [
-                    Regex(
-                        key='key2',
-                        regex='[a]?'
-                    ),
-                    Regex(
-                        key='key2',
-                        regex='[^z]'
-                    ),
+                    {'key': 'key2', 'regex': '[a]?'},
+                    {'key': 'key2', 'regex': '[^z]'},
                 ],
                 'b': [
-                    Regex(
-                        key='key2',
-                        regex='[b]?'
-                    ),
+                    {'key': 'key2', 'regex': '[b]?'},
                 ],
                 'c': [
-                    Regex(
-                        key='key2',
-                        regex='[c]?'
-                    ),
+                    {'key': 'key2', 'regex': '[c]?'}
                 ],
             },
         )
@@ -66,29 +53,14 @@ class TestRegexByValueValidator:
             key_column='key1',
             regexes={
                 'a': [
-                    Regex(
-                        key='key2',
-                        regex='[a]?'
-                    ),
-                    Regex(
-                        key='key2',
-                        regex='[^a]',
-                        is_error=False
-                    ),
+                    {'key': 'key2', 'regex': '[a]?'},
+                    {'key': 'key2', 'regex': '[^a]', 'is_error': False},
                 ],
                 'b': [
-                    Regex(
-                        key='key2',
-                        regex='[^b]',
-                        is_error=False
-                    ),
+                    {'key': 'key2', 'regex': '[^b]', 'is_error': False},
                 ],
                 'c': [
-                    Regex(
-                        key='key2',
-                        regex='[^c]',
-                        is_error=False
-                    ),
+                    {'key': 'key2', 'regex': '[^c]', 'is_error': False},
                 ],
             },
         )
@@ -114,26 +86,14 @@ class TestRegexByValueValidator:
             key_column='key1',
             regexes={
                 'a': [
-                    Regex(
-                        key='key2',
-                        regex='[a]?'
-                    ),
-                    Regex(
-                        key='key2',
-                        regex='[^a]'
-                    ),
+                    {'key': 'key2', 'regex': '[a]?'},
+                    {'key': 'key2', 'regex': '[^a]'},
                 ],
                 'b': [
-                    Regex(
-                        key='key2',
-                        regex='[^b]'
-                    ),
+                    {'key': 'key2', 'regex': '[^b]'},
                 ],
                 'c': [
-                    Regex(
-                        key='key2',
-                        regex='[^c]'
-                    ),
+                    {'key': 'key2', 'regex': '[^c]'},
                 ],
             },
         )

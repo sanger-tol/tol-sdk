@@ -90,7 +90,7 @@ class TolidValidator(Validator):
                 f.and_ = {'specimen_id': {'eq': {'value': specimen_id}}}
                 self.__cached_tolids[specimen_id] = list(self.__datasource.get_list(
                     object_type='specimen',
-                    filters=f
+                    object_filters=f
                 ))
 
             if (len(self.__cached_tolids[specimen_id]) == 0):

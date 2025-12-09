@@ -6,7 +6,6 @@ from typing import Iterable
 
 from tol.core import DataObject
 from tol.validators import (
-    Regex,
     RegexValidator,
 )
 
@@ -20,14 +19,8 @@ class TestRegexValidator:
 
         config = RegexValidator.Config(
             regexes=[
-                Regex(
-                    key='key1',
-                    regex='[abc]',
-                ),
-                Regex(
-                    key='key2',
-                    regex='[abc][def]?',
-                ),
+                {'key': 'key1', 'regex': '[abc]'},
+                {'key': 'key2', 'regex': '[abc][def]?'},
             ]
         )
 
@@ -49,16 +42,9 @@ class TestRegexValidator:
 
         config = RegexValidator.Config(
             regexes=[
-                Regex(
-                    key='key1',
-                    regex='[abc]'
-                ),
+                {'key': 'key1', 'regex': '[abc]'},
                 # adds warnings
-                Regex(
-                    key='key2',
-                    regex='[pqr][xyz]',
-                    is_error=False,
-                ),
+                {'key': 'key2', 'regex': '[pqr][xyz]', 'is_error': False},
             ]
         )
 
@@ -81,15 +67,9 @@ class TestRegexValidator:
 
         config = RegexValidator.Config(
             regexes=[
-                Regex(
-                    key='key1',
-                    regex='[abc]'
-                ),
+                {'key': 'key1', 'regex': '[abc]'},
                 # adds errors
-                Regex(
-                    key='key2',
-                    regex='[pqr][xyz]',
-                ),
+                {'key': 'key2', 'regex': '[pqr][xyz]'},
             ]
         )
 

@@ -10,6 +10,12 @@ from tol.core import DataObject
 from tol.core.validate import Validator
 
 
+RegexDict = dict[
+    str,
+    str | bool | list[Any],
+]
+
+
 @dataclass(frozen=True, kw_only=True)
 class Regex:
     key: str
@@ -31,7 +37,7 @@ class RegexValidator(Validator):
     """
     @dataclass(slots=True, frozen=True, kw_only=True)
     class Config:
-        regexes: List[Regex]
+        regexes: List[Regex | RegexDict]
 
     __slots__ = ['__config']
     __config: Config
@@ -43,7 +49,7 @@ class RegexValidator(Validator):
 
         super().__init__()
 
-        self.__config = config
+        self.__config = self.__get_config(config)
 
     def _validate_data_object(
         self,
@@ -93,3 +99,18 @@ class RegexValidator(Validator):
                 detail=c.detail,
                 field=c.key,
             )
+
+    def __get_config(
+        self,
+        config: Config,
+    ) -> Config:
+
+        # Ensure config is in Regex format
+        # (as you can either pass in a list of Regex or a RegexDict,
+        # which can be used to initialize a Regex)
+        return self.Config(
+            regexes=[
+                c if isinstance(c, Regex) else Regex(**c)
+                for c in config.regexes
+            ]
+        )
