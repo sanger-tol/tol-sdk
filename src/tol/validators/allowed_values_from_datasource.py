@@ -17,7 +17,6 @@ class AllowedValuesFromDataSourceValidator(Validator):
     """
     @dataclass(slots=True, frozen=True, kw_only=True)
     class Config:
-        allowed_values: List[str | int | float] | None = None  # For testing
         datasource_instance_id: int
         datasource_object_type: str
         datasource_field_name: str
@@ -30,12 +29,13 @@ class AllowedValuesFromDataSourceValidator(Validator):
     def __init__(
         self,
         config: Config,
+        allowed_values: List[str | int | float] | None = None  # For testing
     ) -> None:
 
         super().__init__()
 
         self.__config = config
-        self.__cached_list = self.__config.allowed_values \
+        self.__cached_list = allowed_values \
             or self.__initialize_list_from_datasource()
 
     def __initialize_list_from_datasource(self) -> List[str | int | float]:
