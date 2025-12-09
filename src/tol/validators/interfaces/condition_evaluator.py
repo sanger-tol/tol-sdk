@@ -33,7 +33,7 @@ class Condition:
         """
         A means of instantiating a Condition from a dictionary.
         This is a separate method (rather than constructing with kwargs
-        like `Condition(**condition_dict))` to allow for both precense
+        like `Condition(**condition_dict))`) to allow for both precense
         and type checking for each field.
         """
         try:
