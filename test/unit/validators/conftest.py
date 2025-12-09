@@ -6,7 +6,23 @@ from unittest.mock import create_autospec
 
 import pytest
 
-from tol.core import DataObject
+from tol.core import DataObject, DataSource, core_data_object
+
+
+@pytest.fixture
+def mock_data_source() -> DataSource:
+    class _MockDataSource(DataSource):
+        @property
+        def supported_types(self):
+            return ['upload']
+
+        @property
+        def attribute_types(self):
+            raise NotImplementedError()
+
+    ds = _MockDataSource(config={})
+    core_data_object(ds)
+    return ds
 
 
 @pytest.fixture
