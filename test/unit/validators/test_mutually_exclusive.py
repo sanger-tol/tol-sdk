@@ -7,7 +7,6 @@ from unittest.mock import create_autospec
 
 from tol.core import DataObject
 from tol.validators import MutuallyExclusiveValidator
-from tol.validators.interfaces import Condition
 
 
 class TestMutuallyExclusiveValidator:

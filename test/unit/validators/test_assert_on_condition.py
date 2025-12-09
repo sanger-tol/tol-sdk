@@ -5,7 +5,7 @@
 from typing import Iterable
 
 from tol.core import DataObject
-from tol.validators import AssertOnConditionValidator, Condition
+from tol.validators import AssertOnConditionValidator
 
 
 class TestAssertOnConditionValidator:
