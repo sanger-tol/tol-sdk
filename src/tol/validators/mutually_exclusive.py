@@ -25,6 +25,10 @@ class MutuallyExclusiveValidator(Validator, ConditionEvaluator):
         detail: str | None = None
 
         def _get_error_message(self) -> str:
+            # Extract conditions
+            first_condition = Condition.from_dict(self.first_field_where)
+            second_condition = Condition.from_dict(self.second_field_where)
+
             # Use a pre-defined, hard-coded detail message if one was not provided
             if self.detail is None:
                 multiple_target_fields = len(self.target_fields) > 1
@@ -47,8 +51,8 @@ class MutuallyExclusiveValidator(Validator, ConditionEvaluator):
 
                 return (
                     f'The field{possible_plural} {target_fields_str} cannot have the same '
-                    f'value{possible_plural} both when {self.first_field_where} and when '
-                    f'{self.second_field_where}'
+                    f'value{possible_plural} both when {first_condition} and when '
+                    f'{second_condition}'
                 )
             else:
                 return self.detail
