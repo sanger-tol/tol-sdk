@@ -201,7 +201,6 @@ class TestRequireRole:
             ]
         }
 
-
     def test_token_to_role_select(
         self,
         session_factory,
@@ -228,8 +227,7 @@ class TestRequireRole:
             token = token_model.get(ssn, 'good')
             # This would previously fire 4 SELECT statements:
             assert token.user.role_names == ['admin']
-            assert ssn.info.get('select-count') == 1
-
+            assert ssn.info.get('select-count', 0) == 1
 
     def test_good_role(
         self,
