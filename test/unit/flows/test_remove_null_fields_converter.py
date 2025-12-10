@@ -40,10 +40,11 @@ class TestRemoveNullFieldsConverter(TestCase):
             'ABC123',
             attributes={
                 'SpeciesID': None,
+                'SampleName': 'TestSample',
             }
         )
         config = SkipNullFieldsConverter.Config(
-            field_names=['SpeciesID'],
+            field_names=['SpeciesID', 'SampleName'],
         )
         converter = SkipNullFieldsConverter(
             destination.data_object_factory,
@@ -51,8 +52,7 @@ class TestRemoveNullFieldsConverter(TestCase):
         )
 
         result = converter.convert(mock_object)
-        for res in result:
-            assert res == None
+        assert list(result) == []
 
         with self.assertRaises(StopIteration):
             next(result)

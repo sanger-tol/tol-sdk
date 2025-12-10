@@ -39,9 +39,6 @@ class SkipNullFieldsConverter(DataObjectToDataObjectOrUpdateConverter):
                 attributes=data_object.attributes
             )
             yield ret
-        
-        else:
-            yield None
 
 
     def check_exists(self, data_object: DataObject, field: str) -> bool:
