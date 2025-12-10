@@ -201,6 +201,34 @@ class TestRequireRole:
             ]
         }
 
+    def test_token_to_role_select(
+        self,
+        session_factory,
+        user_model,
+        role_model,
+        role_binding_model,
+        token_model,
+        client
+    ):
+        """
+        Test that we only do one SELECT when fetching a token and getting its
+        user's roles.
+        """
+
+        self.__add_models(
+            session_factory,
+            user_model,
+            role_model,
+            role_binding_model,
+            token_model,
+        )
+
+        with session_factory() as ssn:
+            token = token_model.get(ssn, 'good')
+            # This would previously fire 4 SELECT statements:
+            assert token.user.role_names == ['admin']
+            assert ssn.info.get('select-count', 0) == 1
+
     def test_good_role(
         self,
         session_factory,
