@@ -97,7 +97,8 @@ class SanitisingConverter(DataObjectToDataObjectOrUpdateConverter):
 
     def __init__(
         self,
-        data_object_factory: DataObjectFactory
+        data_object_factory: DataObjectFactory,
+        **kwargs
     ):
         super().__init__(data_object_factory)
 
