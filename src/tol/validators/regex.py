@@ -26,7 +26,10 @@ class Regex:
 
     def is_allowed(self, __v: Any) -> bool:
         # Check regex
-        return re.search(self.regex, str(__v or ''))
+        return bool(re.search(
+            self.regex,
+            str(__v) if __v is not None else ''
+        ))
 
 
 class RegexValidator(Validator):

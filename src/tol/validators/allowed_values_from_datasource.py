@@ -41,7 +41,7 @@ class AllowedValuesFromDataSourceValidator(Validator):
 
     def __initialize_list_from_datasource(self) -> List[str | int | float]:
         dsi = portaldb().get_one('data_source_instance', self.__config.datasource_instance_id)
-        ds = DataSourceUtils.get_data_source_by_data_source_instance(dsi)
+        ds = DataSourceUtils.get_datasource_by_datasource_instance(dsi)
         return [
             obj.get_field_by_name(
                 self.__config.datasource_field_name
