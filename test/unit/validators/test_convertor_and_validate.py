@@ -7,7 +7,7 @@ from typing import Iterable
 
 from tol.core import DataObject, DataSource
 from tol.core.data_object_converter import DataObjectToDataObjectOrUpdateConverter
-from tol.validators import AllowedKeysValidator, ConvertorAndValidateValidator
+from tol.validators import ConvertorAndValidateValidator
 
 # Converter that renames a field
 # Validator that asserts a field exists
@@ -46,16 +46,20 @@ class TestConvertorAndValidateValidator:
 
         config = ConvertorAndValidateValidator.Config(
             converters=[{
-                'cls': 'TestConverter',
+                'module': 'test.unit.validators.test_convertor_and_validate',
+                'class_name': 'TestConverter',
                 'config': {
                     'original_field_name': 'key1',
                     'new_field_name': 'key1_renamed',
                 }
             }],
             validators=[{
-                'cls': AllowedKeysValidator,
+                'module': 'tol.validators.allowed_keys',
+                'class_name': 'AllowedKeysValidator',
                 'config': {
-                    'allowed_keys': ['key1_renamed', 'key2', 'key3', 'key4', 'key5', 'key6', 'key7'],
+                    'allowed_keys': [
+                        'key1_renamed', 'key2', 'key3', 'key4', 'key5', 'key6', 'key7'
+                    ],
                 }
             }]
         )
@@ -79,14 +83,16 @@ class TestConvertorAndValidateValidator:
 
         config = ConvertorAndValidateValidator.Config(
             converters=[{
-                'cls': 'TestConverter',
+                'module': 'test.unit.validators.test_convertor_and_validate',
+                'class_name': 'TestConverter',
                 'config': {
                     'original_field_name': 'key1',
                     'new_field_name': 'key1_renamed',
                 }
             }],
             validators=[{
-                'cls': AllowedKeysValidator,
+                'module': 'tol.validators.allowed_keys',
+                'class_name': 'AllowedKeysValidator',
                 'config': {
                     'allowed_keys': ['key1', 'key2', 'key3', 'key4', 'key5', 'key6', 'key7'],
                 }
@@ -109,3 +115,62 @@ class TestConvertorAndValidateValidator:
         )
 
         assert len(validator.errors) == len(list(mock_objs))
+
+    def test_multiple_converters_and_validators(
+        self,
+        mock_objs: Iterable[DataObject],
+        mock_data_source: DataSource
+    ) -> None:
+
+        config = ConvertorAndValidateValidator.Config(
+            converters=[
+                {
+                    'module': 'test.unit.validators.test_convertor_and_validate',
+                    'class_name': 'TestConverter',
+                    'config': {
+                        'original_field_name': 'key1',
+                        'new_field_name': 'key1_renamed',
+                    }
+                },
+                {
+                    'module': 'test.unit.validators.test_convertor_and_validate',
+                    'class_name': 'TestConverter',
+                    'config': {
+                        'original_field_name': 'key1_renamed',
+                        'new_field_name': 'key1_renamed2',
+                    }
+                },
+            ],
+            validators=[
+                {
+                    'module': 'tol.validators.allowed_keys',
+                    'class_name': 'AllowedKeysValidator',
+                    'config': {
+                        'allowed_keys': [
+                            'key1_renamed', 'key2', 'key3', 'key4', 'key5', 'key6', 'key7'
+                        ],
+                    }
+                },
+                {
+                    'module': 'tol.validators.allowed_keys',
+                    'class_name': 'AllowedKeysValidator',
+                    'config': {
+                        'allowed_keys': [
+                            'key1_renamed2', 'key2', 'key3', 'key4', 'key5', 'key6', 'key7'
+                        ],
+                    }
+                }
+            ]
+        )
+
+        validator = ConvertorAndValidateValidator(
+            config=config,
+            data_object_factory=mock_data_source.data_object_factory,
+        )
+
+        list(validator.validate(mock_objs))
+
+        # Aggregated results across multiple validators should still be empty
+        assert len(validator.warnings) == 0
+        assert len(validator.errors) == 3
+        assert len(validator.results) == 3

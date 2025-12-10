@@ -3,12 +3,9 @@
 # SPDX-License-Identifier: MIT
 
 import importlib
-import itertools
-from dataclasses import dataclass, field
-from typing import Iterable
+from dataclasses import dataclass
 
 from tol.core import DataObject
-from tol.core.data_object_converter import DataObjectToDataObjectOrUpdateConverter
 from tol.core.factory import DataObjectFactory
 from tol.core.validate import ValidationResult, Validator
 
@@ -41,8 +38,6 @@ class ConvertorAndValidateValidator(Validator):
         '__converters',
         '__validators'
     ]
-    converters = []
-    validators = []
 
     def __init__(
         self,
@@ -51,13 +46,15 @@ class ConvertorAndValidateValidator(Validator):
         **kwargs
     ) -> None:
         super().__init__()
+        self.__converters = []
+        self.__validators = []
 
         for conv in config.converters:
             __module = importlib.import_module(conv.get('module'))
             converter_class = getattr(__module, conv.get('class_name'))
 
             converter_conf = converter_class.Config(
-                **conv.config
+                **conv.get('config')
             )
             self.__converters.append(converter_class(
                 data_object_factory=data_object_factory,
@@ -68,7 +65,7 @@ class ConvertorAndValidateValidator(Validator):
             validator_class = getattr(__module, val.get('class_name'))
 
             validator_conf = validator_class.Config(
-                **val.config
+                **val.get('config')
             )
             self.__validators.append(validator_class(
                 data_object_factory=data_object_factory,
@@ -76,10 +73,10 @@ class ConvertorAndValidateValidator(Validator):
             ))
 
     def _validate_data_object(self, obj: DataObject) -> None:
-        converted_iterable = itertools.chain(
-            converter.convert(obj) for converter in self.__converters
-        )
-        for obj in converted_iterable:
+        converted_objs = [obj]
+        for converter in self.__converters:
+            converted_objs = converter.convert_iterable(converted_objs)
+        for obj in converted_objs:
             for validator in self.__validators:
                 validator._validate_data_object(obj)
 
