@@ -10,7 +10,7 @@ from tol.core.factory import DataObjectFactory
 from tol.core.validate import ValidationResult, Validator
 
 
-class ConvertorAndValidateValidator(Validator):
+class ConverterAndValidateValidator(Validator):
     """
     Convert DataObjects, validate the converted ones, and return the original
     input unchanged. Inner validator results are not merged here.

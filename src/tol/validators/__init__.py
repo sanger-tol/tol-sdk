@@ -6,7 +6,7 @@ from .allowed_keys import AllowedKeysValidator  # noqa
 from .allowed_values import AllowedValuesValidator  # noqa
 from .allowed_values_from_datasource import AllowedValuesFromDataSourceValidator  # noqa
 from .assert_on_condition import AssertOnConditionValidator  # noqa
-from .convertor_and_validate import ConvertorAndValidateValidator  # noqa
+from .converter_and_validate import ConverterAndValidateValidator  # noqa
 from .ena_checklist import EnaChecklistValidator # noqa
 from .mutually_exclusive import MutuallyExclusiveValidator  # noqa
 from .ena_submittable import EnaSubmittableValidator  # noqa

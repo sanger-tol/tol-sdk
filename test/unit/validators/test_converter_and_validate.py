@@ -7,7 +7,7 @@ from typing import Iterable
 
 from tol.core import DataObject, DataSource
 from tol.core.data_object_converter import DataObjectToDataObjectOrUpdateConverter
-from tol.validators import ConvertorAndValidateValidator
+from tol.validators import ConverterAndValidateValidator
 
 # Converter that renames a field
 # Validator that asserts a field exists
@@ -36,7 +36,7 @@ class TestConverter(
         yield data_object
 
 
-class TestConvertorAndValidateValidator:
+class TestConverterAndValidateValidator:
 
     def test_all_ok(
         self,
@@ -44,9 +44,9 @@ class TestConvertorAndValidateValidator:
         mock_data_source: DataSource
     ) -> None:
 
-        config = ConvertorAndValidateValidator.Config(
+        config = ConverterAndValidateValidator.Config(
             converters=[{
-                'module': 'test.unit.validators.test_convertor_and_validate',
+                'module': 'test.unit.validators.test_converter_and_validate',
                 'class_name': 'TestConverter',
                 'config': {
                     'original_field_name': 'key1',
@@ -63,7 +63,7 @@ class TestConvertorAndValidateValidator:
                 }
             }]
         )
-        validator = ConvertorAndValidateValidator(
+        validator = ConverterAndValidateValidator(
             config=config,
             data_object_factory=mock_data_source.data_object_factory,
         )
@@ -81,9 +81,9 @@ class TestConvertorAndValidateValidator:
         mock_data_source: DataSource
     ) -> None:
 
-        config = ConvertorAndValidateValidator.Config(
+        config = ConverterAndValidateValidator.Config(
             converters=[{
-                'module': 'test.unit.validators.test_convertor_and_validate',
+                'module': 'test.unit.validators.test_converter_and_validate',
                 'class_name': 'TestConverter',
                 'config': {
                     'original_field_name': 'key1',
@@ -99,12 +99,12 @@ class TestConvertorAndValidateValidator:
             }]
         )
 
-        validator = ConvertorAndValidateValidator(
+        validator = ConverterAndValidateValidator(
             config=config,
             data_object_factory=mock_data_source.data_object_factory,
         )
 
-        validator = ConvertorAndValidateValidator(
+        validator = ConverterAndValidateValidator(
             config=config,
             data_object_factory=mock_data_source.data_object_factory,
         )
@@ -122,10 +122,10 @@ class TestConvertorAndValidateValidator:
         mock_data_source: DataSource
     ) -> None:
 
-        config = ConvertorAndValidateValidator.Config(
+        config = ConverterAndValidateValidator.Config(
             converters=[
                 {
-                    'module': 'test.unit.validators.test_convertor_and_validate',
+                    'module': 'test.unit.validators.test_converter_and_validate',
                     'class_name': 'TestConverter',
                     'config': {
                         'original_field_name': 'key1',
@@ -133,7 +133,7 @@ class TestConvertorAndValidateValidator:
                     }
                 },
                 {
-                    'module': 'test.unit.validators.test_convertor_and_validate',
+                    'module': 'test.unit.validators.test_converter_and_validate',
                     'class_name': 'TestConverter',
                     'config': {
                         'original_field_name': 'key1_renamed',
@@ -163,7 +163,7 @@ class TestConvertorAndValidateValidator:
             ]
         )
 
-        validator = ConvertorAndValidateValidator(
+        validator = ConverterAndValidateValidator(
             config=config,
             data_object_factory=mock_data_source.data_object_factory,
         )
