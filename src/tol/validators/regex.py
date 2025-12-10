@@ -44,7 +44,8 @@ class RegexValidator(Validator):
 
     def __init__(
         self,
-        config: Config
+        config: Config,
+        **kwargs
     ) -> None:
 
         super().__init__()

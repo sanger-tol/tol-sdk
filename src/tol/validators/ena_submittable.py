@@ -28,6 +28,7 @@ class EnaSubmittableValidator(Validator):
         self,
         config: Config,
         ena_datasource: DataSource | None = ena(),  # For testing
+        **kwargs
     ) -> None:
 
         super().__init__()

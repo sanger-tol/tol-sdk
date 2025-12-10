@@ -34,6 +34,7 @@ class TolidValidator(Validator):
         self,
         config: Config,
         datasource=tolid(),
+        **kwargs
     ) -> None:
 
         super().__init__()

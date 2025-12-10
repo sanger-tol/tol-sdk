@@ -28,7 +28,7 @@ class UniqueWholeOrganismsValidator(Validator):
     __whole_organisms: List[str]
     __part_organisms: List[str]
 
-    def __init__(self, config: Config) -> None:
+    def __init__(self, config: Config, **kwargs) -> None:
         super().__init__()
         self.__whole_organisms = []
         self.__part_organisms = []
