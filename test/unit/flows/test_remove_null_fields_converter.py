@@ -56,7 +56,7 @@ class TestRemoveNullFieldsConverter(TestCase):
 
         with self.assertRaises(StopIteration):
             next(result)
-            
+
     def test_convert_does_not_skip(self):
         source = _MockDataSource(config={})
         core_data_object(source)

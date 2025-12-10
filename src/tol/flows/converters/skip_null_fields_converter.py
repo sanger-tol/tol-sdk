@@ -25,14 +25,14 @@ class SkipNullFieldsConverter(DataObjectToDataObjectOrUpdateConverter):
         """
         removing null fields from the DataObject
         """
-        
+
         passes = True
         for field in self.__config.field_names:
             value = data_object.get_field_by_name(field)
             if value is None:
                 passes = False
                 break
-        
+
         if passes:
             ret = self._data_object_factory(
                 data_object.type,
