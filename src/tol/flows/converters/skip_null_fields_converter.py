@@ -20,28 +20,23 @@ class SkipNullFieldsConverter(DataObjectToDataObjectOrUpdateConverter):
         super().__init__(data_object_factory)
         self.__config = config
         self._data_object_factory = data_object_factory
-        self._exists_cache = []
 
     def convert(self, data_object: DataObject) -> Iterable[DataObject]:
         """
         removing null fields from the DataObject
         """
         
+        passes = True
         for field in self.__config.field_names:
-            if field in data_object.attributes.keys():
-                if self.check_exists(data_object, field):
-                    self._exists_cache.append(field)
+            value = data_object.get_field_by_name(field)
+            if value is None:
+                passes = False
+                break
         
-        if self._exists_cache == self.__config.field_names:
+        if passes:
             ret = self._data_object_factory(
                 data_object.type,
                 data_object.id,
                 attributes=data_object.attributes
             )
             yield ret
-
-
-    def check_exists(self, data_object: DataObject, field: str) -> bool:
-        if data_object.attributes[field] and data_object.attributes[field] is not None:
-            return True
-        return False
