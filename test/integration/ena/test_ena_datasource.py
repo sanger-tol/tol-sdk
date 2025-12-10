@@ -60,7 +60,8 @@ class TestEnaDataSource(TestCase):
     def test_get_by_id_submittable_taxon(self):
         eds = ena()
 
-        ret = eds.get_by_id('submittable_taxon', ['9606', '12345678', '9605'])
+        # Allow integer and string ids
+        ret = eds.get_by_id('submittable_taxon', ['9606', '12345678', 9605])
         obj1 = next(ret)
         obj2 = next(ret)
         obj3 = next(ret)

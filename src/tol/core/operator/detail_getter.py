@@ -82,7 +82,7 @@ class DetailGetter(ABC):
         for id_ in object_ids:
             seekable_objects.seek(0)
             for obj in seekable_objects:
-                if obj.id == id_:
+                if str(obj.id) == str(id_):
                     yield obj
                     break
             else:
