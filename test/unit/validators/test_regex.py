@@ -45,6 +45,8 @@ class TestRegexValidator:
                 {'key': 'key1', 'regex': '[abc]'},
                 # adds warnings
                 {'key': 'key2', 'regex': '[pqr][xyz]', 'is_error': False},
+                # tests none value
+                {'key': 'key6', 'regex': 'present'},
             ]
         )
 

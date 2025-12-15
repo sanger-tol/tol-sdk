@@ -26,9 +26,9 @@ class Regex:
 
     def is_allowed(self, __v: Any) -> bool:
         # Check regex
-        return bool(re.search(
+        return __v is None or __v == '' or bool(re.search(
             self.regex,
-            str(__v) if __v is not None else ''
+            str(__v)
         ))
 
 
@@ -90,7 +90,6 @@ class RegexValidator(Validator):
         obj: DataObject,
         c: Regex,
     ) -> None:
-
         if c.is_error:
             self.add_error(
                 object_id=obj.id,

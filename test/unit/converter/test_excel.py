@@ -52,7 +52,7 @@ class TestTOSEmitter:
         )
 
         assert obj1.type == object_type
-        assert obj1.id == '1'
+        assert obj1.id == '2'  # Row 2
         dt1 = obj1.attributes.pop('datetime_column')
         assert obj1.attributes == {
             'bool_column': True,
@@ -67,7 +67,7 @@ class TestTOSEmitter:
         )
 
         assert obj2.type == object_type
-        assert obj2.id == '2'
+        assert obj2.id == '3'  # Row 3'
         dt2 = obj2.attributes.pop('datetime_column')
         assert obj2.attributes == {
             'bool_column': False,

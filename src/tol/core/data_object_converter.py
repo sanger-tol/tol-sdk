@@ -3,6 +3,7 @@
 # SPDX-License-Identifier: MIT
 
 from abc import ABC, abstractmethod
+from dataclasses import dataclass
 from typing import Iterable
 
 from more_itertools import flatten
@@ -95,9 +96,14 @@ class DefaultDataObjectToDataObjectConverter(DataObjectToDataObjectOrUpdateConve
 
 class SanitisingConverter(DataObjectToDataObjectOrUpdateConverter):
 
+    @dataclass(slots=True, frozen=True, kw_only=True)
+    class Config:
+        pass
+
     def __init__(
         self,
         data_object_factory: DataObjectFactory,
+        config: Config,
         **kwargs
     ):
         super().__init__(data_object_factory)

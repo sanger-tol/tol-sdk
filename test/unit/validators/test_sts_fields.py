@@ -27,21 +27,24 @@ class _MockDataSource(DataSource, DetailGetter):
                         {
                             'data_input_key': 'key1',
                             'in_manifest': True,
-                            'mandatory_input': True,
-                            'allowed_values': ['b', 'c'],
+                            'mandatory_validation': True,
+                            'allowed_values': [
+                                {'id': 'b', 'value': 'b'}, {'id': 'c', 'value': 'c'}
+                            ],
                             'min': None,
                             'max': None,
                         }, {
+                            'type': 'String',
                             'data_input_key': 'key5',
                             'in_manifest': True,
-                            'mandatory_input': True,
+                            'mandatory_validation': True,
                             'allowed_values': None,
                             'min': 0,
                             'max': 15,
                         }, {
                             'data_input_key': 'key6',
                             'in_manifest': True,
-                            'mandatory_input': True,
+                            'mandatory_validation': True,
                             'allowed_values': None,
                             'min': None,
                             'max': None,

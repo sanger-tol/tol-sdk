@@ -103,7 +103,7 @@ class TolidValidator(Validator):
 
                 if str(obj.get_field_by_name(self.__config.species_id_field)) not in taxons:
                     self.add_error(
-                        object_id=obj.id,
+                        object_id=obj.id + 1,
                         detail=f'Specimen ID {specimen_id} does not match Taxon ID '
                                f'{obj.get_field_by_name(self.__config.species_id_field)}'
                                'in TolID source',

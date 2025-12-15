@@ -52,7 +52,7 @@ class TestTOSEmitter:
         )
 
         assert obj1.type == object_type
-        assert obj1.id == '1'
+        assert obj1.id == '2'  # Row 2
         dt1 = obj1.attributes.pop('datetime_column')
         assert obj1.attributes == {
             'bool_column': True,
@@ -60,6 +60,7 @@ class TestTOSEmitter:
             'int_column': 42,
             'str_column': 'hello',
         }
+        assert isinstance(dt1, datetime)
         assert dt1 == datetime(
             year=2000,
             month=2,
@@ -67,7 +68,7 @@ class TestTOSEmitter:
         )
 
         assert obj2.type == object_type
-        assert obj2.id == '2'
+        assert obj2.id == '3'  # Row 3
         dt2 = obj2.attributes.pop('datetime_column')
         assert obj2.attributes == {
             'bool_column': False,
@@ -75,6 +76,7 @@ class TestTOSEmitter:
             'int_column': 9093,
             'str_column': 'world',
         }
+        assert isinstance(dt2, datetime)
         assert dt2 == datetime(
             year=2010,
             month=2,

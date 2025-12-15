@@ -19,12 +19,12 @@ class ConverterAndValidateValidator(Validator):
         "converters": [{
             "module": "<path.to.module>",
             "class_name": "<path.to.ConverterClass>",
-            "config": { ... }
+            "config_details": { ... }
         }],
         "validators": [{
             "module": "<path.to.module>",
             "class_name": "<path.to.ValidatorClass>",
-            "config": { ... }
+            "config_details": { ... }
         }]
     }
 
@@ -54,7 +54,7 @@ class ConverterAndValidateValidator(Validator):
             converter_class = getattr(__module, conv.get('class_name'))
 
             converter_conf = converter_class.Config(
-                **conv.get('config')
+                **conv.get('config_details')
             )
             self.__converters.append(converter_class(
                 data_object_factory=data_object_factory,
@@ -65,7 +65,7 @@ class ConverterAndValidateValidator(Validator):
             validator_class = getattr(__module, val.get('class_name'))
 
             validator_conf = validator_class.Config(
-                **val.get('config')
+                **val.get('config_details')
             )
             self.__validators.append(validator_class(
                 data_object_factory=data_object_factory,

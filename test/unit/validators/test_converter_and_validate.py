@@ -48,7 +48,7 @@ class TestConverterAndValidateValidator:
             converters=[{
                 'module': 'test.unit.validators.test_converter_and_validate',
                 'class_name': 'TestConverter',
-                'config': {
+                'config_details': {
                     'original_field_name': 'key1',
                     'new_field_name': 'key1_renamed',
                 }
@@ -56,9 +56,10 @@ class TestConverterAndValidateValidator:
             validators=[{
                 'module': 'tol.validators.allowed_keys',
                 'class_name': 'AllowedKeysValidator',
-                'config': {
+                'config_details': {
                     'allowed_keys': [
-                        'key1_renamed', 'key2', 'key3', 'key4', 'key5', 'key6', 'key7'
+                        'key1_renamed', 'key2', 'key3', 'key4', 'key5', 'key6', 'key7',
+                        'key8', 'key9', 'key10', 'key11', 'key12'
                     ],
                 }
             }]
@@ -85,7 +86,7 @@ class TestConverterAndValidateValidator:
             converters=[{
                 'module': 'test.unit.validators.test_converter_and_validate',
                 'class_name': 'TestConverter',
-                'config': {
+                'config_details': {
                     'original_field_name': 'key1',
                     'new_field_name': 'key1_renamed',
                 }
@@ -93,8 +94,11 @@ class TestConverterAndValidateValidator:
             validators=[{
                 'module': 'tol.validators.allowed_keys',
                 'class_name': 'AllowedKeysValidator',
-                'config': {
-                    'allowed_keys': ['key1', 'key2', 'key3', 'key4', 'key5', 'key6', 'key7'],
+                'config_details': {
+                    'allowed_keys': [
+                        'key1', 'key2', 'key3', 'key4', 'key5', 'key6', 'key7',
+                        'key8', 'key9', 'key10', 'key11', 'key12'
+                    ],
                 }
             }]
         )
@@ -127,7 +131,7 @@ class TestConverterAndValidateValidator:
                 {
                     'module': 'test.unit.validators.test_converter_and_validate',
                     'class_name': 'TestConverter',
-                    'config': {
+                    'config_details': {
                         'original_field_name': 'key1',
                         'new_field_name': 'key1_renamed',
                     }
@@ -135,7 +139,7 @@ class TestConverterAndValidateValidator:
                 {
                     'module': 'test.unit.validators.test_converter_and_validate',
                     'class_name': 'TestConverter',
-                    'config': {
+                    'config_details': {
                         'original_field_name': 'key1_renamed',
                         'new_field_name': 'key1_renamed2',
                     }
@@ -145,18 +149,20 @@ class TestConverterAndValidateValidator:
                 {
                     'module': 'tol.validators.allowed_keys',
                     'class_name': 'AllowedKeysValidator',
-                    'config': {
+                    'config_details': {
                         'allowed_keys': [
-                            'key1_renamed', 'key2', 'key3', 'key4', 'key5', 'key6', 'key7'
+                            'key1_renamed', 'key2', 'key3', 'key4', 'key5', 'key6', 'key7',
+                            'key8', 'key9', 'key10', 'key11', 'key12'
                         ],
                     }
                 },
                 {
                     'module': 'tol.validators.allowed_keys',
                     'class_name': 'AllowedKeysValidator',
-                    'config': {
+                    'config_details': {
                         'allowed_keys': [
-                            'key1_renamed2', 'key2', 'key3', 'key4', 'key5', 'key6', 'key7'
+                            'key1_renamed2', 'key2', 'key3', 'key4', 'key5', 'key6', 'key7',
+                            'key8', 'key9', 'key10', 'key11', 'key12'
                         ],
                     }
                 }

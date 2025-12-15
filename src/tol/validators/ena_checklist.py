@@ -27,31 +27,31 @@ class EnaChecklistValidator(Validator):
         super().__init__()
         self.__config = config
         self._datasource = datasource
+        self.__ena_checklist = datasource.get_one(
+            'checklist',
+            self.__config.ena_checklist_id
+        ).checklist
 
     def _validate_data_object(self, obj: DataObject) -> None:
-        ena_datasource = self._datasource
-        ena_checklist = ena_datasource.get_one('checklist', self.__config.ena_checklist_id)
-
-        validations = ena_checklist.attributes['checklist']
-        for key in validations:
+        for key, validation in self.__ena_checklist.items():
             field_name = key
-            if 'field' in validations[key]:
-                field_name = validations[key]['field']
-            if 'mandatory' in validations[key] and key not in obj.attributes:
+            if 'field' in validation:
+                field_name = validation['field']
+            if 'mandatory' in validation and key not in obj.attributes:
                 self.add_error(object_id=obj.id, detail='Must be given', field=[field_name])
                 continue
-            if 'mandatory' in validations[key] and obj.attributes[key] is None:
+            if 'mandatory' in validation and obj.attributes[key] is None:
                 self.add_error(object_id=obj.id, detail='Must be given', field=[field_name])
                 continue
-            if 'mandatory' in validations[key] and obj.attributes.get(key) == '':
+            if 'mandatory' in validation and obj.attributes.get(key) == '':
                 self.add_error(
                     object_id=obj.id,
                     detail='Must not be empty', field=[field_name]
                 )
 
-            if 'restricted text' in validations[key] and key in obj.attributes:
-                for condition in validations[key]:
-                    if type(condition) == str and '(' in condition:
+            if 'restricted text' in validation and key in obj.attributes:
+                for condition in validation:
+                    if isinstance(condition, str) and '(' in condition:
                         regex = condition
                 compiled_re = re.compile(regex)
                 if not compiled_re.search(obj.attributes.get(key)):
@@ -61,9 +61,9 @@ class EnaChecklistValidator(Validator):
                     )
 
             # Check against allowed values
-            if 'text choice' in validations[key] and key in obj.attributes:
-                for condition in validations[key]:
-                    if type(condition) == list:
+            if 'text choice' in validation and key in obj.attributes:
+                for condition in validation:
+                    if isinstance(condition, list):
                         allowed_values = condition
                 if obj.attributes.get(key).lower() not in \
                         [x.lower() for x in allowed_values]:

@@ -21,7 +21,7 @@ class _MockDataSource(DataSource):
 class _MockDataSourceDestination(DataSource):
     @property
     def supported_types(self):
-        return ['sample']
+        return ['upload']
 
     @property
     def attribute_types(self):
@@ -39,20 +39,20 @@ class TestIncomingSampleToEnaSampleConverter(TestCase):
             'upload',
             'ABC123',
             attributes={
-                'ORGANISM_PART': 'WHOLE_ORGANISM',
+                'ORGANISM_PART': ['HEAD', 'LEG'],
                 'LIFESTAGE': 'ADULT',
-                'COLLECTED_BY': 'Dr. Smith',
+                'COLLECTED_BY': ['Dr. Smith'],
                 'DATE_OF_COLLECTION': '2022-01-01',
                 'COLLECTION_LOCATION': 'Country | Region',
                 'DECIMAL_LATITUDE': '51.5074',
                 'DECIMAL_LONGITUDE': '-0.1278',
-                'IDENTIFIED_BY': 'Dr. Jones',
+                'IDENTIFIED_BY': ['Dr. Jones'],
                 'HABITAT': 'Forest',
-                'IDENTIFIER_AFFILIATION': 'Institute',
+                'IDENTIFIER_AFFILIATION': ['Institute'],
                 'SEX': 'Male',
                 'RELATIONSHIP': 'Parent',
                 'SYMBIONT': 'N',
-                'COLLECTOR_AFFILIATION': 'Lab',
+                'COLLECTOR_AFFILIATION': ['Lab'],
                 'DEPTH': '100',
                 'ELEVATION': '200',
                 'ORIGINAL_COLLECTION_DATE': '2021-12-31',
@@ -78,9 +78,9 @@ class TestIncomingSampleToEnaSampleConverter(TestCase):
         attrs = res.attributes
         # Check a few key fields
         assert attrs['ENA-CHECKLIST'] == 'ERC000053'
-        assert attrs['organism part'] == 'WHOLE ORGANISM'
+        assert attrs['organism part'] == 'HEAD | LEG'
         assert attrs['lifestage'] == 'ADULT'
-        assert attrs['collected by'] == 'Dr. Smith'
+        assert attrs['collected_by'] == 'Dr. Smith'
         assert attrs['collection date'] == '2022-01-01'
         assert attrs['geographic location (country and/or sea)'] == 'Country'
         assert attrs['geographic location (latitude)'] == '51.5074'

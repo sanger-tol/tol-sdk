@@ -53,36 +53,42 @@ class StsFieldsValidator(Validator):
         for field in self.__fields.values():
             # Get the value from the data object
             field_value = obj.get_field_by_name(field.get('data_input_key'))
-            if field.get('mandatory_input') and (field_value is None or field_value == ''):
+            if field.get('mandatory_validation') and (field_value is None or field_value == ''):
                 self.add_error(
                     object_id=obj.id,
                     detail=f'Field {field.get("data_input_key")} is required '
                            f'for project {self.__config.project_code}',
                     field=field.get('data_input_key'),
                 )
-            elif field.get('allowed_values') and field_value not in field.get('allowed_values'):
+            elif field.get('allowed_values'):
+                allowed_values = [
+                    value.get('value') for value in field.get('allowed_values', [])
+                ]
+                if field_value not in allowed_values:
+                    self.add_error(
+                        object_id=obj.id,
+                        detail=f'Field {field.get("data_input_key")} value '
+                               f'"{field_value}" not found in allowed values '
+                               f'{allowed_values} for project '
+                               f'{self.__config.project_code}',
+                        field=field.get('data_input_key'),
+                    )
+            elif field.get('min') and field.get('type') == 'String' \
+                    and field_value is not None and len(field_value) < field.get('min'):
                 self.add_error(
                     object_id=obj.id,
                     detail=f'Field {field.get("data_input_key")} value '
-                           f'"{field_value}" not found in allowed values '
-                           f'{field.get("allowed_values")} for project '
-                           f'{self.__config.project_code}',
-                    field=field.get('data_input_key'),
-                )
-            elif field.get('min') and field_value < field.get('min'):
-                self.add_error(
-                    object_id=obj.id,
-                    detail=f'Field {field.get("data_input_key")} value '
-                           f'"{field_value}" is less than minimum value '
+                           f'"{field_value}" is shorter than minimum length '
                            f'"{field.get("min")}" for project '
                            f'{self.__config.project_code}',
                     field=field.get('data_input_key'),
                 )
-            elif field.get('max') and field_value > field.get('max'):
+            elif field.get('max') and field.get('type') == 'String' \
+                    and field_value is not None and len(field_value) > field.get('max'):
                 self.add_error(
                     object_id=obj.id,
                     detail=f'Field {field.get("data_input_key")} value '
-                           f'"{field_value}" is greater than maximum value '
+                           f'"{field_value}" is longer than maximum length '
                            f'"{field.get("max")}" for project '
                            f'{self.__config.project_code}',
                     field=field.get('data_input_key'),
