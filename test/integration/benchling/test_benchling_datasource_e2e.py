@@ -501,7 +501,7 @@ class TestBenchlingDataSourceE2E:
 
         benchling_ds = benchling()
         # Using a specific custom entity for testing as this one definitely has container contents
-        custom_entity = benchling_ds.get_one('temp_dna_extract', 'bfi_PfJozKsa')
+        custom_entity = benchling_ds.get_one('dna_extract', 'bfi_PfJozKsa')
         container = benchling_ds.get_one('tube', 'con_5wnL41Xr')
 
         entity_contents = list(
