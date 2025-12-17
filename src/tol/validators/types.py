@@ -58,6 +58,8 @@ class TypesValidator(Validator):
                     self.__add_result(
                         obj,
                         key,
+                        detail=f'Field {key} value "{actual_value}" is not of type '
+                               f'"{expected_type}"',
                     )
                 if type_class and isinstance(actual_value, type_class):
                     # Special case for bool since isinstance(True, int) is True
@@ -71,12 +73,13 @@ class TypesValidator(Validator):
         self,
         obj: DataObject,
         key: str,
+        detail: str = None,
     ) -> None:
 
         if self.__config.is_error:
             self.add_error(
                 object_id=obj.id,
-                detail=self.__config.detail,
+                detail=detail or self.__config.detail,
                 field=key,
             )
         else:

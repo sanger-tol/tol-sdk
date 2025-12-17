@@ -57,6 +57,8 @@ class StsFieldsValidator(Validator):
                 continue
             # Get the value from the data object
             field_value = obj.get_field_by_name(field.get('data_input_key'))
+            if isinstance(field_value, list):
+                field_value = ' | '.join(str(v) for v in field_value)
 
             # mandatory_input fields must be present
             if field.get('mandatory_input') and field.get('data_input_key') not in obj.attributes:
@@ -116,15 +118,15 @@ class StsFieldsValidator(Validator):
         field_value: str | int | float | None
     ) -> None:
         # Check type is a string
-        if not isinstance(field_value, str):
-            self.add_error(
-                object_id=obj.id,
-                detail=f'Field {field.get("data_input_key")} value '
-                        f'"{field_value}" is not a string for project '
-                        f'{self.__config.project_code}',
-                field=field.get('data_input_key'),
-            )
-            return
+        # if not isinstance(field_value, str):
+        #     self.add_error(
+        #         object_id=obj.id,
+        #         detail=f'Field {field.get("data_input_key")} value '
+        #                 f'"{field_value}" is not a string for project '
+        #                 f'{self.__config.project_code}',
+        #         field=field.get('data_input_key'),
+        #     )
+        #     return
 
         # Min/Max validations for string
         if field.get('min') and len(field_value) < field.get('min'):
