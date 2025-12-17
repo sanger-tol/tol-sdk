@@ -25,7 +25,7 @@ def type_mapping() -> dict[str, str]:
         'str_column': 'str',
         'bool_column': 'bool',
         'datetimecolumn': 'datetime',
-        #'float_column': 'float',  # Test default float conversion
+        # 'float_column': 'float',  # Test default float conversion so don't force type here
     }
 
 
