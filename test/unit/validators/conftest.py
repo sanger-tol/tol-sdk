@@ -46,11 +46,12 @@ def mock_objs() -> Iterable[DataObject]:
             'key5': 'x' * 10 if c in 'ac' else 'x' * 20,
             'key6': 'present' if c in 'ab' else None,
             'key7': [c, 'y', 'z'],
-            'key8': datetime(2020, 1, 1) if c in 'ab' else datetime(2025, 12, 31),
+            'key8': datetime(2020, 1, 1) if c in 'ab' else datetime(2023, 12, 31),
             'key9': 5.0 if c in 'ab' else 15.0,
             'key10': True if c in 'ab' else False,
             'key11': 10 if c in 'ab' else 20,
             'key12': time(12, 0) if c in 'ab' else time(23, 59),
+            'key13': 'Y' if c in 'ab' else 'N',
         }
         __o.key1 = c
         __o.key2 = c
