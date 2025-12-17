@@ -25,7 +25,7 @@ def type_mapping() -> dict[str, str]:
         'str_column': 'str',
         'bool_column': 'bool',
         'datetimecolumn': 'datetime',
-        'float_column': 'float',
+        #'float_column': 'float',  # Test default float conversion
     }
 
 
@@ -60,6 +60,7 @@ class TestTOSEmitter:
             'int_column': 42,
             'str_column': 'hello',
         }
+        assert isinstance(obj1.attributes['float_column'], int)  # test convert to int
         assert isinstance(dt1, datetime)
         assert dt1 == datetime(
             year=2000,
@@ -76,6 +77,7 @@ class TestTOSEmitter:
             'int_column': 9093,
             'str_column': 'world',
         }
+        assert isinstance(obj2.attributes['float_column'], float)
         assert isinstance(dt2, datetime)
         assert dt2 == datetime(
             year=2010,

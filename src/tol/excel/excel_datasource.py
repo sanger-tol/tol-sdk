@@ -118,6 +118,10 @@ class ExcelDataSource(
         # Convert pandas Timestamp to Python datetime
         if isinstance(__v, pd.Timestamp):
             __v = datetime.fromtimestamp(__v.timestamp())
+        
+        # If float and is whole number, convert to int
+        if isinstance(__v, float) and __v.is_integer():
+            __v = int(__v)
 
         if __k not in self.__mappings:
             return __v
