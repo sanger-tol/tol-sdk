@@ -64,7 +64,7 @@ def create_pipeline_step_models(
     class Pipeline(base_model_class):
         __tablename__ = 'pipeline'
 
-        id: Mapped[int] = mapped_column( # noqa A003
+        id: Mapped[int] = mapped_column(  # noqa A003
             primary_key=True,
             autoincrement=True
         )
@@ -100,7 +100,7 @@ def create_pipeline_step_models(
             ),
         )
 
-        id: Mapped[int] = mapped_column( # noqa A003
+        id: Mapped[int] = mapped_column(  # noqa A003
             primary_key=True,
             autoincrement=True
         )
@@ -121,6 +121,11 @@ def create_pipeline_step_models(
             nullable=False
         )
 
+        is_visible: Mapped[bool] = mapped_column(
+            nullable=False,
+            default=True
+        )
+
         config: Mapped[dict[str, Any]] = mapped_column(
             JSONB,
             nullable=False,
@@ -135,7 +140,7 @@ def create_pipeline_step_models(
     class Upload(base_model_class):
         __tablename__ = 'upload'
 
-        id: Mapped[int] = mapped_column( # noqa A003
+        id: Mapped[int] = mapped_column(  # noqa A003
             primary_key=True,
             autoincrement=True
         )
@@ -173,6 +178,11 @@ def create_pipeline_step_models(
             default=False
         )
 
+        is_ready: Mapped[bool] = mapped_column(
+            nullable=False,
+            default=False
+        )
+
         failure_message: Mapped[str | None] = mapped_column(
             nullable=True,
         )
@@ -182,7 +192,7 @@ def create_pipeline_step_models(
             foreign_keys=[pipeline_id]
         )
 
-        user: Mapped['User'] = relationship( # noqa F821
+        user: Mapped['User'] = relationship(  # noqa F821
             back_populates='user_uploads',
             foreign_keys=[user_id]
         )
