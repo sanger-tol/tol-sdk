@@ -54,3 +54,28 @@ class TestAutoDetectManifestTypeConverter(TestCase):
         res = next(result)
         attrs = res.attributes
         assert attrs['manifest_type'] == 'PLATE_WELL'
+
+    def test_pass(self):
+        source = _MockDataSource(config={})
+        core_data_object(source)
+        destination = _MockDataSourceDestination(config={})
+        core_data_object(destination)
+        mock_object = source.data_object_factory(
+            'upload',
+            'ABC123',
+            attributes={
+                'RACK_OR_TUBE_ID': 'AX'
+            }
+        )
+        config = AutoDetectManifestTypeConverter.Config(
+            rack_or_plate='RACK_OR_TUBE_ID',
+        )
+        converter = AutoDetectManifestTypeConverter(
+            destination.data_object_factory,
+            config
+        )
+
+        result = converter.convert(mock_object)
+        res = next(result)
+        attrs = res.attributes
+        assert attrs['manifest_type'] == 'RACK_TUBE'
