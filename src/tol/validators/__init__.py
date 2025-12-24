@@ -20,3 +20,4 @@ from .unique_values import UniqueValuesValidator  # noqa
 from .unique_whole_organisms import UniqueWholeOrganismsValidator  # noqa
 from .interfaces import Condition  # noqa
 from .min_one_valid_value import MinOneValidValueValidator   # noqa
+from .symbiont_check import SymbiontCheckValidator #noqa
