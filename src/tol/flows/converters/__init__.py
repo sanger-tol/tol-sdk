@@ -58,4 +58,4 @@ from .treeofsex_upload_to_treeofsex_attribute_converter import TreeofsexUploadTo
 from .skip_null_fields_converter import SkipNullFieldsConverter  # noqa F401
 from .default_field_value_if_missing_converter import DefaultFieldValueIfMissingConverter  # noqa F401
 from .prefix_field_converter import PrefixFieldConverter  # noqa F401
-from .add_public_name_converter import AddPublicNameConverter  # noqa F401
+from .combine_fields_to_fields_converter import CombineFieldsToFieldConverter  # noqa F401

@@ -5,7 +5,7 @@
 from unittest import TestCase
 
 from tol.core import DataSource, core_data_object
-from tol.flows.converters import AddPublicNameConverter
+from tol.flows.converters import CombineFieldsToFieldConverter
 
 
 class _MockDataSource(DataSource):
@@ -28,7 +28,7 @@ class _MockDataSourceDestination(DataSource):
         raise NotImplementedError()
 
 
-class TestAddPublicNameConverter(TestCase):
+class TestCombineFieldsToFieldConverter(TestCase):
 
     def test_convert_does_not_add_public_name_if_missing_field(self):
         source = _MockDataSource(config={})
@@ -44,13 +44,13 @@ class TestAddPublicNameConverter(TestCase):
             }
         )
 
-        config = AddPublicNameConverter.Config(
+        config = CombineFieldsToFieldConverter.Config(
             field1='TOLID_PREFIX',
             field2='SPECIMEN_ID',
             dest_field='public_name',
             lowercase_field1=True,
         )
-        converter = AddPublicNameConverter(
+        converter = CombineFieldsToFieldConverter(
             destination.data_object_factory,
             config
         )
@@ -75,13 +75,13 @@ class TestAddPublicNameConverter(TestCase):
                 'SPECIMEN_ID': '001',
             }
         )
-        config = AddPublicNameConverter.Config(
+        config = CombineFieldsToFieldConverter.Config(
             field1='TOLID_PREFIX',
             field2='SPECIMEN_ID',
             dest_field='public_name',
             lowercase_field1=True,
         )
-        converter = AddPublicNameConverter(
+        converter = CombineFieldsToFieldConverter(
             destination.data_object_factory,
             config
         )
@@ -105,13 +105,13 @@ class TestAddPublicNameConverter(TestCase):
                 'SPECIMEN_ID': '002',
             }
         )
-        config = AddPublicNameConverter.Config(
+        config = CombineFieldsToFieldConverter.Config(
             field1='TOLID_PREFIX',
             field2='SPECIMEN_ID',
             dest_field='public_name',
             lowercase_field1=False,
         )
-        converter = AddPublicNameConverter(
+        converter = CombineFieldsToFieldConverter(
             destination.data_object_factory,
             config
         )

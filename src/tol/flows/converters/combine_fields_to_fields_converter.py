@@ -7,7 +7,7 @@ from typing import Iterable
 from tol.core import DataObject, DataObjectToDataObjectOrUpdateConverter
 
 
-class AddPublicNameConverter(DataObjectToDataObjectOrUpdateConverter):
+class CombineFieldsToFieldConverter(DataObjectToDataObjectOrUpdateConverter):
 
     @dataclass(slots=True, frozen=True, kw_only=True)
     class Config:
@@ -25,7 +25,9 @@ class AddPublicNameConverter(DataObjectToDataObjectOrUpdateConverter):
 
     def convert(self, data_object: DataObject) -> Iterable[DataObject]:
         """
-        adding public_name field to the DataObject
+        Concatenates the values of two fields and stores the result in a new field.
+        The first field's value may be lowercased if specified in the configuration.
+        The destination field name is given by the configuration.
         """
 
         val1 = data_object.get_field_by_name(self.__config.field1)
