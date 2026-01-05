@@ -16,7 +16,7 @@ class SymbiontCheckValidator(Validator):
     @dataclass(slots=True, frozen=True, kw_only=True)
     class Config:
         symbiont_field: str
-       
+
     __slots__ = ['__config']
     __config: Config
 
@@ -26,7 +26,7 @@ class SymbiontCheckValidator(Validator):
 
     def _validate_data_object(self, obj: DataObject) -> None:
         # This function is used to check if the data object is SYMBIONT or not
-        
+
         if obj.attributes.get(self.__config.symbiont_field) == 'SYMBIONT':
             self.add_error(
                 object_id=obj.id,
