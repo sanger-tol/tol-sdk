@@ -6,10 +6,10 @@ from typing import Iterable
 from unittest.mock import create_autospec
 
 from tol.core import DataObject
-from tol.validators import SymbiontCheckValidator
+from tol.validators import ValueCheckValidator
 
 
-class TestSymbiontCheckValidator:
+class TestValueCheckValidator:
     def test_valid(
         self,
         mock_objs: Iterable[DataObject],
@@ -21,13 +21,13 @@ class TestSymbiontCheckValidator:
             'SYMBIONT': 'SYMBIONT',
         }
         mock_one.SYMBIONT = 'SYMBIONT'
-        mock_one.SPECIMEN_ID = 'one'
 
-        config = SymbiontCheckValidator.Config(
-            symbiont_field='SYMBIONT',
+        config = ValueCheckValidator.Config(
+            field='SYMBIONT',
+            value='SYMBIONT'
         )
 
-        validator = SymbiontCheckValidator(config)
+        validator = ValueCheckValidator(config)
 
         # consume the `Iterable`
         list(
