@@ -9,7 +9,7 @@ from dataclasses import dataclass
 from datetime import datetime
 from typing import Any, Dict, Iterator, List
 
-from sqlalchemy import ForeignKey, UniqueConstraint, Text
+from sqlalchemy import ForeignKey, Text, UniqueConstraint
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import (
     Mapped,
@@ -120,7 +120,6 @@ def create_pipeline_step_models(
         step_order: Mapped[int] = mapped_column(
             nullable=False
         )
-
 
         description: Mapped[str | None] = mapped_column(
             Text,
