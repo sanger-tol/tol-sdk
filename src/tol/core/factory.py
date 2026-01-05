@@ -189,7 +189,7 @@ def core_data_object(
                 if object_from_datasource is not None:
                     self.__type = object_from_datasource.type
                     self.__attributes = object_from_datasource.attributes
-                    self.__to_one_objects = object_from_datasource.to_one_objects
+                    self.__to_one_objects = object_from_datasource._to_one_objects
                     break
 
         @property

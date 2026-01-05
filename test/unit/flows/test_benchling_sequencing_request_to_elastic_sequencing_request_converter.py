@@ -31,7 +31,7 @@ class _MockDataSourceRelational(DataSource, Relational):
     def supported_types(self):
         return [
             'sequencing_request', 'extraction', 'sample', 'species', 'specimen', 'tolid',
-            'tissue_prep'
+            'extraction_container', 'tissue_prep'
         ]
 
     @property
@@ -47,7 +47,8 @@ class _MockDataSourceRelational(DataSource, Relational):
             'specimen': 'specimen',
             'tolid': 'tolid',
             'tissue_prep': 'tissue_prep',
-            'extraction': 'extraction'
+            'extraction': 'extraction',
+            'extraction_container': 'extraction_container'
         }
         return {'sequencing_request': rc_sequencing_request}
 
@@ -87,6 +88,7 @@ class TestBenchlingSequencingRequestToElasticSequencingRequestConverter(TestCase
                 'tissue_prep_id': 'tissue_prep_id_1',
                 'programme_id': 'programme_id_1',
                 'extraction_id': 'extraction_id_1',
+                'fluidx_container_id': 'fluidx_container_id_1',
                 'sequencing_platform': 'pacbio',
                 'source': 'v1'
             }
@@ -120,6 +122,7 @@ class TestBenchlingSequencingRequestToElasticSequencingRequestConverter(TestCase
         self.assertEqual(ret1.tolid.id, 'programme_id_1')
         self.assertEqual(ret1.tissue_prep.id, 'tissue_prep_id_1')
         self.assertEqual(ret1.extraction.id, 'extraction_id_1')
+        self.assertEqual(ret1.extraction_container.id, 'fluidx_container_id_1')
 
         converteds = converter.convert(obj2)
         ret2 = next(converteds)
@@ -135,3 +138,4 @@ class TestBenchlingSequencingRequestToElasticSequencingRequestConverter(TestCase
         self.assertEqual(ret2.tolid.id, 'programme_id_2')
         self.assertTrue(ret2.tissue_prep is None)
         self.assertTrue(ret2.extraction is None)
+        self.assertTrue(ret2.extraction_container is None)
