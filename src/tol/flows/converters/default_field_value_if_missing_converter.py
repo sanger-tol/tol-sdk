@@ -26,9 +26,12 @@ class DefaultFieldValueIfMissingConverter(DataObjectToDataObjectOrUpdateConverte
         Adds a default value for a configured field if missing, empty, or None
         """
 
-        attributes = dict(data_object.attributes)
-
-        current_value = attributes.get(self.__config.field_name)
+        attributes_obj = data_object.attributes
+        if hasattr(attributes_obj, 'get_field_by_name'):
+            current_value = attributes_obj.get_field_by_name(self.__config.field_name)
+        else:
+            current_value = attributes_obj.get(self.__config.field_name)
+        attributes = dict(attributes_obj)
         if not current_value:
             attributes[self.__config.field_name] = self.__config.default_value
 
