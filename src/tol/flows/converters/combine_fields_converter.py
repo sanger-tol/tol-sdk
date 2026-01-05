@@ -7,7 +7,7 @@ from typing import Iterable
 from tol.core import DataObject, DataObjectToDataObjectOrUpdateConverter
 
 
-class CombineFieldsToFieldConverter(DataObjectToDataObjectOrUpdateConverter):
+class CombineFieldsConverter(DataObjectToDataObjectOrUpdateConverter):
 
     @dataclass(slots=True, frozen=True, kw_only=True)
     class Config:
