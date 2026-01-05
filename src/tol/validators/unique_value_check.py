@@ -8,7 +8,7 @@ from tol.core import Validator
 from tol.core.data_object import DataObject
 
 
-class CachedValueCheckValidator(Validator):
+class UniqueValueCheckValidator(Validator):
     """
     Validates an incoming stream of `DataObject` instances.
     For each data object (sample) it checks if the GAL column has only one value
@@ -36,6 +36,6 @@ class CachedValueCheckValidator(Validator):
             if obj.attributes.get(self.__config.field) != self._cached:
                 self.add_error(
                     object_id=obj.id,
-                    detail='More than one value detected in {0}'.format(self.__config.field),
+                    detail=f'More than one value detected in {self.__config.field}',
                     field=self.__config.field,
                 )

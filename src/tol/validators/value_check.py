@@ -31,6 +31,6 @@ class ValueCheckValidator(Validator):
         if obj.attributes.get(self.__config.field) == self.__config.value:
             self.add_error(
                 object_id=obj.id,
-                detail='{0} is detected'.format(self.__config.value),
+                detail=f'{self.__config.value} is detected',
                 field=self.__config.field,
             )

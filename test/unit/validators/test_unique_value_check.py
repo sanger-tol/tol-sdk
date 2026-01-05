@@ -6,10 +6,10 @@ from typing import Iterable
 from unittest.mock import create_autospec
 
 from tol.core import DataObject
-from tol.validators import CachedValueCheckValidator
+from tol.validators import UniqueValueCheckValidator
 
 
-class TestCachedValueCheckValidator:
+class TestUniqueValueCheckValidator:
     def test_valid(
         self,
         mock_objs: Iterable[DataObject],
@@ -28,10 +28,10 @@ class TestCachedValueCheckValidator:
         }
         mock_two.GAL = 'EL'
 
-        config = CachedValueCheckValidator.Config(
+        config = UniqueValueCheckValidator.Config(
             field='GAL',
         )
-        validator = CachedValueCheckValidator(config)
+        validator = UniqueValueCheckValidator(config)
 
         # consume the `Iterable`
         list(
@@ -63,10 +63,10 @@ class TestCachedValueCheckValidator:
             'GAL': 'SANG',
         }
         mock_three.GAL = 'SANG'
-        config = CachedValueCheckValidator.Config(
+        config = UniqueValueCheckValidator.Config(
             field='GAL',
         )
-        validator = CachedValueCheckValidator(config)
+        validator = UniqueValueCheckValidator(config)
 
         # consume the `Iterable`
         list(
@@ -91,10 +91,10 @@ class TestCachedValueCheckValidator:
             'GAL': 'EL',
         }
         mock_two.GAL = 'EL'
-        config = CachedValueCheckValidator.Config(
+        config = UniqueValueCheckValidator.Config(
             field='GAL',
         )
-        validator = CachedValueCheckValidator(config)
+        validator = UniqueValueCheckValidator(config)
 
         # consume the `Iterable`
         list(
