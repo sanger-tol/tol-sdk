@@ -9,28 +9,29 @@ Output: Table with columns:
 
 1) taxon_id: [character] Tissue metadata. Origin: STS
 2) eln_tissue_id: [character] Benchling ID for the tissue the extraction is derived from.
-3) eln_tissue_prep_id: [character] Benchling ID for the tissue prep the extraction is derived from.
-4) extraction_id: [character] DNA extraction entity ID (Benchling).
-5) programme_id: [character] ToLID. Origin: BWH.
-6) specimen_id: [character] Specimen ID. Origin: STS.
-7) creation_date: [date] Date the container was created.
-8) fluidx_container_id: [character] Primary key for the FluidX container.
-9) fluidx_id: [character] FluidX barcode.
-10) tube_type: [character] Type of tube/container.
-11) volume_ul: [numeric] Volume in microliters (0 if archived as 'Retired' or 'Expended').
-12) location: [character] Storage location name.
-13) rack: [character] Box/rack barcode.
-14) archive_purpose: [character] Reason for archiving the DNA extraction.
-15) nanodrop_concentration_ngul: [numeric] Latest Nanodrop concentration (ng/µL).
-16) dna_260_280_ratio: [numeric] Latest Nanodrop 260/280 ratio.
-17) dna_260_230_ratio: [numeric] Latest Nanodrop 260/230 ratio.
-18) qubit_concentration_ngul: [numeric] Latest Qubit concentration (ng/µL).
-19) yield_ng: [numeric] Latest yield (ng).
-20) femto_date_code: [character] Latest Femto date code.
-21) femto_description: [character] Latest Femto profile description.
-22) gqn_index: [numeric] Latest GQN index from Femto.
-23) next_step: [character] Latest decision making next step.
-24) extraction_qc_result: [character] Latest extraction QC result.
+3) tissue_sts_id: [character] STS ID for the tissue the extraction is derived from.
+4) eln_tissue_prep_id: [character] Benchling ID for the tissue prep the extraction is derived from.
+5) extraction_id: [character] DNA extraction entity ID (Benchling).
+6) programme_id: [character] ToLID. Origin: BWH.
+7) specimen_id: [character] Specimen ID. Origin: STS.
+8) creation_date: [date] Date the container was created.
+9) fluidx_container_id: [character] Primary key for the FluidX container.
+10) fluidx_id: [character] FluidX barcode.
+11) tube_type: [character] Type of tube/container.
+12) volume_ul: [numeric] Volume in microliters (0 if archived as 'Retired' or 'Expended').
+13) location: [character] Storage location name.
+14) rack: [character] Box/rack barcode.
+15) archive_purpose: [character] Reason for archiving the DNA extraction.
+16) nanodrop_concentration_ngul: [numeric] Latest Nanodrop concentration (ng/µL).
+17) dna_260_280_ratio: [numeric] Latest Nanodrop 260/280 ratio.
+18) dna_260_230_ratio: [numeric] Latest Nanodrop 260/230 ratio.
+19) qubit_concentration_ngul: [numeric] Latest Qubit concentration (ng/µL).
+20) yield_ng: [numeric] Latest yield (ng).
+21) femto_date_code: [character] Latest Femto date code.
+22) femto_description: [character] Latest Femto profile description.
+23) gqn_index: [numeric] Latest GQN index from Femto.
+24) next_step: [character] Latest decision making next step.
+25) extraction_qc_result: [character] Latest extraction QC result.
 
 NOTES:
 1) Only extractions from the 'ToL Core Lab' project and relevant folders are included.
@@ -109,6 +110,7 @@ latest_decision_making AS (
 SELECT DISTINCT
     t.taxon_id,
     t.id AS eln_tissue_id,
+    t.sts_id AS tissue_sts_id,
     tp.id AS eln_tissue_prep_id,
     dna.id AS extraction_id,
     t.programme_id,

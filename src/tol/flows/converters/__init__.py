@@ -2,6 +2,7 @@
 #
 # SPDX-License-Identifier: MIT
 
+from .benchling_extraction_container_to_elastic_extraction_container_converter import BenchlingExtractionContainerToElasticExtractionContainerConverter  # noqa F401
 from .benchling_extraction_to_elastic_extraction_converter import BenchlingExtractionToElasticExtractionConverter  # noqa F401
 from .benchling_extraction_to_elastic_sequencing_request_converter import BenchlingExtractionToElasticSequencingRequestConverter  # noqa F401
 from .benchling_sequencing_request_to_elastic_sequencing_request_converter import (  # noqa F401
