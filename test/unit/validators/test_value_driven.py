@@ -2,7 +2,6 @@
 #
 # SPDX-License-Identifier: MIT
 
-from typing import Iterable
 from unittest.mock import create_autospec
 
 from tol.core import DataObject
@@ -123,7 +122,7 @@ class TestValueCheckValidator:
             threw_exception = True
             assert e.args[0] == 'ValueDrivenValidator set up incorrectly. ' + \
                 'Failed to retrieve validator information from config'
-        
+
         assert threw_exception
 
     # def test_valid(
