@@ -4,10 +4,10 @@
 
 import importlib
 from dataclasses import dataclass
-from typing import Any, Dict
+from typing import Any, Dict, List
 
 from tol.core import DataObject
-from tol.core.validate import Validator
+from tol.core.validate import Validator, ValidationResult
 
 
 class ValueDrivenValidator(Validator):
@@ -80,3 +80,36 @@ class ValueDrivenValidator(Validator):
 
             # Add the new validator to cached validators
             self.__cached_validators[value] = validator
+
+    @property
+    def results(self) -> List[ValidationResult]:
+        """
+        Get results from all sub-validators, collated into a single list
+        """
+        return [
+            result
+            for validator in self.__cached_validators.values()
+            for result in validator.results
+        ]
+
+    @property
+    def warnings(self) -> List[ValidationResult]:
+        """
+        Get warnings from all sub-validators, collated into a single list
+        """
+        return [
+            warning
+            for validator in self.__cached_validators.values()
+            for warning in validator.warnings
+        ]
+
+    @property
+    def errors(self) -> List[ValidationResult]:
+        """
+        Get errors from all sub-validators, collated into a single list
+        """
+        return [
+            error
+            for validator in self.__cached_validators.values()
+            for error in validator.errors
+        ]

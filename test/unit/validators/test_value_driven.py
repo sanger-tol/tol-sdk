@@ -58,7 +58,6 @@ class TestValueCheckValidator:
 
     def test_multiple_validators(
         self,
-        mock_objs: Iterable[DataObject]
     ) -> None:
         """
         Tests whether the validator is able to work with multiple validators at once
@@ -91,7 +90,7 @@ class TestValueCheckValidator:
                         'field': 'b',
                     }
                 },
-                'value_one': {
+                'value_two': {
                     'module': 'validators.unique_value_check',
                     'class_name': 'UniqueValueCheckValidator',
                     'config_details': {
@@ -107,7 +106,6 @@ class TestValueCheckValidator:
         list(
             validator.validate(iter([mock_one, mock_two]))
         )
-        # TODO: Overall validator doesn't know about sub-validators' errors yet
         assert not validator.results
 
     # def test_failing_validator(
@@ -121,7 +119,6 @@ class TestValueCheckValidator:
 
     def test_invalid_config(
         self,
-        # mocks_objs: Iterable[DataObject]
     ) -> None:
         # Discard the sample mock objects (which won't be useful for this test)
         mock_one: DataObject = create_autospec(DataObject)
