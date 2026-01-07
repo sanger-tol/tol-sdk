@@ -2,8 +2,8 @@
 #
 # SPDX-License-Identifier: MIT
 
-from dataclasses import dataclass
 import importlib
+from dataclasses import dataclass
 from typing import Any, Dict
 
 from tol.core import DataObject
@@ -49,7 +49,7 @@ class ValueDrivenValidator(Validator):
 
         self.__config = config
         self.__cached_validators = {}
-    
+
     def _validate_data_object(
         self,
         obj: DataObject
