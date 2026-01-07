@@ -56,14 +56,59 @@ class TestValueCheckValidator:
     #     )
     #     assert validator.results
 
-    # def test_multiple_validators(
-    #     self,
-    #     mock_objs: Iterable[DataObject]
-    # ) -> None:
-    #     """
-    #     Tests whether the validator is able to work with multiple validators at once
-    #     """
-    #     pass
+    def test_multiple_validators(
+        self,
+        mock_objs: Iterable[DataObject]
+    ) -> None:
+        """
+        Tests whether the validator is able to work with multiple validators at once
+        """
+        # Discard the sample mock objects (which won't be useful for this test)
+        mock_one: DataObject = create_autospec(DataObject)
+        mock_one.id = 'a'
+        mock_one.attributes = {
+            'key_column': 'value_one',
+            'b': 'b',
+        }
+        mock_one.key_column = 'value_one'
+        mock_one.b = 'b'
+        mock_two: DataObject = create_autospec(DataObject)
+        mock_two.id = 'b'
+        mock_two.attributes = {
+            'key_column': 'value_two',
+            'c': 'c',
+        }
+        mock_two.key_column = 'value_two'
+        mock_two.c = 'c'
+
+        config = ValueDrivenValidator.Config(
+            key_column='value_one',
+            validations={
+                'value_one': {
+                    'module': 'validators.unique_value_check',
+                    'class_name': 'UniqueValueCheckValidator',
+                    'config_details': {
+                        'field': 'b',
+                    }
+                },
+                'value_one': {
+                    'module': 'validators.unique_value_check',
+                    'class_name': 'UniqueValueCheckValidator',
+                    'config_details': {
+                        'field': 'c',
+                    }
+                }
+            }
+        )
+
+        validator = ValueDrivenValidator(config)
+
+        # consume the `Iterable`
+        list(
+            validator.validate(iter([mock_one, mock_two]))
+        )
+        # TODO: Overall validator doesn't know about sub-validators' errors yet
+        assert not validator.results
 
     # def test_failing_validator(
     #     self,
