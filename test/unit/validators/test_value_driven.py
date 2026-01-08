@@ -306,7 +306,9 @@ class TestValueDrivenValidator:
         validator = ValueDrivenValidator(config)
 
         # consume the Iterable
-        list(validator.validate(iter([mock_one])))
+        list(
+            validator.validate(iter([mock_one]))
+        )
 
         # Ensure the expected sub-validator for this valid validation has been cached
         cached = validator._ValueDrivenValidator__cached_validators
