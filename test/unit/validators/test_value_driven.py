@@ -19,9 +19,11 @@ class TestValueDrivenValidator:
             class Config:
                 def __init__(self, field):
                     self.field = field
+
             def __init__(self, config):
                 self.config = config
                 self.called = []
+
             def _validate_data_object(self, obj):
                 self.called.append(obj.id)
 
@@ -63,9 +65,11 @@ class TestValueDrivenValidator:
             class Config:
                 def __init__(self, field):
                     self.field = field
+
             def __init__(self, config):
                 self.config = config
                 self.called = []
+
             def _validate_data_object(self, obj):
                 self.called.append(obj.id)
 
@@ -116,8 +120,10 @@ class TestValueDrivenValidator:
             class Config:
                 def __init__(self, field):
                     self.field = field
+     
             def __init__(self, config):
                 self.config = config
+
             def _validate_data_object(self, obj):
                 raise Exception('Subvalidator failed')
 
@@ -188,9 +194,11 @@ class TestValueDrivenValidator:
             class Config:
                 def __init__(self, field):
                     self.field = field
+
             def __init__(self, config):
                 self.config = config
                 self.called = []
+
             def _validate_data_object(self, obj):
                 self.called.append(obj.id)
 
