@@ -21,6 +21,8 @@ class _MockDataSource(DataSource, DetailGetter):
         pass
 
     def get_one(self, object_type: str, object_id, **kwargs):
+        del object_type, kwargs
+
         mock_object = create_autospec(DataObject, instance=True)
         if object_id == 'FAIL':
             return None
@@ -36,6 +38,8 @@ class _MockDataSource(DataSource, DetailGetter):
             ]
 
     def get_list(self, object_type: str, object_filters: DataSourceFilter, **kwargs):
+        del object_type, kwargs
+
         value = object_filters.and_['specimen_id']['eq']['value']
         if value == 'FAIL':
             mock_object = create_autospec(DataObject, instance=True)
