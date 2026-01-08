@@ -47,6 +47,7 @@ class ValueDrivenValidator(Validator):
     ) -> None:
         super().__init__()
 
+        del kwargs
         self.__config = config
         self.__cached_validators = {}
 
