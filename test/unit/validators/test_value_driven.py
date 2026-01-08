@@ -2,14 +2,12 @@
 #
 # SPDX-License-Identifier: MIT
 
-from unittest.mock import create_autospec
+import sys
+from unittest.mock import MagicMock, create_autospec
 
 from tol.core import DataObject
 from tol.validators import ValueDrivenValidator
 
-
-import sys
-from unittest.mock import MagicMock
 
 class TestValueDrivenValidator:
     def test_validator_cached(self):

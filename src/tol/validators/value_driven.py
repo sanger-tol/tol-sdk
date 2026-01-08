@@ -7,7 +7,7 @@ from dataclasses import dataclass
 from typing import Any, Dict, List
 
 from tol.core import DataObject
-from tol.core.validate import Validator, ValidationResult
+from tol.core.validate import ValidationResult, Validator
 
 
 class ValueDrivenValidator(Validator):
