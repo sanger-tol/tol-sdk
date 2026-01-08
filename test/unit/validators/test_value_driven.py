@@ -143,16 +143,16 @@ class TestValueDrivenValidator:
         )
 
         validator = ValueDrivenValidator(config)
-        
+
         list(
             validator.validate(iter([mock_one, mock_two]))
         )
-        
+
         # Fetch the dictionary (private attribute) of cached validators, to check that each
         # sub-validation got a separate validator
         cached = validator._ValueDrivenValidator__cached_validators
         assert len(cached) == 2
-        
+
         # Ensure that the validators validated the correct data objects
         assert cached['value_one'].called == ['a']
         assert cached['value_two'].called == ['b']
@@ -307,7 +307,7 @@ class TestValueDrivenValidator:
 
         # consume the Iterable
         list(validator.validate(iter([mock_one])))
-        
+
         # Ensure the expected sub-validator for this valid validation has been cached
         cached = validator._ValueDrivenValidator__cached_validators
         assert cached['value_one'].called == ['a']
