@@ -3,6 +3,7 @@
 # SPDX-License-Identifier: MIT
 
 import sys
+from typing import Iterable
 from unittest.mock import MagicMock, create_autospec
 
 from tol.core import DataObject
@@ -10,7 +11,10 @@ from tol.validators import ValueDrivenValidator
 
 
 class TestValueDrivenValidator:
-    def test_validator_cached(self):
+    def test_validator_cached(
+        self,
+        mock_objs: Iterable[DataObject]
+    ):
         """
         Uses two data objects that have the same value for their key column. Tests whether the
         validator used for the second data object is the same as the one used for the first.
@@ -34,6 +38,8 @@ class TestValueDrivenValidator:
             DummyValidator
         )
 
+        # The provided mock objects are not appropriate for this test, so we set up new ones
+        del mock_objs
         mock_one: DataObject = create_autospec(DataObject)
         mock_one.id = 'a'
         mock_one.get_field_by_name.return_value = 'value_one'
@@ -124,7 +130,10 @@ class TestValueDrivenValidator:
         assert cached['value_one'].called == ['a']
         assert cached['value_two'].called == ['b']
 
-    def test_failing_validator(self):
+    def test_failing_validator(
+        self,
+        mock_objs: Iterable[DataObject]
+    ):
         """
         Tests whether the overall validator fails as expected if one of its subvalidators fails
         """
@@ -146,6 +155,8 @@ class TestValueDrivenValidator:
             DummyValidator
         )
 
+        # The provided mock objects are not appropriate for this test, so we set up a new one
+        del mock_objs
         mock_one: DataObject = create_autospec(DataObject)
         mock_one.id = 'a'
         mock_one.get_field_by_name.return_value = 'value_one'
@@ -170,10 +181,15 @@ class TestValueDrivenValidator:
         except Exception as e:
             assert str(e) == 'Subvalidator failed'
 
-    def test_invalid_config(self):
+    def test_invalid_config(
+        self,
+        mock_objs: Iterable[DataObject]
+    ):
         """
         Tests that an invalid config raises the correct exception
         """
+        # The provided mock objects are not appropriate for this test, so we set up new ones
+        del mock_objs
         mock_one: DataObject = create_autospec(DataObject)
         mock_one.id = 'a'
         mock_one.get_field_by_name.return_value = 'value_one'
@@ -203,7 +219,10 @@ class TestValueDrivenValidator:
                 'Failed to retrieve validator information from config'
         assert threw_exception
 
-    def test_valid(self):
+    def test_valid(
+        self,
+        mock_objs: Iterable[DataObject]
+    ):
         """
         Tests a valid configuration and successful validation
         """
@@ -226,6 +245,8 @@ class TestValueDrivenValidator:
             DummyValidator
         )
 
+        # The provided mock objects are not appropriate for this test, so we set up a new one
+        del mock_objs
         mock_one: DataObject = create_autospec(DataObject)
         mock_one.id = 'a'
         mock_one.get_field_by_name.return_value = 'value_one'
