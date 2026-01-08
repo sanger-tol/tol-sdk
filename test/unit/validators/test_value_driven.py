@@ -28,7 +28,11 @@ class TestValueDrivenValidator:
                 self.called.append(obj.id)
 
         sys.modules['validators.unique_value_check'] = MagicMock()
-        setattr(sys.modules['validators.unique_value_check'], 'UniqueValueCheckValidator', DummyValidator)
+        setattr(
+            sys.modules['validators.unique_value_check'],
+            'UniqueValueCheckValidator',
+            DummyValidator
+        )
 
         mock_one: DataObject = create_autospec(DataObject)
         mock_one.id = 'a'
@@ -75,8 +79,16 @@ class TestValueDrivenValidator:
 
         sys.modules['validators.unique_value_check'] = MagicMock()
         sys.modules['validators.other_value_check'] = MagicMock()
-        setattr(sys.modules['validators.unique_value_check'], 'UniqueValueCheckValidator', DummyValidator)
-        setattr(sys.modules['validators.other_value_check'], 'OtherValueCheckValidator', DummyValidator)
+        setattr(
+            sys.modules['validators.unique_value_check'],
+            'UniqueValueCheckValidator',
+            DummyValidator
+        )
+        setattr(
+            sys.modules['validators.other_value_check'],
+            'OtherValueCheckValidator',
+            DummyValidator
+        )
 
         mock_one: DataObject = create_autospec(DataObject)
         mock_one.id = 'a'
@@ -120,7 +132,7 @@ class TestValueDrivenValidator:
             class Config:
                 def __init__(self, field):
                     self.field = field
-     
+
             def __init__(self, config):
                 self.config = config
 
@@ -128,7 +140,11 @@ class TestValueDrivenValidator:
                 raise Exception('Subvalidator failed')
 
         sys.modules['validators.unique_value_check'] = MagicMock()
-        setattr(sys.modules['validators.unique_value_check'], 'UniqueValueCheckValidator', DummyValidator)
+        setattr(
+            sys.modules['validators.unique_value_check'],
+            'UniqueValueCheckValidator',
+            DummyValidator
+        )
 
         mock_one: DataObject = create_autospec(DataObject)
         mock_one.id = 'a'
@@ -183,7 +199,8 @@ class TestValueDrivenValidator:
             list(validator.validate(iter([mock_one, mock_two])))
         except Exception as e:
             threw_exception = True
-            assert e.args[0] == 'ValueDrivenValidator set up incorrectly. Failed to retrieve validator information from config'
+            assert e.args[0] == 'ValueDrivenValidator set up incorrectly. ' + \
+                'Failed to retrieve validator information from config'
         assert threw_exception
 
     def test_valid(self):
@@ -203,7 +220,11 @@ class TestValueDrivenValidator:
                 self.called.append(obj.id)
 
         sys.modules['validators.unique_value_check'] = MagicMock()
-        setattr(sys.modules['validators.unique_value_check'], 'UniqueValueCheckValidator', DummyValidator)
+        setattr(
+            sys.modules['validators.unique_value_check'],
+            'UniqueValueCheckValidator',
+            DummyValidator
+        )
 
         mock_one: DataObject = create_autospec(DataObject)
         mock_one.id = 'a'
