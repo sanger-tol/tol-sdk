@@ -31,6 +31,8 @@ class TestValueDrivenValidator:
             def _validate_data_object(self, obj):
                 self.called.append(obj.id)
 
+        # Set up a dummy validator to act as UniqueValueCheckValidator so we can keep track of
+        # which data objects it validates
         sys.modules['validators.unique_value_check'] = MagicMock()
         setattr(
             sys.modules['validators.unique_value_check'],
@@ -61,13 +63,26 @@ class TestValueDrivenValidator:
         )
 
         validator = ValueDrivenValidator(config)
-        list(validator.validate(iter([mock_one, mock_two])))
+
+        # consume the `Iterable`
+        list(
+            validator.validate(iter([mock_one, mock_two]))
+        )
+
+        # Fetch the dictionary (private attribute) of cached validators, and check that there's
+        # only one (confirming that a new one was not made each time)
         cached = validator._ValueDrivenValidator__cached_validators
         assert len(cached) == 1
+
+        # Get this single validator, and ensure it was the same one used for both data objects
+        # 'a' and 'b' by using the `called` store defined in DummyValidator
         instance = cached['value_one']
         assert instance.called == ['a', 'b']
 
-    def test_multiple_validators(self):
+    def test_multiple_validators(
+        self,
+        mock_objs: Iterable[DataObject]
+    ):
         """
         Tests whether the validator is able to work with multiple validators at once
         """
@@ -83,6 +98,8 @@ class TestValueDrivenValidator:
             def _validate_data_object(self, obj):
                 self.called.append(obj.id)
 
+        # Set up dummy validators to act as UniqueValueCheckValidator so we can keep track of
+        # which data objects it validates
         sys.modules['validators.unique_value_check'] = MagicMock()
         sys.modules['validators.other_value_check'] = MagicMock()
         setattr(
@@ -96,6 +113,8 @@ class TestValueDrivenValidator:
             DummyValidator
         )
 
+        # The provided mock objects are not appropriate for this test, so we set up new ones
+        del mock_objs
         mock_one: DataObject = create_autospec(DataObject)
         mock_one.id = 'a'
         mock_one.get_field_by_name.return_value = 'value_one'
@@ -124,9 +143,17 @@ class TestValueDrivenValidator:
         )
 
         validator = ValueDrivenValidator(config)
-        list(validator.validate(iter([mock_one, mock_two])))
+        
+        list(
+            validator.validate(iter([mock_one, mock_two]))
+        )
+        
+        # Fetch the dictionary (private attribute) of cached validators, to check that each
+        # sub-validation got a separate validator
         cached = validator._ValueDrivenValidator__cached_validators
         assert len(cached) == 2
+        
+        # Ensure that the validators validated the correct data objects
         assert cached['value_one'].called == ['a']
         assert cached['value_two'].called == ['b']
 
@@ -148,6 +175,8 @@ class TestValueDrivenValidator:
             def _validate_data_object(self, obj):
                 raise Exception('Subvalidator failed')
 
+        # Set up a dummy validator to act as UniqueValueCheckValidator so we can keep track of
+        # which data objects it validates
         sys.modules['validators.unique_value_check'] = MagicMock()
         setattr(
             sys.modules['validators.unique_value_check'],
@@ -175,8 +204,13 @@ class TestValueDrivenValidator:
         )
 
         validator = ValueDrivenValidator(config)
+
+        # Check whether the sub-validator fails (with the correct error message)
         try:
-            list(validator.validate(iter([mock_one])))
+            # consume the Iterable
+            list(
+                validator.validate(iter([mock_one]))
+            )
             assert False, 'Should have raised Exception'
         except Exception as e:
             assert str(e) == 'Subvalidator failed'
@@ -210,14 +244,17 @@ class TestValueDrivenValidator:
         )
 
         validator = ValueDrivenValidator(config)
-        threw_exception = False
+
+        # Check whether the sub-validator fails (with the correct error message)
         try:
-            list(validator.validate(iter([mock_one, mock_two])))
+            # consume the Iterable
+            list(
+                validator.validate(iter([mock_one, mock_two]))
+            )
+            assert False, 'Should have raised Exception'
         except Exception as e:
-            threw_exception = True
             assert e.args[0] == 'ValueDrivenValidator set up incorrectly. ' + \
                 'Failed to retrieve validator information from config'
-        assert threw_exception
 
     def test_valid(
         self,
@@ -238,6 +275,8 @@ class TestValueDrivenValidator:
             def _validate_data_object(self, obj):
                 self.called.append(obj.id)
 
+        # Set up a dummy validator to act as UniqueValueCheckValidator so we can keep track of
+        # which data objects it validates
         sys.modules['validators.unique_value_check'] = MagicMock()
         setattr(
             sys.modules['validators.unique_value_check'],
@@ -265,6 +304,10 @@ class TestValueDrivenValidator:
         )
 
         validator = ValueDrivenValidator(config)
+
+        # consume the Iterable
         list(validator.validate(iter([mock_one])))
+        
+        # Ensure the expected sub-validator for this valid validation has been cached
         cached = validator._ValueDrivenValidator__cached_validators
         assert cached['value_one'].called == ['a']
