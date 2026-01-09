@@ -4,7 +4,7 @@
 
 import importlib
 from dataclasses import dataclass
-from typing import ADict, List, cast
+from typing import Dict, List, cast
 
 from tol.core import DataObject
 from tol.core.validate import ValidationResult, Validator
