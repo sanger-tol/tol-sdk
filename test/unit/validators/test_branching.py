@@ -333,7 +333,7 @@ class TestBranchingValidator:
                 validator.validate(iter([mock_one]))
             )
             assert False, 'Should have raised Exception'
-        except Exception as e:
+        except ValueError as e:
             assert str(e) == 'Invalid config in BranchingValidator: `module` not found'
 
     def test_invalid_config_type(
@@ -377,6 +377,6 @@ class TestBranchingValidator:
                 validator.validate(iter([mock_one]))
             )
             assert False, 'Should have raised Exception'
-        except Exception as e:
+        except ValueError as e:
             assert str(e) == 'Invalid config in BranchingValidator: ' \
                              '`class_name` contains an erroneous value'

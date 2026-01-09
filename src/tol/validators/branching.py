@@ -96,16 +96,16 @@ class BranchingValidator(Validator, ConditionEvaluator):
         try:
             # Accessing with square brackets will also check whether the key exists or not
             if not isinstance(subvalidation['module'], str):
-                raise ValueError('module')
+                raise TypeError('module')
             elif not isinstance(subvalidation['class_name'], str):
-                raise ValueError('class_name')
-        except (KeyError, ValueError) as e:
+                raise TypeError('class_name')
+        except (KeyError, TypeError) as e:
             if isinstance(e, KeyError):
-                raise Exception(
+                raise ValueError(
                     f'Invalid config in BranchingValidator: `{e.args[0]}` not found'
                 )
             else:
-                raise Exception(
+                raise ValueError(
                     f'Invalid config in BranchingValidator: '
                     f'`{e.args[0]}` contains an erroneous value'
                 )
