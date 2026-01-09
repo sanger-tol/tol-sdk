@@ -83,8 +83,10 @@ class BranchingValidator(Validator, ConditionEvaluator):
                 # Add the new validator to the store of cached validators
                 self.__cached_validators[subvalidator_index] = validator
 
-            # TODO: Should we allow multiple conditions passing?
-            break
+            # At this point, I initially added `break` so that once a condition passed, the rest
+            # did not need to be checked. However, I decided against it because it is more flexible
+            # to have the opportunity to allow multiple conditions to pass, and thus execute
+            # multiple subvalidations, on the same `DataObject` in the same iteration
 
     def __instantiate_validator(self, subvalidation: Subvalidation) -> Validator:
         # Before attempting to extract items from the subvalidation, ensure all of the required
