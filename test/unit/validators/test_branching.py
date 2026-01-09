@@ -7,10 +7,10 @@ from typing import Iterable
 from unittest.mock import MagicMock, create_autospec
 
 from tol.core import DataObject
-from tol.validators import ValueDrivenValidator
+from tol.validators import BranchingValidator
 
 
-class TestValueDrivenValidator:
+class TestBranchingValidator:
     def test_validator_cached(
         self,
         mock_objs: Iterable[DataObject]
@@ -49,7 +49,7 @@ class TestValueDrivenValidator:
         mock_two.id = 'b'
         mock_two.get_field_by_name.return_value = 'value_one'
 
-        config = ValueDrivenValidator.Config(
+        config = BranchingValidator.Config(
             key_column='key_column',
             validations={
                 'value_one': {
@@ -62,7 +62,7 @@ class TestValueDrivenValidator:
             }
         )
 
-        validator = ValueDrivenValidator(config)
+        validator = BranchingValidator(config)
 
         # consume the `Iterable`
         list(
@@ -71,7 +71,7 @@ class TestValueDrivenValidator:
 
         # Fetch the dictionary (private attribute) of cached validators, and check that there's
         # only one (confirming that a new one was not made each time)
-        cached = validator._ValueDrivenValidator__cached_validators
+        cached = validator._BranchingValidator__cached_validators
         assert len(cached) == 1
 
         # Get this single validator, and ensure it was the same one used for both data objects
@@ -122,7 +122,7 @@ class TestValueDrivenValidator:
         mock_two.id = 'b'
         mock_two.get_field_by_name.return_value = 'value_two'
 
-        config = ValueDrivenValidator.Config(
+        config = BranchingValidator.Config(
             key_column='key_column',
             validations={
                 'value_one': {
@@ -142,7 +142,7 @@ class TestValueDrivenValidator:
             }
         )
 
-        validator = ValueDrivenValidator(config)
+        validator = BranchingValidator(config)
 
         list(
             validator.validate(iter([mock_one, mock_two]))
@@ -150,7 +150,7 @@ class TestValueDrivenValidator:
 
         # Fetch the dictionary (private attribute) of cached validators, to check that each
         # sub-validation got a separate validator
-        cached = validator._ValueDrivenValidator__cached_validators
+        cached = validator._BranchingValidator__cached_validators
         assert len(cached) == 2
 
         # Ensure that the validators validated the correct data objects
@@ -190,7 +190,7 @@ class TestValueDrivenValidator:
         mock_one.id = 'a'
         mock_one.get_field_by_name.return_value = 'value_one'
 
-        config = ValueDrivenValidator.Config(
+        config = BranchingValidator.Config(
             key_column='key_column',
             validations={
                 'value_one': {
@@ -203,7 +203,7 @@ class TestValueDrivenValidator:
             }
         )
 
-        validator = ValueDrivenValidator(config)
+        validator = BranchingValidator(config)
 
         # Check whether the sub-validator fails (with the correct error message)
         try:
@@ -231,7 +231,7 @@ class TestValueDrivenValidator:
         mock_two.id = 'b'
         mock_two.get_field_by_name.return_value = 'value_one'
 
-        config = ValueDrivenValidator.Config(
+        config = BranchingValidator.Config(
             key_column='key_column',
             validations={
                 'value_one': {
@@ -243,7 +243,7 @@ class TestValueDrivenValidator:
             }
         )
 
-        validator = ValueDrivenValidator(config)
+        validator = BranchingValidator(config)
 
         # Check whether the sub-validator fails (with the correct error message)
         try:
@@ -253,7 +253,7 @@ class TestValueDrivenValidator:
             )
             assert False, 'Should have raised Exception'
         except Exception as e:
-            assert e.args[0] == 'ValueDrivenValidator set up incorrectly. ' + \
+            assert e.args[0] == 'BranchingValidator set up incorrectly. ' + \
                 'Failed to retrieve validator information from config'
 
     def test_valid(
@@ -290,7 +290,7 @@ class TestValueDrivenValidator:
         mock_one.id = 'a'
         mock_one.get_field_by_name.return_value = 'value_one'
 
-        config = ValueDrivenValidator.Config(
+        config = BranchingValidator.Config(
             key_column='key_column',
             validations={
                 'value_one': {
@@ -303,7 +303,7 @@ class TestValueDrivenValidator:
             }
         )
 
-        validator = ValueDrivenValidator(config)
+        validator = BranchingValidator(config)
 
         # consume the Iterable
         list(
@@ -311,5 +311,5 @@ class TestValueDrivenValidator:
         )
 
         # Ensure the expected sub-validator for this valid validation has been cached
-        cached = validator._ValueDrivenValidator__cached_validators
+        cached = validator._BranchingValidator__cached_validators
         assert cached['value_one'].called == ['a']

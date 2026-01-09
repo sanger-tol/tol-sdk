@@ -12,9 +12,10 @@ from tol.core.validate import ValidationResult, Validator
 from .interfaces import Condition, ConditionDict, ConditionEvaluator
 
 
-class ValueDrivenValidator(Validator, ConditionEvaluator):
+class BranchingValidator(Validator, ConditionEvaluator):
     """
-    Runs different validators depending on the value of a specific column.
+    This validator is configured with a list of conditions.
+    If a condition passes, the corresponding sub-validator will be run.
     """
     @dataclass(slots=True, frozen=True, kw_only=True)
     class Config:
@@ -77,14 +78,13 @@ class ValueDrivenValidator(Validator, ConditionEvaluator):
                         raise ValueError('class_name')
                 except (IndexError, ValueError) as e:
                     # TODO Test both of these error types work
-                    # Also update name
                     if isinstance(e, IndexError):
                         raise Exception(
-                            f'Invalid config in ValueDrivenValidator: {e.args[0]} not found'
+                            f'Invalid config in BranchingValidator: {e.args[0]} not found'
                         )
                     else:
                         raise Exception(
-                            f'Invalid config in ValueDrivenValidator: '
+                            f'Invalid config in BranchingValidator: '
                             f'{e.args[0]} contains erroneous value'
                         )
 
@@ -105,7 +105,7 @@ class ValueDrivenValidator(Validator, ConditionEvaluator):
     @property
     def results(self) -> List[ValidationResult]:
         """
-        Get results from all sub-validators, collated into a single list
+        Fetches results from all sub-validators, collated into a single list
         """
         return [
             result
@@ -116,7 +116,7 @@ class ValueDrivenValidator(Validator, ConditionEvaluator):
     @property
     def warnings(self) -> List[ValidationResult]:
         """
-        Get warnings from all sub-validators, collated into a single list
+        Fetches warnings from all sub-validators, collated into a single list
         """
         return [
             warning
@@ -127,7 +127,7 @@ class ValueDrivenValidator(Validator, ConditionEvaluator):
     @property
     def errors(self) -> List[ValidationResult]:
         """
-        Get errors from all sub-validators, collated into a single list
+        Fetches errors from all sub-validators, collated into a single list
         """
         return [
             error
