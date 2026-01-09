@@ -375,4 +375,4 @@ class TestBranchingValidator:
             )
             assert False, 'Should have raised Exception'
         except Exception as e:
-            assert e.args[0] == f'Invalid config in BranchingValidator: {e.args[0]} not found'
+            assert str(e) == f'Invalid config in BranchingValidator: `module` not found'
