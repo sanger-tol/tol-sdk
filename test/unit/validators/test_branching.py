@@ -334,8 +334,8 @@ class TestBranchingValidator:
             )
             assert False, 'Should have raised Exception'
         except Exception as e:
-            assert str(e) == f'Invalid config in BranchingValidator: `module` not found'
-    
+            assert str(e) == 'Invalid config in BranchingValidator: `module` not found'
+
     def test_invalid_config_type(
         self,
         mock_objs: Iterable[DataObject]
