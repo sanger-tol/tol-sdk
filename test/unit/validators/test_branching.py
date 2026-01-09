@@ -6,7 +6,7 @@ import sys
 from typing import Dict, Iterable, cast
 from unittest.mock import MagicMock, create_autospec
 
-from tol.core import DataObject, Validator
+from tol.core import DataObject
 from tol.validators import BranchingValidator
 
 
