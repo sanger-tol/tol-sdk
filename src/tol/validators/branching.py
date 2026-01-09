@@ -43,7 +43,7 @@ class BranchingValidator(Validator, ConditionEvaluator):
         """
         validations: List[Subvalidation]
 
-    __slots__ = ['__config', '__cached_validators']
+    __slots__ = ['__config', '_cached_validators']
     __config: Config
     _cached_validators: Dict[int, Validator]
     """
