@@ -37,8 +37,8 @@ class TestDateSortingValidator:
         mock_obj: DataObject = create_autospec(DataObject)
         mock_obj.id = 'b'
         mock_obj.attributes = {
-            'collection_date': '2023-10-17',
-            'plating_date': '2023-10-16'
+            'collection_date': datetime(2023, 10, 17, tzinfo=timezone.utc),  # '2023-10-17',
+            'plating_date': datetime(2023, 10, 16, tzinfo=timezone.utc),  # '2023-10-16'
         }
         mock_obj.get_field_by_name.side_effect = lambda field: mock_obj.attributes.get(field)
 
