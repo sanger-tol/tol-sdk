@@ -2,8 +2,8 @@
 #
 # SPDX-License-Identifier: MIT
 
-from unittest.mock import create_autospec
 from datetime import datetime, timezone
+from unittest.mock import create_autospec
 
 from tol.core import DataObject
 from tol.validators import DateSortingValidator
@@ -16,8 +16,8 @@ class TestDateSortingValidator:
         mock_obj: DataObject = create_autospec(DataObject)
         mock_obj.id = 'a'
         mock_obj.attributes = {
-            'collection_date': datetime(2023, 10, 15, tzinfo=timezone.utc), # '2023-10-15'
-            'plating_date': datetime(2023, 10, 16, tzinfo=timezone.utc) # '2023-10-16'
+            'collection_date': datetime(2023, 10, 15, tzinfo=timezone.utc),  # '2023-10-15'
+            'plating_date': datetime(2023, 10, 16, tzinfo=timezone.utc)  # '2023-10-16'
         }
         mock_obj.get_field_by_name.side_effect = lambda field: mock_obj.attributes.get(field)
 
