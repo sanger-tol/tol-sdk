@@ -107,7 +107,7 @@ class BranchingValidator(Validator, ConditionEvaluator):
             else:
                 raise Exception(
                     f'Invalid config in BranchingValidator: '
-                    f'`{e.args[0]}` contains erroneous value'
+                    f'`{e.args[0]}` contains an erroneous value'
                 )
 
         # Dynamically retrieve the validator class
