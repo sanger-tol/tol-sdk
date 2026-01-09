@@ -100,14 +100,15 @@ class BranchingValidator(Validator, ConditionEvaluator):
             elif not isinstance(subvalidation['class_name'], str):
                 raise TypeError('class_name')
         except (KeyError, TypeError) as e:
+            # Make errors more specific to validators
             if isinstance(e, KeyError):
-                raise ValueError(
+                raise KeyError(
                     f'Invalid config in BranchingValidator: `{e.args[0]}` not found'
                 )
             else:
-                raise ValueError(
+                raise TypeError(
                     f'Invalid config in BranchingValidator: '
-                    f'`{e.args[0]}` contains an erroneous value'
+                    f'`{e.args[0]}` contains an erroneous value type'
                 )
 
         # Dynamically retrieve the validator class
