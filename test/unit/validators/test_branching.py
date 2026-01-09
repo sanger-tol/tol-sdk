@@ -3,10 +3,10 @@
 # SPDX-License-Identifier: MIT
 
 import sys
-from typing import Iterable
+from typing import Dict, Iterable, cast
 from unittest.mock import MagicMock, create_autospec
 
-from tol.core import DataObject
+from tol.core import DataObject, Validator
 from tol.validators import BranchingValidator
 
 
@@ -42,10 +42,10 @@ class TestBranchingValidator:
 
         # The provided mock objects are not appropriate for this test, so we set up new ones
         del mock_objs
-        mock_one: DataObject = create_autospec(DataObject)
+        mock_one = create_autospec(DataObject)
         mock_one.id = 'a'
         mock_one.get_field_by_name.return_value = 'value_one'
-        mock_two: DataObject = create_autospec(DataObject)
+        mock_two = create_autospec(DataObject)
         mock_two.id = 'b'
         mock_two.get_field_by_name.return_value = 'value_one'
 
@@ -75,7 +75,7 @@ class TestBranchingValidator:
 
         # Fetch the dictionary (private attribute) of cached validators, and check that there's
         # only one (confirming that a new one was not made each time)
-        cached = validator._BranchingValidator__cached_validators
+        cached = cast(Dict[int, DummyValidator], validator._cached_validators)
         assert len(cached) == 1
 
         # Get this single validator, and ensure it was the same one used for both data objects
@@ -119,10 +119,10 @@ class TestBranchingValidator:
 
         # The provided mock objects are not appropriate for this test, so we set up new ones
         del mock_objs
-        mock_one: DataObject = create_autospec(DataObject)
+        mock_one = create_autospec(DataObject)
         mock_one.id = 'a'
         mock_one.get_field_by_name.return_value = 'value_one'
-        mock_two: DataObject = create_autospec(DataObject)
+        mock_two = create_autospec(DataObject)
         mock_two.id = 'b'
         mock_two.get_field_by_name.return_value = 'value_two'
 
@@ -163,7 +163,7 @@ class TestBranchingValidator:
 
         # Fetch the dictionary (private attribute) of cached validators, to check that each
         # sub-validation got a separate validator
-        cached = validator._BranchingValidator__cached_validators
+        cached = cast(Dict[int, DummyValidator], validator._cached_validators)
         assert len(cached) == 2
 
         # Ensure that the validators validated the correct data objects
@@ -186,6 +186,7 @@ class TestBranchingValidator:
                 self.config = config
 
             def _validate_data_object(self, obj):
+                del obj
                 raise Exception('Subvalidator failed')
 
         # Set up a dummy validator to act as UniqueValueCheckValidator so we can keep track of
@@ -199,7 +200,7 @@ class TestBranchingValidator:
 
         # The provided mock objects are not appropriate for this test, so we set up a new one
         del mock_objs
-        mock_one: DataObject = create_autospec(DataObject)
+        mock_one = create_autospec(DataObject)
         mock_one.id = 'a'
         mock_one.get_field_by_name.return_value = 'value_one'
 
@@ -303,7 +304,7 @@ class TestBranchingValidator:
 
         # The provided mock objects are not appropriate for this test, so we set up a new one
         del mock_objs
-        mock_one: DataObject = create_autospec(DataObject)
+        mock_one = create_autospec(DataObject)
         mock_one.id = 'a'
         mock_one.get_field_by_name.return_value = 'value_one'
 
@@ -332,5 +333,5 @@ class TestBranchingValidator:
         )
 
         # Ensure the expected sub-validator for this valid validation has been cached
-        cached = validator._BranchingValidator__cached_validators
+        cached = cast(Dict[int, DummyValidator], validator._cached_validators)
         assert cached[0].called == ['a']

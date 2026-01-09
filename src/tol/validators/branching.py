@@ -45,7 +45,7 @@ class BranchingValidator(Validator, ConditionEvaluator):
 
     __slots__ = ['__config', '__cached_validators']
     __config: Config
-    __cached_validators: Dict[int, Validator]
+    _cached_validators: Dict[int, Validator]
     """
     Stores all sub-validators that have already been seen so that they can be used again.
     Their keys are their indexes in the `validations` list in the validator config
@@ -60,7 +60,7 @@ class BranchingValidator(Validator, ConditionEvaluator):
 
         del kwargs
         self.__config = config
-        self.__cached_validators = {}
+        self._cached_validators = {}
 
     def _validate_data_object(
         self,
@@ -72,9 +72,9 @@ class BranchingValidator(Validator, ConditionEvaluator):
             if not self._does_condition_pass(Condition.from_dict(condition_dict), obj):
                 continue
 
-            if subvalidator_index in self.__cached_validators:
+            if subvalidator_index in self._cached_validators:
                 # Use existing validator to perform subvalidation
-                validator = self.__cached_validators[subvalidator_index]
+                validator = self._cached_validators[subvalidator_index]
                 validator._validate_data_object(obj)
             else:
                 # Create a new validator and use that for the subvalidation
@@ -82,7 +82,7 @@ class BranchingValidator(Validator, ConditionEvaluator):
                 validator._validate_data_object(obj)
 
                 # Add the new validator to the store of cached validators
-                self.__cached_validators[subvalidator_index] = validator
+                self._cached_validators[subvalidator_index] = validator
 
             # At this point, I initially added `break` so that once a condition passed, the rest
             # did not need to be checked. However, I decided against it because it is more flexible
@@ -130,7 +130,7 @@ class BranchingValidator(Validator, ConditionEvaluator):
         """
         return [
             result
-            for validator in self.__cached_validators.values()
+            for validator in self._cached_validators.values()
             for result in validator.results
         ]
 
@@ -141,7 +141,7 @@ class BranchingValidator(Validator, ConditionEvaluator):
         """
         return [
             warning
-            for validator in self.__cached_validators.values()
+            for validator in self._cached_validators.values()
             for warning in validator.warnings
         ]
 
@@ -152,6 +152,6 @@ class BranchingValidator(Validator, ConditionEvaluator):
         """
         return [
             error
-            for validator in self.__cached_validators.values()
+            for validator in self._cached_validators.values()
             for error in validator.errors
         ]
