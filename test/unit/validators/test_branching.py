@@ -14,7 +14,7 @@ class TestBranchingValidator:
     def test_validator_cached(
         self,
         mock_objs: Iterable[DataObject]
-    ):
+    ) -> None:
         """
         Uses two data objects that have the same value for their key column. Tests whether the
         validator used for the second data object is the same as the one used for the first.
@@ -86,7 +86,7 @@ class TestBranchingValidator:
     def test_multiple_validators(
         self,
         mock_objs: Iterable[DataObject]
-    ):
+    ) -> None:
         """
         Tests whether the validator is able to work with multiple validators at once
         """
@@ -173,7 +173,7 @@ class TestBranchingValidator:
     def test_failing_validator(
         self,
         mock_objs: Iterable[DataObject]
-    ):
+    ) -> None:
         """
         Tests whether the overall validator fails as expected if one of its subvalidators fails
         """
@@ -233,51 +233,10 @@ class TestBranchingValidator:
         except Exception as e:
             assert str(e) == 'Subvalidator failed'
 
-    # def test_invalid_config(
-    #     self,
-    #     mock_objs: Iterable[DataObject]
-    # ):
-    #     """
-    #     Tests that an invalid config raises the correct exception
-    #     """
-    #     # The provided mock objects are not appropriate for this test, so we set up new ones
-    #     del mock_objs
-    #     mock_one: DataObject = create_autospec(DataObject)
-    #     mock_one.id = 'a'
-    #     mock_one.get_field_by_name.return_value = 'value_one'
-    #     mock_two: DataObject = create_autospec(DataObject)
-    #     mock_two.id = 'b'
-    #     mock_two.get_field_by_name.return_value = 'value_one'
-
-    #     config = BranchingValidator.Config(
-    #         key_column='key_column',
-    #         validations={
-    #             'value_one': {
-    #                 # keys are missing here
-    #                 'config_details': {
-    #                     'field': 'b',
-    #                 }
-    #             }
-    #         }
-    #     )
-
-    #     validator = BranchingValidator(config)
-
-    #     # Check whether the sub-validator fails (with the correct error message)
-    #     try:
-    #         # consume the Iterable
-    #         list(
-    #             validator.validate(iter([mock_one, mock_two]))
-    #         )
-    #         assert False, 'Should have raised Exception'
-    #     except Exception as e:
-    #         assert e.args[0] == 'BranchingValidator set up incorrectly. ' + \
-    #             'Failed to retrieve validator information from config'
-
     def test_valid(
         self,
         mock_objs: Iterable[DataObject]
-    ):
+    ) -> None:
         """
         Tests a valid configuration and successful validation
         """
@@ -335,3 +294,44 @@ class TestBranchingValidator:
         # Ensure the expected sub-validator for this valid validation has been cached
         cached = cast(Dict[int, DummyValidator], validator._cached_validators)
         assert cached[0].called == ['a']
+    
+    # def test_invalid_config(
+    #     self,
+    #     mock_objs: Iterable[DataObject]
+    # ):
+    #     """
+    #     Tests that an invalid config raises the correct exception
+    #     """
+    #     # The provided mock objects are not appropriate for this test, so we set up new ones
+    #     del mock_objs
+    #     mock_one: DataObject = create_autospec(DataObject)
+    #     mock_one.id = 'a'
+    #     mock_one.get_field_by_name.return_value = 'value_one'
+    #     mock_two: DataObject = create_autospec(DataObject)
+    #     mock_two.id = 'b'
+    #     mock_two.get_field_by_name.return_value = 'value_one'
+
+    #     config = BranchingValidator.Config(
+    #         key_column='key_column',
+    #         validations={
+    #             'value_one': {
+    #                 # keys are missing here
+    #                 'config_details': {
+    #                     'field': 'b',
+    #                 }
+    #             }
+    #         }
+    #     )
+
+    #     validator = BranchingValidator(config)
+
+    #     # Check whether the sub-validator fails (with the correct error message)
+    #     try:
+    #         # consume the Iterable
+    #         list(
+    #             validator.validate(iter([mock_one, mock_two]))
+    #         )
+    #         assert False, 'Should have raised Exception'
+    #     except Exception as e:
+    #         assert e.args[0] == 'BranchingValidator set up incorrectly. ' + \
+    #             'Failed to retrieve validator information from config'
