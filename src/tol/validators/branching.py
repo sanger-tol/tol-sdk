@@ -66,8 +66,9 @@ class BranchingValidator(Validator, ConditionEvaluator):
         self,
         obj: DataObject
     ) -> None:
-        for subvalidator_index, validation in enumerate(self.__config.validations):
-            condition_dict = cast(ConditionDict, validation['condition'])
+        for subvalidator_index, subvalidation in enumerate(self.__config.validations):
+            # Do not run this sub-validation if its condition does not pass
+            condition_dict = cast(ConditionDict, subvalidation['condition'])
             if not self._does_condition_pass(Condition.from_dict(condition_dict), obj):
                 continue
 
@@ -77,7 +78,7 @@ class BranchingValidator(Validator, ConditionEvaluator):
                 validator._validate_data_object(obj)
             else:
                 # Create a new validator and use that for the subvalidation
-                validator = self.__instantiate_validator(validation)
+                validator = self.__instantiate_validator(subvalidation)
                 validator._validate_data_object(obj)
 
                 # Add the new validator to the store of cached validators
