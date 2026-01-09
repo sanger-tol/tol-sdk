@@ -335,3 +335,44 @@ class TestBranchingValidator:
     #     except Exception as e:
     #         assert e.args[0] == 'BranchingValidator set up incorrectly. ' + \
     #             'Failed to retrieve validator information from config'
+
+    def test_incomplete_config(
+        self,
+        mock_objs: Iterable[DataObject]
+    ) -> None:
+        """
+        Tests whether a configuration that's missing required keys raises the correct exception
+        """
+        # The provided mock objects are not appropriate for this test, so we set up new ones
+        del mock_objs
+        mock_one = create_autospec(DataObject)
+        mock_one.id = 'a'
+        mock_one.get_field_by_name.return_value = 'value_one'
+
+        config = BranchingValidator.Config(
+            validations=[
+                {
+                    'condition': {
+                        'field': 'key_column',
+                        'operator': '==',
+                        'value': 'value_one',
+                    },
+                    'config_details': {
+                        'field': 'b',
+                    },
+                },
+            ]
+        )
+
+        validator = BranchingValidator(
+            config=config
+        )
+
+        try:
+            # consume the Iterable
+            list(
+                validator.validate(iter([mock_one]))
+            )
+            assert False, 'Should have raised Exception'
+        except Exception as e:
+            assert e.args[0] == f'Invalid config in BranchingValidator: {e.args[0]} not found'
