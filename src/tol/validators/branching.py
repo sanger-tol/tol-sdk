@@ -111,7 +111,7 @@ class BranchingValidator(Validator, ConditionEvaluator):
         # Dynamically retrieve the validator class
         validator_module = importlib.import_module(subvalidation['module'])
         validator_class = getattr(validator_module, subvalidation['class_name'])
-        
+
         # Construct and return the new validator
         validator_config = validator_class.Config(
             subvalidation['config_details']
