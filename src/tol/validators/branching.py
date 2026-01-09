@@ -12,6 +12,9 @@ from tol.core.validate import ValidationResult, Validator
 from .interfaces import Condition, ConditionDict, ConditionEvaluator
 
 
+Subvalidation = Dict[str, ConditionDict | str | Dict]
+
+
 class BranchingValidator(Validator, ConditionEvaluator):
     """
     This validator is configured with a list of conditions.
@@ -38,7 +41,7 @@ class BranchingValidator(Validator, ConditionEvaluator):
         ]
         ```
         """
-        validations: List[Dict[str, ConditionDict | str | Dict]]
+        validations: List[Subvalidation]
 
     __slots__ = ['__config', '__cached_validators']
     __config: Config
@@ -68,39 +71,13 @@ class BranchingValidator(Validator, ConditionEvaluator):
             if not self._does_condition_pass(Condition.from_dict(condition_dict), obj):
                 continue
 
-            if subvalidator_index in self.__cached_validators:  # Use existing validator
+            if subvalidator_index in self.__cached_validators:
+                # Use existing validator to perform subvalidation
                 validator = self.__cached_validators[subvalidator_index]
                 validator._validate_data_object(obj)
-            else:  # Create new validator and use that
-                # Check config types. It is easier to handle their errors here than for the
-                # standard library functions to fail
-                try:
-                    # Accessing with square brackets will also check whether the key exists or not
-                    if not isinstance(validation['module'], str):
-                        raise ValueError('module')
-                    elif not isinstance(validation['class_name'], str):
-                        raise ValueError('class_name')
-                except (IndexError, ValueError) as e:
-                    # TODO Test both of these error types work
-                    if isinstance(e, IndexError):
-                        raise Exception(
-                            f'Invalid config in BranchingValidator: {e.args[0]} not found'
-                        )
-                    else:
-                        raise Exception(
-                            f'Invalid config in BranchingValidator: '
-                            f'{e.args[0]} contains erroneous value'
-                        )
-
-                # Instantiate validator class using config, then perform validation
-                validator_module = importlib.import_module(validation['module'])
-                validator_class = getattr(validator_module, validation['class_name'])
-                validator_config = validator_class.Config(
-                    validation['config_details']
-                )
-                validator = validator_class(
-                    config=validator_config,
-                )
+            else:
+                # Create a new validator and use that for the subvalidation
+                validator = self.__instantiate_validator(validation)
                 validator._validate_data_object(obj)
 
                 # Add the new validator to the store of cached validators
@@ -108,6 +85,40 @@ class BranchingValidator(Validator, ConditionEvaluator):
 
             # TODO: Should we allow multiple conditions passing?
             break
+
+    def __instantiate_validator(self, subvalidation: Subvalidation) -> Validator:
+        # Before attempting to extract items from the subvalidation, ensure all of the required
+        # keys are there and that they contain values of the correct types.
+        # This allows the dictionary to be safely queried thereafter
+        try:
+            # Accessing with square brackets will also check whether the key exists or not
+            if not isinstance(subvalidation['module'], str):
+                raise ValueError('module')
+            elif not isinstance(subvalidation['class_name'], str):
+                raise ValueError('class_name')
+        except (IndexError, ValueError) as e:
+            # TODO Test both of these error types work
+            if isinstance(e, IndexError):
+                raise Exception(
+                    f'Invalid config in BranchingValidator: {e.args[0]} not found'
+                )
+            else:
+                raise Exception(
+                    f'Invalid config in BranchingValidator: '
+                    f'{e.args[0]} contains erroneous value'
+                )
+
+        # Dynamically retrieve the validator class
+        validator_module = importlib.import_module(subvalidation['module'])
+        validator_class = getattr(validator_module, subvalidation['class_name'])
+        
+        # Construct and return the new validator
+        validator_config = validator_class.Config(
+            subvalidation['config_details']
+        )
+        return validator_class(
+            config=validator_config,
+        )
 
     @property
     def results(self) -> List[ValidationResult]:
