@@ -4,13 +4,15 @@
 
 import importlib
 from dataclasses import dataclass
-from typing import Any, Dict, List
+from typing import Any, Dict, List, cast
 
 from tol.core import DataObject
 from tol.core.validate import ValidationResult, Validator
 
+from .interfaces import Condition, ConditionDict, ConditionEvaluator
 
-class ValueDrivenValidator(Validator):
+
+class ValueDrivenValidator(Validator, ConditionEvaluator):
     """
     Runs different validators depending on the value of a specific column.
     """
@@ -18,27 +20,28 @@ class ValueDrivenValidator(Validator):
     class Config:
         """
         ```
-        key_column='column_name',
-        validations={
-            'value_one': {
-                "module": "<path.to.module>",
-                "class_name": "<path.to.ValidatorClass>",
-                "config_details": { ... }
+        validations=[
+            {
+                'condition': {
+                    'field': 'column_name',
+                    'operator': '==',
+                    'value': 'expected_value',
+                },
+                'module': '<path.to.module>',
+                'class_name': '<path.to.ValidatorClass>',
+                'config_details': { ... },
             },
-            'value_two': {
-                "module": "<path.to.module>",
-                "class_name": "<path.to.ValidatorClass>",
-                "config_details": { ... }
+            {
+                ...
             }
-        }
+        ]
         ```
         """
-        key_column: str
-        validations: Dict[Any, Dict[Any, Any]]
+        validations: List[Dict[str, ConditionDict | str | Dict]]
 
     __slots__ = ['__config', '__cached_validators']
     __config: Config
-    __cached_validators: Dict[Any, Validator]
+    __cached_validators: Dict[int, Validator]
 
     def __init__(
         self,
@@ -55,32 +58,49 @@ class ValueDrivenValidator(Validator):
         self,
         obj: DataObject
     ) -> None:
-        value = obj.get_field_by_name(self.__config.key_column)
-        if value in self.__cached_validators:
-            # Use existing validator
-            validator = self.__cached_validators[value]
-            validator._validate_data_object(obj)
-        else:
-            # Create new validator
-            try:
-                validator_metaconfig = self.__config.validations[value]
-                validator_module = importlib.import_module(validator_metaconfig['module'])
-                validator_class = getattr(validator_module, validator_metaconfig['class_name'])
-                validator_config = validator_class.Config(
-                    **validator_metaconfig['config_details']
-                )
-            except KeyError:
-                raise Exception(
-                    'ValueDrivenValidator set up incorrectly. '
-                    'Failed to retrieve validator information from config'
-                )
-            validator = validator_class(
-                config=validator_config,
-            )
-            validator._validate_data_object(obj)
+        for subvalidator_index, validation in enumerate(self.__config.validations):
+            condition_dict = cast(ConditionDict, validation['condition'])
+            if not self._does_condition_pass(Condition.from_dict(condition_dict), obj):
+                continue
 
-            # Add the new validator to cached validators
-            self.__cached_validators[value] = validator
+            if subvalidator_index in self.__cached_validators:  # Use existing validator
+                validator = self.__cached_validators[subvalidator_index]
+                validator._validate_data_object(obj)
+            else:  # Create new validator and use that
+                # Check config types. It is easier to handle their errors here than for the
+                # standard library functions to fail
+                try:
+                    # Accessing with square brackets will also check whether the key exists or not
+                    if not isinstance(validation['module'], str):
+                        raise ValueError('module')
+                    elif not isinstance(validation['class_name'], str):
+                        raise ValueError('class_name')
+                except (IndexError, ValueError) as e:
+                    # TODO Test both of these error types work
+                    # Also update name
+                    if isinstance(e, IndexError):
+                        raise Exception(
+                            f'Invalid config in ValueDrivenValidator: {e.args[0]} not found'
+                        )
+                    else:
+                        raise Exception(
+                            f'Invalid config in ValueDrivenValidator: '
+                            f'{e.args[0]} contains erroneous value'
+                        )
+                
+                # Instantiate validator class using config, then perform validation
+                validator_module = importlib.import_module(validation['module'])
+                validator_class = getattr(validator_module, validation['class_name'])
+                validator_config = validator_class.Config(
+                    validation['config_details']
+                )
+                validator = validator_class(
+                    config=validator_config,
+                )
+                validator._validate_data_object(obj)
+
+                # Add the new validator to the store of cached validators
+                self.__cached_validators[subvalidator_index] = validator
 
     @property
     def results(self) -> List[ValidationResult]:
