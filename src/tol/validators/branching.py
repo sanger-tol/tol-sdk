@@ -43,6 +43,10 @@ class BranchingValidator(Validator, ConditionEvaluator):
     __slots__ = ['__config', '__cached_validators']
     __config: Config
     __cached_validators: Dict[int, Validator]
+    """
+    Stores all sub-validators that have already been seen so that they can be used again.
+    Their keys are their indexes in the `validations` list in the validator config
+    """
 
     def __init__(
         self,
