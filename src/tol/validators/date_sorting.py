@@ -36,7 +36,7 @@ class DateSortingValidator(Validator):
         for date in self.__config.dates:
             if obj.get_field_by_name(date) is not None:
                 try:
-                    parsed_date = datetime.fromisoformat(obj.get_field_by_name(date))
+                    parsed_date = obj.get_field_by_name(date)
                 except ValueError:
                     self.add_error(
                         object_id=obj.id,
