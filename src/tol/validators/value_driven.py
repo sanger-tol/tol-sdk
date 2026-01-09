@@ -4,7 +4,7 @@
 
 import importlib
 from dataclasses import dataclass
-from typing import Any, Dict, List, cast
+from typing import ADict, List, cast
 
 from tol.core import DataObject
 from tol.core.validate import ValidationResult, Validator
@@ -87,7 +87,7 @@ class ValueDrivenValidator(Validator, ConditionEvaluator):
                             f'Invalid config in ValueDrivenValidator: '
                             f'{e.args[0]} contains erroneous value'
                         )
-                
+
                 # Instantiate validator class using config, then perform validation
                 validator_module = importlib.import_module(validation['module'])
                 validator_class = getattr(validator_module, validation['class_name'])
