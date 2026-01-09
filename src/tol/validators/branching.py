@@ -106,6 +106,9 @@ class BranchingValidator(Validator, ConditionEvaluator):
                 # Add the new validator to the store of cached validators
                 self.__cached_validators[subvalidator_index] = validator
 
+            # TODO: Should we allow multiple conditions passing?
+            break
+
     @property
     def results(self) -> List[ValidationResult]:
         """
