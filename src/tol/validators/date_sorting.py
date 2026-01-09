@@ -3,7 +3,6 @@
 # SPDX-License-Identifier: MIT
 
 from dataclasses import dataclass
-from datetime import datetime
 
 from tol.core import Validator
 from tol.core.data_object import DataObject
