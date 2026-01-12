@@ -12,7 +12,6 @@ import requests
 from requests.auth import HTTPBasicAuth
 
 from .models import ModelClass, ModelTuple, create_models
-from ...core import HttpClient
 from ..session import SessionFactory, create_session_factory
 from ...api_base.auth import (
     AuthBlueprint,
@@ -23,6 +22,7 @@ from ...api_base.auth import (
 )
 from ...api_base.auth.abc import AuthorisationManager
 from ...api_base.misc import AuthContext
+from ...core import HttpClient
 
 
 class DbAuthManager(AuthManager):
