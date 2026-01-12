@@ -40,7 +40,7 @@ class DateSortingValidator(Validator):
             if not isinstance(date_value, (date, datetime)):
                 self.add_error(
                     object_id=obj.id,
-                    detail=f'{date_field} is not in the right date format',
+                    detail=f'{date_field} of {date_value} is not in the right date format',
                     field=self.__config.dates,
                 )
                 return
