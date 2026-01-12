@@ -26,10 +26,10 @@ class TestBranchingValidator:
 
             def __init__(self, config):
                 self.config = config
-                self.called = []
+                self.obj_ids_validated = []
 
             def _validate_data_object(self, obj):
-                self.called.append(obj.id)
+                self.obj_ids_validated.append(obj.id)
 
         # Set up a dummy validator to act as UniqueValueCheckValidator so we can keep track of
         # which data objects it validates
@@ -81,7 +81,7 @@ class TestBranchingValidator:
         # Get this single validator, and ensure it was the same one used for both data objects
         # 'a' and 'b' by using the `called` store defined in DummyValidator
         instance = cached[0]
-        assert instance.called == ['a', 'b']
+        assert instance.obj_ids_validated == ['a', 'b']
 
     def test_multiple_validators(
         self,
@@ -97,10 +97,10 @@ class TestBranchingValidator:
 
             def __init__(self, config):
                 self.config = config
-                self.called = []
+                self.obj_ids_validated = []
 
             def _validate_data_object(self, obj):
-                self.called.append(obj.id)
+                self.obj_ids_validated.append(obj.id)
 
         # Set up dummy validators to act as UniqueValueCheckValidator so we can keep track of
         # which data objects it validates
@@ -167,8 +167,8 @@ class TestBranchingValidator:
         assert len(cached) == 2
 
         # Ensure that the validators validated the correct data objects
-        assert cached[0].called == ['a']
-        assert cached[1].called == ['b']
+        assert cached[0].obj_ids_validated == ['a']
+        assert cached[1].obj_ids_validated == ['b']
 
     def test_failing_validator(
         self,
@@ -247,10 +247,10 @@ class TestBranchingValidator:
 
             def __init__(self, config):
                 self.config = config
-                self.called = []
+                self.obj_ids_validated = []
 
             def _validate_data_object(self, obj):
-                self.called.append(obj.id)
+                self.obj_ids_validated.append(obj.id)
 
         # Set up a dummy validator to act as UniqueValueCheckValidator so we can keep track of
         # which data objects it validates
@@ -293,7 +293,7 @@ class TestBranchingValidator:
 
         # Ensure the expected sub-validator for this valid validation has been cached
         cached = cast(Dict[int, DummyValidator], validator._cached_validators)
-        assert cached[0].called == ['a']
+        assert cached[0].obj_ids_validated == ['a']
 
     def test_incomplete_config(
         self,
