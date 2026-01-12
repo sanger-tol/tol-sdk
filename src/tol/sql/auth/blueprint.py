@@ -22,6 +22,7 @@ from ...api_base.auth import (
 )
 from ...api_base.auth.abc import AuthorisationManager
 from ...api_base.misc import AuthContext
+from ...core import HttpClient
 
 
 class DbAuthManager(AuthManager):
@@ -194,7 +195,12 @@ class DbAuthManager(AuthManager):
         Raises:
             requests.HTTPError: If the revocation request fails
         """
-        r = requests.post(
+
+        client = HttpClient()
+
+        session = client.get_session()
+
+        r = session.post(
             self.__config.revoke_url,
             data={
                 'token': token,
