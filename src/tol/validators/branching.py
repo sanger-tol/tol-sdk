@@ -72,17 +72,20 @@ class BranchingValidator(Validator, ConditionEvaluator):
             if not self._does_condition_pass(Condition.from_dict(condition_dict), obj):
                 continue
 
+            # Obtain validator, either from cache or anew
+            validator: Validator
             if subvalidator_index in self._cached_validators:
                 # Use existing validator to perform subvalidation
                 validator = self._cached_validators[subvalidator_index]
-                validator._validate_data_object(obj)
             else:
                 # Create a new validator and use that for the subvalidation
                 validator = self.__instantiate_validator(subvalidation)
-                validator._validate_data_object(obj)
 
                 # Add the new validator to the store of cached validators
                 self._cached_validators[subvalidator_index] = validator
+
+            # Validate data object
+            validator._validate_data_object(obj)
 
             # At this point, I initially added `break` so that once a condition passed, the rest
             # did not need to be checked. However, I decided against it because it is more flexible
