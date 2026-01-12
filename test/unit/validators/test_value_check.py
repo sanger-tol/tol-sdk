@@ -15,6 +15,7 @@ class TestValueCheckValidator:
         mock_objs: Iterable[DataObject],
     ) -> None:
         # Discard the sample mock objects (which won't be useful for this test)
+        del mock_objs
         mock_one: DataObject = create_autospec(DataObject)
         mock_one.id = 'a'
         mock_one.attributes = {
