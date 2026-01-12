@@ -206,7 +206,7 @@ class JsonApiClient(HttpClient):
         )
 
         headers = self._merge_headers()
-        session = self._get_session()
+        session = self.get_session()
         r = session.post(
             url,
             headers=headers,
@@ -228,7 +228,7 @@ class JsonApiClient(HttpClient):
 
         url = self.__insert_url(object_type)
         headers = self._merge_headers()
-        session = self._get_session()
+        session = self.get_session()
         r = session.post(url, headers=headers, json=transfer)
         self.__assert_no_error(r)
         return r.json()
