@@ -22,3 +22,4 @@ from .interfaces import Condition  # noqa
 from .min_one_valid_value import MinOneValidValueValidator   # noqa
 from .value_check import ValueCheckValidator  # noqa
 from .unique_value_check import UniqueValueCheckValidator  # noqa
+from .date_sorting import DateSortingValidator # noqa
