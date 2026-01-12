@@ -111,3 +111,7 @@ class TestTypesValidator:
 
         assert not validator.warnings
         assert len(validator.errors) == 35  # One of the values is None, which is skipped
+
+        time_errors = [err for err in validator.errors if err.field == 'key11']
+        for err in time_errors:
+            assert err.detail == 'Only HH:MM format is accepted.'

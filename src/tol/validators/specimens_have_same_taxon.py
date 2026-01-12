@@ -53,7 +53,7 @@ class SpecimensHaveSameTaxonValidator(Validator):
             if specimen_id in self.__seen and taxon_id != self.__seen[specimen_id]:
                 self.add_error(
                     object_id=obj.id,
-                    detail='A non-symbiont must have a matching Specimen ID and Taxon ID',
+                    detail='All samples from the same specimen_ID must have the same TAXON_ID.',
                     field=self.__config.specimen_id_field,
                 )
             if specimen_id not in self.__seen:

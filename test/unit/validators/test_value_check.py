@@ -34,4 +34,4 @@ class TestValueCheckValidator:
         list(
             validator.validate(iter([mock_one]))
         )
-        assert validator.results
+        assert not validator.results
