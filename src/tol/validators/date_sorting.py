@@ -3,6 +3,7 @@
 # SPDX-License-Identifier: MIT
 
 from dataclasses import dataclass
+from datetime import date, datetime
 
 from tol.core import Validator
 from tol.core.data_object import DataObject
@@ -32,25 +33,26 @@ class DateSortingValidator(Validator):
 
         previous_date = None
 
-        for date in self.__config.dates:
-            if obj.get_field_by_name(date) is not None:
-                try:
-                    parsed_date = obj.get_field_by_name(date)
-                except ValueError:
-                    self.add_error(
-                        object_id=obj.id,
-                        detail=f'{date} is not in the right date format',
-                        field=self.__config.dates,
-                    )
-                    return
+        for date_field in self.__config.dates:
+            date_value = obj.get_field_by_name(date_field)
 
-                if previous_date is not None and parsed_date < previous_date:
-                    self.add_error(
-                        object_id=obj.id,
-                        detail=f'Date {date}'
-                        f'({parsed_date}) is before previous date ({previous_date})',
-                        field=self.__config.dates,
-                    )
-                    return
+            # Validate that the value is a date or datetime object
+            if not isinstance(date_value, (date, datetime)):
+                self.add_error(
+                    object_id=obj.id,
+                    detail=f'{date_field} is not in the right date format',
+                    field=self.__config.dates,
+                )
+                return
 
-                previous_date = parsed_date
+            # Check if dates are in ascending order
+            if previous_date is not None and date_value < previous_date:
+                self.add_error(
+                    object_id=obj.id,
+                    detail=f'Date {date_field} ({date_value})'
+                    f'is before previous date ({previous_date})',
+                    field=self.__config.dates,
+                )
+                return
+
+            previous_date = date_value
