@@ -168,10 +168,12 @@ class TestDefaultView:
                 'type': 'sample_typ',
                 'id': 'SMPL#many_dna',
                 'relationships': {
-                    'dna_rel': [
-                        {'type': 'dna_typ', 'id': 'DNA1'},
-                        {'type': 'dna_typ', 'id': 'DNA2'},
-                    ],
+                    'dna_rel': {
+                        'data': [
+                            {'type': 'dna_typ', 'id': 'DNA1'},
+                            {'type': 'dna_typ', 'id': 'DNA2'},
+                        ]
+                    },
                 },
             },
             'included': [
@@ -199,7 +201,7 @@ class TestDefaultView:
                 'relationships': {
                     'accession_rel': None,
                     'study_rel': None,
-                    'dna_rel': [],
+                    'dna_rel': {'data': []},
                 },
             },
         }
@@ -356,7 +358,7 @@ class TestDefaultViewInBlueprint:
                 'relationships': {
                     'accession_rel': None,
                     'sample_list': {
-                        'links': {'related': ('/super_data/specimen_typ/SPMN%2F5678/sample_list')}
+                        'links': {'related': '/super_data/specimen_typ/SPMN%2F5678/sample_list'}
                     },
                     'sex_rel': None,
                     'species_rel': {
