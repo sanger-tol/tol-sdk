@@ -120,7 +120,7 @@ class BranchingValidator(Validator, ConditionEvaluator):
 
         # Construct and return the new validator
         validator_config = validator_class.Config(
-            subvalidation['config_details']
+            **subvalidation['config_details']
         )
         return validator_class(
             config=validator_config,
