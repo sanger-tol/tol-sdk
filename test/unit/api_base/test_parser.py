@@ -7,6 +7,7 @@ from datetime import datetime, timedelta, timezone
 import pytest
 
 from tol.api_client.parser import DefaultParser
+from tol.api_client.view import DefaultView
 from tol.core import DataSourceDict, ReqFieldsTree
 
 
@@ -110,116 +111,130 @@ class TestDefaultParser:
         array.
         """
 
-        parsed = DefaultParser(
-            mock_rel_ds_dict,
-            ReqFieldsTree(
-                'sample_typ',
-                mock_rel_ds,
-                requested_fields=['specimen_rel.species_rel', 'dna_rel'],
-            ),
-        ).parse_json_doc(
-            {
-                'data': [
-                    {
-                        'type': 'sample_typ',
-                        'id': 'SMPL#009',
-                        'attributes': {
-                            'lims_id': 'JurasicPark#009',
+        json_doc = {
+            'data': [
+                {
+                    'type': 'sample_typ',
+                    'id': 'SMPL#009',
+                    'attributes': {
+                        'lims_id': 'JurasicPark#009',
+                    },
+                    'relationships': {
+                        'specimen_rel': {
+                            'data': {
+                                'type': 'specimen_typ',
+                                'id': 'rTyrRex1',
+                            }
                         },
-                        'relationships': {
-                            'specimen_rel': {
-                                'data': {
-                                    'type': 'specimen_typ',
-                                    'id': 'rTyrRex1',
-                                }
-                            },
-                            'dna_rel': {
-                                'data': [
-                                    {
-                                        'type': 'dna_typ',
-                                        'id': 'DNA011',
-                                    },
-                                    {
-                                        'type': 'dna_typ',
-                                        'id': 'DNA012',
-                                    },
-                                ],
-                            },
+                        'dna_rel': {
+                            'data': [
+                                {
+                                    'type': 'dna_typ',
+                                    'id': 'DNA011',
+                                },
+                                {
+                                    'type': 'dna_typ',
+                                    'id': 'DNA012',
+                                },
+                            ],
                         },
                     },
-                    {
-                        'type': 'sample_typ',
-                        'id': 'SMPL#040',
-                        'attributes': {
-                            'lims_id': 'JurasicPark#040',
+                },
+                {
+                    'type': 'sample_typ',
+                    'id': 'SMPL#040',
+                    'attributes': {
+                        'lims_id': 'JurasicPark#040',
+                    },
+                    'relationships': {
+                        'specimen_rel': {
+                            'data': {
+                                'type': 'specimen_typ',
+                                'id': 'rTyrRex1',
+                            }
                         },
-                        'relationships': {
-                            'specimen_rel': {
-                                'data': {
-                                    'type': 'specimen_typ',
-                                    'id': 'rTyrRex1',
+                        'dna_rel': {
+                            'data': [
+                                {
+                                    'type': 'dna_typ',
+                                    'id': 'DNA043',
                                 }
-                            },
-                            'dna_rel': {
-                                'data': [
-                                    {
-                                        'type': 'dna_typ',
-                                        'id': 'DNA043',
-                                    }
-                                ],
-                            },
+                            ],
                         },
                     },
-                ],
-                'included': [
-                    {
-                        'type': 'specimen_typ',
-                        'id': 'rTyrRex1',
-                        'attributes': {
-                            'collected_on': '1993-02-28T19:45:00',
+                },
+            ],
+            'included': [
+                {
+                    'type': 'species_typ',
+                    'id': 'Tyranosaurus rex',
+                    'attributes': {
+                        'common_name': 'king tyrant lizard',
+                    },
+                    'relationships': {
+                        'specimen_list': {
+                            'links': {
+                                'related': '/data/species_typ/Tyranosaurus%20rex/specimen_list'
+                            }
+                        }
+                    },
+                },
+                {
+                    'type': 'specimen_typ',
+                    'id': 'rTyrRex1',
+                    'attributes': {
+                        'collected_on': '1993-02-28T19:45:00',
+                    },
+                    'relationships': {
+                        'species_rel': {
+                            'data': {
+                                'type': 'species_typ',
+                                'id': 'Tyranosaurus rex',
+                            }
                         },
-                        'relationships': {
-                            'species_rel': {
-                                'data': {
-                                    'type': 'species_typ',
-                                    'id': 'Tyranosaurus rex',
-                                }
+                        'sample_list': {
+                            'links': {
+                                'related': '/data/specimen_typ/rTyrRex1/sample_list'
                             }
                         },
                     },
-                    {
-                        'type': 'dna_typ',
-                        'id': 'DNA011',
-                        'attributes': {
-                            'bases': 1_300_456,
-                            'date': '1993-06-09T12:30:00',
-                        },
+                },
+                {
+                    'type': 'dna_typ',
+                    'id': 'DNA011',
+                    'attributes': {
+                        'bases': 1_300_456,
+                        'date': '1993-06-09T12:30:00',
                     },
-                    {
-                        'type': 'dna_typ',
-                        'id': 'DNA012',
-                        'attributes': {
-                            'bases': 3_400_729,
-                            'date': '1993-06-15T14:30:59',
-                        },
+                },
+                {
+                    'type': 'dna_typ',
+                    'id': 'DNA012',
+                    'attributes': {
+                        'bases': 3_400_729,
+                        'date': '1993-06-15T14:30:59',
                     },
-                    {
-                        'type': 'dna_typ',
-                        'id': 'DNA043',
-                        'attributes': {
-                            'reads': 6632,
-                        },
+                },
+                {
+                    'type': 'dna_typ',
+                    'id': 'DNA043',
+                    'attributes': {
+                        'reads': 6632,
                     },
-                    {
-                        'type': 'species_typ',
-                        'id': 'Tyranosaurus rex',
-                        'attributes': {
-                            'common_name': 'king tyrant lizard',
-                        },
-                    },
-                ],
-            }
+                },
+            ],
+        }
+
+        req_tree = ReqFieldsTree(
+            'sample_typ',
+            mock_rel_ds,
+            requested_fields=[
+                'specimen_rel.species_rel',
+                'dna_rel',
+            ],
         )
+
+        parsed = DefaultParser(mock_rel_ds_dict, req_tree).parse_json_doc(json_doc)
         smpl09, smpl40 = parsed
         assert smpl09.id == 'SMPL#009'
         assert smpl40.id == 'SMPL#040'
@@ -247,3 +262,8 @@ class TestDefaultParser:
         assert len(dna40) == 1
         assert dna40[0].id == 'DNA043'
         assert dna40[0].reads == 6632
+
+        # Test round trip of parsed data back to JSON doc
+        view = DefaultView(req_tree, prefix='/data')
+        dumped_json = view.dump_bulk(parsed)
+        assert json_doc == dumped_json
