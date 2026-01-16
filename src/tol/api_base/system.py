@@ -54,7 +54,7 @@ def system_blueprint(
                     break
             f.close()
 
-        result = {'tol_sdk': tol_sdk_version,}
+        result = {'tol_sdk': tol_sdk_version}
 
         return result, 200
 
