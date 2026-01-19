@@ -8,7 +8,6 @@ from datetime import datetime, timedelta
 from typing import Any, Callable, Optional
 from urllib.parse import urlencode
 
-import requests
 from requests.auth import HTTPBasicAuth
 
 from .models import ModelClass, ModelTuple, create_models
@@ -406,7 +405,7 @@ class DbAuthManager(AuthManager):
         Raises:
             requests.HTTPError: If the token request fails
         """
-        client  = HttpClient()
+        client = HttpClient()
 
         session = client.get_session()
         r = session.post(
