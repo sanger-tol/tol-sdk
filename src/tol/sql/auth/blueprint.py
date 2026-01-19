@@ -409,19 +409,11 @@ class DbAuthManager(AuthManager):
         client  = HttpClient()
 
         session = client.get_session()
-        
-        import logging
         r = session.post(
             self.__config.token_url,
             data=self.__token_post_data(code),
             auth=self.__basic_auth()
         )
-        logging.error('LOGGING START')
-        logging.error(r.text)
-        logging.error(self.__config.token_url)
-        logging.error(self.__token_post_data(code))
-        logging.error(self.__config.client_id)
-        logging.error(self.__config.client_secret)
 
         r.raise_for_status()
         return r.json()
@@ -451,7 +443,6 @@ class DbAuthManager(AuthManager):
             'grant_type': 'authorization_code',
             'code': code,
             'redirect_uri': self.__config.redirect_uri,
-            'client_id': self.__config.client_id,
         }
 
     def __delete_old_states(self) -> None:
