@@ -32,9 +32,9 @@ class TestDataSourceUtils(TestCase):
         ds = self.__get_ds()
 
         assert 'record' in ds.relationship_config
-        assert ds.relationship_config['record'].to_many['children'] == 'child'
-        assert 'child' in ds.relationship_config
-        assert ds.relationship_config['child'].to_one['record'] == 'record'
+        assert ds.relationship_config['record'].to_many['category'] == 'category'
+        assert 'category' in ds.relationship_config
+        assert ds.relationship_config['category'].to_many['records'] == 'record'
 
     def test_get_by_id(self):
         ds = self.__get_ds()
