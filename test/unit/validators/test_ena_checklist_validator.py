@@ -281,8 +281,8 @@ class TestEnaChecklistValidator:
                 'COLLECTED_BY': 'Dr. Smith',
                 'DATE_OF_COLLECTION': 'XXX-GGG-AAA',
                 'COLLECTION_LOCATION': 'Country | Region',
-                'DECIMAL_LATITUDE': '51.5074',
-                'DECIMAL_LONGITUDE': '-0.1278',
+                'DECIMAL_LATITUDE': 'not_a_latitude',  # Invalid value to trigger error
+                'DECIMAL_LONGITUDE': 'not_a_longitude',  # Invalid value to trigger error
                 'IDENTIFIED_BY': 'Dr. Jones',
                 'HABITAT': 'Forest',
                 'IDENTIFIER_AFFILIATION': 'Institute',
@@ -311,4 +311,15 @@ class TestEnaChecklistValidator:
         validator = EnaChecklistValidator(config=config, datasource=mock_ena_datasource)
         list(validator.validate(result))
         assert len(validator.warnings) == 0
-        assert len(validator.errors) == 3
+        assert len(validator.errors) == 5
+
+        error_fields = [
+            err.field[0] if isinstance(err.field, list) else err.field
+            for err in validator.errors
+        ]
+        error_details = [err.detail for err in validator.errors]
+        assert 'DECIMAL_LONGITUDE' in error_fields or 'DECIMAL_LATITUDE' in error_fields
+        assert any(
+            'must be a valid decimal' in detail or 'must match the required pattern' in detail
+            for detail in error_details
+        )

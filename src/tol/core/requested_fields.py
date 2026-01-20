@@ -11,6 +11,26 @@ from .operator import Relational
 from .relationship import RelationshipConfig
 
 
+def requested_fields_to_tree(func):
+    """
+    Allows `requested_fields` keyword arguments to be supplied to methods if a
+    `requested_tree` object has not been given.
+    """
+
+    def wrapper(self, tablename, *args, **kwargs):
+        if 'requested_fields' in kwargs:
+            if 'requested_tree' in kwargs:
+                msg = 'Both requested_fields and requested_tree arguments given'
+                raise TypeError(msg)
+            flds = kwargs.pop('requested_fields')
+            kwargs['requested_tree'] = ReqFieldsTree(
+                tablename, self, requested_fields=flds
+            )
+        return func(self, tablename, *args, **kwargs)
+
+    return wrapper
+
+
 class ReqFieldsTree:
     """
     Acts as a template for which related objects and attributes to fetch from

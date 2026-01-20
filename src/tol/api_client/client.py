@@ -11,6 +11,7 @@ from .converter import JsonApiTransfer, JsonRelationshipConfig
 from ..core import HttpClient
 from ..core.datasource_error import DataSourceError
 from ..core.operator import OperatorDict
+from ..core.requested_fields import ReqFieldsTree
 
 
 class JsonApiClient(HttpClient):
@@ -43,7 +44,7 @@ class JsonApiClient(HttpClient):
         self,
         object_type: str,
         object_id: str,
-        requested_fields: list[str] | None = None,
+        requested_tree: ReqFieldsTree | None = None,
     ) -> Optional[JsonApiTransfer]:
         """
         Gets a single JSON:API transfer for the object of specified
@@ -56,7 +57,7 @@ class JsonApiClient(HttpClient):
         return self.__fetch_detail(
             url,
             params={
-                'requested_fields': requested_fields,
+                'requested_fields': requested_tree.to_paths() if requested_tree else None,
             },
             headers=headers,
         )
@@ -68,7 +69,7 @@ class JsonApiClient(HttpClient):
         page_size: int,
         filter_string: Optional[str] = None,
         sort_string: Optional[str] = None,
-        requested_fields: list[str] | None = None,
+        requested_tree: ReqFieldsTree | None = None,
     ) -> JsonApiTransfer:
         """
         Gets a (paged) list-JSON:API transfer for the objects of specified
@@ -81,7 +82,7 @@ class JsonApiClient(HttpClient):
             page_size=page_size,
             filter=filter_string,
             sort_by=sort_string,
-            requested_fields=requested_fields
+            requested_fields=requested_tree.to_paths() if requested_tree else None,
         )
         headers = self._merge_headers()
         return self.__fetch_list(
@@ -157,7 +158,7 @@ class JsonApiClient(HttpClient):
         page_size: int,
         search_after: list[str] | None,
         filter_string: Optional[str] = None,
-        requested_fields: list[str] | None = None,
+        requested_tree: ReqFieldsTree | None = None,
     ) -> JsonApiTransfer:
         """Cursor-pagination."""
 
@@ -165,7 +166,7 @@ class JsonApiClient(HttpClient):
         params = self.__no_none_value_dict(
             filter=filter_string,
             page_size=page_size,
-            requested_fields=requested_fields,
+            requested_fields=requested_tree.to_paths() if requested_tree else None,
         )
         headers = self._merge_headers()
         body = {'search_after': search_after}
@@ -206,7 +207,7 @@ class JsonApiClient(HttpClient):
         )
 
         headers = self._merge_headers()
-        session = self._get_session()
+        session = self.get_session()
         r = session.post(
             url,
             headers=headers,
@@ -228,7 +229,7 @@ class JsonApiClient(HttpClient):
 
         url = self.__insert_url(object_type)
         headers = self._merge_headers()
-        session = self._get_session()
+        session = self.get_session()
         r = session.post(url, headers=headers, json=transfer)
         self.__assert_no_error(r)
         return r.json()
@@ -461,6 +462,8 @@ class JsonApiClient(HttpClient):
         str_params = {}
         for k, v in kwargs.items():
             if v is None:
+                continue
+            if isinstance(v, list) and not v:
                 continue
             str_params[k] = ','.join([str(x) for x in v]) if isinstance(v, list) else str(v)
         return str_params

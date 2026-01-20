@@ -26,11 +26,12 @@ class ValueCheckValidator(Validator):
         self.__config = config
 
     def _validate_data_object(self, obj: DataObject) -> None:
-        # This function is used to check if the data object is SYMBIONT or not
-
-        if obj.attributes.get(self.__config.field) == self.__config.value:
+        if obj.attributes.get(self.__config.field) != self.__config.value:
             self.add_error(
                 object_id=obj.id,
-                detail=f'{self.__config.value} is detected',
+                detail=(
+                    f"Expected '{self.__config.value}' for field "
+                    f"'{self.__config.field}', but got '{obj.attributes.get(self.__config.field)}'"
+                ),
                 field=self.__config.field,
             )

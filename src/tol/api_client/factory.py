@@ -59,23 +59,12 @@ class _ConverterFactory:
     def json_converter_factory(
         self,
         object_type: str | None = None,
-        requested_fields: list[str] | None = None,
+        requested_tree: ReqFieldsTree | None = None,
     ) -> JsonConverterFactory:
         """
         Returns an instantiated `JsonApiConverter`.
         """
-
-        req_fields_tree = (
-            ReqFieldsTree(
-                object_type,
-                self.__data_source,
-                requested_fields=requested_fields,
-            )
-            if object_type
-            else None
-        )
-
-        parser = DefaultParser(self.__ds_dict, req_fields_tree)
+        parser = DefaultParser(self.__ds_dict, requested_tree)
         return JsonApiConverter(parser)
 
     @property
