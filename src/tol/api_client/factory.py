@@ -64,6 +64,14 @@ class _ConverterFactory:
         """
         Returns an instantiated `JsonApiConverter`.
         """
+
+        # If we're going to parse a JSON:API data object (i.e. we have been
+        # passed an `object_type`), we need to add a ReqFieldsTree so that
+        # DataSources with default loading of to-one objects correctly
+        # process the to-ones from the `included` array.
+        if object_type and not requested_tree:
+            requested_tree = ReqFieldsTree(object_type, self.__data_source)
+
         parser = DefaultParser(self.__ds_dict, requested_tree)
         return JsonApiConverter(parser)
 

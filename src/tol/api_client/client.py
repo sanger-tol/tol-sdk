@@ -54,11 +54,13 @@ class JsonApiClient(HttpClient):
         url = self.__detail_url(object_type, object_id)
         headers = self._merge_headers()
 
+        params = {}
+        if requested_tree:
+            params['requested_fields'] = requested_tree.to_paths()
+
         return self.__fetch_detail(
             url,
-            params={
-                'requested_fields': requested_tree.to_paths() if requested_tree else None,
-            },
+            params=params,
             headers=headers,
         )
 
