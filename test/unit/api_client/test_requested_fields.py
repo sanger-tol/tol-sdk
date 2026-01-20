@@ -14,7 +14,7 @@ from tol.api_client.converter import (
 )
 from tol.api_client.filter import ApiFilter
 from tol.api_client.parser import DefaultParser
-from tol.core import DataObject, ReqFieldsTree, core_data_object
+from tol.core import DataObject, core_data_object
 
 
 @pytest.fixture
@@ -84,24 +84,15 @@ def requested_api_ds(
         def get_json_converter(
             self,
             obj_type=None,
-            requested_fields=None,
+            requested_tree=None,
         ) -> JsonApiConverter:
-            rft = (
-                ReqFieldsTree(
-                    obj_type,
-                    api_ds,
-                    requested_fields=requested_fields,
-                )
-                if obj_type
-                else None
-            )
             parser = DefaultParser(
                 {
                     'a': self.api_ds,
                     'b': self.api_ds,
                     'c': self.api_ds,
                 },
-                rft,
+                requested_tree,
             )
             return JsonApiConverter(parser)
 
