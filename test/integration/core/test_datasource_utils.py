@@ -32,7 +32,7 @@ class TestDataSourceUtils(TestCase):
         ds = self.__get_ds()
 
         assert 'record' in ds.relationship_config
-        assert ds.relationship_config['record'].to_many['category'] == 'category'
+        assert ds.relationship_config['record'].to_one['category'] == 'category'
         assert 'category' in ds.relationship_config
         assert ds.relationship_config['category'].to_many['records'] == 'record'
 
