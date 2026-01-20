@@ -60,3 +60,4 @@ from .default_field_value_if_missing_converter import DefaultFieldValueIfMissing
 from .prefix_field_converter import PrefixFieldConverter  # noqa F401
 from .combine_fields_converter import CombineFieldsConverter  # noqa F401
 from .auto_detect_manifest_type_converter import AutoDetectManifestTypeConverter # noqa F401
+from .time_string_to_time import TimeStringToTimeConverter # noqa F401

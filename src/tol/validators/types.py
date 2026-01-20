@@ -55,12 +55,19 @@ class TypesValidator(Validator):
                     continue
                 type_class = type_map.get(expected_type)
                 if type_class and not isinstance(actual_value, type_class):
-                    self.__add_result(
-                        obj,
-                        key,
-                        detail=f'Field {key} value "{actual_value}" is not of type '
-                               f'"{expected_type}"',
-                    )
+                    if expected_type == 'time':
+                        self.__add_result(
+                            obj,
+                            key,
+                            detail='Only HH:MM format is accepted.',
+                        )
+                    else:
+                        self.__add_result(
+                            obj,
+                            key,
+                            detail=f'Field {key} value "{actual_value}" is not of type '
+                                   f'"{expected_type}"',
+                        )
                 if type_class and isinstance(actual_value, type_class):
                     # Special case for bool since isinstance(True, int) is True
                     if expected_type == 'int' and isinstance(actual_value, bool):

@@ -197,7 +197,7 @@ class DefaultView(View):
             sub_tree = tree.get_sub_tree(rel)
             if sub_tree and rel in data_object._to_many_objects:
                 many_obj = data_object._to_many_objects.get(rel)
-                to_many[rel] = [self.__dump_stub(x, rel) for x in many_obj]
+                to_many[rel] = {'data': [self.__dump_stub(x, rel) for x in many_obj]}
                 for obj in many_obj:
                     included.add_dump(self.__dump_object(obj, included, sub_tree))
             elif quoted_id:

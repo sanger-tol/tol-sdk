@@ -18,6 +18,8 @@ class _MockDataSource(DataSource, DetailGetter):
         pass
 
     def get_one(self, object_type: str, object_id, **kwargs):
+        del object_type, kwargs
+
         if object_id == 'a':
             return None
         else:

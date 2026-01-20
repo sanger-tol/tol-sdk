@@ -12,6 +12,11 @@ from tol.sources.ena import ena
 
 
 class EnaChecklistValidator(Validator):
+    ENA_TO_INTERNAL_FIELD_MAP = {
+        'geographic location (longitude)': 'DECIMAL_LONGITUDE',
+        'geographic location (latitude)': 'DECIMAL_LATITUDE',
+    }
+
     """
     validates the ENA_CHECKLIST for each samples
     """
@@ -37,16 +42,18 @@ class EnaChecklistValidator(Validator):
             field_name = key
             if 'field' in validation:
                 field_name = validation['field']
+            internal_field = self.ENA_TO_INTERNAL_FIELD_MAP.get(field_name, field_name)
+
             if 'mandatory' in validation and key not in obj.attributes:
-                self.add_error(object_id=obj.id, detail='Must be given', field=[field_name])
+                self.add_error(object_id=obj.id, detail='Must be given', field=[internal_field])
                 continue
             if 'mandatory' in validation and obj.attributes[key] is None:
-                self.add_error(object_id=obj.id, detail='Must be given', field=[field_name])
+                self.add_error(object_id=obj.id, detail='Must be given', field=[internal_field])
                 continue
             if 'mandatory' in validation and obj.attributes.get(key) == '':
                 self.add_error(
                     object_id=obj.id,
-                    detail='Must not be empty', field=[field_name]
+                    detail='Must not be empty', field=[internal_field]
                 )
 
             if 'restricted text' in validation and key in obj.attributes:
@@ -55,12 +62,25 @@ class EnaChecklistValidator(Validator):
                         regex = condition
                 compiled_re = re.compile(regex)
                 if not compiled_re.search(obj.attributes.get(key)):
-                    self.add_error(
-                        object_id=obj.id,
-                        detail='Must match specific pattern', field=[field_name]
-                    )
+                    if internal_field in ('DECIMAL_LONGITUDE', 'DECIMAL_LATITUDE'):
+                        self.add_error(
+                            object_id=obj.id,
+                            detail=(
+                                f'Value for {internal_field} must be a valid decimal in the'
+                                f' format required by ENA (e.g. 12.3456). '
+                                f'See ENA checklist for accepted format.',
+                            ),
+                            field=[internal_field]
+                        )
+                    else:
+                        self.add_error(
+                            object_id=obj.id,
+                            detail=(
+                                f'Value for {internal_field} must match the required pattern.'
+                            ),
+                            field=[internal_field]
+                        )
 
-            # Check against allowed values
             if 'text choice' in validation and key in obj.attributes:
                 for condition in validation:
                     if isinstance(condition, list):
@@ -69,5 +89,5 @@ class EnaChecklistValidator(Validator):
                         [x.lower() for x in allowed_values]:
                     self.add_error(
                         object_id=obj.id,
-                        detail='Must be in allowed values', field=[field_name]
+                        detail='Must be in allowed values', field=[internal_field]
                     )

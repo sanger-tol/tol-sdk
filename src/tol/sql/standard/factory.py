@@ -485,6 +485,8 @@ def create_standard_models(
             foreign_keys=[data_source_config_id]
         )
 
+        source_order: Mapped[list[str]] = mapped_column(JSONB, nullable=True)
+
     class DataSourceConfigSummary(base_model_class):
         __tablename__ = 'data_source_config_summary'
 
