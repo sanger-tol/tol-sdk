@@ -8,7 +8,6 @@ from datetime import datetime, timedelta
 from typing import Any, Callable, Optional
 from urllib.parse import urlencode
 
-import requests
 from requests.auth import HTTPBasicAuth
 
 from .models import ModelClass, ModelTuple, create_models
@@ -228,9 +227,14 @@ class DbAuthManager(AuthManager):
         Raises:
             requests.HTTPError: If the user info request fails
         """
+
+        client = HttpClient()
+
+        session = client.get_session()
+
         headers = {'Authorization': f'Bearer {token}'}
 
-        r = requests.get(self.__config.user_info_url, headers=headers)
+        r = session.get(self.__config.user_info_url, headers=headers)
         r.raise_for_status()
 
         json_return = r.json()
@@ -401,13 +405,16 @@ class DbAuthManager(AuthManager):
         Raises:
             requests.HTTPError: If the token request fails
         """
-        r = requests.post(
-            self.__config.token_url,
-            auth=self.__basic_auth(),
-            data=self.__token_post_data(code),
-        )
-        r.raise_for_status()
+        client = HttpClient()
 
+        session = client.get_session()
+        r = session.post(
+            self.__config.token_url,
+            data=self.__token_post_data(code),
+            auth=self.__basic_auth()
+        )
+
+        r.raise_for_status()
         return r.json()
 
     def __basic_auth(self) -> HTTPBasicAuth:
