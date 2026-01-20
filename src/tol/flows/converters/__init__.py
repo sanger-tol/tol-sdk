@@ -56,5 +56,8 @@ from .sts_sample_to_casm_benchling_converter import StsSampleToCasmBenchlingConv
 from .treeofsex_species_to_treeofsexwh_species_converter import TreeofsexSpeciesToTreeofsexwhSpeciesConverter  # noqa F401
 from .treeofsex_upload_to_treeofsex_attribute_converter import TreeofsexUploadToTreeofsexAttributeConverter  # noqa F401
 from .skip_null_fields_converter import SkipNullFieldsConverter  # noqa F401
+from .default_field_value_if_missing_converter import DefaultFieldValueIfMissingConverter  # noqa F401
+from .prefix_field_converter import PrefixFieldConverter  # noqa F401
+from .combine_fields_converter import CombineFieldsConverter  # noqa F401
 from .auto_detect_manifest_type_converter import AutoDetectManifestTypeConverter # noqa F401
 from .time_string_to_time import TimeStringToTimeConverter # noqa F401
