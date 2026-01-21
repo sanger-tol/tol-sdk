@@ -90,7 +90,7 @@ class TolidValidator(Validator):
                 f = DataSourceFilter()
                 f.and_ = {'specimen_id': {'eq': {'value': specimen_id}}}
                 self.__cached_tolids[specimen_id] = list(self.__datasource.get_list(
-                    object_type='specimen',
+                    'specimen',
                     object_filters=f
                 ))
 
