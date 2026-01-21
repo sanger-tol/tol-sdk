@@ -17,18 +17,17 @@ def requested_fields_to_tree(func):
     `requested_tree` object has not been given.
     """
 
-    def wrapper(self, tablename, *args, **kwargs):
+    def wrapper(self, object_type, *args, **kwargs):
         if 'requested_fields' in kwargs:
             if 'requested_tree' in kwargs:
                 msg = 'Both requested_fields and requested_tree arguments given'
                 raise TypeError(msg)
             flds = kwargs.pop('requested_fields')
-            if flds and tablename:
+            if flds and object_type:
                 kwargs['requested_tree'] = ReqFieldsTree(
-                    tablename, self, requested_fields=flds
+                    object_type, self, requested_fields=flds
                 )
-        return func(self, tablename, *args, **kwargs)
-
+        return func(self, object_type, *args, **kwargs)
     return wrapper
 
 
