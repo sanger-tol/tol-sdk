@@ -45,6 +45,7 @@ class BenchlingWarehouseDataSource(DataSource, ListGetter):
             'sample': 'sts_id',
             'sequencing_request': 'sanger_sample_id',
             'extraction': 'extraction_id',
+            'extraction_container': 'fluidx_container_id',
             'tissue_prep': 'eln_tissue_prep_id'
         }
 
@@ -70,7 +71,7 @@ class BenchlingWarehouseDataSource(DataSource, ListGetter):
             yield self.data_object_factory(
                 object_type,
                 id_=obj[id_col],
-                attributes=obj
+                attributes={k: v for k, v in obj.items() if k != id_col}
             )
 
     def get_list(
@@ -82,7 +83,9 @@ class BenchlingWarehouseDataSource(DataSource, ListGetter):
         file_suffix = ''
         if object_filters is not None:
             if isinstance(object_filters.and_, dict):
-                for field_name in ['sequencing_platform', 'extraction_type']:
+                for field_name in [
+                    'sequencing_platform', 'extraction_type', 'extraction.extraction_type'
+                ]:
                     if field_name in object_filters.and_:
                         # For an in_list, treat as multiple eq
                         if 'in_list' in object_filters.and_[field_name]:
@@ -101,7 +104,7 @@ class BenchlingWarehouseDataSource(DataSource, ListGetter):
                                 ) for val in object_filters.and_[field_name]['in_list']['value']
                             )
                         elif 'eq' in object_filters.and_[field_name]:
-                            file_suffix = '_' + field_name + '_' \
+                            file_suffix = '_' + field_name.replace('.', '_') + '_' \
                                           + object_filters.and_[field_name]['eq']['value']
             else:
                 raise DataSourceError('Filtering only on sequencing platform and extraction '

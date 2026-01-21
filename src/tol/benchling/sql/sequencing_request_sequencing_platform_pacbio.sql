@@ -24,7 +24,7 @@ Output: Table with cols:
 4) eln_file_registry_id: [character] id in Benchling Registry. Origin: BWH
 5) extraction_id: [character] Original DNA extract entity name. For pooled samples, the first DNA extract pooled. Origin: BWH
 6) submission_sample_name: [character] Entity name. Origin: BWH
-7) fluidx_id: [character] Container barcode of the DNA fluidx tube. Origin: BWH
+7) fluidx_container_id: [character] Container id of the DNA fluidx tube. Origin: BWH
 8) programme_id: [character] ToLID. Origin: BWH
 9) specimen_id: [character] Specimen ID. Origin: STS
 10) tube_name: [character] Name of the submission tube/container.
@@ -73,7 +73,7 @@ pacbio_submissions_container_routine AS (
 		subsam.file_registry_id$ AS eln_file_registry_id,
 		subsam.original_dna_extract AS extraction_id,
 		subsam.name$ AS submission_sample_name,
-		c_dna.barcode AS fluidx_id,
+		c_dna.id AS fluidx_container_id,
 		t.programme_id, 
 		t.specimen_id, 
 		con.name AS tube_name,
@@ -145,7 +145,7 @@ pacbio_submissions_container_pooled AS (
 		subsam.file_registry_id$ AS eln_file_registry_id,
 		subsam.pooled_sample  AS extraction_id,
 		subsam.name$ AS eln_submission_sample_name,
-		c_pool.barcode AS fluidx_id,
+		c_pool.id AS fluidx_container_id,
 		t.programme_id, 
 		t.specimen_id,
 		con.name AS tube_name,
@@ -219,7 +219,7 @@ pacbio_submissions_container_legacy_deprecated AS (
 		subsam.file_registry_id$ AS eln_file_registry_id,
 		subsam.original_dna_extract AS extraction_id,
 		subsam.name$ AS submission_sample_name,
-		c_dna.barcode AS fluidx_id,
+		c_dna.id AS fluidx_container_id,
 		t.programme_id,
 		t.specimen_id,
 		con.name AS tube_name,
@@ -283,7 +283,7 @@ pacbio_submissions_plate_automated_manifest AS (
 		subsam.file_registry_id$ AS eln_file_registry_id,
 		subsam.originaL_dna_extract AS extraction_id,
 		subsam.name$ AS submission_sample_name,
-		c_dna.barcode AS fluidx_id,
+		c_dna.id AS fluidx_container_id,
 		t.programme_id,
 		t.specimen_id,
 		con.name AS tube_name,
@@ -350,7 +350,7 @@ pacbio_submissions_plate_automated_manifest_pooled AS (
 		subsam.file_registry_id$ AS eln_file_registry_id,
 		subsam.pooled_sample AS extraction_id,
 		subsam.name$ AS submission_sample_name,
-		c_pool.barcode AS fluidx_id,
+		c_pool.id AS fluidx_container_id,
 		t.programme_id,
 		t.specimen_id,
 		con.name AS tube_name,
@@ -415,7 +415,7 @@ pacbio_submissions_plate_routine AS (
 		subsam.file_registry_id$ AS eln_file_registry_id,
 		subsam.original_dna_extract AS extraction_id,
 		subsam.name$ AS submission_sample_name,
-		c_dna.barcode AS fluidx_id,
+		c_dna.id AS fluidx_container_id,
 		t.programme_id,
 		t.specimen_id,
 		c_subsam.name AS tube_name,
@@ -485,7 +485,7 @@ pacbio_submissions_plate_routine_pooled AS (
 		subsam.file_registry_id$ AS eln_file_registry_id,
 		subsam.pooled_sample AS extraction_id,
 		subsam.name$ AS submission_sample_name,
-		c_pool.barcode AS fluidx_id,
+		c_pool.id AS fluidx_container_id,
 		t.programme_id,
 		t.specimen_id,
 		c_subsam.name AS tube_name,
