@@ -308,7 +308,7 @@ class TestEndToEnd:
         assert len(seventeenth) == 1  # The archetype
 
     @against(*all_fixtures)
-    def test_upsert(self, data_source: OperableDataSource, ds_sleep):
+    def test_multiple_upserts(self, data_source: OperableDataSource, ds_sleep):
         """
         Upsert a `DataObject` instance, and then upsert again to test upsert behaviour
         """

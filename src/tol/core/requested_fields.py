@@ -23,9 +23,10 @@ def requested_fields_to_tree(func):
                 msg = 'Both requested_fields and requested_tree arguments given'
                 raise TypeError(msg)
             flds = kwargs.pop('requested_fields')
-            kwargs['requested_tree'] = ReqFieldsTree(
-                tablename, self, requested_fields=flds
-            )
+            if flds and tablename:
+                kwargs['requested_tree'] = ReqFieldsTree(
+                    tablename, self, requested_fields=flds
+                )
         return func(self, tablename, *args, **kwargs)
 
     return wrapper

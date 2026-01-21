@@ -134,28 +134,17 @@ class ApiDataSource(
             for k, v in transfer.items()
         }
 
+    @requested_fields_to_tree
     @validate('detailGet')
     def get_by_id(
         self,
         object_type: str,
         object_ids: Iterable[str],
         session: Optional[OperableSession] = None,
-        requested_fields: list[str] | None = None,
         requested_tree: ReqFieldsTree | None = None,
     ) -> Iterable[Optional[DataObject]]:
 
         client = self.__client_factory()
-        # This would be better handled in the decorator but there is a slight
-        # difference in handling here with the requested_tree when requested_fields is None
-        requested_tree = (
-            ReqFieldsTree(
-                object_type,
-                self,
-                requested_fields=requested_fields,
-            )
-            if object_type
-            else None
-        )
 
         json_responses = (
             client.get_detail(
@@ -182,7 +171,6 @@ class ApiDataSource(
         object_filters: Optional[DataSourceFilter] = None,
         sort_by: Optional[str] = None,
         session: Optional[OperableSession] = None,
-        requested_fields: list[str] | None = None,
         requested_tree: ReqFieldsTree | None = None,
     ) -> tuple[Iterable[DataObject], int]:
 
@@ -204,7 +192,6 @@ class ApiDataSource(
         object_type: str,
         object_filters: Optional[DataSourceFilter] = None,
         session: Optional[OperableSession] = None,
-        requested_fields: list[str] | None = None,
         requested_tree: ReqFieldsTree | None = None,
     ) -> Iterable[DataObject]:
         if self.__can_cursor(object_type, object_filters):
