@@ -46,7 +46,7 @@ class AllowedValuesFromDataSourceValidator(Validator):
             obj.get_field_by_name(
                 self.__config.datasource_field_name
             ) for obj in ds.get_list(
-                object_type=self.__config.datasource_object_type
+                self.__config.datasource_object_type
             )
         ]
 
