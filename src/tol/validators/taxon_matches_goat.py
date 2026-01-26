@@ -7,6 +7,9 @@ from tol.sources.goat import GoatDataSource, goat
 
 
 class TaxonMatchesGoatValidator(Validator):
+    """
+    TODO
+    """
     __slots__ = ['__goat_datasource', '__cached_taxons']
     __goat_datasource: GoatDataSource
     __cached_taxons: dict[str, DataObject]
@@ -35,6 +38,7 @@ class TaxonMatchesGoatValidator(Validator):
                     field='taxon_id'
                 )
         
+        # Check scientific name matches the one associated with the taxon id
         if (scientific_name := obj.get_field_by_name('scientific_name')) != taxon.scientific_name:
             self.add_warning(
                 object_id=obj.id,
@@ -42,29 +46,48 @@ class TaxonMatchesGoatValidator(Validator):
                         f'does not match scientific name of taxon ({taxon.scientific_name})')
             )
         
-        self.__check_taxon_relationship(obj.id, obj.species, taxon.species, 'species')
-        self.__check_taxon_relationship(obj.id, obj.genus, taxon.genus, 'genus')
-        self.__check_taxon_relationship(obj.id, obj.family, taxon.family, 'family')
-        self.__check_taxon_relationship(obj.id, obj.superfamily, taxon.superfamily, 'superfamily')
-        self.__check_taxon_relationship(obj.id, obj.phylum, taxon.phylum, 'phylum')
-        self.__check_taxon_relationship(obj.id, obj.kingdom, taxon.kingdom, 'kingdom')
-        self.__check_taxon_relationship(obj.id, obj.superkingdom, taxon.superkingdom, 'superkingdom')
-        self.__check_taxon_relationship(obj.id, obj.domain, taxon.domain, 'domain')
-    
-    def __check_taxon_relationship(self, obj_id, obj_relationship, taxon_value, relationship_name: str) -> None:
-        if obj_relationship is None and taxon_value is None:
-            return
-
-        if obj_relationship is None and taxon_value is not None:
-            self.add_warning(
-                object_id=obj_id,
-                detail=(f'No value found for {relationship_name}, '
-                        f'when GoaT has value {taxon_value}'),
-                field=relationship_name,
+        # Check all related taxons have the same scientific name as in GoaT
+        self.__check_taxon_relationship(
+            obj.id, obj.species, taxon.species, 'species'
+        )
+        self.__check_taxon_relationship(
+            obj.id, obj.genus, taxon.genus, 'genus'
+        )
+        self.__check_taxon_relationship(
+            obj.id, obj.family, taxon.family, 'family'
+        )
+        self.__check_taxon_relationship(
+            obj.id, obj.superfamily, taxon.superfamily, 'superfamily'
+        )
+        self.__check_taxon_relationship(
+            obj.id, obj.phylum, taxon.phylum, 'phylum'
             )
+        self.__check_taxon_relationship(
+            obj.id, obj.kingdom, taxon.kingdom, 'kingdom'
+        )
+        self.__check_taxon_relationship(
+            obj.id, obj.superkingdom, taxon.superkingdom, 'superkingdom'
+        )
+        self.__check_taxon_relationship(
+            obj.id, obj.domain, taxon.domain, 'domain'
+        )
+    
+    def __check_taxon_relationship(
+        self,
+        obj_id: str | None,
+        relationship_from_data_object: DataObject | None,
+        relationship_from_taxon_id: DataObject | None,
+        relationship_name: str,  # Name of lineage item
+    ) -> None:
+        # Not every taxon has every lineage item (e.g. it might not have a superkingdom).
+        # In this case, the value in GoaT will be `None`. If so, the data object must also have
+        # `None` for its value
+        if relationship_from_taxon_id is None and relationship_from_data_object is None:
             return
 
-        if obj_relationship is not None and taxon_value is None:
+        # Check for the erronous case where the lineage item does not exist for this taxon
+        # (in GoaT), but the data object has a value for it anyway
+        if relationship_from_taxon_id is None and relationship_from_data_object is not None:
             self.add_warning(
                 object_id=obj_id,
                 detail=(f'Unexpectedly found value for {relationship_name}, '
@@ -72,11 +95,24 @@ class TaxonMatchesGoatValidator(Validator):
                 field=relationship_name,
             )
             return
-        
-        if obj_relationship.scientific_name != taxon_value.scientific_name:
+
+        # Check for the data object missing the value for this lineage item when it is present
+        # in GoaT
+        if relationship_from_taxon_id is not None and relationship_from_data_object is None:
             self.add_warning(
                 object_id=obj_id,
-                detail=(f'Value for {relationship_name} ({obj_relationship.scientific_name}) '
-                        f'does not match the value in GoaT ({taxon_value.scientific_name})')
+                detail=(f'No value found for {relationship_name}, '
+                        f'when GoaT has value {relationship_from_taxon_id}'),
+                field=relationship_name,
+            )
+            return
+        
+        # Now we know there's a value for this lineage item both in the data object and in GoaT,
+        # so check whether they're the same
+        if relationship_from_data_object.scientific_name != relationship_from_taxon_id.scientific_name:
+            self.add_warning(
+                object_id=obj_id,
+                detail=(f'Value for {relationship_name} ({relationship_from_data_object.scientific_name}) '
+                        f'does not match the value in GoaT ({relationship_from_taxon_id.scientific_name})')
             )
             return
