@@ -32,3 +32,10 @@ class TaxonMatchesGoatValidator(Validator):
                     detail='Invalid TaxonID: ' + taxon_id,
                     field='taxon_id'
                 )
+        
+        if (scientific_name := obj.get_field_by_name('scientific_name')) != taxon.scientific_name:
+            self.add_warning(
+                object_id=obj.id,
+                detail=(f'Scientific name {scientific_name} '
+                        f'does not match scientific name of taxon ({taxon.scientific_name})')
+            )
