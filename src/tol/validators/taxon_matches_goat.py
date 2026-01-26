@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: MIT
 
 from tol.core import DataObject, Validator
-from tol.sources.goat import goat, GoatDataSource
+from tol.sources.goat import GoatDataSource, goat
 
 
 class TaxonMatchesGoatValidator(Validator):
@@ -15,7 +15,7 @@ class TaxonMatchesGoatValidator(Validator):
         super().__init__()
         self.__goat_datasource = goat()
         self.__cached_taxons = {}
-    
+
     def _validate_data_object(self, obj: DataObject) -> None:
         taxon_id = obj.get_field_by_name('taxon_id')
 
