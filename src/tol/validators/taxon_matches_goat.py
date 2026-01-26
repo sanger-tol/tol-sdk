@@ -113,7 +113,7 @@ class TaxonMatchesGoatValidator(Validator):
                 field=taxon_rank_name,
             )
             return
-        
+
         # Now we know there's a value for this taxon rank both in the data object and in GoaT,
         # so check whether they're the same
         if relationship_from_obj.scientific_name != relationship_from_taxon_id.scientific_name:
