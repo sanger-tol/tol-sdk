@@ -26,6 +26,8 @@ class TaxonMatchesGoatValidator(Validator):
             taxon = self.__cached_taxons[taxon_id]
         else:
             taxon = self.__goat_datasource.get_one('taxon', taxon_id)
+
+            # Error if GoaT has no taxon with this id
             if taxon is None:
                 self.add_error(
                     object_id=obj.id,
@@ -40,16 +42,16 @@ class TaxonMatchesGoatValidator(Validator):
                         f'does not match scientific name of taxon ({taxon.scientific_name})')
             )
         
-        self.__check(obj.id, obj.species, taxon.species, 'species')
-        self.__check(obj.id, obj.genus, taxon.genus, 'genus')
-        self.__check(obj.id, obj.family, taxon.family, 'family')
-        self.__check(obj.id, obj.superfamily, taxon.superfamily, 'superfamily')
-        self.__check(obj.id, obj.phylum, taxon.phylum, 'phylum')
-        self.__check(obj.id, obj.kingdom, taxon.kingdom, 'kingdom')
-        self.__check(obj.id, obj.superkingdom, taxon.superkingdom, 'superkingdom')
-        self.__check(obj.id, obj.domain, taxon.domain, 'domain')
+        self.__check_taxon_relationship(obj.id, obj.species, taxon.species, 'species')
+        self.__check_taxon_relationship(obj.id, obj.genus, taxon.genus, 'genus')
+        self.__check_taxon_relationship(obj.id, obj.family, taxon.family, 'family')
+        self.__check_taxon_relationship(obj.id, obj.superfamily, taxon.superfamily, 'superfamily')
+        self.__check_taxon_relationship(obj.id, obj.phylum, taxon.phylum, 'phylum')
+        self.__check_taxon_relationship(obj.id, obj.kingdom, taxon.kingdom, 'kingdom')
+        self.__check_taxon_relationship(obj.id, obj.superkingdom, taxon.superkingdom, 'superkingdom')
+        self.__check_taxon_relationship(obj.id, obj.domain, taxon.domain, 'domain')
     
-    def __check(self, obj_id, obj_relationship, taxon_value, relationship_name: str) -> None:
+    def __check_taxon_relationship(self, obj_id, obj_relationship, taxon_value, relationship_name: str) -> None:
         if obj_relationship is None and taxon_value is None:
             return
 
