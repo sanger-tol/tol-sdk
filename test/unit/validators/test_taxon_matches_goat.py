@@ -3,6 +3,7 @@
 # SPDX-License-Identifier: MIT
 
 from typing import Iterable
+from unittest.mock import create_autospec
 
 from tol.core import DataObject
 from tol.validators.taxon_matches_goat import TaxonMatchesGoatValidator
