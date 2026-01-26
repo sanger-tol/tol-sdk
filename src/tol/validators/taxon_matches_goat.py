@@ -39,3 +39,42 @@ class TaxonMatchesGoatValidator(Validator):
                 detail=(f'Scientific name {scientific_name} '
                         f'does not match scientific name of taxon ({taxon.scientific_name})')
             )
+        
+        self.__check(obj.id, obj.species, taxon.species, 'species')
+        self.__check(obj.id, obj.genus, taxon.genus, 'genus')
+        self.__check(obj.id, obj.family, taxon.family, 'family')
+        self.__check(obj.id, obj.superfamily, taxon.superfamily, 'superfamily')
+        self.__check(obj.id, obj.phylum, taxon.phylum, 'phylum')
+        self.__check(obj.id, obj.kingdom, taxon.kingdom, 'kingdom')
+        self.__check(obj.id, obj.superkingdom, taxon.superkingdom, 'superkingdom')
+        self.__check(obj.id, obj.domain, taxon.domain, 'domain')
+    
+    def __check(self, obj_id, obj_relationship, taxon_value, relationship_name: str) -> None:
+        if obj_relationship is None and taxon_value is None:
+            return
+
+        if obj_relationship is None and taxon_value is not None:
+            self.add_warning(
+                object_id=obj_id,
+                detail=(f'No value found for {relationship_name}, '
+                        f'when GoaT has value {taxon_value}'),
+                field=relationship_name,
+            )
+            return
+
+        if obj_relationship is not None and taxon_value is None:
+            self.add_warning(
+                object_id=obj_id,
+                detail=(f'Unexpectedly found value for {relationship_name}, '
+                        f'which is not found in GoaT'),
+                field=relationship_name,
+            )
+            return
+        
+        if obj_relationship.scientific_name != taxon_value.scientific_name:
+            self.add_warning(
+                object_id=obj_id,
+                detail=(f'Value for {relationship_name} ({obj_relationship.scientific_name}) '
+                        f'does not match the value in GoaT ({taxon_value.scientific_name})')
+            )
+            return
