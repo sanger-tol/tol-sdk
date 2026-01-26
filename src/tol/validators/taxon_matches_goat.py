@@ -21,9 +21,14 @@ class TaxonMatchesGoatValidator(Validator):
 
         # Check whether we already have the information for this id in the cache.
         # If we don't, fetch it from GOAT and add it to the cache
-        taxon: DataObject
+        taxon: DataObject | None
         if taxon_id in self.__cached_taxons:
             taxon = self.__cached_taxons[taxon_id]
         else:
             taxon = self.__goat_datasource.get_one("taxon", taxon_id)
-            # TODO What if None (unable to fetch from goat)?
+            if taxon is None:
+                self.add_error(
+                    object_id=obj.id,
+                    detail="Invalid TaxonID: " + taxon_id,
+                    field="taxon_id"
+                )
