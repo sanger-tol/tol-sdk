@@ -114,6 +114,7 @@ class TaxonMatchesGoatValidator(Validator):
                 object_id=obj_id,
                 detail=(f'Value for {relationship_name} ({relationship_from_obj.scientific_name}) '
                         f'does not match the value in GoaT '
-                        f'({relationship_from_taxon_id.scientific_name})')
+                        f'({relationship_from_taxon_id.scientific_name})'),
+                field=relationship_name,
             )
             return
