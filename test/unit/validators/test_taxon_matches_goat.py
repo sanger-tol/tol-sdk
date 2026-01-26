@@ -46,7 +46,7 @@ class TestTaxonMatchesGoatValidator:
         mock_two.domain.scientific_name = 'Eukaryota'
 
         validator = TaxonMatchesGoatValidator()
-        validations = validator.validate(iter([mock_one, mock_two]))
+        validations = iter(validator.validate(iter([mock_one, mock_two])))
 
         # Validate the first object and get a reference to the taxon object
         next(validations)
