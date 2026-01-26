@@ -77,15 +77,15 @@ class TaxonMatchesGoatValidator(Validator):
         obj_id: str | None,
         relationship_from_obj: DataObject | None,
         relationship_from_taxon_id: DataObject | None,
-        relationship_name: str,  # Name of lineage item
+        relationship_name: str,  # Name of taxon rank
     ) -> None:
-        # Not every taxon has every lineage item (e.g. it might not have a superkingdom).
+        # Not every taxon has every taxon rank (e.g. it might not have a superkingdom).
         # In this case, the value in GoaT will be `None`. If so, the data object must also have
         # `None` for its value
         if relationship_from_taxon_id is None and relationship_from_obj is None:
             return
 
-        # Check for the erronous case where the lineage item does not exist for this taxon
+        # Check for the erronous case where the taxon rank does not exist for this taxon
         # (in GoaT), but the data object has a value for it anyway
         if relationship_from_taxon_id is None and relationship_from_obj is not None:
             self.add_warning(
@@ -96,7 +96,7 @@ class TaxonMatchesGoatValidator(Validator):
             )
             return
 
-        # Check for the data object missing the value for this lineage item when it is present
+        # Check for the data object missing the value for this taxon rank when it is present
         # in GoaT
         if relationship_from_taxon_id is not None and relationship_from_obj is None:
             self.add_warning(
@@ -107,7 +107,7 @@ class TaxonMatchesGoatValidator(Validator):
             )
             return
         
-        # Now we know there's a value for this lineage item both in the data object and in GoaT,
+        # Now we know there's a value for this taxon rank both in the data object and in GoaT,
         # so check whether they're the same
         if relationship_from_obj.scientific_name != relationship_from_taxon_id.scientific_name:
             self.add_warning(
