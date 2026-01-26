@@ -11,14 +11,14 @@ class TaxonMatchesGoatValidator(Validator):
     Validates a stream of `DataObject` instances, checking whether its Taxonomy information
     matches that in GoaT
     """
-    __slots__ = ['__goat_datasource', '__cached_taxa']
+    __slots__ = ['__goat_datasource', '_cached_taxa']
     __goat_datasource: GoatDataSource
-    __cached_taxa: dict[str, DataObject]
+    _cached_taxa: dict[str, DataObject]
 
     def __init__(self) -> None:
         super().__init__()
         self.__goat_datasource = goat()
-        self.__cached_taxa = {}
+        self._cached_taxa = {}
 
     def _validate_data_object(self, obj: DataObject) -> None:
         taxon_id = obj.get_field_by_name('taxon_id')
@@ -26,8 +26,8 @@ class TaxonMatchesGoatValidator(Validator):
         # Check whether we already have the information for this id in the cache.
         # If we don't, fetch it from GoaT and add it to the cache
         taxon: DataObject | None
-        if taxon_id in self.__cached_taxa:
-            taxon = self.__cached_taxa[taxon_id]
+        if taxon_id in self._cached_taxa:
+            taxon = self._cached_taxa[taxon_id]
         else:
             taxon = self.__goat_datasource.get_one('taxon', taxon_id)
 
