@@ -8,7 +8,8 @@ from tol.sources.goat import GoatDataSource, goat
 
 class TaxonMatchesGoatValidator(Validator):
     """
-    TODO
+    Validates a stream of `DataObject` instances, checking whether its Taxonomy information
+    matches that in GoaT
     """
     __slots__ = ['__goat_datasource', '__cached_taxons']
     __goat_datasource: GoatDataSource
@@ -47,38 +48,44 @@ class TaxonMatchesGoatValidator(Validator):
             )
 
         # Check all related taxons have the same scientific name as in GoaT
-        self.__check_taxon_relationship(
+        self.__validate_taxon_rank(
             obj.id, obj.species, taxon.species, 'species'
         )
-        self.__check_taxon_relationship(
+        self.__validate_taxon_rank(
             obj.id, obj.genus, taxon.genus, 'genus'
         )
-        self.__check_taxon_relationship(
+        self.__validate_taxon_rank(
             obj.id, obj.family, taxon.family, 'family'
         )
-        self.__check_taxon_relationship(
+        self.__validate_taxon_rank(
             obj.id, obj.superfamily, taxon.superfamily, 'superfamily'
         )
-        self.__check_taxon_relationship(
+        self.__validate_taxon_rank(
             obj.id, obj.phylum, taxon.phylum, 'phylum'
         )
-        self.__check_taxon_relationship(
+        self.__validate_taxon_rank(
             obj.id, obj.kingdom, taxon.kingdom, 'kingdom'
         )
-        self.__check_taxon_relationship(
+        self.__validate_taxon_rank(
             obj.id, obj.superkingdom, taxon.superkingdom, 'superkingdom'
         )
-        self.__check_taxon_relationship(
+        self.__validate_taxon_rank(
             obj.id, obj.domain, taxon.domain, 'domain'
         )
 
-    def __check_taxon_relationship(
+    def __validate_taxon_rank(
         self,
         obj_id: str | None,
         relationship_from_obj: DataObject | None,
         relationship_from_taxon_id: DataObject | None,
-        relationship_name: str,  # Name of taxon rank
+        taxon_rank_name: str,
     ) -> None:
+        """
+        A reusable function to perform the same validations for every taxon rank
+        (e.g. kingdom, genus, species).
+        It takes in the relationship to this taxon rank in the data object we're validating
+        (relationship_from_obj) and the data object fetched from GoaT (relationship_from_taxon_id)
+        """
         # Not every taxon has every taxon rank (e.g. it might not have a superkingdom).
         # In this case, the value in GoaT will be `None`. If so, the data object must also have
         # `None` for its value
@@ -90,9 +97,9 @@ class TaxonMatchesGoatValidator(Validator):
         if relationship_from_taxon_id is None and relationship_from_obj is not None:
             self.add_warning(
                 object_id=obj_id,
-                detail=(f'Unexpectedly found value for {relationship_name}, '
+                detail=(f'Unexpectedly found value for {taxon_rank_name}, '
                         f'which is not found in GoaT'),
-                field=relationship_name,
+                field=taxon_rank_name,
             )
             return
 
@@ -101,9 +108,9 @@ class TaxonMatchesGoatValidator(Validator):
         if relationship_from_taxon_id is not None and relationship_from_obj is None:
             self.add_warning(
                 object_id=obj_id,
-                detail=(f'No value found for {relationship_name}, '
+                detail=(f'No value found for {taxon_rank_name}, '
                         f'when GoaT has value {relationship_from_taxon_id}'),
-                field=relationship_name,
+                field=taxon_rank_name,
             )
             return
         
@@ -112,9 +119,9 @@ class TaxonMatchesGoatValidator(Validator):
         if relationship_from_obj.scientific_name != relationship_from_taxon_id.scientific_name:
             self.add_warning(
                 object_id=obj_id,
-                detail=(f'Value for {relationship_name} ({relationship_from_obj.scientific_name}) '
+                detail=(f'Value for {taxon_rank_name} ({relationship_from_obj.scientific_name}) '
                         f'does not match the value in GoaT '
                         f'({relationship_from_taxon_id.scientific_name})'),
-                field=relationship_name,
+                field=taxon_rank_name,
             )
             return
