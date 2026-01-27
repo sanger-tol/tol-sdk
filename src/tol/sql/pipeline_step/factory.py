@@ -190,7 +190,7 @@ def create_pipeline_step_models(
 
         validation_status: Mapped[str] = mapped_column(
             nullable=False,
-            default="in_progress"
+            default='in_progress'
         )
 
         failure_message: Mapped[str | None] = mapped_column(
