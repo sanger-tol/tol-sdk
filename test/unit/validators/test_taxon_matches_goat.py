@@ -2,8 +2,8 @@
 #
 # SPDX-License-Identifier: MIT
 
-from typing import Iterable
-from unittest.mock import create_autospec, PropertyMock
+from typing import Any, Iterable
+from unittest.mock import create_autospec, PropertyMock, MagicMock
 
 from tol.core import DataObject
 from tol.validators.taxon_matches_goat import TaxonMatchesGoatValidator
@@ -28,8 +28,9 @@ class TestTaxonMatchesGoatValidator:
         del mock_objs
         mock_one = create_autospec(DataObject)
         mock_one.id = 'a'
-        mock_one.get_field_by_name.return_value = 'Arenicola marina'
+        mock_one.get_field_by_name = MagicMock(return_value='Arenicola marina')
         mock_one.attributes['taxon_id'] = '6344'
+        mock_one.attributes['scientific_name'] = 'Arenicola marina'
         type(mock_one).species = PropertyMock(return_value=DummyScientificName('Arenicola marina'))
         type(mock_one).genus = PropertyMock(return_value=DummyScientificName('Arenicolidae'))
         type(mock_one).family = PropertyMock(return_value=DummyScientificName('Arenicolidae'))
@@ -40,8 +41,8 @@ class TestTaxonMatchesGoatValidator:
         type(mock_one).domain = PropertyMock(return_value=DummyScientificName('Eukaryota'))
         mock_two = create_autospec(DataObject)
         mock_two.id = 'b'
-        mock_two.get_field_by_name.return_value = 'Arenicola marina'
         mock_two.attributes['taxon_id'] = '6344'
+        mock_two.attributes['scientific_name'] = 'Arenicola marina'
         type(mock_two).species = PropertyMock(return_value=DummyScientificName('Arenicola marina'))
         type(mock_two).genus = PropertyMock(return_value=DummyScientificName('Arenicolidae'))
         type(mock_two).family = PropertyMock(return_value=DummyScientificName('Arenicolidae'))
