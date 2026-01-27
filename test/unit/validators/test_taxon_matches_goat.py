@@ -30,7 +30,7 @@ class TestTaxonMatchesGoatValidator:
         mock_one.id = 'a'
         mock_one.get_field_by_name.return_value = 'Arenicola marina'
         mock_one.attributes['taxon_id'] = '6344'
-        type(mock_one).species = PropertyMock(return_value=DummyScientificName('Arenicola'))
+        type(mock_one).species = PropertyMock(return_value=DummyScientificName('Arenicola marina'))
         type(mock_one).genus = PropertyMock(return_value=DummyScientificName('Arenicolidae'))
         type(mock_one).family = PropertyMock(return_value=DummyScientificName('Arenicolidae'))
         type(mock_one).superfamily = PropertyMock(return_value=DummyScientificName(None))
@@ -42,7 +42,7 @@ class TestTaxonMatchesGoatValidator:
         mock_two.id = 'b'
         mock_two.get_field_by_name.return_value = 'Arenicola marina'
         mock_two.attributes['taxon_id'] = '6344'
-        type(mock_two).species = PropertyMock(return_value=DummyScientificName('Arenicola'))
+        type(mock_two).species = PropertyMock(return_value=DummyScientificName('Arenicola marina'))
         type(mock_two).genus = PropertyMock(return_value=DummyScientificName('Arenicolidae'))
         type(mock_two).family = PropertyMock(return_value=DummyScientificName('Arenicolidae'))
         type(mock_two).superfamily = PropertyMock(return_value=DummyScientificName(None))
