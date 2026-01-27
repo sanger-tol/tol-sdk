@@ -28,9 +28,13 @@ class TestTaxonMatchesGoatValidator:
         del mock_objs
         mock_one = create_autospec(DataObject)
         mock_one.id = 'a'
-        mock_one.get_field_by_name = MagicMock(return_value='Arenicola marina')
-        mock_one.attributes['taxon_id'] = '6344'
-        mock_one.attributes['scientific_name'] = 'Arenicola marina'
+        def __get_field_by_name_one(name: str) -> Any:
+            match name:
+                case 'taxon_id':
+                    return '6344'
+                case 'scientific_name':
+                    return 'Arenicola marina'
+        mock_one.get_field_by_name.side_effect = __get_field_by_name_one
         type(mock_one).species = PropertyMock(return_value=DummyScientificName('Arenicola marina'))
         type(mock_one).genus = PropertyMock(return_value=DummyScientificName('Arenicolidae'))
         type(mock_one).family = PropertyMock(return_value=DummyScientificName('Arenicolidae'))
@@ -41,8 +45,13 @@ class TestTaxonMatchesGoatValidator:
         type(mock_one).domain = PropertyMock(return_value=DummyScientificName('Eukaryota'))
         mock_two = create_autospec(DataObject)
         mock_two.id = 'b'
-        mock_two.attributes['taxon_id'] = '6344'
-        mock_two.attributes['scientific_name'] = 'Arenicola marina'
+        def __get_field_by_name_two(name: str) -> Any:
+            match name:
+                case 'taxon_id':
+                    return '6344'
+                case 'scientific_name':
+                    return 'Arenicola marina'
+        mock_two.get_field_by_name.side_effect = __get_field_by_name_two
         type(mock_two).species = PropertyMock(return_value=DummyScientificName('Arenicola marina'))
         type(mock_two).genus = PropertyMock(return_value=DummyScientificName('Arenicolidae'))
         type(mock_two).family = PropertyMock(return_value=DummyScientificName('Arenicolidae'))
