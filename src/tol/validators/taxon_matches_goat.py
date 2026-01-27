@@ -31,8 +31,11 @@ class TaxonMatchesGoatValidator(Validator):
         else:
             taxon = self.__goat_datasource.get_one('taxon', taxon_id)
 
+            # Add this taxon to cached taxa.
             # Error if GoaT has no taxon with this id
-            if taxon is None:
+            if taxon is not None:
+                self._cached_taxa[taxon_id] = taxon
+            else:
                 self.add_error(
                     object_id=obj.id,
                     detail='Invalid TaxonID: ' + taxon_id,
