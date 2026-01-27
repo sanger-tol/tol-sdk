@@ -39,7 +39,7 @@ class TestTaxonMatchesGoatValidator:
                     return 'Arenicola marina'
         mock_one.get_field_by_name.side_effect = __get_field_by_name_one
         type(mock_one).species = PropertyMock(return_value=DummyScientificName('Arenicola marina'))
-        type(mock_one).genus = PropertyMock(return_value=DummyScientificName('Arenicolidae'))
+        type(mock_one).genus = PropertyMock(return_value=DummyScientificName('Arenicola'))
         type(mock_one).family = PropertyMock(return_value=DummyScientificName('Arenicolidae'))
         type(mock_one).superfamily = PropertyMock(return_value=DummyScientificName(None))
         type(mock_one).phylum = PropertyMock(return_value=DummyScientificName('Annelida'))
