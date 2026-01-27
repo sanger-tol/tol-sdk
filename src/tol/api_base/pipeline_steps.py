@@ -110,7 +110,8 @@ def pipeline_steps_blueprint(
                 'spreadsheet_config': upload_data.spreadsheet_config,
                 'pipeline_id': upload_data.pipeline_id,
                 'destination': upload_data.destination,
-                'user_id': upload_data.user_id
+                'user_id': upload_data.user_id,
+                'validation_status': 'validation_in_progress'
             },
         )
 
