@@ -31,6 +31,7 @@ class TestTaxonMatchesGoatValidator:
         del mock_objs
         mock_one = create_autospec(DataObject)
         mock_one.id = 'a'
+
         def __get_field_by_name_one(name: str) -> Any:
             match name:
                 case 'taxon_id':
@@ -46,8 +47,10 @@ class TestTaxonMatchesGoatValidator:
         type(mock_one).kingdom = PropertyMock(return_value=DummyScientificName('Metazoa'))
         type(mock_one).superkingdom = PropertyMock(return_value=None)
         type(mock_one).domain = PropertyMock(return_value=DummyScientificName('Eukaryota'))
+
         mock_two = create_autospec(DataObject)
         mock_two.id = 'b'
+
         def __get_field_by_name_two(name: str) -> Any:
             match name:
                 case 'taxon_id':
@@ -95,6 +98,7 @@ class TestTaxonMatchesGoatValidator:
         del mock_objs
         mock_one = create_autospec(DataObject)
         mock_one.id = 'a'
+
         def __get_field_by_name_one(name: str) -> Any:
             match name:
                 case 'taxon_id':
@@ -110,8 +114,10 @@ class TestTaxonMatchesGoatValidator:
         type(mock_one).kingdom = PropertyMock(return_value=DummyScientificName('Metazoa'))
         type(mock_one).superkingdom = PropertyMock(return_value=DummyScientificName(None))
         type(mock_one).domain = PropertyMock(return_value=DummyScientificName('Eukaryota'))
+
         mock_two = create_autospec(DataObject)
         mock_two.id = 'b'
+
         def __get_field_by_name_two(name: str) -> Any:
             match name:
                 case 'taxon_id':
