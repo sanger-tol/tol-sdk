@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: MIT
 
 from typing import Any, Iterable
-from unittest.mock import create_autospec, PropertyMock, MagicMock
+from unittest.mock import PropertyMock, create_autospec
 
 from tol.core import DataObject
 from tol.validators.taxon_matches_goat import TaxonMatchesGoatValidator
