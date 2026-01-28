@@ -6,7 +6,7 @@ from typing import Any, Iterable
 from unittest.mock import PropertyMock, create_autospec
 
 from tol.core import DataObject
-from tol.validators.taxon_matches_goat import TaxonMatchesGoatValidator
+from tol.validators import TaxonMatchesGoatValidator
 
 
 class TestTaxonMatchesGoatValidator:
