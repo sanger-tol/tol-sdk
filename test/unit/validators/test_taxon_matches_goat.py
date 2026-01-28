@@ -194,7 +194,7 @@ class TestTaxonMatchesGoatValidator:
             validator.validate(iter([mock_one]))
         )
 
-        # Expect there to be a warning for the invalid superfamily
+        # Expect there to be a warning for the invalid superfamily (should be None)
         assert len(validator.warnings) == 1
         assert len(validator.errors) == 0
 
