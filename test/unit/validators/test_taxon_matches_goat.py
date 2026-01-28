@@ -156,8 +156,47 @@ class TestTaxonMatchesGoatValidator:
         self,
         mock_objs: Iterable[DataObject]
     ):
-        # TODO
+        class DummyScientificName:
+            """
+            Used to mock the scientific_name field for related data objects to the returned taxon
+            """
+            __slots__ = ['scientific_name']
+            scientific_name: str
+
+            def __init__(self, scientific_name) -> None:
+                self.scientific_name = scientific_name
+
+        # The provided mock objects are not appropriate for this test, so we set up new ones
         del mock_objs
+        mock_one = create_autospec(DataObject)
+        mock_one.id = 'a'
+
+        def __get_field_by_name_one(name: str) -> Any:
+            match name:
+                case 'taxon_id':
+                    return '6344'
+                case 'scientific_name':
+                    return 'Arenicola marina'
+        mock_one.get_field_by_name.side_effect = __get_field_by_name_one
+        type(mock_one).species = PropertyMock(return_value=DummyScientificName('Arenicola marina'))
+        type(mock_one).genus = PropertyMock(return_value=DummyScientificName('Arenicola'))
+        type(mock_one).family = PropertyMock(return_value=DummyScientificName('Arenicolidae'))
+        type(mock_one).superfamily = PropertyMock(return_value=DummyScientificName('INVALID'))
+        type(mock_one).phylum = PropertyMock(return_value=DummyScientificName('Annelida'))
+        type(mock_one).kingdom = PropertyMock(return_value=DummyScientificName('Metazoa'))
+        type(mock_one).superkingdom = PropertyMock(return_value=None)
+        type(mock_one).domain = PropertyMock(return_value=DummyScientificName('Eukaryota'))
+
+        validator = TaxonMatchesGoatValidator()
+
+        # consume the `Iterable`
+        list(
+            validator.validate(iter([mock_one]))
+        )
+
+        # Expect there to be a warning for the invalid superfamily
+        assert len(validator.warnings) == 1
+        assert len(validator.errors) == 0
 
     def test_taxon_rank_missing(
         self,
