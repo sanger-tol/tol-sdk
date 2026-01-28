@@ -156,6 +156,9 @@ class TestTaxonMatchesGoatValidator:
         self,
         mock_objs: Iterable[DataObject]
     ):
+        """
+        Ensures that a warning will be raised if a taxon rank has a value but GoaT does not
+        """
         class DummyScientificName:
             """
             Used to mock the scientific_name field for related data objects to the returned taxon
@@ -202,6 +205,9 @@ class TestTaxonMatchesGoatValidator:
         self,
         mock_objs: Iterable[DataObject]
     ):
+        """
+        Ensures that a warning will be raised if a taxon rank is missing but it exists in GoaT
+        """
         class DummyScientificName:
             """
             Used to mock the scientific_name field for related data objects to the returned taxon
@@ -248,6 +254,9 @@ class TestTaxonMatchesGoatValidator:
         self,
         mock_objs: Iterable[DataObject]
     ):
+        """
+        Ensures that a warning will be raised if a taxon rank has a value different to in GoaT
+        """
         class DummyScientificName:
             """
             Used to mock the scientific_name field for related data objects to the returned taxon
