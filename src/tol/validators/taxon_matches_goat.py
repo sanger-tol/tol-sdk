@@ -45,7 +45,7 @@ class TaxonMatchesGoatValidator(Validator):
             else:
                 self.add_error(
                     object_id=obj.id,
-                    detail='Invalid Taxon ID: ' + taxon_id,
+                    detail=f'Invalid Taxon ID: {taxon_id}',
                     field='taxon_id'
                 )
 
