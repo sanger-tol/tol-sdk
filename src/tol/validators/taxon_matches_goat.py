@@ -2,6 +2,8 @@
 #
 # SPDX-License-Identifier: MIT
 
+from dataclasses import dataclass
+
 from tol.core import DataObject, Validator
 from tol.sources.goat import GoatDataSource, goat
 
@@ -14,6 +16,11 @@ class TaxonMatchesGoatValidator(Validator):
     __slots__ = ['__goat_datasource', '_cached_taxa']
     __goat_datasource: GoatDataSource
     _cached_taxa: dict[str, DataObject]
+
+    @dataclass(slots=True, frozen=True, kw_only=True)
+    class Config:
+        # This validator doesn't need a config, but the flow needs it anyway
+        pass
 
     def __init__(self) -> None:
         super().__init__()
