@@ -42,6 +42,10 @@ class TaxonMatchesGoatValidator(Validator):
                     field='taxon_id'
                 )
 
+                # We can't validate a taxon that doesn't exist, so after this error move on
+                # to the next DataObject
+                return
+
         # Check scientific name matches the one associated with the taxon id
         if (scientific_name := obj.get_field_by_name('scientific_name')) != taxon.scientific_name:
             self.add_warning(
