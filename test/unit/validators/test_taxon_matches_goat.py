@@ -201,7 +201,7 @@ class TestTaxonMatchesGoatValidator:
     def test_taxon_rank_not_in_goat(
         self,
         mock_objs: Iterable[DataObject]
-    ):
+    ) -> None:
         """
         Ensures that a warning will be raised if a taxon rank has a value but GoaT does not
         """
@@ -250,7 +250,7 @@ class TestTaxonMatchesGoatValidator:
     def test_taxon_rank_missing(
         self,
         mock_objs: Iterable[DataObject]
-    ):
+    ) -> None:
         """
         Ensures that a warning will be raised if a taxon rank is missing but it exists in GoaT
         """
@@ -299,7 +299,7 @@ class TestTaxonMatchesGoatValidator:
     def test_taxon_rank_does_not_match(
         self,
         mock_objs: Iterable[DataObject]
-    ):
+    ) -> None:
         """
         Ensures that a warning will be raised if a taxon rank has a value different to in GoaT
         """
