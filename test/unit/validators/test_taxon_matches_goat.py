@@ -151,7 +151,7 @@ class TestTaxonMatchesGoatValidator:
 
         # Check they're the same object
         assert taxon_object_one == taxon_object_two
-    
+
     def test_taxon_rank_not_in_goat(
         self,
         mock_objs: Iterable[DataObject]
@@ -245,7 +245,7 @@ class TestTaxonMatchesGoatValidator:
         assert len(validator.errors) == 0
 
     def test_taxon_rank_does_not_match(
-            self,
+        self,
         mock_objs: Iterable[DataObject]
     ):
         class DummyScientificName:
