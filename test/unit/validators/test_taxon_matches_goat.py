@@ -84,81 +84,89 @@ class TestTaxonMatchesGoatValidator:
 
         assert len(validator.results) == 0
 
-    # def test_validator_cached(
-    #     self,
-    #     mock_objs: Iterable[DataObject]
-    # ) -> None:
-    #     """
-    #     Uses two data objects that have the same value for their key column. Tests whether the
-    #     validator used for the second data object is the same as the one used for the first.
-    #     """
-    #     class DummyScientificName:
-    #         """
-    #         Used to mock the scientific_name field for related data objects to the returned taxon
-    #         """
-    #         __slots__ = ['scientific_name']
-    #         scientific_name: str
+    def test_validator_cached(
+        self,
+        mock_objs: Iterable[DataObject]
+    ) -> None:
+        """
+        Uses two data objects that have the same value for their key column. Tests whether the
+        validator used for the second data object is the same as the one used for the first.
+        """
+        # The provided mock objects are not appropriate for this test, so we set up new ones
+        del mock_objs
+        mock_one = create_autospec(DataObject)
+        mock_one.id = 'a'
 
-    #         def __init__(self, scientific_name) -> None:
-    #             self.scientific_name = scientific_name
+        def __get_field_by_name_one(name: str) -> Any:
+            match name:
+                case 'TAXON_ID':
+                    return '6344'
+                case 'SCIENTIFIC_NAME':
+                    return 'Arenicola marina'
+                case 'GENUS':
+                    return 'Arenicola'
+                case 'FAMILY':
+                    return 'Arenicolidae'
+                case 'SUPERFAMILY':
+                    return None
+                case 'PHYLUM':
+                    return 'Annelida'
+                case 'KINGDOM':
+                    return 'Metazoa'
+                case 'SUPERKINGDOM':
+                    return None
+                case 'DOMAIN':
+                    return 'Eukaryota'
+        mock_one.get_field_by_name.side_effect = __get_field_by_name_one
 
-    #     # The provided mock objects are not appropriate for this test, so we set up new ones
-    #     del mock_objs
-    #     mock_one = create_autospec(DataObject)
-    #     mock_one.id = 'a'
+        mock_two = create_autospec(DataObject)
+        mock_two.id = 'b'
 
-    #     def __get_field_by_name_one(name: str) -> Any:
-    #         match name:
-    #             case 'taxon_id':
-    #                 return '6344'
-    #             case 'scientific_name':
-    #                 return 'Arenicola marina'
-    #     mock_one.get_field_by_name.side_effect = __get_field_by_name_one
-    #     type(mock_one).species = PropertyMock(return_value=DummyScientificName('Arenicola marina'))
-    #     type(mock_one).genus = PropertyMock(return_value=DummyScientificName('Arenicolidae'))
-    #     type(mock_one).family = PropertyMock(return_value=DummyScientificName('Arenicolidae'))
-    #     type(mock_one).superfamily = PropertyMock(return_value=DummyScientificName(None))
-    #     type(mock_one).phylum = PropertyMock(return_value=DummyScientificName('Annelida'))
-    #     type(mock_one).kingdom = PropertyMock(return_value=DummyScientificName('Metazoa'))
-    #     type(mock_one).superkingdom = PropertyMock(return_value=DummyScientificName(None))
-    #     type(mock_one).domain = PropertyMock(return_value=DummyScientificName('Eukaryota'))
+        def __get_field_by_name_two(name: str) -> Any:
+            match name:
+                case 'TAXON_ID':
+                    return '6344'
+                case 'SCIENTIFIC_NAME':
+                    return 'Arenicola marina'
+                case 'GENUS':
+                    return 'Arenicola'
+                case 'FAMILY':
+                    return 'Arenicolidae'
+                case 'SUPERFAMILY':
+                    return None
+                case 'PHYLUM':
+                    return 'Annelida'
+                case 'KINGDOM':
+                    return 'Metazoa'
+                case 'SUPERKINGDOM':
+                    return None
+                case 'DOMAIN':
+                    return 'Eukaryota'
+        mock_two.get_field_by_name.side_effect = __get_field_by_name_two
 
-    #     mock_two = create_autospec(DataObject)
-    #     mock_two.id = 'b'
+        config = TaxonMatchesGoatValidator.Config(
+            species_field='SCIENTIFIC_NAME',
+            genus_field='GENUS',
+            family_field='FAMILY',
+        )
 
-    #     def __get_field_by_name_two(name: str) -> Any:
-    #         match name:
-    #             case 'taxon_id':
-    #                 return '6344'
-    #             case 'scientific_name':
-    #                 return 'Arenicola marina'
-    #     mock_two.get_field_by_name.side_effect = __get_field_by_name_two
-    #     type(mock_two).species = PropertyMock(return_value=DummyScientificName('Arenicola marina'))
-    #     type(mock_two).genus = PropertyMock(return_value=DummyScientificName('Arenicolidae'))
-    #     type(mock_two).family = PropertyMock(return_value=DummyScientificName('Arenicolidae'))
-    #     type(mock_two).superfamily = PropertyMock(return_value=DummyScientificName(None))
-    #     type(mock_two).phylum = PropertyMock(return_value=DummyScientificName('Annelida'))
-    #     type(mock_two).kingdom = PropertyMock(return_value=DummyScientificName('Metazoa'))
-    #     type(mock_two).superkingdom = PropertyMock(return_value=DummyScientificName(None))
-    #     type(mock_two).domain = PropertyMock(return_value=DummyScientificName('Eukaryota'))
+        validator = TaxonMatchesGoatValidator(config)
+        validations = iter(validator.validate(iter([mock_one, mock_two])))
 
-    #     validator = TaxonMatchesGoatValidator()
-    #     validations = iter(validator.validate(iter([mock_one, mock_two])))
+        # Validate the first object and get a reference to the taxon object
+        next(validations)
+        assert len(validator._cached_taxa) == 1
+        taxon_object_one = validator._cached_taxa.get('6344')
+        assert taxon_object_one is not None
 
-    #     # Validate the first object and get a reference to the taxon object
-    #     next(validations)
-    #     assert len(validator._cached_taxa) == 1
-    #     taxon_object_one = validator._cached_taxa.get('6344')
-    #     assert taxon_object_one is not None
+        # Validate the second object and get a reference to the taxon object
+        next(validations)
+        assert len(validator._cached_taxa) == 1
+        taxon_object_two = validator._cached_taxa.get('6344')
+        assert taxon_object_two is not None
 
-    #     # Validate the second object and get a reference to the taxon object
-    #     next(validations)
-    #     assert len(validator._cached_taxa) == 1
-    #     taxon_object_two = validator._cached_taxa.get('6344')
-    #     assert taxon_object_two is not None
-
-    #     # Check they're the same object
-    #     assert taxon_object_one == taxon_object_two
+        # Check they're the same object
+        assert taxon_object_one == taxon_object_two
 
     # def test_invalid_taxon_id(
     #     self,
