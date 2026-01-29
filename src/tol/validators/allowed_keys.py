@@ -30,6 +30,7 @@ class AllowedKeysValidator(Validator):
         **kwargs
     ) -> None:
 
+        del kwargs
         super().__init__()
         self.__config = config
 
