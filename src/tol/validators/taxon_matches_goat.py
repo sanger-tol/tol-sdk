@@ -36,7 +36,7 @@ class TaxonMatchesGoatValidator(Validator):
         self._cached_taxa = {}
 
     def _validate_data_object(self, obj: DataObject) -> None:
-        taxon_id = obj.get_field_by_name('taxon_id')
+        taxon_id = obj.get_field_by_name('TAXON_ID')
 
         # Check whether we already have the information for this id in the cache.
         # If we don't, fetch it from GoaT and add it to the cache
