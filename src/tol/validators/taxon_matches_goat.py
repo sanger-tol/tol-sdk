@@ -13,17 +13,25 @@ class TaxonMatchesGoatValidator(Validator):
     Validates a stream of `DataObject` instances, checking whether its Taxonomy information
     matches that in GoaT
     """
-    __slots__ = ['__goat_datasource', '_cached_taxa']
+    @dataclass(slots=True, frozen=True, kw_only=True)
+    class Config:
+        species_field: str | None = None
+        genus_field: str | None = None
+        family_field: str | None = None
+        superfamily_field: str | None = None
+        phylum_field: str | None = None
+        kingdom_field: str | None = None
+        superkingdom_field: str | None = None
+        domain_field: str | None = None
+
+    __slots__ = ['__config', '__goat_datasource', '_cached_taxa']
+    __config: Config
     __goat_datasource: GoatDataSource
     _cached_taxa: dict[str, DataObject]
 
-    @dataclass(slots=True, frozen=True, kw_only=True)
-    class Config:
-        # This validator doesn't need a config, but the flow needs it anyway
-        pass
-
-    def __init__(self) -> None:
+    def __init__(self, config: Config) -> None:
         super().__init__()
+        self.__config = config
         self.__goat_datasource = goat()
         self._cached_taxa = {}
 
@@ -53,39 +61,95 @@ class TaxonMatchesGoatValidator(Validator):
                 # to the next DataObject
                 return
 
-        # Check scientific name matches the one associated with the taxon id
-        if (scientific_name := obj.get_field_by_name('scientific_name')) != taxon.scientific_name:
-            self.add_warning(
-                object_id=obj.id,
-                detail=(f'Scientific name {scientific_name} '
-                        f'does not match scientific name of taxon ({taxon.scientific_name})')
-            )
+        # Check taxonomy rank
+        taxonomic_ranks = ('species', 'genus', 'family', 'superfamily',
+                           'phylum', 'kingdom', 'superkingdom', 'domain')
+        for rank in taxonomic_ranks:
+            field_name: str | None = getattr(self.__config, f'{rank}_field')
+            if not field_name:
+                # We're not checking this field
+                continue
 
-        # Check all related taxons have the same scientific name as in GoaT
-        self.__validate_taxon_rank(
-            obj.id, obj.species, taxon.species, 'species'
-        )
-        self.__validate_taxon_rank(
-            obj.id, obj.genus, taxon.genus, 'genus'
-        )
-        self.__validate_taxon_rank(
-            obj.id, obj.family, taxon.family, 'family'
-        )
-        self.__validate_taxon_rank(
-            obj.id, obj.superfamily, taxon.superfamily, 'superfamily'
-        )
-        self.__validate_taxon_rank(
-            obj.id, obj.phylum, taxon.phylum, 'phylum'
-        )
-        self.__validate_taxon_rank(
-            obj.id, obj.kingdom, taxon.kingdom, 'kingdom'
-        )
-        self.__validate_taxon_rank(
-            obj.id, obj.superkingdom, taxon.superkingdom, 'superkingdom'
-        )
-        self.__validate_taxon_rank(
-            obj.id, obj.domain, taxon.domain, 'domain'
-        )
+            value_in_data_object = obj.get_field_by_name(field_name)
+            value_in_goat = taxon.get_field_by_name(f'{rank}.scientific_name')
+
+            if value_in_data_object != value_in_goat:
+                self.add_warning(
+                    object_id=obj.id,
+                    detail=(f'Value for {field_name} ({value_in_data_object}) '
+                            f'does not match the value in GoaT ({value_in_goat})')
+                    field=field_name,
+                )
+
+            # TODO: Be specific or not?
+            # Not every taxon has every taxon rank (e.g. it might not have a superkingdom).
+            # In this case, the value in GoaT will be `None`. If so, the data object must also have
+            # `None` for its value
+            if value_in_goat is None and value_in_data_object is None:
+                pass
+            # Check for the erronous case where the taxon rank does not exist for this taxon
+            # (in GoaT), but the data object has a value for it anyway
+            elif value_in_goat is None and value_in_data_object is not None:
+                self.add_warning(
+                    object_id=obj_id,
+                    detail=(f'Unexpectedly found value for {field_name}, '
+                            f'which is not found in GoaT'),
+                    field=field_name,
+                )
+            # Check for the data object missing the value for this taxon rank when it is present
+            # in GoaT
+            elif value_in_goat is not None and value_in_data_object is None:
+                self.add_warning(
+                    object_id=obj_id,
+                    detail=(f'No value found for {field_name}, '
+                            f'when GoaT has value {value_in_goat}'),
+                    field=field_name,
+                )
+            # Now we know there's a value for this taxon rank both in the data object and in GoaT,
+            # so check whether they're the same
+            elif value_in_goat != value_in_data_object:
+                self.add_warning(
+                    object_id=obj_id,
+                    detail=(f'Value for {field_name} ({value_in_data_object}) '
+                            f'does not match the value in GoaT '
+                            f'({value_in_goat)'),
+                    field=field_name,
+                )
+
+
+        # # Check scientific name matches the one associated with the taxon id
+        # if (scientific_name := obj.get_field_by_name('scientific_name')) != taxon.scientific_name:
+        #     self.add_warning(
+        #         object_id=obj.id,
+        #         detail=(f'Scientific name {scientific_name} '
+        #                 f'does not match scientific name of taxon ({taxon.scientific_name})')
+        #     )
+
+        # # Check all related taxons have the same scientific name as in GoaT
+        # self.__validate_taxon_rank(
+        #     obj.id, obj.species, taxon.species, 'species'
+        # )
+        # self.__validate_taxon_rank(
+        #     obj.id, obj.genus, taxon.genus, 'genus'
+        # )
+        # self.__validate_taxon_rank(
+        #     obj.id, obj.family, taxon.family, 'family'
+        # )
+        # self.__validate_taxon_rank(
+        #     obj.id, obj.superfamily, taxon.superfamily, 'superfamily'
+        # )
+        # self.__validate_taxon_rank(
+        #     obj.id, obj.phylum, taxon.phylum, 'phylum'
+        # )
+        # self.__validate_taxon_rank(
+        #     obj.id, obj.kingdom, taxon.kingdom, 'kingdom'
+        # )
+        # self.__validate_taxon_rank(
+        #     obj.id, obj.superkingdom, taxon.superkingdom, 'superkingdom'
+        # )
+        # self.__validate_taxon_rank(
+        #     obj.id, obj.domain, taxon.domain, 'domain'
+        # )
 
     def __validate_taxon_rank(
         self,
