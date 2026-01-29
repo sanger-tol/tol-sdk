@@ -61,22 +61,26 @@ class TaxonMatchesGoatValidator(Validator):
                 # to the next DataObject
                 return
 
-        # Check taxonomy rank
+        # Check that each associated taxonomy rank for this taxon matches those in GoaT
         taxonomic_ranks = ('species', 'genus', 'family', 'superfamily',
                            'phylum', 'kingdom', 'superkingdom', 'domain')
         for rank in taxonomic_ranks:
+            # From the rank to check, get the name of its field in the data object we're validating
+            # from the validator config. If this field name is `None`, then this taxonomic rank
+            # isn't being checked (likely because the data object does not have this field)
             field_name: str | None = getattr(self.__config, f'{rank}_field')
-            if not field_name:
-                # We're not checking this field
+            if field_name is None:
                 continue
 
+            # Fetch the values of these taxonomic ranks
             value_in_data_object = obj.get_field_by_name(field_name)
             value_in_goat = taxon.get_field_by_name(f'{rank}.scientific_name')
 
+            # Ensure the value in the data object matches the one in GoaT
             if value_in_data_object != value_in_goat:
                 self.add_warning(
                     object_id=obj.id,
                     detail=(f'Value for {field_name} ({value_in_data_object}) '
-                            f'does not match the value in GoaT ({value_in_goat})')
+                            f'does not match the value in GoaT ({value_in_goat})'),
                     field=field_name,
                 )
