@@ -67,6 +67,7 @@ class TestTaxonMatchesGoatValidator:
                     return None
                 case 'DOMAIN':
                     return 'Eukaryota'
+        mock_two.get_field_by_name.side_effect = __get_field_by_name_two
 
         config = TaxonMatchesGoatValidator.Config(
             species_field='SCIENTIFIC_NAME',
