@@ -24,14 +24,14 @@ class TestTaxonMatchesGoatValidator:
 
         def __get_field_by_name_one(name: str) -> Any:
             match name:
-                case 'taxon_id':
+                case 'TAXON_ID':
                     return '6344'
                 case 'SCIENTIFIC_NAME':
                     return 'Arenicola marina'
                 case 'GENUS':
                     return 'Arenicola'
                 case 'FAMILY':
-                    return 'Canidae'
+                    return 'Arenicolidae'
                 case 'SUPERFAMILY':
                     return None
                 case 'PHYLUM':
@@ -49,7 +49,7 @@ class TestTaxonMatchesGoatValidator:
 
         def __get_field_by_name_two(name: str) -> Any:
             match name:
-                case 'taxon_id':
+                case 'TAXON_ID':
                     return '9631'
                 case 'SCIENTIFIC_NAME':
                     return 'Vulpes velox'
