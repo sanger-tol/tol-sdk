@@ -93,8 +93,8 @@ def mock_elastic_data_source() -> ElasticDataSource:
 
 
 @pytest.fixture
-def mock_lazy_elastic_data_source() -> ElasticDataSource:
-    eds = mock_elastic_data_source()
-    eds.lazy_fetch = True
-
-    return eds
+def mock_lazy_elastic_data_source(
+    mock_elastic_data_source: ElasticDataSource
+) -> ElasticDataSource:
+    mock_elastic_data_source.lazy_fetch = True
+    return mock_elastic_data_source
