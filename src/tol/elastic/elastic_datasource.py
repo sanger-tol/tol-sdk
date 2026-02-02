@@ -420,15 +420,7 @@ class ElasticDataSource(
         f.and_ = {'_id': {'in_list': {'value': object_ids}}}
         # get_by_id is expected to return objects in the order they were asked for
         # or None if not found, hence the following rearrangement.
-        seekable_objects = seekable(self.get_list(object_type, object_filters=f))
-        for id_ in object_ids:
-            seekable_objects.seek(0)
-            for obj in seekable_objects:
-                if obj.id == id_:
-                    yield obj
-                    break
-            else:
-                yield None
+        return self.sort_by_id(self.get_list(object_type, object_filters=f), object_ids)
 
     def get_list_page(
         self,
