@@ -139,7 +139,7 @@ class TestElasticDataSource:
             'scripted_upsert': True,
             'upsert': {},
             '_index': 'test-obj-type',
-            '_id': 1,
+            '_id': '1',
             'script': {
                 'source': mock_elastic_data_source._upsert_script,
                 'lang': 'painless',
@@ -162,7 +162,7 @@ class TestElasticDataSource:
             'scripted_upsert': True,
             'upsert': {},
             '_index': 'test-obj-type',
-            '_id': 2,
+            '_id': '2',
             'script': {
                 'source': mock_elastic_data_source._upsert_script,
                 'lang': 'painless',
