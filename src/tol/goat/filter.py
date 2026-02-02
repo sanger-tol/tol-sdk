@@ -21,7 +21,7 @@ class GoatFilter(ABC):
         pass
 
 
-class DefaultGoatFilter(GoatFilter):
+class DefaultElasticFilter(GoatFilter):
 
     def __init__(
         self

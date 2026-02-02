@@ -8,7 +8,7 @@ from unittest.mock import Mock
 import responses
 
 from tol.core import DataObject
-from tol.goat import create_goat_datasource
+from tol.elastic_new import create_elastic_datasource
 
 
 FAKE_API_URL = 'http://fake.lan/api'
@@ -38,7 +38,7 @@ class TestCreateGoatDatasource:
     def test_get_by_id(self):
         """`create_api_datasource().get_by_id()` + no token"""
 
-        goat_ds = create_goat_datasource(FAKE_API_URL)
+        goat_ds = create_elastic_datasource(FAKE_API_URL)
 
         mock_do_factory = Mock()
         mock_data_object = _get_mock_data_object(
@@ -139,7 +139,7 @@ class TestCreateGoatDatasource:
         Multiple statuses, one of which is not found + token
         """
 
-        api_ds = create_goat_datasource(
+        api_ds = create_elastic_datasource(
             FAKE_API_URL
         )
 

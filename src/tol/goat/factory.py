@@ -7,22 +7,22 @@ from typing import Callable, Iterator, Optional
 
 from .client import GoatApiClient
 from .converter import (
-    GoatApiConverter
+    ElasticApiConverter
 )
-from .filter import DefaultGoatFilter
+from .filter import DefaultElasticFilter
 from .goat_datasource import (
     GoatConverterFactory,
-    GoatDataSource
+    ElasticDataSource
 )
 from .parser import DefaultParser
 from ..core import DataSource
 
 
 class _GoatDSDict(Mapping):
-    def __init__(self, api_ds: GoatDataSource) -> None:
+    def __init__(self, api_ds: ElasticDataSource) -> None:
         self.__ds = api_ds
 
-    def __getitem__(self, __k: str) -> GoatDataSource:
+    def __getitem__(self, __k: str) -> ElasticDataSource:
         if __k not in self.__ds.supported_types:
             raise KeyError()
         return self.__ds
@@ -62,7 +62,7 @@ class _ConverterFactory:
         """
 
         parser = DefaultParser(self.__ds_dict)
-        return GoatApiConverter(parser)
+        return ElasticApiConverter(parser)
 
     @property
     def __ds_dict(self) -> dict[str, DataSource]:
@@ -79,12 +79,12 @@ class _FilterFactory:
     def __init__(self) -> None:
         pass
 
-    def goat_filter_factory(self) -> DefaultGoatFilter:
+    def goat_filter_factory(self) -> DefaultElasticFilter:
         """
         Returns an instantiated `GoatFilter`.
         """
 
-        return DefaultGoatFilter()
+        return DefaultElasticFilter()
 
 
 def _get_client_factory(
@@ -102,7 +102,7 @@ def _get_client_factory(
 
 def create_goat_datasource(
     goat_url: str
-) -> GoatDataSource:
+) -> ElasticDataSource:
     """
     Instantiates `GoatDataSource` using the given:
 
@@ -114,7 +114,7 @@ def create_goat_datasource(
     )
     manager = _ConverterFactory()
     filter_factory = _FilterFactory()
-    goat_ds = GoatDataSource(
+    goat_ds = ElasticDataSource(
         client_factory,
         manager.goat_converter_factory,
         filter_factory.goat_filter_factory

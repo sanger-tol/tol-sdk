@@ -11,7 +11,7 @@ from tol.core import (
     DataObject,
     DataSourceError
 )
-from tol.goat import GoatDataSource
+from tol.elastic_new import ElasticDataSource
 
 
 def _get_mock_data_object(
@@ -42,7 +42,7 @@ class TestGoatDataSource:
 
         mock_lc_converter = Mock()
 
-        ds = GoatDataSource(
+        ds = ElasticDataSource(
             lambda: mock_client,
             lambda: mock_lc_converter,
             None
@@ -77,7 +77,7 @@ class TestGoatDataSource:
         mock_lc_converter = Mock()
         mock_lc_converter.convert_list.return_value = ([], 0)
 
-        ds = GoatDataSource(
+        ds = ElasticDataSource(
             lambda: mock_client,
             lambda: mock_lc_converter,
             None
@@ -98,7 +98,7 @@ class TestGoatDataSource:
     def test_bad_object_type(self):
         """A bad object type -> raise `DataSourceError()`"""
 
-        ds = GoatDataSource(
+        ds = ElasticDataSource(
             lambda: None,
             lambda: None,
             None
@@ -113,7 +113,7 @@ class TestGoatDataSource:
         """
         expected = ['taxon']
 
-        ds = GoatDataSource(
+        ds = ElasticDataSource(
             None,
             None,
             None

@@ -4,7 +4,7 @@
 
 import responses
 
-from tol.goat.client import GoatApiClient
+from tol.elastic_new.client import ElasticApiClient
 
 
 FAKE_API_URL = 'http://test.lan/api'
@@ -17,7 +17,7 @@ class TestElasticApiClient:
     def test_get_detail(self):
         """Default values, no token"""
 
-        client = GoatApiClient(FAKE_API_URL)
+        client = ElasticApiClient(FAKE_API_URL)
         resp = {
             'results': [
                 {

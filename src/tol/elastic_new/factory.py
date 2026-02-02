@@ -100,7 +100,7 @@ def _get_client_factory(
     )
 
 
-def create_goat_datasource(
+def create_elastic_datasource(
     goat_url: str
 ) -> ElasticDataSource:
     """

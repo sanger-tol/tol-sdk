@@ -5,7 +5,7 @@
 from dataclasses import dataclass
 
 from tol.core import DataObject, Validator
-from tol.sources.goat import GoatDataSource, goat
+from tol.sources.goat import ElasticDataSource, goat
 
 
 class TaxonMatchesGoatValidator(Validator):
@@ -26,7 +26,7 @@ class TaxonMatchesGoatValidator(Validator):
 
     __slots__ = ['__config', '__goat_datasource', '_cached_taxa']
     __config: Config
-    __goat_datasource: GoatDataSource
+    __goat_datasource: ElasticDataSource
     _cached_taxa: dict[str, DataObject]
 
     def __init__(self, config: Config, **kwargs) -> None:

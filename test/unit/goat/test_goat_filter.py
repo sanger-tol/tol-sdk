@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: MIT
 
 from tol.core import DataSourceFilter
-from tol.goat.filter import DefaultGoatFilter
+from tol.goat.filter import DefaultElasticFilter
 
 
 class TestDefaultGoatFilter:
@@ -16,7 +16,7 @@ class TestDefaultGoatFilter:
             and_={'a': {'eq': {'value': 'hello'}}, 'b': {'eq': {'value': 'yo'}}}
         )
         expected = 'a=hello AND b=yo'
-        observed = DefaultGoatFilter().dumps(in_)
+        observed = DefaultElasticFilter().dumps(in_)
         assert expected == observed
 
     def test_all_filters(self):
@@ -35,5 +35,5 @@ class TestDefaultGoatFilter:
         expected = (
             'a=hello AND b=hi* AND c=1,2,3 AND d<2 AND d>1 AND tax_rank(species)'
         )
-        observed = DefaultGoatFilter().dumps(in_)
+        observed = DefaultElasticFilter().dumps(in_)
         assert expected == observed

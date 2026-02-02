@@ -3,4 +3,4 @@
 # SPDX-License-Identifier: MIT
 
 from .elastic_datasource import ElasticDataSource  # noqa
-from .factory import create_goat_datasource  # noqa
+from .factory import create_elastic_datasource  # noqa
