@@ -15,7 +15,7 @@ GoatApiTransfer = List[dict[
 ]]
 
 
-class GoatApiConverter():
+class ElasticApiConverter():
 
     """
     Converts from GoaT API transfers to instances of

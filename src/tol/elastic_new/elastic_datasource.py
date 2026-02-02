@@ -10,12 +10,12 @@ from typing import Callable, Iterable, List, Optional
 
 from more_itertools import seekable
 
-from .client import GoatApiClient
+from .client import ElasticApiClient
 from .converter import (
-    GoatApiConverter
+    ElasticApiConverter
 )
 from .filter import (
-    GoatFilter
+    ElasticFilter
 )
 from ..core import (
     DataObject,
@@ -34,12 +34,12 @@ from ..core.relationship import RelationshipConfig
 if typing.TYPE_CHECKING:
     from ..core.session import OperableSession
 
-ClientFactory = Callable[[], GoatApiClient]
-FilterFactory = Callable[[], GoatFilter]
-GoatConverterFactory = Callable[[], GoatApiConverter]
+ClientFactory = Callable[[], ElasticApiClient]
+FilterFactory = Callable[[], ElasticFilter]
+GoatConverterFactory = Callable[[], ElasticApiConverter]
 
 
-class GoatDataSource(
+class ElasticDataSource(
     DataSource,
 
     # the supported operators

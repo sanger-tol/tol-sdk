@@ -6,7 +6,7 @@ from tol.core import DataSourceFilter
 from tol.goat.filter import DefaultGoatFilter
 
 
-class TestDefaultGoatFilter:
+class TestDefaultElasticFilter:
     """Test the `DefaultGoatFilter().dumps()` method"""
 
     def test_one_filter(self):

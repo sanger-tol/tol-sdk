@@ -10,7 +10,7 @@ from tol.goat.client import GoatApiClient
 FAKE_API_URL = 'http://test.lan/api'
 
 
-class TestGoatApiClient:
+class TestElasticApiClient:
     """The `GoatApiClient` and its methods"""
 
     @responses.activate

@@ -10,7 +10,7 @@ import requests
 from .converter import GoatApiTransfer
 
 
-class GoatApiClient:
+class ElasticApiClient:
     """
     Takes GoaT API transfers and connects to a remote
     GoaT API.

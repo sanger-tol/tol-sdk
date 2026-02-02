@@ -7,7 +7,7 @@ from abc import ABC, abstractmethod
 from ..core import DataSourceFilter
 
 
-class GoatFilter(ABC):
+class ElasticFilter(ABC):
     """
     Converts instances of `DataSourceFilter` to a
     valid GoaT filter.
@@ -21,7 +21,7 @@ class GoatFilter(ABC):
         pass
 
 
-class DefaultGoatFilter(GoatFilter):
+class DefaultElasticFilter(ElasticFilter):
 
     def __init__(
         self
