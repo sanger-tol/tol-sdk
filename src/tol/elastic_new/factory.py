@@ -10,7 +10,7 @@ from .converter import (
     GoatApiConverter
 )
 from .filter import DefaultGoatFilter
-from .goat_datasource import (
+from .elastic_datasource import (
     GoatConverterFactory,
     GoatDataSource
 )
