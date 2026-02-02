@@ -14,7 +14,9 @@ class DataSourceFilterConverter(ABC):
     """
 
     @abstractmethod
-    def convert(self, filter_: DataSourceFilter) -> dict | str:
+    def convert(
+        self, object_type: str, object_filters: DataSourceFilter | None = None
+    ) -> dict | str:
         """
         Emit a filter valid for the remote source from a `DataSourceFilter` instance
         """

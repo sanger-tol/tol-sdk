@@ -389,6 +389,9 @@ class ElasticDataSource(
         return snakecase(index[start:])
 
     def _field_or_keyword(self, object_type: str, name: str):
+        """
+        Map our field format to Elastic's format
+        """
         if name == 'id':
             return 'uid.keyword'
         # Runtime fields don't behave the same as text fields
@@ -456,10 +459,12 @@ class ElasticDataSource(
         page: int | None = None,
         search_after: list[Any] | None = None
     ) -> dict[str, Any]:
+        # Prevent circular import as the converter needs to know about the datasource
+        from .filter import ElasticFilterConverter
 
         index = self.__get_index_or_alias(object_type)
         real_index_name = self._get_indices().get(index)
-        query = self._build_elasticsearch_query(object_type, object_filters)
+        query = ElasticFilterConverter(self).convert(object_type, object_filters)
         sort = self._build_elasticsearch_sort(object_type, sort_by)
         fields = list(self.runtime_fields[object_type].keys()) \
             if object_type in self.runtime_fields else None
@@ -478,136 +483,6 @@ class ElasticDataSource(
             runtime_mappings=runtime_mappings,
             search_after=search_after
         )
-
-    def _contains_filter(
-        self,
-        query: dict[str, Any],
-        object_type: str,
-        key: str,
-        value: str
-    ) -> dict[str, Any]:
-
-        search_field = self._field_or_keyword(object_type, key)
-        if self.attribute_types[object_type][key] == 'str':
-            query['bool']['must'].append(
-                {
-                    'wildcard': {
-                        search_field: {
-                            'value': f'{value}*', 'boost': 1.0
-                        }
-                    }
-                }
-            )
-        else:
-            query = self._eq_filter(
-                query,
-                'must',
-                search_field,
-                value
-            )
-        return query
-
-    def _eq_filter(
-        self,
-        query: dict[str, Any],
-        elastic_section: str,
-        search_field: str,
-        search_value: str
-    ) -> dict[str, Any]:
-
-        query['bool'][elastic_section].append({
-            'match': {search_field: search_value}
-        })
-
-        return query
-
-    def _build_elasticsearch_query(self, object_type: str,
-                                   object_filters: DataSourceFilter = None):
-        query = {'bool': {'must': [], 'must_not': []}}
-        object_filters = self._preprocess_filter(object_type, object_filters)
-        # If we want to implement preprocessing of filters, call self._preprocess_filter() here
-        if object_filters is None:
-            return query
-        if object_filters.and_ is not None:
-            for k, v in object_filters.and_.items():
-                search_field = self._field_or_keyword(object_type, k)
-                for op, constraint in v.items():
-                    search_value = constraint.get('value')
-                    negated = constraint.get('negate', False)
-                    elastic_section = 'must_not' if negated else 'must'
-                    if 'field' in constraint:
-                        other_field = self._field_or_keyword(
-                            object_type, constraint['field']
-                        )
-                        query['bool']['filter'] = \
-                            self._get_field_comparison_filter(
-                                search_field,
-                                other_field,
-                                op,
-                                negated
-                        )
-                        continue
-                    if op in ['gt', 'gte', 'lt', 'lte']:
-                        query['bool'][elastic_section].append({
-                            'range': {search_field: {op: search_value}}
-                        })
-                    if op in ['eq']:
-                        query = self._eq_filter(
-                            query,
-                            elastic_section,
-                            search_field,
-                            search_value
-                        )
-                    if op in ['contains']:
-                        query['bool'][elastic_section].append({
-                            'wildcard': {
-                                search_field: {'value': f'{search_value}*', 'boost': 1.0}
-                            }
-                        })
-                    if op in ['exists']:
-                        query['bool'][elastic_section].append({
-                            'exists': {'field': search_field}
-                        })
-                    if op in ['in_list']:
-                        query['bool'][elastic_section].append({
-                            'terms': {search_field: search_value, 'boost': 1.0}
-                        })
-        return query
-
-    def _get_field_comparison_filter(self, field1: str, field2: str, op: str, negated: bool) -> \
-            Dict[str, Dict[str, str]]:
-        op_mappings = {
-            'eq': '==',
-            'lt': '<',
-            'lte': '<=',
-            'gt': '>',
-            'gte': '>='
-        }
-        negated_mappings = {  # What to return if negated
-            True: 'true',
-            False: 'false'
-        }
-        # return {negated_mappings[not negated]}
-        return {
-            'script': {
-                'script': {
-                    'source': f"""
-                        if (doc[params['field1']].size() > 0
-                            && doc[params['field2']].size() > 0) {{
-                            if (doc[params['field1']].value.compareTo(doc[params['field2']].value)
-                                {op_mappings[op]} 0) {{
-                                return {negated_mappings[not negated]}
-                            }}
-                        }}
-                        return {negated_mappings[negated]};
-                    """,
-                    'params': {
-                        'field1': field1,
-                        'field2': field2
-                    }
-                }
-            }
-        }
 
     def _build_elasticsearch_sort(
         self,

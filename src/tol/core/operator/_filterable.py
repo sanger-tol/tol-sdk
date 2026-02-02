@@ -22,7 +22,9 @@ class _Filterable(ABC):
         object_filters: Optional[DataSourceFilter] = None,
     ) -> DataSourceFilter:
         """
-        The main use of this is to convert relative dates into absolute dates
+        This method is called inside a datasource before starting its associated filter converter.
+        This method, unlike the converter, converts in place.
+        By default, this method converts relative dates into absolute dates.
         """
         if object_filters is None:
             return None

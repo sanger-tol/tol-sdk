@@ -9,105 +9,14 @@ from unittest import (TestCase, mock)
 from tol.core import (
     DataObject,
     DataSourceError,
-    DataSourceFilter,
-    DefaultAttributeMetadata,
-    core_data_object
 )
 from tol.core.relationship import RelationshipConfig
 from tol.elastic import (
     ElasticDataSource,
-    RuntimeField
 )
 
 
 dt = datetime.fromtimestamp(1234567890)
-
-
-class MockElasticDataSource(ElasticDataSource):
-    def _initialise_elasticsearch(self):
-        self.es = mock.Mock()
-        self.helpers = mock.Mock()
-
-        self.es.indices.get_alias.return_value = {
-            'test-obj-type': {'aliases': {}},
-            'hidden-reltype': {'aliases': {'test-reltype': {}}}
-        }
-        self.index_prefix = 'test'
-
-    @property
-    def attribute_types(self):
-        return {
-            'obj_type': {
-                'field1': 'str',
-                'field2': 'str',
-                'field3': 'int',
-                'field4': 'str',
-                'field5': 'str',
-                'field6': 'int',
-                'field7': 'str',
-                'field8': 'datetime',
-                'datefield': 'datetime'},
-            'reltype': {
-                'field3': 'str',
-                'field4': 'str',
-                'datefield': 'datetime'
-            }
-        }
-
-
-class MockAttributeMetadata(DefaultAttributeMetadata):
-    def is_available_on_relationships(
-            self,
-            object_type: str,
-            attribute_name: str) -> bool:
-
-        if attribute_name in ['field1', 'field2']:
-            return True
-        return False
-
-
-def mock_elastic_data_source() -> tuple[Callable, ElasticDataSource]:
-    eds = MockElasticDataSource(
-        {
-            'uri': 'test',
-            'user': 'user',
-            'password': 'password',
-            'index_prefix': 'test'
-        },
-        relationship_cfg={
-            'obj_type': RelationshipConfig(
-                to_one={'relationship': 'reltype'},
-                to_many={'children': 'reltype'}
-            ),
-            'reltype': RelationshipConfig(
-                to_one={'parent': 'obj_type'}
-            )
-        },
-        runtime_fields={
-            'obj_type': {
-                'field7': RuntimeField(
-                    field_type='keyword',
-                    dependencies=[],
-                    function_body="emit('Hello')"
-                ),
-                'field8': RuntimeField(
-                    field_type='date',
-                    dependencies=['datefield'],
-                    function_body="emit(doc['datefield'].value.toEpochMilli())"
-                )
-            }
-        },
-        attribute_metadata=MockAttributeMetadata
-    )
-    core_data_object_mock = core_data_object(eds)
-    return core_data_object_mock, eds
-
-
-def mock_lazy_elastic_data_source() -> tuple[Callable, ElasticDataSource]:
-    cdo, eds = mock_elastic_data_source()
-    eds.lazy_fetch = True
-
-    return cdo, eds
 
 
 class TestUidSubstitution:
@@ -476,77 +385,6 @@ class TestElasticDataSource(TestCase):
         with self.assertRaises(StopIteration):
             next(returned)
         eds.helpers.scan.assert_called_once()
-
-    def test_build_query(self):
-        _, eds = mock_elastic_data_source()
-
-        expected = {'bool': {'must': [], 'must_not': []}}
-        self.assertEqual(expected, eds._build_elasticsearch_query('obj_type', None))
-
-        # And filtering
-        object_filters = DataSourceFilter()
-        object_filters.and_ = {
-            'field1': {
-                'exists': {},
-                'lt': {'field': 'field2'}
-            },
-            'field2': {
-                'exists': {'negate': True}
-            },
-            'field3': {
-                'lt': {'value': 16},
-                'gte': {'value': 2}
-            },
-            'field4': {
-                'contains': {'value': 'abc'}
-            },
-            'field5': {
-                'in_list': {'value': ['one', 'two']}
-            },
-            'field6': {
-                'eq': {'value': 5}
-            },
-            'field7': {
-                'eq': {'value': 'haberdashery', 'negate': True}
-            },
-            'field8': {
-                'gt': {'value': '2022-01-01'},
-                'lte': {'value': '2023-01-01'}
-            },
-            'datefield': {
-                'gt': {'value': '2022-01-01'},
-                'lte': {'value': '2023-01-01'}
-            },
-            'relationship.field3': {
-                'eq': {'value': 'string1'}
-            }
-        }
-        expected = {
-            'bool': {
-                'must': [
-                    {'exists': {'field': 'field1.keyword'}},
-                    {'range': {'field3': {'lt': 16}}},
-                    {'range': {'field3': {'gte': 2}}},
-                    {'wildcard': {'field4.keyword': {'value': 'abc*', 'boost': 1.0}}},
-                    {'terms': {'field5.keyword': ['one', 'two'], 'boost': 1.0}},
-                    {'match': {'field6': 5}},
-                    {'range': {'field8': {'gt': datetime(2022, 1, 1, 0, 0)}}},
-                    {'range': {'field8': {'lte': datetime(2023, 1, 1, 0, 0)}}},
-                    {'range': {'datefield': {'gt': datetime(2022, 1, 1, 0, 0)}}},
-                    {'range': {'datefield': {'lte': datetime(2023, 1, 1, 0, 0)}}},
-                    {'match': {'relationship.field3.keyword': 'string1'}}
-                ],
-                'must_not': [
-                    {'exists': {'field': 'field2.keyword'}},
-                    {'match': {'field7': 'haberdashery'}}
-                ],
-                'filter': eds._get_field_comparison_filter(
-                    'field1.keyword', 'field2.keyword', 'lt', False
-                )
-            }
-        }
-
-        self.assertEqual(expected, eds._build_elasticsearch_query('obj_type', object_filters))
 
     def test_build_sort(self):
         _, eds = mock_elastic_data_source()
