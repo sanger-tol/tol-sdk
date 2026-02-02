@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: MIT
 
 from datetime import datetime
-from unittest import (TestCase, mock)
+from unittest import mock
 
 from tol.core import (
     DataObject,
