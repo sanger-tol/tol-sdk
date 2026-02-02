@@ -42,4 +42,4 @@ class _Filterable(ABC):
 
     @abstractmethod
     def get_attribute_metadata_by_name(self, obj_type: str, field_name: str) -> Any:
-        raise NotImplementedError("Should be implemented by DataSource")
+        raise NotImplementedError('Should be implemented by DataSource')

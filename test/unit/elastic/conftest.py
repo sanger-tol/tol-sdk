@@ -1,5 +1,6 @@
-import pytest
 from unittest import mock
+
+import pytest
 
 from tol.core import DefaultAttributeMetadata, core_data_object
 from tol.core.relationship import RelationshipConfig
@@ -85,6 +86,7 @@ def mock_elastic_data_source() -> ElasticDataSource:
     )
     core_data_object(eds)
     return eds
+
 
 @pytest.fixture
 def mock_lazy_elastic_data_source() -> ElasticDataSource:

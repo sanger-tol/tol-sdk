@@ -95,7 +95,7 @@ class TestUidSubstitution:
 class TestElasticDataSource(TestCase):
 
     def test_upsert(self, mock_elastic_data_source: ElasticDataSource):
-        CoreDataObject = mock_elastic_data_source.data_object_factory
+        CoreDataObject = mock_elastic_data_source.data_object_factory  # noqa N806
 
         objects = [
             CoreDataObject(
@@ -175,7 +175,7 @@ class TestElasticDataSource(TestCase):
         mock_elastic_data_source.helpers.bulk.assert_called_once()
 
     def test_upsert_add_prefix_and_id(self, mock_elastic_data_source: ElasticDataSource):
-        CoreDataObject = mock_elastic_data_source.data_object_factory
+        CoreDataObject = mock_elastic_data_source.data_object_factory  # noqa N806
 
         objects = [
             CoreDataObject(
@@ -243,7 +243,7 @@ class TestElasticDataSource(TestCase):
             mock_elastic_data_source.upsert('obj_type', objects, id_func=lambda x: x.field1)
 
     def test_update(self, mock_elastic_data_source: ElasticDataSource):
-        CoreDataObject = mock_elastic_data_source.data_object_factory
+        CoreDataObject = mock_elastic_data_source.data_object_factory  # noqa N806
 
         update1 = {
             'field1': 'value1',
@@ -423,8 +423,10 @@ class TestElasticDataSource(TestCase):
                 }
             }
         }
-        returned = mock_elastic_data_source.get_aggregations('index',
-                                        aggregations=aggregations)
+        returned = mock_elastic_data_source.get_aggregations(
+            'index',
+            aggregations=aggregations
+        )
         mock_elastic_data_source.es.search.assert_called_once()
         self.assertEqual(agg_result, returned)
 
@@ -788,15 +790,15 @@ class TestElasticDataSource(TestCase):
     def test_get_to_many_relationships_lazy(
         self, mock_lazy_elastic_data_source: ElasticDataSource
     ):
-        core_data_object = mock_lazy_elastic_data_source.data_object_factory
-        
+        CoreDataObject = mock_lazy_elastic_data_source.data_object_factory  # noqa N806
+
         rc1 = RelationshipConfig()
         rc1.to_many = {'relname': 'reltype'}
         rc1.foreign_keys = {'relname': 'relfk.id'}
         rc2 = RelationshipConfig()
         rc2.to_one = {'relfk': 'obj_type'}
         mock_lazy_elastic_data_source._relationship_cfg = {'obj_type': rc1, 'reltype': rc2}
-        source_object = core_data_object(
+        source_object = CoreDataObject(
             'obj_type',
             {'id': '1'}
         )

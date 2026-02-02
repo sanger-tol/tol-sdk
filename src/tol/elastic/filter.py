@@ -66,7 +66,7 @@ class ElasticFilterConverter(DataSourceFilterConverter):
                             'terms': {search_field: search_value, 'boost': 1.0}
                         })
         return query
-    
+
     def _get_field_comparison_filter(self, field1: str, field2: str, op: str, negated: bool) -> \
             dict[str, dict[str, str]]:
         op_mappings = {
@@ -117,55 +117,58 @@ class ElasticFilterConverter(DataSourceFilterConverter):
         return query
 
 
-def _build_elasticsearch_query(self, object_type: str,
-                                   object_filters: DataSourceFilter = None):
-        query = {'bool': {'must': [], 'must_not': []}}
-        object_filters = self._preprocess_filter(object_type, object_filters)
-        # If we want to implement preprocessing of filters, call self._preprocess_filter() here
-        if object_filters is None:
-            return query
-        if object_filters.and_ is not None:
-            for k, v in object_filters.and_.items():
-                search_field = self._field_or_keyword(object_type, k)
-                for op, constraint in v.items():
-                    search_value = constraint.get('value')
-                    negated = constraint.get('negate', False)
-                    elastic_section = 'must_not' if negated else 'must'
-                    if 'field' in constraint:
-                        other_field = self._field_or_keyword(
-                            object_type, constraint['field']
-                        )
-                        query['bool']['filter'] = \
-                            self._get_field_comparison_filter(
-                                search_field,
-                                other_field,
-                                op,
-                                negated
-                        )
-                        continue
-                    if op in ['gt', 'gte', 'lt', 'lte']:
-                        query['bool'][elastic_section].append({
-                            'range': {search_field: {op: search_value}}
-                        })
-                    if op in ['eq']:
-                        query = self._eq_filter(
-                            query,
-                            elastic_section,
-                            search_field,
-                            search_value
-                        )
-                    if op in ['contains']:
-                        query['bool'][elastic_section].append({
-                            'wildcard': {
-                                search_field: {'value': f'{search_value}*', 'boost': 1.0}
-                            }
-                        })
-                    if op in ['exists']:
-                        query['bool'][elastic_section].append({
-                            'exists': {'field': search_field}
-                        })
-                    if op in ['in_list']:
-                        query['bool'][elastic_section].append({
-                            'terms': {search_field: search_value, 'boost': 1.0}
-                        })
+def _build_elasticsearch_query(
+    self,
+    object_type: str,
+    object_filters: DataSourceFilter | None = None
+) -> dict:
+    query = {'bool': {'must': [], 'must_not': []}}
+    object_filters = self._preprocess_filter(object_type, object_filters)
+    # If we want to implement preprocessing of filters, call self._preprocess_filter() here
+    if object_filters is None:
         return query
+    if object_filters.and_ is not None:
+        for k, v in object_filters.and_.items():
+            search_field = self._field_or_keyword(object_type, k)
+            for op, constraint in v.items():
+                search_value = constraint.get('value')
+                negated = constraint.get('negate', False)
+                elastic_section = 'must_not' if negated else 'must'
+                if 'field' in constraint:
+                    other_field = self._field_or_keyword(
+                        object_type, constraint['field']
+                    )
+                    query['bool']['filter'] = \
+                        self._get_field_comparison_filter(
+                            search_field,
+                            other_field,
+                            op,
+                            negated
+                    )
+                    continue
+                if op in ['gt', 'gte', 'lt', 'lte']:
+                    query['bool'][elastic_section].append({
+                        'range': {search_field: {op: search_value}}
+                    })
+                if op in ['eq']:
+                    query = self._eq_filter(
+                        query,
+                        elastic_section,
+                        search_field,
+                        search_value
+                    )
+                if op in ['contains']:
+                    query['bool'][elastic_section].append({
+                        'wildcard': {
+                            search_field: {'value': f'{search_value}*', 'boost': 1.0}
+                        }
+                    })
+                if op in ['exists']:
+                    query['bool'][elastic_section].append({
+                        'exists': {'field': search_field}
+                    })
+                if op in ['in_list']:
+                    query['bool'][elastic_section].append({
+                        'terms': {search_field: search_value, 'boost': 1.0}
+                    })
+    return query

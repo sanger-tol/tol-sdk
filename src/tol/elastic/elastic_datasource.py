@@ -20,8 +20,6 @@ from dateutil import parser
 
 from elasticsearch import (Elasticsearch, helpers)
 
-from more_itertools import seekable
-
 from ..core import (
     AttributeMetadata,
     DataId,
