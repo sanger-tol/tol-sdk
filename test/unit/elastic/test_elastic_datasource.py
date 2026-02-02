@@ -60,9 +60,9 @@ class TestUidSubstitution:
 
         assert 'uid' not in obj.attributes
 
-    def __test_uid_sort(self, sort_by: str, order: str) -> None:
-
-        _, mock_ds = mock_elastic_data_source()
+    def __test_uid_sort(
+        self, sort_by: str, order: str, mock_elastic_data_source: ElasticDataSource
+    ) -> None:
 
         expected_sort = [
             {
@@ -73,22 +73,22 @@ class TestUidSubstitution:
             }
         ]
 
-        mock_ds.es.search.return_value = {
+        mock_elastic_data_source.es.search.return_value = {
             'hits': {
                 'hits': [],
                 'total': {'value': 0}
             }
         }
 
-        mock_ds.get_list_page(
+        mock_elastic_data_source.get_list_page(
             'obj_type',
             1,
             sort_by=sort_by
         )
 
-        mock_ds.es.search.assert_called_once()
+        mock_elastic_data_source.es.search.assert_called_once()
 
-        (_, kwargs) = mock_ds.es.search.call_args_list[0]
+        (_, kwargs) = mock_elastic_data_source.es.search.call_args_list[0]
         assert kwargs['sort'] == expected_sort
 
 
@@ -785,7 +785,9 @@ class TestElasticDataSource(TestCase):
         related_object = source_object.to_one_relationships['relname']
         self.assertIsNone(related_object)
 
-    def test_get_to_many_relationships_lazy(self, mock_lazy_elastic_data_source: ElasticDataSource):
+    def test_get_to_many_relationships_lazy(
+        self, mock_lazy_elastic_data_source: ElasticDataSource
+    ):
         core_data_object = mock_lazy_elastic_data_source.data_object_factory
         
         rc1 = RelationshipConfig()
@@ -938,7 +940,9 @@ class TestElasticDataSource(TestCase):
                 attributes={'field1': 'value3', 'field2': 'value4'}
             )
         ]
-        returned = mock_elastic_data_source.get_enrich_update(enriching_fields, source_data, 'reltype')
+        returned = mock_elastic_data_source.get_enrich_update(
+            enriching_fields, source_data, 'reltype'
+        )
         self.assertEqual(expected, list(returned))
 
     def test_enrich(self, mock_elastic_data_source: ElasticDataSource):
