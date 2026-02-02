@@ -20,6 +20,7 @@ from dateutil import parser
 
 from elasticsearch import (Elasticsearch, helpers)
 
+from .filter import ElasticFilterConverter
 from ..core import (
     AttributeMetadata,
     DataId,
@@ -50,7 +51,6 @@ from ..core.operator.updater import DataObjectUpdate
 from ..core.relationship import (
     RelationshipConfig
 )
-from .filter import ElasticFilterConverter
 
 if typing.TYPE_CHECKING:
     from ..core.session import OperableSession
