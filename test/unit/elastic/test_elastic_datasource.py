@@ -315,7 +315,7 @@ class TestElasticDataSource:
              '_id': '2', '_index': 'test-obj-type'}
         ]
 
-        returned = mock_elastic_data_source.get_list('obj_type')
+        returned = iter(mock_elastic_data_source.get_list('obj_type'))
         mock_elastic_data_source.helpers.scan.assert_called_once()
         first = next(returned)
         assert first.attributes == {'field1': 'value1', 'field2': 'value2', 'field7': 'Hello'}
@@ -350,6 +350,7 @@ class TestElasticDataSource:
         }
 
         returned, total = mock_elastic_data_source.get_list_page('obj_type', 3)
+        returned = iter(returned)
         mock_elastic_data_source.es.search.assert_called_once()
         assert total == 2
         first = next(returned)
@@ -383,7 +384,7 @@ class TestElasticDataSource:
             }
         ]
 
-        returned = mock_elastic_data_source.get_by_id('obj_type', ['2', '1'])
+        returned = iter(mock_elastic_data_source.get_by_id('obj_type', ['2', '1']))
         first = next(returned)
         assert first.attributes == {'field1': 'value3', 'field2': 'value4', 'field7': 'Hello'}
         assert first.id == '2'
@@ -555,12 +556,12 @@ class TestElasticDataSource:
             second_ret
         ]
 
-        returned = mock_elastic_data_source.get_group_stats(
+        returned = iter(mock_elastic_data_source.get_group_stats(
             'obj_type',
-            group_by='field1',
+            group_by=['field1'],
             stats_fields=['field2', 'datefield'],
             stats=['min', 'max']
-        )
+        ))
         first = next(returned)
         assert first == {
             'key': {'field1': '1111'},
@@ -643,12 +644,12 @@ class TestElasticDataSource:
             second_ret
         ]
 
-        returned = mock_elastic_data_source.get_group_stats(
+        returned = iter(mock_elastic_data_source.get_group_stats(
             'obj_type',
-            group_by='field1',
+            group_by=['field1'],
             stats_fields=['field4'],
             stats=['union']
-        )
+        ))
         first = next(returned)
         assert first == {
             'key': {'field1': '1111'},
@@ -745,10 +746,11 @@ class TestElasticDataSource:
             'test-obj-type': {'aliases': {}},
             'test-reltype': {'aliases': {}}
         }
-        source_objects = mock_elastic_data_source.get_by_id('obj_type', ['1234'])
+        source_objects = iter(mock_elastic_data_source.get_by_id('obj_type', ['1234']))
         source_object = next(source_objects)
 
         related_object = source_object.to_one_relationships['relname']
+        assert related_object is not None
         mock_elastic_data_source.es.indices.get_alias.assert_called_once()
         assert related_object.id == '5678'
         assert related_object.field3 == 'value3'
@@ -773,7 +775,7 @@ class TestElasticDataSource:
             }
         ]
 
-        source_objects = mock_elastic_data_source.get_by_id('obj_type', ['1234'])
+        source_objects = iter(mock_elastic_data_source.get_by_id('obj_type', ['1234']))
         source_object = next(source_objects)
         related_object = source_object.to_one_relationships['relname']
         assert related_object is None
@@ -787,7 +789,7 @@ class TestElasticDataSource:
                             'relname': None}
             }
         ]
-        source_objects = mock_elastic_data_source.get_by_id('obj_type', ['1234'])
+        source_objects = iter(mock_elastic_data_source.get_by_id('obj_type', ['1234']))
         source_object = next(source_objects)
         related_object = source_object.to_one_relationships['relname']
         assert related_object is None
@@ -800,7 +802,7 @@ class TestElasticDataSource:
                 '_source': {'field1': 'value1'}
             }
         ]
-        source_objects = mock_elastic_data_source.get_by_id('obj_type', ['1234'])
+        source_objects = iter(mock_elastic_data_source.get_by_id('obj_type', ['1234']))
         source_object = next(source_objects)
         related_object = source_object.to_one_relationships['relname']
         assert related_object is None
@@ -835,7 +837,7 @@ class TestElasticDataSource:
              '_id': '2', '_index': 'hidden-reltype'}
         ]
 
-        related_objects = source_object.to_many_relationships['relname']
+        related_objects = iter(source_object.to_many_relationships['relname'])
         mock_lazy_elastic_data_source.es.indices.get_alias.assert_called_once()
         mock_lazy_elastic_data_source.helpers.scan.assert_called_once()
         first = next(related_objects)

@@ -487,7 +487,7 @@ class ElasticDataSource(
     def _build_elasticsearch_sort(
         self,
         object_type: str,
-        sort_by: str
+        sort_by: str | None
     ) -> list[dict[str, str]]:
         default_sort = {'uid.keyword': 'asc'}
         if sort_by is None:
