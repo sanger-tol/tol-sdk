@@ -12,7 +12,7 @@ from more_itertools import seekable
 
 from .client import GoatApiClient
 from .converter import (
-    ElasticApiConverter
+    GoatApiConverter
 )
 from .filter import (
     GoatFilter
@@ -36,10 +36,10 @@ if typing.TYPE_CHECKING:
 
 ClientFactory = Callable[[], GoatApiClient]
 FilterFactory = Callable[[], GoatFilter]
-GoatConverterFactory = Callable[[], ElasticApiConverter]
+GoatConverterFactory = Callable[[], GoatApiConverter]
 
 
-class ElasticDataSource(
+class GoatDataSource(
     DataSource,
 
     # the supported operators

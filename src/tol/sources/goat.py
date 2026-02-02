@@ -9,12 +9,12 @@ from ..core import (
     core_data_object
 )
 from ..goat import (
-    ElasticDataSource,
+    GoatDataSource,
     create_goat_datasource
 )
 
 
-def goat(**kwargs) -> ElasticDataSource:
+def goat(**kwargs) -> GoatDataSource:
     goat = create_goat_datasource(
         goat_url=os.getenv('GOAT_URL', Defaults.GOAT_URL)
         + os.getenv('GOAT_API_PATH', Defaults.GOAT_API_PATH)

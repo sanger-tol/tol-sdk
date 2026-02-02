@@ -8,7 +8,7 @@ from unittest.mock import Mock, create_autospec
 from tol.core import DataObject, DataSource
 from tol.core.data_source_dict import DataSourceDict
 from tol.goat.converter import (
-    ElasticApiConverter
+    GoatApiConverter
 )
 from tol.goat.parser import DefaultParser
 
@@ -176,7 +176,7 @@ class TestGoatApiConverter:
             'country_list': 'List[str]',
             'synonym': 'List[str]'
         }}))
-        converter = ElasticApiConverter(parser)
+        converter = GoatApiConverter(parser)
         (out_, _) = converter.convert_list(in_)
         assert len(out_) == 2
         first = out_[0]
