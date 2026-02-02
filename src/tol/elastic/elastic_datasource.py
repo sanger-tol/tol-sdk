@@ -75,9 +75,10 @@ class ElasticDataSource(
 
     def __init__(self, config: Dict,
                  attribute_metadata: AttributeMetadata = DefaultAttributeMetadata,
-                 relationship_cfg: dict[str, RelationshipConfig] = None,
+                 relationship_cfg: dict[str, RelationshipConfig] | None = None,
                  runtime_fields: dict[str, Any] = {},
                  **kwargs):
+        del kwargs
         super().__init__(
             config,
             expected=['uri', 'user', 'password', 'index_prefix'],
@@ -217,6 +218,7 @@ class ElasticDataSource(
         session: Optional[OperableSession] = None,
         **kwargs,
     ) -> tuple[Iterable[DataObject], list[str] | None]:
+        del session, kwargs
 
         resp = self.__get_page_response(
             object_type,
@@ -238,6 +240,8 @@ class ElasticDataSource(
         merge_collections: bool | None = None,
         **kwargs
     ) -> None:
+        del kwargs
+
         if merge_collections is False:
             msg = 'ElasticDataSource does not support turning off merge_collections'
             raise DataSourceError(msg)
@@ -416,6 +420,7 @@ class ElasticDataSource(
         object_ids: Iterable[DataId],
         **kwargs
     ) -> Iterable[DataObject]:
+        del kwargs
         f = DataSourceFilter()
         f.and_ = {'_id': {'in_list': {'value': object_ids}}}
         # get_by_id is expected to return objects in the order they were asked for
@@ -426,11 +431,12 @@ class ElasticDataSource(
         self,
         object_type: str,
         page: int,
-        object_filters: DataSourceFilter = None,
-        sort_by: str = None,
-        page_size: int = None,
+        object_filters: DataSourceFilter | None = None,
+        sort_by: str | None = None,
+        page_size: int | None = None,
         **kwargs
     ) -> Tuple[Iterable[DataObject], int]:
+        del kwargs
 
         resp = self.__get_page_response(
             object_type,
@@ -532,7 +538,7 @@ class ElasticDataSource(
         session: OperableSession | None = None,
         **kwargs
     ) -> Iterable[DataObject]:
-        del kwargs
+        del session, kwargs
 
         index = self.__get_index_or_alias(object_type)
         real_index_name = self._get_indices().get(index)
@@ -634,9 +640,11 @@ class ElasticDataSource(
         self,
         object_type: str,
         aggregations: Dict,
-        object_filters: DataSourceFilter = None,
+        object_filters: DataSourceFilter | None = None,
         **kwargs
     ) -> Dict:
+        del kwargs
+
         index = self.__get_index_or_alias(object_type)
         real_index_name = self._get_indices().get(index)
         query = ElasticFilterConverter(self).convert(object_type, object_filters)
@@ -659,9 +667,10 @@ class ElasticDataSource(
         object_type: str,
         stats_fields: List[str] = [],
         stats: List[str] = [],
-        object_filters: DataSourceFilter = None,
+        object_filters: DataSourceFilter | None = None,
         **kwargs
     ):
+        del kwargs
         aggs = self.__get_aggs(
             object_type=object_type,
             stats_fields=stats_fields,
@@ -703,9 +712,10 @@ class ElasticDataSource(
         group_by: List[str],
         stats_fields: List[str] = [],
         stats: List[str] = [],
-        object_filters: DataSourceFilter = None,
+        object_filters: DataSourceFilter | None = None,
         **kwargs
     ) -> Iterable[dict[Any, int]]:
+        del kwargs
 
         after_key = None
         while True:
@@ -726,8 +736,8 @@ class ElasticDataSource(
         group_by: List[str],
         stats_fields: List[str] = [],
         stats: List[str] = [],
-        after_key: str = None,
-        object_filters: DataSourceFilter = None,
+        after_key: str | None = None,
+        object_filters: DataSourceFilter | None = None,
     ):
         # This will return a potentially large set of results, so we need
         # to page through them
@@ -939,7 +949,7 @@ class ElasticDataSource(
     def get_count(
         self,
         object_type: str,
-        object_filters: DataSourceFilter = None,
+        object_filters: DataSourceFilter | None = None,
         **kwargs
     ) -> int:
         del kwargs
@@ -1038,6 +1048,7 @@ class ElasticDataSource(
         relationship_name: str,
         **kwargs
     ) -> Optional[DataObject]:
+        del kwargs
 
         self.__validate_to_one_relation(source)
 
@@ -1068,6 +1079,8 @@ class ElasticDataSource(
         relationship_name: str,
         **kwargs
     ) -> Iterable[DataObject]:
+        del kwargs
+
         if self.relationship_config is None:
             raise DataSourceError('There are no relationships defined')
         relationship_config = self.relationship_config[source.type]
