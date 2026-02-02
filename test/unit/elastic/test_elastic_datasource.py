@@ -28,15 +28,21 @@ class TestUidSubstitution:
     expose this as `id` proper.
     """
 
-    def test_sort_by_id(self):
+    def test_sort_by_id_asc(self, mock_elastic_data_source: ElasticDataSource):
         """
         `ElasticDataSource().get_list_page()` converts
         sort_by directives containing `id` to `uid`
         internally.
         """
+        self.__test_uid_sort('id', 'asc', mock_elastic_data_source)
 
-        self.__test_uid_sort('-id', 'desc')
-        self.__test_uid_sort('id', 'asc')
+    def test_sort_by_id_desc(self, mock_elastic_data_source: ElasticDataSource):
+        """
+        `ElasticDataSource().get_list_page()` converts
+        sort_by directives containing `id` to `uid`
+        internally.
+        """
+        self.__test_uid_sort('-id', 'desc', mock_elastic_data_source)
 
     def test_get_by_id(self, mock_elastic_data_source: ElasticDataSource):
         """
