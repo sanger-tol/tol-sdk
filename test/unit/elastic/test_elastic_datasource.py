@@ -320,7 +320,7 @@ class TestElasticDataSource:
         first = next(returned)
         assert first.attributes == {'field1': 'value1', 'field2': 'value2', 'field7': 'Hello'}
         assert first.id == '1'
-        assert first.type == 'object_type'
+        assert first.type == 'obj_type'
         second = next(returned)
         assert second.attributes == {'field1': 'value3', 'field2': 'value4', 'field7': 'Hello'}
         assert second.id == '2'
