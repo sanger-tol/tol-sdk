@@ -98,7 +98,7 @@ class TestUidSubstitution:
         assert kwargs['sort'] == expected_sort
 
 
-class TestElasticDataSource(TestCase):
+class TestElasticDataSource:
 
     def test_upsert(self, mock_elastic_data_source: ElasticDataSource):
         CoreDataObject = mock_elastic_data_source.data_object_factory  # noqa N806
@@ -156,7 +156,7 @@ class TestElasticDataSource(TestCase):
                 }
             }
         }
-        self.assertEqual(expected, next(generator))
+        assert next(generator) == expected
         expected = {
             '_op_type': 'update',
             'scripted_upsert': True,
@@ -175,7 +175,7 @@ class TestElasticDataSource(TestCase):
                 }
             }
         }
-        self.assertEqual(expected, next(generator))
+        assert next(generator) == expected
         mock_elastic_data_source.helpers.bulk.return_value = (2, 0)
         mock_elastic_data_source.upsert('index', objects, id_func=lambda x: x.field1)
         mock_elastic_data_source.helpers.bulk.assert_called_once()
@@ -217,7 +217,7 @@ class TestElasticDataSource(TestCase):
                 }
             }
         }
-        self.assertEqual(expected, next(generator))
+        assert next(generator) == expected
         expected = {
             '_op_type': 'update',
             'scripted_upsert': True,
@@ -236,7 +236,7 @@ class TestElasticDataSource(TestCase):
                 }
             }
         }
-        self.assertEqual(expected, next(generator))
+        assert next(generator) == expected
         mock_elastic_data_source.helpers.bulk.return_value = (2, 0)
         mock_elastic_data_source.upsert('index', objects, id_func=lambda x: x.field1)
         mock_elastic_data_source.helpers.bulk.assert_called_once()
@@ -245,8 +245,12 @@ class TestElasticDataSource(TestCase):
         objects = [{'field1': 'value1', 'field2': 'value2'},
                    {'field1': 'value3', 'field2': 'value4'}]
         mock_elastic_data_source.helpers.bulk.return_value = (2, 1)
-        with self.assertRaises(DataSourceError):
-            mock_elastic_data_source.upsert('obj_type', objects, id_func=lambda x: x.field1)
+        try:
+            mock_elastic_data_source.upsert('object_type', objects, id_func=lambda x: x.field1)
+        except DataSourceError:
+            pass
+        else:
+            assert False, 'Expected DataSourceError to be raised'
 
     def test_update(self, mock_elastic_data_source: ElasticDataSource):
         CoreDataObject = mock_elastic_data_source.data_object_factory  # noqa N806
@@ -296,10 +300,10 @@ class TestElasticDataSource(TestCase):
                 }
             }
         }
-        self.assertEqual(expected, update_body)
+        assert update_body == expected
         mock_elastic_data_source.es.update_by_query.return_value = (2, 0)
         mock_elastic_data_source.update('obj_type', updates, candidate_key=['field1'])
-        self.assertEqual(mock_elastic_data_source.es.update_by_query.call_count, 2)
+        assert mock_elastic_data_source.es.update_by_query.call_count == 2
 
     def test_get_list(self, mock_elastic_data_source: ElasticDataSource):
         mock_elastic_data_source.helpers.scan.return_value = [
@@ -314,17 +318,19 @@ class TestElasticDataSource(TestCase):
         returned = mock_elastic_data_source.get_list('obj_type')
         mock_elastic_data_source.helpers.scan.assert_called_once()
         first = next(returned)
-        self.assertEqual({'field1': 'value1', 'field2': 'value2', 'field7': 'Hello'},
-                         first.attributes)
-        self.assertEqual('1', first.id)
-        self.assertEqual('obj_type', first.type)
+        assert first.attributes == {'field1': 'value1', 'field2': 'value2', 'field7': 'Hello'}
+        assert first.id == '1'
+        assert first.type == 'object_type'
         second = next(returned)
-        self.assertEqual({'field1': 'value3', 'field2': 'value4', 'field7': 'Hello'},
-                         second.attributes)
-        self.assertEqual('2', second.id)
-        self.assertEqual('obj_type', second.type)
-        with self.assertRaises(StopIteration):
+        assert second.attributes == {'field1': 'value3', 'field2': 'value4', 'field7': 'Hello'}
+        assert second.id == '2'
+        assert second.type == 'obj_type'
+        try:
             next(returned)
+        except StopIteration:
+            pass
+        else:
+            assert False, 'Expected StopIteration to be raised'
 
     def test_get_list_page(self, mock_elastic_data_source: ElasticDataSource):
         mock_elastic_data_source.es.search.return_value = {
@@ -345,19 +351,21 @@ class TestElasticDataSource(TestCase):
 
         returned, total = mock_elastic_data_source.get_list_page('obj_type', 3)
         mock_elastic_data_source.es.search.assert_called_once()
-        self.assertEqual(2, total)
+        assert total == 2
         first = next(returned)
-        self.assertEqual({'field1': 'value1', 'field2': 'value2', 'field7': 'Hello'},
-                         first.attributes)
-        self.assertEqual('1', first.id)
-        self.assertEqual('obj_type', first.type)
+        assert first.attributes == {'field1': 'value1', 'field2': 'value2', 'field7': 'Hello'}
+        assert first.id == '1'
+        assert first.type == 'obj_type'
         second = next(returned)
-        self.assertEqual({'field1': 'value3', 'field2': 'value4', 'field7': 'Hello'},
-                         second.attributes)
-        self.assertEqual('2', second.id)
-        self.assertEqual('obj_type', second.type)
-        with self.assertRaises(StopIteration):
+        assert second.attributes == {'field1': 'value3', 'field2': 'value4', 'field7': 'Hello'}
+        assert second.id == '2'
+        assert second.type == 'obj_type'
+        try:
             next(returned)
+        except StopIteration:
+            pass
+        else:
+            assert False, 'Expected StopIteration to be raised'
 
     def test_get_by_id(self, mock_elastic_data_source: ElasticDataSource):
         mock_elastic_data_source.helpers.scan.return_value = [
@@ -377,38 +385,34 @@ class TestElasticDataSource(TestCase):
 
         returned = mock_elastic_data_source.get_by_id('obj_type', ['2', '1'])
         first = next(returned)
-        self.assertEqual({'field1': 'value3', 'field2': 'value4', 'field7': 'Hello'},
-                         first.attributes)
-        self.assertEqual('2', first.id)
-        self.assertEqual('obj_type', first.type)
+        assert first.attributes == {'field1': 'value3', 'field2': 'value4', 'field7': 'Hello'}
+        assert first.id == '2'
+        assert first.type == 'obj_type'
         second = next(returned)
-        self.assertEqual({'field1': 'value1', 'field2': 'value2', 'field7': 'Hello'},
-                         second.attributes)
-        self.assertEqual('1', second.id)
-        self.assertEqual('obj_type', second.type)
-        with self.assertRaises(StopIteration):
+        assert second.attributes == {'field1': 'value1', 'field2': 'value2', 'field7': 'Hello'}
+        assert second.id == '1'
+        assert second.type == 'obj_type'
+        try:
             next(returned)
+        except StopIteration:
+            pass
+        else:
+            assert False, 'Expected StopIteration to be raised'
         mock_elastic_data_source.helpers.scan.assert_called_once()
 
     def test_build_sort(self, mock_elastic_data_source: ElasticDataSource):
         expected = [{'uid.keyword': 'asc'}]
-        self.assertEqual(
-            expected, mock_elastic_data_source._build_elasticsearch_sort('obj_type', None)
-        )
+        assert mock_elastic_data_source._build_elasticsearch_sort('obj_type', None) == expected
 
         # Asc
         sort_by = 'field1'
         expected = [{'field1.keyword': 'asc'}, {'uid.keyword': 'asc'}]
-        self.assertEqual(
-            expected, mock_elastic_data_source._build_elasticsearch_sort('obj_type', sort_by)
-        )
+        assert mock_elastic_data_source._build_elasticsearch_sort('obj_type', sort_by) == expected
 
         # Desc
         sort_by = '-field1'
         expected = [{'field1.keyword': 'desc'}, {'uid.keyword': 'asc'}]
-        self.assertEqual(
-            expected, mock_elastic_data_source._build_elasticsearch_sort('obj_type', sort_by)
-        )
+        assert mock_elastic_data_source._build_elasticsearch_sort('obj_type', sort_by) == expected
 
     def test_get_aggregations(self, mock_elastic_data_source: ElasticDataSource):
         agg_result = {
@@ -434,7 +438,7 @@ class TestElasticDataSource(TestCase):
             aggregations=aggregations
         )
         mock_elastic_data_source.es.search.assert_called_once()
-        self.assertEqual(agg_result, returned)
+        assert returned == agg_result
 
     def test_get_count(self, mock_elastic_data_source: ElasticDataSource):
         mock_elastic_data_source.es.search.return_value = {
@@ -447,7 +451,7 @@ class TestElasticDataSource(TestCase):
 
         returned = mock_elastic_data_source.get_count('obj_type')
         mock_elastic_data_source.es.search.assert_called_once()
-        self.assertEqual(12345, returned)
+        assert returned == 12345
 
     def test_get_stats_unique_and_cardinality(self, mock_elastic_data_source: ElasticDataSource):
         ret = {
@@ -475,7 +479,7 @@ class TestElasticDataSource(TestCase):
             stats_fields=['field2', 'datefield'],
             stats=['unique', 'cardinality']
         )
-        self.assertEqual({
+        assert returned == {
             'stats': {
                 'datefield': {
                     'unique': 10,
@@ -486,8 +490,8 @@ class TestElasticDataSource(TestCase):
                     'cardinality': 5
                 }
             }
-        }, returned)
-        self.assertEqual(mock_elastic_data_source.es.search.call_count, 1)
+        }
+        assert mock_elastic_data_source.es.search.call_count == 1
 
     def test_get_group_stats_standard(self, mock_elastic_data_source: ElasticDataSource):
         first_ret = {
@@ -558,7 +562,7 @@ class TestElasticDataSource(TestCase):
             stats=['min', 'max']
         )
         first = next(returned)
-        self.assertEqual({
+        assert first == {
             'key': {'field1': '1111'},
             'stats': {
                 'count': 20,
@@ -571,9 +575,9 @@ class TestElasticDataSource(TestCase):
                     'max': 'Z'
                 }
             }
-        }, first)
+        }
         second = next(returned)
-        self.assertEqual({
+        assert second == {
             'key': {'field1': '1112'},
             'stats': {
                 'count': 18,
@@ -586,10 +590,14 @@ class TestElasticDataSource(TestCase):
                     'max': None
                 }
             }
-        }, second)
-        with self.assertRaises(StopIteration):
+        }
+        try:
             next(returned)
-        self.assertEqual(mock_elastic_data_source.es.search.call_count, 2)
+        except StopIteration:
+            pass
+        else:
+            assert False, 'Expected StopIteration to be raised'
+        assert mock_elastic_data_source.es.search.call_count == 2
 
     def test_get_group_stats_union(self, mock_elastic_data_source: ElasticDataSource):
         first_ret = {
@@ -642,24 +650,28 @@ class TestElasticDataSource(TestCase):
             stats=['union']
         )
         first = next(returned)
-        self.assertEqual({
+        assert first == {
             'key': {'field1': '1111'},
             'stats': {
                 'count': 20,
                 'field4': {'union': ['val1', 'val2', 'val3']}
             }
-        }, first)
+        }
         second = next(returned)
-        self.assertEqual({
+        assert second == {
             'key': {'field1': '1112'},
             'stats': {
                 'count': 18,
                 'field4': {'union': None}
             }
-        }, second)
-        with self.assertRaises(StopIteration):
+        }
+        try:
             next(returned)
-        self.assertEqual(mock_elastic_data_source.es.search.call_count, 2)
+        except StopIteration:
+            pass
+        else:
+            assert False, 'Expected StopIteration to be called'
+        assert mock_elastic_data_source.es.search.call_count == 2
 
     def test_get_supported_types(self, mock_elastic_data_source: ElasticDataSource):
         expected = ['index_1', 'index_2']
@@ -670,12 +682,12 @@ class TestElasticDataSource(TestCase):
 
         returned = mock_elastic_data_source.supported_types
         mock_elastic_data_source.es.indices.get_alias.assert_called_once()
-        self.assertEqual(expected, returned)
+        assert returned == expected
 
         # Test it doesn't call to Elastic the next time
         returned = mock_elastic_data_source.supported_types
         mock_elastic_data_source.es.indices.get_alias.assert_called_once()
-        self.assertEqual(expected, returned)
+        assert returned == expected
 
     def test_get_attribute_types(self, mock_elastic_data_source: ElasticDataSource):
         mock_elastic_data_source.es.indices.get_alias.return_value = {
@@ -713,7 +725,7 @@ class TestElasticDataSource(TestCase):
                     'field_4': 'bool'}
         returned = mock_elastic_data_source._get_attribute_types_for_object_type('index_name')
         mock_elastic_data_source.es.indices.get_mapping.assert_called_once()
-        self.assertEqual(expected, returned)
+        assert returned == expected
 
     def test_get_to_one_relationships(self, mock_elastic_data_source: ElasticDataSource):
         rc = RelationshipConfig()
@@ -738,8 +750,8 @@ class TestElasticDataSource(TestCase):
 
         related_object = source_object.to_one_relationships['relname']
         mock_elastic_data_source.es.indices.get_alias.assert_called_once()
-        self.assertEqual(related_object.id, '5678')
-        self.assertEqual(related_object.field3, 'value3')
+        assert related_object.id == '5678'
+        assert related_object.field3 == 'value3'
 
         # More than one returned (shouldn't happen)
         mock_elastic_data_source.helpers.scan.return_value = [
@@ -764,7 +776,7 @@ class TestElasticDataSource(TestCase):
         source_objects = mock_elastic_data_source.get_by_id('obj_type', ['1234'])
         source_object = next(source_objects)
         related_object = source_object.to_one_relationships['relname']
-        self.assertIsNone(related_object)
+        assert related_object is None
 
         # None returned
         mock_elastic_data_source.helpers.scan.return_value = [
@@ -778,7 +790,7 @@ class TestElasticDataSource(TestCase):
         source_objects = mock_elastic_data_source.get_by_id('obj_type', ['1234'])
         source_object = next(source_objects)
         related_object = source_object.to_one_relationships['relname']
-        self.assertIsNone(related_object)
+        assert related_object is None
 
         # Relationship name missing
         mock_elastic_data_source.helpers.scan.return_value = [
@@ -791,7 +803,7 @@ class TestElasticDataSource(TestCase):
         source_objects = mock_elastic_data_source.get_by_id('obj_type', ['1234'])
         source_object = next(source_objects)
         related_object = source_object.to_one_relationships['relname']
-        self.assertIsNone(related_object)
+        assert related_object is None
 
     def test_get_to_many_relationships_lazy(
         self, mock_lazy_elastic_data_source: ElasticDataSource
@@ -827,15 +839,19 @@ class TestElasticDataSource(TestCase):
         mock_lazy_elastic_data_source.es.indices.get_alias.assert_called_once()
         mock_lazy_elastic_data_source.helpers.scan.assert_called_once()
         first = next(related_objects)
-        self.assertEqual({'field3': 'value1', 'field4': 'value2'}, first.attributes)
-        self.assertEqual('1', first.id)
-        self.assertEqual('reltype', first.type)
+        assert first.attributes == {'field3': 'value1', 'field4': 'value2'}
+        assert first.id == '1'
+        assert first.type == 'reltype'
         second = next(related_objects)
-        self.assertEqual({'field3': 'value3', 'field4': 'value4'}, second.attributes)
-        self.assertEqual('2', second.id)
-        self.assertEqual('reltype', second.type)
-        with self.assertRaises(StopIteration):
+        assert second.attributes == {'field3': 'value3', 'field4': 'value4'}
+        assert second.id == '2'
+        assert second.type == 'reltype'
+        try:
             next(related_objects)
+        except StopIteration:
+            pass
+        else:
+            assert False, 'Expected StopIteration to be raised'
 
     def test_lazy_get_to_one_relation(self):
         """
@@ -918,15 +934,14 @@ class TestElasticDataSource(TestCase):
 
     def test_get_enriching_fields(self, mock_elastic_data_source: ElasticDataSource):
         expected = {'obj_type': ['field1', 'field2']}
-
-        self.assertEqual(expected, mock_elastic_data_source.enriching_fields)
+        assert mock_elastic_data_source.enriching_fields == expected
 
     def test_relationships_to_enrich(self, mock_elastic_data_source: ElasticDataSource):
         expected = {
             'reltype': {'obj_type': ['relationship']},
             'obj_type': {'reltype': ['parent']}
         }
-        self.assertEqual(expected, mock_elastic_data_source.relationships_to_enrich)
+        assert mock_elastic_data_source.relationships_to_enrich == expected
 
     def test_get_enrich_update(self, mock_elastic_data_source: ElasticDataSource):
         expected = [
@@ -951,7 +966,7 @@ class TestElasticDataSource(TestCase):
         returned = mock_elastic_data_source.get_enrich_update(
             enriching_fields, source_data, 'reltype'
         )
-        self.assertEqual(expected, list(returned))
+        assert list(returned) == expected
 
     def test_enrich(self, mock_elastic_data_source: ElasticDataSource):
         source_data = [
@@ -967,4 +982,4 @@ class TestElasticDataSource(TestCase):
         ]
         mock_elastic_data_source.es.update_by_query.return_value = (2, 0)
         mock_elastic_data_source.enrich('obj_type', source_data, 'reltype')
-        self.assertEqual(mock_elastic_data_source.es.update_by_query.call_count, 2)
+        assert mock_elastic_data_source.es.update_by_query.call_count == 2
