@@ -2,10 +2,17 @@
 #
 # SPDX-License-Identifier: MIT
 
+from __future__ import annotations
+
+import typing
 from typing import Any
 
 from .elastic_datasource import ElasticDataSource
 from ..core import DataSourceFilter, DataSourceFilterConverter
+
+# Import only for typing due to circular imports
+if typing.TYPE_CHECKING:
+    from .elastic_datasource import ElasticDataSource
 
 
 class ElasticFilterConverter(DataSourceFilterConverter):

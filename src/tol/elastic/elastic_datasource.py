@@ -50,6 +50,7 @@ from ..core.operator.updater import DataObjectUpdate
 from ..core.relationship import (
     RelationshipConfig
 )
+from .filter import ElasticFilterConverter
 
 if typing.TYPE_CHECKING:
     from ..core.session import OperableSession
@@ -365,9 +366,7 @@ class ElasticDataSource(
             f.and_[key] = {'eq': {'value': u.pop(key)}}
         u = self._prefix_fields(u, field_prefix)
         u = self._convert_data_objects_in_update_to_dict(u)
-        query = self._build_elasticsearch_query(
-            object_type,
-            object_filters=f)
+        query = ElasticFilterConverter(self).convert(object_type, object_filters=f)
         return {
             'query': query,
             'script': {
@@ -457,9 +456,6 @@ class ElasticDataSource(
         page: int | None = None,
         search_after: list[Any] | None = None
     ) -> dict[str, Any]:
-        # Prevent circular import as the converter needs to know about the datasource
-        from .filter import ElasticFilterConverter
-
         index = self.__get_index_or_alias(object_type)
         real_index_name = self._get_indices().get(index)
         query = ElasticFilterConverter(self).convert(object_type, object_filters)
@@ -536,9 +532,11 @@ class ElasticDataSource(
         session: OperableSession | None = None,
         **kwargs
     ) -> Iterable[DataObject]:
+        del kwargs
+
         index = self.__get_index_or_alias(object_type)
         real_index_name = self._get_indices().get(index)
-        query = self._build_elasticsearch_query(object_type, object_filters)
+        query = ElasticFilterConverter(self).convert(object_type, object_filters)
         fields = list(self.runtime_fields[object_type].keys()) \
             if object_type in self.runtime_fields else None
         runtime_mappings = self.runtime_fields[object_type] \
@@ -641,7 +639,7 @@ class ElasticDataSource(
     ) -> Dict:
         index = self.__get_index_or_alias(object_type)
         real_index_name = self._get_indices().get(index)
-        query = self._build_elasticsearch_query(object_type, object_filters)
+        query = ElasticFilterConverter(self).convert(object_type, object_filters)
         fields = list(self.runtime_fields[object_type].keys()) \
             if object_type in self.runtime_fields else None
         runtime_mappings = self.runtime_fields[object_type] \
@@ -944,9 +942,10 @@ class ElasticDataSource(
         object_filters: DataSourceFilter = None,
         **kwargs
     ) -> int:
+        del kwargs
         index = self.__get_index_or_alias(object_type)
         real_index_name = self._get_indices().get(index)
-        query = self._build_elasticsearch_query(object_type, object_filters)
+        query = ElasticFilterConverter(self).convert(object_type, object_filters)
         fields = list(self.runtime_fields[object_type].keys()) \
             if object_type in self.runtime_fields else None
         runtime_mappings = self.runtime_fields[object_type] \
