@@ -7,7 +7,6 @@ from __future__ import annotations
 import typing
 from typing import Any
 
-from .elastic_datasource import ElasticDataSource
 from ..core import DataSourceFilter, DataSourceFilterConverter
 
 # Import only for typing due to circular imports
