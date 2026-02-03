@@ -2,7 +2,7 @@
 #
 # SPDX-License-Identifier: MIT
 
-from ..core import DataSourceParser
+from ..core import DataObject, DataSourceParser
 
 from .parser import ElasticApiResource
 
@@ -16,3 +16,11 @@ class ElasticConverter:
 
     def __init__(self, parser: DataSourceParser[ElasticApiResource]) -> None:
         self.__parser = parser
+
+    def convert(self, input_: ElasticApiResource) -> DataObject:
+        """
+        Converts an `ElasticApiTransfer` containing a detail (single) result
+        """
+        return self.__parser.parse(input_)
+
+    # TODO: Is `convert_list` needed?
