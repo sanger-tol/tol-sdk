@@ -4,7 +4,8 @@
 
 from typing import Any
 
-from ..core import DataSourceParser
+from . import ElasticDataSource
+from ..core import DataObject, DataSource, DataSourceParser
 
 
 ElasticApiResource = dict[str, Any]
@@ -14,6 +15,15 @@ class DefaultParser(DataSourceParser[ElasticApiResource]):
     """
     Parses Elastic API transfer resource `dict`s to `DataObject` instances
     """
+    __slots__ = ['__data_source']
+    __data_source: ElasticDataSource
+
+    def __init__(self, data_source: ElasticDataSource) -> None:
+        self.__data_source = data_source
+    
+    def parse(self, transfer: ElasticApiResource) -> DataObject:
+        pass
+
     # def parse(self, transfer: ElasticApiResource) -> DataObject:
     #     if '_source' in transfer:
     #         type_ = self.__real_index_to_object_type(transfer['_index'])  # TODO IN DATA SOURCE
