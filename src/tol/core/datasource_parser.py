@@ -24,7 +24,7 @@ class DataSourceParser(ABC, Generic[TransferResourceType]):
         `DataObject` instance
         """
         raise NotImplementedError
-    
+
     def parse_iterable(self, transfers: Iterable[TransferResourceType]) -> Iterable[DataObject]:
         """
         Uses the subclass's implementation of `parse`
