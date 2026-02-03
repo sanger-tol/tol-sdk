@@ -38,3 +38,4 @@ from .validate import (  # noqa F401
     ValidationSeverity,
     ValidationResult
 )
+from .datasource_parser import DataSourceParser  # noqa F401
