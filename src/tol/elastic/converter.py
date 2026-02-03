@@ -2,12 +2,13 @@
 #
 # SPDX-License-Identifier: MIT
 
-from ..core import DataObject, DataSourceParser
+# from collections.abc import Iterable
 
+from ..core import DataObject, DataSourceParser
 from .parser import ElasticApiResource
 
 
-class ElasticConverter:
+class ElasticApiConverter:
     """
     Converts from Elastic API transfers to instances of `DataObject`
     """
@@ -23,4 +24,8 @@ class ElasticConverter:
         """
         return self.__parser.parse(input_)
 
-    # TODO: Is `convert_list` needed?
+    # def convert_list(self, input_: ElasticApiResource) -> Iterable[DataObject]:
+    #     return (
+    #         self.__parser.parse(obj)
+    #         for obj in input_.values()
+    #     )
