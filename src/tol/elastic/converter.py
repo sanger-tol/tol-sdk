@@ -4,8 +4,8 @@
 
 # from collections.abc import Iterable
 
-from ..core import DataObject, DataSourceParser
 from .parser import ElasticApiResource
+from ..core import DataObject, DataSourceParser
 
 
 class ElasticApiConverter:

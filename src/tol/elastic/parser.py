@@ -4,7 +4,7 @@
 
 from typing import Any
 
-from ..core import DataObject, DataSourceParser
+from ..core import DataSourceParser
 
 
 ElasticApiResource = dict[str, Any]
@@ -28,7 +28,7 @@ class DefaultParser(DataSourceParser[ElasticApiResource]):
     #         )
     #     else:
     #         return None
-    
+
     # def _convert_data_dict_to_data_object(self, type_, id_, data, runtime_data):
     #     attributes = {
     #         k: self.__make_dates(type_, k, v) for k, v in data.items()

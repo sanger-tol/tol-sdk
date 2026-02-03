@@ -10,11 +10,13 @@ class _ElasticDSDict:
     """
     pass
 
+
 class _ConverterFactory:
     """
     Manages the instantiation of `ElasticApiConverter`
     """
     pass
+
 
 class _FilterFactory:
     """
@@ -22,12 +24,14 @@ class _FilterFactory:
     """
     pass
 
+
 def _get_client_factory():
     """
     A resonable default for creating
     an `ElasticApiClient` instance
     """
     pass
+
 
 def create_elastic_datasource():
     """
