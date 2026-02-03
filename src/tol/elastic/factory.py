@@ -7,6 +7,10 @@ from __future__ import annotations
 import typing
 from collections.abc import Iterator, Mapping
 
+from .converter import ElasticApiConverter
+from .parser import DefaultParser
+from ..core import DataSource
+
 if typing.TYPE_CHECKING:
     from . import ElasticDataSource
 
@@ -43,7 +47,31 @@ class _ConverterFactory:
     """
     Manages the instantiation of `ElasticApiConverter`
     """
-    pass
+    __slots__ = ['__data_source']
+    __data_source: DataSource | None  
+
+    def __init__(self) -> None:
+        # The converter factory is instantisated before the data source, so this must be assigned
+        # after initialisation. Therefore, if `None`, the data source hasn't been instantiate yet
+        self.__data_source = None
+
+    @property
+    def data_source(self) -> DataSource | None:
+        """
+        Fetch the data source, or `None` if it hasn't been instantiated yet
+        """
+        return self.__data_source
+
+    @data_source.setter
+    def data_source(self, data_source: DataSource) -> None:
+        self.__data_source = data_source
+
+    def elastic_converter_factory(self) -> ElasticApiConverter:
+        # TODO CHECK NOT NONE OR USE DICT FROM BEFORE
+        parser = DefaultParser(self.data_source)
+        return ElasticApiConverter(parser)
+
+    # TODO ds dict
 
 
 class _FilterFactory:
