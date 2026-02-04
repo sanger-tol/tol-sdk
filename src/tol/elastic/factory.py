@@ -49,8 +49,8 @@ class ElasticApiConverterFactoryManager:
     def elastic_converter_factory(self) -> ElasticApiConverter:
         if self.data_source is None:
             raise Exception(
-                "TOL INTERNAL ERROR: elastic_converter_factory called before the data_source "
-                "was assigned in _ConverterFactoryManager"
+                'TOL INTERNAL ERROR: elastic_converter_factory called before the data_source '
+                'was assigned in _ConverterFactoryManager'
             )
 
         parser = DefaultParser(self.data_source)
@@ -64,7 +64,7 @@ def _client_factory() -> ElasticClient:
     """
     # TODO
     raise NotImplementedError(
-        '`ElasticClient` hasn\'t been made yet, so this function cannot be implemented, '
+        "`ElasticClient` hasn't been made yet, so this function cannot be implemented, "
         'but it is useful in the construction of `ElasticDataSource` to have this function present'
     )
 
