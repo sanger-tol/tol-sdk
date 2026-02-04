@@ -18,14 +18,20 @@ class ElasticApiConverter:
     def __init__(self, parser: DataSourceParser[ElasticApiResource]) -> None:
         self.__parser = parser
 
-    def convert(self, input_: ElasticApiResource) -> DataObject:
+    def convert(self, input_: ElasticApiResource) -> DataObject | None:
         """
         Converts an `ElasticApiTransfer` containing a detail (single) result
         """
         return self.__parser.parse(input_)
-
-    # def convert_list(self, input_: ElasticApiResource) -> Iterable[DataObject]:
-    #     return (
-    #         self.__parser.parse(obj)
-    #         for obj in input_.values()
-    #     )
+    
+    def convert_list(
+        self, input_: list[ElasticApiResource]
+    ) -> tuple[list[DataObject | None], int | None]:
+        """
+        Converts a list of `ElasticApiTransfer`s to a list of `DataObjects`. Also returns
+        a count of the total results meeting.
+        """
+        return [
+            self.__parser.parse(obj)
+            for obj in input_
+        ], len(input_)
