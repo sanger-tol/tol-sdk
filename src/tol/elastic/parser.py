@@ -18,7 +18,7 @@ if TYPE_CHECKING:
 ElasticApiResource = dict[str, Any]
 
 
-class DefaultParser(DataSourceParser[ElasticApiResource]):
+class DefaultElasticApiParser(DataSourceParser[ElasticApiResource]):
     """
     Parses Elastic API transfer resource `dict`s to `DataObject` instances
     """
@@ -106,3 +106,7 @@ class DefaultParser(DataSourceParser[ElasticApiResource]):
             relation_data,
             {}  # This can be empty because runtime_fields are not applicable for enriched objects
         )
+
+class DefaultDataObjectParser:
+    def parse(self, transfer: DataObject) -> ElasticApiResource:
+        raise NotImplementedError

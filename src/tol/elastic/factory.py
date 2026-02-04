@@ -9,7 +9,7 @@ from typing import Any
 from . import ElasticDataSource
 from .client import ElasticClient
 from .converter import ElasticApiConverter
-from .parser import DefaultParser
+from .parser import DefaultElasticApiParser
 from ..core import (
     AttributeMetadata,
     DefaultAttributeMetadata
@@ -53,7 +53,7 @@ class ElasticApiConverterFactoryManager:
                 'was assigned in _ConverterFactoryManager'
             )
 
-        parser = DefaultParser(self.data_source)
+        parser = DefaultElasticApiParser(self.data_source)
         return ElasticApiConverter(parser)
 
 

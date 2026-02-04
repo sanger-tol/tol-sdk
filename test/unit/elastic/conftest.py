@@ -9,7 +9,7 @@ import pytest
 from tol.core import DataSource, DefaultAttributeMetadata, core_data_object
 from tol.core.relationship import RelationshipConfig
 from tol.elastic import ElasticApiConverter, ElasticDataSource, RuntimeField
-from tol.elastic.parser import DefaultParser
+from tol.elastic.parser import DefaultElasticApiParser
 
 
 class MockElasticDataSource(ElasticDataSource):
@@ -81,7 +81,7 @@ def mock_elastic_data_source() -> ElasticDataSource:
 
         def elastic_converter_factory(self) -> ElasticApiConverter:
             # TODO CHECK NOT NONE OR USE DICT FROM BEFORE
-            parser = DefaultParser(self.data_source)
+            parser = DefaultElasticApiParser(self.data_source)
             return ElasticApiConverter(parser)
 
     manager = _ConverterFactory()
