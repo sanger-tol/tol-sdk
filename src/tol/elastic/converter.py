@@ -34,6 +34,7 @@ class ElasticApiConverter(Converter[ElasticApiResource, DataObject]):
         for elastic_resource in input_:
             yield self.__parser.parse(elastic_resource)
 
+
 class DataObjectConverter(Converter[DataObject, ElasticApiResource]):
     # TODO
     pass

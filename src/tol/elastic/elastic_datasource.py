@@ -7,7 +7,7 @@ from __future__ import annotations
 import typing
 from collections.abc import Callable
 from datetime import datetime
-from typing import Any, Dict, Iterable, List, Mapping, Optional, Tuple
+from typing import Any, Dict, Iterable, List, Optional, Tuple
 
 from cachetools.func import ttl_cache
 
@@ -15,8 +15,6 @@ from caseconverter import (
     kebabcase,
     snakecase
 )
-
-from dateutil import parser
 
 from elasticsearch import (Elasticsearch, helpers)
 
