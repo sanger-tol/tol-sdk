@@ -4,6 +4,7 @@
 
 from __future__ import annotations
 
+from collections.abc import Mapping
 from typing import Any, TYPE_CHECKING
 
 import dateutil
@@ -29,7 +30,7 @@ class DefaultParser(DataSourceParser[ElasticApiResource]):
 
     def parse(self, transfer: ElasticApiResource) -> DataObject | None:
         if '_source' in transfer:
-            type_ = self.__data_source.__real_index_to_object_type(transfer['_index'])
+            type_ = self.__data_source._real_index_to_object_type(transfer['_index'])
             id_ = transfer['_id']
             attributes = transfer['_source']
             runtime_attributes = transfer['fields'] if 'fields' in transfer else {}
@@ -51,7 +52,7 @@ class DefaultParser(DataSourceParser[ElasticApiResource]):
             k: self.__make_dates(type_, k, v[0]) for k, v in runtime_data.items()
             if k in self.__data_source.attribute_types[type_]
         }
-        to_one = self.__data_source.__make_to_one_relations(type_, data)
+        to_one = self.__make_to_one_relations(type_, data)
         return self.__data_source.data_object_factory(
             type_,
             id_=id_,
@@ -64,3 +65,44 @@ class DefaultParser(DataSourceParser[ElasticApiResource]):
                 isinstance(value, str):
             return dateutil.parser.parse(value)
         return value
+
+    def __make_to_one_relations(
+        self,
+        type_: str,
+        data: dict[str, Any]
+    ) -> dict[str, DataObject | None]:
+
+        if type_ not in self.__data_source.relationship_config:
+            return {}
+
+        if self.__data_source.relationship_config[type_].to_one is None:
+            return {}
+
+        return {
+            k: self.__make_to_one_relation(data.get(k), v)
+            for k, v in self.__data_source.relationship_config[type_].to_one.items()
+        }
+
+    def __make_to_one_relation(
+        self,
+        relation_data: dict[str, Any] | None,
+        type_: str
+    ) -> DataObject | None:
+
+        if (
+            relation_data is None
+            or not isinstance(relation_data, Mapping)
+        ):
+            return None
+
+        id_ = relation_data.get('id')
+
+        if id_ is None:
+            return None
+
+        return self._convert_data_dict_to_data_object(
+            type_,
+            id_,
+            relation_data,
+            {}  # This can be empty because runtime_fields are not applicable for enriched objects
+        )

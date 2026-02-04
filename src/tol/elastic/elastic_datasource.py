@@ -562,13 +562,12 @@ class ElasticDataSource(
                                       query={'query': query},
                                       fields=fields,
                                       runtime_mappings=runtime_mappings)
-        # return self._elastic_converter_factory().convert_list(generator)[0]
-        return self._convert_dict_to_data_objects(generator)
+        return self._elastic_converter_factory().convert_list(generator)
 
     def _convert_dict_to_data_objects(self, objs: Dict) -> Iterable:
         for obj in objs:
             if '_source' in obj:
-                type_ = self.__real_index_to_object_type(obj['_index'])
+                type_ = self._real_index_to_object_type(obj['_index'])
                 id_ = obj['_id']
                 attributes = obj['_source']
                 runtime_attributes = obj['fields'] if 'fields' in obj else {}
@@ -998,7 +997,7 @@ class ElasticDataSource(
         }
         return aliased_indexes | non_aliased_indexes
 
-    def __real_index_to_object_type(self, index: str) -> str:
+    def _real_index_to_object_type(self, index: str) -> str:
         aliases = self._get_indices()
         alias = next((k for k, v in aliases.items() if v == index), None)
         return self.__get_object_type(alias) if alias else None

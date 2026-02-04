@@ -26,16 +26,13 @@ class ElasticApiConverter(Converter[ElasticApiResource, DataObject]):
 
     def convert_list(
         self, input_: Iterable[ElasticApiResource]
-    ) -> tuple[list[DataObject | None], int | None]:
+    ) -> Iterable[DataObject]:
         """
         Converts a list of `ElasticApiTransfer`s to a list of `DataObjects`. Also returns
         a count of the total results meeting.
         """
-        converted = [
-            self.__parser.parse(obj)
-            for obj in input_
-        ]
-        return converted, len(converted)
+        for elastic_resource in input_:
+            yield self.__parser.parse(elastic_resource)
 
 class DataObjectConverter(Converter[DataObject, ElasticApiResource]):
     # TODO
