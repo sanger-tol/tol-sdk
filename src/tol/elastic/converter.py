@@ -25,7 +25,7 @@ class ElasticApiConverter:
         Converts an `ElasticApiTransfer` containing a detail (single) result
         """
         return self.__parser.parse(input_)
-    
+
     def convert_list(
         self, input_: Iterable[ElasticApiResource]
     ) -> tuple[list[DataObject | None], int | None]:

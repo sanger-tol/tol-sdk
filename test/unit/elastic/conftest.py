@@ -8,7 +8,7 @@ import pytest
 
 from tol.core import DataSource, DefaultAttributeMetadata, core_data_object
 from tol.core.relationship import RelationshipConfig
-from tol.elastic import ElasticDataSource, RuntimeField, ElasticApiConverter
+from tol.elastic import ElasticApiConverter, ElasticDataSource, RuntimeField
 from tol.elastic.parser import DefaultParser
 
 
@@ -63,11 +63,9 @@ def mock_elastic_data_source() -> ElasticDataSource:
         Manages the instantiation of `ElasticApiConverter`
         """
         __slots__ = ['__data_source']
-        __data_source: DataSource | None  
+        __data_source: DataSource | None
 
         def __init__(self) -> None:
-            # The converter factory is instantisated before the data source, so this must be assigned
-            # after initialisation. Therefore, if `None`, the data source hasn't been instantiate yet
             self.__data_source = None
 
         @property

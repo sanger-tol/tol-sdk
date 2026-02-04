@@ -5,8 +5,9 @@
 from __future__ import annotations
 
 from collections.abc import Iterator, Mapping
-from typing import Any, TYPE_CHECKING
+from typing import Any
 
+from . import ElasticDataSource
 from .converter import ElasticApiConverter
 from .parser import DefaultParser
 from ..core import (
@@ -15,8 +16,6 @@ from ..core import (
     DefaultAttributeMetadata
 )
 from ..core.relationship import RelationshipConfig
-
-from . import ElasticDataSource
 
 
 class _ElasticDSDict(Mapping):
@@ -34,7 +33,7 @@ class _ElasticDSDict(Mapping):
 
     def __init__(self, data_source: ElasticDataSource) -> None:
         self.__data_source = data_source
-    
+
     def __getitem__(self, key: str) -> ElasticDataSource:
         if key not in self.__data_source.supported_types:
             raise KeyError()
@@ -52,7 +51,7 @@ class _ConverterFactory:
     Manages the instantiation of `ElasticApiConverter`
     """
     __slots__ = ['__data_source']
-    __data_source: DataSource | None  
+    __data_source: DataSource | None
 
     def __init__(self) -> None:
         # The converter factory is instantisated before the data source, so this must be assigned
@@ -93,9 +92,12 @@ def _get_client_factory():
     pass
 
 
-def create_elastic_datasource(config: dict, attribute_metadata: AttributeMetadata = DefaultAttributeMetadata,
-                 relationship_cfg: dict[str, RelationshipConfig] | None = None,
-                 runtime_fields: dict[str, Any] = {}) -> ElasticDataSource:
+def create_elastic_datasource(
+    config: dict,
+    attribute_metadata: AttributeMetadata = DefaultAttributeMetadata,
+    relationship_cfg: dict[str, RelationshipConfig] | None = None,
+    runtime_fields: dict[str, Any] = {}
+) -> ElasticDataSource:
     """
     Properly instaniates an ElasticDataSource
     using the configuration required for the client
