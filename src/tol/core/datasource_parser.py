@@ -18,14 +18,16 @@ class DataSourceParser(ABC, Generic[TransferResourceType]):
     into `DataObject` instances.
     """
     @abstractmethod
-    def parse(self, transfer: TransferResourceType) -> DataObject:
+    def parse(self, transfer: TransferResourceType) -> DataObject | None:
         """
         Parses an individual transfer resource to a
         `DataObject` instance
         """
         raise NotImplementedError
 
-    def parse_iterable(self, transfers: Iterable[TransferResourceType]) -> Iterable[DataObject]:
+    def parse_iterable(
+        self, transfers: Iterable[TransferResourceType]
+    ) -> Iterable[DataObject | None]:
         """
         Uses the subclass's implementation of `parse`
         to parse an iterable of transfer resources

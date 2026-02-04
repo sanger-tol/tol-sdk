@@ -27,7 +27,7 @@ class DefaultParser(DataSourceParser[ElasticApiResource]):
     def __init__(self, data_source: ElasticDataSource) -> None:
         self.__data_source = data_source
 
-    def parse(self, transfer: ElasticApiResource) -> DataObject:
+    def parse(self, transfer: ElasticApiResource) -> DataObject | None:
         if '_source' in transfer:
             type_ = self.__data_source.__real_index_to_object_type(transfer['_index'])
             id_ = transfer['_id']
