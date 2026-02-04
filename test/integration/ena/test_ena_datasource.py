@@ -61,11 +61,11 @@ class TestEnaDataSource(TestCase):
         eds = ena()
 
         # Allow integer and string ids
-        ret = eds.get_by_id('submittable_taxon', ['9606', '12345678', 9605])
+        ret = eds.get_by_id('submittable_taxon', ['9606', '12345678', 9605, 'invalid_format'])
         obj1 = next(ret)
         obj2 = next(ret)
         obj3 = next(ret)
-
+        obj4 = next(ret)
         self.assertEqual(obj1.id, '9606')
         # Just pick out a few attributes to test
         self.assertEqual(obj1.submittable, True)
@@ -75,6 +75,8 @@ class TestEnaDataSource(TestCase):
         # Just pick out a few attributes to test
         self.assertEqual(obj3.submittable, False)
         self.assertEqual(obj3.division, 'MAM')
+        # Invalid format should return None
+        self.assertIsNone(obj4)
         with self.assertRaises(StopIteration):
             next(ret)
 
