@@ -2,15 +2,13 @@
 #
 # SPDX-License-Identifier: MIT
 
-# from collections.abc import Iterable
-
 from collections.abc import Iterable
 
 from .parser import ElasticApiResource
-from ..core import DataObject, DataSourceParser
+from ..core import Converter, DataObject, DataSourceParser
 
 
-class ElasticApiConverter:
+class ElasticApiConverter(Converter[ElasticApiResource, DataObject]):
     """
     Converts from Elastic API transfers to instances of `DataObject`
     """
@@ -20,7 +18,7 @@ class ElasticApiConverter:
     def __init__(self, parser: DataSourceParser[ElasticApiResource]) -> None:
         self.__parser = parser
 
-    def convert(self, input_: ElasticApiResource) -> DataObject | None:
+    def convert(self, input_: ElasticApiResource) -> DataObject:
         """
         Converts an `ElasticApiTransfer` containing a detail (single) result
         """
@@ -38,3 +36,7 @@ class ElasticApiConverter:
             for obj in input_
         ]
         return converted, len(converted)
+
+class DataObjectConverter(Converter[DataObject, ElasticApiResource]):
+    # TODO
+    pass
