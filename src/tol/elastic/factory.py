@@ -4,46 +4,17 @@
 
 from __future__ import annotations
 
-from collections.abc import Iterator, Mapping
 from typing import Any
 
 from . import ElasticDataSource
+from .client import ElasticClient
 from .converter import ElasticApiConverter
 from .parser import DefaultParser
 from ..core import (
     AttributeMetadata,
-    DataSource,
     DefaultAttributeMetadata
 )
 from ..core.relationship import RelationshipConfig
-
-
-class _ElasticDSDict(Mapping):
-    """
-    A wrapper around an `ElasticDataSource` that only
-    lets you access it if you provide on object type
-    supported by the data source. This class masquerades as a dictionary
-    (and is considered as a `dict` type in the Parser),
-    so you go about this via a key access using square brackets.
-    I'm not quite sure why it's done like this, but as the code is
-    set up right now all data sources need to use this pattern.
-    """
-    __slots__ = ['__data_source']
-    __data_source: ElasticDataSource
-
-    def __init__(self, data_source: ElasticDataSource) -> None:
-        self.__data_source = data_source
-
-    def __getitem__(self, key: str) -> ElasticDataSource:
-        if key not in self.__data_source.supported_types:
-            raise KeyError()
-        return self.__data_source
-
-    def __iter__(self) -> Iterator:
-        return iter(self.__data_source.supported_types)
-
-    def __len__(self) -> int:
-        return len(self.__data_source.supported_types)
 
 
 class ElasticApiConverterFactoryManager:
@@ -86,19 +57,16 @@ class ElasticApiConverterFactoryManager:
         return ElasticApiConverter(parser)
 
 
-class _FilterFactory:
-    """
-    Manages the instantiation of `ElasticFilterConverter`
-    """
-    pass
-
-
-def _get_client_factory():
+def _client_factory() -> ElasticClient:
     """
     A resonable default for creating
     an `ElasticApiClient` instance
     """
-    pass
+    # TODO
+    raise NotImplementedError(
+        '`ElasticClient` hasn\'t been made yet, so this function cannot be implemented, '
+        'but it is useful in the construction of `ElasticDataSource` to have this function present'
+    )
 
 
 def create_elastic_datasource(
@@ -111,7 +79,7 @@ def create_elastic_datasource(
     Properly instaniates an ElasticDataSource
     using the configuration required for the client
     """
-    client_factory = None  # TODO
+    client_factory = _client_factory
     manager = ElasticApiConverterFactoryManager()
     elastic_ds = ElasticDataSource(
         config,
