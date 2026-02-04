@@ -6,9 +6,10 @@ from unittest import mock
 
 import pytest
 
-from tol.core import DefaultAttributeMetadata, core_data_object
+from tol.core import DataSource, DefaultAttributeMetadata, core_data_object
 from tol.core.relationship import RelationshipConfig
-from tol.elastic import ElasticDataSource, RuntimeField
+from tol.elastic import ElasticDataSource, RuntimeField, ElasticApiConverter
+from tol.elastic.parser import DefaultParser
 
 
 class MockElasticDataSource(ElasticDataSource):
@@ -56,6 +57,37 @@ class MockAttributeMetadata(DefaultAttributeMetadata):
 
 @pytest.fixture
 def mock_elastic_data_source() -> ElasticDataSource:
+    # COPIED FROM FACTORY.PY
+    class _ConverterFactory:
+        """
+        Manages the instantiation of `ElasticApiConverter`
+        """
+        __slots__ = ['__data_source']
+        __data_source: DataSource | None  
+
+        def __init__(self) -> None:
+            # The converter factory is instantisated before the data source, so this must be assigned
+            # after initialisation. Therefore, if `None`, the data source hasn't been instantiate yet
+            self.__data_source = None
+
+        @property
+        def data_source(self) -> DataSource | None:
+            """
+            Fetch the data source, or `None` if it hasn't been instantiated yet
+            """
+            return self.__data_source
+
+        @data_source.setter
+        def data_source(self, data_source: DataSource) -> None:
+            self.__data_source = data_source
+
+        def elastic_converter_factory(self) -> ElasticApiConverter:
+            # TODO CHECK NOT NONE OR USE DICT FROM BEFORE
+            parser = DefaultParser(self.data_source)
+            return ElasticApiConverter(parser)
+
+    manager = _ConverterFactory()
+
     eds = MockElasticDataSource(
         {
             'uri': 'test',
@@ -63,6 +95,8 @@ def mock_elastic_data_source() -> ElasticDataSource:
             'password': 'password',
             'index_prefix': 'test'
         },
+        client_factory=lambda: None,
+        elastic_converter_factory=manager.elastic_converter_factory,
         relationship_cfg={
             'obj_type': RelationshipConfig(
                 to_one={'relationship': 'reltype'},
@@ -88,6 +122,7 @@ def mock_elastic_data_source() -> ElasticDataSource:
         },
         attribute_metadata=MockAttributeMetadata
     )
+    manager.data_source = eds
     core_data_object(eds)
     return eds
 

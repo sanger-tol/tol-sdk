@@ -20,6 +20,8 @@ from dateutil import parser
 
 from elasticsearch import (Elasticsearch, helpers)
 
+from .client import ElasticClient
+from .converter import ElasticApiConverter
 from .filter import ElasticFilterConverter
 from ..core import (
     AttributeMetadata,
@@ -55,6 +57,9 @@ from ..core.relationship import (
 if typing.TYPE_CHECKING:
     from ..core.session import OperableSession
 
+ElasticClientFactory = Callable[[], ElasticClient]
+ElasticConverterFactory = Callable[[], ElasticApiConverter]
+
 
 class ElasticDataSource(
     DataSource,
@@ -72,8 +77,9 @@ class ElasticDataSource(
     Statter,
     GroupStatter
 ):
-
     def __init__(self, config: Dict,
+                 client_factory: ElasticClientFactory,
+                 elastic_converter_factory: ElasticConverterFactory,
                  attribute_metadata: AttributeMetadata = DefaultAttributeMetadata,
                  relationship_cfg: dict[str, RelationshipConfig] | None = None,
                  runtime_fields: dict[str, Any] = {},
@@ -84,6 +90,8 @@ class ElasticDataSource(
             expected=['uri', 'user', 'password', 'index_prefix'],
             attribute_metadata=attribute_metadata,
         )
+        self._client_factory = client_factory
+        self._elastic_converter_factory = elastic_converter_factory
         """
         relationship_cfg is also supported if we want to handle relationships
         Only FKs pointing to IDs are currently supported
@@ -554,7 +562,7 @@ class ElasticDataSource(
                                       query={'query': query},
                                       fields=fields,
                                       runtime_mappings=runtime_mappings)
-        return self._convert_dict_to_data_objects(generator)
+        return self._elastic_converter_factory().convert_list(generator)[0]
 
     def _convert_dict_to_data_objects(self, objs: Dict) -> Iterable:
         for obj in objs:

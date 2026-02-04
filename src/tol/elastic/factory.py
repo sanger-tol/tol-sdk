@@ -4,15 +4,21 @@
 
 from __future__ import annotations
 
-import typing
 from collections.abc import Iterator, Mapping
+from typing import Any, TYPE_CHECKING
 
 from .converter import ElasticApiConverter
 from .parser import DefaultParser
-from ..core import DataSource
+from ..core import (
+    AttributeMetadata,
+    DataSource,
+    DefaultAttributeMetadata
+)
+from ..core.relationship import RelationshipConfig
 
-if typing.TYPE_CHECKING:
-    from . import ElasticDataSource
+# if TYPE_CHECKING:
+#     from . import ElasticDataSource
+from . import ElasticDataSource
 
 
 # class _ElasticDSDict(Mapping):
@@ -89,9 +95,24 @@ def _get_client_factory():
     pass
 
 
-def create_elastic_datasource():
+def create_elastic_datasource(config: dict, attribute_metadata: AttributeMetadata = DefaultAttributeMetadata,
+                 relationship_cfg: dict[str, RelationshipConfig] | None = None,
+                 runtime_fields: dict[str, Any] = {}) -> ElasticDataSource:
     """
     Properly instaniates an ElasticDataSource
     using the configuration required for the client
     """
-    pass
+    client_factory = None  # TODO
+    manager = _ConverterFactory()
+    elastic_ds = ElasticDataSource(
+        config,
+        client_factory,
+        manager.elastic_converter_factory,
+        attribute_metadata,
+        relationship_cfg,
+        runtime_fields
+    )
+
+    manager.data_source = elastic_ds
+
+    return elastic_ds
