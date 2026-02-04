@@ -107,6 +107,7 @@ class DefaultElasticApiParser(DataSourceParser[ElasticApiResource]):
             {}  # This can be empty because runtime_fields are not applicable for enriched objects
         )
 
+
 class DefaultDataObjectParser:
     def parse(self, transfer: DataObject) -> ElasticApiResource:
         raise NotImplementedError

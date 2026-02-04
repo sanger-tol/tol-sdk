@@ -8,7 +8,11 @@ import pytest
 
 from tol.core import DataSource, DefaultAttributeMetadata, core_data_object
 from tol.core.relationship import RelationshipConfig
-from tol.elastic import ElasticApiConverter, ElasticDataSource, RuntimeField, create_elastic_datasource
+from tol.elastic import (
+    ElasticApiConverter,
+    ElasticDataSource,
+    RuntimeField,
+)
 from tol.elastic.parser import DefaultElasticApiParser
 
 

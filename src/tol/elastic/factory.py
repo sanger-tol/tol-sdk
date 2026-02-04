@@ -36,7 +36,7 @@ class _ConverterFactoryManager:
     __ConverterClass: type
     __ParserClass: type
 
-    def __init__(self, ConverterClass: type, ParserClass: type) -> None:
+    def __init__(self, ConverterClass: type, ParserClass: type) -> None:  # noqa N803
         # The factory is instantisated before the data source, so this must be assigned
         # after initialisation. Therefore, if `None`, the data source hasn't been instantiated yet
         self.__data_source = None

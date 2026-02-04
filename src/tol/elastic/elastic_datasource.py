@@ -19,7 +19,7 @@ from caseconverter import (
 from elasticsearch import (Elasticsearch, helpers)
 
 from .client import ElasticClient
-from .converter import ElasticApiConverter, DataObjectConverter
+from .converter import DataObjectConverter, ElasticApiConverter
 from .filter import ElasticFilterConverter
 from ..core import (
     AttributeMetadata,
