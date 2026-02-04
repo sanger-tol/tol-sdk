@@ -4,6 +4,7 @@
 
 from __future__ import annotations
 
+import dateutil
 from typing import Any, TYPE_CHECKING
 
 from ..core import DataObject, DataSourceParser
@@ -42,13 +43,13 @@ class DefaultParser(DataSourceParser[ElasticApiResource]):
 
     def _convert_data_dict_to_data_object(self, type_, id_, data, runtime_data):
         attributes = {
-            k: self.__data_source.__make_dates(type_, k, v) for k, v in data.items()
+            k: self.__make_dates(type_, k, v) for k, v in data.items()
             if k in self.__data_source.attribute_types[type_]
         }
         # make_dates might shift to parser (&make_to_one_relations?)
         # get real index stay in ds
         runtime_attributes = {
-            k: self.__data_source.__make_dates(type_, k, v[0]) for k, v in runtime_data.items()
+            k: self.__make_dates(type_, k, v[0]) for k, v in runtime_data.items()
             if k in self.__data_source.attribute_types[type_]
         }
         to_one = self.__data_source.__make_to_one_relations(type_, data)
@@ -58,3 +59,9 @@ class DefaultParser(DataSourceParser[ElasticApiResource]):
             attributes=attributes | runtime_attributes,
             to_one=to_one
         )
+
+    def __make_dates(self, object_type, attribute_name, value):
+        if self.__data_source.attribute_types[object_type][attribute_name] == 'datetime' and \
+                isinstance(value, str):
+            return dateutil.parser.parse(value)
+        return value
