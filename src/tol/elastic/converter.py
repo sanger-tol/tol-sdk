@@ -4,6 +4,8 @@
 
 # from collections.abc import Iterable
 
+from collections.abc import Iterable
+
 from .parser import ElasticApiResource
 from ..core import DataObject, DataSourceParser
 
@@ -25,13 +27,14 @@ class ElasticApiConverter:
         return self.__parser.parse(input_)
     
     def convert_list(
-        self, input_: list[ElasticApiResource]
+        self, input_: Iterable[ElasticApiResource]
     ) -> tuple[list[DataObject | None], int | None]:
         """
         Converts a list of `ElasticApiTransfer`s to a list of `DataObjects`. Also returns
         a count of the total results meeting.
         """
-        return [
+        converted = [
             self.__parser.parse(obj)
             for obj in input_
-        ], len(input_)
+        ]
+        return converted, len(converted)
