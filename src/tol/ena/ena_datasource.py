@@ -11,6 +11,7 @@ from cachetools.func import ttl_cache
 
 import requests
 from requests.auth import HTTPBasicAuth
+from requests.exceptions import HTTPError
 
 
 from .client import EnaApiClient
@@ -118,9 +119,13 @@ class EnaDataSource(
         if object_type == 'submittable_taxon':
             ena_response = []
             for object_id in object_ids:
-                response = client.get_detail(object_type, [object_id])
-                if response and isinstance(response, list):
-                    ena_response.extend(response)
+                try:
+                    response = client.get_detail(object_type, [object_id])
+                    if response and isinstance(response, list):
+                        ena_response.extend(response)
+                except HTTPError as http_error:
+                    if http_error.response.status_code != 400:
+                        raise
         else:
             ena_response = client.get_detail(object_type, object_ids)
         # For a checklist we need to convert into a list of dicts
