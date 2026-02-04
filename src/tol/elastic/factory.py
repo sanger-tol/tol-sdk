@@ -79,17 +79,26 @@ def create_elastic_datasource(
     Properly instaniates an ElasticDataSource
     using the configuration required for the client
     """
+    # Instantiate the factories needed by the data source
     client_factory = _client_factory
-    manager = ElasticApiConverterFactoryManager()
+
+    # The converter is different however, as it requires a reference to the data source itself.
+    # Thus this manager object is used to pass the factory method to the data source's constructor
+    # before the reference is passed in
+    converter_factory_manager = ElasticApiConverterFactoryManager()
+
+    # Instantiate the data source
     elastic_ds = ElasticDataSource(
         config,
         client_factory,
-        manager.elastic_converter_factory,
+        converter_factory_manager.elastic_converter_factory,
         attribute_metadata,
         relationship_cfg,
         runtime_fields
     )
 
-    manager.data_source = elastic_ds
+    # Update the converter factory manager so that the converter factory has a reference to the
+    # now instantiated data source
+    converter_factory_manager.data_source = elastic_ds
 
     return elastic_ds
