@@ -562,7 +562,8 @@ class ElasticDataSource(
                                       query={'query': query},
                                       fields=fields,
                                       runtime_mappings=runtime_mappings)
-        return self._elastic_converter_factory().convert_list(generator)[0]
+        # return self._elastic_converter_factory().convert_list(generator)[0]
+        return self._convert_dict_to_data_objects(generator)
 
     def _convert_dict_to_data_objects(self, objs: Dict) -> Iterable:
         for obj in objs:
