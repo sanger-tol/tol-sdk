@@ -4,8 +4,9 @@
 
 from __future__ import annotations
 
-import dateutil
 from typing import Any, TYPE_CHECKING
+
+import dateutil
 
 from ..core import DataObject, DataSourceParser
 
