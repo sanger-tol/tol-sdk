@@ -19,7 +19,7 @@ from caseconverter import (
 from elasticsearch import (Elasticsearch, helpers)
 
 from .client import ElasticClient
-from .converter import ElasticApiConverter
+from .converter import ElasticApiConverter, DataObjectConverter
 from .filter import ElasticFilterConverter
 from ..core import (
     AttributeMetadata,
@@ -57,6 +57,7 @@ if typing.TYPE_CHECKING:
 
 ElasticClientFactory = Callable[[], ElasticClient]
 ElasticConverterFactory = Callable[[], ElasticApiConverter]
+DataObjectConverterFactory = Callable[[], DataObjectConverter]
 
 
 class ElasticDataSource(
@@ -78,6 +79,7 @@ class ElasticDataSource(
     def __init__(self, config: dict,
                  client_factory: ElasticClientFactory,
                  elastic_converter_factory: ElasticConverterFactory,
+                 data_object_converter_factory: DataObjectConverterFactory,
                  attribute_metadata: AttributeMetadata = DefaultAttributeMetadata,
                  relationship_cfg: dict[str, RelationshipConfig] | None = None,
                  runtime_fields: dict[str, Any] = {},
@@ -90,6 +92,7 @@ class ElasticDataSource(
         )
         self._client_factory = client_factory
         self._elastic_converter_factory = elastic_converter_factory
+        self._data_object_converter_factory = data_object_converter_factory
         """
         relationship_cfg is also supported if we want to handle relationships
         Only FKs pointing to IDs are currently supported

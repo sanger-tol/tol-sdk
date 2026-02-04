@@ -8,7 +8,7 @@ import pytest
 
 from tol.core import DataSource, DefaultAttributeMetadata, core_data_object
 from tol.core.relationship import RelationshipConfig
-from tol.elastic import ElasticApiConverter, ElasticDataSource, RuntimeField
+from tol.elastic import ElasticApiConverter, ElasticDataSource, RuntimeField, create_elastic_datasource
 from tol.elastic.parser import DefaultElasticApiParser
 
 
@@ -55,6 +55,7 @@ class MockAttributeMetadata(DefaultAttributeMetadata):
         return False
 
 
+# TODO Switch with commented out version below
 @pytest.fixture
 def mock_elastic_data_source() -> ElasticDataSource:
     # COPIED FROM FACTORY.PY
@@ -95,6 +96,7 @@ def mock_elastic_data_source() -> ElasticDataSource:
         },
         client_factory=lambda: None,
         elastic_converter_factory=manager.elastic_converter_factory,
+        data_object_converter_factory=manager.elastic_converter_factory,  # VERY MUCH TEMP SOLUTION
         relationship_cfg={
             'obj_type': RelationshipConfig(
                 to_one={'relationship': 'reltype'},
@@ -123,6 +125,43 @@ def mock_elastic_data_source() -> ElasticDataSource:
     manager.data_source = eds
     core_data_object(eds)
     return eds
+# @pytest.fixture
+# def mock_elastic_data_source() -> ElasticDataSource:
+#     eds = create_elastic_datasource(
+#         {
+#             'uri': 'test',
+#             'user': 'user',
+#             'password': 'password',
+#             'index_prefix': 'test'
+#         },
+#         relationship_cfg={
+#             'obj_type': RelationshipConfig(
+#                 to_one={'relationship': 'reltype'},
+#                 to_many={'children': 'reltype'}
+#             ),
+#             'reltype': RelationshipConfig(
+#                 to_one={'parent': 'obj_type'}
+#             )
+#         },
+#         runtime_fields={
+#             'obj_type': {
+#                 'field7': RuntimeField(
+#                     field_type='keyword',
+#                     dependencies=[],
+#                     function_body="emit('Hello')"
+#                 ),
+#                 'field8': RuntimeField(
+#                     field_type='date',
+#                     dependencies=['datefield'],
+#                     function_body="emit(doc['datefield'].value.toEpochMilli())"
+#                 )
+#             }
+#         },
+#         attribute_metadata=MockAttributeMetadata
+#     )
+
+#     core_data_object(eds)
+#     return eds
 
 
 @pytest.fixture
