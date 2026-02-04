@@ -5,9 +5,9 @@
 from __future__ import annotations
 
 import typing
-from collections.abc import Callable
+from collections.abc import Callable, Iterable
 from datetime import datetime
-from typing import Any, Dict, Iterable, List, Optional, Tuple
+from typing import Any
 
 from cachetools.func import ttl_cache
 
@@ -75,7 +75,7 @@ class ElasticDataSource(
     Statter,
     GroupStatter
 ):
-    def __init__(self, config: Dict,
+    def __init__(self, config: dict,
                  client_factory: ElasticClientFactory,
                  elastic_converter_factory: ElasticConverterFactory,
                  attribute_metadata: AttributeMetadata = DefaultAttributeMetadata,
@@ -129,14 +129,14 @@ class ElasticDataSource(
         )
         self.helpers = helpers
 
-    def _convert_data_object_to_dict(self, data_object: DataObject) -> Dict:
+    def _convert_data_object_to_dict(self, data_object: DataObject) -> dict:
         to_ones_dict = {
             k: self._convert_to_one_relation(v)
             for k, v in data_object._to_one_objects.items()
         }
         return data_object.attributes | to_ones_dict
 
-    def _convert_data_objects_in_update_to_dict(self, dict_: Dict) -> Dict:
+    def _convert_data_objects_in_update_to_dict(self, dict_: dict) -> dict:
         ret = {}
         for k, v in dict_.items():
             if isinstance(v, DataObject):
@@ -158,7 +158,7 @@ class ElasticDataSource(
             **one_relation.attributes
         }
 
-    def _prefix_fields(self, dict_: Dict, prefix: str) -> Dict:
+    def _prefix_fields(self, dict_: dict, prefix: str) -> dict:
         if prefix == '':
             return dict_
         ret = {}
@@ -166,10 +166,10 @@ class ElasticDataSource(
             ret[prefix + '_' + k] = v
         return ret
 
-    def _add_uid(self, dict_: Dict, uid: Any) -> Dict:
+    def _add_uid(self, dict_: dict, uid: Any) -> dict:
         return {**dict_, 'uid': f'{uid}'}
 
-    def _convert_dates(self, dict_: Dict) -> Dict:
+    def _convert_dates(self, dict_: dict) -> dict:
         ret = {}
         for k, v in dict_.items():
             if isinstance(v, datetime):
@@ -178,7 +178,7 @@ class ElasticDataSource(
                 ret[k] = v
         return ret
 
-    def _stringify_ids(self, dict_: Dict) -> Dict:
+    def _stringify_ids(self, dict_: dict) -> dict:
         ret = {}
         for k, v in dict_.items():
             if isinstance(v, dict):
@@ -218,10 +218,10 @@ class ElasticDataSource(
     def get_cursor_page(
         self,
         object_type: str,
-        page_size: Optional[int] = None,
-        object_filters: Optional[DataSourceFilter] = None,
+        page_size: int | None = None,
+        object_filters: DataSourceFilter | None = None,
         search_after: list[str] | None = None,
-        session: Optional[OperableSession] = None,
+        session: OperableSession | None = None,
         **kwargs,
     ) -> tuple[Iterable[DataObject], list[str] | None]:
         del session, kwargs
@@ -341,7 +341,7 @@ class ElasticDataSource(
                         }
                         continue
                     }
-                    if (ctx._source[param.key] instanceof ArrayList) {
+                    if (ctx._source[param.key] instanceof Arraylist) {
                         for (newParam in param.value) {
                             if(! ctx._source[param.key].contains(newParam)) {
                                 ctx._source[param.key].add(newParam)
@@ -366,7 +366,7 @@ class ElasticDataSource(
         """
         return s.replace('\n', ' ')
 
-    def _action_for_update(self, object_type: str, update: Dict,
+    def _action_for_update(self, object_type: str, update: dict,
                            field_prefix: str, candidate_key: Iterable[str]):
         u = self._convert_dates(update)
         f = DataSourceFilter()
@@ -441,7 +441,7 @@ class ElasticDataSource(
         sort_by: str | None = None,
         page_size: int | None = None,
         **kwargs
-    ) -> Tuple[Iterable[DataObject], int]:
+    ) -> tuple[Iterable[DataObject], int]:
         del kwargs
 
         resp = self.__get_page_response(
@@ -565,10 +565,10 @@ class ElasticDataSource(
     def get_aggregations(
         self,
         object_type: str,
-        aggregations: Dict,
+        aggregations: dict,
         object_filters: DataSourceFilter | None = None,
         **kwargs
-    ) -> Dict:
+    ) -> dict:
         del kwargs
 
         index = self.__get_index_or_alias(object_type)
@@ -591,8 +591,8 @@ class ElasticDataSource(
     def get_stats(
         self,
         object_type: str,
-        stats_fields: List[str] = [],
-        stats: List[str] = [],
+        stats_fields: list[str] = [],
+        stats: list[str] = [],
         object_filters: DataSourceFilter | None = None,
         **kwargs
     ):
@@ -635,9 +635,9 @@ class ElasticDataSource(
     def get_group_stats(
         self,
         object_type: str,
-        group_by: List[str],
-        stats_fields: List[str] = [],
-        stats: List[str] = [],
+        group_by: list[str],
+        stats_fields: list[str] = [],
+        stats: list[str] = [],
         object_filters: DataSourceFilter | None = None,
         **kwargs
     ) -> Iterable[dict[Any, int]]:
@@ -659,9 +659,9 @@ class ElasticDataSource(
     def __get_group_stats_page(
         self,
         object_type: str,
-        group_by: List[str],
-        stats_fields: List[str] = [],
-        stats: List[str] = [],
+        group_by: list[str],
+        stats_fields: list[str] = [],
+        stats: list[str] = [],
         after_key: str | None = None,
         object_filters: DataSourceFilter | None = None,
     ):
@@ -703,8 +703,8 @@ class ElasticDataSource(
     def __get_aggs(
             self,
             object_type: str,
-            stats_fields: List,
-            stats: List
+            stats_fields: list,
+            stats: list
     ):
         ret = {}
         for stats_field in stats_fields:
@@ -778,7 +778,7 @@ class ElasticDataSource(
                 """,
                 'combine_script': 'return state.list',
                 'reduce_script': """
-                    ArrayList ret = [];
+                    Arraylist ret = [];
                     for (a in states) {
                         for (element in a) {
                             if (!ret.contains(element)) {
@@ -856,9 +856,9 @@ class ElasticDataSource(
                 'reduce_script': """
                     Map uniqueValueMap = new HashMap();
                     int count = 0;
-                    for(shardList in states) {
-                        if(shardList != null) {
-                            for(key in shardList) {
+                    for(shardlist in states) {
+                        if(shardlist != null) {
+                            for(key in shardlist) {
                                 if(!uniqueValueMap.containsKey(key)) {
                                     count +=1;
                                     uniqueValueMap.put(key, key);
@@ -937,7 +937,7 @@ class ElasticDataSource(
             return 'bool'
         return type_
 
-    def _get_attribute_types_for_object_type(self, object_type: str) -> Dict:
+    def _get_attribute_types_for_object_type(self, object_type: str) -> dict:
         index_or_alias_name = self.__get_index_or_alias(object_type)
         real_index_name = self._get_indices().get(index_or_alias_name)
         mapping = self.es.indices.get_mapping(index=index_or_alias_name)
@@ -973,7 +973,7 @@ class ElasticDataSource(
         source: DataObject,
         relationship_name: str,
         **kwargs
-    ) -> Optional[DataObject]:
+    ) -> DataObject | None:
         del kwargs
 
         self.__validate_to_one_relation(source)
