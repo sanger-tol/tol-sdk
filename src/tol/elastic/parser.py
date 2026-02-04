@@ -2,10 +2,14 @@
 #
 # SPDX-License-Identifier: MIT
 
-from typing import Any
+from __future__ import annotations
 
-from . import ElasticDataSource
-from ..core import DataObject, DataSource, DataSourceParser
+from typing import Any, TYPE_CHECKING
+
+from ..core import DataObject, DataSourceParser
+
+if TYPE_CHECKING:
+    from . import ElasticDataSource
 
 
 ElasticApiResource = dict[str, Any]
