@@ -47,8 +47,6 @@ class DefaultParser(DataSourceParser[ElasticApiResource]):
             k: self.__make_dates(type_, k, v) for k, v in data.items()
             if k in self.__data_source.attribute_types[type_]
         }
-        # make_dates might shift to parser (&make_to_one_relations?)
-        # get real index stay in ds
         runtime_attributes = {
             k: self.__make_dates(type_, k, v[0]) for k, v in runtime_data.items()
             if k in self.__data_source.attribute_types[type_]
