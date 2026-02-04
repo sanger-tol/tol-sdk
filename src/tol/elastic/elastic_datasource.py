@@ -328,7 +328,7 @@ class ElasticDataSource(
             return [], None
 
         search_after = hits[-1]['sort']
-        objs = self._convert_dict_to_data_objects(hits)
+        objs = self._elastic_converter_factory().convert_list(hits)
 
         return objs, search_after
 
@@ -455,7 +455,7 @@ class ElasticDataSource(
         )
 
         return (
-            self._convert_dict_to_data_objects(
+            self._elastic_converter_factory().convert_list(
                 resp['hits']['hits']
             ),
             resp['hits']['total']['value']
@@ -563,86 +563,6 @@ class ElasticDataSource(
                                       fields=fields,
                                       runtime_mappings=runtime_mappings)
         return self._elastic_converter_factory().convert_list(generator)
-
-    def _convert_dict_to_data_objects(self, objs: Dict) -> Iterable:
-        for obj in objs:
-            if '_source' in obj:
-                type_ = self._real_index_to_object_type(obj['_index'])
-                id_ = obj['_id']
-                attributes = obj['_source']
-                runtime_attributes = obj['fields'] if 'fields' in obj else {}
-                yield self._convert_data_dict_to_data_object(
-                    type_,
-                    id_,
-                    attributes,
-                    runtime_attributes
-                )
-            else:
-                yield None
-
-    def _convert_data_dict_to_data_object(self, type_, id_, data, runtime_data):
-        attributes = {
-            k: self.__make_dates(type_, k, v) for k, v in data.items()
-            if k in self.attribute_types[type_]
-        }
-        runtime_attributes = {
-            k: self.__make_dates(type_, k, v[0]) for k, v in runtime_data.items()
-            if k in self.attribute_types[type_]
-        }
-        to_one = self.__make_to_one_relations(type_, data)
-        return self.data_object_factory(
-            type_,
-            id_=id_,
-            attributes=attributes | runtime_attributes,
-            to_one=to_one
-        )
-
-    def __make_to_one_relations(
-        self,
-        type_: str,
-        data: dict[str, Any]
-    ) -> dict[str, Optional[DataObject]]:
-
-        if type_ not in self.relationship_config:
-            return {}
-
-        if self.relationship_config[type_].to_one is None:
-            return {}
-
-        return {
-            k: self.__make_to_one_relation(data.get(k), v)
-            for k, v in self.relationship_config[type_].to_one.items()
-        }
-
-    def __make_to_one_relation(
-        self,
-        relation_data: Optional[dict[str, Any]],
-        type_: str
-    ) -> Optional[DataObject]:
-
-        if (
-            relation_data is None
-            or not isinstance(relation_data, Mapping)
-        ):
-            return None
-
-        id_ = relation_data.get('id')
-
-        if id_ is None:
-            return None
-
-        return self._convert_data_dict_to_data_object(
-            type_,
-            id_,
-            relation_data,
-            {}  # This can be empty because runtime_fields are not applicable for enriched objects
-        )
-
-    def __make_dates(self, object_type, attribute_name, value):
-        if self.attribute_types[object_type][attribute_name] == 'datetime' and \
-                isinstance(value, str):
-            return parser.parse(value)
-        return value
 
     def get_aggregations(
         self,
