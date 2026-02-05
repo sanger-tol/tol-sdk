@@ -4,7 +4,6 @@
 
 import os
 
-from .defaults import Defaults
 from ..api_client import (
     ApiDataSource,
     create_api_datasource
@@ -16,10 +15,9 @@ from ..core import (
 
 def portaldb(retries: int = 5, **kwargs) -> ApiDataSource:
     portaldb = create_api_datasource(
-        api_url=os.getenv('PORTAL_URL', Defaults.PORTAL_URL)
-        + os.getenv('PORTAL_API_PATH', Defaults.PORTAL_API_PATH),
+        api_url=os.getenv('PORTAL_URL') + os.getenv('PORTAL_API_PATH') + '/local',
         token=os.getenv('PORTAL_API_KEY'),
-        data_prefix='/local',
+        data_prefix='',
         retries=retries
     )
     core_data_object(portaldb)

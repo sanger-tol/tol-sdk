@@ -86,7 +86,6 @@ class SqlDataSource(
         sorter_factory: SorterFactory,
         user_id_getter: Optional[UserIdGetter] = None,
         attribute_metadata: AttributeMetadata = DefaultAttributeMetadata,
-        **kwargs
     ) -> None:
         self.__db = db
         self.__type_tablename_map = type_tablename_map
