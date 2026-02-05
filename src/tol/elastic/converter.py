@@ -3,7 +3,6 @@
 # SPDX-License-Identifier: MIT
 
 from collections.abc import Iterable
-from typing import Any
 
 from .parser import ElasticApiResource
 from ..core import Converter, DataObject, DataSourceParser
@@ -47,13 +46,14 @@ class DataObjectConverter(Converter[DataObject, ElasticApiResource]):
     def convert(self, input_: DataObject) -> ElasticApiResource:
         raise NotImplementedError
 
+
 class DataObjectUpdateConverter(Converter[DataObjectUpdate, ElasticApiResource]):
     __slots__ = ['__parser']
     __parser: DataSourceParser[DataObjectUpdate, ElasticApiResource]
 
     def __init__(self, parser: DataSourceParser[DataObjectUpdate, ElasticApiResource]) -> None:
         self.__parser = parser
-    
+
     def convert(self, input_: DataObjectUpdate) -> ElasticApiResource:
         raise NotImplementedError
 

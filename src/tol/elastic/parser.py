@@ -119,12 +119,13 @@ class DefaultDataObjectParser(DataSourceParser[DataObject, ElasticApiResource]):
     def parse(self, transfer: DataObject) -> ElasticApiResource:
         raise NotImplementedError
 
+
 class DefaultDataObjectUpdateParser(DataSourceParser[DataObjectUpdate, ElasticApiResource]):
     __slots__ = ['__data_source']
     __data_source: ElasticDataSource
 
     def __init__(self, data_source: ElasticDataSource) -> None:
         self.__data_source = data_source
-    
+
     def parse(self, transfer: DataObjectUpdate) -> ElasticApiResource:
         raise NotImplementedError
