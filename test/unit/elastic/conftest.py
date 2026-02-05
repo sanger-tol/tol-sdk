@@ -6,15 +6,13 @@ from unittest import mock
 
 import pytest
 
-from tol.core import DataSource, DefaultAttributeMetadata, core_data_object
+from tol.core import DefaultAttributeMetadata, core_data_object
 from tol.core.relationship import RelationshipConfig
 from tol.elastic import (
-    ElasticApiConverter,
     ElasticDataSource,
     RuntimeField,
 )
 from tol.elastic.factory import _ConverterFactoriesManager
-from tol.elastic.parser import DefaultElasticApiParser
 
 
 class MockElasticDataSource(ElasticDataSource):
