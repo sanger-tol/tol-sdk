@@ -4,6 +4,7 @@
 
 from __future__ import annotations
 
+import datetime
 from collections.abc import Mapping
 from typing import Any, TYPE_CHECKING
 
@@ -109,7 +110,78 @@ class DefaultElasticApiParser(DataSourceParser[ElasticApiResource, DataObject]):
         )
 
 
-class DefaultDataObjectParser(DataSourceParser[DataObject, ElasticApiResource]):
+class _ToElasticApiResourceParser:
+    def _convert_dates(self, dict_: dict) -> dict:
+        ret = {}
+        for k, v in dict_.items():
+            if isinstance(v, datetime.datetime):
+                ret[k] = v.isoformat()
+            else:
+                ret[k] = v
+        return ret
+    
+    @property
+    def _update_script(self):
+        s = """
+            for (param in params['upsertWith'].entrySet()) {
+                if (param.value != null) {
+                    if (ctx._source[param.key] instanceof Map) {
+                        for (newParam in param.value.entrySet()) {
+                            ctx._source[param.key][newParam.key] = newParam.value;
+                        }
+                        continue
+                    }
+                    if (ctx._source[param.key] instanceof ArrayList) {
+                        for (newParam in param.value) {
+                            if(! ctx._source[param.key].contains(newParam)) {
+                                ctx._source[param.key].add(newParam)
+                            }
+                        }
+                        continue
+                    }
+                }
+                ctx._source[param.key] = param.value;
+            }
+        """
+        return s.replace('\n', ' ')
+
+    @property
+    def _upsert_script(self):
+        s = f"""
+            if ( ctx.op == 'create' ) {{
+                ctx._source = params['upsertWith']
+            }} else {{
+                {self._update_script}
+            }}
+        """
+        return s.replace('\n', ' ')
+
+    def _prefix_fields(self, dict_: dict, prefix: str) -> dict:
+        if prefix == '':
+            return dict_
+        ret = {}
+        for k, v in dict_.items():
+            ret[prefix + '_' + k] = v
+        return ret
+
+    def _parse_to_one_relation(
+        self,
+        one_relation: DataObject | None
+    ) -> dict[str, Any] | None:
+
+        if one_relation is None:
+            return None
+
+        return {
+            'id': one_relation.id,
+            **one_relation.attributes
+        }
+
+
+class DefaultDataObjectParser(
+    DataSourceParser[DataObject, ElasticApiResource],
+    _ToElasticApiResourceParser,
+):
     __slots__ = ['__data_source']
     __data_source: ElasticDataSource
 
@@ -119,8 +191,33 @@ class DefaultDataObjectParser(DataSourceParser[DataObject, ElasticApiResource]):
     def parse(self, transfer: DataObject) -> ElasticApiResource:
         raise NotImplementedError
 
+    def _convert_data_object_to_dict(self, data_object: DataObject) -> dict:
+        to_ones_dict = {
+            k: self._parse_to_one_relation(v)
+            for k, v in data_object._to_one_objects.items()
+        }
+        return data_object.attributes | to_ones_dict
 
-class DefaultDataObjectUpdateParser(DataSourceParser[DataObjectUpdate, ElasticApiResource]):
+    def _stringify_ids(self, dict_: dict) -> dict:
+        ret = {}
+        for k, v in dict_.items():
+            if isinstance(v, dict):
+                if 'id' in v:
+                    v['id'] = str(v['id'])
+                ret[k] = self._stringify_ids(v)
+            else:
+                ret[k] = v
+
+        return ret
+
+    def _add_uid(self, dict_: dict, uid: Any) -> dict:
+        return {**dict_, 'uid': f'{uid}'}
+
+
+class DefaultDataObjectUpdateParser(
+    DataSourceParser[DataObjectUpdate, ElasticApiResource],
+    _ToElasticApiResourceParser,
+):
     __slots__ = ['__data_source']
     __data_source: ElasticDataSource
 
@@ -129,3 +226,12 @@ class DefaultDataObjectUpdateParser(DataSourceParser[DataObjectUpdate, ElasticAp
 
     def parse(self, transfer: DataObjectUpdate) -> ElasticApiResource:
         raise NotImplementedError
+
+    def _convert_data_objects_in_update_to_dict(self, dict_: dict) -> dict:
+        ret = {}
+        for k, v in dict_.items():
+            if isinstance(v, DataObject):
+                ret[k] = self._parse_to_one_relation(v)
+            else:
+                ret[k] = v
+        return ret
