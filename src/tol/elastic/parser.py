@@ -109,5 +109,11 @@ class DefaultElasticApiParser(DataSourceParser[ElasticApiResource, DataObject]):
 
 
 class DefaultDataObjectParser(DataSourceParser[DataObject, ElasticApiResource]):
+    __slots__ = ['__data_source']
+    __data_source: ElasticDataSource
+
+    def __init__(self, data_source) -> None:
+        self.__data_source = data_source
+
     def parse(self, transfer: DataObject) -> ElasticApiResource:
         raise NotImplementedError
