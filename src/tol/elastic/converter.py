@@ -13,9 +13,9 @@ class ElasticApiConverter(Converter[ElasticApiResource, DataObject]):
     Converts from Elastic API transfers to instances of `DataObject`
     """
     __slots__ = ['__parser']
-    __parser: DataSourceParser[ElasticApiResource]
+    __parser: DataSourceParser[ElasticApiResource, DataObject]
 
-    def __init__(self, parser: DataSourceParser[ElasticApiResource]) -> None:
+    def __init__(self, parser: DataSourceParser[ElasticApiResource, DataObject]) -> None:
         self.__parser = parser
 
     def convert(self, input_: ElasticApiResource) -> DataObject:
