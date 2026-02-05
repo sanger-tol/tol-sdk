@@ -6,19 +6,17 @@ from abc import ABC, abstractmethod
 from collections.abc import Iterable
 from typing import Generic, TypeVar
 
-from . import DataObject
+
+In = TypeVar('In')
+Out = TypeVar('Out')
 
 
-TransferResourceType = TypeVar('TransferResourceType')
-
-
-class DataSourceParser(ABC, Generic[TransferResourceType]):
+class DataSourceParser(ABC, Generic[In, Out]):
     """
-    Parses transfers to and from a remote source (of type `TransferType`)
-    into `DataObject` instances.
+    Parses resources from the format `In` to the format `Out`
     """
     @abstractmethod
-    def parse(self, transfer: TransferResourceType) -> DataObject | None:
+    def parse(self, transfer: In) -> Out | None:
         """
         Parses an individual transfer resource to a
         `DataObject` instance
@@ -26,8 +24,8 @@ class DataSourceParser(ABC, Generic[TransferResourceType]):
         raise NotImplementedError
 
     def parse_iterable(
-        self, transfers: Iterable[TransferResourceType]
-    ) -> Iterable[DataObject | None]:
+        self, transfers: Iterable[In]
+    ) -> Iterable[Out | None]:
         """
         Uses the subclass's implementation of `parse`
         to parse an iterable of transfer resources

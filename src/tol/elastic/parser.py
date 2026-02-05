@@ -18,7 +18,7 @@ if TYPE_CHECKING:
 ElasticApiResource = dict[str, Any]
 
 
-class DefaultElasticApiParser(DataSourceParser[ElasticApiResource]):
+class DefaultElasticApiParser(DataSourceParser[ElasticApiResource, DataObject]):
     """
     Parses Elastic API transfer resource `dict`s to `DataObject` instances
     """
@@ -108,6 +108,6 @@ class DefaultElasticApiParser(DataSourceParser[ElasticApiResource]):
         )
 
 
-class DefaultDataObjectParser:
+class DefaultDataObjectParser(DataSourceParser[DataObject, ElasticApiResource]):
     def parse(self, transfer: DataObject) -> ElasticApiResource:
         raise NotImplementedError
