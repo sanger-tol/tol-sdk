@@ -222,8 +222,8 @@ def pipeline_steps_blueprint(
             if upload.validation_status not in allowed_validation_statuses:
                 raise DataSourceError(
                     'Invalid Request',
-                    f'Upload with ID {upload.id} cannot be revalidated as its validation ' +
-                    f'status is not in {allowed_validation_statuses} status.',
+                    f'Upload with ID {upload.id} cannot be revalidated as its validation \
+                    status is not in {allowed_validation_statuses} status.',
                     400
                 )
 
