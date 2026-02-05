@@ -57,7 +57,7 @@ class GoatApiClient:
         r.raise_for_status()
         return r.json()['results'] if 'results' in r.json() else [], r.json()['status']['hits']
 
-    def __detail_url(self, object_type: str, object_ids: str) -> Tuple[str, Dict]:
+    def __detail_url(self, object_type: str, object_ids: list[str]) -> Tuple[str, Dict]:
         obj_ids_str = ','.join(object_ids)
         return self.__page_url(object_type, 1, len(object_ids), f'tax_name({obj_ids_str})')
 
