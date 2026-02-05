@@ -10,8 +10,8 @@ from typing import Any, TYPE_CHECKING
 
 import dateutil
 
-from ..core import DataObject, DataSourceParser
-from ..core.operator.updater import DataObjectUpdate
+from .filter import ElasticFilterConverter
+from ..core import DataObject, DataSourceFilter, DataSourceParser
 
 if TYPE_CHECKING:
     from . import ElasticDataSource
@@ -245,8 +245,32 @@ class DefaultDataObjectUpdateParser(_ToElasticApiResourceParser):
     def __init__(self, data_source: ElasticDataSource) -> None:
         self.__data_source = data_source
 
-    def parse(self, transfer: DataObjectUpdate) -> ElasticApiResource:
-        raise NotImplementedError
+    def parse(
+        self,
+        object_type: str,
+        update: dict,
+        field_prefix: str,
+        candidate_key: Iterable[str],
+    ):
+        u = self._convert_dates(update)
+        f = DataSourceFilter()
+        f.and_ = {}
+        for key in candidate_key:
+            # Don't want key in the upsert as it cannot change anyway
+            f.and_[key] = {'eq': {'value': u.pop(key)}}
+        u = self._prefix_fields(u, field_prefix)
+        u = self._convert_data_objects_in_update_to_dict(u)
+        query = ElasticFilterConverter(self.__data_source).convert(object_type, object_filters=f)
+        return {
+            'query': query,
+            'script': {
+                'source': self._update_script,
+                'lang': 'painless',
+                'params': {
+                    'upsertWith': u
+                }
+            },
+        }
 
     def _convert_data_objects_in_update_to_dict(self, dict_: dict) -> dict:
         ret = {}
