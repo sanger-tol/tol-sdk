@@ -10,6 +10,7 @@ from typing import Any, TYPE_CHECKING
 import dateutil
 
 from ..core import DataObject, DataSourceParser
+from ..core.operator.updater import DataObjectUpdate
 
 if TYPE_CHECKING:
     from . import ElasticDataSource
@@ -112,8 +113,18 @@ class DefaultDataObjectParser(DataSourceParser[DataObject, ElasticApiResource]):
     __slots__ = ['__data_source']
     __data_source: ElasticDataSource
 
-    def __init__(self, data_source) -> None:
+    def __init__(self, data_source: ElasticDataSource) -> None:
         self.__data_source = data_source
 
     def parse(self, transfer: DataObject) -> ElasticApiResource:
+        raise NotImplementedError
+
+class DefaultDataObjectUpdateParser(DataSourceParser[DataObjectUpdate, ElasticApiResource]):
+    __slots__ = ['__data_source']
+    __data_source: ElasticDataSource
+
+    def __init__(self, data_source: ElasticDataSource) -> None:
+        self.__data_source = data_source
+    
+    def parse(self, transfer: DataObjectUpdate) -> ElasticApiResource:
         raise NotImplementedError

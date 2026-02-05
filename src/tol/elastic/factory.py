@@ -8,8 +8,8 @@ from typing import Any
 
 from . import ElasticDataSource
 from .client import ElasticClient
-from .converter import DataObjectConverter, ElasticApiConverter
-from .parser import DefaultDataObjectParser, DefaultElasticApiParser
+from .converter import DataObjectConverter, DataObjectUpdateConverter, ElasticApiConverter
+from .parser import DefaultDataObjectParser, DefaultDataObjectUpdateParser, DefaultElasticApiParser
 from ..core import (
     AttributeMetadata,
     DefaultAttributeMetadata
@@ -21,7 +21,8 @@ class _ConverterFactoriesManager:
     """
     The purpose of this class is to provide `elastic_api_converter_factory` and
     `data_object_converter_factory`, functions passed to `ElasticDataSource` that manage the
-    instantiation of their respective converters (`ElasticApiConverter` and `DataObjectConverter`).
+    instantiation of their respective converters (`ElasticApiConverter`, `DataObjectConverter`
+    and `DataObjectUpdateConverter`).
     The reason we need this manager class around these factory functions is because the parser
     classes (needed to instantiate the converters) cannot themselves be instantiated until we
     already have an instance of `ElasticDataSource`.
@@ -71,6 +72,16 @@ class _ConverterFactoriesManager:
         parser = DefaultDataObjectParser(self.data_source)
         return DataObjectConverter(parser)
 
+    def data_object_update_converter_factory(self) -> DataObjectUpdateConverter:
+        if self.data_source is None:
+            raise Exception(
+                'TOL INTERNAL ERROR: factory function for DataObjectUpdateConverter called '
+                'before the data source was assigned in _ConverterFactoriesManager'
+            )
+
+        parser = DefaultDataObjectUpdateParser(self.data_source)
+        return DataObjectUpdateConverter(parser)
+
 
 def _client_factory() -> ElasticClient:
     """
@@ -108,6 +119,7 @@ def create_elastic_datasource(
         client_factory,
         converter_factories_manager.elastic_api_converter_factory,
         converter_factories_manager.data_object_converter_factory,
+        converter_factories_manager.data_object_update_converter_factory,
         attribute_metadata,
         relationship_cfg,
         runtime_fields

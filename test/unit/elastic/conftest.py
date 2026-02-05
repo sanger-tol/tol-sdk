@@ -74,6 +74,7 @@ def mock_elastic_data_source() -> ElasticDataSource:
         client_factory=lambda: None,
         elastic_converter_factory=manager.elastic_api_converter_factory,
         data_object_converter_factory=manager.data_object_converter_factory,
+        data_object_update_converter_factory=manager.data_object_update_converter_factory,
         relationship_cfg={
             'obj_type': RelationshipConfig(
                 to_one={'relationship': 'reltype'},
