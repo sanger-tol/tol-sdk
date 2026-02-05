@@ -99,9 +99,9 @@ class TestTolidSpecimenToElasticTolidConverter(TestCase):
         self.assertEqual(obj1.id, ret1.id)
         self.assertEqual('tolid', ret1.type)
         self.assertEqual(ret1.attributes, {
-            'tolid_created_at': mock_created_at,
-            'tolid_requested_taxonomy_id': 'requested_subspecies_1',
-            'tolid_legacy_name': 'legacy_name_1',
+            'created_at': mock_created_at,
+            'requested_taxonomy_id': 'requested_subspecies_1',
+            'legacy_name': 'legacy_name_1',
         })
 
         self.assertEqual(ret1.tolid_species.id, '123')

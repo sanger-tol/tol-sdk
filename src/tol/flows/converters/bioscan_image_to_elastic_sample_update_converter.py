@@ -54,8 +54,8 @@ class BioscanImageToElasticSampleUpdateConverter(
             # For a Bioscan image, the specimen id and sample id are the same,
             # because a Bioscan sample is the whole specimen (an entire insect)
             'sts_specimen.id': sample_id,
-            'bioscan_image_url': bioscan_image_url,
-            'bioscan_image_modified': input_.attributes['last_modified']
+            'url': bioscan_image_url,
+            'modified': input_.attributes['last_modified']
         }
 
         yield (None, attributes)  # type: ignore (Linter does not properly recognise type here)

@@ -16,6 +16,6 @@ class StsProjectToElasticSampleUpdateConverter(
     def convert(self, data_object: DataObject) -> Iterable[DataObjectUpdate]:
         if data_object is not None:
             yield (None, {
-                'sts_project': data_object.id,
-                'sts_target_coverage': data_object.target_coverage
+                'project': data_object.id,
+                'target_coverage': data_object.target_coverage
             })
