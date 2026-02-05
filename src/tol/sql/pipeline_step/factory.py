@@ -183,14 +183,13 @@ def create_pipeline_step_models(
             default=False
         )
 
-        # is_ready: Mapped[bool] = mapped_column(
-        #     nullable=False,
-        #     default=False
-        # )
-
         validation_status: Mapped[str] = mapped_column(
             nullable=False,
             default='in_progress'
+        )
+
+        rejection_reason: Mapped[str] = mapped_column(
+            nullable=True
         )
 
         failure_message: Mapped[str | None] = mapped_column(
