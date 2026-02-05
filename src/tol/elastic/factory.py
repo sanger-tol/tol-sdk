@@ -8,7 +8,7 @@ from typing import Any
 
 from . import ElasticDataSource
 from .client import ElasticClient
-from .converter import ElasticApiConverter
+from .converter import DataObjectConverter, ElasticApiConverter
 from .parser import DefaultDataObjectParser, DefaultElasticApiParser
 from ..core import (
     AttributeMetadata,
@@ -17,31 +17,25 @@ from ..core import (
 )
 from ..core.relationship import RelationshipConfig
 
-
-class _ConverterFactoryManager:
+class _ConverterFactoriesManager:
     """
-    The purpose of this class is to provide `converter_factory`, a function passed to
-    `ElasticDataSource` that manages the instantiation of a converter (i.e. `ElasticApiConverter
-    and `DataObjectConverter`). It takes in the types of the converter and parser class so it can
-    be reused for both converters.
-    The reason we need this manager class around that function is because the parser class (needed
-    to instantiate a converter) cannot itself be instantiated until we already have an instance of
-    `ElasticDataSource`.
-    So, this class is instantiated, then its `converter_factory` method is provided to
-    `ElasticDataSource` when that is instantiated, then the `data_source` property is set, then
-    we're done.
+    The purpose of this class is to provide `elastic_api_converter_factory` and
+    `data_object_converter_factory`, functions passed to `ElasticDataSource` that manage the
+    instantiation of their respective converters (`ElasticApiConverter` and `DataObjectConverter`).
+    The reason we need this manager class around these factory functions is because the parser
+    classes (needed to instantiate the converters) cannot themselves be instantiated until we
+    already have an instance of `ElasticDataSource`.
+    So, this class is instantiated, then its converter factory methods are provided to the data
+    source for its instantiation, then the `data_source` property is set to enable the factory
+    functions to work.
     """
-    __slots__ = ['__data_source', '__ConverterClass', '__ParserClass']
+    __slots__ = ['__data_source']
     __data_source: ElasticDataSource | None
-    __ConverterClass: type
-    __ParserClass: type
-
-    def __init__(self, ConverterClass: type, ParserClass: type) -> None:  # noqa N803
+    
+    def __init__(self) -> None:
         # The factory is instantisated before the data source, so this must be assigned
         # after initialisation. Therefore, if `None`, the data source hasn't been instantiated yet
         self.__data_source = None
-        self.__ConverterClass = ConverterClass
-        self.__ParserClass = ParserClass
 
     @property
     def data_source(self) -> ElasticDataSource | None:
@@ -57,19 +51,25 @@ class _ConverterFactoryManager:
         """
         self.__data_source = data_source
 
-    def converter_factory(self) -> Any:
-        """
-        Returns the instantiated converter of type self.__ConverterClass
-        """
+    def elastic_api_converter_factory(self) -> ElasticApiConverter:
         if self.data_source is None:
             raise Exception(
-                f'TOL INTERNAL ERROR: factory function for '
-                f'{self.__ConverterClass.__class__.__name__} called before '
-                f'the data source was assigned in _ConverterFactoryManager'
+                'TOL INTERNAL ERROR: factory function for ElasticApiConverter called '
+                'before the data source was assigned in _ConverterFactoriesManager'
             )
+        
+        parser = DefaultElasticApiParser(self.data_source)
+        return ElasticApiConverter(parser)
 
-        parser = self.__ParserClass(self.data_source)
-        return self.__ConverterClass(parser)
+    def data_object_converter_factory(self) -> DataObjectConverter:
+        if self.data_source is None:
+            raise Exception(
+                'TOL INTERNAL ERROR: factory function for DataObjectConverter called '
+                'before the data source was assigned in _ConverterFactoriesManager'
+            )
+        
+        parser = DefaultDataObjectParser(self.data_source)
+        return DataObjectConverter(parser)
 
 
 def _client_factory() -> ElasticClient:
@@ -98,29 +98,23 @@ def create_elastic_datasource(
     client_factory = _client_factory
 
     # The converters are different however, as they require a references to the data source itself.
-    # Thus, manager objects are used to pass the factory methods to the data source's constructor
-    # before its reference is passed in
-    elastic_api_converter_factory_manager = _ConverterFactoryManager(
-        ElasticApiConverter, DefaultElasticApiParser
-    )
-    data_object_converter_factory_manager = _ConverterFactoryManager(
-        DataObject, DefaultDataObjectParser
-    )
+    # Thus, a manager object is used to pass the factory functions to the data source's
+    # constructor before its reference is passed in
+    converter_factories_manager = _ConverterFactoriesManager()
 
     # Instantiate the data source
     elastic_ds = ElasticDataSource(
         config,
         client_factory,
-        elastic_api_converter_factory_manager.converter_factory,
-        data_object_converter_factory_manager.converter_factory,
+        converter_factories_manager.elastic_api_converter_factory,
+        converter_factories_manager.data_object_converter_factory,
         attribute_metadata,
         relationship_cfg,
         runtime_fields
     )
 
-    # Update the converter factory managers so that the converter factories have a references to
+    # Update the converter factories manager so that the converter factories have a references to
     # the now instantiated data source
-    elastic_api_converter_factory_manager.data_source = elastic_ds
-    data_object_converter_factory_manager.data_source = elastic_ds
+    converter_factories_manager.data_source = elastic_ds
 
     return elastic_ds
