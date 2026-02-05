@@ -349,7 +349,7 @@ class ElasticDataSource(
                         }
                         continue
                     }
-                    if (ctx._source[param.key] instanceof Arraylist) {
+                    if (ctx._source[param.key] instanceof ArrayList) {
                         for (newParam in param.value) {
                             if(! ctx._source[param.key].contains(newParam)) {
                                 ctx._source[param.key].add(newParam)
@@ -786,7 +786,7 @@ class ElasticDataSource(
                 """,
                 'combine_script': 'return state.list',
                 'reduce_script': """
-                    Arraylist ret = [];
+                    ArrayList ret = [];
                     for (a in states) {
                         for (element in a) {
                             if (!ret.contains(element)) {
@@ -864,9 +864,9 @@ class ElasticDataSource(
                 'reduce_script': """
                     Map uniqueValueMap = new HashMap();
                     int count = 0;
-                    for(shardlist in states) {
-                        if(shardlist != null) {
-                            for(key in shardlist) {
+                    for(shardList in states) {
+                        if(shardList != null) {
+                            for(key in shardList) {
                                 if(!uniqueValueMap.containsKey(key)) {
                                     count +=1;
                                     uniqueValueMap.put(key, key);
