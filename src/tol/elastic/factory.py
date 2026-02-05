@@ -12,10 +12,10 @@ from .converter import DataObjectConverter, ElasticApiConverter
 from .parser import DefaultDataObjectParser, DefaultElasticApiParser
 from ..core import (
     AttributeMetadata,
-    DataObject,
     DefaultAttributeMetadata
 )
 from ..core.relationship import RelationshipConfig
+
 
 class _ConverterFactoriesManager:
     """
@@ -31,7 +31,7 @@ class _ConverterFactoriesManager:
     """
     __slots__ = ['__data_source']
     __data_source: ElasticDataSource | None
-    
+
     def __init__(self) -> None:
         # The factory is instantisated before the data source, so this must be assigned
         # after initialisation. Therefore, if `None`, the data source hasn't been instantiated yet
@@ -57,7 +57,7 @@ class _ConverterFactoriesManager:
                 'TOL INTERNAL ERROR: factory function for ElasticApiConverter called '
                 'before the data source was assigned in _ConverterFactoriesManager'
             )
-        
+
         parser = DefaultElasticApiParser(self.data_source)
         return ElasticApiConverter(parser)
 
@@ -67,7 +67,7 @@ class _ConverterFactoriesManager:
                 'TOL INTERNAL ERROR: factory function for DataObjectConverter called '
                 'before the data source was assigned in _ConverterFactoriesManager'
             )
-        
+
         parser = DefaultDataObjectParser(self.data_source)
         return DataObjectConverter(parser)
 
