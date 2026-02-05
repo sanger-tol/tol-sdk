@@ -5,7 +5,7 @@
 from __future__ import annotations
 
 import datetime
-from collections.abc import Mapping
+from collections.abc import Callable, Iterable, Mapping
 from typing import Any, TYPE_CHECKING
 
 import dateutil
@@ -178,18 +178,42 @@ class _ToElasticApiResourceParser:
         }
 
 
-class DefaultDataObjectParser(
-    DataSourceParser[DataObject, ElasticApiResource],
-    _ToElasticApiResourceParser,
-):
+class DefaultDataObjectParser(_ToElasticApiResourceParser):
     __slots__ = ['__data_source']
     __data_source: ElasticDataSource
 
     def __init__(self, data_source: ElasticDataSource) -> None:
         self.__data_source = data_source
 
-    def parse(self, transfer: DataObject) -> ElasticApiResource:
-        raise NotImplementedError
+    def parse(
+        self,
+        index: str,
+        objects: Iterable[DataObject],
+        id_func: Callable,
+        field_prefix: str,
+    ):
+        real_index_name = self.__data_source._get_indices().get(index)
+        for object_ in objects:
+            obj = self._convert_data_object_to_dict(object_)
+            obj = self._convert_dates(obj)
+            obj = self._prefix_fields(obj, field_prefix)
+            obj = self._stringify_ids(obj)
+            uid = id_func(object_)
+            obj = self._add_uid(obj, uid)
+            yield {
+                '_op_type': 'update',
+                'scripted_upsert': True,
+                'upsert': {},
+                '_index': real_index_name,
+                '_id': uid,
+                'script': {
+                    'source': self._upsert_script,
+                    'lang': 'painless',
+                    'params': {
+                        'upsertWith': obj
+                    }
+                }
+            }
 
     def _convert_data_object_to_dict(self, data_object: DataObject) -> dict:
         to_ones_dict = {
@@ -214,10 +238,7 @@ class DefaultDataObjectParser(
         return {**dict_, 'uid': f'{uid}'}
 
 
-class DefaultDataObjectUpdateParser(
-    DataSourceParser[DataObjectUpdate, ElasticApiResource],
-    _ToElasticApiResourceParser,
-):
+class DefaultDataObjectUpdateParser(_ToElasticApiResourceParser):
     __slots__ = ['__data_source']
     __data_source: ElasticDataSource
 
