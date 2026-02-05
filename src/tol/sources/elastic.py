@@ -8,7 +8,8 @@ from ..core import (
     core_data_object
 )
 from ..elastic import (
-    ElasticDataSource
+    ElasticDataSource,
+    create_elastic_datasource
 )
 
 
@@ -27,11 +28,11 @@ def elastic(
         product = os.getenv('ELASTIC_PRODUCT', 'portal')
     index_suffix = f'-{product}' if product else ''
     index_suffix += f'-{environment}' if environment else ''
-    elastic = ElasticDataSource({
+    elastic = create_elastic_datasource({
         'uri': os.getenv('ELASTIC_URI'),
         'user': os.getenv('ELASTIC_USER'),
         'password': os.getenv('ELASTIC_PASSWORD'),
-        'index_prefix': os.getenv('ELASTIC_INDEX_PREFIX') + index_suffix},
+        'index_prefix': os.getenv('ELASTIC_INDEX_PREFIX', '') + index_suffix},
         **kwargs
     )
     core_data_object(elastic)
