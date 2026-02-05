@@ -256,6 +256,8 @@ class ElasticDataSource(
             raise DataSourceError(msg)
 
         index = self.__get_index_or_alias(object_type)
+        # init converter
+        # replace action for upsert as result of converter
         (no_of_operations, no_of_errors) = \
             self.helpers.bulk(self.es,
                               self._action_for_upsert(index,
@@ -282,7 +284,10 @@ class ElasticDataSource(
 
         index = self.__get_index_or_alias(object_type)
         real_index_name = self._get_indices().get(index)
+        # init converter
         for (_, update) in updates:
+            # converter takes update, returns candidate key and body
+
             # We can get the candidate key dynamically from the actual update
             if 'candidate_key_func' in kwargs:
                 candidate_key = kwargs['candidate_key_func'](update)

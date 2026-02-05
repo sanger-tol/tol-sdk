@@ -44,3 +44,5 @@ class DataObjectConverter(Converter[DataObject, ElasticApiResource]):
 
     def convert(self, input_: DataObject) -> ElasticApiResource:
         raise NotImplementedError
+
+# make second, but with a parent to inherit from (enc funcs)
