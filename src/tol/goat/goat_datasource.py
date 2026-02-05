@@ -8,8 +8,6 @@ import typing
 from functools import cache
 from typing import Callable, Iterable, List, Optional
 
-from more_itertools import seekable
-
 from .client import GoatApiClient
 from .converter import (
     GoatApiConverter
