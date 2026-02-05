@@ -13,6 +13,7 @@ from tol.elastic import (
     ElasticDataSource,
     RuntimeField,
 )
+from tol.elastic.factory import _ConverterFactoriesManager
 from tol.elastic.parser import DefaultElasticApiParser
 
 
@@ -59,37 +60,11 @@ class MockAttributeMetadata(DefaultAttributeMetadata):
         return False
 
 
-# TODO Switch with commented out version below
 @pytest.fixture
 def mock_elastic_data_source() -> ElasticDataSource:
-    # COPIED FROM FACTORY.PY
-    class _ConverterFactory:
-        """
-        Manages the instantiation of `ElasticApiConverter`
-        """
-        __slots__ = ['__data_source']
-        __data_source: DataSource | None
-
-        def __init__(self) -> None:
-            self.__data_source = None
-
-        @property
-        def data_source(self) -> DataSource | None:
-            """
-            Fetch the data source, or `None` if it hasn't been instantiated yet
-            """
-            return self.__data_source
-
-        @data_source.setter
-        def data_source(self, data_source: DataSource) -> None:
-            self.__data_source = data_source
-
-        def elastic_converter_factory(self) -> ElasticApiConverter:
-            # TODO CHECK NOT NONE OR USE DICT FROM BEFORE
-            parser = DefaultElasticApiParser(self.data_source)
-            return ElasticApiConverter(parser)
-
-    manager = _ConverterFactory()
+    # A bit of a hacky solution, recreating most of create_elastic_datasource but using
+    # the MockElasticDataSource instead
+    manager = _ConverterFactoriesManager()
 
     eds = MockElasticDataSource(
         {
@@ -99,8 +74,8 @@ def mock_elastic_data_source() -> ElasticDataSource:
             'index_prefix': 'test'
         },
         client_factory=lambda: None,
-        elastic_converter_factory=manager.elastic_converter_factory,
-        data_object_converter_factory=manager.elastic_converter_factory,  # VERY MUCH TEMP SOLUTION
+        elastic_converter_factory=manager.elastic_api_converter_factory,
+        data_object_converter_factory=manager.data_object_converter_factory,
         relationship_cfg={
             'obj_type': RelationshipConfig(
                 to_one={'relationship': 'reltype'},
@@ -129,43 +104,6 @@ def mock_elastic_data_source() -> ElasticDataSource:
     manager.data_source = eds
     core_data_object(eds)
     return eds
-# @pytest.fixture
-# def mock_elastic_data_source() -> ElasticDataSource:
-#     eds = create_elastic_datasource(
-#         {
-#             'uri': 'test',
-#             'user': 'user',
-#             'password': 'password',
-#             'index_prefix': 'test'
-#         },
-#         relationship_cfg={
-#             'obj_type': RelationshipConfig(
-#                 to_one={'relationship': 'reltype'},
-#                 to_many={'children': 'reltype'}
-#             ),
-#             'reltype': RelationshipConfig(
-#                 to_one={'parent': 'obj_type'}
-#             )
-#         },
-#         runtime_fields={
-#             'obj_type': {
-#                 'field7': RuntimeField(
-#                     field_type='keyword',
-#                     dependencies=[],
-#                     function_body="emit('Hello')"
-#                 ),
-#                 'field8': RuntimeField(
-#                     field_type='date',
-#                     dependencies=['datefield'],
-#                     function_body="emit(doc['datefield'].value.toEpochMilli())"
-#                 )
-#             }
-#         },
-#         attribute_metadata=MockAttributeMetadata
-#     )
-
-#     core_data_object(eds)
-#     return eds
 
 
 @pytest.fixture
