@@ -119,7 +119,7 @@ class _ToElasticApiResourceParser:
             else:
                 ret[k] = v
         return ret
-    
+
     @property
     def _update_script(self):
         s = """
