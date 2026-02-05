@@ -113,27 +113,20 @@ class GoatDataSource(
     def get_by_id(
         self,
         object_type: str,
-        object_ids: Iterable[str],
+        object_ids: Iterable[str | int],
         **kwargs,
     ) -> Iterable[Optional[DataObject]]:
         if object_type not in self.supported_types:
             raise DataSourceError(f'{object_type} is not supported')
 
+        object_ids_str = [str(object_id) for object_id in object_ids]
         client = self.__client_factory()
-        goat_response, _ = client.get_detail(object_type, object_ids)
+        goat_response, _ = client.get_detail(object_type, object_ids_str)
         goat_converter = self.__gc_factory()
 
         converted_objects, _ = goat_converter.convert_list(goat_response) \
             if goat_response is not None else ([], 0)
-        seekable_objects = seekable(converted_objects)
-        for id_ in object_ids:
-            seekable_objects.seek(0)
-            for obj in seekable_objects:
-                if obj.id == id_:
-                    yield obj
-                    break
-            else:
-                yield None
+        return self.sort_by_id(converted_objects, object_ids_str)
 
     def get_list_page(
         self,
