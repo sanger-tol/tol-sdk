@@ -19,7 +19,11 @@ from caseconverter import (
 from elasticsearch import (Elasticsearch, helpers)
 
 from .client import ElasticClient
-from .converter import ElasticUpsertInputConverter, ElasticUpdateInputConverter, ElasticApiConverter
+from .converter import (
+    ElasticApiConverter,
+    ElasticUpdateInputConverter,
+    ElasticUpsertInputConverter,
+)
 from .filter import ElasticFilterConverter
 from .parser import ElasticUpdateInputResource, ElasticUpsertInputResource
 from ..core import (

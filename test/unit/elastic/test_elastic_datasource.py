@@ -11,13 +11,13 @@ from tol.core import (
 )
 from tol.core.relationship import RelationshipConfig
 from tol.elastic import (
-    ElasticUpsertInputConverter,
-    ElasticUpdateInputConverter,
     ElasticDataSource,
+    ElasticUpdateInputConverter,
     ElasticUpdateInputResource,
+    ElasticUpsertInputConverter,
     ElasticUpsertInputResource,
 )
-from tol.elastic.parser import DefaultElasticUpsertInputParser, DefaultElasticUpdateInputParser
+from tol.elastic.parser import DefaultElasticUpdateInputParser, DefaultElasticUpsertInputParser
 
 
 dt = datetime.fromtimestamp(1234567890)
