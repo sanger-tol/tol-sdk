@@ -8,8 +8,8 @@ from typing import Any
 
 from . import ElasticDataSource
 from .client import ElasticClient
-from .converter import DataObjectConverter, DataObjectUpdateConverter, ElasticApiConverter
-from .parser import DefaultDataObjectParser, DefaultDataObjectUpdateParser, DefaultElasticApiParser
+from .converter import ElasticUpsertInputConverter, ElasticUpdateInputConverter, ElasticApiConverter
+from .parser import DefaultElasticUpsertInputParser, DefaultElasticUpdateInputParser, DefaultElasticApiParser
 from ..core import (
     AttributeMetadata,
     DefaultAttributeMetadata
@@ -62,25 +62,25 @@ class _ConverterFactoriesManager:
         parser = DefaultElasticApiParser(self.data_source)
         return ElasticApiConverter(parser)
 
-    def data_object_converter_factory(self) -> DataObjectConverter:
+    def data_object_converter_factory(self) -> ElasticUpsertInputConverter:
         if self.data_source is None:
             raise Exception(
                 'TOL INTERNAL ERROR: factory function for DataObjectConverter called '
                 'before the data source was assigned in _ConverterFactoriesManager'
             )
 
-        parser = DefaultDataObjectParser(self.data_source)
-        return DataObjectConverter(parser)
+        parser = DefaultElasticUpsertInputParser(self.data_source)
+        return ElasticUpsertInputConverter(parser)
 
-    def data_object_update_converter_factory(self) -> DataObjectUpdateConverter:
+    def data_object_update_converter_factory(self) -> ElasticUpdateInputConverter:
         if self.data_source is None:
             raise Exception(
                 'TOL INTERNAL ERROR: factory function for DataObjectUpdateConverter called '
                 'before the data source was assigned in _ConverterFactoriesManager'
             )
 
-        parser = DefaultDataObjectUpdateParser(self.data_source)
-        return DataObjectUpdateConverter(parser)
+        parser = DefaultElasticUpdateInputParser(self.data_source)
+        return ElasticUpdateInputConverter(parser)
 
 
 def _client_factory() -> ElasticClient:

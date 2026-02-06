@@ -19,7 +19,7 @@ from caseconverter import (
 from elasticsearch import (Elasticsearch, helpers)
 
 from .client import ElasticClient
-from .converter import DataObjectConverter, DataObjectUpdateConverter, ElasticApiConverter
+from .converter import ElasticUpsertInputConverter, ElasticUpdateInputConverter, ElasticApiConverter
 from .filter import ElasticFilterConverter
 from .parser import ElasticUpdateInputResource, ElasticUpsertInputResource
 from ..core import (
@@ -58,8 +58,8 @@ if typing.TYPE_CHECKING:
 
 ElasticClientFactory = Callable[[], ElasticClient]
 ElasticConverterFactory = Callable[[], ElasticApiConverter]
-DataObjectConverterFactory = Callable[[], DataObjectConverter]
-DataObjectUpdateConverterFactory = Callable[[], DataObjectUpdateConverter]
+DataObjectConverterFactory = Callable[[], ElasticUpsertInputConverter]
+DataObjectUpdateConverterFactory = Callable[[], ElasticUpdateInputConverter]
 
 
 class ElasticDataSource(

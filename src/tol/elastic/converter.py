@@ -35,7 +35,7 @@ class ElasticApiConverter(Converter[ElasticApiResource, DataObject]):
             yield self.__parser.parse(elastic_resource)
 
 
-class DataObjectConverter(Converter[ElasticUpsertInputResource, ElasticApiResource]):
+class ElasticUpsertInputConverter(Converter[ElasticUpsertInputResource, ElasticApiResource]):
     __slots__ = ['__parser']
     __parser: DataSourceParser[ElasticUpsertInputResource, ElasticApiResource]
 
@@ -52,7 +52,7 @@ class DataObjectConverter(Converter[ElasticUpsertInputResource, ElasticApiResour
         return self.__parser.parse(input_)
 
 
-class DataObjectUpdateConverter(Converter[ElasticUpdateInputResource, ElasticApiResource]):
+class ElasticUpdateInputConverter(Converter[ElasticUpdateInputResource, ElasticApiResource]):
     __slots__ = ['__parser']
     __parser: DataSourceParser[ElasticUpdateInputResource, ElasticApiResource]
 

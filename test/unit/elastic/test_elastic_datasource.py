@@ -11,13 +11,13 @@ from tol.core import (
 )
 from tol.core.relationship import RelationshipConfig
 from tol.elastic import (
-    DataObjectConverter,
-    DataObjectUpdateConverter,
+    ElasticUpsertInputConverter,
+    ElasticUpdateInputConverter,
     ElasticDataSource,
     ElasticUpdateInputResource,
     ElasticUpsertInputResource,
 )
-from tol.elastic.parser import DefaultDataObjectParser, DefaultDataObjectUpdateParser
+from tol.elastic.parser import DefaultElasticUpsertInputParser, DefaultElasticUpdateInputParser
 
 
 dt = datetime.fromtimestamp(1234567890)
@@ -133,8 +133,8 @@ class TestElasticDataSource:
                 }
             )
         ]
-        converter = DataObjectConverter(
-            DefaultDataObjectParser(mock_elastic_data_source)
+        converter = ElasticUpsertInputConverter(
+            DefaultElasticUpsertInputParser(mock_elastic_data_source)
         )
         generator = converter.convert(ElasticUpsertInputResource(
             'test-obj-type',
@@ -149,7 +149,7 @@ class TestElasticDataSource:
             '_index': 'test-obj-type',
             '_id': '1',
             'script': {
-                'source': DefaultDataObjectParser(mock_elastic_data_source)._upsert_script,
+                'source': DefaultElasticUpsertInputParser(mock_elastic_data_source)._upsert_script,
                 'lang': 'painless',
                 'params': {
                     'upsertWith': {
@@ -172,7 +172,7 @@ class TestElasticDataSource:
             '_index': 'test-obj-type',
             '_id': '2',
             'script': {
-                'source': DefaultDataObjectParser(mock_elastic_data_source)._upsert_script,
+                'source': DefaultElasticUpsertInputParser(mock_elastic_data_source)._upsert_script,
                 'lang': 'painless',
                 'params': {
                     'upsertWith': {
@@ -201,8 +201,8 @@ class TestElasticDataSource:
                 attributes={'field1': 'value3', 'field2': 'value4'}
             )
         ]
-        converter = DataObjectConverter(
-            DefaultDataObjectParser(mock_elastic_data_source)
+        converter = ElasticUpsertInputConverter(
+            DefaultElasticUpsertInputParser(mock_elastic_data_source)
         )
         generator = converter.convert(ElasticUpsertInputResource(
             'test-obj-type',
@@ -217,7 +217,7 @@ class TestElasticDataSource:
             '_index': 'test-obj-type',
             '_id': 'value1',
             'script': {
-                'source': DefaultDataObjectParser(mock_elastic_data_source)._upsert_script,
+                'source': DefaultElasticUpsertInputParser(mock_elastic_data_source)._upsert_script,
                 'lang': 'painless',
                 'params': {
                     'upsertWith': {
@@ -236,7 +236,7 @@ class TestElasticDataSource:
             '_index': 'test-obj-type',
             '_id': 'value3',
             'script': {
-                'source': DefaultDataObjectParser(mock_elastic_data_source)._upsert_script,
+                'source': DefaultElasticUpsertInputParser(mock_elastic_data_source)._upsert_script,
                 'lang': 'painless',
                 'params': {
                     'upsertWith': {
@@ -281,8 +281,8 @@ class TestElasticDataSource:
         updates = [(None, update1),
                    (None, update2)]
 
-        converter = DataObjectUpdateConverter(
-            DefaultDataObjectUpdateParser(mock_elastic_data_source)
+        converter = ElasticUpdateInputConverter(
+            DefaultElasticUpdateInputParser(mock_elastic_data_source)
         )
         update_body = converter.convert(ElasticUpdateInputResource(
             'obj_type',
@@ -300,7 +300,7 @@ class TestElasticDataSource:
                 }
             },
             'script': {
-                'source': DefaultDataObjectUpdateParser(mock_elastic_data_source)._update_script,
+                'source': DefaultElasticUpdateInputParser(mock_elastic_data_source)._update_script,
                 'lang': 'painless',
                 'params': {
                     'upsertWith': {

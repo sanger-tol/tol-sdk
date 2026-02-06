@@ -195,7 +195,7 @@ class _ToElasticApiResourceParser:
         }
 
 
-class DefaultDataObjectParser(
+class DefaultElasticUpsertInputParser(
     DataSourceParser[ElasticUpsertInputResource, ElasticApiResource],
     _ToElasticApiResourceParser
 ):
@@ -255,7 +255,7 @@ class DefaultDataObjectParser(
         return {**dict_, 'uid': f'{uid}'}
 
 
-class DefaultDataObjectUpdateParser(
+class DefaultElasticUpdateInputParser(
     DataSourceParser[ElasticUpdateInputResource, ElasticApiResource],
     _ToElasticApiResourceParser
 ):
