@@ -20,8 +20,8 @@ from elasticsearch import (Elasticsearch, helpers)
 
 from .client import ElasticClient
 from .converter import DataObjectConverter, DataObjectUpdateConverter, ElasticApiConverter
-from .parser import ElasticUpdateInputResource, ElasticUpsertInputResource
 from .filter import ElasticFilterConverter
+from .parser import ElasticUpdateInputResource, ElasticUpsertInputResource
 from ..core import (
     AttributeMetadata,
     DataId,

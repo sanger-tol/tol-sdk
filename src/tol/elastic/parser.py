@@ -5,8 +5,8 @@
 from __future__ import annotations
 
 import datetime
-from dataclasses import dataclass
 from collections.abc import Callable, Iterable, Mapping
+from dataclasses import dataclass
 from typing import Any, TYPE_CHECKING
 
 import dateutil
