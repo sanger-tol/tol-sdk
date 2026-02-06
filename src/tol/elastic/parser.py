@@ -242,7 +242,7 @@ class DefaultDataObjectParser(
 
 
 class DefaultDataObjectUpdateParser(
-    DataSourceParser[DefaultDataObjectUpdateParser, ElasticApiResource],
+    DataSourceParser[DataObject, ElasticApiResource],
     _ToElasticApiResourceParser
 ):
     __slots__ = ['__data_source']
