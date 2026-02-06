@@ -5,6 +5,7 @@
 from __future__ import annotations
 
 import datetime
+from dataclasses import dataclass
 from collections.abc import Callable, Iterable, Mapping
 from typing import Any, TYPE_CHECKING
 
@@ -18,6 +19,22 @@ if TYPE_CHECKING:
 
 
 ElasticApiResource = dict[str, Any]
+
+
+@dataclass(slots=True)
+class ElasticUpsertInputResource:
+    index: str
+    objects: Iterable[DataObject]
+    id_func: Callable
+    field_prefix: str
+
+
+@dataclass(slots=True)
+class ElasticUpdateInputResource:
+    object_type: str
+    update: dict
+    field_prefix: str
+    candidate_key: Iterable[str]
 
 
 class DefaultElasticApiParser(DataSourceParser[ElasticApiResource, DataObject]):
@@ -179,7 +196,7 @@ class _ToElasticApiResourceParser:
 
 
 class DefaultDataObjectParser(
-    DataSourceParser[DataObject, ElasticApiResource],
+    DataSourceParser[ElasticUpsertInputResource, ElasticApiResource],
     _ToElasticApiResourceParser
 ):
     __slots__ = ['__data_source']
@@ -190,18 +207,15 @@ class DefaultDataObjectParser(
 
     def parse(
         self,
-        index: str,
-        objects: Iterable[DataObject],
-        id_func: Callable,
-        field_prefix: str,
+        transfer: ElasticUpsertInputResource,
     ):
-        real_index_name = self.__data_source._get_indices().get(index)
-        for object_ in objects:
+        real_index_name = self.__data_source._get_indices().get(transfer.index)
+        for object_ in transfer.objects:
             obj = self._convert_data_object_to_dict(object_)
             obj = self._convert_dates(obj)
-            obj = self._prefix_fields(obj, field_prefix)
+            obj = self._prefix_fields(obj, transfer.field_prefix)
             obj = self._stringify_ids(obj)
-            uid = id_func(object_)
+            uid = transfer.id_func(object_)
             obj = self._add_uid(obj, uid)
             yield {
                 '_op_type': 'update',
@@ -242,7 +256,7 @@ class DefaultDataObjectParser(
 
 
 class DefaultDataObjectUpdateParser(
-    DataSourceParser[DataObject, ElasticApiResource],
+    DataSourceParser[ElasticUpdateInputResource, ElasticApiResource],
     _ToElasticApiResourceParser
 ):
     __slots__ = ['__data_source']
@@ -253,20 +267,19 @@ class DefaultDataObjectUpdateParser(
 
     def parse(
         self,
-        object_type: str,
-        update: dict,
-        field_prefix: str,
-        candidate_key: Iterable[str],
+        transfer: ElasticUpdateInputResource,
     ):
-        u = self._convert_dates(update)
+        u = self._convert_dates(transfer.update)
         f = DataSourceFilter()
         f.and_ = {}
-        for key in candidate_key:
+        for key in transfer.candidate_key:
             # Don't want key in the upsert as it cannot change anyway
             f.and_[key] = {'eq': {'value': u.pop(key)}}
-        u = self._prefix_fields(u, field_prefix)
+        u = self._prefix_fields(u, transfer.field_prefix)
         u = self._convert_data_objects_in_update_to_dict(u)
-        query = ElasticFilterConverter(self.__data_source).convert(object_type, object_filters=f)
+        query = ElasticFilterConverter(self.__data_source).convert(
+            transfer.object_type, object_filters=f
+        )
         return {
             'query': query,
             'script': {

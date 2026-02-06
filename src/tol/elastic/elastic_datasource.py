@@ -20,6 +20,7 @@ from elasticsearch import (Elasticsearch, helpers)
 
 from .client import ElasticClient
 from .converter import DataObjectConverter, DataObjectUpdateConverter, ElasticApiConverter
+from .parser import ElasticUpdateInputResource, ElasticUpsertInputResource
 from .filter import ElasticFilterConverter
 from ..core import (
     AttributeMetadata,
@@ -176,10 +177,10 @@ class ElasticDataSource(
         converter = self._data_object_converter_factory()
         (no_of_operations, no_of_errors) = \
             self.helpers.bulk(self.es,
-                              converter.convert(index,
-                                                objects,
-                                                id_func,
-                                                field_prefix),
+                              converter.convert(ElasticUpsertInputResource(index,
+                                                                           objects,
+                                                                           id_func,
+                                                                           field_prefix)),
                               stats_only=True,
                               chunk_size=chunk_size)
         if no_of_errors > 0:
@@ -209,10 +210,10 @@ class ElasticDataSource(
                 candidate_key = kwargs['candidate_key_func'](update)
             self.es.update_by_query(
                 index=real_index_name,
-                body=converter.convert(object_type,
-                                       update,
-                                       field_prefix,
-                                       candidate_key),
+                body=converter.convert(ElasticUpdateInputResource(object_type,
+                                                                  update,
+                                                                  field_prefix,
+                                                                  candidate_key)),
                 conflicts='proceed',
                 wait_for_completion=False
             )

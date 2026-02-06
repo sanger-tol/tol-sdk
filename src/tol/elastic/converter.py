@@ -2,11 +2,10 @@
 #
 # SPDX-License-Identifier: MIT
 
-from collections.abc import Callable, Iterable
+from collections.abc import Iterable
 
-from .parser import ElasticApiResource
+from .parser import ElasticApiResource, ElasticUpdateInputResource, ElasticUpsertInputResource
 from ..core import Converter, DataObject, DataSourceParser
-from ..core.operator.updater import DataObjectUpdate
 
 
 class ElasticApiConverter(Converter[ElasticApiResource, DataObject]):
@@ -36,45 +35,35 @@ class ElasticApiConverter(Converter[ElasticApiResource, DataObject]):
             yield self.__parser.parse(elastic_resource)
 
 
-class DataObjectConverter(Converter[DataObject, ElasticApiResource]):
+class DataObjectConverter(Converter[ElasticUpsertInputResource, ElasticApiResource]):
     __slots__ = ['__parser']
-    __parser: DataSourceParser[DataObject, ElasticApiResource]
+    __parser: DataSourceParser[ElasticUpsertInputResource, ElasticApiResource]
 
-    def __init__(self, parser: DataSourceParser[DataObject, ElasticApiResource]) -> None:
+    def __init__(
+        self,
+        parser: DataSourceParser[ElasticUpsertInputResource, ElasticApiResource]
+    ) -> None:
         self.__parser = parser
 
     def convert(
         self,
-        index: str,
-        objects: Iterable[DataObject],
-        id_func: Callable,
-        field_prefix: str,
+        input_: ElasticUpsertInputResource,
     ) -> ElasticApiResource:
-        return self.__parser.parse(
-            index,
-            objects,
-            id_func,
-            field_prefix
-        )
+        return self.__parser.parse(input_)
 
 
-class DataObjectUpdateConverter(Converter[DataObjectUpdate, ElasticApiResource]):
+class DataObjectUpdateConverter(Converter[ElasticUpdateInputResource, ElasticApiResource]):
     __slots__ = ['__parser']
-    __parser: DataSourceParser[DataObjectUpdate, ElasticApiResource]
+    __parser: DataSourceParser[ElasticUpdateInputResource, ElasticApiResource]
 
-    def __init__(self, parser: DataSourceParser[DataObjectUpdate, ElasticApiResource]) -> None:
+    def __init__(
+        self,
+        parser: DataSourceParser[ElasticUpdateInputResource, ElasticApiResource]
+    ) -> None:
         self.__parser = parser
 
     def convert(
         self,
-        object_type: str,
-        update: dict,
-        field_prefix: str,
-        candidate_key: Iterable[str],
+        input_: ElasticUpdateInputResource,
     ) -> ElasticApiResource:
-        return self.__parser.parse(
-            object_type,
-            update,
-            field_prefix,
-            candidate_key,
-        )
+        return self.__parser.parse(input_)

@@ -14,6 +14,8 @@ from tol.elastic import (
     DataObjectConverter,
     DataObjectUpdateConverter,
     ElasticDataSource,
+    ElasticUpdateInputResource,
+    ElasticUpsertInputResource,
 )
 from tol.elastic.parser import DefaultDataObjectParser, DefaultDataObjectUpdateParser
 
@@ -134,12 +136,12 @@ class TestElasticDataSource:
         converter = DataObjectConverter(
             DefaultDataObjectParser(mock_elastic_data_source)
         )
-        generator = converter.convert(
+        generator = converter.convert(ElasticUpsertInputResource(
             'test-obj-type',
             objects,
             id_func=lambda x: x.id,
             field_prefix=''
-        )
+        ))
         expected = {
             '_op_type': 'update',
             'scripted_upsert': True,
@@ -202,12 +204,12 @@ class TestElasticDataSource:
         converter = DataObjectConverter(
             DefaultDataObjectParser(mock_elastic_data_source)
         )
-        generator = converter.convert(
+        generator = converter.convert(ElasticUpsertInputResource(
             'test-obj-type',
             objects,
             id_func=lambda x: x.field1,
             field_prefix='pre'
-        )
+        ))
         expected = {
             '_op_type': 'update',
             'scripted_upsert': True,
@@ -282,12 +284,12 @@ class TestElasticDataSource:
         converter = DataObjectUpdateConverter(
             DefaultDataObjectUpdateParser(mock_elastic_data_source)
         )
-        update_body = converter.convert(
+        update_body = converter.convert(ElasticUpdateInputResource(
             'obj_type',
             update1,
             field_prefix='',
             candidate_key=['field1']
-        )
+        ))
         expected = {
             'query': {
                 'bool': {
