@@ -178,7 +178,10 @@ class _ToElasticApiResourceParser:
         }
 
 
-class DefaultDataObjectParser(_ToElasticApiResourceParser):
+class DefaultDataObjectParser(
+    DataSourceParser[DataObject, ElasticApiResource],
+    _ToElasticApiResourceParser
+):
     __slots__ = ['__data_source']
     __data_source: ElasticDataSource
 
@@ -238,7 +241,10 @@ class DefaultDataObjectParser(_ToElasticApiResourceParser):
         return {**dict_, 'uid': f'{uid}'}
 
 
-class DefaultDataObjectUpdateParser(_ToElasticApiResourceParser):
+class DefaultDataObjectUpdateParser(
+    DataSourceParser[DefaultDataObjectUpdateParser, ElasticApiResource],
+    _ToElasticApiResourceParser
+):
     __slots__ = ['__data_source']
     __data_source: ElasticDataSource
 

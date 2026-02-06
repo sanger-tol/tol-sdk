@@ -11,8 +11,11 @@ from tol.core import (
 )
 from tol.core.relationship import RelationshipConfig
 from tol.elastic import (
+    DataObjectConverter,
+    DataObjectUpdateConverter,
     ElasticDataSource,
 )
+from tol.elastic.parser import DefaultDataObjectParser, DefaultDataObjectUpdateParser
 
 
 dt = datetime.fromtimestamp(1234567890)
@@ -128,7 +131,10 @@ class TestElasticDataSource:
                 }
             )
         ]
-        generator = mock_elastic_data_source._action_for_upsert(
+        converter = DataObjectConverter(
+            DefaultDataObjectParser(mock_elastic_data_source)
+        )
+        generator = converter.convert(
             'test-obj-type',
             objects,
             id_func=lambda x: x.id,
@@ -141,7 +147,7 @@ class TestElasticDataSource:
             '_index': 'test-obj-type',
             '_id': '1',
             'script': {
-                'source': mock_elastic_data_source._upsert_script,
+                'source': DefaultDataObjectParser._upsert_script,
                 'lang': 'painless',
                 'params': {
                     'upsertWith': {
@@ -164,7 +170,7 @@ class TestElasticDataSource:
             '_index': 'test-obj-type',
             '_id': '2',
             'script': {
-                'source': mock_elastic_data_source._upsert_script,
+                'source': DefaultDataObjectParser._upsert_script,
                 'lang': 'painless',
                 'params': {
                     'upsertWith': {
@@ -193,7 +199,10 @@ class TestElasticDataSource:
                 attributes={'field1': 'value3', 'field2': 'value4'}
             )
         ]
-        generator = mock_elastic_data_source._action_for_upsert(
+        converter = DataObjectConverter(
+            DefaultDataObjectParser(mock_elastic_data_source)
+        )
+        generator = converter.convert(
             'test-obj-type',
             objects,
             id_func=lambda x: x.field1,
@@ -270,7 +279,10 @@ class TestElasticDataSource:
         updates = [(None, update1),
                    (None, update2)]
 
-        update_body = mock_elastic_data_source._action_for_update(
+        converter = DataObjectUpdateConverter(
+            DefaultDataObjectUpdateParser(mock_elastic_data_source)
+        )
+        update_body = converter.convert(
             'obj_type',
             update1,
             field_prefix='',
@@ -286,7 +298,7 @@ class TestElasticDataSource:
                 }
             },
             'script': {
-                'source': mock_elastic_data_source._update_script,
+                'source': DefaultDataObjectUpdateParser._update_script,
                 'lang': 'painless',
                 'params': {
                     'upsertWith': {
