@@ -147,7 +147,7 @@ class TestElasticDataSource:
             '_index': 'test-obj-type',
             '_id': '1',
             'script': {
-                'source': DefaultDataObjectParser._upsert_script,
+                'source': DefaultDataObjectParser(mock_elastic_data_source)._upsert_script,
                 'lang': 'painless',
                 'params': {
                     'upsertWith': {
@@ -170,7 +170,7 @@ class TestElasticDataSource:
             '_index': 'test-obj-type',
             '_id': '2',
             'script': {
-                'source': DefaultDataObjectParser._upsert_script,
+                'source': DefaultDataObjectParser(mock_elastic_data_source)._upsert_script,
                 'lang': 'painless',
                 'params': {
                     'upsertWith': {
@@ -215,7 +215,7 @@ class TestElasticDataSource:
             '_index': 'test-obj-type',
             '_id': 'value1',
             'script': {
-                'source': mock_elastic_data_source._upsert_script,
+                'source': DefaultDataObjectParser(mock_elastic_data_source)._upsert_script,
                 'lang': 'painless',
                 'params': {
                     'upsertWith': {
@@ -234,7 +234,7 @@ class TestElasticDataSource:
             '_index': 'test-obj-type',
             '_id': 'value3',
             'script': {
-                'source': mock_elastic_data_source._upsert_script,
+                'source': DefaultDataObjectParser(mock_elastic_data_source)._upsert_script,
                 'lang': 'painless',
                 'params': {
                     'upsertWith': {
@@ -298,7 +298,7 @@ class TestElasticDataSource:
                 }
             },
             'script': {
-                'source': DefaultDataObjectUpdateParser._update_script,
+                'source': DefaultDataObjectUpdateParser(mock_elastic_data_source)._update_script,
                 'lang': 'painless',
                 'params': {
                     'upsertWith': {
