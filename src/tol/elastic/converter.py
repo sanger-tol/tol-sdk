@@ -2,7 +2,7 @@
 #
 # SPDX-License-Identifier: MIT
 
-from collections.abc import Iterable
+from collections.abc import Callable, Iterable
 
 from .parser import ElasticApiResource
 from ..core import Converter, DataObject, DataSourceParser
@@ -43,8 +43,19 @@ class DataObjectConverter(Converter[DataObject, ElasticApiResource]):
     def __init__(self, parser: DataSourceParser[DataObject, ElasticApiResource]) -> None:
         self.__parser = parser
 
-    def convert(self, input_: DataObject) -> ElasticApiResource:
-        raise NotImplementedError
+    def convert(
+        self,
+        index: str,
+        objects: Iterable[DataObject],
+        id_func: Callable,
+        field_prefix: str,
+    ) -> ElasticApiResource:
+        return self.__parser.parse(
+            index,
+            objects,
+            id_func,
+            field_prefix
+        )
 
 
 class DataObjectUpdateConverter(Converter[DataObjectUpdate, ElasticApiResource]):
@@ -54,7 +65,16 @@ class DataObjectUpdateConverter(Converter[DataObjectUpdate, ElasticApiResource])
     def __init__(self, parser: DataSourceParser[DataObjectUpdate, ElasticApiResource]) -> None:
         self.__parser = parser
 
-    def convert(self, input_: DataObjectUpdate) -> ElasticApiResource:
-        raise NotImplementedError
-
-# make second, but with a parent to inherit from (enc funcs)
+    def convert(
+        self,
+        object_type: str,
+        update: dict,
+        field_prefix: str,
+        candidate_key: Iterable[str],
+    ) -> ElasticApiResource:
+        return self.__parser.parse(
+            object_type,
+            update,
+            field_prefix,
+            candidate_key,
+        )

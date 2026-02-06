@@ -259,14 +259,13 @@ class ElasticDataSource(
             raise DataSourceError(msg)
 
         index = self.__get_index_or_alias(object_type)
-        # init converter
-        # replace action for upsert as result of converter
+        converter = self._data_object_converter_factory()
         (no_of_operations, no_of_errors) = \
             self.helpers.bulk(self.es,
-                              self._action_for_upsert(index,
-                                                      objects,
-                                                      id_func,
-                                                      field_prefix),
+                              converter.convert(index,
+                                                objects,
+                                                id_func,
+                                                field_prefix),
                               stats_only=True,
                               chunk_size=chunk_size)
         if no_of_errors > 0:
@@ -287,7 +286,7 @@ class ElasticDataSource(
 
         index = self.__get_index_or_alias(object_type)
         real_index_name = self._get_indices().get(index)
-        # init converter
+        converter = self._data_object_update_converter_factory()
         for (_, update) in updates:
             # converter takes update, returns candidate key and body
 
@@ -296,10 +295,10 @@ class ElasticDataSource(
                 candidate_key = kwargs['candidate_key_func'](update)
             self.es.update_by_query(
                 index=real_index_name,
-                body=self._action_for_update(object_type,
-                                             update,
-                                             field_prefix,
-                                             candidate_key),
+                body=converter.convert(object_type,
+                                       update,
+                                       field_prefix,
+                                       candidate_key),
                 conflicts='proceed',
                 wait_for_completion=False
             )
