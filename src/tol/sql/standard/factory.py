@@ -560,21 +560,21 @@ def create_standard_models(
         )
 
     class WebApp(base_model_class):
-        __tablename__ = "web_app"
-        
+        __tablename__ = 'web_app'
+
         id : Mapped[str] = mapped_column(primary_key=True) # noqa A003
 
         navigation: Mapped[dict] = mapped_column(
             JSONB,
             nullable=False,
             default={},
-            server_default='{}'
+            server_default='{}'  # noqa P103
         )
         profile_navigation: Mapped[dict] = mapped_column(
             JSONB,
             nullable=False,
             default={},
-            server_default='{}'
+            server_default='{}'  # noqa P103
         )
 
     class _UserMixin:
