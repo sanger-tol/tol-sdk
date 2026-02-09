@@ -559,6 +559,24 @@ def create_standard_models(
             foreign_keys=[DataSourceConfigSummary.data_source_config_id]
         )
 
+    class WebApp(base_model_class):
+        __tablename__ = "web_app"
+        
+        id : Mapped[str] = mapped_column(primary_key=True) # noqa A003
+
+        navigation: Mapped[dict] = mapped_column(
+            JSONB,
+            nullable=False,
+            default={},
+            server_default='{}'
+        )
+        profile_navigation: Mapped[dict] = mapped_column(
+            JSONB,
+            nullable=False,
+            default={},
+            server_default='{}'
+        )
+
     class _UserMixin:
 
         @declared_attr
