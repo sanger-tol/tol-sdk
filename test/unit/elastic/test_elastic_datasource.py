@@ -3,111 +3,24 @@
 # SPDX-License-Identifier: MIT
 
 from datetime import datetime
-from typing import Callable
-from unittest import (TestCase, mock)
+from unittest import mock
 
 from tol.core import (
     DataObject,
     DataSourceError,
-    DataSourceFilter,
-    DefaultAttributeMetadata,
-    core_data_object
 )
 from tol.core.relationship import RelationshipConfig
 from tol.elastic import (
     ElasticDataSource,
-    RuntimeField
+    ElasticUpdateInputConverter,
+    ElasticUpdateInputResource,
+    ElasticUpsertInputConverter,
+    ElasticUpsertInputResource,
 )
+from tol.elastic.parser import DefaultElasticUpdateInputParser, DefaultElasticUpsertInputParser
 
 
 dt = datetime.fromtimestamp(1234567890)
-
-
-class MockElasticDataSource(ElasticDataSource):
-    def _initialise_elasticsearch(self):
-        self.es = mock.Mock()
-        self.helpers = mock.Mock()
-
-        self.es.indices.get_alias.return_value = {
-            'test-obj-type': {'aliases': {}},
-            'hidden-reltype': {'aliases': {'test-reltype': {}}}
-        }
-        self.index_prefix = 'test'
-
-    @property
-    def attribute_types(self):
-        return {
-            'obj_type': {
-                'field1': 'str',
-                'field2': 'str',
-                'field3': 'int',
-                'field4': 'str',
-                'field5': 'str',
-                'field6': 'int',
-                'field7': 'str',
-                'field8': 'datetime',
-                'datefield': 'datetime'},
-            'reltype': {
-                'field3': 'str',
-                'field4': 'str',
-                'datefield': 'datetime'
-            }
-        }
-
-
-class MockAttributeMetadata(DefaultAttributeMetadata):
-    def is_available_on_relationships(
-            self,
-            object_type: str,
-            attribute_name: str) -> bool:
-
-        if attribute_name in ['field1', 'field2']:
-            return True
-        return False
-
-
-def mock_elastic_data_source() -> tuple[Callable, ElasticDataSource]:
-    eds = MockElasticDataSource(
-        {
-            'uri': 'test',
-            'user': 'user',
-            'password': 'password',
-            'index_prefix': 'test'
-        },
-        relationship_cfg={
-            'obj_type': RelationshipConfig(
-                to_one={'relationship': 'reltype'},
-                to_many={'children': 'reltype'}
-            ),
-            'reltype': RelationshipConfig(
-                to_one={'parent': 'obj_type'}
-            )
-        },
-        runtime_fields={
-            'obj_type': {
-                'field7': RuntimeField(
-                    field_type='keyword',
-                    dependencies=[],
-                    function_body="emit('Hello')"
-                ),
-                'field8': RuntimeField(
-                    field_type='date',
-                    dependencies=['datefield'],
-                    function_body="emit(doc['datefield'].value.toEpochMilli())"
-                )
-            }
-        },
-        attribute_metadata=MockAttributeMetadata
-    )
-    core_data_object_mock = core_data_object(eds)
-    return core_data_object_mock, eds
-
-
-def mock_lazy_elastic_data_source() -> tuple[Callable, ElasticDataSource]:
-    cdo, eds = mock_elastic_data_source()
-    eds.lazy_fetch = True
-
-    return cdo, eds
 
 
 class TestUidSubstitution:
@@ -120,25 +33,28 @@ class TestUidSubstitution:
     expose this as `id` proper.
     """
 
-    def test_sort_by_id(self):
+    def test_sort_by_id_asc(self, mock_elastic_data_source: ElasticDataSource):
         """
         `ElasticDataSource().get_list_page()` converts
         sort_by directives containing `id` to `uid`
         internally.
         """
+        self.__test_uid_sort('id', 'asc', mock_elastic_data_source)
 
-        self.__test_uid_sort('-id', 'desc')
-        self.__test_uid_sort('id', 'asc')
+    def test_sort_by_id_desc(self, mock_elastic_data_source: ElasticDataSource):
+        """
+        `ElasticDataSource().get_list_page()` converts
+        sort_by directives containing `id` to `uid`
+        internally.
+        """
+        self.__test_uid_sort('-id', 'desc', mock_elastic_data_source)
 
-    def test_get_by_id(self):
+    def test_get_by_id(self, mock_elastic_data_source: ElasticDataSource):
         """
         `ElasticDataSource().get_by_id()` removes `uid`
         from elastic transfers
         """
-
-        _, mock_ds = mock_elastic_data_source()
-
-        mock_ds.helpers.scan.return_value = [
+        mock_elastic_data_source.helpers.scan.return_value = [
             {
                 '_index': 'test-obj-type',
                 '_id': 'lol',
@@ -150,14 +66,14 @@ class TestUidSubstitution:
         ]
 
         (obj,) = list(
-            mock_ds.get_by_id('obj_type', ['lol'])
+            mock_elastic_data_source.get_by_id('obj_type', ['lol'])
         )
 
         assert 'uid' not in obj.attributes
 
-    def __test_uid_sort(self, sort_by: str, order: str) -> None:
-
-        _, mock_ds = mock_elastic_data_source()
+    def __test_uid_sort(
+        self, sort_by: str, order: str, mock_elastic_data_source: ElasticDataSource
+    ) -> None:
 
         expected_sort = [
             {
@@ -168,65 +84,72 @@ class TestUidSubstitution:
             }
         ]
 
-        mock_ds.es.search.return_value = {
+        mock_elastic_data_source.es.search.return_value = {
             'hits': {
                 'hits': [],
                 'total': {'value': 0}
             }
         }
 
-        mock_ds.get_list_page(
+        mock_elastic_data_source.get_list_page(
             'obj_type',
             1,
             sort_by=sort_by
         )
 
-        mock_ds.es.search.assert_called_once()
+        mock_elastic_data_source.es.search.assert_called_once()
 
-        (_, kwargs) = mock_ds.es.search.call_args_list[0]
+        (_, kwargs) = mock_elastic_data_source.es.search.call_args_list[0]
         assert kwargs['sort'] == expected_sort
 
 
-class TestElasticDataSource(TestCase):
+class TestElasticDataSource:
 
-    def test_upsert(self):
-        core_data_object, eds = mock_elastic_data_source()
+    def test_upsert(self, mock_elastic_data_source: ElasticDataSource):
+        CoreDataObject = mock_elastic_data_source.data_object_factory  # noqa N806
 
         objects = [
-            core_data_object(
+            CoreDataObject(
                 'obj_type',
-                id_=1,
+                id_='1',
                 attributes={
                     'field1': 'value1',
                     'field2': 'value2',
                     'datefield': dt
                 },
                 to_one={
-                    'relationship': core_data_object(
+                    'relationship': CoreDataObject(
                         'reltype',
                         id_='rel1'
                     )
                 }
             ),
-            core_data_object(
+            CoreDataObject(
                 'obj_type',
-                id_=2,
+                id_='2',
                 attributes={
                     'field1': 'value3',
                     'field2': 'value4'
                 }
             )
         ]
-        generator = eds._action_for_upsert('test-obj-type', objects, id_func=lambda x: x.id,
-                                           field_prefix='')
+        converter = ElasticUpsertInputConverter(
+            DefaultElasticUpsertInputParser(mock_elastic_data_source)
+        )
+        generator = converter.convert(ElasticUpsertInputResource(
+            'test-obj-type',
+            objects,
+            id_func=lambda x: x.id,
+            field_prefix=''
+        ))
         expected = {
             '_op_type': 'update',
             'scripted_upsert': True,
             'upsert': {},
             '_index': 'test-obj-type',
-            '_id': 1,
+            '_id': '1',
             'script': {
-                'source': eds._upsert_script,
+                'source': DefaultElasticUpsertInputParser(mock_elastic_data_source)._upsert_script,
                 'lang': 'painless',
                 'params': {
                     'upsertWith': {
@@ -241,15 +164,15 @@ class TestElasticDataSource(TestCase):
                 }
             }
         }
-        self.assertEqual(expected, next(generator))
+        assert next(generator) == expected
         expected = {
             '_op_type': 'update',
             'scripted_upsert': True,
             'upsert': {},
             '_index': 'test-obj-type',
-            '_id': 2,
+            '_id': '2',
             'script': {
-                'source': eds._upsert_script,
+                'source': DefaultElasticUpsertInputParser(mock_elastic_data_source)._upsert_script,
                 'lang': 'painless',
                 'params': {
                     'upsertWith': {
@@ -260,13 +183,13 @@ class TestElasticDataSource(TestCase):
                 }
             }
         }
-        self.assertEqual(expected, next(generator))
-        eds.helpers.bulk.return_value = (2, 0)
-        eds.upsert('index', objects, id_func=lambda x: x.field1)
-        eds.helpers.bulk.assert_called_once()
+        assert next(generator) == expected
+        mock_elastic_data_source.helpers.bulk.return_value = (2, 0)
+        mock_elastic_data_source.upsert('index', objects, id_func=lambda x: x.field1)
+        mock_elastic_data_source.helpers.bulk.assert_called_once()
 
-    def test_upsert_add_prefix_and_id(self):
-        CoreDataObject, eds = mock_elastic_data_source()  # noqa
+    def test_upsert_add_prefix_and_id(self, mock_elastic_data_source: ElasticDataSource):
+        CoreDataObject = mock_elastic_data_source.data_object_factory  # noqa N806
 
         objects = [
             CoreDataObject(
@@ -278,8 +201,15 @@ class TestElasticDataSource(TestCase):
                 attributes={'field1': 'value3', 'field2': 'value4'}
             )
         ]
-        generator = eds._action_for_upsert('test-obj-type', objects, id_func=lambda x: x.field1,
-                                           field_prefix='pre')
+        converter = ElasticUpsertInputConverter(
+            DefaultElasticUpsertInputParser(mock_elastic_data_source)
+        )
+        generator = converter.convert(ElasticUpsertInputResource(
+            'test-obj-type',
+            objects,
+            id_func=lambda x: x.field1,
+            field_prefix='pre'
+        ))
         expected = {
             '_op_type': 'update',
             'scripted_upsert': True,
@@ -287,7 +217,7 @@ class TestElasticDataSource(TestCase):
             '_index': 'test-obj-type',
             '_id': 'value1',
             'script': {
-                'source': eds._upsert_script,
+                'source': DefaultElasticUpsertInputParser(mock_elastic_data_source)._upsert_script,
                 'lang': 'painless',
                 'params': {
                     'upsertWith': {
@@ -298,7 +228,7 @@ class TestElasticDataSource(TestCase):
                 }
             }
         }
-        self.assertEqual(expected, next(generator))
+        assert next(generator) == expected
         expected = {
             '_op_type': 'update',
             'scripted_upsert': True,
@@ -306,7 +236,7 @@ class TestElasticDataSource(TestCase):
             '_index': 'test-obj-type',
             '_id': 'value3',
             'script': {
-                'source': eds._upsert_script,
+                'source': DefaultElasticUpsertInputParser(mock_elastic_data_source)._upsert_script,
                 'lang': 'painless',
                 'params': {
                     'upsertWith': {
@@ -317,27 +247,29 @@ class TestElasticDataSource(TestCase):
                 }
             }
         }
-        self.assertEqual(expected, next(generator))
-        eds.helpers.bulk.return_value = (2, 0)
-        eds.upsert('index', objects, id_func=lambda x: x.field1)
-        eds.helpers.bulk.assert_called_once()
+        assert next(generator) == expected
+        mock_elastic_data_source.helpers.bulk.return_value = (2, 0)
+        mock_elastic_data_source.upsert('index', objects, id_func=lambda x: x.field1)
+        mock_elastic_data_source.helpers.bulk.assert_called_once()
 
-    def test_upsert_error(self):
-        _, eds = mock_elastic_data_source()
-
+    def test_upsert_error(self, mock_elastic_data_source: ElasticDataSource):
         objects = [{'field1': 'value1', 'field2': 'value2'},
                    {'field1': 'value3', 'field2': 'value4'}]
-        eds.helpers.bulk.return_value = (2, 1)
-        with self.assertRaises(DataSourceError):
-            eds.upsert('obj_type', objects, id_func=lambda x: x.field1)
+        mock_elastic_data_source.helpers.bulk.return_value = (2, 1)
+        try:
+            mock_elastic_data_source.upsert('object_type', objects, id_func=lambda x: x.field1)
+        except DataSourceError:
+            pass
+        else:
+            assert False, 'Expected DataSourceError to be raised'
 
-    def test_update(self):
-        core_data_object, eds = mock_elastic_data_source()
+    def test_update(self, mock_elastic_data_source: ElasticDataSource):
+        CoreDataObject = mock_elastic_data_source.data_object_factory  # noqa N806
 
         update1 = {
             'field1': 'value1',
             'field2': 'value2',
-            'relationship': core_data_object(
+            'relationship': CoreDataObject(
                 'reltype',
                 id_='rel1',
                 attributes={'field3': 'string1', 'field4': 'string2'}
@@ -349,10 +281,15 @@ class TestElasticDataSource(TestCase):
         updates = [(None, update1),
                    (None, update2)]
 
-        update_body = eds._action_for_update('obj_type',
-                                             update1,
-                                             field_prefix='',
-                                             candidate_key=['field1'])
+        converter = ElasticUpdateInputConverter(
+            DefaultElasticUpdateInputParser(mock_elastic_data_source)
+        )
+        update_body = converter.convert(ElasticUpdateInputResource(
+            'obj_type',
+            update1,
+            field_prefix='',
+            candidate_key=['field1']
+        ))
         expected = {
             'query': {
                 'bool': {
@@ -363,7 +300,7 @@ class TestElasticDataSource(TestCase):
                 }
             },
             'script': {
-                'source': eds._update_script,
+                'source': DefaultElasticUpdateInputParser(mock_elastic_data_source)._update_script,
                 'lang': 'painless',
                 'params': {
                     'upsertWith': {
@@ -377,15 +314,13 @@ class TestElasticDataSource(TestCase):
                 }
             }
         }
-        self.assertEqual(expected, update_body)
-        eds.es.update_by_query.return_value = (2, 0)
-        eds.update('obj_type', updates, candidate_key=['field1'])
-        self.assertEqual(eds.es.update_by_query.call_count, 2)
+        assert update_body == expected
+        mock_elastic_data_source.es.update_by_query.return_value = (2, 0)
+        mock_elastic_data_source.update('obj_type', updates, candidate_key=['field1'])
+        assert mock_elastic_data_source.es.update_by_query.call_count == 2
 
-    def test_get_list(self):
-        _, eds = mock_elastic_data_source()
-
-        eds.helpers.scan.return_value = [
+    def test_get_list(self, mock_elastic_data_source: ElasticDataSource):
+        mock_elastic_data_source.helpers.scan.return_value = [
             {'_source': {'field1': 'value1', 'field2': 'value2'},
              'fields': {'field7': ['Hello']},
              '_id': '1', '_index': 'test-obj-type'},
@@ -394,25 +329,25 @@ class TestElasticDataSource(TestCase):
              '_id': '2', '_index': 'test-obj-type'}
         ]
 
-        returned = eds.get_list('obj_type')
-        eds.helpers.scan.assert_called_once()
+        returned = iter(mock_elastic_data_source.get_list('obj_type'))
+        mock_elastic_data_source.helpers.scan.assert_called_once()
         first = next(returned)
-        self.assertEqual({'field1': 'value1', 'field2': 'value2', 'field7': 'Hello'},
-                         first.attributes)
-        self.assertEqual('1', first.id)
-        self.assertEqual('obj_type', first.type)
+        assert first.attributes == {'field1': 'value1', 'field2': 'value2', 'field7': 'Hello'}
+        assert first.id == '1'
+        assert first.type == 'obj_type'
         second = next(returned)
-        self.assertEqual({'field1': 'value3', 'field2': 'value4', 'field7': 'Hello'},
-                         second.attributes)
-        self.assertEqual('2', second.id)
-        self.assertEqual('obj_type', second.type)
-        with self.assertRaises(StopIteration):
+        assert second.attributes == {'field1': 'value3', 'field2': 'value4', 'field7': 'Hello'}
+        assert second.id == '2'
+        assert second.type == 'obj_type'
+        try:
             next(returned)
+        except StopIteration:
+            pass
+        else:
+            assert False, 'Expected StopIteration to be raised'
 
-    def test_get_list_page(self):
-        _, eds = mock_elastic_data_source()
-
-        eds.es.search.return_value = {
+    def test_get_list_page(self, mock_elastic_data_source: ElasticDataSource):
+        mock_elastic_data_source.es.search.return_value = {
             'hits': {
                 'hits': [
                     {'_source': {'field1': 'value1', 'field2': 'value2'},
@@ -428,26 +363,27 @@ class TestElasticDataSource(TestCase):
             }
         }
 
-        returned, total = eds.get_list_page('obj_type', 3)
-        eds.es.search.assert_called_once()
-        self.assertEqual(2, total)
+        returned, total = mock_elastic_data_source.get_list_page('obj_type', 3)
+        returned = iter(returned)
+        mock_elastic_data_source.es.search.assert_called_once()
+        assert total == 2
         first = next(returned)
-        self.assertEqual({'field1': 'value1', 'field2': 'value2', 'field7': 'Hello'},
-                         first.attributes)
-        self.assertEqual('1', first.id)
-        self.assertEqual('obj_type', first.type)
+        assert first.attributes == {'field1': 'value1', 'field2': 'value2', 'field7': 'Hello'}
+        assert first.id == '1'
+        assert first.type == 'obj_type'
         second = next(returned)
-        self.assertEqual({'field1': 'value3', 'field2': 'value4', 'field7': 'Hello'},
-                         second.attributes)
-        self.assertEqual('2', second.id)
-        self.assertEqual('obj_type', second.type)
-        with self.assertRaises(StopIteration):
+        assert second.attributes == {'field1': 'value3', 'field2': 'value4', 'field7': 'Hello'}
+        assert second.id == '2'
+        assert second.type == 'obj_type'
+        try:
             next(returned)
+        except StopIteration:
+            pass
+        else:
+            assert False, 'Expected StopIteration to be raised'
 
-    def test_get_by_id(self):
-        _, eds = mock_elastic_data_source()
-
-        eds.helpers.scan.return_value = [
+    def test_get_by_id(self, mock_elastic_data_source: ElasticDataSource):
+        mock_elastic_data_source.helpers.scan.return_value = [
             {
                 '_index': 'test-obj-type',
                 '_id': '1',
@@ -462,111 +398,38 @@ class TestElasticDataSource(TestCase):
             }
         ]
 
-        returned = eds.get_by_id('obj_type', ['2', '1'])
+        returned = iter(mock_elastic_data_source.get_by_id('obj_type', ['2', '1']))
         first = next(returned)
-        self.assertEqual({'field1': 'value3', 'field2': 'value4', 'field7': 'Hello'},
-                         first.attributes)
-        self.assertEqual('2', first.id)
-        self.assertEqual('obj_type', first.type)
+        assert first.attributes == {'field1': 'value3', 'field2': 'value4', 'field7': 'Hello'}
+        assert first.id == '2'
+        assert first.type == 'obj_type'
         second = next(returned)
-        self.assertEqual({'field1': 'value1', 'field2': 'value2', 'field7': 'Hello'},
-                         second.attributes)
-        self.assertEqual('1', second.id)
-        self.assertEqual('obj_type', second.type)
-        with self.assertRaises(StopIteration):
+        assert second.attributes == {'field1': 'value1', 'field2': 'value2', 'field7': 'Hello'}
+        assert second.id == '1'
+        assert second.type == 'obj_type'
+        try:
             next(returned)
-        eds.helpers.scan.assert_called_once()
+        except StopIteration:
+            pass
+        else:
+            assert False, 'Expected StopIteration to be raised'
+        mock_elastic_data_source.helpers.scan.assert_called_once()
 
-    def test_build_query(self):
-        _, eds = mock_elastic_data_source()
-
-        expected = {'bool': {'must': [], 'must_not': []}}
-        self.assertEqual(expected, eds._build_elasticsearch_query('obj_type', None))
-
-        # And filtering
-        object_filters = DataSourceFilter()
-        object_filters.and_ = {
-            'field1': {
-                'exists': {},
-                'lt': {'field': 'field2'}
-            },
-            'field2': {
-                'exists': {'negate': True}
-            },
-            'field3': {
-                'lt': {'value': 16},
-                'gte': {'value': 2}
-            },
-            'field4': {
-                'contains': {'value': 'abc'}
-            },
-            'field5': {
-                'in_list': {'value': ['one', 'two']}
-            },
-            'field6': {
-                'eq': {'value': 5}
-            },
-            'field7': {
-                'eq': {'value': 'haberdashery', 'negate': True}
-            },
-            'field8': {
-                'gt': {'value': '2022-01-01'},
-                'lte': {'value': '2023-01-01'}
-            },
-            'datefield': {
-                'gt': {'value': '2022-01-01'},
-                'lte': {'value': '2023-01-01'}
-            },
-            'relationship.field3': {
-                'eq': {'value': 'string1'}
-            }
-        }
-        expected = {
-            'bool': {
-                'must': [
-                    {'exists': {'field': 'field1.keyword'}},
-                    {'range': {'field3': {'lt': 16}}},
-                    {'range': {'field3': {'gte': 2}}},
-                    {'wildcard': {'field4.keyword': {'value': 'abc*', 'boost': 1.0}}},
-                    {'terms': {'field5.keyword': ['one', 'two'], 'boost': 1.0}},
-                    {'match': {'field6': 5}},
-                    {'range': {'field8': {'gt': datetime(2022, 1, 1, 0, 0)}}},
-                    {'range': {'field8': {'lte': datetime(2023, 1, 1, 0, 0)}}},
-                    {'range': {'datefield': {'gt': datetime(2022, 1, 1, 0, 0)}}},
-                    {'range': {'datefield': {'lte': datetime(2023, 1, 1, 0, 0)}}},
-                    {'match': {'relationship.field3.keyword': 'string1'}}
-                ],
-                'must_not': [
-                    {'exists': {'field': 'field2.keyword'}},
-                    {'match': {'field7': 'haberdashery'}}
-                ],
-                'filter': eds._get_field_comparison_filter(
-                    'field1.keyword', 'field2.keyword', 'lt', False
-                )
-            }
-        }
-
-        self.assertEqual(expected, eds._build_elasticsearch_query('obj_type', object_filters))
-
-    def test_build_sort(self):
-        _, eds = mock_elastic_data_source()
-
+    def test_build_sort(self, mock_elastic_data_source: ElasticDataSource):
         expected = [{'uid.keyword': 'asc'}]
-        self.assertEqual(expected, eds._build_elasticsearch_sort('obj_type', None))
+        assert mock_elastic_data_source._build_elasticsearch_sort('obj_type', None) == expected
 
         # Asc
         sort_by = 'field1'
         expected = [{'field1.keyword': 'asc'}, {'uid.keyword': 'asc'}]
-        self.assertEqual(expected, eds._build_elasticsearch_sort('obj_type', sort_by))
+        assert mock_elastic_data_source._build_elasticsearch_sort('obj_type', sort_by) == expected
 
         # Desc
         sort_by = '-field1'
         expected = [{'field1.keyword': 'desc'}, {'uid.keyword': 'asc'}]
-        self.assertEqual(expected, eds._build_elasticsearch_sort('obj_type', sort_by))
+        assert mock_elastic_data_source._build_elasticsearch_sort('obj_type', sort_by) == expected
 
-    def test_get_aggregations(self):
-        _, eds = mock_elastic_data_source()
-
+    def test_get_aggregations(self, mock_elastic_data_source: ElasticDataSource):
         agg_result = {
             'my-agg-name': {
                 'doc_count_error_upper_bound': 0,
@@ -574,7 +437,7 @@ class TestElasticDataSource(TestCase):
                 'buckets': []
             }
         }
-        eds.es.search.return_value = {
+        mock_elastic_data_source.es.search.return_value = {
             'aggregations': agg_result
         }
 
@@ -585,15 +448,15 @@ class TestElasticDataSource(TestCase):
                 }
             }
         }
-        returned = eds.get_aggregations('index',
-                                        aggregations=aggregations)
-        eds.es.search.assert_called_once()
-        self.assertEqual(agg_result, returned)
+        returned = mock_elastic_data_source.get_aggregations(
+            'index',
+            aggregations=aggregations
+        )
+        mock_elastic_data_source.es.search.assert_called_once()
+        assert returned == agg_result
 
-    def test_get_count(self):
-        _, eds = mock_elastic_data_source()
-
-        eds.es.search.return_value = {
+    def test_get_count(self, mock_elastic_data_source: ElasticDataSource):
+        mock_elastic_data_source.es.search.return_value = {
             'hits': {
                 'total': {
                     'value': 12345
@@ -601,13 +464,11 @@ class TestElasticDataSource(TestCase):
             }
         }
 
-        returned = eds.get_count('obj_type')
-        eds.es.search.assert_called_once()
-        self.assertEqual(12345, returned)
+        returned = mock_elastic_data_source.get_count('obj_type')
+        mock_elastic_data_source.es.search.assert_called_once()
+        assert returned == 12345
 
-    def test_get_stats_unique_and_cardinality(self):
-        _, eds = mock_elastic_data_source()
-
+    def test_get_stats_unique_and_cardinality(self, mock_elastic_data_source: ElasticDataSource):
         ret = {
             'aggregations': {
                 'datefield_unique': {
@@ -624,16 +485,16 @@ class TestElasticDataSource(TestCase):
                 }
             }
         }
-        eds.es.search.side_effect = [
+        mock_elastic_data_source.es.search.side_effect = [
             ret
         ]
 
-        returned = eds.get_stats(
+        returned = mock_elastic_data_source.get_stats(
             'obj_type',
             stats_fields=['field2', 'datefield'],
             stats=['unique', 'cardinality']
         )
-        self.assertEqual({
+        assert returned == {
             'stats': {
                 'datefield': {
                     'unique': 10,
@@ -644,12 +505,10 @@ class TestElasticDataSource(TestCase):
                     'cardinality': 5
                 }
             }
-        }, returned)
-        self.assertEqual(eds.es.search.call_count, 1)
+        }
+        assert mock_elastic_data_source.es.search.call_count == 1
 
-    def test_get_group_stats_standard(self):
-        _, eds = mock_elastic_data_source()
-
+    def test_get_group_stats_standard(self, mock_elastic_data_source: ElasticDataSource):
         first_ret = {
             'aggregations': {
                 'counts': {
@@ -706,19 +565,19 @@ class TestElasticDataSource(TestCase):
             }
         }
 
-        eds.es.search.side_effect = [
+        mock_elastic_data_source.es.search.side_effect = [
             first_ret,
             second_ret
         ]
 
-        returned = eds.get_group_stats(
+        returned = iter(mock_elastic_data_source.get_group_stats(
             'obj_type',
-            group_by='field1',
+            group_by=['field1'],
             stats_fields=['field2', 'datefield'],
             stats=['min', 'max']
-        )
+        ))
         first = next(returned)
-        self.assertEqual({
+        assert first == {
             'key': {'field1': '1111'},
             'stats': {
                 'count': 20,
@@ -731,9 +590,9 @@ class TestElasticDataSource(TestCase):
                     'max': 'Z'
                 }
             }
-        }, first)
+        }
         second = next(returned)
-        self.assertEqual({
+        assert second == {
             'key': {'field1': '1112'},
             'stats': {
                 'count': 18,
@@ -746,14 +605,16 @@ class TestElasticDataSource(TestCase):
                     'max': None
                 }
             }
-        }, second)
-        with self.assertRaises(StopIteration):
+        }
+        try:
             next(returned)
-        self.assertEqual(eds.es.search.call_count, 2)
+        except StopIteration:
+            pass
+        else:
+            assert False, 'Expected StopIteration to be raised'
+        assert mock_elastic_data_source.es.search.call_count == 2
 
-    def test_get_group_stats_union(self):
-        _, eds = mock_elastic_data_source()
-
+    def test_get_group_stats_union(self, mock_elastic_data_source: ElasticDataSource):
         first_ret = {
             'aggregations': {
                 'counts': {
@@ -792,62 +653,62 @@ class TestElasticDataSource(TestCase):
             }
         }
 
-        eds.es.search.side_effect = [
+        mock_elastic_data_source.es.search.side_effect = [
             first_ret,
             second_ret
         ]
 
-        returned = eds.get_group_stats(
+        returned = iter(mock_elastic_data_source.get_group_stats(
             'obj_type',
-            group_by='field1',
+            group_by=['field1'],
             stats_fields=['field4'],
             stats=['union']
-        )
+        ))
         first = next(returned)
-        self.assertEqual({
+        assert first == {
             'key': {'field1': '1111'},
             'stats': {
                 'count': 20,
                 'field4': {'union': ['val1', 'val2', 'val3']}
             }
-        }, first)
+        }
         second = next(returned)
-        self.assertEqual({
+        assert second == {
             'key': {'field1': '1112'},
             'stats': {
                 'count': 18,
                 'field4': {'union': None}
             }
-        }, second)
-        with self.assertRaises(StopIteration):
+        }
+        try:
             next(returned)
-        self.assertEqual(eds.es.search.call_count, 2)
+        except StopIteration:
+            pass
+        else:
+            assert False, 'Expected StopIteration to be called'
+        assert mock_elastic_data_source.es.search.call_count == 2
 
-    def test_get_supported_types(self):
-        _, eds = mock_elastic_data_source()
-
+    def test_get_supported_types(self, mock_elastic_data_source: ElasticDataSource):
         expected = ['index_1', 'index_2']
-        eds.es.indices.get_alias.return_value = {
+        mock_elastic_data_source.es.indices.get_alias.return_value = {
             'test-index-1': {'aliases': {}},
             'test-index-2': {'aliases': {}}
         }
 
-        returned = eds.supported_types
-        eds.es.indices.get_alias.assert_called_once()
-        self.assertEqual(expected, returned)
+        returned = mock_elastic_data_source.supported_types
+        mock_elastic_data_source.es.indices.get_alias.assert_called_once()
+        assert returned == expected
 
         # Test it doesn't call to Elastic the next time
-        returned = eds.supported_types
-        eds.es.indices.get_alias.assert_called_once()
-        self.assertEqual(expected, returned)
+        returned = mock_elastic_data_source.supported_types
+        mock_elastic_data_source.es.indices.get_alias.assert_called_once()
+        assert returned == expected
 
-    def test_get_attribute_types(self):
-        _, eds = mock_elastic_data_source()
-
-        eds.es.indices.get_alias.return_value = {
+    def test_get_attribute_types(self, mock_elastic_data_source: ElasticDataSource):
+        mock_elastic_data_source.es.indices.get_alias.return_value = {
             'test-index-name': {'aliases': {}}
         }
-        eds.es.indices.get_mapping.return_value = {
+        mock_elastic_data_source.es.indices.get_mapping.return_value = {
             'test-index-name': {
                 'mappings': {
                     'properties': {
@@ -877,16 +738,15 @@ class TestElasticDataSource(TestCase):
                     'field_2': 'datetime',
                     'field_3': 'int',
                     'field_4': 'bool'}
-        returned = eds._get_attribute_types_for_object_type('index_name')
-        eds.es.indices.get_mapping.assert_called_once()
-        self.assertEqual(expected, returned)
+        returned = mock_elastic_data_source._get_attribute_types_for_object_type('index_name')
+        mock_elastic_data_source.es.indices.get_mapping.assert_called_once()
+        assert returned == expected
 
-    def test_get_to_one_relationships(self):
-        _, eds = mock_elastic_data_source()
+    def test_get_to_one_relationships(self, mock_elastic_data_source: ElasticDataSource):
         rc = RelationshipConfig()
         rc.to_one = {'relname': 'reltype'}
-        eds._relationship_cfg = {'obj_type': rc}
-        eds.helpers.scan.return_value = [
+        mock_elastic_data_source._relationship_cfg = {'obj_type': rc}
+        mock_elastic_data_source.helpers.scan.return_value = [
             {
                 '_index': 'test-obj-type',
                 '_id': '1234',
@@ -896,20 +756,21 @@ class TestElasticDataSource(TestCase):
                                         'field4': 'value4'}}
             }
         ]
-        eds.es.indices.get_alias.return_value = {
+        mock_elastic_data_source.es.indices.get_alias.return_value = {
             'test-obj-type': {'aliases': {}},
             'test-reltype': {'aliases': {}}
         }
-        source_objects = eds.get_by_id('obj_type', ['1234'])
+        source_objects = iter(mock_elastic_data_source.get_by_id('obj_type', ['1234']))
         source_object = next(source_objects)
 
         related_object = source_object.to_one_relationships['relname']
-        eds.es.indices.get_alias.assert_called_once()
-        self.assertEqual(related_object.id, '5678')
-        self.assertEqual(related_object.field3, 'value3')
+        assert related_object is not None
+        mock_elastic_data_source.es.indices.get_alias.assert_called_once()
+        assert related_object.id == '5678'
+        assert related_object.field3 == 'value3'
 
         # More than one returned (shouldn't happen)
-        eds.helpers.scan.return_value = [
+        mock_elastic_data_source.helpers.scan.return_value = [
             {
                 '_index': 'test-obj-type',
                 '_id': '1234',
@@ -928,13 +789,13 @@ class TestElasticDataSource(TestCase):
             }
         ]
 
-        source_objects = eds.get_by_id('obj_type', ['1234'])
+        source_objects = iter(mock_elastic_data_source.get_by_id('obj_type', ['1234']))
         source_object = next(source_objects)
         related_object = source_object.to_one_relationships['relname']
-        self.assertIsNone(related_object)
+        assert related_object is None
 
         # None returned
-        eds.helpers.scan.return_value = [
+        mock_elastic_data_source.helpers.scan.return_value = [
             {
                 '_index': 'test-obj-type',
                 '_id': '1234',
@@ -942,41 +803,44 @@ class TestElasticDataSource(TestCase):
                             'relname': None}
             }
         ]
-        source_objects = eds.get_by_id('obj_type', ['1234'])
+        source_objects = iter(mock_elastic_data_source.get_by_id('obj_type', ['1234']))
         source_object = next(source_objects)
         related_object = source_object.to_one_relationships['relname']
-        self.assertIsNone(related_object)
+        assert related_object is None
 
         # Relationship name missing
-        eds.helpers.scan.return_value = [
+        mock_elastic_data_source.helpers.scan.return_value = [
             {
                 '_index': 'test-obj-type',
                 '_id': '1234',
                 '_source': {'field1': 'value1'}
             }
         ]
-        source_objects = eds.get_by_id('obj_type', ['1234'])
+        source_objects = iter(mock_elastic_data_source.get_by_id('obj_type', ['1234']))
         source_object = next(source_objects)
         related_object = source_object.to_one_relationships['relname']
-        self.assertIsNone(related_object)
+        assert related_object is None
 
-    def test_get_to_many_relationships_lazy(self):
-        core_data_object, eds = mock_lazy_elastic_data_source()
+    def test_get_to_many_relationships_lazy(
+        self, mock_lazy_elastic_data_source: ElasticDataSource
+    ):
+        CoreDataObject = mock_lazy_elastic_data_source.data_object_factory  # noqa N806
+
         rc1 = RelationshipConfig()
         rc1.to_many = {'relname': 'reltype'}
         rc1.foreign_keys = {'relname': 'relfk.id'}
         rc2 = RelationshipConfig()
         rc2.to_one = {'relfk': 'obj_type'}
-        eds._relationship_cfg = {'obj_type': rc1, 'reltype': rc2}
-        source_object = core_data_object(
+        mock_lazy_elastic_data_source._relationship_cfg = {'obj_type': rc1, 'reltype': rc2}
+        source_object = CoreDataObject(
             'obj_type',
             {'id': '1'}
         )
-        eds.es.indices.get_alias.return_value = {
+        mock_lazy_elastic_data_source.es.indices.get_alias.return_value = {
             'test-obj-type': {'aliases': {}},
             'test-reltype': {'aliases': {}}
         }
-        eds.helpers.scan.return_value = [
+        mock_lazy_elastic_data_source.helpers.scan.return_value = [
             {'_source': {'field3': 'value1',
                          'field4': 'value2',
                          'relfk': {'id': '1'}},
@@ -987,19 +851,23 @@ class TestElasticDataSource(TestCase):
              '_id': '2', '_index': 'hidden-reltype'}
         ]
 
-        related_objects = source_object.to_many_relationships['relname']
-        eds.es.indices.get_alias.assert_called_once()
-        eds.helpers.scan.assert_called_once()
+        related_objects = iter(source_object.to_many_relationships['relname'])
+        mock_lazy_elastic_data_source.es.indices.get_alias.assert_called_once()
+        mock_lazy_elastic_data_source.helpers.scan.assert_called_once()
         first = next(related_objects)
-        self.assertEqual({'field3': 'value1', 'field4': 'value2'}, first.attributes)
-        self.assertEqual('1', first.id)
-        self.assertEqual('reltype', first.type)
+        assert first.attributes == {'field3': 'value1', 'field4': 'value2'}
+        assert first.id == '1'
+        assert first.type == 'reltype'
         second = next(related_objects)
-        self.assertEqual({'field3': 'value3', 'field4': 'value4'}, second.attributes)
-        self.assertEqual('2', second.id)
-        self.assertEqual('reltype', second.type)
-        with self.assertRaises(StopIteration):
+        assert second.attributes == {'field3': 'value3', 'field4': 'value4'}
+        assert second.id == '2'
+        assert second.type == 'reltype'
+        try:
             next(related_objects)
+        except StopIteration:
+            pass
+        else:
+            assert False, 'Expected StopIteration to be raised'
 
     def test_lazy_get_to_one_relation(self):
         """
@@ -1080,25 +948,18 @@ class TestElasticDataSource(TestCase):
         ]
         assert observed == mock_inter2
 
-    def test_get_enriching_fields(self):
-        _, eds = mock_elastic_data_source()
-
+    def test_get_enriching_fields(self, mock_elastic_data_source: ElasticDataSource):
         expected = {'obj_type': ['field1', 'field2']}
+        assert mock_elastic_data_source.enriching_fields == expected
 
-        self.assertEqual(expected, eds.enriching_fields)
-
-    def test_relationships_to_enrich(self):
-        _, eds = mock_elastic_data_source()
-
+    def test_relationships_to_enrich(self, mock_elastic_data_source: ElasticDataSource):
         expected = {
             'reltype': {'obj_type': ['relationship']},
             'obj_type': {'reltype': ['parent']}
         }
-        self.assertEqual(expected, eds.relationships_to_enrich)
+        assert mock_elastic_data_source.relationships_to_enrich == expected
 
-    def test_get_enrich_update(self):
-        _, eds = mock_elastic_data_source()
-
+    def test_get_enrich_update(self, mock_elastic_data_source: ElasticDataSource):
         expected = [
             (None, {'parent': {'id': 'id1', 'field1': 'value1', 'field2': 'value2'},
                     'parent.id': 'id1'}),
@@ -1108,33 +969,33 @@ class TestElasticDataSource(TestCase):
 
         enriching_fields = ['field1', 'field2']
         source_data = [
-            eds.data_object_factory(
+            mock_elastic_data_source.data_object_factory(
                 'obj_type',
                 'id1',
                 attributes={'field1': 'value1', 'field2': 'value2'}
-            ), eds.data_object_factory(
+            ), mock_elastic_data_source.data_object_factory(
                 'obj_type',
                 'id2',
                 attributes={'field1': 'value3', 'field2': 'value4'}
             )
         ]
-        returned = eds.get_enrich_update(enriching_fields, source_data, 'reltype')
-        self.assertEqual(expected, list(returned))
+        returned = mock_elastic_data_source.get_enrich_update(
+            enriching_fields, source_data, 'reltype'
+        )
+        assert list(returned) == expected
 
-    def test_enrich(self):
-        _, eds = mock_elastic_data_source()
-
+    def test_enrich(self, mock_elastic_data_source: ElasticDataSource):
         source_data = [
-            eds.data_object_factory(
+            mock_elastic_data_source.data_object_factory(
                 'obj_type',
                 'id1',
                 attributes={'field1': 'value1', 'field2': 'value2'}
-            ), eds.data_object_factory(
+            ), mock_elastic_data_source.data_object_factory(
                 'obj_type',
                 'id2',
                 attributes={'field1': 'value3', 'field2': 'value4'}
             )
         ]
-        eds.es.update_by_query.return_value = (2, 0)
-        eds.enrich('obj_type', source_data, 'reltype')
-        self.assertEqual(eds.es.update_by_query.call_count, 2)
+        mock_elastic_data_source.es.update_by_query.return_value = (2, 0)
+        mock_elastic_data_source.enrich('obj_type', source_data, 'reltype')
+        assert mock_elastic_data_source.es.update_by_query.call_count == 2

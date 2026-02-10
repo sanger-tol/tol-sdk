@@ -2,8 +2,8 @@
 #
 # SPDX-License-Identifier: MIT
 
-from abc import ABC
-from typing import Optional
+from abc import ABC, abstractmethod
+from typing import Any
 
 import dateparser
 
@@ -19,10 +19,12 @@ class _Filterable(ABC):
     def _preprocess_filter(
         self,
         object_type: str,
-        object_filters: Optional[DataSourceFilter] = None,
-    ) -> DataSourceFilter:
+        object_filters: DataSourceFilter | None = None,
+    ) -> DataSourceFilter | None:
         """
-        The main use of this is to convert relative dates into absolute dates
+        This method is called inside a datasource before starting its associated filter converter.
+        This method, unlike the converter, converts in place.
+        By default, this method converts relative dates into absolute dates.
         """
         if object_filters is None:
             return None
@@ -37,3 +39,7 @@ class _Filterable(ABC):
                         object_filters.and_[name][op]['value'] = dateparser.parse(val['value'])
 
         return object_filters
+
+    @abstractmethod
+    def get_attribute_metadata_by_name(self, obj_type: str, field_name: str) -> Any:
+        raise NotImplementedError('Should be implemented by DataSource')

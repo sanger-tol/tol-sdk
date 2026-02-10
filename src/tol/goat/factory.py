@@ -36,7 +36,7 @@ class _GoatDSDict(Mapping):
 
 class _ConverterFactory:
     """
-    Manges the instantation of:
+    Manages the instantation of:
 
     - `GoatApiConverter`
     """
