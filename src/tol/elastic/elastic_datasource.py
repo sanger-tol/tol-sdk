@@ -292,10 +292,11 @@ class ElasticDataSource(
                 return f'{name}.keyword'
         return name
 
-    def __prepare_get_parameters(
+    def _prepare_get_parameters(
         self,
         object_type: str,
         object_filters: DataSourceFilter | None,
+        requested_tree: ReqFieldsTree | None = None,
     ) -> tuple[str | None, dict, list[Any] | None, Any | None]:
         """
         Prepares the real_index_name, query, fields, and runtime_mappings,
@@ -305,12 +306,26 @@ class ElasticDataSource(
         index = self.__get_index_or_alias(object_type)
         real_index_name = self._get_indices().get(index)
         query = ElasticFilterConverter(self).convert(object_type, object_filters)
-        fields = list(self.runtime_fields[object_type].keys()) \
+        fields = self.runtime_fields[object_type].keys() \
             if object_type in self.runtime_fields else None
+        
+        # If there is a requested tree, ensure only fields from this tree
+        # are being fetched
+        if fields is not None and requested_tree is not None:
+            fields = filter(
+                lambda field: field in requested_tree,
+                fields
+            )
+
         runtime_mappings = self.runtime_fields[object_type] \
             if object_type in self.runtime_fields else None
 
-        return real_index_name, query, fields, runtime_mappings
+        return (
+            real_index_name,
+            query,
+            list(fields) if fields is not None else None,  # Consume the `Iterable`
+            runtime_mappings,
+        )
 
     @requested_fields_to_tree
     def get_by_id(
@@ -369,8 +384,8 @@ class ElasticDataSource(
         search_after: list[Any] | None = None,
         requested_tree: ReqFieldsTree | None = None,
     ) -> dict[str, Any]:
-        real_index_name, query, fields, runtime_mappings = self.__prepare_get_parameters(
-            object_type, object_filters
+        real_index_name, query, fields, runtime_mappings = self._prepare_get_parameters(
+            object_type, object_filters, requested_tree
         )
         sort = self._build_elasticsearch_sort(object_type, sort_by)
         if page_size is None:
@@ -445,8 +460,8 @@ class ElasticDataSource(
     ) -> Iterable[DataObject]:
         del session, kwargs
 
-        real_index_name, query, fields, runtime_mappings = self.__prepare_get_parameters(
-            object_type, object_filters
+        real_index_name, query, fields, runtime_mappings = self._prepare_get_parameters(
+            object_type, object_filters, requested_tree
         )
         generator = self.helpers.scan(self.es,
                                       index=real_index_name,
@@ -466,8 +481,8 @@ class ElasticDataSource(
     ) -> dict:
         del kwargs
 
-        real_index_name, query, fields, runtime_mappings = self.__prepare_get_parameters(
-            object_type, object_filters,
+        real_index_name, query, fields, runtime_mappings = self._prepare_get_parameters(
+            object_type, object_filters
         )
         resp = self.es.search(
             size=0,
@@ -771,7 +786,7 @@ class ElasticDataSource(
     ) -> int:
         del kwargs
 
-        real_index_name, query, fields, runtime_mappings = self.__prepare_get_parameters(
+        real_index_name, query, fields, runtime_mappings = self._prepare_get_parameters(
             object_type, object_filters
         )
         # We are not using es.count so that we can use runtime fields
