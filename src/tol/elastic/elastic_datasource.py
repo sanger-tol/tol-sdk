@@ -292,6 +292,26 @@ class ElasticDataSource(
                 return f'{name}.keyword'
         return name
 
+    def __prepare_get_parameters(
+        self,
+        object_type: str,
+        object_filters: DataSourceFilter | None,
+    ) -> tuple[str | None, dict, list[Any] | None, Any | None]:
+        """
+        Prepares the real_index_name, query, fields, and runtime_mappings,
+        needed for all get operations
+        """
+
+        index = self.__get_index_or_alias(object_type)
+        real_index_name = self._get_indices().get(index)
+        query = ElasticFilterConverter(self).convert(object_type, object_filters)
+        fields = list(self.runtime_fields[object_type].keys()) \
+            if object_type in self.runtime_fields else None
+        runtime_mappings = self.runtime_fields[object_type] \
+            if object_type in self.runtime_fields else None
+        
+        return real_index_name, query, fields, runtime_mappings
+
     @requested_fields_to_tree
     def get_by_id(
         self,
