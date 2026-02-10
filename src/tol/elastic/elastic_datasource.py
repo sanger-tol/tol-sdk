@@ -457,13 +457,11 @@ class ElasticDataSource(
                                       runtime_mappings=runtime_mappings)
         return self._elastic_converter_factory().convert_list(generator)
 
-    @requested_fields_to_tree
     def get_aggregations(
         self,
         object_type: str,
         aggregations: dict,
         object_filters: DataSourceFilter | None = None,
-        requested_tree: ReqFieldsTree | None = None,
         **kwargs
     ) -> dict:
         del kwargs
