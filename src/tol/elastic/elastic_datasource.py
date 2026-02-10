@@ -308,7 +308,7 @@ class ElasticDataSource(
         query = ElasticFilterConverter(self).convert(object_type, object_filters)
         fields = self.runtime_fields[object_type].keys() \
             if object_type in self.runtime_fields else None
-        
+
         # If there is a requested tree, ensure only fields from this tree
         # are being fetched
         if fields is not None and requested_tree is not None:
