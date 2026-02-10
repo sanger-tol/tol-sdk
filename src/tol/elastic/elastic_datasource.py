@@ -5,9 +5,9 @@
 from __future__ import annotations
 
 import typing
-from collections.abc import Callable
+from collections.abc import Callable, Iterable
 from datetime import datetime
-from typing import Any, Dict, Iterable, List, Mapping, Optional, Tuple
+from typing import Any
 
 from cachetools.func import ttl_cache
 
@@ -16,12 +16,16 @@ from caseconverter import (
     snakecase
 )
 
-from dateutil import parser
-
 from elasticsearch import (Elasticsearch, helpers)
 
-from more_itertools import seekable
-
+from .client import ElasticClient
+from .converter import (
+    ElasticApiConverter,
+    ElasticUpdateInputConverter,
+    ElasticUpsertInputConverter,
+)
+from .filter import ElasticFilterConverter
+from .parser import ElasticUpdateInputResource, ElasticUpsertInputResource
 from ..core import (
     AttributeMetadata,
     DataId,
@@ -56,6 +60,11 @@ from ..core.relationship import (
 if typing.TYPE_CHECKING:
     from ..core.session import OperableSession
 
+ElasticClientFactory = Callable[[], ElasticClient]
+ElasticConverterFactory = Callable[[], ElasticApiConverter]
+DataObjectConverterFactory = Callable[[], ElasticUpsertInputConverter]
+DataObjectUpdateConverterFactory = Callable[[], ElasticUpdateInputConverter]
+
 
 class ElasticDataSource(
     DataSource,
@@ -73,17 +82,25 @@ class ElasticDataSource(
     Statter,
     GroupStatter
 ):
-
-    def __init__(self, config: Dict,
+    def __init__(self, config: dict,
+                 client_factory: ElasticClientFactory,
+                 elastic_converter_factory: ElasticConverterFactory,
+                 data_object_converter_factory: DataObjectConverterFactory,
+                 data_object_update_converter_factory: DataObjectUpdateConverterFactory,
                  attribute_metadata: AttributeMetadata = DefaultAttributeMetadata,
-                 relationship_cfg: dict[str, RelationshipConfig] = None,
+                 relationship_cfg: dict[str, RelationshipConfig] | None = None,
                  runtime_fields: dict[str, Any] = {},
                  **kwargs):
+        del kwargs
         super().__init__(
             config,
             expected=['uri', 'user', 'password', 'index_prefix'],
             attribute_metadata=attribute_metadata,
         )
+        self._client_factory = client_factory
+        self._elastic_converter_factory = elastic_converter_factory
+        self._data_object_converter_factory = data_object_converter_factory
+        self._data_object_update_converter_factory = data_object_update_converter_factory
         """
         relationship_cfg is also supported if we want to handle relationships
         Only FKs pointing to IDs are currently supported
@@ -123,101 +140,16 @@ class ElasticDataSource(
         )
         self.helpers = helpers
 
-    def _convert_data_object_to_dict(self, data_object: DataObject) -> Dict:
-        to_ones_dict = {
-            k: self._convert_to_one_relation(v)
-            for k, v in data_object._to_one_objects.items()
-        }
-        return data_object.attributes | to_ones_dict
-
-    def _convert_data_objects_in_update_to_dict(self, dict_: Dict) -> Dict:
-        ret = {}
-        for k, v in dict_.items():
-            if isinstance(v, DataObject):
-                ret[k] = self._convert_to_one_relation(v)
-            else:
-                ret[k] = v
-        return ret
-
-    def _convert_to_one_relation(
-        self,
-        one_relation: DataObject | None
-    ) -> dict[str, Any] | None:
-
-        if one_relation is None:
-            return None
-
-        return {
-            'id': one_relation.id,
-            **one_relation.attributes
-        }
-
-    def _prefix_fields(self, dict_: Dict, prefix: str) -> Dict:
-        if prefix == '':
-            return dict_
-        ret = {}
-        for k, v in dict_.items():
-            ret[prefix + '_' + k] = v
-        return ret
-
-    def _add_uid(self, dict_: Dict, uid: Any) -> Dict:
-        return {**dict_, 'uid': f'{uid}'}
-
-    def _convert_dates(self, dict_: Dict) -> Dict:
-        ret = {}
-        for k, v in dict_.items():
-            if isinstance(v, datetime):
-                ret[k] = v.isoformat()
-            else:
-                ret[k] = v
-        return ret
-
-    def _stringify_ids(self, dict_: Dict) -> Dict:
-        ret = {}
-        for k, v in dict_.items():
-            if isinstance(v, dict):
-                if 'id' in v:
-                    v['id'] = str(v['id'])
-                ret[k] = self._stringify_ids(v)
-            else:
-                ret[k] = v
-
-        return ret
-
-    def _action_for_upsert(self, index: str, objects: Iterable[DataObject], id_func: Callable,
-                           field_prefix: str):
-        real_index_name = self._get_indices().get(index)
-        for object_ in objects:
-            obj = self._convert_data_object_to_dict(object_)
-            obj = self._convert_dates(obj)
-            obj = self._prefix_fields(obj, field_prefix)
-            obj = self._stringify_ids(obj)
-            uid = id_func(object_)
-            obj = self._add_uid(obj, uid)
-            yield {
-                '_op_type': 'update',
-                'scripted_upsert': True,
-                'upsert': {},
-                '_index': real_index_name,
-                '_id': uid,
-                'script': {
-                    'source': self._upsert_script,
-                    'lang': 'painless',
-                    'params': {
-                        'upsertWith': obj
-                    }
-                }
-            }
-
     def get_cursor_page(
         self,
         object_type: str,
-        page_size: Optional[int] = None,
-        object_filters: Optional[DataSourceFilter] = None,
+        page_size: int | None = None,
+        object_filters: DataSourceFilter | None = None,
         search_after: list[str] | None = None,
-        session: Optional[OperableSession] = None,
+        session: OperableSession | None = None,
         **kwargs,
     ) -> tuple[Iterable[DataObject], list[str] | None]:
+        del session, kwargs
 
         resp = self.__get_page_response(
             object_type,
@@ -239,17 +171,20 @@ class ElasticDataSource(
         merge_collections: bool | None = None,
         **kwargs
     ) -> None:
+        del kwargs
+
         if merge_collections is False:
             msg = 'ElasticDataSource does not support turning off merge_collections'
             raise DataSourceError(msg)
 
         index = self.__get_index_or_alias(object_type)
+        converter = self._data_object_converter_factory()
         (no_of_operations, no_of_errors) = \
             self.helpers.bulk(self.es,
-                              self._action_for_upsert(index,
-                                                      objects,
-                                                      id_func,
-                                                      field_prefix),
+                              converter.convert(ElasticUpsertInputResource(index,
+                                                                           objects,
+                                                                           id_func,
+                                                                           field_prefix)),
                               stats_only=True,
                               chunk_size=chunk_size)
         if no_of_errors > 0:
@@ -270,16 +205,19 @@ class ElasticDataSource(
 
         index = self.__get_index_or_alias(object_type)
         real_index_name = self._get_indices().get(index)
+        converter = self._data_object_update_converter_factory()
         for (_, update) in updates:
+            # converter takes update, returns candidate key and body
+
             # We can get the candidate key dynamically from the actual update
             if 'candidate_key_func' in kwargs:
                 candidate_key = kwargs['candidate_key_func'](update)
             self.es.update_by_query(
                 index=real_index_name,
-                body=self._action_for_update(object_type,
-                                             update,
-                                             field_prefix,
-                                             candidate_key),
+                body=converter.convert(ElasticUpdateInputResource(object_type,
+                                                                  update,
+                                                                  field_prefix,
+                                                                  candidate_key)),
                 conflicts='proceed',
                 wait_for_completion=False
             )
@@ -317,69 +255,9 @@ class ElasticDataSource(
             return [], None
 
         search_after = hits[-1]['sort']
-        objs = self._convert_dict_to_data_objects(hits)
+        objs = self._elastic_converter_factory().convert_list(hits)
 
         return objs, search_after
-
-    @property
-    def _update_script(self):
-        s = """
-            for (param in params['upsertWith'].entrySet()) {
-                if (param.value != null) {
-                    if (ctx._source[param.key] instanceof Map) {
-                        for (newParam in param.value.entrySet()) {
-                            ctx._source[param.key][newParam.key] = newParam.value;
-                        }
-                        continue
-                    }
-                    if (ctx._source[param.key] instanceof ArrayList) {
-                        for (newParam in param.value) {
-                            if(! ctx._source[param.key].contains(newParam)) {
-                                ctx._source[param.key].add(newParam)
-                            }
-                        }
-                        continue
-                    }
-                }
-                ctx._source[param.key] = param.value;
-            }
-        """
-        return s.replace('\n', ' ')
-
-    @property
-    def _upsert_script(self):
-        s = f"""
-            if ( ctx.op == 'create' ) {{
-                ctx._source = params['upsertWith']
-            }} else {{
-                {self._update_script}
-            }}
-        """
-        return s.replace('\n', ' ')
-
-    def _action_for_update(self, object_type: str, update: Dict,
-                           field_prefix: str, candidate_key: Iterable[str]):
-        u = self._convert_dates(update)
-        f = DataSourceFilter()
-        f.and_ = {}
-        for key in candidate_key:
-            # Don't want key in the upsert as it cannot change anyway
-            f.and_[key] = {'eq': {'value': u.pop(key)}}
-        u = self._prefix_fields(u, field_prefix)
-        u = self._convert_data_objects_in_update_to_dict(u)
-        query = self._build_elasticsearch_query(
-            object_type,
-            object_filters=f)
-        return {
-            'query': query,
-            'script': {
-                'source': self._update_script,
-                'lang': 'painless',
-                'params': {
-                    'upsertWith': u
-                }
-            },
-        }
 
     def __get_index_or_alias(self, object_type: str) -> str:
         return f'{self.index_prefix}-{kebabcase(object_type)}'
@@ -389,6 +267,9 @@ class ElasticDataSource(
         return snakecase(index[start:])
 
     def _field_or_keyword(self, object_type: str, name: str):
+        """
+        Map our field format to Elastic's format
+        """
         if name == 'id':
             return 'uid.keyword'
         # Runtime fields don't behave the same as text fields
@@ -416,29 +297,23 @@ class ElasticDataSource(
         object_ids: Iterable[DataId],
         **kwargs
     ) -> Iterable[DataObject]:
+        del kwargs
         f = DataSourceFilter()
         f.and_ = {'_id': {'in_list': {'value': object_ids}}}
         # get_by_id is expected to return objects in the order they were asked for
         # or None if not found, hence the following rearrangement.
-        seekable_objects = seekable(self.get_list(object_type, object_filters=f))
-        for id_ in object_ids:
-            seekable_objects.seek(0)
-            for obj in seekable_objects:
-                if obj.id == id_:
-                    yield obj
-                    break
-            else:
-                yield None
+        return self.sort_by_id(self.get_list(object_type, object_filters=f), object_ids)
 
     def get_list_page(
         self,
         object_type: str,
         page: int,
-        object_filters: DataSourceFilter = None,
-        sort_by: str = None,
-        page_size: int = None,
+        object_filters: DataSourceFilter | None = None,
+        sort_by: str | None = None,
+        page_size: int | None = None,
         **kwargs
-    ) -> Tuple[Iterable[DataObject], int]:
+    ) -> tuple[Iterable[DataObject], int]:
+        del kwargs
 
         resp = self.__get_page_response(
             object_type,
@@ -449,7 +324,7 @@ class ElasticDataSource(
         )
 
         return (
-            self._convert_dict_to_data_objects(
+            self._elastic_converter_factory().convert_list(
                 resp['hits']['hits']
             ),
             resp['hits']['total']['value']
@@ -464,10 +339,9 @@ class ElasticDataSource(
         page: int | None = None,
         search_after: list[Any] | None = None
     ) -> dict[str, Any]:
-
         index = self.__get_index_or_alias(object_type)
         real_index_name = self._get_indices().get(index)
-        query = self._build_elasticsearch_query(object_type, object_filters)
+        query = ElasticFilterConverter(self).convert(object_type, object_filters)
         sort = self._build_elasticsearch_sort(object_type, sort_by)
         fields = list(self.runtime_fields[object_type].keys()) \
             if object_type in self.runtime_fields else None
@@ -487,140 +361,10 @@ class ElasticDataSource(
             search_after=search_after
         )
 
-    def _contains_filter(
-        self,
-        query: dict[str, Any],
-        object_type: str,
-        key: str,
-        value: str
-    ) -> dict[str, Any]:
-
-        search_field = self._field_or_keyword(object_type, key)
-        if self.attribute_types[object_type][key] == 'str':
-            query['bool']['must'].append(
-                {
-                    'wildcard': {
-                        search_field: {
-                            'value': f'{value}*', 'boost': 1.0
-                        }
-                    }
-                }
-            )
-        else:
-            query = self._eq_filter(
-                query,
-                'must',
-                search_field,
-                value
-            )
-        return query
-
-    def _eq_filter(
-        self,
-        query: dict[str, Any],
-        elastic_section: str,
-        search_field: str,
-        search_value: str
-    ) -> dict[str, Any]:
-
-        query['bool'][elastic_section].append({
-            'match': {search_field: search_value}
-        })
-
-        return query
-
-    def _build_elasticsearch_query(self, object_type: str,
-                                   object_filters: DataSourceFilter = None):
-        query = {'bool': {'must': [], 'must_not': []}}
-        object_filters = self._preprocess_filter(object_type, object_filters)
-        # If we want to implement preprocessing of filters, call self._preprocess_filter() here
-        if object_filters is None:
-            return query
-        if object_filters.and_ is not None:
-            for k, v in object_filters.and_.items():
-                search_field = self._field_or_keyword(object_type, k)
-                for op, constraint in v.items():
-                    search_value = constraint.get('value')
-                    negated = constraint.get('negate', False)
-                    elastic_section = 'must_not' if negated else 'must'
-                    if 'field' in constraint:
-                        other_field = self._field_or_keyword(
-                            object_type, constraint['field']
-                        )
-                        query['bool']['filter'] = \
-                            self._get_field_comparison_filter(
-                                search_field,
-                                other_field,
-                                op,
-                                negated
-                        )
-                        continue
-                    if op in ['gt', 'gte', 'lt', 'lte']:
-                        query['bool'][elastic_section].append({
-                            'range': {search_field: {op: search_value}}
-                        })
-                    if op in ['eq']:
-                        query = self._eq_filter(
-                            query,
-                            elastic_section,
-                            search_field,
-                            search_value
-                        )
-                    if op in ['contains']:
-                        query['bool'][elastic_section].append({
-                            'wildcard': {
-                                search_field: {'value': f'{search_value}*', 'boost': 1.0}
-                            }
-                        })
-                    if op in ['exists']:
-                        query['bool'][elastic_section].append({
-                            'exists': {'field': search_field}
-                        })
-                    if op in ['in_list']:
-                        query['bool'][elastic_section].append({
-                            'terms': {search_field: search_value, 'boost': 1.0}
-                        })
-        return query
-
-    def _get_field_comparison_filter(self, field1: str, field2: str, op: str, negated: bool) -> \
-            Dict[str, Dict[str, str]]:
-        op_mappings = {
-            'eq': '==',
-            'lt': '<',
-            'lte': '<=',
-            'gt': '>',
-            'gte': '>='
-        }
-        negated_mappings = {  # What to return if negated
-            True: 'true',
-            False: 'false'
-        }
-        # return {negated_mappings[not negated]}
-        return {
-            'script': {
-                'script': {
-                    'source': f"""
-                        if (doc[params['field1']].size() > 0
-                            && doc[params['field2']].size() > 0) {{
-                            if (doc[params['field1']].value.compareTo(doc[params['field2']].value)
-                                {op_mappings[op]} 0) {{
-                                return {negated_mappings[not negated]}
-                            }}
-                        }}
-                        return {negated_mappings[negated]};
-                    """,
-                    'params': {
-                        'field1': field1,
-                        'field2': field2
-                    }
-                }
-            }
-        }
-
     def _build_elasticsearch_sort(
         self,
         object_type: str,
-        sort_by: str
+        sort_by: str | None
     ) -> list[dict[str, str]]:
         default_sort = {'uid.keyword': 'asc'}
         if sort_by is None:
@@ -671,9 +415,11 @@ class ElasticDataSource(
         session: OperableSession | None = None,
         **kwargs
     ) -> Iterable[DataObject]:
+        del session, kwargs
+
         index = self.__get_index_or_alias(object_type)
         real_index_name = self._get_indices().get(index)
-        query = self._build_elasticsearch_query(object_type, object_filters)
+        query = ElasticFilterConverter(self).convert(object_type, object_filters)
         fields = list(self.runtime_fields[object_type].keys()) \
             if object_type in self.runtime_fields else None
         runtime_mappings = self.runtime_fields[object_type] \
@@ -685,98 +431,20 @@ class ElasticDataSource(
                                       query={'query': query},
                                       fields=fields,
                                       runtime_mappings=runtime_mappings)
-        return self._convert_dict_to_data_objects(generator)
-
-    def _convert_dict_to_data_objects(self, objs: Dict) -> Iterable:
-        for obj in objs:
-            if '_source' in obj:
-                type_ = self.__real_index_to_object_type(obj['_index'])
-                id_ = obj['_id']
-                attributes = obj['_source']
-                runtime_attributes = obj['fields'] if 'fields' in obj else {}
-                yield self._convert_data_dict_to_data_object(
-                    type_,
-                    id_,
-                    attributes,
-                    runtime_attributes
-                )
-            else:
-                yield None
-
-    def _convert_data_dict_to_data_object(self, type_, id_, data, runtime_data):
-        attributes = {
-            k: self.__make_dates(type_, k, v) for k, v in data.items()
-            if k in self.attribute_types[type_]
-        }
-        runtime_attributes = {
-            k: self.__make_dates(type_, k, v[0]) for k, v in runtime_data.items()
-            if k in self.attribute_types[type_]
-        }
-        to_one = self.__make_to_one_relations(type_, data)
-        return self.data_object_factory(
-            type_,
-            id_=id_,
-            attributes=attributes | runtime_attributes,
-            to_one=to_one
-        )
-
-    def __make_to_one_relations(
-        self,
-        type_: str,
-        data: dict[str, Any]
-    ) -> dict[str, Optional[DataObject]]:
-
-        if type_ not in self.relationship_config:
-            return {}
-
-        if self.relationship_config[type_].to_one is None:
-            return {}
-
-        return {
-            k: self.__make_to_one_relation(data.get(k), v)
-            for k, v in self.relationship_config[type_].to_one.items()
-        }
-
-    def __make_to_one_relation(
-        self,
-        relation_data: Optional[dict[str, Any]],
-        type_: str
-    ) -> Optional[DataObject]:
-
-        if (
-            relation_data is None
-            or not isinstance(relation_data, Mapping)
-        ):
-            return None
-
-        id_ = relation_data.get('id')
-
-        if id_ is None:
-            return None
-
-        return self._convert_data_dict_to_data_object(
-            type_,
-            id_,
-            relation_data,
-            {}  # This can be empty because runtime_fields are not applicable for enriched objects
-        )
-
-    def __make_dates(self, object_type, attribute_name, value):
-        if self.attribute_types[object_type][attribute_name] == 'datetime' and \
-                isinstance(value, str):
-            return parser.parse(value)
-        return value
+        return self._elastic_converter_factory().convert_list(generator)
 
     def get_aggregations(
         self,
         object_type: str,
-        aggregations: Dict,
-        object_filters: DataSourceFilter = None,
+        aggregations: dict,
+        object_filters: DataSourceFilter | None = None,
         **kwargs
-    ) -> Dict:
+    ) -> dict:
+        del kwargs
+
         index = self.__get_index_or_alias(object_type)
         real_index_name = self._get_indices().get(index)
-        query = self._build_elasticsearch_query(object_type, object_filters)
+        query = ElasticFilterConverter(self).convert(object_type, object_filters)
         fields = list(self.runtime_fields[object_type].keys()) \
             if object_type in self.runtime_fields else None
         runtime_mappings = self.runtime_fields[object_type] \
@@ -794,11 +462,12 @@ class ElasticDataSource(
     def get_stats(
         self,
         object_type: str,
-        stats_fields: List[str] = [],
-        stats: List[str] = [],
-        object_filters: DataSourceFilter = None,
+        stats_fields: list[str] = [],
+        stats: list[str] = [],
+        object_filters: DataSourceFilter | None = None,
         **kwargs
     ):
+        del kwargs
         aggs = self.__get_aggs(
             object_type=object_type,
             stats_fields=stats_fields,
@@ -837,12 +506,13 @@ class ElasticDataSource(
     def get_group_stats(
         self,
         object_type: str,
-        group_by: List[str],
-        stats_fields: List[str] = [],
-        stats: List[str] = [],
-        object_filters: DataSourceFilter = None,
+        group_by: list[str],
+        stats_fields: list[str] = [],
+        stats: list[str] = [],
+        object_filters: DataSourceFilter | None = None,
         **kwargs
     ) -> Iterable[dict[Any, int]]:
+        del kwargs
 
         after_key = None
         while True:
@@ -860,11 +530,11 @@ class ElasticDataSource(
     def __get_group_stats_page(
         self,
         object_type: str,
-        group_by: List[str],
-        stats_fields: List[str] = [],
-        stats: List[str] = [],
-        after_key: str = None,
-        object_filters: DataSourceFilter = None,
+        group_by: list[str],
+        stats_fields: list[str] = [],
+        stats: list[str] = [],
+        after_key: str | None = None,
+        object_filters: DataSourceFilter | None = None,
     ):
         # This will return a potentially large set of results, so we need
         # to page through them
@@ -904,8 +574,8 @@ class ElasticDataSource(
     def __get_aggs(
             self,
             object_type: str,
-            stats_fields: List,
-            stats: List
+            stats_fields: list,
+            stats: list
     ):
         ret = {}
         for stats_field in stats_fields:
@@ -1076,12 +746,13 @@ class ElasticDataSource(
     def get_count(
         self,
         object_type: str,
-        object_filters: DataSourceFilter = None,
+        object_filters: DataSourceFilter | None = None,
         **kwargs
     ) -> int:
+        del kwargs
         index = self.__get_index_or_alias(object_type)
         real_index_name = self._get_indices().get(index)
-        query = self._build_elasticsearch_query(object_type, object_filters)
+        query = ElasticFilterConverter(self).convert(object_type, object_filters)
         fields = list(self.runtime_fields[object_type].keys()) \
             if object_type in self.runtime_fields else None
         runtime_mappings = self.runtime_fields[object_type] \
@@ -1115,7 +786,7 @@ class ElasticDataSource(
         }
         return aliased_indexes | non_aliased_indexes
 
-    def __real_index_to_object_type(self, index: str) -> str:
+    def _real_index_to_object_type(self, index: str) -> str:
         aliases = self._get_indices()
         alias = next((k for k, v in aliases.items() if v == index), None)
         return self.__get_object_type(alias) if alias else None
@@ -1137,7 +808,7 @@ class ElasticDataSource(
             return 'bool'
         return type_
 
-    def _get_attribute_types_for_object_type(self, object_type: str) -> Dict:
+    def _get_attribute_types_for_object_type(self, object_type: str) -> dict:
         index_or_alias_name = self.__get_index_or_alias(object_type)
         real_index_name = self._get_indices().get(index_or_alias_name)
         mapping = self.es.indices.get_mapping(index=index_or_alias_name)
@@ -1173,7 +844,8 @@ class ElasticDataSource(
         source: DataObject,
         relationship_name: str,
         **kwargs
-    ) -> Optional[DataObject]:
+    ) -> DataObject | None:
+        del kwargs
 
         self.__validate_to_one_relation(source)
 
@@ -1204,6 +876,8 @@ class ElasticDataSource(
         relationship_name: str,
         **kwargs
     ) -> Iterable[DataObject]:
+        del kwargs
+
         if self.relationship_config is None:
             raise DataSourceError('There are no relationships defined')
         relationship_config = self.relationship_config[source.type]
