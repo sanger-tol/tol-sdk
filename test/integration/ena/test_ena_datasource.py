@@ -132,4 +132,4 @@ class TestEnaDataSource(TestCase):
 
         obj4 = ret[3]
         self.assertEqual(obj4.id, 'GCA_958301625.1')
-        self.assertEqual(obj4.common_name, 'Turkestan rose')
+        self.assertEqual(obj4.common_name, 'Japanese rose')
