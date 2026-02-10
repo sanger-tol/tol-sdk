@@ -30,10 +30,13 @@ class DataSourceUtils:
     @classmethod
     def get_datasource_by_datasource_instance(
         cls,
-        datasource_instance: DataObject
+        datasource_instance: DataObject,
+        **kwargs
     ) -> DataSource:
         datasource_config = datasource_instance.data_source_config
-        kwargs = dict(datasource_instance.kwargs) if datasource_instance.kwargs else {}
+        new_kwargs = dict(datasource_instance.kwargs) if datasource_instance.kwargs else {}
+        if kwargs:
+            new_kwargs.update(kwargs)
         if datasource_config:
             relationship_config = cls.get_relationship_config_from_data_source_config(
                 datasource_config
@@ -44,14 +47,14 @@ class DataSourceUtils:
             runtime_fields = cls.get_runtime_fields_from_data_source_config(
                 datasource_config
             )
-            kwargs.update({
+            new_kwargs.update({
                 'relationship_cfg': relationship_config,
                 'attribute_metadata': amd,
                 'runtime_fields': runtime_fields
             })
         return DataSourceUtils.get_datasource_by_name(
             datasource_instance.builtin_name,
-            **kwargs
+            **new_kwargs
         )
 
     @classmethod
@@ -83,7 +86,6 @@ class DataSourceUtils:
         cls,
         datasource_config: DataObject
     ) -> dict:
-        from ..elastic.runtime_fields import RuntimeFields  # Break circular import cycle
         runtime_fields = {}
         f = DataSourceFilter()
         f.and_ = {
@@ -95,6 +97,7 @@ class DataSourceUtils:
             if dsa.object_type not in runtime_fields:
                 runtime_fields[dsa.object_type] = {}
             if 'function' in dsa.runtime_definition:
+                from ..elastic.runtime_fields import RuntimeFields  # Break circular import cycle
                 method = getattr(RuntimeFields, dsa.runtime_definition['function'])
                 runtime_fields[dsa.object_type][dsa.name] = \
                     method(**dsa.runtime_definition.get('function_kwargs', {}))

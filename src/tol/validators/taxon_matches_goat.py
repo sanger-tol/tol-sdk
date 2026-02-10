@@ -29,7 +29,7 @@ class TaxonMatchesGoatValidator(Validator):
     __goat_datasource: GoatDataSource
     _cached_taxa: dict[str, DataObject]
 
-    def __init__(self, config: Config) -> None:
+    def __init__(self, config: Config, **kwargs) -> None:
         super().__init__()
         self.__config = config
         self.__goat_datasource = goat()
