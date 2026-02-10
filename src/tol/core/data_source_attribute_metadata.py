@@ -39,13 +39,17 @@ def data_source_attribute_metadata(
 
         @ttl_cache(ttl=3600)
         def __read_cardinality_from_datasource(self, object_type):
-            stats = self.host.get_stats(
-                object_type,
-                stats=['cardinality'],
-                stats_fields=self.host.attribute_types[object_type].keys())
             ret = {}
-            for attribute in self.host.attribute_types[object_type].keys():
-                ret[attribute] = stats['stats'][attribute]['cardinality']
+            try:
+                stats = self.host.get_stats(
+                    object_type,
+                    stats=['cardinality'],
+                    stats_fields=self.host.attribute_types[object_type].keys())
+                for attribute in self.host.attribute_types[object_type].keys():
+                    ret[attribute] = stats['stats'][attribute]['cardinality']
+            except AttributeError:
+                # Fall back to default cardinality if the datasource doesn't have stats
+                pass
             return ret
 
         def __get_attribute(
