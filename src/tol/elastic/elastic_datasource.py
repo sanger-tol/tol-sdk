@@ -328,7 +328,8 @@ class ElasticDataSource(
             object_filters,
             sort_by,
             page_size,
-            page=page
+            page=page,
+            requested_tree=requested_tree,
         )
 
         return (
@@ -345,7 +346,8 @@ class ElasticDataSource(
         sort_by: str | None,
         page_size: int | None,
         page: int | None = None,
-        search_after: list[Any] | None = None
+        search_after: list[Any] | None = None,
+        requested_tree: ReqFieldsTree | None = None,
     ) -> dict[str, Any]:
         index = self.__get_index_or_alias(object_type)
         real_index_name = self._get_indices().get(index)
