@@ -309,7 +309,7 @@ class ElasticDataSource(
             if object_type in self.runtime_fields else None
         runtime_mappings = self.runtime_fields[object_type] \
             if object_type in self.runtime_fields else None
-        
+
         return real_index_name, query, fields, runtime_mappings
 
     @requested_fields_to_tree
