@@ -305,7 +305,10 @@ class ElasticDataSource(
         f.and_ = {'_id': {'in_list': {'value': object_ids}}}
         # get_by_id is expected to return objects in the order they were asked for
         # or None if not found, hence the following rearrangement.
-        return self.sort_by_id(self.get_list(object_type, object_filters=f), object_ids)
+        return self.sort_by_id(
+            self.get_list(object_type, object_filters=f, requested_tree=requested_tree),
+            object_ids
+        )
 
     @requested_fields_to_tree
     def get_list_page(
