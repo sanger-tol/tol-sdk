@@ -56,6 +56,7 @@ from ..core.operator.updater import DataObjectUpdate
 from ..core.relationship import (
     RelationshipConfig
 )
+from ..core.requested_fields import ReqFieldsTree, requested_fields_to_tree
 
 if typing.TYPE_CHECKING:
     from ..core.session import OperableSession
@@ -291,10 +292,12 @@ class ElasticDataSource(
                 return f'{name}.keyword'
         return name
 
+    @requested_fields_to_tree
     def get_by_id(
         self,
         object_type: str,
         object_ids: Iterable[DataId],
+        requested_tree: ReqFieldsTree | None = None,
         **kwargs
     ) -> Iterable[DataObject]:
         del kwargs
@@ -304,6 +307,7 @@ class ElasticDataSource(
         # or None if not found, hence the following rearrangement.
         return self.sort_by_id(self.get_list(object_type, object_filters=f), object_ids)
 
+    @requested_fields_to_tree
     def get_list_page(
         self,
         object_type: str,
@@ -311,6 +315,7 @@ class ElasticDataSource(
         object_filters: DataSourceFilter | None = None,
         sort_by: str | None = None,
         page_size: int | None = None,
+        requested_tree: ReqFieldsTree | None = None,
         **kwargs
     ) -> tuple[Iterable[DataObject], int]:
         del kwargs
@@ -408,11 +413,13 @@ class ElasticDataSource(
 
         return {field: order}
 
+    @requested_fields_to_tree
     def get_list(
         self,
         object_type: str,
         object_filters: DataSourceFilter | None = None,
         session: OperableSession | None = None,
+        requested_tree: ReqFieldsTree | None = None,
         **kwargs
     ) -> Iterable[DataObject]:
         del session, kwargs
@@ -433,11 +440,13 @@ class ElasticDataSource(
                                       runtime_mappings=runtime_mappings)
         return self._elastic_converter_factory().convert_list(generator)
 
+    @requested_fields_to_tree
     def get_aggregations(
         self,
         object_type: str,
         aggregations: dict,
         object_filters: DataSourceFilter | None = None,
+        requested_tree: ReqFieldsTree | None = None,
         **kwargs
     ) -> dict:
         del kwargs
