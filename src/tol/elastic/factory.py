@@ -107,7 +107,8 @@ def create_elastic_datasource(
     config: dict,
     attribute_metadata: AttributeMetadata = DefaultAttributeMetadata,
     relationship_cfg: dict[str, RelationshipConfig] | None = None,
-    runtime_fields: dict[str, Any] = {}
+    runtime_fields: dict[str, Any] = {},
+    **kwargs,
 ) -> ElasticDataSource:
     """
     Properly instaniates an ElasticDataSource
@@ -130,7 +131,8 @@ def create_elastic_datasource(
         converter_factories_manager.data_object_update_converter_factory,
         attribute_metadata,
         relationship_cfg,
-        runtime_fields
+        runtime_fields,
+        **kwargs,
     )
 
     # Update the converter factories manager so that the converter factories have a references to
