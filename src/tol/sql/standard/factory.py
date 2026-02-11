@@ -45,6 +45,7 @@ class StandardModels(IterableABC[type[Model]]):
     view: type[Model]
     view_board: type[Model]
     board: type[Model]
+    web_app: type[Model]
 
     _user_mixin: type[Any]
 
@@ -68,7 +69,8 @@ class StandardModels(IterableABC[type[Model]]):
                 self.loader_instance,
                 self.data_source_instance,
                 self.data_source_config,
-                self.loader
+                self.loader,
+                self.web_app
             ]
         )
 
@@ -559,6 +561,24 @@ def create_standard_models(
             foreign_keys=[DataSourceConfigSummary.data_source_config_id]
         )
 
+    class WebApp(base_model_class):
+        __tablename__ = 'web_app'
+
+        id : Mapped[str] = mapped_column(primary_key=True) # noqa A003
+
+        navigation: Mapped[dict] = mapped_column(
+            JSONB,
+            nullable=False,
+            default={},
+            server_default='{}'  # noqa P103
+        )
+        profile_navigation: Mapped[dict] = mapped_column(
+            JSONB,
+            nullable=False,
+            default={},
+            server_default='{}'  # noqa P103
+        )
+
     class _UserMixin:
 
         @declared_attr
@@ -600,5 +620,6 @@ def create_standard_models(
         view=View,
         view_board=ViewBoard,
         board=Board,
+        web_app=WebApp,
         _user_mixin=_UserMixin
     )
