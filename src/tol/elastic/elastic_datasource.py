@@ -313,7 +313,7 @@ class ElasticDataSource(
         # are being fetched
         if fields is not None and requested_tree is not None:
             fields = filter(
-                lambda field: requested_tree.has_attribute(field),
+                requested_tree.has_attribute,
                 fields
             )
 
