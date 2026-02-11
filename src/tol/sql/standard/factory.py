@@ -45,6 +45,7 @@ class StandardModels(IterableABC[type[Model]]):
     view: type[Model]
     view_board: type[Model]
     board: type[Model]
+    web_app: type[Model]
 
     _user_mixin: type[Any]
 
@@ -68,7 +69,8 @@ class StandardModels(IterableABC[type[Model]]):
                 self.loader_instance,
                 self.data_source_instance,
                 self.data_source_config,
-                self.loader
+                self.loader,
+                self.web_app
             ]
         )
 
@@ -618,5 +620,6 @@ def create_standard_models(
         view=View,
         view_board=ViewBoard,
         board=Board,
+        web_app=WebApp,
         _user_mixin=_UserMixin
     )
