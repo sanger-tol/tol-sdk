@@ -127,6 +127,51 @@ class TestRunningPipelinesWithDataSources:
 
         assert prefect_ds.insert.call_count == 1
 
+    def test_revalidate_upload__200(
+        self,
+        client: FlaskClient,
+        ctx: AuthContext,
+        sql_ds: SqlDataSource,
+        prefect_ds: PrefectDataSource,
+        role: str
+    ):
+
+        ctx.user_id = '1001'
+        ctx.roles = [role]
+
+        sql_ds.data_object_factory = self.__do_factory
+
+        sql_ds.get_one.side_effect = [
+            self.__mock_pipeline('123123'),
+        ]
+
+        upload = self.__mock_upload('123456')
+        upload.validation_status = 'validation_system_error'
+        sql_ds.get_list.return_value = [upload]
+
+        prefect_ds.insert.return_value = [
+            self.__do_factory(
+                type_='flow_run',
+                id_='run_123456',
+                attributes={'parameters': {}},
+            )
+        ]
+
+        response = client.post(
+            '/run-pipeline/revalidate',
+            json={
+                'data': {
+                    'upload_ids': ['123456']
+                }
+            }
+        )
+
+        assert response.status_code == 200
+        assert response.json == {
+            'success': True,
+            'upload_and_flow_run_ids': [['123456', 'run_123456']]
+        }
+
     def __do_factory(
         self,
         type_: str,

@@ -218,6 +218,15 @@ def pipeline_steps_blueprint(
             object_filters=f
         )
 
+        if not existing_uploads:
+            raise DataSourceError(
+                'Not Found',
+                'No uploads found for the provided upload IDs.',
+                404
+            )
+
+        existing_by_id = {upload.id: upload for upload in existing_uploads}
+
         for upload in existing_uploads:
             if upload.validation_status not in allowed_validation_statuses:
                 raise DataSourceError(
@@ -255,10 +264,10 @@ def pipeline_steps_blueprint(
 
         flow_run_ids = [__insert_flow_run(
             upload_id=upload_id,
-            pipeline_id=upload.pipeline_id,
-            s3_filename=upload.s3_filename,
+            pipeline_id=existing_by_id[upload_id].pipeline_id,
+            s3_filename=existing_by_id[upload_id].s3_filename,
             dry_run=False
-        ) for upload_id, upload in zip(upload_ids, uploads)]
+        ) for upload_id in upload_ids]
 
         for upload_id, flow_run_id in zip(upload_ids, flow_run_ids):
             __upsert_flow_run_id(
