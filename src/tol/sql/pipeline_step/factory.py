@@ -191,7 +191,7 @@ def create_pipeline_step_models(
         rejection_reason: Mapped[str] = mapped_column(
             nullable=True
         )
-        
+
         hidden: Mapped[str] = mapped_column(
             nullable=False,
             default=False
