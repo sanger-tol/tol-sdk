@@ -113,7 +113,7 @@ class TestElasticDataSource:
         f = DataSourceFilter()
         f.and_ = {
             'field7': {'eq': {'value': 'test'}},
-            'field8': {'eq': {'value': 'test', 'negate': True}}
+            'field8': {'eq': {'value': '2020-01-01', 'negate': True}}
         }
         real_index_name, query, fields, runtime_mappings = \
             mock_elastic_data_source._prepare_get_parameters('obj_type', f)
@@ -124,7 +124,7 @@ class TestElasticDataSource:
                     {'match': {'field7': 'test'}},
                 ],
                 'must_not': [
-                    {'match': {'field8': 'test'}},
+                    {'match': {'field8': datetime(2020, 1, 1, 0, 0)}},
                 ]
             }
         }
@@ -136,21 +136,21 @@ class TestElasticDataSource:
         f = DataSourceFilter()
         f.and_ = {
             'field7': {'eq': {'value': 'test'}},
-            'field8': {'eq': {'value': 'test', 'negate': True}}
         }
-        requested_tree = ReqFieldsTree('obj_type', mock_elastic_data_source, ['field7'])
+        requested_tree = ReqFieldsTree('obj_type', mock_elastic_data_source, ['field8'])
         real_index_name, query, fields, runtime_mappings = \
-            mock_elastic_data_source._prepare_get_parameters('obj_type', f)
+            mock_elastic_data_source._prepare_get_parameters('obj_type', f, requested_tree)
         assert real_index_name == 'test-obj-type'
         assert query == {
             'bool': {
                 'must': [
                     {'match': {'field7': 'test'}},
                 ],
+                'must_not': []
             }
         }
-        assert fields == ['field7']
-        assert list(cast(dict, runtime_mappings).keys()) == ['field7']
+        assert fields == ['field7', 'field8']
+        assert list(cast(dict, runtime_mappings).keys()) == ['field7', 'field8']
 
     def test_upsert(self, mock_elastic_data_source: ElasticDataSource):
         CoreDataObject = mock_elastic_data_source.data_object_factory  # noqa N806
