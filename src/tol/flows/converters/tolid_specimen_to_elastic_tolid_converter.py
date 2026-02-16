@@ -22,11 +22,11 @@ class TolidSpecimenToElasticTolidConverter(
                 'legacy_name': data_object.legacy_name,
             },
             to_one={
-                'tolid_species': self._data_object_factory(
+                'species': self._data_object_factory(
                     'species',
                     data_object.species.id
                 ),
-                'tolid_specimen': self._data_object_factory(
+                'specimen': self._data_object_factory(
                     'specimen',
                     data_object.specimen_id
                 )

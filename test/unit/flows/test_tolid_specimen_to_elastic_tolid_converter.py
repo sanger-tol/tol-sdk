@@ -55,8 +55,8 @@ class _MockDataSourceElastic(DataSource, Relational):
     @property
     def relationship_config(self) -> DataObject | None:
         return {'tolid': RelationshipConfig(to_one={
-            'tolid_species': 'species',
-            'tolid_specimen': 'specimen'
+            'species': 'species',
+            'specimen': 'specimen'
         })}
 
 
@@ -104,7 +104,7 @@ class TestTolidSpecimenToElasticTolidConverter(TestCase):
             'legacy_name': 'legacy_name_1',
         })
 
-        self.assertEqual(ret1.tolid_species.id, '123')
-        self.assertEqual(ret1.tolid_species.type, 'species')
-        self.assertEqual(ret1.tolid_specimen.id, 'specimen_id_1')
-        self.assertEqual(ret1.tolid_specimen.type, 'specimen')
+        self.assertEqual(ret1.species.id, '123')
+        self.assertEqual(ret1.species.type, 'species')
+        self.assertEqual(ret1.specimen.id, 'specimen_id_1')
+        self.assertEqual(ret1.specimen.type, 'specimen')

@@ -96,7 +96,7 @@ class _MockDataSource(DataSource, Relational):
     def relationship_config(self):
         rc_manifest = RelationshipConfig()
         rc_manifest.to_one = {
-            'sts_sampleset': 'sampleset',
+            'sampleset': 'sampleset',
         }
         return {
             'manifest': rc_manifest
@@ -208,7 +208,7 @@ class TestStsManifestToElasticManifestConverter(TestCase):
             'compliance_status': 'PASSED',
             'wildlife_compliance_processors': ['Test User'],
         })
-        self.assertEqual(ret1.sts_sampleset.id, 'test_sampleset')
+        self.assertEqual(ret1.sampleset.id, 'test_sampleset')
 
         with self.assertRaises(StopIteration):
             next(converteds)

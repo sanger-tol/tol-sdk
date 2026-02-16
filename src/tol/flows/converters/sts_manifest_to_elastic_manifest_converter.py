@@ -35,12 +35,13 @@ class StsManifestToElasticManifestConverter(
         ret = self._data_object_factory(
             'manifest',
             data_object.id,
-            attributes=attributes
+            attributes=attributes,
+            to_one={
+                'sampleset': self._data_object_factory(
+                    'sampleset',
+                    data_object.sampleset.id
+                ) if data_object.sampleset is not None else None,
+            }
         )
-        if data_object.sampleset is not None:
-            ret.sts_sampleset = self._data_object_factory(
-                'sampleset',
-                data_object.sampleset.id
-            )
 
         yield ret
