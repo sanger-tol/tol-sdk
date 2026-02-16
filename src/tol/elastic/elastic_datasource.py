@@ -297,28 +297,38 @@ class ElasticDataSource(
         object_type: str,
         object_filters: DataSourceFilter | None,
         requested_tree: ReqFieldsTree | None = None,
-    ) -> tuple[str | None, dict, list[Any] | None, Any | None]:
+    ) -> tuple[str | None, dict, list[Any] | None, dict | None]:
         """
         Prepares the real_index_name, query, fields, and runtime_mappings,
-        needed for all get operations
+        needed for all get operations.
+        `fields` and `runtime_mappings` are filtered by the fields in the requested tree,
+        if one was provided.
         """
 
+        # Prepare real_index_name
         index = self.__get_index_or_alias(object_type)
         real_index_name = self._get_indices().get(index)
+        
+        # Prepare query
         query = ElasticFilterConverter(self).convert(object_type, object_filters)
-        fields = self.runtime_fields[object_type].keys() \
-            if object_type in self.runtime_fields else None
-
-        # If there is a requested tree, ensure only fields from this tree
-        # are being fetched
-        if fields is not None and requested_tree is not None:
+        
+        # Prepare fields to request and their runtime_mappings.
+        # Filter runtime fields to have only those in the requested tree.
+        runtime_mappings = (
+            dict(self.runtime_fields[object_type])
+            if object_type in self.runtime_fields
+            else None
+        )
+        fields = runtime_mappings.keys() if runtime_mappings is not None else None
+        if requested_tree is not None and fields is not None and runtime_mappings is not None:
+            # Filter fields to fetch based on whether they're in the requested tree
             fields = filter(
                 requested_tree.has_attribute,
-                fields
+                fields,
             )
 
-        runtime_mappings = self.runtime_fields[object_type] \
-            if object_type in self.runtime_fields else None
+            # Only allow the runtime mappings of these fields
+            runtime_mappings = { key: runtime_mappings[key] for key in fields }
 
         return (
             real_index_name,
