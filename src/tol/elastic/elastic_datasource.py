@@ -308,10 +308,10 @@ class ElasticDataSource(
         # Prepare real_index_name
         index = self.__get_index_or_alias(object_type)
         real_index_name = self._get_indices().get(index)
-        
+
         # Prepare query
         query = ElasticFilterConverter(self).convert(object_type, object_filters)
-        
+
         # Prepare fields to request and their runtime_mappings.
         # Filter runtime fields to have only those in the requested tree.
         runtime_mappings = (
@@ -328,7 +328,7 @@ class ElasticDataSource(
             )
 
             # Only allow the runtime mappings of these fields
-            runtime_mappings = { key: runtime_mappings[key] for key in fields }
+            runtime_mappings = {key: runtime_mappings[key] for key in fields}
 
         return (
             real_index_name,
