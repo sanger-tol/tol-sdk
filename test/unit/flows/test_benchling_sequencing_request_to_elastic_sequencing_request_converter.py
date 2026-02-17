@@ -81,7 +81,6 @@ class TestBenchlingSequencingRequestToElasticSequencingRequestConverter(TestCase
             id_='sequencing_request_id_1',
             type_='sequencing_request',
             attributes={
-                'sanger_sample_id': 'sanger_sample_id_1',
                 'sts_id': 'sts_id_1',
                 'taxon_id': 'taxon_id_1',
                 'specimen_id': 'specimen_id_1',
@@ -98,7 +97,6 @@ class TestBenchlingSequencingRequestToElasticSequencingRequestConverter(TestCase
             id_='sequencing_request_id_2',
             type_='sequencing_request',
             attributes={
-                'sanger_sample_id': 'sanger_sample_id_2',
                 'sts_id': 'sts_id_2',
                 'taxon_id': 'taxon_id_2',
                 'specimen_id': 'specimen_id_2',
@@ -110,7 +108,7 @@ class TestBenchlingSequencingRequestToElasticSequencingRequestConverter(TestCase
 
         converteds = converter.convert(obj1)
         ret1 = next(converteds)
-        self.assertEqual(obj1.attributes['sanger_sample_id'], ret1.id)
+        self.assertEqual(obj1.id, ret1.id)
         self.assertEqual(obj1.type, ret1.type)
         self.assertEqual(ret1.attributes, {
             'sequencing_platform': 'pacbio',
@@ -126,7 +124,7 @@ class TestBenchlingSequencingRequestToElasticSequencingRequestConverter(TestCase
 
         converteds = converter.convert(obj2)
         ret2 = next(converteds)
-        self.assertEqual(obj2.attributes['sanger_sample_id'], ret2.id)
+        self.assertEqual(obj2.id, ret2.id)
         self.assertEqual(obj2.type, ret2.type)
         self.assertEqual(ret2.attributes, {
             'sequencing_platform': 'pacbio',

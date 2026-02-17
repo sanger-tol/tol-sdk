@@ -13,7 +13,7 @@ from ...core import (
 class BenchlingSequencingRequestToElasticSequencingRequestConverter(
         DataObjectToDataObjectOrUpdateConverter):
     def convert(self, data_object: DataObject) -> Iterable[DataObject]:
-        if data_object.sts_id is not None:
+        if data_object.sts_id and data_object.id:
             extraction = None
             extraction_container = None
             tissue_prep = None
@@ -34,7 +34,7 @@ class BenchlingSequencingRequestToElasticSequencingRequestConverter(
                 )
             ret = self._data_object_factory(
                 'sequencing_request',
-                data_object.sanger_sample_id,
+                data_object.id,
                 attributes={
                     **{k: v
                        for k, v in data_object.attributes.items()

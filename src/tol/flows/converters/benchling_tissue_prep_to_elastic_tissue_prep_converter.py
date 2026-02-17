@@ -15,12 +15,11 @@ class BenchlingTissuePrepToElasticTissuePrepConverter(
     def convert(self, data_object: DataObject) -> Iterable[DataObject]:
         ret = self._data_object_factory(
             'tissue_prep',
-            data_object.eln_tissue_prep_id,
+            data_object.id,
             attributes={
                 **{k: v
                    for k, v in data_object.attributes.items()
-                   if k not in ['eln_tissue_prep_id',
-                                'sts_id',
+                   if k not in ['sts_id',
                                 'taxon_id',
                                 'programme_id']}
             },

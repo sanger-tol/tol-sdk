@@ -13,7 +13,7 @@ from ...core import (
 class BenchlingExtractionToElasticExtractionConverter(
         DataObjectToDataObjectOrUpdateConverter):
     def convert(self, data_object: DataObject) -> Iterable[DataObject]:
-        if data_object.sts_id is not None:
+        if data_object.sts_id and data_object.id:
             ret = self._data_object_factory(
                 'extraction',
                 data_object.id,
