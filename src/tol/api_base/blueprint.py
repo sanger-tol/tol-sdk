@@ -274,10 +274,13 @@ def _core_blueprint(
         object_id_unencoded = urllib.parse.unquote(object_id)
         return controller.get_detail(object_type, object_id_unencoded)
 
-    @data_handler.route('/<object_type>', methods=['GET'])
+    @data_handler.route('/<object_type>', methods=['GET', 'POST'])
     def get_list(*, object_type: str):
         """Get a paginated list of objects of the specified type."""
-        request_args = ListGetParameters(request.args)
+        if request.method == 'POST':
+            request_args = ListGetParameters(request.json)
+        else:
+            request_args = ListGetParameters(request.args)
         controller = __new_controller(
             object_type,
             requested_fields=request_args.requested_fields,

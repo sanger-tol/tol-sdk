@@ -169,6 +169,18 @@ class TestBlueprint(BlueprintTestCase):
         # make sure it 404'd for the right reason
         assert 'completely_fake' in response.data.decode('utf-8')
 
+    def test_404_on_unknown_type_post(self):
+        """
+        Using an unknown type (e.g. 'completely_fake') returns a 404 (POST)
+        """
+        response = self.client.open('/data/completely_fake', method='POST', json={})
+        self.assert404(
+            response,
+            f'Response body is : {response.data.decode("utf-8")}'
+        )
+        # make sure it 404'd for the right reason
+        assert 'completely_fake' in response.data.decode('utf-8')
+
     def test_200_on_good_detail_get(self):
         """A good detail GET returns 200 and correct data, including decoding"""
         response = self.client.open('/data/polly/909%2f111', method='GET')
@@ -193,6 +205,32 @@ class TestBlueprint(BlueprintTestCase):
     def test_200_on_good_list_get(self):
         """A good list GET returns 200 and correct data"""
         response = self.client.open('/data/cracker', method='GET')
+        self.assert200(
+            response,
+            f'Response body is : {response.data.decode("utf-8")}'
+        )
+        expected_objects = [
+            {
+                'type': 'cracker',
+                'id': str(i + 1),
+                'attributes': {
+                    'parrot': 'parrot'
+                }
+            }
+            for i in range(len(response.json['data']))
+        ]
+        self.assertEqual(
+            response.json,
+            {
+                'meta': {'total': 400,
+                         'types': {'parrot': 'str'}},
+                'data': expected_objects
+            }
+        )
+
+    def test_200_on_good_list_get_post(self):
+        """A good list POST returns 200 and correct data"""
+        response = self.client.open('/data/cracker', method='POST', json={})
         self.assert200(
             response,
             f'Response body is : {response.data.decode("utf-8")}'
