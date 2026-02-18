@@ -168,7 +168,7 @@ class TestBlueprint(BlueprintTestCase):
         )
         # make sure it 404'd for the right reason
         assert 'completely_fake' in response.data.decode('utf-8')
-        
+
     def test_404_on_unknown_type_post(self):
         """
         Using an unknown type (e.g. 'completely_fake') returns a 404 (POST)
@@ -227,7 +227,7 @@ class TestBlueprint(BlueprintTestCase):
                 'data': expected_objects
             }
         )
-        
+
     def test_200_on_good_list_get_post(self):
         """A good list POST returns 200 and correct data"""
         response = self.client.open('/data/cracker', method='POST', json={})
