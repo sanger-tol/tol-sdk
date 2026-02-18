@@ -168,6 +168,18 @@ class TestBlueprint(BlueprintTestCase):
         )
         # make sure it 404'd for the right reason
         assert 'completely_fake' in response.data.decode('utf-8')
+        
+    def test_404_on_unknown_type_post(self):
+        """
+        Using an unknown type (e.g. 'completely_fake') returns a 404 (POST)
+        """
+        response = self.client.open('/data/completely_fake', method='POST', json={})
+        self.assert404(
+            response,
+            f'Response body is : {response.data.decode("utf-8")}'
+        )
+        # make sure it 404'd for the right reason
+        assert 'completely_fake' in response.data.decode('utf-8')
 
     def test_200_on_good_detail_get(self):
         """A good detail GET returns 200 and correct data, including decoding"""
@@ -218,8 +230,7 @@ class TestBlueprint(BlueprintTestCase):
         
     def test_200_on_good_list_get_post(self):
         """A good list POST returns 200 and correct data"""
-        body = {}  # We are mocking the result
-        response = self.client.open('/data/cracker', method='POST', json=body)
+        response = self.client.open('/data/cracker', method='POST', json={})
         self.assert200(
             response,
             f'Response body is : {response.data.decode("utf-8")}'
