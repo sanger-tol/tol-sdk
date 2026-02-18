@@ -215,6 +215,33 @@ class TestBlueprint(BlueprintTestCase):
                 'data': expected_objects
             }
         )
+        
+    def test_200_on_good_list_get_post(self):
+        """A good list POST returns 200 and correct data"""
+        body = {}  # We are mocking the result
+        response = self.client.open('/data/cracker', method='POST', json=body)
+        self.assert200(
+            response,
+            f'Response body is : {response.data.decode("utf-8")}'
+        )
+        expected_objects = [
+            {
+                'type': 'cracker',
+                'id': str(i + 1),
+                'attributes': {
+                    'parrot': 'parrot'
+                }
+            }
+            for i in range(len(response.json['data']))
+        ]
+        self.assertEqual(
+            response.json,
+            {
+                'meta': {'total': 400,
+                         'types': {'parrot': 'str'}},
+                'data': expected_objects
+            }
+        )
 
     def test_200_on_good_aggregations(self):
         """A good aggregations POST returns 200 and correct data"""

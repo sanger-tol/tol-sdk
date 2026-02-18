@@ -12,7 +12,12 @@ class FilterUtils:
     @classmethod
     def parse_to_datasource_filter(cls, __key: str, __value: str) -> DataSourceFilter:
         try:
-            filter_dict = json.loads(__value)
+            # When making POST request, flask converts incoming JSON to a dict already
+            # Only need to json.loads when using GET request
+            filter_dict = __value
+            if not isinstance(__value, dict):
+                filter_dict = json.loads(__value)
+
             if isinstance(filter_dict, dict):
                 dsf = DataSourceFilter(**filter_dict)
                 return dsf
