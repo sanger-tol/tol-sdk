@@ -338,7 +338,9 @@ class ElasticDataSource(
             # Only allow the runtime mappings of these fields
             runtime_mappings = {key: runtime_mappings[key] for key in fields}
 
-        fields = list(fields) if fields is not None else None  # Consume the `Iterable`
+        # Consume the `Iterable`
+        fields = list(fields) if fields is not None else None
+
         return (
             real_index_name,
             query,
