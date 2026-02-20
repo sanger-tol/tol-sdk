@@ -64,7 +64,8 @@ class StatusDataSource(
         page_size: Optional[int] = None,
         object_filters: Optional[DataSourceFilter] = None,
         sort_by: Optional[str] = None,
-        session: Optional[OperableSession] = None
+        session: Optional[OperableSession] = None,
+        **kwargs
     ) -> tuple[Iterable[DataObject], int]:
 
         urls = object_filters.and_['id']['in_list']['value']

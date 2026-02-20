@@ -151,7 +151,8 @@ class JiraDataSource(
         page_size: Optional[int] = None,
         object_filters: Optional[DataSourceFilter] = None,
         sort_by: Optional[str] = None,
-        session: Optional[OperableSession] = None
+        session: Optional[OperableSession] = None,
+        **kwargs
     ) -> tuple[Iterable[DataObject], int]:
         if page_size is None:
             page_size = self.get_page_size()
@@ -170,7 +171,8 @@ class JiraDataSource(
         self,
         object_type: str,
         object_filters: Optional[DataSourceFilter] = None,
-        session: Optional[OperableSession] = None
+        session: Optional[OperableSession] = None,
+        **kwargs
     ) -> Iterable[DataObject]:
 
         page = 1

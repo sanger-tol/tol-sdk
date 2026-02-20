@@ -151,6 +151,11 @@ def create_standard_models(
             nullable=True
         )
 
+        requested_fields: Mapped[list[str]] = mapped_column(
+            JSONB,
+            nullable=True
+        )
+
         prefix: Mapped[str] = mapped_column(nullable=False, default='')
         convert_class: Mapped[str] = mapped_column(nullable=True)
         candidate_key: Mapped[dict] = mapped_column(JSONB, nullable=True)

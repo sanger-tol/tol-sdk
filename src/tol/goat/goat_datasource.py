@@ -133,7 +133,8 @@ class GoatDataSource(
         page_size: Optional[int] = None,
         object_filters: Optional[DataSourceFilter] = None,
         sort_by: Optional[str] = None,
-        session: Optional[OperableSession] = None
+        session: Optional[OperableSession] = None,
+        **kwargs
     ) -> tuple[Iterable[DataObject], int]:
         if page_size is None:
             page_size = self.get_page_size()
@@ -152,7 +153,8 @@ class GoatDataSource(
         self,
         object_type: str,
         object_filters: Optional[DataSourceFilter] = None,
-        session: Optional[OperableSession] = None
+        session: Optional[OperableSession] = None,
+        **kwargs
     ) -> Iterable[DataObject]:
         # There is no way to page beyond 10000 in GoaT. After discussions with GoaT they
         # users to set off long queries. Therefore, we just set a large size and no offset here.
