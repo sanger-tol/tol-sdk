@@ -117,19 +117,19 @@ class TestEnaDataSource(TestCase):
             page_size=4
         )
 
-        assert total == 5
+        assert total == 7
         self.assertEqual(len(ret), 4)
         obj1 = ret[0]
-        self.assertEqual(obj1.id, 'GCA_922984935.1')
-        self.assertEqual(obj1.collected_by, 'Chris Newman | Ming-shan Tsai | David Macdonald | Christina Buesching | Peter Holland') # noqa
-        self.assertEqual(obj1.collection_date, '2019-09-19')
+        self.assertEqual(obj1.id, 'GCA_054556025.1')
+        self.assertEqual(obj1.collected_by, 'Quanshu Wu and Bingyao Huang') # noqa
+        self.assertEqual(obj1.collection_date, '2022')
 
         obj2 = ret[1]
-        self.assertEqual(obj2.id, 'GCA_922984935.2')
+        self.assertEqual(obj2.id, 'GCA_054556105.1')
 
         obj3 = ret[2]
-        self.assertEqual(obj3.id, 'GCA_922990625.1')
+        self.assertEqual(obj3.id, 'GCA_922984935.1')
 
         obj4 = ret[3]
-        self.assertEqual(obj4.id, 'GCA_958301625.1')
-        self.assertEqual(obj4.common_name, 'Japanese rose')
+        self.assertEqual(obj4.id, 'GCA_922984935.2')
+        self.assertEqual(obj4.sex, 'male')
