@@ -326,8 +326,10 @@ class ElasticDataSource(
             fields = filter(
                 lambda field: (
                     requested_tree.has_attribute(field)
-                    or object_filters is not None and object_filters.and_ is not None \
+                    or (
+                        object_filters is not None and object_filters.and_ is not None
                         and field in object_filters.and_.keys()
+                    )
                     or sort_by is not None and field in sort_by
                 ),
                 fields,
@@ -336,10 +338,11 @@ class ElasticDataSource(
             # Only allow the runtime mappings of these fields
             runtime_mappings = {key: runtime_mappings[key] for key in fields}
 
+        fields = list(fields) if fields is not None else None  # Consume the `Iterable`
         return (
             real_index_name,
             query,
-            list(fields) if fields is not None else None,  # Consume the `Iterable`
+            fields,
             runtime_mappings,
         )
 
