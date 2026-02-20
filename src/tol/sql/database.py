@@ -875,6 +875,13 @@ class DefaultDatabase(Database):
                 relation = getattr(prev_model, rel_name)
                 load = load.joinedload(relation) if load else joinedload(relation)
             if names := tree.attribute_names:
+                # SQLAlchemy will always add the primary key to the query, but
+                # if the `.id` column isn't the primary key then
+                # serialization to JSON will fail with the `raiseload` trap.
+                # Adding it unconditionally here is harmless - it won't
+                # appear twice in the SELECT statement.
+                names.append(model.get_id_column_name())
+
                 for col_name in model.get_all_foreign_key_names():
                     # Always load any to-one ID columns where the relation
                     # isn't being fetched so that we can create stub objects

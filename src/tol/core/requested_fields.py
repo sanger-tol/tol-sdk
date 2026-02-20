@@ -86,7 +86,7 @@ class ReqFieldsTree:
     def get_sub_tree(self, name: str) -> ReqFieldsTree | None:
         return self.__sub_trees.get(name)
 
-    def sub_trees(self) -> Iterator[str, ReqFieldsTree]:
+    def sub_trees(self) -> Iterator[tuple[str, ReqFieldsTree]]:
         """
         Iterator over `name, sub_tree`.
         """
