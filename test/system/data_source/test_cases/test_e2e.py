@@ -3,11 +3,12 @@
 # SPDX-License-Identifier: MIT
 
 from datetime import datetime
-from typing import Dict
+from typing import Dict, Iterable
 
 import pytest
 
 from tol.core import (
+    DataObject,
     DataSource,
     DataSourceError,
     DataSourceFilter,
