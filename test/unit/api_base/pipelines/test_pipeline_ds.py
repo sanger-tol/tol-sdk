@@ -47,6 +47,7 @@ class TestRunningPipelinesWithDataSources:
                         's3_bucket': 's3://bucket/path/to/file',
                         's3_filename': 'file.xlsx',
                         'spreadsheet_config': 'some_config',
+                        'upload_name': 'some_name',
                         'pipeline_id': '123123',
                         'destination': 'some_destination',
                         'dry_run': False
@@ -101,6 +102,7 @@ class TestRunningPipelinesWithDataSources:
                     's3_bucket': 's3://bucket/path/to/file',
                     's3_filename': 'file.xlsx',
                     'spreadsheet_config': 'some_config',
+                    'upload_name': 'some_name',
                     'pipeline_id': '123123',
                     'destination': 'some_destination',
                     'dry_run': False

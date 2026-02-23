@@ -34,6 +34,7 @@ class UploadData:
     spreadsheet_config: str
     pipeline_id: int
     destination: str
+    upload_name: str
     user_id: int
     dry_run: bool
 
@@ -43,6 +44,7 @@ REQUIRED_FIELDS: List = [
     's3_filename',
     'spreadsheet_config',
     'pipeline_id',
+    'upload_name',
     'destination',
     'dry_run'
 ]
@@ -110,6 +112,7 @@ def pipeline_steps_blueprint(
                 's3_bucket': upload_data.s3_bucket,
                 's3_filename': upload_data.s3_filename,
                 'spreadsheet_config': upload_data.spreadsheet_config,
+                'upload_name': upload_data.upload_name,
                 'pipeline_id': upload_data.pipeline_id,
                 'destination': upload_data.destination,
                 'user_id': upload_data.user_id,
@@ -300,6 +303,7 @@ def pipeline_steps_blueprint(
             spreadsheet_config=body['spreadsheet_config'],
             pipeline_id=pipeline_id,
             destination=body['destination'],
+            upload_name=body['upload_name'],
             user_id=user_id,
             dry_run=body['dry_run']
         )
