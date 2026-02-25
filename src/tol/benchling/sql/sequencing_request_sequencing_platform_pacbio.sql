@@ -10,9 +10,6 @@ It consists of 6 different SQL CTEs, each for a different data/submission model 
 	3. legacy_bnt: Data migrated from Batches and Tracking system B&T.
 	4. pooled DNA samples v1: Container based model for DNA pooled samples.
 
-The table produced also contains the eln_submission_sample_id and eln_file_registry_id 
-which uniquely idenfied each submission sample entity in Benchling Warehouse (BWH). 
-
 The eln_dna_extract_id should be used as the foreign key to the DNA extract entity the
 submission is derived from.
 
@@ -21,34 +18,34 @@ Output: Table with cols:
 1) sts_id: [integer] Tissue metadata. Origin: STS
 2) taxon_id: [character] Tissue metadata. Origin: STS
 3) submission_sample_id: [character] Foreign key to other entities and results in Benchling. Origin: BWH
-4) eln_file_registry_id: [character] id in Benchling Registry. Origin: BWH
-5) extraction_id: [character] Original DNA extract entity name. For pooled samples, the first DNA extract pooled. Origin: BWH
-6) submission_sample_name: [character] Entity name. Origin: BWH
-7) fluidx_container_id: [character] Container id of the DNA fluidx tube. Origin: BWH
-8) programme_id: [character] ToLID. Origin: BWH
-9) specimen_id: [character] Specimen ID. Origin: STS
-10) tube_name: [character] Name of the submission tube/container.
-11) sanger_sample_id: [character] Sanger Sample ID or Sanger UUID of the PacBio submission. 
-12) plate_name: [character] Name of submission plate.
-13) pipeline: [character] name of the submission pipeline.
-14) library_type: [character] Library type.
-15) retention_instructions: [character] sample retention instructions
-16) gb_yield_of_ccs_data_required: [double precision] CCS yield data required in GB.
-17) number_of_smrt_cells_required: [double precision]
-18) sheared_femto_fragment_size_bp: [double precision]
-19) post_spri_concentration_ngul: [double precision]
-20) post_spri_volume_ul: [jsonb]
-21) nanodrop_260280: [double precision] 
-22) nanodrop_260230: [double precision]
-23) nanodrop_concentration_ngul: [double precision]
-24) sample_prep_additional_requirements: [character]
-25) include_5mc_cells_in_cpg_motifs: [character]
-26) cc5_output_includes_kinetics_information: [character]
-27) priority: [character]
-28) library_batch_id: [character] Library batch ID from LR Benchling. Origin: BWH
-29) completion_date: [Date]
-30) sequencing_platform: [character] Sequencing platform: pacbio.
-31) source: [character] Data source: v1, v1_pooled, v2, v2_pooled, legacy_bnt
+4) extraction_id: [character] Original DNA extract entity name. For pooled samples, the first DNA extract pooled. Origin: BWH
+5) submission_sample_name: [character] Entity name. Origin: BWH
+6) fluidx_container_id: [character] Container id of the DNA fluidx tube. Origin: BWH
+7) tube_id: [character] Barcode of the DNA container.
+7) programme_id: [character] ToLID. Origin: BWH
+8) specimen_id: [character] Specimen ID. Origin: STS
+9) tube_name: [character] Name of the submission tube/container.
+10) sanger_sample_id: [character] Sanger Sample ID or Sanger UUID of the PacBio submission. 
+11) plate_name: [character] Name of submission plate.
+12) pipeline: [character] name of the submission pipeline.
+13) library_type: [character] Library type.
+14) retention_instructions: [character] sample retention instructions
+15) gb_yield_of_ccs_data_required: [double precision] CCS yield data required in GB.
+16) number_of_smrt_cells_required: [double precision]
+17) sheared_femto_fragment_size_bp: [double precision]
+18) post_spri_concentration_ngul: [double precision]
+19) post_spri_volume_ul: [jsonb]
+20) nanodrop_260280: [double precision] 
+21) nanodrop_260230: [double precision]
+22) nanodrop_concentration_ngul: [double precision]
+23) sample_prep_additional_requirements: [character]
+24) include_5mc_cells_in_cpg_motifs: [character]
+25) cc5_output_includes_kinetics_information: [character]
+26) priority: [character]
+27) library_batch_id: [character] Library batch ID from LR Benchling. Origin: BWH
+28) completion_date: [Date]
+29) sequencing_platform: [character] Sequencing platform: pacbio.
+30) source: [character] Data source: v1, v1_pooled, v2, v2_pooled, legacy_bnt
 
 NOTES: 
 
@@ -71,13 +68,12 @@ pacbio_submissions_container_routine AS (
 		t.taxon_id,
 		tp.id AS tissue_prep_id,
 		subsam.id AS submission_sample_id,
-		subsam.file_registry_id$ AS eln_file_registry_id,
 		subsam.original_dna_extract AS extraction_id,
 		subsam.name$ AS submission_sample_name,
 		c_dna.id AS fluidx_container_id,
 		t.programme_id, 
 		t.specimen_id, 
-		con.name AS tube_name,
+		con.barcode AS tube_id,
 		CASE
 			WHEN pbsum.submission_date < DATE '2025-09-01'
 				THEN con.name
@@ -144,13 +140,12 @@ pacbio_submissions_container_pooled AS (
 		t.taxon_id,
 		tp.id AS tissue_prep_id,
 		subsam.id AS submission_sample_id,
-		subsam.file_registry_id$ AS eln_file_registry_id,
 		subsam.pooled_sample  AS extraction_id,
 		subsam.name$ AS eln_submission_sample_name,
 		c_pool.id AS fluidx_container_id,
 		t.programme_id, 
 		t.specimen_id,
-		con.name AS tube_name,
+		con.name AS tube_id,
 		CASE
 			WHEN pbsum.submission_date < DATE '2025-09-01'
 				THEN con.name
@@ -219,13 +214,12 @@ pacbio_submissions_container_legacy_deprecated AS (
 		t.taxon_id,
 		tp.id AS tissue_prep_id,
 		subsam.id AS submission_sample_id,
-		subsam.file_registry_id$ AS eln_file_registry_id,
 		subsam.original_dna_extract AS extraction_id,
 		subsam.name$ AS submission_sample_name,
 		c_dna.id AS fluidx_container_id,
 		t.programme_id,
 		t.specimen_id,
-		con.name AS tube_name,
+		con.name AS tube_id,
 		con.name AS sanger_sample_id,
 		NULL::varchar AS plate_name,
 		NULL::varchar AS pipeline,
@@ -283,13 +277,12 @@ pacbio_submissions_plate_automated_manifest AS (
 		t.taxon_id,
 		tp.id AS tissue_prep_id,
 		subsam.id AS submission_sample_id,
-		subsam.file_registry_id$ AS eln_file_registry_id,
 		subsam.originaL_dna_extract AS extraction_id,
 		subsam.name$ AS submission_sample_name,
 		c_dna.id AS fluidx_container_id,
 		t.programme_id,
 		t.specimen_id,
-		con.name AS tube_name,
+		con.name AS tube_id,
 		con.name AS sanger_sample_id,
 		plt.name AS plate_name,
 		pbsubm_p.pipeline,
@@ -351,13 +344,12 @@ pacbio_submissions_plate_automated_manifest_pooled AS (
 		t.taxon_id,
 		tp.id AS tissue_prep_id,
 		subsam.id AS eln_submission_sample_id,
-		subsam.file_registry_id$ AS eln_file_registry_id,
 		subsam.pooled_sample AS extraction_id,
 		subsam.name$ AS submission_sample_name,
 		c_pool.id AS fluidx_container_id,
 		t.programme_id,
 		t.specimen_id,
-		con.name AS tube_name,
+		con.name AS tube_id,
 		con.name AS sanger_sample_id,
 		plt.name AS plate_name,
 		pbsubm_p.pipeline,
@@ -417,13 +409,12 @@ pacbio_submissions_plate_routine AS (
 		t.taxon_id,
 		tp.id AS tissue_prep_id,
 		subsam.id AS submission_sample_id,
-		subsam.file_registry_id$ AS eln_file_registry_id,
 		subsam.original_dna_extract AS extraction_id,
 		subsam.name$ AS submission_sample_name,
 		c_dna.id AS fluidx_container_id,
 		t.programme_id,
 		t.specimen_id,
-		c_subsam.name AS tube_name,
+		c_subsam.name AS tube_id,
 		ssid.sanger_sample_id AS sanger_sample_id,
 		plate.name$ AS plate_name,
 		NULL::varchar AS pipeline,
@@ -492,13 +483,12 @@ pacbio_submissions_plate_routine_pooled AS (
 		t.taxon_id,
 		tp.id AS tissue_prep_id,
 		subsam.id AS submission_sample_id,
-		subsam.file_registry_id$ AS eln_file_registry_id,
 		subsam.pooled_sample AS extraction_id,
 		subsam.name$ AS submission_sample_name,
 		c_pool.id AS fluidx_container_id,
 		t.programme_id,
 		t.specimen_id,
-		c_subsam.name AS tube_name,
+		c_subsam.name AS tube_id,
 		ssid.sanger_sample_id AS sanger_sample_id,
 		plate.name$ AS plate_name,
 		NULL::varchar AS pipeline,
