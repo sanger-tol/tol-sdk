@@ -186,6 +186,7 @@ def _core_blueprint(
     url_prefix: str,
     auth_inspector: Optional[AuthInspector] = None,
     include_all_to_ones: bool = True,
+    cache_service: Optional[CacheService] = None,
 ) -> DataBlueprint:
     """
     Create the core blueprint responsible for managing DataSource endpoints.
@@ -202,7 +203,7 @@ def _core_blueprint(
             inspector for request authorisation.
         include_all_to_ones (bool): Whether to fetch or store all to-one related objects
             when fetching or serialising DataObjects.
-
+        cache_service (Optional[CacheService], optional): Cache service for caching responses.
     Returns:
         DataBlueprint: A configured blueprint with all data endpoints and error handlers.
 
@@ -226,6 +227,7 @@ def _core_blueprint(
     def __new_controller(
         object_type: str,
         requested_fields: list[str] | None = None,
+        cache_service: Optional[CacheService] = None,
     ) -> Controller:
         """
         Create a new Controller instance for handling requests to a specific object type.
@@ -233,6 +235,7 @@ def _core_blueprint(
         Args:
             object_type (str): The type of object this controller will handle.
             requested_fields (list[str] | None, optional): Specific fields to include in responses.
+            cache_service (Optional[CacheService], optional): Cache service for caching responses.
 
         Returns:
             Controller: Configured controller instance.
@@ -254,7 +257,8 @@ def _core_blueprint(
             prefix=url_prefix,
             hop_limit=hop_limit,
         )
-        return Controller(data_source, view, req_fields_tree, auth_inspector=auth_inspector)
+        return Controller(data_source, view, req_fields_tree,
+                          auth_inspector=auth_inspector, cache_service=cache_service)
 
     def __new_parser(
         object_type: str,
