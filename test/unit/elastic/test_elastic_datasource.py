@@ -3,13 +3,16 @@
 # SPDX-License-Identifier: MIT
 
 from datetime import datetime
+from typing import cast
 from unittest import mock
 
 from tol.core import (
     DataObject,
     DataSourceError,
+    DataSourceFilter,
 )
 from tol.core.relationship import RelationshipConfig
+from tol.core.requested_fields import ReqFieldsTree
 from tol.elastic import (
     ElasticDataSource,
     ElasticUpdateInputConverter,
@@ -104,6 +107,65 @@ class TestUidSubstitution:
 
 
 class TestElasticDataSource:
+
+    def test_requested_tree_filtering(self, mock_elastic_data_source: ElasticDataSource):
+        # Test no requested tree
+        f = DataSourceFilter()
+        f.and_ = {
+            'field7': {'eq': {'value': 'test'}},
+            'field8': {'eq': {'value': '2020-01-01', 'negate': True}}
+        }
+        (
+            real_index_name,
+            query,
+            fields,
+            runtime_mappings
+        ) = mock_elastic_data_source._prepare_get_parameters(
+            object_type='obj_type',
+            object_filters=f,
+        )
+        assert real_index_name == 'test-obj-type'
+        assert query == {
+            'bool': {
+                'must': [
+                    {'match': {'field7': 'test'}},
+                ],
+                'must_not': [
+                    {'match': {'field8': datetime(2020, 1, 1, 0, 0)}},
+                ]
+            }
+        }
+        assert fields == ['field7', 'field8']
+        assert list(cast(dict, runtime_mappings).keys()) == ['field7', 'field8']
+
+        # Test with requested tree.
+        # Both fields and mappings should have filters
+        f = DataSourceFilter()
+        f.and_ = {
+            'field7': {'eq': {'value': 'test'}},
+        }
+        requested_tree = ReqFieldsTree('obj_type', mock_elastic_data_source, ['field8'])
+        (
+            real_index_name,
+            query,
+            fields,
+            runtime_mappings
+        ) = mock_elastic_data_source._prepare_get_parameters(
+            object_type='obj_type',
+            object_filters=f,
+            requested_tree=requested_tree,
+        )
+        assert real_index_name == 'test-obj-type'
+        assert query == {
+            'bool': {
+                'must': [
+                    {'match': {'field7': 'test'}},
+                ],
+                'must_not': []
+            }
+        }
+        assert fields == ['field7', 'field8']
+        assert list(cast(dict, runtime_mappings).keys()) == ['field7', 'field8']
 
     def test_upsert(self, mock_elastic_data_source: ElasticDataSource):
         CoreDataObject = mock_elastic_data_source.data_object_factory  # noqa N806
