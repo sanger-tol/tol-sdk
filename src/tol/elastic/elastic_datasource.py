@@ -320,10 +320,10 @@ class ElasticDataSource(
             if object_type in self.runtime_fields
             else None
         )
-        fields = runtime_mappings.keys() if runtime_mappings is not None else None
+        fields = list(runtime_mappings.keys()) if runtime_mappings is not None else None
         if requested_tree is not None and fields is not None and runtime_mappings is not None:
             # Filter fields to fetch based on whether they're in the requested tree
-            fields = filter(
+            fields = list(filter(
                 lambda field: (
                     requested_tree.has_attribute(field)
                     or (
@@ -333,13 +333,10 @@ class ElasticDataSource(
                     or sort_by is not None and field in sort_by
                 ),
                 fields,
-            )
+            ))
 
             # Only allow the runtime mappings of these fields
             runtime_mappings = {key: runtime_mappings[key] for key in fields}
-
-        # Consume the `Iterable`
-        fields = list(fields) if fields is not None else None
 
         return (
             real_index_name,
