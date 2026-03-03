@@ -65,7 +65,7 @@ class StsFieldsValidator(Validator):
                 self.add_error(
                     object_id=obj.id,
                     detail=f'Field {field.get("data_input_key")} is required '
-                           f'for project {self.__config.project_code}',
+                           f'for project',
                     field=field.get('data_input_key'),
                 )
                 continue
@@ -79,7 +79,7 @@ class StsFieldsValidator(Validator):
                 self.add_error(
                     object_id=obj.id,
                     detail=f'Field {field.get("data_input_key")} is required to have a value '
-                           f'for project {self.__config.project_code}',
+                           f'for project.',
                     field=field.get('data_input_key'),
                 )
                 continue
@@ -94,8 +94,7 @@ class StsFieldsValidator(Validator):
                         object_id=obj.id,
                         detail=f'Field {field.get("data_input_key")} value '
                                f'"{field_value}" not found in allowed values '
-                               f'{allowed_values} for project '
-                               f'{self.__config.project_code}',
+                               f'{allowed_values} for project.',
                         field=field.get('data_input_key'),
                     )
 
@@ -122,8 +121,7 @@ class StsFieldsValidator(Validator):
         #     self.add_error(
         #         object_id=obj.id,
         #         detail=f'Field {field.get("data_input_key")} value '
-        #                 f'"{field_value}" is not a string for project '
-        #                 f'{self.__config.project_code}',
+        #                 f'"{field_value}" is not a string for project.',
         #         field=field.get('data_input_key'),
         #     )
         #     return
@@ -134,8 +132,7 @@ class StsFieldsValidator(Validator):
                 object_id=obj.id,
                 detail=f'Field {field.get("data_input_key")} value '
                        f'"{field_value}" is shorter than minimum length '
-                       f'"{field.get("min")}" for project '
-                       f'{self.__config.project_code}',
+                       f'"{field.get("min")}" for project.',
                 field=field.get('data_input_key'),
             )
         if field.get('max') and len(field_value) > field.get('max'):
@@ -143,8 +140,7 @@ class StsFieldsValidator(Validator):
                 object_id=obj.id,
                 detail=f'Field {field.get("data_input_key")} value '
                        f'"{field_value}" is longer than maximum length '
-                       f'"{field.get("max")}" for project '
-                       f'{self.__config.project_code}',
+                       f'"{field.get("max")}" for project.',
                 field=field.get('data_input_key'),
             )
 
@@ -159,8 +155,7 @@ class StsFieldsValidator(Validator):
             self.add_error(
                 object_id=obj.id,
                 detail=f'Field {field.get("data_input_key")} value '
-                       f'"{field_value}" is not a number for project '
-                       f'{self.__config.project_code}',
+                       f'"{field_value}" is not a number for project.',
                 field=field.get('data_input_key'),
             )
             return
@@ -171,8 +166,7 @@ class StsFieldsValidator(Validator):
                 object_id=obj.id,
                 detail=f'Field {field.get("data_input_key")} value '
                        f'"{field_value}" is less than minimum value '
-                       f'"{field.get("min")}" for project '
-                       f'{self.__config.project_code}',
+                       f'"{field.get("min")}" for project.',
                 field=field.get('data_input_key'),
             )
         if field.get('max') is not None and field_value > field.get('max'):
@@ -180,8 +174,7 @@ class StsFieldsValidator(Validator):
                 object_id=obj.id,
                 detail=f'Field {field.get("data_input_key")} value '
                        f'"{field_value}" is greater than maximum value '
-                       f'"{field.get("max")}" for project '
-                       f'{self.__config.project_code}',
+                       f'"{field.get("max")}" for project.',
                 field=field.get('data_input_key'),
             )
 
@@ -196,8 +189,7 @@ class StsFieldsValidator(Validator):
             self.add_error(
                 object_id=obj.id,
                 detail=f'Field {field.get("data_input_key")} value '
-                       f'"{field_value}" is not a boolean (Y/N) for project '
-                       f'{self.__config.project_code}',
+                       f'"{field_value}" is not a boolean (Y/N) for project.',
                 field=field.get('data_input_key'),
             )
 
@@ -211,8 +203,7 @@ class StsFieldsValidator(Validator):
             self.add_error(
                 object_id=obj.id,
                 detail=f'Field {field.get("data_input_key")} value '
-                       f'"{field_value}" is not a date string for project '
-                       f'{self.__config.project_code}',
+                       f'"{field_value}" is not a date string for project.',
                 field=field.get('data_input_key'),
             )
             return
@@ -224,6 +215,6 @@ class StsFieldsValidator(Validator):
                     object_id=obj.id,
                     detail=f'Field {field.get("data_input_key")} value '
                            f'"{field_value}" is not within the allowed date '
-                           f'range for project {self.__config.project_code}',
+                           f'range for project.',
                     field=field.get('data_input_key'),
                 )
