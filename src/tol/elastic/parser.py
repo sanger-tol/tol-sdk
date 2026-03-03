@@ -272,10 +272,10 @@ class DefaultElasticUpdateInputParser(
         u = self._convert_dates(transfer.update)
         f = DataSourceFilter()
         f.and_ = {}
-        u = self._prefix_fields(u, transfer.field_prefix)
         for key in transfer.candidate_key:
             # Don't want key in the upsert as it cannot change anyway
             f.and_[key] = {'eq': {'value': u.pop(key)}}
+        u = self._prefix_fields(u, transfer.field_prefix)
         u = self._convert_data_objects_in_update_to_dict(u)
         query = ElasticFilterConverter(self.__data_source).convert(
             transfer.object_type, object_filters=f
