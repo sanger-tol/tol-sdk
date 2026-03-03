@@ -38,5 +38,6 @@ class BenchlingTissueToStsSampleConverter(
         else:
             return obj.sts_id, {
                 'eln_id': obj.id,
-                'eln_updated_at': datetime.now()
+                'eln_updated_at': datetime.now(),
+                'ep_exported': True
             }
