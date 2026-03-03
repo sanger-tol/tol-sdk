@@ -36,6 +36,7 @@ from ..core.data_source_dict import DataSourceDict
 from ..core.operator import Relational
 from ..core.operator.operator_config import DefaultOperatorConfig, OperatorConfig
 from ..core.requested_fields import ReqFieldsTree
+from ..services.cache import CacheService, cache
 
 
 class DataBlueprint(Blueprint):
@@ -92,15 +93,19 @@ class CustomBlueprint(Blueprint):
         name (str, optional): The name for this blueprint. Defaults to __name__.
     """
 
-    def __init__(self, url_prefix: str, name: str = __name__) -> None:
+    def __init__(self, url_prefix: str, name: str = __name__,
+                 cache_service: Optional[CacheService] = None) -> None:
         """
         Initialize the CustomBlueprint.
 
         Args:
             url_prefix (str): URL prefix for custom routes.
             name (str, optional): Blueprint name. Defaults to __name__.
+            cache_service (Optional[CacheService], optional):
+                Cache service instance. Defaults to None.
         """
         super().__init__(name, __name__, url_prefix=url_prefix)
+        self.cache_service = cache_service
 
 
 def _config_blueprint(
@@ -443,6 +448,7 @@ def data_blueprint(
         url_prefix,
         auth_inspector=auth_inspector,
         include_all_to_ones=include_all_to_ones,
+        cache_service=cache
     )
     core_bp.register_blueprint(config_bp)
 
@@ -477,6 +483,7 @@ def custom_blueprint(url_prefix: str = '/custom', name: str = 'custom') -> DataB
         app.register_blueprint(custom_bp)
         ```
     """
-    custom_handler = CustomBlueprint(name=name, url_prefix=url_prefix)
+    custom_handler = CustomBlueprint(name=name, url_prefix=url_prefix,
+                                     cache_service=cache)
 
     return custom_handler

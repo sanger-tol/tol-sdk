@@ -3,3 +3,4 @@
 # SPDX-License-Identifier: MIT
 
 from .s3_client import S3Client # noqa
+from .cache import cache # noqa

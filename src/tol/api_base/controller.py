@@ -12,7 +12,11 @@ aggregations, and relationship management with proper validation and authorisati
 
 from __future__ import annotations
 
+import hashlib
 import inspect
+import json
+import logging
+import time
 from inspect import BoundArguments
 from typing import Any, Callable, Iterable, Optional, Type
 
@@ -50,8 +54,11 @@ from ..core.operator import (
     Upserter,
 )
 from ..core.operator.updater import DataObjectUpdate
+from ..services.cache import CacheService, cache
 
 
+# Will keep logging here, while in development
+logger = logging.getLogger(__name__)
 EmptySuccessResponse = dict[str, bool]
 
 
@@ -86,10 +93,56 @@ def __is_supported(
     return False
 
 
+def _build_cache_key(controller: Controller, object_type: str,
+                     operator_method: OperatorMethod, args: tuple, kwargs: dict) -> str:
+    """Build a stable cache key from the request parameters."""
+    cache_kwargs = {k: v for k, v in kwargs.items() if k != 'ext_and'}
+
+    def serialise(val):
+        """Serialise a value into a JSON-serialisable form for hashing."""
+        if isinstance(val, ListGetParameters):
+            return val.as_cache_key_dict()
+        elif isinstance(val, DataObject):
+            return {'id': val.id, 'type': val.type}
+        elif hasattr(val, 'model_dump'):
+            return val.model_dump(mode='json')
+        elif hasattr(val, '__dict__'):
+            return {k: serialise(v) for k, v in vars(val).items()}
+        elif isinstance(val, DataSourceFilter):
+            return val.to_dict()
+        elif isinstance(val, (list, tuple)):
+            return [serialise(v) for v in val]
+        elif isinstance(val, dict):
+            return {k: serialise(v) for k, v in val.items()}
+        elif isinstance(val, (str, int, float, bool, type(None))):
+            return val
+        else:
+            return str(val)
+
+    try:
+        # Create a hash of the serialised arguments to use as part of the cache key
+        serialised = [serialise(a) for a in args] + [serialise(cache_kwargs)]
+        logger.error(
+            f'[CACHE KEY INPUT] {object_type}.{operator_method}: \
+                {json.dumps(serialised, sort_keys=True, indent=2)}')
+        args_hash = hashlib.sha256(
+            json.dumps(serialised, sort_keys=True).encode()
+        ).hexdigest()
+    except TypeError:
+        # If any part of the arguments is not serialisable,
+        # fall back to a simple string representation
+        # Might have caught all the current cases with the serialise function,
+        # but this is a safeguard against future changes
+        args_hash = hashlib.sha256(str((args, cache_kwargs)).encode()).hexdigest()
+
+    return controller.cache_service.build_cache_key(object_type, str(operator_method), args_hash)
+
+
 def validate(
     operator_class: Type[Operator],
     object_method_name: str,
     operator_method: OperatorMethod,
+    cache_ttl: Optional[int] = None,
 ) -> Callable:
     """
     Decorator factory for validating Controller method operations.
@@ -111,7 +164,6 @@ def validate(
             is not inherited from.
         UnsupportedOperationError: If the operation is not supported by the data source.
     """
-
     def decorator(method: Callable) -> Callable:
         sig = inspect.signature(method)
 
@@ -125,16 +177,40 @@ def validate(
                 raise UnsupportedOperationError(object_type, str(operator_method))
 
             ext_and = controller.inspect_auth(object_type, operator_method, bound_args)
-            return method(
-                controller,
-                object_type,
-                *args,
-                ext_and=ext_and,
-                **kwargs,
-            )
+
+            if cache_ttl is not None and controller.cache_service:
+                cache_key = _build_cache_key(controller, object_type,
+                                             operator_method, args, kwargs)
+
+                t0 = time.perf_counter()
+                cached = controller.cache_service.get(cache_key)
+                cache_time = (time.perf_counter() - t0) * 1000
+
+                if cached is not None:
+                    logger.error(
+                        f'[CACHE HIT]  {object_type}.{operator_method} '
+                        f'key={cache_key} redis_lookup={cache_time:.2f}ms'
+                    )
+                    return cached
+
+                t0 = time.perf_counter()
+                result = method(controller, object_type, *args, ext_and=ext_and, **kwargs)
+                db_time = (time.perf_counter() - t0) * 1000
+
+                # Might need to be a little bit more clever with tags becasue it will be really
+                # inefficient to invalidate on object_type, as it's the top level for most data.
+                # However, it's the easiest for now.
+                controller.cache_service.set(cache_key, result, ttl=cache_ttl, tags=[object_type])
+                logger.error(
+                    f'[CACHE MISS] {object_type}.{operator_method} '
+                    f'key={cache_key} db_fetch={db_time:.2f}ms redis_lookup={cache_time:.2f}ms '
+                    f'saved={db_time - cache_time:.2f}ms'
+                )
+                return result
+
+            return method(controller, object_type, *args, ext_and=ext_and, **kwargs)
 
         return wrapper
-
     return decorator
 
 
@@ -162,6 +238,7 @@ class Controller:
         view: View,
         requested_tree: ReqFieldsTree | None = None,
         auth_inspector: Optional[AuthInspector] = None,
+        cache_service: Optional[CacheService] = None,
     ) -> None:
         """
         Initialise the Controller with required dependencies.
@@ -169,13 +246,26 @@ class Controller:
         Args:
             data_source: The OperableDataSource instance for data operations.
             view: The View instance for response formatting.
-            auth_inspector: Optional AuthInspector for authorisation validation.
+            auth_inspector: Optional[AuthInspector] for authorisation validation.
                 If None, no authorisation checks will be performed.
+            cache_service: Optional CacheService instance for caching responses.
+                If None, caching will be disabled.
         """
         self.__data_source = data_source
         self.__view = view
         self.__requested_tree = requested_tree
         self.__inspector = auth_inspector
+        self.__cache_service = cache_service or cache
+
+    @property
+    def cache_service(self) -> Optional[CacheService]:
+        """
+        Get the cache service instance.
+
+        Returns:
+            The cache service instance used by this controller, or None if caching is not enabled.
+        """
+        return self.__cache_service
 
     @property
     def data_source(self) -> OperableDataSource:
@@ -209,7 +299,7 @@ class Controller:
         if self.__inspector is not None:
             return self.__inspector(object_type, operation, bound_args)
 
-    @validate(DetailGetter, 'get_by_id', OperatorMethod.DETAIL)
+    @validate(DetailGetter, 'get_by_id', OperatorMethod.DETAIL, cache_ttl=3600)
     def get_detail(self, object_type: str, object_id: str, **kwargs) -> ResponseDict:
         """
         Retrieve an individual object of the specified type and identifier.
@@ -232,7 +322,7 @@ class Controller:
         data_object = self.__get_detail_object(object_type, object_id)
         return self.__view.dump(data_object)
 
-    @validate(PageGetter, 'get_list_page', OperatorMethod.PAGE)
+    @validate(PageGetter, 'get_list_page', OperatorMethod.PAGE, cache_ttl=3600)
     def get_list(
         self,
         object_type: str,
@@ -273,7 +363,7 @@ class Controller:
         }
         return self.__view.dump_bulk(data_objects, document_meta=meta)
 
-    @validate(Counter, 'get_count', OperatorMethod.COUNT)
+    @validate(Counter, 'get_count', OperatorMethod.COUNT, cache_ttl=3600)
     def get_count(
         self,
         object_type: str,
@@ -304,7 +394,7 @@ class Controller:
         document_meta = {'total': total}
         return self.__view.dump_bulk([], document_meta=document_meta)
 
-    @validate(Counter, 'get_stats', OperatorMethod.STATS)
+    @validate(Counter, 'get_stats', OperatorMethod.STATS, cache_ttl=3600)
     def get_stats(
         self,
         object_type: str,
@@ -337,7 +427,7 @@ class Controller:
         document_meta = {**stats, 'type': object_type}
         return self.__view.dump_bulk([], document_meta=document_meta)
 
-    @validate(GroupStatter, 'get_group_stats', OperatorMethod.GROUP_STATS)
+    @validate(GroupStatter, 'get_group_stats', OperatorMethod.GROUP_STATS, cache_ttl=3600)
     def get_group_stats(
         self,
         object_type: str,
@@ -477,7 +567,7 @@ class Controller:
         else:
             return {'success': True}
 
-    @validate(Aggregator, 'get_aggregations', OperatorMethod.AGGREGATE)
+    @validate(Aggregator, 'get_aggregations', OperatorMethod.AGGREGATE, cache_ttl=3600)
     def post_aggregations(
         self,
         object_type: str,
@@ -514,7 +604,7 @@ class Controller:
         }
         return self.__view.dump_bulk([], document_meta=document_meta)
 
-    @validate(Cursor, 'get_cursor_page', OperatorMethod.CURSOR)
+    @validate(Cursor, 'get_cursor_page', OperatorMethod.CURSOR, cache_ttl=3600)
     def get_cursor_page(
         self,
         object_type: str,
@@ -553,7 +643,7 @@ class Controller:
 
         return self.__view.dump_bulk(data_objects, document_meta=meta)
 
-    @validate(Relational, 'get_recursive_relation', OperatorMethod.TO_ONE)
+    @validate(Relational, 'get_recursive_relation', OperatorMethod.TO_ONE, cache_ttl=3600)
     def get_recursive_relation(
         self, data_object: DataObject, relationship_hops: list[str], **kwargs
     ) -> ResponseDict:
@@ -581,7 +671,7 @@ class Controller:
             raise RecursiveRelationNotFoundException()
         return self.__view.dump(related_object)
 
-    @validate(Relational, 'get_to_many_relations_page', OperatorMethod.TO_MANY)
+    @validate(Relational, 'get_to_many_relations_page', OperatorMethod.TO_MANY, cache_ttl=3600)
     def get_many_relations_page(
         self,
         data_object: DataObject,

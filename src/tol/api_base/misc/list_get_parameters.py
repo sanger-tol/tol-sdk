@@ -18,6 +18,10 @@ class ListGetParameters:
     def __init__(self, request_args: Dict[str, str]) -> None:
         self.__request_args = request_args
 
+    def as_cache_key_dict(self) -> Dict[str, str]:
+        """Return the raw request args for use in cache key generation."""
+        return self.__request_args
+
     @property
     def page_size(self) -> Optional[int]:
         """The optional page size to return"""

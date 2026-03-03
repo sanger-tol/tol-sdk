@@ -34,6 +34,7 @@ dependencies = [
   "setuptools == 69.0.3",
   "dateparser == 1.2.1",
   "pydantic == 2.11.4",
+  "pydantic-settings == 2.13.1"
 ]
 
 [project.optional-dependencies]
@@ -54,6 +55,7 @@ sheets = [
     "gspread >= 5.12.0"
 ]
 s3 = ["minio == 7.2.15"]
+redis = ["redis == 7.2.1"]
 all = [
     "tol-sdk[api-base]",
     "tol-sdk[benchling]",
@@ -64,7 +66,9 @@ all = [
     "tol-sdk[mysql]",
     "tol-sdk[postgresql]",
     "tol-sdk[prefect]",
-    "tol-sdk[sheets]"
+    "tol-sdk[sheets]",
+    "tol-sdk[s3]",
+    "tol-sdk[redis]"
 ]
 docs = [
     "sphinx",
