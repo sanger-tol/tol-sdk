@@ -24,6 +24,7 @@ class TolqcDataToElasticRunDataConverter(DataObjectToDataObjectOrUpdateConverter
         target_attributes['auto_qc'] = data_object.auto_qc
         target_attributes['qc'] = data_object.qc
         target_attributes['read_length_n50'] = data_object.read_length_n50
+        target_attributes['reads'] = data_object.reads
         target_attributes['bases'] = data_object.bases
         target_attributes['bases_a'] = data_object.bases_a
         target_attributes['bases_c'] = data_object.bases_c
