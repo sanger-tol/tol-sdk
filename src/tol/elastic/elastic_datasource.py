@@ -275,19 +275,18 @@ class ElasticDataSource(
         # Handle flat fields
         if name in self.attribute_types[object_type]:
             return self.attribute_types[object_type][name]
-        
         # Handle Relationship fields
         if '.' in name and self.relationship_config is not None:
             # Same bit as _field_or_keyword is doing
             relationship_name, attribute = name.split('.')[0], name.split('.')[1]
-            if (object_type in self.relationship_config and
-                    relationship_name in self.relationship_config[object_type].to_one):
+            if (object_type in self.relationship_config
+                    and relationship_name in self.relationship_config[object_type].to_one):
                 relationship_object_type = (
                     self.relationship_config[object_type].to_one[relationship_name]
                 )
                 if attribute in self.attribute_types[relationship_object_type]:
                     return self.attribute_types[relationship_object_type][attribute]
-        
+
     def _field_or_keyword(self, object_type: str, name: str):
         """
         Map our field format to Elastic's format
