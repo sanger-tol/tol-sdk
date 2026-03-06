@@ -267,6 +267,27 @@ class ElasticDataSource(
         start = len(self.index_prefix) + 1
         return snakecase(index[start:])
 
+    def __get_relationship_attribute_type(self, object_type: str, name: str):
+        """
+        Resolve the attribute type for a field, handling both flat fields and relationship fields.
+        Returns the attribute type string (e.g., 'str', 'int', 'datetime') or None if not found.
+        """
+        # Handle flat fields
+        if name in self.attribute_types[object_type]:
+            return self.attribute_types[object_type][name]
+        
+        # Handle Relationship fields
+        if '.' in name and self.relationship_config is not None:
+            # Same bit as _field_or_keyword is doing
+            relationship_name, attribute = name.split('.')[0], name.split('.')[1]
+            if (object_type in self.relationship_config and
+                    relationship_name in self.relationship_config[object_type].to_one):
+                relationship_object_type = (
+                    self.relationship_config[object_type].to_one[relationship_name]
+                )
+                if attribute in self.attribute_types[relationship_object_type]:
+                    return self.attribute_types[relationship_object_type][attribute]
+        
     def _field_or_keyword(self, object_type: str, name: str):
         """
         Map our field format to Elastic's format
@@ -555,7 +576,7 @@ class ElasticDataSource(
             stats_values[stats_field] = {}
             for stat in stats:
                 stat_value = aggregation_result[f'{stats_field}_{stat}']['value']
-                python_type = self.attribute_types[object_type][stats_field]
+                python_type = self.__get_relationship_attribute_type(object_type, stats_field)
                 if python_type == 'datetime' and stat_value is not None \
                         and stat in ['min', 'max']:
                     stat_value = datetime.fromtimestamp(stat_value / 1000)
@@ -645,9 +666,11 @@ class ElasticDataSource(
                     agg = self.__get_union_aggregation(object_type, stats_field)
                 elif stat == 'unique':
                     agg = self.__get_unique_count_aggregation(object_type, stats_field)
-                elif self.attribute_types[object_type][stats_field] == 'str' \
-                        and stat in ['min', 'max']:
-                    agg = self.__get_string_aggregation(object_type, stats_field, stat)
+                elif stat in ['min', 'max']:
+                    # Get the actual attribute type (handles both flat and relationship fields)
+                    attr_type = self.__get_relationship_attribute_type(object_type, stats_field)
+                    if attr_type == 'str':
+                        agg = self.__get_string_aggregation(object_type, stats_field, stat)
                 ret[f'{stats_field}_{stat}'] = agg
         return ret
 
