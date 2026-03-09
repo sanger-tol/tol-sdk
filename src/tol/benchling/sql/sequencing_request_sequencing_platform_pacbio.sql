@@ -45,9 +45,10 @@ Output: Table with cols:
 25) include_5mc_cells_in_cpg_motifs: [character]
 26) cc5_output_includes_kinetics_information: [character]
 27) priority: [character]
-28) completion_date: [Date]
-29) sequencing_platform: [character] Sequencing platform: pacbio.
-30) source: [character] Data source: v1, v1_pooled, v2, v2_pooled, legacy_bnt
+28) library_batch_id: [character] Library batch ID from LR Benchling. Origin: BWH
+29) completion_date: [Date]
+30) sequencing_platform: [character] Sequencing platform: pacbio.
+31) source: [character] Data source: v1, v1_pooled, v2, v2_pooled, legacy_bnt
 
 NOTES: 
 
@@ -98,6 +99,7 @@ pacbio_submissions_container_routine AS (
 		NULL::varchar AS include_5mc_cells_in_cpg_motifs,
 		NULL::varchar AS cc5_output_includes_kinetics_information,
 		NULL::varchar AS priority,
+		NULL::varchar AS library_batch_id,
 		pbsum.submission_date AS completion_date, 
 		'pacbio'::varchar AS sequencing_platform,
 		'v1'::varchar AS source
@@ -170,6 +172,7 @@ pacbio_submissions_container_pooled AS (
 		NULL::varchar AS include_5mc_cells_in_cpg_motifs,
 		NULL::varchar AS cc5_output_includes_kinetics_information,
 		NULL::varchar AS priority,
+		NULL::varchar AS library_batch_id,
 		pbsum.submission_date AS completion_date, 
 		'pacbio'::varchar AS sequencing_platform,
 		'v1_pooled'::varchar AS source
@@ -240,6 +243,7 @@ pacbio_submissions_container_legacy_deprecated AS (
 		NULL::varchar AS include_5mc_cells_in_cpg_motifs,
 		NULL::varchar AS cc5_output_includes_kinetics_information,
 		NULL::varchar AS priority,
+		NULL::varchar AS library_batch_id,
 		subsam.created_at$ AS completion_date, 
 		'pacbio'::varchar AS sequencing_platform,
 		'legacy_bnt'::varchar AS source
@@ -274,7 +278,6 @@ pacbio_submissions_container_legacy_deprecated AS (
 
 -- plate based submissions
 pacbio_submissions_plate_automated_manifest AS (
-	
 	SELECT DISTINCT	
 		t.sts_id,
 		t.taxon_id,
@@ -304,6 +307,7 @@ pacbio_submissions_plate_automated_manifest AS (
 		pbsubm_p.include_5mc_cells_in_cpg_motifs,
 		pbsubm_p.cc5_output_includes_kinetics_information,
 		pbsubm_p.priority,
+		NULL::varchar AS library_batch_id,
 		DATE(pbsubm_p.created_at$) AS completion_date, 
 		'pacbio'::varchar AS sequencing_platform,
 		'v2'::varchar AS source
@@ -371,6 +375,7 @@ pacbio_submissions_plate_automated_manifest_pooled AS (
 		pbsubm_p.include_5mc_cells_in_cpg_motifs,
 		pbsubm_p.cc5_output_includes_kinetics_information,
 		pbsubm_p.priority,
+		NULL::varchar AS library_batch_id,
 		DATE(pbsubm_p.created_at$) AS completion_date, 
 		'pacbio'::varchar AS sequencing_platform,
 		'v2_pooled'::varchar AS source
@@ -436,6 +441,7 @@ pacbio_submissions_plate_routine AS (
 		NULL::varchar AS include_5mc_cells_in_cpg_motifs,
 		NULL::varchar AS cc5_output_includes_kinetics_information,
 		NULL::varchar AS priority,
+		lpb.name$ AS library_batch_id,
 		pbsubm_p.created_at$ AS completion_date,
 		'pacbio'::varchar AS sequencing_platform,
 		'v2'::varchar AS SOURCE
@@ -464,7 +470,11 @@ pacbio_submissions_plate_routine AS (
 		ON con.plate_id = plate.id
 	LEFT JOIN sanger_sample_id$raw AS ssid
 		ON con.id = ssid.sample_tube
-	LEFT JOIN project$raw AS proj
+	LEFT JOIN lr_long_read_library_preparation_b$raw AS lr_proc -- Chunk to add LR lib prep batch ID
+		ON lr_proc.sanger_sample_id = ssid.sanger_sample_id
+	LEFT JOIN lr_library_preparation_batch$raw AS lpb
+		ON lr_proc.library_preparation_batch = lpb.id -- End of chunk to add LR lib prep batch ID
+	LEFT JOIN project$raw AS proj 
 		ON subsam.project_id$ = proj.id
 	 LEFT JOIN folder$raw AS f 
         ON subsam.folder_id$ = f.id
@@ -506,6 +516,7 @@ pacbio_submissions_plate_routine_pooled AS (
 		NULL::varchar AS include_5mc_cells_in_cpg_motifs,
 		NULL::varchar AS cc5_output_includes_kinetics_information,
 		NULL::varchar AS priority,
+		lpb.name$ AS library_batch_id,
 		pbsubm_p.created_at$ AS completion_date,
 		'pacbio'::varchar AS sequencing_platform,
 		'v2'::varchar AS SOURCE
@@ -534,6 +545,10 @@ pacbio_submissions_plate_routine_pooled AS (
 		ON dna.tissue_prep = tp.id
 	LEFT JOIN tissue$raw AS t 
 		ON tp.tissue = t.id -- End of Tissue metadata Chunk
+	LEFT JOIN lr_long_read_library_preparation_b$raw AS lr_proc -- Chunk to add LR lib prep batch ID
+		ON lr_proc.sanger_sample_id = ssid.sanger_sample_id
+	LEFT JOIN lr_library_preparation_batch$raw AS lpb
+		ON lr_proc.library_preparation_batch = lpb.id -- End of chunk to add LR lib prep batch ID
 	LEFT JOIN project$raw AS proj
 		ON subsam.project_id$ = proj.id
 	 LEFT JOIN folder$raw AS f 
