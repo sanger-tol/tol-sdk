@@ -53,6 +53,14 @@ class DataObject(_AnyKeyProtocol, ABC):
 
     @property
     @abstractmethod
+    def source(self) -> str | None:
+        """
+        The original source of this object (used in Elastic where the same data can be stored
+        in multiple places. In this case, source priority is used to know which to return)
+        """
+
+    @property
+    @abstractmethod
     def attributes(self) -> dict[str, Any]:
         """
         A dictionary of key:attribute pairs, where an attribute
