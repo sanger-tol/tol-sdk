@@ -212,7 +212,7 @@ def core_data_object(
         @property
         def source(self) -> str | None:
             return self.__source
-    
+
         @source.setter
         def source(self, new_source: str | None) -> None:
             self.__source = new_source
