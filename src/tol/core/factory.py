@@ -79,6 +79,7 @@ def _local_name(__name: str) -> bool:
     __PROPERTY_NAMES = [  # noqa N806
         'id',
         'type',
+        'source',
         'attributes',
         'to_one_relationships',
         'to_many_relationships',
