@@ -88,8 +88,8 @@ class _ExampleDataObject(DataObject):
         return self.__type
 
     @property
-    def source(self) -> str | None:
-        return super().source
+    def provenance(self) -> str | None:
+        return super().provenance
 
     @property
     def to_many_relationships(self):
