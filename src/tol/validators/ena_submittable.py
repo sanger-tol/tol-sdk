@@ -53,10 +53,41 @@ class EnaSubmittableValidator(Validator):
                        f'"{taxon_id}" not found in ENA',
                 field=self.__config.field_name,
             )
+            return
+
+        if (
+            str(taxon_id) == '32644'
+            and self.__cached_species[taxon_id].rank == 'species'
+            and self.__cached_species[taxon_id].submittable
+        ):
+            return
+        elif not self.__cached_species[taxon_id].binomial:
+            self.add_error(
+                object_id=obj.id,
+                detail=f'Field {self.__config.field_name} value '
+                       f'"{taxon_id}" taxon species name is not-binomial',
+                field=self.__config.field_name,
+            )
         elif not self.__cached_species[taxon_id].submittable:
             self.add_error(
                 object_id=obj.id,
                 detail=f'Field {self.__config.field_name} value '
                        f'"{taxon_id}" is not submittable in ENA',
+                field=self.__config.field_name,
+            )
+        elif self.__cached_species[taxon_id].rank == 'subspecies':
+            self.add_warning(
+                object_id=obj.id,
+                detail='Please consider onboarding your sample at species rank '
+                       '(provide taxon and species name); subspecies information '
+                       'can be recorded in the infra_epithet field on the manifest.',
+                field=self.__config.field_name,
+            )
+        elif self.__cached_species[taxon_id].rank != 'species':
+            self.add_error(
+                object_id=obj.id,
+                detail=f'Field {self.__config.field_name} value '
+                       f'"{taxon_id}" has rank '
+                       f'"{ self.__cached_species[taxon_id].rank}" which is not acceptable',
                 field=self.__config.field_name,
             )
