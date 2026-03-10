@@ -85,6 +85,8 @@ class DefaultParser(Parser):
     def __parse_user(self, transfer: JiraTransfer) -> DataObject:
         if transfer is None:
             return None
+        if type(transfer) != dict:
+            return None
         type_ = 'user'
         ds = self.__get_data_source(type_)
         raw_attributes = transfer
