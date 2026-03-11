@@ -20,7 +20,7 @@ from .datasource_filter import DataSourceFilter
 
 class DataLoader(ABC):
     @abstractmethod
-    def load(self, provenance: str = None, dry_run: bool = False, **kwargs):
+    def load(self, provenance: str | None = None, dry_run: bool = False, **kwargs):
         """
         Loads a set of object from one DataSource to another
         """
@@ -53,7 +53,7 @@ class DefaultDataLoader():
 
     def load(
         self,
-        provenance: str = None,
+        provenance: str | None = None,
         dry_run: bool = False,
         candidate_key: Optional[List[str]] = ['id'],
         method: str = 'upsert',
@@ -104,7 +104,7 @@ class DefaultDataLoader():
         converted_objs: Iterable[object],
         candidate_key: List[str] = ['id'],
         dry_run: bool = False,
-        provenance: str = None,
+        provenance: str | None = None,
         method: str = 'upsert'
     ):
         grouped_sorted_converted_objects = self._get_sorted_converted_objs(converted_objs)
@@ -140,7 +140,7 @@ class DefaultDataLoader():
         converted_objs: Iterable[object],
         candidate_key: List[str] = ['id'],
         dry_run: bool = False,
-        provenance: str = None,
+        provenance: str | None = None,
         method: str = 'upsert'
     ):
         returned_objects = []
