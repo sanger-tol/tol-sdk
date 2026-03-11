@@ -24,11 +24,11 @@ class TreeofsexUploadToTreeofsexAttributeConverter(
 
     def convert(self, data_object: DataObject) -> Iterable[DataObject]:
         # Have we seen the source before?
-        if data_object.source not in self.__sources_seen:
-            self.__sources_seen.add(data_object.source)
+        if data_object.provenance not in self.__sources_seen:
+            self.__sources_seen.add(data_object.provenance)
             yield self._data_object_factory(
                 'source',
-                data_object.source
+                data_object.provenance
             )
 
         # Have we seen the species before?
@@ -49,7 +49,7 @@ class TreeofsexUploadToTreeofsexAttributeConverter(
             to_one={
                 'source': self._data_object_factory(
                     'source',
-                    data_object.source
+                    data_object.provenance
                 ),
                 'species': self._data_object_factory(
                     'species',
