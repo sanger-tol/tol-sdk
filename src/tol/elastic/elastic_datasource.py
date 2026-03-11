@@ -244,7 +244,7 @@ class ElasticDataSource(
             group_statter_stats_fields=summary.stats_fields,
             group_statter_stats=summary.stats,
         )
-        loader.load(field_prefix=summary.prefix)
+        loader.load(provenance=summary.prefix)
 
     def __format_cursor_response(
         self,
