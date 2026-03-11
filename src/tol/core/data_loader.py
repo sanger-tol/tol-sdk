@@ -20,7 +20,7 @@ from .datasource_filter import DataSourceFilter
 
 class DataLoader(ABC):
     @abstractmethod
-    def load(self, field_prefix: str = None, dry_run: bool = False, **kwargs):
+    def load(self, provenance: str = None, dry_run: bool = False, **kwargs):
         """
         Loads a set of object from one DataSource to another
         """
