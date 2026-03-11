@@ -64,5 +64,5 @@ LEFT JOIN entry$raw AS ent
 WHERE proj.name = 'ToL Core Lab'
     AND  (f.name IN ('Routine Throughput', 'DNA', 'Core Lab Entities', 'Benchling MS Project Move') OR f.name IS NULL)
     AND (dna.archive_purpose$ != ('Made in error') OR dna.archive_purpose$ IS NULL)
-    AND ent.name NOT LIKE '%Nuclei isolation and tagmentation%'
+    AND (ent.name NOT LIKE '%Nuclei isolation and tagmentation%' OR ent.name IS NULL)
 ORDER BY completion_date DESC
