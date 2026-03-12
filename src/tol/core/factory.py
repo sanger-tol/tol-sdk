@@ -214,8 +214,8 @@ def core_data_object(
             return self.__provenance
 
         @provenance.setter
-        def provenance(self, new_source: str | None) -> None:
-            self.__provenance = new_source
+        def provenance(self, new_provenance: str | None) -> None:
+            self.__provenance = new_provenance
 
         @property
         def attributes(self) -> dict[str, Any]:
