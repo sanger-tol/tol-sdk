@@ -100,6 +100,10 @@ class _MockDataSource(DataSource, Statter, ListGetter, Upserter):
                         'field1': {
                             'min': 'A',
                             'max': 'Z'
+                        },
+                        'field2.attribute': {
+                            'min': 'B',
+                            'max': 'C'
                         }
                     }
                 }, {
@@ -107,6 +111,10 @@ class _MockDataSource(DataSource, Statter, ListGetter, Upserter):
                     'stats': {
                         'count': 17,
                         'field1': {
+                            'min': None,
+                            'max': None
+                        },
+                        'field2.attribute': {
                             'min': None,
                             'max': None
                         }
@@ -375,7 +383,7 @@ class TestDataLoader(TestCase):
             destination_object_type='destination_type',
             dependencies=[],
             group_statter_group_by=['group_by_field'],
-            group_statter_stats_fields=['field1'],
+            group_statter_stats_fields=['field1', 'field2.attribute'],
             group_statter_stats=['min', 'max'],
             loader_name='test_loader'
         )
@@ -388,6 +396,8 @@ class TestDataLoader(TestCase):
         self.assertEqual(3, obj1.source_type_count)
         self.assertEqual('A', obj1.source_type_field1_min)
         self.assertEqual('Z', obj1.source_type_field1_max)
+        self.assertEqual('B', obj1.source_type_field2_attribute_min)
+        self.assertEqual('C', obj1.source_type_field2_attribute_max)
 
         obj2 = next(destination.upserted)
         self.assertEqual('value2', obj2.id)
@@ -395,6 +405,8 @@ class TestDataLoader(TestCase):
         self.assertEqual(17, obj2.source_type_count)
         self.assertIsNone(obj2.source_type_field1_min)
         self.assertIsNone(obj2.source_type_field1_max)
+        self.assertIsNone(obj2.source_type_field2_attribute_min)
+        self.assertIsNone(obj2.source_type_field2_attribute_max)
 
         with self.assertRaises(StopIteration):
             next(destination.upserted)
