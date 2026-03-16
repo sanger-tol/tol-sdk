@@ -117,4 +117,13 @@ def data_source_attribute_metadata(
                 return super().get_source(object_type, attribute_name)
             return attribute.source
 
+        def get_acts_as(
+                self,
+                object_type: str,
+                attribute_name: str) -> Optional[str]:
+            attribute = self.__get_attribute(object_type, attribute_name)
+            if attribute is None:
+                return super().get_acts_as(object_type, attribute_name)
+            return attribute.acts_as
+
     return DataSourceAttributeMetadata
