@@ -205,8 +205,4 @@ class TestSetStatusAction(TestCase):
         )
 
         self.assertEqual(code, 500)
-<<<<<<< HEAD
         self.assertEqual(result, {'error': 'Insert failed'})
-=======
-        self.assertEqual(result, {'error': 'Insert failed'})
->>>>>>> 4aa32ad7 (TOLP-9628 add set status action)
