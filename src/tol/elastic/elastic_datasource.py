@@ -168,7 +168,7 @@ class ElasticDataSource(
         objects: Iterable[DataObject],
         chunk_size: int = 100,
         id_func=lambda x: x.id,
-        field_prefix: str = '',
+        provenance: str = '',
         merge_collections: bool | None = None,
         **kwargs
     ) -> None:
@@ -185,7 +185,7 @@ class ElasticDataSource(
                               converter.convert(ElasticUpsertInputResource(index,
                                                                            objects,
                                                                            id_func,
-                                                                           field_prefix)),
+                                                                           provenance)),
                               stats_only=True,
                               chunk_size=chunk_size)
         if no_of_errors > 0:
@@ -196,7 +196,7 @@ class ElasticDataSource(
         self,
         object_type: str,
         updates: Iterable[DataObjectUpdate],
-        field_prefix: str = '',
+        provenance: str = '',
         candidate_key: Iterable[str] = [],
         **kwargs
     ) -> None:
@@ -217,7 +217,7 @@ class ElasticDataSource(
                 index=real_index_name,
                 body=converter.convert(ElasticUpdateInputResource(object_type,
                                                                   update,
-                                                                  field_prefix,
+                                                                  provenance,
                                                                   candidate_key)),
                 conflicts='proceed',
                 wait_for_completion=False
@@ -244,7 +244,7 @@ class ElasticDataSource(
             group_statter_stats_fields=summary.stats_fields,
             group_statter_stats=summary.stats,
         )
-        loader.load(field_prefix=summary.prefix)
+        loader.load(provenance=summary.prefix)
 
     def __format_cursor_response(
         self,

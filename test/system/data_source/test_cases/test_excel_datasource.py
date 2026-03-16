@@ -57,7 +57,7 @@ class TestTreeOfSex:
             converter=converter,
         )
 
-        loader.load(field_prefix='')
+        loader.load(provenance='')
 
         ds_sleep(5)
 

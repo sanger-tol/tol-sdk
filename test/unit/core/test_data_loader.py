@@ -171,14 +171,14 @@ class _MockDataSource(DataSource, Statter, ListGetter, Upserter):
         yield from objects
         self.exhausted = True
 
-    def upsert(self, object_type, objects, field_prefix=None):
+    def upsert(self, object_type, objects, provenance=None):
         objects_to_upsert = list(objects)
         # This is what we test with - make it it's own generator
         self.upserted = (obj for obj in objects_to_upsert)
         self.upserted_object_type = object_type
         return self.__record_exhaustion(objects_to_upsert)
 
-    def insert(self, object_type, objects, field_prefix=None):
+    def insert(self, object_type, objects, provenance=None):
         objects_to_insert = list(objects)
         # This is what we test with - make it it's own generator
         self.inserted = (obj for obj in objects_to_insert)
