@@ -467,6 +467,7 @@ def create_standard_models(
         available_on_relationships: Mapped[bool] = mapped_column(nullable=False, default=True)
         is_authoritative: Mapped[bool] = mapped_column(nullable=False, default=False)
         source: Mapped[str] = mapped_column(nullable=True)
+        acts_as: Mapped[str] = mapped_column(nullable=True)
         runtime_definition: Mapped[dict] = mapped_column(JSONB, nullable=True)
 
     class DataSourceConfigRelationship(base_model_class):
