@@ -147,7 +147,8 @@ class TestDataSource(TestCase):
                         'cardinality': 1000,
                         'available_on_relationships': True,
                         'authoritative': True,
-                        'source': 'test_source'
+                        'source': 'test_source',
+                        'acts_as': None
                     },
                     'attribute2': {
                         'python_type': 'int',
@@ -156,7 +157,8 @@ class TestDataSource(TestCase):
                         'cardinality': 1000,
                         'available_on_relationships': True,
                         'authoritative': True,
-                        'source': 'test_source'
+                        'source': 'test_source',
+                        'acts_as': None
                     }
                 },
                 'object_type2': {
@@ -167,7 +169,8 @@ class TestDataSource(TestCase):
                         'cardinality': 5,
                         'available_on_relationships': False,
                         'authoritative': False,
-                        'source': 'test_source'
+                        'source': 'test_source',
+                        'acts_as': None
                     },
                     'attribute4': {
                         'python_type': 'datetime',
@@ -176,7 +179,8 @@ class TestDataSource(TestCase):
                         'cardinality': 5,
                         'available_on_relationships': False,
                         'authoritative': False,
-                        'source': 'test_source'
+                        'source': 'test_source',
+                        'acts_as': None
                     }
                 }
             }
@@ -193,7 +197,8 @@ class TestDataSource(TestCase):
                 'cardinality': 1000,
                 'available_on_relationships': True,
                 'authoritative': True,
-                'source': 'test_source'
+                'source': 'test_source',
+                'acts_as': None
             }
         )
         self.assertEqual(
@@ -205,6 +210,7 @@ class TestDataSource(TestCase):
                 'cardinality': 5,
                 'available_on_relationships': False,
                 'authoritative': False,
-                'source': 'test_source'
+                'source': 'test_source',
+                'acts_as': None
             }
         )
