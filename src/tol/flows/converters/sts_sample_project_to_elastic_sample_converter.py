@@ -27,7 +27,6 @@ class StsSampleProjectToElasticSampleConverter(
             'programme': [data_object.project.programme],
             **sample_attributes
         }
-        
         if data_object.project.id and data_object.project.is_primary:
             attributes['project'] = data_object.project.id
 
