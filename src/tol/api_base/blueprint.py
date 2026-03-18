@@ -211,6 +211,7 @@ def _core_blueprint(
         - PATCH /<object_type>: Update multiple objects
         - POST /<object_type>:insert: Insert new objects
         - POST /<object_type>:upsert: Insert or update objects
+        - POST /<object_type>:summary: Get summarised data
         - POST /<object_type>:aggregations: Get aggregated data
         - POST /<object_type>:cursor: Get cursor-based pagination
         - GET /<object_type>:to-one/<object_id>/<hops_suffix>: Navigate to-one relationships
