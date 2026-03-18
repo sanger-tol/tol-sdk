@@ -352,7 +352,7 @@ def _core_blueprint(
     @data_handler.route('/<object_type>:summary', methods=['POST'])
     def get_summary(*, object_type: str):
         return {
-            "message": "Hello, world!"
+            'message': 'Hello, world!'
         }
 
     @data_handler.route('/<object_type>:aggregations', methods=['POST'])
