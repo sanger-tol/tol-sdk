@@ -20,10 +20,14 @@ class StsSampleProjectToElasticSampleConverter(
         # The project (note this is adding to a list)
         s = data_object.sample
         attributes = {
-            'project': [data_object.project.id],
+            'all_projects': [data_object.project.id],
             'programme': [data_object.project.programme],
             **s.attributes
         }
+
+        if data_object.project.id and data_object.project.is_primary == True:
+                attributes['project'] = data_object.project.id
+
         to_one = {}
         try:
             if 'location' in s.to_one_relationships:
