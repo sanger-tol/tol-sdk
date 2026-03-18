@@ -71,6 +71,11 @@ class _TestAttributeMetadata(DefaultAttributeMetadata):
 
     def get_source(self, object_type, attribute_name):
         return 'test_source'
+    
+    def get_acts_as(self, object_type, attribute_name):
+        if object_type == 'object_type1':
+            return 'status'
+        return None
 
 
 class _TestDataSourceAttributes(DataSource, Relational):
@@ -148,7 +153,7 @@ class TestDataSource(TestCase):
                         'available_on_relationships': True,
                         'authoritative': True,
                         'source': 'test_source',
-                        'acts_as': None
+                        'acts_as': 'status'
                     },
                     'attribute2': {
                         'python_type': 'int',
@@ -158,7 +163,7 @@ class TestDataSource(TestCase):
                         'available_on_relationships': True,
                         'authoritative': True,
                         'source': 'test_source',
-                        'acts_as': None
+                        'acts_as': 'status'
                     }
                 },
                 'object_type2': {
@@ -198,7 +203,7 @@ class TestDataSource(TestCase):
                 'available_on_relationships': True,
                 'authoritative': True,
                 'source': 'test_source',
-                'acts_as': None
+                'acts_as': 'status'
             }
         )
         self.assertEqual(
