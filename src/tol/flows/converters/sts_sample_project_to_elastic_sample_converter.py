@@ -19,14 +19,17 @@ class StsSampleProjectToElasticSampleConverter(
     def convert(self, data_object: DataObject) -> Iterable[DataObject]:
         # The project (note this is adding to a list)
         s = data_object.sample
+        sample_attributes = dict(s.attributes or {})
+        if 'storage_rack_id' in sample_attributes:
+            sample_attributes['rackid'] = sample_attributes.pop('storage_rack_id')
         attributes = {
             'all_projects': [data_object.project.id],
             'programme': [data_object.project.programme],
-            **s.attributes
+            **sample_attributes
         }
-
-        if data_object.project.id and data_object.project.is_primary == True:
-                attributes['project'] = data_object.project.id
+        
+        if data_object.project.id and data_object.project.is_primary:
+            attributes['project'] = data_object.project.id
 
         to_one = {}
         try:
