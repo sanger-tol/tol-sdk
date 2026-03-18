@@ -71,7 +71,7 @@ class _TestAttributeMetadata(DefaultAttributeMetadata):
 
     def get_source(self, object_type, attribute_name):
         return 'test_source'
-    
+
     def get_acts_as(self, object_type, attribute_name):
         if object_type == 'object_type1':
             return 'status'
