@@ -6,7 +6,8 @@ from __future__ import annotations
 
 import typing
 from abc import ABC, abstractmethod
-from typing import Any, Iterable, Optional
+from collections.abc import Iterable
+from typing import Any
 
 from ._filterable import _Filterable
 
@@ -23,9 +24,9 @@ class GroupStatter(_Filterable, ABC):
         group_by: list[str],
         stats_fields: list[str] = [],
         stats: list[str] = ['min', 'max'],
-        object_filters: Optional[DataSourceFilter] = None,
-        session: Optional[OperableSession] = None
-    ) -> Iterable[dict[Any, int]]:
+        object_filters: DataSourceFilter | None = None,
+        session: OperableSession | None = None
+    ) -> Iterable[dict[str, dict[str, int | dict[str, int]]]]:
         """
         Gets stats for results that are matched by the (optional) filter,
         broken down by the group_by parameter

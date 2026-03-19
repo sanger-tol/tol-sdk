@@ -3,6 +3,7 @@
 # SPDX-License-Identifier: MIT
 
 from __future__ import annotations
+from cachetools.func import ttl_cache
 
 from abc import ABC, abstractmethod
 from collections.abc import Iterable
@@ -363,6 +364,45 @@ class DefaultDatabase(Database):
         result = instance.instance_to_many_relations[relationship_name]
         return result
 
+    def get_stats(
+        self,
+        tablename: str,
+        stats_fields: list[str],
+        stats: list[str],
+        in_session: Session,
+    ) -> list[dict[str, dict[str, Any]]]:
+        all = self.__all_table_stats(in_session)
+        return all
+
+    @ttl_cache(ttl=3600)
+    def __all_table_stats(self, in_session: Session):
+        crsr = in_session.execute(text("""
+            SELECT
+              s.tablename,
+              s.attname AS column,
+              CASE
+                WHEN s.n_distinct < 0 THEN
+                  CAST (-1 * s.n_distinct * t.n_live_tup AS INT)
+                ELSE CAST (s.n_distinct AS INT)
+              END AS cardinality
+              -- , t.n_live_tup AS table_rows
+            FROM
+              pg_stats AS s
+              JOIN pg_stat_user_tables AS t
+                ON s.tablename = t.relname
+                AND s.schemaname = t.schemaname
+            WHERE
+              s.schemaname = current_schema
+            ORDER BY
+              s.tablename,
+              s.attname
+        """))
+
+        tbl_stats = {}
+        for tbl, col, card in crsr:
+            tbl_stats.setdefault(tbl, {})[col] = card
+        return tbl_stats
+
     def get_group_stats(
         self,
         tablename: str,
@@ -509,7 +549,7 @@ class DefaultDatabase(Database):
     def __apply_stats(
         self,
         query: Select,
-        filters: DatabaseFilter,
+        filters: DatabaseFilter | None,
         model: type[Model],
         stats_fields: list[str],
         stats: list[str],

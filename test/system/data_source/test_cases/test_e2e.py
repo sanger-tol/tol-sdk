@@ -806,7 +806,7 @@ class TestEndToEnd:
         cnt = data_source.get_count('root', object_filters=f)
         assert cnt == 5
 
-    @against(elastic, api_elastic)
+    @against(*all_fixtures)
     def test_stats(self, data_source: OperableDataSource, ds_sleep):
         """
         Upsert 3 `DataObject` instances, and get them as a list with filters

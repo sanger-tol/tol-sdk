@@ -39,6 +39,7 @@ from ..core.operator import (
     RelationWriteMode,
     Relational,
     ReturnMode,
+    Statter,
     Upserter,
 )
 from ..core.relationship import RelationshipConfig
@@ -68,6 +69,7 @@ class SqlDataSource(
     ListGetter,
     PageGetter,
     Relational,
+    Statter,
     Upserter,
 ):
     """
@@ -349,6 +351,23 @@ class SqlDataSource(
             in_session.close()
         return return_list
 
+    def get_stats(
+        self,
+        object_type: str,
+        stats_fields: List[str] = [],
+        stats: List[str] = ['min', 'max'],
+        object_filters: Optional[DataSourceFilter] = None,
+        session: Optional[OperableSession] = None
+    ) -> dict[Any, int]:
+        tablename = self.__type_tablename_map[object_type]
+        in_session = self.__get_sqla_session(session)
+        return self.__db.get_stats(
+            tablename,
+            stats_fields,
+            stats,
+            in_session,
+        )
+
     def get_group_stats(
         self,
         object_type: str,
@@ -357,8 +376,7 @@ class SqlDataSource(
         stats: list[str] = ['min', 'max'],
         object_filters: Optional[DataSourceFilter] = None,
         session: Optional[OperableSession] = None,
-    ) -> Iterable[dict[Any, int]]:
-
+    ) -> Iterable[dict[str, dict[str, int | dict[str, int]]]]:
         tablename = self.__type_tablename_map[object_type]
         in_session = self.__get_sqla_session(session)
         filters = self.__filter_factory(
