@@ -144,7 +144,13 @@ class _ToElasticApiResourceParser:
                 if (param.value != null) {
                     if (ctx._source[param.key] instanceof Map) {
                         for (newParam in param.value.entrySet()) {
-                            ctx._source[param.key][newParam.key] = newParam.value;
+                            if (newParam.value instanceof Map && ctx._source[param.key][newParam.key] instanceof Map) {
+                                for (nestedParam in newParam.value.entrySet()) {
+                                    ctx._source[param.key][newParam.key][nestedParam.key] = nestedParam.value;
+                                }
+                            } else {
+                                ctx._source[param.key][newParam.key] = newParam.value;
+                            }
                         }
                         continue
                     }
