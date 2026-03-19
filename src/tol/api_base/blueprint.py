@@ -278,7 +278,7 @@ def _core_blueprint(
     def get_list(*, object_type: str):
         """Get a paginated list of objects of the specified type."""
         if request.method == 'POST':
-            request_args = ListGetParameters(request.json)
+            request_args = ListGetParameters(request.json | request.args)
         else:
             request_args = ListGetParameters(request.args)
         controller = __new_controller(
