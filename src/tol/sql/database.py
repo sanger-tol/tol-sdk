@@ -3,11 +3,12 @@
 # SPDX-License-Identifier: MIT
 
 from __future__ import annotations
-from cachetools.func import ttl_cache
 
 from abc import ABC, abstractmethod
 from collections.abc import Iterable
 from typing import Any
+
+from cachetools.func import ttl_cache
 
 from sqlalchemy import Select, distinct, func, select
 from sqlalchemy.exc import IntegrityError
@@ -370,13 +371,24 @@ class DefaultDatabase(Database):
         stats_fields: list[str],
         stats: list[str],
         in_session: Session,
-    ) -> list[dict[str, dict[str, Any]]]:
-        all = self.__all_table_stats(in_session)
-        return all
+    ) -> dict[str, dict[str, dict[str, int]]]:
+        all_stats = self.__all_table_stats(in_session)
+        tbl_ret_stats = {}
 
-    @ttl_cache(ttl=3600)
+        if tbl_stats := all_stats.get(tablename):
+            for col in stats_fields:
+                if col_stats := tbl_stats.get(col):
+                    col_ret_stats = tbl_ret_stats.setdefault(col, {})
+                    for stat_name in stats:
+                        col_ret_stats[stat_name] = col_stats.get(stat_name)
+        return {'stats': tbl_ret_stats}
+
+    @ttl_cache(ttl=60)
     def __all_table_stats(self, in_session: Session):
-        crsr = in_session.execute(text("""
+        """Cached (per session) so that the function isn't called for each table"""
+        tbl_model = self.__tablename_model_dict
+
+        stats = in_session.execute(text("""
             SELECT
               s.tablename,
               s.attname AS column,
@@ -385,7 +397,6 @@ class DefaultDatabase(Database):
                   CAST (-1 * s.n_distinct * t.n_live_tup AS INT)
                 ELSE CAST (s.n_distinct AS INT)
               END AS cardinality
-              -- , t.n_live_tup AS table_rows
             FROM
               pg_stats AS s
               JOIN pg_stat_user_tables AS t
@@ -393,14 +404,13 @@ class DefaultDatabase(Database):
                 AND s.schemaname = t.schemaname
             WHERE
               s.schemaname = current_schema
-            ORDER BY
-              s.tablename,
-              s.attname
-        """))
+        """)).fetchall()
 
         tbl_stats = {}
-        for tbl, col, card in crsr:
-            tbl_stats.setdefault(tbl, {})[col] = card
+        for tbl, col, card_n in stats:
+            if col == tbl_model[tbl].get_id_column_name():
+                col = 'id'
+            tbl_stats.setdefault(tbl, {})[col] = {'cardinality': card_n}
         return tbl_stats
 
     def get_group_stats(

@@ -5,7 +5,7 @@
 from __future__ import annotations
 
 import typing
-from typing import Any, Callable, Dict, Iterable, List, Optional, Tuple
+from typing import Callable, Dict, Iterable, List, Optional, Tuple
 
 from sqlalchemy.orm import Session as SqlaSession
 
@@ -354,11 +354,11 @@ class SqlDataSource(
     def get_stats(
         self,
         object_type: str,
-        stats_fields: List[str] = [],
-        stats: List[str] = ['min', 'max'],
-        object_filters: Optional[DataSourceFilter] = None,
-        session: Optional[OperableSession] = None
-    ) -> dict[Any, int]:
+        stats_fields: list[str],
+        stats: list[str],
+        object_filters: DataSourceFilter | None = None,
+        session: OperableSession | None = None
+    ) -> dict[str, dict[str, dict[str, int]]]:
         tablename = self.__type_tablename_map[object_type]
         in_session = self.__get_sqla_session(session)
         return self.__db.get_stats(

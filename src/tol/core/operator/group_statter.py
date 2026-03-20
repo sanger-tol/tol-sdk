@@ -7,7 +7,6 @@ from __future__ import annotations
 import typing
 from abc import ABC, abstractmethod
 from collections.abc import Iterable
-from typing import Any
 
 from ._filterable import _Filterable
 
