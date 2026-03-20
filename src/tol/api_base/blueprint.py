@@ -26,6 +26,7 @@ from .misc import (
     JsonApiRequestBody,
     ListGetParameters,
     RelataionshipHopsParser,
+    StatsParameters,
 )
 from ..api_client.exception import BaseRuntimeException
 from ..api_client.parser import DefaultParser
@@ -300,9 +301,9 @@ def _core_blueprint(
     def get_stats(*, object_type: str):
         """Get statistical information about objects of the specified type."""
         if request.method == 'POST':
-            request_args = ListGetParameters(request.json | request.args)
+            request_args = StatsParameters(request.json | request.args)
         else:
-            request_args = ListGetParameters(request.args)
+            request_args = StatsParameters(request.args)
         controller = __new_controller(object_type)
         return controller.get_stats(object_type, request_args)
 
