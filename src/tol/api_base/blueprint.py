@@ -287,18 +287,24 @@ def _core_blueprint(
         )
         return controller.get_list(object_type, request_args)
 
-    @data_handler.route('/<object_type>:count', methods=['GET'])
+    @data_handler.route('/<object_type>:count', methods=['GET', 'POST'])
     def get_count(*, object_type: str):
         """Get the count of objects matching the specified filters."""
+        if request.method == 'POST':
+            request_args = ListGetParameters(request.json | request.args)
+        else:
+            request_args = ListGetParameters(request.args)
         controller = __new_controller(object_type)
-        request_args = ListGetParameters(request.args)
         return controller.get_count(object_type, request_args)
 
-    @data_handler.route('/<object_type>:stats', methods=['GET'])
+    @data_handler.route('/<object_type>:stats', methods=['GET', 'POST'])
     def get_stats(*, object_type: str):
         """Get statistical information about objects of the specified type."""
+        if request.method == 'POST':
+            request_args = ListGetParameters(request.json | request.args)
+        else:
+            request_args = ListGetParameters(request.args)
         controller = __new_controller(object_type)
-        request_args = StatsParameters(request.args)
         return controller.get_stats(object_type, request_args)
 
     @data_handler.get('/<object_type>:group-stats')
@@ -347,14 +353,14 @@ def _core_blueprint(
     def get_aggregations(*, object_type: str):
         """Get aggregated data for objects of the specified type."""
         controller = __new_controller(object_type)
-        request_args = AggregationParameters(request.args)
+        request_args = AggregationParameters(request.args | request.json)
         body = AggregationBody(request.json)
         return controller.post_aggregations(object_type, request_args, body)
 
     @data_handler.post('/<object_type>:cursor')
     def get_cursor_page(*, object_type: str):
         """Get a page of results using cursor-based pagination."""
-        request_args = ListGetParameters(request.args)
+        request_args = ListGetParameters(request.args | request.json)
         controller = __new_controller(
             object_type,
             requested_fields=request_args.requested_fields,
