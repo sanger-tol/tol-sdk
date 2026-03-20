@@ -302,6 +302,21 @@ class TestBlueprint(BlueprintTestCase):
             }
         )
 
+    def test_200_on_good_count_post(self):
+        """A good count POST returns 200 and correct data"""
+        response = self.client.open('/data/cracker:count', method='POST', json={})
+        self.assert200(
+            response,
+            f'Response body is : {response.data.decode("utf-8")}'
+        )
+        self.assertEqual(
+            response.json,
+            {
+                'meta': {'total': 9876},
+                'data': []
+            }
+        )
+
 
 class TestBlueprintDelete(TestCase):
     def create_app(self):
