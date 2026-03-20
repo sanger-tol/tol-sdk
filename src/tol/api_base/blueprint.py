@@ -26,7 +26,6 @@ from .misc import (
     JsonApiRequestBody,
     ListGetParameters,
     RelataionshipHopsParser,
-    StatsParameters,
 )
 from ..api_client.exception import BaseRuntimeException
 from ..api_client.parser import DefaultParser
