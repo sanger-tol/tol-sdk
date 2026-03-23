@@ -350,8 +350,8 @@ def _core_blueprint(
             merge_collections=request_args.merge_collections,
         )
 
-    @data_handler.route('/<object_type>:summary', methods=['POST'])
-    def get_summary(*, object_type: str):
+    @data_handler.route('/<object_type>:aggregations', methods=['POST'])
+    def get_aggregations(*, object_type: str):
         return {
             'message': 'Hello, world!'
         }
