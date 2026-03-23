@@ -120,7 +120,7 @@ SELECT DISTINCT
     con.barcode AS fluidx_id,
     tube.type AS tube_type,
     CASE
-        WHEN con.archive_purpose$ IN ('Retired', 'Expended') THEN 0 -- Retired or expended DNA extractions have a weight of 0
+        WHEN con.archived$ THEN 0 -- Archived DNA extractions have a weight of 0
         ELSE con.volume_si * 1000000
     END AS volume_ul,
     loc.name AS location,
