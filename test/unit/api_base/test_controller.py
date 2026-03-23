@@ -18,7 +18,7 @@ from tol.api_client.exception import (
 from tol.api_client.view import DefaultView, View
 from tol.core import DataSource, DataSourceFilter, ReqFieldsTree, core_data_object
 from tol.core.data_object import DataObject
-from tol.core.operator import LegacyAggregator, DetailGetter, PageGetter, Relational
+from tol.core.operator import DetailGetter, LegacyAggregator, PageGetter, Relational
 
 
 class _TestDataSource1(DataSource, DetailGetter):

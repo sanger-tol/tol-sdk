@@ -34,13 +34,13 @@ from ..api_client.view import ResponseDict, View
 from ..core import DataObject, OperableDataSource, ReqFieldsTree
 from ..core.datasource_filter import AndFilter, DataSourceFilter
 from ..core.operator import (
-    LegacyAggregator,
     Counter,
     Cursor,
     Deleter,
     DetailGetter,
     GroupStatter,
     Inserter,
+    LegacyAggregator,
     Operator,
     OperatorMethod,
     PageGetter,

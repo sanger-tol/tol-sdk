@@ -16,11 +16,11 @@ from tol.core import (
     core_data_object
 )
 from tol.core.operator import (
-    LegacyAggregator,
     Counter,
     Deleter,
     DetailGetter,
     Inserter,
+    LegacyAggregator,
     PageGetter,
     Relational,
     Updater,

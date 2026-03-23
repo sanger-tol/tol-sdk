@@ -37,12 +37,12 @@ from ..core import (
     GroupStatterDataLoader
 )
 from ..core.operator import (
-    LegacyAggregator,
     Counter,
     Cursor,
     DetailGetter,
     Enricher,
     GroupStatter,
+    LegacyAggregator,
     ListGetter,
     PageGetter,
     RelationWriteMode,
