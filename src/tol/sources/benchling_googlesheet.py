@@ -1,6 +1,7 @@
 # SPDX-FileCopyrightText: 2026 Genome Research Ltd.
 #
 # SPDX-License-Identifier: MIT
+
 import json
 import os
 
@@ -14,14 +15,14 @@ from tol.google_sheets import (
 
 def benchling_googlesheet(**kwargs) -> GoogleSheetDataSource:
     gsds = GoogleSheetDataSource({
-        'cclient_secrets': json.loads(os.getenv('GOOGLE_CLIENT_SECRETS')),
+        'client_secrets': json.loads(os.getenv('GOOGLE_CLIENT_SECRETS')),
         'sheet_key': '1IyGPD9dF51kUL2mgW6u0r4CNPy7lsTGC2UfD_M58lNo',
         'mappings': {
-            'benchling_library_batch_id': {
-                'worksheet_name': 'NEW_LIBRARY_BATCH_ID',
+            'sequencing_request': {
+                'worksheet_name': 'Sheet1',
                 'columns': {
-                    'sequencing_batch_id': {
-                        'heading': 'sequencing_batch_id',
+                    'id': {
+                        'heading': 'sequencing_request_id',
                         'type': 'str',
                     },
                     'library_batch_id': {
