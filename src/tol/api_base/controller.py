@@ -18,6 +18,8 @@ from typing import Any, Callable, Iterable, Optional, Type
 
 from .auth import AuthInspector
 from .misc import (
+    AggregationBody,
+    AggregationParameters,
     GroupStatsParameters,
     LegacyAggregationBody,
     LegacyAggregationParameters,
@@ -476,6 +478,17 @@ class Controller:
             return self.__view.dump_bulk(returned)
         else:
             return {'success': True}
+
+    # TODO
+    def post_aggregations(
+        self,
+        object_type: str,
+        query_args: AggregationParameters,
+        body: AggregationBody,
+    ):
+        # TODO
+        del object_type, query_args, body
+        return {}
 
     @validate(LegacyAggregator, 'get_aggregations_legacy', OperatorMethod.AGGREGATE_LEGACY)
     def post_aggregations_legacy(
