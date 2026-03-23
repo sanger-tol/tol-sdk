@@ -60,7 +60,7 @@ class ParrotDataSource(DataSource, DetailGetter, PageGetter, LegacyAggregator, C
     def get_count(self, object_type: str, *args, **kwargs):
         return 9876  # just a silly number, arbitrary
 
-    def get_aggregations(
+    def get_aggregations_legacy(
             self,
             object_type: str,
             aggregations: Dict,

@@ -501,7 +501,7 @@ class ElasticDataSource(
                                       runtime_mappings=runtime_mappings)
         return self._elastic_converter_factory().convert_list(generator)
 
-    def get_aggregations(
+    def get_aggregations_legacy(
         self,
         object_type: str,
         aggregations: dict,
@@ -537,7 +537,7 @@ class ElasticDataSource(
             object_type=object_type,
             stats_fields=stats_fields,
             stats=stats)
-        agg_results = self.get_aggregations(
+        agg_results = self.get_aggregations_legacy(
             object_type=object_type,
             aggregations=aggs,
             object_filters=object_filters
@@ -624,7 +624,7 @@ class ElasticDataSource(
             )
         if after_key is not None:
             aggregation['counts']['composite']['after'] = after_key
-        agg_page = self.get_aggregations(
+        agg_page = self.get_aggregations_legacy(
             object_type,
             aggregations=aggregation,
             object_filters=object_filters)

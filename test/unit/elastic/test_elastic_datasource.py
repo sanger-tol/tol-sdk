@@ -510,7 +510,7 @@ class TestElasticDataSource:
                 }
             }
         }
-        returned = mock_elastic_data_source.get_aggregations(
+        returned = mock_elastic_data_source.get_aggregations_legacy(
             'index',
             aggregations=aggregations
         )

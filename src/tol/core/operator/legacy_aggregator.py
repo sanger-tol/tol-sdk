@@ -21,7 +21,7 @@ class LegacyAggregator(_Filterable, ABC):
     """
 
     @abstractmethod
-    def get_aggregations(
+    def get_aggregations_legacy(
         self,
         object_type: str,
         aggregations: dict[str, Any],

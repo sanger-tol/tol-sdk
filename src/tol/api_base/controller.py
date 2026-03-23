@@ -18,9 +18,11 @@ from typing import Any, Callable, Iterable, Optional, Type
 
 from .auth import AuthInspector
 from .misc import (
+    AggregationBody,
+    AggregationParameters,
+    GroupStatsParameters,
     LegacyAggregationBody,
     LegacyAggregationParameters,
-    GroupStatsParameters,
     ListGetParameters,
     StatsParameters,
 )
@@ -477,7 +479,7 @@ class Controller:
         else:
             return {'success': True}
 
-    @validate(LegacyAggregator, 'get_aggregations', OperatorMethod.AGGREGATE)
+    @validate(LegacyAggregator, 'get_aggregations_legacy', OperatorMethod.AGGREGATE_LEGACY)
     def post_aggregations_legacy(
         self,
         object_type: str,
@@ -503,7 +505,7 @@ class Controller:
         Raises:
             UnsupportedOperationError: If the data source doesn't support aggregation.
         """
-        aggregation_results = self.__data_source.get_aggregations(
+        aggregation_results = self.__data_source.get_aggregations_legacy(
             object_type,
             object_filters=self.__combine_filters(query_args.filter, ext_and),
             aggregations=body.aggs,

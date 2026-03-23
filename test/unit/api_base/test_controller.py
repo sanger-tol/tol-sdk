@@ -76,7 +76,7 @@ class _TestDataSource3(DataSource, LegacyAggregator, PageGetter):
             for i in range(page_size)
         ], 560  # a very arbitrary number
 
-    def get_aggregations(
+    def get_aggregations_legacy(
         self, object_type: str, aggregations: Dict, object_filters: DataSourceFilter = None
     ) -> Dict:
         return {

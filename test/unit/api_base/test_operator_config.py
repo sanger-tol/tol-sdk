@@ -28,7 +28,7 @@ class _MockDataSource1(
     def attribute_types(self):
         raise NotImplementedError()
 
-    def get_aggregations(*args, **kwargs):
+    def get_aggregations_legacy(*args, **kwargs):
         raise NotImplementedError()
 
     def get_by_id(*args, **kwargs):
