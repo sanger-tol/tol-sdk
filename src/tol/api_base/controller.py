@@ -34,7 +34,7 @@ from ..api_client.view import ResponseDict, View
 from ..core import DataObject, OperableDataSource, ReqFieldsTree
 from ..core.datasource_filter import AndFilter, DataSourceFilter
 from ..core.operator import (
-    Aggregator,
+    LegacyAggregator,
     Counter,
     Cursor,
     Deleter,
@@ -477,7 +477,7 @@ class Controller:
         else:
             return {'success': True}
 
-    @validate(Aggregator, 'get_aggregations', OperatorMethod.AGGREGATE)
+    @validate(LegacyAggregator, 'get_aggregations', OperatorMethod.AGGREGATE)
     def post_aggregations(
         self,
         object_type: str,

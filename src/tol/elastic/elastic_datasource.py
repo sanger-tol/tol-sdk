@@ -37,7 +37,7 @@ from ..core import (
     GroupStatterDataLoader
 )
 from ..core.operator import (
-    Aggregator,
+    LegacyAggregator,
     Counter,
     Cursor,
     DetailGetter,
@@ -75,7 +75,7 @@ class ElasticDataSource(
     Enricher,
     PageGetter,
     ListGetter,
-    Aggregator,
+    LegacyAggregator,
     Relational,
     Updater,
     Upserter,

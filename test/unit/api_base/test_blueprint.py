@@ -16,7 +16,7 @@ from tol.core import (
     core_data_object
 )
 from tol.core.operator import (
-    Aggregator,
+    LegacyAggregator,
     Counter,
     Deleter,
     DetailGetter,
@@ -31,7 +31,7 @@ from tol.core.operator.updater import DataObjectUpdate
 from .app import _test_application
 
 
-class ParrotDataSource(DataSource, DetailGetter, PageGetter, Aggregator, Counter):
+class ParrotDataSource(DataSource, DetailGetter, PageGetter, LegacyAggregator, Counter):
     """Mimics what its told."""
 
     def get_by_id(self, object_type: str, object_ids, **kwargs):
@@ -257,7 +257,7 @@ class TestBlueprint(BlueprintTestCase):
     def test_200_on_good_aggregations(self):
         """A good aggregations POST returns 200 and correct data"""
         body = {'aggs': {}}  # We are mocking the result
-        response = self.client.open('/data/cracker:aggregations', method='POST', json=body)
+        response = self.client.open('/data/cracker:aggregations_legacy', method='POST', json=body)
         self.assert200(
             response,
             f'Response body is : {response.data.decode("utf-8")}'

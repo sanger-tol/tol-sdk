@@ -356,7 +356,7 @@ def _core_blueprint(
             'message': 'Hello, world!'
         }
 
-    @data_handler.route('/<object_type>:aggregations', methods=['POST'])
+    @data_handler.route('/<object_type>:aggregations_legacy', methods=['POST'])
     def get_aggregations(*, object_type: str):
         """Get aggregated data for objects of the specified type."""
         controller = __new_controller(object_type)

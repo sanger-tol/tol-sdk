@@ -18,7 +18,7 @@ from tol.api_client.exception import (
 from tol.api_client.view import DefaultView, View
 from tol.core import DataSource, DataSourceFilter, ReqFieldsTree, core_data_object
 from tol.core.data_object import DataObject
-from tol.core.operator import Aggregator, DetailGetter, PageGetter, Relational
+from tol.core.operator import LegacyAggregator, DetailGetter, PageGetter, Relational
 
 
 class _TestDataSource1(DataSource, DetailGetter):
@@ -50,7 +50,7 @@ class _TestDataSource2(DataSource, PageGetter):
         return {'test_A': {}, 'test_B': {}}
 
 
-class _TestDataSource3(DataSource, Aggregator, PageGetter):
+class _TestDataSource3(DataSource, LegacyAggregator, PageGetter):
     """Accounts for page number and size in results"""
 
     def get_list_page(

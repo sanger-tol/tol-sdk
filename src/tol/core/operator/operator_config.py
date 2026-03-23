@@ -9,7 +9,7 @@ from abc import ABC, abstractmethod
 from itertools import chain
 from typing import Iterable
 
-from .aggregator import Aggregator
+from .aggregator import LegacyAggregator
 from .counter import Counter
 from .cursor import Cursor
 from .deleter import Deleter
@@ -27,7 +27,7 @@ if typing.TYPE_CHECKING:
 
 
 READ_OPERATOR_MAP: dict[str, type] = {
-    'aggregate': Aggregator,
+    'aggregate': LegacyAggregator,
     'count': Counter,
     'cursor': Cursor,
     'detailGet': DetailGetter,

@@ -4,7 +4,7 @@
 
 from tol.core import DataSource
 from tol.core.operator import (
-    Aggregator,
+    LegacyAggregator,
     Deleter,
     DetailGetter,
     PageGetter,
@@ -16,7 +16,7 @@ from tol.core.operator.operator_config import DefaultOperatorConfig
 
 class _MockDataSource1(
     DataSource,
-    Aggregator,
+    LegacyAggregator,
     DetailGetter,
     PageGetter
 ):

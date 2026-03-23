@@ -15,7 +15,7 @@ if typing.TYPE_CHECKING:
     from ..session import OperableSession
 
 
-class Aggregator(_Filterable, ABC):
+class LegacyAggregator(_Filterable, ABC):
     """
     Gets aggregations according to the Elastic aggregation specification
     """

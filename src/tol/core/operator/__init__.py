@@ -4,7 +4,7 @@
 
 from typing import Union
 
-from .aggregator import Aggregator
+from .aggregator import LegacyAggregator
 from .counter import Counter
 from .cursor import Cursor
 from .declare import get_operator_member_names  # noqa
@@ -25,7 +25,7 @@ from .upserter import Upserter
 
 
 ALL_OPERATORS = (
-    Aggregator,
+    LegacyAggregator,
     Counter,
     Cursor,
     Deleter,
@@ -44,7 +44,7 @@ ALL_OPERATORS = (
 
 
 class AllOperatorType(
-    Aggregator,
+    LegacyAggregator,
     Counter,
     Cursor,
     Deleter,
@@ -72,7 +72,7 @@ class AllOperatorType(
 #
 # Operator = Union[*ALL_OPERATORS]
 Operator = Union[
-    Aggregator,
+    LegacyAggregator,
     Counter,
     Cursor,
     Deleter,
