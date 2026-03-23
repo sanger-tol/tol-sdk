@@ -18,8 +18,6 @@ from typing import Any, Callable, Iterable, Optional, Type
 
 from .auth import AuthInspector
 from .misc import (
-    AggregationBody,
-    AggregationParameters,
     GroupStatsParameters,
     LegacyAggregationBody,
     LegacyAggregationParameters,
