@@ -4,7 +4,7 @@
 
 from typing import Union
 
-from .aggregator import LegacyAggregator
+from .legacy_aggregator import LegacyAggregator
 from .counter import Counter
 from .cursor import Cursor
 from .declare import get_operator_member_names  # noqa

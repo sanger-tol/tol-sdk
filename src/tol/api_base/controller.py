@@ -18,8 +18,8 @@ from typing import Any, Callable, Iterable, Optional, Type
 
 from .auth import AuthInspector
 from .misc import (
-    AggregationBody,
-    AggregationParameters,
+    LegacyAggregationBody,
+    LegacyAggregationParameters,
     GroupStatsParameters,
     ListGetParameters,
     StatsParameters,
@@ -478,11 +478,11 @@ class Controller:
             return {'success': True}
 
     @validate(LegacyAggregator, 'get_aggregations', OperatorMethod.AGGREGATE)
-    def post_aggregations(
+    def post_aggregations_legacy(
         self,
         object_type: str,
-        query_args: AggregationParameters,
-        body: AggregationBody,
+        query_args: LegacyAggregationParameters,
+        body: LegacyAggregationBody,
         ext_and: Optional[AndFilter] = None,
     ) -> ResponseDict:
         """

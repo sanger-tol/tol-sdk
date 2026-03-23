@@ -4,7 +4,7 @@
 
 import pytest
 
-from tol.api_base.misc import AggregationBody
+from tol.api_base.misc import LegacyAggregationBody
 from tol.api_client.exception import BadPostJsonError
 
 
@@ -12,10 +12,10 @@ class TestAggregationBody:
     def test_no_aggregations(self):
         """No aggregations specified throws error"""
         with pytest.raises(BadPostJsonError):
-            AggregationBody({'irrelevent': 'so?'}).aggs
+            LegacyAggregationBody({'irrelevent': 'so?'}).aggs
 
     def test_good_aggregations(self):
         """Just aggregations, confirm that an integer is returned"""
         agg = {'something': 'here'}
-        parsed = AggregationBody({'aggs': agg})
+        parsed = LegacyAggregationBody({'aggs': agg})
         assert parsed.aggs == {'something': 'here'}

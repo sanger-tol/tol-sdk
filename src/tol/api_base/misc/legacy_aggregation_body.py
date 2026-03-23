@@ -7,7 +7,7 @@ from typing import Dict
 from ...api_client.exception import BadPostJsonError
 
 
-class AggregationBody:
+class LegacyAggregationBody:
     """
     Parses the parameters from a query string for a Aggregation POST
     endpoint.

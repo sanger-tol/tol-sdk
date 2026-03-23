@@ -20,8 +20,8 @@ from .auth import AuthInspector
 from .auth.error import AuthError
 from .controller import Controller
 from .misc import (
-    AggregationBody,
-    AggregationParameters,
+    LegacyAggregationBody,
+    LegacyAggregationParameters,
     GroupStatsParameters,
     JsonApiRequestBody,
     ListGetParameters,
@@ -360,9 +360,9 @@ def _core_blueprint(
     def get_aggregations_legacy(*, object_type: str):
         """Get aggregated data for objects of the specified type."""
         controller = __new_controller(object_type)
-        request_args = AggregationParameters(request.args | request.json)
-        body = AggregationBody(request.json)
-        return controller.post_aggregations(object_type, request_args, body)
+        request_args = LegacyAggregationParameters(request.args | request.json)
+        body = LegacyAggregationBody(request.json)
+        return controller.post_aggregations_legacy(object_type, request_args, body)
 
     @data_handler.post('/<object_type>:cursor')
     def get_cursor_page(*, object_type: str):

@@ -9,7 +9,7 @@ from abc import ABC, abstractmethod
 from itertools import chain
 from typing import Iterable
 
-from .aggregator import LegacyAggregator
+from .legacy_aggregator import LegacyAggregator
 from .counter import Counter
 from .cursor import Cursor
 from .deleter import Deleter

@@ -8,7 +8,7 @@ from unittest.mock import MagicMock, Mock, PropertyMock, create_autospec
 import pytest
 
 from tol.api_base.controller import Controller
-from tol.api_base.misc import AggregationBody, AggregationParameters, ListGetParameters
+from tol.api_base.misc import LegacyAggregationBody, LegacyAggregationParameters, ListGetParameters
 from tol.api_client.exception import (
     ObjectNotFoundByIdException,
     RecursiveRelationNotFoundException,
@@ -179,14 +179,14 @@ class TestController:
 
         rft = ReqFieldsTree('test_X', ds_3)
         controller = Controller(ds_3, DefaultView(rft), rft)
-        parsed = AggregationParameters(
+        parsed = LegacyAggregationParameters(
             {
                 'filter': """
                 {"exact": {"column1": "value1"}}
             """
             }
         )
-        body = AggregationBody(
+        body = LegacyAggregationBody(
             {
                 'aggs': {
                     'completed_over_time': {
@@ -217,7 +217,7 @@ class TestController:
             },
             'data': [],
         }
-        observed = controller.post_aggregations('test_X', parsed, body)
+        observed = controller.post_aggregations_legacy('test_X', parsed, body)
         assert expected == observed
 
     def test_unsupported_operation(self):
@@ -249,7 +249,7 @@ class TestController:
         with pytest.raises(UnsupportedOperationError):
             controller.get_list('test', query_args=query_args)
         with pytest.raises(UnsupportedOperationError):
-            controller.post_aggregations('test', MagicMock(), MagicMock(), MagicMock())
+            controller.post_aggregations_legacy('test', MagicMock(), MagicMock(), MagicMock())
 
     def test_operation_implemented_no_abc(self):
         """
