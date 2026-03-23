@@ -26,19 +26,19 @@ class TestExtColumn:
         """no overriding of name."""
 
         @ext
-        class _TestModel(BaseModel):
+        class _TestModel1(BaseModel):
             __tablename__ = '1'
 
             id: Mapped[str] = mapped_column(primary_key=True)  # noqa
 
-        excluded = _TestModel.get_excluded_column_names()
+        excluded = _TestModel1.get_excluded_column_names()
         assert excluded == ['id', 'ext']
 
     def test_override(self):
         """overriding of name"""
 
         @ext(target='absolute')
-        class _TestModel(BaseModel):
+        class _TestModel2(BaseModel):
             __tablename__ = '2'
 
             @classmethod
@@ -47,7 +47,7 @@ class TestExtColumn:
 
             id_override: Mapped[str] = mapped_column(primary_key=True)
 
-        excluded = _TestModel.get_excluded_column_names()
+        excluded = _TestModel2.get_excluded_column_names()
         assert excluded == ['id_override', 'absolute']
 
     def test_promotion(self):
@@ -62,7 +62,7 @@ class TestExtColumn:
         }
 
         @ext
-        class _TestModel(BaseModel):
+        class _TestModel3(BaseModel):
             __tablename__ = '3'
 
             id: Mapped[str] = mapped_column(primary_key=True)  # noqa
@@ -72,7 +72,7 @@ class TestExtColumn:
             def ext(self) -> dict[str, Any]:
                 return ext_data
 
-        m = _TestModel(id='101', already_there='I love this!!!')
+        m = _TestModel3(id='101', already_there='I love this!!!')
         attrs = m.instance_attributes
 
         assert attrs == {

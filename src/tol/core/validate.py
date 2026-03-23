@@ -7,6 +7,7 @@ from dataclasses import dataclass
 from enum import Enum
 from typing import Iterable
 
+
 from .data_object import DataObject, ErrorObject
 
 

@@ -17,7 +17,7 @@ from tol.sources.portaldb import (
 class TestDataSourceUtils(TestCase):
 
     def __get_ds(self):
-        dsi = portaldb().get_one('data_source_instance', '18')
+        dsi = portaldb().get_one('data_source_instance', 'test')
         return DataSourceUtils.get_datasource_by_datasource_instance(dsi)
 
     def test_attribute_types(self):
@@ -32,9 +32,9 @@ class TestDataSourceUtils(TestCase):
         ds = self.__get_ds()
 
         assert 'record' in ds.relationship_config
-        assert ds.relationship_config['record'].to_many['children'] == 'child'
-        assert 'child' in ds.relationship_config
-        assert ds.relationship_config['child'].to_one['record'] == 'record'
+        assert ds.relationship_config['record'].to_one['category'] == 'category'
+        assert 'category' in ds.relationship_config
+        assert ds.relationship_config['category'].to_many['records'] == 'record'
 
     def test_get_by_id(self):
         ds = self.__get_ds()

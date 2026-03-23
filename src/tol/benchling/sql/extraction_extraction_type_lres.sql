@@ -28,8 +28,8 @@ SELECT DISTINCT
 	tp.name$ AS eln_tissue_prep_name,
 	ssid.sanger_sample_id,
 	ssid.sanger_sample_id AS extraction_id,
-	c.barcode AS fluidx_id,
-	c.id AS fluidx_container_id,
+	sub_con.barcode AS fluidx_id,
+	sub_con.id AS fluidx_container_id,
 	DATE(tpsub.submitted_submission_date) AS completion_date,
 	'lres'::varchar AS extraction_type
 FROM tissue_prep$raw AS tp
@@ -41,8 +41,16 @@ LEFT JOIN container$raw AS c
 	ON cc.container_id = c.id
 LEFT JOIN tissue_prep_submission_workflow_output$raw AS tpsub
 	ON c.id = tpsub.sample_tube_id
+LEFT JOIN container$raw AS sub_con
+	ON tpsub.sample_tube_id = sub_con.id
 LEFT JOIN storage$raw AS stor 
 	ON c.location_id = stor.id
 LEFT JOIN sanger_sample_id$raw AS ssid 
 	ON c.id = ssid.sample_tube
-WHERE stor.name$ = 'SciOps ToL Lab'
+LEFT JOIN project$raw AS proj
+	ON tp.project_id$ = proj.id
+LEFT JOIN folder$raw AS f 
+	ON tp.folder_id$ = f.id
+WHERE sub_con.id IS NOT NULL
+	AND proj.name = 'ToL Core Lab'
+	AND f.name = 'Sample Prep'

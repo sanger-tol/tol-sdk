@@ -11,6 +11,7 @@ from cachetools.func import ttl_cache
 
 import requests
 from requests.auth import HTTPBasicAuth
+from requests.exceptions import HTTPError
 
 
 from .client import EnaApiClient
@@ -100,7 +101,10 @@ class EnaDataSource(
     @property
     @cache
     def supported_types(self) -> list[str]:
-        return ['assembly', 'read_run', 'sample', 'study', 'taxon']
+        return [
+            'assembly', 'read_run', 'sample', 'study', 'taxon', 'checklist',
+            'submittable_taxon'
+        ]
 
     def get_by_id(
         self,
@@ -111,7 +115,22 @@ class EnaDataSource(
         self.__validate_object_type(object_type)
 
         client = self.__client_factory()
-        ena_response = client.get_detail(object_type, object_ids)
+        # For a submittable_taxon we need to make multiple calls
+        if object_type == 'submittable_taxon':
+            ena_response = []
+            for object_id in object_ids:
+                try:
+                    response = client.get_detail(object_type, [object_id])
+                    if response and isinstance(response, list):
+                        ena_response.extend(response)
+                except HTTPError as http_error:
+                    if http_error.response.status_code != 400:
+                        raise
+        else:
+            ena_response = client.get_detail(object_type, object_ids)
+        # For a checklist we need to convert into a list of dicts
+        if object_type == 'checklist':
+            ena_response = convert_checklist_xml_to_dict(ena_response)
         ena_converter = self.__ec_factory()
 
         converted_objects, _ = ena_converter.convert_list(object_type, ena_response) \
@@ -198,7 +217,6 @@ class EnaDataSource(
         return response
 
     def get_request(self, command: str, headers=None, params=None) -> requests.Response:
-
         response = requests.get(self.uri + command,
                                 params=params, headers=headers,
                                 auth=HTTPBasicAuth(self.user, self.password))
@@ -208,13 +226,6 @@ class EnaDataSource(
                                   detail=f"(status code '{str(response.status_code)}')'")
 
         return response
-
-    def get_xml_checklist(self, checklist_id: str) -> Dict[str, Tuple[str, str, object]]:
-        output = self.get_request(f'/ena/browser/api/xml/{checklist_id}')
-
-        checklist_dict = convert_checklist_xml_to_dict(output.text)
-
-        return checklist_dict
 
     def get_biosample_data_biosampleid(self, biosample_id: str):
         output = self.get_request(f'/ena/browser/api/xml/{biosample_id}')

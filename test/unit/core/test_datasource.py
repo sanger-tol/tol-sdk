@@ -72,6 +72,11 @@ class _TestAttributeMetadata(DefaultAttributeMetadata):
     def get_source(self, object_type, attribute_name):
         return 'test_source'
 
+    def get_acts_as(self, object_type, attribute_name):
+        if object_type == 'object_type1':
+            return 'status'
+        return None
+
 
 class _TestDataSourceAttributes(DataSource, Relational):
     def __init__(self, config: Dict):
@@ -147,7 +152,8 @@ class TestDataSource(TestCase):
                         'cardinality': 1000,
                         'available_on_relationships': True,
                         'authoritative': True,
-                        'source': 'test_source'
+                        'source': 'test_source',
+                        'acts_as': 'status'
                     },
                     'attribute2': {
                         'python_type': 'int',
@@ -156,7 +162,8 @@ class TestDataSource(TestCase):
                         'cardinality': 1000,
                         'available_on_relationships': True,
                         'authoritative': True,
-                        'source': 'test_source'
+                        'source': 'test_source',
+                        'acts_as': 'status'
                     }
                 },
                 'object_type2': {
@@ -167,7 +174,8 @@ class TestDataSource(TestCase):
                         'cardinality': 5,
                         'available_on_relationships': False,
                         'authoritative': False,
-                        'source': 'test_source'
+                        'source': 'test_source',
+                        'acts_as': None
                     },
                     'attribute4': {
                         'python_type': 'datetime',
@@ -176,7 +184,8 @@ class TestDataSource(TestCase):
                         'cardinality': 5,
                         'available_on_relationships': False,
                         'authoritative': False,
-                        'source': 'test_source'
+                        'source': 'test_source',
+                        'acts_as': None
                     }
                 }
             }
@@ -193,7 +202,8 @@ class TestDataSource(TestCase):
                 'cardinality': 1000,
                 'available_on_relationships': True,
                 'authoritative': True,
-                'source': 'test_source'
+                'source': 'test_source',
+                'acts_as': 'status'
             }
         )
         self.assertEqual(
@@ -205,6 +215,7 @@ class TestDataSource(TestCase):
                 'cardinality': 5,
                 'available_on_relationships': False,
                 'authoritative': False,
-                'source': 'test_source'
+                'source': 'test_source',
+                'acts_as': None
             }
         )

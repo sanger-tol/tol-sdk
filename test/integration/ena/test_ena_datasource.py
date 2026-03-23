@@ -39,6 +39,47 @@ class TestEnaDataSource(TestCase):
         with self.assertRaises(StopIteration):
             next(ret)
 
+    def test_get_by_id_checklist(self):
+        eds = ena()
+
+        ret = eds.get_by_id('checklist', ['ERC000053', 'ERC000036'])
+        obj1 = next(ret)
+        obj2 = next(ret)
+
+        self.assertEqual(obj1.id, 'ERC000053')
+        # Just pick out a few attributes to test
+        self.assertEqual(obj1.checklist.get('specimen_id'), [
+            'optional',
+            'free text',
+            ''
+        ])
+        self.assertEqual(obj2.type, 'checklist')
+        with self.assertRaises(StopIteration):
+            next(ret)
+
+    def test_get_by_id_submittable_taxon(self):
+        eds = ena()
+
+        # Allow integer and string ids
+        ret = eds.get_by_id('submittable_taxon', ['9606', '12345678', 9605, 'invalid_format'])
+        obj1 = next(ret)
+        obj2 = next(ret)
+        obj3 = next(ret)
+        obj4 = next(ret)
+        self.assertEqual(obj1.id, '9606')
+        # Just pick out a few attributes to test
+        self.assertEqual(obj1.submittable, True)
+        self.assertEqual(obj1.division, 'HUM')
+        self.assertTrue(obj2 is None)
+        self.assertEqual(obj3.id, '9605')
+        # Just pick out a few attributes to test
+        self.assertEqual(obj3.submittable, False)
+        self.assertEqual(obj3.division, 'MAM')
+        # Invalid format should return None
+        self.assertIsNone(obj4)
+        with self.assertRaises(StopIteration):
+            next(ret)
+
     def test_get_list(self):
         eds = ena()
 
@@ -76,19 +117,19 @@ class TestEnaDataSource(TestCase):
             page_size=4
         )
 
-        assert total == 5
+        assert total == 7
         self.assertEqual(len(ret), 4)
         obj1 = ret[0]
-        self.assertEqual(obj1.id, 'GCA_922984935.1')
-        self.assertEqual(obj1.collected_by, 'Chris Newman | Ming-shan Tsai | David Macdonald | Christina Buesching | Peter Holland') # noqa
-        self.assertEqual(obj1.collection_date, '2019-09-19')
+        self.assertEqual(obj1.id, 'GCA_054556025.1')
+        self.assertEqual(obj1.collected_by, 'Quanshu Wu and Bingyao Huang') # noqa
+        self.assertEqual(obj1.collection_date, '2022')
 
         obj2 = ret[1]
-        self.assertEqual(obj2.id, 'GCA_922984935.2')
+        self.assertEqual(obj2.id, 'GCA_054556105.1')
 
         obj3 = ret[2]
-        self.assertEqual(obj3.id, 'GCA_922990625.1')
+        self.assertEqual(obj3.id, 'GCA_922984935.1')
 
         obj4 = ret[3]
-        self.assertEqual(obj4.id, 'GCA_958301625.1')
-        self.assertEqual(obj4.common_name, 'Japanese rose')
+        self.assertEqual(obj4.id, 'GCA_922984935.2')
+        self.assertEqual(obj4.sex, 'male')

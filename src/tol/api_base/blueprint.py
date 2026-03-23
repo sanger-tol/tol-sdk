@@ -35,6 +35,7 @@ from ..core import DataSource, DataSourceError, OperableDataSource
 from ..core.data_source_dict import DataSourceDict
 from ..core.operator import Relational
 from ..core.operator.operator_config import DefaultOperatorConfig, OperatorConfig
+from ..core.requested_fields import ReqFieldsTree
 
 
 class DataBlueprint(Blueprint):
@@ -179,6 +180,7 @@ def _core_blueprint(
     data_source_dict: dict[str, DataSource],
     url_prefix: str,
     auth_inspector: Optional[AuthInspector] = None,
+    include_all_to_ones: bool = True,
 ) -> DataBlueprint:
     """
     Create the core blueprint responsible for managing DataSource endpoints.
@@ -193,6 +195,8 @@ def _core_blueprint(
         url_prefix (str): URL prefix for all data endpoints.
         auth_inspector (Optional[AuthInspector], optional): Authentication
             inspector for request authorisation.
+        include_all_to_ones (bool): Whether to fetch or store all to-one related objects
+            when fetching or serialising DataObjects.
 
     Returns:
         DataBlueprint: A configured blueprint with all data endpoints and error handlers.
@@ -231,43 +235,76 @@ def _core_blueprint(
         hop_limit = None if requested_fields else 1
 
         data_source = data_source_dict[object_type]
-        view = DefaultView(
-            prefix=url_prefix,
-            include_all_to_ones=True,
-            hop_limit=hop_limit,
-            requested_fields=requested_fields,
+
+        # Build a ReqFieldsTree template for the request
+        req_fields_tree = ReqFieldsTree(
+            object_type,
+            data_source,
+            requested_fields,
+            include_all_to_ones=include_all_to_ones,
         )
-        return Controller(data_source, view, auth_inspector=auth_inspector)
+
+        view = DefaultView(
+            requested_tree=req_fields_tree,
+            prefix=url_prefix,
+            hop_limit=hop_limit,
+        )
+        return Controller(data_source, view, req_fields_tree, auth_inspector=auth_inspector)
+
+    def __new_parser(
+        object_type: str,
+    ):
+        data_source = data_source_dict[object_type]
+        # Build a ReqFieldsTree template for the request
+        req_fields_tree = ReqFieldsTree(
+            object_type,
+            data_source,
+            include_all_to_ones=include_all_to_ones,
+        )
+        return DefaultParser(data_source_dict, requested_tree=req_fields_tree)
 
     @data_handler.route('/<object_type>/<path:object_id>', methods=['GET'])  # Allow slashes
     def get_detail(*, object_type: str, object_id: str):
         """Get details of a specific object by ID."""
-        controller = __new_controller(object_type)
+        request_args = ListGetParameters(request.args)
+        controller = __new_controller(
+            object_type,
+            requested_fields=request_args.requested_fields,
+        )
         object_id_unencoded = urllib.parse.unquote(object_id)
         return controller.get_detail(object_type, object_id_unencoded)
 
-    @data_handler.route('/<object_type>', methods=['GET'])
+    @data_handler.route('/<object_type>', methods=['GET', 'POST'])
     def get_list(*, object_type: str):
         """Get a paginated list of objects of the specified type."""
-        request_args = ListGetParameters(request.args)
+        if request.method == 'POST':
+            request_args = ListGetParameters(request.json | request.args)
+        else:
+            request_args = ListGetParameters(request.args)
         controller = __new_controller(
             object_type,
             requested_fields=request_args.requested_fields,
         )
         return controller.get_list(object_type, request_args)
 
-    @data_handler.route('/<object_type>:count', methods=['GET'])
+    @data_handler.route('/<object_type>:count', methods=['GET', 'POST'])
     def get_count(*, object_type: str):
         """Get the count of objects matching the specified filters."""
+        if request.method == 'POST':
+            request_args = ListGetParameters(request.json | request.args)
+        else:
+            request_args = ListGetParameters(request.args)
         controller = __new_controller(object_type)
-        request_args = ListGetParameters(request.args)
         return controller.get_count(object_type, request_args)
 
-    @data_handler.route('/<object_type>:stats', methods=['GET'])
+    @data_handler.route('/<object_type>:stats', methods=['GET', 'POST'])
     def get_stats(*, object_type: str):
         """Get statistical information about objects of the specified type."""
+        if request.method == 'POST':
+            request_args = StatsParameters(request.json | request.args)
+        else:
+            request_args = StatsParameters(request.args)
         controller = __new_controller(object_type)
-        request_args = StatsParameters(request.args)
         return controller.get_stats(object_type, request_args)
 
     @data_handler.get('/<object_type>:group-stats')
@@ -295,19 +332,17 @@ def _core_blueprint(
     def post_inserts(*, object_type: str):
         """Insert new objects of the specified type."""
         controller = __new_controller(object_type)
-        request_body = JsonApiRequestBody(request.json)
-        parser = DefaultParser(data_source_dict)
-        objects = parser.parse_iterable(request_body.data)
+        parser = __new_parser(object_type)
+        objects = parser.parse_json_doc(request.json)
         return controller.post_inserts(object_type, objects)
 
     @data_handler.route('/<object_type>:upsert', methods=['POST'])
     def post_upserts(*, object_type: str):
         """Insert or update objects of the specified type."""
-        controller = __new_controller(object_type)
         request_args = ListGetParameters(request.args)
-        request_body = JsonApiRequestBody(request.json)
-        parser = DefaultParser(data_source_dict)
-        objects = parser.parse_iterable(request_body.data)
+        controller = __new_controller(object_type)
+        parser = __new_parser(object_type)
+        objects = parser.parse_json_doc(request.json)
         return controller.post_upserts(
             object_type,
             objects,
@@ -318,17 +353,21 @@ def _core_blueprint(
     def get_aggregations(*, object_type: str):
         """Get aggregated data for objects of the specified type."""
         controller = __new_controller(object_type)
-        request_args = AggregationParameters(request.args)
+        request_args = AggregationParameters(request.args | request.json)
         body = AggregationBody(request.json)
         return controller.post_aggregations(object_type, request_args, body)
 
     @data_handler.post('/<object_type>:cursor')
     def get_cursor_page(*, object_type: str):
         """Get a page of results using cursor-based pagination."""
-        controller = __new_controller(object_type)
-        request_args = ListGetParameters(request.args)
+        request_args = ListGetParameters(request.args | request.json)
+        controller = __new_controller(
+            object_type,
+            requested_fields=request_args.requested_fields,
+        )
         search_after = request.json.get('search_after')
-        return controller.get_cursor_page(object_type, request_args, search_after)
+        page = controller.get_cursor_page(object_type, request_args, search_after)
+        return page
 
     @data_handler.route('/<object_type>:to-one/<object_id>/<path:hops_suffix>', methods=['GET'])
     def get_to_one_relation(*, object_type: str, object_id: str, hops_suffix: str):
@@ -369,6 +408,7 @@ def data_blueprint(
     url_prefix: str = '/data',
     config_prefix: str = '/_config',
     auth_inspector: Optional[AuthInspector] = None,
+    include_all_to_ones: bool = True,
 ) -> DataBlueprint:
     """
     Create a complete data blueprint with both core and configuration endpoints.
@@ -405,7 +445,10 @@ def data_blueprint(
         config_prefix, data_sources, DefaultOperatorConfig(*data_sources)
     )
     core_bp = _core_blueprint(
-        DataSourceDict(*data_sources), url_prefix, auth_inspector=auth_inspector
+        DataSourceDict(*data_sources),
+        url_prefix,
+        auth_inspector=auth_inspector,
+        include_all_to_ones=include_all_to_ones,
     )
     core_bp.register_blueprint(config_bp)
 

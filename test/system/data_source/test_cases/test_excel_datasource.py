@@ -57,7 +57,7 @@ class TestTreeOfSex:
             converter=converter,
         )
 
-        loader.load(field_prefix='')
+        loader.load(provenance='')
 
         ds_sleep(5)
 
@@ -79,10 +79,10 @@ class TestTreeOfSex:
             )
         )
 
-        assert obj1.id == '1'
+        assert obj1.id == '2'
         assert obj1.int_column is None
         assert obj1.str_column == 'X:-:map_TO'
 
-        assert obj2.id == '2'
+        assert obj2.id == '3'
         assert int(obj2.int_column) == 42
         assert obj2.str_column == 'Y'

@@ -55,12 +55,12 @@ class TestLabwhereLocationToElasticSampleConverter(TestCase):
         ret1 = next(converteds)
         self.assertEqual(ret1, (None, {
             'sts_project': 'proj1',
-            'sts_target_coverage': 25
+            'target_coverage': 25
         }))
 
         converteds = converter.convert(obj2)
         ret2 = next(converteds)
         self.assertEqual(ret2, (None, {
             'sts_project': 'proj2',
-            'sts_target_coverage': 50
+            'target_coverage': 50
         }))

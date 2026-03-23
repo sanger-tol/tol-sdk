@@ -51,19 +51,19 @@ class TestBenchlingWarehouseDataSource(TestCase):
         first = next(returned)
         self.assertEqual('1234', first.id)
         self.assertEqual('sample', first.type)
-        self.assertEqual({'sts_id': '1234', 'priority': '1',
+        self.assertEqual({'priority': '1',
                           'rack_id': '9876', 'project': 'PROJ1'},
                          first.attributes)
         second = next(returned)
         self.assertEqual('2345', second.id)
         self.assertEqual('sample', second.type)
-        self.assertEqual({'sts_id': '2345', 'position': '2',
+        self.assertEqual({'position': '2',
                           'rack_id': '8765', 'project': 'PROJ2'},
                          second.attributes)
         third = next(returned)
         self.assertEqual('3456', third.id)
         self.assertEqual('sample', third.type)
-        self.assertEqual({'sts_id': '3456', 'position': None,
+        self.assertEqual({'position': None,
                           'rack_id': '7654', 'project': 'PROJ3'},
                          third.attributes)
         with self.assertRaises(StopIteration):

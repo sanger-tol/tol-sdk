@@ -2,7 +2,7 @@
 #
 # SPDX-License-Identifier: MIT
 
-from datetime import datetime
+from datetime import date, datetime
 from typing import Any, Optional
 from unittest.mock import Mock, create_autospec
 
@@ -11,7 +11,6 @@ from tol.api_client.converter import (
     JsonApiConverter
 )
 from tol.api_client.parser import DefaultParser
-from tol.api_client.view import DefaultView
 from tol.core import DataObject, DataSource
 from tol.core.data_source_dict import DataSourceDict
 
@@ -20,7 +19,8 @@ def _get_mock_data_object(
     type_: str,
     id_: Optional[str],
     attributes: dict[str, Any] = {},
-    to_one: dict[str, Any] = {}
+    to_one: dict[str, Any] = {},
+    to_many: dict[str, Any] = {},
 ) -> DataObject:
 
     data_object = Mock()
@@ -86,18 +86,9 @@ class TestJsonApiConverter:
     def test_no_optional(self):
         """Optional fields not specified"""
 
-        in_ = {
-            'data_lol': {
-                'type': 'hype'
-            }
-        }
-        parser = DefaultParser(
-            _get_mock_ds_dict({'hype': {}})
-        )
-        converter = JsonApiConverter(
-            parser,
-            data_key='data_lol'
-        )
+        in_ = {'data': {'type': 'hype'}}
+        parser = DefaultParser(_get_mock_ds_dict({'hype': {}}))
+        converter = JsonApiConverter(parser)
         out_ = converter.convert(in_)
 
         assert out_.type == 'hype'
@@ -290,7 +281,7 @@ class TestDataObjectConverter:
             ]
         }
 
-        converter = DataObjectConverter(DefaultView())
+        converter = DataObjectConverter(_get_mock_data_source())
         observed = converter.convert_list(mock_objs)
 
         assert observed == expected
@@ -307,17 +298,17 @@ class TestDataObjectConverter:
             'lol',
             attributes={
                 'a': datetime.now(),
-                'b': datetime.now(),
+                'b': date.today(),
                 'c': True,
                 'd': 'sdsa90d',
                 'e': 394
             }
         )
-        converter = DataObjectConverter(DefaultView())
+        converter = DataObjectConverter(_get_mock_data_source())
         observed = converter.convert(mock_obj)
 
         attributes = observed['data']['attributes']
         assert list(attributes.keys()) == list('abcde')
 
         for c in 'abcde':
-            assert not isinstance(attributes[c], datetime)
+            assert not isinstance(attributes[c], date)

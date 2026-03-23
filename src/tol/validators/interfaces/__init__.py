@@ -2,5 +2,4 @@
 #
 # SPDX-License-Identifier: MIT
 
-
-from .factory import create_loader_models  # noqa F401
+from .condition_evaluator import Condition, ConditionDict, ConditionEvaluator  # noqa

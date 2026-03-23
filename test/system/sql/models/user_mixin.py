@@ -14,13 +14,13 @@ from sqlalchemy.orm import (
     relationship
 )
 
-from .board import board_user_mixin
+from .standard import standard_user_mixin
 
 if typing.TYPE_CHECKING:
     from .r1 import R1
 
 
-class TestUserMixin(board_user_mixin):
+class TestUserMixin(standard_user_mixin):
     """
     Augments user with:
 

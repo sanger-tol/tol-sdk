@@ -5,10 +5,7 @@
 from typing import Iterable
 
 from tol.core import DataObject
-from tol.validators import (
-    AllowedValues,
-    AllowedValuesValidator,
-)
+from tol.validators import AllowedValuesValidator
 
 
 class TestAllowedValuesValidator:
@@ -18,16 +15,10 @@ class TestAllowedValuesValidator:
         mock_objs: Iterable[DataObject]
     ) -> None:
 
-        config = [
-            AllowedValues(
-                key='key1',
-                values=list('abc'),
-            ),
-            {
-                'key': 'key2',
-                'values': list('abc'),
-            },
-        ]
+        config = AllowedValuesValidator.Config(
+            field='key1',
+            allowed_values=list('abc')
+        )
 
         validator = AllowedValuesValidator(
             config,
@@ -45,18 +36,11 @@ class TestAllowedValuesValidator:
         mock_objs: Iterable[DataObject]
     ) -> None:
 
-        config = [
-            AllowedValues(
-                key='key1',
-                values=list('abc')
-            ),
-            # adds warnings
-            AllowedValues(
-                key='key2',
-                values=list('xyz'),
-                is_error=False,
-            ),
-        ]
+        config = AllowedValuesValidator.Config(
+            field='key1',
+            allowed_values=list('xyz'),
+            is_error=False  # adds warnings
+        )
 
         validator = AllowedValuesValidator(
             config,
@@ -75,17 +59,11 @@ class TestAllowedValuesValidator:
         mock_objs: Iterable[DataObject]
     ) -> None:
 
-        config = [
-            AllowedValues(
-                key='key1',
-                values=list('abc')
-            ),
-            # adds errors
-            AllowedValues(
-                key='key2',
-                values=list('xyz'),
-            ),
-        ]
+        config = AllowedValuesValidator.Config(
+            field='key1',
+            allowed_values=list('xyz'),
+            is_error=True  # adds errors
+        )
 
         validator = AllowedValuesValidator(
             config,

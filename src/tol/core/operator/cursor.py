@@ -14,6 +14,7 @@ from ..datasource_filter import DataSourceFilter
 
 if typing.TYPE_CHECKING:
     from ..data_object import DataObject
+    from ..requested_fields import ReqFieldsTree
     from ..session import OperableSession
 
 
@@ -48,7 +49,8 @@ class Cursor(_Filterable, ABC):
         object_filters: Optional[DataSourceFilter] = None,
         search_after: list[str] | None = None,
         session: Optional[OperableSession] = None,
-        requested_fields: list[str] | None = None
+        requested_fields: list[str] | None = None,
+        requested_tree: ReqFieldsTree | None = None,
     ) -> tuple[Iterable[DataObject], list[str] | None]:
         """
         Gets an `Iterable` of `DataObject` instances of the given
@@ -118,7 +120,7 @@ class Cursor(_Filterable, ABC):
         object_type: str,
         object_filters: Optional[DataSourceFilter] = None,
         session: Optional[OperableSession] = None,
-        requested_fields: list[str] | None = None
+        **kwargs,
     ) -> Iterable[DataObject]:
         """
         A usable implementation for `ListGetter.get_list()`
@@ -135,7 +137,7 @@ class Cursor(_Filterable, ABC):
                 object_filters=object_filters,
                 search_after=search_after,
                 session=session,
-                requested_fields=requested_fields,
+                **kwargs,
             )
             objs = list(fetched)
 

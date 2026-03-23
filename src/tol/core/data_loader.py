@@ -20,7 +20,7 @@ from .datasource_filter import DataSourceFilter
 
 class DataLoader(ABC):
     @abstractmethod
-    def load(self, field_prefix: str = None, dry_run: bool = False, **kwargs):
+    def load(self, provenance: str | None = None, dry_run: bool = False, **kwargs):
         """
         Loads a set of object from one DataSource to another
         """
@@ -53,7 +53,7 @@ class DefaultDataLoader():
 
     def load(
         self,
-        field_prefix: str = None,
+        provenance: str | None = None,
         dry_run: bool = False,
         candidate_key: Optional[List[str]] = ['id'],
         method: str = 'upsert',
@@ -70,7 +70,7 @@ class DefaultDataLoader():
                 candidate_key=candidate_key,
                 converted_objs=converted_objs,
                 dry_run=dry_run,
-                field_prefix=field_prefix,
+                provenance=provenance,
                 method=method
             )
         else:
@@ -78,7 +78,7 @@ class DefaultDataLoader():
                 candidate_key=candidate_key,
                 converted_objs=converted_objs,
                 dry_run=dry_run,
-                field_prefix=field_prefix,
+                provenance=provenance,
                 method=method,
                 destination_object_type=self._destination_object_type
             )
@@ -104,7 +104,7 @@ class DefaultDataLoader():
         converted_objs: Iterable[object],
         candidate_key: List[str] = ['id'],
         dry_run: bool = False,
-        field_prefix: str = None,
+        provenance: str | None = None,
         method: str = 'upsert'
     ):
         grouped_sorted_converted_objects = self._get_sorted_converted_objs(converted_objs)
@@ -115,7 +115,7 @@ class DefaultDataLoader():
                 candidate_key=candidate_key,
                 converted_objs=grouped_sorted_converted_objects[key],
                 dry_run=dry_run,
-                field_prefix=field_prefix,
+                provenance=provenance,
                 method=method,
                 destination_object_type=key
             )
@@ -140,7 +140,7 @@ class DefaultDataLoader():
         converted_objs: Iterable[object],
         candidate_key: List[str] = ['id'],
         dry_run: bool = False,
-        field_prefix: str = None,
+        provenance: str | None = None,
         method: str = 'upsert'
     ):
         returned_objects = []
@@ -150,7 +150,7 @@ class DefaultDataLoader():
                 returned_objects = insert_method(
                     destination_object_type,
                     objects=converted_objs,
-                    field_prefix=field_prefix
+                    provenance=provenance
                 )
             else:
                 for converted_obj in converted_objs:
@@ -161,7 +161,7 @@ class DefaultDataLoader():
                     object_type=destination_object_type,
                     updates=converted_objs,
                     candidate_key=candidate_key,
-                    field_prefix=field_prefix
+                    provanence=provenance
                 )
             else:
                 for converted_obj_id, converted_obj in converted_objs:
@@ -284,8 +284,10 @@ class GroupStatterDataLoader(DefaultDataLoader):
                     = data_object['stats']['count']
                 for stats_field in data_loader._group_statter_stats_fields:
                     for stat in data_loader._group_statter_stats:
-                        attributes[f'{source_object_type}_{stats_field}_{append_string}{stat}'] = \
-                            data_object['stats'][stats_field][stat]
+                        converted_stats_field = stats_field.replace('.', '_')
+                        attributes[
+                            f'{source_object_type}_{converted_stats_field}_{append_string}{stat}'
+                        ] = data_object['stats'][stats_field][stat]
                 ret1 = CoreDataObject(
                     id_=data_object['key'][data_loader._group_statter_group_by[0]],
                     type_=data_loader._destination_object_type,

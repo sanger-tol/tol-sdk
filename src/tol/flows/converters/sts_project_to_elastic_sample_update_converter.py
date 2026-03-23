@@ -17,5 +17,5 @@ class StsProjectToElasticSampleUpdateConverter(
         if data_object is not None:
             yield (None, {
                 'sts_project': data_object.id,
-                'sts_target_coverage': data_object.target_coverage
+                'target_coverage': data_object.target_coverage
             })

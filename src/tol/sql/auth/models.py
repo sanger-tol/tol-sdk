@@ -19,6 +19,7 @@ from sqlalchemy.ext.declarative import declared_attr
 from sqlalchemy.orm import (
     Mapped,
     Session,
+    joinedload,
     mapped_column,
     relationship
 )
@@ -184,7 +185,7 @@ def create_models(
 
         id: Mapped[str] = mapped_column(  # noqa A003
             primary_key=True,
-            name=None if not prefix_with_name else 'state_id'
+            name='state_id' if prefix_with_name else None
         )
 
         created_at: Mapped[datetime] = mapped_column(
@@ -257,13 +258,13 @@ def create_models(
         id: Mapped[int] = mapped_column(  # noqa A003
             primary_key=True,
             autoincrement=True,
-            name=None if not prefix_with_name else 'user_id'
+            name='user_id' if prefix_with_name else None
         )
 
-        _tokens: Mapped[list['Token']] = relationship(
+        _tokens: Mapped[list[Token]] = relationship(
             back_populates='user'
         )
-        _role_bindings: Mapped[list['RoleBinding']] = relationship(
+        _role_bindings: Mapped[list[RoleBinding]] = relationship(
             back_populates='user'
         )
 
@@ -340,7 +341,7 @@ def create_models(
 
     class _TokenPKMixin:
         """
-        Has an integer has a primary key.
+        Has an integer as a primary key.
 
         This is all that is needed in most apps,
         and is the default.
@@ -403,11 +404,19 @@ def create_models(
             token: str
         ) -> Optional[Token]:
 
-            return sess.query(
-                cls
-            ).filter_by(
-                token=token
-            ).one_or_none()
+            return (
+                sess.query(cls)
+                .filter_by(token=token)
+                .options(
+                    # Join through to the Role table when fetching a Token so
+                    # that SQLAlchemy only fires one SELECT query instead of
+                    # four to get `token.user._role_bindings.role.name`
+                    joinedload(cls.user)
+                    .joinedload(User._role_bindings)
+                    .joinedload(RoleBinding.role)
+                )
+                .one_or_none()
+            )
 
         @classmethod
         def get_or_create(
@@ -475,14 +484,14 @@ def create_models(
         id: Mapped[int] = mapped_column(  # noqa A003
             primary_key=True,
             autoincrement=True,
-            name=None if not prefix_with_name else 'role_id'
+            name='role_id' if prefix_with_name else None
         )
 
         name: Mapped[str] = mapped_column(
             unique=True
         )
 
-        _role_bindings: Mapped[list['RoleBinding']] = relationship(
+        _role_bindings: Mapped[list[RoleBinding]] = relationship(
             back_populates='role'
         )
 

@@ -16,7 +16,7 @@ from tol.api_client.exception import (
     UnsupportedOperationError,
 )
 from tol.api_client.view import DefaultView, View
-from tol.core import DataSource, DataSourceFilter, core_data_object
+from tol.core import DataSource, DataSourceFilter, ReqFieldsTree, core_data_object
 from tol.core.data_object import DataObject
 from tol.core.operator import Aggregator, DetailGetter, PageGetter, Relational
 
@@ -119,7 +119,10 @@ class TestController:
             'meta': {'total': 20, 'types': {}},
             'data': [{'type': 'test_B', 'id': str(i)} for i in range(20)],
         }
-        controller = Controller(ds_2, DefaultView())
+        controller = Controller(ds_2, DefaultView(ReqFieldsTree('test_B', ds_2)))
+        observed = controller.get_list('test_B', ListGetParameters({}))
+        rft = ReqFieldsTree('test_B', ds_2)
+        controller = Controller(ds_2, DefaultView(rft), rft)
         observed = controller.get_list('test_B', ListGetParameters({}))
         assert observed == expected
 
@@ -131,8 +134,8 @@ class TestController:
                 return [None]
 
         not_found_ds = _TestDataSourceNotFound({})
-
-        controller = Controller(not_found_ds, DefaultView())
+        rft = ReqFieldsTree('test2', not_found_ds)
+        controller = Controller(not_found_ds, DefaultView(rft), rft)
 
         with pytest.raises(ObjectNotFoundByIdException):
             controller.get_detail('test2', 'anything goes too')
@@ -140,7 +143,8 @@ class TestController:
     def test_page_size_and_number(self):
         """Check that page_size and page_number are passed in correctly"""
 
-        controller = Controller(ds_3, DefaultView())
+        rft = ReqFieldsTree('test_X', ds_3)
+        controller = Controller(ds_3, DefaultView(rft), rft)
         parsed = ListGetParameters(
             {
                 'page': '90',
@@ -173,7 +177,8 @@ class TestController:
     def test_aggregations(self):
         """Check that aggregations are working"""
 
-        controller = Controller(ds_3, DefaultView())
+        rft = ReqFieldsTree('test_X', ds_3)
+        controller = Controller(ds_3, DefaultView(rft), rft)
         parsed = AggregationParameters(
             {
                 'filter': """
@@ -236,7 +241,8 @@ class TestController:
                 return ['no']
 
         bad_ds = _BadDataSource()
-        controller = Controller(bad_ds, DefaultView())
+        rft = ReqFieldsTree('test', bad_ds)
+        controller = Controller(bad_ds, DefaultView(rft), rft)
         query_args = ListGetParameters({'page': '1', 'page_size': '10'})
         with pytest.raises(UnsupportedOperationError):
             controller.get_detail('test', 'hype')
@@ -271,7 +277,8 @@ class TestController:
                 raise Exception("shouldn't have made it this far!")
 
         bad_ds = _BadDataSource()
-        controller = Controller(bad_ds, DefaultView())
+        rft = ReqFieldsTree('uh-oh', bad_ds)
+        controller = Controller(bad_ds, DefaultView(rft), rft)
 
         with pytest.raises(UninheritedOperationError) as e:
             controller.get_detail('uh-oh', 'lol')
@@ -296,7 +303,9 @@ class TestController:
         mock_ds = create_autospec(Relational)
         mock_ds.get_recursive_relation.return_value = expected
 
-        controller = Controller(mock_ds, mock_view)
+        mock_rft = create_autospec(ReqFieldsTree)
+
+        controller = Controller(mock_ds, mock_view, mock_rft)
         observed = controller.get_recursive_relation(mock_object, ['a', 'b'])
 
         mock_ds.validate_to_one_recurse.assert_called_once_with('test', ['a', 'b'])
@@ -319,7 +328,9 @@ class TestController:
         mock_ds = create_autospec(Relational)
         mock_ds.get_recursive_relation.return_value = None
 
-        controller = Controller(mock_ds, mock_view)
+        mock_rft = create_autospec(ReqFieldsTree)
+
+        controller = Controller(mock_ds, mock_view, mock_rft)
 
         with pytest.raises(RecursiveRelationNotFoundException):
             controller.get_recursive_relation(mock_object, ['a', 'b'])
@@ -346,7 +357,9 @@ class TestController:
         mock_ds = create_autospec(Relational)
         mock_ds.get_to_many_relations_page.return_value = expected
 
-        controller = Controller(mock_ds, mock_view)
+        mock_rft = create_autospec(ReqFieldsTree)
+
+        controller = Controller(mock_ds, mock_view, mock_rft)
 
         controller.get_many_relations_page(mock_object, 'test_relation', mock_params)
 

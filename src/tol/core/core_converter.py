@@ -6,14 +6,12 @@ from __future__ import annotations
 
 import typing
 from abc import ABC, abstractmethod
+from collections.abc import Iterable, Iterator
 from functools import reduce
 from itertools import chain
 from typing import (
     Any,
     Generic,
-    Iterable,
-    Iterator,
-    Optional,
     TypeVar
 )
 
@@ -36,8 +34,8 @@ class Converter(ABC, Generic[In, Out]):
 
     def convert_iterable(
         self,
-        inputs: Iterable[Optional[In]]
-    ) -> Iterable[Optional[Out]]:
+        inputs: Iterable[In | None]
+    ) -> Iterable[Out | None]:
         """
         Converts an `Iterable` of (possibly `None`) input representations
         to an `Iterable` of (possibly `None`) output representations,
@@ -46,7 +44,7 @@ class Converter(ABC, Generic[In, Out]):
 
         return (self.convert_optional(i) for i in inputs)
 
-    def convert_optional(self, input_: Optional[In]) -> Optional[Out]:
+    def convert_optional(self, input_: In | None) -> Out | None:
         """
         Converts a possibly `None` input representation to either:
 
@@ -72,15 +70,15 @@ class AsyncConverter(ABC, Generic[In, Out]):
     async def async_convert(self, input_: In) -> Out:
         """input_ must not be null."""
 
-    async def async_convert_optional(self, input_: Optional[In]) -> Optional[Out]:
+    async def async_convert_optional(self, input_: In | None) -> Out | None:
         """input_ can be `None`, in which case `None` is returned"""
 
         return await self.async_convert(input_) if input_ is not None else None
 
     async def async_convert_iterable(
         self,
-        input_: Iterable[Optional[In]]
-    ) -> Iterable[Optional[Out]]:
+        input_: Iterable[In | None]
+    ) -> Iterable[Out | None]:
         """
         Converts an `Iterable`, converting or returning `None` element-wise,
         using `AsyncConverter().async_convert_optional()`

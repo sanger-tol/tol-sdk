@@ -18,10 +18,12 @@ class HttpClient:
         self,
         token: Optional[str] = None,
         token_header: str = 'token',
-        retries: int = 5
+        retries: int = 5,
+        status_forcelist: Optional[list[int]] = [429, 502, 503, 504],
     ) -> None:
         self.__token = self._token_header(token_header, token)
         self.__retries = retries
+        self.__status_forcelist = status_forcelist
 
     def _token_header(
         self,
@@ -53,7 +55,7 @@ class HttpClient:
             **__empty_if_none(self.__token)
         }
 
-    def _get_session(self) -> requests.Session:
+    def get_session(self) -> requests.Session:
 
         cert_path = os.path.join(
             os.path.dirname(__file__),
@@ -72,12 +74,12 @@ class HttpClient:
         """
         Attempts a call to the endpoint 5 times, with a delay of 1 second
         """
-        session = self._get_session()
+        session = self.get_session()
 
         retry_strategy = Retry(
             total=self.__retries,
             backoff_factor=1,
-            status_forcelist=[429, 502, 503, 504]
+            status_forcelist=self.__status_forcelist
         )
         session.mount('http://', HTTPAdapter(max_retries=retry_strategy))
         session.mount('https://', HTTPAdapter(max_retries=retry_strategy))

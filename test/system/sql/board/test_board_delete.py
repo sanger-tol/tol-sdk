@@ -179,6 +179,37 @@ class TestBoardDelete:
         }
         board_ds.insert('user', list(users.values()))
 
+        # build up the data_source_config and data_source_instance
+        data_source_config = board_ds.data_object_factory(
+            'data_source_config',
+            id_=1,
+            attributes={
+                'name': 'tol-test',
+                'description': 'Test data source config',
+            }
+        )
+        board_ds.insert('data_source_config', [data_source_config])
+
+        data_source_instance = board_ds.data_object_factory(
+            'data_source_instance',
+            id_='tol_system_test',
+            attributes={
+                'builtin_name': 'elastic-test',
+                'kwargs': {},
+                'publish': True,
+                'ui_api_details': {
+                    'url': 'http://example.com',
+                    'apiPath': '/v1/data',
+                    'apiDataPath': '/data',
+                    'dataspace': 'test_dataspace'
+                }
+            },
+            to_one={
+                'data_source_config': data_source_config
+            }
+        )
+        board_ds.insert('data_source_instance', [data_source_instance])
+
         objs: dict[str, dict[str, DataObject]] = {}
 
         # build up the exposed types
@@ -229,7 +260,7 @@ class TestBoardDelete:
                 'title': f'component_{id_}',
                 'config': {},
                 'object_type': 'sample',
-                'datasource': '{"api_prefix": "local", "base_url": "portal.com"}',
+                'data_source_instance_id': 'tol_system_test',
                 'component_type': 'table',
                 'widget_type': 'idk this is a test',
                 'filter_pass_through': False
@@ -239,7 +270,7 @@ class TestBoardDelete:
             return {
                 'title': f'zone_{id_}',
                 'object_type': 'sample',
-                'datasource': '{"api_prefix": "local", "base_url": "portal.com"}',
+                'data_source_instance_id': 'tol_system_test',
             }
 
         elif type_ == 'view':

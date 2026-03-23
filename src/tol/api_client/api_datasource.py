@@ -35,6 +35,7 @@ from ..core.operator import (
     Upserter,
 )
 from ..core.relationship import RelationshipConfig
+from ..core.requested_fields import ReqFieldsTree, requested_fields_to_tree
 
 if typing.TYPE_CHECKING:
     from ..core.session import OperableSession
@@ -133,27 +134,34 @@ class ApiDataSource(
             for k, v in transfer.items()
         }
 
+    @requested_fields_to_tree
     @validate('detailGet')
     def get_by_id(
         self,
         object_type: str,
         object_ids: Iterable[str],
         session: Optional[OperableSession] = None,
-        requested_fields: list[str] | None = None,
+        requested_tree: ReqFieldsTree | None = None,
     ) -> Iterable[Optional[DataObject]]:
 
         client = self.__client_factory()
+
         json_responses = (
-            client.get_detail(object_type, id_)
+            client.get_detail(
+                object_type,
+                id_,
+                requested_tree=requested_tree,
+            )
             for id_ in object_ids
         )
-        json_converter = self.__jc_factory()
+        json_converter = self.__jc_factory(object_type, requested_tree)
         return (
             json_converter.convert(r)
             if r is not None else None
             for r in json_responses
         )
 
+    @requested_fields_to_tree
     @validate('listGet')
     def get_list_page(
         self,
@@ -163,7 +171,7 @@ class ApiDataSource(
         object_filters: Optional[DataSourceFilter] = None,
         sort_by: Optional[str] = None,
         session: Optional[OperableSession] = None,
-        requested_fields: list[str] | None = None,
+        requested_tree: ReqFieldsTree | None = None,
     ) -> tuple[Iterable[DataObject], int]:
 
         filter_string = self.__get_filter_string(object_filters)
@@ -173,27 +181,30 @@ class ApiDataSource(
             page_size,
             filter_string=filter_string,
             sort_string=sort_by,
-            requested_fields=requested_fields,
+            requested_tree=requested_tree,
         )
-        return self.__jc_factory().convert_list(transfer)
 
+        return self.__jc_factory(object_type, requested_tree).convert_list(transfer)
+
+    @requested_fields_to_tree
     def get_list(
         self,
         object_type: str,
         object_filters: Optional[DataSourceFilter] = None,
         session: Optional[OperableSession] = None,
-        requested_fields: list[str] | None = None,
+        requested_tree: ReqFieldsTree | None = None,
     ) -> Iterable[DataObject]:
-
         if self.__can_cursor(object_type, object_filters):
             return self._get_list_by_cursor(
                 object_type,
-                object_filters
+                object_filters,
+                requested_tree=requested_tree,
             )
         else:
             return self.__get_list_regular(
                 object_type,
-                object_filters
+                object_filters,
+                requested_tree=requested_tree,
             )
 
     @validate('count')
@@ -258,7 +269,7 @@ class ApiDataSource(
         object_filters: Optional[DataSourceFilter] = None,
         search_after: list[str] | None = None,
         session: Optional[OperableSession] = None,
-        requested_fields: list[str] | None = None
+        requested_tree: ReqFieldsTree | None = None,
     ) -> tuple[Iterable[DataObject], list[str] | None]:
 
         filter_string = self.__get_filter_string(object_filters)
@@ -266,9 +277,11 @@ class ApiDataSource(
             object_type,
             page_size,
             search_after,
-            filter_string=filter_string
+            filter_string=filter_string,
+            requested_tree=requested_tree,
         )
-        return self.__jc_factory().convert_cursor_page(transfer)
+
+        return self.__jc_factory(object_type, requested_tree).convert_cursor_page(transfer)
 
     @validate('delete')
     def delete(
@@ -298,7 +311,7 @@ class ApiDataSource(
             merge_collections=merge_collections,
         )
         if self.return_mode[object_type] == ReturnMode.POPULATED:
-            converted, _ = self.__jc_factory().convert_list(returned)
+            converted, _ = self.__jc_factory(object_type).convert_list(returned)
             return converted
         return []  # when the underlying DataSource doesn't return anything
 
@@ -319,7 +332,7 @@ class ApiDataSource(
         )
         if transfer is None:
             return None
-        return self.__jc_factory().convert(transfer)
+        return self.__jc_factory(source.type).convert(transfer)
 
     @validate('relational', direct_object=True)
     @validate_id
@@ -353,7 +366,7 @@ class ApiDataSource(
             page,
             page_size
         )
-        return self.__jc_factory().convert_list(transfer)
+        return self.__jc_factory(source.type).convert_list(transfer)
 
     @validate('relational', direct_object=True)
     @validate_id
@@ -400,7 +413,7 @@ class ApiDataSource(
             transfer
         )
         if self.return_mode[object_type] == ReturnMode.POPULATED:
-            converted, _ = self.__jc_factory().convert_list(returned)
+            converted, _ = self.__jc_factory(object_type).convert_list(returned)
             return converted
 
     @property
@@ -429,13 +442,15 @@ class ApiDataSource(
     def __get_list_regular(
         self,
         object_type: str,
-        object_filters: Optional[DataSourceFilter]
+        object_filters: Optional[DataSourceFilter],
+        requested_tree: ReqFieldsTree | None = None,
     ) -> Iterable[DataObject]:
 
         page = 1
         page_size = self.get_page_size()
         client = self.__client_factory()
-        jc_converter = self.__jc_factory()
+
+        jc_converter = self.__jc_factory(object_type, requested_tree)
         filter_string = self.__get_filter_string(object_filters)
 
         while True:
@@ -443,7 +458,8 @@ class ApiDataSource(
                 object_type,
                 page,
                 page_size,
-                filter_string=filter_string
+                filter_string=filter_string,
+                requested_tree=requested_tree,
             )
             (results_page, _) = jc_converter.convert_list(transfer)
 

@@ -22,7 +22,7 @@ class _MockDataSourceRelational(DataSource, Relational):
 
     @property
     def supported_types(self):
-        return ['sequencing_request', 'sample', 'extraction', 'run_data']
+        return ['sequencing_request', 'sample', 'extraction', 'extraction_container', 'run_data']
 
     @property
     def attribute_types(self):
@@ -33,7 +33,8 @@ class _MockDataSourceRelational(DataSource, Relational):
         rc_sequencing_request = RelationshipConfig()
         rc_sequencing_request.to_one = {
             'benchling_sample': 'sample',
-            'benchling_extraction': 'extraction'
+            'benchling_extraction': 'extraction',
+            'benchling_extraction_container': 'extraction_container'
         }
         return {'sequencing_request': rc_sequencing_request}
 
@@ -65,12 +66,14 @@ class TestElasticSequencingRequestToElasticRunDataUpdateConverter(TestCase):
 
         sample1 = CoreDataObject('sample', '1234')
         extraction1 = CoreDataObject('extraction', '2345')
+        extraction_container1 = CoreDataObject('extraction_container', '3456')
         obj1 = CoreDataObject(
             id_='SEQREQ1',
             type_='sequencing_request',
             to_one={
                 'benchling_sample': sample1,
-                'benchling_extraction': extraction1
+                'benchling_extraction': extraction1,
+                'benchling_extraction_container': extraction_container1
             }
         )
 
@@ -91,6 +94,8 @@ class TestElasticSequencingRequestToElasticRunDataUpdateConverter(TestCase):
         assert ret1['benchling_sample'].id == sample1.id
         assert 'benchling_extraction' in ret1
         assert ret1['benchling_extraction'].id == extraction1.id
+        assert 'benchling_extraction_container' in ret1
+        assert ret1['benchling_extraction_container'].id == extraction_container1.id
 
         converteds = converter.convert(obj2)
         (id2, ret2) = next(converteds)
@@ -99,3 +104,4 @@ class TestElasticSequencingRequestToElasticRunDataUpdateConverter(TestCase):
         assert 'benchling_sample' in ret2
         assert ret2['benchling_sample'].id == sample2.id
         assert 'benchling_extraction' not in ret2
+        assert 'benchling_extraction_container' not in ret2

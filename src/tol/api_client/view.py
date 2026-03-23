@@ -2,18 +2,21 @@
 #
 # SPDX-License-Identifier: MIT
 
+from __future__ import annotations
+
 import urllib
 from abc import ABC, abstractmethod
-from datetime import date, datetime
-from typing import Any, Dict, Iterable, List, Optional, Union
+from collections.abc import Iterable
+from datetime import date
+from typing import Any
 
 from ..core import DataObject
-from ..core.operator import Relational
+from ..core.requested_fields import ReqFieldsTree
 
-DocumentMeta = Dict[str, Any]
-DumpDict = Dict[str, Any]
-DumpDictMany = List[DumpDict]
-ResponseDict = Dict[str, Union[DumpDict, DumpDictMany]]
+DocumentMeta = dict[str, Any]
+DumpDict = dict[str, Any]
+DumpDictMany = list[DumpDict]
+ResponseDict = dict[str, DumpDict | DumpDictMany]
 
 
 class View(ABC):
@@ -26,7 +29,7 @@ class View(ABC):
     def dump(
         self,
         data_object: DataObject,
-        document_meta: Optional[DocumentMeta] = None
+        document_meta: DocumentMeta | None = None,
     ) -> ResponseDict:
         """
         Create a JSON:API response for an individual DataObject result
@@ -36,7 +39,7 @@ class View(ABC):
     def dump_bulk(
         self,
         data_objects: Iterable[DataObject],
-        document_meta: Optional[DocumentMeta] = None
+        document_meta: DocumentMeta | None = None,
     ) -> ResponseDict:
         """
         Create a JSON:API response for an Iterable of DataObject results
@@ -54,42 +57,40 @@ class DefaultView(View):
 
     def __init__(
         self,
+        requested_tree: ReqFieldsTree,
         prefix: str = '',
-        include_all_to_ones: bool = False,
-        hop_limit: Optional[int] = None,
-        requested_fields: list[str] | None = None,
+        hop_limit: int | None = None,
     ) -> None:
         """
         Args:
 
         - prefix                - the URL prefix on which the
                                   data blueprint is served
-        - include_all_to_ones   - whether to fetch all absent
-                                  to-one relation objects,
-                                  using the "host" `Relational`
-                                  instance
         - hop_limit             - the maximum recursion limit
                                   on including related to-one
                                   objects. Default no limit
+        - requested_tree        - a tree data structure of the
+                                  requested fields for the query
         """
 
         self.__prefix = prefix
-        self.__all_to_ones = include_all_to_ones
         self.__hop_limit = hop_limit
-        self.__requested_fields = requested_fields
+        self.__requested_tree = requested_tree
 
     def dump(
         self,
         data_object: DataObject,
-        document_meta: Optional[DocumentMeta] = None
+        document_meta: DocumentMeta | None = None,
     ) -> ResponseDict:
-
-        response = {
-            'data': self.__dump_object(
-                data_object,
-                self.__initial_marker,
-            )
-        }
+        included = IncludedDumps()
+        dumped = self.__dump_object(
+            data_object,
+            included,
+            tree=self.__requested_tree,
+        )
+        response = {'data': dumped}
+        if included:
+            response['included'] = included.as_list()
         if document_meta is not None:
             response['meta'] = document_meta
         return response
@@ -97,226 +98,170 @@ class DefaultView(View):
     def dump_bulk(
         self,
         data_objects: Iterable[DataObject],
-        document_meta: Optional[DocumentMeta] = None
+        document_meta: DocumentMeta | None = None,
     ) -> ResponseDict:
-
+        included = IncludedDumps()
         dumped = [
             self.__dump_object(
                 data_object,
-                self.__initial_marker,
+                included,
+                tree=self.__requested_tree,
             )
             for data_object in data_objects
         ]
-        response = {
-            'data': dumped
-        }
+        response = {'data': dumped}
+        if included:
+            response['included'] = included.as_list()
         if document_meta is not None:
             response['meta'] = document_meta
         return response
 
-    @property
-    def __initial_marker(self) -> int | str:
-        if self.__requested_fields:
-            return ''
-        else:
-            return 0
-
     def __dump_object(
         self,
         data_object: DataObject,
-        marker: int | str,
+        included: IncludedDumps,
+        tree: ReqFieldsTree,
     ) -> DumpDict:
-
-        dump = {
-            'type': data_object.type,
-            'id': data_object.id
-        }
-        if data_object.attributes:
-            dump['attributes'] = self.__convert_attributes(
-                data_object.attributes
-            )
-        dump = self.__add_relationships(data_object, dump, marker)
+        """
+        Returns a JSON:API resource object for the `data_object`, recursively
+        adding related objects as specified in the `tree: ReqFieldsTree`
+        argument.  Related objects are accumulated in the `incldued` array.
+        """
+        dump = {'type': data_object.type, 'id': null_or_str(data_object.id)}
+        # Stub trees are created by requested_fields paths ending in ".id"
+        if not tree.is_stub:
+            self.__add_attributes(data_object, dump, tree)
+        if tree.has_relationships:
+            self.__add_relationships(data_object, dump, included, tree)
         return dump
+
+    def __add_attributes(
+        self,
+        data_object: DataObject,
+        dump: DumpDict,
+        tree: ReqFieldsTree | None,
+    ):
+        """
+        If attributes are specified in the `tree: ReqFieldsTree`, adds only
+        those to the dump.  Default is to add all attribtues.
+        """
+        if tree and (attr_names := tree.attribute_names):
+            # Only add requested attributes
+            dump['attributes'] = self.__convert_attributes(
+                {name: getattr(data_object, name) for name in attr_names}
+            )
+        elif data_object.attributes:
+            # Default behaviour is to add all attributes
+            dump['attributes'] = self.__convert_attributes(data_object.attributes)
 
     def __add_relationships(
         self,
         data_object: DataObject,
         dump: DumpDict,
-        marker: int
+        included: IncludedDumps,
+        tree: ReqFieldsTree | None = None,
     ) -> DumpDict:
+        rel_dict = self.__dump_to_one_relationships(
+            data_object, included, tree
+        ) | self.__dump_to_many_relationships(data_object, included, tree)
+        if rel_dict:
+            dump['relationships'] = rel_dict
 
-        host = data_object._host
-        if not isinstance(host, Relational):
-            return dump
-
-        to_one_keys = self.__get_to_one_keys(data_object)
-        to_many_keys = self.__get_to_many_keys(host, data_object.type)
-        if not to_one_keys and not to_many_keys:
-            return dump
-        dump['relationships'] = self.__get_relationship_dumps(
-            to_one_keys,
-            to_many_keys,
-            data_object,
-            marker
-        )
-        return dump
-
-    def __get_relationship_dumps(
+    def __dump_to_one_relationships(
         self,
-        to_one_relationships: list[str],
-        to_many_relationships: list[str],
         data_object: DataObject,
-        marker: int
-    ) -> AllRelationshipsDump:
-
-        dump = {
-            key: self.__dump_to_one_relationship(key, data_object, marker)
-            for key in to_one_relationships
-        } | {
-            key: self.__dump_to_many_relationship(key, data_object.type,
-                                                  data_object.id)
-            for key in to_many_relationships
-        }
-
-        return {
-            k: v for k, v in dump.items() if v != {}
-        }
-
-    def __dump_to_many_relationship(
-        self,
-        key: str,
-        type_: str,
-        id_: str
+        included: IncludedDumps,
+        tree: ReqFieldsTree,
     ) -> RelationshipDump:
+        to_ones = {}
+        for rel in tree.to_one_names():
+            if rel in data_object._to_one_objects:
+                one_dump = None
+                if one := data_object._to_one_objects.get(rel):
+                    one_dump = {'data': self.__dump_stub(one, rel)}
+                    if sub_tree := tree.get_sub_tree(rel):
+                        included.add_dump(self.__dump_object(one, included, tree=sub_tree))
+                to_ones[rel] = one_dump
+        return to_ones
 
-        id_encoded = urllib.parse.quote(str(id_), safe='')
-        link = f'{self.__prefix}/{type_}/{id_encoded}/{key}'
-        return {
-            'links': {
-                'related': link
-            }
-        }
-
-    def __dump_to_one_relationship(
-        self,
-        key: str,
-        data_object: DataObject,
-        marker: int | str
-    ) -> Optional[RelationshipDump]:
-
-        if self.__hop_limit is not None and marker >= self.__hop_limit:
-            return {}
-
-        if self.__requested_fields and not self.__to_one_is_relevant(key, marker):
-            return {}
-
-        related_object = self.__get_related_to_one(data_object, key)
-        if related_object is not None:
-            next_marker = self.__get_next_marker(marker, key)
-            return {
-                'data': self.__dump_object(
-                    related_object,
-                    next_marker,
-                )
-            }
-
-    def __get_next_marker(
-        self,
-        marker: int | str,
-        key: str,
-    ) -> int | str:
-
-        return (
-            (f'{marker}.{key}' if marker else key)
-            if self.__requested_fields
-            else marker + 1
-        )
-
-    def __to_one_is_relevant(
-        self,
-        key: str,
-        marker: str
-    ) -> bool:
-
-        next_marker = self.__get_next_marker(marker, key)
-
-        return any(
-            r for r in self.__requested_fields
-            if r.startswith(next_marker)
-        )
-
-    def __get_related_to_one(
+    def __dump_to_many_relationships(
         self,
         data_object: DataObject,
-        key: str
-    ) -> Optional[DataObject]:
+        included: IncludedDumps,
+        tree: ReqFieldsTree,
+    ) -> RelationshipDump:
+        oid = data_object.id
+        quoted_id = None if oid is None else urllib.parse.quote(str(oid), safe='')
+        to_many = {}
+        for rel in tree.to_many_names():
+            sub_tree = tree.get_sub_tree(rel)
+            if sub_tree and rel in data_object._to_many_objects:
+                many_obj = data_object._to_many_objects.get(rel)
+                to_many[rel] = {'data': [self.__dump_stub(x, rel) for x in many_obj]}
+                for obj in many_obj:
+                    included.add_dump(self.__dump_object(obj, included, sub_tree))
+            elif quoted_id:
+                link = f'{self.__prefix}/{data_object.type}/{quoted_id}/{rel}'
+                to_many[rel] = {'links': {'related': link}}
+        return to_many
 
-        relations = (
-            data_object.to_one_relationships
-            if self.__all_to_ones
-            else data_object._to_one_objects
-        )
-        return relations.get(key)
-
-    def __get_to_one_keys(
-        self,
-        obj: DataObject
-    ) -> list[str]:
-
-        if self.__all_to_ones:
-            return self.__get_target_keys(
-                obj._host,
-                obj.type,
-                'to_one'
+    def __dump_stub(self, obj: DataObject, rel_name: str) -> dict[str, str]:
+        """
+        Create a stub JSON:API object, known in the JSON:API spec as
+        a "resource identifier object".  Contains a sanity check for the `id`
+        attribute having a value.  If we want to support, for example,
+        storing related objects with auto-incremented IDs, we will need to
+        implement creating `lid` local IDs for linking to resource objects in
+        the `included` array.
+        """
+        if obj.id is None:
+            msg = (
+                f"Cannot serialise '{obj.type}' object in relation"
+                f" '{rel_name}' because it has no `id` attribute"
             )
-        else:
-            return list(
-                obj._to_one_objects.keys()
-            )
+            raise ValueError(msg)
+        return {'type': obj.type, 'id': str(obj.id)}
 
-    def __get_to_many_keys(
-        self,
-        host: Relational,
-        type_: str
-    ) -> list[str]:
+    def __convert_attributes(self, attributes: dict[str, Any]) -> dict[str, Any]:
+        return {k: self.__convert_value(v) for k, v in attributes.items()}
 
-        return self.__get_target_keys(host, type_, 'to_many')
+    def __convert_value(self, val: Any, /) -> Any:
+        if isinstance(val, date):
+            # `datetime` is a subclass of `date`
+            return val.isoformat()
+        return val
 
-    def __get_target_keys(
-        self,
-        host: Relational,
-        type_: str,
-        target_name: str
-    ) -> list[str]:
 
-        if host.relationship_config is None:
-            return []
-        config = host.relationship_config.get(type_)
-        if config is None:
-            return []
-        target = getattr(config, target_name)
-        return self.__keys_or_empty(target)
+def null_or_str(oid: Any, /):
+    """
+    Return `oid` as a string if it isn't `None`
+    """
+    return None if oid is None else str(oid)
 
-    def __keys_or_empty(
-        self,
-        config: Optional[dict[str, str]]
-    ) -> Iterable[str]:
 
-        return (
-            config.keys() if config is not None else []
-        )
+class IncludedDumps:
+    """
+    Maintains objects to be returned in the JSON:API `included` list, indexed
+    by tuples of `(type, id)`.
+    """
 
-    def __convert_attributes(
-        self,
-        attributes: dict[str, Any]
-    ) -> dict[str, Any]:
+    def __init__(self):
+        self.__type_id: dict[tuple[str, str], DumpDict] = {}
 
-        return {
-            k: self.__convert_value(v)
-            for k, v in attributes.items()
-        }
+    def __len__(self):
+        """
+        Implemented so that an `IncludedDumps` object returns true in boolean
+        context when it has entries.
+        """
+        return len(self.__type_id)
 
-    def __convert_value(self, __v: Any) -> Any:
-        if isinstance(__v, (date, datetime)):
-            return __v.isoformat()
-        return __v
+    def as_list(self):
+        return list(self.__type_id.values())
+
+    def add_dump(self, dump: DumpDict):
+        """
+        Add a new DumpDict to the collection.
+        """
+        key = dump['type'], dump['id']
+        if key not in self.__type_id:
+            self.__type_id[key] = dump

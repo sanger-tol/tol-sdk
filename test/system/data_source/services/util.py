@@ -14,7 +14,8 @@ import requests
 from tol.core.relationship import RelationshipConfig
 from tol.elastic import (
     ElasticDataSource,
-    RuntimeField
+    RuntimeField,
+    create_elastic_datasource
 )
 
 
@@ -46,7 +47,6 @@ def get_prefix(extra_prefix: str = 'test') -> str:
 
 def elastic_datasource(
     prefix: str,
-    class_: type[ElasticDataSource] = ElasticDataSource
 ) -> ElasticDataSource:
 
     rc_root = RelationshipConfig()
@@ -54,7 +54,7 @@ def elastic_datasource(
         'related_object': 'related'
     }
 
-    return class_(
+    return create_elastic_datasource(
         {
             'uri': os.environ['ELASTIC_URI'],
             'user': os.environ['ELASTIC_USER'],

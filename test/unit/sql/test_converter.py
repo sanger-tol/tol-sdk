@@ -3,12 +3,9 @@
 # SPDX-License-Identifier: MIT
 
 from typing import Any, Dict, Iterable, Optional
-from unittest.mock import MagicMock, PropertyMock
+from unittest.mock import MagicMock, Mock, PropertyMock
 
-from tol.core import (
-    Converter,
-    DataObject
-)
+from tol.core import Converter, DataObject, ReqFieldsTree
 from tol.sql.model import Model
 from tol.sql.sql_converter import (
     DefaultDataObjectConverter,
@@ -72,9 +69,10 @@ class _ExampleModel(Model):
 
 
 class _ExampleDataObject(DataObject):
-    def __init__(self, type_, id_=None, data_=None):
+    def __init__(self, type_, id_=None, data_=None, provenance_=None):
         self.__type = type_
         self.__id = id_
+        self.__provenance = provenance_
         self.__data = data_
 
     @property
@@ -88,6 +86,10 @@ class _ExampleDataObject(DataObject):
     @property
     def type(self):  # noqa
         return self.__type
+
+    @property
+    def provenance(self) -> str | None:
+        return self.__provenance
 
     @property
     def to_many_relationships(self):
@@ -105,8 +107,16 @@ class _ExampleDataObject(DataObject):
     def _to_one_objects(self) -> None:
         raise NotImplementedError()
 
+    @property
+    def _to_many_objects(self) -> None:
+        raise NotImplementedError()
 
-def factory(type_, id_=None, attributes=None, to_one=None):
+
+def _tests_req_fields_tree():
+    return ReqFieldsTree('tests', Mock(), include_all_to_ones=False)
+
+
+def factory(type_, id_=None, attributes=None, to_one=None, to_many=None):
     return _ExampleDataObject(type_, id_, attributes)
 
 
@@ -159,7 +169,8 @@ class TestDefaultModelConverter:
             'meaningLife': 42.0
         }
         example = _ExampleModel(attributes, id_='909')
-        converter = DefaultModelConverter(lambda e: f'{e.get_table_name()}s', factory)
+        rft = _tests_req_fields_tree()
+        converter = DefaultModelConverter(lambda e: f'{e.get_table_name()}s', factory, rft)
         observed = list(converter.convert_iterable([example]))
 
         assert len(observed) == 1
@@ -181,9 +192,11 @@ class TestDefaultModelConverter:
             )
             for i in range(9)
         ]
+        rft = _tests_req_fields_tree()
         converter = DefaultModelConverter(
             lambda e: f'{e.get_table_name()}s are the best',
-            factory
+            factory,
+            rft,
         )
         observed = list(converter.convert_iterable(examples))
 
@@ -201,9 +214,11 @@ class TestDefaultModelConverter:
         """Converting None returns None"""
 
         examples = [None]
+        rft = _tests_req_fields_tree()
         converter = DefaultModelConverter(
             lambda e: f'{e.get_table_name()}s are the best',
-            factory
+            factory,
+            rft,
         )
         observed = converter.convert_iterable(examples)
         assert list(observed) == [None]

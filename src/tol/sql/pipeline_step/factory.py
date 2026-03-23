@@ -9,7 +9,7 @@ from dataclasses import dataclass
 from datetime import datetime
 from typing import Any, Dict, Iterator, List
 
-from sqlalchemy import ForeignKey, UniqueConstraint
+from sqlalchemy import ForeignKey, Text, UniqueConstraint
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import (
     Mapped,
@@ -64,7 +64,7 @@ def create_pipeline_step_models(
     class Pipeline(base_model_class):
         __tablename__ = 'pipeline'
 
-        id: Mapped[int] = mapped_column( # noqa A003
+        id: Mapped[int] = mapped_column(  # noqa A003
             primary_key=True,
             autoincrement=True
         )
@@ -100,7 +100,7 @@ def create_pipeline_step_models(
             ),
         )
 
-        id: Mapped[int] = mapped_column( # noqa A003
+        id: Mapped[int] = mapped_column(  # noqa A003
             primary_key=True,
             autoincrement=True
         )
@@ -121,6 +121,16 @@ def create_pipeline_step_models(
             nullable=False
         )
 
+        description: Mapped[str | None] = mapped_column(
+            Text,
+            nullable=True
+        )
+
+        is_visible: Mapped[bool] = mapped_column(
+            nullable=False,
+            default=True
+        )
+
         config: Mapped[dict[str, Any]] = mapped_column(
             JSONB,
             nullable=False,
@@ -135,18 +145,18 @@ def create_pipeline_step_models(
     class Upload(base_model_class):
         __tablename__ = 'upload'
 
-        id: Mapped[int] = mapped_column( # noqa A003
+        id: Mapped[int] = mapped_column(  # noqa A003
             primary_key=True,
             autoincrement=True
         )
 
-        s3_url: Mapped[str] = mapped_column(nullable=False,)
+        s3_bucket: Mapped[str] = mapped_column(nullable=False,)
         s3_filename: Mapped[str] = mapped_column(nullable=False)
         spreadsheet_config: Mapped[str] = mapped_column(nullable=True)
 
         user_id: Mapped[int] = mapped_column(
             ForeignKey('user.id'),
-            nullable=False
+            nullable=True
         )
 
         pipeline_id: Mapped[int] = mapped_column(
@@ -173,6 +183,24 @@ def create_pipeline_step_models(
             default=False
         )
 
+        validation_status: Mapped[str] = mapped_column(
+            nullable=True,
+            default='in_progress'
+        )
+
+        rejection_reason: Mapped[str] = mapped_column(
+            nullable=True
+        )
+
+        hidden: Mapped[str] = mapped_column(
+            nullable=True,
+            default=False
+        )
+
+        upload_name: Mapped[str] = mapped_column(
+            nullable=True,
+        )
+
         failure_message: Mapped[str | None] = mapped_column(
             nullable=True,
         )
@@ -182,7 +210,7 @@ def create_pipeline_step_models(
             foreign_keys=[pipeline_id]
         )
 
-        user: Mapped['User'] = relationship( # noqa F821
+        user: Mapped['User'] = relationship(  # noqa F821
             back_populates='user_uploads',
             foreign_keys=[user_id]
         )

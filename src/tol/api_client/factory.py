@@ -5,20 +5,12 @@
 from collections.abc import Mapping
 from typing import Callable, Iterator, Optional
 
-from .api_datasource import (
-    ApiDataSource,
-    DOConverterFactory,
-    JsonConverterFactory
-)
+from .api_datasource import ApiDataSource, DOConverterFactory, JsonConverterFactory
 from .client import JsonApiClient
-from .converter import (
-    DataObjectConverter,
-    JsonApiConverter
-)
+from .converter import DataObjectConverter, JsonApiConverter
 from .filter import DefaultApiFilter
 from .parser import DefaultParser
-from .view import DefaultView
-from ..core import DataSource
+from ..core import DataSource, ReqFieldsTree
 
 
 class _ApiDSDict(Mapping):
@@ -54,11 +46,7 @@ class _ConverterFactory:
         return self.__data_source
 
     @data_source.setter
-    def data_source(
-        self,
-        ds: DataSource
-    ) -> None:
-
+    def data_source(self, ds: DataSource) -> None:
         self.__data_source = ds
 
     def do_converter_factory(self) -> DOConverterFactory:
@@ -66,15 +54,25 @@ class _ConverterFactory:
         Returns an instantiated `DataObjectConverter`.
         """
 
-        view = DefaultView(prefix=self.__prefix)
-        return DataObjectConverter(view)
+        return DataObjectConverter(self.__data_source, prefix=self.__prefix)
 
-    def json_converter_factory(self) -> JsonConverterFactory:
+    def json_converter_factory(
+        self,
+        object_type: str | None = None,
+        requested_tree: ReqFieldsTree | None = None,
+    ) -> JsonConverterFactory:
         """
         Returns an instantiated `JsonApiConverter`.
         """
 
-        parser = DefaultParser(self.__ds_dict)
+        # If we're going to parse a JSON:API data object (i.e. we have been
+        # passed an `object_type`), we need to add a ReqFieldsTree so that
+        # DataSources with default loading of to-one objects correctly
+        # process the to-ones from the `included` array.
+        if object_type and not requested_tree:
+            requested_tree = ReqFieldsTree(object_type, self.__data_source)
+
+        parser = DefaultParser(self.__ds_dict, requested_tree)
         return JsonApiConverter(parser)
 
     @property
@@ -87,6 +85,7 @@ def _get_client_factory(
     token: Optional[str],
     data_prefix: str,
     retries: int,
+    status_forcelist: list[int],
     merge_collections: bool | None,
 ) -> Callable[[], JsonApiClient]:
     """
@@ -99,6 +98,7 @@ def _get_client_factory(
         token=token,
         data_prefix=data_prefix,
         retries=retries,
+        status_forcelist=status_forcelist,
         merge_collections=merge_collections,
     )
 
@@ -110,9 +110,9 @@ def _filter_factory() -> DefaultApiFilter:
 def create_api_datasource(
     api_url: str,
     token: Optional[str] = None,
-
     data_prefix: str = '/data',
     retries: int = 5,
+    status_forcelist: Optional[list[int]] = None,
     merge_collections: bool | None = None,
 ) -> ApiDataSource:
     """
@@ -127,6 +127,7 @@ def create_api_datasource(
         token=token,
         data_prefix=data_prefix,
         retries=retries,
+        status_forcelist=status_forcelist,
         merge_collections=merge_collections,
     )
     manager = _ConverterFactory(data_prefix)
@@ -135,7 +136,7 @@ def create_api_datasource(
         client_factory,
         manager.json_converter_factory,
         manager.do_converter_factory,
-        _filter_factory
+        _filter_factory,
     )
 
     manager.data_source = api_ds

@@ -2,7 +2,6 @@
 #
 # SPDX-License-Identifier: MIT
 
-from typing import Optional
 from unittest.mock import Mock, PropertyMock, call, create_autospec
 
 import pytest
@@ -13,6 +12,7 @@ from tol.api_client.converter import JsonApiConverter
 from tol.core import DataObject, DataSourceError
 from tol.core.operator import ReturnMode
 from tol.core.relationship import RelationshipConfig
+from tol.core.requested_fields import ReqFieldsTree
 
 
 class TestApiDataSource:
@@ -34,21 +34,29 @@ class TestApiDataSource:
 
         mock_jc_converter = Mock()
         mock_jc_converter.convert.return_value = mock_data_object
+        mock_jc_converter.convert_relationship_config.return_value = \
+            {'test': RelationshipConfig()}
 
         ds = ApiDataSource(
             lambda: mock_client,
-            lambda: mock_jc_converter,
+            lambda obj_type=None, requested_tree=None: mock_jc_converter,
             None,
             None
         )
         ds.data_object_factory = lambda: Mock()
 
-        (observed,) = list(ds.get_by_id('test', ['an ID']))
+        requested_tree = ReqFieldsTree(
+            'test',
+            ds,
+            requested_fields=None
+        )
+        (observed,) = list(ds.get_by_id('test', ['an ID'], requested_tree=requested_tree))
         assert observed == mock_data_object
 
         mock_client.get_detail.assert_called_once_with(
             'test',
-            'an ID'
+            'an ID',
+            requested_tree=requested_tree,
         )
         mock_jc_converter.convert.assert_called_once_with(
             mock_response
@@ -70,21 +78,29 @@ class TestApiDataSource:
         }
 
         mock_jc_converter = Mock()
+        mock_jc_converter.convert_relationship_config.return_value = \
+            {'test': RelationshipConfig()}
 
         ds = ApiDataSource(
             lambda: mock_client,
-            lambda: mock_jc_converter,
+            lambda obj_type=None, requested_tree=None: mock_jc_converter,
             None,
             None
         )
         ds.data_object_factory = lambda: Mock()
 
-        (observed,) = list(ds.get_by_id('test', ['an ID']))
+        requested_tree = ReqFieldsTree(
+            'test',
+            ds,
+            requested_fields=None
+        )
+        (observed,) = list(ds.get_by_id('test', ['an ID'], requested_tree=requested_tree))
         assert observed is None
 
         mock_client.get_detail.assert_called_once_with(
             'test',
-            'an ID'
+            'an ID',
+            requested_tree=requested_tree,
         )
         mock_jc_converter.convert.assert_not_called()
 
@@ -160,6 +176,8 @@ class TestApiDataSource:
 
         mock_json_converter = Mock()
         mock_json_converter.convert_list.return_value = expected
+        mock_json_converter.convert_relationship_config.return_value = \
+            {'test': RelationshipConfig()}
 
         mock_ds_filter = Mock()
 
@@ -168,17 +186,22 @@ class TestApiDataSource:
 
         api_ds = ApiDataSource(
             lambda: mock_client,
-            lambda: mock_json_converter,
+            lambda obj_type=None, requested_tree=None: mock_json_converter,
             None,
             lambda: mock_api_filter
         )
-
+        requested_tree = ReqFieldsTree(
+            'test',
+            api_ds,
+            requested_fields=None
+        )
         observed = api_ds.get_list_page(
             'test',
             3489,
             page_size=8989,
             object_filters=mock_ds_filter,
-            sort_by='ludicrous_speed-'
+            sort_by='ludicrous_speed-',
+            requested_tree=requested_tree
         )
 
         mock_client.get_list_page.assert_called_once_with(
@@ -187,7 +210,7 @@ class TestApiDataSource:
             8989,
             filter_string='I am a filter!!!',
             sort_string='ludicrous_speed-',
-            requested_fields=None,
+            requested_tree=requested_tree,
         )
         mock_api_filter.dumps.assert_called_once_with(
             mock_ds_filter
@@ -220,20 +243,26 @@ class TestApiDataSource:
 
         mock_json_converter = Mock()
         mock_json_converter.convert_list.return_value = expected
-
+        mock_json_converter.convert_relationship_config.return_value = \
+            {'test': RelationshipConfig()}
         mock_api_filter = Mock()
 
         api_ds = ApiDataSource(
             lambda: mock_client,
-            lambda: mock_json_converter,
+            lambda obj_type=None, requested_tree=None: mock_json_converter,
             None,
             lambda: mock_api_filter
         )
-
+        requested_tree = ReqFieldsTree(
+            'test',
+            api_ds,
+            requested_fields=None
+        )
         observed = api_ds.get_list_page(
             'test',
             101,
             page_size=3,
+            requested_tree=requested_tree
         )
 
         mock_client.get_list_page.assert_called_once_with(
@@ -242,7 +271,7 @@ class TestApiDataSource:
             3,
             filter_string=None,
             sort_string=None,
-            requested_fields=None,
+            requested_tree=requested_tree,
         )
         mock_api_filter.dumps.assert_not_called()
         mock_json_converter.convert_list.assert_called_once_with(
@@ -426,8 +455,9 @@ class TestApiDataSource:
             object_type: str,
             page: int,
             page_size: int,
-            filter_string: Optional[str] = None,
-            sort_string: Optional[str] = None
+            filter_string: str | None = None,
+            sort_string: str | None = None,
+            requested_tree: ReqFieldsTree | None = None,
         ) -> list[Mock]:
 
             return [mock_objs[page - 1]] if page <= 3 else []
@@ -437,7 +467,8 @@ class TestApiDataSource:
                 'test_hype',
                 i,
                 1,
-                filter_string='akdfuom'
+                filter_string='akdfuom',
+                requested_tree=None,
             )
             for i in range(1, 5)
         ]
@@ -461,9 +492,9 @@ class TestApiDataSource:
 
         api_ds = ApiDataSource(
             lambda: mock_client,
-            lambda: mock_json_converter,
+            lambda obj_type, requested_tree: mock_json_converter,
             None,
-            lambda: mock_api_filter
+            lambda: mock_api_filter,
         )
         api_ds.page_size = 1
 
@@ -482,9 +513,7 @@ class TestApiDataSource:
 
         expected = Mock()
 
-        source = Mock()
-        type(source).type = PropertyMock(return_value='a')
-        type(source).id = PropertyMock(return_value='id_MINE')
+        source = Mock(type='a', id='id_MINE')
 
         mock_client = create_autospec(JsonApiClient)
         mock_client.config_attribute_types.return_value = {
@@ -510,7 +539,7 @@ class TestApiDataSource:
 
         api_ds = ApiDataSource(
             lambda: mock_client,
-            lambda: mock_jc,
+            lambda obj_type=None, requested_tree=None: mock_jc,
             None,
             None
         )
@@ -577,7 +606,7 @@ class TestApiDataSource:
 
         api_ds = ApiDataSource(
             lambda: mock_client,
-            lambda: mock_jc,
+            lambda obj_type=None, requested_tree=None: mock_jc,
             None,
             None
         )
@@ -656,11 +685,7 @@ class TestApiDataSource:
 
         expected = [Mock() for _ in range(3)]
 
-        mock_obj = Mock()
-        type(mock_obj).type = PropertyMock(return_value='hype')
-        type(mock_obj).id = PropertyMock(
-            return_value='neverending_hype'
-        )
+        mock_obj = Mock(type='hype', id='neverending_hype')
 
         mock_client = create_autospec(JsonApiClient)
         mock_client.get_to_many_relations_page.return_value = expected
@@ -681,7 +706,7 @@ class TestApiDataSource:
 
         api_ds = ApiDataSource(
             lambda: mock_client,
-            lambda: mock_jc,
+            lambda obj_type=None, requested_tree=None: mock_jc,
             None,
             None
         )
@@ -734,7 +759,7 @@ class TestApiDataSource:
 
         api_ds = ApiDataSource(
             lambda: mock_client,
-            lambda: mock_jc,
+            lambda obj_type, requested_tree: mock_jc,
             None,
             None
         )
@@ -759,9 +784,7 @@ class TestApiDataSource:
         by its client -> returns `None` and doesn't convert
         """
 
-        mock_obj = Mock()
-        type(mock_obj).type = PropertyMock(return_value='a')
-        type(mock_obj).id = PropertyMock(return_value='id')
+        mock_obj = Mock(type='a', id='id')
 
         mock_client = create_autospec(JsonApiClient)
         mock_client.get_to_one_relation_recursive.return_value = None
@@ -781,7 +804,7 @@ class TestApiDataSource:
 
         api_ds = ApiDataSource(
             lambda: mock_client,
-            lambda: mock_jc,
+            lambda obj_type=None, requested_tree=None: mock_jc,
             None,
             None
         )
@@ -800,9 +823,7 @@ class TestApiDataSource:
         client -> returns `None` and doesn't convert
         """
 
-        mock_obj = Mock()
-        type(mock_obj).type = PropertyMock(return_value='a')
-        type(mock_obj).id = PropertyMock(return_value='id')
+        mock_obj = Mock(type='a', id='id')
 
         mock_client = create_autospec(JsonApiClient)
         mock_client.get_to_one_relation_recursive.return_value = None

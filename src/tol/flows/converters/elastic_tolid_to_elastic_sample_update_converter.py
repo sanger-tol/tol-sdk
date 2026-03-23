@@ -21,7 +21,10 @@ class ElasticTolidToElasticSampleUpdateConverter(
             yield (
                 None,
                 {
-                    'tolid_tolid': {'id': data_object.id},
+                    'tolid_tolid': self._data_object_factory(
+                        'tolid',
+                        data_object.id
+                    ),
                     'sts_species.id':
                         data_object.requested_taxonomy_id
                         if data_object.requested_taxonomy_id is not None

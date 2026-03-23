@@ -29,5 +29,13 @@ class ElasticSequencingRequestToElasticRunDataUpdateConverter(
                     'extraction',
                     extraction.id
                 )
+        if 'benchling_extraction_container' in data_object.to_one_relationships:
+            extraction_container = \
+                data_object.to_one_relationships['benchling_extraction_container']
+            if extraction_container is not None:
+                to_ones['benchling_extraction_container'] = self._data_object_factory(
+                    'extraction_container',
+                    extraction_container.id
+                )
         yield (None, to_ones | {
             'mlwh_sequencing_request.id': data_object.id})  # The candidate key

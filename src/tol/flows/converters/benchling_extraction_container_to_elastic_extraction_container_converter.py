@@ -1,0 +1,53 @@
+# SPDX-FileCopyrightText: 2026 Genome Research Ltd.
+#
+# SPDX-License-Identifier: MIT
+
+from typing import Iterable
+
+from ...core import (
+    DataObject,
+    DataObjectToDataObjectOrUpdateConverter
+)
+
+
+class BenchlingExtractionContainerToElasticExtractionContainerConverter(
+        DataObjectToDataObjectOrUpdateConverter):
+    def convert(self, data_object: DataObject) -> Iterable[DataObject]:
+        if data_object.tissue_sts_id and data_object.id:
+            ret = self._data_object_factory(
+                'extraction_container',
+                data_object.id,
+                attributes={
+                    **{k: v
+                       for k, v in data_object.attributes.items()
+                       if k not in ['tissue_sts_id', 'specimen_id', 'taxon_id',
+                                    'programme_id', 'eln_tissue_prep_id', 'extraction_id']}
+                },
+                to_one={
+                    'sample': self._data_object_factory(
+                        'sample',
+                        data_object.tissue_sts_id
+                    ) if data_object.tissue_sts_id is not None else None,
+                    'species': self._data_object_factory(
+                        'species',
+                        data_object.taxon_id
+                    ) if data_object.taxon_id is not None else None,
+                    'specimen': self._data_object_factory(
+                        'specimen',
+                        data_object.specimen_id
+                    ) if data_object.specimen_id is not None else None,
+                    'tolid': self._data_object_factory(
+                        'tolid',
+                        data_object.programme_id
+                    ) if data_object.programme_id is not None else None,
+                    'tissue_prep': self._data_object_factory(
+                        'tissue_prep',
+                        data_object.eln_tissue_prep_id
+                    ) if data_object.eln_tissue_prep_id is not None else None,
+                    'extraction': self._data_object_factory(
+                        'extraction',
+                        data_object.extraction_id
+                    ) if data_object.extraction_id is not None else None,
+                }
+            )
+            yield ret

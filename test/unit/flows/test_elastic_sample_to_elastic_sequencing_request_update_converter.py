@@ -84,10 +84,8 @@ class TestElasticSampleToElasticSequencingRequestUpdateConverter(TestCase):
         converteds = converter.convert(obj1)
         id1, attributes1 = next(converteds)
         self.assertIsNone(id1)
-        self.assertEqual(attributes1, {
-            'mlwh_sample': {'id': 'sample1'},
-            'mlwh_specimen.id': 'specimen1',
-        })
+        self.assertEqual(attributes1.get('mlwh_sample').id, 'sample1')
+        self.assertEqual(attributes1.get('mlwh_specimen.id'), 'specimen1')
 
         with self.assertRaises(StopIteration):
             next(converteds)

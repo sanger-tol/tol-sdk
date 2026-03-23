@@ -11,6 +11,7 @@ from .converter import JsonApiTransfer, JsonRelationshipConfig
 from ..core import HttpClient
 from ..core.datasource_error import DataSourceError
 from ..core.operator import OperatorDict
+from ..core.requested_fields import ReqFieldsTree
 
 
 class JsonApiClient(HttpClient):
@@ -28,9 +29,13 @@ class JsonApiClient(HttpClient):
         config_prefix: str = '/_config',
         token_header: str = 'token',
         retries: int = 5,
+        status_forcelist: Optional[list[int]] = None,
         merge_collections: bool | None = None,
     ) -> None:
-        super().__init__(token=token, token_header=token_header, retries=retries)
+        kwargs = {'token': token, 'token_header': token_header, 'retries': retries}
+        if status_forcelist is not None:
+            kwargs['status_forcelist'] = status_forcelist
+        super().__init__(**kwargs)
         self.__data_url = f'{api_url}{data_prefix}'
         self.__config_url = f'{self.__data_url}{config_prefix}'
         self.__merge_collections = merge_collections
@@ -39,7 +44,7 @@ class JsonApiClient(HttpClient):
         self,
         object_type: str,
         object_id: str,
-        requested_fields: list[str] | None = None,
+        requested_tree: ReqFieldsTree | None = None,
     ) -> Optional[JsonApiTransfer]:
         """
         Gets a single JSON:API transfer for the object of specified
@@ -49,11 +54,13 @@ class JsonApiClient(HttpClient):
         url = self.__detail_url(object_type, object_id)
         headers = self._merge_headers()
 
+        params = {}
+        if requested_tree:
+            params['requested_fields'] = requested_tree.to_paths()
+
         return self.__fetch_detail(
             url,
-            params={
-                'requested_fields': requested_fields,
-            },
+            params=params,
             headers=headers,
         )
 
@@ -64,7 +71,7 @@ class JsonApiClient(HttpClient):
         page_size: int,
         filter_string: Optional[str] = None,
         sort_string: Optional[str] = None,
-        requested_fields: list[str] | None = None,
+        requested_tree: ReqFieldsTree | None = None,
     ) -> JsonApiTransfer:
         """
         Gets a (paged) list-JSON:API transfer for the objects of specified
@@ -77,7 +84,7 @@ class JsonApiClient(HttpClient):
             page_size=page_size,
             filter=filter_string,
             sort_by=sort_string,
-            requested_field=requested_fields
+            requested_fields=requested_tree.to_paths() if requested_tree else None,
         )
         headers = self._merge_headers()
         return self.__fetch_list(
@@ -153,7 +160,7 @@ class JsonApiClient(HttpClient):
         page_size: int,
         search_after: list[str] | None,
         filter_string: Optional[str] = None,
-        requested_fields: list[str] | None = None,
+        requested_tree: ReqFieldsTree | None = None,
     ) -> JsonApiTransfer:
         """Cursor-pagination."""
 
@@ -161,7 +168,7 @@ class JsonApiClient(HttpClient):
         params = self.__no_none_value_dict(
             filter=filter_string,
             page_size=page_size,
-            requested_fields=requested_fields,
+            requested_fields=requested_tree.to_paths() if requested_tree else None,
         )
         headers = self._merge_headers()
         body = {'search_after': search_after}
@@ -202,7 +209,7 @@ class JsonApiClient(HttpClient):
         )
 
         headers = self._merge_headers()
-        session = self._get_session()
+        session = self.get_session()
         r = session.post(
             url,
             headers=headers,
@@ -224,7 +231,7 @@ class JsonApiClient(HttpClient):
 
         url = self.__insert_url(object_type)
         headers = self._merge_headers()
-        session = self._get_session()
+        session = self.get_session()
         r = session.post(url, headers=headers, json=transfer)
         self.__assert_no_error(r)
         return r.json()
@@ -388,7 +395,7 @@ class JsonApiClient(HttpClient):
         return r.json()
 
     def __detail_url(self, object_type: str, object_id: str) -> str:
-        return f'{self.__data_url}/{object_type}/{quote(object_id)}'
+        return f'{self.__data_url}/{object_type}/{quote(str(object_id))}'
 
     def __list_url(self, object_type: str) -> str:
         return f'{self.__data_url}/{object_type}'
@@ -420,7 +427,7 @@ class JsonApiClient(HttpClient):
 
         hop_string = '/'.join(relationship_hops)
         base_url = (
-            f'{self.__data_url}/{object_type}:to-one/{quote(object_id)}'
+            f'{self.__data_url}/{object_type}:to-one/{quote(str(object_id))}'
         )
         return f'{base_url}/{hop_string}'
 
@@ -430,9 +437,8 @@ class JsonApiClient(HttpClient):
         object_id: str,
         relationship_name: str
     ) -> str:
-
         base_url = (
-            f'{self.__data_url}/{object_type}:to-many/{quote(object_id)}'
+            f'{self.__data_url}/{object_type}:to-many/{quote(str(object_id))}'
         )
         return f'{base_url}/{relationship_name}'
 
@@ -455,7 +461,11 @@ class JsonApiClient(HttpClient):
         return f'{self.__config_url}/return_mode'
 
     def __no_none_value_dict(self, **kwargs) -> dict[str, Any]:
-        return {
-            k: v for k, v in kwargs.items()
-            if v is not None
-        }
+        str_params = {}
+        for k, v in kwargs.items():
+            if v is None:
+                continue
+            if isinstance(v, list) and not v:
+                continue
+            str_params[k] = ','.join([str(x) for x in v]) if isinstance(v, list) else str(v)
+        return str_params

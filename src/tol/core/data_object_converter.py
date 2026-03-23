@@ -3,6 +3,7 @@
 # SPDX-License-Identifier: MIT
 
 from abc import ABC, abstractmethod
+from dataclasses import dataclass
 from typing import Iterable
 
 from more_itertools import flatten
@@ -90,5 +91,46 @@ class DefaultDataObjectToDataObjectConverter(DataObjectToDataObjectOrUpdateConve
                     if k != self.__id_field
                 }
             )
-            return iter([ret])
-        return iter([])
+            yield ret
+
+
+class SanitisingConverter(DataObjectToDataObjectOrUpdateConverter):
+
+    @dataclass(slots=True, frozen=True, kw_only=True)
+    class Config:
+        pass
+
+    def __init__(
+        self,
+        data_object_factory: DataObjectFactory,
+        config: Config,
+        **kwargs
+    ):
+        super().__init__(data_object_factory)
+
+    def convert(
+        self,
+        data_object: DataObject
+    ) -> Iterable[DataObject]:
+        """
+        A converter that removes leading and trailing whitespace from
+        string attributes.
+        """
+        if data_object is not None and data_object.id is not None:
+            ret = self._data_object_factory(
+                id_=data_object.id,
+                type_=data_object.type,
+                attributes={
+                    k: self.__sanitise(v)
+                    for k, v in data_object.attributes.items()
+                }
+            )
+            yield ret
+
+    def __sanitise(
+        self,
+        value: object
+    ) -> object:
+        if isinstance(value, str):
+            return value.strip()
+        return value

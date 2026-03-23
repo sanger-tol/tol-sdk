@@ -10,6 +10,7 @@ from typing import Iterable, Optional
 
 if typing.TYPE_CHECKING:
     from ..data_object import DataObject
+    from ..requested_fields import ReqFieldsTree
     from ..session import OperableSession
 
 from more_itertools import chunked, seekable
@@ -27,7 +28,7 @@ class DetailGetter(ABC):
         object_type: str,
         object_ids: Iterable[str],
         session: Optional[OperableSession] = None,
-        requested_fields: list[str] | None = None
+        **kwargs,
     ) -> Iterable[Optional[DataObject]]:
         """
         Gets an Iterable of DataObject instances, of specified object_type,
@@ -38,11 +39,7 @@ class DetailGetter(ABC):
         """
 
         for chunk in chunked(object_ids, self.page_size):
-            yield from self.get_by_id(
-                object_type,
-                chunk,
-                requested_fields=requested_fields,
-            )
+            yield from self.get_by_id(object_type, chunk, **kwargs)
 
     @abstractmethod
     def get_by_id(
@@ -50,7 +47,8 @@ class DetailGetter(ABC):
         object_type: str,
         object_ids: Iterable[str],
         session: Optional[OperableSession] = None,
-        requested_fields: list[str] | None = None
+        requested_fields: list[str] | None = None,
+        requested_tree: ReqFieldsTree | None = None,
     ) -> Iterable[Optional[DataObject]]:
         """
         Gets an Iterable of DataObject instances, of specified object_type,
@@ -63,20 +61,14 @@ class DetailGetter(ABC):
         object_type: str,
         object_id: str,
         session: Optional[OperableSession] = None,
-        requested_fields: list[str] | None = None
+        **kwargs,
     ) -> Optional[DataObject]:
         """
         Gets the individual `DataObject` instance, of specified object_type
         and object_id, or returns `None` if not found.
         """
 
-        return list(
-            self.get_by_id(
-                object_type,
-                [object_id],
-                requested_fields=requested_fields
-            )
-        )[0]
+        return list(self.get_by_id(object_type, [object_id], **kwargs))[0]
 
     # A helper method to ensure that the order of the returned objects
     # matches the order of the input ids
@@ -90,7 +82,7 @@ class DetailGetter(ABC):
         for id_ in object_ids:
             seekable_objects.seek(0)
             for obj in seekable_objects:
-                if obj.id == id_:
+                if str(obj.id) == str(id_):
                     yield obj
                     break
             else:

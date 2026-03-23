@@ -5,7 +5,7 @@
 import os
 
 from tol.api_client.view import DefaultView
-from tol.core import DataObject, core_data_object
+from tol.core import DataObject, ReqFieldsTree, core_data_object
 from tol.sql import create_sql_datasource
 
 from .. import models
@@ -18,6 +18,8 @@ class TestRequestedFields:
     """
     Specifying a `requested_fields` kwarg on the various operations
     within `SqlDataSource` fetches only those fields.
+
+    Fails to test that unrequested fields are not fetched!
     """
 
     def test_single(self, session_factory, models_list):
@@ -31,7 +33,7 @@ class TestRequestedFields:
                 models.B(
                     id_override=id_,
                     int_column=i,
-                    another_string='exclude me!'
+                    another_string='exclude me!',
                 )
             )
         session.commit()
@@ -46,34 +48,38 @@ class TestRequestedFields:
                 # requested fields are there
                 assert b.id == letter
                 assert b.int_column == i
+                assert b.another_string is None
 
-        def __assert_requested_view(
-            iter_b: list[DataObject]
-        ) -> None:
-
+        def __assert_requested_view(iter_b: list[DataObject]) -> None:
             view = DefaultView(
-                requested_fields=['int_column']
+                requested_tree=ReqFieldsTree(
+                    'b',
+                    sql_ds,
+                    requested_fields=['int_column'],
+                )
             )
             dumped = view.dump_bulk(iter_b)['data']
 
-            for i, (b, letter) in enumerate(zip(dumped, 'abc')):
+            for i, (b, letter) in enumerate(zip(dumped, 'abc', strict=True)):
                 # requested fields are there
                 assert b['id'] == letter
                 assert b['attributes']['int_column'] == i
+                assert b['attributes'].get('another_string') is None
 
         # `get_list()`
+        rft_b = ReqFieldsTree(
+            'b',
+            sql_ds,
+            requested_fields=['int_column'],
+        )
         iter_b = list(
-            sql_ds.get_list('b', requested_fields=['int_column'])
+            sql_ds.get_list('b', requested_tree=rft_b),
         )
         __assert_requested(iter_b)
         __assert_requested_view(iter_b)
 
         # `get_list_page()`
-        page_b, count_b = sql_ds.get_list_page(
-            'b',
-            1,
-            requested_fields=['int_column']
-        )
+        page_b, count_b = sql_ds.get_list_page('b', 1, requested_tree=rft_b)
         page_b = list(page_b)
 
         assert count_b == 3
@@ -122,42 +128,46 @@ class TestRequestedFields:
             assert r3.funny_r1.r2_d2.id == 'something comforting'
             assert r3.funny_r1.r2_d2.funny_string == 'yes'
 
-        def __assert_requested_view(
-            iter_r3: list[DataObject]
-        ) -> None:
-
+        def __assert_requested_view(iter_r3: list[DataObject]) -> None:
             view = DefaultView(
-                requested_fields=['funny_r1.r2_d2.funny_string'],
+                requested_tree=ReqFieldsTree(
+                    'r3',
+                    sql_ds,
+                    ['funny_r1.r2_d2.funny_string'],
+                ),
             )
             dumped = view.dump_bulk(iter_r3)
+            included = {(x['type'], x['id']): x for x in dumped['included']}
 
             assert len(dumped['data']) == 1
             dumped_r3 = dumped['data'][0]
 
             # meant to be there
             assert dumped_r3['id'] == 'neither'
-            dumped_r1 = dumped_r3['relationships']['funny_r1']['data']
+            assert dumped_r3['relationships']['funny_r1']['data'] == {'type': 'r1', 'id': 'idk'}
+            dumped_r1 = included['r1', 'idk']
             assert dumped_r1['id'] == 'idk'
-            dumped_r2 = dumped_r1['relationships']['r2_d2']['data']
+            assert dumped_r1['relationships']['r2_d2']['data'] == {
+                'type': 'r2',
+                'id': 'something comforting',
+            }
+            dumped_r2 = included['r2', 'something comforting']
             assert dumped_r2['id'] == 'something comforting'
             assert dumped_r2['attributes']['funny_string'] == 'yes'
 
-        # `get_list()`
+        rft_r3 = ReqFieldsTree(
+            'r3',
+            sql_ds,
+            requested_fields=['funny_r1.r2_d2.funny_string'],
+        )
         iter_r3 = list(
-            sql_ds.get_list(
-                'r3',
-                requested_fields=['funny_r1.r2_d2.funny_string']
-            )
+            sql_ds.get_list('r3', requested_tree=rft_r3),
         )
         __assert_requested(iter_r3)
         __assert_requested_view(iter_r3)
 
         # `get_list_page()`
-        page_r3, count_r3 = sql_ds.get_list_page(
-            'r3',
-            1,
-            requested_fields=['funny_r1.r2_d2.funny_string']
-        )
+        page_r3, count_r3 = sql_ds.get_list_page('r3', 1, requested_tree=rft_r3)
         page_r3 = list(page_r3)
 
         assert count_r3 == 1

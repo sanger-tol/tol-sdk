@@ -34,17 +34,19 @@ class TestGoatDataSource(TestCase):
     def test_get_by_id(self):
         gds = goat()
 
-        ret = gds.get_by_ids('taxon', ['4113'])
+        ret = gds.get_by_ids('taxon', ['4113', 5757])
         obj1 = next(ret)
         self.assertEqual('4113', obj1.id)
         # Just pick out a few attributes here to test
         self.assertEqual(obj1.scientific_name, 'Solanum tuberosum')
         self.assertEqual(obj1.chromosome_number, 48)
-        self.assertEqual(obj1.assembly_level, 'Scaffold')
+        self.assertEqual(obj1.assembly_level, 'Chromosome')
         self.assertEqual(obj1.long_list, ['AFRICABP', 'DTOL'])
         self.assertEqual(obj1.phylum.scientific_name, 'Streptophyta')
         self.assertEqual(obj1.domain.scientific_name, 'Eukaryota')
         self.assertTrue(any('Solanum chocclo' in syn for syn in obj1.synonym))
+        obj2 = next(ret)
+        self.assertEqual('5757', obj2.id)
         with self.assertRaises(StopIteration):
             next(ret)
 
@@ -66,7 +68,7 @@ class TestGoatDataSource(TestCase):
                 self.assertEqual('4113', obj.id)
                 self.assertEqual(obj.scientific_name, 'Solanum tuberosum')
                 self.assertEqual(obj.chromosome_number, 48)
-                self.assertEqual(obj.assembly_level, 'Scaffold')
+                self.assertEqual(obj.assembly_level, 'Chromosome')
                 self.assertEqual(obj.long_list, ['AFRICABP', 'DTOL'])
                 self.assertEqual(obj.phylum.scientific_name, 'Streptophyta')
                 self.assertTrue(any('Solanum chocclo' in syn for syn in obj.synonym))

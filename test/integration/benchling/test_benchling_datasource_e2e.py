@@ -33,7 +33,7 @@ class TestBenchlingDataSourceE2E:
         'folder',
         'worklist',
         'storage',
-        '12x12_box',
+        '12x12_box_v2',
         'casm_well',
         # TODO restore (TOLP-8669)
         # 'casm_programme_id'
@@ -156,8 +156,8 @@ class TestBenchlingDataSourceE2E:
         benchling_ds.delete(object_type, [obj.id for obj in new_objs])
 
     @against_types([
-        '12x12_box:casm_sequencing_container',
-        '12x12_box:casm_tube'
+        '12x12_box_v2:casm_sequencing_container',
+        '12x12_box_v2:casm_tube'
     ])
     def test_many_insert_delete_update_storage_layers(self, object_type: str) -> None:
         benchling_ds = benchling()
@@ -501,7 +501,7 @@ class TestBenchlingDataSourceE2E:
 
         benchling_ds = benchling()
         # Using a specific custom entity for testing as this one definitely has container contents
-        custom_entity = benchling_ds.get_one('temp_dna_extract', 'bfi_PfJozKsa')
+        custom_entity = benchling_ds.get_one('dna_extract', 'bfi_PfJozKsa')
         container = benchling_ds.get_one('tube', 'con_5wnL41Xr')
 
         entity_contents = list(
@@ -587,7 +587,7 @@ class TestBenchlingDataSourceE2E:
         if object_type in ['tissue']:
             return 'programme_id'
         if object_type == 'tissue_prep':
-            return 'submission_id'
+            return 'bt_id'
         if object_type == 'consumables_lot':
             return 'batch_lot_number'
         if object_type in ['folder', 'worklist', 'storage']:

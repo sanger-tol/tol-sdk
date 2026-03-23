@@ -31,10 +31,10 @@ def __model_converter_factory(
     type_function: TypeFunction
 ) -> ConverterFactory:
 
-    return lambda do_factory, requested_fields: DefaultModelConverter(
+    return lambda do_factory, req_fields_tree: DefaultModelConverter(
         type_function,
         do_factory,
-        requested_fields=requested_fields
+        requested_tree=req_fields_tree
     )
 
 

@@ -54,7 +54,8 @@ class TestCreateApiDatasource:
             'test',
             id_='hype',
             attributes={'yes': False},
-            to_one={}
+            to_one={},
+            to_many={},
         )
         assert observed == [mock_data_object]
 
@@ -108,7 +109,8 @@ class TestCreateApiDatasource:
             'test',
             id_='200',
             attributes={'yes': False},
-            to_one={}
+            to_one={},
+            to_many={},
         )
         assert observed == [None, mock_data_object]
 
@@ -172,7 +174,7 @@ class TestCreateApiDatasource:
         ]
         expected_json = {'data': expected_list}
 
-        expected_url = f'{FAKE_API_URL}/data/test2:upsert'
+        expected_url = f'{FAKE_API_URL}/data/a_test_lol:upsert'
         responses.post(
             expected_url,
             match=[
@@ -186,28 +188,38 @@ class TestCreateApiDatasource:
                 'data': []
             }
         )
-        self.__responses_preflight_check('test2', ['upsert'])
+        self.__responses_preflight_check('a_test_lol', ['upsert'])
 
-        api_ds.upsert('test2', in_)
+        api_ds.upsert('a_test_lol', in_)
 
     def __responses_preflight_check(
         self,
         object_type: str,
-        operation_names: list[str]
+        operation_names: list[str],
     ):
         """adds pre-flight checks to `responses`"""
 
         responses.get(
             f'{FAKE_API_URL}/data/_config/operations',
             json={
-                object_type: {'noauth': operation_names}
-            }
+                object_type: {'noauth': operation_names},
+            },
         )
         responses.get(
             f'{FAKE_API_URL}/data/_config/attribute_types',
-            json={object_type: {}}
+            json={
+                object_type: {},
+            },
+        )
+        responses.get(
+            f'{FAKE_API_URL}/data/_config/relationships',
+            json={
+                object_type: {},
+            },
         )
         responses.get(
             f'{FAKE_API_URL}/data/_config/return_mode',
-            json={object_type: ReturnMode.NONE}
+            json={
+                object_type: ReturnMode.NONE,
+            },
         )

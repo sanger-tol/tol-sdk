@@ -5,18 +5,22 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import Any, Dict, Iterable, List, Optional, Type
+from collections.abc import Iterable
+from typing import Any, Dict, List, Optional, Type
 
 from sqlalchemy import distinct, func
 from sqlalchemy.exc import IntegrityError
-from sqlalchemy.orm import MappedColumn, Query, Session, joinedload
+from sqlalchemy.orm import Load, MappedColumn, Query, Session, joinedload, load_only, raiseload
 from sqlalchemy.orm.attributes import flag_modified
 
 from .filter import DatabaseFilter
 from .model import Model
 from .session import SessionFactory
 from .sort import DatabaseSorter
-from ..core import DataSourceError
+from ..core import DataSourceError, ReqFieldsTree
+
+
+SubPath = tuple[str | None, ReqFieldsTree]
 
 
 class Database(ABC):
@@ -28,7 +32,7 @@ class Database(ABC):
         tablename: str,
         instance_id: Any,
         in_session: Session,
-        requested_relationships: dict[str, str] | None = None,
+        requested_tree: ReqFieldsTree | None = None,
     ) -> Optional[Model]:
         """
         Gets a single instance by its instance-ID, or None if not found.
@@ -46,7 +50,7 @@ class Database(ABC):
         sort_by: Optional[DatabaseSorter] = None,
         offset: Optional[int] = None,
         limit: Optional[int] = None,
-        requested_relationships: dict[str, str] | None = None
+        requested_tree: ReqFieldsTree | None = None,
     ) -> Iterable[Model]:
         """
         Returns an Iterable of `Model` instances according
@@ -191,14 +195,13 @@ class DefaultDatabase(Database):
         tablename: str,
         instance_id: Any,
         in_session: Session,
-        requested_relationships: dict[str, str] | None = None,
+        requested_tree: ReqFieldsTree | None = None,
     ) -> Optional[Model]:
-
         result = self.__get_instance_by_id(
             tablename,
             instance_id,
             in_session,
-            requested_relationships,
+            requested_tree,
         )
         return result
 
@@ -210,13 +213,13 @@ class DefaultDatabase(Database):
         sort_by: Optional[DatabaseSorter] = None,
         offset: Optional[int] = None,
         limit: Optional[int] = None,
-        requested_relationships: dict[str, str] | None = None,
+        requested_tree: ReqFieldsTree | None = None,
     ) -> Iterable[Model]:
 
         _, query = self.__get_model_query(
             tablename,
             in_session,
-            requested_relationships,
+            requested_tree=requested_tree,
             filters=filters,
         )
         if filters is not None:
@@ -225,7 +228,8 @@ class DefaultDatabase(Database):
             query = filters.filter(query, tablename, self.__tablename_model_dict)
         if sort_by is not None:
             query = sort_by.sort(query, tablename, self.__tablename_model_dict, filters)
-        query = query.limit(limit).offset(offset)
+        if limit is not None and offset is not None:
+            query = query.limit(limit).offset(offset)
         results = query.all()
         return results
 
@@ -236,7 +240,7 @@ class DefaultDatabase(Database):
         filters: Optional[DatabaseFilter] = None
     ) -> int:
 
-        _, query = self.__get_model_query(tablename, in_session, None, filters=filters)
+        _, query = self.__get_model_query(tablename, in_session, filters=filters)
         if filters is not None:
             query = filters.filter(query, tablename, self.__tablename_model_dict)
         count = query.count()
@@ -346,7 +350,6 @@ class DefaultDatabase(Database):
         model, query = self.__get_model_query(
             tablename,
             in_session,
-            None,
             filters=filters,
         )
 
@@ -605,42 +608,17 @@ class DefaultDatabase(Database):
         self,
         tablename: str,
         in_session: Session,
-        requested_relationships: dict | None,
+        requested_tree: ReqFieldsTree | None = None,
         filters: DatabaseFilter | None = None,
     ) -> tuple[Type[Model], Query]:
 
         model = self.__tablename_model_dict[tablename]
-        query = in_session.query(model) if not filters else filters.get_query(in_session, model)
+        query = filters.get_query(in_session, model) if filters else in_session.query(model)
 
-        if requested_relationships:
-            query = self.__apply_requested_relationships(
-                query,
-                requested_relationships
-            )
+        if requested_tree:
+            query = self.add_options_to_query(query, tablename, requested_tree)
 
         return model, query
-
-    def __apply_requested_relationships(
-        self,
-        query: Query,
-        requested_relationships: dict[str, str]
-    ) -> Query:
-
-        tablename = requested_relationships.pop('__tablename__')
-        if not requested_relationships:
-            return query
-
-        model = self.__tablename_model_dict[tablename]
-
-        for r_name, r_dict in requested_relationships.items():
-            relationship = getattr(model, r_name)
-            query.options(
-                joinedload(relationship)
-            )
-
-            query = self.__apply_requested_relationships(query, r_dict)
-
-        return query
 
     def __commit_session(
         self,
@@ -677,7 +655,7 @@ class DefaultDatabase(Database):
         tablename: str,
         instance_id: str,
         in_session: Session,
-        requested_relationships: dict[str, str] | None = None,
+        requested_tree: ReqFieldsTree | None = None,
     ) -> Optional[Model]:
         """
         Gets an instance by its tablename and id.
@@ -686,7 +664,7 @@ class DefaultDatabase(Database):
         model, query = self.__get_model_query(
             tablename,
             in_session,
-            requested_relationships
+            requested_tree=requested_tree,
         )
         id_column = getattr(model, model.get_id_column_name())
         result = query.filter(id_column == instance_id).one_or_none()
@@ -854,3 +832,68 @@ class DefaultDatabase(Database):
                 f'Hint - check the following tables: "{relationship_names}".'
             )
         )
+
+    def add_options_to_query(
+        self,
+        query: Query,
+        tablename: str,
+        requested_tree: ReqFieldsTree,
+    ):
+        options = self.joinedload_options(requested_tree)
+        # `raiseload(*)` acts as a trap, raising an exception if any methods
+        # on the returned objects are called which would trigger loading data
+        # from the database via another SELECT.
+        return query.options(options, raiseload('*')) if options else query
+
+    def joinedload_options(self, tree: ReqFieldsTree) -> list[Load]:
+        """
+        Returns a list of SQLAlchemy `Load` objects based on the supplied
+        `ReqFieldsTree` which specify which related tables to join into and
+        which attribute columns to select.  This list of `Load` objects can
+        then be added to a SQLAlchemy `Query` via a call to `options()`.
+        """
+        sub: SubPath = None, tree
+        return list(self.__joinedload_iter(sub))
+
+    def __joinedload_iter(self, sub: SubPath, *path: list[SubPath]):
+        path = [*path, sub]
+        tree = sub[1]
+        if tree.is_leaf:
+            if options := self.__joinedload_options_from_path(path):
+                yield options
+        else:
+            for sub in tree.sub_trees():
+                yield from self.__joinedload_iter(sub, *path)
+
+    def __joinedload_options_from_path(self, path: list[SubPath]):
+        load = None
+        prev_model = None
+        for rel_name, tree in path:
+            model = self.__tablename_model_dict[tree.object_type]
+            if prev_model:
+                # Add a joinedload for this model if `tree` isn't the root
+                relation = getattr(prev_model, rel_name)
+                load = load.joinedload(relation) if load else joinedload(relation)
+            if names := tree.attribute_names:
+                # SQLAlchemy will always add the primary key to the query, but
+                # if the `.id` column isn't the primary key then
+                # serialization to JSON will fail with the `raiseload` trap.
+                # Adding it unconditionally here is harmless - it won't
+                # appear twice in the SELECT statement.
+                names.append(model.get_id_column_name())
+
+                for col_name in model.get_all_foreign_key_names():
+                    # Always load any to-one ID columns where the relation
+                    # isn't being fetched so that we can create stub objects
+                    # for them.
+                    if not tree.has_attribute(col_name):
+                        names.append(col_name)
+                cols = [getattr(model, x) for x in names if x != 'id']
+                load = (
+                    load.load_only(*cols, raiseload=True)
+                    if load
+                    else load_only(*cols, raiseload=True)
+                )
+            prev_model = model
+
+        return load

@@ -3,24 +3,16 @@
 # SPDX-License-Identifier: MIT
 
 from abc import ABC
-from typing import Any, Callable, Optional, TypeVar
+from typing import Any, Callable
 
 from .model import Model
-from ..core import DataObject
+from ..core import DataObject, ReqFieldsTree
 from ..core.core_converter import Converter
 from ..core.factory import DataObjectFactory
 
 
 TypeFunction = Callable[[Model], str]
 """Takes a Model instance, and returns the corresponding DataObject type."""
-
-
-In = TypeVar('In')
-"""The input representation type"""
-
-
-Out = TypeVar('Out')
-"""The output representation type"""
 
 
 class ModelConverter(Converter[Model, DataObject], ABC):
@@ -30,13 +22,11 @@ class ModelConverter(Converter[Model, DataObject], ABC):
 
 
 class DefaultModelConverter(ModelConverter):
-
     def __init__(
         self,
         type_function: TypeFunction,
         data_object_factory: DataObjectFactory,
-        max_depth: int = 1,
-        requested_fields: list[str] | None = None,
+        requested_tree: ReqFieldsTree,
     ) -> None:
         """
         Takes a type_function Callable, which determines the type of the
@@ -45,116 +35,61 @@ class DefaultModelConverter(ModelConverter):
 
         self.__type_function = type_function
         self.__data_object_factory = data_object_factory
-
-        self.__requested_fields = requested_fields
-        self.__max_depth = (
-            None
-            if self.__requested_fields
-            else max_depth
-        )
+        self.__requested_tree = requested_tree
 
     def convert(self, model: Model) -> DataObject:
-        return self.__convert_to_max_depth(
-            model,
-            self.__initial_marker
-        )
-
-    def __convert_to_max_depth(
-        self,
-        model: Model | None,
-        marker: int
-    ) -> DataObject:
-
         if model is None:
             return None
-
-        type_ = self.__type_function(model)
-
-        return self.__data_object_factory(
-            type_,
-            id_=model.instance_id,
-            attributes=model.instance_attributes,
-            to_one=self.__convert_to_ones(
-                model,
-                marker
-            )
-        )
-
-    @property
-    def __initial_marker(self) -> int | str:
-        return (
-            ''
-            if self.__requested_fields
-            else 0
-        )
-
-    def __convert_to_ones(
-        self,
-        model: Model,
-        marker: int | str
-    ) -> dict[str, Optional[DataObject]]:
-
-        if self.__max_depth and marker >= self.__max_depth:
-            return {}
-
-        return {
-            k: self.__convert_to_max_depth(
-                model.instance_to_one_relations[k],
-                self.__get_next_marker(
-                    k,
-                    marker,
-                )
-            )
-            for k in self.__get_requested_to_ones(
-                model,
-                marker,
-            )
-        }
-
-    def __get_next_marker(
-        self,
-        k: str,
-        marker: int | str
-    ) -> int | str:
-
-        if self.__requested_fields:
-            return f'{marker}.{k}' if marker else k
+        if tree := self.__requested_tree:
+            return self.__convert_requested(model, tree)
         else:
-            return marker + 1
+            return self.__data_object_factory(
+                self.__type_function(model),
+                id_=model.instance_id,
+                attributes=model.instance_attributes,
+            )
 
-    def __get_requested_to_ones(
-        self,
-        model_instance: Model,
-        marker: int | str
-    ) -> list[str]:
+    def __convert_requested(self, model, tree):
+        if attr_names := tree.attribute_names:
+            attributes = {x: getattr(model, x) for x in attr_names if x != 'id'}
+        else:
+            attributes = model.instance_attributes
 
-        all_keys = list(
-            model_instance.get_to_one_relationship_config().keys()
+        req_to_ones = self.__convert_to_ones_requested(model, tree)
+        req_to_many = self.__convert_to_many_requested(model, tree)
+
+        obj = self.__data_object_factory(
+            self.__type_function(model),
+            id_=model.instance_id,
+            attributes=attributes,
+            to_one=req_to_ones,
+            to_many=req_to_many,
         )
+        return obj
 
-        if not self.__requested_fields:
-            return all_keys
+    def __convert_to_ones_requested(self, model, tree):
+        to_ones = {}
+        for rel_name, remote in model.get_to_one_relationship_config().items():
+            one = None
+            if sub_tree := tree.get_sub_tree(rel_name):
+                if sub_model := getattr(model, rel_name):
+                    one = self.__convert_requested(sub_model, sub_tree)
+            else:
+                # Create a stub DataObject
+                rel_col = model.get_foreign_key_name(rel_name)
+                if rel_id := getattr(model, rel_col):
+                    one = self.__data_object_factory(remote, id_=rel_id)
+            to_ones[rel_name] = one
+        return to_ones if to_ones else None
 
-        return [
-            k for k in all_keys
-            if self.__requested_to_one(k, marker)
-        ]
-
-    def __requested_to_one(
-        self,
-        k: str,
-        marker: int | str
-    ) -> bool:
-
-        next_marker = self.__get_next_marker(
-            k,
-            marker,
-        )
-
-        return any(
-            r.startswith(next_marker)
-            for r in self.__requested_fields
-        )
+    def __convert_to_many_requested(self, model, tree):
+        to_manys = {}
+        for rel_name in model.get_to_many_relationship_config():
+            if sub_tree := tree.get_sub_tree(rel_name):
+                to_manys[rel_name] = [
+                    self.__convert_requested(x, sub_tree) for x in getattr(model, rel_name)
+                ]
+        return to_manys if to_manys else None
 
 
 class DataObjectConverter(Converter[DataObject, Model], ABC):
@@ -164,11 +99,7 @@ class DataObjectConverter(Converter[DataObject, Model], ABC):
 
 
 class DefaultDataObjectConverter(DataObjectConverter):
-
-    def __init__(
-        self,
-        type_models_dict: dict[str, type[Model]]
-    ) -> None:
+    def __init__(self, type_models_dict: dict[str, type[Model]]) -> None:
         """
         `type_models_dict` maps object type to the
         corresponding `type[Model]` class.
@@ -182,40 +113,22 @@ class DefaultDataObjectConverter(DataObjectConverter):
         return model_class(
             **self.__get_id_dict(input_.id, model_class),
             **input_.attributes,
-            **self.__get_relation_dict(
-                model_class,
-                input_._to_one_objects
-            )
+            **self.__get_relation_dict(model_class, input_._to_one_objects),
         )
 
-    def __get_id_dict(
-        self,
-        id_: str,
-        model_class: type[Model]
-    ) -> dict[str, str]:
-
+    def __get_id_dict(self, id_: str, model_class: type[Model]) -> dict[str, str]:
         id_column_name = model_class.get_id_column_name()
         return {id_column_name: id_}
 
     def __get_relation_dict(
-        self,
-        model_class: type[Model],
-        ones: dict[str, DataObject]
+        self, model_class: type[Model], ones: dict[str, DataObject]
     ) -> dict[str, str]:
         # TODO validation - relationship names and their types
 
         return {
-            model_class.get_foreign_key_name(
-                rel_name
-            ): self.__map_to_foreign_key(rel_obj)
+            model_class.get_foreign_key_name(rel_name): self.__map_to_foreign_key(rel_obj)
             for rel_name, rel_obj in ones.items()
         }
 
-    def __map_to_foreign_key(
-        self,
-        rel_obj: DataObject | None
-    ) -> Any | None:
-
-        return (
-            None if rel_obj is None else rel_obj.id
-        )
+    def __map_to_foreign_key(self, rel_obj: DataObject | None) -> Any | None:
+        return None if rel_obj is None else rel_obj.id
