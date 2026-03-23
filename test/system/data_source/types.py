@@ -41,8 +41,8 @@ class Root(ModelBase):
 
     id: Mapped[str] = mapped_column(primary_key=True)  # noqa A003
 
-    str_column: Mapped[str] = mapped_column(nullable=True)
-    int_column: Mapped[int] = mapped_column(nullable=True)
+    str_column: Mapped[str] = mapped_column(nullable=True, index=True)
+    int_column: Mapped[int] = mapped_column(nullable=True, index=True)
     datetime_column: Mapped[datetime] = mapped_column(nullable=True)
     bool_column: Mapped[bool] = mapped_column(nullable=True)
     list_column: Mapped[list] = mapped_column(

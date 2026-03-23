@@ -385,7 +385,7 @@ class DefaultDatabase(Database):
 
     @ttl_cache(ttl=60)
     def __all_table_stats(self, in_session: Session):
-        """Cached (per session) so that the function isn't called for each table"""
+        """Cached for a short time so that the query isn't rerun for each table"""
         tbl_model = self.__tablename_model_dict
 
         stats = in_session.execute(text("""

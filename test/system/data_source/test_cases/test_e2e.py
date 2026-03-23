@@ -806,7 +806,46 @@ class TestEndToEnd:
         cnt = data_source.get_count('root', object_filters=f)
         assert cnt == 5
 
-    @against(*all_fixtures)
+    @against(sql, api_sql)
+    def test_cardinality_stat(self, data_source: OperableDataSource, ds_sleep):
+        """
+        Upsert 3 `DataObject` instances, and test the cardinality stats
+        """
+
+        str_vals = ['A', 'B', 'C']
+        int_vals = [1, 2, 3, 4, 5]
+        data_objects = []
+        cdo = data_source.data_object_factory
+        for i in range(1000):
+            data_objects.append(
+                cdo(
+                    'root',
+                    f't{i + 1}',
+                    attributes={
+                        'str_column': str_vals[i % 3],
+                        'int_column': int_vals[i % 5],
+                    },
+                )
+            )
+        data_source.upsert('root', data_objects)
+
+        stats = data_source.get_stats(
+            'root',
+            stats_fields=['str_column', 'int_column'],
+            stats=['cardinality'],
+            object_filters=None,
+        )['stats']
+
+        # Stats are approximate, but with 1000 rows added and indexes on the
+        # `str_column` and `int_column` columns an exact answer is returned.
+        # These two values are one greater than added in this test due to the
+        # single "archetype" record added to the table.  The cardinality stat
+        # occasionally returns values larger that the true value, so the test
+        # is `>=` rather than an exact value.
+        assert stats['str_column']['cardinality'] >= 4
+        assert stats['int_column']['cardinality'] >= 6
+
+    @against(elastic, api_elastic)
     def test_stats(self, data_source: OperableDataSource, ds_sleep):
         """
         Upsert 3 `DataObject` instances, and get them as a list with filters
