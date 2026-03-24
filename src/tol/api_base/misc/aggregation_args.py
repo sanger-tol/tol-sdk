@@ -69,7 +69,7 @@ class AggregationArgs:
 
     @property
     def filter(self) -> DataSourceFilter:  # noqa A003
-        return FilterUtils.parse_to_datasource_filter('filter', self.__get_arg('filter'))
+        return FilterUtils.parse_to_datasource_filter('filter', self.__get_arg('filter', str))
 
     @property
     def x_axis(self) -> str:
