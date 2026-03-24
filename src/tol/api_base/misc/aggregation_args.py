@@ -6,9 +6,9 @@ from typing import Any
 
 from werkzeug.datastructures import MultiDict
 
+from .filter_utils import FilterUtils
 from ...api_client.exception import BadPostJsonError
 from ...core import DataSourceFilter
-from .filter_utils import FilterUtils
 
 
 class AggregationArgs:
@@ -28,13 +28,13 @@ class AggregationArgs:
         # Validate JSON body: must exist, and should be an object (not a list)
         # The accepted JSON body is an object (Python dict). It cannot be a list
         if not isinstance(body_json, dict):
-            raise TypeError("JSON body must be an object")
+            raise TypeError('JSON body must be an object')
 
         self.__args_dict = (
             (body_json if body_json else {})
             | (request_args.to_dict() if request_args else {})
         )
-    
+
     # All args are calculated properties, because some args are required for one type of
     # aggregation, but not for others
     def __get_arg(
@@ -68,13 +68,13 @@ class AggregationArgs:
         return arg_value
 
     @property
-    def filter(self) -> DataSourceFilter:
+    def filter(self) -> DataSourceFilter:  # noqa A003
         return FilterUtils.parse_to_datasource_filter('filter', self.__get_arg('filter'))
 
     @property
     def x_axis(self) -> str:
         return self.__get_arg('x_axis', str)
-    
+
     @property
     def y_axis(self) -> str:
         return self.__get_arg('y_axis', str)
@@ -82,19 +82,19 @@ class AggregationArgs:
     @property
     def break_down_by(self) -> str:
         return self.__get_arg('break_down_by', str)
-    
+
     @property
     def stat(self) -> str:
         return self.__get_arg('stat', str)
-    
+
     @property
     def stat_field(self) -> str:
         return self.__get_arg('stat_field', str)
-    
+
     @property
     def cumulative(self) -> bool:
         return self.__get_arg('cumulative', bool, False)
-    
+
     @property
     def maximum_categories(self) -> int:
         return self.__get_arg('maximum_categories', int, 10)
