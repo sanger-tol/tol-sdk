@@ -18,8 +18,7 @@ from typing import Any, Callable, Iterable, Optional, Type
 
 from .auth import AuthInspector
 from .misc import (
-    AggregationBody,
-    AggregationParameters,
+    AggregationArgs,
     GroupStatsParameters,
     LegacyAggregationBody,
     LegacyAggregationParameters,
@@ -484,11 +483,10 @@ class Controller:
     def post_aggregations(
         self,
         object_type: str,
-        query_args: AggregationParameters,
-        body: AggregationBody,
+        aggregation_args: AggregationArgs,
     ):
         # TODO
-        del object_type, query_args, body
+        del object_type, aggregation_args
         return {}
 
     @validate(LegacyAggregator, 'get_aggregations_legacy', OperatorMethod.AGGREGATE_LEGACY)
