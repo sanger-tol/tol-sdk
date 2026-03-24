@@ -25,6 +25,6 @@ class AggregationArgs:
         assert isinstance(body_json, dict)
 
         self.__args_dict = (
-            (body_json if body_json else {}) |
-            (request_args.to_dict() if request_args else {})
+            (body_json if body_json else {})
+            | (request_args.to_dict() if request_args else {})
         )
