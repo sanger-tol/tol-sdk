@@ -13,7 +13,7 @@ from tol.google_sheets import (
 )
 
 
-def benchling_googlesheet(**kwargs) -> GoogleSheetDataSource:
+def library_batch_ids(**kwargs) -> GoogleSheetDataSource:
     gsds = GoogleSheetDataSource({
         'client_secrets': json.loads(os.getenv('GOOGLE_CLIENT_SECRETS')),
         'sheet_key': '1IyGPD9dF51kUL2mgW6u0r4CNPy7lsTGC2UfD_M58lNo',
