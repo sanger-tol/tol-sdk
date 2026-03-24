@@ -37,6 +37,7 @@ from ..core import (
     GroupStatterDataLoader
 )
 from ..core.operator import (
+    Aggregator,
     Counter,
     Cursor,
     DetailGetter,
@@ -69,6 +70,7 @@ DataObjectUpdateConverterFactory = Callable[[], ElasticUpdateInputConverter]
 
 class ElasticDataSource(
     DataSource,
+    Aggregator,
     Cursor,
     Summariser,
     DetailGetter,

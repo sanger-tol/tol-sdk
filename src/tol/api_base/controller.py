@@ -484,10 +484,19 @@ class Controller:
         self,
         object_type: str,
         aggregation_args: AggregationArgs,
-    ):
-        # TODO
-        del object_type, aggregation_args
-        return {}
+        ext_and: AndFilter | None = None,
+    ) -> ResponseDict:
+        return self.data_source.get_aggregations(
+            object_type=object_type,
+            object_filters=self.__combine_filters(aggregation_args.filter, ext_and),
+            x_axis=aggregation_args.x_axis,
+            y_axis=aggregation_args.y_axis,
+            break_down_by=aggregation_args.break_down_by,
+            stat=aggregation_args.stat,
+            stat_field=aggregation_args.stat_field,
+            cumulative=aggregation_args.cumulative,
+            maximum_categories=aggregation_args.maximum_categories,
+        )
 
     @validate(LegacyAggregator, 'get_aggregations_legacy', OperatorMethod.AGGREGATE_LEGACY)
     def post_aggregations_legacy(
