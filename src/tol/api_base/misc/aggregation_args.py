@@ -7,6 +7,8 @@ from typing import Any
 from werkzeug.datastructures import MultiDict
 
 from ...api_client.exception import BadPostJsonError
+from ...core import DataSourceFilter
+from .filter_utils import FilterUtils
 
 
 class AggregationArgs:
@@ -32,3 +34,67 @@ class AggregationArgs:
             (body_json if body_json else {})
             | (request_args.to_dict() if request_args else {})
         )
+    
+    # All args are calculated properties, because some args are required for one type of
+    # aggregation, but not for others
+    def __get_arg(
+        self,
+        arg_key: str,
+        expected_type: type,
+        default_value: Any | None = None
+    ) -> Any:
+        arg_value = self.__args_dict.get(arg_key)
+
+        # The case that `None` was passed in or the arg wasn't supplied
+        if arg_value is None:
+            if default_value is None:
+                raise BadPostJsonError(
+                    arg_key,
+                    message=f'"{arg_key}" must be given'
+                )
+            else:
+                return default_value
+
+        # Ensure the arg is the correct type
+        if not isinstance(arg_value, expected_type):
+            raise BadPostJsonError(
+                arg_key,
+                message=(
+                    f'"{arg_key}" is of an incorrect type. '
+                    f'Expected {expected_type}, found {type(arg_value)}'
+                )
+            )
+
+        return arg_value
+
+    @property
+    def filter(self) -> DataSourceFilter:
+        return FilterUtils.parse_to_datasource_filter('filter', self.__get_arg('filter'))
+
+    @property
+    def x_axis(self) -> str:
+        return self.__get_arg('x_axis', str)
+    
+    @property
+    def y_axis(self) -> str:
+        return self.__get_arg('y_axis', str)
+
+    @property
+    def break_down_by(self) -> str:
+        return self.__get_arg('break_down_by', str)
+    
+    @property
+    def stat(self) -> str:
+        return self.__get_arg('stat', str)
+    
+    @property
+    def stat_field(self) -> str:
+        return self.__get_arg('stat_field', str)
+    
+    @property
+    def cumulative(self) -> bool:
+        return self.__get_arg('cumulative', bool, False)
+    
+    @property
+    def maximum_categories(self) -> int:
+        return self.__get_arg('maximum_categories', int, 10)
