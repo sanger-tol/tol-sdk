@@ -40,20 +40,14 @@ class AggregationArgs:
     def __get_arg(
         self,
         arg_key: str,
-        expected_type: type,
+        expected_type: type,  # (or None)
         default_value: Any | None = None
     ) -> Any:
         arg_value = self.__args_dict.get(arg_key)
 
         # The case that `None` was passed in or the arg wasn't supplied
         if arg_value is None:
-            if default_value is None:
-                raise BadPostJsonError(
-                    arg_key,
-                    message=f'"{arg_key}" must be given'
-                )
-            else:
-                return default_value
+            return default_value
 
         # Ensure the arg is the correct type
         if not isinstance(arg_value, expected_type):
@@ -68,8 +62,13 @@ class AggregationArgs:
         return arg_value
 
     @property
-    def filter(self) -> DataSourceFilter:  # noqa A003
-        return FilterUtils.parse_to_datasource_filter('filter', self.__get_arg('filter', str))
+    def filter(self) -> DataSourceFilter | None:  # noqa A003
+        filter_string: str | None = self.__get_arg('filter', str)
+
+        if filter_string is None:
+            return None
+        else:
+            return FilterUtils.parse_to_datasource_filter('filter', filter_string)
 
     @property
     def x_axis(self) -> str:
