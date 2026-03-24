@@ -4,6 +4,7 @@
 
 from typing import Union
 
+from .aggregator import Aggregator
 from .counter import Counter
 from .cursor import Cursor
 from .declare import get_operator_member_names  # noqa
@@ -25,7 +26,7 @@ from .upserter import Upserter
 
 
 ALL_OPERATORS = (
-    LegacyAggregator,
+    Aggregator,
     Counter,
     Cursor,
     Deleter,
@@ -35,6 +36,7 @@ ALL_OPERATORS = (
     Enricher,
     GroupStatter,
     Inserter,
+    LegacyAggregator,
     ListGetter,
     PageGetter,
     Statter,
@@ -44,7 +46,7 @@ ALL_OPERATORS = (
 
 
 class AllOperatorType(
-    LegacyAggregator,
+    Aggregator,
     Counter,
     Cursor,
     Deleter,
@@ -56,6 +58,7 @@ class AllOperatorType(
     Enricher,
     GroupStatter,
     Inserter,
+    LegacyAggregator,
     ListGetter,
     PageGetter,
     Statter,
@@ -72,7 +75,7 @@ class AllOperatorType(
 #
 # Operator = Union[*ALL_OPERATORS]
 Operator = Union[
-    LegacyAggregator,
+    Aggregator,
     Counter,
     Cursor,
     Deleter,
@@ -80,6 +83,7 @@ Operator = Union[
     Enricher,
     GroupStatter,
     Inserter,
+    LegacyAggregator,
     ListGetter,
     PageGetter,
     Relational,
