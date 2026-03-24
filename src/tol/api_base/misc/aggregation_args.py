@@ -6,6 +6,8 @@ from typing import Any
 
 from werkzeug.datastructures import MultiDict
 
+from ...api_client.exception import BadPostJsonError
+
 
 class AggregationArgs:
     """
@@ -21,8 +23,10 @@ class AggregationArgs:
         body_json: Any | None,
         request_args: MultiDict | None = None
     ) -> None:
+        # Validate JSON body: must exist, and should be an object (not a list)
         # The accepted JSON body is an object (Python dict). It cannot be a list
-        assert isinstance(body_json, dict)
+        if not isinstance(body_json, dict):
+            raise TypeError("JSON body must be an object")
 
         self.__args_dict = (
             (body_json if body_json else {})
