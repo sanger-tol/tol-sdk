@@ -181,13 +181,19 @@ class ElasticDataSource(
         index = self.__get_index_or_alias(object_type)
         converter = self._data_object_converter_factory()
         (no_of_operations, no_of_errors) = \
-            self.helpers.bulk(self.es,
-                              converter.convert(ElasticUpsertInputResource(index,
-                                                                           objects,
-                                                                           id_func,
-                                                                           provenance)),
-                              stats_only=True,
-                              chunk_size=chunk_size)
+            self.helpers.bulk(
+                self.es,
+                converter.convert(
+                    ElasticUpsertInputResource(
+                        index=index,
+                        objects=objects,
+                        id_func=id_func,
+                        field_prefix=provenance
+                    )
+                ),
+                stats_only=True,
+                chunk_size=chunk_size
+        )
         if no_of_errors > 0:
             raise DataSourceError(f'{no_of_errors} errors encountered '
                                   f'upserting {no_of_operations} objects')
@@ -215,10 +221,10 @@ class ElasticDataSource(
                 candidate_key = kwargs['candidate_key_func'](update)
             self.es.update_by_query(
                 index=real_index_name,
-                body=converter.convert(ElasticUpdateInputResource(object_type,
-                                                                  update,
-                                                                  provenance,
-                                                                  candidate_key)),
+                body=converter.convert(ElasticUpdateInputResource(object_type=object_type,
+                                                                  update=update,
+                                                                  field_prefix=provenance,
+                                                                  candidate_key=candidate_key)),
                 conflicts='proceed',
                 wait_for_completion=False
             )
@@ -244,7 +250,7 @@ class ElasticDataSource(
             group_statter_stats_fields=summary.stats_fields,
             group_statter_stats=summary.stats,
         )
-        loader.load(provenance=summary.provenance)
+        loader.load(provenance=summary.provenance_override)
 
     def __format_cursor_response(
         self,

@@ -151,7 +151,7 @@ def create_standard_models(
             nullable=True
         )
 
-        provenance: Mapped[str] = mapped_column(nullable=False, default='')
+        provenance_override: Mapped[str] = mapped_column(nullable=False, default='')
         convert_class: Mapped[str] = mapped_column(nullable=True)
         candidate_key: Mapped[dict] = mapped_column(JSONB, nullable=True)
 
@@ -522,7 +522,7 @@ def create_standard_models(
             default=[]
         )
 
-        prefix: Mapped[str] = mapped_column(
+        provenance_override: Mapped[str] = mapped_column(
             nullable=False,
             default=''
         )
