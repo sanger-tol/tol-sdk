@@ -105,11 +105,11 @@ class DataSourceUtils:
         for dsrc in datasource_config.data_source_config_relationships:
             if dsrc.source_order is None:
                 continue
-            if "source_order" not in runtime_fields:
-                runtime_fields["source_order"] = {}
-            if dsrc.object_type not in runtime_fields["source_order"]:
-                runtime_fields["source_order"][dsrc.object_type] = {}
-            runtime_fields["source_order"][dsrc.object_type][dsrc.name] = dsrc.source_order
+            if 'source_order' not in runtime_fields:
+                runtime_fields['source_order'] = {}
+            if dsrc.object_type not in runtime_fields['source_order']:
+                runtime_fields['source_order'][dsrc.object_type] = {}
+            runtime_fields['source_order'][dsrc.object_type][dsrc.name] = dsrc.source_order
         return runtime_fields
 
     @classmethod
