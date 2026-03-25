@@ -829,6 +829,29 @@ class TestEndToEnd:
             )
         data_source.upsert('root', data_objects)
 
+        # SQL / Postgres needs to have analysed the table for the stats to be
+        # built, which we trigger by requesting matches to the `str_column`
+        # and `int_column`:
+        found = []
+        for and_clause in (
+            {
+                'str_column': {
+                    'eq': {'value': 'B'},
+                }
+            },
+            {
+                'int_column': {
+                    'eq': {'value': 5},
+                }
+            },
+        ):
+            found.extend(
+                data_source.get_list(
+                    'root',
+                    DataSourceFilter(and_=and_clause),
+                )
+            )
+
         stats = data_source.get_stats(
             'root',
             stats_fields=['str_column', 'int_column'],
