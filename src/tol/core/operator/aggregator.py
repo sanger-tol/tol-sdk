@@ -21,6 +21,7 @@ class Aggregator(_Filterable, ABC):
         *,
         x_axis: str | None = None,
         y_axis: str | None = None,
+        date_interval: str | None = None,
         break_down_by: str | None = None,
         stat: str | None = None,
         stat_field: str | None = None,

@@ -2,6 +2,7 @@
 #
 # SPDX-License-Identifier: MIT
 
+import re
 from typing import Any
 
 from werkzeug.datastructures import MultiDict
@@ -19,6 +20,12 @@ class AggregationArgs:
 
     __slots__ = ['__args_dict']
     __args_dict: dict
+
+    # A number, then a word
+    DATE_INTERVAL_REGEX = r'(\d+)([a-zA-Z]+)'
+    # These units mean the same as they would in Elasticsearch aggregations. However, not all of
+    # the units in Elastic are supported (just these ones below)
+    DATE_INTERVAL_UNITS = 'd', 'w', 'M', 'y'
 
     def __init__(
         self,
@@ -81,6 +88,28 @@ class AggregationArgs:
     @property
     def break_down_by(self) -> str:
         return self.__get_arg('break_down_by', str)
+    
+    @property
+    def date_interval(self) -> str:
+        interval_string = self.__get_arg('date_interval', str, '1M')
+
+        # Validate the interval is a number and a unit
+        match = re.search(AggregationArgs.DATE_INTERVAL_REGEX, interval_string)
+        if not match:
+            raise BadPostJsonError(
+                'date_interval',
+                message='Invalid format (expected value and unit, e.g. "1M")'
+            )
+
+        # Validate the unit is one of the accepted options
+        unit = match.group(2)
+        if unit not in AggregationArgs.DATE_INTERVAL_UNITS:
+            raise BadPostJsonError(
+                'date_interval',
+                message=f'Invalid unit (expected one of {AggregationArgs.DATE_INTERVAL_UNITS})'
+            )
+
+        return interval_string
 
     @property
     def stat(self) -> str:

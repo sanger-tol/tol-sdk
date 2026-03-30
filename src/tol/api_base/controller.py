@@ -491,6 +491,7 @@ class Controller:
             object_filters=self.__combine_filters(aggregation_args.filter, ext_and),
             x_axis=aggregation_args.x_axis,
             y_axis=aggregation_args.y_axis,
+            date_interval=aggregation_args.date_interval,
             break_down_by=aggregation_args.break_down_by,
             stat=aggregation_args.stat,
             stat_field=aggregation_args.stat_field,
