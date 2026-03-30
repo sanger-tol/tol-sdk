@@ -78,19 +78,19 @@ class AggregationArgs:
             return FilterUtils.parse_to_datasource_filter('filter', filter_string)
 
     @property
-    def x_axis(self) -> str:
+    def x_axis(self) -> str | None:
         return self.__get_arg('x_axis', str)
 
     @property
-    def y_axis(self) -> str:
+    def y_axis(self) -> str | None:
         return self.__get_arg('y_axis', str)
 
     @property
-    def break_down_by(self) -> str:
+    def break_down_by(self) -> str | None:
         return self.__get_arg('break_down_by', str)
 
     @property
-    def date_interval(self) -> str:
+    def date_interval(self) -> str | None:
         interval_string = self.__get_arg('date_interval', str, '1M')
 
         # Validate the interval is a number and a unit
@@ -112,17 +112,17 @@ class AggregationArgs:
         return interval_string
 
     @property
-    def stat(self) -> str:
+    def stat(self) -> str | None:
         return self.__get_arg('stat', str)
 
     @property
-    def stat_field(self) -> str:
+    def stat_field(self) -> str | None:
         return self.__get_arg('stat_field', str)
 
     @property
-    def cumulative(self) -> bool:
+    def cumulative(self) -> bool | None:
         return self.__get_arg('cumulative', bool, False)
 
     @property
-    def maximum_categories(self) -> int:
+    def maximum_categories(self) -> int | None:
         return self.__get_arg('maximum_categories', int, 10)
