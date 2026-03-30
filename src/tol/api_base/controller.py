@@ -12,14 +12,20 @@ aggregations, and relationship management with proper validation and authorisati
 
 from __future__ import annotations
 
+from datetime import datetime
 import inspect
 from inspect import BoundArguments
+from importlib
 from typing import Any, Callable, Iterable, Optional, Type
+
 
 from .auth import AuthInspector
 from .misc import (
+    ActionParameters,
     AggregationBody,
     AggregationParameters,
+    CtxGetter,
+    default_ctx_getter,
     GroupStatsParameters,
     ListGetParameters,
     StatsParameters,
@@ -31,7 +37,7 @@ from ..api_client.exception import (
     UnsupportedOperationError,
 )
 from ..api_client.view import ResponseDict, View
-from ..core import DataObject, OperableDataSource, ReqFieldsTree
+from ..core import DataObject, DataSourceError, OperableDataSource, ReqFieldsTree
 from ..core.datasource_filter import AndFilter, DataSourceFilter
 from ..core.operator import (
     Aggregator,
@@ -707,3 +713,203 @@ class Controller:
         """
         self.__data_source.validate_to_one_recurse(source.type, relationship_hops)
         return self.__data_source.get_recursive_relation(source, relationship_hops)
+
+    def perform_action(
+        self,
+        object_type: str,
+        action_args: ActionParameters,
+        action_ds: OperableDataSource,
+        flow_ds: OperableDataSource,
+    ) -> ResponseDict:
+        """
+        Perform an action on objects of the specified type.
+
+        This method executes a predefined action based on the provided parameters,
+        which may include an action name, target IDs, and additional parameters.
+
+        Args:
+            object_type: The type of objects to perform the action on.
+            action_name: The name of the action to perform.
+            ids: List of object IDs to target with the action.
+            params: Optional additional parameters for the action.
+
+        Returns:
+            A dictionary containing the result of the action.
+        """
+        # Implementation of the action execution logic goes here.
+        ctx_getter: CtxGetter = default_ctx_getter,
+
+        ctx = ctx_getter()
+        user_id = ctx.user_id
+        
+        # TODO: Add role-based access control for actions here, potentially using ctx.roles
+
+        ids: list[str] = action_args.ids
+        action_name: str = action_args.action_name
+        params: dict[str, Any] = action_args.params
+
+        action = self.__get_action(object_type, action_name, action_ds)
+
+        action_params = (
+            action.params
+            if action.params
+            else {}
+        )
+
+        if action.flow_name:
+            flow_params = {
+                'extra_params': {
+                    **params,
+                    **action_params,
+                },
+                'user_id': user_id,
+                'object_type': object_type,
+                'ids': ids
+            }
+
+            flow_run_id, flow_run_name = self.__insert_flow_run(
+                action,
+                flow_params,
+                user_id,
+                flow_ds
+            )
+
+            user_action_params = {
+                **params,
+                **action_params,
+                'ids': ids,
+                'flow_run_id': flow_run_id,
+                'flow_run_name': flow_run_name
+            }
+
+        elif action.class_name:
+            # Try to import the class from tol.actions first, then fall back to main.actions
+            action_class = None
+            try:
+                tol_actions_module = importlib.import_module('tol.actions')
+                if hasattr(tol_actions_module, action.class_name):
+                    action_class = getattr(tol_actions_module, action.class_name)
+
+                if action_class is None:
+                    main_actions_module = importlib.import_module('main.actions')
+                    if hasattr(main_actions_module, action.class_name):
+                        action_class = getattr(main_actions_module, action.class_name)
+
+            except ImportError:
+                raise DataSourceError(
+                    'Action Class Import Error',
+                    'Class not found in tol.actions or main.actions',
+                    500
+                )
+
+            if action_class is None:
+                raise DataSourceError(
+                    'Action Class Not Found',
+                    f'Action class "{action.class_name}" not found in tol.actions or main.actions',
+                    404
+                )
+
+            class_params = {**action_params, **params}
+
+            action_instance = action_class()
+            status = action_instance.run(ids=ids, params=class_params,
+                                         object_type=object_type, datasource=action_ds)
+
+            user_action_params = {
+                **params,
+                **action_params,
+                'ids': ids,
+                'status': status
+            }
+
+        else:
+            raise DataSourceError(
+                'Invalid Action',
+                'No Actions are defined',
+                400
+            )
+
+        user = action_ds.get_one('user', user_id)
+
+        user_action = action_ds.data_object_factory(
+            'user_action',
+            attributes={
+                'ids': ids,
+                'params': user_action_params,
+                'created_at': datetime.now()
+            },
+            to_one={
+                'user': user,
+                'action': action
+            }
+        )
+        action_ds.insert('user_action', [user_action])
+
+        return {'success': True}, 200
+    
+    def __get_action(
+        object_type: str,
+        action_name: str,
+        action_ds: OperableDataSource
+    ) -> DataObject:
+
+        f = DataSourceFilter(
+            and_={
+                'name': {
+                    'eq': {
+                        'value': action_name
+                    }
+                },
+                'object_type': {
+                    'eq': {
+                        'value': object_type
+                    }
+                }
+            }
+        )
+
+        action_list = list(
+            action_ds.get_list(
+                'action',
+                object_filters=f
+            )
+        )
+
+        if not action_list:
+            raise DataSourceError(
+                'Not Found',
+                'The specified action was not found',
+                404
+            )
+
+        return action_list[0]
+
+    def __insert_flow_run(
+        action: DataObject,
+        flow_params: dict[str, Any],
+        user_id: str,
+        flow_ds: OperableDataSource
+    ) -> tuple[str, str]:
+
+        flow_name = action.flow_name
+        flow_run = flow_ds.data_object_factory(
+            'flow_run',
+            attributes={
+                'flow_name': flow_name,
+                'deployment_name': flow_name,
+                'parameters': flow_params,
+                'tags': [
+                    'app_name:portal',
+                    f'user_id:{user_id}'
+                ],
+            }
+        )
+
+        inserted_run_data = list(
+            flow_ds.insert(
+                'flow_run',
+                [flow_run]
+            )
+        )[0]
+
+        return inserted_run_data.id, inserted_run_data.name

@@ -2,6 +2,7 @@
 #
 # SPDX-License-Identifier: MIT
 
+from .action_parameters import ActionParameters  # noqa
 from .aggregation_parameters import AggregationParameters  # noqa
 from .aggregation_body import AggregationBody  # noqa
 from .authenticate import Authenticator, quick_and_dirty_auth  # noqa

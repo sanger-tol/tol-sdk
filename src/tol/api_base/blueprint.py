@@ -20,6 +20,7 @@ from .auth import AuthInspector
 from .auth.error import AuthError
 from .controller import Controller
 from .misc import (
+    ActionParameters,
     AggregationBody,
     AggregationParameters,
     GroupStatsParameters,
@@ -181,6 +182,8 @@ def _core_blueprint(
     url_prefix: str,
     auth_inspector: Optional[AuthInspector] = None,
     include_all_to_ones: bool = True,
+    flow_ds: Optional[DataSource] = None,
+    action_ds: Optional[DataSource] = None,
 ) -> DataBlueprint:
     """
     Create the core blueprint responsible for managing DataSource endpoints.
@@ -368,6 +371,13 @@ def _core_blueprint(
         search_after = request.json.get('search_after')
         page = controller.get_cursor_page(object_type, request_args, search_after)
         return page
+    
+    @data_handler.post('/<object_type>:action')
+    def post_action(*, object_type: str):
+        """Perform an action on objects of the specified type."""
+        request_args = ActionParameters(request.args | request.json)
+        controller = __new_controller(object_type)
+        controller.perform_action(object_type, request_args, action_ds, flow_ds)
 
     @data_handler.route('/<object_type>:to-one/<object_id>/<path:hops_suffix>', methods=['GET'])
     def get_to_one_relation(*, object_type: str, object_id: str, hops_suffix: str):
@@ -405,6 +415,8 @@ def _core_blueprint(
 
 def data_blueprint(
     *data_sources: DataSource,
+    flow_ds: Optional[DataSource] = None,
+    action_ds: Optional[DataSource] = None,
     url_prefix: str = '/data',
     config_prefix: str = '/_config',
     auth_inspector: Optional[AuthInspector] = None,
@@ -449,6 +461,8 @@ def data_blueprint(
         url_prefix,
         auth_inspector=auth_inspector,
         include_all_to_ones=include_all_to_ones,
+        flow_ds=flow_ds,
+        action_ds=action_ds,
     )
     core_bp.register_blueprint(config_bp)
 
