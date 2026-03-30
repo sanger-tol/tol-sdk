@@ -87,6 +87,10 @@ def create_action_models(
         user_actions: Mapped[list['UserAction']] = relationship(  # noqa F821
             back_populates='action'
         )
+        
+        role_actions: Mapped[list['RoleAction']] = relationship(  # noqa F821
+            back_populates='action'
+        )
 
     class UserAction(base_model_class):
         __tablename__ = 'user_action'
