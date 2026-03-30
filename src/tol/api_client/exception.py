@@ -136,6 +136,15 @@ class BadPostJsonError(BaseRuntimeException):
         return f'{detail}\n\n{message}'
 
 
+class BadArgumentCombinationError(BaseRuntimeException):
+    def __init__(self, message: str | None = None) -> None:
+        errors = [{
+            'title': 'Bad Argument Combination',
+            'detail': message
+        }]
+        super().__init__(errors, status_code=400)
+
+
 class UnauthenticatedError(BaseRuntimeException):
     """
     Raise on any error condition that warrants a
