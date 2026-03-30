@@ -88,7 +88,7 @@ class AggregationArgs:
     @property
     def break_down_by(self) -> str:
         return self.__get_arg('break_down_by', str)
-    
+
     @property
     def date_interval(self) -> str:
         interval_string = self.__get_arg('date_interval', str, '1M')
