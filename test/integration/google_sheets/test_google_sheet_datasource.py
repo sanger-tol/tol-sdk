@@ -70,7 +70,8 @@ class TestGoogleSheetDataSource(TestCase):
                 'optional': 'str',
                 'boolean': 'boolean',
                 'float': 'float',
-                'datetime': 'datetime'
+                'datetime': 'datetime',
+                'unmapped_column1': 'str',
             }
         }
         self.assertEqual(expected, gsds.attribute_types)
@@ -87,7 +88,8 @@ class TestGoogleSheetDataSource(TestCase):
             'optional': 'YES',
             'boolean': True,
             'float': 2.34,
-            'datetime': datetime(2024, 3, 15, 12, 13, 14)}, obj1.attributes)
+            'datetime': datetime(2024, 3, 15, 12, 13, 14),
+            'unmapped_column1': 'Unmapped Value 1'}, obj1.attributes)
         obj4 = next(ret)
         self.assertEqual(4, obj4.id)
         self.assertEqual({
@@ -95,7 +97,8 @@ class TestGoogleSheetDataSource(TestCase):
             'optional': None,
             'boolean': None,
             'float': 5.678,
-            'datetime': None}, obj4.attributes)
+            'datetime': None,
+            'unmapped_column1': None}, obj4.attributes)
         with self.assertRaises(StopIteration):
             next(ret)
 
@@ -110,7 +113,8 @@ class TestGoogleSheetDataSource(TestCase):
             'optional': 'YES',
             'boolean': True,
             'float': 2.34,
-            'datetime': datetime(2024, 3, 15, 12, 13, 14)}, obj1.attributes)
+            'datetime': datetime(2024, 3, 15, 12, 13, 14),
+            'unmapped_column1': 'Unmapped Value 1'}, obj1.attributes)
         obj2 = next(ret)
         self.assertEqual(2, obj2.id)
         self.assertEqual({
@@ -118,7 +122,8 @@ class TestGoogleSheetDataSource(TestCase):
             'optional': None,
             'boolean': False,
             'float': None,
-            'datetime': None}, obj2.attributes)
+            'datetime': None,
+            'unmapped_column1': None}, obj2.attributes)
         obj3 = next(ret)
         self.assertEqual(3, obj3.id)
         self.assertEqual({
@@ -126,7 +131,8 @@ class TestGoogleSheetDataSource(TestCase):
             'optional': 'NO',
             'boolean': True,
             'float': None,
-            'datetime': datetime(2030, 12, 31)}, obj3.attributes)
+            'datetime': datetime(2030, 12, 31),
+            'unmapped_column1': None}, obj3.attributes)
         obj4 = next(ret)
         self.assertEqual(4, obj4.id)
         self.assertEqual({
@@ -134,6 +140,7 @@ class TestGoogleSheetDataSource(TestCase):
             'optional': None,
             'boolean': None,
             'float': 5.678,
-            'datetime': None}, obj4.attributes)
+            'datetime': None,
+            'unmapped_column1': None}, obj4.attributes)
         with self.assertRaises(StopIteration):
             next(ret)
