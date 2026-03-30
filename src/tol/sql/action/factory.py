@@ -127,7 +127,7 @@ def create_action_models(
             back_populates='user_actions',
             foreign_keys=[user_id]
         )
-        
+
     class RoleAction(base_model_class):
         __tablename__ = 'role_action'
 
@@ -158,7 +158,7 @@ def create_action_models(
             return relationship(
                 back_populates='user'
             )
-            
+
     class _RoleMixin:
 
         @declared_attr
