@@ -19,7 +19,7 @@ class Aggregator(_Filterable, ABC):
         object_type: str,
         object_filters: DataSourceFilter | None = None,
         *,
-        x_axis: str | None = None,
+        x_axis: str,
         y_axis: str | None = None,
         date_interval: str | None = None,
         break_down_by: str | None = None,
@@ -33,6 +33,8 @@ class Aggregator(_Filterable, ABC):
     @abstractmethod
     def get_date_bar_chart_aggregation(
         self,
+        object_type,
+        object_filters,
         x_axis: str,
         date_interval: str,
         break_down_by: str | None,
@@ -45,6 +47,8 @@ class Aggregator(_Filterable, ABC):
     @abstractmethod
     def get_categorical_bar_chart_aggregation(
         self,
+        object_type: str,
+        object_filters: DataSourceFilter | None,
         x_axis: str,
         break_down_by: str | None,
         stat: str | None,
@@ -55,6 +59,8 @@ class Aggregator(_Filterable, ABC):
 
     def get_scatter_plot_aggregation(
         self,
+        object_type: str,
+        object_filters: DataSourceFilter | None,
         x_axis: str,
         y_axis: str,
         break_down_by: str | None,

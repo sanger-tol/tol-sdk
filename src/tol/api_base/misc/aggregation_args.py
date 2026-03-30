@@ -48,12 +48,16 @@ class AggregationArgs:
         self,
         arg_key: str,
         expected_type: type,  # (or None)
-        default_value: Any | None = None
+        default_value: Any | None = None,
+        required: bool = False,
     ) -> Any:
         arg_value = self.__args_dict.get(arg_key)
 
         # The case that `None` was passed in or the arg wasn't supplied
         if arg_value is None:
+            if required:
+                raise BadPostJsonError(arg_key)
+
             return default_value
 
         # Ensure the arg is the correct type
@@ -78,8 +82,8 @@ class AggregationArgs:
             return FilterUtils.parse_to_datasource_filter('filter', filter_string)
 
     @property
-    def x_axis(self) -> str | None:
-        return self.__get_arg('x_axis', str)
+    def x_axis(self) -> str:
+        return self.__get_arg('x_axis', str, required=True)
 
     @property
     def y_axis(self) -> str | None:
