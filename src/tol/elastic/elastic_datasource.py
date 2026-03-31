@@ -503,6 +503,10 @@ class ElasticDataSource(
                                       runtime_mappings=runtime_mappings)
         return self._elastic_converter_factory().convert_list(generator)
 
+    # TODO: This probably shouldn't reside here
+    def __append_keyword_if_needed(self, field: str) -> str:
+        return field if field.startswith('calc_') else f'{field}.keyword'
+
     def __make_date_aggregation(
         self,
         object_type: str,
@@ -520,7 +524,25 @@ class ElasticDataSource(
         date_interval: str,
         break_down_by: str,
     ) -> dict:
-        pass
+        return {
+            'aggs': {
+                'agg': {
+                    'terms': {
+                        'field': self.__append_keyword_if_needed(x_axis),
+                        'size': 25,
+                    },
+                    'aggs': {
+                        '0': {
+                            'date_histogram': {
+                                'field': x_axis,
+                                'calendar_interval': date_interval,
+                                'time_zone': 'Europe/London',
+                            },
+                        },
+                    },
+                },
+            },
+        }
 
     def __get_scatter_aggregations(
         self,
