@@ -3,6 +3,7 @@
 # SPDX-License-Identifier: MIT
 
 from pathlib import Path
+from typing import Any
 
 import numpy as np
 
@@ -11,7 +12,7 @@ import pandas as pd
 from .pandas_datasource import PandasDataSource
 
 
-class ExcelDataSource(
+class CsvDataSource(
     PandasDataSource
 ):
     """
@@ -22,32 +23,26 @@ class ExcelDataSource(
     def __init__(
         self,
         filepath: str | Path,
-        sheet_name: str,
         *,
         object_type: str = 'sheet_row',
-        engine: str = 'openpyxl',
         type_mapping: dict[str, str] | None = None,
     ) -> None:
 
         super().__init__(
             filepath,
-            sheet_name,
+            sheet_name=None,
             object_type=object_type,
-            engine=engine,
             type_mapping=type_mapping,
         )
 
     def _get_dataframe(
         self,
         filepath: str | Path,
-        sheet_name: str,
-        engine: str,
+        *args: Any
     ) -> pd.DataFrame:
 
-        __df: pd.DataFrame = pd.read_excel(
-            filepath,
-            sheet_name,
-            engine=engine,
+        __df: pd.DataFrame = pd.read_csv(
+            filepath
         )
 
         return __df.replace(np.nan, None)

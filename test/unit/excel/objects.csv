@@ -1,0 +1,3 @@
+﻿int_column,str_column,bool_column,datetime_column,float_column
+42,hello,TRUE,18/02/2000 00:00,42
+9093,world,FALSE,18/02/2010 00:00,9032.2
