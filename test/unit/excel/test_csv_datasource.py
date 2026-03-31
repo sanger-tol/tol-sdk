@@ -29,7 +29,7 @@ def type_mapping() -> dict[str, str]:
     }
 
 
-class TestTOSEmitter:
+class TestCsvDatasource:
 
     def test_get_list(
         self,
