@@ -29,7 +29,7 @@ class Aggregator(_Filterable, ABC):
         maximum_categories: int | None = None,
     ) -> dict:
         return {'hey': 'there'}
-    
+
     @abstractmethod
     def get_date_bar_chart_aggregation(
         self,
@@ -67,4 +67,3 @@ class Aggregator(_Filterable, ABC):
     ) -> dict:
         # TODO: This is concrete and should be implemented here
         raise NotImplementedError
-
