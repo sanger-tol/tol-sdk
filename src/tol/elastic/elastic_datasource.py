@@ -580,7 +580,27 @@ class ElasticDataSource(
         maximum_categories: int,
         break_down_by: str,
     ) -> dict:
-        pass
+        return {
+            'aggs': {
+                'agg': {
+                    'terms': {
+                        'field': self.__append_keyword_if_needed(x_axis),
+                        'size': 25,
+                    },
+                    'aggs': {
+                        '0': {
+                            'terms': {
+                                'field': self.__append_keyword_if_needed(x_axis),
+                                'order': {
+                                    '_key': 'asc',
+                                },
+                                'size': 25,
+                            },
+                        },
+                    },
+                },
+            },
+        }
 
     def __get_elastic_aggregations(
         self,
