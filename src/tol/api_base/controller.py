@@ -503,7 +503,7 @@ class Controller:
         if aggregations is None:
             raise BadArgumentCombinationError('Invalid aggregations argument combination')
 
-        return aggregations            
+        return aggregations
 
     @validate(LegacyAggregator, 'get_aggregations_legacy', OperatorMethod.AGGREGATE_LEGACY)
     def post_aggregations_legacy(

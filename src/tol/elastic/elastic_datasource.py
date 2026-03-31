@@ -546,7 +546,7 @@ class ElasticDataSource(
         object_filters: DataSourceFilter | None,
         x_axis: str,
         # TODO: This should only be used if x_axis is categorical. How do we know that?
-        maximum_categories: int, 
+        maximum_categories: int,
     ) -> dict:
         pass
 
@@ -600,10 +600,10 @@ class ElasticDataSource(
         elastic_aggregations_query_dict: dict | None = None
 
         # TODO: Typing and name. Gotten either in if chain or later
-        result: Any
+        result: Any = ...
 
         # Call the correct aggregation function depending on the options provided
-        if x_axis and self.attribute_types[object_type][x_axis] == "datetime" and date_interval:
+        if x_axis and self.attribute_types[object_type][x_axis] == 'datetime' and date_interval:
             if break_down_by:
                 elastic_aggregations_query_dict = self.__make_date_aggregation_segmented(
                     object_type,
@@ -629,7 +629,7 @@ class ElasticDataSource(
                 y_axis,
                 break_down_by
             )
-        elif x_axis and self.attribute_types[object_type][x_axis] == "str":
+        elif x_axis and self.attribute_types[object_type][x_axis] == 'str':
             if break_down_by:
                 elastic_aggregations_query_dict = self.__make_categorical_aggregation_segmented(
                     object_type,
@@ -659,6 +659,10 @@ class ElasticDataSource(
 
         # TODO: Post-processing (e.g. using cumulative)
         # TODO: Form into correct format then return
+
+        # TEMP
+        del result
+        return {}
 
     def get_aggregations_legacy(
         self,
