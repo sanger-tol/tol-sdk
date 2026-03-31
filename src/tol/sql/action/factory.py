@@ -49,6 +49,7 @@ class ActionModels(IterableABC[type[Model]]):
         return iter(
             [
                 self.user_action,
+                self.role_action,
                 self.action
             ]
         )

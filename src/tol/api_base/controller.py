@@ -24,8 +24,8 @@ from .misc import (
     ActionParameters,
     AggregationBody,
     AggregationParameters,
-    CtxGetter,
     default_ctx_getter,
+    CtxGetter,
     GroupStatsParameters,
     ListGetParameters,
     StatsParameters,
@@ -737,9 +737,8 @@ class Controller:
             A dictionary containing the result of the action.
         """
         # Implementation of the action execution logic goes here.
-        ctx_getter: CtxGetter = default_ctx_getter,
+        ctx: CtxGetter = default_ctx_getter()
 
-        ctx = ctx_getter()
         user_id = ctx.user_id
         
         # TODO: Add role-based access control for actions here, potentially using ctx.roles
@@ -848,6 +847,7 @@ class Controller:
         return {'success': True}, 200
     
     def __get_action(
+        self,
         object_type: str,
         action_name: str,
         action_ds: OperableDataSource
