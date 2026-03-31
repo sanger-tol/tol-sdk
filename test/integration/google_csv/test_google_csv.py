@@ -5,7 +5,7 @@
 import pytest
 
 from tol.excel import CsvDataSource
-from tol.sources.google_csv import google_csv
+from tol.sources.google_csv import google_csv 
 
 
 @pytest.fixture(scope='module')
