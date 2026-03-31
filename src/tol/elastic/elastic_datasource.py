@@ -503,15 +503,12 @@ class ElasticDataSource(
                                       runtime_mappings=runtime_mappings)
         return self._elastic_converter_factory().convert_list(generator)
 
-    def get_aggregations_legacy(
+    def __get_elastic_aggregations(
         self,
         object_type: str,
-        aggregations: dict,
+        elastic_aggregations: dict,
         object_filters: DataSourceFilter | None = None,
-        **kwargs
     ) -> dict:
-        del kwargs
-
         real_index_name, query, fields, runtime_mappings = self._prepare_get_parameters(
             object_type=object_type,
             object_filters=object_filters,
@@ -520,11 +517,21 @@ class ElasticDataSource(
             size=0,
             index=real_index_name,
             query=query,
-            aggregations=aggregations,
+            aggregations=elastic_aggregations,
             fields=fields,
             runtime_mappings=runtime_mappings
         )
         return resp['aggregations']
+
+    def get_aggregations_legacy(
+        self,
+        object_type: str,
+        aggregations: dict,
+        object_filters: DataSourceFilter | None = None,
+        **kwargs
+    ) -> dict:
+        del kwargs
+        return self.__get_elastic_aggregations(object_type, aggregations, object_filters)
 
     def get_stats(
         self,
