@@ -26,6 +26,7 @@ from .misc import (
     StatsParameters,
 )
 from ..api_client.exception import (
+    BadArgumentCombinationError,
     ObjectNotFoundByIdException,
     RecursiveRelationNotFoundException,
     UninheritedOperationError,
@@ -486,7 +487,7 @@ class Controller:
         aggregation_args: AggregationArgs,
         ext_and: AndFilter | None = None,
     ) -> ResponseDict:
-        return self.data_source.get_aggregations(
+        aggregations = self.data_source.get_aggregations(
             object_type=object_type,
             object_filters=self.__combine_filters(aggregation_args.filter, ext_and),
             x_axis=aggregation_args.x_axis,
@@ -498,6 +499,11 @@ class Controller:
             cumulative=aggregation_args.cumulative,
             maximum_categories=aggregation_args.maximum_categories,
         )
+
+        if aggregations is None:
+            raise BadArgumentCombinationError('Invalid aggregations argument combination')
+
+        return aggregations            
 
     @validate(LegacyAggregator, 'get_aggregations_legacy', OperatorMethod.AGGREGATE_LEGACY)
     def post_aggregations_legacy(

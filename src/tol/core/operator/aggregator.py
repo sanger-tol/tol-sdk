@@ -14,6 +14,7 @@ if typing.TYPE_CHECKING:
 
 
 class Aggregator(_Filterable, ABC):
+    @abstractmethod
     def get_aggregations(
         self,
         object_type: str,
@@ -27,43 +28,8 @@ class Aggregator(_Filterable, ABC):
         stat_field: str | None = None,
         cumulative: bool | None = None,
         maximum_categories: int | None = None,
-    ) -> dict:
-        return {'hey': 'there'}
-
-    @abstractmethod
-    def get_date_bar_chart_aggregation(
-        self,
-        object_type,
-        object_filters,
-        x_axis: str,
-        date_interval: str,
-        break_down_by: str | None,
-        stat: str | None,
-        stat_field: str | None,
-        cumulative: bool,
-    ) -> dict:
-        raise NotImplementedError
-
-    @abstractmethod
-    def get_categorical_bar_chart_aggregation(
-        self,
-        object_type: str,
-        object_filters: DataSourceFilter | None,
-        x_axis: str,
-        break_down_by: str | None,
-        stat: str | None,
-        stat_field: str | None,
-        maximum_categories: int,
-    ) -> dict:
-        raise NotImplementedError
-
-    def get_scatter_plot_aggregation(
-        self,
-        object_type: str,
-        object_filters: DataSourceFilter | None,
-        x_axis: str,
-        y_axis: str,
-        break_down_by: str | None,
-    ) -> dict:
-        # TODO: This is concrete and should be implemented here
-        raise NotImplementedError
+    ) -> dict | None:
+        """
+        Returns a dictionary of aggregated data, or `None` if the options provided did not
+        correspond to a valid aggregation
+        """
