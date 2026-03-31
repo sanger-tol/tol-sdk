@@ -200,7 +200,7 @@ def restore(ctx):
     click.echo('Restoring database...')
     command = (
         f'docker compose --env-file {env_file} run --rm {service}-dbutils'
-        ' python3 run.py restore'
+        ' restore'
     )
     click.secho(command, fg='green')
     run(command)

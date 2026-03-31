@@ -24,6 +24,37 @@ from tol.core.relationship import RelationshipConfig
 
 
 @pytest.fixture
+def mock_config_datasource() -> DataSource:
+    class _MockConfigDataSource(DataSource):
+        @property
+        def supported_types(self) -> list[str]:
+            return ['data_source_instance']
+
+        @property
+        def attribute_types(self) -> dict[str, str]:
+            return {
+                'data_source_instance': {}
+            }
+
+        def get_one(
+            self,
+            object_type: str,
+            object_id: str
+        ) -> Optional[DataObject]:
+            return self.data_object_factory(
+                type_=object_type,
+                id_=object_id,
+                attributes={
+                    'builtin_name': 'portal'
+                }
+            )
+
+    mock_ds = _MockConfigDataSource(config={})
+    core_data_object(mock_ds)
+    return mock_ds
+
+
+@pytest.fixture
 def mock_datasource() -> DataSource:
     class _MockDataSource(
         DataSource, DetailGetter, GroupStatter, ListGetter, Relational
@@ -172,3 +203,13 @@ class TestUtils:
         assert len(objects) == 2
         assert objects[0].id == 'child0'
         assert objects[1].id == 'child1'
+
+    def test_get_datasource(
+            self,
+            mock_config_datasource: DataSource
+    ):
+        ds = DataSourceUtils.get_datasource(
+            datasource_instance_id='tol_production',
+            config_datasource=mock_config_datasource
+        )
+        assert isinstance(ds, DataSource)
