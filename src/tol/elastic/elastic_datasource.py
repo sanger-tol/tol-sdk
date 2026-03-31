@@ -503,6 +503,63 @@ class ElasticDataSource(
                                       runtime_mappings=runtime_mappings)
         return self._elastic_converter_factory().convert_list(generator)
 
+    def __make_date_aggregation(
+        self,
+        object_type: str,
+        object_filters: DataSourceFilter | None,
+        x_axis: str,
+        date_interval: str,  # Validated in `AggregationArgs`
+    ) -> dict:
+        pass
+
+    def __make_date_aggregation_segmented(
+        self,
+        object_type: str,
+        object_filters: DataSourceFilter | None,
+        x_axis: str,
+        date_interval: str,
+        break_down_by: str,
+    ) -> dict:
+        pass
+
+    def __get_scatter_aggregations(
+        self,
+        object_type: str,
+        object_filters: DataSourceFilter | None,
+        x_axis: str,
+        y_axis: str,
+        break_down_by: str | None,
+    ) -> Iterable[DataObject]:
+        # TODO: Break down by???
+        # TODO: I don't think you're supposed to construct ReqFieldsTree directly here
+        return self.get_list_page(
+            object_type=object_type,
+            page=1,
+            object_filters=object_filters,
+            page_size=500,
+            requested_tree=ReqFieldsTree(object_type, self, [x_axis, y_axis])
+        )[0]
+
+    def __make_categorical_aggregation(
+        self,
+        object_type: str,
+        object_filters: DataSourceFilter | None,
+        x_axis: str,
+        # TODO: This should only be used if x_axis is categorical. How do we know that?
+        maximum_categories: int, 
+    ) -> dict:
+        pass
+
+    def __make_categorical_aggregation_segmented(
+        self,
+        object_type: str,
+        object_filters: DataSourceFilter | None,
+        x_axis: str,
+        maximum_categories: int,
+        break_down_by: str,
+    ) -> dict:
+        pass
+
     def __get_elastic_aggregations(
         self,
         object_type: str,
@@ -522,6 +579,86 @@ class ElasticDataSource(
             runtime_mappings=runtime_mappings
         )
         return resp['aggregations']
+
+    def get_aggregations(
+        self,
+        object_type: str,
+        object_filters: DataSourceFilter | None = None,
+        *,
+        x_axis: str,
+        y_axis: str | None = None,
+        date_interval: str | None = None,
+        break_down_by: str | None = None,
+        stat: str | None = None,
+        stat_field: str | None = None,
+        cumulative: bool | None = None,
+        maximum_categories: int | None = None
+    ) -> dict | None:
+        # For some combinations of options, a query to Elastic aggregations is required.
+        # This will be set to the aggregation request dict if such a combination is detected.
+        # If it's still `None` after checking the options, no query to Elastic should be made.
+        elastic_aggregations_query_dict: dict | None = None
+
+        # TODO: Typing and name. Gotten either in if chain or later
+        result: Any
+
+        # Call the correct aggregation function depending on the options provided
+        if x_axis and self.attribute_types[object_type][x_axis] == "datetime" and date_interval:
+            if break_down_by:
+                elastic_aggregations_query_dict = self.__make_date_aggregation_segmented(
+                    object_type,
+                    object_filters,
+                    x_axis,
+                    date_interval,
+                    break_down_by
+                )
+            else:
+                elastic_aggregations_query_dict = self.__make_date_aggregation(
+                    object_type,
+                    object_filters,
+                    x_axis,
+                    date_interval
+                )
+        elif x_axis and y_axis:
+            # This is not an Elastic aggregation; it directly assigns to `result` rather than
+            # preparing a query dict
+            result = self.__get_scatter_aggregations(
+                object_type,
+                object_filters,
+                x_axis,
+                y_axis,
+                break_down_by
+            )
+        elif x_axis and self.attribute_types[object_type][x_axis] == "str":
+            if break_down_by:
+                elastic_aggregations_query_dict = self.__make_categorical_aggregation_segmented(
+                    object_type,
+                    object_filters,
+                    x_axis,
+                    maximum_categories or 0,  # TODO It may be a different way to say no max
+                    break_down_by
+                )
+            else:
+                elastic_aggregations_query_dict = self.__make_categorical_aggregation(
+                    object_type,
+                    object_filters,
+                    x_axis,
+                    maximum_categories or 0
+                )
+        else:
+            # Invalid combination of options
+            return None
+
+        # Make the call to Elastic if this aggregation requires it
+        if elastic_aggregations_query_dict is not None:
+            result = self.__get_elastic_aggregations(
+                object_type,
+                elastic_aggregations_query_dict,
+                object_filters
+            )
+
+        # TODO: Post-processing (e.g. using cumulative)
+        # TODO: Form into correct format then return
 
     def get_aggregations_legacy(
         self,
