@@ -34,26 +34,31 @@ class MockGoogleSheetDataSource(GoogleSheetDataSource):
 
 
 def mock_googlesheet_data_source() -> GoogleSheetDataSource:
-    gsds = MockGoogleSheetDataSource({
-        'sheet_key': 'test-sheet-id',
-        'mappings': {
-            'specimen': {
-                'worksheet_name': 'SANGER_QC',
-                'columns': {
-                    'id': {
-                        'heading': 'SPECIMEN_ID',
-                        'type': 'str'
-                    },
-                    'sanger_qc_result': {
-                        'heading': 'Sanger QC Result',
-                        'type': 'str'
-                    },
+    mappings = {
+        'specimen': {
+            'worksheet_name': 'SANGER_QC',
+            'columns': {
+                'id': {
+                    'heading': 'SPECIMEN_ID',
+                    'type': 'str'
                 },
-                'header_row': 1,
-                'data_start_row': 2
-            }
+                'sanger_qc_result': {
+                    'heading': 'Sanger QC Result',
+                    'type': 'str'
+                },
+            },
+            'header_row': 1,
+            'data_start_row': 2
         }
-    })
+    }
+
+    with mock.patch('tol.sources.googlesheet.GoogleSheetDataSource', MockGoogleSheetDataSource):
+        gsds = googlesheet(
+            googlesheet_id='test-sheet-id',
+            mappings=mappings,
+            client_secrets={}
+        )
+
     cdo = core_data_object(gsds)
     return cdo, gsds
 
