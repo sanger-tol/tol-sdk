@@ -2,6 +2,7 @@
 #
 # SPDX-License-Identifier: MIT
 
+from abc import ABC, abstractmethod
 from datetime import datetime
 from pathlib import Path
 from typing import Any, Iterable
@@ -22,6 +23,7 @@ from ..core.operator import ListGetter
 class PandasDataSource(
     DataSource,
     ListGetter,
+    ABC
 ):
     """
     Emits `DataObject` instances from a tabular
@@ -144,3 +146,12 @@ class PandasDataSource(
             return bool
 
         raise DataSourceError(title='Bad Mapping Value')
+
+    @abstractmethod
+    def _get_dataframe(
+        self,
+        filepath: str | Path,
+        sheet_name: str,
+        engine: str,
+    ) -> pd.DataFrame:
+        raise NotImplementedError
