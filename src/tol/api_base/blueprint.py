@@ -182,8 +182,8 @@ def _core_blueprint(
     url_prefix: str,
     auth_inspector: Optional[AuthInspector] = None,
     include_all_to_ones: bool = True,
-    flow_ds: Optional[DataSource] = None,
-    action_ds: Optional[DataSource] = None,
+    flow_ds: Optional[OperableDataSource] = None,
+    action_ds: Optional[OperableDataSource] = None,
 ) -> DataBlueprint:
     """
     Create the core blueprint responsible for managing DataSource endpoints.
@@ -200,7 +200,7 @@ def _core_blueprint(
             inspector for request authorisation.
         include_all_to_ones (bool): Whether to fetch or store all to-one related objects
             when fetching or serialising DataObjects.
-
+        flow_ds (Optional[DataSource], optional): DataSource for flow operations.
     Returns:
         DataBlueprint: A configured blueprint with all data endpoints and error handlers.
 
@@ -377,7 +377,7 @@ def _core_blueprint(
         """Perform an action on objects of the specified type."""
         request_args = ActionParameters(request.args | request.json)
         controller = __new_controller(object_type)
-        controller.perform_action(object_type, request_args, action_ds, flow_ds)
+        return controller.perform_action(object_type, request_args, action_ds, flow_ds)
 
     @data_handler.route('/<object_type>:to-one/<object_id>/<path:hops_suffix>', methods=['GET'])
     def get_to_one_relation(*, object_type: str, object_id: str, hops_suffix: str):

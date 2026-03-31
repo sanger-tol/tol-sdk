@@ -84,6 +84,8 @@ def create_action_models(
             nullable=False,
             default={}
         )
+        
+        class_name: Mapped[str] = mapped_column(nullable=True)
 
         user_actions: Mapped[list['UserAction']] = relationship(  # noqa F821
             back_populates='action'
