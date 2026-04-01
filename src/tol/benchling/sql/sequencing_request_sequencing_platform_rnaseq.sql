@@ -50,6 +50,8 @@ WITH rnaseq_submissions AS (
 		ON cc.container_id = con.id
 	LEFT JOIN rnaseq_sumbission_output$raw AS rnaseq_out
 		ON rnaseq.id = rnaseq_out.workflow_task_id$
+	LEFT JOIN workflow_task_status$raw AS wf
+		ON rnaseq.workflow_task_status_id$ = wf.id
 	LEFT JOIN folder$raw AS f 
 			ON rna.folder_id$ = f.id
 		LEFT JOIN project$raw AS proj
@@ -60,6 +62,7 @@ WITH rnaseq_submissions AS (
 	  	AND ssid.sanger_sample_id IS NOT NULL
 		AND proj.name = 'ToL Core Lab'
 		AND f.name IN ('Routine Throughput', 'RNA', 'Submissions', 'Core Lab Entities', 'Benchling MS Project Move')
+		AND wf.status_type = 'COMPLETED'
 
 
 ),
