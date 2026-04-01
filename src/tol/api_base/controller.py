@@ -12,10 +12,10 @@ aggregations, and relationship management with proper validation and authorisati
 
 from __future__ import annotations
 
-from datetime import datetime
 import inspect
-from inspect import BoundArguments
 import importlib
+from datetime import datetime
+from inspect import BoundArguments
 from typing import Any, Callable, Iterable, Optional, Type
 
 
@@ -24,11 +24,11 @@ from .misc import (
     ActionParameters,
     AggregationBody,
     AggregationParameters,
-    default_ctx_getter,
     CtxGetter,
     GroupStatsParameters,
     ListGetParameters,
     StatsParameters,
+    default_ctx_getter,
 )
 from ..api_client.exception import (
     ObjectNotFoundByIdException,
@@ -740,7 +740,7 @@ class Controller:
         ctx: CtxGetter = default_ctx_getter()
 
         user_id = ctx.user_id
-        
+
         # TODO: Add role-based access control for actions here, potentially using ctx.roles
 
         ids: list[str] = action_args.ids
@@ -754,7 +754,7 @@ class Controller:
             if action_role not in ctx.roles:
                 raise DataSourceError(
                     'Unauthorized',
-                    f'User does not have required role for this action',
+                    'User does not have required role for this action',
                     403
                 )
 
@@ -854,7 +854,7 @@ class Controller:
         action_ds.insert('user_action', [user_action])
 
         return {'success': True}, 200
-    
+
     def __get_action(
         self,
         object_type: str,
@@ -923,7 +923,7 @@ class Controller:
         )[0]
 
         return inserted_run_data.id, inserted_run_data.name
-    
+
     def __get_role_action_list(
         self,
         action: DataObject,
@@ -947,7 +947,7 @@ class Controller:
             role_id_list.append(role_id)
 
         return self.__get_roles_from_id(role_id_list, action_ds)
-    
+
     def __get_roles_from_id(
         self,
         role_ids: list[str],

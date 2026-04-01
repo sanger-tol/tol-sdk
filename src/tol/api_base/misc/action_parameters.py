@@ -20,14 +20,14 @@ class ActionParameters:
         The optional action name.
         """
         return self.__request_args.get('action_name')
-    
+
     @property
     def ids(self) -> list[str]:  # noqa A003
         """
         The action IDs.
         """
         return self.__request_args.get('ids')
-    
+
     @property
     def params(self) -> Optional[dict[str, Any]]:  # noqa A003
         """

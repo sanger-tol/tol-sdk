@@ -371,7 +371,7 @@ def _core_blueprint(
         search_after = request.json.get('search_after')
         page = controller.get_cursor_page(object_type, request_args, search_after)
         return page
-    
+
     @data_handler.post('/<object_type>:action')
     def post_action(*, object_type: str):
         """Perform an action on objects of the specified type."""

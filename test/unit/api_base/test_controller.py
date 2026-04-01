@@ -426,7 +426,6 @@ def _setup_action_ds(action, role_actions=None, roles=None, user=None):
     action_ds = Mock()
 
     def get_list_side_effect(type_, **kwargs):
-        filters = kwargs.get('object_filters')
         if type_ == 'action':
             return [action]
         if type_ == 'role_action':
