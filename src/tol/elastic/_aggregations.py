@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 
 from ..core import DataSourceFilter
-from ..core.operator.aggregator import AggregationResult
+from ..core.operator import AggregationResult
 
 
 class _ElasticAggregator(ABC):
