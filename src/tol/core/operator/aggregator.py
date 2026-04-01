@@ -13,6 +13,14 @@ if typing.TYPE_CHECKING:
     from ..datasource_filter import DataSourceFilter
 
 
+_AggregationResultData = list[dict]
+_AggregationResultSegments = dict[
+    typing.Literal['key', 'break_down_by'],
+    str | _AggregationResultData
+]
+AggregationResult = list[_AggregationResultSegments]
+
+
 class Aggregator(_Filterable, ABC):
     @abstractmethod
     def get_aggregations(
@@ -28,7 +36,7 @@ class Aggregator(_Filterable, ABC):
         stat_field: str | None = None,
         cumulative: bool | None = None,
         maximum_categories: int | None = None,
-    ) -> dict | None:
+    ) -> AggregationResult | None:
         """
         Returns a dictionary of aggregated data, or `None` if the options provided did not
         correspond to a valid aggregation
