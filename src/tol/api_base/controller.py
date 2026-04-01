@@ -12,8 +12,8 @@ aggregations, and relationship management with proper validation and authorisati
 
 from __future__ import annotations
 
-import inspect
 import importlib
+import inspect
 from datetime import datetime
 from inspect import BoundArguments
 from typing import Any, Callable, Iterable, Optional, Type
