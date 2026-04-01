@@ -89,13 +89,45 @@ def action_blueprint(
         )
 
         if not action_list:
-            raise DataSourceError(
-                'Not Found',
-                'The specified action was not found',
-                404
+            action_class = __get_action_class(action_name)
+            if action_class is None:
+                raise DataSourceError(
+                    'Not Found',
+                    'The specified action was not found',
+                    404
+                )
+
+            action = sql_ds.data_object_factory(
+                'action',
+                attributes={
+                    'name': action_name,
+                    'object_type': object_type,
+                    'flow_name': None,
+                    'class_name': action_name,
+                    'params': {},
+                }
             )
+            inserted_actions = list(sql_ds.insert('action', [action]))
+            return inserted_actions[0]
 
         return action_list[0]
+
+    def __get_action_class(
+        class_name: str
+    ) -> type[Any] | None:
+        try:
+            tol_actions_module = importlib.import_module('tol.actions')
+            if hasattr(tol_actions_module, class_name):
+                return getattr(tol_actions_module, class_name)
+
+            main_actions_module = importlib.import_module('main.actions')
+            if hasattr(main_actions_module, class_name):
+                return getattr(main_actions_module, class_name)
+
+        except ImportError:
+            return None
+
+        return None
 
     def __insert_flow_run(
         action: DataObject,
@@ -178,24 +210,7 @@ def action_blueprint(
             }
 
         elif action.class_name:
-            # Try to import the class from tol.actions first, then fall back to main.actions
-            action_class = None
-            try:
-                tol_actions_module = importlib.import_module('tol.actions')
-                if hasattr(tol_actions_module, action.class_name):
-                    action_class = getattr(tol_actions_module, action.class_name)
-
-                if action_class is None:
-                    main_actions_module = importlib.import_module('main.actions')
-                    if hasattr(main_actions_module, action.class_name):
-                        action_class = getattr(main_actions_module, action.class_name)
-
-            except ImportError:
-                raise DataSourceError(
-                    'Action Class Import Error',
-                    'Class not found in tol.actions or main.actions',
-                    500
-                )
+            action_class = __get_action_class(action.class_name)
 
             if action_class is None:
                 raise DataSourceError(
