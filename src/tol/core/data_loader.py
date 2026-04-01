@@ -161,7 +161,7 @@ class DefaultDataLoader():
                     object_type=destination_object_type,
                     updates=converted_objs,
                     candidate_key=candidate_key,
-                    provanence=provenance
+                    provenance=provenance
                 )
             else:
                 for converted_obj_id, converted_obj in converted_objs:
