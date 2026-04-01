@@ -748,6 +748,15 @@ class Controller:
         params: dict[str, Any] = action_args.params
 
         action = self.__get_action(object_type, action_name, action_ds)
+        action_roles = self.__get_role_action_list(action, action_ds)
+
+        for action_role in action_roles:
+            if action_role not in ctx.roles:
+                raise DataSourceError(
+                    'Unauthorized',
+                    f'User does not have required role for this action',
+                    403
+                )
 
         action_params = (
             action.params
@@ -913,3 +922,46 @@ class Controller:
         )[0]
 
         return inserted_run_data.id, inserted_run_data.name
+    
+    def __get_role_action_list(
+        self,
+        action: DataObject,
+        action_ds: OperableDataSource
+    ) -> list[str]:
+        role_action_list = action_ds.get_list(
+            'role_action',
+            object_filters=DataSourceFilter(
+                and_={
+                    'action_id': {
+                        'eq': {
+                            'value': action.id
+                        }
+                    }
+                }
+            )
+        )
+        role_id_list = []
+        for role_action in role_action_list:
+            role_id = role_action.to_one_relationships['role'].id
+            role_id_list.append(role_id)
+
+        return self.__get_roles_from_id(role_id_list, action_ds)
+    
+    def __get_roles_from_id(
+        self,
+        role_ids: list[str],
+        action_ds: OperableDataSource
+    ) -> list[str]:
+        role_list = action_ds.get_list(
+            'role',
+            object_filters=DataSourceFilter(
+                and_={
+                    'id': {
+                        'in_list': {
+                            'value': role_ids
+                        }
+                    }
+                }
+            )
+        )
+        return [role.name for role in role_list]
