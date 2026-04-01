@@ -894,6 +894,7 @@ class Controller:
         return action_list[0]
 
     def __insert_flow_run(
+        self,
         action: DataObject,
         flow_params: dict[str, Any],
         user_id: str,
