@@ -4,7 +4,7 @@ from ..core import DataSourceFilter
 from ..core.operator import AggregationResult
 
 
-class _ElasticAggregator(ABC):
+class ElasticAggregator(ABC):
     @abstractmethod
     def _field_or_keyword(self, object_type: str, name: str) -> str:
         """

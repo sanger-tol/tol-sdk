@@ -59,7 +59,7 @@ from ..core.relationship import (
     RelationshipConfig
 )
 from ..core.requested_fields import ReqFieldsTree, requested_fields_to_tree
-from ._aggregations import _ElasticAggregator
+from ._aggregations import ElasticAggregator
 
 if typing.TYPE_CHECKING:
     from ..core.session import OperableSession
@@ -73,7 +73,7 @@ DataObjectUpdateConverterFactory = Callable[[], ElasticUpdateInputConverter]
 class ElasticDataSource(
     DataSource,
     Aggregator,
-    _ElasticAggregator,
+    ElasticAggregator,
     Cursor,
     Summariser,
     DetailGetter,
