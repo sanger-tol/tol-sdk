@@ -5,6 +5,7 @@
 from __future__ import annotations
 
 import typing
+import numbers
 from collections.abc import Callable, Iterable
 from datetime import datetime
 from typing import Any
@@ -38,7 +39,6 @@ from ..core import (
     GroupStatterDataLoader
 )
 from ..core.operator import (
-    AggregationResult,
     Aggregator,
     Counter,
     Cursor,
@@ -55,6 +55,7 @@ from ..core.operator import (
     Updater,
     Upserter,
 )
+from ..core.operator.aggregator import AggregationResult, AggregationResultData
 from ..core.operator.updater import DataObjectUpdate
 from ..core.relationship import (
     RelationshipConfig
@@ -525,6 +526,31 @@ class ElasticDataSource(
             runtime_mappings=runtime_mappings
         )
         return resp['aggregations']
+    
+    def __apply_cumulative_transformation_to_aggregations_result(
+        self,
+        aggregations_result: AggregationResult,
+    ) -> None:
+        """
+        Applies IN PLACE accumulation across y values in an aggregations result
+        """
+        accumulation = 0
+
+        for break_down_by in aggregations_result:
+            data = typing.cast(AggregationResultData, break_down_by['data'])
+            for data_point in data:
+                if not isinstance(data_point['y'], numbers.Real):
+                    raise DataSourceError(
+                        'Unable to accumulate aggregation',
+                        detail=(
+                            'The `cumulative` flag passed into `get_aggregations` was `True`, '
+                            'but this is not supported for aggregations of a non-numerical y-axis'
+                        ),
+                        status_code=400,
+                    )
+
+                accumulation += data_point['y']
+                data_point['y'] = accumulation
 
     def get_aggregations(
         self,
@@ -583,7 +609,10 @@ class ElasticDataSource(
             # Invalid combination of options
             return None
 
-        # TODO: Post-processing (e.g. using cumulative)
+        # Post-processing (if required)
+        if cumulative:
+            self.__apply_cumulative_transformation_to_aggregations_result(result)
+
         return result
 
     def get_aggregations_legacy(

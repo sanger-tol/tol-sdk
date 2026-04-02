@@ -13,10 +13,10 @@ if typing.TYPE_CHECKING:
     from ..datasource_filter import DataSourceFilter
 
 
-_AggregationResultData = list[dict]
-_AggregationResultKey = str | None
-_AggregationResultSegments = dict[str, _AggregationResultKey | _AggregationResultData]
-AggregationResult = list[_AggregationResultSegments]
+AggregationResultData = list[dict]
+AggregationResultKey = str | None
+AggregationResultSegments = dict[str, AggregationResultKey | AggregationResultData]
+AggregationResult = list[AggregationResultSegments]
 
 
 class Aggregator(_Filterable, ABC):
