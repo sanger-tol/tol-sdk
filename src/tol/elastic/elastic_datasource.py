@@ -24,6 +24,7 @@ from .converter import (
     ElasticUpdateInputConverter,
     ElasticUpsertInputConverter,
 )
+from ._aggregations import ElasticAggregator
 from .filter import ElasticFilterConverter
 from .parser import ElasticUpdateInputResource, ElasticUpsertInputResource
 from ..core import (
@@ -37,8 +38,8 @@ from ..core import (
     GroupStatterDataLoader
 )
 from ..core.operator import (
-    Aggregator,
     AggregationResult,
+    Aggregator,
     Counter,
     Cursor,
     DetailGetter,
@@ -59,7 +60,6 @@ from ..core.relationship import (
     RelationshipConfig
 )
 from ..core.requested_fields import ReqFieldsTree, requested_fields_to_tree
-from ._aggregations import ElasticAggregator
 
 if typing.TYPE_CHECKING:
     from ..core.session import OperableSession
