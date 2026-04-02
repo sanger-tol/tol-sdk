@@ -278,7 +278,7 @@ class ElasticDataSource(
         start = len(self.index_prefix) + 1
         return snakecase(index[start:])
 
-    def _field_or_keyword(self, object_type: str, name: str):
+    def _field_or_keyword(self, object_type: str, name: str) -> str:
         """
         Map our field format to Elastic's format
         """
@@ -505,9 +505,6 @@ class ElasticDataSource(
                                       fields=fields,
                                       runtime_mappings=runtime_mappings)
         return self._elastic_converter_factory().convert_list(generator)
-
-    def __append_keyword_if_needed(self, field: str) -> str:
-        return field if field.startswith('calc_') else f'{field}.keyword'
 
     def __get_elastic_aggregations(
         self,
