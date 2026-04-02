@@ -20,6 +20,7 @@ from .auth import AuthInspector
 from .auth.error import AuthError
 from .controller import Controller
 from .misc import (
+    ActionParameters,
     AggregationArgs,
     GroupStatsParameters,
     JsonApiRequestBody,
@@ -182,6 +183,8 @@ def _core_blueprint(
     url_prefix: str,
     auth_inspector: Optional[AuthInspector] = None,
     include_all_to_ones: bool = True,
+    flow_ds: Optional[OperableDataSource] = None,
+    action_ds: Optional[OperableDataSource] = None,
 ) -> DataBlueprint:
     """
     Create the core blueprint responsible for managing DataSource endpoints.
@@ -198,7 +201,7 @@ def _core_blueprint(
             inspector for request authorisation.
         include_all_to_ones (bool): Whether to fetch or store all to-one related objects
             when fetching or serialising DataObjects.
-
+        flow_ds (Optional[DataSource], optional): DataSource for flow operations.
     Returns:
         DataBlueprint: A configured blueprint with all data endpoints and error handlers.
 
@@ -378,6 +381,13 @@ def _core_blueprint(
         page = controller.get_cursor_page(object_type, request_args, search_after)
         return page
 
+    @data_handler.post('/<object_type>:action')
+    def post_action(*, object_type: str):
+        """Perform an action on objects of the specified type."""
+        request_args = ActionParameters(request.json | request.args)
+        controller = __new_controller(object_type)
+        return controller.perform_action(object_type, request_args, action_ds, flow_ds)
+
     @data_handler.route('/<object_type>:to-one/<object_id>/<path:hops_suffix>', methods=['GET'])
     def get_to_one_relation(*, object_type: str, object_id: str, hops_suffix: str):
         """Navigate through to-one relationships following the specified path."""
@@ -414,6 +424,8 @@ def _core_blueprint(
 
 def data_blueprint(
     *data_sources: DataSource,
+    flow_ds: Optional[DataSource] = None,
+    action_ds: Optional[DataSource] = None,
     url_prefix: str = '/data',
     config_prefix: str = '/_config',
     auth_inspector: Optional[AuthInspector] = None,
@@ -458,6 +470,8 @@ def data_blueprint(
         url_prefix,
         auth_inspector=auth_inspector,
         include_all_to_ones=include_all_to_ones,
+        flow_ds=flow_ds,
+        action_ds=action_ds,
     )
     core_bp.register_blueprint(config_bp)
 
