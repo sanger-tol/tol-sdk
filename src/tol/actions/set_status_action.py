@@ -17,9 +17,6 @@ class SetStatusAction(Action):
     the corresponding status history table.
     """
 
-    def __init__(self):
-        super().__init__()
-
     def run(
         self,
         datasource: DataSource,
@@ -49,7 +46,7 @@ class SetStatusAction(Action):
             with datasource.get_session() as session:
                 for obj in session.insert(status_table, new_status_objects):
                     parent = obj.to_one_relationships.get(object_type)
-                    setattr(parent, status_type, obj)
+                    setattr(parent, 'status', obj)
                     session.upsert(object_type, [parent])
 
             return {'success': True}, 200
