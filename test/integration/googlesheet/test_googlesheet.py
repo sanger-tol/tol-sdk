@@ -3,91 +3,89 @@
 # SPDX-License-Identifier: MIT
 
 from unittest import (
-    TestCase,
-    mock
+    TestCase
 )
 
-from tol.core import (
-    core_data_object
-)
+import json
+import os
+
 from tol.google_sheets import (
     GoogleSheetDataSource
 )
 from tol.sources.googlesheet import googlesheet
 
 
-class MockGoogleSheetDataSource(GoogleSheetDataSource):
-    def _initialise_google_sheet(self):
-        return mock.Mock()
-
-    def _initialise_data(self, object_type):
-        self.data[object_type] = [
-            {
-                'SPECIMEN_ID': 'specimen-1',
-                'Sanger QC Result': 'pass',
-            },
-            {
-                'SPECIMEN_ID': 'specimen-2',
-                'Sanger QC Result': 'fail',
-            },
-        ]
+SYSTEM_TEST_ASSETS_SHEET_KEY = '1R4HX5n_kLzS9ci7c2rsrLHucjOvq0Nq3lKDq8yyBbvI'
 
 
-def mock_googlesheet_data_source() -> GoogleSheetDataSource:
+def client_secrets_from_env() -> dict | None:
+    raw = os.getenv('GOOGLE_CLIENT_SECRETS')
+    if not raw:
+        return None
+
+    try:
+        return json.loads(raw)
+    except json.JSONDecodeError:
+        return None
+
+
+def googlesheet_data_source(client_secrets: dict) -> GoogleSheetDataSource:
     mappings = {
         'specimen': {
-            'worksheet_name': 'SANGER_QC',
+            'worksheet_name': 'Sheet1',
             'columns': {
                 'id': {
-                    'heading': 'SPECIMEN_ID',
-                    'type': 'str'
+                    'heading': 'Id',
+                    'type': 'int'
                 },
-                'sanger_qc_result': {
-                    'heading': 'Sanger QC Result',
+                'value': {
+                    'heading': 'Value',
                     'type': 'str'
                 },
             },
-            'header_row': 1,
-            'data_start_row': 2
+            'header_row': 2,
+            'data_start_row': 4
         }
     }
 
-    with mock.patch('tol.sources.googlesheet.GoogleSheetDataSource', MockGoogleSheetDataSource):
-        gsds = googlesheet(
-            googlesheet_id='test-sheet-id',
-            mappings=mappings,
-            client_secrets={}
-        )
-
-    cdo = core_data_object(gsds)
-    return cdo, gsds
+    gsds = googlesheet(
+        googlesheet_id=SYSTEM_TEST_ASSETS_SHEET_KEY,
+        mappings=mappings,
+        client_secrets=client_secrets,
+    )
+    return gsds
 
 
 class TestGoogleSheetDataSource(TestCase):
 
+    @classmethod
+    def setUpClass(cls):
+        cls.client_secrets = client_secrets_from_env()
+        if cls.client_secrets is None:
+            raise cls.skipTest(
+                'GOOGLE_CLIENT_SECRETS is not set or contains invalid JSON'
+            )
+
     def test_attribute_types(self):
-        _, gsds = mock_googlesheet_data_source()
+        gsds = googlesheet_data_source(self.client_secrets)
+        self.assertIsInstance(gsds, GoogleSheetDataSource)
 
         expected = {
             'specimen': {
-                'id': 'str',
-                'sanger_qc_result': 'str',
+                'id': 'int',
+                'value': 'str',
             }
         }
         self.assertEqual(expected, gsds.attribute_types)
         self.assertEqual(['specimen'], gsds.supported_types)
 
     def test_get_list(self):
-        _, gsds = mock_googlesheet_data_source()
+        gsds = googlesheet_data_source(self.client_secrets)
 
-        ret = gsds.get_list('specimen')
-        obj1 = next(ret)
-        self.assertEqual('specimen-1', obj1.id)
-        self.assertEqual({'sanger_qc_result': 'pass'}, obj1.attributes)
+        rows = list(gsds.get_list('specimen'))
+        self.assertGreaterEqual(len(rows), 1)
 
-        obj2 = next(ret)
-        self.assertEqual('specimen-2', obj2.id)
-        self.assertEqual({'sanger_qc_result': 'fail'}, obj2.attributes)
-
-        with self.assertRaises(StopIteration):
-            next(ret)
+        obj1 = rows[0]
+        self.assertEqual('specimen', obj1.type)
+        self.assertIsInstance(obj1.id, int)
+        self.assertIn('value', obj1.attributes)
