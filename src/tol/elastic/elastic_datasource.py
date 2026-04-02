@@ -4,8 +4,8 @@
 
 from __future__ import annotations
 
-import typing
 import numbers
+import typing
 from collections.abc import Callable, Iterable
 from datetime import datetime
 from typing import Any
@@ -19,13 +19,13 @@ from caseconverter import (
 
 from elasticsearch import (Elasticsearch, helpers)
 
+from ._aggregations import ElasticAggregator
 from .client import ElasticClient
 from .converter import (
     ElasticApiConverter,
     ElasticUpdateInputConverter,
     ElasticUpsertInputConverter,
 )
-from ._aggregations import ElasticAggregator
 from .filter import ElasticFilterConverter
 from .parser import ElasticUpdateInputResource, ElasticUpsertInputResource
 from ..core import (
@@ -526,7 +526,7 @@ class ElasticDataSource(
             runtime_mappings=runtime_mappings
         )
         return resp['aggregations']
-    
+
     def __apply_cumulative_transformation_to_aggregations_result(
         self,
         aggregations_result: AggregationResult,
