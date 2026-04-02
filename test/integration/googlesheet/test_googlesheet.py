@@ -2,12 +2,11 @@
 #
 # SPDX-License-Identifier: MIT
 
+import json
+import os
 from unittest import (
     TestCase
 )
-
-import json
-import os
 
 from tol.google_sheets import (
     GoogleSheetDataSource
