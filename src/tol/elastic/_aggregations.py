@@ -61,6 +61,7 @@ class ElasticAggregator(ABC):
         date_interval: str,  # Validated in `AggregationArgs`
         break_down_by: str,
     ) -> AggregationResult:
+        # Query Elastic
         elastic_response = self.__get_elastic_aggregations(
             object_type,
             {
@@ -84,8 +85,22 @@ class ElasticAggregator(ABC):
             },
             object_filters,
         )
-        # TODO PARSE
-        pass
+
+        # Parse to our response format
+        return [
+            {
+                'key': str(break_down_by['key']),
+                'data': [
+                    {
+                        'x': data_point['key_as_string'],
+                        'y': data_point['doc_count']
+                    }
+                    # '1' is the key Elasticsearch returns for the nested aggregation
+                    for data_point in break_down_by['1']['buckets']
+                ]
+            }
+            for break_down_by in elastic_response['meta']['aggregations']['agg']['buckets']
+        ]
 
     def __get_categorical_aggregation(
         self,
@@ -124,6 +139,7 @@ class ElasticAggregator(ABC):
         maximum_categories: int,
         break_down_by: str,
     ) -> AggregationResult:
+        # Query Elastic
         elastic_response = self.__get_elastic_aggregations(
             object_type,
             {
@@ -149,5 +165,19 @@ class ElasticAggregator(ABC):
             },
             object_filters,
         )
-        # TODO PARSE
-        pass
+
+        # Parse to our response format
+        return [
+            {
+                'key': str(break_down_by['key']),
+                'data': [
+                    {
+                        'x': data_point['key'],
+                        'y': data_point['doc_count']
+                    }
+                    # '1' is the key Elasticsearch returns for the nested aggregation
+                    for data_point in break_down_by['1']['buckets']
+                ]
+            }
+            for break_down_by in elastic_response['meta']['aggregations']['agg']['buckets']
+        ]
