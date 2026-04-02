@@ -6,6 +6,15 @@ from ..core.operator import AggregationResult
 
 class _ElasticAggregator(ABC):
     @abstractmethod
+    def _field_or_keyword(self, object_type: str, name: str) -> str:
+        """
+        Helper method that maps fields in our format to Elastic's format. Implemented in the
+        data source itself. This is defined as abstract here to indicate to other methods in this
+        class that it'll be available.
+        """
+        raise NotImplementedError
+
+    @abstractmethod
     def __get_elastic_aggregations(
         self,
         object_type: str,
@@ -26,6 +35,22 @@ class _ElasticAggregator(ABC):
         x_axis: str,
         date_interval: str,  # Validated in `AggregationArgs`
     ) -> AggregationResult:
+        elastic_response = self.__get_elastic_aggregations(
+            object_type,
+            {
+                'aggs': {
+                    'agg': {
+                        'date_histogram': {
+                            'field': x_axis,
+                            'calendar_interval': date_interval,
+                            'time_zone': 'Europe/London',
+                        },
+                    },
+                },
+            },
+            object_filters,
+        )
+        # TODO PARSE
         pass
 
     def __get_date_aggregation_segmented(
@@ -36,6 +61,30 @@ class _ElasticAggregator(ABC):
         date_interval: str,  # Validated in `AggregationArgs`
         break_down_by: str,
     ) -> AggregationResult:
+        elastic_response = self.__get_elastic_aggregations(
+            object_type,
+            {
+                'aggs': {
+                    'agg': {
+                        'terms': {
+                            'field': self._field_or_keyword(object_type, break_down_by),
+                            'size': 25,
+                        },
+                        'aggs': {
+                            '0': {
+                                'date_histogram': {
+                                    'field': x_axis,
+                                    'calendar_interval': date_interval,
+                                    'time_zone': 'Europe/London',
+                                },
+                            },
+                        },
+                    },
+                },
+            },
+            object_filters,
+        )
+        # TODO PARSE
         pass
 
     def __get_categorical_aggregation(
@@ -46,6 +95,24 @@ class _ElasticAggregator(ABC):
         # TODO: This should only be used if x_axis is categorical. How do we know that?
         maximum_categories: int,
     ) -> AggregationResult:
+        elastic_response = self.__get_elastic_aggregations(
+            object_type,
+            {
+                'aggs': {
+                    'agg': {
+                        'terms': {
+                            'field': self._field_or_keyword(object_type, x_axis),
+                            'order': {
+                                '_key': 'asc',
+                            },
+                            'size': 25,
+                        },
+                    },
+                },
+            },
+            object_filters,
+        )
+        # TODO PARSE
         pass
 
     def __get_categorical_aggregation_segmented(
@@ -57,4 +124,30 @@ class _ElasticAggregator(ABC):
         maximum_categories: int,
         break_down_by: str,
     ) -> AggregationResult:
+        elastic_response = self.__get_elastic_aggregations(
+            object_type,
+            {
+                'aggs': {
+                    'agg': {
+                        'terms': {
+                            'field': self._field_or_keyword(object_type, break_down_by),
+                            'size': 25,
+                        },
+                        'aggs': {
+                            '0': {
+                                'terms': {
+                                    'field': self._field_or_keyword(object_type, x_axis),
+                                    'order': {
+                                        '_key': 'asc',
+                                    },
+                                    'size': 25,
+                                },
+                            },
+                        },
+                    },
+                },
+            },
+            object_filters,
+        )
+        # TODO PARSE
         pass
