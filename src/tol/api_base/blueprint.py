@@ -375,7 +375,7 @@ def _core_blueprint(
     @data_handler.post('/<object_type>:action')
     def post_action(*, object_type: str):
         """Perform an action on objects of the specified type."""
-        request_args = ActionParameters(request.args | request.json)
+        request_args = ActionParameters(request.json | request.args)
         controller = __new_controller(object_type)
         return controller.perform_action(object_type, request_args, action_ds, flow_ds)
 
