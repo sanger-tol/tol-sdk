@@ -14,10 +14,7 @@ if typing.TYPE_CHECKING:
 
 
 _AggregationResultData = list[dict]
-_AggregationResultSegments = dict[
-    typing.Literal['key', 'break_down_by'],
-    str | _AggregationResultData
-]
+_AggregationResultSegments = dict[str, str | _AggregationResultData]
 AggregationResult = list[_AggregationResultSegments]
 
 
