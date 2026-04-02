@@ -51,10 +51,15 @@ WITH hic_submissions AS (
 		ON tp.tissue = t.id
 	LEFT JOIN project$raw AS proj 
 		ON tp.project_id$ = proj.id
+	LEFT JOIN workflow_task$raw AS wft
+		ON hic.workflow_task_id$ = wft.id
+	LEFT JOIN workflow_task_status$raw AS wfts
+		ON wft.workflow_task_status_id = wfts.id
 	WHERE hic.archived$ = 'FALSE'
 		AND ssid.sanger_sample_id IS NOT NULL
 		AND ssid.sanger_sample_id != ''
 		AND proj.name = 'ToL Core Lab'
+		AND wfts.status_type = 'COMPLETED'
 
 ),
 hic_legacy_submissions AS (

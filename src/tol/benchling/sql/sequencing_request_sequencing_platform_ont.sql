@@ -36,7 +36,12 @@ WITH base AS (
         ON cc.container_id = con.id
     LEFT JOIN sanger_sample_id$raw ssid
         ON out.sample_tube_id = ssid.sample_tube
+	LEFT JOIN workflow_task$raw AS wft
+		ON out.workflow_task_id$ = wft.id
+	LEFT JOIN workflow_task_status$raw AS wfts
+		ON wft.workflow_task_status_id = wfts.id
     WHERE out.submission_platform = 'ONT'
+		AND wfts.status_type = 'COMPLETED'
 )
 
 SELECT
@@ -138,4 +143,9 @@ LEFT JOIN sanger_sample_id$raw AS ssid
 	ON ssid.sample_tube = c.id
 LEFT JOIN ont_shear_spri_decision$raw AS ss
 	ON ss.submission_sample = subsam.id
+LEFT JOIN workflow_task$raw AS wft
+	ON out.workflow_task_id$ = wft.id
+LEFT JOIN workflow_task_status$raw AS wfts
+	ON wft.workflow_task_status_id = wfts.id
+WHERE wfts.status_type = 'COMPLETED'
 ORDER BY completion_date DESC
