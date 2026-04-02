@@ -718,8 +718,8 @@ class Controller:
         self,
         object_type: str,
         action_args: ActionParameters,
-        action_ds: OperableDataSource,
-        flow_ds: OperableDataSource,
+        action_ds: Optional[OperableDataSource] = None,
+        flow_ds: Optional[OperableDataSource] = None,
     ) -> ResponseDict:
         """
         Perform an action on objects of the specified type.
@@ -772,6 +772,13 @@ class Controller:
         )
 
         if action.flow_name:
+            if flow_ds is None:
+                raise DataSourceError(
+                    'Flow Data Source Required',
+                    'A data source capable of handling flow runs is required to execute this action',
+                    500
+                )
+
             flow_params = {
                 'extra_params': {
                     **params,
@@ -798,6 +805,13 @@ class Controller:
             }
 
         elif action.class_name:
+            if action_ds is None:
+                raise DataSourceError(
+                    'Action Data Source Required',
+                    'A data source is required to execute this action',
+                    500
+                )
+
             # Try to import the class from tol.actions first, then fall back to main.actions
             action_class = None
             try:
