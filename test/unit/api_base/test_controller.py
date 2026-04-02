@@ -3,12 +3,13 @@
 # SPDX-License-Identifier: MIT
 
 from typing import Dict, Iterable
-from unittest.mock import MagicMock, Mock, PropertyMock, create_autospec
+from unittest.mock import MagicMock, Mock, PropertyMock, create_autospec, patch
 
 import pytest
 
 from tol.api_base.controller import Controller
 from tol.api_base.misc import AggregationBody, AggregationParameters, ListGetParameters
+from tol.api_base.misc.auth_context import AuthContext
 from tol.api_client.exception import (
     ObjectNotFoundByIdException,
     RecursiveRelationNotFoundException,
@@ -16,7 +17,7 @@ from tol.api_client.exception import (
     UnsupportedOperationError,
 )
 from tol.api_client.view import DefaultView, View
-from tol.core import DataSource, DataSourceFilter, ReqFieldsTree, core_data_object
+from tol.core import DataSource, DataSourceError, DataSourceFilter, ReqFieldsTree, core_data_object
 from tol.core.data_object import DataObject
 from tol.core.operator import Aggregator, DetailGetter, PageGetter, Relational
 
@@ -367,3 +368,323 @@ class TestController:
             mock_object, 'test_relation', 3, 5
         )
         mock_view.dump_bulk.assert_called_once_with(expected)
+
+
+def _make_auth_context(user_id='user1', roles=None):
+    """Helper to create an AuthContext with the given user_id and roles."""
+    ctx = AuthContext()
+    ctx.user_id = user_id
+    ctx.roles = roles or []
+    return ctx
+
+
+def _make_action_args(action_name='test_action', ids=None, params=None):
+    """Helper to create a mock ActionParameters."""
+    mock = Mock()
+    type(mock).action_name = PropertyMock(return_value=action_name)
+    type(mock).ids = PropertyMock(return_value=ids or ['id1', 'id2'])
+    type(mock).params = PropertyMock(return_value=params or {})
+    return mock
+
+
+def _make_action_object(
+    action_id='action1',
+    flow_name=None,
+    class_name=None,
+    params=None,
+):
+    """Helper to create a mock action DataObject."""
+    action = Mock()
+    type(action).id = PropertyMock(return_value=action_id)
+    type(action).flow_name = PropertyMock(return_value=flow_name)
+    type(action).class_name = PropertyMock(return_value=class_name)
+    type(action).params = PropertyMock(return_value=params)
+    return action
+
+
+def _make_role_action(role_id):
+    """Helper to create a mock role_action with a to_one role relationship."""
+    role_action = Mock()
+    role_mock = Mock()
+    type(role_mock).id = PropertyMock(return_value=role_id)
+    role_action.to_one_relationships = {'role': role_mock}
+    return role_action
+
+
+def _make_role(name):
+    """Helper to create a mock role DataObject."""
+    role = Mock()
+    type(role).name = PropertyMock(return_value=name)
+    return role
+
+
+def _setup_action_ds(action, role_actions=None, roles=None, user=None):
+    """
+    Helper to set up the action_ds mock with standard responses
+    for get_list, get_one, data_object_factory, and insert.
+    """
+    action_ds = Mock()
+
+    def get_list_side_effect(type_, **kwargs):
+        if type_ == 'action':
+            return [action]
+        if type_ == 'role_action':
+            return role_actions or []
+        if type_ == 'role':
+            return roles or []
+        return []
+
+    action_ds.get_list.side_effect = get_list_side_effect
+    action_ds.get_one.return_value = user or Mock()
+    action_ds.data_object_factory.return_value = Mock()
+    action_ds.insert.return_value = None
+    return action_ds
+
+
+class TestPerformAction:
+    """Tests for `Controller().perform_action()`"""
+
+    @patch('tol.api_base.controller.default_ctx_getter')
+    def test_flow_action_success(self, mock_ctx_getter):
+        """Happy path: action with flow_name inserts a flow run and user_action."""
+
+        mock_ctx_getter.return_value = _make_auth_context(
+            user_id='user1', roles=['admin']
+        )
+
+        action = _make_action_object(flow_name='my_flow', params={'key': 'val'})
+        role_action = _make_role_action('role1')
+        role = _make_role('admin')
+        user = Mock()
+
+        action_ds = _setup_action_ds(
+            action,
+            role_actions=[role_action],
+            roles=[role],
+            user=user,
+        )
+
+        flow_run_result = Mock()
+        type(flow_run_result).id = PropertyMock(return_value='run1')
+        type(flow_run_result).name = PropertyMock(return_value='run_name_1')
+
+        flow_ds = Mock()
+        flow_ds.data_object_factory.return_value = Mock()
+        flow_ds.insert.return_value = [flow_run_result]
+
+        mock_view = Mock()
+        controller = Controller(Mock(), mock_view)
+
+        result = controller.perform_action(
+            'sample_type',
+            _make_action_args(action_name='test_action', ids=['id1']),
+            action_ds,
+            flow_ds,
+        )
+
+        assert result == ({'success': True}, 200)
+        flow_ds.insert.assert_called_once()
+        action_ds.insert.assert_called_once()
+
+    @patch('tol.api_base.controller.default_ctx_getter')
+    def test_class_action_success(self, mock_ctx_getter):
+        """Happy path: action with class_name instantiates and runs the class."""
+
+        mock_ctx_getter.return_value = _make_auth_context(
+            user_id='user1', roles=['editor']
+        )
+
+        action = _make_action_object(class_name='MyAction', params={})
+        role_action = _make_role_action('role1')
+        role = _make_role('editor')
+
+        action_ds = _setup_action_ds(
+            action,
+            role_actions=[role_action],
+            roles=[role],
+        )
+
+        mock_action_class = Mock()
+        mock_action_instance = Mock()
+        mock_action_instance.run.return_value = 'done'
+        mock_action_class.return_value = mock_action_instance
+
+        flow_ds = Mock()
+        mock_view = Mock()
+        controller = Controller(Mock(), mock_view)
+
+        with patch('tol.api_base.controller.importlib.import_module') as mock_import:
+            mock_module = Mock()
+            mock_module.MyAction = mock_action_class
+            mock_import.return_value = mock_module
+
+            result = controller.perform_action(
+                'sample_type',
+                _make_action_args(action_name='do_thing', ids=['id1']),
+                action_ds,
+                flow_ds,
+            )
+
+        assert result == ({'success': True}, 200)
+        mock_action_instance.run.assert_called_once()
+        action_ds.insert.assert_called_once()
+
+    @patch('tol.api_base.controller.default_ctx_getter')
+    def test_action_not_found(self, mock_ctx_getter):
+        """Action not found in action_ds raises DataSourceError 404."""
+
+        mock_ctx_getter.return_value = _make_auth_context(user_id='user1', roles=[])
+
+        action_ds = Mock()
+        action_ds.get_list.return_value = []  # no action found
+
+        flow_ds = Mock()
+        mock_view = Mock()
+        controller = Controller(Mock(), mock_view)
+
+        with pytest.raises(DataSourceError) as exc:
+            controller.perform_action(
+                'sample_type',
+                _make_action_args(action_name='nonexistent'),
+                action_ds,
+                flow_ds,
+            )
+
+        assert exc.value.status_code == 404
+
+    @patch('tol.api_base.controller.default_ctx_getter')
+    def test_unauthorized_role(self, mock_ctx_getter):
+        """User missing a required role raises DataSourceError 403."""
+
+        mock_ctx_getter.return_value = _make_auth_context(
+            user_id='user1', roles=['viewer']
+        )
+
+        action = _make_action_object(flow_name='some_flow')
+        role_action = _make_role_action('role1')
+        role = _make_role('admin')  # required role is 'admin'
+
+        action_ds = _setup_action_ds(
+            action,
+            role_actions=[role_action],
+            roles=[role],
+        )
+
+        flow_ds = Mock()
+        mock_view = Mock()
+        controller = Controller(Mock(), mock_view)
+
+        with pytest.raises(DataSourceError) as exc:
+            controller.perform_action(
+                'sample_type',
+                _make_action_args(),
+                action_ds,
+                flow_ds,
+            )
+
+        assert exc.value.status_code == 403
+
+    @patch('tol.api_base.controller.default_ctx_getter')
+    def test_no_flow_or_class_raises_error(self, mock_ctx_getter):
+        """Action with neither flow_name nor class_name raises DataSourceError 400."""
+
+        mock_ctx_getter.return_value = _make_auth_context(
+            user_id='user1', roles=['admin']
+        )
+
+        action = _make_action_object(flow_name=None, class_name=None)
+        role_action = _make_role_action('role1')
+        role = _make_role('admin')
+
+        action_ds = _setup_action_ds(
+            action,
+            role_actions=[role_action],
+            roles=[role],
+        )
+
+        flow_ds = Mock()
+        mock_view = Mock()
+        controller = Controller(Mock(), mock_view)
+
+        with pytest.raises(DataSourceError) as exc:
+            controller.perform_action(
+                'sample_type',
+                _make_action_args(),
+                action_ds,
+                flow_ds,
+            )
+
+        assert exc.value.status_code == 400
+
+    @patch('tol.api_base.controller.default_ctx_getter')
+    def test_no_roles_required_action(self, mock_ctx_getter):
+        """Action with no role_actions throws error."""
+
+        mock_ctx_getter.return_value = _make_auth_context(
+            user_id='user1', roles=[]
+        )
+
+        action = _make_action_object(flow_name='simple_flow', params={})
+
+        action_ds = _setup_action_ds(
+            action,
+            role_actions=[],  # no roles required
+            roles=[],
+        )
+
+        flow_run_result = Mock()
+        type(flow_run_result).id = PropertyMock(return_value='run1')
+        type(flow_run_result).name = PropertyMock(return_value='run_name_1')
+
+        flow_ds = Mock()
+        flow_ds.data_object_factory.return_value = Mock()
+        flow_ds.insert.return_value = [flow_run_result]
+
+        mock_view = Mock()
+        controller = Controller(Mock(), mock_view)
+
+        with pytest.raises(DataSourceError) as exc:
+            controller.perform_action(
+                'sample_type',
+                _make_action_args(),
+                action_ds,
+                flow_ds,
+            )
+
+        assert exc.value.status_code == 403
+
+    @patch('tol.api_base.controller.default_ctx_getter')
+    def test_class_action_import_error(self, mock_ctx_getter):
+        """Class-based action with missing module raises DataSourceError 500."""
+
+        mock_ctx_getter.return_value = _make_auth_context(
+            user_id='user1', roles=['admin']
+        )
+
+        action = _make_action_object(class_name='MissingClass', params={})
+        role_action = _make_role_action('role1')
+        role = _make_role('admin')
+
+        action_ds = _setup_action_ds(
+            action,
+            role_actions=[role_action],
+            roles=[role],
+        )
+
+        flow_ds = Mock()
+        mock_view = Mock()
+        controller = Controller(Mock(), mock_view)
+
+        with patch(
+            'tol.api_base.controller.importlib.import_module',
+            side_effect=ImportError('no module'),
+        ):
+            with pytest.raises(DataSourceError) as exc:
+                controller.perform_action(
+                    'sample_type',
+                    _make_action_args(),
+                    action_ds,
+                    flow_ds,
+                )
+
+            assert exc.value.status_code == 500
