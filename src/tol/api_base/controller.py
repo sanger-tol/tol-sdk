@@ -749,13 +749,13 @@ class Controller:
 
         action = self.__get_action(object_type, action_name, action_ds)
         action_roles = self.__get_role_action_list(action, action_ds)
-        
+
         if len(action_roles) == 0:
             raise DataSourceError(
-                    'Unauthorized',
-                    'This action does not have any roles assigned to it',
-                    403
-                )
+                'Unauthorized',
+                'This action does not have any roles assigned to it',
+                403
+            )
 
         for action_role in action_roles:
             if action_role not in ctx.roles:
