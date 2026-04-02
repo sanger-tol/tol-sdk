@@ -50,8 +50,20 @@ class ElasticAggregator(ABC):
             },
             object_filters,
         )
-        # TODO PARSE
-        pass
+
+        # Parse to our response format
+        return [
+            {
+                'key': None,
+                'data': [
+                    {
+                        'x': data_point['key_as_string'],
+                        'y': data_point['doc_count'],
+                    }
+                    for data_point in elastic_response['meta']['aggregations']['agg']['buckets']
+                ]
+            }
+        ]
 
     def __get_date_aggregation_segmented(
         self,
