@@ -14,7 +14,8 @@ if typing.TYPE_CHECKING:
 
 
 _AggregationResultData = list[dict]
-_AggregationResultSegments = dict[str, str | _AggregationResultData]
+_AggregationResultKey = str | None
+_AggregationResultSegments = dict[str, _AggregationResultKey | _AggregationResultData]
 AggregationResult = list[_AggregationResultSegments]
 
 
