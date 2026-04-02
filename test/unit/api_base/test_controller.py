@@ -617,8 +617,8 @@ class TestPerformAction:
         assert exc.value.status_code == 400
 
     @patch('tol.api_base.controller.default_ctx_getter')
-    def test_no_roles_required_allows_action(self, mock_ctx_getter):
-        """Action with no role_actions allows any authenticated user."""
+    def test_no_roles_required_action(self, mock_ctx_getter):
+        """Action with no role_actions throws error."""
 
         mock_ctx_getter.return_value = _make_auth_context(
             user_id='user1', roles=[]
@@ -643,14 +643,15 @@ class TestPerformAction:
         mock_view = Mock()
         controller = Controller(Mock(), mock_view)
 
-        result = controller.perform_action(
-            'sample_type',
-            _make_action_args(ids=['id1']),
-            action_ds,
-            flow_ds,
-        )
+        with pytest.raises(DataSourceError) as exc:
+            controller.perform_action(
+                'sample_type',
+                _make_action_args(),
+                action_ds,
+                flow_ds,
+            )
 
-        assert result == ({'success': True}, 200)
+        assert exc.value.status_code == 403
 
     @patch('tol.api_base.controller.default_ctx_getter')
     def test_class_action_import_error(self, mock_ctx_getter):
