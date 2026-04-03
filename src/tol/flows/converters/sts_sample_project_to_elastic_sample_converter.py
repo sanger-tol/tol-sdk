@@ -90,7 +90,8 @@ class StsSampleProjectToElasticSampleConverter(
                     attributes['lab_work_category'] = s.sample_export_options.display_name
             if 'storage_rack' in s.to_one_relationships:
                 if s.storage_rack is not None:
-                    attributes['location'] = s.storage_rack.freezer_tray.id
+                    if s.storage_rack.freezer_tray is not None:
+                        attributes['location'] = s.storage_rack.freezer_tray.id
             # Make tolid a relationship
             if s.public_name is not None and s.public_name != '':
                 to_one['tolid'] = self._data_object_factory(
