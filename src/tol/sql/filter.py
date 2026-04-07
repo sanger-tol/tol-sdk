@@ -134,8 +134,8 @@ class DefaultDatabaseFilter(DatabaseFilter):
         for part, trie in parent_trie.items():
             alias = trie.alias
 
-            # Probably want an outerjoin() here
-            query = query.join(alias, getattr(parent_alias, part))
+            # Need a `LEFT JOIN` here so that null relationships can be found
+            query = query.outerjoin(alias, getattr(parent_alias, part))
 
             query = self.__apply_joins(
                 query,
@@ -305,6 +305,7 @@ class DefaultDatabaseFilter(DatabaseFilter):
         if negate is True:
             return query.filter(
                 (column.is_(None)) | not_(expression)
+                # not_(expression)
             )
         else:
             return query.filter(expression)
