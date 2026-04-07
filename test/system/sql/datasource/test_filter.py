@@ -2,7 +2,6 @@
 #
 # SPDX-License-Identifier: MIT
 
-from genericpath import exists
 from pytest import fixture
 
 from tol.core import DataSourceFilter
