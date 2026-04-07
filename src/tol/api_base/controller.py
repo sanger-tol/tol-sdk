@@ -746,6 +746,13 @@ class Controller:
         ids: list[str] = action_args.ids
         action_name: str = action_args.action_name
         params: dict[str, Any] = action_args.params
+        
+        if action_ds is None:
+            raise DataSourceError(
+                'Action Data Source Required',
+                'A data source is required to execute this action',
+                500
+            )
 
         action = self.__get_action(object_type, action_name, action_ds)
         action_roles = self.__get_role_action_list(action, action_ds)
@@ -805,13 +812,6 @@ class Controller:
             }
 
         elif action.class_name:
-            if action_ds is None:
-                raise DataSourceError(
-                    'Action Data Source Required',
-                    'A data source is required to execute this action',
-                    500
-                )
-
             # Try to import the class from tol.actions first, then fall back to main.actions
             action_class = None
             try:
@@ -854,7 +854,7 @@ class Controller:
         else:
             raise DataSourceError(
                 'Invalid Action',
-                'No Actions are defined',
+                'No class_name or flow_name is defined',
                 400
             )
 
