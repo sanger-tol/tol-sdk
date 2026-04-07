@@ -507,7 +507,7 @@ class ElasticDataSource(
                                       runtime_mappings=runtime_mappings)
         return self._elastic_converter_factory().convert_list(generator)
 
-    def __get_elastic_aggregations(
+    def _get_elastic_aggregations(
         self,
         object_type: str,
         elastic_aggregations: dict,
@@ -623,7 +623,7 @@ class ElasticDataSource(
         **kwargs
     ) -> dict:
         del kwargs
-        return self.__get_elastic_aggregations(object_type, aggregations, object_filters)
+        return self._get_elastic_aggregations(object_type, aggregations, object_filters)
 
     def get_stats(
         self,
