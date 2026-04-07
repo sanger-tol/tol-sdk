@@ -746,7 +746,7 @@ class Controller:
         ids: list[str] = action_args.ids
         action_name: str = action_args.action_name
         params: dict[str, Any] = action_args.params
-        
+
         if action_ds is None:
             raise DataSourceError(
                 'Action Data Source Required',
@@ -782,7 +782,7 @@ class Controller:
             if flow_ds is None:
                 raise DataSourceError(
                     'Flow Data Source Required',
-                    'A data source capable of handling flow runs is required to execute this action',
+                    'A flows data source is required to execute this action',
                     500
                 )
 
