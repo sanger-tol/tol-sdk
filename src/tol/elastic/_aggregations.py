@@ -18,8 +18,10 @@ class ElasticAggregator(ABC):
         """
         raise NotImplementedError
 
+    # This references the __get_elastic_aggregations method in ElasticDataSource. It must be
+    # written this way here due to name mangling
     @abstractmethod
-    def __get_elastic_aggregations(
+    def _ElasticDataSource__get_elastic_aggregations(
         self,
         object_type: str,
         elastic_aggregations: dict,
@@ -39,7 +41,7 @@ class ElasticAggregator(ABC):
         x_axis: str,
         date_interval: str,  # Validated in `AggregationArgs`
     ) -> AggregationResult:
-        elastic_response = self.__get_elastic_aggregations(
+        elastic_response = self._ElasticDataSource__get_elastic_aggregations(
             object_type,
             {
                 'aggs': {
