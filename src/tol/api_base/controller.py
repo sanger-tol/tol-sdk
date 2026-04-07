@@ -718,8 +718,8 @@ class Controller:
         self,
         object_type: str,
         action_args: ActionParameters,
-        action_ds: OperableDataSource,
-        flow_ds: OperableDataSource,
+        action_ds: Optional[OperableDataSource] = None,
+        flow_ds: Optional[OperableDataSource] = None,
     ) -> ResponseDict:
         """
         Perform an action on objects of the specified type.
@@ -747,6 +747,13 @@ class Controller:
         action_name: str = action_args.action_name
         params: dict[str, Any] = action_args.params
 
+        if action_ds is None:
+            raise DataSourceError(
+                'Action Data Source Required',
+                'A data source is required to execute this action',
+                500
+            )
+
         action = self.__get_action(object_type, action_name, action_ds)
         action_roles = self.__get_role_action_list(action, action_ds)
 
@@ -772,6 +779,13 @@ class Controller:
         )
 
         if action.flow_name:
+            if flow_ds is None:
+                raise DataSourceError(
+                    'Flow Data Source Required',
+                    'A flows data source is required to execute this action',
+                    500
+                )
+
             flow_params = {
                 'extra_params': {
                     **params,
@@ -840,7 +854,7 @@ class Controller:
         else:
             raise DataSourceError(
                 'Invalid Action',
-                'No Actions are defined',
+                'No class_name or flow_name is defined',
                 400
             )
 
