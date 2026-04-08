@@ -305,7 +305,6 @@ class DefaultDatabaseFilter(DatabaseFilter):
         if negate is True:
             return query.filter(
                 (column.is_(None)) | not_(expression)
-                # not_(expression)
             )
         else:
             return query.filter(expression)
