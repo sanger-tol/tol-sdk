@@ -78,7 +78,7 @@ class ElasticAggregator(ABC):
         break_down_by: str,
     ) -> AggregationResult:
         # Query Elastic
-        elastic_response = self.__get_elastic_aggregations(
+        elastic_response = self._get_elastic_aggregations(
             object_type,
             {
                 'aggs': {
@@ -126,7 +126,7 @@ class ElasticAggregator(ABC):
         # TODO: This should only be used if x_axis is categorical. How do we know that?
         maximum_categories: int,
     ) -> AggregationResult:
-        elastic_response = self.__get_elastic_aggregations(
+        elastic_response = self._get_elastic_aggregations(
             object_type,
             {
                 'aggs': {
@@ -168,7 +168,7 @@ class ElasticAggregator(ABC):
         break_down_by: str,
     ) -> AggregationResult:
         # Query Elastic
-        elastic_response = self.__get_elastic_aggregations(
+        elastic_response = self._get_elastic_aggregations(
             object_type,
             {
                 'aggs': {
