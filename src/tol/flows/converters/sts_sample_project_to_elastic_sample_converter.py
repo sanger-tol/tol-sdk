@@ -31,6 +31,11 @@ class StsSampleProjectToElasticSampleConverter(
             attributes['project'] = data_object.project.id
 
         to_one = {}
+        person_attributes = {}
+        ext_id_attributes = {}
+        sample_species_attributes = {}
+        sample_species_to_one = {}
+
         try:
             if 'location' in s.to_one_relationships:
                 if s.location is not None:
@@ -100,15 +105,12 @@ class StsSampleProjectToElasticSampleConverter(
                 )
                 attributes['public_name'] = None
 
-            person_attributes = {}
             for sp in s.sample_persons:
                 person_attributes[f'{sp.action.lower()}_name'] = sp.person.fullname
 
-            ext_id_attributes = {}
             for ext_id in s.ext_ids:
                 ext_id_attributes[f'{ext_id.ext_id_type.lower()}'] = ext_id.value
 
-            sample_species_attributes = {}
             for ss in s.sample_species:
                 if ss.target_or_symbiont == 'TARGET':
                     sample_species_attributes, sample_species_to_one = \
