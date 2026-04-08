@@ -34,3 +34,17 @@ class TestAggregationArgs:
 
             # Ensure the correct error was raised (the required field was mentioned)
             assert required_field in str(e.value)
+
+    def test_invalid_date_interval(self):
+        """
+        `date_interval` should be formatted as a number followed by an accepted unit (e.g. 1M)
+        """
+        # Invalid format
+        with pytest.raises(BadPostJsonError) as e:
+            AggregationArgs({'date_interval': '1 month'}).date_interval
+        assert 'Invalid format' in str(e.value)
+
+        # Invalid unit
+        with pytest.raises(BadPostJsonError) as e:
+            AggregationArgs({'date_interval': '1m'}).date_interval
+        assert 'Invalid unit'
