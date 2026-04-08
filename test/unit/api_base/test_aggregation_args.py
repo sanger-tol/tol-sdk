@@ -22,3 +22,15 @@ class TestAggregationArgs:
         )
         assert args.x_axis == 'test_field'
         assert args.date_interval == '2y'
+    
+    def test_required_fields_not_provided(self):
+        REQUIRED_FIELDS = ('x_axis',)
+        
+        args = AggregationArgs({})
+        for required_field in REQUIRED_FIELDS:
+            # Ensure attempting to get the required field raises an error
+            with pytest.raises(BadPostJsonError) as e:
+                getattr(args, required_field)
+
+            # Ensure the correct error was raised (the required field was mentioned)
+            assert required_field in str(e.value)
