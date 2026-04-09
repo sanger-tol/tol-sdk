@@ -8,7 +8,7 @@ from typing import Any
 from werkzeug.datastructures import MultiDict
 
 from .filter_utils import FilterUtils
-from ...api_client.exception import PostJsonKeyMissingError
+from ...api_client.exception import PostJsonInvalidValueError, PostJsonKeyMissingError
 from ...core import DataSourceFilter
 
 
@@ -100,16 +100,16 @@ class AggregationArgs:
         # Validate the interval is a number and a unit
         match = re.search(AggregationArgs.DATE_INTERVAL_REGEX, interval_string)
         if not match:
-            raise PostJsonKeyMissingError(
-                'date_interval',
+            raise PostJsonInvalidValueError(
+                key='date_interval',
                 message='Invalid format (expected value and unit, e.g. "1M")'
             )
 
         # Validate the unit is one of the accepted options
         unit = match.group(2)
         if unit not in AggregationArgs.DATE_INTERVAL_UNITS:
-            raise PostJsonKeyMissingError(
-                'date_interval',
+            raise PostJsonInvalidValueError(
+                key='date_interval',
                 message=f'Invalid unit (expected one of {AggregationArgs.DATE_INTERVAL_UNITS})'
             )
 

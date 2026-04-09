@@ -5,7 +5,7 @@
 import pytest
 
 from tol.api_base.misc import AggregationArgs
-from tol.api_client.exception import PostJsonKeyMissingError
+from tol.api_client.exception import PostJsonInvalidValueError, PostJsonKeyMissingError
 
 
 class TestAggregationArgs:
@@ -40,11 +40,11 @@ class TestAggregationArgs:
         `date_interval` should be formatted as a number followed by an accepted unit (e.g. 1M)
         """
         # Invalid format
-        with pytest.raises(PostJsonKeyMissingError) as e:
+        with pytest.raises(PostJsonInvalidValueError) as e:
             AggregationArgs({'date_interval': '1 month'}).date_interval
-        assert 'Invalid format' in str(e.value)
+        assert 'Invalid format' in e.value.errors[0]['detail']
 
         # Invalid unit
-        with pytest.raises(PostJsonKeyMissingError) as e:
+        with pytest.raises(PostJsonInvalidValueError) as e:
             AggregationArgs({'date_interval': '1m'}).date_interval
-        assert 'Invalid unit' in str(e.value)
+        assert 'Invalid unit' in e.value.errors[0]['detail']
