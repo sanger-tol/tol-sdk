@@ -33,7 +33,14 @@ from tol.core.operator.updater import DataObjectUpdate
 from .app import _test_application
 
 
-class ParrotDataSource(DataSource, Aggregator, DetailGetter, PageGetter, LegacyAggregator, Counter):
+class ParrotDataSource(
+    DataSource,
+    Aggregator,
+    DetailGetter,
+    PageGetter,
+    LegacyAggregator,
+    Counter
+):
     """Mimics what its told."""
 
     def get_by_id(self, object_type: str, object_ids, **kwargs):
@@ -78,7 +85,7 @@ class ParrotDataSource(DataSource, Aggregator, DetailGetter, PageGetter, LegacyA
     ) -> AggregationResult | None:
         return [
             {
-                'key' : 'break_down_by_1',
+                'key': 'break_down_by_1',
                 'data': [
                     {
                         'x': '2025-01-01', 'y': 27
@@ -89,7 +96,7 @@ class ParrotDataSource(DataSource, Aggregator, DetailGetter, PageGetter, LegacyA
                 ],
             },
             {
-                'key' : 'break_down_by_2',
+                'key': 'break_down_by_2',
                 'data': [
                     {
                         'x': '2025-01-01', 'y': 15
@@ -305,7 +312,7 @@ class TestBlueprint(BlueprintTestCase):
         )
         expected_aggregations = [
             {
-                'key' : 'break_down_by_1',
+                'key': 'break_down_by_1',
                 'data': [
                     {
                         'x': '2025-01-01', 'y': 27
@@ -316,7 +323,7 @@ class TestBlueprint(BlueprintTestCase):
                 ],
             },
             {
-                'key' : 'break_down_by_2',
+                'key': 'break_down_by_2',
                 'data': [
                     {
                         'x': '2025-01-01', 'y': 15
