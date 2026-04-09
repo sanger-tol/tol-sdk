@@ -111,14 +111,14 @@ class BadQueryArgError(BaseRuntimeException):
         return f'{detail}\n\n{message}'
 
 
-class BadPostJsonError(BaseRuntimeException):
+class PostJsonKeyMissingError(BaseRuntimeException):
     def __init__(
         self,
         __key: str,
         message: Optional[str] = None
     ) -> None:
         errors = [{
-            'title': 'Bad POST JSON',
+            'title': 'Bad POST JSON: Missing Key',
             'detail': self.__get_detail(__key, message)
         }]
         super().__init__(errors, status_code=400)

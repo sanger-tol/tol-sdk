@@ -4,7 +4,7 @@
 
 from typing import Dict
 
-from ...api_client.exception import BadPostJsonError
+from ...api_client.exception import PostJsonKeyMissingError
 
 
 class LegacyAggregationBody:
@@ -23,7 +23,7 @@ class LegacyAggregationBody:
         """
         body_dict = self.__body_dict.get('aggs')
         if body_dict is None:
-            raise BadPostJsonError(
+            raise PostJsonKeyMissingError(
                 'aggs',
                 message='"aggs" must be given'
             )

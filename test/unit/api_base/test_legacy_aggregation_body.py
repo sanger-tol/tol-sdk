@@ -5,13 +5,13 @@
 import pytest
 
 from tol.api_base.misc import LegacyAggregationBody
-from tol.api_client.exception import BadPostJsonError
+from tol.api_client.exception import PostJsonKeyMissingError
 
 
 class TestAggregationBody:
     def test_no_aggregations(self):
         """No aggregations specified throws error"""
-        with pytest.raises(BadPostJsonError):
+        with pytest.raises(PostJsonKeyMissingError):
             LegacyAggregationBody({'irrelevent': 'so?'}).aggs
 
     def test_good_aggregations(self):

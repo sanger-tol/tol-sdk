@@ -19,7 +19,14 @@ from tol.api_client.exception import (
 from tol.api_client.view import DefaultView, View
 from tol.core import DataSource, DataSourceError, DataSourceFilter, ReqFieldsTree, core_data_object
 from tol.core.data_object import DataObject
-from tol.core.operator import DetailGetter, LegacyAggregator, PageGetter, Relational
+from tol.core.operator import (
+    AggregationResult,
+    Aggregator,
+    DetailGetter,
+    LegacyAggregator,
+    PageGetter,
+    Relational
+)
 
 
 class _TestDataSource1(DataSource, DetailGetter):
@@ -51,7 +58,7 @@ class _TestDataSource2(DataSource, PageGetter):
         return {'test_A': {}, 'test_B': {}}
 
 
-class _TestDataSource3(DataSource, LegacyAggregator, PageGetter):
+class _TestDataSource3(DataSource, LegacyAggregator, PageGetter, Aggregator):
     """Accounts for page number and size in results"""
 
     def get_list_page(
@@ -96,6 +103,22 @@ class _TestDataSource3(DataSource, LegacyAggregator, PageGetter):
                 ]
             }
         }
+
+    def get_aggregations(
+        self,
+        object_type: str,
+        object_filters: DataSourceFilter | None = None,
+        *,
+        x_axis: str,
+        y_axis: str | None = None,
+        date_interval: str | None = None,
+        break_down_by: str | None = None,
+        stat: str | None = None,
+        stat_field: str | None = None,
+        cumulative: bool | None = None,
+        maximum_categories: int | None = None
+    ) -> AggregationResult | None:
+        pass
 
     @property
     def supported_types(self):
