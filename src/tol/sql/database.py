@@ -318,8 +318,12 @@ class DefaultDatabase(Database):
             instance_id,
             in_session
         )
-        result = instance.instance_to_one_relations[relationship_name]
-        return result
+        # It's possible for the relationship to be None when the foreign key is set but the
+        # related object doesn't exist, so we check for the existence of the instance first before
+        # trying to access the relationship
+        if instance:
+            result = instance.instance_to_one_relations[relationship_name]
+            return result
 
     def get_to_many_relations(
         self,
