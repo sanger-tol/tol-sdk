@@ -136,6 +136,15 @@ class PostJsonKeyMissingError(BaseRuntimeException):
         return f'{detail}\n\n{message}'
 
 
+class PostJsonInvalidValueError(BaseRuntimeException):
+    def __init__(self, key: str, message: str) -> None:
+        errors = [{
+            'title': 'Bad POST JSON: Invalid Value',
+            'detail': f'The key {key} in the POSTed JSON body has an invalid value\n\n{message}',
+        }]
+        super().__init__(errors, status_code=400)
+
+
 class BadArgumentCombinationError(BaseRuntimeException):
     def __init__(self, message: str | None = None) -> None:
         errors = [{
