@@ -557,6 +557,58 @@ class TestElasticDataSource:
         )
         assert result is None
 
+    def test_cumulative_aggregation(self, mock_elastic_data_source: ElasticDataSource):
+        """
+        Check whether the accumulation post-processing step functions correctly.
+
+        This step is separate to the aggregation performed. A date aggregation is used here,
+        but it could be any one.
+        This test is structured similarly to test_date_aggregation in the ElasticAggregator tests,
+        so if that changes this should too
+        """
+        # Mock the result of the Elastic API call
+        mock_elastic_data_source.es.search.return_value = {
+            'aggregations': {
+                'date-aggregation': {
+                    'buckets': [
+                        {
+                            'doc_count': 27,
+                            'key': 1735689600,
+                            'key_as_string': '2025-01-01',
+                        },
+                        {
+                            'doc_count': 30,
+                            'key': 1735776000,
+                            'key_as_string': '2025-01-02',
+                        }
+                    ]
+                }
+            }
+        }
+
+        expected_result = [{
+            'key': None,
+            'data': [
+                {
+                    'x': '2025-01-01',
+                    'y': 27,
+                },
+                {
+                    'x': '2025-01-02',
+                    'y': 57,
+                },
+            ]
+        }]
+        actual_result = mock_elastic_data_source.get_aggregations(
+            'obj_type',
+            None,
+            x_axis='datefield',
+            date_interval='1M',
+            cumulative=True,
+        )
+        assert actual_result == expected_result
+        mock_elastic_data_source.es.search.assert_called_once()
+
     def test_get_aggregations_legacy(self, mock_elastic_data_source: ElasticDataSource):
         agg_result = {
             'my-agg-name': {
