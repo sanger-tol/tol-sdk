@@ -43,7 +43,7 @@ class ElasticAggregator(ABC):
             object_type,
             {
                 'aggs': {
-                    'agg': {
+                    'date-aggregation': {
                         'date_histogram': {
                             'field': x_axis,
                             'calendar_interval': date_interval,
@@ -64,7 +64,7 @@ class ElasticAggregator(ABC):
                         'x': data_point['key_as_string'],
                         'y': data_point['doc_count'],
                     }
-                    for data_point in elastic_response['meta']['aggregations']['agg']['buckets']
+                    for data_point in elastic_response['date-aggregation']['buckets']
                 ]
             }
         ]
