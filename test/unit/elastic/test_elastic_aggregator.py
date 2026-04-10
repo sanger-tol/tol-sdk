@@ -137,3 +137,68 @@ class TestElasticAggregator:
     def test_scatter_aggregation(self, mock_elastic_data_source: ElasticDataSource):
         # TODO Once the scatter aggregation has been implemented
         pass
+
+    def test_categorical_aggregation(self, mock_elastic_data_source: ElasticDataSource):
+        # Mock the result of the Elastic API call
+        mock_elastic_data_source.es.search.return_value = {
+            'aggregations': {
+                'categorical-aggregation': {
+                    'buckets': [
+                        {
+                            "doc_count": 2434,
+                            "key": "-"
+                        },
+                        {
+                            "doc_count": 145,
+                            "key": "CURATED"
+                        },
+                        {
+                            "doc_count": 192,
+                            "key": "DRAFT"
+                        },
+                        {
+                            "doc_count": 912,
+                            "key": "IN PROGRESS"
+                        },
+                        {
+                            "doc_count": 2727,
+                            "key": "RELEASED"
+                        },
+                    ]
+                }
+            }
+        }
+
+        expected_result = [{
+            'key': None,
+            'data': [
+                {
+                    'x': '-',
+                    'y': 2434,
+                },
+                {
+                    'x': 'CURATED',
+                    'y': 145,
+                },
+                {
+                    'x': 'DRAFT',
+                    'y': 192,
+                },
+                {
+                    'x': 'IN PROGRESS',
+                    'y': 912,
+                },
+                {
+                    'x': 'RELEASED',
+                    'y': 2727,
+                },
+            ]
+        }]
+        actual_result = mock_elastic_data_source._get_categorical_aggregation(
+            'obj_type',
+            None,
+            'field4',
+            5,  # TODO: Maximum categories
+        )
+        assert actual_result == expected_result
+        mock_elastic_data_source.es.search.assert_called_once()

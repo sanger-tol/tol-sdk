@@ -153,7 +153,7 @@ class ElasticAggregator(ABC):
                         'x': data_point['key'],
                         'y': data_point['doc_count'],
                     }
-                    for data_point in elastic_response['meta']['aggregations']['agg']['buckets']
+                    for data_point in elastic_response['categorical-aggregation']['buckets']
                 ]
             }
         ]
