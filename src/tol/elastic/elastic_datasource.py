@@ -570,7 +570,7 @@ class ElasticDataSource(
 
         # Call the correct aggregation method depending on the options provided.
         # These are implemented in `_ElasticAggregator` (`_aggregations.py`)
-        if x_axis and self.attribute_types[object_type][x_axis] == 'datetime' and date_interval:
+        if self.attribute_types[object_type][x_axis] == 'datetime' and date_interval:
             if break_down_by:
                 result = self.__get_date_aggregation_segmented(
                     object_type,
@@ -586,10 +586,10 @@ class ElasticDataSource(
                     x_axis,
                     date_interval,
                 )
-        elif x_axis and y_axis:
+        elif y_axis:
             # TODO SCATTER AGGREGATION
             return None
-        elif x_axis and self.attribute_types[object_type][x_axis] == 'str':
+        elif self.attribute_types[object_type][x_axis] == 'str':
             if break_down_by:
                 result = self.__get_categorical_aggregation_segmented(
                     object_type,
