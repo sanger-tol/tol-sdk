@@ -572,7 +572,7 @@ class ElasticDataSource(
         # These are implemented in `_ElasticAggregator` (`_aggregations.py`)
         if self.attribute_types[object_type][x_axis] == 'datetime' and date_interval:
             if break_down_by:
-                result = self.__get_date_aggregation_segmented(
+                result = self._get_date_aggregation_segmented(
                     object_type,
                     object_filters,
                     x_axis,
@@ -580,7 +580,7 @@ class ElasticDataSource(
                     break_down_by,
                 )
             else:
-                result = self.__get_date_aggregation(
+                result = self._get_date_aggregation(
                     object_type,
                     object_filters,
                     x_axis,
@@ -591,7 +591,7 @@ class ElasticDataSource(
             return None
         elif self.attribute_types[object_type][x_axis] == 'str':
             if break_down_by:
-                result = self.__get_categorical_aggregation_segmented(
+                result = self._get_categorical_aggregation_segmented(
                     object_type,
                     object_filters,
                     x_axis,
@@ -599,7 +599,7 @@ class ElasticDataSource(
                     break_down_by,
                 )
             else:
-                result = self.__get_categorical_aggregation(
+                result = self._get_categorical_aggregation(
                     object_type,
                     object_filters,
                     x_axis,

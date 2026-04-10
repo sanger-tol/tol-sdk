@@ -32,7 +32,7 @@ class ElasticAggregator(ABC):
         """
         raise NotImplementedError
 
-    def __get_date_aggregation(
+    def _get_date_aggregation(
         self,
         object_type: str,
         object_filters: DataSourceFilter | None,
@@ -69,7 +69,7 @@ class ElasticAggregator(ABC):
             }
         ]
 
-    def __get_date_aggregation_segmented(
+    def _get_date_aggregation_segmented(
         self,
         object_type: str,
         object_filters: DataSourceFilter | None,
@@ -118,7 +118,7 @@ class ElasticAggregator(ABC):
             for break_down_by in elastic_response['meta']['aggregations']['agg']['buckets']
         ]
 
-    def __get_categorical_aggregation(
+    def _get_categorical_aggregation(
         self,
         object_type: str,
         object_filters: DataSourceFilter | None,
@@ -158,7 +158,7 @@ class ElasticAggregator(ABC):
             }
         ]
 
-    def __get_categorical_aggregation_segmented(
+    def _get_categorical_aggregation_segmented(
         self,
         object_type: str,
         object_filters: DataSourceFilter | None,
