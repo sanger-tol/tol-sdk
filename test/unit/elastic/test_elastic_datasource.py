@@ -491,7 +491,7 @@ class TestElasticDataSource:
         expected = [{'field1.keyword': 'desc'}, {'uid.keyword': 'asc'}]
         assert mock_elastic_data_source._build_elasticsearch_sort('obj_type', sort_by) == expected
 
-    def test_get_aggregations(self, mock_elastic_data_source: ElasticDataSource):
+    def test_get_aggregations_legacy(self, mock_elastic_data_source: ElasticDataSource):
         agg_result = {
             'my-agg-name': {
                 'doc_count_error_upper_bound': 0,
