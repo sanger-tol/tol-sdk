@@ -202,3 +202,132 @@ class TestElasticAggregator:
         )
         assert actual_result == expected_result
         mock_elastic_data_source.es.search.assert_called_once()
+
+    def test_categorical_aggregation_segmented(self, mock_elastic_data_source: ElasticDataSource):
+        # Mock the result of the Elastic API call
+        mock_elastic_data_source.es.search.return_value = {
+            'aggregations': {
+                'categorical-aggregation': {
+                    'buckets': [
+                        {
+                            'key': 'DTOL',
+                            'doc_count': 8767,
+                            '1': {
+                                'buckets': [
+                                    {
+                                        "doc_count": 2434,
+                                        "key": "-"
+                                    },
+                                    {
+                                        "doc_count": 145,
+                                        "key": "CURATED"
+                                    },
+                                    {
+                                        "doc_count": 192,
+                                        "key": "DRAFT"
+                                    },
+                                    {
+                                        "doc_count": 912,
+                                        "key": "IN PROGRESS"
+                                    },
+                                    {
+                                        "doc_count": 2727,
+                                        "key": "RELEASED"
+                                    },
+                                ]
+                            }
+                        },
+                        {
+                            'key': 'PSYCHE',
+                            'doc_count': 1909,
+                            '1': {
+                                'buckets': [
+                                    {
+                                        "doc_count": 246,
+                                        "key": "-"
+                                    },
+                                    {
+                                        "doc_count": 31,
+                                        "key": "CURATED"
+                                    },
+                                    {
+                                        "doc_count": 5,
+                                        "key": "DRAFT"
+                                    },
+                                    {
+                                        "doc_count": 45,
+                                        "key": "IN PROGRESS"
+                                    },
+                                    {
+                                        "doc_count": 90,
+                                        "key": "RELEASED"
+                                    },
+                                ]
+                            }
+                        },
+                    ]
+                }
+            }
+        }
+
+        expected_result = [
+            {
+                'key': 'DTOL',
+                'data': [
+                    {
+                        "x": "-",
+                        "y": 2434,
+                    },
+                    {
+                        "x": "CURATED",
+                        "y": 145,
+                    },
+                    {
+                        "x": "DRAFT",
+                        "y": 192,
+                    },
+                    {
+                        "x": "IN PROGRESS",
+                        "y": 912,
+                    },
+                    {
+                        "x": "RELEASED",
+                        "y": 2727,
+                    },
+                ]
+            },
+            {
+                'key': 'PSYCHE',
+                'data': [
+                    {
+                        "x": "-",
+                        "y": 246,
+                    },
+                    {
+                        "x": "CURATED",
+                        "y": 31,
+                    },
+                    {
+                        "x": "DRAFT",
+                        "y": 5,
+                    },
+                    {
+                        "x": "IN PROGRESS",
+                        "y": 45,
+                    },
+                    {
+                        "x": "RELEASED",
+                        "y": 90,
+                    },
+                ]
+            },
+        ]
+        actual_result = mock_elastic_data_source._get_categorical_aggregation_segmented(
+            'obj_type',
+            None,
+            'field4',
+            5,  # TODO: Maximum categories
+            'field3',
+        )
+        assert actual_result == expected_result
+        mock_elastic_data_source.es.search.assert_called_once()
