@@ -145,24 +145,24 @@ class TestElasticAggregator:
                 'categorical-aggregation': {
                     'buckets': [
                         {
-                            "doc_count": 2434,
-                            "key": "-"
+                            'doc_count': 2434,
+                            'key': '-',
                         },
                         {
-                            "doc_count": 145,
-                            "key": "CURATED"
+                            'doc_count': 145,
+                            'key': 'CURATED',
                         },
                         {
-                            "doc_count": 192,
-                            "key": "DRAFT"
+                            'doc_count': 192,
+                            'key': 'DRAFT',
                         },
                         {
-                            "doc_count": 912,
-                            "key": "IN PROGRESS"
+                            'doc_count': 912,
+                            'key': 'IN PROGRESS',
                         },
                         {
-                            "doc_count": 2727,
-                            "key": "RELEASED"
+                            'doc_count': 2727,
+                            'key': 'RELEASED',
                         },
                     ]
                 }
@@ -215,24 +215,24 @@ class TestElasticAggregator:
                             '1': {
                                 'buckets': [
                                     {
-                                        "doc_count": 2434,
-                                        "key": "-"
+                                        'doc_count': 2434,
+                                        'key': '-',
                                     },
                                     {
-                                        "doc_count": 145,
-                                        "key": "CURATED"
+                                        'doc_count': 145,
+                                        'key': 'CURATED',
                                     },
                                     {
-                                        "doc_count": 192,
-                                        "key": "DRAFT"
+                                        'doc_count': 192,
+                                        'key': 'DRAFT',
                                     },
                                     {
-                                        "doc_count": 912,
-                                        "key": "IN PROGRESS"
+                                        'doc_count': 912,
+                                        'key': 'IN PROGRESS',
                                     },
                                     {
-                                        "doc_count": 2727,
-                                        "key": "RELEASED"
+                                        'doc_count': 2727,
+                                        'key': 'RELEASED',
                                     },
                                 ]
                             }
@@ -243,24 +243,24 @@ class TestElasticAggregator:
                             '1': {
                                 'buckets': [
                                     {
-                                        "doc_count": 246,
-                                        "key": "-"
+                                        'doc_count': 246,
+                                        'key': '-'
                                     },
                                     {
-                                        "doc_count": 31,
-                                        "key": "CURATED"
+                                        'doc_count': 31,
+                                        'key': 'CURATED'
                                     },
                                     {
-                                        "doc_count": 5,
-                                        "key": "DRAFT"
+                                        'doc_count': 5,
+                                        'key': 'DRAFT'
                                     },
                                     {
-                                        "doc_count": 45,
-                                        "key": "IN PROGRESS"
+                                        'doc_count': 45,
+                                        'key': 'IN PROGRESS'
                                     },
                                     {
-                                        "doc_count": 90,
-                                        "key": "RELEASED"
+                                        'doc_count': 90,
+                                        'key': 'RELEASED'
                                     },
                                 ]
                             }
@@ -275,24 +275,24 @@ class TestElasticAggregator:
                 'key': 'DTOL',
                 'data': [
                     {
-                        "x": "-",
-                        "y": 2434,
+                        'x': '-',
+                        'y': 2434,
                     },
                     {
-                        "x": "CURATED",
-                        "y": 145,
+                        'x': 'CURATED',
+                        'y': 145,
                     },
                     {
-                        "x": "DRAFT",
-                        "y": 192,
+                        'x': 'DRAFT',
+                        'y': 192,
                     },
                     {
-                        "x": "IN PROGRESS",
-                        "y": 912,
+                        'x': 'IN PROGRESS',
+                        'y': 912,
                     },
                     {
-                        "x": "RELEASED",
-                        "y": 2727,
+                        'x': 'RELEASED',
+                        'y': 2727,
                     },
                 ]
             },
@@ -300,24 +300,24 @@ class TestElasticAggregator:
                 'key': 'PSYCHE',
                 'data': [
                     {
-                        "x": "-",
-                        "y": 246,
+                        'x': '-',
+                        'y': 246,
                     },
                     {
-                        "x": "CURATED",
-                        "y": 31,
+                        'x': 'CURATED',
+                        'y': 31,
                     },
                     {
-                        "x": "DRAFT",
-                        "y": 5,
+                        'x': 'DRAFT',
+                        'y': 5,
                     },
                     {
-                        "x": "IN PROGRESS",
-                        "y": 45,
+                        'x': 'IN PROGRESS',
+                        'y': 45,
                     },
                     {
-                        "x": "RELEASED",
-                        "y": 90,
+                        'x': 'RELEASED',
+                        'y': 90,
                     },
                 ]
             },
