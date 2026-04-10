@@ -491,6 +491,70 @@ class TestElasticDataSource:
         expected = [{'field1.keyword': 'desc'}, {'uid.keyword': 'asc'}]
         assert mock_elastic_data_source._build_elasticsearch_sort('obj_type', sort_by) == expected
 
+    def test_get_aggregations(self, mock_elastic_data_source: ElasticDataSource):
+        """
+        Checks that the correct aggregation method is called for the arguments provided
+        """
+        # Replace the aggregation methods with mocks.
+        # We're not testing their functionality here, only which one was called
+        # (for functionality, see the tests for ElasticAggregator)
+        mock_elastic_data_source._get_date_aggregation = mock.Mock(return_value={})
+        mock_elastic_data_source._get_date_aggregation_segmented = mock.Mock(return_value={})
+        mock_elastic_data_source._get_categorical_aggregation = mock.Mock(return_value={})
+        mock_elastic_data_source._get_categorical_aggregation_segmented = mock.Mock(return_value={})
+        # TODO: Add scatter ones here when that's done
+
+        # Date aggregation combination
+        result = mock_elastic_data_source.get_aggregations(
+            'obj_type',
+            None,
+            x_axis='datefield',
+            date_interval='1M',
+        )
+        assert result == {}
+        assert mock_elastic_data_source._get_date_aggregation.assert_called_once()
+
+        # Date segmented aggregation combination
+        result = mock_elastic_data_source.get_aggregations(
+            'obj_type',
+            None,
+            x_axis='datefield',
+            date_interval='1M',
+            break_down_by='field3',
+        )
+        assert result == {}
+        assert mock_elastic_data_source._get_date_aggregation_segmented.assert_called_once()
+
+        # TODO Scatter aggregation here
+
+        # Categorical aggregation combination
+        result = mock_elastic_data_source.get_aggregations(
+            'obj_type',
+            None,
+            x_axis='field4',
+        )
+        assert result == {}
+        assert mock_elastic_data_source._get_categorical_aggregation.assert_called_once()
+
+        # Categorical segmented aggregation combination
+        result = mock_elastic_data_source.get_aggregations(
+            'obj_type',
+            None,
+            x_axis='field4',
+            break_down_by='field3',
+        )
+        assert result == {}
+        assert mock_elastic_data_source._get_categorical_aggregation_segmented.assert_called_once()
+
+        # Invalid combination
+        result = mock_elastic_data_source.get_aggregations(
+            'obj_type',
+            None,
+            x_axis='field3',
+            maximum_categories=8,
+        )
+        assert result is None
+
     def test_get_aggregations_legacy(self, mock_elastic_data_source: ElasticDataSource):
         agg_result = {
             'my-agg-name': {
