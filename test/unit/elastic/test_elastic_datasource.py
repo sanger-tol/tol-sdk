@@ -501,7 +501,9 @@ class TestElasticDataSource:
         mock_elastic_data_source._get_date_aggregation = mock.Mock(return_value={})
         mock_elastic_data_source._get_date_aggregation_segmented = mock.Mock(return_value={})
         mock_elastic_data_source._get_categorical_aggregation = mock.Mock(return_value={})
-        mock_elastic_data_source._get_categorical_aggregation_segmented = mock.Mock(return_value={})
+        mock_elastic_data_source._get_categorical_aggregation_segmented = mock.Mock(
+            return_value={}
+        )
         # TODO: Add scatter ones here when that's done
 
         # Date aggregation combination
