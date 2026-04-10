@@ -8,7 +8,12 @@ from unittest.mock import MagicMock, Mock, PropertyMock, create_autospec, patch
 import pytest
 
 from tol.api_base.controller import Controller
-from tol.api_base.misc import LegacyAggregationBody, LegacyAggregationParameters, ListGetParameters
+from tol.api_base.misc import (
+    AggregationArgs,
+    LegacyAggregationBody,
+    LegacyAggregationParameters,
+    ListGetParameters,
+)
 from tol.api_base.misc.auth_context import AuthContext
 from tol.api_client.exception import (
     ObjectNotFoundByIdException,
@@ -118,7 +123,21 @@ class _TestDataSource3(DataSource, LegacyAggregator, PageGetter, Aggregator):
         cumulative: bool | None = None,
         maximum_categories: int | None = None
     ) -> AggregationResult | None:
-        pass
+        return [
+            {
+                'key': None,
+                'data': [
+                    {
+                        'x': '2015-04-01T00:00:00.000Z',
+                        'y': 3,
+                    },
+                    {
+                        'x': '2015-05-01T00:00:00.000Z',
+                        'y': 0,
+                    },
+                ]
+            },
+        ]
 
     @property
     def supported_types(self):
@@ -200,6 +219,32 @@ class TestController:
 
     def test_aggregations(self):
         """Check that aggregations are working"""
+
+        rft = ReqFieldsTree('test_X', ds_3)
+        controller = Controller(ds_3, DefaultView(rft), rft)
+        parsed_args = AggregationArgs({
+            'filter': '{"and_": {"column1": {"eq": "value1"}}}',
+            'x_axis': 'complete_date',
+            'date_interval': '1M',
+        })
+        expected = [{
+            'key': None,
+            'data': [
+                {
+                    'x': '2015-04-01T00:00:00.000Z',
+                    'y': 3
+                },
+                {
+                    'x': '2015-05-01T00:00:00.000Z',
+                    'y': 0
+                }
+            ]
+        }]
+        observed = controller.post_aggregations('test_X', parsed_args)
+        assert expected == observed
+
+    def test_legacy_aggregations(self):
+        """Check that legacy aggregations are working"""
 
         rft = ReqFieldsTree('test_X', ds_3)
         controller = Controller(ds_3, DefaultView(rft), rft)
