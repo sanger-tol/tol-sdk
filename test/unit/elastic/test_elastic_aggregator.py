@@ -59,6 +59,8 @@ class TestElasticAggregator:
                             'key': 'DTOL',
                             'document_count': 8767,
                             '1': {
+                                'doc_count_error_upper_bound': 0,
+                                'sum_other_doc_count': 0,
                                 'buckets': [
                                     {
                                         'doc_count': 27,
@@ -77,6 +79,8 @@ class TestElasticAggregator:
                             'key': 'PSYCHE',
                             'doc_count': 1909,
                             '1': {
+                                'doc_count_error_upper_bound': 0,
+                                'sum_other_doc_count': 0,
                                 'buckets': [
                                     {
                                         'doc_count': 15,
@@ -213,6 +217,8 @@ class TestElasticAggregator:
                             'key': 'DTOL',
                             'doc_count': 8767,
                             '1': {
+                                'doc_count_error_upper_bound': 0,
+                                'sum_other_doc_count': 0,
                                 'buckets': [
                                     {
                                         'doc_count': 2434,
@@ -241,6 +247,8 @@ class TestElasticAggregator:
                             'key': 'PSYCHE',
                             'doc_count': 1909,
                             '1': {
+                                'doc_count_error_upper_bound': 0,
+                                'sum_other_doc_count': 0,
                                 'buckets': [
                                     {
                                         'doc_count': 246,
