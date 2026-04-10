@@ -4,6 +4,7 @@
 
 from tol.core import DataSource
 from tol.core.operator import (
+    Aggregator,
     Deleter,
     DetailGetter,
     LegacyAggregator,
@@ -15,6 +16,7 @@ from tol.core.operator.operator_config import DefaultOperatorConfig
 
 
 class _MockDataSource1(
+    Aggregator,
     DataSource,
     DetailGetter,
     LegacyAggregator,
@@ -26,6 +28,9 @@ class _MockDataSource1(
 
     @property
     def attribute_types(self):
+        raise NotImplementedError()
+
+    def get_aggregations(*args, **kwargs):
         raise NotImplementedError()
 
     def get_aggregations_legacy(*args, **kwargs):
