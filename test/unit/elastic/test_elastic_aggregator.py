@@ -75,7 +75,7 @@ class TestElasticAggregator:
                         },
                         {
                             'key': 'PSYCHE',
-                            'document_count': 1909,
+                            'doc_count': 1909,
                             '1': {
                                 'buckets': [
                                     {
