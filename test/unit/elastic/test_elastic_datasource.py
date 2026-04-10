@@ -512,7 +512,7 @@ class TestElasticDataSource:
             date_interval='1M',
         )
         assert result == {}
-        assert mock_elastic_data_source._get_date_aggregation.assert_called_once()
+        mock_elastic_data_source._get_date_aggregation.assert_called_once()
 
         # Date segmented aggregation combination
         result = mock_elastic_data_source.get_aggregations(
@@ -523,7 +523,7 @@ class TestElasticDataSource:
             break_down_by='field3',
         )
         assert result == {}
-        assert mock_elastic_data_source._get_date_aggregation_segmented.assert_called_once()
+        mock_elastic_data_source._get_date_aggregation_segmented.assert_called_once()
 
         # TODO Scatter aggregation here
 
@@ -534,7 +534,7 @@ class TestElasticDataSource:
             x_axis='field4',
         )
         assert result == {}
-        assert mock_elastic_data_source._get_categorical_aggregation.assert_called_once()
+        mock_elastic_data_source._get_categorical_aggregation.assert_called_once()
 
         # Categorical segmented aggregation combination
         result = mock_elastic_data_source.get_aggregations(
@@ -544,7 +544,7 @@ class TestElasticDataSource:
             break_down_by='field3',
         )
         assert result == {}
-        assert mock_elastic_data_source._get_categorical_aggregation_segmented.assert_called_once()
+        mock_elastic_data_source._get_categorical_aggregation_segmented.assert_called_once()
 
         # Invalid combination
         result = mock_elastic_data_source.get_aggregations(
