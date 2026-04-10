@@ -115,7 +115,7 @@ class ElasticAggregator(ABC):
                     for data_point in break_down_by['1']['buckets']
                 ]
             }
-            for break_down_by in elastic_response['meta']['aggregations']['agg']['buckets']
+            for break_down_by in elastic_response['date-aggregation']['buckets']
         ]
 
     def _get_categorical_aggregation(
