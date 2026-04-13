@@ -46,6 +46,7 @@ class StandardModels(IterableABC[type[Model]]):
     view_board: type[Model]
     board: type[Model]
     web_app: type[Model]
+    board_diff: type[Model]
 
     _user_mixin: type[Any]
 
@@ -70,7 +71,8 @@ class StandardModels(IterableABC[type[Model]]):
                 self.data_source_instance,
                 self.data_source_config,
                 self.loader,
-                self.web_app
+                self.web_app,
+                self.board_diff
             ]
         )
 
@@ -404,9 +406,40 @@ def create_standard_models(
             ForeignKey(f'{user_table_name}.id'),
             nullable=False
         )
+
         user = relationship(
             user_model_class_name,
             back_populates='boards',
+            foreign_keys=[user_id]
+        )
+
+    class BoardDiff(base_model_class):
+        __tablename__ = 'board_diff'
+
+        id: Mapped[str] = mapped_column(  # noqa A003
+            primary_key=True
+        )
+
+        user_id: Mapped[int] = mapped_column(
+            ForeignKey(f'{user_table_name}.id'),
+            nullable=False
+        )
+
+        board_id: Mapped[str] = mapped_column(
+            ForeignKey('board.id'),
+            nullable=False
+        )
+
+        component_id: Mapped[str] = mapped_column(
+            ForeignKey('component.id'),
+            nullable=False
+        )
+
+        config: Mapped[dict] = mapped_column(JSONB, nullable=True)
+
+        user = relationship(
+            user_model_class_name,
+            back_populates='board_diff',
             foreign_keys=[user_id]
         )
 
@@ -568,7 +601,7 @@ def create_standard_models(
     class WebApp(base_model_class):
         __tablename__ = 'web_app'
 
-        id : Mapped[str] = mapped_column(primary_key=True) # noqa A003
+        id: Mapped[str] = mapped_column(primary_key=True)  # noqa A003
 
         navigation: Mapped[dict] = mapped_column(
             JSONB,
@@ -624,6 +657,7 @@ def create_standard_models(
         view=View,
         view_board=ViewBoard,
         board=Board,
+        board_diff=BoardDiff,
         web_app=WebApp,
         _user_mixin=_UserMixin
     )
