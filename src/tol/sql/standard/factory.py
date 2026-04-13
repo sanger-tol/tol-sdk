@@ -416,17 +416,13 @@ def create_standard_models(
     class BoardDiff(base_model_class):
         __tablename__ = 'board_diff'
 
-        id: Mapped[str] = mapped_column(  # noqa A003
-            primary_key=True
+        id: Mapped[int] = mapped_column(  # noqa A003
+            primary_key=True,
+            autoincrement=True
         )
 
         user_id: Mapped[int] = mapped_column(
             ForeignKey(f'{user_table_name}.id'),
-            nullable=False
-        )
-
-        board_id: Mapped[str] = mapped_column(
-            ForeignKey('board.id'),
             nullable=False
         )
 
@@ -638,6 +634,12 @@ def create_standard_models(
 
         @declared_attr
         def boards(self) -> Mapped[list[Board]]:
+            return relationship(
+                back_populates='user'
+            )
+
+        @declared_attr
+        def board_diff(self) -> Mapped[list[BoardDiff]]:
             return relationship(
                 back_populates='user'
             )
