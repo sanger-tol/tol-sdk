@@ -74,3 +74,15 @@ class TestRuntimeFields:
                 emit(differenceInMillis);
             }
         """.split())
+
+    def test_substring(self):
+        rf = RuntimeFields.substring(
+            'field1',
+            start=0,
+            end=5
+        )
+        assert ''.join(rf['script']['source'].split()) == ''.join("""
+            if (doc.containsKey('field1.keyword') && doc['field1.keyword'].size() > 0) {
+                emit(doc['field1.keyword'].value.substring(0, 5));
+            }
+        """.split())

@@ -143,7 +143,7 @@ class TestElasticSampleToBenchlingTissueConverter(TestCase):
                 'sts_tollab_assign_date': datetime(2023, 1, 1),
                 'sts_send_rd': 'rd',
                 'sts_priority': '1',
-                'sts_project': ['project1', 'project2'],
+                'sts_project': 'project1',
                 'sts_sequencescape_study_id': 'cf01ea23-ac45-67e8-9101-11b213141516',
                 'sts_cost_code': 'S12345',
             },
@@ -192,7 +192,7 @@ class TestElasticSampleToBenchlingTissueConverter(TestCase):
             'rd_sample': 'rd',
             'sts_id': 1234,
             'priority': '1',
-            'project': 'project1, project2',
+            'project': 'project1',
             'study_id': 'cf01ea23-ac45-67e8-9101-11b213141516',
             'cost_code': 'S12345',
         })
