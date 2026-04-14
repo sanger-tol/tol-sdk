@@ -29,21 +29,21 @@ class SetStatusAction(Action):
             raise DataSourceError(
                 'Missing status',
                 'Missing status from params',
-                404
+                400
             )
 
         if ids is None or len(ids) == 0:
             raise DataSourceError(
                 'Missing ids',
                 'Missing required param: "ids"',
-                404
+                400
             )
 
         if 'user_id' not in params:
             raise DataSourceError(
                 'Missing user_id',
                 'Missing required param: "user_id"',
-                404
+                400
             )
 
         user_id = params['user_id'] if 'user_id' in params else None
