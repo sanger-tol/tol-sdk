@@ -4,6 +4,8 @@
 from dataclasses import dataclass
 from typing import Iterable
 
+from more_itertools import peekable
+
 from tol.core import DataObject, DataObjectToDataObjectOrUpdateConverter
 
 
@@ -27,22 +29,21 @@ class BufferingConverter(DataObjectToDataObjectOrUpdateConverter):
         self._data_object_factory = data_object_factory
 
     def convert_iterable(self, inputs):
-        object_to_yield = None
-        for data_object in inputs:
-            converted_objects = list(self.convert(data_object))
-            for converted_object in converted_objects:
-                if object_to_yield and converted_object.id == object_to_yield.id:
-                    object_to_yield = self.__merge_objects(object_to_yield, converted_object)
-                else:
-                    if object_to_yield:
-                        yield object_to_yield
-                    object_to_yield = converted_object
-        if object_to_yield:
-            yield object_to_yield
+        it = peekable(inputs)
+        for data_object in it:
+            while True:
+                try:
+                    if it.peek().id == data_object.id:
+                        data_object = self.__merge_objects(data_object, next(it))
+                    else:
+                        break
+                except StopIteration:
+                    break
+            yield data_object
 
     def convert(self, data_object: DataObject) -> Iterable[DataObject]:
         """
-        No actual coinverting is done
+        No actual converting is done
         """
         yield data_object
 
