@@ -38,6 +38,13 @@ class SetStatusAction(Action):
                 'Missing required param: "ids"',
                 404
             )
+        
+        if 'user_id' not in params:
+            raise DataSourceError(
+                'Missing user_id',
+                'Missing required param: "user_id"',
+                404
+            )
 
         user_id = params['user_id'] if 'user_id' in params else None
         status_type_id = params['status']
