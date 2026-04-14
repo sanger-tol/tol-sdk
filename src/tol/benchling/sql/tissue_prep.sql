@@ -28,7 +28,7 @@ Columns in output table:
 5) eln_file_registry_id: [character] id in Benchling Registry.
 6) programme_id: [character] ToLID. Origin: BWH
 6) specimen_id: [character] Specimen ID. Origin: STS
-7) eln_tissue_prep_name: [character]
+7) tissue_prep_name: [character]
 8) sampleprep_date: [Date] date of sample preparation.
 9) tissue_prep_fluidx_id: [character] fluidx id of the tissue prep container
 10) tube_location: [character] location of the tissue prep container.
@@ -50,21 +50,20 @@ WITH tissue_preps AS (
 		tp.id AS eln_tissue_prep_id,
 		t.programme_id,
 		t.specimen_id,
-		tp.name$ AS eln_tissue_prep_name,
+		tp.name$ AS tissue_prep_name,
 		DATE(tp.created_at$) AS sampleprep_date,
 		con.barcode AS tissue_prep_fluidx_id,
 		con.id AS fluidx_container_id,
 		loc.name AS tube_location,
 		CASE
-			WHEN con.archive_purpose$ IN ('Retired', 'Expended') THEN 0 -- Retired or expended tissue preps have a weight of 0
-			WHEN loc.name = 'SciOps ToL Lab' THEN 0 -- Tissue preps sent to LRES have a weight of 0
+			WHEN con.archived$ THEN 0 -- Retired or expended tissue preps have a weight of 0
+			WHEN loc.name LIKE '%Temporary location whilst migrating samples%' OR loc.name LIKE '%SciOps ToL Lab%' THEN 0 -- Tissue preps sent to LRES have a weight of 0
 			ELSE con.volume_si * 1000000
 		END AS weight_mg,
 		tube.tissue_prep_downstream_process AS downstream_protocol,
 		tube.tissue_prep_disruption_method AS disruption_method,
 		tube.tissue_prep_type,
 		tube.sciops_protocol_required,
-		t.lab_work_category AS labwork_category_sts,
 		tp.bt_id AS tissue_prep_bnt_id
 	FROM incoming_tissue_and_tissue_prep2$raw AS wrkf_tp
 	LEFT JOIN tissue_prep$raw AS tp
@@ -81,11 +80,15 @@ WITH tissue_preps AS (
 		ON tp.project_id$ = proj.id
 	LEFT JOIN folder$raw AS f
 		ON t.folder_id$ = f.id
-	WHERE proj.name = 'ToL Core Lab'
+	LEFT JOIN workflow_task$raw AS wft
+		ON wrkf_tp.workflow_task_id$ = wft.id
+	LEFT JOIN workflow_task_status$raw AS wfts
+		ON wft.workflow_task_status_id = wfts.id	WHERE proj.name = 'ToL Core Lab'
 		AND f.name IN ('Core Lab Entities', 'R&D', 'Routine Throughput', 'Benchling MS Project Move', 'ToL Core Restricted Entities')
 		AND (tp.archive_purpose$ != ('Made in error') OR tp.archive_purpose$ IS NULL)
 		AND (con.archive_purpose$ != ('Made in error') OR con.archive_purpose$ IS NULL)
-
+		AND wfts.status_type = 'COMPLETED'
+	
 ),
 legacy_tissue_preps AS (
 	
@@ -96,21 +99,20 @@ legacy_tissue_preps AS (
 		tp.id AS eln_tissue_prep_id,
 		t.programme_id,
 		t.specimen_id,
-		tp.name$ AS eln_tissue_prep_name,
+		tp.name$ AS tissue_prep_name,
 		DATE(tp.created_at$) AS sampleprep_date,
 		con.barcode AS tissue_prep_fluidx_id,
 		con.id AS fluidx_container_id,
 		loc.name AS tube_location,
 		CASE
-			WHEN con.archive_purpose$ IN ('Retired', 'Expended') THEN 0 -- Retired or expended tissue preps have a weight of 0
-			WHEN loc.name = 'SciOps ToL Lab' THEN 0 -- Tissue preps sent to LRES have a weight of 0
+			WHEN con.archived$ THEN 0 -- Retired or expended tissue preps have a weight of 0
+			WHEN loc.name LIKE '%Temporary location whilst migrating samples%' OR loc.name LIKE '%SciOps ToL Lab%' THEN 0 -- Tissue preps sent to LRES have a weight of 0
 			ELSE con.volume_si * 1000000 
 		END AS weight_mg,
 		tpr.downstream_protocol,
 		NULL::varchar AS disruption_method,
 		tube.tissue_prep_type,
 		tube.sciops_protocol_required,
-		t.lab_work_category AS labwork_category_sts,
 		tp.bt_id AS tissue_prep_bnt_id
 	FROM tissue_prep$raw AS tp
 	LEFT JOIN tissue$raw AS t

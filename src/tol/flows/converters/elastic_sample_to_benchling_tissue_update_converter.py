@@ -63,7 +63,7 @@ class ElasticSampleToBenchlingTissueUpdateConverter(
                     'sts_id': int(data_object.id),
                     # 'remaining_weight':,
                     'priority': data_object.sts_priority,
-                    'project': ', '.join(data_object.sts_project),
+                    'project': data_object.sts_project,
                     'study_id': data_object.sts_sequencescape_study_id,
                     'cost_code': data_object.sts_cost_code,
                 }

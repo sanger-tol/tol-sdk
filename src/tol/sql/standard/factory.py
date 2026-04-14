@@ -152,7 +152,10 @@ def create_standard_models(
         )
 
         provenance_override: Mapped[str] = mapped_column(nullable=False, default='')
-        convert_class: Mapped[str] = mapped_column(nullable=True)
+        config: Mapped[dict[str, Any]] = mapped_column(
+            nullable=False,
+            default={}
+        )
         candidate_key: Mapped[dict] = mapped_column(JSONB, nullable=True)
 
         # For loading by IDs
