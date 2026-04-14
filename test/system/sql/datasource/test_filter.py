@@ -91,6 +91,53 @@ class TestDefaultDatabaseFilter:
         (r3_obj,) = db.get_page('r3', sess, filters=deep_filt)
         assert r3_obj.id == 'an-r3-id'
 
+    def test_fetch_null_relatoinship(self, session_factory, models_list, sess):
+        # Store R3 -> R1 -> R2 chain of objects
+        session = session_factory()
+        session.add(
+            models.R3(
+                id='r3-1',
+                funny_r1=models.R1(
+                    id_override='r1-id',
+                ),
+            )
+        )
+        session.add(
+            models.R3(
+                id='r3-2',
+                funny_r1=None,
+            )
+        )
+        session.commit()
+        session.close()
+
+        db = DefaultDatabase(session_factory, models_list)
+        fun = DefaultDatabaseFilter(
+            DataSourceFilter(
+                and_={
+                    'funny_r1.id': {
+                        'exists': {},
+                    },
+                }
+            )
+        )
+        fun1_list = list(db.get_page('r3', sess, filters=fun))
+        assert len(fun1_list) == 1
+        assert fun1_list[0].id == 'r3-1'
+
+        no_fun = DefaultDatabaseFilter(
+            DataSourceFilter(
+                and_={
+                    'funny_r1.id': {
+                        'exists': {'negate': True},
+                    },
+                }
+            )
+        )
+        fun2_list = list(db.get_page('r3', sess, filters=no_fun))
+        assert len(fun2_list) == 1
+        assert fun2_list[0].id == 'r3-2'
+
     def test_all_filters(self, session_factory, models_list, type_tablename_dict, sess):
         """
         4 filters on 5 extant rows - each removes a different one - the db should fetch
