@@ -133,3 +133,13 @@ class RuntimeFields:
             )
         )
         return rf.to_dict()
+
+    @classmethod
+    def substring(cls, field: str, start: int, end: int, return_type: str = 'keyword'):
+        keyword = '.keyword' if return_type == 'keyword' else ''
+        rf = RuntimeField(
+            field_type=return_type,
+            dependencies=[f'{field}{keyword}'],
+            function_body=f"emit(doc['{field}{keyword}'].value.substring({start}, {end}));"
+        )
+        return rf.to_dict()
