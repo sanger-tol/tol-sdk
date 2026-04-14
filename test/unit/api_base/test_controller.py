@@ -16,6 +16,7 @@ from tol.api_base.misc import (
 )
 from tol.api_base.misc.auth_context import AuthContext
 from tol.api_client.exception import (
+    BadArgumentCombinationError,
     ObjectNotFoundByIdException,
     RecursiveRelationNotFoundException,
     UninheritedOperationError,
@@ -123,6 +124,14 @@ class _TestDataSource3(DataSource, LegacyAggregator, PageGetter, Aggregator):
         cumulative: bool | None = None,
         maximum_categories: int | None = None
     ) -> AggregationResult | None:
+        # The mock invalid combination is a non-date field with a date_interval
+        # (see test_exception_on_invalid_aggregation_combination)
+        if x_axis == 'categorical_field' and date_interval is not None:
+            # `None` should cause a BadArgumentCombinationError to be raised by the controller
+            return None
+
+        # Else assume the combination is fine (and we're in test_aggregations),
+        # so simply return a result
         return [
             {
                 'key': None,
@@ -242,6 +251,23 @@ class TestController:
         }]
         observed = controller.post_aggregations('test_X', parsed_args)
         assert expected == observed
+
+    def test_exception_on_invalid_aggregation_combination(self):
+        """
+        When every aggregation argument is valid, but their combination cannot map to
+        an available aggregation, a 422 status code should be returned
+        """
+        rft = ReqFieldsTree('test_X', ds_3)
+        controller = Controller(ds_3, DefaultView(rft), rft)
+        parsed_args = AggregationArgs({
+            'filter': '{"and_": {"column1": {"eq": "value1" }}}',
+            'x_axis': 'categorical_field',
+            'date_interval': '1M',
+        })
+
+        with pytest.raises(BadArgumentCombinationError) as e:
+            controller.post_aggregations('test_X', parsed_args)
+        assert e.value.errors[0]['detail'] == 'Invalid aggregations argument combination'
 
     def test_legacy_aggregations(self):
         """Check that legacy aggregations are working"""
