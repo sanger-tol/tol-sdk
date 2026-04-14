@@ -255,11 +255,24 @@ def create_models(
 
         __tablename__ = user_table_name
 
-        id: Mapped[int] = mapped_column(  # noqa A003
-            primary_key=True,
-            autoincrement=True,
-            name='user_id' if prefix_with_name else None
-        )
+        if prefix_with_name:
+            user_id: Mapped[int] = mapped_column(  # noqa A003
+                primary_key=True,
+                autoincrement=True
+            )
+
+            @property
+            def id(self) -> int: # noqa A001
+                """
+                Reliably gets the PK of this `User` - irrespective
+                of its name.
+                """
+                return getattr(self, self.get_id_column_name())
+        else:
+            id: Mapped[int] = mapped_column(  # noqa A003
+                primary_key=True,
+                autoincrement=True
+            )
 
         _tokens: Mapped[list[Token]] = relationship(
             back_populates='user'
@@ -267,6 +280,10 @@ def create_models(
         _role_bindings: Mapped[list[RoleBinding]] = relationship(
             back_populates='user'
         )
+
+        @classmethod
+        def get_id_column_name(cls) -> str:
+            return 'user_id' if prefix_with_name else 'id'
 
         @classmethod
         def __get_oidc_id_column_name(cls) -> str:
@@ -388,7 +405,7 @@ def create_models(
         )
 
         user_id: Mapped[int] = mapped_column(
-            ForeignKey(User.id)
+            ForeignKey(User.user_id if prefix_with_name else User.id)
         )
 
         user = relationship(
@@ -505,7 +522,7 @@ def create_models(
         )
 
         user_id: Mapped[int] = mapped_column(
-            ForeignKey(User.id)
+            ForeignKey(User.user_id if prefix_with_name else User.id)
         )
         role_id: Mapped[int] = mapped_column(
             ForeignKey(Role.id)
