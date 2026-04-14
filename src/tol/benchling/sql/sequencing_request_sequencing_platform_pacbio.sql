@@ -124,6 +124,10 @@ pacbio_submissions_container_routine AS (
         ON subsam.folder_id$ = f.id
 	LEFT JOIN sanger_sample_id$raw AS ssid 
 		ON con.id = ssid.sample_tube
+	LEFT JOIN workflow_task$raw AS wft
+		ON pbsum.workflow_task_id$ = wft.id
+	LEFT JOIN workflow_task_status$raw AS wfts
+		ON wft.workflow_task_status_id = wfts.id
 	WHERE pbsum.archived$ = FALSE -- Excluding archived submission containers
 		-- Filters to add DNA extract fluidx tubes
 		AND tube.type IS NULL  -- Selecting non-Voucher containers
@@ -131,6 +135,7 @@ pacbio_submissions_container_routine AS (
 		AND c_dna.barcode LIKE 'F%' -- Selecting only valid FluidX IDs
 		AND proj.name = 'ToL Core Lab' -- Selecting ToL Core Lab submissions only
 		AND f.name IN ('Routine Throughput', 'PacBio prep', 'Submissions', 'Core Lab Entities', 'Benchling MS Project Move')
+		AND wfts.status_type = 'COMPLETED'
 ),
 
 pacbio_submissions_container_pooled AS (
@@ -198,6 +203,10 @@ pacbio_submissions_container_pooled AS (
 		ON subsam.folder_id$ = f.id
 	LEFT JOIN sanger_sample_id$raw AS ssid 
 		ON con.id = ssid.sample_tube
+	LEFT JOIN workflow_task$raw AS wft
+		ON pbsum.workflow_task_id$ = wft.id
+	LEFT JOIN workflow_task_status$raw AS wfts
+		ON wft.workflow_task_status_id = wfts.id
 	WHERE pbsum.archived$ = FALSE -- Excluding archived submission containers
 		-- Filters to add DNA extract fluidx tubes
 		AND tube.type IS NULL  -- Selecting non-Voucher containers
@@ -205,6 +214,7 @@ pacbio_submissions_container_pooled AS (
 		AND subsam.pooled_sample IS NOT NULL
 		AND proj.name = 'ToL Core Lab' -- Selecting ToL Core Lab sbmissions only
 		AND f.name IN ('Routine Throughput', 'PacBio prep', 'Submissions', 'Core Lab Entities', 'Benchling MS Project Move')
+		AND wfts.status_type = 'COMPLETED'
 ),
 
 pacbio_submissions_container_legacy_deprecated AS (
@@ -327,6 +337,10 @@ pacbio_submissions_plate_automated_manifest AS (
 		ON subsam.project_id$ = proj.id
 	LEFT JOIN folder$raw AS f 
 		ON subsam.folder_id$ = f.id
+	LEFT JOIN workflow_task$raw AS wft
+		ON pbsubm_p.workflow_task_id$ = wft.id
+	LEFT JOIN workflow_task_status$raw AS wfts
+		ON wft.workflow_task_status_id = wfts.id
 	WHERE con.archived$ = FALSE -- Excluding archived submission containers
 		AND pbsubm_p.archived$ = FALSE -- Exclusing archived submissions
 		-- Filters to add DNA extract fluidx tubes
@@ -334,7 +348,8 @@ pacbio_submissions_plate_automated_manifest AS (
 		AND (c_dna.archive_purpose$ != ('Made in error') OR c_dna.archive_purpose$ IS NULL) -- Excluding containers made by mistake
 		AND c_dna.barcode LIKE 'F%' -- Selecting only valid FluidX IDs
 		AND proj.name = 'ToL Core Lab' -- Selecting ToL Core Lab sbmissions only
-		AND f.name IN ('Routine Throughput', 'PacBio prep', 'Submissions', 'Core Lab Entities', 'Benchling MS Project Move', 'R&D Sample Processing Requests')		
+		AND f.name IN ('Routine Throughput', 'PacBio prep', 'Submissions', 'Core Lab Entities', 'Benchling MS Project Move', 'R&D Sample Processing Requests')
+		AND wfts.status_type = 'COMPLETED'
 ),
 
 pacbio_submissions_plate_automated_manifest_pooled AS (
@@ -396,10 +411,15 @@ pacbio_submissions_plate_automated_manifest_pooled AS (
 		ON subsam.project_id$ = proj.id
 	LEFT JOIN folder$raw AS f 
 		ON subsam.folder_id$ = f.id
+	LEFT JOIN workflow_task$raw AS wft
+		ON pbsubm_p.workflow_task_id$ = wft.id
+	LEFT JOIN workflow_task_status$raw AS wfts
+		ON wft.workflow_task_status_id = wfts.id
 	WHERE subsam.pooled_sample IS NOT NULL
 		AND proj.name = 'ToL Core Lab'
 		AND f.name IN ('Routine Throughput', 'PacBio prep', 'Submissions', 'Core Lab Entities', 'Benchling MS Project Move', 'R&D Sample Processing Requests')
-		AND pbsubm_p.archived$ = FALSE	
+		AND pbsubm_p.archived$ = FALSE
+		AND wfts.status_type = 'COMPLETED'
 ),
 
 pacbio_submissions_plate_routine AS (
@@ -469,12 +489,17 @@ pacbio_submissions_plate_routine AS (
 		ON subsam.project_id$ = proj.id
 	 LEFT JOIN folder$raw AS f 
         ON subsam.folder_id$ = f.id
+	LEFT JOIN workflow_task$raw AS wft
+		ON pbsubm_p.workflow_task_id$ = wft.id
+	LEFT JOIN workflow_task_status$raw AS wfts
+		ON wft.workflow_task_status_id = wfts.id
 	WHERE pbsubm_p.archived$ = FALSE -- Excluding archived submissions
 		AND tube.type IS NULL  -- Selecting non-Voucher containers
 	    AND (c_dna.archive_purpose$ != ('Made in error') OR c_dna.archive_purpose$ IS NULL) -- Excluding containers made by mistake
 		AND c_dna.barcode LIKE 'F%' -- Selecting only valid FluidX IDs
 		AND proj.name = 'ToL Core Lab' -- Selecting ToL Core Lab submissions only
 		AND f.name IN ('Routine Throughput', 'PacBio prep', 'Submissions', 'Core Lab Entities', 'Benchling MS Project Move')
+		AND wfts.status_type = 'COMPLETED'
 ),
 
 pacbio_submissions_plate_routine_pooled AS (
@@ -543,10 +568,15 @@ pacbio_submissions_plate_routine_pooled AS (
 		ON subsam.project_id$ = proj.id
 	 LEFT JOIN folder$raw AS f 
         ON subsam.folder_id$ = f.id
+	LEFT JOIN workflow_task$raw AS wft
+		ON pbsubm_p.workflow_task_id$ = wft.id
+	LEFT JOIN workflow_task_status$raw AS wfts
+		ON wft.workflow_task_status_id = wfts.id
 	WHERE subsam.pooled_sample IS NOT NULL
 	    AND pbsubm_p.archived$ = FALSE
 		AND proj.name = 'ToL Core Lab' -- Selecting ToL Core Lab submissions only
 		AND f.name IN ('Routine Throughput', 'PacBio prep', 'Submissions', 'Core Lab Entities', 'Benchling MS Project Move')
+		AND wfts.status_type = 'COMPLETED'
 )
 
 SELECT *
