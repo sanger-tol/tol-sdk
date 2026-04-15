@@ -77,3 +77,11 @@ class TestMultipleConverter:
             assert 'key1_renamed' not in obj.attributes
             assert 'key1_renamed2' in obj.attributes
             assert obj.attributes['key1_renamed2'] in 'abc'
+
+        ret = list(multiple_converter.convert(mock_objs[0]))
+        assert len(ret) == 1
+        obj = ret[0]
+        assert 'key1' not in obj.attributes
+        assert 'key1_renamed' not in obj.attributes
+        assert 'key1_renamed2' in obj.attributes
+        assert obj.attributes['key1_renamed2'] == 'a'
