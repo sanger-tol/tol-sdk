@@ -58,7 +58,4 @@ class MultipleConverter(DataObjectToDataObjectOrUpdateConverter):
         yield from converted_objs
 
     def convert(self, data_object: DataObject) -> Iterable[DataObject | DataObjectUpdate]:
-        converted_objs = [data_object]
-        for converter in self.__converters:
-            converted_objs = converter.convert_iterable(converted_objs)
-        yield from converted_objs
+        yield from self.convert_iterable([data_object])
