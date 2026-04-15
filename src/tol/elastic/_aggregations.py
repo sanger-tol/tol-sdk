@@ -42,13 +42,11 @@ class ElasticAggregator(ABC):
         elastic_response = self._get_elastic_aggregations(
             object_type,
             {
-                'aggs': {
-                    'date-aggregation': {
-                        'date_histogram': {
-                            'field': x_axis,
-                            'calendar_interval': date_interval,
-                            'time_zone': 'Europe/London',
-                        },
+                'date-aggregation': {
+                    'date_histogram': {
+                        'field': x_axis,
+                        'calendar_interval': date_interval,
+                        'time_zone': 'Europe/London',
                     },
                 },
             },
@@ -81,19 +79,17 @@ class ElasticAggregator(ABC):
         elastic_response = self._get_elastic_aggregations(
             object_type,
             {
-                'aggs': {
-                    'agg': {
-                        'terms': {
-                            'field': self._field_or_keyword(object_type, break_down_by),
-                            'size': 25,
-                        },
-                        'aggs': {
-                            '0': {
-                                'date_histogram': {
-                                    'field': x_axis,
-                                    'calendar_interval': date_interval,
-                                    'time_zone': 'Europe/London',
-                                },
+                'date-aggregation': {
+                    'terms': {
+                        'field': self._field_or_keyword(object_type, break_down_by),
+                        'size': 25,
+                    },
+                    'aggs': {
+                        '0': {
+                            'date_histogram': {
+                                'field': x_axis,
+                                'calendar_interval': date_interval,
+                                'time_zone': 'Europe/London',
                             },
                         },
                     },
@@ -129,15 +125,13 @@ class ElasticAggregator(ABC):
         elastic_response = self._get_elastic_aggregations(
             object_type,
             {
-                'aggs': {
-                    'agg': {
-                        'terms': {
-                            'field': self._field_or_keyword(object_type, x_axis),
-                            'order': {
-                                '_key': 'asc',
-                            },
-                            'size': 25,
+                'categorical-aggregation': {
+                    'terms': {
+                        'field': self._field_or_keyword(object_type, x_axis),
+                        'order': {
+                            '_key': 'asc',
                         },
+                        'size': 25,
                     },
                 },
             },
@@ -171,21 +165,19 @@ class ElasticAggregator(ABC):
         elastic_response = self._get_elastic_aggregations(
             object_type,
             {
-                'aggs': {
-                    'agg': {
-                        'terms': {
-                            'field': self._field_or_keyword(object_type, break_down_by),
-                            'size': 25,
-                        },
-                        'aggs': {
-                            '0': {
-                                'terms': {
-                                    'field': self._field_or_keyword(object_type, x_axis),
-                                    'order': {
-                                        '_key': 'asc',
-                                    },
-                                    'size': 25,
+                'categorical-aggregation': {
+                    'terms': {
+                        'field': self._field_or_keyword(object_type, break_down_by),
+                        'size': 25,
+                    },
+                    'aggs': {
+                        '0': {
+                            'terms': {
+                                'field': self._field_or_keyword(object_type, x_axis),
+                                'order': {
+                                    '_key': 'asc',
                                 },
+                                'size': 25,
                             },
                         },
                     },
