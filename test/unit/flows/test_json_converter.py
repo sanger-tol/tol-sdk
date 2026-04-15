@@ -44,6 +44,12 @@ class TestJsonConverter(TestCase):
                     'metadata': {
                         'doi': '10.12688/example.1'
                     },
+                    'reviewer_reports': [
+                        {
+                            'id': 'report-1',
+                            'recommendation': 'approve'
+                        }
+                    ],
                     'assembly_stats': {
                         'sequence_report': {
                             'assembly_accession': 'GCA_123456789.1'
@@ -74,6 +80,8 @@ class TestJsonConverter(TestCase):
         self.assertEqual('ilHumTest1', ret.attributes['tolid'])
         self.assertIn('assembly_stats', ret.attributes)
         self.assertIn('metadata', ret.attributes)
+        self.assertIn('reviewer_reports', ret.attributes)
+        self.assertEqual('report-1', ret.attributes['reviewer_reports'][0]['id'])
 
         with self.assertRaises(StopIteration):
             next(converted)

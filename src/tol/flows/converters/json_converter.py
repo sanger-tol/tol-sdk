@@ -22,6 +22,7 @@ class JsonConverter(DataObjectToDataObjectOrUpdateConverter):
         'references',
         'methods',
         'assembly_stats',
+        'reviewer_reports',
     )
 
     __slots__ = ['__config']
