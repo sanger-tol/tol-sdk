@@ -46,7 +46,7 @@ class SetStatusAction(Action):
                 400
             )
 
-        user_id = params['user_id'] if 'user_id' in params else None
+        user_id = params['user_id']
         status_type_id = params['status']
         status_table = f'{object_type}_status'
         status_type_table = f'{object_type}_status_type'
@@ -80,7 +80,7 @@ class SetStatusAction(Action):
         object_type: str,
         status_table: str,
         status_type: Any,
-        user_id: str | None = None
+        user_id: str
     ) -> Any:
 
         for id_ in ids:
