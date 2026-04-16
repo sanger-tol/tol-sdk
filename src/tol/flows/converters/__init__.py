@@ -45,6 +45,7 @@ from .labwhere_location_to_sts_tray_converter import LabwhereLocationToStsTrayCo
 from .mlwh_extraction_to_elastic_extraction_converter import MlwhExtractionToElasticExtractionConverter  # noqa F401
 from .mlwh_run_data_to_elastic_run_data_converter import MlwhRunDataToElasticRunDataConverter  # noqa F401
 from .mlwh_sequencing_request_to_elastic_sequencing_request_converter import MlwhSequencingRequestToElasticSequencingRequestConverter  # noqa F401
+from .multiple_converter import MultipleConverter  # noqa F401
 from .sts_banked_sample_to_elastic_sample_converter import StsBankedSampleToElasticSampleConverter  # noqa F401
 from .sts_manifest_to_elastic_manifest_converter import StsManifestToElasticManifestConverter  # noqa F401
 from .sts_project_to_elastic_sample_update_converter import StsProjectToElasticSampleUpdateConverter  # noqa F401
