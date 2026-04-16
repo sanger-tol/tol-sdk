@@ -6,6 +6,7 @@ from unittest import TestCase
 from unittest.mock import MagicMock
 
 from tol.actions import SetStatusAction
+from tol.core import DataSourceError
 
 
 def _make_datasource(ids, object_type, status_type_id):
@@ -57,26 +58,38 @@ class TestSetStatusAction(TestCase):
 
     def test_missing_params_returns_400(self):
         datasource = MagicMock()
-        result, code = self.action.run(
-            datasource=datasource,
-            ids=['id1'],
-            object_type='specimen',
-            params=None,
-        )
-        self.assertEqual(code, 400)
-        self.assertEqual(result, {'error': 'Missing required param: "status"'})
+        with self.assertRaises(DataSourceError) as ctx:
+            self.action.run(
+                datasource=datasource,
+                ids=['id1'],
+                object_type='specimen',
+                params=None,
+            )
+        self.assertEqual(ctx.exception.status_code, 400)
         datasource.get_one.assert_not_called()
 
     def test_missing_status_key_returns_400(self):
         datasource = MagicMock()
-        result, code = self.action.run(
-            datasource=datasource,
-            ids=['id1'],
-            object_type='specimen',
-            params={},
-        )
-        self.assertEqual(code, 400)
-        self.assertEqual(result, {'error': 'Missing required param: "status"'})
+        with self.assertRaises(DataSourceError) as ctx:
+            self.action.run(
+                datasource=datasource,
+                ids=['id1'],
+                object_type='specimen',
+                params={},
+            )
+        self.assertEqual(ctx.exception.status_code, 400)
+        datasource.get_one.assert_not_called()
+
+    def test_missing_user_id_returns_400(self):
+        datasource = MagicMock()
+        with self.assertRaises(DataSourceError) as ctx:
+            self.action.run(
+                datasource=datasource,
+                ids=['id1'],
+                object_type='specimen',
+                params={'status': 'active'},
+            )
+        self.assertEqual(ctx.exception.status_code, 400)
         datasource.get_one.assert_not_called()
 
     # ------------------------------------------------------------------
@@ -92,7 +105,7 @@ class TestSetStatusAction(TestCase):
             datasource=datasource,
             ids=ids,
             object_type=object_type,
-            params={'status': 'active'},
+            params={'status': 'active', 'user_id': 'user1'},
         )
 
         self.assertEqual(code, 200)
@@ -107,7 +120,7 @@ class TestSetStatusAction(TestCase):
             datasource=datasource,
             ids=ids,
             object_type=object_type,
-            params={'status': 'pending'},
+            params={'status': 'pending', 'user_id': 'user1'},
         )
 
         datasource.get_one.assert_any_call('sample_status_type', 'pending')
@@ -121,7 +134,7 @@ class TestSetStatusAction(TestCase):
             datasource=datasource,
             ids=ids,
             object_type=object_type,
-            params={'status': 'active'},
+            params={'status': 'active', 'user_id': 'user1'},
         )
 
         for id_ in ids:
@@ -136,7 +149,7 @@ class TestSetStatusAction(TestCase):
             datasource=datasource,
             ids=ids,
             object_type=object_type,
-            params={'status': 'active'},
+            params={'status': 'active', 'user_id': 'user1'},
         )
 
         self.assertEqual(datasource.data_object_factory.call_count, len(ids))
@@ -151,7 +164,7 @@ class TestSetStatusAction(TestCase):
             datasource=datasource,
             ids=ids,
             object_type=object_type,
-            params={'status': 'active'},
+            params={'status': 'active', 'user_id': 'user1'},
         )
 
         insert_call_args = session.insert.call_args
@@ -167,7 +180,7 @@ class TestSetStatusAction(TestCase):
             datasource=datasource,
             ids=ids,
             object_type=object_type,
-            params={'status': 'active'},
+            params={'status': 'active', 'user_id': 'user1'},
         )
 
         self.assertEqual(session.upsert.call_count, len(ids))
@@ -184,7 +197,7 @@ class TestSetStatusAction(TestCase):
             datasource=datasource,
             ids=['id1'],
             object_type='specimen',
-            params={'status': 'active'},
+            params={'status': 'active', 'user_id': 'user1'},
         )
 
         self.assertEqual(code, 500)
@@ -201,7 +214,7 @@ class TestSetStatusAction(TestCase):
             datasource=datasource,
             ids=ids,
             object_type=object_type,
-            params={'status': 'active'},
+            params={'status': 'active', 'user_id': 'user1'},
         )
 
         self.assertEqual(code, 500)
