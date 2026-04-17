@@ -53,12 +53,12 @@ class TestElasticAggregator:
         # Mock the result of the Elastic API call
         mock_elastic_data_source.es.search.return_value = {
             'aggregations': {
-                'date-aggregation': {
+                'break-down-by-aggregation': {
                     'buckets': [
                         {
                             'key': 'DTOL',
                             'document_count': 8767,
-                            '0': {
+                            'date-aggregation': {
                                 'doc_count_error_upper_bound': 0,
                                 'sum_other_doc_count': 0,
                                 'buckets': [
@@ -78,7 +78,7 @@ class TestElasticAggregator:
                         {
                             'key': 'PSYCHE',
                             'doc_count': 1909,
-                            '0': {
+                            'date-aggregation': {
                                 'doc_count_error_upper_bound': 0,
                                 'sum_other_doc_count': 0,
                                 'buckets': [
@@ -211,12 +211,12 @@ class TestElasticAggregator:
         # Mock the result of the Elastic API call
         mock_elastic_data_source.es.search.return_value = {
             'aggregations': {
-                'categorical-aggregation': {
+                'break-down-by-aggregation': {
                     'buckets': [
                         {
                             'key': 'DTOL',
                             'doc_count': 8767,
-                            '0': {
+                            'categorical-aggregation': {
                                 'doc_count_error_upper_bound': 0,
                                 'sum_other_doc_count': 0,
                                 'buckets': [
@@ -246,7 +246,7 @@ class TestElasticAggregator:
                         {
                             'key': 'PSYCHE',
                             'doc_count': 1909,
-                            '0': {
+                            'categorical-aggregation': {
                                 'doc_count_error_upper_bound': 0,
                                 'sum_other_doc_count': 0,
                                 'buckets': [

@@ -79,13 +79,13 @@ class ElasticAggregator(ABC):
         elastic_response = self._get_elastic_aggregations(
             object_type,
             {
-                'date-aggregation': {
+                'break-down-by-aggregation': {
                     'terms': {
                         'field': self._field_or_keyword(object_type, break_down_by),
                         'size': 25,
                     },
                     'aggs': {
-                        '0': {
+                        'date-aggregation': {
                             'date_histogram': {
                                 'field': x_axis,
                                 'calendar_interval': date_interval,
@@ -107,10 +107,10 @@ class ElasticAggregator(ABC):
                         'x': data_point['key_as_string'],
                         'y': data_point['doc_count']
                     }
-                    for data_point in break_down_by['0']['buckets']
+                    for data_point in break_down_by['date-aggregation']['buckets']
                 ]
             }
-            for break_down_by in elastic_response['date-aggregation']['buckets']
+            for break_down_by in elastic_response['break-down-by-aggregation']['buckets']
         ]
 
     def _get_categorical_aggregation(
@@ -164,13 +164,13 @@ class ElasticAggregator(ABC):
         elastic_response = self._get_elastic_aggregations(
             object_type,
             {
-                'categorical-aggregation': {
+                'break-down-by-aggregation': {
                     'terms': {
                         'field': self._field_or_keyword(object_type, break_down_by),
                         'size': 25,
                     },
                     'aggs': {
-                        '0': {
+                        'categorical-aggregation': {
                             'terms': {
                                 'field': self._field_or_keyword(object_type, x_axis),
                                 'order': {
@@ -194,8 +194,8 @@ class ElasticAggregator(ABC):
                         'x': data_point['key'],
                         'y': data_point['doc_count']
                     }
-                    for data_point in break_down_by['0']['buckets']
+                    for data_point in break_down_by['categorical-aggregation']['buckets']
                 ]
             }
-            for break_down_by in elastic_response['categorical-aggregation']['buckets']
+            for break_down_by in elastic_response['break-down-by-aggregation']['buckets']
         ]
