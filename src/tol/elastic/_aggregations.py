@@ -107,7 +107,6 @@ class ElasticAggregator(ABC):
                         'x': data_point['key_as_string'],
                         'y': data_point['doc_count']
                     }
-                    # '1' is the key Elasticsearch returns for the nested aggregation
                     for data_point in break_down_by['0']['buckets']
                 ]
             }
@@ -195,7 +194,6 @@ class ElasticAggregator(ABC):
                         'x': data_point['key'],
                         'y': data_point['doc_count']
                     }
-                    # '1' is the key Elasticsearch returns for the nested aggregation
                     for data_point in break_down_by['0']['buckets']
                 ]
             }
