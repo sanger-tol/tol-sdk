@@ -507,7 +507,7 @@ class Controller:
         )
 
         if aggregations is None:
-            raise BadArgumentCombinationError('Invalid aggregations argument combination')
+            raise BadArgumentCombinationError('Invalid aggregation arguments combination')
 
         return aggregations
 
