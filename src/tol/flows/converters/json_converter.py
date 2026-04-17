@@ -39,7 +39,6 @@ class JsonConverter(DataObjectToDataObjectOrUpdateConverter):
         if not isinstance(payload, dict):
             raise ValueError('JsonConverter expects payload to be a JSON object')
 
-        # Keep the DataObject attributes aligned with the schema top-level keys.
         output_attributes = {
             key: payload.get(key)
             for key in self.__schema_top_level_keys
