@@ -14,7 +14,6 @@ class JsonConverter(DataObjectToDataObjectOrUpdateConverter):
     class Config:
         destination_type: str = 'genome_note'
         wrapped_data_key: str = 'data'
-        strict_missing_relation_fields: bool = False
 
     __schema_top_level_keys = (
         'metadata',
