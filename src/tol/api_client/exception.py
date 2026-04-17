@@ -151,7 +151,7 @@ class BadArgumentCombinationError(BaseRuntimeException):
             'title': 'Bad Argument Combination',
             'detail': message
         }]
-        super().__init__(errors, status_code=400)
+        super().__init__(errors, status_code=422)
 
 
 class UnauthenticatedError(BaseRuntimeException):
