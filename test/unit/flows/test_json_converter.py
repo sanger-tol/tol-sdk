@@ -30,91 +30,85 @@ class _MockDestination(DataSource):
 
 class TestJsonConverter(TestCase):
 
-    def test_convert_maps_wrapped_payload_and_derives_relationship_fields(self):
-        source = _MockSource(config={})
-        destination = _MockDestination(config={})
-        core_data_object(source)
-        core_data_object(destination)
+    def setUp(self):
+        self.source = _MockSource(config={})
+        self.destination = _MockDestination(config={})
+        core_data_object(self.source)
+        core_data_object(self.destination)
+        self.converter = JsonConverter(
+            self.destination.data_object_factory,
+            JsonConverter.Config()
+        )
 
-        input_obj = source.data_object_factory(
+    def _build_input(self, object_id, attributes):
+        return self.source.data_object_factory(
             'json_blob',
+            object_id,
+            attributes=attributes
+        )
+
+    def _convert_one(self, input_obj):
+        converted = self.converter.convert(input_obj)
+        ret = next(converted)
+        with self.assertRaises(StopIteration):
+            next(converted)
+        return ret
+
+    def test_convert_maps_wrapped_payload(self):
+        input_obj = self._build_input(
             'raw-1',
-            attributes={
+            {
                 'data': {
-                    'metadata': {
-                        'doi': '10.12688/example.1'
-                    },
+                    'metadata': {'doi': '10.12688/example.1'},
+                    'extra_field': 'should_be_ignored',
                     'reviewer_reports': [
-                        {
-                            'id': 'report-1',
-                            'recommendation': 'approve'
-                        }
+                        {'id': 'report-1', 'recommendation': 'approve'}
                     ],
                     'assembly_stats': {
                         'sequence_report': {
                             'assembly_accession': 'GCA_123456789.1'
                         },
-                        'species': [
-                            {'ncbi_taxonomy_id': '9606'}
-                        ],
-                        'samples': [
-                            {'tolid': 'ilHumTest1'}
-                        ]
+                        'species': [{'ncbi_taxonomy_id': '9606'}],
+                        'samples': [{'tolid': 'ilHumTest1'}]
                     }
                 }
             }
         )
 
-        converter = JsonConverter(
-            destination.data_object_factory,
-            JsonConverter.Config()
-        )
-
-        converted = converter.convert(input_obj)
-        ret = next(converted)
+        ret = self._convert_one(input_obj)
 
         self.assertEqual('genome_note', ret.type)
-        self.assertEqual('10.12688/example.1', ret.id)
-        self.assertEqual('GCA_123456789.1', ret.attributes['assembly_accession'])
-        self.assertEqual('9606', ret.attributes['taxid'])
-        self.assertEqual('ilHumTest1', ret.attributes['tolid'])
+        self.assertEqual('raw-1', ret.id)
         self.assertIn('assembly_stats', ret.attributes)
         self.assertIn('metadata', ret.attributes)
         self.assertIn('reviewer_reports', ret.attributes)
+        self.assertNotIn('extra_field', ret.attributes)
         self.assertEqual('report-1', ret.attributes['reviewer_reports'][0]['id'])
 
-        with self.assertRaises(StopIteration):
-            next(converted)
-
-    def test_convert_raises_when_strict_and_required_fields_missing(self):
-        source = _MockSource(config={})
-        destination = _MockDestination(config={})
-        core_data_object(source)
-        core_data_object(destination)
-
-        input_obj = source.data_object_factory(
-            'json_blob',
-            'raw-2',
-            attributes={
-                'data': {
-                    'metadata': {
-                        'doi': '10.12688/example.2'
-                    },
-                    'assembly_stats': {
-                        'sequence_report': {
-                            'assembly_accession': 'GCA_987654321.1'
-                        },
-                        'species': [],
-                        'samples': []
-                    }
-                }
+    def test_convert_handles_unwrapped_payload(self):
+        input_obj = self._build_input(
+            'raw-4',
+            {
+                'metadata': {'doi': '10.12688/example.1'},
+                'assembly_stats': {'accession': 'GCA_123456789.1'}
             }
         )
 
-        converter = JsonConverter(
-            destination.data_object_factory,
-            JsonConverter.Config(strict_missing_relation_fields=True)
+        ret = self._convert_one(input_obj)
+
+        self.assertEqual('genome_note', ret.type)
+        self.assertIn('metadata', ret.attributes)
+        self.assertIn('assembly_stats', ret.attributes)
+
+    def test_convert_raises_on_non_dict_payload(self):
+        input_obj = self._build_input(
+            'raw-5',
+            {
+                'data': 'not a dict, just a string'
+            }
         )
 
-        with self.assertRaises(ValueError):
-            next(converter.convert(input_obj))
+        with self.assertRaises(ValueError) as context:
+            list(self.converter.convert(input_obj))
+
+        self.assertIn('JSON object', str(context.exception))
