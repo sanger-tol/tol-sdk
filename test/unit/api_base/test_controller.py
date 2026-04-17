@@ -267,7 +267,7 @@ class TestController:
 
         with pytest.raises(BadArgumentCombinationError) as e:
             controller.post_aggregations('test_X', parsed_args)
-        assert e.value.errors[0]['detail'] == 'Invalid aggregations argument combination'
+        assert e.value.errors[0]['detail'] == 'Invalid aggregation arguments combination'
 
     def test_legacy_aggregations(self):
         """Check that legacy aggregations are working"""
