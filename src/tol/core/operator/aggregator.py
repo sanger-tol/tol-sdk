@@ -15,8 +15,8 @@ if typing.TYPE_CHECKING:
 
 AggregationResultData = list[dict]
 AggregationResultKey = str | None
-AggregationResultSegments = dict[str, AggregationResultKey | AggregationResultData]
-AggregationResult = list[AggregationResultSegments]
+AggregationResultSegment = dict[str, AggregationResultKey | AggregationResultData]
+AggregationResult = list[AggregationResultSegment]
 
 
 class Aggregator(_Filterable, ABC):
