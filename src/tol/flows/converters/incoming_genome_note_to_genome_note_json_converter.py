@@ -45,7 +45,6 @@ class IncomingGenomeNoteToGenomeNoteJsonConverter(DataObjectToDataObjectOrUpdate
             if key in payload
         }
 
-        # Require taxonomy id from assembly_stats.species[0].ncbi_taxonomy_id
         taxonomy_id = None
         assembly_stats = payload.get('assembly_stats', {})
         if isinstance(assembly_stats, dict):
@@ -55,7 +54,9 @@ class IncomingGenomeNoteToGenomeNoteJsonConverter(DataObjectToDataObjectOrUpdate
                 if isinstance(first_species, dict):
                     taxonomy_id = first_species.get('ncbi_taxonomy_id')
         if not taxonomy_id:
-            raise ValueError('Missing taxonomy id (assembly_stats.species[0].ncbi_taxonomy_id) in input payload')
+            raise ValueError(
+                'Missing taxonomy id (assembly_stats.species[0].ncbi_taxonomy_id) in input payload'
+            )
 
         yield self._data_object_factory(
             self.__config.destination_type,
@@ -74,7 +75,8 @@ class IncomingGenomeNoteToGenomeNoteJsonConverter(DataObjectToDataObjectOrUpdate
                 properties = wrapped.get(self.__config.wrapped_properties_key)
                 if not isinstance(properties, dict):
                     raise ValueError(
-                        f'Expected "{self.__config.wrapped_properties_key}" to contain a JSON object'
+                        f'Expected "{self.__config.wrapped_properties_key}" '
+                        'to contain a JSON object'
                     )
                 return properties
             return wrapped
