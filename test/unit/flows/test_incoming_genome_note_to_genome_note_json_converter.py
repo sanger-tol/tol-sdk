@@ -5,7 +5,7 @@
 from unittest import TestCase
 
 from tol.core import DataSource, core_data_object
-from tol.flows.converters import JsonConverter
+from tol.flows.converters import IncomingGenomeNoteToGenomeNoteJsonConverter
 
 
 class _MockSource(DataSource):
@@ -35,9 +35,9 @@ class TestJsonConverter(TestCase):
         self.destination = _MockDestination(config={})
         core_data_object(self.source)
         core_data_object(self.destination)
-        self.converter = JsonConverter(
+        self.converter = IncomingGenomeNoteToGenomeNoteJsonConverter(
             self.destination.data_object_factory,
-            JsonConverter.Config()
+            IncomingGenomeNoteToGenomeNoteJsonConverter.Config()
         )
 
     def _build_input(self, object_id, attributes):
@@ -78,7 +78,8 @@ class TestJsonConverter(TestCase):
         ret = self._convert_one(input_obj)
 
         self.assertEqual('genome_note', ret.type)
-        self.assertEqual('raw-1', ret.id)
+        # Now expects taxonomy id as output id
+        self.assertEqual('9606', ret.id)
         self.assertIn('assembly_stats', ret.attributes)
         self.assertIn('metadata', ret.attributes)
         self.assertIn('reviewer_reports', ret.attributes)
@@ -94,11 +95,9 @@ class TestJsonConverter(TestCase):
             }
         )
 
-        ret = self._convert_one(input_obj)
-
-        self.assertEqual('genome_note', ret.type)
-        self.assertIn('metadata', ret.attributes)
-        self.assertIn('assembly_stats', ret.attributes)
+        with self.assertRaises(ValueError) as context:
+            self._convert_one(input_obj)
+        self.assertIn('taxonomy id', str(context.exception))
 
     def test_convert_raises_on_non_dict_payload(self):
         input_obj = self._build_input(

@@ -8,12 +8,13 @@ from typing import Any, Iterable
 from tol.core import DataObject, DataObjectToDataObjectOrUpdateConverter
 
 
-class JsonConverter(DataObjectToDataObjectOrUpdateConverter):
+class IncomingGenomeNoteToGenomeNoteJsonConverter(DataObjectToDataObjectOrUpdateConverter):
 
     @dataclass(slots=True, frozen=True, kw_only=True)
     class Config:
         destination_type: str = 'genome_note'
         wrapped_data_key: str = 'data'
+        wrapped_properties_key: str = 'properties'
 
     __schema_top_level_keys = (
         'metadata',
@@ -44,9 +45,21 @@ class JsonConverter(DataObjectToDataObjectOrUpdateConverter):
             if key in payload
         }
 
+        # Require taxonomy id from assembly_stats.species[0].ncbi_taxonomy_id
+        taxonomy_id = None
+        assembly_stats = payload.get('assembly_stats', {})
+        if isinstance(assembly_stats, dict):
+            species = assembly_stats.get('species')
+            if isinstance(species, list) and species:
+                first_species = species[0]
+                if isinstance(first_species, dict):
+                    taxonomy_id = first_species.get('ncbi_taxonomy_id')
+        if not taxonomy_id:
+            raise ValueError('Missing taxonomy id (assembly_stats.species[0].ncbi_taxonomy_id) in input payload')
+
         yield self._data_object_factory(
             self.__config.destination_type,
-            data_object.id,
+            taxonomy_id,
             attributes=output_attributes,
         )
 
@@ -57,5 +70,12 @@ class JsonConverter(DataObjectToDataObjectOrUpdateConverter):
                 raise ValueError(
                     f'Expected "{self.__config.wrapped_data_key}" to contain a JSON object'
                 )
+            if self.__config.wrapped_properties_key in wrapped:
+                properties = wrapped.get(self.__config.wrapped_properties_key)
+                if not isinstance(properties, dict):
+                    raise ValueError(
+                        f'Expected "{self.__config.wrapped_properties_key}" to contain a JSON object'
+                    )
+                return properties
             return wrapped
         return attributes

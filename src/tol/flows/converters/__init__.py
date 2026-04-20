@@ -66,4 +66,4 @@ from .prefix_field_converter import PrefixFieldConverter  # noqa F401
 from .combine_fields_converter import CombineFieldsConverter  # noqa F401
 from .auto_detect_manifest_type_converter import AutoDetectManifestTypeConverter # noqa F401
 from .time_string_to_time import TimeStringToTimeConverter # noqa F401
-from .json_converter import JsonConverter  # noqa F401
+from .incoming_genome_note_to_genome_note_json_converter import IncomingGenomeNoteToGenomeNoteJsonConverter  # noqa F401
