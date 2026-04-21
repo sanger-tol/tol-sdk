@@ -6,6 +6,10 @@ SPDX-License-Identifier: MIT
 
 # Changelog
 
+## tol-sdk `2.1.2`
+21-04-2026
+- Added Config dataclass to all converters
+
 ## tol-sdk `2.1.1`
 21-04-2026
 - Fixed actions by passing user_id as a default parameter to local actions,
