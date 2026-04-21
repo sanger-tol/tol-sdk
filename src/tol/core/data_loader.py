@@ -264,7 +264,7 @@ class GroupStatterDataLoader(DefaultDataLoader):
                 config: Config
             ) -> None:
                 super().__init__(data_object_factory)
-
+                self.__config = config
 
             def convert_iterable(
                 self,

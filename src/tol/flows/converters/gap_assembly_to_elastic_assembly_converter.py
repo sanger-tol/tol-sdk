@@ -25,6 +25,7 @@ class GapAssemblyToElasticAssemblyConverter(
         super().__init__(data_object_factory)
         self.__config = config
         self._data_object_factory = data_object_factory
+
     def convert_details(self, assembly: DataObject) -> Iterable[DataObject]:
         return {
             d.id.replace(' ', '_').lower(): d.info

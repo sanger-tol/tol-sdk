@@ -25,6 +25,7 @@ class InformaticsTolidToElasticTolidConverter(
         super().__init__(data_object_factory)
         self.__config = config
         self._data_object_factory = data_object_factory
+
     def convert(self, data_object: DataObject) -> Iterable[DataObject]:
         if data_object.status_summary is not None:
             yield self._data_object_factory(
