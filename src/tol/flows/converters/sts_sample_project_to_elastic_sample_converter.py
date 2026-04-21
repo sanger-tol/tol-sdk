@@ -3,6 +3,7 @@
 
 import datetime
 import re
+from dataclasses import dataclass
 from typing import Iterable
 
 from dateutil import parser as dateutil_parser
@@ -16,6 +17,19 @@ from ...core import (
 
 class StsSampleProjectToElasticSampleConverter(
         DataObjectToDataObjectOrUpdateConverter):
+
+    @dataclass(slots=True, frozen=True, kw_only=True)
+    class Config:
+        pass
+
+    __slots__ = ['__config']
+    __config: Config
+
+    def __init__(self, data_object_factory, config: Config) -> None:
+        super().__init__(data_object_factory)
+        self.__config = config
+        self._data_object_factory = data_object_factory
+
     def convert(self, data_object: DataObject) -> Iterable[DataObject]:
         # The project (note this is adding to a list)
         s = data_object.sample

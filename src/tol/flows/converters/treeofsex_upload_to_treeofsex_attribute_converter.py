@@ -2,6 +2,7 @@
 #
 # SPDX-License-Identifier: MIT
 
+from dataclasses import dataclass
 from typing import Iterable
 
 from ...core import (
@@ -13,8 +14,16 @@ from ...core import (
 class TreeofsexUploadToTreeofsexAttributeConverter(
         DataObjectToDataObjectOrUpdateConverter):
 
-    def __init__(self, data_object_factory, user=None):
+    @dataclass(slots=True, frozen=True, kw_only=True)
+    class Config:
+        pass
+
+    __slots__ = ['__config']
+    __config: Config
+
+    def __init__(self, data_object_factory, config: Config, user=None):
         super().__init__(data_object_factory)
+        self.__config = config
         self.__sources_seen = set()
         self.__species_seen = set()
         self.__user = user

@@ -117,7 +117,8 @@ class TestGapAssemblyToElasticAssemblyAnalysisConverter(TestCase):
         core_data_object(source)
         core_data_object(destination)
         converter = GapAssemblyToElasticAssemblyAnalysisConverter(
-            data_object_factory=destination.data_object_factory
+            data_object_factory=destination.data_object_factory,
+            config=GapAssemblyToElasticAssemblyAnalysisConverter.Config()
         )
 
         CoreDataObject = source.data_object_factory  # noqa N806

@@ -64,7 +64,8 @@ class TestElasticSampleToStsSampleConverter(TestCase):
         core_data_object(source)
         core_data_object(destination)
         converter = ElasticSampleToStsSampleConverter(
-            data_object_factory=destination.data_object_factory
+            data_object_factory=destination.data_object_factory,
+            config=ElasticSampleToStsSampleConverter.Config()
         )
 
         CoreDataObject = source.data_object_factory  # noqa N806

@@ -75,6 +75,7 @@ class TestTreeofsexUploadToTreeofsexAttributeConverter(TestCase):
         )
         converter = TreeofsexUploadToTreeofsexAttributeConverter(
             data_object_factory=destination.data_object_factory,
+            config=TreeofsexUploadToTreeofsexAttributeConverter.Config(),
             user=user
         )
 

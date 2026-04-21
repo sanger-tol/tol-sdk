@@ -3,6 +3,7 @@
 # SPDX-License-Identifier: MIT
 
 from abc import ABC, abstractmethod
+from dataclasses import dataclass
 from datetime import datetime, timezone
 from itertools import chain, groupby
 from typing import Dict, Iterable, List, Optional, Type
@@ -16,6 +17,7 @@ from .data_object import DataObject
 from .data_object_converter import DataObjectToDataObjectOrUpdateConverter
 from .datasource import DataSource
 from .datasource_filter import DataSourceFilter
+from .factory import DataObjectFactory
 
 
 class DataLoader(ABC):
@@ -180,7 +182,8 @@ class DefaultDataLoader():
 
         if convert_class is not None:
             return convert_class(
-                data_object_factory=self._destination.data_object_factory
+                data_object_factory=self._destination.data_object_factory,
+                config=convert_class.Config()
             )
 
         raise Exception(
@@ -248,6 +251,21 @@ class GroupStatterDataLoader(DefaultDataLoader):
         data_loader = self
 
         class DefaultGroupStatToDataObjectConverter(DataObjectToDataObjectOrUpdateConverter):
+
+            @dataclass(slots=True, frozen=True, kw_only=True)
+            class Config:
+                pass
+
+            __slots__ = ['__config']
+            __config: Config
+
+            def __init__(
+                self, data_object_factory: DataObjectFactory,
+                config: Config
+            ) -> None:
+                super().__init__(data_object_factory)
+                self.__config = config
+
             def convert_iterable(
                 self,
                 inputs: Iterable[DataObject]
@@ -306,6 +324,7 @@ class GroupStatterDataLoader(DefaultDataLoader):
         audit: DataSource = None,
         convert_class: Optional[DataObjectToDataObjectOrUpdateConverter] = None,
         object_filters: Optional[DataSourceFilter] = None,
+        converter: Converter | None = None,
         group_statter_group_by: Optional[str] = None,
         group_statter_stats_fields: Optional[List[str]] = [],
         group_statter_stats: Optional[List[str]] = ['min', 'max']
@@ -318,7 +337,8 @@ class GroupStatterDataLoader(DefaultDataLoader):
             destination_object_type=destination_object_type,
             loader_name=loader_name, audit=audit,
             convert_class=convert_class,
-            object_filters=object_filters)
+            object_filters=object_filters,
+            converter=converter)
         self._group_statter_group_by = group_statter_group_by
         self._group_statter_stats_fields = group_statter_stats_fields
         self._group_statter_stats = group_statter_stats
@@ -366,13 +386,15 @@ class ObjectsDataLoader(DefaultDataLoader):
                  loader_name: str,
                  audit: Optional[DataSource] = None,
                  convert_class: Optional[DataObjectToDataObjectOrUpdateConverter] = None,
-                 objects: Optional[Iterable[DataObject]] = None):
+                 objects: Optional[Iterable[DataObject]] = None,
+                 converter: Converter | None = None):
         super().__init__(
             source=source, destination=destination,
             dependencies=dependencies, source_object_type=source_object_type,
             destination_object_type=destination_object_type,
             loader_name=loader_name, audit=audit,
-            convert_class=convert_class)
+            convert_class=convert_class,
+            converter=converter)
         self._objects = objects
 
     def _get_source_objects(self) -> Iterable:
