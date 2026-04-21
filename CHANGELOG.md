@@ -6,6 +6,12 @@ SPDX-License-Identifier: MIT
 
 # Changelog
 
+## tol-sdk `2.1.1`
+21-04-2026
+- Fixed actions by passing user_id as a default parameter to local actions,
+  this is required for status actions and audits of which user ran a local
+  action
+
 ## tol-sdk `2.1.0`
 20-04-2026
 - Added the `:aggregations` endpoint to replace the previous one by the same name,
