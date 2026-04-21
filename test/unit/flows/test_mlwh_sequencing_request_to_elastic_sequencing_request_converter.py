@@ -70,7 +70,8 @@ class TestMlwhSequencingRequestToElasticSequencingRequestConverter(TestCase):
         core_data_object(source)
         core_data_object(destination)
         converter = MlwhSequencingRequestToElasticSequencingRequestConverter(
-            data_object_factory=destination.data_object_factory
+            data_object_factory=destination.data_object_factory,
+            config=MlwhSequencingRequestToElasticSequencingRequestConverter.Config()
         )
 
         CoreDataObject = source.data_object_factory  # noqa N806

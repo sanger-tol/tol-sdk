@@ -68,7 +68,8 @@ class TestTolidSpecimenToElasticTolidConverter(TestCase):
         core_data_object(source)
         core_data_object(destination)
         converter = TolidSpecimenToElasticTolidConverter(
-            data_object_factory=destination.data_object_factory
+            data_object_factory=destination.data_object_factory,
+            config=TolidSpecimenToElasticTolidConverter.Config()
         )
 
         mock_created_at = datetime.now()

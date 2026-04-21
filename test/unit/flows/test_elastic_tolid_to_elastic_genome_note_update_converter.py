@@ -63,7 +63,8 @@ class TestElasticTolidToElasticGenomeNoteUpdateConverter(TestCase):
         core_data_object(source)
         core_data_object(destination)
         converter = ElasticTolidToElasticGenomeNoteUpdateConverter(
-            data_object_factory=destination.data_object_factory
+            data_object_factory=destination.data_object_factory,
+            config=ElasticTolidToElasticGenomeNoteUpdateConverter.Config()
         )
 
         CoreDataObject = source.data_object_factory  # noqa N806

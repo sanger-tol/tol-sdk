@@ -2,6 +2,7 @@
 #
 # SPDX-License-Identifier: MIT
 
+from dataclasses import dataclass
 from typing import (
     Iterable
 )
@@ -15,10 +16,18 @@ from ...core import (
 class ElasticObjectToPortaldbObjectConverter(
         DataObjectToDataObjectOrUpdateConverter):
 
-    def __init__(self, data_object_factory, fields: dict = {},
+    @dataclass(slots=True, frozen=True, kw_only=True)
+    class Config:
+        pass
+
+    __slots__ = ['__config']
+    __config: Config
+
+    def __init__(self, data_object_factory, config: Config, fields: dict = {},
                  destination_object_type: str = 'tolid_event',
                  id_field: str = 'id', incremental: bool = False):
         super().__init__(data_object_factory)
+        self.__config = config
         self.__fields = fields
         self.__destination_object_type = destination_object_type
         self.__id_field = id_field

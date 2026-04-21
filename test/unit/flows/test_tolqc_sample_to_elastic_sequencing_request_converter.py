@@ -115,7 +115,8 @@ class TestTolqcSampleToElasticSequencingRequestConverter(TestCase):
         core_data_object(source)
         core_data_object(destination)
         converter = TolqcSampleToElasticSequencingRequestConverter(
-            data_object_factory=destination.data_object_factory
+            data_object_factory=destination.data_object_factory,
+            config=TolqcSampleToElasticSequencingRequestConverter.Config()
         )
 
         CoreDataObject = source.data_object_factory # noqa N806

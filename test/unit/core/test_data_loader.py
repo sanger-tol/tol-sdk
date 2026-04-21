@@ -2,6 +2,7 @@
 #
 # SPDX-License-Identifier: MIT
 
+from dataclasses import dataclass
 from typing import Dict, Iterable, List, Optional
 from unittest import (TestCase)
 
@@ -25,6 +26,13 @@ from tol.core.operator import (
 
 
 class _TestDataObjectToDataObjectConverter(DataObjectToDataObjectOrUpdateConverter):
+
+    @dataclass(slots=True, frozen=True, kw_only=True)
+    class Config:
+        pass
+
+    def __init__(self, data_object_factory, config: Config = None) -> None:
+        super().__init__(data_object_factory)
 
     def convert(self, data_object: DataObject) -> Iterable[DataObject]:
         CoreDataObject = self._data_object_factory  # noqa N806

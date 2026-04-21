@@ -88,7 +88,8 @@ class TestElasticSampleToBenchlingTissueUpdateConverter(TestCase):
         core_data_object(source)
         core_data_object(destination)
         converter = ElasticSampleToBenchlingTissueUpdateConverter(
-            data_object_factory=destination.data_object_factory
+            data_object_factory=destination.data_object_factory,
+            config=ElasticSampleToBenchlingTissueUpdateConverter.Config()
         )
 
         CoreDataObject = source.data_object_factory  # noqa N806
