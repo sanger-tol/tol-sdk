@@ -8,9 +8,15 @@ from unittest.mock import MagicMock, Mock, PropertyMock, create_autospec, patch
 import pytest
 
 from tol.api_base.controller import Controller
-from tol.api_base.misc import AggregationBody, AggregationParameters, ListGetParameters
+from tol.api_base.misc import (
+    AggregationArgs,
+    LegacyAggregationBody,
+    LegacyAggregationParameters,
+    ListGetParameters,
+)
 from tol.api_base.misc.auth_context import AuthContext
 from tol.api_client.exception import (
+    BadArgumentCombinationError,
     ObjectNotFoundByIdException,
     RecursiveRelationNotFoundException,
     UninheritedOperationError,
@@ -19,7 +25,14 @@ from tol.api_client.exception import (
 from tol.api_client.view import DefaultView, View
 from tol.core import DataSource, DataSourceError, DataSourceFilter, ReqFieldsTree, core_data_object
 from tol.core.data_object import DataObject
-from tol.core.operator import Aggregator, DetailGetter, PageGetter, Relational
+from tol.core.operator import (
+    AggregationResult,
+    Aggregator,
+    DetailGetter,
+    LegacyAggregator,
+    PageGetter,
+    Relational
+)
 
 
 class _TestDataSource1(DataSource, DetailGetter):
@@ -51,7 +64,7 @@ class _TestDataSource2(DataSource, PageGetter):
         return {'test_A': {}, 'test_B': {}}
 
 
-class _TestDataSource3(DataSource, Aggregator, PageGetter):
+class _TestDataSource3(DataSource, LegacyAggregator, PageGetter, Aggregator):
     """Accounts for page number and size in results"""
 
     def get_list_page(
@@ -77,7 +90,7 @@ class _TestDataSource3(DataSource, Aggregator, PageGetter):
             for i in range(page_size)
         ], 560  # a very arbitrary number
 
-    def get_aggregations(
+    def get_aggregations_legacy(
         self, object_type: str, aggregations: Dict, object_filters: DataSourceFilter = None
     ) -> Dict:
         return {
@@ -96,6 +109,44 @@ class _TestDataSource3(DataSource, Aggregator, PageGetter):
                 ]
             }
         }
+
+    def get_aggregations(
+        self,
+        object_type: str,
+        object_filters: DataSourceFilter | None = None,
+        *,
+        x_axis: str,
+        y_axis: str | None = None,
+        date_interval: str | None = None,
+        break_down_by: str | None = None,
+        stat: str | None = None,
+        stat_field: str | None = None,
+        cumulative: bool | None = None,
+        maximum_categories: int | None = None
+    ) -> AggregationResult | None:
+        # The mock invalid combination is a non-date field with a date_interval
+        # (see test_exception_on_invalid_aggregation_combination)
+        if x_axis == 'categorical_field' and date_interval is not None:
+            # `None` should cause a BadArgumentCombinationError to be raised by the controller
+            return None
+
+        # Else assume the combination is fine (and we're in test_aggregations),
+        # so simply return a result
+        return [
+            {
+                'key': None,
+                'data': [
+                    {
+                        'x': '2015-04-01T00:00:00.000Z',
+                        'y': 3,
+                    },
+                    {
+                        'x': '2015-05-01T00:00:00.000Z',
+                        'y': 0,
+                    },
+                ]
+            },
+        ]
 
     @property
     def supported_types(self):
@@ -180,14 +231,57 @@ class TestController:
 
         rft = ReqFieldsTree('test_X', ds_3)
         controller = Controller(ds_3, DefaultView(rft), rft)
-        parsed = AggregationParameters(
+        parsed_args = AggregationArgs({
+            'filter': '{"and_": {"column1": {"eq": "value1"}}}',
+            'x_axis': 'complete_date',
+            'date_interval': '1M',
+        })
+        expected = [{
+            'key': None,
+            'data': [
+                {
+                    'x': '2015-04-01T00:00:00.000Z',
+                    'y': 3
+                },
+                {
+                    'x': '2015-05-01T00:00:00.000Z',
+                    'y': 0
+                }
+            ]
+        }]
+        observed = controller.post_aggregations('test_X', parsed_args)
+        assert expected == observed
+
+    def test_exception_on_invalid_aggregation_combination(self):
+        """
+        When every aggregation argument is valid, but their combination cannot map to
+        an available aggregation, a 422 status code should be returned
+        """
+        rft = ReqFieldsTree('test_X', ds_3)
+        controller = Controller(ds_3, DefaultView(rft), rft)
+        parsed_args = AggregationArgs({
+            'filter': '{"and_": {"column1": {"eq": "value1" }}}',
+            'x_axis': 'categorical_field',
+            'date_interval': '1M',
+        })
+
+        with pytest.raises(BadArgumentCombinationError) as e:
+            controller.post_aggregations('test_X', parsed_args)
+        assert e.value.errors[0]['detail'] == 'Invalid aggregation arguments combination'
+
+    def test_legacy_aggregations(self):
+        """Check that legacy aggregations are working"""
+
+        rft = ReqFieldsTree('test_X', ds_3)
+        controller = Controller(ds_3, DefaultView(rft), rft)
+        parsed = LegacyAggregationParameters(
             {
                 'filter': """
                 {"exact": {"column1": "value1"}}
             """
             }
         )
-        body = AggregationBody(
+        body = LegacyAggregationBody(
             {
                 'aggs': {
                     'completed_over_time': {
@@ -218,7 +312,7 @@ class TestController:
             },
             'data': [],
         }
-        observed = controller.post_aggregations('test_X', parsed, body)
+        observed = controller.post_aggregations_legacy('test_X', parsed, body)
         assert expected == observed
 
     def test_unsupported_operation(self):
@@ -250,7 +344,7 @@ class TestController:
         with pytest.raises(UnsupportedOperationError):
             controller.get_list('test', query_args=query_args)
         with pytest.raises(UnsupportedOperationError):
-            controller.post_aggregations('test', MagicMock(), MagicMock(), MagicMock())
+            controller.post_aggregations_legacy('test', MagicMock(), MagicMock(), MagicMock())
 
     def test_operation_implemented_no_abc(self):
         """

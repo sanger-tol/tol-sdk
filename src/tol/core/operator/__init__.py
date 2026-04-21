@@ -4,7 +4,7 @@
 
 from typing import Union
 
-from .aggregator import Aggregator
+from .aggregator import Aggregator, AggregationResult  # noqa
 from .counter import Counter
 from .cursor import Cursor
 from .declare import get_operator_member_names  # noqa
@@ -14,6 +14,7 @@ from .enricher import Enricher
 from .enum import OperatorMethod, RelationWriteMode, ReturnMode  # noqa
 from .group_statter import GroupStatter
 from .inserter import Inserter
+from .legacy_aggregator import LegacyAggregator
 from .list_getter import ListGetter
 from .operator_config import OperatorDict  # noqa
 from .page_getter import PageGetter
@@ -35,6 +36,7 @@ ALL_OPERATORS = (
     Enricher,
     GroupStatter,
     Inserter,
+    LegacyAggregator,
     ListGetter,
     PageGetter,
     Statter,
@@ -56,6 +58,7 @@ class AllOperatorType(
     Enricher,
     GroupStatter,
     Inserter,
+    LegacyAggregator,
     ListGetter,
     PageGetter,
     Statter,
@@ -80,6 +83,7 @@ Operator = Union[
     Enricher,
     GroupStatter,
     Inserter,
+    LegacyAggregator,
     ListGetter,
     PageGetter,
     Relational,

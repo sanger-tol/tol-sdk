@@ -492,6 +492,124 @@ class TestElasticDataSource:
         assert mock_elastic_data_source._build_elasticsearch_sort('obj_type', sort_by) == expected
 
     def test_get_aggregations(self, mock_elastic_data_source: ElasticDataSource):
+        """
+        Checks that the correct aggregation method is called for the arguments provided
+        """
+        # Replace the aggregation methods with mocks.
+        # We're not testing their functionality here, only which one was called
+        # (for functionality, see the tests for ElasticAggregator)
+        mock_elastic_data_source._get_date_aggregation = mock.Mock(return_value={})
+        mock_elastic_data_source._get_date_aggregation_segmented = mock.Mock(return_value={})
+        mock_elastic_data_source._get_categorical_aggregation = mock.Mock(return_value={})
+        mock_elastic_data_source._get_categorical_aggregation_segmented = mock.Mock(
+            return_value={}
+        )
+        # TODO: Add scatter ones here when that's done
+
+        # Date aggregation combination
+        result = mock_elastic_data_source.get_aggregations(
+            'obj_type',
+            None,
+            x_axis='datefield',
+            date_interval='1M',
+        )
+        assert result == {}
+        mock_elastic_data_source._get_date_aggregation.assert_called_once()
+
+        # Date segmented aggregation combination
+        result = mock_elastic_data_source.get_aggregations(
+            'obj_type',
+            None,
+            x_axis='datefield',
+            date_interval='1M',
+            break_down_by='field3',
+        )
+        assert result == {}
+        mock_elastic_data_source._get_date_aggregation_segmented.assert_called_once()
+
+        # TODO Scatter aggregation here
+
+        # Categorical aggregation combination
+        result = mock_elastic_data_source.get_aggregations(
+            'obj_type',
+            None,
+            x_axis='field4',
+        )
+        assert result == {}
+        mock_elastic_data_source._get_categorical_aggregation.assert_called_once()
+
+        # Categorical segmented aggregation combination
+        result = mock_elastic_data_source.get_aggregations(
+            'obj_type',
+            None,
+            x_axis='field4',
+            break_down_by='field3',
+        )
+        assert result == {}
+        mock_elastic_data_source._get_categorical_aggregation_segmented.assert_called_once()
+
+        # Invalid combination
+        result = mock_elastic_data_source.get_aggregations(
+            'obj_type',
+            None,
+            x_axis='field3',
+            maximum_categories=8,
+        )
+        assert result is None
+
+    def test_cumulative_aggregation(self, mock_elastic_data_source: ElasticDataSource):
+        """
+        Check whether the accumulation post-processing step functions correctly.
+
+        This step is separate to the aggregation performed. A date aggregation is used here,
+        but it could be any one.
+        This test is structured similarly to test_date_aggregation in the ElasticAggregator tests,
+        so if that changes this should too
+        """
+        # Mock the result of the Elastic API call
+        mock_elastic_data_source.es.search.return_value = {
+            'aggregations': {
+                'date-aggregation': {
+                    'buckets': [
+                        {
+                            'doc_count': 27,
+                            'key': 1735689600,
+                            'key_as_string': '2025-01-01',
+                        },
+                        {
+                            'doc_count': 30,
+                            'key': 1735776000,
+                            'key_as_string': '2025-01-02',
+                        }
+                    ]
+                }
+            }
+        }
+
+        expected_result = [{
+            'key': None,
+            'data': [
+                {
+                    'x': '2025-01-01',
+                    'y': 27,
+                },
+                {
+                    'x': '2025-01-02',
+                    'y': 57,
+                },
+            ]
+        }]
+        actual_result = mock_elastic_data_source.get_aggregations(
+            'obj_type',
+            None,
+            x_axis='datefield',
+            date_interval='1M',
+            cumulative=True,
+        )
+        assert actual_result == expected_result
+        mock_elastic_data_source.es.search.assert_called_once()
+
+    def test_get_aggregations_legacy(self, mock_elastic_data_source: ElasticDataSource):
         agg_result = {
             'my-agg-name': {
                 'doc_count_error_upper_bound': 0,
@@ -510,7 +628,7 @@ class TestElasticDataSource:
                 }
             }
         }
-        returned = mock_elastic_data_source.get_aggregations(
+        returned = mock_elastic_data_source.get_aggregations_legacy(
             'index',
             aggregations=aggregations
         )

@@ -22,15 +22,17 @@ from typing import Any, Callable, Iterable, Optional, Type
 from .auth import AuthInspector
 from .misc import (
     ActionParameters,
-    AggregationBody,
-    AggregationParameters,
+    AggregationArgs,
     CtxGetter,
     GroupStatsParameters,
+    LegacyAggregationBody,
+    LegacyAggregationParameters,
     ListGetParameters,
     StatsParameters,
     default_ctx_getter,
 )
 from ..api_client.exception import (
+    BadArgumentCombinationError,
     ObjectNotFoundByIdException,
     RecursiveRelationNotFoundException,
     UninheritedOperationError,
@@ -47,6 +49,7 @@ from ..core.operator import (
     DetailGetter,
     GroupStatter,
     Inserter,
+    LegacyAggregator,
     Operator,
     OperatorMethod,
     PageGetter,
@@ -487,8 +490,33 @@ class Controller:
     def post_aggregations(
         self,
         object_type: str,
-        query_args: AggregationParameters,
-        body: AggregationBody,
+        aggregation_args: AggregationArgs,
+        ext_and: AndFilter | None = None,
+    ) -> ResponseDict:
+        aggregations = self.data_source.get_aggregations(
+            object_type=object_type,
+            object_filters=self.__combine_filters(aggregation_args.filter, ext_and),
+            x_axis=aggregation_args.x_axis,
+            y_axis=aggregation_args.y_axis,
+            date_interval=aggregation_args.date_interval,
+            break_down_by=aggregation_args.break_down_by,
+            stat=aggregation_args.stat,
+            stat_field=aggregation_args.stat_field,
+            cumulative=aggregation_args.cumulative,
+            maximum_categories=aggregation_args.maximum_categories,
+        )
+
+        if aggregations is None:
+            raise BadArgumentCombinationError('Invalid aggregation arguments combination')
+
+        return aggregations
+
+    @validate(LegacyAggregator, 'get_aggregations_legacy', OperatorMethod.AGGREGATE_LEGACY)
+    def post_aggregations_legacy(
+        self,
+        object_type: str,
+        query_args: LegacyAggregationParameters,
+        body: LegacyAggregationBody,
         ext_and: Optional[AndFilter] = None,
     ) -> ResponseDict:
         """
@@ -509,7 +537,7 @@ class Controller:
         Raises:
             UnsupportedOperationError: If the data source doesn't support aggregation.
         """
-        aggregation_results = self.__data_source.get_aggregations(
+        aggregation_results = self.__data_source.get_aggregations_legacy(
             object_type,
             object_filters=self.__combine_filters(query_args.filter, ext_and),
             aggregations=body.aggs,

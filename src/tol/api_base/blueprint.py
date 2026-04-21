@@ -21,10 +21,11 @@ from .auth.error import AuthError
 from .controller import Controller
 from .misc import (
     ActionParameters,
-    AggregationBody,
-    AggregationParameters,
+    AggregationArgs,
     GroupStatsParameters,
     JsonApiRequestBody,
+    LegacyAggregationBody,
+    LegacyAggregationParameters,
     ListGetParameters,
     RelataionshipHopsParser,
     StatsParameters,
@@ -215,6 +216,7 @@ def _core_blueprint(
         - POST /<object_type>:insert: Insert new objects
         - POST /<object_type>:upsert: Insert or update objects
         - POST /<object_type>:aggregations: Get aggregated data
+        - POST /<object_type>:aggregations_legacy: Get aggregated data (LEGACY)
         - POST /<object_type>:cursor: Get cursor-based pagination
         - GET /<object_type>:to-one/<object_id>/<hops_suffix>: Navigate to-one relationships
         - GET /<object_type>:to-many/<object_id>/<relationship_name>: Get to-many relationships
@@ -356,9 +358,16 @@ def _core_blueprint(
     def get_aggregations(*, object_type: str):
         """Get aggregated data for objects of the specified type."""
         controller = __new_controller(object_type)
-        request_args = AggregationParameters(request.args | request.json)
-        body = AggregationBody(request.json)
-        return controller.post_aggregations(object_type, request_args, body)
+        request_args = AggregationArgs(request.json, request.args)
+        return controller.post_aggregations(object_type, request_args)
+
+    @data_handler.route('/<object_type>:aggregations_legacy', methods=['POST'])
+    def get_aggregations_legacy(*, object_type: str):
+        """Get aggregated data for objects of the specified type."""
+        controller = __new_controller(object_type)
+        request_args = LegacyAggregationParameters(request.args | request.json)
+        body = LegacyAggregationBody(request.json)
+        return controller.post_aggregations_legacy(object_type, request_args, body)
 
     @data_handler.post('/<object_type>:cursor')
     def get_cursor_page(*, object_type: str):
