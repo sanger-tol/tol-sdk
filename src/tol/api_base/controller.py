@@ -866,7 +866,7 @@ class Controller:
                     404
                 )
 
-            class_params = {**action_params, **params}
+            class_params = {**action_params, **params, 'user_id': user_id}
 
             action_instance = action_class()
             status = action_instance.run(ids=ids, params=class_params,
