@@ -23,6 +23,7 @@ class IncomingGenomeNoteToGenomeNoteJsonConverter(DataObjectToDataObjectOrUpdate
         'methods',
         'assembly_stats',
         'reviewer_reports',
+        'publication_metadata'
     )
 
     __slots__ = ['__config']
