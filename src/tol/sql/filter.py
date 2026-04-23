@@ -6,14 +6,14 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from collections import defaultdict
-from collections.abc import Iterable, Iterator, MutableMapping
+from collections.abc import MutableMapping
 from functools import reduce
 from itertools import chain
-from typing import Any, Dict, Optional, Tuple, Type
+from typing import Any, Dict, Iterable, Iterator, Optional, Tuple
 
-from sqlalchemy import BinaryExpression, cast, inspect, not_
+from sqlalchemy import BinaryExpression, Select, cast, inspect, not_, select
 from sqlalchemy.dialects.postgresql import JSONB
-from sqlalchemy.orm import MappedColumn, Query, Session, aliased
+from sqlalchemy.orm import MappedColumn, Query, aliased
 from sqlalchemy.orm.util import AliasedClass
 
 from .model import Model
@@ -30,8 +30,8 @@ class AliasTrie(MutableMapping[str, 'AliasTrie']):
     def alias(self) -> AliasedClass[Model]:
         return self.__alias
 
-    def __getitem__(self, key: str) -> AliasTrie:
-        return self.__dict[key]
+    def __getitem__(self, k: str) -> AliasTrie:
+        return self.__dict[k]
 
     def __setitem__(self, key: str, value: AliasTrie) -> None:
         self.__dict[key] = value
@@ -53,8 +53,6 @@ class DatabaseFilter(ABC):
     def filter(  # noqa A003
         self,
         query: Query[Model],
-        tablename: str,
-        model_dict: Dict[str, Type[Model]]
     ) -> Query[Model]:
         """Filter the Query object using the given model"""
 
@@ -67,9 +65,7 @@ class DatabaseFilter(ABC):
         """Adds a relation field to the filter, for joining later"""
 
     @abstractmethod
-    def get_query(
-        self, session: Session, base_model: type[Model]
-    ) -> tuple[Query[Model], AliasedClass[Model]]:
+    def get_query(self, base_model: type[Model]) -> Select:
         """Gets an aliased query"""
 
 
@@ -89,10 +85,8 @@ class DefaultDatabaseFilter(DatabaseFilter):
 
     def filter(  # noqa A003
         self,
-        query: Query[Model],
-        __tablename: str,
-        __model_dict: Dict[str, Type[Model]]
-    ) -> Query[Model]:
+        query: Select,
+    ) -> Select:
 
         self.__rel_keys.update(
             self.__generate_relational_keys()
@@ -119,10 +113,11 @@ class DefaultDatabaseFilter(DatabaseFilter):
 
         return query
 
-    def get_query(self, session: Session, base_model: Model) -> [Query[Model]]:
+    def get_query(self, base_model: type[Model]) -> Select:
         self.__base_model = base_model
 
-        return session.query(base_model)
+        id_column = base_model.get_id_column()
+        return select(id_column).distinct()
 
     def __apply_joins(
         self,
@@ -176,13 +171,11 @@ class DefaultDatabaseFilter(DatabaseFilter):
                     )
                     current[part] = step
                     current = step
-                else:
-                    current = current[part]
                 current_alias = current.alias
 
         return trie
 
-    def __generate_relational_keys(self) -> Iterator[str]:
+    def __generate_relational_keys(self) -> Iterable[str]:
         if not self.__filter:
             return []
 
@@ -515,21 +508,16 @@ class DefaultDatabaseFilter(DatabaseFilter):
     def get_column(self, key: str, model: type[Any] | None = None) -> MappedColumn:
         model = self.__alias_trie.alias if model is None else model
         if key == 'id':
-            return self.__get_id_column(model)
+            return model.get_id_column()
         elif '.' in key:
             return self.__get_relation_column(key)
         else:
             return self.__get_column_attr(model, key)
 
-    def __get_id_column(self, model: type[Model]) -> MappedColumn:
-        og_model: type[Model] = inspect(model).mapper.class_
-        id_key = og_model.get_id_column_name()
-        return self.__get_column_attr(model, id_key)
-
     def __get_column_attr(self, model: AliasedClass[Model], key: str) -> MappedColumn:
-        for col in inspect(model).selectable.c:
-            if col.key == key:
-                return col
+        col = getattr(inspect(model).selectable.c, key)
+        if col is not None:
+            return col
         msg = f"Failed to find column '{key}' in '{model}'"
         raise ValueError(msg)
 
@@ -538,14 +526,14 @@ class DefaultDatabaseFilter(DatabaseFilter):
         key: str
     ) -> MappedColumn:
 
-        (*initial, column) = key.split('.')
+        (*path, column) = key.split('.')
 
-        if not initial:
+        if not path:
             return self.get_column(key)
 
         trie = self.__alias_trie
-        for i in initial:
-            trie = trie[i]
+        for e in path:
+            trie = trie[e]
 
         return self.get_column(
             column,

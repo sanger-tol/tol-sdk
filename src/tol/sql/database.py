@@ -6,11 +6,11 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from collections.abc import Iterable
-from typing import Any, Dict, List, Optional, Type
+from typing import Any
 
-from sqlalchemy import distinct, func
+from sqlalchemy import Select, distinct, func, select
 from sqlalchemy.exc import IntegrityError
-from sqlalchemy.orm import Load, MappedColumn, Query, Session, joinedload, load_only, raiseload
+from sqlalchemy.orm import Load, MappedColumn, Session, joinedload, load_only, raiseload
 from sqlalchemy.orm.attributes import flag_modified
 
 from .filter import DatabaseFilter
@@ -33,7 +33,7 @@ class Database(ABC):
         instance_id: Any,
         in_session: Session,
         requested_tree: ReqFieldsTree | None = None,
-    ) -> Optional[Model]:
+    ) -> Model | None:
         """
         Gets a single instance by its instance-ID, or None if not found.
 
@@ -46,10 +46,10 @@ class Database(ABC):
         self,
         tablename: str,
         in_session: Session,
-        filters: Optional[DatabaseFilter] = None,
-        sort_by: Optional[DatabaseSorter] = None,
-        offset: Optional[int] = None,
-        limit: Optional[int] = None,
+        filters: DatabaseFilter | None = None,
+        sort_by: DatabaseSorter | None = None,
+        offset: int | None = None,
+        limit: int | None = None,
         requested_tree: ReqFieldsTree | None = None,
     ) -> Iterable[Model]:
         """
@@ -62,7 +62,7 @@ class Database(ABC):
         self,
         tablename: str,
         in_session: Session,
-        filters: Optional[DatabaseFilter] = None
+        filters: DatabaseFilter | None = None
     ) -> int:
         """
         Counts the total number of `Model` instances of the given
@@ -75,7 +75,7 @@ class Database(ABC):
         tablename: str,
         instance_id: Any,
         in_session: Session,
-        user_id: Optional[str] = None
+        user_id: str | None = None
     ) -> None:
         """
         Deletes the `Model` instance of specified tablename and
@@ -87,7 +87,7 @@ class Database(ABC):
         self,
         instance: Model,
         in_session: Session,
-        user_id: Optional[str] = None
+        user_id: str | None = None
     ) -> Model:
         """Performs an "upsert" on the given `Model` instance."""
 
@@ -96,7 +96,7 @@ class Database(ABC):
         self,
         instance: Model,
         in_session: Session,
-        user_id: Optional[str] = None
+        user_id: str | None = None
     ) -> Model:
         """
         "Inserts" the given `Model` instance.
@@ -111,7 +111,7 @@ class Database(ABC):
         instance_id: str,
         relationship_name: str,
         in_session: Session
-    ) -> Optional[Model]:
+    ) -> Model | None:
         """
         For the instance of given tablename and ID, gets the to-one
         instance under the given relationship.
@@ -178,7 +178,7 @@ class DefaultDatabase(Database):
     def __init__(
         self,
         session_factory: SessionFactory,
-        models: List[Type[Model]]
+        models: list[type[Model]]
     ) -> None:
 
         self.__session_factory = session_factory
@@ -196,7 +196,7 @@ class DefaultDatabase(Database):
         instance_id: Any,
         in_session: Session,
         requested_tree: ReqFieldsTree | None = None,
-    ) -> Optional[Model]:
+    ) -> Model | None:
         result = self.__get_instance_by_id(
             tablename,
             instance_id,
@@ -209,49 +209,70 @@ class DefaultDatabase(Database):
         self,
         tablename: str,
         in_session: Session,
-        filters: Optional[DatabaseFilter] = None,
-        sort_by: Optional[DatabaseSorter] = None,
-        offset: Optional[int] = None,
-        limit: Optional[int] = None,
+        filters: DatabaseFilter | None = None,
+        sort_by: DatabaseSorter | None = None,
+        offset: int | None = None,
+        limit: int | None = None,
         requested_tree: ReqFieldsTree | None = None,
     ) -> Iterable[Model]:
 
-        _, query = self.__get_model_query(
+        model_dict = self.__tablename_model_dict
+        model, query = self.__get_model_query(
             tablename,
-            in_session,
             requested_tree=requested_tree,
-            filters=filters,
         )
-        if filters is not None:
+
+        filter_query = None
+        if filters:
             if sort_by is not None:
                 filters.add_field(sort_by.term)
-            query = filters.filter(query, tablename, self.__tablename_model_dict)
-        if sort_by is not None:
-            query = sort_by.sort(query, tablename, self.__tablename_model_dict, filters)
+            filter_query = self.__get_filter_query(tablename, filters)
+            if sort_by is not None:
+                filter_query = sort_by.sort(filter_query, tablename, model_dict, filters)
+
+        if sort_by is None:
+            query = query.order_by(model.get_id_column())
+        else:
+            query = sort_by.sort(query, tablename, model_dict)
+
         if limit is not None and offset is not None:
-            query = query.limit(limit).offset(offset)
-        results = query.all()
+            if filters:
+                filter_query = filter_query.limit(limit).offset(offset)
+            else:
+                query = query.limit(limit).offset(offset)
+
+        if filters:
+            # Add the filter query as a common table expression
+            filter_cte = filter_query.cte()
+            query = query.join(
+                filter_cte,
+                getattr(filter_cte.c, model.get_id_column_name()) == model.get_id_column(),
+            )
+        results = in_session.scalars(query).unique().all()
         return results
 
     def count(
         self,
         tablename: str,
         in_session: Session,
-        filters: Optional[DatabaseFilter] = None
+        filters: DatabaseFilter | None = None,
     ) -> int:
 
-        _, query = self.__get_model_query(tablename, in_session, filters=filters)
-        if filters is not None:
-            query = filters.filter(query, tablename, self.__tablename_model_dict)
-        count = query.count()
-        return count
+        model = self.__tablename_model_dict[tablename]
+        query = (
+            self.__get_filter_query(tablename, filters=filters)
+            if filters
+            else select(model.get_id_column())
+        )
+        (n,) = in_session.execute(select(func.count()).select_from(query.subquery())).one()
+        return n
 
     def delete(
         self,
         tablename: str,
         instance_id: Any,
         in_session: Session,
-        user_id: Optional[str] = None
+        user_id: str | None = None
     ) -> None:
 
         instance = self.__get_instance_by_id(
@@ -272,7 +293,7 @@ class DefaultDatabase(Database):
         self,
         instance: Model,
         in_session: Session,
-        user_id: Optional[str] = None,
+        user_id: str | None = None,
         merge_collections: bool | None = None,
     ) -> Model:
 
@@ -293,7 +314,7 @@ class DefaultDatabase(Database):
         self,
         instance: Model,
         in_session: Session,
-        user_id: Optional[str] = None,
+        user_id: str | None = None,
     ) -> Model:
 
         in_session.add(instance)
@@ -311,7 +332,7 @@ class DefaultDatabase(Database):
         instance_id: str,
         relationship_name: str,
         in_session: Session,
-    ) -> Optional[Model]:
+    ) -> Model | None:
 
         instance = self.__get_instance_by_id(
             tablename,
@@ -351,34 +372,37 @@ class DefaultDatabase(Database):
         filters: DatabaseFilter | None = None,
     ) -> list[dict[str, dict[str, Any]]]:
 
-        model, query = self.__get_model_query(
-            tablename,
-            in_session,
-            filters=filters,
-        )
+        model = self.__tablename_model_dict[tablename]
+        query = select().select_from(model)
+        filter_query = self.__get_filter_query(tablename, filters=filters) if filters else None
 
-        query = self.__filter_query(query, tablename, filters)
-        query, s_columns = self.__apply_stats(
+        query = self.__apply_group_by(
+            query,
+            model,
+            group_by,
+            filters,
+        )
+        query = self.__apply_stats(
             query,
             filters,
             model,
             stats_fields,
             stats,
         )
-        query, g_columns = self.__apply_group_by(
-            query,
-            model,
-            group_by,
-            filters,
-        )
+
+        if filters:
+            filter_cte = filter_query.cte()
+            query = query.join(
+                filter_cte,
+                getattr(filter_cte.c, model.get_id_column_name()) == model.get_id_column(),
+            )
 
         return self.__get_stats_from_query(
+            in_session,
             query,
             group_by,
             stats_fields,
             stats,
-            g_columns,
-            s_columns,
         )
 
     @property
@@ -391,19 +415,14 @@ class DefaultDatabase(Database):
 
     def __get_stats_from_query(
         self,
-        query: Query,
+        in_session: Session,
+        query: Select,
         group_by: list[str],
         stats_fields: list[str],
         stats: list[str],
-        group_by_columns: list[MappedColumn],
-        stat_columns: list[MappedColumn],
     ) -> list[dict[str, dict[str, Any]]]:
 
-        query = query.with_entities(
-            *group_by_columns,
-            *stat_columns,
-        )
-        results = query.all()
+        results = in_session.execute(query).all()
 
         return self.__parse_results(
             results,
@@ -438,15 +457,15 @@ class DefaultDatabase(Database):
         stats: list[str],
     ) -> dict[str, dict[str, Any]]:
 
-        group_keys = self.__parse_group_keys(
-            result,
-            group_by,
-        )
         stats_dict = self.__parse_stats_dict(
             result,
             group_by,
             stats_fields,
             stats,
+        )
+        group_keys = self.__parse_group_keys(
+            result,
+            group_by,
         )
 
         return {
@@ -488,12 +507,12 @@ class DefaultDatabase(Database):
 
     def __apply_stats(
         self,
-        query: Query,
+        query: Select,
         filters: DatabaseFilter,
         model: type[Model],
         stats_fields: list[str],
         stats: list[str],
-    ) -> tuple[Query, list[MappedColumn]]:
+    ) -> Select:
 
         stat_columns = []
 
@@ -511,7 +530,7 @@ class DefaultDatabase(Database):
 
         stat_columns.append(func.count())
 
-        return query, stat_columns
+        return query.add_columns(*stat_columns)
 
     def __apply_stats_for_field(
         self,
@@ -559,11 +578,11 @@ class DefaultDatabase(Database):
 
     def __apply_group_by(
         self,
-        query: Query,
+        query: Select,
         model: type[Model],
         group_by: list[str],
         filters: DatabaseFilter,
-    ) -> tuple[Query, list[MappedColumn]]:
+    ) -> Select:
         """Must be done last in `get_group_stats()`."""
 
         g_columns = []
@@ -575,23 +594,7 @@ class DefaultDatabase(Database):
             )
             g_columns.append(g_column)
 
-        return query.group_by(*g_columns).order_by(*g_columns), g_columns
-
-    def __filter_query(
-        self,
-        query: Query,
-        tablename: str,
-        filters: DatabaseFilter | None,
-    ) -> Query:
-
-        if filters:
-            query = filters.filter(
-                query,
-                tablename,
-                self.__tablename_model_dict,
-            )
-
-        return query
+        return query.group_by(*g_columns).order_by(*g_columns).add_columns(*g_columns)
 
     def __get_attribute_types(self) -> dict[str, dict[str, type]]:
         return {
@@ -608,17 +611,23 @@ class DefaultDatabase(Database):
             for t, m in self.__tablename_model_dict.items()
         }
 
+    def __get_filter_query(
+        self,
+        tablename: str,
+        filters: DatabaseFilter,
+    ):
+        model = self.__tablename_model_dict[tablename]
+        query = filters.get_query(model)
+        return filters.filter(query)
+
     def __get_model_query(
         self,
         tablename: str,
-        in_session: Session,
         requested_tree: ReqFieldsTree | None = None,
-        filters: DatabaseFilter | None = None,
-    ) -> tuple[Type[Model], Query]:
+    ) -> tuple[type[Model], Select]:
 
         model = self.__tablename_model_dict[tablename]
-        query = filters.get_query(in_session, model) if filters else in_session.query(model)
-
+        query = select(model).select_from(model)
         if requested_tree:
             query = self.add_options_to_query(query, tablename, requested_tree)
 
@@ -629,7 +638,7 @@ class DefaultDatabase(Database):
         in_session: Session,
         instance: Model,
         operation: str,
-        user_id: Optional[str] = None,
+        user_id: str | None = None,
         is_delete: bool = False
     ) -> Model | None:
 
@@ -648,7 +657,7 @@ class DefaultDatabase(Database):
         self,
         instance: Model,
         in_session: Session,
-        user_id: Optional[str]
+        user_id: str | None,
     ) -> None:
 
         instance.before_commit(user_id=user_id)
@@ -660,24 +669,24 @@ class DefaultDatabase(Database):
         instance_id: str,
         in_session: Session,
         requested_tree: ReqFieldsTree | None = None,
-    ) -> Optional[Model]:
+    ) -> Model | None:
         """
         Gets an instance by its tablename and id.
         """
 
         model, query = self.__get_model_query(
             tablename,
-            in_session,
             requested_tree=requested_tree,
         )
-        id_column = getattr(model, model.get_id_column_name())
-        result = query.filter(id_column == instance_id).one_or_none()
+        result = in_session.scalars(
+            query.filter(model.get_id_column() == instance_id)
+        ).one_or_none()
         return result
 
     def __get_tablename_model_dict(
         self,
-        models: List[Type[Model]]
-    ) -> Dict[str, Type[Model]]:
+        models: list[type[Model]]
+    ) -> dict[str, type[Model]]:
 
         return {
             m.get_table_name(): m for m in models
@@ -805,7 +814,7 @@ class DefaultDatabase(Database):
     ) -> list[str]:
 
         return [
-            k for k in instance.get_attribute_types().keys()
+            k for k in instance.get_attribute_types().keys()  # noqa: SIM118
             if self.__is_type(instance, k, type_)
         ]
 
@@ -839,7 +848,7 @@ class DefaultDatabase(Database):
 
     def add_options_to_query(
         self,
-        query: Query,
+        query: Select,
         tablename: str,
         requested_tree: ReqFieldsTree,
     ):
@@ -847,14 +856,18 @@ class DefaultDatabase(Database):
         # `raiseload(*)` acts as a trap, raising an exception if any methods
         # on the returned objects are called which would trigger loading data
         # from the database via another SELECT.
-        return query.options(options, raiseload('*')) if options else query
+        if options:
+            for load in options:
+                query = query.options(load)
+            query = query.options(raiseload('*'))
+        return query
 
     def joinedload_options(self, tree: ReqFieldsTree) -> list[Load]:
         """
         Returns a list of SQLAlchemy `Load` objects based on the supplied
         `ReqFieldsTree` which specify which related tables to join into and
         which attribute columns to select.  This list of `Load` objects can
-        then be added to a SQLAlchemy `Query` via a call to `options()`.
+        then be added to a SQLAlchemy `Select` via `options()`.
         """
         sub: SubPath = None, tree
         return list(self.__joinedload_iter(sub))

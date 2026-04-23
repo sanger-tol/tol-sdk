@@ -48,6 +48,7 @@ class DefaultDatabaseSorter(DatabaseSorter):
 
         if filters is not None:
             column = filters.get_column(self.term)
+            query = query.add_columns(column)
         else:
             column, query = self.__join_and_get_column(
                 query,
@@ -69,6 +70,9 @@ class DefaultDatabaseSorter(DatabaseSorter):
         for relation in relations:
             column = getattr(model, relation)
             query = query.join(column)
+            # Sorting on to-many related columns would not make sense.  Could
+            # trap to-many relations here to provide a friendlier error
+            # message.
             to_one = model.get_to_one_relationship_config()
             model = model_dict[
                 to_one[relation]

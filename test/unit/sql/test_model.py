@@ -155,6 +155,7 @@ class TestDefaultModel:
     def test_get_column(self):
         """Getting columns that exist"""
 
+        assert _Example.get_id_column().key == 'id'
         assert _Example.get_column('string_column').key == 'string_column'
         assert _Example.get_column('boolean_column').key == 'boolean_column'
         assert _Example.get_column(
