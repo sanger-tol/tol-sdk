@@ -6,7 +6,7 @@ import os
 
 from pytest import fixture
 
-from tol.core import DataSourceFilter, ReqFieldsTree, core_data_object
+from tol.core import DataSourceFilter, core_data_object
 from tol.core.datasource_filter import AndFilter
 from tol.sql import create_sql_datasource
 from tol.sql.database import DefaultDatabase
@@ -150,10 +150,14 @@ class TestDefaultDatabaseFilter:
             session.add(
                 models.R1(
                     id_override=f'r1_{i:03d}',
+                    r2_d2=models.R2(
+                        id=f'r2_{i:03d}',
+                        funny_string='x',
+                    ),
                     r3_plz=[
                         models.R3(
                             id=f'r3_{i:03d}_{j:03d}',
-                            another_string='x',
+                            another_string='y',
                         )
                         for j in range(100)
                     ],
@@ -170,7 +174,7 @@ class TestDefaultDatabaseFilter:
         filt = DataSourceFilter(
             and_={
                 'r3_plz.another_string': {
-                    'eq': {'value': 'x'},
+                    'eq': {'value': 'y'},
                 },
             }
         )
@@ -179,7 +183,7 @@ class TestDefaultDatabaseFilter:
             sql_ds.get_list(
                 'r1',
                 object_filters=filt,
-                requested_fields=['r3_plz'],
+                requested_fields=['r2_d2', 'r3_plz'],
             )
         )
 
