@@ -13,7 +13,7 @@ from typing import Any, Dict, Iterable, Iterator, Optional, Tuple
 
 from sqlalchemy import BinaryExpression, Select, cast, inspect, not_, select
 from sqlalchemy.dialects.postgresql import JSONB
-from sqlalchemy.orm import MappedColumn, Query, aliased
+from sqlalchemy.orm import MappedColumn, aliased
 from sqlalchemy.orm.util import AliasedClass
 
 from .model import Model
@@ -47,14 +47,14 @@ class AliasTrie(MutableMapping[str, 'AliasTrie']):
 
 
 class DatabaseFilter(ABC):
-    """Filters an `sqlalchemy.orm` `Query` object"""
+    """Filters an `sqlalchemy.orm` `Select` object"""
 
     @abstractmethod
     def filter(  # noqa A003
         self,
-        query: Query[Model],
-    ) -> Query[Model]:
-        """Filter the Query object using the given model"""
+        query: Select,
+    ) -> Select:
+        """Filter the Select object using the given model"""
 
     @abstractmethod
     def get_column(self, key: str) -> MappedColumn:
@@ -121,10 +121,10 @@ class DefaultDatabaseFilter(DatabaseFilter):
 
     def __apply_joins(
         self,
-        query: Query[Model],
+        query: Select,
         parent_trie: AliasTrie,
         parent_alias: AliasedClass[Model],
-    ) -> Query[Model]:
+    ) -> Select:
 
         for part, trie in parent_trie.items():
             alias = trie.alias
@@ -203,7 +203,7 @@ class DefaultDatabaseFilter(DatabaseFilter):
     def __none_coalesce(self, in_: Optional[dict]) -> dict:
         return in_ if in_ is not None else {}
 
-    def __filter_top_and_(self, query: Query[Model]) -> Query[Model]:
+    def __filter_top_and_(self, query: Select) -> Select:
         if not self.__filter.and_:
             return query
 
@@ -218,10 +218,10 @@ class DefaultDatabaseFilter(DatabaseFilter):
 
     def __switch_and_term_dict(
         self,
-        query: Query[Model],
+        query: Select,
         column_key: str,
         term_dict: dict[str, dict[str, Any]]
-    ) -> Query[Model]:
+    ) -> Select:
 
         return reduce(
             lambda q, kv: self.__switch_and_term(
@@ -235,11 +235,11 @@ class DefaultDatabaseFilter(DatabaseFilter):
 
     def __switch_and_term(
         self,
-        query: Query[Model],
+        query: Select,
         column: MappedColumn,
         op: str,
         term: dict[str, dict[str, Any]]
-    ) -> Query[Model]:
+    ) -> Select:
 
         filter_dict = defaultdict(
             lambda: lambda *_: query,
@@ -271,10 +271,10 @@ class DefaultDatabaseFilter(DatabaseFilter):
 
     def __filter_exists(
         self,
-        query: Query[Model],
+        query: Select,
         column: MappedColumn,
         term: dict[str, Any]
-    ) -> Query[Model]:
+    ) -> Select:
 
         _, negate = self.__parse_value_negate(term)
 
@@ -289,11 +289,11 @@ class DefaultDatabaseFilter(DatabaseFilter):
 
     def __negatable_filter(
         self,
-        query: Query[Model],
+        query: Select,
         expression: BinaryExpression,
         column: MappedColumn,
         negate: bool
-    ) -> Query[Model]:
+    ) -> Select:
 
         if negate is True:
             return query.filter(
@@ -304,10 +304,10 @@ class DefaultDatabaseFilter(DatabaseFilter):
 
     def __filter_in_list(
         self,
-        query: Query[Model],
+        query: Select,
         column: MappedColumn,
         term: dict[str, Any]
-    ) -> Query[Model]:
+    ) -> Select:
 
         value, negate = self.__parse_value_negate(term)
         expression = column.in_(value)
@@ -321,10 +321,10 @@ class DefaultDatabaseFilter(DatabaseFilter):
 
     def __filter_contains(
         self,
-        query: Query[Model],
+        query: Select,
         column: MappedColumn,
         term: dict[str, Any]
-    ) -> Query[Model]:
+    ) -> Select:
 
         value, negate = self.__parse_value_negate(term)
 
@@ -348,11 +348,11 @@ class DefaultDatabaseFilter(DatabaseFilter):
 
     def __filter_contains_str(
         self,
-        query: Query[Model],
+        query: Select,
         column: MappedColumn,
         value: str,
         negate: bool
-    ) -> Query[Model]:
+    ) -> Select:
 
         ilike = self.__get_ilike_term(value)
         expression = column.ilike(ilike)
@@ -366,11 +366,11 @@ class DefaultDatabaseFilter(DatabaseFilter):
 
     def __filter_contains_list(
         self,
-        query: Query[Model],
+        query: Select,
         column: MappedColumn,
         value: Any,
         negate: bool
-    ) -> Query[Model]:
+    ) -> Select:
 
         jsonb_column = cast(column, JSONB)
         expression = jsonb_column.op('@>')([value])
@@ -384,10 +384,10 @@ class DefaultDatabaseFilter(DatabaseFilter):
 
     def __filter_eq(
         self,
-        query: Query[Model],
+        query: Select,
         column: MappedColumn,
         term: dict[str, Any]
-    ) -> Query[Model]:
+    ) -> Select:
 
         value, negate = self.__parse_value_negate(term)
         expression = column == value
@@ -401,10 +401,10 @@ class DefaultDatabaseFilter(DatabaseFilter):
 
     def __filter_lt(
         self,
-        query: Query[Model],
+        query: Select,
         column: MappedColumn,
         term: dict[str, Any]
-    ) -> Query[Model]:
+    ) -> Select:
 
         value, negate = self.__parse_value_negate(term)
         expression = column < value
@@ -418,10 +418,10 @@ class DefaultDatabaseFilter(DatabaseFilter):
 
     def __filter_lte(
         self,
-        query: Query[Model],
+        query: Select,
         column: MappedColumn,
         term: dict[str, Any]
-    ) -> Query[Model]:
+    ) -> Select:
 
         value, negate = self.__parse_value_negate(term)
         expression = column <= value
@@ -435,10 +435,10 @@ class DefaultDatabaseFilter(DatabaseFilter):
 
     def __filter_gt(
         self,
-        query: Query[Model],
+        query: Select,
         column: MappedColumn,
         term: dict[str, Any]
-    ) -> Query[Model]:
+    ) -> Select:
 
         value, negate = self.__parse_value_negate(term)
         expression = column > value
@@ -452,10 +452,10 @@ class DefaultDatabaseFilter(DatabaseFilter):
 
     def __filter_gte(
         self,
-        query: Query[Model],
+        query: Select,
         column: MappedColumn,
         term: dict[str, Any]
-    ) -> Query[Model]:
+    ) -> Select:
 
         value, negate = self.__parse_value_negate(term)
         expression = column >= value
@@ -467,7 +467,7 @@ class DefaultDatabaseFilter(DatabaseFilter):
             negate
         )
 
-    def __filter_top_exact(self, query: Query[Model]) -> Query[Model]:
+    def __filter_top_exact(self, query: Select) -> Select:
         exact_filters = self.__filter.exact
         if exact_filters is None:
             return query
@@ -476,7 +476,7 @@ class DefaultDatabaseFilter(DatabaseFilter):
             query = query.filter(exact_column == v)
         return query
 
-    def __filter_top_contains(self, query: Query[Model]) -> Query[Model]:
+    def __filter_top_contains(self, query: Select) -> Select:
         contains_filters = self.__filter.contains
         if contains_filters is None:
             return query
@@ -486,7 +486,7 @@ class DefaultDatabaseFilter(DatabaseFilter):
             query = query.filter(contains_column.ilike(term))
         return query
 
-    def __filter_top_in_list(self, query: Query[Model]) -> Query[Model]:
+    def __filter_top_in_list(self, query: Select) -> Select:
         in_filters = self.__filter.in_list
         if in_filters is None:
             return query
@@ -495,7 +495,7 @@ class DefaultDatabaseFilter(DatabaseFilter):
             query = query.filter(in_column.in_(v))
         return query
 
-    def __filter_top_range(self, query: Query[Model]) -> Query[Model]:
+    def __filter_top_range(self, query: Select) -> Select:
         range_filters = self.__filter.range
         if range_filters is None:
             return query
