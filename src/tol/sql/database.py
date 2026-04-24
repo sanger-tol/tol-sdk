@@ -224,6 +224,8 @@ class DefaultDatabase(Database):
 
         filter_query = None
         if filters:
+            # Dependency on the order in which methods on the DatabaseSorter
+            # and DatabaseFilter objects are called could be cleaned up.
             if sort_by is not None:
                 filters.add_field(sort_by.term)
             filter_query = self.__get_filter_query(tablename, filters)
@@ -248,8 +250,7 @@ class DefaultDatabase(Database):
                 filter_cte,
                 getattr(filter_cte.c, model.get_id_column_name()) == model.get_id_column(),
             )
-        results = in_session.scalars(query).unique().all()
-        return results
+        return in_session.scalars(query).unique().all()
 
     def count(
         self,
