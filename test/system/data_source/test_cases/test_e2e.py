@@ -3,6 +3,7 @@
 # SPDX-License-Identifier: MIT
 
 from datetime import datetime
+from time import sleep
 from typing import Dict
 
 import pytest
@@ -829,25 +830,9 @@ class TestEndToEnd:
             )
         data_source.upsert('root', data_objects)
 
-        # SQL / Postgres needs to have analysed the table for the stats to be
-        # built, which we trigger by requesting matches to the `str_column`
-        # and `int_column`:
-        found = list(
-            data_source.get_list(
-                'root',
-                DataSourceFilter(
-                    and_={
-                        'str_column': {
-                            'eq': {'value': 'B'},
-                        },
-                        'int_column': {
-                            'eq': {'value': 5},
-                        },
-                    }
-                ),
-            )
-        )
-        assert len(found) == 67
+        # PostgreSQL set to ANALYZE tables every 5 seconds with
+        # `autovacuum_naptime=5` in docker-compose.yml
+        sleep(9)
 
         stats = data_source.get_stats(
             'root',

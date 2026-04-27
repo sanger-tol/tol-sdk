@@ -8,6 +8,8 @@ services:
 
   db:
     image: postgres:14
+    # Trigger auto-vacuum (which runs ANALYZE) more frequently:
+    command: ["postgres", "-c", "autovacuum_naptime=5"]
     environment:
       - POSTGRES_USER=test-user
       - POSTGRES_PASSWORD=test-password

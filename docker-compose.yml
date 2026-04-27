@@ -12,7 +12,7 @@ services:
   tol-sdk-python-db:
     image: postgres:14
     container_name: db
-    # Can be useful when debugging to show all SQL statements in the log:
+    # Useful when debugging to show all SQL statements in the log:
     # command: ["postgres", "-c", "log_statement=all"]
     environment:
       - POSTGRES_USER=test-user
