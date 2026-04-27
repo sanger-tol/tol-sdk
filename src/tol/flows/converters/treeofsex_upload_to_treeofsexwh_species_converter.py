@@ -30,12 +30,15 @@ class TreeofsexUploadToTreeofsexwhSpeciesConverter(
             'species',
             data_object.species,
             attributes={
-                data_object.key: [
-                    {
-                        'value': data_object.value,
-                        'source': data_object.reference,
-                    }
-                ]
+                data_object.key: data_object.value,
+                data_object.key + '_reference': data_object.reference
+                # We will want to change this to be like the below
+                # data_object.key: [
+                #     {
+                #         'value': data_object.value,
+                #         'source': data_object.reference,
+                #     }
+                # ]
             }
         )
         yield ret

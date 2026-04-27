@@ -62,12 +62,15 @@ class TestTreeofsexUploadToTreeofsexwhSpeciesConverter(TestCase):
         assert ret1.type == 'species'
         assert ret1.id == 'Species specius'
         assert ret1.attributes == {
-            'key1': [
-                {
-                    'value': 'value1',
-                    'source': 'source1',
-                }
-            ]
+            'key1': 'value1',
+            'key1_reference': 'source1',
+            # We will want to change this to be like the below
+            # 'key1': [
+            #     {
+            #         'value': 'value1',
+            #         'source': 'source1',
+            #     }
+            # ]
         }
 
         with self.assertRaises(StopIteration):
