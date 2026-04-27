@@ -817,7 +817,7 @@ class TestEndToEnd:
         int_vals = [1, 2, 3, 4, 5]
         data_objects = []
         cdo = data_source.data_object_factory
-        for i in range(100):
+        for i in range(1000):
             data_objects.append(
                 cdo(
                     'root',
@@ -846,7 +846,7 @@ class TestEndToEnd:
             'Missing stats, possibly due to ANALYZE not having run.'
         )
 
-        # Stats are approximate, but with 100 rows added and indexes on the
+        # Stats are approximate, but with 1000 rows added and indexes on the
         # `str_column` and `int_column` columns an exact answer is returned.
         # These two values are one greater than added in this test due to the
         # single "archetype" record added to the table.  The cardinality stat
