@@ -10,7 +10,7 @@ from typing import Any
 
 from cachetools.func import ttl_cache
 
-from sqlalchemy import Select, distinct, func, select
+from sqlalchemy import Select, distinct, func, select, text
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Load, MappedColumn, Session, joinedload, load_only, raiseload
 from sqlalchemy.orm.attributes import flag_modified
