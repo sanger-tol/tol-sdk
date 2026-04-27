@@ -8,6 +8,8 @@ services:
 
   db:
     image: postgres:14
+    # Useful when debugging to show all SQL statements in the log:
+    # command: ["postgres", "-c", "log_statement=all"]
     # Trigger auto-vacuum (which runs ANALYZE) more frequently:
     command: ["postgres", "-c", "autovacuum_naptime=5"]
     environment:
