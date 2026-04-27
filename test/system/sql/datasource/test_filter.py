@@ -2,10 +2,13 @@
 #
 # SPDX-License-Identifier: MIT
 
+import os
+
 from pytest import fixture
 
-from tol.core import DataSourceFilter
+from tol.core import DataSourceFilter, core_data_object
 from tol.core.datasource_filter import AndFilter
+from tol.sql import create_sql_datasource
 from tol.sql.database import DefaultDatabase
 from tol.sql.filter import DatabaseFilter, DefaultDatabaseFilter
 
@@ -137,6 +140,54 @@ class TestDefaultDatabaseFilter:
         fun2_list = list(db.get_page('r3', sess, filters=no_fun))
         assert len(fun2_list) == 1
         assert fun2_list[0].id == 'r3-2'
+
+    def test_filter_to_many_page(self, session_factory, models_list, sess):
+        # store R1 -> r3_plz[R3] objects
+        session = session_factory()
+
+        # Create 10 R1 objects each with 100 R3 objects
+        for i in range(10):
+            session.add(
+                models.R1(
+                    id_override=f'r1_{i:03d}',
+                    r2_d2=models.R2(
+                        id=f'r2_{i:03d}',
+                        funny_string='x',
+                    ),
+                    r3_plz=[
+                        models.R3(
+                            id=f'r3_{i:03d}_{j:03d}',
+                            another_string='y',
+                        )
+                        for j in range(100)
+                    ],
+                )
+            )
+        session.commit()
+        session.close()
+
+        # Create a SqlDataSource
+        sql_ds = create_sql_datasource(models_list, os.environ['DB_URI'])
+        sql_ds.page_size = 3
+        core_data_object(sql_ds)
+
+        filt = DataSourceFilter(
+            and_={
+                'r3_plz.another_string': {
+                    'eq': {'value': 'y'},
+                },
+            }
+        )
+
+        r1_list = list(
+            sql_ds.get_list(
+                'r1',
+                object_filters=filt,
+                requested_fields=['r2_d2', 'r3_plz'],
+            )
+        )
+
+        assert len(r1_list) == 10
 
     def test_all_filters(self, session_factory, models_list, type_tablename_dict, sess):
         """

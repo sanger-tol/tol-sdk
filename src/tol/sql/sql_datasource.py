@@ -358,6 +358,7 @@ class SqlDataSource(
         object_filters: Optional[DataSourceFilter] = None,
         session: Optional[OperableSession] = None,
     ) -> Iterable[dict[Any, int]]:
+
         tablename = self.__type_tablename_map[object_type]
         in_session = self.__get_sqla_session(session)
         filters = self.__filter_factory(

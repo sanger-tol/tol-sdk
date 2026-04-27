@@ -114,10 +114,10 @@ class ReqFieldsTree:
         return self.__rel_conf is not None
 
     def to_one_names(self) -> Iterable[str]:
-        return x.keys() if (x := self.__rel_conf.to_one) else ()
+        return x.keys() if (rc := self.__rel_conf) and (x := rc.to_one) else ()
 
     def to_many_names(self) -> Iterable[str]:
-        return x.keys() if (x := self.__rel_conf.to_many) else ()
+        return x.keys() if (rc := self.__rel_conf) and (x := rc.to_many) else ()
 
     def get_relationship(self, name: str) -> str:
         """
