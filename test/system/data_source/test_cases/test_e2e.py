@@ -841,14 +841,15 @@ class TestEndToEnd:
             object_filters=None,
         )['stats']
 
+        # Test for missing stats
+        assert stats is not None, 'Missing stats, possibly due to ANALYZE not having run.'
+
         # Stats are approximate, but with 1000 rows added and indexes on the
         # `str_column` and `int_column` columns an exact answer is returned.
         # These two values are one greater than added in this test due to the
-        # single "archetype" record added to the table.  The cardinality stat
-        # occasionally returns values larger that the true value, so the test
-        # is `>=` rather than an exact value.
-        assert stats['str_column']['cardinality'] >= 4
-        assert stats['int_column']['cardinality'] >= 6
+        # single "archetype" record added to the table.
+        assert stats['str_column']['cardinality'] == 4
+        assert stats['int_column']['cardinality'] == 6
 
     @against(elastic, api_elastic)
     def test_stats(self, data_source: OperableDataSource, ds_sleep):
