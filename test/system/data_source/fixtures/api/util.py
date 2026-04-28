@@ -11,6 +11,7 @@ from ..base import DataSourceFixture
 TOKEN = 'hypeTrain123!'
 
 
+
 class ApiFixture(DataSourceFixture):
 
     def __init__(

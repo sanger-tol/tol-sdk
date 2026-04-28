@@ -5,9 +5,6 @@
 import os
 from datetime import datetime
 
-from sqlalchemy import create_engine, delete
-from sqlalchemy.exc import ProgrammingError
-
 from tol.core import DataSource, core_data_object
 from tol.sql import (
     create_session_factory,
@@ -25,14 +22,6 @@ session_factory = create_session_factory(DB_URI)
 class SqlFixture(DataSourceFixture):
     """A `DataSourceFixture` for `SqlDataSource`"""
 
-    def __init__(self) -> None:
-        engine = create_engine(DB_URI)
-        for model in ALL_MODELS:
-            try:
-                model.__table__.create(engine)
-            except ProgrammingError:
-                continue
-
     @property
     def name(self) -> str:
         return 'sql'
@@ -43,22 +32,16 @@ class SqlFixture(DataSourceFixture):
         return sql_ds
 
     def before_test(self) -> None:
-        # need this in case a previous test
-        # fails to teardown properly
-        self.__delete_all()
-
+        with session_factory() as sess:
+            conn = sess.connection()
+            # Drop tables created by previous tests
+            Root.metadata.drop_all(conn)
+            Root.metadata.create_all(conn)
+            sess.commit()
         self.__insert_archetypes()
 
     def after_test(self) -> None:
-        self.__delete_all()
-
-    def __delete_all(self) -> None:
-        delete_order = list(reversed(ALL_MODELS))
-
-        session = session_factory()
-        for model in delete_order:
-            session.execute(delete(model))
-        session.commit()
+        pass
 
     def __insert_archetypes(self) -> None:
         with session_factory() as sess:

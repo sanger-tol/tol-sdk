@@ -16,7 +16,7 @@ from ..fixtures import all_fixtures, api_elastic, elastic
 class TestGroupStats:
 
     @against(*all_fixtures)
-    def test_group_stats(self, data_source: OperableDataSource, ds_sleep):
+    def test_group_stats_simple(self, data_source: OperableDataSource, ds_sleep):
         """
         Basic stats, without `union` or `cardinality`
         """

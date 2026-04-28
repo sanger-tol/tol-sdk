@@ -405,6 +405,7 @@ class DefaultDatabase(Database):
             WHERE
               s.schemaname = current_schema
         """)).fetchall()
+        in_session.close()
 
         tbl_stats = {}
         for tbl, col, card_n in stats:
@@ -474,7 +475,7 @@ class DefaultDatabase(Database):
     ) -> list[dict[str, dict[str, Any]]]:
 
         results = in_session.execute(query).all()
-
+        in_session.close()
         return self.__parse_results(
             results,
             group_by,

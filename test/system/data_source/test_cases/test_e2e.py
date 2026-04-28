@@ -20,11 +20,7 @@ from tol.core import (
 from tol.core.operator import ListGetter, RelationWriteMode, ReturnMode
 
 from ..dec import against
-from ..fixtures import all_fixtures
-from ..fixtures.api.elastic import api_elastic
-from ..fixtures.api.sql import api_sql
-from ..fixtures.elastic_ds import elastic
-from ..fixtures.sql_ds import sql
+from ..fixtures import all_fixtures, api_elastic, api_sql, elastic, sql
 
 
 class _MockDataSource(DataSource, ListGetter):
@@ -852,8 +848,8 @@ class TestEndToEnd:
         # single "archetype" record added to the table.  The cardinality stat
         # occasionally returns values larger that the true value, so the test
         # is `>=` rather than an exact value.
-        assert stats['str_column']['cardinality'] >= 4
-        assert stats['int_column']['cardinality'] >= 6
+        assert stats['str_column']['cardinality'] == 4
+        assert stats['int_column']['cardinality'] == 6
 
     @against(elastic, api_elastic)
     def test_stats(self, data_source: OperableDataSource, ds_sleep):
