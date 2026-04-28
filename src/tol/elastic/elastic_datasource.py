@@ -785,7 +785,7 @@ class ElasticDataSource(
                 for stat in stats:
                     stat_value = v[f'{stats_field}_{stat}']['value']
                     python_type = self.get_attribute_metadata_by_name(
-                    object_type, stats_field)['python_type']
+                        object_type, stats_field)['python_type']
                     if python_type == 'datetime' and stat_value is not None \
                             and stat in ['min', 'max']:
                         stat_value = datetime.fromtimestamp(stat_value / 1000)
