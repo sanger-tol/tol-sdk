@@ -845,9 +845,7 @@ class TestEndToEnd:
         # Stats are approximate, but with 1000 rows added and indexes on the
         # `str_column` and `int_column` columns an exact answer is returned.
         # These two values are one greater than added in this test due to the
-        # single "archetype" record added to the table.  The cardinality stat
-        # occasionally returns values larger that the true value, so the test
-        # is `>=` rather than an exact value.
+        # single "archetype" record added to the table.
         assert stats['str_column']['cardinality'] == 4
         assert stats['int_column']['cardinality'] == 6
 
