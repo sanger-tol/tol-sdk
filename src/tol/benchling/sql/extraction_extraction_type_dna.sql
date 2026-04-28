@@ -42,6 +42,8 @@ SELECT DISTINCT
     dna.bt_id AS bnt_id,
     dna.manual_vs_automatic AS manual_vs_automatic,
     dna.extraction_protocol,
+    dm.qc_passfail AS extraction_qc_result,
+    dm.next_step AS next_step,
     'dna'::varchar AS extraction_type,
     f.name AS folder_name
 FROM dna_extract$raw AS dna
@@ -57,6 +59,8 @@ LEFT JOIN registration_origin$raw AS reg
 	ON reg.entity_id = dna.id
 LEFT JOIN entry$raw AS ent
 	ON reg.origin_entry_id = ent.id
+LEFT JOIN dna_decision_making_v2$raw as dm
+    ON dm.sample_id = dna.id
 WHERE proj.name = 'ToL Core Lab'
     AND  (f.name IN ('Routine Throughput', 'DNA', 'Core Lab Entities', 'Benchling MS Project Move') OR f.name IS NULL)
     AND (dna.archive_purpose$ != ('Made in error') OR dna.archive_purpose$ IS NULL)
