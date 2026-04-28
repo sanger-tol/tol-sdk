@@ -662,7 +662,7 @@ class ElasticDataSource(
             stats_values[stats_field] = {}
             for stat in stats:
                 stat_value = aggregation_result[f'{stats_field}_{stat}']['value']
-                python_type = self.attribute_types[object_type][stats_field]
+                python_type = self.get_attribute_metadata_by_name(object_type, stats_field)['python_type']
                 if python_type == 'datetime' and stat_value is not None \
                         and stat in ['min', 'max']:
                     stat_value = datetime.fromtimestamp(stat_value / 1000)
@@ -752,7 +752,7 @@ class ElasticDataSource(
                     agg = self.__get_union_aggregation(object_type, stats_field)
                 elif stat == 'unique':
                     agg = self.__get_unique_count_aggregation(object_type, stats_field)
-                elif self.attribute_types[object_type][stats_field] == 'str' \
+                elif self.get_attribute_metadata_by_name(object_type, stats_field)['python_type'] == 'str' \
                         and stat in ['min', 'max']:
                     agg = self.__get_string_aggregation(object_type, stats_field, stat)
                 ret[f'{stats_field}_{stat}'] = agg
@@ -782,7 +782,7 @@ class ElasticDataSource(
                 stats_values[stats_field] = {}
                 for stat in stats:
                     stat_value = v[f'{stats_field}_{stat}']['value']
-                    python_type = self.attribute_types[object_type][stats_field]
+                    python_type = self.get_attribute_metadata_by_name(object_type, stats_field)['python_type']
                     if python_type == 'datetime' and stat_value is not None \
                             and stat in ['min', 'max']:
                         stat_value = datetime.fromtimestamp(stat_value / 1000)
