@@ -15,8 +15,7 @@ class GenomeNoteConverter(DataObjectToDataObjectOrUpdateConverter):
 
     @dataclass(slots=True, frozen=True, kw_only=True)
     class Config:
-        incoming_genome_note: str = 'genome_note'
-        outgoing_genome_note: str = 'genome_note'
+        pass
 
     __slots__ = ['__config']
     __config: Config
@@ -36,7 +35,6 @@ class GenomeNoteConverter(DataObjectToDataObjectOrUpdateConverter):
         assembly_stats = attributes.get('assembly_stats', {})
 
         for key in (
-            'doi',
             'data_availability',
             'title',
             'abstract',
@@ -47,10 +45,7 @@ class GenomeNoteConverter(DataObjectToDataObjectOrUpdateConverter):
             output_attributes[key] = metadata.get(key, '')
 
         output_attributes['authors'] = [
-            {
-                'surname': author.get('surname', ''),
-                'given_names': author.get('given_names', ''),
-            }
+            author.get('given_names', '') + ' ' + author.get('surname', '')
             for author in metadata.get('authors', [])
         ]
 
@@ -76,7 +71,6 @@ class GenomeNoteConverter(DataObjectToDataObjectOrUpdateConverter):
         for key in (
             'chromosomal_pseudomolecules',
             'samples',
-            'species',
             'other',
         ):
             output_attributes[key] = assembly_stats.get(
@@ -84,11 +78,21 @@ class GenomeNoteConverter(DataObjectToDataObjectOrUpdateConverter):
                 [] if key != 'other' else {},
             )
 
+        species_list = assembly_stats.get('species', [])
+        for species_obj in species_list:
+            for k, v in species_obj.items():
+                output_attributes[f'species_{k}'] = v
+            break
+
         for key in self.as_is_attributes():
             if key in attributes:
                 output_attributes[key] = attributes[key]
 
-        yield self._data_object_factory(attributes=output_attributes)
+        yield self._data_object_factory(
+            type_='genome_note',
+            id_=metadata.get('doi', None),
+            attributes=output_attributes
+        )
 
     def rename_attributes(self):
         return (
