@@ -8,7 +8,9 @@ from abc import ABC, abstractmethod
 from collections.abc import Iterable
 from typing import Any
 
-from sqlalchemy import Select, distinct, func, select
+from cachetools.func import ttl_cache
+
+from sqlalchemy import Select, distinct, func, select, text
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Load, MappedColumn, Session, joinedload, load_only, raiseload
 from sqlalchemy.orm.attributes import flag_modified
@@ -363,6 +365,55 @@ class DefaultDatabase(Database):
         result = instance.instance_to_many_relations[relationship_name]
         return result
 
+    def get_stats(
+        self,
+        tablename: str,
+        stats_fields: list[str],
+        stats: list[str],
+        in_session: Session,
+    ) -> dict[str, dict[str, dict[str, int]]]:
+        all_stats = self.__all_table_stats(in_session)
+        tbl_ret_stats = {}
+
+        if tbl_stats := all_stats.get(tablename):
+            for col in stats_fields:
+                if col_stats := tbl_stats.get(col):
+                    col_ret_stats = tbl_ret_stats.setdefault(col, {})
+                    for stat_name in stats:
+                        col_ret_stats[stat_name] = col_stats.get(stat_name)
+        return {'stats': tbl_ret_stats}
+
+    @ttl_cache(ttl=60)
+    def __all_table_stats(self, in_session: Session):
+        """Cached for a short time so that the query isn't rerun for each table"""
+        tbl_model = self.__tablename_model_dict
+
+        stats = in_session.execute(text("""
+            SELECT
+              s.tablename,
+              s.attname AS column,
+              CASE
+                WHEN s.n_distinct < 0 THEN
+                  CAST (-1 * s.n_distinct * t.n_live_tup AS INT)
+                ELSE CAST (s.n_distinct AS INT)
+              END AS cardinality
+            FROM
+              pg_stats AS s
+              JOIN pg_stat_user_tables AS t
+                ON s.tablename = t.relname
+                AND s.schemaname = t.schemaname
+            WHERE
+              s.schemaname = current_schema
+        """)).fetchall()
+        in_session.close()
+
+        tbl_stats = {}
+        for tbl, col, card_n in stats:
+            if col == tbl_model[tbl].get_id_column_name():
+                col = 'id'
+            tbl_stats.setdefault(tbl, {})[col] = {'cardinality': card_n}
+        return tbl_stats
+
     def get_group_stats(
         self,
         tablename: str,
@@ -424,7 +475,7 @@ class DefaultDatabase(Database):
     ) -> list[dict[str, dict[str, Any]]]:
 
         results = in_session.execute(query).all()
-
+        in_session.close()
         return self.__parse_results(
             results,
             group_by,
@@ -509,7 +560,7 @@ class DefaultDatabase(Database):
     def __apply_stats(
         self,
         query: Select,
-        filters: DatabaseFilter,
+        filters: DatabaseFilter | None,
         model: type[Model],
         stats_fields: list[str],
         stats: list[str],

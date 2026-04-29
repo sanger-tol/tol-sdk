@@ -6,7 +6,6 @@ from __future__ import annotations
 
 import typing
 from abc import ABC, abstractmethod
-from typing import Any, List, Optional
 
 from ._filterable import _Filterable
 
@@ -20,11 +19,11 @@ class Statter(_Filterable, ABC):
     def get_stats(
         self,
         object_type: str,
-        stats_fields: List[str] = [],
-        stats: List[str] = ['min', 'max'],
-        object_filters: Optional[DataSourceFilter] = None,
-        session: Optional[OperableSession] = None
-    ) -> dict[Any, int]:
+        stats_fields: list[str] = [],
+        stats: list[str] = ['min', 'max'],
+        object_filters: DataSourceFilter | None = None,
+        session: OperableSession | None = None
+    ) -> dict[str, dict[str, dict[str, int]]]:
         """
         Gets stats for results that are matched by the (optional) filter
         """
