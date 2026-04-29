@@ -40,7 +40,7 @@ class GritIssueToElasticCurationConverter(
             attributes = {
                 k: v for k, v in data_object.attributes.items()
                 if k not in ['assembly_statistics', 'chromosome_result', 'description',
-                            'sample_id', 'status_changes', 'linked_issues']
+                             'sample_id', 'status_changes', 'linked_issues']
             } | {
                 self.__sanitise_attribute_name(sc['next_status']) + '_date': sc['end_date']
                 for sc in data_object.status_changes
