@@ -27,25 +27,19 @@ Output: Table with cols:
 9) tube_name: [character] Name of the submission tube/container.
 10) sanger_sample_id: [character] Sanger Sample ID or Sanger UUID of the PacBio submission. 
 11) plate_name: [character] Name of submission plate.
-12) pipeline: [character] name of the submission pipeline.
-13) library_type: [character] Library type.
-14) retention_instructions: [character] sample retention instructions
-15) gb_yield_of_ccs_data_required: [double precision] CCS yield data required in GB.
-16) number_of_smrt_cells_required: [double precision]
-17) sheared_femto_fragment_size_bp: [double precision]
-18) post_spri_concentration_ngul: [double precision]
-19) post_spri_volume_ul: [jsonb]
-20) nanodrop_260280: [double precision] 
-21) nanodrop_260230: [double precision]
-22) nanodrop_concentration_ngul: [double precision]
-23) sample_prep_additional_requirements: [character]
-24) include_5mc_cells_in_cpg_motifs: [character]
-25) cc5_output_includes_kinetics_information: [character]
-26) priority: [character]
-27) library_batch_id: [character] Library batch ID from LR Benchling. Origin: BWH
-28) completion_date: [Date]
-29) sequencing_platform: [character] Sequencing platform: pacbio.
-30) source: [character] Data source: v1, v1_pooled, v2, v2_pooled, legacy_bnt
+12) library_type: [character] Library type.
+13) number_of_smrt_cells_required: [double precision]
+14) sheared_femto_fragment_size_bp: [double precision]
+15) post_spri_concentration_ngul: [double precision]
+16) post_spri_volume_ul: [jsonb]
+17) nanodrop_260280: [double precision] 
+18) nanodrop_260230: [double precision]
+19) nanodrop_concentration_ngul: [double precision]
+20) sample_prep_additional_requirements: [character]
+21) library_batch_id: [character] Library batch ID from LR Benchling. Origin: BWH
+22) completion_date: [Date]
+23) sequencing_platform: [character] Sequencing platform: pacbio.
+24) source: [character] Data source: v1, v1_pooled, v2, v2_pooled, legacy_bnt
 
 NOTES: 
 
@@ -80,22 +74,18 @@ pacbio_submissions_container_routine AS (
 			ELSE ssid.sanger_sample_id
 		END AS sanger_sample_id,
 		NULL::varchar AS plate_name,
-		NULL::varchar AS pipeline,
 		pbsum.sequencing_type_please_fill AS library_type,
-		NULL::varchar AS retention_instructions,
-		NULL::float8 AS gb_yield_of_ccs_data_required,
 		pbsum.smrt_cells_required AS number_of_smrt_cells_required,
-		NULL::float8 AS sheared_femto_fragment_size_bp,
-		NULL::float8 AS post_spri_concentration_ngul,
+		femto.average_fragment_size AS sheared_femto_fragment_size_bp,
+		qubit.qubit_concentration_ngul AS post_spri_concentration_ngul,
 		NULL::jsonb AS post_spri_volume_ul,
-		NULL::float8 AS nanodrop_260280, 
-		NULL::float8 AS nanodrop_260230,
-		NULL::float8 AS nanodrop_concentration_ngul,
+		nano._260_280_ratio AS nanodrop_260280, 
+		nano._260_230_ratio AS nanodrop_260230,
+		nano.nanodrop_concentration_ngul AS nanodrop_concentration_ngul,
 		NULL::varchar AS sample_prep_additional_requirements,
-		NULL::varchar AS include_5mc_cells_in_cpg_motifs,
-		NULL::varchar AS cc5_output_includes_kinetics_information,
-		NULL::varchar AS priority,
 		NULL::varchar AS library_batch_id,
+		spri.spri_type,
+		spri.bead_type,
 		pbsum.submission_date AS completion_date, 
 		'pacbio'::varchar AS sequencing_platform,
 		'v1'::varchar AS source
@@ -124,6 +114,14 @@ pacbio_submissions_container_routine AS (
         ON subsam.folder_id$ = f.id
 	LEFT JOIN sanger_sample_id$raw AS ssid 
 		ON con.id = ssid.sample_tube
+	LEFT JOIN femto_pacbio_prep_v2$raw AS femto
+		ON femto.sample_id = subsam.id
+	LEFT JOIN qubit_measurements_v2$raw AS qubit
+		ON qubit.sample_id = subsam.id
+	LEFT JOIN nanodrop_measurements_v2$raw AS nano
+		ON nano.sample_id = subsam.id
+	LEFT JOIN spri_info_v2$raw AS spri
+		ON spri.sample_id = subsam.id
 	LEFT JOIN workflow_task$raw AS wft
 		ON pbsum.workflow_task_id$ = wft.id
 	LEFT JOIN workflow_task_status$raw AS wfts
@@ -157,22 +155,18 @@ pacbio_submissions_container_pooled AS (
 			ELSE ssid.sanger_sample_id
 		END AS sanger_sample_id,
 		NULL::varchar AS plate_name,
-		NULL::varchar AS pipeline,
 		pbsum.sequencing_type_please_fill AS library_type,
-		NULL::varchar AS retention_instructions,
-		NULL::float8 AS gb_yield_of_ccs_data_required,
-		NULL::float8 AS number_of_smrt_cells_required,
-		NULL::float8 AS sheared_femto_fragment_size_bp,
-		NULL::float8 AS post_spri_concentration_ngul,
+		pbsum.smrt_cells_required AS number_of_smrt_cells_required,
+		femto.average_fragment_size AS sheared_femto_fragment_size_bp,
+		qubit.qubit_concentration_ngul AS post_spri_concentration_ngul,
 		NULL::jsonb AS post_spri_volume_ul,
-		NULL::float8 AS nanodrop_260280, 
-		NULL::float8 AS nanodrop_260230,
-		NULL::float8 AS nanodrop_concentration_ngul,
+		nano._260_280_ratio AS nanodrop_260280, 
+		nano._260_230_ratio AS nanodrop_260230,
+		nano.nanodrop_concentration_ngul AS nanodrop_concentration_ngul,
 		NULL::varchar AS sample_prep_additional_requirements,
-		NULL::varchar AS include_5mc_cells_in_cpg_motifs,
-		NULL::varchar AS cc5_output_includes_kinetics_information,
-		NULL::varchar AS priority,
 		NULL::varchar AS library_batch_id,
+		spri.spri_type AS spri_type,
+		spri.bead_type AS bead_type,
 		pbsum.submission_date AS completion_date, 
 		'pacbio'::varchar AS sequencing_platform,
 		'v1_pooled'::varchar AS source
@@ -203,6 +197,14 @@ pacbio_submissions_container_pooled AS (
 		ON subsam.folder_id$ = f.id
 	LEFT JOIN sanger_sample_id$raw AS ssid 
 		ON con.id = ssid.sample_tube
+	LEFT JOIN femto_pacbio_prep_v2$raw AS femto
+		ON femto.sample_id = subsam.id
+	LEFT JOIN qubit_measurements_v2$raw AS qubit
+		ON qubit.sample_id = subsam.id
+	LEFT JOIN nanodrop_measurements_v2$raw AS nano
+		ON nano.sample_id = subsam.id
+	LEFT JOIN spri_info_v2$raw AS spri
+		ON spri.sample_id = subsam.id
 	LEFT JOIN workflow_task$raw AS wft
 		ON pbsum.workflow_task_id$ = wft.id
 	LEFT JOIN workflow_task_status$raw AS wfts
@@ -232,22 +234,18 @@ pacbio_submissions_container_legacy_deprecated AS (
 		con.name AS tube_id,
 		con.name AS sanger_sample_id,
 		NULL::varchar AS plate_name,
-		NULL::varchar AS pipeline,
 		NULL::varchar AS library_type,
-		NULL::varchar AS retention_instructions,
-		NULL::float8 AS gb_yield_of_ccs_data_required,
 		NULL::float8 AS number_of_smrt_cells_required,
-		NULL::float8 AS sheared_femto_fragment_size_bp,
-		NULL::float8 AS post_spri_concentration_ngul,
+		femto.average_fragment_size AS sheared_femto_fragment_size_bp,
+		qubit.qubit_concentration_ngul AS post_spri_concentration_ngul,
 		NULL::jsonb AS post_spri_volume_ul,
-		NULL::float8 AS nanodrop_260280, 
-		NULL::float8 AS nanodrop_260230,
-		NULL::float8 AS nanodrop_concentration_ngul,
+		nano._260_280_ratio AS nanodrop_260280, 
+		nano._260_230_ratio AS nanodrop_260230,
+		nano.nanodrop_concentration_ngul AS nanodrop_concentration_ngul,
 		NULL::varchar AS sample_prep_additional_requirements,
-		NULL::varchar AS include_5mc_cells_in_cpg_motifs,
-		NULL::varchar AS cc5_output_includes_kinetics_information,
-		NULL::varchar AS priority,
 		NULL::varchar AS library_batch_id,
+		spri.spri_type AS spri_type,
+		spri.bead_type AS bead_type,
 		subsam.created_at$ AS completion_date, 
 		'pacbio'::varchar AS sequencing_platform,
 		'legacy_bnt'::varchar AS source
@@ -262,6 +260,14 @@ pacbio_submissions_container_legacy_deprecated AS (
 		ON dna.tissue_prep = tp.id 
 	LEFT JOIN tissue$raw AS t 
 		ON tp.tissue = t.id -- End of Tissue metadata Chunk
+	LEFT JOIN femto_pacbio_prep_v2$raw AS femto
+		ON femto.sample_id = subsam.id -- Chunk to add femto data to legacy submissions
+	LEFT JOIN qubit_measurements_v2$raw AS qubit
+		ON qubit.sample_id = subsam.id -- Chunk to add qubit data to legacy submissions
+	LEFT JOIN nanodrop_measurements_v2$raw AS nano
+		ON nano.sample_id = subsam.id -- Chunk to add nanodrop data to legacy submissions
+	LEFT JOIN spri_info_v2$raw AS spri
+		ON spri.sample_id = subsam.id -- Chunk to add spri data to legacy submissions
 	LEFT JOIN container_content$raw AS cc_dna -- Chunk to add DNA fluidx id
 		ON dna.id = cc_dna.entity_id
 	LEFT JOIN container$raw AS c_dna 
@@ -277,7 +283,7 @@ pacbio_submissions_container_legacy_deprecated AS (
 		AND tube.type IS NULL -- Selecting non-Voucher containers
 	    AND (c_dna.archive_purpose$ != ('Made in error') OR c_dna.archive_purpose$ IS NULL) -- Excluding containers made by mistake
 		AND c_dna.barcode LIKE 'F%' -- Selecting only valid FluidX IDs
-		AND proj.name = 'ToL Core Lab' -- Selecting ToL Core Lab sbmissions only
+		AND proj.name = 'ToL Core Lab' -- Selecting ToL Core Lab submissions only
 ),
 
 -- plate based submissions
@@ -295,10 +301,7 @@ pacbio_submissions_plate_automated_manifest AS (
 		con.name AS tube_id,
 		con.name AS sanger_sample_id,
 		plt.name AS plate_name,
-		pbsubm_p.pipeline,
 		pbsubm_p.library_type,
-		pbsubm_p.retention_instructions,
-		pbsubm_p.gb_yield_of_ccs_data_required,
 		pbsubm_p.number_of_smrt_cells_required,
 		pbsubm_p.sheared_femto_fragment_size_bp,
 		pbsubm_p.post_spri_concentration_ngul,
@@ -307,10 +310,9 @@ pacbio_submissions_plate_automated_manifest AS (
 		pbsubm_p.nanodrop_260230,
 		pbsubm_p.nanodrop_concentration_ngul,
 		pbsubm_p.sample_prep_additional_requirements,
-		pbsubm_p.include_5mc_cells_in_cpg_motifs,
-		pbsubm_p.cc5_output_includes_kinetics_information,
-		pbsubm_p.priority,
 		NULL::varchar AS library_batch_id,
+		spri.spri_type,
+		spri.bead_type,
 		DATE(pbsubm_p.created_at$) AS completion_date, 
 		'pacbio'::varchar AS sequencing_platform,
 		'v2'::varchar AS source
@@ -337,6 +339,8 @@ pacbio_submissions_plate_automated_manifest AS (
 		ON subsam.project_id$ = proj.id
 	LEFT JOIN folder$raw AS f 
 		ON subsam.folder_id$ = f.id
+	LEFT JOIN spri_info_v2$raw AS spri
+		ON spri.sample_id = subsam.id
 	LEFT JOIN workflow_task$raw AS wft
 		ON pbsubm_p.workflow_task_id$ = wft.id
 	LEFT JOIN workflow_task_status$raw AS wfts
@@ -367,10 +371,7 @@ pacbio_submissions_plate_automated_manifest_pooled AS (
 		con.name AS tube_id,
 		con.name AS sanger_sample_id,
 		plt.name AS plate_name,
-		pbsubm_p.pipeline,
 		pbsubm_p.library_type,
-		pbsubm_p.retention_instructions,
-		pbsubm_p.gb_yield_of_ccs_data_required,
 		pbsubm_p.number_of_smrt_cells_required,
 		pbsubm_p.sheared_femto_fragment_size_bp,
 		pbsubm_p.post_spri_concentration_ngul,
@@ -379,10 +380,9 @@ pacbio_submissions_plate_automated_manifest_pooled AS (
 		pbsubm_p.nanodrop_260230,
 		pbsubm_p.nanodrop_concentration_ngul,
 		pbsubm_p.sample_prep_additional_requirements,
-		pbsubm_p.include_5mc_cells_in_cpg_motifs,
-		pbsubm_p.cc5_output_includes_kinetics_information,
-		pbsubm_p.priority,
 		NULL::varchar AS library_batch_id,
+		spri.spri_type AS spri_type,
+		spri.bead_type AS bead_type,
 		DATE(pbsubm_p.created_at$) AS completion_date, 
 		'pacbio'::varchar AS sequencing_platform,
 		'v2_pooled'::varchar AS source
@@ -411,6 +411,8 @@ pacbio_submissions_plate_automated_manifest_pooled AS (
 		ON subsam.project_id$ = proj.id
 	LEFT JOIN folder$raw AS f 
 		ON subsam.folder_id$ = f.id
+	LEFT JOIN spri_info_v2$raw AS spri
+		ON spri.sample_id = subsam.id
 	LEFT JOIN workflow_task$raw AS wft
 		ON pbsubm_p.workflow_task_id$ = wft.id
 	LEFT JOIN workflow_task_status$raw AS wfts
@@ -437,22 +439,18 @@ pacbio_submissions_plate_routine AS (
 		c_subsam.name AS tube_id,
 		ssid.sanger_sample_id AS sanger_sample_id,
 		plate.name$ AS plate_name,
-		NULL::varchar AS pipeline,
 		pbsubm_p.sequencing_type AS library_type,
-		NULL::varchar AS retention_instructions,
-		NULL::float8 AS gb_yield_of_ccs_data_required,
 		pbsubm_p.number_of_smrt_cells_required,
-		NULL::float8 AS sheared_femto_fragment_size_bp,
-		NULL::float8 AS post_spri_concentration_ngul,
+		femto.average_fragment_size AS sheared_femto_fragment_size_bp,
+		qubit.qubit_concentration_ngul AS post_spri_concentration_ngul,
 		NULL::JSONB AS post_spri_volume_ul,
-		NULL::float8 AS nanodrop_260280,
-		NULL::float8 AS nanodrop_260230,
-		NULL::float8 AS nanodrop_concentration_ngul,
+		nano._260_280_ratio AS nanodrop_260280,
+		nano._260_230_ratio AS nanodrop_260230,
+		nano.nanodrop_concentration_ngul AS nanodrop_concentration_ngul,
 		NULL::varchar AS sample_prep_additional_requirements,
-		NULL::varchar AS include_5mc_cells_in_cpg_motifs,
-		NULL::varchar AS cc5_output_includes_kinetics_information,
-		NULL::varchar AS priority,
 		lpb.name$ AS library_batch_id,
+		spri.spri_type AS spri_type,
+		spri.bead_type AS bead_type,
 		pbsubm_p.created_at$ AS completion_date,
 		'pacbio'::varchar AS sequencing_platform,
 		'v2'::varchar AS SOURCE
@@ -481,6 +479,14 @@ pacbio_submissions_plate_routine AS (
 		ON con.plate_id = plate.id
 	LEFT JOIN sanger_sample_id$raw AS ssid
 		ON con.id = ssid.sample_tube
+	LEFT JOIN femto_pacbio_prep_v2$raw AS femto
+		ON femto.sample_id = subsam.id
+	LEFT JOIN qubit_measurements_v2$raw AS qubit
+		ON qubit.sample_id = subsam.id
+	LEFT JOIN nanodrop_measurements_v2$raw AS nano
+		ON nano.sample_id = subsam.id
+	LEFT JOIN spri_info_v2$raw AS spri
+		ON spri.sample_id = subsam.id
 	LEFT JOIN lr_long_read_library_preparation_b$raw AS lr_proc -- Chunk to add LR lib prep batch ID
 		ON lr_proc.sanger_sample_id = ssid.sanger_sample_id
 	LEFT JOIN lr_library_preparation_batch$raw AS lpb
@@ -516,22 +522,18 @@ pacbio_submissions_plate_routine_pooled AS (
 		c_subsam.name AS tube_id,
 		ssid.sanger_sample_id AS sanger_sample_id,
 		plate.name$ AS plate_name,
-		NULL::varchar AS pipeline,
 		pbsubm_p.sequencing_type AS library_type,
-		NULL::varchar AS retention_instructions,
-		NULL::float8 AS gb_yield_of_ccs_data_required,
 		pbsubm_p.number_of_smrt_cells_required,
-		NULL::float8 AS sheared_femto_fragment_size_bp,
-		NULL::float8 AS post_spri_concentration_ngul,
+		femto.average_fragment_size AS sheared_femto_fragment_size_bp,
+		qubit.qubit_concentration_ngul AS post_spri_concentration_ngul,
 		NULL::JSONB AS post_spri_volume_ul,
-		NULL::float8 AS nanodrop_260280,
-		NULL::float8 AS nanodrop_260230,
-		NULL::float8 AS nanodrop_concentration_ngul,
+		nano._260_280_ratio AS nanodrop_260280,
+		nano._260_230_ratio AS nanodrop_260230,
+		nano.nanodrop_concentration_ngul AS nanodrop_concentration_ngul,
 		NULL::varchar AS sample_prep_additional_requirements,
-		NULL::varchar AS include_5mc_cells_in_cpg_motifs,
-		NULL::varchar AS cc5_output_includes_kinetics_information,
-		NULL::varchar AS priority,
 		lpb.name$ AS library_batch_id,
+		spri.spri_type AS spri_type,
+		spri.bead_type AS bead_type,
 		pbsubm_p.created_at$ AS completion_date,
 		'pacbio'::varchar AS sequencing_platform,
 		'v2'::varchar AS SOURCE
@@ -548,6 +550,14 @@ pacbio_submissions_plate_routine_pooled AS (
 		ON con.plate_id = plate.id -- End of chunk to get the plate ID
 	LEFT JOIN sanger_sample_id$raw AS ssid
 		ON con.id = ssid.sample_tube
+	LEFT JOIN femto_pacbio_prep_v2$raw AS femto
+		ON femto.sample_id = subsam.id
+	LEFT JOIN qubit_measurements_v2$raw AS qubit
+		ON qubit.sample_id = subsam.id
+	LEFT JOIN nanodrop_measurements_v2$raw AS nano
+		ON nano.sample_id = subsam.id
+	LEFT JOIN spri_info_v2$raw AS spri
+		ON spri.sample_id = subsam.id
 	LEFT JOIN pooled_samples$raw AS pool 
 		ON subsam.pooled_sample = pool.id
 	LEFT JOIN container_content$raw AS cc_pool -- Chunk to connect pooled sample to the FluidX tube
