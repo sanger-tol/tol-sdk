@@ -115,6 +115,7 @@ class TestGritIssueToElasticCurationConverter(TestCase):
                 'created': datetime(2020, 2, 2),
                 'sample_id': 'abCdeFghi1',
                 'description': 'Ignore',
+                'assembled_by': 'ToL',
                 'status_changes': [
                     {
                         'this_status': 'Open',
@@ -141,6 +142,7 @@ class TestGritIssueToElasticCurationConverter(TestCase):
         self.assertEqual('KEY-123', ret1.id)
         self.assertEqual('curation', ret1.type)
         self.assertEqual(ret1.attributes, {
+            'assembled_by': 'ToL',
             'created': datetime(2020, 2, 2),
             'mid_range_date': datetime(2020, 2, 3),
             'closed_date': datetime(2020, 2, 4),
@@ -186,5 +188,10 @@ class TestGritIssueToElasticCurationConverter(TestCase):
         })
         self.assertEqual(ret1.tolid.id, 'abCdeFghi1')
 
+        with self.assertRaises(StopIteration):
+            next(converteds)
+
+        issue.assembled_by = 'Someone Else'
+        converteds = converter.convert(issue)
         with self.assertRaises(StopIteration):
             next(converteds)
