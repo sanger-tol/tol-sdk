@@ -63,10 +63,14 @@ class DataSourceUtils:
             runtime_fields = cls.get_runtime_fields_from_data_source_config(
                 datasource_config
             )
+            runtime_fields_with_source_order = cls.get_source_order_from_data_source_config(
+                datasource_config,
+                runtime_fields
+            )
             new_kwargs.update({
                 'relationship_cfg': relationship_config,
                 'attribute_metadata': amd,
-                'runtime_fields': runtime_fields
+                'runtime_fields': runtime_fields_with_source_order
             })
         return DataSourceUtils.get_datasource_by_name(
             datasource_instance.builtin_name,
