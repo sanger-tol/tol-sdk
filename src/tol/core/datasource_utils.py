@@ -125,6 +125,22 @@ class DataSourceUtils:
         return runtime_fields
 
     @classmethod
+    def get_source_order_from_data_source_config(
+        cls,
+        datasource_config: DataObject,
+        runtime_fields: dict
+    ) -> dict:
+        for dsrc in datasource_config.data_source_config_relationships:
+            if dsrc.source_order is None:
+                continue
+            if 'source_order' not in runtime_fields:
+                runtime_fields['source_order'] = {}
+            if dsrc.object_type not in runtime_fields['source_order']:
+                runtime_fields['source_order'][dsrc.object_type] = {}
+            runtime_fields['source_order'][dsrc.object_type][dsrc.name] = dsrc.source_order
+        return runtime_fields
+
+    @classmethod
     def get_ids(
         cls,
         datasource: DataSource,
