@@ -736,6 +736,7 @@ class ElasticDataSource(
             stats
         )
         return after_key, buckets
+
     def __get_aggs(
             self,
             object_type: str,
