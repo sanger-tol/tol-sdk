@@ -38,7 +38,8 @@ Columns in output table:
 14) tissue_prep_type: [character] tissue type for HiC SciOps submissions.
 15) sciops_protocol_required: [character] protocol required for HiC SciOps submissions.
 16) sts_labwork_category: [character] Reason for exporting tissue. Aid to interpret downstream protocol for legacy samples.
-17) tissue_prep_bnt_id: [character] Batches and Tracking legacy id.
+17) weight_of_prep_for_dna: [double] weight of the tissue prep used for DNA extraction.
+18) tissue_prep_bnt_id: [character] Batches and Tracking legacy id.
 */
 
 WITH tissue_preps AS (
@@ -64,12 +65,15 @@ WITH tissue_preps AS (
 		tube.tissue_prep_disruption_method AS disruption_method,
 		tube.tissue_prep_type,
 		tube.sciops_protocol_required,
+		sp.weight_of_prep_for_dna,
 		tp.bt_id AS tissue_prep_bnt_id
 	FROM incoming_tissue_and_tissue_prep2$raw AS wrkf_tp
 	LEFT JOIN tissue_prep$raw AS tp
 		ON wrkf_tp.tissue_prep_id ->> 0 = tp.id
 	LEFT JOIN tissue$raw AS t
 		ON tp.tissue = t.id
+	LEFT JOIN sample_prep_weight_measurements$raw AS sp
+		ON sp.tissue_prep = tp.id
 	LEFT JOIN container$raw AS con 
 		ON wrkf_tp.tissue_prep_tube_id = con.id
 	LEFT JOIN tube$raw AS tube
@@ -113,6 +117,7 @@ legacy_tissue_preps AS (
 		NULL::varchar AS disruption_method,
 		tube.tissue_prep_type,
 		tube.sciops_protocol_required,
+		tpr.weight_of_prep_for_dna,
 		tp.bt_id AS tissue_prep_bnt_id
 	FROM tissue_prep$raw AS tp
 	LEFT JOIN tissue$raw AS t
