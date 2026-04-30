@@ -47,10 +47,14 @@ class DataSourceUtils:
             runtime_fields = cls.get_runtime_fields_from_data_source_config(
                 datasource_config
             )
+            runtime_with_source_order = cls.get_source_order_from_data_source_config(
+                datasource_config,
+                runtime_fields
+            )
             new_kwargs.update({
                 'relationship_cfg': relationship_config,
                 'attribute_metadata': amd,
-                'runtime_fields': runtime_fields
+                'runtime_fields': runtime_with_source_order
             })
         return DataSourceUtils.get_datasource_by_name(
             datasource_instance.builtin_name,
@@ -102,6 +106,13 @@ class DataSourceUtils:
                     'type': dsa.runtime_definition.get('type', 'keyword'),
                     'script': {'source': dsa.runtime_definition['script']}
                 }
+
+    @classmethod
+    def get_source_order_from_data_source_config(
+        cls,
+        datasource_config: DataObject,
+        runtime_fields: dict
+    ) -> dict:
         for dsrc in datasource_config.data_source_config_relationships:
             if dsrc.source_order is None:
                 continue
