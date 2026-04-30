@@ -63,7 +63,7 @@ class DataSourceUtils:
             runtime_fields = cls.get_runtime_fields_from_data_source_config(
                 datasource_config
             )
-            runtime_fields_with_source_order = cls.get_source_order_from_data_source_config(
+            runtime_fields_with_source_order = cls.add_source_order_to_runtime_fields(
                 datasource_config,
                 runtime_fields
             )
@@ -129,7 +129,7 @@ class DataSourceUtils:
         return runtime_fields
 
     @classmethod
-    def get_source_order_from_data_source_config(
+    def add_source_order_to_runtime_fields(
         cls,
         datasource_config: DataObject,
         runtime_fields: dict
