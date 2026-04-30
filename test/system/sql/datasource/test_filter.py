@@ -4,9 +4,9 @@
 
 import os
 
-from pytest import fixture
+from pytest import fixture, raises
 
-from tol.core import DataSourceFilter, core_data_object
+from tol.core import DataSourceError, DataSourceFilter, core_data_object
 from tol.core.datasource_filter import AndFilter
 from tol.sql import create_sql_datasource
 from tol.sql.database import DefaultDatabase
@@ -93,6 +93,52 @@ class TestDefaultDatabaseFilter:
         assert count == 1
         (r3_obj,) = db.get_page('r3', sess, filters=deep_filt)
         assert r3_obj.id == 'an-r3-id'
+
+    def test_build_multiple_matches_in_same_table(self):
+        """
+        Tests that we can correctly construct searches on multiple fields
+        within a table two (or more) deep in the hierarchy.
+        """
+        filt = DefaultDatabaseFilter(
+            DataSourceFilter(
+                and_={
+                    'funny_r1.r2_d2.id': {
+                        'eq': {'value': 'an-r2-id'},
+                    },
+                    'funny_r1.r2_d2.funny_string': {
+                        'eq': {'value': 'x'},
+                    },
+                },
+            )
+        )
+        query = filt.get_query(models.R3)
+        filt.filter(query)
+
+    def test_exception_from_bad_filter_path(self):
+        """
+        Tests for a `DataSourceError` from bad elements in a filter path
+        """
+        filt = DefaultDatabaseFilter(
+            DataSourceFilter(
+                and_={
+                    'funny_r1.r2_x.id': {'eq': {'value': 'y'}},
+                },
+            )
+        )
+        query = filt.get_query(models.R3)
+        with raises(DataSourceError, match=r'No such relationship.+from filter path'):
+            filt.filter(query)
+
+        filt = DefaultDatabaseFilter(
+            DataSourceFilter(
+                and_={
+                    'funny_r1.r2_d2.x': {'eq': {'value': 'y'}},
+                },
+            )
+        )
+        query = filt.get_query(models.R3)
+        with raises(DataSourceError, match=r'No such column'):
+            filt.filter(query)
 
     def test_fetch_null_relatoinship(self, session_factory, models_list, sess):
         # Store R3 -> R1 -> R2 chain of objects
