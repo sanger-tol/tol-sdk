@@ -432,9 +432,6 @@ def board_blueprint(
                     new_id = f'{prefix_mappings.get(entity_type, "x")}_{generate(custom_alphabet, 12)}'
                     id_mapping[obj.id] = new_id
 
-        # Insert fresh non-joiner objects with new IDs and caller's user_id.
-        # Copy all to-one relationships from the original (preserving required FKs
-        # like data_source_instance), overriding only user with the new owner.
         for entity_type in type_hierarchy:
             for obj in entities.get(entity_type, []):
                 original_user = obj.to_one_relationships.get('user')
@@ -455,8 +452,6 @@ def board_blueprint(
                 )
                 board_ds.insert(entity_type, [new_obj])
 
-        # Insert fresh joiner objects: id is auto-increment so omit it,
-        # remap both FK to-one IDs, preserve order
         for entity_type, objs in entities.items():
             if entity_type not in type_hierarchy:
                 # joiner_type is '{smaller_type}_{bigger_type}'
