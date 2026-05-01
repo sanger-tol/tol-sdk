@@ -19,7 +19,7 @@ from ..core import (
     DataSourceFilter
 )
 
-if typing.TYPE_CHECKING:
+if TYPE_CHECKING:
     from ..sql import SqlDataSource
 
 
