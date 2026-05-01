@@ -349,27 +349,76 @@ def board_blueprint(
             user_id
         )
 
-    def __serialize_board_entities(
+    def __serialise_board_entities(
         parent_id: str,
-        object_type: str,
         all_entities: dict[str, list[DataObject]]
     ) -> dict[str, Any]:
         """
-        Serializes the given entities in a way that makes them
-        suitable for passing back to a caller that wants to recreate
-        the full hierarchy (e.g. for a board-copy operation).
+        serialises the given entities into a nested dict structure suitable 
+        for consumption by the frontend, starting at the given parent ID and 
+        type (e.g. a `view` ID and `view` type would serialise that 
+        view along with its child zones and components).
         """
-        def _serialize(obj: DataObject) -> dict[str, Any]:
-            return {
-                'id': obj.id,
+
+        # We loop through the joiner types (e.g. `zone_view`) to build a lookup of parent ID
+        # (e.g. `view` ID) -> list of child IDs (e.g. `zone` IDs),
+        # which we can use when serializing the children of each object
+        children_lookup: dict[str, list[str]] = {}
+
+        for entity_type, objs in all_entities.items():
+            if entity_type not in type_hierarchy:
+                bigger_type = next(t for t in type_hierarchy if entity_type.endswith(f'_{t}'))
+                smaller_type = entity_type[: -(len(bigger_type) + 1)]
+                for obj in sorted(objs, key=lambda o: getattr(o, 'order', 0)):
+                    bigger_obj = getattr(obj, bigger_type)
+                    smaller_obj = getattr(obj, smaller_type)
+                    children_lookup.setdefault(bigger_obj.id, []).append(smaller_obj.id)
+
+        # We loop through the non-joiner types to build a lookup of ID -> object,
+        # which we can use when serializing the children of each object
+        obj_lookup: dict[str, DataObject] = {
+            str(obj.id): obj
+            for entity_type, objs in all_entities.items()
+            if entity_type in type_hierarchy
+            for obj in objs
+        }
+
+        # We define a recursive serialization function that uses the above
+        # lookups to serialise each object along with its children
+        def _serialise(obj: DataObject) -> dict[str, Any]:
+            obj_id = str(obj.id)
+            child_ids = children_lookup.get(obj_id, [])
+
+            result: dict[str, Any] = {
+                'id': obj_id,
                 'type': obj.type,
-                'attributes': obj.attributes,
+                # We filter out the 'filter' attribute for non-component and non-zone types,
+                # as it isn't currently needed, can re-add later when needed, i.e. param boards
+                **{
+                    k: v for k, v in obj.attributes.items()
+                    if k != 'filter' or obj.type in ('component', 'zone')
+                },
             }
 
-        return {
-            entity_type: [_serialize(obj) for obj in objs]
-            for entity_type, objs in all_entities.items()
-        }
+            # Component is the only type that doesn't have an 'order' field
+            # in the joiner table, nor does it have any child entities, so we
+            # can skip adding the 'order' and 'children' fields for it
+            if obj.type != 'component':
+                result['order'] = child_ids
+                result['children'] = {
+                    child_id: _serialise(obj_lookup[child_id])
+                    for child_id in child_ids
+                    if child_id in obj_lookup
+                },
+
+            return result
+
+        # We start the recursive serialization at the given parent ID and type
+        parent_obj = obj_lookup.get(parent_id)
+        if parent_obj is None:
+            return {}
+
+        return _serialise(parent_obj)
 
     @board_bp.delete('/<string:object_type>/<string:object_id>')
     def __delete_endpoint(*, object_type: str, object_id: str):
@@ -399,9 +448,9 @@ def board_blueprint(
             )
 
         all_entities = __collect_recursive(object_type, [obj])
-        serialized_entities = __serialize_board_entities(obj.id, obj.type, all_entities)
+        serialised_entities = __serialise_board_entities(obj.id, all_entities)
 
-        return serialized_entities, 200
+        return serialised_entities, 200
 
     def __save_board_and_children(
         entities: dict[str, list[DataObject]],
