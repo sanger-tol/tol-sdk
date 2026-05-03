@@ -267,8 +267,7 @@ def board_blueprint(
 
         __delete_above(
             bigger_type,
-            bigger_id,
-            user_id
+            bigger_id
         )
 
         __delete_recursive(
@@ -405,7 +404,10 @@ def board_blueprint(
 
             if obj.type == 'board':
                 ctx = ctx_getter()
-                result['write_privilege'] = obj.user.id == ctx.user_id or 'admin' in ctx.roles
+                result['write_privilege'] = (
+                    ctx.authenticated
+                    and (obj.user.id == ctx.user_id or 'warden' in ctx.roles)
+    )
 
             return result
 
