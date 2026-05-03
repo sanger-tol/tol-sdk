@@ -112,8 +112,7 @@ def board_blueprint(
 
         return [
             obj for obj in all_smaller_objs
-            if obj.user.id == user_id
-            and __smaller_is_deletable(
+            if __smaller_is_deletable(
                 obj,
                 bigger_type,
                 all_bigger_ids,
@@ -185,7 +184,6 @@ def board_blueprint(
     def __delete_above(
         object_type: str,
         object_id: str,
-        user_id: str
     ) -> None:
         """
         Deletes the (sole) joining table entry pointing to the specified
@@ -231,14 +229,6 @@ def board_blueprint(
             )
         )
 
-        above_obj: DataObject = getattr(joiner_obj, above_type)
-        if above_obj.user.id != user_id:
-            raise DataSourceError(
-                'Deletion Error',
-                f'The linked {above_type} is not yours.',
-                400
-            )
-
         board_ds.delete(joiner_type, [joiner_obj.id])
 
     def delete(
@@ -271,7 +261,8 @@ def board_blueprint(
                 404
             )
 
-        if bigger_obj.user.id != user_id:
+        if bigger_obj.user.id != user_id and \
+                'admin' not in ctx_getter().roles:
             raise ForbiddenError()
 
         __delete_above(
@@ -394,6 +385,7 @@ def board_blueprint(
                     k: v for k, v in obj.attributes.items()
                     if k != 'filter' or obj.type in ('component', 'zone')
                 },
+                'owner_email': obj.user.oidc_id
             }
 
             # Component is the only type that doesn't have an 'order' field
@@ -406,6 +398,14 @@ def board_blueprint(
                     for child_id in child_ids
                     if child_id in obj_lookup
                 },
+
+            if obj.type == 'zone' or obj.type == 'component':
+                result['data_source_instance_id'] = obj.data_source_instance.id
+                result['ui_api_details'] = obj.data_source_instance.ui_api_details
+
+            if obj.type == 'board':
+                ctx = ctx_getter()
+                result['write_privilege'] = obj.user.id == ctx.user_id or 'admin' in ctx.roles
 
             return result
 
