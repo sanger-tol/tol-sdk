@@ -22,7 +22,7 @@ class _MockDataSourceRelational(DataSource, Relational):
 
     @property
     def supported_types(self):
-        return ['run_data', 'species', 'specimen', 'sequencing_request', 'tolid']
+        return ['run_data', 'species', 'specimen', 'sequencing_request', 'tolid', 'study']
 
     @property
     def attribute_types(self):
@@ -35,7 +35,8 @@ class _MockDataSourceRelational(DataSource, Relational):
             'species': 'species',
             'specimen': 'specimen',
             'sequencing_request': 'sequencing_request',
-            'tolid': 'tolid'
+            'tolid': 'tolid',
+            'study': 'study'
         }
         return {'run_data': rc_run_data}
 
@@ -84,6 +85,7 @@ class TestMlwhRunDataToElasticRunDataConverter(TestCase):
                 'supplier_name': 'supplier1',
                 'sample_ref': 'sample1',
                 'tolid': 'tolid1',
+                'study_id': 'study1',
                 'attribute1': 'value1'
             }
         )
@@ -98,6 +100,6 @@ class TestMlwhRunDataToElasticRunDataConverter(TestCase):
         self.assertEqual(ret1.to_one_relationships['specimen'].id, 'supplier1')
         self.assertEqual(ret1.to_one_relationships['sequencing_request'].id, 'sample1')
         self.assertEqual(ret1.to_one_relationships['tolid'].id, 'tolid1')
-
+        self.assertEqual(ret1.to_one_relationships['study'].id, 'study1')
         with self.assertRaises(StopIteration):
             next(converteds)
