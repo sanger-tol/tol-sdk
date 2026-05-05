@@ -395,8 +395,8 @@ def board_blueprint(
                 },
 
             if obj.type == 'zone' or obj.type == 'component':
-                result['data_source_instance_id'] = \
-                    getattr(obj.data_source_instance, 'id', None)
+                result['data_source_instance_id'] = getattr(
+                    obj.data_source_instance, 'id', None)
                 result['ui_api_details'] = getattr(
                     obj.data_source_instance, 'ui_api_details', None)
 
