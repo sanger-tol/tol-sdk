@@ -34,7 +34,6 @@ TYPE_HIERARCHY = [
 def board_blueprint(
     board_ds: SqlDataSource,
     type_hierarchy: list[str] = TYPE_HIERARCHY,
-
     ctx_getter: CtxGetter = default_ctx_getter,
 ) -> Blueprint:
     """
@@ -53,7 +52,7 @@ def board_blueprint(
     def __smaller_is_deletable(
         smaller_obj: DataObject,
         bigger_type: str,
-        all_bigger_ids: list[str],
+        all_bigger_ids: list[str | None],
         joiner_type: str
     ) -> bool:
         """
@@ -93,9 +92,8 @@ def board_blueprint(
         smaller_type: str,
         joiner_type: str,
         bigger_type: str,
-        all_bigger_ids: list[str],
+        all_bigger_ids: list[str | None],
         joins: list[DataObject],
-        user_id: str
     ) -> list[DataObject]:
         """
         Given a bigger->smaller relation (e.g.
@@ -167,11 +165,10 @@ def board_blueprint(
                     bigger_type,
                     all_bigger_ids,
                     joins,
-                    user_id
                 )
                 all_deletable_smallers.extend(deletable_smallers)
 
-                join_ids = [j.id for j in joins]
+                join_ids = [getattr(j, 'id', None) for j in joins]
                 all_join_ids.extend(join_ids)
 
             # delete the joins first
@@ -179,6 +176,7 @@ def board_blueprint(
 
             __delete_recursive(smaller_type, all_deletable_smallers, user_id)
 
+        
         board_ds.delete(bigger_type, all_bigger_ids)
 
     def __delete_above(
@@ -261,7 +259,7 @@ def board_blueprint(
                 404
             )
 
-        if bigger_obj.user.id != user_id and \
+        if getattr(bigger_obj.user, 'id', None) != user_id and \
                 'admin' not in ctx_getter().roles:
             raise ForbiddenError()
 
@@ -384,7 +382,6 @@ def board_blueprint(
                     k: v for k, v in obj.attributes.items()
                     if k != 'filter' or obj.type in ('component', 'zone')
                 },
-                'owner_email': obj.user.oidc_id
             }
 
             # Component is the only type that doesn't have an 'order' field
@@ -399,15 +396,16 @@ def board_blueprint(
                 },
 
             if obj.type == 'zone' or obj.type == 'component':
-                result['data_source_instance_id'] = obj.data_source_instance.id
-                result['ui_api_details'] = obj.data_source_instance.ui_api_details
+                result['data_source_instance_id'] = getattr(obj.data_source_instance, 'id', None)
+                result['ui_api_details'] = getattr(obj.data_source_instance, 'ui_api_details', None)
 
             if obj.type == 'board':
+                result['owner_email'] = getattr(obj.user, 'email', None)
                 ctx = ctx_getter()
                 result['write_privilege'] = (
                     ctx.authenticated
-                    and (obj.user.id == ctx.user_id or 'warden' in ctx.roles)
-    )
+                    and (getattr(obj.user, 'id', None) == ctx.user_id or 'admin' in ctx.roles)
+                )
 
             return result
 
