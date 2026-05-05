@@ -176,7 +176,6 @@ def board_blueprint(
 
             __delete_recursive(smaller_type, all_deletable_smallers, user_id)
 
-        
         board_ds.delete(bigger_type, all_bigger_ids)
 
     def __delete_above(
@@ -396,8 +395,10 @@ def board_blueprint(
                 },
 
             if obj.type == 'zone' or obj.type == 'component':
-                result['data_source_instance_id'] = getattr(obj.data_source_instance, 'id', None)
-                result['ui_api_details'] = getattr(obj.data_source_instance, 'ui_api_details', None)
+                result['data_source_instance_id'] = \
+                    getattr(obj.data_source_instance, 'id', None)
+                result['ui_api_details'] = getattr(
+                    obj.data_source_instance, 'ui_api_details', None)
 
             if obj.type == 'board':
                 result['owner_email'] = getattr(obj.user, 'email', None)
