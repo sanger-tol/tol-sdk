@@ -30,7 +30,7 @@ class MlwhSequencingRequestToElasticSequencingRequestConverter(
         attributes = {
             k: v
             for k, v in data_object.attributes.items()
-            if k not in ['taxon_id', 'public_name', 'sample_ref', 'supplier_name']
+            if k not in ['taxon_id', 'public_name', 'sample_ref', 'supplier_name', 'study_id']
         }
         to_one_relations = {
             'specimen': self._data_object_factory(
@@ -43,6 +43,10 @@ class MlwhSequencingRequestToElasticSequencingRequestConverter(
             'tolid': self._data_object_factory(
                 'tolid',
                 data_object.public_name
+            ),
+            'study': self._data_object_factory(
+                'study',
+                str(data_object.study_id)
             )
         }
         ret = self._data_object_factory(
