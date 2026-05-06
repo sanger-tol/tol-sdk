@@ -415,6 +415,27 @@ def board_blueprint(
                     and (getattr(obj.user, 'id', None) == ctx.user_id or 'warden' in ctx.roles)
                 )
 
+            if obj.type == 'component':
+                user_config = list(board_ds.get_list(
+                    'board_diff',
+                    object_filters=DataSourceFilter(
+                        and_={
+                            'component_id': {
+                                'eq': {
+                                    'value': obj.id
+                                }
+                            },
+                            'user_id': {
+                                'eq': {
+                                    'value': ctx_getter().user_id
+                                }
+                            }
+                        }
+                    )
+                )) if ctx_getter().authenticated else []
+                result['config_diff'] = getattr(
+                    user_config[0], 'config', None) if user_config else None
+
             return result
 
         # We start the recursive serialization at the given parent ID and type
