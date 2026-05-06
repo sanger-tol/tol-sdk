@@ -42,7 +42,39 @@ NOTES:
 
 */
 
-WITH latest_nanodrop_conc AS (    
+WITH locations AS (
+    WITH RECURSIVE sg AS (
+        SELECT 
+            id AS location,
+            location_id AS parent,
+            barcode,
+            name,
+            ARRAY[barcode] AS barcode_path,
+            ARRAY[name] AS name_path,	
+            ARRAY[id] AS id_path
+        FROM location$raw
+        WHERE location_id IS NULL
+        UNION ALL
+        SELECT
+            l.id,
+            l.location_id,
+            l.barcode,
+            l.name,
+            sg.barcode_path || l.barcode,
+            sg.name_path || l.name,
+            sg.id_path || l.id
+        FROM location$raw l
+        JOIN sg ON sg.location = l.location_id
+    )
+    SELECT
+        location AS location_id,
+        name,
+        ARRAY_TO_STRING(name_path, ' / ') AS full_location,
+        ARRAY_TO_STRING(barcode_path, ' / ') AS full_barcodes
+    FROM sg
+),
+
+latest_nanodrop_conc AS (    
     SELECT
         nanod.sample_id,
         nanod.nanodrop_concentration_ngul,
@@ -125,8 +157,12 @@ corelab_extraction_containers AS (
             WHEN con.archived$ THEN 0 -- Archived DNA extractions have a weight of 0
             ELSE con.volume_si * 1000000
         END AS volume_ul,
-        loc.name AS location,
-        box.barcode AS rack,
+		CASE
+			WHEN con.archived$ THEN NULL
+			ELSE CONCAT(locations.full_location, ' / ', box.barcode) 
+		END AS location_path,
+        chr(ascii('A') + con.row_index) || (con.column_index + 1) AS tube_position,
+		con.archived$ AS archived,
         con.archive_purpose$ AS archive_purpose,
         latest_nanodrop_conc.nanodrop_concentration_ngul,
         latest_nanodrop_conc.dna_260_280_ratio,
@@ -149,6 +185,8 @@ corelab_extraction_containers AS (
         ON con.box_id = box.id
     LEFT JOIN location$raw AS loc
         ON loc.id = box.location_id -- End of location chunk
+	LEFT JOIN locations
+		ON locations.location_id = box.location_id
     LEFT JOIN tissue_prep$raw AS tp
         ON tp.id = dna.tissue_prep
     LEFT JOIN tissue$raw AS t
@@ -191,8 +229,9 @@ mock_lres_extractions_containers AS (
         NULL::varchar AS fluidx_id,
         NULL::varchar AS tube_type,
         NULL::float AS volume_ul,
-        'lres'::varchar AS location,
-        NULL::varchar AS rack,
+        'lres'::varchar AS location_path,
+        NULL::varchar AS tube_position,
+		NULL::boolean AS archived,
         NULL::varchar AS archive_purpose,
         NULL::float AS nanodrop_concentration_ngul,
         NULL::float AS dna_260_280_ratio,
