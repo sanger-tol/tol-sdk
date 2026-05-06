@@ -6,7 +6,7 @@ from __future__ import annotations
 
 from typing import Any, TYPE_CHECKING
 
-from flask import Blueprint
+from flask import Blueprint, request
 
 from ..api_base.auth import ForbiddenError
 from ..api_base.misc import (
@@ -18,6 +18,8 @@ from ..core import (
     DataSourceError,
     DataSourceFilter
 )
+
+from nanoid import generate
 
 if TYPE_CHECKING:
     from ..sql import SqlDataSource
@@ -259,7 +261,7 @@ def board_blueprint(
             )
 
         if getattr(bigger_obj.user, 'id', None) != user_id and \
-                'admin' not in ctx_getter().roles:
+                'warden' not in ctx_getter().roles:
             raise ForbiddenError()
 
         __delete_above(
@@ -334,7 +336,8 @@ def board_blueprint(
 
     def __serialise_board_entities(
         parent_id: str,
-        all_entities: dict[str, list[DataObject]]
+        all_entities: dict[str, list[DataObject]],
+        id_mapping: dict[str, str] | None = None,
     ) -> dict[str, Any]:
         """
         serialises the given entities into a nested dict structure suitable
@@ -369,11 +372,15 @@ def board_blueprint(
         # We define a recursive serialization function that uses the above
         # lookups to serialise each object along with its children
         def _serialise(obj: DataObject) -> dict[str, Any]:
-            obj_id = str(obj.id)
-            child_ids = children_lookup.get(obj_id, [])
+            obj_id: str = str(obj.id)
+            mapped_id: str = id_mapping.get(obj_id, obj_id) if id_mapping else obj_id
+
+            child_ids: list[str] = children_lookup.get(obj_id, [])
+            mapped_child_ids: list[str] = [id_mapping.get(child_id, child_id)
+                                           for child_id in child_ids] if id_mapping else child_ids
 
             result: dict[str, Any] = {
-                'id': obj_id,
+                'id': mapped_id,
                 'type': obj.type,
                 # We filter out the 'filter' attribute for non-component and non-zone types,
                 # as it isn't currently needed, can re-add later when needed, i.e. param boards
@@ -387,10 +394,10 @@ def board_blueprint(
             # in the joiner table, nor does it have any child entities, so we
             # can skip adding the 'order' and 'children' fields for it
             if obj.type != 'component':
-                result['order'] = child_ids
+                result['order'] = mapped_child_ids
                 result['children'] = {
-                    child_id: _serialise(obj_lookup[child_id])
-                    for child_id in child_ids
+                    mapped_child_id: _serialise(obj_lookup[child_id])
+                    for child_id, mapped_child_id in zip(child_ids, mapped_child_ids)
                     if child_id in obj_lookup
                 },
 
@@ -401,11 +408,11 @@ def board_blueprint(
                     obj.data_source_instance, 'ui_api_details', None)
 
             if obj.type == 'board':
-                result['owner_email'] = getattr(obj.user, 'email', None)
+                result['owner_email'] = getattr(obj.user, 'oidc_id', None)
                 ctx = ctx_getter()
                 result['write_privilege'] = (
                     ctx.authenticated
-                    and (getattr(obj.user, 'id', None) == ctx.user_id or 'admin' in ctx.roles)
+                    and (getattr(obj.user, 'id', None) == ctx.user_id or 'warden' in ctx.roles)
                 )
 
             return result
@@ -416,6 +423,113 @@ def board_blueprint(
             return {}
 
         return _serialise(parent_obj)
+
+    def __save_board_entity_and_children(
+        entities: dict[str, list[DataObject]],
+        user_id: str,
+        new_parent_title: str,
+        parent_type: str,
+    ) -> tuple[str, dict[str, str]]:
+        """
+        Saves the given entities and their relations to the database.
+
+        Expects the entities to be in a dict keyed by type (including
+        joiner types) mapping to the list of `DataObject`s of that type,
+        as returned by `__collect_recursive`.
+        """
+
+        custom_alphabet = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz'
+        prefix_mappings = {
+            'board': 'b',
+            'view': 'v',
+            'zone': 'z',
+            'component': 'c',
+        }
+
+        # Build old -> new ID mapping for all non-joiner types
+        id_mapping: dict[str, str] = {}
+        for entity_type, objs in entities.items():
+            if entity_type in type_hierarchy:
+                for obj in objs:
+                    new_id = f'{prefix_mappings.get(
+                        entity_type, "x")}_{generate(custom_alphabet, 12)}'
+                    id_mapping[obj.id] = new_id
+
+        for entity_type in type_hierarchy:
+            for obj in entities.get(entity_type, []):
+                original_user = obj.to_one_relationships.get('user')
+                user_stub = board_ds.data_object_factory(
+                    type_=original_user.type if original_user else 'user',
+                    id_=user_id,
+                )
+                to_one = {
+                    rel_name: (user_stub if rel_name == 'user' else rel_obj)
+                    for rel_name, rel_obj in obj.to_one_relationships.items()
+                }
+                new_obj = board_ds.data_object_factory(
+                    type_=entity_type,
+                    id_=id_mapping[obj.id],
+                    attributes={
+                        **obj.attributes, 'title': new_parent_title}
+                    if entity_type == parent_type else obj.attributes,
+                    to_one=to_one,
+                )
+                board_ds.insert(entity_type, [new_obj])
+
+        for entity_type, objs in entities.items():
+            if entity_type not in type_hierarchy:
+                bigger_t = next(t for t in type_hierarchy if entity_type.endswith(f'_{t}'))
+                smaller_t = entity_type[: -(len(bigger_t) + 1)]
+                for obj in objs:
+                    smaller_obj = getattr(obj, smaller_t)
+                    bigger_obj = getattr(obj, bigger_t)
+                    new_obj = board_ds.data_object_factory(
+                        type_=entity_type,
+                        attributes={'order': obj.order},
+                        to_one={
+                            smaller_t: board_ds.data_object_factory(
+                                type_=smaller_t,
+                                id_=id_mapping[smaller_obj.id],
+                            ),
+                            bigger_t: board_ds.data_object_factory(
+                                type_=bigger_t,
+                                id_=id_mapping[bigger_obj.id],
+                            ),
+                        },
+                    )
+                    board_ds.insert(entity_type, [new_obj])
+
+        return id_mapping[entities[biggest_type][0].id], id_mapping
+
+    @board_bp.post('/copy/<string:object_type>/<string:object_id>')
+    def __copy_entity(*, object_type: str, object_id: str):
+        obj = board_ds.get_one(object_type, object_id)
+        if obj is None or obj.id is None:
+            raise DataSourceError(
+                'Not Found',
+                f'The given {object_type} was not found.',
+                404
+            )
+
+        new_parent_title = request.json.get(
+            'new_parent_entity_title', f'{obj.title} - copy')
+        parent_type = request.json.get('parent_entity_type', 'board')
+
+        all_entities = __collect_recursive(object_type, [obj])
+        new_entity_id, id_mapping = __save_board_entity_and_children(
+            all_entities, ctx_getter().user_id, new_parent_title, parent_type)
+
+        if not all_entities.get(object_type) or not new_entity_id:
+            raise DataSourceError(
+                'Copy Error',
+                f'An error occurred while copying the {object_type}.',
+                500
+            )
+
+        copied_entity = __serialise_board_entities(obj.id, all_entities, id_mapping)
+        copied_entity['title'] = new_parent_title
+
+        return copied_entity, 201
 
     @board_bp.delete('/<string:object_type>/<string:object_id>')
     def __delete_endpoint(*, object_type: str, object_id: str):
@@ -445,7 +559,7 @@ def board_blueprint(
             )
 
         all_entities = __collect_recursive(object_type, [obj])
-        serialised_entities = __serialise_board_entities(obj.id, all_entities)
+        serialised_entities = __serialise_board_entities(obj.id, all_entities, id_mapping=None)
 
         return serialised_entities, 200
 
