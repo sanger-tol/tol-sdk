@@ -6,6 +6,30 @@ SPDX-License-Identifier: MIT
 
 # Changelog
 
+## tol-sdk `2.1.7`
+07-05-2026
+- Allow DataLoaders to use requested_fields
+
+## tol-sdk `2.1.6`
+06-05-2026
+- Add study as top level object
+- Add location path and tube position to containers from Benchling
+- JSON to Elastic converter for Genome Notes
+
+## tol-sdk `2.1.5`
+29-04-2026
+- Exclude non-ToL curations in the converter
+- Fix for SqlDatasource filtering two or more levels deep
+
+## tol-sdk `2.1.4`
+29-04-2026
+- Allow Elastic get_stats to work with related attributes
+
+## tol-sdk `2.1.3`
+27-04-2026
+- Add cardinality metadata to SqlDataSource
+- Add mock containers for LRES DNA extractions
+
 ## tol-sdk `2.1.2`
 21-04-2026
 - Added Config dataclass to all converters
