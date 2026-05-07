@@ -4,14 +4,14 @@
 
 import pytest
 
-from tol.api_base.misc import AggregationParameters
+from tol.api_base.misc import LegacyAggregationParameters
 from tol.api_client.exception import BadQueryArgError
 
 
 class TestAggregationParameters:
     def test_no_parameters(self):
         """No page size or page key specified returns None"""
-        parsed = AggregationParameters({'irrelevent': 'so?'})
+        parsed = LegacyAggregationParameters({'irrelevent': 'so?'})
         assert parsed.filter is None
 
     def test_good_filter(self):
@@ -19,13 +19,13 @@ class TestAggregationParameters:
         filter_string = """
             {"exact": {"column1": "value1"}}
         """
-        parsed = AggregationParameters({'filter': filter_string})
+        parsed = LegacyAggregationParameters({'filter': filter_string})
         assert parsed.filter.exact == {'column1': 'value1'}
 
     def test_bad_filter(self):
         """non-JSON raises Exception"""
         for __val in ['0', 'sjdklsjd', '', ' ']:
             with pytest.raises(BadQueryArgError) as e:
-                AggregationParameters({'filter': __val}).filter
+                LegacyAggregationParameters({'filter': __val}).filter
             assert 'filter' in str(e.value)
             assert __val in str(e.value)

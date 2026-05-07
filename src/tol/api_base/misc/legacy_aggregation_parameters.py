@@ -7,7 +7,7 @@ from typing import Dict, Optional
 from .filter_utils import FilterUtils
 
 
-class AggregationParameters:
+class LegacyAggregationParameters:
     """
     Parses the parameters from a query string for a Aggregation POST
     endpoint.

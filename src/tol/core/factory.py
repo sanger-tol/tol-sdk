@@ -79,6 +79,7 @@ def _local_name(__name: str) -> bool:
     __PROPERTY_NAMES = [  # noqa N806
         'id',
         'type',
+        'provenance',
         'attributes',
         'to_one_relationships',
         'to_many_relationships',
@@ -124,6 +125,7 @@ def core_data_object(
             self,
             type_: str,
             id_: str | None = None,
+            provenance_: str | None = None,
             attributes: DataDict | None = None,
             to_one: ToOne | None = None,
             to_many: ToMany | None = None,
@@ -132,6 +134,7 @@ def core_data_object(
         ):
             self.__id = id_
             self.__type = type_
+            self.__provenance = provenance_
             self.__attributes = {} if attributes is None else attributes
             self.__to_one_objects = {} if to_one is None else to_one
             self.__to_many_objects = {} if to_many is None else to_many
@@ -205,6 +208,14 @@ def core_data_object(
         @id.setter
         def id(self, new_id: str) -> None:  # noqa
             self.__id = new_id
+
+        @property
+        def provenance(self) -> str | None:
+            return self.__provenance
+
+        @provenance.setter
+        def provenance(self, new_provenance: str | None) -> None:
+            self.__provenance = new_provenance
 
         @property
         def attributes(self) -> dict[str, Any]:

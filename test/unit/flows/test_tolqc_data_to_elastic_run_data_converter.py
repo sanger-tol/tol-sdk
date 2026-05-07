@@ -208,7 +208,8 @@ class TestTolqcDataToElasticRunDataConverter(TestCase):
         core_data_object(source)
         core_data_object(destination)
         converter = TolqcDataToElasticRunDataConverter(
-            data_object_factory=destination.data_object_factory
+            data_object_factory=destination.data_object_factory,
+            config=TolqcDataToElasticRunDataConverter.Config()
         )
 
         CoreDataObject = source.data_object_factory # noqa N806
@@ -220,6 +221,7 @@ class TestTolqcDataToElasticRunDataConverter(TestCase):
             attributes={
                 'tag_index': 'data1_tag_index',
                 'lims_qc': 'data1_manual_qc',
+                'reads': 200,
                 'bases': 12345,
                 'bases_a': 123,
                 'bases_c': 234,
@@ -403,6 +405,7 @@ class TestTolqcDataToElasticRunDataConverter(TestCase):
             'tag2_sequence': None,
             'auto_qc': None,
             'qc': None,
+            'reads': 200,
             'bases': 12345,
             'bases_a': 123,
             'bases_c': 234,
@@ -431,6 +434,7 @@ class TestTolqcDataToElasticRunDataConverter(TestCase):
             'run': 'run1_id',
             'position': None,
             'run_complete': None,
+            'reads': None,
             'bases': None,
             'bases_a': None,
             'bases_c': None,
@@ -460,6 +464,7 @@ class TestTolqcDataToElasticRunDataConverter(TestCase):
             'position': None,
             'run_start': None,
             'run_complete': None,
+            'reads': None,
             'bases': None,
             'bases_a': None,
             'bases_c': None,
@@ -484,6 +489,7 @@ class TestTolqcDataToElasticRunDataConverter(TestCase):
             'tag2_sequence': None,
             'auto_qc': None,
             'qc': None,
+            'reads': None,
             'bases': None,
             'bases_a': None,
             'bases_c': None,
@@ -509,6 +515,7 @@ class TestTolqcDataToElasticRunDataConverter(TestCase):
             'tag2_sequence': None,
             'auto_qc': None,
             'qc': None,
+            'reads': None,
             'bases': None,
             'bases_a': None,
             'bases_c': None,
@@ -537,6 +544,7 @@ class TestTolqcDataToElasticRunDataConverter(TestCase):
             'tag_sequence': None,
             'tag2_sequence': None,
             'biospecimen_id': 'accession1_id',
+            'reads': None,
             'bases': None,
             'bases_a': None,
             'bases_c': None,
@@ -566,6 +574,7 @@ class TestTolqcDataToElasticRunDataConverter(TestCase):
             'tag2_sequence': None,
             'auto_qc': None,
             'qc': None,
+            'reads': None,
             'bases': None,
             'bases_a': None,
             'bases_c': None,
@@ -591,6 +600,7 @@ class TestTolqcDataToElasticRunDataConverter(TestCase):
             'auto_qc': None,
             'qc': None,
             'reporting_category': 'rnaseq',
+            'reads': None,
             'bases': None,
             'bases_a': None,
             'bases_c': None,

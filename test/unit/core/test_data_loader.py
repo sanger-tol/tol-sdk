@@ -2,6 +2,7 @@
 #
 # SPDX-License-Identifier: MIT
 
+from dataclasses import dataclass
 from typing import Dict, Iterable, List, Optional
 from unittest import (TestCase)
 
@@ -25,6 +26,13 @@ from tol.core.operator import (
 
 
 class _TestDataObjectToDataObjectConverter(DataObjectToDataObjectOrUpdateConverter):
+
+    @dataclass(slots=True, frozen=True, kw_only=True)
+    class Config:
+        pass
+
+    def __init__(self, data_object_factory, config: Config = None) -> None:
+        super().__init__(data_object_factory)
 
     def convert(self, data_object: DataObject) -> Iterable[DataObject]:
         CoreDataObject = self._data_object_factory  # noqa N806
@@ -106,6 +114,10 @@ class _MockDataSource(DataSource, Statter, ListGetter, Upserter):
                         'field1': {
                             'min': 'A',
                             'max': 'Z'
+                        },
+                        'field2.attribute': {
+                            'min': 'B',
+                            'max': 'C'
                         }
                     }
                 }, {
@@ -113,6 +125,10 @@ class _MockDataSource(DataSource, Statter, ListGetter, Upserter):
                     'stats': {
                         'count': 17,
                         'field1': {
+                            'min': None,
+                            'max': None
+                        },
+                        'field2.attribute': {
                             'min': None,
                             'max': None
                         }
@@ -169,14 +185,14 @@ class _MockDataSource(DataSource, Statter, ListGetter, Upserter):
         yield from objects
         self.exhausted = True
 
-    def upsert(self, object_type, objects, field_prefix=None):
+    def upsert(self, object_type, objects, provenance=None):
         objects_to_upsert = list(objects)
         # This is what we test with - make it it's own generator
         self.upserted = (obj for obj in objects_to_upsert)
         self.upserted_object_type = object_type
         return self.__record_exhaustion(objects_to_upsert)
 
-    def insert(self, object_type, objects, field_prefix=None):
+    def insert(self, object_type, objects, provenance=None):
         objects_to_insert = list(objects)
         # This is what we test with - make it it's own generator
         self.inserted = (obj for obj in objects_to_insert)
@@ -381,7 +397,7 @@ class TestDataLoader(TestCase):
             destination_object_type='destination_type',
             dependencies=[],
             group_statter_group_by=['group_by_field'],
-            group_statter_stats_fields=['field1'],
+            group_statter_stats_fields=['field1', 'field2.attribute'],
             group_statter_stats=['min', 'max'],
             loader_name='test_loader'
         )
@@ -394,6 +410,8 @@ class TestDataLoader(TestCase):
         self.assertEqual(3, obj1.source_type_count)
         self.assertEqual('A', obj1.source_type_field1_min)
         self.assertEqual('Z', obj1.source_type_field1_max)
+        self.assertEqual('B', obj1.source_type_field2_attribute_min)
+        self.assertEqual('C', obj1.source_type_field2_attribute_max)
 
         obj2 = next(destination.upserted)
         self.assertEqual('value2', obj2.id)
@@ -401,6 +419,8 @@ class TestDataLoader(TestCase):
         self.assertEqual(17, obj2.source_type_count)
         self.assertIsNone(obj2.source_type_field1_min)
         self.assertIsNone(obj2.source_type_field1_max)
+        self.assertIsNone(obj2.source_type_field2_attribute_min)
+        self.assertIsNone(obj2.source_type_field2_attribute_max)
 
         with self.assertRaises(StopIteration):
             next(destination.upserted)

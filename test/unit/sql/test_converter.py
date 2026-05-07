@@ -69,9 +69,10 @@ class _ExampleModel(Model):
 
 
 class _ExampleDataObject(DataObject):
-    def __init__(self, type_, id_=None, data_=None):
+    def __init__(self, type_, id_=None, data_=None, provenance_=None):
         self.__type = type_
         self.__id = id_
+        self.__provenance = provenance_
         self.__data = data_
 
     @property
@@ -85,6 +86,10 @@ class _ExampleDataObject(DataObject):
     @property
     def type(self):  # noqa
         return self.__type
+
+    @property
+    def provenance(self) -> str | None:
+        return self.__provenance
 
     @property
     def to_many_relationships(self):

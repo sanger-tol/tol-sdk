@@ -4,6 +4,7 @@
 
 from __future__ import annotations
 
+import numbers
 import typing
 from collections.abc import Callable, Iterable
 from datetime import datetime
@@ -18,6 +19,7 @@ from caseconverter import (
 
 from elasticsearch import (Elasticsearch, helpers)
 
+from ._aggregations import ElasticAggregator
 from .client import ElasticClient
 from .converter import (
     ElasticApiConverter,
@@ -43,6 +45,7 @@ from ..core.operator import (
     DetailGetter,
     Enricher,
     GroupStatter,
+    LegacyAggregator,
     ListGetter,
     PageGetter,
     RelationWriteMode,
@@ -52,10 +55,12 @@ from ..core.operator import (
     Updater,
     Upserter,
 )
+from ..core.operator.aggregator import AggregationResult, AggregationResultData
 from ..core.operator.updater import DataObjectUpdate
 from ..core.relationship import (
     RelationshipConfig
 )
+from ..core.requested_fields import ReqFieldsTree, requested_fields_to_tree
 
 if typing.TYPE_CHECKING:
     from ..core.session import OperableSession
@@ -68,13 +73,15 @@ DataObjectUpdateConverterFactory = Callable[[], ElasticUpdateInputConverter]
 
 class ElasticDataSource(
     DataSource,
+    Aggregator,
+    ElasticAggregator,
     Cursor,
     Summariser,
     DetailGetter,
     Enricher,
     PageGetter,
     ListGetter,
-    Aggregator,
+    LegacyAggregator,
     Relational,
     Updater,
     Upserter,
@@ -167,7 +174,7 @@ class ElasticDataSource(
         objects: Iterable[DataObject],
         chunk_size: int = 100,
         id_func=lambda x: x.id,
-        field_prefix: str = '',
+        provenance: str = '',
         merge_collections: bool | None = None,
         **kwargs
     ) -> None:
@@ -180,13 +187,19 @@ class ElasticDataSource(
         index = self.__get_index_or_alias(object_type)
         converter = self._data_object_converter_factory()
         (no_of_operations, no_of_errors) = \
-            self.helpers.bulk(self.es,
-                              converter.convert(ElasticUpsertInputResource(index,
-                                                                           objects,
-                                                                           id_func,
-                                                                           field_prefix)),
-                              stats_only=True,
-                              chunk_size=chunk_size)
+            self.helpers.bulk(
+                self.es,
+                converter.convert(
+                    ElasticUpsertInputResource(
+                        index=index,
+                        objects=objects,
+                        id_func=id_func,
+                        field_prefix=provenance
+                    )
+                ),
+                stats_only=True,
+                chunk_size=chunk_size
+        )
         if no_of_errors > 0:
             raise DataSourceError(f'{no_of_errors} errors encountered '
                                   f'upserting {no_of_operations} objects')
@@ -195,7 +208,7 @@ class ElasticDataSource(
         self,
         object_type: str,
         updates: Iterable[DataObjectUpdate],
-        field_prefix: str = '',
+        provenance: str = '',
         candidate_key: Iterable[str] = [],
         **kwargs
     ) -> None:
@@ -214,10 +227,10 @@ class ElasticDataSource(
                 candidate_key = kwargs['candidate_key_func'](update)
             self.es.update_by_query(
                 index=real_index_name,
-                body=converter.convert(ElasticUpdateInputResource(object_type,
-                                                                  update,
-                                                                  field_prefix,
-                                                                  candidate_key)),
+                body=converter.convert(ElasticUpdateInputResource(object_type=object_type,
+                                                                  update=update,
+                                                                  field_prefix=provenance,
+                                                                  candidate_key=candidate_key)),
                 conflicts='proceed',
                 wait_for_completion=False
             )
@@ -243,7 +256,7 @@ class ElasticDataSource(
             group_statter_stats_fields=summary.stats_fields,
             group_statter_stats=summary.stats,
         )
-        loader.load(field_prefix=summary.prefix)
+        loader.load(provenance=summary.provenance_override)
 
     def __format_cursor_response(
         self,
@@ -266,7 +279,7 @@ class ElasticDataSource(
         start = len(self.index_prefix) + 1
         return snakecase(index[start:])
 
-    def _field_or_keyword(self, object_type: str, name: str):
+    def _field_or_keyword(self, object_type: str, name: str) -> str:
         """
         Map our field format to Elastic's format
         """
@@ -291,10 +304,65 @@ class ElasticDataSource(
                 return f'{name}.keyword'
         return name
 
+    def _prepare_get_parameters(
+        self,
+        object_type: str,
+        object_filters: DataSourceFilter | None,
+        sort_by: str | None = None,
+        requested_tree: ReqFieldsTree | None = None,
+    ) -> tuple[str | None, dict, list[Any] | None, dict | None]:
+        """
+        Prepares the real_index_name, query, fields, and runtime_mappings,
+        needed for all get operations.
+        `fields` and `runtime_mappings` are filtered by the fields in the requested tree,
+        if one was provided.
+        """
+
+        # Prepare real_index_name
+        index = self.__get_index_or_alias(object_type)
+        real_index_name = self._get_indices().get(index)
+
+        # Prepare query
+        query = ElasticFilterConverter(self).convert(object_type, object_filters)
+
+        # Prepare fields to request and their runtime_mappings.
+        # Filter runtime fields to have only those in the requested tree.
+        runtime_mappings = (
+            dict(self.runtime_fields[object_type])
+            if object_type in self.runtime_fields
+            else None
+        )
+        fields = list(runtime_mappings.keys()) if runtime_mappings is not None else None
+        if requested_tree is not None and fields is not None and runtime_mappings is not None:
+            # Filter fields to fetch based on whether they're in the requested tree
+            fields = list(filter(
+                lambda field: (
+                    requested_tree.has_attribute(field)
+                    or (
+                        object_filters is not None and object_filters.and_ is not None
+                        and field in object_filters.and_.keys()
+                    )
+                    or sort_by is not None and field in sort_by
+                ),
+                fields,
+            ))
+
+            # Only allow the runtime mappings of these fields
+            runtime_mappings = {key: runtime_mappings[key] for key in fields}
+
+        return (
+            real_index_name,
+            query,
+            fields,
+            runtime_mappings,
+        )
+
+    @requested_fields_to_tree
     def get_by_id(
         self,
         object_type: str,
         object_ids: Iterable[DataId],
+        requested_tree: ReqFieldsTree | None = None,
         **kwargs
     ) -> Iterable[DataObject]:
         del kwargs
@@ -302,8 +370,12 @@ class ElasticDataSource(
         f.and_ = {'_id': {'in_list': {'value': object_ids}}}
         # get_by_id is expected to return objects in the order they were asked for
         # or None if not found, hence the following rearrangement.
-        return self.sort_by_id(self.get_list(object_type, object_filters=f), object_ids)
+        return self.sort_by_id(
+            self.get_list(object_type, object_filters=f, requested_tree=requested_tree),
+            object_ids
+        )
 
+    @requested_fields_to_tree
     def get_list_page(
         self,
         object_type: str,
@@ -311,6 +383,7 @@ class ElasticDataSource(
         object_filters: DataSourceFilter | None = None,
         sort_by: str | None = None,
         page_size: int | None = None,
+        requested_tree: ReqFieldsTree | None = None,
         **kwargs
     ) -> tuple[Iterable[DataObject], int]:
         del kwargs
@@ -320,7 +393,8 @@ class ElasticDataSource(
             object_filters,
             sort_by,
             page_size,
-            page=page
+            page=page,
+            requested_tree=requested_tree,
         )
 
         return (
@@ -337,16 +411,16 @@ class ElasticDataSource(
         sort_by: str | None,
         page_size: int | None,
         page: int | None = None,
-        search_after: list[Any] | None = None
+        search_after: list[Any] | None = None,
+        requested_tree: ReqFieldsTree | None = None,
     ) -> dict[str, Any]:
-        index = self.__get_index_or_alias(object_type)
-        real_index_name = self._get_indices().get(index)
-        query = ElasticFilterConverter(self).convert(object_type, object_filters)
+        real_index_name, query, fields, runtime_mappings = self._prepare_get_parameters(
+            object_type=object_type,
+            object_filters=object_filters,
+            sort_by=sort_by,
+            requested_tree=requested_tree,
+        )
         sort = self._build_elasticsearch_sort(object_type, sort_by)
-        fields = list(self.runtime_fields[object_type].keys()) \
-            if object_type in self.runtime_fields else None
-        runtime_mappings = self.runtime_fields[object_type] \
-            if object_type in self.runtime_fields else None
         if page_size is None:
             page_size = self.get_page_size()
         from_ = (page - 1) * page_size if page is not None else None
@@ -408,22 +482,22 @@ class ElasticDataSource(
 
         return {field: order}
 
+    @requested_fields_to_tree
     def get_list(
         self,
         object_type: str,
         object_filters: DataSourceFilter | None = None,
         session: OperableSession | None = None,
+        requested_tree: ReqFieldsTree | None = None,
         **kwargs
     ) -> Iterable[DataObject]:
         del session, kwargs
 
-        index = self.__get_index_or_alias(object_type)
-        real_index_name = self._get_indices().get(index)
-        query = ElasticFilterConverter(self).convert(object_type, object_filters)
-        fields = list(self.runtime_fields[object_type].keys()) \
-            if object_type in self.runtime_fields else None
-        runtime_mappings = self.runtime_fields[object_type] \
-            if object_type in self.runtime_fields else None
+        real_index_name, query, fields, runtime_mappings = self._prepare_get_parameters(
+            object_type=object_type,
+            object_filters=object_filters,
+            requested_tree=requested_tree,
+        )
         generator = self.helpers.scan(self.es,
                                       index=real_index_name,
                                       scroll='10m',
@@ -433,7 +507,115 @@ class ElasticDataSource(
                                       runtime_mappings=runtime_mappings)
         return self._elastic_converter_factory().convert_list(generator)
 
+    def _get_elastic_aggregations(
+        self,
+        object_type: str,
+        elastic_aggregations: dict,
+        object_filters: DataSourceFilter | None = None,
+    ) -> dict:
+        real_index_name, query, fields, runtime_mappings = self._prepare_get_parameters(
+            object_type=object_type,
+            object_filters=object_filters,
+        )
+        resp = self.es.search(
+            size=0,
+            index=real_index_name,
+            query=query,
+            aggregations=elastic_aggregations,
+            fields=fields,
+            runtime_mappings=runtime_mappings
+        )
+        return resp['aggregations']
+
+    def __apply_cumulative_transformation_to_aggregations_result(
+        self,
+        aggregations_result: AggregationResult,
+    ) -> None:
+        """
+        Applies IN PLACE accumulation across y values in an aggregations result
+        """
+        accumulation = 0
+
+        for break_down_by in aggregations_result:
+            data = typing.cast(AggregationResultData, break_down_by['data'])
+            for data_point in data:
+                if not isinstance(data_point['y'], numbers.Real):
+                    raise DataSourceError(
+                        'Unable to accumulate aggregation',
+                        detail=(
+                            'The `cumulative` flag passed into `get_aggregations` was `True`, '
+                            'but this is not supported for aggregations of a non-numerical y-axis'
+                        ),
+                        status_code=400,
+                    )
+
+                accumulation += data_point['y']
+                data_point['y'] = accumulation
+
     def get_aggregations(
+        self,
+        object_type: str,
+        object_filters: DataSourceFilter | None = None,
+        *,
+        x_axis: str,
+        y_axis: str | None = None,
+        date_interval: str | None = None,
+        break_down_by: str | None = None,
+        stat: str | None = None,
+        stat_field: str | None = None,
+        cumulative: bool | None = None,
+        maximum_categories: int | None = None
+    ) -> AggregationResult | None:
+        result: AggregationResult
+
+        # Call the correct aggregation method depending on the options provided.
+        # These are implemented in `_ElasticAggregator` (`_aggregations.py`)
+        if self.attribute_types[object_type][x_axis] == 'datetime' and date_interval:
+            if break_down_by:
+                result = self._get_date_aggregation_segmented(
+                    object_type,
+                    object_filters,
+                    x_axis,
+                    date_interval,
+                    break_down_by,
+                )
+            else:
+                result = self._get_date_aggregation(
+                    object_type,
+                    object_filters,
+                    x_axis,
+                    date_interval,
+                )
+        elif y_axis:
+            # TODO SCATTER AGGREGATION
+            return None
+        elif self.attribute_types[object_type][x_axis] == 'str':
+            if break_down_by:
+                result = self._get_categorical_aggregation_segmented(
+                    object_type,
+                    object_filters,
+                    x_axis,
+                    maximum_categories or 0,  # TODO It may be a different way to say no max
+                    break_down_by,
+                )
+            else:
+                result = self._get_categorical_aggregation(
+                    object_type,
+                    object_filters,
+                    x_axis,
+                    maximum_categories or 0,  # TODO It may be a different way to say no max
+                )
+        else:
+            # Invalid combination of options
+            return None
+
+        # Post-processing (if required)
+        if cumulative:
+            self.__apply_cumulative_transformation_to_aggregations_result(result)
+
+        return result
+
+    def get_aggregations_legacy(
         self,
         object_type: str,
         aggregations: dict,
@@ -441,23 +623,7 @@ class ElasticDataSource(
         **kwargs
     ) -> dict:
         del kwargs
-
-        index = self.__get_index_or_alias(object_type)
-        real_index_name = self._get_indices().get(index)
-        query = ElasticFilterConverter(self).convert(object_type, object_filters)
-        fields = list(self.runtime_fields[object_type].keys()) \
-            if object_type in self.runtime_fields else None
-        runtime_mappings = self.runtime_fields[object_type] \
-            if object_type in self.runtime_fields else None
-        resp = self.es.search(
-            size=0,
-            index=real_index_name,
-            query=query,
-            aggregations=aggregations,
-            fields=fields,
-            runtime_mappings=runtime_mappings
-        )
-        return resp['aggregations']
+        return self._get_elastic_aggregations(object_type, aggregations, object_filters)
 
     def get_stats(
         self,
@@ -472,7 +638,7 @@ class ElasticDataSource(
             object_type=object_type,
             stats_fields=stats_fields,
             stats=stats)
-        agg_results = self.get_aggregations(
+        agg_results = self.get_aggregations_legacy(
             object_type=object_type,
             aggregations=aggs,
             object_filters=object_filters
@@ -496,7 +662,7 @@ class ElasticDataSource(
             stats_values[stats_field] = {}
             for stat in stats:
                 stat_value = aggregation_result[f'{stats_field}_{stat}']['value']
-                python_type = self.attribute_types[object_type][stats_field]
+                python_type = self.get_python_type_by_name(object_type, stats_field)
                 if python_type == 'datetime' and stat_value is not None \
                         and stat in ['min', 'max']:
                     stat_value = datetime.fromtimestamp(stat_value / 1000)
@@ -559,7 +725,7 @@ class ElasticDataSource(
             )
         if after_key is not None:
             aggregation['counts']['composite']['after'] = after_key
-        agg_page = self.get_aggregations(
+        agg_page = self.get_aggregations_legacy(
             object_type,
             aggregations=aggregation,
             object_filters=object_filters)
@@ -586,7 +752,7 @@ class ElasticDataSource(
                     agg = self.__get_union_aggregation(object_type, stats_field)
                 elif stat == 'unique':
                     agg = self.__get_unique_count_aggregation(object_type, stats_field)
-                elif self.attribute_types[object_type][stats_field] == 'str' \
+                elif self.get_python_type_by_name(object_type, stats_field) == 'str' \
                         and stat in ['min', 'max']:
                     agg = self.__get_string_aggregation(object_type, stats_field, stat)
                 ret[f'{stats_field}_{stat}'] = agg
@@ -616,7 +782,7 @@ class ElasticDataSource(
                 stats_values[stats_field] = {}
                 for stat in stats:
                     stat_value = v[f'{stats_field}_{stat}']['value']
-                    python_type = self.attribute_types[object_type][stats_field]
+                    python_type = self.get_python_type_by_name(object_type, stats_field)
                     if python_type == 'datetime' and stat_value is not None \
                             and stat in ['min', 'max']:
                         stat_value = datetime.fromtimestamp(stat_value / 1000)
@@ -750,13 +916,11 @@ class ElasticDataSource(
         **kwargs
     ) -> int:
         del kwargs
-        index = self.__get_index_or_alias(object_type)
-        real_index_name = self._get_indices().get(index)
-        query = ElasticFilterConverter(self).convert(object_type, object_filters)
-        fields = list(self.runtime_fields[object_type].keys()) \
-            if object_type in self.runtime_fields else None
-        runtime_mappings = self.runtime_fields[object_type] \
-            if object_type in self.runtime_fields else None
+
+        real_index_name, query, fields, runtime_mappings = self._prepare_get_parameters(
+            object_type=object_type,
+            object_filters=object_filters,
+        )
         # We are not using es.count so that we can use runtime fields
         resp = self.es.search(
             index=real_index_name,

@@ -16,11 +16,13 @@ from tol.core import (
     core_data_object
 )
 from tol.core.operator import (
+    AggregationResult,
     Aggregator,
     Counter,
     Deleter,
     DetailGetter,
     Inserter,
+    LegacyAggregator,
     PageGetter,
     Relational,
     Updater,
@@ -31,7 +33,14 @@ from tol.core.operator.updater import DataObjectUpdate
 from .app import _test_application
 
 
-class ParrotDataSource(DataSource, DetailGetter, PageGetter, Aggregator, Counter):
+class ParrotDataSource(
+    DataSource,
+    Aggregator,
+    DetailGetter,
+    PageGetter,
+    LegacyAggregator,
+    Counter
+):
     """Mimics what its told."""
 
     def get_by_id(self, object_type: str, object_ids, **kwargs):
@@ -61,6 +70,45 @@ class ParrotDataSource(DataSource, DetailGetter, PageGetter, Aggregator, Counter
         return 9876  # just a silly number, arbitrary
 
     def get_aggregations(
+        self,
+        object_type: str,
+        object_filters: DataSourceFilter | None = None,
+        *,
+        x_axis: str,
+        y_axis: str | None = None,
+        date_interval: str | None = None,
+        break_down_by: str | None = None,
+        stat: str | None = None,
+        stat_field: str | None = None,
+        cumulative: bool | None = None,
+        maximum_categories: int | None = None
+    ) -> AggregationResult | None:
+        return [
+            {
+                'key': 'break_down_by_1',
+                'data': [
+                    {
+                        'x': '2025-01-01', 'y': 27
+                    },
+                    {
+                        'x': '2025-01-02', 'y': 30
+                    }
+                ],
+            },
+            {
+                'key': 'break_down_by_2',
+                'data': [
+                    {
+                        'x': '2025-01-01', 'y': 15
+                    },
+                    {
+                        'x': '2025-01-02', 'y': 20
+                    }
+                ],
+            }
+        ]
+
+    def get_aggregations_legacy(
             self,
             object_type: str,
             aggregations: Dict,
@@ -255,9 +303,43 @@ class TestBlueprint(BlueprintTestCase):
         )
 
     def test_200_on_good_aggregations(self):
-        """A good aggregations POST returns 200 and correct data"""
-        body = {'aggs': {}}  # We are mocking the result
+        """A good aggregations POST"""
+        body = {'x_axis': 'field_name'}  # We are mocking the result
         response = self.client.open('/data/cracker:aggregations', method='POST', json=body)
+        self.assert200(
+            response,
+            f'Response body is : {response.data.decode("utf-8")}'
+        )
+        expected_aggregations = [
+            {
+                'key': 'break_down_by_1',
+                'data': [
+                    {
+                        'x': '2025-01-01', 'y': 27
+                    },
+                    {
+                        'x': '2025-01-02', 'y': 30
+                    }
+                ],
+            },
+            {
+                'key': 'break_down_by_2',
+                'data': [
+                    {
+                        'x': '2025-01-01', 'y': 15
+                    },
+                    {
+                        'x': '2025-01-02', 'y': 20
+                    }
+                ],
+            }
+        ]
+        self.assertEqual(response.json, expected_aggregations)
+
+    def test_200_on_good_aggregations_legacy(self):
+        """A good legacy aggregations POST returns 200 and correct data"""
+        body = {'aggs': {}}  # We are mocking the result
+        response = self.client.open('/data/cracker:aggregations_legacy', method='POST', json=body)
         self.assert200(
             response,
             f'Response body is : {response.data.decode("utf-8")}'
@@ -290,6 +372,21 @@ class TestBlueprint(BlueprintTestCase):
     def test_200_on_good_count(self):
         """A good count GET returns 200 and correct data"""
         response = self.client.open('/data/cracker:count', method='GET')
+        self.assert200(
+            response,
+            f'Response body is : {response.data.decode("utf-8")}'
+        )
+        self.assertEqual(
+            response.json,
+            {
+                'meta': {'total': 9876},
+                'data': []
+            }
+        )
+
+    def test_200_on_good_count_post(self):
+        """A good count POST returns 200 and correct data"""
+        response = self.client.open('/data/cracker:count', method='POST', json={})
         self.assert200(
             response,
             f'Response body is : {response.data.decode("utf-8")}'

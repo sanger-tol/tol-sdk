@@ -67,6 +67,17 @@ class AttributeMetadata(ABC):
     ) -> bool:
         pass
 
+    @abstractmethod
+    def get_acts_as(
+        self,
+        object_type: str,
+        attribute_name: str
+    ) -> Optional[str]:
+        """
+        A semantic role for the attribute (e.g. 'status'), used by consumers
+        to apply special behaviour.
+        """
+
 
 class DefaultAttributeMetadata(AttributeMetadata):
     def get_display_name(
@@ -144,5 +155,14 @@ class DefaultAttributeMetadata(AttributeMetadata):
             attribute_name: str) -> Optional[str]:
         """
         The source of the attribute i.e becnhling, sts etc
+        """
+        return None
+
+    def get_acts_as(
+            self,
+            object_type: str,
+            attribute_name: str) -> Optional[str]:
+        """
+        A semantic role for the attribute (e.g. 'status').
         """
         return None

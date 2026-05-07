@@ -8,7 +8,7 @@ from abc import ABCMeta
 from datetime import datetime
 from functools import cache
 from types import MappingProxyType  # A read-only dict
-from typing import Any, Iterable, Optional, Type
+from typing import Any, Iterable, Optional
 
 from sqlalchemy import JSON, inspect
 from sqlalchemy.ext.declarative import DeclarativeMeta
@@ -18,7 +18,7 @@ from sqlalchemy.orm import (
     RelationshipDirection,
     declarative_base,
     declared_attr,
-    mapped_column
+    mapped_column,
 )
 
 from .exception import BadColumnError
@@ -52,6 +52,12 @@ class Model:
     @classmethod
     def get_column(cls, name: str) -> MappedColumn:
         """The (attribute) column for the given name."""
+
+    @classmethod
+    def get_id_column(cls) -> MappedColumn:
+        """
+        The columns that serves as the "id".
+        """
 
     @classmethod
     def get_to_one_relationship_config(cls) -> dict[str, str]:
@@ -154,7 +160,7 @@ class DefaultModel(Model):
     """
 
 
-def model_base() -> Type[DefaultModel]:
+def model_base() -> type[DefaultModel]:
     """
     Creates a new base for Model classes that implement the Model ABC.
     """
@@ -192,6 +198,10 @@ def model_base() -> Type[DefaultModel]:
         @classmethod
         def get_id_column_name(cls) -> str:
             return 'id'
+
+        @classmethod
+        def get_id_column(cls) -> MappedColumn:
+            return cls.get_column(cls.get_id_column_name())
 
         @classmethod
         def get_column(cls, name: str) -> MappedColumn:

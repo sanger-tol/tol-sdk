@@ -183,9 +183,22 @@ def create_pipeline_step_models(
             default=False
         )
 
-        is_ready: Mapped[bool] = mapped_column(
-            nullable=False,
+        validation_status: Mapped[str] = mapped_column(
+            nullable=True,
+            default='in_progress'
+        )
+
+        rejection_reason: Mapped[str] = mapped_column(
+            nullable=True
+        )
+
+        hidden: Mapped[str] = mapped_column(
+            nullable=True,
             default=False
+        )
+
+        upload_name: Mapped[str] = mapped_column(
+            nullable=True,
         )
 
         failure_message: Mapped[str | None] = mapped_column(

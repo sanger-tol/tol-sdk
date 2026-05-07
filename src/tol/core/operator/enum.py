@@ -18,6 +18,7 @@ class OperatorMethod(str, Enum):
     UPDATE = 'update PATCH'
     UPSERT = 'upserts POST'
     AGGREGATE = 'aggregations POST'
+    AGGREGATE_LEGACY = 'aggregations_legacy POST'
     TO_ONE = 'recursive to-one relation GET'
     TO_MANY = 'to-many relations GET'
 

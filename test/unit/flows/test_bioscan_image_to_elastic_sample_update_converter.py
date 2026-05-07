@@ -34,7 +34,8 @@ class TestBioscanImageToElasticSampleUpdateConverter(TestCase):
 
         # Initialize converter
         converter = BioscanImageToElasticSampleUpdateConverter(
-            data_object_factory=destination_data_source.data_object_factory
+            data_object_factory=destination_data_source.data_object_factory,
+            config=BioscanImageToElasticSampleUpdateConverter.Config()
         )
 
         # Make a "mock class" that's actually the data_object_factory of the source data source

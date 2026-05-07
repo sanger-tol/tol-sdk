@@ -2,6 +2,7 @@
 #
 # SPDX-License-Identifier: MIT
 
+from dataclasses import dataclass
 from typing import (
     Iterable
 )
@@ -18,10 +19,18 @@ from ...core import (
 class ElasticSampleToBenchlingTissueConverter(
         DataObjectToDataObjectOrUpdateConverter):
 
-    def __init__(self, data_object_factory):
+    @dataclass(slots=True, frozen=True, kw_only=True)
+    class Config:
+        pass
+
+    __slots__ = ['__config']
+    __config: Config
+
+    def __init__(self, data_object_factory, config: Config):
         super().__init__(data_object_factory)
         self.update_converter = ElasticSampleToBenchlingTissueUpdateConverter(
-            data_object_factory=self._data_object_factory
+            data_object_factory=self._data_object_factory,
+            config=config
         )
 
     def convert(self, data_object: DataObject) -> Iterable[DataObject]:

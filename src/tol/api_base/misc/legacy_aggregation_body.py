@@ -4,10 +4,10 @@
 
 from typing import Dict
 
-from ...api_client.exception import BadPostJsonError
+from ...api_client.exception import PostJsonKeyMissingError
 
 
-class AggregationBody:
+class LegacyAggregationBody:
     """
     Parses the parameters from a query string for a Aggregation POST
     endpoint.
@@ -23,7 +23,7 @@ class AggregationBody:
         """
         body_dict = self.__body_dict.get('aggs')
         if body_dict is None:
-            raise BadPostJsonError(
+            raise PostJsonKeyMissingError(
                 'aggs',
                 message='"aggs" must be given'
             )

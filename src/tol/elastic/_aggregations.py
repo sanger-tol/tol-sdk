@@ -1,0 +1,201 @@
+# SPDX-FileCopyrightText: 2026 Genome Research Ltd.
+#
+# SPDX-License-Identifier: MIT
+
+from abc import ABC, abstractmethod
+
+from ..core import DataSourceFilter
+from ..core.operator import AggregationResult
+
+
+class ElasticAggregator(ABC):
+    @abstractmethod
+    def _field_or_keyword(self, object_type: str, name: str) -> str:
+        """
+        Helper method that maps fields in our format to Elastic's format. Implemented in the
+        data source itself. This is defined as abstract here to indicate to other methods in this
+        class that it'll be available.
+        """
+        raise NotImplementedError
+
+    @abstractmethod
+    def _get_elastic_aggregations(
+        self,
+        object_type: str,
+        elastic_aggregations: dict,
+        object_filters: DataSourceFilter | None = None,
+    ) -> dict:
+        """
+        The helper method that makes the actual aggregations call to Elastic. Implemented in the
+        data source itself. This is defined as abstract here to indicate to other methods in this
+        class that it'll be available.
+        """
+        raise NotImplementedError
+
+    def _get_date_aggregation(
+        self,
+        object_type: str,
+        object_filters: DataSourceFilter | None,
+        x_axis: str,
+        date_interval: str,  # Validated in `AggregationArgs`
+    ) -> AggregationResult:
+        elastic_response = self._get_elastic_aggregations(
+            object_type,
+            {
+                'date-aggregation': {
+                    'date_histogram': {
+                        'field': x_axis,
+                        'calendar_interval': date_interval,
+                        'time_zone': 'Europe/London',
+                    },
+                },
+            },
+            object_filters,
+        )
+
+        # Parse to our response format
+        return [
+            {
+                'key': None,
+                'data': [
+                    {
+                        'x': data_point['key_as_string'],
+                        'y': data_point['doc_count'],
+                    }
+                    for data_point in elastic_response['date-aggregation']['buckets']
+                ]
+            }
+        ]
+
+    def _get_date_aggregation_segmented(
+        self,
+        object_type: str,
+        object_filters: DataSourceFilter | None,
+        x_axis: str,
+        date_interval: str,  # Validated in `AggregationArgs`
+        break_down_by: str,
+    ) -> AggregationResult:
+        # Query Elastic
+        elastic_response = self._get_elastic_aggregations(
+            object_type,
+            {
+                'break-down-by-aggregation': {
+                    'terms': {
+                        'field': self._field_or_keyword(object_type, break_down_by),
+                        'size': 25,
+                    },
+                    'aggs': {
+                        'date-aggregation': {
+                            'date_histogram': {
+                                'field': x_axis,
+                                'calendar_interval': date_interval,
+                                'time_zone': 'Europe/London',
+                            },
+                        },
+                    },
+                },
+            },
+            object_filters,
+        )
+
+        # Parse to our response format
+        return [
+            {
+                'key': str(break_down_by['key']),
+                'data': [
+                    {
+                        'x': data_point['key_as_string'],
+                        'y': data_point['doc_count']
+                    }
+                    for data_point in break_down_by['date-aggregation']['buckets']
+                ]
+            }
+            for break_down_by in elastic_response['break-down-by-aggregation']['buckets']
+        ]
+
+    def _get_categorical_aggregation(
+        self,
+        object_type: str,
+        object_filters: DataSourceFilter | None,
+        x_axis: str,
+        # TODO: This should only be used if x_axis is categorical. How do we know that?
+        maximum_categories: int,
+    ) -> AggregationResult:
+        elastic_response = self._get_elastic_aggregations(
+            object_type,
+            {
+                'categorical-aggregation': {
+                    'terms': {
+                        'field': self._field_or_keyword(object_type, x_axis),
+                        'order': {
+                            '_key': 'asc',
+                        },
+                        'size': 25,
+                    },
+                },
+            },
+            object_filters,
+        )
+
+        # Parse to our response format
+        return [
+            {
+                'key': None,
+                'data': [
+                    {
+                        'x': data_point['key'],
+                        'y': data_point['doc_count'],
+                    }
+                    for data_point in elastic_response['categorical-aggregation']['buckets']
+                ]
+            }
+        ]
+
+    def _get_categorical_aggregation_segmented(
+        self,
+        object_type: str,
+        object_filters: DataSourceFilter | None,
+        x_axis: str,
+        # TODO: This should only be used if x_axis is categorical. How do we know that?
+        maximum_categories: int,
+        break_down_by: str,
+    ) -> AggregationResult:
+        # Query Elastic
+        elastic_response = self._get_elastic_aggregations(
+            object_type,
+            {
+                'break-down-by-aggregation': {
+                    'terms': {
+                        'field': self._field_or_keyword(object_type, break_down_by),
+                        'size': 25,
+                    },
+                    'aggs': {
+                        'categorical-aggregation': {
+                            'terms': {
+                                'field': self._field_or_keyword(object_type, x_axis),
+                                'order': {
+                                    '_key': 'asc',
+                                },
+                                'size': 25,
+                            },
+                        },
+                    },
+                },
+            },
+            object_filters,
+        )
+
+        # Parse to our response format
+        return [
+            {
+                'key': str(break_down_by['key']),
+                'data': [
+                    {
+                        'x': data_point['key'],
+                        'y': data_point['doc_count']
+                    }
+                    for data_point in break_down_by['categorical-aggregation']['buckets']
+                ]
+            }
+            for break_down_by in elastic_response['break-down-by-aggregation']['buckets']
+        ]

@@ -3,9 +3,6 @@
 
 This SQL query retrieves all the information of pooled DNA extractions performed by the ToL Core Laboratory. 
 
-The table produced also contains the eln_pooled_sample_id and eln_file_registry_id 
-which uniquely idenfied each dna extract entity in Benchling Warehouse (BWH). 
-
 The eln_pooled_sample_id should be used as the foreign key to the DNA extract entity to the
 submission it is derived from.
 
@@ -17,22 +14,21 @@ Output: Table with cols:
 2) taxon_id: [character] Tissue metadata. Origin: STS
 3) eln_tissue_id: [character] Benchling id for the tissue the extractions is derived from.
 4) eln_tissue_prep_id: [character] Benchling id for the tissue prep the extractions is derived from.
-5) eln_file_registry_id: [character] id in Benchling Registry.
-6) extraction_id: [character] Primary key. 
-7) programme_id: [character] ToLID. Origin: BWH
-8) specimen_id: [character] Specimen ID. Origin: STS
-9) completion_date: [date] Extraction date. This field coalesces created_at$ and created_on fields. Created_on is for bnt legacy data.
-10) extraction_name: [character] Entity name. 
-11) fluidx_id: [character] Container barcode of the DNA fluidx tube. 
-12) extraction_qc_result: [character] QC result: Yes = Extraction passed; No = Extraction failed. 
-13) yield_ng: [double] DNA yield after extraction. 
-14) femto_description:[character] Categorical description of the femto pulse profile. 
-15) volume_ul: [double] volume of DNA available in the fluidx tube.
-16) tube_type: [character] Type of tube. Marked NULL or voucher.
-17) location: [character] Physical locationo of the DNA extraction. Freezer shelf.
-18) rack: [character] Physical locationo of the DNA extraction. Rack barcode.
-19) source_extractions_id: [jsonb] List of ids for pooled dna extracts.
-20) extraction_type: [character] pooled_dna.
+5) extraction_id: [character] Primary key. 
+6) programme_id: [character] ToLID. Origin: BWH
+7) specimen_id: [character] Specimen ID. Origin: STS
+8) completion_date: [date] Extraction date. This field coalesces created_at$ and created_on fields. Created_on is for bnt legacy data.
+9) extraction_name: [character] Entity name. 
+10) fluidx_id: [character] Container barcode of the DNA fluidx tube. 
+11) extraction_qc_result: [character] QC result: Yes = Extraction passed; No = Extraction failed. 
+12) yield_ng: [double] DNA yield after extraction. 
+13) femto_description:[character] Categorical description of the femto pulse profile. 
+14) volume_ul: [double] volume of DNA available in the fluidx tube.
+15) tube_type: [character] Type of tube. Marked NULL or voucher.
+16) location: [character] Physical locationo of the DNA extraction. Freezer shelf.
+17) rack: [character] Physical locationo of the DNA extraction. Rack barcode.
+18) source_extractions_id: [jsonb] List of ids for pooled dna extracts.
+19) extraction_type: [character] pooled_dna.
 
 NOTES: 
 
@@ -50,7 +46,6 @@ SELECT DISTINCT
 	t.taxon_id,
 	t.id AS eln_tissue_id,
 	tp.id AS eln_tissue_prep_id,
-	dnap.file_registry_id$ AS eln_file_registry_id,
 	dnap.id AS extraction_id,
 	t.programme_id,
 	t.specimen_id,

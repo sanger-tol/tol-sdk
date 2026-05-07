@@ -4,83 +4,39 @@
 
 from __future__ import annotations
 
+from operator import eq
 from string import ascii_lowercase
 from typing import Any
 from unittest.mock import MagicMock
 
 import pytest
 
+from sqlalchemy import Integer
 from sqlalchemy.exc import IntegrityError
+from sqlalchemy.orm import mapped_column
 
 from tol.core import DataSourceError
 from tol.sql.database import DefaultDatabase
+from tol.sql.model import model_base
 
 
-class _Column:
-    def __init__(self, name: Any) -> None:
-        self.__name = name
-
-    def __eq__(self, __v: Any) -> tuple(str, str, Any):
-        """gives a deterministic result for __eq__ (==)"""
-        return '__eq__', self.__name, __v
+Base = model_base()
 
 
-class _TestModel:
+class _TestModel(Base):
+    __tablename__ = 'test'
 
-    id = _Column('id')  # noqa A003
-    int_column = _Column('int_column')
-
-    def __init__(self, **kwargs) -> None:
-        for k, v in kwargs.items():
-            setattr(self, k, v)
-
-    @classmethod
-    def get_attribute_types(cls):
-        return {}
-
-    @classmethod
-    def get_id_attribute_type(cls):
-        return int
-
-    @classmethod
-    def get_table_name(cls):
-        return 'test'
-
-    @classmethod
-    def get_id_column_name(cls):
-        return 'id'
-
-    @property
-    def instance_id(self):
-        pass
+    id = mapped_column(Integer, primary_key=True)  # noqa: A003
+    int_column = mapped_column(Integer)
 
 
-class _OverrideIdModel:
-    id_other = _Column('id_other')
+class _OverrideIdModel(Base):
+    __tablename__ = 'test_override'
 
-    def __init__(self, **kwargs) -> None:
-        for k, v in kwargs.items():
-            setattr(self, k, v)
+    id_other = mapped_column(Integer, primary_key=True)
 
-    @classmethod
-    def get_id_column_name(cls) -> str:
+    def get_id_column_name():
         return 'id_other'
-
-    @classmethod
-    def get_table_name(cls) -> str:
-        return 'test_override'
-
-    @classmethod
-    def get_attribute_types(cls):
-        return {}
-
-    @classmethod
-    def get_id_attribute_type(cls):
-        return str
-
-    @property
-    def instance_id(self):
-        pass
 
 
 class _SessionMock:
@@ -124,12 +80,16 @@ class _SessionMock:
         self.__calls.append(('filter', args, kwargs))
         return self
 
-    def query(self, *args, **kwargs) -> _SessionMock:  # noqa
-        self.__calls.append(('query', args, kwargs))
+    def execute(self, *args, **kwargs) -> _SessionMock:  # noqa
+        self.__calls.append(('execute', args, kwargs))
         return self
 
-    def limit(self, *args, **kwargs) -> _SessionMock:  # noqa
-        self.__calls.append(('limit', args, kwargs))
+    def scalars(self, *args, **kwargs) -> _SessionMock:  # noqa
+        self.__calls.append(('scalars', args, kwargs))
+        return self
+
+    def unique(self, *args, **kwargs) -> _SessionMock:  # noqa
+        self.__calls.append(('unique', args, kwargs))
         return self
 
     def delete(self, *args, **kwargs) -> _SessionMock:  # noqa
@@ -140,9 +100,9 @@ class _SessionMock:
         self.__calls.append(('commit', args, kwargs))
         return self
 
-    def offset(self, *args, **kwargs) -> _SessionMock:  # noqa
-        self.__calls.append(('offset', args, kwargs))
-        return self
+    def one(self, *args, **kwargs) -> _SessionMock:  # noqa
+        self.__calls.append(('one', args, kwargs))
+        return self.__return_value
 
     def one_or_none(self, *args, **kwargs) -> Any:
         self.__calls.append(('one_or_none', args, kwargs))
@@ -157,8 +117,7 @@ class _SessionMock:
 
     def count(self, *args, **kwargs) -> int:
         self.__calls.append(('count', args, kwargs))
-        # this is not remotely type safe
-        return len(self.__return_value)
+        return self.__return_value
 
 
 class TestDefaultDatabase:
@@ -169,18 +128,18 @@ class TestDefaultDatabase:
         db = DefaultDatabase(lambda: session_mock, [_TestModel])
         result = db.get_by_id('test', '404', session_mock)
         assert result is None
-        # 3 = 1 query + 1 filter + 1 one_or_none
-        assert len(session_mock.calls) == 3
+
+        # 2 = 1 scalars + 1 one_or_none
+        assert len(session_mock.calls) == 2
+        call, (select,), kwargs = session_mock.calls[0]
+        assert call == 'scalars'
+
         # query on correct table
-        assert session_mock.calls[0] == ('query', (_TestModel,), {})
-        # filter correct column
-        assert session_mock.calls[1] == (
-            'filter',
-            (_TestModel.id == '404',),
-            {}
-        )
+        assert [x.name for x in select.get_final_froms()] == ['test']
+        assert kwargs == {}
+
         # finally one_or_none
-        assert session_mock.calls[2] == ('one_or_none', (), {})
+        assert session_mock.calls[1] == ('one_or_none', (), {})
 
     def test_get_by_id_exists(self):
         """get_by_id() gets an existing row -> return it"""
@@ -192,18 +151,22 @@ class TestDefaultDatabase:
         db = DefaultDatabase(lambda: session_mock, [_TestModel])
         result = db.get_by_id('test', '302', session_mock)
         assert result == expected
-        # 3 = 1 query + 1 filter + 1 one_or_none
-        assert len(session_mock.calls) == 3
+
+        # 2 = 1 scalars + 1 one_or_none
+        assert len(session_mock.calls) == 2
+        call, (select,), kwargs = session_mock.calls[0]
+        assert call == 'scalars'
+
         # query on correct table
-        assert session_mock.calls[0] == ('query', (_TestModel,), {})
-        # filter correct column
-        assert session_mock.calls[1] == (
-            'filter',
-            (_TestModel.id == '302',),
-            {}
-        )
+        assert [x.name for x in select.get_final_froms()] == ['test']
+
+        # correct column filter
+        op = select.whereclause
+        assert [op.left.name, op.operator, op.right.value] == ['id', eq, '302']
+        assert kwargs == {}
+
         # finally one_or_none
-        assert session_mock.calls[2] == ('one_or_none', (), {})
+        assert session_mock.calls[1] == ('one_or_none', (), {})
 
     def test_get_by_non_standard_id_column(self):
         """get_by_id using a different id_column"""
@@ -213,18 +176,22 @@ class TestDefaultDatabase:
         db = DefaultDatabase(lambda: session_mock, [_OverrideIdModel])
         result = db.get_by_id('test_override', '302', session_mock)
         assert result == expected
-        # 3 = 1 query + 1 filter + 1 one_or_none
-        assert len(session_mock.calls) == 3
+
+        # 2 = 1 scalars + 1 one_or_none
+        assert len(session_mock.calls) == 2
+        call, (select,), kwargs = session_mock.calls[0]
+        assert call == 'scalars'
+
         # query on correct table
-        assert session_mock.calls[0] == ('query', (_OverrideIdModel,), {})
-        # filter correct column
-        assert session_mock.calls[1] == (
-            'filter',
-            (_OverrideIdModel.id_other == '302',),
-            {}
-        )
+        assert [x.name for x in select.get_final_froms()] == ['test_override']
+
+        # correct column filter
+        op = select.whereclause
+        assert [op.left.name, op.operator, op.right.value] == ['id_other', eq, '302']
+        assert kwargs == {}
+
         # finally one_or_none
-        assert session_mock.calls[2] == ('one_or_none', (), {})
+        assert session_mock.calls[1] == ('one_or_none', (), {})
 
     def test_get_list_page_none_found(self):
         """get_list_page that returns no results at all, no filters"""
@@ -238,23 +205,23 @@ class TestDefaultDatabase:
             limit=100
         )
         assert list(result) == []
-        # 4 = query + limit + offset + all
-        assert len(session_mock.calls) == 4
-        # query on correct table
-        assert session_mock.calls[0] == ('query', (_TestModel,), {})
-        # NB. using calls_dict as it doesn't matter which order
-        # limit and offset occur.
 
-        # limit correctly
-        assert session_mock.calls_dict['limit'] == [
-            ('limit', (100,), {})
-        ]
-        # offset correctly
-        assert session_mock.calls_dict['offset'] == [
-            ('offset', (300,), {})
-        ]
+        # 3 = scalars + unique + all
+        assert len(session_mock.calls) == 3
+        call, (select,), kwargs = session_mock.calls[0]
+        assert call == 'scalars'
+
+        # query on correct table
+        assert [x.name for x in select.get_final_froms()] == ['test']
+
+        # correct offset and limit
+        assert select._offset == 300
+        assert select._limit == 100
+
+        assert session_mock.calls[1] == ('unique', (), {})
+
         # finally all()
-        assert session_mock.calls[-1] == ('all', (), {})
+        assert session_mock.calls[2] == ('all', (), {})
 
     def test_get_list_page_some(self):
         """get_list_page that does find some results, and returns them"""
@@ -272,52 +239,72 @@ class TestDefaultDatabase:
             limit=100
         )
         assert list(result) == expected
-        # 4 = query + limit + offset + all
-        assert len(session_mock.calls) == 4
-        # query on correct table
-        assert session_mock.calls[0] == ('query', (_TestModel,), {})
-        # NB. using calls_dict as it doesn't matter which order
-        # limit and offset occur.
 
-        # limit correctly
-        assert session_mock.calls_dict['limit'] == [
-            ('limit', (100,), {})
-        ]
-        # offset correctly
-        assert session_mock.calls_dict['offset'] == [
-            ('offset', (300,), {})
-        ]
+        # 3 = scalars + unique + all
+        assert len(session_mock.calls) == 3
+        call, (select,), kwargs = session_mock.calls[0]
+        assert call == 'scalars'
+
+        # query on correct table
+        assert [x.name for x in select.get_final_froms()] == ['test']
+
+        # correct offset and limit
+        assert select._offset == 300
+        assert select._limit == 100
+
+        assert session_mock.calls[1] == ('unique', (), {})
+
         # finally all()
-        assert session_mock.calls[-1] == ('all', (), {})
+        assert session_mock.calls[2] == ('all', (), {})
 
     def test_count_no_results(self):
         """count() works with no results (no filters) -> returns 0"""
 
-        session_mock = _SessionMock([])
+        session_mock = _SessionMock((0,))
         db = DefaultDatabase(lambda: session_mock, [_TestModel])
         result = db.count('test', session_mock)
         assert result == 0
+
         # 2 = query + count
         assert len(session_mock.calls) == 2
-        # query first
-        assert session_mock.calls[0] == ('query', (_TestModel,), {})
-        # then count
-        assert session_mock.calls[1] == ('count', (), {})
+        call, (select,), kwargs = session_mock.calls[0]
+        assert call == 'execute'
+
+        # query on correct table
+        # assert [x.name for x in select.get_final_froms()] == ['test']
+        table_names = []
+        for x in select.get_final_froms():
+            for y in x.element.get_final_froms():
+                table_names.append(y.name)
+        assert table_names == ['test']
+
+        # then one
+        assert session_mock.calls[1] == ('one', (), {})
 
     def test_count_results_found(self):
         """count() works with some results found (no filters)"""
 
-        expected = list(range(234))
+        expected = (234,)
         session_mock = _SessionMock(expected)
         db = DefaultDatabase(lambda: session_mock, [_TestModel])
         result = db.count('test', session_mock)
         assert result == 234
+
         # 2 = query + count
         assert len(session_mock.calls) == 2
-        # query first
-        assert session_mock.calls[0] == ('query', (_TestModel,), {})
-        # then count
-        assert session_mock.calls[1] == ('count', (), {})
+        call, (select,), kwargs = session_mock.calls[0]
+        assert call == 'execute'
+
+        # query on correct table
+        # assert [x.name for x in select.get_final_froms()] == ['test']
+        table_names = []
+        for x in select.get_final_froms():
+            for y in x.element.get_final_froms():
+                table_names.append(y.name)
+        assert table_names == ['test']
+
+        # then one
+        assert session_mock.calls[1] == ('one', (), {})
 
     def test_delete_integrity_error(self):
         """
@@ -364,22 +351,25 @@ class TestDefaultDatabase:
         db = DefaultDatabase(lambda: session_mock, [_TestModel])
         db.delete('test', 'why_should_I_care!', session_mock)
 
-        # same as get_by_id... 3 = query, filter, one_or_none, delete, commit
-        assert len(session_mock.calls) == 5
+        # 4 = scalars, one_or_none, delete, commit
+        assert len(session_mock.calls) == 4
+
         # query on correct table
-        assert session_mock.calls[0] == ('query', (_TestModel,), {})
-        # filter correct column
-        assert session_mock.calls[1] == (
-            'filter',
-            (_TestModel.id == 'why_should_I_care!',),
-            {}
-        )
+        call, (select,), kwargs = session_mock.calls[0]
+        assert call == 'scalars'
+        assert [x.name for x in select.get_final_froms()] == ['test']
+
+        # correct column filter
+        op = select.whereclause
+        assert [op.left.name, op.operator, op.right.value] == ['id', eq, 'why_should_I_care!']
+        assert kwargs == {}
+
         # one_or_none
-        assert session_mock.calls[2] == ('one_or_none', (), {})
+        assert session_mock.calls[1] == ('one_or_none', (), {})
         # delete
-        assert session_mock.calls[3] == ('delete', (model_mock,), {})
+        assert session_mock.calls[2] == ('delete', (model_mock,), {})
         # finally -> commit
-        assert session_mock.calls[4] == ('commit', (), {})
+        assert session_mock.calls[3] == ('commit', (), {})
 
     def test_attribute_types(self):
         """

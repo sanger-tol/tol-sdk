@@ -2,6 +2,7 @@
 #
 # SPDX-License-Identifier: MIT
 
+from dataclasses import dataclass
 from typing import Iterable
 
 from ...core import (
@@ -13,6 +14,18 @@ from ...core.operator.updater import DataObjectUpdate
 
 class ElasticSampleToBenchlingTissueUpdateConverter(
         DataObjectToDataObjectOrUpdateConverter):
+
+    @dataclass(slots=True, frozen=True, kw_only=True)
+    class Config:
+        pass
+
+    __slots__ = ['__config']
+    __config: Config
+
+    def __init__(self, data_object_factory, config: Config) -> None:
+        super().__init__(data_object_factory)
+        self.__config = config
+        self._data_object_factory = data_object_factory
 
     def _convert_one(self, data_object: DataObject) -> DataObjectUpdate:
         if data_object is None:
@@ -63,7 +76,7 @@ class ElasticSampleToBenchlingTissueUpdateConverter(
                     'sts_id': int(data_object.id),
                     # 'remaining_weight':,
                     'priority': data_object.sts_priority,
-                    'project': ', '.join(data_object.sts_project),
+                    'project': data_object.sts_project,
                     'study_id': data_object.sts_sequencescape_study_id,
                     'cost_code': data_object.sts_cost_code,
                 }

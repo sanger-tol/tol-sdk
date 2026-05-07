@@ -128,6 +128,7 @@ class DataSource(ABC):
                     'cardinality': am.get_cardinality(object_type, attribute_name),
                     'authoritative': am.is_authoritative(object_type, attribute_name),
                     'source': am.get_source(object_type, attribute_name),
+                    'acts_as': am.get_acts_as(object_type, attribute_name),
                     'available_on_relationships':
                         am.is_available_on_relationships(
                             object_type,
@@ -152,6 +153,22 @@ class DataSource(ABC):
                 if name in self.relationship_config[current_obj_type].to_one:
                     current_obj_type = self.relationship_config[current_obj_type].to_one[name]
                     continue
+            return None
+        return None
+
+    def get_python_type_by_name(self, obj_type: str, field_name: str) -> str | None:
+        """Resolve python_type for a (possibly dotted) field name using attribute_types
+        and relationship_config only, avoiding any dependency on attribute_metadata."""
+        current_obj_type = obj_type
+        for name in field_name.split('.'):
+            attr_types = self.attribute_types.get(current_obj_type, {})
+            if name in attr_types:
+                return attr_types[name]
+            rel_cfg = self.relationship_config.get(current_obj_type)
+            if rel_cfg is not None and rel_cfg.to_one is not None \
+                    and name in rel_cfg.to_one:
+                current_obj_type = rel_cfg.to_one[name]
+                continue
             return None
         return None
 

@@ -6,14 +6,13 @@ Output: Table with cols:
 1) sts_id: [integer] Tissue metadata. Origin: STS
 2) taxon_id: [character] Tissue metadata. Origin: STS
 3) extraction_id: [character] Foreign key to other entities and results in Benchling. Origin: BWH
-4) eln_file_registry_id: [character] id in Benchling Registry. Origin: BWH
-5) programme_id: [character] ToLID.
-6) specimen_id: [character] ToLID.
-7) sanger_sample_id: [character] Sanger Sample ID or Sanger UUID of the HiC submission. 
-8) fluidx_id: [character] Container barcode of the tissue prep fluidx tube. Origin: BWH
-9) completion_date: [Date] Date of submission. For legacy data: created_on.
-10) sequencing_platform: [character] Sequencing platform: RNASEQ
-11) source: [character] Data source: legacy_bnt, v1
+4) programme_id: [character] ToLID.
+5) specimen_id: [character] ToLID.
+6) sanger_sample_id: [character] Sanger Sample ID or Sanger UUID of the HiC submission. 
+7) fluidx_id: [character] Container barcode of the tissue prep fluidx tube. Origin: BWH
+8) completion_date: [Date] Date of submission. For legacy data: created_on.
+9) sequencing_platform: [character] Sequencing platform: RNASEQ
+10) source: [character] Data source: legacy_bnt, v1
 
 NOTES: 
 
@@ -27,11 +26,11 @@ WITH rnaseq_submissions AS (
 		t.taxon_id,
 		tp.id AS tissue_prep_id,
 		rna.id AS extraction_id,
-		rna.file_registry_id$ AS eln_file_registry,
+		rna.name$ AS submission_sample_name,
 		t.programme_id,
 		t.specimen_id,
 		ssid.sanger_sample_id, 
-		con.barcode AS fluidx_id,
+		con.barcode AS tube_id,
 		rnaseq_out.submitted_submission_date AS completion_date, 
 		'rnaseq'::varchar AS sequencing_platform,
 		rna.bt_id,
@@ -51,6 +50,8 @@ WITH rnaseq_submissions AS (
 		ON cc.container_id = con.id
 	LEFT JOIN rnaseq_sumbission_output$raw AS rnaseq_out
 		ON rnaseq.id = rnaseq_out.workflow_task_id$
+	LEFT JOIN workflow_task_status$raw AS wf
+		ON rnaseq.workflow_task_status_id$ = wf.id
 	LEFT JOIN folder$raw AS f 
 			ON rna.folder_id$ = f.id
 		LEFT JOIN project$raw AS proj
@@ -61,6 +62,7 @@ WITH rnaseq_submissions AS (
 	  	AND ssid.sanger_sample_id IS NOT NULL
 		AND proj.name = 'ToL Core Lab'
 		AND f.name IN ('Routine Throughput', 'RNA', 'Submissions', 'Core Lab Entities', 'Benchling MS Project Move')
+		AND wf.status_type = 'COMPLETED'
 
 
 ),
@@ -71,11 +73,11 @@ rnaseq_legacy_submissions AS (
 		t.taxon_id,
 		tp.id AS tissue_prep_id,
 		rna.id AS extraction_id,
-		rna.file_registry_id$ AS eln_file_registry,
+		rna.name$ AS submission_sample_name,
 		t.programme_id,
 		t.specimen_id,
 		ssid.sanger_sample_id, 
-		c.barcode AS fluidx_id,
+		c.barcode AS tube_id,
 		rna.created_on AS completion_date, 
 		'rnaseq'::varchar AS sequencing_platform,
 		rna.bt_id,

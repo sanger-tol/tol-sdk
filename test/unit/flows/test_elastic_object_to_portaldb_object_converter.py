@@ -39,9 +39,11 @@ class TestElasticObjectToPortaldbObjectConverter(TestCase):
         core_data_object(destination)
         converter = ElasticObjectToPortaldbObjectConverter(
             data_object_factory=destination.data_object_factory,
-            destination_object_type='tissue_prep_event',
-            fields={'test_field_1': 'test1'},
-            id_field='different_id'
+            config=ElasticObjectToPortaldbObjectConverter.Config(
+                destination_object_type='tissue_prep_event',
+                fields={'test_field_1': 'test1'},
+                id_field='different_id'
+            )
         )
 
         CoreDataObject = source.data_object_factory # noqa N806
@@ -62,10 +64,12 @@ class TestElasticObjectToPortaldbObjectConverter(TestCase):
         # Test incremental conversion for tolid_event
         converter2 = ElasticObjectToPortaldbObjectConverter(
             data_object_factory=destination.data_object_factory,
-            destination_object_type='tolid_event',
-            fields={'test_field_2': 'test2'},
-            id_field='different_id',
-            incremental=True
+            config=ElasticObjectToPortaldbObjectConverter.Config(
+                destination_object_type='tolid_event',
+                fields={'test_field_2': 'test2'},
+                id_field='different_id',
+                incremental=True
+            )
         )
 
         CoreDataObject = source.data_object_factory # noqa N806

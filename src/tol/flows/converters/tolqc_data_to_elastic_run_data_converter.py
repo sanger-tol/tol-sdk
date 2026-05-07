@@ -2,6 +2,7 @@
 #
 # SPDX-License-Identifier: MIT
 
+from dataclasses import dataclass
 from typing import Iterable
 
 from ...core import (
@@ -12,6 +13,18 @@ from ...utils import convert_s3_to_https
 
 
 class TolqcDataToElasticRunDataConverter(DataObjectToDataObjectOrUpdateConverter):
+
+    @dataclass(slots=True, frozen=True, kw_only=True)
+    class Config:
+        pass
+
+    __slots__ = ['__config']
+    __config: Config
+
+    def __init__(self, data_object_factory, config: Config) -> None:
+        super().__init__(data_object_factory)
+        self.__config = config
+        self._data_object_factory = data_object_factory
 
     def convert(self, data_object: DataObject) -> Iterable[DataObject]:
         target_attributes = {}
@@ -24,6 +37,7 @@ class TolqcDataToElasticRunDataConverter(DataObjectToDataObjectOrUpdateConverter
         target_attributes['auto_qc'] = data_object.auto_qc
         target_attributes['qc'] = data_object.qc
         target_attributes['read_length_n50'] = data_object.read_length_n50
+        target_attributes['reads'] = data_object.reads
         target_attributes['bases'] = data_object.bases
         target_attributes['bases_a'] = data_object.bases_a
         target_attributes['bases_c'] = data_object.bases_c

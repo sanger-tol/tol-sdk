@@ -79,7 +79,8 @@ class TestBenchlingEntityToStsSampleConverter(TestCase):
         converter_class = \
             BenchlingEntityToBenchlingWorklistItemConverterFactory(worklist).get_converter_class()
         converter = converter_class(
-            data_object_factory=destination.data_object_factory
+            data_object_factory=destination.data_object_factory,
+            config=converter_class.Config()
         )
 
         converteds = converter.convert(obj1)

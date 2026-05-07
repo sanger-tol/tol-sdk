@@ -290,7 +290,8 @@ class TestStsSampleProjectToElasticSampleConverter(TestCase):
         core_data_object(source)
         core_data_object(destination)
         converter = StsSampleProjectToElasticSampleConverter(
-            data_object_factory=destination.data_object_factory
+            data_object_factory=destination.data_object_factory,
+            config=StsSampleProjectToElasticSampleConverter.Config()
         )
 
         CoreDataObject = source.data_object_factory  # noqa N806
@@ -428,7 +429,9 @@ class TestStsSampleProjectToElasticSampleConverter(TestCase):
         sample_project = CoreDataObject(
             id_='test_sample_project',
             type_='sample_project',
-            attributes={},
+            attributes={
+                'is_primary': True,
+            },
             to_one={
                 'sample': sample,
                 'project': project
@@ -440,8 +443,9 @@ class TestStsSampleProjectToElasticSampleConverter(TestCase):
         self.assertEqual('sample', ret1.type)
         self.maxDiff = None
         self.assertEqual(ret1.attributes, {
-            'project': ['test_project'],
+            'all_projects': ['test_project'],
             'programme': ['test_programme'],
+            'project': 'test_project',
             'collection_country': 'Country',
             'collection_locality': 'County | Town',
             'latitude': 12.345678,

@@ -1,14 +1,14 @@
-
 /* 
 SQL Query: LRES Submissions Benchling Warehouse
 
 Output: Table with cols: 
 
-1) sanger_sample_id
-2) programme_id
-3) specimen_id
-4) fluidx_id: Fluidx ID of the tissue prep submitted. 
-5) submission_type: Submission type code: PACBIO
+1) sanger_sample_id: Sanger sample identifier
+2) extraction_id: Extraction identifier (same as sanger_sample_id)
+3) fluidx_id: Fluidx ID of the submitted tissue prep container
+4) completion_date: Date the submission was completed
+5) next_step: LRES, Small Arthropod MagAttract, or RNA
+6) extraction_type: Type of extraction (lres)
 
 NOTES: 
 
@@ -31,6 +31,12 @@ SELECT DISTINCT
 	sub_con.barcode AS fluidx_id,
 	sub_con.id AS fluidx_container_id,
 	DATE(tpsub.submitted_submission_date) AS completion_date,
+	COALESCE(
+		tpsub.downstream_application,
+		CASE
+			WHEN tpsub.created_at$ < DATE '2026-04-15' THEN 'LRES'
+		END
+	) AS next_step,
 	'lres'::varchar AS extraction_type
 FROM tissue_prep$raw AS tp
 LEFT JOIN tissue$raw AS t
@@ -54,3 +60,4 @@ LEFT JOIN folder$raw AS f
 WHERE sub_con.id IS NOT NULL
 	AND proj.name = 'ToL Core Lab'
 	AND f.name = 'Sample Prep'
+	AND tpsub.downstream_application IS DISTINCT FROM 'RNA'

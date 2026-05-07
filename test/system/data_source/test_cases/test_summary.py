@@ -62,7 +62,7 @@ class TestSummarise:
                 'group_by': ['related_object.id'],
                 'stats_fields': ['int_column'],
                 'stats': ['min', 'max'],
-                'prefix': 'summarise_one',
+                'provenance_override': 'summarise_one',
             }
         )
 

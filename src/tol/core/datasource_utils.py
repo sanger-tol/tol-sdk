@@ -18,6 +18,22 @@ from .relationship import RelationshipConfig
 class DataSourceUtils:
 
     @classmethod
+    def get_datasource(
+        cls,
+        datasource_instance_id: str,
+        config_datasource: DataSource
+    ) -> DataSource:
+        datasource_instance = config_datasource.get_one(
+            'data_source_instance',
+            datasource_instance_id
+        )
+        if datasource_instance is None:
+            raise DataSourceError(
+                f'Datasource instance with id {datasource_instance_id} not found'
+            )
+        return cls.get_datasource_by_datasource_instance(datasource_instance)
+
+    @classmethod
     def get_datasource_by_name(
         cls,
         name: str,

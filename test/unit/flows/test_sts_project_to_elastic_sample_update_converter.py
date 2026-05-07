@@ -31,7 +31,8 @@ class TestLabwhereLocationToElasticSampleConverter(TestCase):
         core_data_object(source)
         core_data_object(destination)
         converter = StsProjectToElasticSampleUpdateConverter(
-            data_object_factory=destination.data_object_factory
+            data_object_factory=destination.data_object_factory,
+            config=StsProjectToElasticSampleUpdateConverter.Config()
         )
 
         CoreDataObject = source.data_object_factory # noqa N806
@@ -54,13 +55,13 @@ class TestLabwhereLocationToElasticSampleConverter(TestCase):
         converteds = converter.convert(obj1)
         ret1 = next(converteds)
         self.assertEqual(ret1, (None, {
-            'project': 'proj1',
+            'sts_project': 'proj1',
             'target_coverage': 25
         }))
 
         converteds = converter.convert(obj2)
         ret2 = next(converteds)
         self.assertEqual(ret2, (None, {
-            'project': 'proj2',
+            'sts_project': 'proj2',
             'target_coverage': 50
         }))

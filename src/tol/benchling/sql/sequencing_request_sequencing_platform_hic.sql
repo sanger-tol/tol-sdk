@@ -6,15 +6,15 @@ Output: Table with cols:
 1) sts_id: [integer] Tissue metadata. Origin: STS
 2) taxon_id: [character] Tissue metadata. Origin: STS
 3) tissue_prep_id: [character] Foreign key to other entities and results in Benchling. Origin: BWH
-4) eln_file_registry_id: [character] id in Benchling Registry. Origin: BWH
-5) programme_id: [character] ToLID.
-6) specimen_id: [character] Origin: STS
-7) sanger_sample_id: [character] Sanger Sample ID or Sanger UUID of the HiC submission. 
-8) fluidx_id: [character] Container barcode of the tissue prep fluidx tube. Origin: BWH
-9) completion_date: [Date] Date of submission. For legacy data: merging of created_on and created_at$.
-10) sequencing_platform: [character] Sequencing platform: HIC
-11) bt_id: [character] B&T ID (legacy)
-12) source: [character] Data source: v1, legacy_bnt
+4) submission_sample_name: [character] The name of the entity that is being submitted
+4) programme_id: [character] ToLID.
+5) specimen_id: [character] Origin: STS
+6) sanger_sample_id: [character] Sanger Sample ID or Sanger UUID of the HiC submission. 
+7) tube_id: [character] Container barcode of the tissue prep fluidx tube. Origin: BWH
+8) completion_date: [Date] Date of submission. For legacy data: merging of created_on and created_at$.
+9) sequencing_platform: [character] Sequencing platform: HIC
+10) bt_id: [character] B&T ID (legacy)
+11) source: [character] Data source: v1, legacy_bnt
 
 NOTES: 
 
@@ -29,11 +29,11 @@ WITH hic_submissions AS (
 		t.sts_id,
 		t.taxon_id,
 		tp.id AS tissue_prep_id,
-		tp.file_registry_id$ AS eln_file_registry,
+		tp.name$ AS submission_sample_name,
 		t.programme_id,
 		t.specimen_id,
 		ssid.sanger_sample_id, 
-		c.barcode AS fluidx_id,
+		c.barcode AS tube_id,
 		hic.submitted_submission_date AS completion_date, 
 		'hic'::varchar AS sequencing_platform,
 		tp.bt_id,
@@ -51,10 +51,15 @@ WITH hic_submissions AS (
 		ON tp.tissue = t.id
 	LEFT JOIN project$raw AS proj 
 		ON tp.project_id$ = proj.id
+	LEFT JOIN workflow_task$raw AS wft
+		ON hic.workflow_task_id$ = wft.id
+	LEFT JOIN workflow_task_status$raw AS wfts
+		ON wft.workflow_task_status_id = wfts.id
 	WHERE hic.archived$ = 'FALSE'
 		AND ssid.sanger_sample_id IS NOT NULL
 		AND ssid.sanger_sample_id != ''
 		AND proj.name = 'ToL Core Lab'
+		AND wfts.status_type = 'COMPLETED'
 
 ),
 hic_legacy_submissions AS (
@@ -63,11 +68,11 @@ hic_legacy_submissions AS (
 		t.sts_id,
 		t.taxon_id,
 		tp.id AS tissue_prep_id,
-		tp.file_registry_id$ AS eln_file_registry,
+		tp.name$ as submission_sample_name,
 		t.programme_id,
 		t.specimen_id,
 		ssid.sanger_sample_id,
-		c.barcode AS fluidx_id,
+		c.barcode AS tube_id,
 		COALESCE(DATE(tp.created_on), DATE(tp.created_at$)) AS completion_date,
 		'hic'::varchar AS sequencing_platform,
 		tp.bt_id,
