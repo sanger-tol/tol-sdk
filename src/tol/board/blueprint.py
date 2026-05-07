@@ -433,8 +433,10 @@ def board_blueprint(
                         }
                     )
                 )) if ctx_getter().authenticated else []
-                result['config_diff'] = getattr(
-                    user_config[0], 'config', None) if user_config else None
+                result['config_diff'] = {
+                    'id': getattr(user_config[0], 'id', None) if user_config else None,
+                    'config': getattr(user_config[0], 'config', None) if user_config else None
+                }
 
             return result
 
