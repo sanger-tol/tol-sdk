@@ -82,8 +82,8 @@ def save_board_entity_and_children(
     for entity_type, objs in entities.items():
         if entity_type in type_hierarchy:
             for obj in objs:
-                new_id = f'{PREFIX_MAPPINGS.get(
-                    entity_type, "x")}_{generate(custom_alphabet, 12)}'
+                prefix = PREFIX_MAPPINGS.get(entity_type, 'x')
+                new_id = f'{prefix}_{generate(custom_alphabet, 12)}'
                 id_mapping[obj.id] = new_id
 
     for entity_type in type_hierarchy:

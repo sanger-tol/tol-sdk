@@ -11,9 +11,9 @@ from flask.testing import FlaskClient
 
 import pytest
 
+import tol.board.blueprint as board_blueprint_module
 from tol.api_base.auth import ForbiddenError
 from tol.api_base.misc import AuthContext
-import tol.board.blueprint as board_blueprint_module
 from tol.core import DataObject, DataSourceError, DataSourceFilter
 from tol.sql import SqlDataSource
 

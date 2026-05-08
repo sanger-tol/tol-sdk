@@ -8,6 +8,12 @@ from typing import Any, TYPE_CHECKING
 
 from flask import Blueprint, request
 
+from nanoid import generate
+
+from .utils import (
+    get_entity_type_from_prefix,
+    save_board_entity_and_children,
+)
 from ..api_base.auth import ForbiddenError
 from ..api_base.misc import (
     CtxGetter,
@@ -18,12 +24,6 @@ from ..core import (
     DataSourceError,
     DataSourceFilter
 )
-
-from .utils import (
-    get_entity_type_from_prefix,
-    save_board_entity_and_children,
-)
-from nanoid import generate
 
 if TYPE_CHECKING:
     from ..sql import SqlDataSource
