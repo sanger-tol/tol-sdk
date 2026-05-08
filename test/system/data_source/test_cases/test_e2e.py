@@ -955,6 +955,17 @@ class TestEndToEnd:
         assert fourth[3].runtime_column is False
         assert fourth[4].runtime_column is False
         assert fourth[5].runtime_column is False
+        
+        # Coalesce runtime field with regular field
+        from tol.elastic.runtime_fields import RuntimeFields
+        # data_objects[0]['id2'] = RuntimeFields.coalesce([data_objects[0].id])
+        variable = RuntimeFields.coalesce([data_objects[0].id])
+        import logging
+        data_objects[0].id2 = variable
+        logging.error(data_objects[0].attributes)
+        logging.error(data_objects[0].id2)
+        raise Exception('Check the log for the coalesced runtime field value')
+        assert data_objects[0].id2 == '0'
 
     @against(*all_fixtures)
     def test_data_loader(self, data_source: OperableDataSource, ds_sleep):

@@ -64,13 +64,12 @@ class DataSourceUtils:
                 datasource_config
             )
             runtime_fields_with_source_order = cls.add_source_order_to_runtime_fields(
-                datasource_config,
-                runtime_fields
+                datasource_config
             )
             new_kwargs.update({
                 'relationship_cfg': relationship_config,
                 'attribute_metadata': amd,
-                'runtime_fields': runtime_fields_with_source_order
+                'runtime_fields': runtime_fields | runtime_fields_with_source_order
             })
         return DataSourceUtils.get_datasource_by_name(
             datasource_instance.builtin_name,
@@ -132,16 +131,15 @@ class DataSourceUtils:
     def add_source_order_to_runtime_fields(
         cls,
         datasource_config: DataObject,
-        runtime_fields: dict
     ) -> dict:
+        runtime_fields = {}
         for dsrc in datasource_config.data_source_config_relationships:
             if dsrc.source_order is None:
                 continue
-            if 'source_order' not in runtime_fields:
-                runtime_fields['source_order'] = {}
-            if dsrc.object_type not in runtime_fields['source_order']:
-                runtime_fields['source_order'][dsrc.object_type] = {}
-            runtime_fields['source_order'][dsrc.object_type][dsrc.name] = dsrc.source_order
+            from ..elastic.runtime_fields import RuntimeFields  # Break circular import cycle
+            runtime_fields[dsrc.object_type][f'{dsrc.name}.id'] = RuntimeFields.coalesce(
+                [f'{dsrc.name}.provenance.{source_order}.id' for source_order in dsrc.source_order]
+            )
         return runtime_fields
 
     @classmethod
