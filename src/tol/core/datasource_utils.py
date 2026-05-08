@@ -193,8 +193,9 @@ class DataSourceUtils:
         object_type: str,
         ids: Iterator[str],
         sort_by: str = None,
+        requested_fields: list[str] | None = None
     ) -> Iterator[DataObject]:
-        objs = datasource.get_by_ids(object_type, ids)
+        objs = datasource.get_by_ids(object_type, ids, requested_fields=requested_fields)
         if sort_by is not None:
             yield from sorted(objs, key=lambda obj: obj.get_field_by_name(sort_by) or 0)
         else:

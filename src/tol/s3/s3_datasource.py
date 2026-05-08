@@ -77,7 +77,8 @@ class S3DataSource(
         object_type: str,
         object_filters: Optional[DataSourceFilter] = None,
         session: Optional[OperableSession] = None,
-        requested_fields: list[str] | None = None
+        requested_fields: list[str] | None = None,
+        **kwargs
     ) -> Iterable[DataObject]:
         client = self.__client_factory()
         objects = client.list_objects(self.bucket_name, self.prefix)

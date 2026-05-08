@@ -94,7 +94,8 @@ class DummyDataSource(
         self,
         object_type: str,
         object_filters: Optional[DataSourceFilter] = None,
-        session: Optional[OperableSession] = None
+        session: Optional[OperableSession] = None,
+        **kwargs
     ) -> Iterable[DataObject]:
         if object_filters:
             raise DataSourceError('Filtering is not supported')
