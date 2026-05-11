@@ -586,4 +586,85 @@ def board_blueprint(
 
         return serialised_entities, 200
 
+    def __get_board_entity_type(entity_id: str) -> str | None:
+        prefix_mappings = {
+            'b': 'board',
+            'v': 'view',
+            'z': 'zone',
+            'c': 'component',
+        }
+        return prefix_mappings.get(entity_id[0]) if entity_id else None
+
+    def __get_parent_joiner_objs(
+        parent_object_id: str,
+        parent_object_type: str,
+        joiner_object_type: str
+    ) -> list[DataObject]:
+        f = DataSourceFilter(
+            and_={
+                f'{parent_object_type}.id': {
+                    'eq': {
+                        'value': parent_object_id
+                    }
+                }
+            }
+        )
+        return list(board_ds.get_list(
+            joiner_object_type,
+            object_filters=f
+        ))
+
+    @board_bp.patch('/reorder/<string:parent_object_id>')
+    def __reorder_entity(*, parent_object_id: str):
+        new_order = request.json.get('order')
+
+        parent_object_type = __get_board_entity_type(parent_object_id)
+        child_object_type = __get_board_entity_type(new_order[0])
+        joiner_object_type = f'{child_object_type}_{parent_object_type}'
+
+        # Getting the actual child IDs from the given parent
+        joiner_objs = __get_parent_joiner_objs(
+            parent_object_id,
+            parent_object_type,
+            joiner_object_type
+        )
+        actual_child_ids = [
+            obj.to_one_relationships[child_object_type].id
+            for obj in joiner_objs
+        ]
+
+        # Ensure the new order includes all and only the child IDs
+        if len(actual_child_ids) != len(new_order) or set(actual_child_ids) != set(new_order):
+            raise DataSourceError(
+                'Invalid Order',
+                'Not all child IDs are included' \
+                'in the new order, or there are' \
+                'extra IDs that are not children.',
+                400
+            )
+
+        # Build a lookup of child ID -> joiner object, which we can use to
+        # create the updated joiner objects with the new order values
+        joiner_ids_by_child_id = {
+            obj.to_one_relationships[child_object_type].id: obj.id
+            for obj in joiner_objs
+        }
+
+        # Create new joiner objects with the updated order values
+        updated_joiners = [
+            board_ds.data_object_factory(
+                type_=joiner_object_type,
+                id_=joiner_ids_by_child_id[child_id],
+                attributes={'order': order},
+            )
+            for order, child_id in enumerate(new_order)
+        ]
+
+        # Upsert the updated joiner objects to save the new order
+        board_ds.upsert_batch(joiner_object_type, updated_joiners)
+
+        return {
+            "order": actual_child_ids
+        }, 200
+
     return board_bp
