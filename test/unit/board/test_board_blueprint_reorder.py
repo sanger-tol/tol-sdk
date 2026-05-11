@@ -4,9 +4,8 @@
 
 from unittest.mock import MagicMock, call
 
-import pytest
-
 from flask.testing import FlaskClient
+import pytest
 
 from tol.core import DataSourceError
 from tol.sql import SqlDataSource
