@@ -7,8 +7,8 @@ from __future__ import annotations
 import typing
 from typing import Any
 
-from nanoid import generate
 from flask import Blueprint, request
+from nanoid import generate
 
 from ..api_base.auth import ForbiddenError
 from ..api_base.misc import (
@@ -652,7 +652,7 @@ def board_blueprint(
     def __reorder_endpoint(*, parent_object_id: str):
         """
         Reorders child entities under a given parent entity.
-        
+
         Expects a JSON body with an 'order' field containing a
         list of child entity IDs in the desired order.
 

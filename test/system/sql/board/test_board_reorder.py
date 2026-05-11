@@ -4,8 +4,6 @@
 
 from flask.testing import FlaskClient
 
-import pytest
-
 from tol.api_base.misc import AuthContext
 from tol.core import DataSourceFilter
 from tol.sql import SqlDataSource

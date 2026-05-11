@@ -136,5 +136,3 @@ class TestBoardDelete:
                 '/zone/a'
             )
             assert e.value.status_code == 400
-
-
