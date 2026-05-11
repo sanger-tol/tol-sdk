@@ -478,9 +478,7 @@ def board_blueprint(
         for entity_type, objs in entities.items():
             if entity_type in type_hierarchy:
                 for obj in objs:
-                    new_id = f'{
-                        prefix_mappings.get(entity_type, "x")}_{generate(custom_alphabet, 12)
-                    }'
+                    new_id = f'{prefix_mappings.get(entity_type, "x")}_{generate(custom_alphabet, 12)}'
                     id_mapping[obj.id] = new_id
 
         for entity_type in type_hierarchy:
@@ -498,8 +496,7 @@ def board_blueprint(
                     type_=entity_type,
                     id_=id_mapping[obj.id],
                     attributes={
-                        **obj.attributes, 'title': new_board_title
-                    } if entity_type == 'board' else obj.attributes,
+                        **obj.attributes, 'title': new_board_title} if entity_type == 'board' else obj.attributes,
                     to_one=to_one,
                 )
                 board_ds.insert(entity_type, [new_obj])
