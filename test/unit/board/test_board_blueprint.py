@@ -66,7 +66,11 @@ class TestBoardBlueprint:
         assert payload['type'] == 'L'
         assert payload['title'] == 'My board'
         assert payload['order'] == ['m_view123456789']
-        children = payload['children'][0] if isinstance(payload['children'], list) else payload['children']
+        children = (
+            payload['children'][0]
+            if isinstance(payload['children'], list)
+            else payload['children']
+        )
         assert 'm_view123456789' in children
         assert children['m_view123456789']['title'] == 'My first view'
 
