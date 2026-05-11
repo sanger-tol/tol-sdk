@@ -17,7 +17,7 @@ from sqlalchemy.orm import MappedColumn, aliased
 from sqlalchemy.orm.util import AliasedClass
 
 from .model import Model
-from ..core import DataSourceFilter
+from ..core import DataSourceError, DataSourceFilter
 
 
 class AliasTrie(MutableMapping[str, 'AliasTrie']):
@@ -144,33 +144,41 @@ class DefaultDatabaseFilter(DatabaseFilter):
         self,
         parent_alias: AliasedClass[Model],
         relationship_name: str,
+        path: str,
     ) -> AliasedClass[Model]:
 
         mapper = inspect(parent_alias).mapper
-        rel_prop = mapper.relationships[relationship_name]
-        target_model = rel_prop.mapper.class_
-        return aliased(target_model)
+        if rel_prop := mapper.relationships.get(relationship_name):
+            target_model = rel_prop.mapper.class_
+            return aliased(target_model)
+        msg = (
+            f"No such relationship '{mapper.class_.__tablename__}.{relationship_name}'"
+            f" from filter path '{path}'"
+        )
+        raise DataSourceError(title='Bad filter element', detail=msg)
 
     def add_field(self, field: str) -> None:
         self.__rel_keys.add(field)
 
-    def __build_alias_trie(self, paths: Iterable[str]) -> AliasTrie:
+    def __build_alias_trie(self, rel_keys: Iterable[str]) -> AliasTrie:
         trie = AliasTrie(self.__base_model)
 
-        for path in paths:
+        for path in rel_keys:
             parts = path.split('.')
             current_alias = self.__base_model
             current = trie
             for part in parts[:-1]:
-                if part not in current:
+                step = current.get(part)
+                if step is None:
                     step = AliasTrie(
                         self.__create_alias(
                             current_alias,
                             part,
+                            path,
                         )
                     )
                     current[part] = step
-                    current = step
+                current = step
                 current_alias = current.alias
 
         return trie
@@ -515,11 +523,11 @@ class DefaultDatabaseFilter(DatabaseFilter):
             return self.__get_column_attr(model, key)
 
     def __get_column_attr(self, model: AliasedClass[Model], key: str) -> MappedColumn:
-        col = getattr(inspect(model).selectable.c, key)
+        col = inspect(model).selectable.c.get(key)
         if col is not None:
             return col
-        msg = f"Failed to find column '{key}' in '{model}'"
-        raise ValueError(msg)
+        msg = f"No such column '{key}' in '{inspect(model).class_.__tablename__}'"
+        raise DataSourceError(title='Bad Attribute Name', detail=msg)
 
     def __get_relation_column(
         self,

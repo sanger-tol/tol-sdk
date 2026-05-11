@@ -16,7 +16,7 @@ from ..fixtures import all_fixtures, api_elastic, elastic
 class TestGroupStats:
 
     @against(*all_fixtures)
-    def test_group_stats(self, data_source: OperableDataSource, ds_sleep):
+    def test_group_stats_simple(self, data_source: OperableDataSource, ds_sleep):
         """
         Basic stats, without `union` or `cardinality`
         """
@@ -36,8 +36,8 @@ class TestGroupStats:
                 id_,
                 attributes={'str_column': f'test_{id_}',
                             'int_column': i,
-                            'datetime_column': datetime(2024, 1, i + 1, 0, 0, 0),
-                            'bool_column': True if i % 2 == 0 else False,
+                            'datetime_column': datetime(2024, 1, i + 1, 0, 0, 0),  # noqa: DTZ001
+                            'bool_column': i % 2 == 0,
                             'list_column': ['a', 'b', 'c'] if i == 0 else ['x', 'y', 'z']}
             )
             for i, id_ in enumerate(ids)
@@ -148,7 +148,7 @@ class TestGroupStats:
                 attributes={'str_column': f'test_{id_}',
                             'int_column': i,
                             'datetime_column': datetime(2024, 1, i + 1, 0, 0, 0),
-                            'bool_column': True if i % 2 == 0 else False,
+                            'bool_column': i % 2 == 0,
                             'list_column': ['a', 'b', 'c'] if i == 0 else ['x', 'y', 'z']}
             )
             for i, id_ in enumerate(ids)

@@ -12,8 +12,10 @@ services:
   tol-sdk-python-db:
     image: postgres:14
     container_name: db
-    # Can be useful when debugging to show all SQL statements in the log:
+    # Useful when debugging to show all SQL statements in the log:
     # command: ["postgres", "-c", "log_statement=all"]
+    # Trigger auto-vacuum (which runs ANALYZE) more frequently:
+    command: ["postgres", "-c", "autovacuum_naptime=5"]
     environment:
       - POSTGRES_USER=test-user
       - POSTGRES_PASSWORD=test-password

@@ -20,8 +20,7 @@ def object_type() -> str:
 @pytest.fixture(scope='module')
 def type_mapping() -> dict[str, str]:
     return {
-        'ID': 'str',
-        'Kingdom': 'str',
+        'species': 'str',
     }
 
 
@@ -33,7 +32,7 @@ class TestCsvDataSource:
         type_mapping: dict[str, str],
     ) -> None:
         """Using a real spreadsheet."""
-        file_id = '1GUNRDgaVtOVDj_1_ubZzDR72UhvUTQhM'  # Publicly available test file
+        file_id = '1zTXUUXq7CLgqfbiNaxwi57Fvhzx9bvcX'  # Publicly available test file
 
         ds = google_csv_datasource_factory(
             google_file_id=file_id,
@@ -47,5 +46,4 @@ class TestCsvDataSource:
         )
         assert objs[0].type == object_type
         assert objs[0].id == '2'
-        assert objs[0].attributes['ID'] == '1'
-        assert objs[0].attributes['Kingdom'] == 'Plantae'
+        assert objs[0].attributes['species'] == 'Adetoxenus Formosus'
