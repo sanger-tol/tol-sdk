@@ -2,10 +2,13 @@
 #
 # SPDX-License-Identifier: MIT
 
+import pytest
+
 from unittest.mock import MagicMock, call
 
 from flask.testing import FlaskClient
 
+from tol.core import DataSourceError
 from tol.sql import SqlDataSource
 
 
@@ -61,8 +64,8 @@ class TestBoardBlueprintReorder:
         board_ds.get_list.return_value = joiner_objs
 
         # 'zone_c' is missing
-        r = board_client.patch('/reorder/view_I', json={'order': ['zone_a', 'zone_b']})
-        assert r.status_code == 400
+        with pytest.raises(DataSourceError):
+            board_client.patch('/reorder/view_I', json={'order': ['zone_a', 'zone_b']})
 
         board_ds.upsert_batch.assert_not_called()
 
@@ -83,10 +86,10 @@ class TestBoardBlueprintReorder:
         board_ds.get_list.return_value = joiner_objs
 
         # 'zone_d' does not belong to view_I
-        r = board_client.patch(
-            '/reorder/view_I', json={'order': ['zone_a', 'zone_b', 'zone_c', 'zone_d']}
-        )
-        assert r.status_code == 400
+        with pytest.raises(DataSourceError):
+            board_client.patch(
+                '/reorder/view_I', json={'order': ['zone_a', 'zone_b', 'zone_c', 'zone_d']}
+            )
 
         board_ds.upsert_batch.assert_not_called()
 
@@ -106,8 +109,8 @@ class TestBoardBlueprintReorder:
         ]
         board_ds.get_list.return_value = joiner_objs
 
-        r = board_client.patch('/reorder/view_I', json={'order': ['zone_x', 'zone_y', 'zone_z']})
-        assert r.status_code == 400
+        with pytest.raises(DataSourceError):
+            board_client.patch('/reorder/view_I', json={'order': ['zone_x', 'zone_y', 'zone_z']})
 
         board_ds.upsert_batch.assert_not_called()
 
