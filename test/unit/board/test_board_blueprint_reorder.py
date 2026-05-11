@@ -17,7 +17,7 @@ class TestBoardBlueprintReorder:
         board_ds: SqlDataSource,
     ):
         """
-        PATCH /reorder/v_I with a valid new order -> 200,
+        PATCH /reorder/view_I with a valid new order -> 200,
         upsert_batch called with correctly ordered factory objects.
         """
 
