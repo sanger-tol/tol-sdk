@@ -291,305 +291,629 @@ class TestDataSourceRegistry:
         mock_factory.assert_called_once_with(retries=10)
 ```
 
+### Testing patterns
+
+| Pattern | Category | Where used | Purpose |
+|---|---|---|---|
+| **Arrange-Act-Assert (AAA)** | Structural | All test methods | Each test sets up state, performs one action, and asserts one outcome — enforcing a consistent structural layout across the test suite |
+| **Test Doubles (Mock)** | Creational | `TestDataSourceRegistry` | `MagicMock` replaces real factory callables to verify invocation without constructing real DataSources |
+| **Environment Isolation (monkeypatch)** | Behavioural | `TestEnvVar`, `TestSourceDefinition`, `TestDataSourceRegistry` | `monkeypatch.setenv` injects env vars per-test without leaking state between tests — controlling runtime behaviour without modifying production code |
+| **Negative Testing** | Behavioural | `TestDataSourceRegistry.test_create_unknown_source_raises` | `pytest.raises` verifies error paths produce the expected exception — asserting behavioural contracts on invalid input |
+| **Unit of Behaviour** | Behavioural | `TestSourceDefinition.test_resolve_composes_args` | Tests the composed result of multiple env vars rather than each step, validating the end-to-end resolve pipeline |
+
 ---
 
-## 2. Typed DataSource Configuration
+## 2. Error Handling Strategy for DataSource Operations
 
-**Pattern type:** Creational (Builder)
+**Pattern type:** Behavioural (Strategy)
 
 ### Current pattern
 
-`DataSource.__init__()` in `src/tol/core/datasource.py` takes a `Dict[str, Any]` and uses `setattr` to splat keys onto the instance:
+Error handling across DataSource operations is ad-hoc and inconsistent. Three different approaches are used depending on where the error occurs:
+
+**Actions** (`src/tol/actions/upsert_action.py`, `src/tol/actions/set_status_action.py`) use bare `except Exception` to catch everything and return error dicts:
 
 ```python
-DataSourceConfig = Dict[str, Any]
-
-class DataSource(ABC):
-    def __init__(self, config: DataSourceConfig, *args, expected=None, **kwargs):
-        self.__validate_config(config, expected)
-        for k, v in config.items():
-            setattr(self, k, v)
-
-    def __validate_config(self, config, expected):
-        if expected is None:
-            return
-        for k in expected:
-            if k not in config:
-                raise DataSourceError(
-                    title='Incorrect configuration',
-                    detail=f'{k} missing in config dict'
-                )
+# src/tol/actions/upsert_action.py
+class UpsertAction(Action):
+    def run(self, datasource, ids, object_type, params=None):
+        data_objects = self.__convert_to_data_objects(...)
+        try:
+            datasource.upsert_batch(object_type=object_type, objects=data_objects)
+            return {'success': True}, 200
+        except Exception as e:
+            return {'error': str(e)}, 500
 ```
 
-Eight DataSource subclasses use this config dict pattern:
+```python
+# src/tol/actions/set_status_action.py
+class SetStatusAction(Action):
+    def run(self, datasource, ids, object_type, params=None):
+        # ...validation...
+        try:
+            # ...build objects, insert, update parent...
+            return {'success': True}, 200
+        except Exception as e:  # noqa: BLE001
+            return {'error': str(e)}, 500
+```
 
-| DataSource | Expected keys | Type safety |
+**HTTP transport** (`src/tol/core/http_client.py`) uses `urllib3.Retry` at the session level for a fixed set of status codes:
+
+```python
+# src/tol/core/http_client.py
+def _get_session_with_retries(self) -> requests.Session:
+    retry_strategy = Retry(
+        total=self.__retries,          # default 5
+        backoff_factor=1,
+        status_forcelist=[429, 502, 503, 504]
+    )
+```
+
+**DataSource subclasses** each implement their own error recovery. For example, `BenchlingDataSource` has a custom method that retries failed bulk upserts by falling back to individual calls.
+
+Two parallel exception hierarchies exist:
+
+| Hierarchy | Location | Exceptions |
 |---|---|---|
-| `BenchlingDataSource` | `url`, `api_key`, `registry_id`, `project_id` | None |
-| `MlwhDataSource` | `uri` | None |
-| `SequencingDataSource` | 13 keys (rabbitmq config) | None |
-| `StsDataSource` | `url`, `key` | None |
-| `GoogleSheetDataSource` | `client_secrets`, `sheet_key`, `mappings` | None |
-| `ElasticDataSource` | `uri`, `user`, `password`, `index_prefix` | None |
-| `JsonDataSource` | `uri`, `type`, `id_attribute`, `mappings` | None |
-| `S3JsonDataSource` | 7 keys | None |
+| `DataSourceError` | `src/tol/core/datasource_error.py` | `UnknownObjectTypeException`, `NoDataObjectFactoryError`, `NotRelationalError` |
+| `BaseRuntimeException` | `src/tol/api_client/exception.py` | `ObjectNotFoundByIdException`, `UnsupportedOperationError`, `BadQueryArgError` |
 
-Validation only checks key presence. Wrong value types, empty strings, and `None` values all pass silently:
+Problems:
 
-```python
-# All of these pass validation — fail later at runtime
-BenchlingDataSource({'url': 123, 'api_key': None, 'registry_id': '', 'project_id': ''})
-SequencingDataSource({'rabbitmq_port': 'not-a-number', ...})
-```
-
-The `setattr` loop can overwrite methods or properties if a config key collides with them.
+1. **Bare `except Exception`** — swallows all errors including `KeyboardInterrupt`-adjacent bugs, makes debugging difficult, and returns a lossy string representation
+2. **No error classification** — transient errors (network timeout, 503) and permanent errors (missing field, unknown type) are handled identically
+3. **No composable error recovery** — each Action/DataSource reimplements its own try/except; there is no way to share or swap recovery strategies
+4. **Two exception hierarchies** — `DataSourceError` and `BaseRuntimeException` are unrelated, so callers cannot catch "any SDK error" without catching `Exception`
+5. **Error context is lost** — `str(e)` discards the exception type, traceback, and any structured fields like `status_code`
 
 ### Changes required
 
-**Step 1** — Create a frozen dataclass per DataSource that uses config dicts:
+**Step 1** — Unify the exception hierarchy under `DataSourceError`:
 
 ```python
-# src/tol/benchling/config.py
-from dataclasses import dataclass
+# src/tol/core/datasource_error.py — add classification
+from enum import Enum, auto
 
-@dataclass(frozen=True)
-class BenchlingConfig:
-    url: str
-    api_key: str
-    registry_id: str
-    project_id: str
+
+class ErrorKind(Enum):
+    """Classifies errors as transient (retryable) or permanent."""
+    TRANSIENT = auto()  # Network timeout, 429, 502, 503, 504
+    PERMANENT = auto()  # Missing field, unknown type, auth failure
+
+
+class DataSourceError(Exception):
+    def __init__(self, title: str = None, detail: str = None,
+                 status_code: int = 500,
+                 kind: ErrorKind = ErrorKind.PERMANENT,
+                 cause: Exception | None = None):
+        self.title = title
+        self.detail = detail
+        self.status_code = status_code
+        self.kind = kind
+        self.__cause__ = cause
+
+    @property
+    def is_transient(self) -> bool:
+        return self.kind == ErrorKind.TRANSIENT
+
+    def __str__(self) -> str:
+        return f'{self.title} - "{self.detail}"'
+
+
+class TransientError(DataSourceError):
+    """A retryable error — network issues, rate limits, temporary unavailability."""
+    def __init__(self, title: str = None, detail: str = None,
+                 status_code: int = 503, cause: Exception | None = None):
+        super().__init__(title, detail, status_code,
+                         kind=ErrorKind.TRANSIENT, cause=cause)
+
+
+class PermanentError(DataSourceError):
+    """A non-retryable error — bad input, missing config, unknown types."""
+    def __init__(self, title: str = None, detail: str = None,
+                 status_code: int = 400, cause: Exception | None = None):
+        super().__init__(title, detail, status_code,
+                         kind=ErrorKind.PERMANENT, cause=cause)
+```
+
+**Step 2** — Define an `ErrorHandler` strategy interface:
+
+```python
+# src/tol/core/error_handler.py
+from __future__ import annotations
+
+from abc import ABC, abstractmethod
+from typing import Any
+
+from .datasource_error import DataSourceError
+
+
+class ErrorHandler(ABC):
+    """Strategy interface for handling DataSource operation errors."""
+
+    @abstractmethod
+    def handle(
+        self,
+        error: DataSourceError,
+        context: dict[str, Any]
+    ) -> tuple[dict[str, Any], int]:
+        """Handle an error and return a response tuple (body, status_code)."""
+
+
+class DefaultErrorHandler(ErrorHandler):
+    """Preserves current behaviour: return error dict with 500."""
+
+    def handle(self, error, context):
+        return {'error': str(error)}, error.status_code
+
+
+class ClassifyingErrorHandler(ErrorHandler):
+    """
+    Routes errors based on their ErrorKind.
+    Delegates to separate handlers for transient vs permanent errors.
+    """
+
+    def __init__(
+        self,
+        transient_handler: ErrorHandler,
+        permanent_handler: ErrorHandler
+    ):
+        self._transient = transient_handler
+        self._permanent = permanent_handler
+
+    def handle(self, error, context):
+        if error.is_transient:
+            return self._transient.handle(error, context)
+        return self._permanent.handle(error, context)
+
+
+class RetryErrorHandler(ErrorHandler):
+    """
+    Retries the failed operation up to max_retries times before delegating
+    to a fallback handler.
+    """
+
+    def __init__(
+        self,
+        max_retries: int = 3,
+        fallback: ErrorHandler | None = None
+    ):
+        self._max_retries = max_retries
+        self._fallback = fallback or DefaultErrorHandler()
+
+    def handle(self, error, context):
+        operation = context.get('operation')
+        if operation is None:
+            return self._fallback.handle(error, context)
+
+        for attempt in range(self._max_retries):
+            try:
+                result = operation()
+                return {'success': True}, 200
+            except DataSourceError as retry_error:
+                if not retry_error.is_transient:
+                    return self._fallback.handle(retry_error, context)
+                error = retry_error
+
+        return self._fallback.handle(error, context)
+
+
+class LoggingErrorHandler(ErrorHandler):
+    """
+    Wraps another handler, logging the error before delegating.
+    Decorator pattern applied to the Strategy.
+    """
+
+    def __init__(self, delegate: ErrorHandler, logger=None):
+        self._delegate = delegate
+        self._logger = logger
+
+    def handle(self, error, context):
+        if self._logger:
+            self._logger.error(
+                'DataSource error in %s: %s (kind=%s, status=%d)',
+                context.get('action', 'unknown'),
+                error,
+                error.kind.name,
+                error.status_code
+            )
+        return self._delegate.handle(error, context)
+```
+
+**Step 3** — Inject `ErrorHandler` into `Action`:
+
+```python
+# src/tol/actions/action.py
+from __future__ import annotations
+
+from abc import ABC, abstractmethod
+from typing import Any
+
+from ..core import DataSource
+from ..core.error_handler import DefaultErrorHandler, ErrorHandler
+
+
+class Action(ABC):
+    def __init__(self, error_handler: ErrorHandler | None = None):
+        self._error_handler = error_handler or DefaultErrorHandler()
+
+    @abstractmethod
+    def _execute(
+        self,
+        datasource: DataSource,
+        ids: list[str],
+        object_type: str,
+        params: dict[str, Any] | None = None
+    ) -> tuple[dict[str, Any], int]:
+        """Subclasses implement the operation logic here."""
+
+    def run(
+        self,
+        datasource: DataSource,
+        ids: list[str],
+        object_type: str,
+        params: dict[str, Any] | None = None
+    ) -> tuple[dict[str, Any], int]:
+        """Template method: execute the action, delegate errors to the handler."""
+        try:
+            return self._execute(datasource, ids, object_type, params)
+        except DataSourceError as e:
+            return self._error_handler.handle(e, {
+                'action': type(self).__name__,
+                'ids': ids,
+                'object_type': object_type,
+            })
+```
+
+**Step 4** — Update Action subclasses to use `_execute` instead of `run`:
+
+```python
+# src/tol/actions/upsert_action.py
+class UpsertAction(Action):
+    def _execute(self, datasource, ids, object_type, params=None):
+        data_objects = self.__convert_to_data_objects(
+            datasource=datasource, ids=ids,
+            object_type=object_type, params=params
+        )
+        datasource.upsert_batch(object_type=object_type, objects=data_objects)
+        return {'success': True}, 200
 ```
 
 ```python
-# src/tol/sciops/config.py
-from dataclasses import dataclass
-
-@dataclass(frozen=True)
-class SciopsConfig:
-    redpanda_url: str
-    redpanda_api_key: str
-    rabbitmq_host: str
-    rabbitmq_port: int
-    rabbitmq_username: str
-    rabbitmq_password: str
-    rabbitmq_vhost: str
-    rabbitmq_exchange: str
-    rabbitmq_routing_key: str
-    rabbitmq_use_ssl: bool = False
-    rabbitmq_publish_retry_delay: int = 5
-    rabbitmq_publish_retries: int = 3
-    tol_feedback_queue: str = ''
+# src/tol/actions/set_status_action.py
+class SetStatusAction(Action):
+    def _execute(self, datasource, ids, object_type, params=None):
+        # ...validation (raises PermanentError)...
+        # ...build objects, insert, update parent...
+        return {'success': True}, 200
 ```
 
-```python
-# src/tol/mlwh/config.py
-from dataclasses import dataclass
+**Step 5** — Update `SetStatusAction` validation to use typed errors:
 
-@dataclass(frozen=True)
-class MlwhConfig:
-    uri: str
+```python
+# src/tol/actions/set_status_action.py
+from ..core.datasource_error import PermanentError
+
+class SetStatusAction(Action):
+    def _execute(self, datasource, ids, object_type, params=None):
+        if not params or 'status' not in params:
+            raise PermanentError(
+                'Missing status',
+                'Missing status from params',
+                status_code=400
+            )
+        if ids is None or len(ids) == 0:
+            raise PermanentError(
+                'Missing ids',
+                'Missing required param: "ids"',
+                status_code=400
+            )
+        # ...rest of logic without try/except...
 ```
 
-Repeat for `GoogleSheetConfig`, `ElasticConfig`, `JsonConfig`, `S3JsonConfig`, `StsLegacyConfig`.
-
-**Step 2** — Update `DataSource.__init__` to accept both patterns (backward compatible):
+Usage:
 
 ```python
-# src/tol/core/datasource.py
-class DataSource(ABC):
-    def __init__(self, config: DataSourceConfig | object, *args,
-                 expected: list[str] | None = None,
-                 attribute_metadata=DefaultAttributeMetadata, **kwargs):
-        self.__data_object_factory = None
-        self.__attribute_metadata = attribute_metadata
+# Before — bare except, no configurability
+action = UpsertAction()
+result, status = action.run(ds, ids=['1'], object_type='sample')
+# On error: always returns {'error': '<str>'}, 500
 
-        if isinstance(config, dict):
-            # Legacy dict path — unchanged
-            self.__validate_config(config, expected)
-            for k, v in config.items():
-                setattr(self, k, v)
-        else:
-            # New typed config path
-            from dataclasses import fields
-            for f in fields(config):
-                setattr(self, f.name, getattr(config, f.name))
-```
+# After — default behaviour unchanged
+action = UpsertAction()
+result, status = action.run(ds, ids=['1'], object_type='sample')
+# On error: returns {'error': '<str>'}, <actual_status_code>
 
-**Step 3** — Update each DataSource subclass to accept both:
+# After — with retry strategy for transient errors
+from tol.core.error_handler import (
+    ClassifyingErrorHandler, RetryErrorHandler, DefaultErrorHandler
+)
+handler = ClassifyingErrorHandler(
+    transient_handler=RetryErrorHandler(max_retries=3),
+    permanent_handler=DefaultErrorHandler()
+)
+action = UpsertAction(error_handler=handler)
+result, status = action.run(ds, ids=['1'], object_type='sample')
+# Transient errors retry 3 times; permanent errors fail immediately
 
-```python
-# src/tol/benchling/benchling_datasource.py
-from .config import BenchlingConfig
-
-class BenchlingDataSource(DataSource, ...):
-    def __init__(self, config: BenchlingConfig | DataSourceConfig, ...):
-        if isinstance(config, dict):
-            config = BenchlingConfig(**config)  # Convert legacy dict
-        super().__init__(config)
-```
-
-**Step 4** — Update sources to use typed configs:
-
-```python
-# src/tol/sources/benchling.py
-from tol.benchling.config import BenchlingConfig
-
-def benchling(**kwargs):
-    cfg = BenchlingConfig(
-        api_key=os.getenv('BENCHLING_API_KEY'),
-        url=os.getenv('BENCHLING_URL'),
-        registry_id=os.getenv('BENCHLING_REGISTRY_ID'),
-        project_id=os.getenv('BENCHLING_PROJECT_ID'),
-    )
-    ds = BenchlingDataSource(cfg)
-    core_data_object(ds)
-    return ds
+# After — with logging
+from tol.core.error_handler import LoggingErrorHandler
+import logging
+logger = logging.getLogger('tol.actions')
+handler = LoggingErrorHandler(DefaultErrorHandler(), logger=logger)
+action = SetStatusAction(error_handler=handler)
 ```
 
 Files that need changes:
 
 | File | Change |
 |---|---|
-| `src/tol/core/datasource.py` | Add dataclass branch to `__init__` |
-| `src/tol/benchling/config.py` | New file |
-| `src/tol/sciops/config.py` | New file |
-| `src/tol/mlwh/config.py` | New file |
-| One new config file per config-dict DataSource | New files |
-| Each config-dict DataSource `__init__` | Accept both patterns |
+| `src/tol/core/datasource_error.py` | Add `ErrorKind`, `TransientError`, `PermanentError`, and `kind`/`cause` fields to `DataSourceError` |
+| `src/tol/core/error_handler.py` | New file — `ErrorHandler` ABC with `DefaultErrorHandler`, `ClassifyingErrorHandler`, `RetryErrorHandler`, `LoggingErrorHandler` |
+| `src/tol/core/__init__.py` | Export `ErrorHandler`, `ErrorKind` |
+| `src/tol/actions/action.py` | Accept `ErrorHandler` in constructor, move `run` to template method calling `_execute` |
+| `src/tol/actions/upsert_action.py` | Rename `run` → `_execute`, remove try/except |
+| `src/tol/actions/set_status_action.py` | Rename `run` → `_execute`, remove try/except, use `PermanentError` for validation |
+| `src/tol/api_client/exception.py` | Make `BaseRuntimeException` extend `DataSourceError` instead of `Exception` |
 
 ### Benefits
 
-- Missing or mistyped keys cause `TypeError` at construction, not deep runtime errors
-- Wrong value types are caught early (e.g. `rabbitmq_port` must be `int`)
-- IDE autocompletion and type checking work on config fields
-- Config objects are frozen — cannot be accidentally mutated
-- `setattr` collision risk eliminated for typed path
-- Self-documenting: each config dataclass declares exactly what a DataSource needs
+- Eliminates bare `except Exception` — errors are classified and only `DataSourceError` subtypes are caught
+- Error handling is **injectable** — callers choose retry, logging, or custom strategies without modifying Action code
+- **Transient vs permanent** classification enables intelligent retry at the application level, not just HTTP transport
+- Exception hierarchy is unified — `BaseRuntimeException` becomes a `DataSourceError` subclass, enabling a single catch-all
+- Error context is preserved — `cause` chains the original exception, `status_code` flows through to the response
+- `Action.run()` becomes a clean Template Method — subclasses implement `_execute` with no error handling boilerplate
 
 ### Testing impact
 
-All existing tests pass without changes because the dict path is preserved. Tests that construct DataSources with dicts (e.g. `_TestDataSourceExpected({'field1': 'v1', 'field2': 'v2'})` in `test/unit/core/test_datasource.py`) continue to work.
+Existing tests that check `action.run()` return values continue to work because `DefaultErrorHandler` preserves the `({'error': str(e)}, status_code)` response format. Tests that directly call `set_status_action.run()` and check for `DataSourceError` raises will need minor updates to expect `PermanentError` instead, though `PermanentError` is a subclass of `DataSourceError` so `pytest.raises(DataSourceError)` still catches it.
 
 ### Testability improvement
 
-Config objects can be validated independently of DataSource construction. Invalid configurations are caught by the type system. Tests no longer need to verify runtime config dict key expectations — the dataclass constructor enforces them.
+- Error handlers are independently testable — each strategy can be unit tested without a real DataSource or Action
+- Actions can be tested with a `MockErrorHandler` to verify that errors are delegated correctly
+- Transient/permanent classification can be asserted directly via `error.is_transient`
+- Retry behaviour is testable without network calls — inject a mock operation that fails N times then succeeds
+- Error context dict is inspectable — tests can verify what metadata is passed to the handler
 
 ### How to write the tests
 
 ```python
-# test/unit/benchling/test_config.py
+# test/unit/core/test_error_handler.py
 import pytest
-from dataclasses import FrozenInstanceError
-from tol.benchling.config import BenchlingConfig
+from unittest.mock import MagicMock, patch
+from tol.core.datasource_error import (
+    DataSourceError, ErrorKind, TransientError, PermanentError
+)
+from tol.core.error_handler import (
+    DefaultErrorHandler, ClassifyingErrorHandler,
+    RetryErrorHandler, LoggingErrorHandler
+)
 
 
-class TestBenchlingConfig:
-    def test_valid_config(self):
-        cfg = BenchlingConfig(
-            url='https://x.benchling.com',
-            api_key='sk-abc123',
-            registry_id='src_abc',
-            project_id='src_xyz',
+class TestDefaultErrorHandler:
+    def test_returns_error_dict_with_status_code(self):
+        handler = DefaultErrorHandler()
+        error = DataSourceError('title', 'detail', status_code=404)
+        body, status = handler.handle(error, {})
+        assert body == {'error': 'title - "detail"'}
+        assert status == 404
+
+    def test_handles_transient_and_permanent_equally(self):
+        handler = DefaultErrorHandler()
+        transient = TransientError('timeout', 'timed out')
+        permanent = PermanentError('bad input', 'field missing')
+        _, t_status = handler.handle(transient, {})
+        _, p_status = handler.handle(permanent, {})
+        assert t_status == 503
+        assert p_status == 400
+
+
+class TestClassifyingErrorHandler:
+    def test_routes_transient_to_transient_handler(self):
+        transient_handler = MagicMock(spec=DefaultErrorHandler)
+        transient_handler.handle.return_value = ({'retried': True}, 200)
+        permanent_handler = MagicMock(spec=DefaultErrorHandler)
+        handler = ClassifyingErrorHandler(transient_handler, permanent_handler)
+
+        error = TransientError('timeout', 'timed out')
+        body, status = handler.handle(error, {})
+
+        transient_handler.handle.assert_called_once()
+        permanent_handler.handle.assert_not_called()
+        assert body == {'retried': True}
+
+    def test_routes_permanent_to_permanent_handler(self):
+        transient_handler = MagicMock(spec=DefaultErrorHandler)
+        permanent_handler = MagicMock(spec=DefaultErrorHandler)
+        permanent_handler.handle.return_value = ({'error': 'bad'}, 400)
+        handler = ClassifyingErrorHandler(transient_handler, permanent_handler)
+
+        error = PermanentError('bad input', 'missing field')
+        body, status = handler.handle(error, {})
+
+        permanent_handler.handle.assert_called_once()
+        transient_handler.handle.assert_not_called()
+        assert status == 400
+
+
+class TestRetryErrorHandler:
+    def test_retries_transient_errors(self):
+        call_count = 0
+        def operation():
+            nonlocal call_count
+            call_count += 1
+            if call_count < 3:
+                raise TransientError('fail', f'attempt {call_count}')
+            return True
+
+        handler = RetryErrorHandler(max_retries=3)
+        error = TransientError('fail', 'attempt 0')
+        body, status = handler.handle(error, {'operation': operation})
+
+        assert body == {'success': True}
+        assert status == 200
+        assert call_count == 3
+
+    def test_gives_up_after_max_retries(self):
+        def operation():
+            raise TransientError('fail', 'always fails')
+
+        handler = RetryErrorHandler(max_retries=2)
+        error = TransientError('fail', 'initial')
+        body, status = handler.handle(error, {'operation': operation})
+
+        assert 'error' in body
+        assert status == 503
+
+    def test_permanent_error_during_retry_stops_immediately(self):
+        call_count = 0
+        def operation():
+            nonlocal call_count
+            call_count += 1
+            raise PermanentError('bad', 'not retryable')
+
+        handler = RetryErrorHandler(max_retries=5)
+        error = TransientError('fail', 'initial')
+        body, status = handler.handle(error, {'operation': operation})
+
+        assert call_count == 1  # Stopped after first permanent error
+        assert status == 400
+
+    def test_no_operation_in_context_delegates_to_fallback(self):
+        fallback = MagicMock(spec=DefaultErrorHandler)
+        fallback.handle.return_value = ({'error': 'no op'}, 500)
+        handler = RetryErrorHandler(max_retries=3, fallback=fallback)
+
+        error = TransientError('fail', 'detail')
+        handler.handle(error, {})  # No 'operation' key
+
+        fallback.handle.assert_called_once()
+
+
+class TestLoggingErrorHandler:
+    def test_logs_before_delegating(self):
+        logger = MagicMock()
+        delegate = MagicMock(spec=DefaultErrorHandler)
+        delegate.handle.return_value = ({'error': 'x'}, 500)
+        handler = LoggingErrorHandler(delegate, logger=logger)
+
+        error = PermanentError('bad', 'detail')
+        handler.handle(error, {'action': 'UpsertAction'})
+
+        logger.error.assert_called_once()
+        delegate.handle.assert_called_once()
+
+    def test_returns_delegate_result(self):
+        delegate = MagicMock(spec=DefaultErrorHandler)
+        delegate.handle.return_value = ({'custom': 'response'}, 422)
+        handler = LoggingErrorHandler(delegate)
+
+        error = PermanentError('bad', 'detail')
+        body, status = handler.handle(error, {})
+
+        assert body == {'custom': 'response'}
+        assert status == 422
+
+
+# test/unit/core/test_datasource_error.py
+class TestErrorKind:
+    def test_transient_error_is_transient(self):
+        error = TransientError('timeout', 'timed out')
+        assert error.is_transient is True
+        assert error.kind == ErrorKind.TRANSIENT
+
+    def test_permanent_error_is_not_transient(self):
+        error = PermanentError('bad input', 'missing')
+        assert error.is_transient is False
+        assert error.kind == ErrorKind.PERMANENT
+
+    def test_default_datasource_error_is_permanent(self):
+        error = DataSourceError('generic', 'detail')
+        assert error.is_transient is False
+
+    def test_cause_chaining(self):
+        original = ValueError('original cause')
+        error = TransientError('wrapper', 'detail', cause=original)
+        assert error.__cause__ is original
+
+    def test_transient_error_inherits_datasource_error(self):
+        error = TransientError('x', 'y')
+        assert isinstance(error, DataSourceError)
+
+    def test_permanent_error_inherits_datasource_error(self):
+        error = PermanentError('x', 'y')
+        assert isinstance(error, DataSourceError)
+
+
+# test/unit/actions/test_upsert_action.py
+class TestUpsertActionErrorHandling:
+    def test_delegates_error_to_handler(self):
+        mock_handler = MagicMock(spec=DefaultErrorHandler)
+        mock_handler.handle.return_value = ({'handled': True}, 503)
+        action = UpsertAction(error_handler=mock_handler)
+
+        mock_ds = MagicMock()
+        mock_ds.upsert_batch.side_effect = TransientError('fail', 'timeout')
+
+        body, status = action.run(mock_ds, ['1'], 'sample')
+
+        mock_handler.handle.assert_called_once()
+        assert body == {'handled': True}
+        assert status == 503
+
+    def test_default_handler_preserves_existing_behaviour(self):
+        action = UpsertAction()  # Uses DefaultErrorHandler
+        mock_ds = MagicMock()
+        mock_ds.upsert_batch.side_effect = DataSourceError(
+            'fail', 'detail', status_code=500
         )
-        assert cfg.url == 'https://x.benchling.com'
-        assert cfg.api_key == 'sk-abc123'
 
-    def test_missing_required_field_raises_type_error(self):
-        with pytest.raises(TypeError):
-            BenchlingConfig(url='https://x.benchling.com')
+        body, status = action.run(mock_ds, ['1'], 'sample')
 
-    def test_unexpected_field_raises_type_error(self):
-        with pytest.raises(TypeError):
-            BenchlingConfig(
-                url='https://x', api_key='k',
-                registry_id='r', project_id='p',
-                not_a_field='oops',
-            )
+        assert 'error' in body
+        assert status == 500
 
-    def test_frozen_prevents_mutation(self):
-        cfg = BenchlingConfig(
-            url='https://x', api_key='k',
-            registry_id='r', project_id='p',
+
+# test/unit/actions/test_set_status_action.py
+class TestSetStatusActionErrorHandling:
+    def test_validation_errors_are_permanent(self):
+        handler = MagicMock(spec=DefaultErrorHandler)
+        handler.handle.return_value = ({'error': 'bad'}, 400)
+        action = SetStatusAction(error_handler=handler)
+
+        body, status = action.run(MagicMock(), ['1'], 'sample', params={})
+
+        error_arg = handler.handle.call_args[0][0]
+        assert isinstance(error_arg, PermanentError)
+        assert error_arg.status_code == 400
+
+    def test_missing_ids_raises_permanent_error(self):
+        handler = MagicMock(spec=DefaultErrorHandler)
+        handler.handle.return_value = ({'error': 'no ids'}, 400)
+        action = SetStatusAction(error_handler=handler)
+
+        body, status = action.run(
+            MagicMock(), [], 'sample',
+            params={'status': 'approved', 'user_id': 'u1'}
         )
-        with pytest.raises(FrozenInstanceError):
-            cfg.url = 'https://other'
 
-
-# test/unit/sciops/test_config.py
-from tol.sciops.config import SciopsConfig
-
-
-class TestSciopsConfig:
-    def test_required_fields(self):
-        cfg = SciopsConfig(
-            redpanda_url='http://x', redpanda_api_key='k',
-            rabbitmq_host='host', rabbitmq_port=5672,
-            rabbitmq_username='u', rabbitmq_password='p',
-            rabbitmq_vhost='/', rabbitmq_exchange='ex',
-            rabbitmq_routing_key='rk',
-        )
-        assert cfg.rabbitmq_port == 5672
-        assert cfg.rabbitmq_use_ssl is False  # default
-
-    def test_defaults_applied(self):
-        cfg = SciopsConfig(
-            redpanda_url='http://x', redpanda_api_key='k',
-            rabbitmq_host='host', rabbitmq_port=5672,
-            rabbitmq_username='u', rabbitmq_password='p',
-            rabbitmq_vhost='/', rabbitmq_exchange='ex',
-            rabbitmq_routing_key='rk',
-        )
-        assert cfg.rabbitmq_publish_retry_delay == 5
-        assert cfg.rabbitmq_publish_retries == 3
-        assert cfg.tol_feedback_queue == ''
-
-
-# test/unit/core/test_datasource.py — add to existing file
-class TestDataSourceTypedConfig:
-    def test_typed_config_sets_attributes(self):
-        """DataSource accepts a dataclass config and sets attributes."""
-        from dataclasses import dataclass
-
-        @dataclass(frozen=True)
-        class TestConfig:
-            field1: str
-            field2: str
-
-        class _DS(DataSource):
-            def __init__(self, config):
-                super().__init__(config)
-
-            @property
-            def supported_types(self):
-                return []
-
-        ds = _DS(TestConfig(field1='a', field2='b'))
-        assert ds.field1 == 'a'
-        assert ds.field2 == 'b'
-
-    def test_dict_config_still_works(self):
-        """Legacy dict config path is unchanged."""
-        ds = _TestDataSourceExpected({'field1': 'v1', 'field2': 'v2'})
-        assert ds.field1 == 'v1'
-
-
-# test/unit/benchling/test_benchling_datasource.py — add to existing
-class TestBenchlingDataSourceConfig:
-    def test_accepts_typed_config(self):
-        cfg = BenchlingConfig(
-            url='https://x', api_key='k',
-            registry_id='r', project_id='p',
-        )
-        ds = BenchlingDataSource(cfg)
-        assert ds.url == 'https://x'
-
-    def test_accepts_legacy_dict(self):
-        ds = BenchlingDataSource({
-            'url': 'https://x', 'api_key': 'k',
-            'registry_id': 'r', 'project_id': 'p',
-        })
-        assert ds.url == 'https://x'
+        error_arg = handler.handle.call_args[0][0]
+        assert isinstance(error_arg, PermanentError)
 ```
+
+### Testing patterns
+
+| Pattern | Category | Where used | Purpose |
+|---|---|---|---|
+| **Arrange-Act-Assert (AAA)** | Structural | All test methods | Each test creates a handler/error, invokes `handle`, and asserts the response — enforcing a consistent structural layout across the test suite |
+| **Test Doubles (Mock/Stub)** | Creational | `TestClassifyingErrorHandler`, `TestRetryErrorHandler`, `TestLoggingErrorHandler`, `TestUpsertActionErrorHandling` | `MagicMock(spec=...)` creates strict test doubles for `ErrorHandler` and `DataSource` to isolate the unit under test |
+| **State-based Testing** | Behavioural | `TestRetryErrorHandler.test_retries_transient_errors` | Uses a `call_count` closure to track how many times the operation was retried — verifying runtime behavioural state across retry cycles |
+| **Behaviour Verification** | Behavioural | `TestLoggingErrorHandler.test_logs_before_delegating` | Asserts that `logger.error` was called exactly once, verifying side-effect behaviour rather than return values |
+| **Negative Testing** | Behavioural | `TestRetryErrorHandler.test_gives_up_after_max_retries`, `TestSetStatusActionErrorHandling.test_missing_ids_raises_permanent_error` | Verifies correct behavioural handling of failure paths — exhausted retries and invalid input |
+| **Polymorphism Testing** | Structural | `TestErrorKind.test_transient_error_inherits_datasource_error` | `isinstance` checks verify the exception hierarchy structure, ensuring catch clauses work correctly across subtypes |
+| **Backward Compatibility Testing** | Behavioural | `TestUpsertActionErrorHandling.test_default_handler_preserves_existing_behaviour` | Confirms that constructing an Action without an explicit handler produces the same behavioural result as the current codebase |
 
 ---
 
@@ -1059,3 +1383,14 @@ def _clean_datasource_registry():
     _data_source_registry.clear()
     _data_source_registry.update(original)
 ```
+
+### Testing patterns
+
+| Pattern | Category | Where used | Purpose |
+|---|---|---|---|
+| **Arrange-Act-Assert (AAA)** | Structural | All test methods | Each test registers DataSources, performs one operation, and asserts one outcome — enforcing a consistent structural layout |
+| **Test Doubles (Mock)** | Creational | `TestRegistryCleanup.test_direct_registry_injection` | `Mock()` creates lightweight stand-ins for DataSource objects, enabling test setup without constructing real implementations |
+| **Identity Assertion** | Structural | `TestCoreDataObjectDI.test_isinstance_across_sources` | `type(obj1) is type(obj2)` verifies the structural guarantee that a single class exists regardless of registration source |
+| **State Isolation (Fixture)** | Behavioural | `TestRegistryCleanup`, `_clean_datasource_registry` fixture | Snapshot-and-restore pattern ensures each test starts with a clean registry — controlling behavioural side-effects of `core_data_object()` calls |
+| **Negative Testing** | Behavioural | `TestRegistryCleanup.test_empty_registry_raises_on_host` | `pytest.raises(KeyError)` verifies behavioural contracts when accessing an unregistered type |
+| **Integration Verification** | Structural | `TestCoreDataObjectDI.test_host_resolved_from_registry` | `obj._host is ds` verifies the structural wiring between `CoreDataObject` and the registry — confirming DI is correctly plumbed |
