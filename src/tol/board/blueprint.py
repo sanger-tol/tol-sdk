@@ -11,6 +11,7 @@ from flask import Blueprint, request
 from nanoid import generate
 
 from .utils import (
+    PREFIX_MAPPINGS,
     get_entity_type_from_prefix,
     save_board_entity_and_children,
 )
@@ -100,6 +101,7 @@ def board_blueprint(
         bigger_type: str,
         all_bigger_ids: list[str | None],
         joins: list[DataObject],
+        user_id: str,
     ) -> list[DataObject]:
         """
         Given a bigger->smaller relation (e.g.
@@ -114,9 +116,12 @@ def board_blueprint(
             for join in joins
         ]
 
+        can_delete_any_owner = 'warden' in ctx_getter().roles
+
         return [
             obj for obj in all_smaller_objs
-            if __smaller_is_deletable(
+            if (can_delete_any_owner or getattr(obj.user, 'id', None) == user_id)
+            and __smaller_is_deletable(
                 obj,
                 bigger_type,
                 all_bigger_ids,
@@ -171,6 +176,7 @@ def board_blueprint(
                     bigger_type,
                     all_bigger_ids,
                     joins,
+                    user_id,
                 )
                 all_deletable_smallers.extend(deletable_smallers)
 
@@ -603,6 +609,92 @@ def board_blueprint(
             'order': next_order,
             **attributes,
         }, 201
+
+    @board_bp.post('/create-board')
+    @board_bp.post('/create_board')
+    def __create_board():
+        payload = request.json or {}
+        board_title = payload.get('board_title', 'New board')
+        first_view_title = payload.get('first_view_title', 'View 1')
+
+        board_type = type_hierarchy[0]
+        view_type = type_hierarchy[1]
+
+        custom_alphabet = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz'
+        board_prefix = PREFIX_MAPPINGS.get(board_type, board_type[:1].lower())
+        board_id = f'{board_prefix}_{generate(custom_alphabet, 12)}'
+
+        user_stub = board_ds.data_object_factory(
+            type_='user',
+            id_=ctx_getter().user_id,
+        )
+
+        board_obj = board_ds.data_object_factory(
+            type_=board_type,
+            id_=board_id,
+            attributes={
+                'title': board_title,
+                'filter': {},
+            },
+            to_one={'user': user_stub},
+        )
+        board_ds.insert(board_type, [board_obj])
+
+        # Add the first view using add_entity logic
+        view_attributes = {
+            'title': first_view_title,
+            'filter': {},
+        }
+
+        view_id_prefix = PREFIX_MAPPINGS.get(view_type, view_type[:1].lower())
+        view_id = f'{view_id_prefix}_{generate(custom_alphabet, 12)}'
+
+        view_obj = board_ds.data_object_factory(
+            type_=view_type,
+            id_=view_id,
+            attributes=view_attributes,
+            to_one={'user': user_stub},
+        )
+        board_ds.insert(view_type, [view_obj])
+
+        joiner_type = f'{view_type}_{board_type}'
+        joins_filter = DataSourceFilter(
+            and_={
+                f'{board_type}.id': {
+                    'eq': {
+                        'value': board_id
+                    }
+                }
+            }
+        )
+        existing_joins = list(board_ds.get_list(joiner_type, object_filters=joins_filter))
+        next_order = max((getattr(join, 'order', 0) for join in existing_joins), default=0) + 1
+
+        view_board_obj = board_ds.data_object_factory(
+            type_=joiner_type,
+            attributes={'order': next_order},
+            to_one={
+                view_type: board_ds.data_object_factory(
+                    type_=view_type,
+                    id_=view_id,
+                ),
+                board_type: board_ds.data_object_factory(
+                    type_=board_type,
+                    id_=board_id,
+                ),
+            },
+        )
+        board_ds.insert(joiner_type, [view_board_obj])
+
+        # Return full serialized board JSON
+        entities = {
+            board_type: [board_obj],
+            view_type: [view_obj],
+            joiner_type: [view_board_obj],
+        }
+        serialised = __serialise_board_entities(board_id, entities)
+
+        return serialised, 201
 
     @board_bp.delete('/<string:object_type>/<string:object_id>')
     def __delete_endpoint(*, object_type: str, object_id: str):

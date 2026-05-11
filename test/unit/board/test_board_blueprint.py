@@ -20,6 +20,92 @@ from tol.sql import SqlDataSource
 
 class TestBoardBlueprint:
 
+    def test_create_board__201(
+        self,
+        board_auth_ctx: AuthContext,
+        board_client: FlaskClient,
+        board_ds: SqlDataSource,
+        monkeypatch: pytest.MonkeyPatch,
+    ):
+        """
+        POST create_board creates board + first view + join row,
+        then returns full serialized board JSON.
+        """
+
+        board_auth_ctx.user_id = '100'
+
+        ids = iter(['board12345678', 'view123456789'])
+        monkeypatch.setattr(
+            board_blueprint_module,
+            'generate',
+            lambda *_args: next(ids)
+        )
+
+        def _factory(*, type_, id_=None, attributes=None, to_one=None):
+            return self.__mock_obj(
+                type_,
+                id_=id_,
+                attributes=attributes or {},
+                to_one=to_one or {},
+            )
+
+        board_ds.data_object_factory.side_effect = _factory
+
+        r = board_client.post(
+            '/create-board',
+            json={
+                'board_title': 'My board',
+                'first_view_title': 'My first view',
+            }
+        )
+
+        assert r.status_code == 201
+        payload = r.get_json()
+
+        assert payload['id'] == 'l_board12345678'
+        assert payload['type'] == 'L'
+        assert payload['title'] == 'My board'
+        assert payload['order'] == ['m_view123456789']
+        children = payload['children'][0] if isinstance(payload['children'], list) else payload['children']
+        assert 'm_view123456789' in children
+        assert children['m_view123456789']['title'] == 'My first view'
+
+        inserted_types = [call.args[0] for call in board_ds.insert.call_args_list]
+        assert inserted_types == ['L', 'M', 'M_L']
+
+    def test_create_board_alias__201(
+        self,
+        board_auth_ctx: AuthContext,
+        board_client: FlaskClient,
+        board_ds: SqlDataSource,
+        monkeypatch: pytest.MonkeyPatch,
+    ):
+        """
+        POST create_board alias route works.
+        """
+
+        board_auth_ctx.user_id = '100'
+
+        ids = iter(['board12345678', 'view123456789'])
+        monkeypatch.setattr(
+            board_blueprint_module,
+            'generate',
+            lambda *_args: next(ids)
+        )
+
+        def _factory(*, type_, id_=None, attributes=None, to_one=None):
+            return self.__mock_obj(
+                type_,
+                id_=id_,
+                attributes=attributes or {},
+                to_one=to_one or {},
+            )
+
+        board_ds.data_object_factory.side_effect = _factory
+
+        r = board_client.post('/create_board', json={})
+        assert r.status_code == 201
+
     def test_delete_smallest__200(
         self,
         board_auth_ctx: AuthContext,
