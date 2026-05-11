@@ -5,6 +5,7 @@
 from unittest.mock import MagicMock, call
 
 from flask.testing import FlaskClient
+
 import pytest
 
 from tol.core import DataSourceError
