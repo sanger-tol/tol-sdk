@@ -649,7 +649,7 @@ def board_blueprint(
         board_ds.upsert_batch(joiner_object_type, updated_joiners)
 
     @board_bp.patch('/reorder/<string:parent_object_id>')
-    def __reorder_entity_endpoint(*, parent_object_id: str):
+    def __reorder_endpoint(*, parent_object_id: str):
         """
         Reorders child entities under a given parent entity.
         
