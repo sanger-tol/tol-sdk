@@ -352,7 +352,7 @@ def board_blueprint(
         all_entities: dict[str, list[DataObject]]
     ) -> dict[str, Any]:
         """
-        serialises the given entities into a nested dict structure suitable
+        Serialises the given entities into a nested dict structure suitable
         for consumption by the frontend, starting at the given parent ID and
         type (e.g. a `view` ID and `view` type would serialise that
         view along with its child zones and components).
@@ -556,6 +556,11 @@ def board_blueprint(
         return {'copied': True, 'board_id': board_id}, 201
 
     def __get_board_entity_type(entity_id: str) -> str | None:
+        """
+        Infers the board entity type from the ID prefix.
+        Expects IDs to be in the format '{prefix}_{nanoid}',
+        where the prefix indicates the entity type (e.g. 'b' for board, 'v' for view, etc.).
+        """
         prefix_mappings = {
             'b': 'board',
             'v': 'view',
@@ -566,9 +571,12 @@ def board_blueprint(
 
     def __get_parent_joiner_objs(
         parent_object_id: str,
-        parent_object_type: str,
         joiner_object_type: str
     ) -> list[DataObject]:
+        """
+        Retrieves the joiner objects for a given parent object.
+        """
+        parent_object_type = joiner_object_type.split('_')[1]
         f = DataSourceFilter(
             and_={
                 f'{parent_object_type}.id': {
@@ -585,6 +593,14 @@ def board_blueprint(
 
     @board_bp.patch('/reorder/<string:parent_object_id>')
     def __reorder_entity(*, parent_object_id: str):
+        """
+        Reorders child entities under a given parent entity.
+        
+        Expects a JSON body with an 'order' field containing a
+        list of child entity IDs in the desired order.
+
+        Validates that the provided order includes all and only the actual child IDs.
+        """
         new_order = request.json.get('order')
 
         parent_object_type = __get_board_entity_type(parent_object_id)
@@ -594,7 +610,6 @@ def board_blueprint(
         # Getting the actual child IDs from the given parent
         joiner_objs = __get_parent_joiner_objs(
             parent_object_id,
-            parent_object_type,
             joiner_object_type
         )
         actual_child_ids = [
@@ -606,8 +621,8 @@ def board_blueprint(
         if len(actual_child_ids) != len(new_order) or set(actual_child_ids) != set(new_order):
             raise DataSourceError(
                 'Invalid Order',
-                'Not all child IDs are included'
-                'in the new order, or there are'
+                'Not all child IDs are included '
+                'in the new order, or there are '
                 'extra IDs that are not children.',
 
                 400
