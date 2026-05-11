@@ -40,6 +40,7 @@ class DefaultDataLoader():
         audit: Optional[DataSource] = None,
         convert_class: Optional[DataObjectToDataObjectOrUpdateConverter] = None,
         object_filters: Optional[DataSourceFilter] = None,
+        requested_fields: Optional[List[str]] = None,
         converter: Converter | None = None
     ):
         self._source = source
@@ -52,6 +53,7 @@ class DefaultDataLoader():
         self._destination_object_type = destination_object_type
         self._loader_name = loader_name
         self._object_filters = object_filters
+        self._requested_fields = requested_fields
 
     def load(
         self,
@@ -193,7 +195,9 @@ class DefaultDataLoader():
     def _get_source_objects(self) -> Iterable:
         source_objs = self._source.get_list(
             self._source_object_type,
-            object_filters=self._object_filters)
+            object_filters=self._object_filters,
+            requested_fields=self._requested_fields
+        )
         return source_objs
 
     def _record_time(self, start_or_end: str):
@@ -324,6 +328,7 @@ class GroupStatterDataLoader(DefaultDataLoader):
         audit: DataSource = None,
         convert_class: Optional[DataObjectToDataObjectOrUpdateConverter] = None,
         object_filters: Optional[DataSourceFilter] = None,
+        requested_fields: Optional[List[str]] = None,
         converter: Converter | None = None,
         group_statter_group_by: Optional[str] = None,
         group_statter_stats_fields: Optional[List[str]] = [],
@@ -338,6 +343,7 @@ class GroupStatterDataLoader(DefaultDataLoader):
             loader_name=loader_name, audit=audit,
             convert_class=convert_class,
             object_filters=object_filters,
+            requested_fields=requested_fields,
             converter=converter)
         self._group_statter_group_by = group_statter_group_by
         self._group_statter_stats_fields = group_statter_stats_fields
@@ -362,6 +368,7 @@ class IdsDataLoader(DefaultDataLoader):
                  audit: Optional[DataSource] = None,
                  convert_class: Optional[DataObjectToDataObjectOrUpdateConverter] = None,
                  object_ids: Optional[Iterable[str]] = None,
+                 requested_fields: Optional[List[str]] = None,
                  converter: Converter | None = None):
         super().__init__(
             source=source, destination=destination,
@@ -369,13 +376,16 @@ class IdsDataLoader(DefaultDataLoader):
             destination_object_type=destination_object_type,
             loader_name=loader_name, audit=audit,
             converter=converter,
-            convert_class=convert_class)
+            convert_class=convert_class,
+            requested_fields=requested_fields)
         self._object_ids = object_ids
 
     def _get_source_objects(self) -> Iterable:
         source_objs = self._source.get_by_ids(
             self._source_object_type,
-            self._object_ids)
+            self._object_ids,
+            requested_fields=self._requested_fields
+        )
         return source_objs
 
 
@@ -387,6 +397,7 @@ class ObjectsDataLoader(DefaultDataLoader):
                  audit: Optional[DataSource] = None,
                  convert_class: Optional[DataObjectToDataObjectOrUpdateConverter] = None,
                  objects: Optional[Iterable[DataObject]] = None,
+                 requested_fields: Optional[List[str]] = None,
                  converter: Converter | None = None):
         super().__init__(
             source=source, destination=destination,
@@ -394,6 +405,7 @@ class ObjectsDataLoader(DefaultDataLoader):
             destination_object_type=destination_object_type,
             loader_name=loader_name, audit=audit,
             convert_class=convert_class,
+            requested_fields=requested_fields,
             converter=converter)
         self._objects = objects
 

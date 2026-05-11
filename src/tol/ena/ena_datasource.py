@@ -143,7 +143,8 @@ class EnaDataSource(
         page_number: int,
         page_size: Optional[int] = None,
         object_filters: Optional[DataSourceFilter] = None,
-        sort_by: Optional[str] = None
+        sort_by: Optional[str] = None,
+        **kwargs
     ) -> tuple[Iterable[DataObject], int]:
 
         size = page_size if page_size else self.get_page_size()
@@ -167,7 +168,8 @@ class EnaDataSource(
         self,
         object_type: str,
         object_filters: Optional[DataSourceFilter] = None,
-        sort_by: Optional[str] = None
+        sort_by: Optional[str] = None,
+        **kwargs
     ) -> Iterable[DataObject]:
 
         if sort_by is not None:
