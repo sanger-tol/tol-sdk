@@ -2,9 +2,9 @@
 #
 # SPDX-License-Identifier: MIT
 
-import pytest
-
 from unittest.mock import MagicMock, call
+
+import pytest
 
 from flask.testing import FlaskClient
 
