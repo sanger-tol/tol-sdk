@@ -4,8 +4,10 @@
 
 from flask.testing import FlaskClient
 
+import pytest
+
 from tol.api_base.misc import AuthContext
-from tol.core import DataSourceFilter
+from tol.core import DataSourceError, DataSourceFilter
 from tol.sql import SqlDataSource
 
 from .utils import insert_board_hierarchy
@@ -30,12 +32,12 @@ class TestBoardReorder:
 
         hierarchy = {
             'zone': {
-                'a': ('100', []),
-                'b': ('100', []),
-                'c': ('100', []),
+                'z_a': ('100', []),
+                'z_b': ('100', []),
+                'z_c': ('100', []),
             },
             'view': {
-                'I': ('100', ['a', 'b', 'c'])
+                'v_I': ('100', ['z_a', 'z_b', 'z_c'])
             }
         }
 
@@ -44,26 +46,26 @@ class TestBoardReorder:
         board_auth_ctx.user_id = '100'
 
         r = board_client.patch(
-            '/reorder/I',
-            json={'order': ['c', 'a', 'b']}
+            '/reorder/v_I',
+            json={'order': ['z_c', 'z_a', 'z_b']}
         )
         assert r.status_code == 200
-        assert r.json['order'] == ['c', 'a', 'b']
+        assert r.json['order'] == ['z_c', 'z_a', 'z_b']
 
         # Verify the order values in the DB
         joiner_objs = list(board_ds.get_list(
             'zone_view',
             object_filters=DataSourceFilter(
-                and_={'view.id': {'eq': {'value': 'I'}}}
+                and_={'view.id': {'eq': {'value': 'v_I'}}}
             )
         ))
         order_by_zone_id = {
             obj.zone.id: obj.order
             for obj in joiner_objs
         }
-        assert order_by_zone_id['c'] == 0
-        assert order_by_zone_id['a'] == 1
-        assert order_by_zone_id['b'] == 2
+        assert order_by_zone_id['z_c'] == 0
+        assert order_by_zone_id['z_a'] == 1
+        assert order_by_zone_id['z_b'] == 2
 
     def test__reorder__missing_child__400(
         self,
@@ -78,12 +80,12 @@ class TestBoardReorder:
 
         hierarchy = {
             'zone': {
-                'a': ('100', []),
-                'b': ('100', []),
-                'c': ('100', []),
+                'z_a': ('100', []),
+                'z_b': ('100', []),
+                'z_c': ('100', []),
             },
             'view': {
-                'I': ('100', ['a', 'b', 'c'])
+                'v_I': ('100', ['z_a', 'z_b', 'z_c'])
             }
         }
 
@@ -91,12 +93,12 @@ class TestBoardReorder:
 
         board_auth_ctx.user_id = '100'
 
-        # 'c' is missing
-        r = board_client.patch(
-            '/reorder/I',
-            json={'order': ['a', 'b']}
-        )
-        assert r.status_code == 400
+        # 'z_c' is missing
+        with pytest.raises(DataSourceError):
+            board_client.patch(
+                '/reorder/v_I',
+                json={'order': ['z_a', 'z_b']}
+            )
 
     def test__reorder__extra_child__400(
         self,
@@ -111,13 +113,13 @@ class TestBoardReorder:
 
         hierarchy = {
             'zone': {
-                'a': ('100', []),
-                'b': ('100', []),
-                'c': ('100', []),
-                'd': ('100', []),
+                'z_a': ('100', []),
+                'z_b': ('100', []),
+                'z_c': ('100', []),
+                'z_d': ('100', []),
             },
             'view': {
-                'I': ('100', ['a', 'b', 'c'])
+                'v_I': ('100', ['z_a', 'z_b', 'z_c'])
             }
         }
 
@@ -125,12 +127,12 @@ class TestBoardReorder:
 
         board_auth_ctx.user_id = '100'
 
-        # 'd' is not a child of 'I'
-        r = board_client.patch(
-            '/reorder/I',
-            json={'order': ['a', 'b', 'c', 'd']}
-        )
-        assert r.status_code == 400
+        # 'z_d' is not a child of 'v_I'
+        with pytest.raises(DataSourceError):
+            board_client.patch(
+                '/reorder/v_I',
+                json={'order': ['z_a', 'z_b', 'z_c', 'z_d']}
+            )
 
     def test__reorder__same_order__200(
         self,
@@ -146,11 +148,11 @@ class TestBoardReorder:
 
         hierarchy = {
             'zone': {
-                'a': ('100', []),
-                'b': ('100', []),
+                'z_a': ('100', []),
+                'z_b': ('100', []),
             },
             'view': {
-                'I': ('100', ['a', 'b'])
+                'v_I': ('100', ['z_a', 'z_b'])
             }
         }
 
@@ -159,7 +161,7 @@ class TestBoardReorder:
         board_auth_ctx.user_id = '100'
 
         r = board_client.patch(
-            '/reorder/I',
-            json={'order': ['a', 'b']}
+            '/reorder/v_I',
+            json={'order': ['z_a', 'z_b']}
         )
         assert r.status_code == 200
