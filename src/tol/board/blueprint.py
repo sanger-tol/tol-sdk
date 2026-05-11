@@ -8,6 +8,7 @@ import typing
 from typing import Any
 
 from flask import Blueprint, request
+
 from nanoid import generate
 
 from ..api_base.auth import ForbiddenError

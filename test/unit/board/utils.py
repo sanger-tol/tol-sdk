@@ -180,5 +180,3 @@ def mock_board_get_list(
         ]
 
     return __get_list
-
-
