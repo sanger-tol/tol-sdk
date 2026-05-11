@@ -591,17 +591,17 @@ def board_blueprint(
             object_filters=f
         ))
 
-    @board_bp.patch('/reorder/<string:parent_object_id>')
-    def __reorder_entity(*, parent_object_id: str):
+    def reorder(
+        parent_object_id: str,
+        new_order: list[str]
+    ) -> None:
         """
         Reorders child entities under a given parent entity.
-        
-        Expects a JSON body with an 'order' field containing a
-        list of child entity IDs in the desired order.
+
+        Expects a list of child entity IDs in the desired order.
 
         Validates that the provided order includes all and only the actual child IDs.
         """
-        new_order = request.json.get('order')
 
         parent_object_type = __get_board_entity_type(parent_object_id)
         child_object_type = __get_board_entity_type(new_order[0])
@@ -648,8 +648,23 @@ def board_blueprint(
         # Upsert the updated joiner objects to save the new order
         board_ds.upsert_batch(joiner_object_type, updated_joiners)
 
+    @board_bp.patch('/reorder/<string:parent_object_id>')
+    def __reorder_entity_endpoint(*, parent_object_id: str):
+        """
+        Reorders child entities under a given parent entity.
+        
+        Expects a JSON body with an 'order' field containing a
+        list of child entity IDs in the desired order.
+
+        Validates that the provided order includes all and only the actual child IDs.
+        """
+        new_order = request.json.get('order')
+
+        reorder(parent_object_id, new_order)
+
+        # Use the passed order as the reorder function already validates
         return {
-            'order': actual_child_ids
+            'order': new_order
         }, 200
 
     return board_bp
