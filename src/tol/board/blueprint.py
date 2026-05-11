@@ -5,9 +5,9 @@
 from __future__ import annotations
 
 import typing
-
 from typing import Any
 
+from nanoid import generate
 from flask import Blueprint, request
 
 from ..api_base.auth import ForbiddenError
@@ -23,8 +23,6 @@ from ..core import (
 
 if typing.TYPE_CHECKING:
     from ..sql import SqlDataSource
-
-from nanoid import generate
 
 
 TYPE_HIERARCHY = [
@@ -354,9 +352,9 @@ def board_blueprint(
         all_entities: dict[str, list[DataObject]]
     ) -> dict[str, Any]:
         """
-        serialises the given entities into a nested dict structure suitable 
-        for consumption by the frontend, starting at the given parent ID and 
-        type (e.g. a `view` ID and `view` type would serialise that 
+        serialises the given entities into a nested dict structure suitable
+        for consumption by the frontend, starting at the given parent ID and
+        type (e.g. a `view` ID and `view` type would serialise that
         view along with its child zones and components).
         """
 
@@ -478,7 +476,10 @@ def board_blueprint(
         for entity_type, objs in entities.items():
             if entity_type in type_hierarchy:
                 for obj in objs:
-                    new_id = f'{prefix_mappings.get(entity_type, "x")}_{generate(custom_alphabet, 12)}'
+                    new_id = (
+                        f'{prefix_mappings.get(entity_type, "x")}'
+                        f'_{generate(custom_alphabet, 12)}'
+                    )
                     id_mapping[obj.id] = new_id
 
         for entity_type in type_hierarchy:
@@ -495,8 +496,11 @@ def board_blueprint(
                 new_obj = board_ds.data_object_factory(
                     type_=entity_type,
                     id_=id_mapping[obj.id],
-                    attributes={
-                        **obj.attributes, 'title': new_board_title} if entity_type == 'board' else obj.attributes,
+                    attributes=(
+                        {**obj.attributes, 'title': new_board_title}
+                        if entity_type == 'board'
+                        else obj.attributes
+                    ),
                     to_one=to_one,
                 )
                 board_ds.insert(entity_type, [new_obj])
@@ -602,9 +606,10 @@ def board_blueprint(
         if len(actual_child_ids) != len(new_order) or set(actual_child_ids) != set(new_order):
             raise DataSourceError(
                 'Invalid Order',
-                'Not all child IDs are included' \
-                'in the new order, or there are' \
+                'Not all child IDs are included'
+                'in the new order, or there are'
                 'extra IDs that are not children.',
+
                 400
             )
 
@@ -629,7 +634,7 @@ def board_blueprint(
         board_ds.upsert_batch(joiner_object_type, updated_joiners)
 
         return {
-            "order": actual_child_ids
+            'order': actual_child_ids
         }, 200
 
     return board_bp
