@@ -137,9 +137,13 @@ class DataSourceUtils:
             if dsrc.source_order is None:
                 continue
             from ..elastic.runtime_fields import RuntimeFields  # Break circular import cycle
-            runtime_fields[dsrc.object_type][f'{dsrc.name}.id'] = RuntimeFields.coalesce(
-                [f'{dsrc.name}.provenance.{source_order}.id' for source_order in dsrc.source_order]
-            )
+            if dsrc.object_type not in runtime_fields:
+                runtime_fields[dsrc.object_type] = {}
+            runtime_fields[dsrc.object_type]['id'] = {
+                'value': RuntimeFields.coalesce(
+                    [f'{dsrc.name}.id.provenance.{source_order}.value' for source_order in dsrc.source_order]
+                )
+            }
         return runtime_fields
 
     @classmethod

@@ -3,6 +3,7 @@
 # SPDX-License-Identifier: MIT
 
 from typing import Any, Iterable, Optional
+from unittest.mock import MagicMock
 
 import pytest
 
@@ -14,6 +15,7 @@ from tol.core import (
     DataSourceUtils,
     core_data_object
 )
+from tol.elastic.runtime_fields import RuntimeFields
 from tol.core.operator import (
     DetailGetter,
     GroupStatter,
@@ -213,3 +215,52 @@ class TestUtils:
             config_datasource=mock_config_datasource
         )
         assert isinstance(ds, DataSource)
+
+    def test_add_source_order_to_runtime_fields_empty(self):
+        config = MagicMock()
+        config.data_source_config_relationships = []
+
+        result = DataSourceUtils.add_source_order_to_runtime_fields(config)
+
+        assert result == {}
+
+    def test_add_source_order_to_runtime_fields_skips_none_source_order(self):
+        rel = MagicMock()
+        rel.source_order = None
+        config = MagicMock()
+        config.data_source_config_relationships = [rel]
+
+        result = DataSourceUtils.add_source_order_to_runtime_fields(config)
+
+        assert result == {}
+
+    def test_add_source_order_to_runtime_fields_with_source_order(self):
+        rel = MagicMock()
+        rel.source_order = ['source1', 'source2']
+        rel.object_type = 'sample'
+        rel.name = 'rel_name'
+        config = MagicMock()
+        config.data_source_config_relationships = [rel]
+
+        result = DataSourceUtils.add_source_order_to_runtime_fields(config)
+
+        expected_field = RuntimeFields.coalesce(
+            ['rel_name.provenance.source1.id', 'rel_name.provenance.source2.id']
+        )
+        print(expected_field)
+        raise AssertionError(f'Expected field: {expected_field}, got: {result["sample"]["id"]["value"]}')
+        assert result == {'sample': {'id': {'value': expected_field}}}
+        
+        
+'''
+species: {
+    id: {
+        _provenance: {
+            source 1: { value: 'source1_id' },
+            source 2: { value: 'source2_id' }
+        },
+        value: coalesce([rel_name.provenance.source1.id, rel_name.provenance.source2.id])
+    }
+}
+'''
+

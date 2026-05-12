@@ -190,7 +190,11 @@ class _ToElasticApiResourceParser:
             return None
 
         return {
-            'id': one_relation.id,
+            'id': {
+                'provenance': {
+                    one_relation.provenance: {'value': one_relation.id}
+                }
+            },
             **one_relation.attributes
         }
 
