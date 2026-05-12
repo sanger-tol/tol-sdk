@@ -151,7 +151,7 @@ class DefaultParser(Parser):
                     # will be a dict containing a "links" key.)
                     to_one[name] = None
                 elif 'data' in value:
-                    data = value.get('data')
+                    data = value['data']
                     if isinstance(data, list):
                         to_many[name] = [self.__make_stub_data_object(x) for x in data]
                     else:
