@@ -107,7 +107,7 @@ class DataObject(_AnyKeyProtocol, ABC):
 
     @property
     @abstractmethod
-    def _to_many_objects(self) -> dict[str, Iterable[DataObject]]:
+    def _to_many_objects(self) -> dict[str, list[DataObject]]:
         """
         The name: attribute mapping for to-many `DataObject`s set on this
         instance.
