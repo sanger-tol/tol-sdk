@@ -22,7 +22,7 @@ class _MockDataSourceRelational(DataSource, Relational):
 
     @property
     def supported_types(self):
-        return ['species', 'specimen', 'sequencing_request', 'tolid']
+        return ['species', 'specimen', 'sequencing_request', 'tolid', 'study']
 
     @property
     def attribute_types(self):
@@ -34,7 +34,8 @@ class _MockDataSourceRelational(DataSource, Relational):
         rc_sequencing_request.to_one = {
             'species': 'species',
             'specimen': 'specimen',
-            'tolid': 'tolid'
+            'tolid': 'tolid',
+            'study': 'study'
         }
         return {'sequencing_request': rc_sequencing_request}
 
@@ -70,7 +71,8 @@ class TestMlwhSequencingRequestToElasticSequencingRequestConverter(TestCase):
         core_data_object(source)
         core_data_object(destination)
         converter = MlwhSequencingRequestToElasticSequencingRequestConverter(
-            data_object_factory=destination.data_object_factory
+            data_object_factory=destination.data_object_factory,
+            config=MlwhSequencingRequestToElasticSequencingRequestConverter.Config()
         )
 
         CoreDataObject = source.data_object_factory  # noqa N806
@@ -82,6 +84,7 @@ class TestMlwhSequencingRequestToElasticSequencingRequestConverter(TestCase):
                 'supplier_name': 'supplier1',
                 'sample_ref': 'sample1',
                 'public_name': 'tolid1',
+                'study_id': 'study1',
                 'attribute1': 'value1'
             }
         )
@@ -95,6 +98,6 @@ class TestMlwhSequencingRequestToElasticSequencingRequestConverter(TestCase):
         self.assertEqual(ret1.to_one_relationships['species'].id, '1234')
         self.assertEqual(ret1.to_one_relationships['specimen'].id, 'supplier1')
         self.assertEqual(ret1.to_one_relationships['tolid'].id, 'tolid1')
-
+        self.assertEqual(ret1.to_one_relationships['study'].id, 'study1')
         with self.assertRaises(StopIteration):
             next(converteds)

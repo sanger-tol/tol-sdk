@@ -28,6 +28,7 @@ def requested_fields_to_tree(func):
                     object_type, self, requested_fields=flds
                 )
         return func(self, object_type, *args, **kwargs)
+
     return wrapper
 
 
@@ -114,12 +115,12 @@ class ReqFieldsTree:
         return self.__rel_conf is not None
 
     def to_one_names(self) -> Iterable[str]:
-        return x.keys() if (x := self.__rel_conf.to_one) else ()
+        return x.keys() if (rc := self.__rel_conf) and (x := rc.to_one) else ()
 
     def to_many_names(self) -> Iterable[str]:
-        return x.keys() if (x := self.__rel_conf.to_many) else ()
+        return x.keys() if (rc := self.__rel_conf) and (x := rc.to_many) else ()
 
-    def get_relationship(self, name: str) -> str:
+    def get_relationship(self, name: str) -> str | None:
         """
         Fetches the related object type from the `to_one` or `to_many` fields
         of the attached `RelationshipConfig`.
@@ -140,7 +141,7 @@ class ReqFieldsTree:
             self.add_sub_tree(
                 name,
                 self.__class__(
-                    sub_type,
+                    sub_type,  # ty:ignore[invalid-argument-type]
                     data_source,
                     include_all_to_ones=False,
                 ),

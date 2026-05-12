@@ -20,10 +20,12 @@ from .auth import AuthInspector
 from .auth.error import AuthError
 from .controller import Controller
 from .misc import (
-    AggregationBody,
-    AggregationParameters,
+    ActionParameters,
+    AggregationArgs,
     GroupStatsParameters,
     JsonApiRequestBody,
+    LegacyAggregationBody,
+    LegacyAggregationParameters,
     ListGetParameters,
     RelataionshipHopsParser,
     StatsParameters,
@@ -181,6 +183,8 @@ def _core_blueprint(
     url_prefix: str,
     auth_inspector: Optional[AuthInspector] = None,
     include_all_to_ones: bool = True,
+    flow_ds: Optional[OperableDataSource] = None,
+    action_ds: Optional[OperableDataSource] = None,
 ) -> DataBlueprint:
     """
     Create the core blueprint responsible for managing DataSource endpoints.
@@ -197,7 +201,7 @@ def _core_blueprint(
             inspector for request authorisation.
         include_all_to_ones (bool): Whether to fetch or store all to-one related objects
             when fetching or serialising DataObjects.
-
+        flow_ds (Optional[DataSource], optional): DataSource for flow operations.
     Returns:
         DataBlueprint: A configured blueprint with all data endpoints and error handlers.
 
@@ -212,6 +216,7 @@ def _core_blueprint(
         - POST /<object_type>:insert: Insert new objects
         - POST /<object_type>:upsert: Insert or update objects
         - POST /<object_type>:aggregations: Get aggregated data
+        - POST /<object_type>:aggregations_legacy: Get aggregated data (LEGACY)
         - POST /<object_type>:cursor: Get cursor-based pagination
         - GET /<object_type>:to-one/<object_id>/<hops_suffix>: Navigate to-one relationships
         - GET /<object_type>:to-many/<object_id>/<relationship_name>: Get to-many relationships
@@ -353,9 +358,16 @@ def _core_blueprint(
     def get_aggregations(*, object_type: str):
         """Get aggregated data for objects of the specified type."""
         controller = __new_controller(object_type)
-        request_args = AggregationParameters(request.args | request.json)
-        body = AggregationBody(request.json)
-        return controller.post_aggregations(object_type, request_args, body)
+        request_args = AggregationArgs(request.json, request.args)
+        return controller.post_aggregations(object_type, request_args)
+
+    @data_handler.route('/<object_type>:aggregations_legacy', methods=['POST'])
+    def get_aggregations_legacy(*, object_type: str):
+        """Get aggregated data for objects of the specified type."""
+        controller = __new_controller(object_type)
+        request_args = LegacyAggregationParameters(request.args | request.json)
+        body = LegacyAggregationBody(request.json)
+        return controller.post_aggregations_legacy(object_type, request_args, body)
 
     @data_handler.post('/<object_type>:cursor')
     def get_cursor_page(*, object_type: str):
@@ -368,6 +380,13 @@ def _core_blueprint(
         search_after = request.json.get('search_after')
         page = controller.get_cursor_page(object_type, request_args, search_after)
         return page
+
+    @data_handler.post('/<object_type>:action')
+    def post_action(*, object_type: str):
+        """Perform an action on objects of the specified type."""
+        request_args = ActionParameters(request.json | request.args)
+        controller = __new_controller(object_type)
+        return controller.perform_action(object_type, request_args, action_ds, flow_ds)
 
     @data_handler.route('/<object_type>:to-one/<object_id>/<path:hops_suffix>', methods=['GET'])
     def get_to_one_relation(*, object_type: str, object_id: str, hops_suffix: str):
@@ -405,6 +424,8 @@ def _core_blueprint(
 
 def data_blueprint(
     *data_sources: DataSource,
+    flow_ds: Optional[DataSource] = None,
+    action_ds: Optional[DataSource] = None,
     url_prefix: str = '/data',
     config_prefix: str = '/_config',
     auth_inspector: Optional[AuthInspector] = None,
@@ -449,6 +470,8 @@ def data_blueprint(
         url_prefix,
         auth_inspector=auth_inspector,
         include_all_to_ones=include_all_to_ones,
+        flow_ds=flow_ds,
+        action_ds=action_ds,
     )
     core_bp.register_blueprint(config_bp)
 

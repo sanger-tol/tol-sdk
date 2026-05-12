@@ -36,8 +36,10 @@ class ActionModels(IterableABC[type[Model]]):
 
     action: type[Model]
     user_action: type[Model]
+    role_action: type[Model]
 
     _user_mixin: type[Any]
+    _role_mixin: type[Any]
 
     def __iter__(self) -> Iterator[type[Model]]:
         """
@@ -47,6 +49,7 @@ class ActionModels(IterableABC[type[Model]]):
         return iter(
             [
                 self.user_action,
+                self.role_action,
                 self.action
             ]
         )
@@ -75,14 +78,21 @@ def create_action_models(
         name: Mapped[str] = mapped_column(nullable=False)
         object_type: Mapped[str] = mapped_column(nullable=False)
 
-        flow_name: Mapped[str] = mapped_column(nullable=False)
+        flow_name: Mapped[str] = mapped_column(nullable=True)
+        class_name: Mapped[str] = mapped_column(nullable=True)
         params: Mapped[dict] = mapped_column(
             JSONB,
             nullable=False,
             default={}
         )
 
+        class_name: Mapped[str] = mapped_column(nullable=True)
+
         user_actions: Mapped[list['UserAction']] = relationship(  # noqa F821
+            back_populates='action'
+        )
+
+        role_actions: Mapped[list['RoleAction']] = relationship(  # noqa F821
             back_populates='action'
         )
 
@@ -126,6 +136,29 @@ def create_action_models(
             foreign_keys=[user_id]
         )
 
+    class RoleAction(base_model_class):
+        __tablename__ = 'role_action'
+
+        id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)  # noqa A003
+
+        action_id: Mapped[int] = mapped_column(
+            ForeignKey('action.id'),
+            nullable=False
+        )
+        action: Mapped['Action'] = relationship(  # noqa F821
+            back_populates='role_actions',
+            foreign_keys=[action_id]
+        )
+
+        role_id: Mapped[int] = mapped_column(
+            ForeignKey('role.id'),
+            nullable=False
+        )
+        role: Mapped['Role'] = relationship(  # noqa F821
+            back_populates='role_actions',
+            foreign_keys=[role_id]
+        )
+
     class _UserMixin:
 
         @declared_attr
@@ -134,8 +167,18 @@ def create_action_models(
                 back_populates='user'
             )
 
+    class _RoleMixin:
+
+        @declared_attr
+        def role_actions(self) -> Mapped[list[RoleAction]]:
+            return relationship(
+                back_populates='role'
+            )
+
     return ActionModels(
         action=Action,
         user_action=UserAction,
-        _user_mixin=_UserMixin
+        role_action=RoleAction,
+        _user_mixin=_UserMixin,
+        _role_mixin=_RoleMixin
     )

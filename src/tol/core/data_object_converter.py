@@ -52,14 +52,23 @@ class DataObjectToDataObjectOrUpdateConverter(ABC):
 
 class DefaultDataObjectToDataObjectConverter(DataObjectToDataObjectOrUpdateConverter):
 
+    @dataclass(slots=True, frozen=True, kw_only=True)
+    class Config:
+        pass
+
+    __slots__ = ['__config']
+    __config: Config
+
     def __init__(
         self,
         data_object_factory: DataObjectFactory,
+        config: Config,
         destination_object_type: str | None = None,
         id_field: str | None = None
     ):
 
         super().__init__(data_object_factory)
+        self.__config = config
         self.__dest_object_type = destination_object_type
         self.__id_field = id_field
 

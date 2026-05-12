@@ -2,10 +2,13 @@
 #
 # SPDX-License-Identifier: MIT
 
-from pytest import fixture
+import os
 
-from tol.core import DataSourceFilter
+from pytest import fixture, raises
+
+from tol.core import DataSourceError, DataSourceFilter, core_data_object
 from tol.core.datasource_filter import AndFilter
+from tol.sql import create_sql_datasource
 from tol.sql.database import DefaultDatabase
 from tol.sql.filter import DatabaseFilter, DefaultDatabaseFilter
 
@@ -90,6 +93,147 @@ class TestDefaultDatabaseFilter:
         assert count == 1
         (r3_obj,) = db.get_page('r3', sess, filters=deep_filt)
         assert r3_obj.id == 'an-r3-id'
+
+    def test_build_multiple_matches_in_same_table(self):
+        """
+        Tests that we can correctly construct searches on multiple fields
+        within a table two (or more) deep in the hierarchy.
+        """
+        filt = DefaultDatabaseFilter(
+            DataSourceFilter(
+                and_={
+                    'funny_r1.r2_d2.id': {
+                        'eq': {'value': 'an-r2-id'},
+                    },
+                    'funny_r1.r2_d2.funny_string': {
+                        'eq': {'value': 'x'},
+                    },
+                },
+            )
+        )
+        query = filt.get_query(models.R3)
+        filt.filter(query)
+
+    def test_exception_from_bad_filter_path(self):
+        """
+        Tests for a `DataSourceError` from bad elements in a filter path
+        """
+        filt = DefaultDatabaseFilter(
+            DataSourceFilter(
+                and_={
+                    'funny_r1.r2_x.id': {'eq': {'value': 'y'}},
+                },
+            )
+        )
+        query = filt.get_query(models.R3)
+        with raises(DataSourceError, match=r'No such relationship.+from filter path'):
+            filt.filter(query)
+
+        filt = DefaultDatabaseFilter(
+            DataSourceFilter(
+                and_={
+                    'funny_r1.r2_d2.x': {'eq': {'value': 'y'}},
+                },
+            )
+        )
+        query = filt.get_query(models.R3)
+        with raises(DataSourceError, match=r'No such column'):
+            filt.filter(query)
+
+    def test_fetch_null_relatoinship(self, session_factory, models_list, sess):
+        # Store R3 -> R1 -> R2 chain of objects
+        session = session_factory()
+        session.add(
+            models.R3(
+                id='r3-1',
+                funny_r1=models.R1(
+                    id_override='r1-id',
+                ),
+            )
+        )
+        session.add(
+            models.R3(
+                id='r3-2',
+                funny_r1=None,
+            )
+        )
+        session.commit()
+        session.close()
+
+        db = DefaultDatabase(session_factory, models_list)
+        fun = DefaultDatabaseFilter(
+            DataSourceFilter(
+                and_={
+                    'funny_r1.id': {
+                        'exists': {},
+                    },
+                }
+            )
+        )
+        fun1_list = list(db.get_page('r3', sess, filters=fun))
+        assert len(fun1_list) == 1
+        assert fun1_list[0].id == 'r3-1'
+
+        no_fun = DefaultDatabaseFilter(
+            DataSourceFilter(
+                and_={
+                    'funny_r1.id': {
+                        'exists': {'negate': True},
+                    },
+                }
+            )
+        )
+        fun2_list = list(db.get_page('r3', sess, filters=no_fun))
+        assert len(fun2_list) == 1
+        assert fun2_list[0].id == 'r3-2'
+
+    def test_filter_to_many_page(self, session_factory, models_list, sess):
+        # store R1 -> r3_plz[R3] objects
+        session = session_factory()
+
+        # Create 10 R1 objects each with 100 R3 objects
+        for i in range(10):
+            session.add(
+                models.R1(
+                    id_override=f'r1_{i:03d}',
+                    r2_d2=models.R2(
+                        id=f'r2_{i:03d}',
+                        funny_string='x',
+                    ),
+                    r3_plz=[
+                        models.R3(
+                            id=f'r3_{i:03d}_{j:03d}',
+                            another_string='y',
+                        )
+                        for j in range(100)
+                    ],
+                )
+            )
+        session.commit()
+        session.close()
+
+        # Create a SqlDataSource
+        sql_ds = create_sql_datasource(models_list, os.environ['DB_URI'])
+        sql_ds.page_size = 3
+        core_data_object(sql_ds)
+
+        filt = DataSourceFilter(
+            and_={
+                'r3_plz.another_string': {
+                    'eq': {'value': 'y'},
+                },
+            }
+        )
+
+        r1_list = list(
+            sql_ds.get_list(
+                'r1',
+                object_filters=filt,
+                requested_fields=['r2_d2', 'r3_plz'],
+            )
+        )
+
+        assert len(r1_list) == 10
 
     def test_all_filters(self, session_factory, models_list, type_tablename_dict, sess):
         """

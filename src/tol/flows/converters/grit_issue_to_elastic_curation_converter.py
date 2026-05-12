@@ -3,6 +3,7 @@
 # SPDX-License-Identifier: MIT
 
 import re
+from dataclasses import dataclass
 from typing import Iterable
 
 from ...core import (
@@ -14,35 +15,52 @@ from ...core import (
 class GritIssueToElasticCurationConverter(
         DataObjectToDataObjectOrUpdateConverter):
 
-    def convert(self, data_object: DataObject) -> Iterable[DataObject]:
-        assembly_stats = self.__get_assembly_stats(
-            data_object.attributes.get('assembly_statistics')
-        )
-        chr_data = self.__get_chr_data(data_object.attributes.get('chromosome_result'))
-        attributes = {
-            k: v for k, v in data_object.attributes.items()
-            if k not in ['assembly_statistics', 'chromosome_result', 'description',
-                         'sample_id', 'status_changes', 'linked_issues']
-        } | {
-            self.__sanitise_attribute_name(sc['next_status']) + '_date': sc['end_date']
-            for sc in data_object.status_changes
-        } | {
-            'assignee_name': data_object.assignee.name if data_object.assignee else None,
-        } | assembly_stats | chr_data
+    @dataclass(slots=True, frozen=True, kw_only=True)
+    class Config:
+        pass
 
-        to_one_relations = {
-            'tolid': self._data_object_factory(
-                'tolid',
-                data_object.attributes.get('sample_id')
+    __slots__ = ['__config']
+    __config: Config
+
+    def __init__(self, data_object_factory, config: Config) -> None:
+        super().__init__(data_object_factory)
+        self.__config = config
+        self._data_object_factory = data_object_factory
+
+    def convert(self, data_object: DataObject) -> Iterable[DataObject]:
+        if data_object.assembled_by in [
+            'Blaxter',
+            'Jaron Group',
+            'ToL'
+        ]:
+            assembly_stats = self.__get_assembly_stats(
+                data_object.attributes.get('assembly_statistics')
             )
-        }
-        ret = self._data_object_factory(
-            'curation',
-            data_object.id,
-            attributes=attributes,
-            to_one=to_one_relations
-        )
-        yield ret
+            chr_data = self.__get_chr_data(data_object.attributes.get('chromosome_result'))
+            attributes = {
+                k: v for k, v in data_object.attributes.items()
+                if k not in ['assembly_statistics', 'chromosome_result', 'description',
+                             'sample_id', 'status_changes', 'linked_issues']
+            } | {
+                self.__sanitise_attribute_name(sc['next_status']) + '_date': sc['end_date']
+                for sc in data_object.status_changes
+            } | {
+                'assignee_name': data_object.assignee.name if data_object.assignee else None,
+            } | assembly_stats | chr_data
+
+            to_one_relations = {
+                'tolid': self._data_object_factory(
+                    'tolid',
+                    data_object.attributes.get('sample_id')
+                )
+            }
+            ret = self._data_object_factory(
+                'curation',
+                data_object.id,
+                attributes=attributes,
+                to_one=to_one_relations
+            )
+            yield ret
 
     def __sanitise_attribute_name(self, name: str) -> str:
         return re.sub(r'\s+', '_', name.lower())

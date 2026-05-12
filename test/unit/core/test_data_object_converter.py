@@ -60,7 +60,8 @@ class TestDataObjectConverter(TestCase):
             return_value='destination_type'
         )
         converter = DefaultDataObjectToDataObjectConverter(
-            data_object_factory=destination.data_object_factory
+            data_object_factory=destination.data_object_factory,
+            config=DefaultDataObjectToDataObjectConverter.Config()
         )
         converter.data_loader = mock_dl
 
@@ -177,6 +178,7 @@ class TestDataObjectConverter(TestCase):
         )
         converter = DefaultDataObjectToDataObjectConverter(
             data_object_factory=destination.data_object_factory,
+            config=DefaultDataObjectToDataObjectConverter.Config(),
             id_field='id_field'
         )
         converter.data_loader = mock_dl

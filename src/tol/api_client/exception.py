@@ -111,14 +111,14 @@ class BadQueryArgError(BaseRuntimeException):
         return f'{detail}\n\n{message}'
 
 
-class BadPostJsonError(BaseRuntimeException):
+class PostJsonKeyMissingError(BaseRuntimeException):
     def __init__(
         self,
         __key: str,
         message: Optional[str] = None
     ) -> None:
         errors = [{
-            'title': 'Bad POST JSON',
+            'title': 'Bad POST JSON: Missing Key',
             'detail': self.__get_detail(__key, message)
         }]
         super().__init__(errors, status_code=400)
@@ -134,6 +134,24 @@ class BadPostJsonError(BaseRuntimeException):
         if message is None:
             return detail
         return f'{detail}\n\n{message}'
+
+
+class PostJsonInvalidValueError(BaseRuntimeException):
+    def __init__(self, key: str, message: str) -> None:
+        errors = [{
+            'title': 'Bad POST JSON: Invalid Value',
+            'detail': f'The key {key} in the POSTed JSON body has an invalid value\n\n{message}',
+        }]
+        super().__init__(errors, status_code=400)
+
+
+class BadArgumentCombinationError(BaseRuntimeException):
+    def __init__(self, message: str | None = None) -> None:
+        errors = [{
+            'title': 'Bad Argument Combination',
+            'detail': message
+        }]
+        super().__init__(errors, status_code=422)
 
 
 class UnauthenticatedError(BaseRuntimeException):

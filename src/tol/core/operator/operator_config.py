@@ -9,13 +9,13 @@ from abc import ABC, abstractmethod
 from itertools import chain
 from typing import Iterable
 
-from .aggregator import Aggregator
 from .counter import Counter
 from .cursor import Cursor
 from .deleter import Deleter
 from .detail_getter import DetailGetter
 from .group_statter import GroupStatter
 from .inserter import Inserter
+from .legacy_aggregator import LegacyAggregator
 from .page_getter import PageGetter
 from .relational import Relational
 from .statter import Statter
@@ -27,7 +27,7 @@ if typing.TYPE_CHECKING:
 
 
 READ_OPERATOR_MAP: dict[str, type] = {
-    'aggregate': Aggregator,
+    'aggregate': LegacyAggregator,
     'count': Counter,
     'cursor': Cursor,
     'detailGet': DetailGetter,

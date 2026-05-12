@@ -101,7 +101,8 @@ class PrefectDataSource(
         page_number: int,
         page_size: Optional[int] = None,
         object_filters: Optional[DataSourceFilter] = None,
-        sort_by: Optional[str] = None
+        sort_by: Optional[str] = None,
+        **kwargs
     ) -> tuple[Iterable[FlowRunObject], None]:
         """
         Gets paged results of `FlowRun` flavoured `DataObject`
@@ -126,7 +127,8 @@ class PrefectDataSource(
     def get_list(
         self,
         object_type: str,
-        object_filters: Optional[DataSourceFilter] = None
+        object_filters: Optional[DataSourceFilter] = None,
+        **kwargs
     ) -> Iterable[FlowRunObject]:
 
         page = 1

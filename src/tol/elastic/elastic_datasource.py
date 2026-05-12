@@ -4,6 +4,7 @@
 
 from __future__ import annotations
 
+import numbers
 import typing
 from collections.abc import Callable, Iterable
 from datetime import datetime
@@ -18,6 +19,7 @@ from caseconverter import (
 
 from elasticsearch import (Elasticsearch, helpers)
 
+from ._aggregations import ElasticAggregator
 from .client import ElasticClient
 from .converter import (
     ElasticApiConverter,
@@ -43,6 +45,7 @@ from ..core.operator import (
     DetailGetter,
     Enricher,
     GroupStatter,
+    LegacyAggregator,
     ListGetter,
     PageGetter,
     RelationWriteMode,
@@ -52,6 +55,7 @@ from ..core.operator import (
     Updater,
     Upserter,
 )
+from ..core.operator.aggregator import AggregationResult, AggregationResultData
 from ..core.operator.updater import DataObjectUpdate
 from ..core.relationship import (
     RelationshipConfig
@@ -69,13 +73,15 @@ DataObjectUpdateConverterFactory = Callable[[], ElasticUpdateInputConverter]
 
 class ElasticDataSource(
     DataSource,
+    Aggregator,
+    ElasticAggregator,
     Cursor,
     Summariser,
     DetailGetter,
     Enricher,
     PageGetter,
     ListGetter,
-    Aggregator,
+    LegacyAggregator,
     Relational,
     Updater,
     Upserter,
@@ -181,13 +187,19 @@ class ElasticDataSource(
         index = self.__get_index_or_alias(object_type)
         converter = self._data_object_converter_factory()
         (no_of_operations, no_of_errors) = \
-            self.helpers.bulk(self.es,
-                              converter.convert(ElasticUpsertInputResource(index,
-                                                                           objects,
-                                                                           id_func,
-                                                                           provenance)),
-                              stats_only=True,
-                              chunk_size=chunk_size)
+            self.helpers.bulk(
+                self.es,
+                converter.convert(
+                    ElasticUpsertInputResource(
+                        index=index,
+                        objects=objects,
+                        id_func=id_func,
+                        field_prefix=provenance
+                    )
+                ),
+                stats_only=True,
+                chunk_size=chunk_size
+        )
         if no_of_errors > 0:
             raise DataSourceError(f'{no_of_errors} errors encountered '
                                   f'upserting {no_of_operations} objects')
@@ -215,10 +227,10 @@ class ElasticDataSource(
                 candidate_key = kwargs['candidate_key_func'](update)
             self.es.update_by_query(
                 index=real_index_name,
-                body=converter.convert(ElasticUpdateInputResource(object_type,
-                                                                  update,
-                                                                  provenance,
-                                                                  candidate_key)),
+                body=converter.convert(ElasticUpdateInputResource(object_type=object_type,
+                                                                  update=update,
+                                                                  field_prefix=provenance,
+                                                                  candidate_key=candidate_key)),
                 conflicts='proceed',
                 wait_for_completion=False
             )
@@ -244,7 +256,7 @@ class ElasticDataSource(
             group_statter_stats_fields=summary.stats_fields,
             group_statter_stats=summary.stats,
         )
-        loader.load(provenance=summary.prefix)
+        loader.load(provenance=summary.provenance_override)
 
     def __format_cursor_response(
         self,
@@ -267,7 +279,7 @@ class ElasticDataSource(
         start = len(self.index_prefix) + 1
         return snakecase(index[start:])
 
-    def _field_or_keyword(self, object_type: str, name: str):
+    def _field_or_keyword(self, object_type: str, name: str) -> str:
         """
         Map our field format to Elastic's format
         """
@@ -495,15 +507,12 @@ class ElasticDataSource(
                                       runtime_mappings=runtime_mappings)
         return self._elastic_converter_factory().convert_list(generator)
 
-    def get_aggregations(
+    def _get_elastic_aggregations(
         self,
         object_type: str,
-        aggregations: dict,
+        elastic_aggregations: dict,
         object_filters: DataSourceFilter | None = None,
-        **kwargs
     ) -> dict:
-        del kwargs
-
         real_index_name, query, fields, runtime_mappings = self._prepare_get_parameters(
             object_type=object_type,
             object_filters=object_filters,
@@ -512,11 +521,109 @@ class ElasticDataSource(
             size=0,
             index=real_index_name,
             query=query,
-            aggregations=aggregations,
+            aggregations=elastic_aggregations,
             fields=fields,
             runtime_mappings=runtime_mappings
         )
         return resp['aggregations']
+
+    def __apply_cumulative_transformation_to_aggregations_result(
+        self,
+        aggregations_result: AggregationResult,
+    ) -> None:
+        """
+        Applies IN PLACE accumulation across y values in an aggregations result
+        """
+        accumulation = 0
+
+        for break_down_by in aggregations_result:
+            data = typing.cast(AggregationResultData, break_down_by['data'])
+            for data_point in data:
+                if not isinstance(data_point['y'], numbers.Real):
+                    raise DataSourceError(
+                        'Unable to accumulate aggregation',
+                        detail=(
+                            'The `cumulative` flag passed into `get_aggregations` was `True`, '
+                            'but this is not supported for aggregations of a non-numerical y-axis'
+                        ),
+                        status_code=400,
+                    )
+
+                accumulation += data_point['y']
+                data_point['y'] = accumulation
+
+    def get_aggregations(
+        self,
+        object_type: str,
+        object_filters: DataSourceFilter | None = None,
+        *,
+        x_axis: str,
+        y_axis: str | None = None,
+        date_interval: str | None = None,
+        break_down_by: str | None = None,
+        stat: str | None = None,
+        stat_field: str | None = None,
+        cumulative: bool | None = None,
+        maximum_categories: int | None = None
+    ) -> AggregationResult | None:
+        result: AggregationResult
+
+        # Call the correct aggregation method depending on the options provided.
+        # These are implemented in `_ElasticAggregator` (`_aggregations.py`)
+        if self.attribute_types[object_type][x_axis] == 'datetime' and date_interval:
+            if break_down_by:
+                result = self._get_date_aggregation_segmented(
+                    object_type,
+                    object_filters,
+                    x_axis,
+                    date_interval,
+                    break_down_by,
+                )
+            else:
+                result = self._get_date_aggregation(
+                    object_type,
+                    object_filters,
+                    x_axis,
+                    date_interval,
+                )
+        elif y_axis:
+            # TODO SCATTER AGGREGATION
+            return None
+        elif self.attribute_types[object_type][x_axis] == 'str':
+            if break_down_by:
+                result = self._get_categorical_aggregation_segmented(
+                    object_type,
+                    object_filters,
+                    x_axis,
+                    maximum_categories or 0,  # TODO It may be a different way to say no max
+                    break_down_by,
+                )
+            else:
+                result = self._get_categorical_aggregation(
+                    object_type,
+                    object_filters,
+                    x_axis,
+                    maximum_categories or 0,  # TODO It may be a different way to say no max
+                )
+        else:
+            # Invalid combination of options
+            return None
+
+        # Post-processing (if required)
+        if cumulative:
+            self.__apply_cumulative_transformation_to_aggregations_result(result)
+
+        return result
+
+    def get_aggregations_legacy(
+        self,
+        object_type: str,
+        aggregations: dict,
+        object_filters: DataSourceFilter | None = None,
+        **kwargs
+    ) -> dict:
+        del kwargs
+        return self._get_elastic_aggregations(object_type, aggregations, object_filters)
 
     def get_stats(
         self,
@@ -531,7 +638,7 @@ class ElasticDataSource(
             object_type=object_type,
             stats_fields=stats_fields,
             stats=stats)
-        agg_results = self.get_aggregations(
+        agg_results = self.get_aggregations_legacy(
             object_type=object_type,
             aggregations=aggs,
             object_filters=object_filters
@@ -555,7 +662,7 @@ class ElasticDataSource(
             stats_values[stats_field] = {}
             for stat in stats:
                 stat_value = aggregation_result[f'{stats_field}_{stat}']['value']
-                python_type = self.attribute_types[object_type][stats_field]
+                python_type = self.get_python_type_by_name(object_type, stats_field)
                 if python_type == 'datetime' and stat_value is not None \
                         and stat in ['min', 'max']:
                     stat_value = datetime.fromtimestamp(stat_value / 1000)
@@ -618,7 +725,7 @@ class ElasticDataSource(
             )
         if after_key is not None:
             aggregation['counts']['composite']['after'] = after_key
-        agg_page = self.get_aggregations(
+        agg_page = self.get_aggregations_legacy(
             object_type,
             aggregations=aggregation,
             object_filters=object_filters)
@@ -645,7 +752,7 @@ class ElasticDataSource(
                     agg = self.__get_union_aggregation(object_type, stats_field)
                 elif stat == 'unique':
                     agg = self.__get_unique_count_aggregation(object_type, stats_field)
-                elif self.attribute_types[object_type][stats_field] == 'str' \
+                elif self.get_python_type_by_name(object_type, stats_field) == 'str' \
                         and stat in ['min', 'max']:
                     agg = self.__get_string_aggregation(object_type, stats_field, stat)
                 ret[f'{stats_field}_{stat}'] = agg
@@ -675,7 +782,7 @@ class ElasticDataSource(
                 stats_values[stats_field] = {}
                 for stat in stats:
                     stat_value = v[f'{stats_field}_{stat}']['value']
-                    python_type = self.attribute_types[object_type][stats_field]
+                    python_type = self.get_python_type_by_name(object_type, stats_field)
                     if python_type == 'datetime' and stat_value is not None \
                             and stat in ['min', 'max']:
                         stat_value = datetime.fromtimestamp(stat_value / 1000)

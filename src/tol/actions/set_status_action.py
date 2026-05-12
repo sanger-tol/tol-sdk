@@ -8,7 +8,7 @@ from datetime import datetime, timezone
 from typing import Any
 
 from .action import Action
-from ..core import DataSource
+from ..core import DataSource, DataSourceError
 
 
 class SetStatusAction(Action):
@@ -16,9 +16,6 @@ class SetStatusAction(Action):
     Sets the status of one or more objects by inserting a new row into
     the corresponding status history table.
     """
-
-    def __init__(self):
-        super().__init__()
 
     def run(
         self,
@@ -29,8 +26,27 @@ class SetStatusAction(Action):
     ) -> tuple[dict[str, bool], int]:
 
         if not params or 'status' not in params:
-            return {'error': 'Missing required param: "status"'}, 400
+            raise DataSourceError(
+                'Missing status',
+                'Missing status from params',
+                400
+            )
 
+        if ids is None or len(ids) == 0:
+            raise DataSourceError(
+                'Missing ids',
+                'Missing required param: "ids"',
+                400
+            )
+
+        if 'user_id' not in params:
+            raise DataSourceError(
+                'Missing user_id',
+                'Missing required param: "user_id"',
+                400
+            )
+
+        user_id = params['user_id']
         status_type_id = params['status']
         status_table = f'{object_type}_status'
         status_type_table = f'{object_type}_status_type'
@@ -44,12 +60,13 @@ class SetStatusAction(Action):
                 object_type=object_type,
                 status_table=status_table,
                 status_type=status_type,
+                user_id=user_id,
             )
 
             with datasource.get_session() as session:
                 for obj in session.insert(status_table, new_status_objects):
                     parent = obj.to_one_relationships.get(object_type)
-                    setattr(parent, status_type, obj)
+                    setattr(parent, 'status', obj)
                     session.upsert(object_type, [parent])
 
             return {'success': True}, 200
@@ -63,6 +80,7 @@ class SetStatusAction(Action):
         object_type: str,
         status_table: str,
         status_type: Any,
+        user_id: str
     ) -> Any:
 
         for id_ in ids:
@@ -71,6 +89,8 @@ class SetStatusAction(Action):
                 type_=status_table,
                 attributes={
                     'status_time': datetime.now(tz=timezone.utc),
+                    'modified_at': datetime.now(tz=timezone.utc),
+                    'modified_by': user_id,
                 },
                 to_one={
                     object_type: parent,

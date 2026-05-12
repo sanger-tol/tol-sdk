@@ -2,6 +2,7 @@
 #
 # SPDX-License-Identifier: MIT
 
+from dataclasses import dataclass
 from typing import Dict, Iterable, List, Optional
 from unittest import (TestCase)
 
@@ -26,6 +27,13 @@ from tol.core.operator import (
 
 class _TestDataObjectToDataObjectConverter(DataObjectToDataObjectOrUpdateConverter):
 
+    @dataclass(slots=True, frozen=True, kw_only=True)
+    class Config:
+        pass
+
+    def __init__(self, data_object_factory, config: Config = None) -> None:
+        super().__init__(data_object_factory)
+
     def convert(self, data_object: DataObject) -> Iterable[DataObject]:
         CoreDataObject = self._data_object_factory  # noqa N806
         # if data_object relations data = data else data.attributes
@@ -47,7 +55,12 @@ class _MockDataSource(DataSource, Statter, ListGetter, Upserter):
         super().__init__(config)
         self.exhausted = False
 
-    def get_list(self, object_type: str, object_filters: DataSourceFilter = None):
+    def get_list(
+        self,
+        object_type: str,
+        object_filters: DataSourceFilter = None,
+        requested_fields: Optional[List[str]] = None
+    ) -> Iterable[DataObject]:
         if object_filters is not None:
             mock_objects = [{'id': 'test', 'attribute': 'att1'}]
         else:
@@ -62,7 +75,8 @@ class _MockDataSource(DataSource, Statter, ListGetter, Upserter):
 
     def get_by_ids(
             self, object_type: str,
-            object_ids: Iterable[str]) -> Iterable[Optional[DataObject]]:
+            object_ids: Iterable[str],
+            requested_fields: Optional[List[str]] = None) -> Iterable[Optional[DataObject]]:
         mock_objects = [
             {'id': 'test', 'attribute': 'att1'},
             {'id': 'test2', 'attribute': 'att2'}

@@ -6,18 +6,18 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from collections import defaultdict
-from collections.abc import Iterable, Iterator, MutableMapping
+from collections.abc import MutableMapping
 from functools import reduce
 from itertools import chain
-from typing import Any, Dict, Optional, Tuple, Type
+from typing import Any, Dict, Iterable, Iterator, Optional, Tuple
 
-from sqlalchemy import BinaryExpression, cast, inspect, not_
+from sqlalchemy import BinaryExpression, Select, cast, inspect, not_, select
 from sqlalchemy.dialects.postgresql import JSONB
-from sqlalchemy.orm import MappedColumn, Query, Session, aliased
+from sqlalchemy.orm import MappedColumn, aliased
 from sqlalchemy.orm.util import AliasedClass
 
 from .model import Model
-from ..core import DataSourceFilter
+from ..core import DataSourceError, DataSourceFilter
 
 
 class AliasTrie(MutableMapping[str, 'AliasTrie']):
@@ -30,8 +30,8 @@ class AliasTrie(MutableMapping[str, 'AliasTrie']):
     def alias(self) -> AliasedClass[Model]:
         return self.__alias
 
-    def __getitem__(self, key: str) -> AliasTrie:
-        return self.__dict[key]
+    def __getitem__(self, k: str) -> AliasTrie:
+        return self.__dict[k]
 
     def __setitem__(self, key: str, value: AliasTrie) -> None:
         self.__dict[key] = value
@@ -47,16 +47,14 @@ class AliasTrie(MutableMapping[str, 'AliasTrie']):
 
 
 class DatabaseFilter(ABC):
-    """Filters an `sqlalchemy.orm` `Query` object"""
+    """Filters an `sqlalchemy.orm` `Select` object"""
 
     @abstractmethod
     def filter(  # noqa A003
         self,
-        query: Query[Model],
-        tablename: str,
-        model_dict: Dict[str, Type[Model]]
-    ) -> Query[Model]:
-        """Filter the Query object using the given model"""
+        query: Select,
+    ) -> Select:
+        """Filter the Select object using the given model"""
 
     @abstractmethod
     def get_column(self, key: str) -> MappedColumn:
@@ -67,9 +65,7 @@ class DatabaseFilter(ABC):
         """Adds a relation field to the filter, for joining later"""
 
     @abstractmethod
-    def get_query(
-        self, session: Session, base_model: type[Model]
-    ) -> tuple[Query[Model], AliasedClass[Model]]:
+    def get_query(self, base_model: type[Model]) -> Select:
         """Gets an aliased query"""
 
 
@@ -89,10 +85,8 @@ class DefaultDatabaseFilter(DatabaseFilter):
 
     def filter(  # noqa A003
         self,
-        query: Query[Model],
-        __tablename: str,
-        __model_dict: Dict[str, Type[Model]]
-    ) -> Query[Model]:
+        query: Select,
+    ) -> Select:
 
         self.__rel_keys.update(
             self.__generate_relational_keys()
@@ -119,23 +113,24 @@ class DefaultDatabaseFilter(DatabaseFilter):
 
         return query
 
-    def get_query(self, session: Session, base_model: Model) -> [Query[Model]]:
+    def get_query(self, base_model: type[Model]) -> Select:
         self.__base_model = base_model
 
-        return session.query(base_model)
+        id_column = base_model.get_id_column()
+        return select(id_column).distinct()
 
     def __apply_joins(
         self,
-        query: Query[Model],
+        query: Select,
         parent_trie: AliasTrie,
         parent_alias: AliasedClass[Model],
-    ) -> Query[Model]:
+    ) -> Select:
 
         for part, trie in parent_trie.items():
             alias = trie.alias
 
-            # Probably want an outerjoin() here
-            query = query.join(alias, getattr(parent_alias, part))
+            # Need a `LEFT JOIN` here so that null relationships can be found
+            query = query.outerjoin(alias, getattr(parent_alias, part))
 
             query = self.__apply_joins(
                 query,
@@ -149,40 +144,46 @@ class DefaultDatabaseFilter(DatabaseFilter):
         self,
         parent_alias: AliasedClass[Model],
         relationship_name: str,
+        path: str,
     ) -> AliasedClass[Model]:
 
         mapper = inspect(parent_alias).mapper
-        rel_prop = mapper.relationships[relationship_name]
-        target_model = rel_prop.mapper.class_
-        return aliased(target_model)
+        if rel_prop := mapper.relationships.get(relationship_name):
+            target_model = rel_prop.mapper.class_
+            return aliased(target_model)
+        msg = (
+            f"No such relationship '{mapper.class_.__tablename__}.{relationship_name}'"
+            f" from filter path '{path}'"
+        )
+        raise DataSourceError(title='Bad filter element', detail=msg)
 
     def add_field(self, field: str) -> None:
         self.__rel_keys.add(field)
 
-    def __build_alias_trie(self, paths: Iterable[str]) -> AliasTrie:
+    def __build_alias_trie(self, rel_keys: Iterable[str]) -> AliasTrie:
         trie = AliasTrie(self.__base_model)
 
-        for path in paths:
+        for path in rel_keys:
             parts = path.split('.')
             current_alias = self.__base_model
             current = trie
             for part in parts[:-1]:
-                if part not in current:
+                step = current.get(part)
+                if step is None:
                     step = AliasTrie(
                         self.__create_alias(
                             current_alias,
                             part,
+                            path,
                         )
                     )
                     current[part] = step
-                    current = step
-                else:
-                    current = current[part]
+                current = step
                 current_alias = current.alias
 
         return trie
 
-    def __generate_relational_keys(self) -> Iterator[str]:
+    def __generate_relational_keys(self) -> Iterable[str]:
         if not self.__filter:
             return []
 
@@ -210,7 +211,7 @@ class DefaultDatabaseFilter(DatabaseFilter):
     def __none_coalesce(self, in_: Optional[dict]) -> dict:
         return in_ if in_ is not None else {}
 
-    def __filter_top_and_(self, query: Query[Model]) -> Query[Model]:
+    def __filter_top_and_(self, query: Select) -> Select:
         if not self.__filter.and_:
             return query
 
@@ -225,10 +226,10 @@ class DefaultDatabaseFilter(DatabaseFilter):
 
     def __switch_and_term_dict(
         self,
-        query: Query[Model],
+        query: Select,
         column_key: str,
         term_dict: dict[str, dict[str, Any]]
-    ) -> Query[Model]:
+    ) -> Select:
 
         return reduce(
             lambda q, kv: self.__switch_and_term(
@@ -242,11 +243,11 @@ class DefaultDatabaseFilter(DatabaseFilter):
 
     def __switch_and_term(
         self,
-        query: Query[Model],
+        query: Select,
         column: MappedColumn,
         op: str,
         term: dict[str, dict[str, Any]]
-    ) -> Query[Model]:
+    ) -> Select:
 
         filter_dict = defaultdict(
             lambda: lambda *_: query,
@@ -278,10 +279,10 @@ class DefaultDatabaseFilter(DatabaseFilter):
 
     def __filter_exists(
         self,
-        query: Query[Model],
+        query: Select,
         column: MappedColumn,
         term: dict[str, Any]
-    ) -> Query[Model]:
+    ) -> Select:
 
         _, negate = self.__parse_value_negate(term)
 
@@ -296,11 +297,11 @@ class DefaultDatabaseFilter(DatabaseFilter):
 
     def __negatable_filter(
         self,
-        query: Query[Model],
+        query: Select,
         expression: BinaryExpression,
         column: MappedColumn,
         negate: bool
-    ) -> Query[Model]:
+    ) -> Select:
 
         if negate is True:
             return query.filter(
@@ -311,10 +312,10 @@ class DefaultDatabaseFilter(DatabaseFilter):
 
     def __filter_in_list(
         self,
-        query: Query[Model],
+        query: Select,
         column: MappedColumn,
         term: dict[str, Any]
-    ) -> Query[Model]:
+    ) -> Select:
 
         value, negate = self.__parse_value_negate(term)
         expression = column.in_(value)
@@ -328,10 +329,10 @@ class DefaultDatabaseFilter(DatabaseFilter):
 
     def __filter_contains(
         self,
-        query: Query[Model],
+        query: Select,
         column: MappedColumn,
         term: dict[str, Any]
-    ) -> Query[Model]:
+    ) -> Select:
 
         value, negate = self.__parse_value_negate(term)
 
@@ -355,11 +356,11 @@ class DefaultDatabaseFilter(DatabaseFilter):
 
     def __filter_contains_str(
         self,
-        query: Query[Model],
+        query: Select,
         column: MappedColumn,
         value: str,
         negate: bool
-    ) -> Query[Model]:
+    ) -> Select:
 
         ilike = self.__get_ilike_term(value)
         expression = column.ilike(ilike)
@@ -373,11 +374,11 @@ class DefaultDatabaseFilter(DatabaseFilter):
 
     def __filter_contains_list(
         self,
-        query: Query[Model],
+        query: Select,
         column: MappedColumn,
         value: Any,
         negate: bool
-    ) -> Query[Model]:
+    ) -> Select:
 
         jsonb_column = cast(column, JSONB)
         expression = jsonb_column.op('@>')([value])
@@ -391,10 +392,10 @@ class DefaultDatabaseFilter(DatabaseFilter):
 
     def __filter_eq(
         self,
-        query: Query[Model],
+        query: Select,
         column: MappedColumn,
         term: dict[str, Any]
-    ) -> Query[Model]:
+    ) -> Select:
 
         value, negate = self.__parse_value_negate(term)
         expression = column == value
@@ -408,10 +409,10 @@ class DefaultDatabaseFilter(DatabaseFilter):
 
     def __filter_lt(
         self,
-        query: Query[Model],
+        query: Select,
         column: MappedColumn,
         term: dict[str, Any]
-    ) -> Query[Model]:
+    ) -> Select:
 
         value, negate = self.__parse_value_negate(term)
         expression = column < value
@@ -425,10 +426,10 @@ class DefaultDatabaseFilter(DatabaseFilter):
 
     def __filter_lte(
         self,
-        query: Query[Model],
+        query: Select,
         column: MappedColumn,
         term: dict[str, Any]
-    ) -> Query[Model]:
+    ) -> Select:
 
         value, negate = self.__parse_value_negate(term)
         expression = column <= value
@@ -442,10 +443,10 @@ class DefaultDatabaseFilter(DatabaseFilter):
 
     def __filter_gt(
         self,
-        query: Query[Model],
+        query: Select,
         column: MappedColumn,
         term: dict[str, Any]
-    ) -> Query[Model]:
+    ) -> Select:
 
         value, negate = self.__parse_value_negate(term)
         expression = column > value
@@ -459,10 +460,10 @@ class DefaultDatabaseFilter(DatabaseFilter):
 
     def __filter_gte(
         self,
-        query: Query[Model],
+        query: Select,
         column: MappedColumn,
         term: dict[str, Any]
-    ) -> Query[Model]:
+    ) -> Select:
 
         value, negate = self.__parse_value_negate(term)
         expression = column >= value
@@ -474,7 +475,7 @@ class DefaultDatabaseFilter(DatabaseFilter):
             negate
         )
 
-    def __filter_top_exact(self, query: Query[Model]) -> Query[Model]:
+    def __filter_top_exact(self, query: Select) -> Select:
         exact_filters = self.__filter.exact
         if exact_filters is None:
             return query
@@ -483,7 +484,7 @@ class DefaultDatabaseFilter(DatabaseFilter):
             query = query.filter(exact_column == v)
         return query
 
-    def __filter_top_contains(self, query: Query[Model]) -> Query[Model]:
+    def __filter_top_contains(self, query: Select) -> Select:
         contains_filters = self.__filter.contains
         if contains_filters is None:
             return query
@@ -493,7 +494,7 @@ class DefaultDatabaseFilter(DatabaseFilter):
             query = query.filter(contains_column.ilike(term))
         return query
 
-    def __filter_top_in_list(self, query: Query[Model]) -> Query[Model]:
+    def __filter_top_in_list(self, query: Select) -> Select:
         in_filters = self.__filter.in_list
         if in_filters is None:
             return query
@@ -502,7 +503,7 @@ class DefaultDatabaseFilter(DatabaseFilter):
             query = query.filter(in_column.in_(v))
         return query
 
-    def __filter_top_range(self, query: Query[Model]) -> Query[Model]:
+    def __filter_top_range(self, query: Select) -> Select:
         range_filters = self.__filter.range
         if range_filters is None:
             return query
@@ -515,37 +516,32 @@ class DefaultDatabaseFilter(DatabaseFilter):
     def get_column(self, key: str, model: type[Any] | None = None) -> MappedColumn:
         model = self.__alias_trie.alias if model is None else model
         if key == 'id':
-            return self.__get_id_column(model)
+            return model.get_id_column()
         elif '.' in key:
             return self.__get_relation_column(key)
         else:
             return self.__get_column_attr(model, key)
 
-    def __get_id_column(self, model: type[Model]) -> MappedColumn:
-        og_model: type[Model] = inspect(model).mapper.class_
-        id_key = og_model.get_id_column_name()
-        return self.__get_column_attr(model, id_key)
-
     def __get_column_attr(self, model: AliasedClass[Model], key: str) -> MappedColumn:
-        for col in inspect(model).selectable.c:
-            if col.key == key:
-                return col
-        msg = f"Failed to find column '{key}' in '{model}'"
-        raise ValueError(msg)
+        col = inspect(model).selectable.c.get(key)
+        if col is not None:
+            return col
+        msg = f"No such column '{key}' in '{inspect(model).class_.__tablename__}'"
+        raise DataSourceError(title='Bad Attribute Name', detail=msg)
 
     def __get_relation_column(
         self,
         key: str
     ) -> MappedColumn:
 
-        (*initial, column) = key.split('.')
+        (*path, column) = key.split('.')
 
-        if not initial:
+        if not path:
             return self.get_column(key)
 
         trie = self.__alias_trie
-        for i in initial:
-            trie = trie[i]
+        for e in path:
+            trie = trie[e]
 
         return self.get_column(
             column,

@@ -32,7 +32,8 @@ class TestElasticSequencingRequestToStsSequencingRequestConverter(TestCase):
         core_data_object(source)
         core_data_object(destination)
         converter = ElasticSequencingRequestToStsSequencingRequestConverter(
-            data_object_factory=destination.data_object_factory
+            data_object_factory=destination.data_object_factory,
+            config=ElasticSequencingRequestToStsSequencingRequestConverter.Config()
         )
 
         CoreDataObject = source.data_object_factory  # noqa N806

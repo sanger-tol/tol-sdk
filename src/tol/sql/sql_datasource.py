@@ -5,7 +5,7 @@
 from __future__ import annotations
 
 import typing
-from typing import Any, Callable, Dict, Iterable, List, Optional, Tuple
+from typing import Callable, Dict, Iterable, List, Optional, Tuple
 
 from sqlalchemy.orm import Session as SqlaSession
 
@@ -39,6 +39,7 @@ from ..core.operator import (
     RelationWriteMode,
     Relational,
     ReturnMode,
+    Statter,
     Upserter,
 )
 from ..core.relationship import RelationshipConfig
@@ -68,6 +69,7 @@ class SqlDataSource(
     ListGetter,
     PageGetter,
     Relational,
+    Statter,
     Upserter,
 ):
     """
@@ -349,6 +351,23 @@ class SqlDataSource(
             in_session.close()
         return return_list
 
+    def get_stats(
+        self,
+        object_type: str,
+        stats_fields: list[str],
+        stats: list[str],
+        object_filters: DataSourceFilter | None = None,
+        session: OperableSession | None = None
+    ) -> dict[str, dict[str, dict[str, int]]]:
+        tablename = self.__type_tablename_map[object_type]
+        in_session = self.__get_sqla_session(session)
+        return self.__db.get_stats(
+            tablename,
+            stats_fields,
+            stats,
+            in_session,
+        )
+
     def get_group_stats(
         self,
         object_type: str,
@@ -357,7 +376,7 @@ class SqlDataSource(
         stats: list[str] = ['min', 'max'],
         object_filters: Optional[DataSourceFilter] = None,
         session: Optional[OperableSession] = None,
-    ) -> Iterable[dict[Any, int]]:
+    ) -> Iterable[dict[str, dict[str, int | dict[str, int]]]]:
         tablename = self.__type_tablename_map[object_type]
         in_session = self.__get_sqla_session(session)
         filters = self.__filter_factory(

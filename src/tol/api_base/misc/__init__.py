@@ -2,8 +2,10 @@
 #
 # SPDX-License-Identifier: MIT
 
-from .aggregation_parameters import AggregationParameters  # noqa
-from .aggregation_body import AggregationBody  # noqa
+from .legacy_aggregation_parameters import LegacyAggregationParameters  # noqa
+from .legacy_aggregation_body import LegacyAggregationBody  # noqa
+from .aggregation_args import AggregationArgs  # noqa
+from .action_parameters import ActionParameters  # noqa
 from .authenticate import Authenticator, quick_and_dirty_auth  # noqa
 from .auth_context import AuthContext, CtxGetter, default_ctx_getter  # noqa
 from .data_body import RequestBody, JsonApiRequestBody  # noqa

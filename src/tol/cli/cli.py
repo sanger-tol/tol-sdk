@@ -200,7 +200,7 @@ def restore(ctx):
     click.echo('Restoring database...')
     command = (
         f'docker compose --env-file {env_file} run --rm {service}-dbutils'
-        ' python3 run.py restore'
+        ' restore'
     )
     click.secho(command, fg='green')
     run(command)
@@ -455,7 +455,7 @@ def data(ctx, source, operation, type_, filter_, fields, converter, output):
     if converter is not None:
         module = importlib.import_module('tol.flows.converters')
         class_ = getattr(module, converter)
-        objs = class_(ds.data_object_factory).convert_iterable(objs)
+        objs = class_(ds.data_object_factory, config=class_.Config()).convert_iterable(objs)
     if output == 'tsv':
         output_tsv(objs, fields.split(',') if fields else [])
     if output == 'ndjson':

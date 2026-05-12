@@ -290,14 +290,15 @@ class TestStsSampleProjectToElasticSampleConverter(TestCase):
         core_data_object(source)
         core_data_object(destination)
         converter = StsSampleProjectToElasticSampleConverter(
-            data_object_factory=destination.data_object_factory
+            data_object_factory=destination.data_object_factory,
+            config=StsSampleProjectToElasticSampleConverter.Config()
         )
 
         CoreDataObject = source.data_object_factory  # noqa N806
         project = CoreDataObject(
             id_='test_project',
             type_='project',
-            attributes={'programme': 'test_programme', 'is_primary': True}
+            attributes={'programme': 'test_programme'}
         )
         location = CoreDataObject(
             id_='test_gal',
@@ -428,7 +429,9 @@ class TestStsSampleProjectToElasticSampleConverter(TestCase):
         sample_project = CoreDataObject(
             id_='test_sample_project',
             type_='sample_project',
-            attributes={},
+            attributes={
+                'is_primary': True,
+            },
             to_one={
                 'sample': sample,
                 'project': project
