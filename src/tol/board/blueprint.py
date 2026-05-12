@@ -452,6 +452,8 @@ def board_blueprint(
         user_id: str,
         new_parent_title: str,
         parent_type: str,
+        object_type: str = biggest_type,
+        parent_id: str | None = None,
     ) -> tuple[str, dict[str, str]]:
         """
         Saves the given entities and their relations to the database.
@@ -522,7 +524,38 @@ def board_blueprint(
                     )
                     board_ds.insert(entity_type, [new_obj])
 
-        return id_mapping[entities[biggest_type][0].id], id_mapping
+        if parent_id is not None:
+            joiner_type = f'{object_type}_{parent_type}'
+            num_parent_joins = board_ds.get_count(
+                joiner_type,
+                object_filters=DataSourceFilter(
+                    and_={
+                        f'{parent_type}.id': {
+                            'eq': {
+                                'value': parent_id
+                            }
+                        }
+                    }
+                )
+            )
+            new_root_id = id_mapping[entities[object_type][0].id]
+            joiner_obj = board_ds.data_object_factory(
+                type_=joiner_type,
+                attributes={'order': num_parent_joins + 1},
+                to_one={
+                    object_type: board_ds.data_object_factory(
+                        type_=object_type,
+                        id_=new_root_id,
+                    ),
+                    parent_type: board_ds.data_object_factory(
+                        type_=parent_type,
+                        id_=parent_id,
+                    ),
+                },
+            )
+            board_ds.insert(joiner_type, [joiner_obj])
+
+        return id_mapping[entities[object_type][0].id], id_mapping
 
     @board_bp.post('/copy/<string:object_type>/<string:object_id>')
     def __copy_entity(*, object_type: str, object_id: str):
@@ -537,10 +570,12 @@ def board_blueprint(
         new_parent_title = request.json.get(
             'new_parent_entity_title', f'{obj.title} - copy')
         parent_type = request.json.get('parent_entity_type', 'board')
+        parent_id = request.json.get('parent_entity_id')
 
         all_entities = __collect_recursive(object_type, [obj])
         new_entity_id, id_mapping = __save_board_entity_and_children(
-            all_entities, ctx_getter().user_id, new_parent_title, parent_type)
+            all_entities, ctx_getter().user_id, new_parent_title,
+            parent_type, object_type, parent_id)
 
         if not all_entities.get(object_type) or not new_entity_id:
             raise DataSourceError(
