@@ -574,7 +574,7 @@ class TestSqlDataSource:
 
     def test_upsert(self):
         """
-        `SqlDataSource().upsert()` calls `Database().upsert()` and
+        `SqlDataSource().upsert()` delegates to `Database().upsert_batch()` and
         `BackConverter().convert() correctly`
         """
 
@@ -602,8 +602,8 @@ class TestSqlDataSource:
         )
         ds.data_object_factory = MagicMock()
         ds.upsert('tests', [mock_object])
-        mock_db.upsert.assert_called_once_with(
-            mock_model,
+        mock_db.upsert_batch.assert_called_once_with(
+            [mock_model],
             mock_sess,
             user_id=None,
             merge_collections=None,
@@ -726,8 +726,8 @@ class TestSqlDataSource:
 
         sql_ds.upsert('test', [mock_obj])
 
-        mock_db.upsert.assert_called_once_with(
-            mock_model_instance,
+        mock_db.upsert_batch.assert_called_once_with(
+            [mock_model_instance],
             mock_sess,
             user_id='a user ID',
             merge_collections=None,

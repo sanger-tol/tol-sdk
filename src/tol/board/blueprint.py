@@ -646,10 +646,7 @@ def board_blueprint(
             for order, child_id in enumerate(new_order)
         ]
 
-        # Upsert all rows in a single transaction so the deferred unique
-        # constraint on (parent_id, order) is only checked at commit time.
-        with board_ds.get_session() as session:
-            session.upsert(joiner_object_type, updated_joiners)
+        board_ds.upsert(joiner_object_type, updated_joiners)
 
     @board_bp.patch('/reorder/<string:parent_object_id>')
     def __reorder_endpoint(*, parent_object_id: str):

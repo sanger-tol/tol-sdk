@@ -43,8 +43,8 @@ class TestBoardBlueprintReorder:
             call(type_='zone_view', id_='j1', attributes={'order': 2}),
         ]
 
-        board_ds.upsert_batch.assert_called_once()
-        upsert_type = board_ds.upsert_batch.call_args.args[0]
+        board_ds.upsert.assert_called_once()
+        upsert_type = board_ds.upsert.call_args.args[0]
         assert upsert_type == 'zone_view'
 
     def test_reorder__missing_child__400(
