@@ -41,13 +41,13 @@ def mock_board_obj(
 
 def mock_board_join(
     objs: dict[str, dict[str, DataObject]],
-    bigger: str,
+    parent: str,
     joiner: str,
-    smaller: str,
+    child: str,
     type_def: dict[str, tuple[str, list[str]]],
     join_ids: Iterator[str]
 ) -> dict[str, DataObject]:
-    """Creates mock joining table objects linking smaller entities to bigger parents."""
+    """Creates mock joining table objects linking child entities to parent entities."""
 
     all_pairs = (
         (k, v)
@@ -59,8 +59,8 @@ def mock_board_join(
         (
             str(next(join_ids)),
             (
-                objs[bigger][k],
-                objs[smaller][v]
+                objs[parent][k],
+                objs[child][v]
             )
         )
         for k, v in all_pairs
@@ -71,11 +71,11 @@ def mock_board_join(
             joiner,
             id_=id_,
             to_one={
-                bigger: bigger_obj,
-                smaller: smaller_obj
+                parent: parent_obj,
+                child: child_obj
             }
         )
-        for id_, (bigger_obj, smaller_obj)
+        for id_, (parent_obj, child_obj)
         in join_defs
     }
 
@@ -87,7 +87,7 @@ def mock_board_hierarchy(
 ) -> dict[str, dict[str, DataObject]]:
     """Mocks all objects in the hierarchy with joins.
 
-    For the smallest one, give an empty list each time.
+    For the leaf child, give an empty list each time.
     """
 
     objs: dict[str, dict[str, DataObject]] = {}
@@ -103,16 +103,16 @@ def mock_board_hierarchy(
     join_ids = iter(count())
 
     # build up the joining types
-    for i, bigger in enumerate(type_hierarchy[:-1]):
-        smaller = type_hierarchy[i + 1]
-        joiner = f'{smaller}_{bigger}'
+    for i, parent in enumerate(type_hierarchy[:-1]):
+        child = type_hierarchy[i + 1]
+        joiner = f'{child}_{parent}'
 
         objs[joiner] = mock_board_join(
             objs,
-            bigger,
+            parent,
             joiner,
-            smaller,
-            obj_hierachy[bigger],
+            child,
+            obj_hierachy[parent],
             join_ids
         )
 
@@ -143,17 +143,17 @@ def mock_board_get_count(
         *,
         object_filters: DataSourceFilter
     ) -> int:
-        smaller_type, bigger_type = joiner_type.split('_')
+        child_type, parent_type = joiner_type.split('_')
 
-        smaller_id = object_filters.and_[f'{smaller_type}.id']['eq']['value']
+        child_id = object_filters.and_[f'{child_type}.id']['eq']['value']
 
         # note this is a negate term
-        all_bigger_ids = object_filters.and_[f'{bigger_type}.id']['in_list']['value']
+        all_parent_ids = object_filters.and_[f'{parent_type}.id']['in_list']['value']
 
         joiner_objs = [
             obj for obj in objs[joiner_type].values()
-            if getattr(obj, smaller_type).id == smaller_id
-            and getattr(obj, bigger_type).id not in all_bigger_ids
+            if getattr(obj, child_type).id == child_id
+            and getattr(obj, parent_type).id not in all_parent_ids
         ]
         return len(joiner_objs)
 
@@ -170,13 +170,13 @@ def mock_board_get_list(
         *,
         object_filters: DataSourceFilter
     ) -> list[DataObject]:
-        _, bigger = object_type.split('_')
+        _, parent = object_type.split('_')
 
-        bigger_id = object_filters.and_[f'{bigger}.id']['eq']['value']
+        parent_id = object_filters.and_[f'{parent}.id']['eq']['value']
 
         return [
             obj for obj in objs[object_type].values()
-            if getattr(obj, bigger).id == bigger_id
+            if getattr(obj, parent).id == parent_id
         ]
 
     return __get_list

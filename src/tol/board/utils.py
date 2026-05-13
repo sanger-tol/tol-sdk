@@ -4,11 +4,11 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import Any, TYPE_CHECKING
 
 from nanoid import generate
 
-from ..core import DataObject
+from ..core import DataObject, DataSourceFilter
 
 if TYPE_CHECKING:
     from ..sql import SqlDataSource
@@ -75,7 +75,7 @@ def save_board_entity_and_children(
 
     custom_alphabet = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz'
 
-    biggest_type = type_hierarchy[0]
+    root_parent_type = type_hierarchy[0]
 
     # Build old -> new ID mapping for all non-joiner types
     id_mapping: dict[str, str] = {}
@@ -109,25 +109,212 @@ def save_board_entity_and_children(
 
     for entity_type, objs in entities.items():
         if entity_type not in type_hierarchy:
-            bigger_t = next(t for t in type_hierarchy if entity_type.endswith(f'_{t}'))
-            smaller_t = entity_type[: -(len(bigger_t) + 1)]
+            parent_t = next(t for t in type_hierarchy if entity_type.endswith(f'_{t}'))
+            child_t = entity_type[: -(len(parent_t) + 1)]
             for obj in objs:
-                smaller_obj = getattr(obj, smaller_t)
-                bigger_obj = getattr(obj, bigger_t)
+                child_obj = getattr(obj, child_t)
+                parent_obj = getattr(obj, parent_t)
                 new_obj = board_ds.data_object_factory(
                     type_=entity_type,
                     attributes={'order': obj.order},
                     to_one={
-                        smaller_t: board_ds.data_object_factory(
-                            type_=smaller_t,
-                            id_=id_mapping[smaller_obj.id],
+                        child_t: board_ds.data_object_factory(
+                            type_=child_t,
+                            id_=id_mapping[child_obj.id],
                         ),
-                        bigger_t: board_ds.data_object_factory(
-                            type_=bigger_t,
-                            id_=id_mapping[bigger_obj.id],
+                        parent_t: board_ds.data_object_factory(
+                            type_=parent_t,
+                            id_=id_mapping[parent_obj.id],
                         ),
                     },
                 )
                 board_ds.insert(entity_type, [new_obj])
 
-    return id_mapping[entities[biggest_type][0].id], id_mapping
+    return id_mapping[entities[root_parent_type][0].id], id_mapping
+
+
+def collect_recursive(
+    board_ds: SqlDataSource,
+    object_type: str,
+    parent_objs: list[DataObject],
+    type_hierarchy: list[str],
+    collected: dict[str, list[DataObject]] | None = None,
+) -> dict[str, list[DataObject]]:
+    """
+    Recursively collects all contained objects and their join rows
+    without ownership filtering.
+
+    Returns a dict keyed by type (including joiner types) mapping
+    to the list of `DataObject`s of that type, suitable for passing
+    back to a caller that wants to recreate the full hierarchy.
+
+    Args:
+        board_ds: The data source for board operations
+        object_type: The current object type being processed
+        parent_objs: List of containing objects
+        type_hierarchy: The hierarchy of entity types
+        collected: Accumulation dict for recursion
+
+    Returns:
+        Dict mapping entity types to lists of DataObjects
+    """
+    if collected is None:
+        collected = {}
+
+    leaf_child_type = type_hierarchy[-1]
+
+    collected.setdefault(object_type, []).extend(parent_objs)
+
+    if object_type == leaf_child_type:
+        return collected
+
+    parent_index = type_hierarchy.index(object_type)
+    child_type = type_hierarchy[parent_index + 1]
+    joiner_type = f'{child_type}_{object_type}'
+
+    all_joins: list[DataObject] = []
+    all_child_objs: list[DataObject] = []
+
+    for parent_obj in parent_objs:
+        joins_filter = DataSourceFilter(
+            and_={
+                f'{parent_obj.type}.id': {
+                    'eq': {
+                        'value': parent_obj.id
+                    }
+                }
+            }
+        )
+        joins = list(
+            board_ds.get_list(
+                joiner_type,
+                object_filters=joins_filter
+            )
+        )
+        all_joins.extend(joins)
+        all_child_objs.extend(
+            getattr(join, child_type) for join in joins
+        )
+
+    collected.setdefault(joiner_type, []).extend(all_joins)
+
+    if all_child_objs:
+        collect_recursive(board_ds, child_type, all_child_objs, type_hierarchy, collected)
+
+    return collected
+
+
+def serialise_board_entities(
+    all_entities: dict[str, list[DataObject]],
+    parent_id: str,
+    type_hierarchy: list[str],
+    id_mapping: dict[str, str] | None = None,
+) -> dict[str, Any]:
+    """
+    Serialises the given entities into a nested dict structure suitable
+    for consumption by the frontend.
+
+    Args:
+        all_entities: Dict mapping entity types to lists of DataObjects
+        parent_id: The ID of the parent entity to start serialization from
+        type_hierarchy: The hierarchy of entity types
+        id_mapping: Optional mapping of old IDs to new IDs
+
+    Returns:
+        Nested dict structure representing the entities
+    """
+    # We loop through the joiner types (e.g. `zone_view`) to build a lookup of parent ID
+    # (e.g. `view` ID) -> list of child IDs (e.g. `zone` IDs),
+    # which we can use when serializing the children of each object
+    children_lookup: dict[str, list[str]] = {}
+
+    for entity_type, objs in all_entities.items():
+        if entity_type not in type_hierarchy:
+            parent_type = next(t for t in type_hierarchy if entity_type.endswith(f'_{t}'))
+            child_type = entity_type[: -(len(parent_type) + 1)]
+            for obj in sorted(objs, key=lambda o: getattr(o, 'order', 0)):
+                parent_obj = getattr(obj, parent_type)
+                child_obj = getattr(obj, child_type)
+                children_lookup.setdefault(parent_obj.id, []).append(child_obj.id)
+
+    # We loop through the non-joiner types to build a lookup of ID -> object,
+    # which we can use when serializing the children of each object
+    obj_lookup: dict[str, DataObject] = {
+        str(obj.id): obj
+        for entity_type, objs in all_entities.items()
+        if entity_type in type_hierarchy
+        for obj in objs
+    }
+
+    # We define a recursive serialization function that uses the above
+    # lookups to serialise each object along with its children
+    def _serialise(obj: DataObject) -> dict[str, Any]:
+        obj_id: str = str(obj.id)
+        mapped_id: str = id_mapping.get(obj_id, obj_id) if id_mapping else obj_id
+
+        child_ids: list[str] = children_lookup.get(obj_id, [])
+        mapped_child_ids: list[str] = [id_mapping.get(child_id, child_id)
+                                       for child_id in child_ids] if id_mapping else child_ids
+
+        result: dict[str, Any] = {
+            'id': mapped_id,
+            'type': obj.type,
+            # We filter out the 'filter' attribute for non-component and non-zone types,
+            # as it isn't currently needed, can re-add later when needed, i.e. param boards
+            **{
+                k: v for k, v in obj.attributes.items()
+                if k != 'filter' or obj.type in ('component', 'zone')
+            },
+        }
+
+        # Component is the only type that doesn't have an 'order' field
+        # in the joiner table, nor does it have any child entities, so we
+        # can skip adding the 'order' and 'children' fields for it
+        if obj.type != 'component':
+            result['order'] = mapped_child_ids
+            result['children'] = {
+                mapped_child_id: _serialise(obj_lookup[child_id])
+                for child_id, mapped_child_id in zip(child_ids, mapped_child_ids)
+                if child_id in obj_lookup
+            },
+
+        return result
+
+    # We start the recursive serialization at the given parent ID and type
+    parent_obj = obj_lookup.get(parent_id)
+    if parent_obj is None:
+        return {}
+
+    return _serialise(parent_obj)
+
+
+def get_parent_joiner_objs(
+    board_ds: SqlDataSource,
+    parent_object_id: str,
+    joiner_object_type: str,
+) -> list[DataObject]:
+    """
+    Retrieves the joiner objects for a given parent object.
+
+    Args:
+        board_ds: The data source for board operations
+        parent_object_id: The ID of the parent object
+        joiner_object_type: The joiner type (e.g., 'zone_view')
+
+    Returns:
+        List of joiner DataObjects
+    """
+    parent_object_type = joiner_object_type.split('_')[1]
+    f = DataSourceFilter(
+        and_={
+            f'{parent_object_type}.id': {
+                'eq': {
+                    'value': parent_object_id
+                }
+            }
+        }
+    )
+    return list(board_ds.get_list(
+        joiner_object_type,
+        object_filters=f
+    ))
