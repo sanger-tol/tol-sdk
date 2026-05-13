@@ -27,7 +27,8 @@ class _MockDataSourceRelational(DataSource, Relational):
                 'specimen', 'preservative_solution', 'collection_method',
                 'sample_person', 'person', 'manifest', 'tissue_size', 'sample_species',
                 'species', 'lifestage', 'sex', 'organism_part', 'sample_species_organism_part',
-                'ext_id', 'strain', 'storage_rack', 'freezer_tray', 'hazard_group']
+                'ext_id', 'strain', 'storage_rack', 'freezer_tray', 'hazard_group',
+                'disposal']
 
     @property
     def attribute_types(self):
@@ -54,6 +55,7 @@ class _MockDataSourceRelational(DataSource, Relational):
             'tissue_size': 'tissue_size',
             'sample_export_options': 'sample_export_options',
             'storage_rack': 'storage_rack',
+            'disposal': 'disposal',
         }
         rc_sample.to_many = {
             'sample_persons': 'sample_person',
@@ -265,7 +267,8 @@ class _MockDataSource(DataSource, Relational):
             'specimen': 'specimen',
             'tolid': 'tolid',
             'manifest': 'manifest',
-            'sampleset': 'sampleset'
+            'sampleset': 'sampleset',
+            'disposal': 'disposal',
         }
         return {'sample': rc_sample}
 
@@ -300,6 +303,21 @@ class TestStsSampleProjectToElasticSampleConverter(TestCase):
             type_='project',
             attributes={'programme': 'test_programme'}
         )
+
+        for is_restored, expected_disposed in [
+            (None, True),
+            (False, True),
+            (True, False),
+        ]:
+            disposal_attributes = {}
+        if is_restored is not None:
+            disposal_attributes['restored?'] = is_restored
+        disposal = CoreDataObject(
+            id_='test_disposal',
+            type_='disposal',
+            attributes=disposal_attributes
+        )
+
         location = CoreDataObject(
             id_='test_gal',
             type_='location',
@@ -423,6 +441,7 @@ class TestStsSampleProjectToElasticSampleConverter(TestCase):
                 'tissue_size': tissue_size,
                 'sample_export_options': sample_export_options,
                 'storage_rack': storage_rack,
+                'disposal': disposal,
             }
         )
 
@@ -438,6 +457,8 @@ class TestStsSampleProjectToElasticSampleConverter(TestCase):
             }
         )
         converteds = converter.convert(sample_project)
+        ret = next(converter.convert(sample_project), )
+        self.assertEqual(ret.attributes['disposed'], expected_disposed)
         ret1 = next(converteds)
         self.assertEqual('test_sample', ret1.id)
         self.assertEqual('sample', ret1.type)
@@ -477,6 +498,7 @@ class TestStsSampleProjectToElasticSampleConverter(TestCase):
             'sex': 'FEMALE',
             'organism_part': ['LEG', 'HEAD'],
             'location': 'test_freezer_tray',
+            'disposed': False,
         })
         assert ret1.species.id == 'test_species'
         assert ret1.tolid.id == 'xxTesTest1'
