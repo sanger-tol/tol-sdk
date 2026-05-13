@@ -120,14 +120,6 @@ class StsSampleProjectToElasticSampleConverter(
                 else:
                     attributes['disposed'] = True
 
-            attributes['disposed'] = False
-            if 'disposal' in s.to_one_relationships and s.disposal is not None:
-                is_restore = getattr(s.disposal, 'restore?', None)
-                if is_restore is not None:
-                    attributes['disposed'] = not bool(is_restore)
-                else:
-                    attributes['disposed'] = True
-
             # Make tolid a relationship
             if s.public_name is not None and s.public_name != '':
                 to_one['tolid'] = self._data_object_factory(
