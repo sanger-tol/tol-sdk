@@ -36,7 +36,7 @@ class Upserter(_Writer, ABC):
         - insert    - if the `DataObject` is new to the `DataSource`
         - update    - if the `DataObject` is not new
 
-        We previde a default implementation that calls `upsert_batch`
+        We provide a default implementation that calls `upsert_batch`
         """
 
         upserted = ()

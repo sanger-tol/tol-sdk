@@ -8,6 +8,8 @@ from typing import Any, TYPE_CHECKING
 
 from flask import Blueprint, request
 
+from nanoid import generate
+
 from ..api_base.auth import ForbiddenError
 from ..api_base.misc import (
     CtxGetter,
@@ -18,8 +20,6 @@ from ..core import (
     DataSourceError,
     DataSourceFilter
 )
-
-from nanoid import generate
 
 if TYPE_CHECKING:
     from ..sql import SqlDataSource
@@ -340,7 +340,7 @@ def board_blueprint(
         id_mapping: dict[str, str] | None = None,
     ) -> dict[str, Any]:
         """
-        serialises the given entities into a nested dict structure suitable
+        Serialises the given entities into a nested dict structure suitable
         for consumption by the frontend, starting at the given parent ID and
         type (e.g. a `view` ID and `view` type would serialise that
         view along with its child zones and components).
@@ -476,8 +476,10 @@ def board_blueprint(
         for entity_type, objs in entities.items():
             if entity_type in type_hierarchy:
                 for obj in objs:
-                    new_id = f'{prefix_mappings.get(
-                        entity_type, "x")}_{generate(custom_alphabet, 12)}'
+                    new_id = (
+                        f'{prefix_mappings.get(entity_type, "x")}'
+                        f'_{generate(custom_alphabet, 12)}'
+                    )
                     id_mapping[obj.id] = new_id
 
         for entity_type in type_hierarchy:
@@ -494,9 +496,11 @@ def board_blueprint(
                 new_obj = board_ds.data_object_factory(
                     type_=entity_type,
                     id_=id_mapping[obj.id],
-                    attributes={
-                        **obj.attributes, 'title': new_parent_title}
-                    if entity_type == parent_type else obj.attributes,
+                    attributes=(
+                        {**obj.attributes, 'title': new_parent_title}
+                        if entity_type == 'board'
+                        else obj.attributes
+                    ),
                     to_one=to_one,
                 )
                 board_ds.insert(entity_type, [new_obj])
@@ -620,5 +624,116 @@ def board_blueprint(
         serialised_entities = __serialise_board_entities(obj.id, all_entities, id_mapping=None)
 
         return serialised_entities, 200
+
+    def __get_board_entity_type(entity_id: str) -> str | None:
+        """
+        Infers the board entity type from the ID prefix.
+        Expects IDs to be in the format '{prefix}_{nanoid}',
+        where the prefix indicates the entity type (e.g. 'b' for board, 'v' for view, etc.).
+        """
+        prefix_mappings = {
+            'b': 'board',
+            'v': 'view',
+            'z': 'zone',
+            'c': 'component',
+        }
+        return prefix_mappings.get(entity_id[0]) if entity_id else None
+
+    def __get_parent_joiner_objs(
+        parent_object_id: str,
+        joiner_object_type: str
+    ) -> list[DataObject]:
+        """
+        Retrieves the joiner objects for a given parent object.
+        """
+        parent_object_type = joiner_object_type.split('_')[1]
+        f = DataSourceFilter(
+            and_={
+                f'{parent_object_type}.id': {
+                    'eq': {
+                        'value': parent_object_id
+                    }
+                }
+            }
+        )
+        return list(board_ds.get_list(
+            joiner_object_type,
+            object_filters=f
+        ))
+
+    def reorder(
+        parent_object_id: str,
+        new_order: list[str]
+    ) -> None:
+        """
+        Reorders child entities under a given parent entity.
+
+        Expects a list of child entity IDs in the desired order.
+
+        Validates that the provided order includes all and only the actual child IDs.
+        """
+
+        parent_object_type = __get_board_entity_type(parent_object_id)
+        child_object_type = __get_board_entity_type(new_order[0])
+        joiner_object_type = f'{child_object_type}_{parent_object_type}'
+
+        # Getting the actual child IDs from the given parent
+        joiner_objs = __get_parent_joiner_objs(
+            parent_object_id,
+            joiner_object_type
+        )
+        actual_child_ids = [
+            obj.to_one_relationships[child_object_type].id
+            for obj in joiner_objs
+        ]
+
+        # Ensure the new order includes all and only the child IDs
+        if len(actual_child_ids) != len(new_order) or set(actual_child_ids) != set(new_order):
+            raise DataSourceError(
+                'Invalid Order',
+                'Not all child IDs are included '
+                'in the new order, or there are '
+                'extra IDs that are not children.',
+
+                400
+            )
+
+        # Build a lookup of child ID -> joiner object, which we can use to
+        # create the updated joiner objects with the new order values
+        joiner_ids_by_child_id = {
+            obj.to_one_relationships[child_object_type].id: obj.id
+            for obj in joiner_objs
+        }
+
+        # Create new joiner objects with the updated order values
+        updated_joiners = [
+            board_ds.data_object_factory(
+                type_=joiner_object_type,
+                id_=joiner_ids_by_child_id[child_id],
+                attributes={'order': order},
+            )
+            for order, child_id in enumerate(new_order)
+        ]
+
+        board_ds.upsert(joiner_object_type, updated_joiners)
+
+    @board_bp.patch('/reorder/<string:parent_object_id>')
+    def __reorder_endpoint(*, parent_object_id: str):
+        """
+        Reorders child entities under a given parent entity.
+
+        Expects a JSON body with an 'order' field containing a
+        list of child entity IDs in the desired order.
+
+        Validates that the provided order includes all and only the actual child IDs.
+        """
+        new_order = request.json.get('order')
+
+        reorder(parent_object_id, new_order)
+
+        # Use the passed order as the reorder function already validates
+        return {
+            'order': new_order
+        }, 200
 
     return board_bp

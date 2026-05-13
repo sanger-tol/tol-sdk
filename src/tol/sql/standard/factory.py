@@ -9,7 +9,7 @@ from dataclasses import dataclass
 from datetime import datetime
 from typing import Any, Iterator
 
-from sqlalchemy import ForeignKey
+from sqlalchemy import ForeignKey, UniqueConstraint
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import (
     Mapped,
@@ -223,6 +223,9 @@ def create_standard_models(
 
     class ComponentZone(base_model_class):
         __tablename__ = 'component_zone'
+        __table_args__ = (
+            UniqueConstraint('zone_id', 'order', deferrable=True, initially='DEFERRED'),
+        )
 
         id: Mapped[int] = mapped_column(  # noqa A003
             primary_key=True,
@@ -297,6 +300,9 @@ def create_standard_models(
 
     class ZoneView(base_model_class):
         __tablename__ = 'zone_view'
+        __table_args__ = (
+            UniqueConstraint('view_id', 'order', deferrable=True, initially='DEFERRED'),
+        )
 
         id: Mapped[int] = mapped_column(  # noqa A003
             primary_key=True,
@@ -360,6 +366,9 @@ def create_standard_models(
 
     class ViewBoard(base_model_class):
         __tablename__ = 'view_board'
+        __table_args__ = (
+            UniqueConstraint('board_id', 'order', deferrable=True, initially='DEFERRED'),
+        )
 
         id: Mapped[int] = mapped_column(  # noqa A003
             primary_key=True,
