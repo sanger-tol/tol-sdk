@@ -110,6 +110,49 @@ class TestBoardBlueprint:
         r = board_client.post('/create_board', json={})
         assert r.status_code == 201
 
+    def test_create_board__next_order_from_existing_joins(
+        self,
+        board_auth_ctx: AuthContext,
+        board_client: FlaskClient,
+        board_ds: SqlDataSource,
+        monkeypatch: pytest.MonkeyPatch,
+    ):
+        """
+        POST create_board sets view_board.order to max(existing)+1.
+        """
+
+        board_auth_ctx.user_id = '100'
+
+        ids = iter(['board12345678', 'view123456789'])
+        monkeypatch.setattr(
+            board_blueprint_module,
+            'generate',
+            lambda *_args: next(ids)
+        )
+
+        existing_join = self.__mock_obj('M_L', id_='j1', attributes={'order': 2})
+        board_ds.get_list.return_value = [existing_join]
+
+        def _factory(*, type_, id_=None, attributes=None, to_one=None):
+            return self.__mock_obj(
+                type_,
+                id_=id_,
+                attributes=attributes or {},
+                to_one=to_one or {},
+            )
+
+        board_ds.data_object_factory.side_effect = _factory
+
+        r = board_client.post('/create-board', json={})
+        assert r.status_code == 201
+
+        factory_calls = board_ds.data_object_factory.call_args_list
+        assert any(
+            call.kwargs.get('type_') == 'M_L'
+            and call.kwargs.get('attributes') == {'order': 3}
+            for call in factory_calls
+        )
+
     def test_delete_smallest__200(
         self,
         board_auth_ctx: AuthContext,
@@ -239,6 +282,36 @@ class TestBoardBlueprint:
 
         with pytest.raises(ForbiddenError):
             board_client.post('/add/S/m_parent', json={'attributes': {'title': 'New S'}})
+
+    def test_add_entity__201_defaults_title(
+        self,
+        board_auth_ctx: AuthContext,
+        board_client: FlaskClient,
+        board_ds: SqlDataSource,
+        monkeypatch: pytest.MonkeyPatch,
+    ):
+        """
+        POST add defaults title when attributes.title is missing.
+        """
+
+        board_auth_ctx.user_id = '100'
+
+        monkeypatch.setattr(
+            board_blueprint_module,
+            'get_entity_type_from_prefix',
+            lambda _prefix: 'M'
+        )
+
+        parent_obj = self.__mock_obj('M', 'm_parent', user_id='100')
+        board_ds.get_one.return_value = parent_obj
+        board_ds.get_list.return_value = []
+
+        r = board_client.post('/add/S/m_parent', json={'attributes': {}})
+
+        assert r.status_code == 201
+        payload = r.get_json()
+        assert payload['title'] == 'New S'
+        assert payload['order'] == 1
 
     def test_delete_smallest__403(
         self,

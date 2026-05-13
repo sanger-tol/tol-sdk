@@ -27,6 +27,7 @@ dependencies = [
   "case-converter == 1.1.0",
   "Click == 8.1.7",
   "dacite == 1.9.2",
+  "nanoid == 2.0.0",
   "more-itertools == 10.2.0",
   "python_dateutil >= 2.8.1",
   "python-dotenv >= 1.0.1",
