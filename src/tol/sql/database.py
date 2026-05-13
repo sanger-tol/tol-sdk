@@ -94,6 +94,19 @@ class Database(ABC):
         """Performs an "upsert" on the given `Model` instance."""
 
     @abstractmethod
+    def upsert_batch(
+        self,
+        instances: Iterable[Model],
+        in_session: Session,
+        user_id: str | None = None,
+    ) -> list[Model]:
+        """
+        Performs a batched "upsert", committing all instances in a
+        single transaction so that deferred constraints are only checked
+        once at commit time.
+        """
+
+    @abstractmethod
     def insert(
         self,
         instance: Model,
@@ -313,6 +326,35 @@ class DefaultDatabase(Database):
             user_id=user_id
         )
 
+    def upsert_batch(
+        self,
+        instances: Iterable[Model],
+        in_session: Session,
+        user_id: str | None = None,
+        merge_collections: bool | None = None,
+    ) -> list[Model]:
+        try:
+            with in_session.no_autoflush:
+                staged = [
+                    self.__upsert_to_session(instance, in_session, merge_collections)
+                    for instance in instances
+                ]
+            for instance in staged:
+                self.__before_commit(instance, in_session, user_id)
+            in_session.commit()
+            for instance in staged:
+                in_session.refresh(instance)
+            return staged
+        except IntegrityError:
+            in_session.rollback()
+            raise DataSourceError(
+                title='Database Integrity Error',
+                detail=(
+                    'An integrity error was encountered in the Database '
+                    'during a batch upsert operation.'
+                )
+            )
+
     def insert(
         self,
         instance: Model,
@@ -372,7 +414,7 @@ class DefaultDatabase(Database):
         stats: list[str],
         in_session: Session,
     ) -> dict[str, dict[str, dict[str, int]]]:
-        all_stats = self.__all_table_stats(in_session)
+        all_stats = self.__all_table_stats()
         tbl_ret_stats = {}
 
         if tbl_stats := all_stats.get(tablename):
@@ -384,28 +426,32 @@ class DefaultDatabase(Database):
         return {'stats': tbl_ret_stats}
 
     @ttl_cache(ttl=60)
-    def __all_table_stats(self, in_session: Session):
+    def __all_table_stats(self):
         """Cached for a short time so that the query isn't rerun for each table"""
         tbl_model = self.__tablename_model_dict
+        in_session = self.__session_factory()
 
-        stats = in_session.execute(text("""
-            SELECT
-              s.tablename,
-              s.attname AS column,
-              CASE
-                WHEN s.n_distinct < 0 THEN
-                  CAST (-1 * s.n_distinct * t.n_live_tup AS INT)
-                ELSE CAST (s.n_distinct AS INT)
-              END AS cardinality
-            FROM
-              pg_stats AS s
-              JOIN pg_stat_user_tables AS t
-                ON s.tablename = t.relname
-                AND s.schemaname = t.schemaname
-            WHERE
-              s.schemaname = current_schema
-        """)).fetchall()
-        in_session.close()
+        try:
+            in_session.execute(text('ANALYZE'))
+            stats = in_session.execute(text("""
+                SELECT
+                  s.tablename,
+                  s.attname AS column,
+                  CASE
+                    WHEN s.n_distinct < 0 THEN
+                      CAST (-1 * s.n_distinct * t.n_live_tup AS INT)
+                    ELSE CAST (s.n_distinct AS INT)
+                  END AS cardinality
+                FROM
+                  pg_stats AS s
+                  JOIN pg_stat_user_tables AS t
+                    ON s.tablename = t.relname
+                    AND s.schemaname = t.schemaname
+                WHERE
+                  s.schemaname = current_schema
+            """)).fetchall()
+        finally:
+            in_session.close()
 
         tbl_stats = {}
         for tbl, col, card_n in stats:
@@ -757,13 +803,11 @@ class DefaultDatabase(Database):
             in_session
         )
         if old_instance is not None:
-            instance = self.__handle_difference(
+            return self.__handle_difference(
                 old_instance,
                 instance,
                 merge_collections,
             )
-            in_session.flush()
-            return instance
 
         in_session.add(instance)
         return instance

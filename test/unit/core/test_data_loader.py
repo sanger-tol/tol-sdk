@@ -55,7 +55,12 @@ class _MockDataSource(DataSource, Statter, ListGetter, Upserter):
         super().__init__(config)
         self.exhausted = False
 
-    def get_list(self, object_type: str, object_filters: DataSourceFilter = None):
+    def get_list(
+        self,
+        object_type: str,
+        object_filters: DataSourceFilter = None,
+        requested_fields: Optional[List[str]] = None
+    ) -> Iterable[DataObject]:
         if object_filters is not None:
             mock_objects = [{'id': 'test', 'attribute': 'att1'}]
         else:
@@ -70,7 +75,8 @@ class _MockDataSource(DataSource, Statter, ListGetter, Upserter):
 
     def get_by_ids(
             self, object_type: str,
-            object_ids: Iterable[str]) -> Iterable[Optional[DataObject]]:
+            object_ids: Iterable[str],
+            requested_fields: Optional[List[str]] = None) -> Iterable[Optional[DataObject]]:
         mock_objects = [
             {'id': 'test', 'attribute': 'att1'},
             {'id': 'test2', 'attribute': 'att2'}

@@ -4,11 +4,12 @@
 
 from datetime import datetime
 from time import sleep
-from typing import Dict
+from typing import Dict, Iterable
 
 import pytest
 
 from tol.core import (
+    DataObject,
     DataSource,
     DataSourceError,
     DataSourceFilter,
@@ -27,7 +28,11 @@ class _MockDataSource(DataSource, ListGetter):
     def __init__(self, config: Dict):
         super().__init__(config)
 
-    def get_list(self, object_type: str, object_filters: DataSourceFilter):
+    def get_list(
+        self, object_type: str,
+        object_filters: DataSourceFilter,
+        **kwargs
+    ) -> Iterable[DataObject]:
         for i in range(150):
             yield self.data_object_factory(
                 'source_type',
@@ -963,6 +968,7 @@ class TestEndToEnd:
             destination_object_type='root',
             dependencies=[],
             convert_class=DefaultDataObjectToDataObjectConverter,
+            requested_fields=['str_column', 'bool_column'],
             loader_name='e2e loader',
         )
         loader.load(provenance='e2e')

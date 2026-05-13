@@ -280,18 +280,15 @@ class SqlDataSource(
         **kwargs,
     ) -> list[DataObject]:
         back_converter = self.__back_converter_factory()
-        model_instances = back_converter.convert_iterable(objects)
+        model_instances = list(back_converter.convert_iterable(objects))
         user_id = self.__user_id_getter()
         in_session = self.__get_sqla_session(session)
-        returned_models = [
-            self.__db.upsert(
-                instance,
-                in_session,
-                user_id=user_id,
-                merge_collections=merge_collections,
-            )
-            for instance in model_instances
-        ]
+        returned_models = self.__db.upsert_batch(
+            model_instances,
+            in_session,
+            user_id=user_id,
+            merge_collections=merge_collections,
+        )
         return_list = list(self.__get_converter().convert_iterable(returned_models))
         if session is None:
             in_session.close()
