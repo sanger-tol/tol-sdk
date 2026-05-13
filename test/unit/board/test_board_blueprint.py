@@ -77,7 +77,7 @@ class TestBoardBlueprint:
         inserted_types = [call.args[0] for call in board_ds.insert.call_args_list]
         assert inserted_types == ['L', 'M', 'M_L']
 
-    def test_create_board_alias__201(
+    def test_create_board__404_snake_case_alias_removed(
         self,
         board_auth_ctx: AuthContext,
         board_client: FlaskClient,
@@ -85,7 +85,7 @@ class TestBoardBlueprint:
         monkeypatch: pytest.MonkeyPatch,
     ):
         """
-        POST create_board alias route works.
+        POST create_board snake_case alias is not registered.
         """
 
         board_auth_ctx.user_id = '100'
@@ -108,7 +108,7 @@ class TestBoardBlueprint:
         board_ds.data_object_factory.side_effect = _factory
 
         r = board_client.post('/create_board', json={})
-        assert r.status_code == 201
+        assert r.status_code == 404
 
     def test_create_board__next_order_from_existing_joins(
         self,
@@ -208,7 +208,7 @@ class TestBoardBlueprint:
         board_ds.get_list.return_value = [existing_join_1, existing_join_2]
 
         r = board_client.post(
-            '/add/S/m_parent',
+            '/add-entity/S/m_parent',
             json={'attributes': {'title': 'New S', 'filter': {'a': 1}}}
         )
 
@@ -253,7 +253,7 @@ class TestBoardBlueprint:
         )
 
         with pytest.raises(DataSourceError) as e:
-            board_client.post('/add/S/m_parent', json={'attributes': {'title': 'New S'}})
+            board_client.post('/add-entity/S/m_parent', json={'attributes': {'title': 'New S'}})
 
         assert e.value.title == 'Bad Parent'
         assert e.value.status_code == 400
@@ -281,7 +281,7 @@ class TestBoardBlueprint:
         board_ds.get_one.return_value = parent_obj
 
         with pytest.raises(ForbiddenError):
-            board_client.post('/add/S/m_parent', json={'attributes': {'title': 'New S'}})
+            board_client.post('/add-entity/S/m_parent', json={'attributes': {'title': 'New S'}})
 
     def test_add_entity__201_defaults_title(
         self,
@@ -306,7 +306,7 @@ class TestBoardBlueprint:
         board_ds.get_one.return_value = parent_obj
         board_ds.get_list.return_value = []
 
-        r = board_client.post('/add/S/m_parent', json={'attributes': {}})
+        r = board_client.post('/add-entity/S/m_parent', json={'attributes': {}})
 
         assert r.status_code == 201
         payload = r.get_json()

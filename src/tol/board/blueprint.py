@@ -509,8 +509,8 @@ def board_blueprint(
 
         return copied_entity, 201
 
-    @board_bp.post('/add/<string:object_type>/<string:parent_id>')
-    def __add_entity(*, object_type: str, parent_id: str):
+    @board_bp.post('/add-entity/<string:object_type>/<string:parent_id>')
+    def __add_entity_endpoint(*, object_type: str, parent_id: str):
         if object_type not in type_hierarchy:
             raise DataSourceError(
                 'Unknown Type',
@@ -611,8 +611,7 @@ def board_blueprint(
         }, 201
 
     @board_bp.post('/create-board')
-    @board_bp.post('/create_board')
-    def __create_board():
+    def __create_board_endpoint():
         payload = request.json or {}
         board_title = payload.get('board_title', 'New board')
         first_view_title = payload.get('first_view_title', 'View 1')
