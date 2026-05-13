@@ -305,11 +305,12 @@ class GroupStatterDataLoader(DefaultDataLoader):
                 attributes[f'{source_object_type}_{append_string}count'] \
                     = data_object['stats']['count']
                 for stats_field in data_loader._group_statter_stats_fields:
-                    for stat in data_loader._group_statter_stats:
-                        converted_stats_field = stats_field.replace('.', '_')
-                        attributes[
-                            f'{source_object_type}_{converted_stats_field}_{append_string}{stat}'
-                        ] = data_object['stats'][stats_field][stat]
+                    if stats_field in data_object['stats']:  # not present in "recent" stat
+                        for stat in data_loader._group_statter_stats:
+                            converted_stats_field = stats_field.replace('.', '_')
+                            attributes[
+                                f'{source_object_type}_{converted_stats_field}_{append_string}{stat}'
+                            ] = data_object['stats'][stats_field][stat]
                 ret1 = CoreDataObject(
                     id_=data_object['key'][data_loader._group_statter_group_by[0]],
                     type_=data_loader._destination_object_type,
