@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: MIT
 
 from typing import Any, cast
-from unittest.mock import create_autospec, MagicMock
+from unittest.mock import MagicMock
 
 from flask.testing import FlaskClient
 

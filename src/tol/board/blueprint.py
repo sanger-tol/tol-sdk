@@ -4,27 +4,27 @@
 
 from __future__ import annotations
 
-from typing import Any, TYPE_CHECKING
+from typing import TYPE_CHECKING
 
 from flask import Blueprint, request
 from nanoid import generate
 
-from .utils import (
-    get_entity_type_from_prefix,
-    collect_recursive,
-    serialise_board_entities,
-    get_parent_joiner_objs,
-    generate_entity_id,
-    save_board_entity_and_children,
-)
 from .errors import (
-    NotFoundError,
-    UnknownTypeError,
     AddError,
     BadParentError,
-    InvalidOrderError,
     CopyError,
     DeletionError,
+    InvalidOrderError,
+    NotFoundError,
+    UnknownTypeError,
+)
+from .utils import (
+    collect_recursive,
+    generate_entity_id,
+    get_entity_type_from_prefix,
+    get_parent_joiner_objs,
+    save_board_entity_and_children,
+    serialise_board_entities,
 )
 from ..api_base.auth import ForbiddenError
 from ..api_base.misc import (
@@ -522,7 +522,6 @@ def board_blueprint(
 
         return {'deleted': True}, 200
 
-
     def reorder(
         parent_object_id: str,
         new_order: list[str]
@@ -617,7 +616,9 @@ def board_blueprint(
             raise NotFoundError(object_type)
 
         all_entities = collect_recursive(board_ds, object_type, [obj], type_hierarchy)
-        serialised_entities = serialise_board_entities(all_entities, obj.id, type_hierarchy, id_mapping=None)
+        serialised_entities = serialise_board_entities(
+            all_entities, obj.id, type_hierarchy, id_mapping=None
+        )
 
         return serialised_entities, 200
 
