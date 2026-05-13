@@ -317,7 +317,7 @@ class TestStsSampleProjectToElasticSampleConverter(TestCase):
                 type_='disposal',
                 attributes=disposal_attributes
             )
-            
+
             location = CoreDataObject(
                 id_='test_location',
                 type_='location',
@@ -457,7 +457,7 @@ class TestStsSampleProjectToElasticSampleConverter(TestCase):
                 }
             )
             converteds = converter.convert(sample_project)
-            
+
             ret = next(converter.convert(sample_project))
             self.assertEqual(ret.attributes['disposed'], expected_disposed)
 
