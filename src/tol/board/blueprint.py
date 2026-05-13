@@ -7,15 +7,24 @@ from __future__ import annotations
 from typing import Any, TYPE_CHECKING
 
 from flask import Blueprint, request
-
 from nanoid import generate
 
 from .utils import (
-    PREFIX_MAPPINGS,
     get_entity_type_from_prefix,
     collect_recursive,
     serialise_board_entities,
     get_parent_joiner_objs,
+    generate_entity_id,
+    save_board_entity_and_children,
+)
+from .errors import (
+    NotFoundError,
+    UnknownTypeError,
+    AddError,
+    BadParentError,
+    InvalidOrderError,
+    CopyError,
+    DeletionError,
 )
 from ..api_base.auth import ForbiddenError
 from ..api_base.misc import (
@@ -24,7 +33,6 @@ from ..api_base.misc import (
 )
 from ..core import (
     DataObject,
-    DataSourceError,
     DataSourceFilter
 )
 
@@ -61,7 +69,7 @@ def board_blueprint(
     def __child_is_deletable(
         child_obj: DataObject,
         parent_type: str,
-        all_parent_ids: list[str | None],
+        all_parent_ids: list[str],
         joiner_type: str
     ) -> bool:
         """
@@ -101,7 +109,7 @@ def board_blueprint(
         child_type: str,
         joiner_type: str,
         parent_type: str,
-        all_parent_ids: list[str | None],
+        all_parent_ids: list[str],
         joins: list[DataObject],
         user_id: str,
     ) -> list[DataObject]:
@@ -145,7 +153,7 @@ def board_blueprint(
         be deleted.
         """
 
-        all_parent_ids = [obj.id for obj in parent_objs]
+        all_parent_ids = [obj.id for obj in parent_objs if obj.id is not None]
 
         if parent_type != leaf_child_type:
             all_deletable_children = []
@@ -182,7 +190,7 @@ def board_blueprint(
                 )
                 all_deletable_children.extend(deletable_children)
 
-                join_ids = [getattr(j, 'id', None) for j in joins]
+                join_ids = [j.id for j in joins if getattr(j, 'id', None) is not None]
                 all_join_ids.extend(join_ids)
 
             # delete the joins first
@@ -190,7 +198,8 @@ def board_blueprint(
 
             __delete_recursive(child_type, all_deletable_children, user_id)
 
-        board_ds.delete(parent_type, all_parent_ids)
+        if all_parent_ids:
+            board_ds.delete(parent_type, all_parent_ids)
 
     def __delete_above(
         object_type: str,
@@ -226,12 +235,7 @@ def board_blueprint(
         if above_count == 0:
             return
         if above_count > 1:
-            raise DataSourceError(
-                'Deletion Error',
-                f'More than one {above_type}s instances point '
-                f'to this {object_type}.',
-                400
-            )
+            raise DeletionError(above_type, object_type)
 
         (joiner_obj,) = list(
             board_ds.get_list(
@@ -239,6 +243,9 @@ def board_blueprint(
                 object_filters=f
             )
         )
+
+        if joiner_obj.id is None:
+            return
 
         board_ds.delete(joiner_type, [joiner_obj.id])
 
@@ -266,11 +273,7 @@ def board_blueprint(
         parent_obj = board_ds.get_one(parent_type, parent_id)
 
         if parent_obj is None:
-            raise DataSourceError(
-                'Not Found',
-                f'The given {parent_type} was not found.',
-                404
-            )
+            raise NotFoundError(parent_type)
 
         if getattr(parent_obj.user, 'id', None) != user_id and \
                 'warden' not in ctx_getter().roles:
@@ -287,146 +290,33 @@ def board_blueprint(
             user_id
         )
 
-    def __save_board_entity_and_children(
-        entities: dict[str, list[DataObject]],
-        user_id: str,
-        new_parent_title: str,
-        parent_type: str,
-        object_type: str = root_parent_type,
-        parent_id: str | None = None,
-    ) -> tuple[str, dict[str, str]]:
-        """
-        Saves the given entities and their relations to the database.
-
-        Expects the entities to be in a dict keyed by type (including
-        joiner types) mapping to the list of `DataObject`s of that type,
-        as returned by `collect_recursive`.
-        """
-
-        custom_alphabet = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz'
-        prefix_mappings = {
-            'board': 'b',
-            'view': 'v',
-            'zone': 'z',
-            'component': 'c',
-        }
-
-        # Build old -> new ID mapping for all non-joiner types
-        id_mapping: dict[str, str] = {}
-        for entity_type, objs in entities.items():
-            if entity_type in type_hierarchy:
-                for obj in objs:
-                    new_id = (
-                        f'{prefix_mappings.get(entity_type, "x")}'
-                        f'_{generate(custom_alphabet, 12)}'
-                    )
-                    id_mapping[obj.id] = new_id
-
-        for entity_type in type_hierarchy:
-            for obj in entities.get(entity_type, []):
-                original_user = obj.to_one_relationships.get('user')
-                user_stub = board_ds.data_object_factory(
-                    type_=original_user.type if original_user else 'user',
-                    id_=user_id,
-                )
-                to_one = {
-                    rel_name: (user_stub if rel_name == 'user' else rel_obj)
-                    for rel_name, rel_obj in obj.to_one_relationships.items()
-                }
-                new_obj = board_ds.data_object_factory(
-                    type_=entity_type,
-                    id_=id_mapping[obj.id],
-                    attributes=(
-                        {**obj.attributes, 'title': new_parent_title}
-                        if entity_type == 'board'
-                        else obj.attributes
-                    ),
-                    to_one=to_one,
-                )
-                board_ds.insert(entity_type, [new_obj])
-
-        for entity_type, objs in entities.items():
-            if entity_type not in type_hierarchy:
-                parent_t = next(t for t in type_hierarchy if entity_type.endswith(f'_{t}'))
-                child_t = entity_type[: -(len(parent_t) + 1)]
-                for obj in objs:
-                    child_obj = getattr(obj, child_t)
-                    parent_obj = getattr(obj, parent_t)
-                    new_obj = board_ds.data_object_factory(
-                        type_=entity_type,
-                        attributes={'order': obj.order},
-                        to_one={
-                            child_t: board_ds.data_object_factory(
-                                type_=child_t,
-                                id_=id_mapping[child_obj.id],
-                            ),
-                            parent_t: board_ds.data_object_factory(
-                                type_=parent_t,
-                                id_=id_mapping[parent_obj.id],
-                            ),
-                        },
-                    )
-                    board_ds.insert(entity_type, [new_obj])
-
-        if parent_id is not None:
-            joiner_type = f'{object_type}_{parent_type}'
-            num_parent_joins = board_ds.get_count(
-                joiner_type,
-                object_filters=DataSourceFilter(
-                    and_={
-                        f'{parent_type}.id': {
-                            'eq': {
-                                'value': parent_id
-                            }
-                        }
-                    }
-                )
-            )
-            new_root_id = id_mapping[entities[object_type][0].id]
-            joiner_obj = board_ds.data_object_factory(
-                type_=joiner_type,
-                attributes={'order': num_parent_joins + 1},
-                to_one={
-                    object_type: board_ds.data_object_factory(
-                        type_=object_type,
-                        id_=new_root_id,
-                    ),
-                    parent_type: board_ds.data_object_factory(
-                        type_=parent_type,
-                        id_=parent_id,
-                    ),
-                },
-            )
-            board_ds.insert(joiner_type, [joiner_obj])
-
-        return id_mapping[entities[object_type][0].id], id_mapping
-
     @board_bp.post('/copy/<string:object_type>/<string:object_id>')
     def __copy_entity(*, object_type: str, object_id: str):
         obj = board_ds.get_one(object_type, object_id)
         if obj is None or obj.id is None:
-            raise DataSourceError(
-                'Not Found',
-                f'The given {object_type} was not found.',
-                404
-            )
+            raise NotFoundError(object_type)
 
-        new_parent_title = request.json.get(
-            'new_parent_entity_title', f'{obj.title} - copy')
-        parent_type = request.json.get('parent_entity_type', 'board')
-        parent_id = request.json.get('parent_entity_id')
+        payload = request.json or {}
+        new_parent_title = payload.get('new_parent_entity_title', f'{obj.title} - copy')
+        parent_type = str(payload.get('parent_entity_type', 'board'))
+        raw_parent_id = payload.get('parent_entity_id')
+        parent_id = str(raw_parent_id) if raw_parent_id is not None else None
 
         all_entities = collect_recursive(board_ds, object_type, [obj], type_hierarchy)
-        new_entity_id, id_mapping = __save_board_entity_and_children(
-            all_entities, ctx_getter().user_id, new_parent_title,
-            parent_type, object_type, parent_id)
+        new_entity_id, id_mapping = save_board_entity_and_children(
+            board_ds,
+            all_entities,
+            ctx_getter().user_id,
+            new_parent_title,
+            parent_type,
+            type_hierarchy,
+            object_type=object_type,
+            parent_id=parent_id,
+            id_generator=generate,
+        )
 
         if not all_entities.get(object_type) or not new_entity_id:
-            raise DataSourceError(
-                'Copy Error',
-                f'An error occurred while copying the {object_type}.',
-                500
-            )
+            raise CopyError(object_type)
 
         copied_entity = serialise_board_entities(all_entities, obj.id, type_hierarchy, id_mapping)
         copied_entity['title'] = new_parent_title
@@ -436,36 +326,20 @@ def board_blueprint(
     @board_bp.post('/add-entity/<string:object_type>/<string:parent_id>')
     def __add_entity_endpoint(*, object_type: str, parent_id: str):
         if object_type not in type_hierarchy:
-            raise DataSourceError(
-                'Unknown Type',
-                'The given type is not recognised in the hierarchy',
-                400
-            )
+            raise UnknownTypeError()
 
         object_index = type_hierarchy.index(object_type)
         if object_index == 0:
-            raise DataSourceError(
-                'Add Error',
-                f'Cannot add {object_type} with a parent ID.',
-                400
-            )
+            raise AddError(object_type)
 
         expected_parent_type = type_hierarchy[object_index - 1]
         parent_type = get_entity_type_from_prefix(parent_id.split('_', 1)[0])
         if parent_type is None or parent_type != expected_parent_type:
-            raise DataSourceError(
-                'Bad Parent',
-                f'The parent ID does not match expected type {expected_parent_type}.',
-                400
-            )
+            raise BadParentError(expected_parent_type)
 
         parent_obj = board_ds.get_one(parent_type, parent_id)
         if parent_obj is None or parent_obj.id is None:
-            raise DataSourceError(
-                'Not Found',
-                f'The given {parent_type} was not found.',
-                404
-            )
+            raise NotFoundError(parent_type)
 
         ctx = ctx_getter()
         if getattr(parent_obj.user, 'id', None) != ctx.user_id and 'warden' not in ctx.roles:
@@ -480,9 +354,11 @@ def board_blueprint(
         if object_type in ('board', 'view', 'zone', 'component') and 'filter' not in attributes:
             attributes['filter'] = {}
 
-        id_prefix = object_type[:1]
-        custom_alphabet = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz'
-        new_entity_id = f'{id_prefix}_{generate(custom_alphabet, 12)}'
+        new_entity_id = generate_entity_id(
+            object_type,
+            id_generator=generate,
+            fallback_prefix=object_type[:1],
+        )
 
         user_stub = board_ds.data_object_factory(
             type_='user',
@@ -526,26 +402,41 @@ def board_blueprint(
         )
         board_ds.insert(joiner_type, [join_obj])
 
+        serialised_entity = serialise_board_entities(
+            {object_type: [new_entity]},
+            new_entity_id,
+            type_hierarchy,
+        )
+
+        if not serialised_entity:
+            serialised_entity = {
+                'id': new_entity_id,
+                'type': object_type,
+                **{
+                    k: v for k, v in attributes.items()
+                    if k != 'filter' or object_type in ('component', 'zone')
+                },
+            }
+            if object_type != 'component':
+                serialised_entity['order'] = []
+                serialised_entity['children'] = {}
+
         return {
-            'id': new_entity_id,
-            'type': object_type,
+            **serialised_entity,
             'parent_id': parent_id,
-            'order': next_order,
-            **attributes,
+            'parent_order': next_order,
         }, 201
 
     @board_bp.post('/create-board')
     def __create_board_endpoint():
         payload = request.json or {}
-        board_title = payload.get('board_title', 'New board')
+        board_title = payload.get('board_title', 'Untitled board')
         first_view_title = payload.get('first_view_title', 'View 1')
 
         board_type = type_hierarchy[0]
         view_type = type_hierarchy[1]
 
-        custom_alphabet = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz'
-        board_prefix = PREFIX_MAPPINGS.get(board_type, board_type[:1].lower())
-        board_id = f'{board_prefix}_{generate(custom_alphabet, 12)}'
+        board_id = generate_entity_id(board_type, id_generator=generate)
 
         user_stub = board_ds.data_object_factory(
             type_='user',
@@ -569,8 +460,7 @@ def board_blueprint(
             'filter': {},
         }
 
-        view_id_prefix = PREFIX_MAPPINGS.get(view_type, view_type[:1].lower())
-        view_id = f'{view_id_prefix}_{generate(custom_alphabet, 12)}'
+        view_id = generate_entity_id(view_type, id_generator=generate)
 
         view_obj = board_ds.data_object_factory(
             type_=view_type,
@@ -622,11 +512,7 @@ def board_blueprint(
     @board_bp.delete('/<string:object_type>/<string:object_id>')
     def __delete_endpoint(*, object_type: str, object_id: str):
         if object_type not in type_hierarchy:
-            raise DataSourceError(
-                'Unknown Type',
-                'The given type is not recognised in the hierarchy',
-                400
-            )
+            raise UnknownTypeError()
 
         delete(
             object_type,
@@ -649,8 +535,15 @@ def board_blueprint(
         Validates that the provided order includes all and only the actual child IDs.
         """
 
-        parent_object_type = get_entity_type_from_prefix(parent_object_id.split('_', 1)[0])
-        child_object_type = get_entity_type_from_prefix(new_order[0].split('_', 1)[0])
+        parent_prefix = parent_object_id.split('_', 1)[0]
+        parent_object_type = get_entity_type_from_prefix(parent_prefix) or parent_prefix
+
+        if not new_order:
+            raise InvalidOrderError()
+
+        child_prefix = new_order[0].split('_', 1)[0]
+        child_object_type = get_entity_type_from_prefix(child_prefix) or child_prefix
+
         joiner_object_type = f'{child_object_type}_{parent_object_type}'
 
         # Getting the actual child IDs from the given parent
@@ -659,28 +552,28 @@ def board_blueprint(
             parent_object_id,
             joiner_object_type
         )
-        actual_child_ids = [
-            obj.to_one_relationships[child_object_type].id
-            for obj in joiner_objs
-        ]
+        actual_child_ids: list[str] = []
+        for obj in joiner_objs:
+            child_rel = obj.to_one_relationships.get(child_object_type)
+            child_id = getattr(child_rel, 'id', None)
+            if child_id is None:
+                raise InvalidOrderError()
+            actual_child_ids.append(child_id)
 
         # Ensure the new order includes all and only the child IDs
         if len(actual_child_ids) != len(new_order) or set(actual_child_ids) != set(new_order):
-            raise DataSourceError(
-                'Invalid Order',
-                'Not all child IDs are included '
-                'in the new order, or there are '
-                'extra IDs that are not children.',
-
-                400
-            )
+            raise InvalidOrderError()
 
         # Build a lookup of child ID -> joiner object, which we can use to
         # create the updated joiner objects with the new order values
-        joiner_ids_by_child_id = {
-            obj.to_one_relationships[child_object_type].id: obj.id
-            for obj in joiner_objs
-        }
+        joiner_ids_by_child_id: dict[str, str] = {}
+        for obj in joiner_objs:
+            child_rel = obj.to_one_relationships.get(child_object_type)
+            child_id = getattr(child_rel, 'id', None)
+            joiner_id = getattr(obj, 'id', None)
+            if child_id is None or joiner_id is None:
+                raise InvalidOrderError()
+            joiner_ids_by_child_id[child_id] = joiner_id
 
         # Create new joiner objects with the updated order values
         updated_joiners = [
@@ -704,7 +597,11 @@ def board_blueprint(
 
         Validates that the provided order includes all and only the actual child IDs.
         """
-        new_order = request.json.get('order')
+        payload = request.json or {}
+        new_order = payload.get('order')
+
+        if not isinstance(new_order, list) or not all(isinstance(item, str) for item in new_order):
+            raise InvalidOrderError()
 
         reorder(parent_object_id, new_order)
 
@@ -717,11 +614,7 @@ def board_blueprint(
     def __get_board_entities(*, object_type: str, object_id: str):
         obj = board_ds.get_one(object_type, object_id)
         if obj is None or obj.id is None:
-            raise DataSourceError(
-                'Not Found',
-                f'The given {object_type} was not found.',
-                404
-            )
+            raise NotFoundError(object_type)
 
         all_entities = collect_recursive(board_ds, object_type, [obj], type_hierarchy)
         serialised_entities = serialise_board_entities(all_entities, obj.id, type_hierarchy, id_mapping=None)

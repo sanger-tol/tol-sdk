@@ -4,7 +4,7 @@
 
 from __future__ import annotations
 
-from typing import Any, TYPE_CHECKING
+from typing import Any, Callable, TYPE_CHECKING
 
 from nanoid import generate
 
@@ -20,6 +20,29 @@ PREFIX_MAPPINGS = {
     'zone': 'z',
     'component': 'c',
 }
+
+CUSTOM_ID_ALPHABET = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz'
+
+
+def generate_entity_id(
+    entity_type: str,
+    id_generator: Callable[[str, int], str] = generate,
+    fallback_prefix: str | None = None,
+) -> str:
+    """
+    Generates a prefixed entity ID (e.g. `b_xxxxxxxxxxxx`).
+
+    Args:
+        entity_type: The entity type (e.g. 'board', 'view', 'zone', 'component')
+
+    Returns:
+        A generated entity ID with the mapped prefix.
+    """
+    prefix = PREFIX_MAPPINGS.get(
+        entity_type,
+        fallback_prefix if fallback_prefix is not None else entity_type[:1].lower(),
+    )
+    return f'{prefix}_{id_generator(CUSTOM_ID_ALPHABET, 12)}'
 
 
 def get_entity_type_from_prefix(prefix: str) -> str | None:
@@ -52,6 +75,9 @@ def save_board_entity_and_children(
     new_parent_title: str,
     parent_type: str,
     type_hierarchy: list[str],
+    object_type: str | None = None,
+    parent_id: str | None = None,
+    id_generator: Callable[[str, int], str] = generate,
 ) -> tuple[str, dict[str, str]]:
     """
     Saves the given entities and their relations to the database.
@@ -67,27 +93,35 @@ def save_board_entity_and_children(
         new_parent_title: Title for the parent entity
         parent_type: The type of the parent entity
         type_hierarchy: The hierarchy of entity types
+        object_type: The root copied object type; defaults to the hierarchy root
+        parent_id: Optional parent object ID to attach copied root to
+        id_generator: Callable used to generate random ID suffixes
 
     Returns:
         A tuple of (new_parent_entity_id, id_mapping) where id_mapping
         maps old IDs to newly generated IDs
     """
 
-    custom_alphabet = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz'
-
     root_parent_type = type_hierarchy[0]
+    object_type = object_type or root_parent_type
 
     # Build old -> new ID mapping for all non-joiner types
     id_mapping: dict[str, str] = {}
     for entity_type, objs in entities.items():
         if entity_type in type_hierarchy:
             for obj in objs:
-                prefix = PREFIX_MAPPINGS.get(entity_type, 'x')
-                new_id = f'{prefix}_{generate(custom_alphabet, 12)}'
-                id_mapping[obj.id] = new_id
+                if obj.id is None:
+                    continue
+                id_mapping[obj.id] = generate_entity_id(
+                    entity_type,
+                    id_generator=id_generator,
+                    fallback_prefix='x',
+                )
 
     for entity_type in type_hierarchy:
         for obj in entities.get(entity_type, []):
+            if obj.id is None or obj.id not in id_mapping:
+                continue
             original_user = obj.to_one_relationships.get('user')
             user_stub = board_ds.data_object_factory(
                 type_=original_user.type if original_user else 'user',
@@ -102,7 +136,7 @@ def save_board_entity_and_children(
                 id_=id_mapping[obj.id],
                 attributes={
                     **obj.attributes, 'title': new_parent_title}
-                if entity_type == parent_type else obj.attributes,
+                if entity_type == root_parent_type else obj.attributes,
                 to_one=to_one,
             )
             board_ds.insert(entity_type, [new_obj])
@@ -114,6 +148,10 @@ def save_board_entity_and_children(
             for obj in objs:
                 child_obj = getattr(obj, child_t)
                 parent_obj = getattr(obj, parent_t)
+                if child_obj.id is None or parent_obj.id is None:
+                    continue
+                if child_obj.id not in id_mapping or parent_obj.id not in id_mapping:
+                    continue
                 new_obj = board_ds.data_object_factory(
                     type_=entity_type,
                     attributes={'order': obj.order},
@@ -130,7 +168,46 @@ def save_board_entity_and_children(
                 )
                 board_ds.insert(entity_type, [new_obj])
 
-    return id_mapping[entities[root_parent_type][0].id], id_mapping
+    root_objects = entities.get(object_type, [])
+    root_source_id = next(
+        (obj.id for obj in root_objects if obj.id is not None and obj.id in id_mapping),
+        None,
+    )
+    if root_source_id is None:
+        raise ValueError(f'No valid root object found for {object_type}')
+
+    if parent_id is not None:
+        joiner_type = f'{object_type}_{parent_type}'
+        num_parent_joins = board_ds.get_count(
+            joiner_type,
+            object_filters=DataSourceFilter(
+                and_={
+                    f'{parent_type}.id': {
+                        'eq': {
+                            'value': parent_id
+                        }
+                    }
+                }
+            )
+        )
+        new_root_id = id_mapping[root_source_id]
+        joiner_obj = board_ds.data_object_factory(
+            type_=joiner_type,
+            attributes={'order': num_parent_joins + 1},
+            to_one={
+                object_type: board_ds.data_object_factory(
+                    type_=object_type,
+                    id_=new_root_id,
+                ),
+                parent_type: board_ds.data_object_factory(
+                    type_=parent_type,
+                    id_=parent_id,
+                ),
+            },
+        )
+        board_ds.insert(joiner_type, [joiner_obj])
+
+    return id_mapping[root_source_id], id_mapping
 
 
 def collect_recursive(
