@@ -500,7 +500,7 @@ class TestStsSampleProjectToElasticSampleConverter(TestCase):
                 'sex': 'FEMALE',
                 'organism_part': ['LEG', 'HEAD'],
                 'location': 'test_freezer_tray',
-                'disposed': True,
+                'disposed': expected_disposed,
             })
         assert ret1.species.id == 'test_species'
         assert ret1.tolid.id == 'xxTesTest1'
