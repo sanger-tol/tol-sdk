@@ -9,6 +9,8 @@ from jsonschema import Draft202012Validator
 from tol.core import DataObject
 from tol.core.validate import Validator
 
+EXPECTED_DRAFT = 'https://json-schema.org/draft/2020-12/schema'
+
 
 class JsonSchemaDefinitionValidator(Validator):
     """
@@ -27,6 +29,11 @@ class JsonSchemaDefinitionValidator(Validator):
                 raise TypeError(
                     f'json_schema must be a dict, got {type(self.json_schema).__name__}'
                 )
+            if self.json_schema.get('$schema') != EXPECTED_DRAFT:
+                raise ValueError(
+                    f'json_schema must declare "$schema": "{EXPECTED_DRAFT}"'
+                )
+            Draft202012Validator.check_schema(self.json_schema)
 
     __slots__ = ['__config', '__validator']
     __config: Config
