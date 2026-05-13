@@ -868,6 +868,80 @@ class TestElasticDataSource:
             assert False, 'Expected StopIteration to be called'
         assert mock_elastic_data_source.es.search.call_count == 2
 
+    def test_get_group_stats_recent(self, mock_elastic_data_source: ElasticDataSource):
+        first_ret = {
+            'aggregations': {
+                'counts': {
+                    'after_key': {
+                        'field1': '1234'
+                    },
+                    'buckets': [
+                        {
+                            'key': {
+                                'field1': '1111'
+                            },
+                            'doc_count': 20,
+                            'field4_recent': {
+                                'value': 'val1'
+                            }
+                        },
+                        {
+                            'key': {
+                                'field1': '1112'
+                            },
+                            'doc_count': 18,
+                            'field4_recent': {
+                                'value': None
+                            }
+                        }
+                    ]
+                }
+            }
+        }
+
+        second_ret = {
+            'aggregations': {
+                'counts': {
+                    'buckets': []
+                }
+            }
+        }
+
+        mock_elastic_data_source.es.search.side_effect = [
+            first_ret,
+            second_ret
+        ]
+
+        returned = iter(mock_elastic_data_source.get_group_stats(
+            'obj_type',
+            group_by=['field1'],
+            stats_fields=['field4', 'datefield'],
+            stats=['recent']
+        ))
+        first = next(returned)
+        assert first == {
+            'key': {'field1': '1111'},
+            'stats': {
+                'count': 20,
+                'field4': {'recent': 'val1'}
+            }
+        }
+        second = next(returned)
+        assert second == {
+            'key': {'field1': '1112'},
+            'stats': {
+                'count': 18,
+                'field4': {'recent': None}
+            }
+        }
+        try:
+            next(returned)
+        except StopIteration:
+            pass
+        else:
+            assert False, 'Expected StopIteration to be called'
+        assert mock_elastic_data_source.es.search.call_count == 2
+
     def test_get_supported_types(self, mock_elastic_data_source: ElasticDataSource):
         expected = ['index_1', 'index_2']
         mock_elastic_data_source.es.indices.get_alias.return_value = {

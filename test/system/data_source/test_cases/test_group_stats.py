@@ -174,6 +174,24 @@ class TestGroupStats:
         assert true_stats['count'] == 2
         assert true_stats['list_column']['union'] == ['a', 'b', 'c', 'x', 'y', 'z']
 
+        # Recent stats
+        f = DataSourceFilter()
+        f.and_ = {'datetime_column': {'gte': {'value': datetime(2021, 1, 1, 0, 0, 0)}}}
+        stats = list(data_source.get_group_stats(
+            'root',
+            ['bool_column'],
+            stats_fields=['str_column', 'datetime_column'],
+            stats=['recent'],
+            object_filters=f
+        ))
+        assert len(stats) == 2
+        false_stats = stats[0]['stats']
+        assert false_stats['count'] == 1
+        assert false_stats['str_column']['recent'] == 'test_train'
+        true_stats = stats[1]['stats']
+        assert true_stats['count'] == 2
+        assert true_stats['str_column']['recent'] == 'test_max'
+
         # String min and max
         stats = list(data_source.get_group_stats(
             'root',
