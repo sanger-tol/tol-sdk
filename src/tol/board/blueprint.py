@@ -7,6 +7,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 from flask import Blueprint, request
+
 from nanoid import generate
 
 from .errors import (
