@@ -21,8 +21,6 @@ from ..core import (
     DataSourceFilter
 )
 
-from nanoid import generate
-
 if TYPE_CHECKING:
     from ..sql import SqlDataSource
 
