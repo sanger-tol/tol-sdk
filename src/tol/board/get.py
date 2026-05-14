@@ -1,0 +1,37 @@
+# SPDX-FileCopyrightText: 2024 Genome Research Ltd.
+#
+# SPDX-License-Identifier: MIT
+
+from __future__ import annotations
+
+from collections.abc import Callable
+from typing import Any, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from ..core import DataObject
+    from ..sql import SqlDataSource
+
+
+def get_entity(
+    *,
+    board_ds: SqlDataSource,
+    object_type: str,
+    object_id: str,
+    type_hierarchy: list[str],
+    not_found_error_type: type[Exception],
+    collect_recursive_fn: Callable[..., dict[str, list[DataObject]]],
+    serialise_board_entities_fn: Callable[..., dict[str, Any]],
+) -> tuple[dict[str, Any], int]:
+    obj = board_ds.get_one(object_type, object_id)
+    if obj is None or obj.id is None:
+        raise not_found_error_type(object_type)
+
+    all_entities = collect_recursive_fn(board_ds, object_type, [obj], type_hierarchy)
+    serialised_entities = serialise_board_entities_fn(
+        all_entities,
+        obj.id,
+        type_hierarchy,
+        id_mapping=None,
+    )
+
+    return serialised_entities, 200
