@@ -48,3 +48,21 @@ class FlowUtils:
         if user_extra is None:
             raise ValueError(f'User extra with id {sts_user_id} not found')
         return sts_user.fullname, user_extra.eln_api_key
+
+    @classmethod
+    def get_worklist(cls, bds: DataSource, worklist_name: str) -> str:
+        """
+        Get the worklist with the given name from Benchling, or return None
+        if it doesn't exist. Benchling does not allow searching by name so
+        we have to get all worklists and filter in Python.
+        """
+        if worklist_name is None:
+            return None
+
+        try:
+            for worklist in bds.get_list('worklist'):
+                if worklist.name == worklist_name:
+                    return worklist
+            return None
+        except Exception:
+            return None

@@ -98,3 +98,48 @@ class TestFlowUtilsGetUserNameAndElnApiKey:
             'object_filters', call_args.args[1] if len(call_args.args) > 1 else None
         )
         assert passed_filter.and_['email']['eq']['value'] == 'user@example.com'
+
+
+@pytest.fixture
+def mock_benchling_ds():
+    worklist_a = MagicMock()
+    worklist_a.name = 'Worklist A'
+
+    worklist_b = MagicMock()
+    worklist_b.name = 'Worklist B'
+
+    ds = MagicMock()
+    ds.get_list.return_value = [worklist_a, worklist_b]
+    return ds
+
+
+class TestFlowUtilsGetWorklist:
+
+    def test_returns_matching_worklist(self, mock_benchling_ds):
+        result = FlowUtils.get_worklist(bds=mock_benchling_ds, worklist_name='Worklist A')
+
+        assert result is mock_benchling_ds.get_list.return_value[0]
+        assert result.name == 'Worklist A'
+
+    def test_returns_none_if_name_is_none(self, mock_benchling_ds):
+        result = FlowUtils.get_worklist(bds=mock_benchling_ds, worklist_name=None)
+
+        assert result is None
+        mock_benchling_ds.get_list.assert_not_called()
+
+    def test_returns_none_if_not_found(self, mock_benchling_ds):
+        result = FlowUtils.get_worklist(bds=mock_benchling_ds, worklist_name='Nonexistent')
+
+        assert result is None
+
+    def test_returns_none_if_get_list_raises(self, mock_benchling_ds):
+        mock_benchling_ds.get_list.side_effect = Exception('connection error')
+
+        result = FlowUtils.get_worklist(bds=mock_benchling_ds, worklist_name='Worklist A')
+
+        assert result is None
+
+    def test_calls_get_list_with_worklist_type(self, mock_benchling_ds):
+        FlowUtils.get_worklist(bds=mock_benchling_ds, worklist_name='Worklist B')
+
+        mock_benchling_ds.get_list.assert_called_once_with('worklist')
