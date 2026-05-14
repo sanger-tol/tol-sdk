@@ -245,22 +245,7 @@ class TestUtils:
         result = DataSourceUtils.add_source_order_to_runtime_fields(config)
 
         expected_field = RuntimeFields.coalesce(
-            ['rel_name.provenance.source1.id', 'rel_name.provenance.source2.id']
+            ['rel_name.id.provenance.source1.value', 'rel_name.id.provenance.source2.value']
         )
-        print(expected_field)
-        raise AssertionError(f'Expected field: {expected_field}, got: {result["sample"]["id"]["value"]}')
         assert result == {'sample': {'id': {'value': expected_field}}}
-        
-        
-'''
-species: {
-    id: {
-        _provenance: {
-            source 1: { value: 'source1_id' },
-            source 2: { value: 'source2_id' }
-        },
-        value: coalesce([rel_name.provenance.source1.id, rel_name.provenance.source2.id])
-    }
-}
-'''
 

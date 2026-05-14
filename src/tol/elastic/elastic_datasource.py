@@ -194,7 +194,7 @@ class ElasticDataSource(
                         index=index,
                         objects=objects,
                         id_func=id_func,
-                        field_prefix=provenance
+                        provenance=provenance
                     )
                 ),
                 stats_only=True,
