@@ -25,4 +25,4 @@ from .branching import BranchingValidator  # noqa
 from .unique_value_check import UniqueValueCheckValidator  # noqa
 from .date_sorting import DateSortingValidator  # noqa
 from .taxon_matches_goat import TaxonMatchesGoatValidator  # noqa
-from .json_schema import JsonSchemaValidator  # noqa
+from .json_schema_definition import JsonSchemaDefinitionValidator  # noqa
