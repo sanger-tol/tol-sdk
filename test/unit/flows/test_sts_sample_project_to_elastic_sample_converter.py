@@ -464,7 +464,6 @@ class TestStsSampleProjectToElasticSampleConverter(TestCase):
             ret1 = next(converteds)
             self.assertEqual('test_sample', ret1.id)
             self.assertEqual('sample', ret1.type)
-            self.maxDiff = None
             self.assertEqual(ret1.attributes, {
                 'all_projects': ['test_project'],
                 'programme': ['test_programme'],
