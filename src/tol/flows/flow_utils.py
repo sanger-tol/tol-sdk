@@ -1,0 +1,50 @@
+# SPDX-FileCopyrightText: 2022 Genome Research Ltd.
+#
+# SPDX-License-Identifier: MIT
+
+from ..core import (
+    DataSource,
+    DataSourceFilter,
+)
+
+
+class FlowUtils:
+
+    @classmethod
+    def get_user_name_and_eln_api_key(
+        cls,
+        portaldb_ds: DataSource,
+        sts_ds: DataSource,
+        portal_user_id: str
+    ) -> tuple[str, str]:
+        """
+            Get the user's full name and ELN API key from STS, using the portal user ID to find
+            the user's email address and then using that to find the user in STS.
+            This is needed because the portal user ID is not the same as the STS user ID,
+            but the email address is the same in both systems.
+        """
+        portal_user = portaldb_ds.get_one('user', portal_user_id)
+        email = portal_user.oidc_id
+        f = DataSourceFilter(
+            and_={
+                'email': {
+                    'eq': {
+                        'value': email
+                    }
+                }
+            }
+        )
+        sts_list_users = list(
+            sts_ds.get_list(
+                'user',
+                object_filters=f
+            )
+        )
+        assert len(sts_list_users) == 1
+        sts_user = sts_list_users[0]
+        sts_user_id = sts_user.id
+
+        user_extra = sts_ds.get_one('user_extra', sts_user_id)
+        if user_extra is None:
+            raise ValueError(f'User extra with id {sts_user_id} not found')
+        return sts_user.fullname, user_extra.eln_api_key

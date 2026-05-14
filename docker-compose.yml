@@ -114,6 +114,8 @@ services:
       - ENA_CONTACT_EMAIL
       - PORTAL_URL
       - PORTAL_API_PATH
+      - PORTAL_API_KEY
+      - STS_API_KEY
       - BOLD_API_KEY
       - S3_URI
       - S3_ACCESS_KEY
