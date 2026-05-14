@@ -304,10 +304,11 @@ class TestStsSampleProjectToElasticSampleConverter(TestCase):
             attributes={'programme': 'test_programme'}
         )
 
-        for is_restored, expected_disposed in [
-            (None, True),
-            (False, True),
-            (True, False),
+        for include_disposal, is_restored, expected_disposed in [
+            (False, None, False),
+            (True, None, True),
+            (True, False, True),
+            (True, True, False),
         ]:
             disposal_attributes = {}
             if is_restored is not None:
@@ -416,6 +417,23 @@ class TestStsSampleProjectToElasticSampleConverter(TestCase):
                     'level': 'level1'
                 }
             )
+            sample_to_one = {
+                'location': location,
+                'gal': gal,
+                'preservation_approach': approach,
+                'preservative_solution': solution,
+                'collection_method': method,
+                'hazard_group': hazard_group,
+                'specimen': specimen,
+                'sampleset': sampleset,
+                'manifest': manifest,
+                'tissue_size': tissue_size,
+                'sample_export_options': sample_export_options,
+                'storage_rack': storage_rack,
+            }
+            if include_disposal:
+                sample_to_one['disposal'] = disposal
+
             sample = CoreDataObject(
                 id_='test_sample',
                 type_='sample',
@@ -428,21 +446,7 @@ class TestStsSampleProjectToElasticSampleConverter(TestCase):
                     'sequencescape_study_id': 'cf01ea23-ac45-67e8-9101-11b213141516',
                     'cost_code': 'S12345',
                 },
-                to_one={
-                    'location': location,
-                    'gal': gal,
-                    'preservation_approach': approach,
-                    'preservative_solution': solution,
-                    'collection_method': method,
-                    'hazard_group': hazard_group,
-                    'specimen': specimen,
-                    'sampleset': sampleset,
-                    'manifest': manifest,
-                    'tissue_size': tissue_size,
-                    'sample_export_options': sample_export_options,
-                    'storage_rack': storage_rack,
-                    'disposal': disposal,
-                }
+                to_one=sample_to_one
             )
 
             sample_project = CoreDataObject(
