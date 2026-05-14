@@ -114,9 +114,9 @@ class StsSampleProjectToElasticSampleConverter(
 
             attributes['disposed'] = False
             if 'disposal' in s.to_one_relationships and s.disposal is not None:
-                restored = getattr(s.disposal, 'restored?', None)
-                if restored is not None:
-                    attributes['disposed'] = not bool(restored)
+                restored = s.disposal.restored
+                if restored is True:
+                    attributes['disposed'] = False
                 else:
                     attributes['disposed'] = True
 

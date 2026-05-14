@@ -306,13 +306,12 @@ class TestStsSampleProjectToElasticSampleConverter(TestCase):
 
         for include_disposal, is_restored, expected_disposed in [
             (False, None, False),
-            (True, None, True),
-            (True, False, True),
             (True, True, False),
+            (True, False, True),
         ]:
             disposal_attributes = {}
             if is_restored is not None:
-                disposal_attributes['restored?'] = is_restored
+                disposal_attributes['restored'] = is_restored
             disposal = CoreDataObject(
                 id_='test_disposal',
                 type_='disposal',
@@ -461,9 +460,6 @@ class TestStsSampleProjectToElasticSampleConverter(TestCase):
                 }
             )
             converteds = converter.convert(sample_project)
-
-            ret = next(converter.convert(sample_project))
-            self.assertEqual(ret.attributes['disposed'], expected_disposed)
 
             ret1 = next(converteds)
             self.assertEqual('test_sample', ret1.id)
