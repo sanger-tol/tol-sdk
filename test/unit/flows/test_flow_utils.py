@@ -120,6 +120,7 @@ class TestFlowUtilsGetWorklist:
 
         assert result is mock_benchling_ds.get_list.return_value[0]
         assert result.name == 'Worklist A'
+        mock_benchling_ds.get_list.assert_called_once_with('worklist')
 
     def test_returns_none_if_name_is_none(self, mock_benchling_ds):
         result = FlowUtils.get_worklist(bds=mock_benchling_ds, worklist_name=None)
@@ -139,7 +140,35 @@ class TestFlowUtilsGetWorklist:
 
         assert result is None
 
-    def test_calls_get_list_with_worklist_type(self, mock_benchling_ds):
-        FlowUtils.get_worklist(bds=mock_benchling_ds, worklist_name='Worklist B')
 
-        mock_benchling_ds.get_list.assert_called_once_with('worklist')
+class TestFlowUtilsGetFolder:
+
+    def test_returns_folder_when_found(self, mock_benchling_ds):
+        folder = MagicMock()
+        folder.name = 'My Folder'
+        mock_benchling_ds.get_list.return_value = iter([folder])
+
+        result = FlowUtils.get_folder(bds=mock_benchling_ds, folder_name='My Folder')
+        assert result is folder
+        call_args = mock_benchling_ds.get_list.call_args
+        assert call_args.args[0] == 'folder'
+
+    def test_returns_none_when_name_is_none(self, mock_benchling_ds):
+        result = FlowUtils.get_folder(bds=mock_benchling_ds, folder_name=None)
+
+        assert result is None
+        mock_benchling_ds.get_list.assert_not_called()
+
+    def test_returns_none_when_not_found(self, mock_benchling_ds):
+        mock_benchling_ds.get_list.return_value = iter([])
+
+        result = FlowUtils.get_folder(bds=mock_benchling_ds, folder_name='Missing Folder')
+
+        assert result is None
+
+    def test_returns_none_if_get_list_raises(self, mock_benchling_ds):
+        mock_benchling_ds.get_list.side_effect = Exception('connection error')
+
+        result = FlowUtils.get_worklist(bds=mock_benchling_ds, worklist_name='Worklist A')
+
+        assert result is None

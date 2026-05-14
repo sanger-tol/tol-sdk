@@ -66,3 +66,15 @@ class FlowUtils:
             return None
         except Exception:
             return None
+
+    @classmethod
+    def get_folder(cls, bds: DataSource, folder_name: str) -> str:
+        if folder_name is None:
+            return None
+        try:
+            f = DataSourceFilter()
+            f.and_ = {'name': {'eq': {'value': folder_name}}}
+            folder = next(bds.get_list('folder', object_filters=f))
+        except StopIteration:
+            return None
+        return folder
