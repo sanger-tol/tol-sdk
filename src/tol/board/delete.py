@@ -6,6 +6,9 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+from tol.api_base.auth.error import ForbiddenError
+from tol.board.errors import DeletionError, NotFoundError
+
 from ..core import DataObject, DataSourceFilter
 
 if TYPE_CHECKING:
@@ -147,7 +150,6 @@ def _delete_above(
     object_id: str,
     user_id: str,
     roles: list[str],
-    deletion_error_type: type[Exception],
 ) -> None:
     if object_type == root_parent_type:
         return
@@ -170,7 +172,7 @@ def _delete_above(
     if above_count == 0:
         return
     if above_count > 1:
-        raise deletion_error_type(above_type, object_type)
+        raise DeletionError(above_type, object_type)
 
     (joiner_obj,) = list(board_ds.get_list(joiner_type, object_filters=filt))
 
@@ -180,11 +182,11 @@ def _delete_above(
     if 'warden' not in roles:
         above_obj = getattr(joiner_obj, above_type, None)
         if above_obj is None:
-            raise deletion_error_type(above_type, object_type)
+            raise DeletionError(above_type, object_type)
 
         above_owner_id = getattr(getattr(above_obj, 'user', None), 'id', None)
         if above_owner_id != user_id:
-            raise deletion_error_type(above_type, object_type)
+            raise DeletionError(above_type, object_type)
 
     board_ds.delete(joiner_type, [joiner_obj.id])
 
@@ -197,19 +199,16 @@ def delete_entity(
     parent_id: str,
     user_id: str,
     roles: list[str],
-    forbidden_error_type: type[Exception],
-    not_found_error_type: type[Exception],
-    deletion_error_type: type[Exception],
 ) -> None:
     leaf_child_type = type_hierarchy[-1]
     root_parent_type = type_hierarchy[0]
 
     parent_obj = board_ds.get_one(parent_type, parent_id)
     if parent_obj is None:
-        raise not_found_error_type(parent_type)
+        raise NotFoundError(parent_type)
 
     if getattr(parent_obj.user, 'id', None) != user_id and 'warden' not in roles:
-        raise forbidden_error_type()
+        raise ForbiddenError()
 
     _delete_above(
         board_ds=board_ds,
@@ -219,7 +218,6 @@ def delete_entity(
         object_id=parent_id,
         user_id=user_id,
         roles=roles,
-        deletion_error_type=deletion_error_type,
     )
 
     _delete_recursive(

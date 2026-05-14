@@ -10,16 +10,12 @@ from flask import Blueprint, request
 
 from nanoid import generate
 
+from .constants import TYPE_HIERARCHY
 from .copy import copy_entity
 from .create import add_entity, create_board
 from .delete import delete_entity
 from .errors import (
-    AddError,
-    BadParentError,
-    CopyError,
-    DeletionError,
-    InvalidOrderError,
-    NotFoundError,
+    PayloadError,
     UnknownTypeError,
 )
 from .get import get_entity
@@ -32,19 +28,10 @@ from .utils import (
     save_board_entity_and_children,
     serialise_board_entities,
 )
-from ..api_base.auth import ForbiddenError
 from ..api_base.misc import CtxGetter, default_ctx_getter
 
 if TYPE_CHECKING:
     from ..sql import SqlDataSource
-
-
-TYPE_HIERARCHY = [
-    'board',
-    'view',
-    'zone',
-    'component',
-]
 
 
 def board_blueprint(
@@ -71,8 +58,6 @@ def board_blueprint(
             type_hierarchy=type_hierarchy,
             user_id=ctx_getter().user_id,
             payload=request.json or {},
-            not_found_error_type=NotFoundError,
-            copy_error_type=CopyError,
             collect_recursive_fn=collect_recursive,
             save_board_entity_and_children_fn=save_board_entity_and_children,
             serialise_board_entities_fn=serialise_board_entities,
@@ -89,11 +74,6 @@ def board_blueprint(
             user_id=ctx.user_id,
             roles=ctx.roles,
             payload=request.json or {},
-            add_error_type=AddError,
-            bad_parent_error_type=BadParentError,
-            not_found_error_type=NotFoundError,
-            unknown_type_error_type=UnknownTypeError,
-            forbidden_error_type=ForbiddenError,
             get_entity_type_from_prefix_fn=get_entity_type_from_prefix,
             generate_entity_id_fn=generate_entity_id,
             serialise_board_entities_fn=serialise_board_entities,
@@ -125,9 +105,6 @@ def board_blueprint(
             parent_id=object_id,
             user_id=ctx.user_id,
             roles=ctx.roles,
-            forbidden_error_type=ForbiddenError,
-            not_found_error_type=NotFoundError,
-            deletion_error_type=DeletionError,
         )
 
         return {'deleted': True}, 200
@@ -145,14 +122,16 @@ def board_blueprint(
         payload = request.json or {}
         new_order = payload.get('order')
 
+        if 'order' not in payload:
+            raise PayloadError('You must specify order')
+
         if not isinstance(new_order, list) or not all(isinstance(item, str) for item in new_order):
-            raise InvalidOrderError()
+            raise PayloadError('The field "order" must be a list of strings.')
 
         reorder_entities(
             board_ds=board_ds,
             parent_object_id=parent_object_id,
             new_order=new_order,
-            invalid_order_error_type=InvalidOrderError,
             get_entity_type_from_prefix_fn=get_entity_type_from_prefix,
             get_parent_joiner_objs_fn=get_parent_joiner_objs,
         )
@@ -168,7 +147,6 @@ def board_blueprint(
             object_type=object_type,
             object_id=object_id,
             type_hierarchy=type_hierarchy,
-            not_found_error_type=NotFoundError,
             collect_recursive_fn=collect_recursive,
             serialise_board_entities_fn=serialise_board_entities,
         )

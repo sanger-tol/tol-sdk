@@ -51,10 +51,7 @@ class TestBoardBlueprintAddEntityAndCreateBoard:
 
         r = board_client.post(
             '/create-board',
-            json={
-                'board_title': 'My board',
-                'first_view_title': 'My first view',
-            }
+            json={}
         )
 
         assert r.status_code == 201
@@ -62,7 +59,7 @@ class TestBoardBlueprintAddEntityAndCreateBoard:
 
         assert payload['id'] == 'l_board12345678'
         assert payload['type'] == 'L'
-        assert payload['title'] == 'My board'
+        assert payload['title'] == 'Untitled board'
         assert payload['order'] == ['m_view123456789']
         children = (
             payload['children'][0]
@@ -70,7 +67,7 @@ class TestBoardBlueprintAddEntityAndCreateBoard:
             else payload['children']
         )
         assert 'm_view123456789' in children
-        assert children['m_view123456789']['title'] == 'My first view'
+        assert children['m_view123456789']['title'] == 'View 1'
 
         inserted_types = [call.args[0] for call in cast(MagicMock, board_ds).insert.call_args_list]
         assert inserted_types == ['L', 'M', 'M_L']
@@ -232,6 +229,53 @@ class TestBoardBlueprintAddEntityAndCreateBoard:
 
         assert e.value.title == 'Bad Parent'
         assert e.value.status_code == 400
+
+    def test_add_entity__400_unknown_object_type(
+        self,
+        board_auth_ctx: AuthContext,
+        board_client: FlaskClient,
+    ):
+        """
+        POST add with an unknown object type -> failure (400).
+        """
+
+        board_auth_ctx.user_id = '100'
+
+        with pytest.raises(DataSourceError) as e:
+            board_client.post(
+                '/add-entity/unknown/m_parent',
+                json={'attributes': {'title': 'New X'}},
+            )
+
+        assert e.value.title == 'Unknown Type'
+        assert e.value.status_code == 400
+
+    def test_add_entity__404_parent_not_found(
+        self,
+        board_auth_ctx: AuthContext,
+        board_client: FlaskClient,
+        board_ds: SqlDataSource,
+        monkeypatch: pytest.MonkeyPatch,
+    ):
+        """
+        POST add where the resolved parent does not exist -> failure (404).
+        """
+
+        board_auth_ctx.user_id = '100'
+
+        monkeypatch.setattr(
+            board_blueprint_module,
+            'get_entity_type_from_prefix',
+            lambda _prefix: 'M'
+        )
+
+        cast(MagicMock, board_ds).get_one.return_value = None
+
+        with pytest.raises(DataSourceError) as e:
+            board_client.post('/add-entity/S/m_missing', json={'attributes': {'title': 'New S'}})
+
+        assert e.value.title == 'Not Found'
+        assert e.value.status_code == 404
 
     def test_add_entity__403(
         self,

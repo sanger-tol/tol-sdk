@@ -71,3 +71,11 @@ class DeletionError(DataSourceError):
         """Initialize a DeletionError."""
         detail = f'More than one {above_type}s instances point to this {object_type}.'
         super().__init__(title='Deletion Error', detail=detail, status_code=400)
+
+
+class PayloadError(DataSourceError):
+    """Raised when the request payload is invalid or required fields are missing."""
+
+    def __init__(self, message: str) -> None:
+        """Initialize a PayloadError."""
+        super().__init__(title='Payload Error', detail=message, status_code=400)

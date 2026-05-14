@@ -8,20 +8,11 @@ from typing import Any, Callable, TYPE_CHECKING
 
 from nanoid import generate
 
+from .constants import CUSTOM_ID_ALPHABET, PREFIX_MAPPINGS
 from ..core import DataObject, DataSourceFilter
 
 if TYPE_CHECKING:
     from ..sql import SqlDataSource
-
-
-PREFIX_MAPPINGS = {
-    'board': 'b',
-    'view': 'v',
-    'zone': 'z',
-    'component': 'c',
-}
-
-CUSTOM_ID_ALPHABET = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz'
 
 
 def generate_entity_id(

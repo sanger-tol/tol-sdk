@@ -7,6 +7,9 @@ from __future__ import annotations
 from collections.abc import Callable
 from typing import Any, TYPE_CHECKING
 
+from tol.api_base.auth.error import ForbiddenError
+from tol.board.errors import AddError, BadParentError, NotFoundError, UnknownTypeError
+
 from ..core import DataSourceFilter
 
 if TYPE_CHECKING:
@@ -22,34 +25,29 @@ def add_entity(
     user_id: str,
     roles: list[str],
     payload: dict[str, Any],
-    add_error_type: type[Exception],
-    bad_parent_error_type: type[Exception],
-    not_found_error_type: type[Exception],
-    unknown_type_error_type: type[Exception],
-    forbidden_error_type: type[Exception],
     get_entity_type_from_prefix_fn: Callable[[str], str | None],
     generate_entity_id_fn: Callable[..., str],
     serialise_board_entities_fn: Callable[..., dict[str, Any]],
     id_generator: Callable[..., str],
 ) -> tuple[dict[str, Any], int]:
     if object_type not in type_hierarchy:
-        raise unknown_type_error_type()
+        raise UnknownTypeError()
 
     object_index = type_hierarchy.index(object_type)
     if object_index == 0:
-        raise add_error_type(object_type)
+        raise AddError(object_type)
 
     expected_parent_type = type_hierarchy[object_index - 1]
     parent_type = get_entity_type_from_prefix_fn(parent_id.split('_', 1)[0])
     if parent_type is None or parent_type != expected_parent_type:
-        raise bad_parent_error_type(expected_parent_type)
+        raise BadParentError(expected_parent_type)
 
     parent_obj = board_ds.get_one(parent_type, parent_id)
     if parent_obj is None or parent_obj.id is None:
-        raise not_found_error_type(parent_type)
+        raise NotFoundError(parent_type)
 
     if getattr(parent_obj.user, 'id', None) != user_id and 'warden' not in roles:
-        raise forbidden_error_type()
+        raise ForbiddenError()
 
     attributes = payload.get('attributes', {})
 
@@ -143,9 +141,6 @@ def create_board(
     serialise_board_entities_fn: Callable[..., dict[str, Any]],
     id_generator: Callable[..., str],
 ) -> tuple[dict[str, Any], int]:
-    board_title = payload.get('board_title', 'Untitled board')
-    first_view_title = payload.get('first_view_title', 'View 1')
-
     board_type = type_hierarchy[0]
     view_type = type_hierarchy[1]
 
@@ -160,7 +155,7 @@ def create_board(
         type_=board_type,
         id_=board_id,
         attributes={
-            'title': board_title,
+            'title': 'Untitled board',
             'filter': {},
         },
         to_one={'user': user_stub},
@@ -168,7 +163,7 @@ def create_board(
     board_ds.insert(board_type, [board_obj])
 
     view_attributes = {
-        'title': first_view_title,
+        'title': 'View 1',
         'filter': {},
     }
 
