@@ -145,6 +145,8 @@ def _delete_above(
     root_parent_type: str,
     object_type: str,
     object_id: str,
+    user_id: str,
+    roles: list[str],
     deletion_error_type: type[Exception],
 ) -> None:
     if object_type == root_parent_type:
@@ -174,6 +176,15 @@ def _delete_above(
 
     if joiner_obj.id is None:
         return
+
+    if 'warden' not in roles:
+        above_obj = getattr(joiner_obj, above_type, None)
+        if above_obj is None:
+            raise deletion_error_type(above_type, object_type)
+
+        above_owner_id = getattr(getattr(above_obj, 'user', None), 'id', None)
+        if above_owner_id != user_id:
+            raise deletion_error_type(above_type, object_type)
 
     board_ds.delete(joiner_type, [joiner_obj.id])
 
@@ -206,6 +217,8 @@ def delete_entity(
         root_parent_type=root_parent_type,
         object_type=parent_type,
         object_id=parent_id,
+        user_id=user_id,
+        roles=roles,
         deletion_error_type=deletion_error_type,
     )
 

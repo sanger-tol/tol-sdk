@@ -95,7 +95,7 @@ class TestBoardDelete:
             board_client.delete(
                 '/zone/a'
             )
-            assert e.value.status_code == 400
+        assert e.value.status_code == 400
 
     def test__middle_type__multiple_upstream_fail(
         self,
@@ -135,4 +135,4 @@ class TestBoardDelete:
             board_client.delete(
                 '/zone/a'
             )
-            assert e.value.status_code == 400
+        assert e.value.status_code == 400
