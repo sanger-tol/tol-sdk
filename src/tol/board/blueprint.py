@@ -145,6 +145,7 @@ def board_blueprint(
             type_hierarchy=type_hierarchy,
             collect_recursive_fn=collect_recursive,
             serialise_board_entities_fn=serialise_board_entities,
+            ctx_getter=ctx_getter,
         )
 
     return board_bp

@@ -7,6 +7,7 @@ from __future__ import annotations
 from collections.abc import Callable
 from typing import Any, TYPE_CHECKING
 
+from tol.api_base.misc.auth_context import CtxGetter, default_ctx_getter
 from tol.board.errors import NotFoundError
 
 if TYPE_CHECKING:
@@ -22,6 +23,7 @@ def get_entity(
     type_hierarchy: list[str],
     collect_recursive_fn: Callable[..., dict[str, list[DataObject]]],
     serialise_board_entities_fn: Callable[..., dict[str, Any]],
+    ctx_getter: CtxGetter = default_ctx_getter,
 ) -> tuple[dict[str, Any], int]:
     obj = board_ds.get_one(object_type, object_id)
     if obj is None or obj.id is None:
@@ -33,6 +35,8 @@ def get_entity(
         obj.id,
         type_hierarchy,
         id_mapping=None,
+        board_ds=board_ds,
+        ctx_getter=ctx_getter,
     )
 
     return serialised_entities, 200

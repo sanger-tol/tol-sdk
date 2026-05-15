@@ -10,6 +10,7 @@ from nanoid import generate
 
 from .constants import CUSTOM_ID_ALPHABET, PREFIX_MAPPINGS
 from ..core import DataObject, DataSourceFilter
+from ..api_base.misc import CtxGetter, default_ctx_getter
 
 if TYPE_CHECKING:
     from ..sql import SqlDataSource
@@ -276,7 +277,9 @@ def serialise_board_entities(
     all_entities: dict[str, list[DataObject]],
     parent_id: str,
     type_hierarchy: list[str],
+    board_ds: SqlDataSource,
     id_mapping: dict[str, str] | None = None,
+    ctx_getter: CtxGetter = default_ctx_getter,
 ) -> dict[str, Any]:
     """
     Serialises the given entities into a nested dict structure suitable
@@ -287,6 +290,8 @@ def serialise_board_entities(
         parent_id: The ID of the parent entity to start serialization from
         type_hierarchy: The hierarchy of entity types
         id_mapping: Optional mapping of old IDs to new IDs
+        board_ds: The data source for board operations
+        ctx_getter: Function to get the current context
 
     Returns:
         Nested dict structure representing the entities
@@ -346,6 +351,43 @@ def serialise_board_entities(
                 if child_id in obj_lookup
             }
 
+        if obj.type == 'zone' or obj.type == 'component':
+                result['data_source_instance_id'] = getattr(
+                    obj.data_source_instance, 'id', None)
+                result['ui_api_details'] = getattr(
+                    obj.data_source_instance, 'ui_api_details', None)
+
+        if obj.type == 'board':
+            result['owner_email'] = getattr(obj.user, 'oidc_id', None)
+            ctx = ctx_getter()
+            result['write_privilege'] = (
+                ctx.authenticated
+                and (getattr(obj.user, 'id', None) == ctx.user_id or 'warden' in ctx.roles)
+            )
+
+        if obj.type == 'component':
+            user_config = list(board_ds.get_list(
+                'board_diff',
+                object_filters=DataSourceFilter(
+                    and_={
+                        'component_id': {
+                            'eq': {
+                                'value': obj.id
+                            }
+                        },
+                        'user_id': {
+                            'eq': {
+                                'value': ctx_getter().user_id
+                            }
+                        }
+                    }
+                )
+            )) if ctx_getter().authenticated else []
+            result['config_diff'] = {
+                'id': getattr(user_config[0], 'id', None) if user_config else None,
+                'config': getattr(user_config[0], 'config', None) if user_config else None
+            }
+        
         return result
 
     # We start the recursive serialization at the given parent ID and type
