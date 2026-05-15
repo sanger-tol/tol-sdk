@@ -14,6 +14,40 @@ from tol.sql import SqlDataSource
 
 class TestBoardBlueprintReorder:
 
+    def test_reorder__400_missing_order_payload_field(
+        self,
+        board_client: FlaskClient,
+        board_ds: SqlDataSource,
+    ):
+        """
+        PATCH without the required order field -> payload error (400).
+        """
+
+        with pytest.raises(DataSourceError) as e:
+            board_client.patch('/reorder/view_I', json={})
+
+        assert e.value.title == 'Payload Error'
+        assert e.value.detail == 'You must specify all of: order'
+        assert e.value.status_code == 400
+        board_ds.get_list.assert_not_called()
+
+    def test_reorder__400_order_must_be_list_of_strings(
+        self,
+        board_client: FlaskClient,
+        board_ds: SqlDataSource,
+    ):
+        """
+        PATCH with a malformed order field -> payload error (400).
+        """
+
+        with pytest.raises(DataSourceError) as e:
+            board_client.patch('/reorder/view_I', json={'order': ['zone_a', 1]})
+
+        assert e.value.title == 'Bad Request'
+        assert e.value.detail == 'The field "order" must be a list of strings.'
+        assert e.value.status_code == 400
+        board_ds.get_list.assert_not_called()
+
     def test_reorder__200(
         self,
         board_client: FlaskClient,

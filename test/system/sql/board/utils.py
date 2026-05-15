@@ -18,7 +18,7 @@ def insert_board_hierarchy(
     """
     Inserts all objects in the hierarchy with joins.
 
-    For the smallest one, give an empty list each time.
+    For the leaf child, give an empty list each time.
     """
 
     # build up the users
@@ -87,17 +87,17 @@ def insert_board_hierarchy(
     join_ids = iter(count())
 
     # build up the joining types
-    for i, bigger in enumerate(type_hierarchy[:-1]):
-        smaller = type_hierarchy[i + 1]
-        joiner = f'{smaller}_{bigger}'
+    for i, parent in enumerate(type_hierarchy[:-1]):
+        child = type_hierarchy[i + 1]
+        joiner = f'{child}_{parent}'
 
         objs[joiner] = insert_board_joins(
             board_ds,
             objs,
-            bigger,
+            parent,
             joiner,
-            smaller,
-            obj_hierachy.get(bigger, {}),
+            child,
+            obj_hierachy.get(parent, {}),
             join_ids
         )
 
@@ -143,14 +143,14 @@ def get_board_attributes(
 def insert_board_joins(
     board_ds: SqlDataSource,
     objs: dict[str, dict[str, DataObject]],
-    bigger: str,
+    parent: str,
     joiner: str,
-    smaller: str,
+    child: str,
     type_def: dict[str, tuple[str, list[str]]],
     join_ids: Iterator[int]
 ) -> None:
     """
-    Inserts joining table rows linking smaller entities to their bigger.
+    Inserts joining table rows linking child entities to their parent.
     """
 
     all_pairs = (
@@ -163,8 +163,8 @@ def insert_board_joins(
         (
             next(join_ids),
             (
-                objs[bigger][k],
-                objs[smaller][v]
+                objs[parent][k],
+                objs[child][v]
             )
         )
         for k, v in all_pairs
@@ -178,11 +178,11 @@ def insert_board_joins(
                 'order': join_id
             },
             to_one={
-                bigger: bigger_obj,
-                smaller: smaller_obj
+                parent: parent_obj,
+                child: child_obj
             }
         )
-        for join_id, (bigger_obj, smaller_obj)
+        for join_id, (parent_obj, child_obj)
         in join_defs
     )
 
