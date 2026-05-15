@@ -7,7 +7,7 @@ from __future__ import annotations
 from collections.abc import Callable
 from typing import Any, TYPE_CHECKING
 
-from tol.board.errors import CopyError, NotFoundError, PayloadError
+from .errors import CopyError, NotFoundError, PayloadError
 
 if TYPE_CHECKING:
     from ..core import DataObject
@@ -32,9 +32,7 @@ def copy_entity(
 
     required_payload_fields = ['parent_entity_id']
     if not all(field in payload for field in required_payload_fields):
-        raise PayloadError(
-            f'You must specify all of: {", ".join(required_payload_fields)}'
-        )
+        raise PayloadError(required_payload_fields)
 
     new_parent_title = payload.get('new_parent_entity_title', f'{obj.title} - copy')
     parent_type = str(payload.get('parent_entity_type', 'board'))

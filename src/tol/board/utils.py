@@ -344,7 +344,7 @@ def serialise_board_entities(
                 mapped_child_id: _serialise(obj_lookup[child_id])
                 for child_id, mapped_child_id in zip(child_ids, mapped_child_ids)
                 if child_id in obj_lookup
-            },
+            }
 
         return result
 

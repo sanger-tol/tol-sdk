@@ -27,7 +27,7 @@ class TestBoardBlueprintReorder:
             board_client.patch('/reorder/view_I', json={})
 
         assert e.value.title == 'Payload Error'
-        assert e.value.detail == 'You must specify order'
+        assert e.value.detail == 'You must specify all of: order'
         assert e.value.status_code == 400
         board_ds.get_list.assert_not_called()
 
@@ -43,7 +43,7 @@ class TestBoardBlueprintReorder:
         with pytest.raises(DataSourceError) as e:
             board_client.patch('/reorder/view_I', json={'order': ['zone_a', 1]})
 
-        assert e.value.title == 'Payload Error'
+        assert e.value.title == 'Bad Request'
         assert e.value.detail == 'The field "order" must be a list of strings.'
         assert e.value.status_code == 400
         board_ds.get_list.assert_not_called()

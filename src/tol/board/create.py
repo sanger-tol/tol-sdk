@@ -7,10 +7,13 @@ from __future__ import annotations
 from collections.abc import Callable
 from typing import Any, TYPE_CHECKING
 
+from nanoid import generate
+
 from tol.api_base.auth.error import ForbiddenError
 from tol.board.errors import AddError, BadParentError, NotFoundError, UnknownTypeError
 
 from ..core import DataSourceFilter
+from .utils import generate_entity_id, serialise_board_entities
 
 if TYPE_CHECKING:
     from ..sql import SqlDataSource
@@ -26,10 +29,8 @@ def add_entity(
     roles: list[str],
     payload: dict[str, Any],
     get_entity_type_from_prefix_fn: Callable[[str], str | None],
-    generate_entity_id_fn: Callable[..., str],
-    serialise_board_entities_fn: Callable[..., dict[str, Any]],
-    id_generator: Callable[..., str],
 ) -> tuple[dict[str, Any], int]:
+
     if object_type not in type_hierarchy:
         raise UnknownTypeError()
 
@@ -57,9 +58,9 @@ def add_entity(
     if object_type in ('board', 'view', 'zone', 'component') and 'filter' not in attributes:
         attributes['filter'] = {}
 
-    new_entity_id = generate_entity_id_fn(
+    new_entity_id = generate_entity_id(
         object_type,
-        id_generator=id_generator,
+        id_generator=generate,
         fallback_prefix=object_type[:1],
     )
 
@@ -105,7 +106,7 @@ def add_entity(
     )
     board_ds.insert(joiner_type, [join_obj])
 
-    serialised_entity = serialise_board_entities_fn(
+    serialised_entity = serialise_board_entities(
         {object_type: [new_entity]},
         new_entity_id,
         type_hierarchy,
@@ -137,14 +138,12 @@ def create_board(
     type_hierarchy: list[str],
     user_id: str,
     payload: dict[str, Any],
-    generate_entity_id_fn: Callable[..., str],
-    serialise_board_entities_fn: Callable[..., dict[str, Any]],
-    id_generator: Callable[..., str],
 ) -> tuple[dict[str, Any], int]:
+
     board_type = type_hierarchy[0]
     view_type = type_hierarchy[1]
 
-    board_id = generate_entity_id_fn(board_type, id_generator=id_generator)
+    board_id = generate_entity_id(board_type, id_generator=generate)
 
     user_stub = board_ds.data_object_factory(
         type_='user',
@@ -167,7 +166,7 @@ def create_board(
         'filter': {},
     }
 
-    view_id = generate_entity_id_fn(view_type, id_generator=id_generator)
+    view_id = generate_entity_id(view_type, id_generator=generate)
 
     view_obj = board_ds.data_object_factory(
         type_=view_type,
@@ -211,6 +210,6 @@ def create_board(
         view_type: [view_obj],
         joiner_type: [view_board_obj],
     }
-    serialised = serialise_board_entities_fn(entities, board_id, type_hierarchy)
+    serialised = serialise_board_entities(entities, board_id, type_hierarchy)
 
     return serialised, 201

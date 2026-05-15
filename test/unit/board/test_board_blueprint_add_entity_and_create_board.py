@@ -10,6 +10,7 @@ from flask.testing import FlaskClient
 import pytest
 
 import tol.board.blueprint as board_blueprint_module
+import tol.board.create as board_create_module
 from tol.api_base.auth import ForbiddenError
 from tol.api_base.misc import AuthContext
 from tol.core import DataObject, DataSourceError
@@ -34,7 +35,7 @@ class TestBoardBlueprintAddEntityAndCreateBoard:
 
         ids = iter(['board12345678', 'view123456789'])
         monkeypatch.setattr(
-            board_blueprint_module,
+            board_create_module,
             'generate',
             lambda *_args: next(ids)
         )
@@ -87,7 +88,7 @@ class TestBoardBlueprintAddEntityAndCreateBoard:
 
         ids = iter(['board12345678', 'view123456789'])
         monkeypatch.setattr(
-            board_blueprint_module,
+            board_create_module,
             'generate',
             lambda *_args: next(ids)
         )
@@ -120,7 +121,7 @@ class TestBoardBlueprintAddEntityAndCreateBoard:
 
         ids = iter(['board12345678', 'view123456789'])
         monkeypatch.setattr(
-            board_blueprint_module,
+            board_create_module,
             'generate',
             lambda *_args: next(ids)
         )

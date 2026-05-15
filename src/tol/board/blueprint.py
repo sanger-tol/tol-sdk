@@ -8,8 +8,6 @@ from typing import TYPE_CHECKING
 
 from flask import Blueprint, request
 
-from nanoid import generate
-
 from .constants import TYPE_HIERARCHY
 from .copy import copy_entity
 from .create import add_entity, create_board
@@ -22,13 +20,13 @@ from .get import get_entity
 from .reorder import reorder_entities
 from .utils import (
     collect_recursive,
-    generate_entity_id,
     get_entity_type_from_prefix,
     get_parent_joiner_objs,
     save_board_entity_and_children,
     serialise_board_entities,
 )
 from ..api_base.misc import CtxGetter, default_ctx_getter
+from ..core import DataSourceError
 
 if TYPE_CHECKING:
     from ..sql import SqlDataSource
@@ -75,9 +73,6 @@ def board_blueprint(
             roles=ctx.roles,
             payload=request.json or {},
             get_entity_type_from_prefix_fn=get_entity_type_from_prefix,
-            generate_entity_id_fn=generate_entity_id,
-            serialise_board_entities_fn=serialise_board_entities,
-            id_generator=generate,
         )
 
     @board_bp.post('/create-board')
@@ -87,9 +82,6 @@ def board_blueprint(
             type_hierarchy=type_hierarchy,
             user_id=ctx_getter().user_id,
             payload=request.json or {},
-            generate_entity_id_fn=generate_entity_id,
-            serialise_board_entities_fn=serialise_board_entities,
-            id_generator=generate,
         )
 
     @board_bp.delete('/<string:object_type>/<string:object_id>')
@@ -123,10 +115,14 @@ def board_blueprint(
         new_order = payload.get('order')
 
         if 'order' not in payload:
-            raise PayloadError('You must specify order')
+            raise PayloadError(['order'])
 
         if not isinstance(new_order, list) or not all(isinstance(item, str) for item in new_order):
-            raise PayloadError('The field "order" must be a list of strings.')
+            raise DataSourceError(
+                'Bad Request',
+                'The field "order" must be a list of strings.',
+                400,
+            )
 
         reorder_entities(
             board_ds=board_ds,

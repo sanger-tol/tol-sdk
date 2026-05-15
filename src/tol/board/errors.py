@@ -76,6 +76,7 @@ class DeletionError(DataSourceError):
 class PayloadError(DataSourceError):
     """Raised when the request payload is invalid or required fields are missing."""
 
-    def __init__(self, message: str) -> None:
+    def __init__(self, required_fields: list[str]) -> None:
         """Initialize a PayloadError."""
-        super().__init__(title='Payload Error', detail=message, status_code=400)
+        detail = f'You must specify all of: {", ".join(required_fields)}'
+        super().__init__(title='Payload Error', detail=detail, status_code=400)
