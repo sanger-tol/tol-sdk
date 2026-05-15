@@ -355,8 +355,9 @@ class TestElasticDataSource:
         update_body = converter.convert(ElasticUpdateInputResource(
             'obj_type',
             update1,
-            field_prefix='source_1',
-            candidate_key=['field1']
+            field_prefix='prefix',
+            candidate_key=['field1'],
+            provenance='source_1'
         ))
         expected = {
             'query': {
@@ -372,8 +373,8 @@ class TestElasticDataSource:
                 'lang': 'painless',
                 'params': {
                     'upsertWith': {
-                        'field2': 'value2',
-                        'relationship': {
+                        'prefix_field2': 'value2',
+                        'prefix_relationship': {
                             'id': {'provenance': {'source_1': {'value': 'rel1'}}},
                             'field3': 'string1',
                             'field4': 'string2'
@@ -382,6 +383,8 @@ class TestElasticDataSource:
                 }
             }
         }
+        print(update_body)
+        print(expected)
         assert update_body == expected
         mock_elastic_data_source.es.update_by_query.return_value = (2, 0)
         mock_elastic_data_source.update('obj_type', updates, candidate_key=['field1'])

@@ -34,8 +34,9 @@ class ElasticUpsertInputResource:
 class ElasticUpdateInputResource:
     object_type: str
     update: dict
-    field_prefix: str
     candidate_key: Iterable[str]
+    provenance: str = ''
+    field_prefix: str = ''
 
 
 class DefaultElasticApiParser(DataSourceParser[ElasticApiResource, DataObject]):
@@ -179,7 +180,7 @@ class _ToElasticApiResourceParser:
             return dict_
         ret = {}
         for k, v in dict_.items():
-            if k is not 'id':
+            if k != 'id':
                 ret[prefix + '_' + k] = v
         return ret
 
@@ -291,8 +292,8 @@ class DefaultElasticUpdateInputParser(
         for key in transfer.candidate_key:
             # Don't want key in the upsert as it cannot change anyway
             f.and_[key] = {'eq': {'value': u.pop(key)}}
-        # u = self._prefix_fields(u, transfer.field_prefix)
-        u = self._convert_data_objects_in_update_to_dict(u, transfer.field_prefix)
+        u = self._prefix_fields(u, transfer.field_prefix)
+        u = self._convert_data_objects_in_update_to_dict(u, transfer.provenance)
         query = ElasticFilterConverter(self.__data_source).convert(
             transfer.object_type, object_filters=f
         )
