@@ -12,8 +12,8 @@ from nanoid import generate
 from tol.api_base.auth.error import ForbiddenError
 from tol.board.errors import AddError, BadParentError, NotFoundError, UnknownTypeError
 
-from ..core import DataSourceFilter
 from .utils import generate_entity_id, serialise_board_entities
+from ..core import DataSourceFilter
 
 if TYPE_CHECKING:
     from ..sql import SqlDataSource
