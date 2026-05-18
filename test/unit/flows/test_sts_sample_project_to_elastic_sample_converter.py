@@ -27,7 +27,8 @@ class _MockDataSourceRelational(DataSource, Relational):
                 'specimen', 'preservative_solution', 'collection_method',
                 'sample_person', 'person', 'manifest', 'tissue_size', 'sample_species',
                 'species', 'lifestage', 'sex', 'organism_part', 'sample_species_organism_part',
-                'ext_id', 'strain', 'storage_rack', 'freezer_tray', 'hazard_group']
+                'ext_id', 'strain', 'storage_rack', 'freezer_tray', 'hazard_group',
+                'disposal']
 
     @property
     def attribute_types(self):
@@ -54,6 +55,7 @@ class _MockDataSourceRelational(DataSource, Relational):
             'tissue_size': 'tissue_size',
             'sample_export_options': 'sample_export_options',
             'storage_rack': 'storage_rack',
+            'disposal': 'disposal',
         }
         rc_sample.to_many = {
             'sample_persons': 'sample_person',
@@ -251,7 +253,7 @@ class _MockDataSource(DataSource, Relational):
 
     @property
     def supported_types(self):
-        return ['sample', 'species', 'tolid', 'specimen', 'manifest', 'sampleset']
+        return ['sample', 'species', 'tolid', 'specimen', 'manifest', 'sampleset', 'disposal']
 
     @property
     def attribute_types(self):
@@ -265,7 +267,8 @@ class _MockDataSource(DataSource, Relational):
             'specimen': 'specimen',
             'tolid': 'tolid',
             'manifest': 'manifest',
-            'sampleset': 'sampleset'
+            'sampleset': 'sampleset',
+            'disposal': 'disposal',
         }
         return {'sample': rc_sample}
 
@@ -300,117 +303,120 @@ class TestStsSampleProjectToElasticSampleConverter(TestCase):
             type_='project',
             attributes={'programme': 'test_programme'}
         )
-        location = CoreDataObject(
-            id_='test_gal',
-            type_='location',
-            attributes={
-                'location': 'Country | County | Town',
-                'lat': 12.345678,
-                'long': 23.456789,
-                'elevation': 65,
-                'depth': 200,
-                'habitat': 'Woodland'
-            }
-        )
-        gal = CoreDataObject(
-            id_='test_gal',
-            type_='gal',
-            attributes={
-                'name': 'Test Gal',
-                'abbreviation': 'TESTGAL'
-            }
-        )
-        specimen = CoreDataObject(
-            id_='test_specimen',
-            type_='specimen',
-            attributes={}
-        )
-        sampleset = CoreDataObject(
-            id_='test_sampleset',
-            type_='sampleset',
-            attributes={}
-        )
-        manifest = CoreDataObject(
-            id_='test_manifest',
-            type_='manifest',
-            attributes={}
-        )
-        tissue_size = CoreDataObject(
-            id_='test_tissue_size',
-            type_='tissue_size',
-            attributes={
-                'size': 'huge'
-            }
-        )
-        sample_export_options = CoreDataObject(
-            id_='test_sample_export_options',
-            type_='sample_export_options',
-            attributes={
-                'display_name': 'labwork1'
-            }
-        )
-        approach = CoreDataObject(
-            id_='test_approach',
-            type_='preservation_approach',
-            attributes={
-                'approach': 'approach'
-            }
-        )
-        solution = CoreDataObject(
-            id_='test_solution',
-            type_='preservative_solution',
-            attributes={
-                'solution': 'solution'
-            }
-        )
-        freezer_tray = CoreDataObject(
-            id_='test_freezer_tray',
-            type_='freezer_tray',
-            attributes={}
-        )
-        storage_rack = CoreDataObject(
-            id_='test_storage_rack',
-            type_='storage_rack',
-            attributes={
-            },
-            to_one={
-                'freezer_tray': freezer_tray
-            }
-        )
-        solution = CoreDataObject(
-            id_='test_solution',
-            type_='preservative_solution',
-            attributes={
-                'solution': 'solution'
-            }
-        )
-        method = CoreDataObject(
-            id_='test_method',
-            type_='collection_method',
-            attributes={
-                'method': 'method_desc'
-            }
-        )
-        hazard_group = CoreDataObject(
-            id_='test_hazard_group',
-            type_='hazard_group',
-            attributes={
-                'level': 'level1'
-            }
-        )
-        sample = CoreDataObject(
-            id_='test_sample',
-            type_='sample',
-            attributes={
-                'col_date': '2020-02-02',
-                'original_collection_date': '2011-01-01 12:00:00',
-                'pre_date': '2000-12-12',
-                'public_name': 'xxTesTest1',
-                'other': 'another',
-                'sequencescape_study_id': 'cf01ea23-ac45-67e8-9101-11b213141516',
-                'cost_code': 'S12345',
-            },
-            to_one={
+
+        for include_disposal, is_restored, expected_disposed in [
+            (False, None, False),
+            (True, True, False),
+            (True, False, True),
+        ]:
+            disposal_attributes = {}
+            if is_restored is not None:
+                disposal_attributes['restored'] = is_restored
+            disposal = CoreDataObject(
+                id_='test_disposal',
+                type_='disposal',
+                attributes=disposal_attributes
+            )
+
+            location = CoreDataObject(
+                id_='test_location',
+                type_='location',
+                attributes={
+                    'location': 'Country | County | Town',
+                    'lat': 12.345678,
+                    'long': 23.456789,
+                    'elevation': 65,
+                    'depth': 200,
+                    'habitat': 'Woodland'
+                }
+            )
+            gal = CoreDataObject(
+                id_='test_gal',
+                type_='gal',
+                attributes={
+                    'name': 'Test Gal',
+                    'abbreviation': 'TESTGAL'
+                }
+            )
+            specimen = CoreDataObject(
+                id_='test_specimen',
+                type_='specimen',
+                attributes={}
+            )
+            sampleset = CoreDataObject(
+                id_='test_sampleset',
+                type_='sampleset',
+                attributes={}
+            )
+            manifest = CoreDataObject(
+                id_='test_manifest',
+                type_='manifest',
+                attributes={}
+            )
+            tissue_size = CoreDataObject(
+                id_='test_tissue_size',
+                type_='tissue_size',
+                attributes={
+                    'size': 'huge'
+                }
+            )
+            sample_export_options = CoreDataObject(
+                id_='test_sample_export_options',
+                type_='sample_export_options',
+                attributes={
+                    'display_name': 'labwork1'
+                }
+            )
+            approach = CoreDataObject(
+                id_='test_approach',
+                type_='preservation_approach',
+                attributes={
+                    'approach': 'approach'
+                }
+            )
+            solution = CoreDataObject(
+                id_='test_solution',
+                type_='preservative_solution',
+                attributes={
+                    'solution': 'solution'
+                }
+            )
+            freezer_tray = CoreDataObject(
+                id_='test_freezer_tray',
+                type_='freezer_tray',
+                attributes={}
+            )
+            storage_rack = CoreDataObject(
+                id_='test_storage_rack',
+                type_='storage_rack',
+                attributes={
+                },
+                to_one={
+                    'freezer_tray': freezer_tray
+                }
+            )
+            solution = CoreDataObject(
+                id_='test_solution',
+                type_='preservative_solution',
+                attributes={
+                    'solution': 'solution'
+                }
+            )
+            method = CoreDataObject(
+                id_='test_method',
+                type_='collection_method',
+                attributes={
+                    'method': 'method_desc'
+                }
+            )
+            hazard_group = CoreDataObject(
+                id_='test_hazard_group',
+                type_='hazard_group',
+                attributes={
+                    'level': 'level1'
+                }
+            )
+            sample_to_one = {
                 'location': location,
                 'gal': gal,
                 'preservation_approach': approach,
@@ -424,60 +430,77 @@ class TestStsSampleProjectToElasticSampleConverter(TestCase):
                 'sample_export_options': sample_export_options,
                 'storage_rack': storage_rack,
             }
-        )
+            if include_disposal:
+                sample_to_one['disposal'] = disposal
 
-        sample_project = CoreDataObject(
-            id_='test_sample_project',
-            type_='sample_project',
-            attributes={
-                'is_primary': True,
-            },
-            to_one={
-                'sample': sample,
-                'project': project
-            }
-        )
-        converteds = converter.convert(sample_project)
-        ret1 = next(converteds)
-        self.assertEqual('test_sample', ret1.id)
-        self.assertEqual('sample', ret1.type)
-        self.maxDiff = None
-        self.assertEqual(ret1.attributes, {
-            'all_projects': ['test_project'],
-            'programme': ['test_programme'],
-            'project': 'test_project',
-            'collection_country': 'Country',
-            'collection_locality': 'County | Town',
-            'latitude': 12.345678,
-            'longitude': 23.456789,
-            'elevation': 65,
-            'depth': 200,
-            'habitat': 'Woodland',
-            'gal_abbreviation': 'TESTGAL',
-            'gal_name': 'Test Gal',
-            'preservation_approach': 'approach',
-            'preservative_solution': 'solution',
-            'collection_method_desc': 'method_desc',
-            'hazard_group': 'level1',
-            'tissue_size': 'huge',
-            'lab_work_category': 'labwork1',
-            'col_date': datetime.datetime(2020, 2, 2),
-            'original_collection_date': datetime.datetime(2011, 1, 1, 12),
-            'pre_date': datetime.datetime(2000, 12, 12),
-            'public_name': None,
-            'other': 'another',
-            'action1_name': 'full name1',
-            'action2_name': 'full name2',
-            'sequencescape_study_id': 'cf01ea23-ac45-67e8-9101-11b213141516',
-            'cost_code': 'S12345',
-            'lifestage': 'EMBRYO',
-            'strain': 'Strain',
-            'type1': 'ext_id1',
-            'type2': 'ext_id2',
-            'sex': 'FEMALE',
-            'organism_part': ['LEG', 'HEAD'],
-            'location': 'test_freezer_tray',
-        })
+            sample = CoreDataObject(
+                id_='test_sample',
+                type_='sample',
+                attributes={
+                    'col_date': '2020-02-02',
+                    'original_collection_date': '2011-01-01 12:00:00',
+                    'pre_date': '2000-12-12',
+                    'public_name': 'xxTesTest1',
+                    'other': 'another',
+                    'sequencescape_study_id': 'cf01ea23-ac45-67e8-9101-11b213141516',
+                    'cost_code': 'S12345',
+                },
+                to_one=sample_to_one
+            )
+
+            sample_project = CoreDataObject(
+                id_='test_sample_project',
+                type_='sample_project',
+                attributes={
+                    'is_primary': True,
+                },
+                to_one={
+                    'sample': sample,
+                    'project': project
+                }
+            )
+            converteds = converter.convert(sample_project)
+
+            ret1 = next(converteds)
+            self.assertEqual('test_sample', ret1.id)
+            self.assertEqual('sample', ret1.type)
+            self.assertEqual(ret1.attributes, {
+                'all_projects': ['test_project'],
+                'programme': ['test_programme'],
+                'project': 'test_project',
+                'collection_country': 'Country',
+                'collection_locality': 'County | Town',
+                'latitude': 12.345678,
+                'longitude': 23.456789,
+                'elevation': 65,
+                'depth': 200,
+                'habitat': 'Woodland',
+                'gal_abbreviation': 'TESTGAL',
+                'gal_name': 'Test Gal',
+                'preservation_approach': 'approach',
+                'preservative_solution': 'solution',
+                'collection_method_desc': 'method_desc',
+                'hazard_group': 'level1',
+                'tissue_size': 'huge',
+                'lab_work_category': 'labwork1',
+                'col_date': datetime.datetime(2020, 2, 2),
+                'original_collection_date': datetime.datetime(2011, 1, 1, 12),
+                'pre_date': datetime.datetime(2000, 12, 12),
+                'public_name': None,
+                'other': 'another',
+                'action1_name': 'full name1',
+                'action2_name': 'full name2',
+                'sequencescape_study_id': 'cf01ea23-ac45-67e8-9101-11b213141516',
+                'cost_code': 'S12345',
+                'lifestage': 'EMBRYO',
+                'strain': 'Strain',
+                'type1': 'ext_id1',
+                'type2': 'ext_id2',
+                'sex': 'FEMALE',
+                'organism_part': ['LEG', 'HEAD'],
+                'location': 'test_freezer_tray',
+                'disposed': expected_disposed,
+            })
         assert ret1.species.id == 'test_species'
         assert ret1.tolid.id == 'xxTesTest1'
         assert ret1.specimen.id == 'test_specimen'

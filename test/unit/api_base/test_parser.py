@@ -163,6 +163,25 @@ class TestDefaultParser:
                         },
                     },
                 },
+                {
+                    'type': 'sample_typ',
+                    'id': 'SMPL#042',
+                    'attributes': {
+                        'lims_id': 'JurasicPark#042',
+                    },
+                    'relationships': {
+                        'specimen_rel': {
+                            'data': {
+                                'type': 'specimen_typ',
+                                'id': 'rTyrRex1',
+                            }
+                        },
+                        'dna_rel': {
+                            # Test empty list
+                            'data': [],
+                        },
+                    },
+                },
             ],
             'included': [
                 {
@@ -235,7 +254,7 @@ class TestDefaultParser:
         )
 
         parsed = DefaultParser(mock_rel_ds_dict, req_tree).parse_json_doc(json_doc)
-        smpl09, smpl40 = parsed
+        smpl09, smpl40, smpl42 = parsed
         assert smpl09.id == 'SMPL#009'
         assert smpl40.id == 'SMPL#040'
         assert smpl09.specimen_rel.id == 'rTyrRex1'
@@ -262,6 +281,9 @@ class TestDefaultParser:
         assert len(dna40) == 1
         assert dna40[0].id == 'DNA043'
         assert dna40[0].reads == 6632
+
+        # Should stored an empty list
+        assert smpl42.dna_rel == []
 
         # Test round trip of parsed data back to JSON doc
         view = DefaultView(req_tree, prefix='/data')

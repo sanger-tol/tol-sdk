@@ -744,8 +744,12 @@ class ElasticDataSource(
             stats: list
     ):
         ret = {}
-        for stats_field in stats_fields:
-            for stat in stats:
+        for stat in stats:
+            if stat == 'recent':
+                agg = self.__get_recent_aggregation(object_type, stats_fields)
+                ret[f'{stats_fields[0]}_{stat}'] = agg
+                continue
+            for stats_field in stats_fields:
                 agg = {stat: {'field': self._field_or_keyword(object_type, stats_field)}}
                 if stat == 'union':
                     # This is a bespoke aggregation
@@ -779,17 +783,58 @@ class ElasticDataSource(
         for v in buckets:
             stats_values = {'count': v['doc_count']}
             for stats_field in stats_fields:
-                stats_values[stats_field] = {}
                 for stat in stats:
+                    if f'{stats_field}_{stat}' not in v:  # For recent, this stat may not exist
+                        continue
                     stat_value = v[f'{stats_field}_{stat}']['value']
                     python_type = self.get_python_type_by_name(object_type, stats_field)
                     if python_type == 'datetime' and stat_value is not None \
                             and stat in ['min', 'max']:
                         stat_value = datetime.fromtimestamp(stat_value / 1000)
+                    if stats_field not in stats_values:
+                        stats_values[stats_field] = {}
                     stats_values[stats_field][stat] = stat_value
             all_stats.append({'key': v['key'], 'stats': stats_values})
 
         return after_key, all_stats
+
+    def __get_recent_aggregation(self, object_type, fields):
+        """
+        This function is calculating the most recent value of the first field
+        based on the date in the second field.
+        """
+        value_field = self._field_or_keyword(object_type, fields[0])
+        date_field = self._field_or_keyword(object_type, fields[1])
+        agg = {
+            'scripted_metric': {
+                'init_script': 'state.stat = null; state.date = null',
+                'map_script': f"""
+                    if (doc['{date_field}'].size() > 0 && doc['{value_field}'].size() > 0) {{
+                        def date = doc['{date_field}'].value;
+                        if (state.date == null || date.isAfter(state.date)) {{
+                            state.date = date;
+                            state.stat = doc['{value_field}'].value;
+                        }}
+                    }}
+                """,
+                'combine_script': "return ['stat': state.stat, 'date': state.date]",
+                'reduce_script': """
+                    def ret_stat = null;
+                    def ret_date = null;
+                    for (a in states) {
+                        if (a == null || a['stat'] == null) {
+                            continue;
+                        }
+                        if (ret_date == null || a['date'].isAfter(ret_date)) {
+                            ret_date = a['date'];
+                            ret_stat = a['stat'];
+                        }
+                    }
+                    return ret_stat;
+                """
+            }
+        }
+        return agg
 
     def __get_union_aggregation(self, object_type, field):
         """
