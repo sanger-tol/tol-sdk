@@ -202,11 +202,12 @@ class _ToElasticApiResourceParser:
                 },
                 **one_relation.attributes
             }
-    
+
         return {
             'id': one_relation.id,
             **one_relation.attributes
         }
+
 
 class DefaultElasticUpsertInputParser(
     DataSourceParser[ElasticUpsertInputResource, ElasticApiResource],
