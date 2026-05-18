@@ -15,13 +15,13 @@ from tol.core import (
     DataSourceUtils,
     core_data_object
 )
-from tol.elastic.runtime_fields import RuntimeFields
 from tol.core.operator import (
     DetailGetter,
     GroupStatter,
     ListGetter,
     Relational
 )
+from tol.elastic.runtime_fields import RuntimeFields
 from tol.core.relationship import RelationshipConfig
 
 
@@ -248,4 +248,3 @@ class TestUtils:
             ['rel_name.id.provenance.source1.value', 'rel_name.id.provenance.source2.value']
         )
         assert result == {'sample': {'id': {'value': expected_field}}}
-
