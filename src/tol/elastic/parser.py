@@ -26,7 +26,7 @@ class ElasticUpsertInputResource:
     index: str
     objects: Iterable[DataObject]
     id_func: Callable
-    provenance: str = ''
+    provenance: str | None = None
     field_prefix: str = ''
 
 
@@ -35,7 +35,7 @@ class ElasticUpdateInputResource:
     object_type: str
     update: dict
     candidate_key: Iterable[str]
-    provenance: str = ''
+    provenance: str | None = None
     field_prefix: str = ''
 
 
@@ -187,20 +187,30 @@ class _ToElasticApiResourceParser:
     def _parse_to_one_relation(
         self,
         one_relation: DataObject | None,
-        provenance: str
+        provenance: str | None
     ) -> dict[str, Any] | None:
 
         if one_relation is None:
             return None
+        
+        print('THIS IS A TEST')
+        print(provenance is None)
+        print(provenance is '')
 
+        if provenance is not None:
+            return {
+                'id': {
+                    'provenance': {
+                        provenance: {'value': one_relation.id}
+                    }
+                },
+                **one_relation.attributes
+            }
+    
         return {
-            'id': {
-                'provenance': {
-                    provenance: {'value': one_relation.id}
-                }
-            },
+            'id': one_relation.id,
             **one_relation.attributes
-        }
+        }        
 
 
 class DefaultElasticUpsertInputParser(
@@ -240,7 +250,7 @@ class DefaultElasticUpsertInputParser(
                 }
             }
 
-    def _convert_data_object_to_dict(self, data_object: DataObject, provenance: str) -> dict:
+    def _convert_data_object_to_dict(self, data_object: DataObject, provenance: str | None) -> dict:
         to_ones_dict = {
             k: self._parse_to_one_relation(v, provenance)
             for k, v in data_object._to_one_objects.items()
@@ -308,11 +318,11 @@ class DefaultElasticUpdateInputParser(
             },
         }
 
-    def _convert_data_objects_in_update_to_dict(self, dict_: dict, field_prefix: str) -> dict:
+    def _convert_data_objects_in_update_to_dict(self, dict_: dict, provenance: str | None) -> dict:
         ret = {}
         for k, v in dict_.items():
             if isinstance(v, DataObject):
-                ret[k] = self._parse_to_one_relation(v, field_prefix)
+                ret[k] = self._parse_to_one_relation(v, provenance)
             else:
                 ret[k] = v
         return ret
