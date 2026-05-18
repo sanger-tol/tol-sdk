@@ -9,8 +9,8 @@ from typing import Any, Callable, TYPE_CHECKING
 from nanoid import generate
 
 from .constants import CUSTOM_ID_ALPHABET, PREFIX_MAPPINGS
-from ..core import DataObject, DataSourceFilter
 from ..api_base.misc import CtxGetter, default_ctx_getter
+from ..core import DataObject, DataSourceFilter
 
 if TYPE_CHECKING:
     from ..sql import SqlDataSource
@@ -352,10 +352,10 @@ def serialise_board_entities(
             }
 
         if obj.type == 'zone' or obj.type == 'component':
-                result['data_source_instance_id'] = getattr(
-                    obj.data_source_instance, 'id', None)
-                result['ui_api_details'] = getattr(
-                    obj.data_source_instance, 'ui_api_details', None)
+            result['data_source_instance_id'] = getattr(
+                obj.data_source_instance, 'id', None)
+            result['ui_api_details'] = getattr(
+                obj.data_source_instance, 'ui_api_details', None)
 
         if obj.type == 'board':
             result['owner_email'] = getattr(obj.user, 'oidc_id', None)
@@ -387,7 +387,7 @@ def serialise_board_entities(
                 'id': getattr(user_config[0], 'id', None) if user_config else None,
                 'config': getattr(user_config[0], 'config', None) if user_config else None
             }
-        
+
         return result
 
     # We start the recursive serialization at the given parent ID and type
