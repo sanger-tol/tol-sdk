@@ -144,6 +144,13 @@ def pipeline_steps_blueprint(
         flow_name: str = 'pipeline',
     ) -> str | None:
 
+        if pipeline_id is None:
+            raise DataSourceError(
+                'Bad Request',
+                'Pipeline ID must be provided to run the pipeline.',
+                400
+            )
+        
         flow_params = {
             'upload_id': upload_id,
             'pipeline_id': pipeline_id,
@@ -267,7 +274,7 @@ def pipeline_steps_blueprint(
 
         flow_run_ids = [__insert_flow_run(
             upload_id=upload_id,
-            pipeline_id=existing_by_id[upload_id].pipeline_id,
+            pipeline_id=existing_by_id[upload_id].pipeline.id,
             s3_filename=existing_by_id[upload_id].s3_filename,
             dry_run=False
         ) for upload_id in upload_ids]
