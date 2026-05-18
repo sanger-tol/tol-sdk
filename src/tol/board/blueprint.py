@@ -14,7 +14,6 @@ from .delete import delete_entity
 from .get import get_entity
 from .reorder import reorder_entities
 from .utils import check_auth_and_required_fields
-
 from ..api_base.misc import CtxGetter, default_ctx_getter
 from ..core import DataSourceError
 

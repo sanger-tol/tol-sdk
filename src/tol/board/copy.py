@@ -6,8 +6,6 @@ from __future__ import annotations
 
 from typing import Any, TYPE_CHECKING
 
-
-from .constants import TYPE_HIERARCHY
 from .errors import CopyError, NotFoundError
 from .utils import (
     collect_recursive,
@@ -49,7 +47,7 @@ def copy_entity(
         raise CopyError(object_type)
 
     copied_entity = serialise_board_entities(
-        all_entities, obj.id, TYPE_HIERARCHY, board_ds, id_mapping)
+        all_entities, obj.id, board_ds, id_mapping)
     copied_entity['title'] = new_parent_title
 
     return copied_entity, 201

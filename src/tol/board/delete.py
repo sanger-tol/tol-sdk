@@ -203,7 +203,7 @@ def delete_entity(
 
     parent_type, child_type = get_entity_and_child_type_from_parent_id(parent_id)
 
-    if parent_type not in TYPE_HIERARCHY or child_type not in TYPE_HIERARCHY:
+    if child_type not in TYPE_HIERARCHY:
         raise NotFoundError('board entity')
 
     parent_obj = board_ds.get_one(parent_type, parent_id)

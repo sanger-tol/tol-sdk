@@ -32,6 +32,7 @@ def generate_entity_id(
     Returns:
         A generated entity ID with the mapped prefix.
     """
+
     fallback_prefix = fallback_prefix or entity_type[:1].lower()
     prefix = PREFIX_MAPPINGS.get(entity_type, fallback_prefix)
     return f'{prefix}_{generate(CUSTOM_ID_ALPHABET, 12)}'

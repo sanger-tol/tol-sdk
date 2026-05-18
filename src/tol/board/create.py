@@ -13,6 +13,7 @@ from tol.board.errors import (
     NotFoundError,
     UnknownTypeError
 )
+
 from .utils import (
     generate_entity_id,
     get_entity_and_child_type_from_parent_id,
@@ -33,9 +34,6 @@ def add_entity(
 ) -> tuple[dict[str, Any], int]:
 
     parent_type, child_type = get_entity_and_child_type_from_parent_id(parent_id)
-
-    if parent_type is None or child_type is None:
-        raise NotFoundError(parent_type or 'board entity')
 
     if child_type not in TYPE_HIERARCHY:
         raise UnknownTypeError()

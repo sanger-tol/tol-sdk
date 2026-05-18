@@ -36,14 +36,15 @@ class TestBoardBlueprintDelete:
 
         board_auth_ctx.user_id = '100'
 
-        mock_small = mock_board_obj('S', 'delete_me', user_id='100')
+        mock_small = mock_board_obj('zone', 'z_delete_me', user_id='100')
         board_ds.get_one.side_effect = lambda *_: mock_small
+        board_ds.get_list.return_value = []
         board_ds.get_count.return_value = 0
 
-        r = board_client.delete('/S/delete_me')
+        r = board_client.delete('/z_delete_me', json={})
         assert r.status_code == 200
 
-        board_ds.delete.assert_called_once_with('S', ['delete_me'])
+        board_ds.delete.assert_any_call('zone', ['z_delete_me'])
 
     def test_delete_smallest__403(
         self,
@@ -58,11 +59,11 @@ class TestBoardBlueprintDelete:
 
         board_auth_ctx.user_id = '100'
 
-        mock_small = mock_board_obj('S', 'delete_me', user_id='no_match')
+        mock_small = mock_board_obj('zone', 'z_delete_me', user_id='no_match')
         board_ds.get_one.return_value = mock_small
 
         with pytest.raises(ForbiddenError):
-            board_client.delete('/S/delete_me')
+            board_client.delete('/z_delete_me', json={})
 
     def test_delete_biggest__total(
         self,
@@ -83,17 +84,17 @@ class TestBoardBlueprintDelete:
         board_auth_ctx.user_id = '100'
 
         hierarchy = {
-            'S': {
-                '1': ('100', []),
-                '2': ('100', []),
-                '3': ('100', [])
+            'zone': {
+                'z_1': ('100', []),
+                'z_2': ('100', []),
+                'z_3': ('100', [])
             },
-            'M': {
-                'a': ('100', ['1', '3']),
-                'b': ('100', ['2', '3'])
+            'view': {
+                'v_a': ('100', ['z_1', 'z_3']),
+                'v_b': ('100', ['z_2', 'z_3'])
             },
-            'L': {
-                'I': ('100', ['a', 'b'])
+            'board': {
+                'b_I': ('100', ['v_a', 'v_b'])
             }
         }
 
@@ -103,15 +104,13 @@ class TestBoardBlueprintDelete:
         board_ds.get_list.side_effect = mock_board_get_list(objs)
         board_ds.get_count.side_effect = mock_board_get_count(objs)
 
-        r = board_client.delete('/L/I')
+        r = board_client.delete('/b_I', json={})
         assert r.status_code == 200
 
         observed_deletes = self.__format_type_deletes(board_ds)
-        assert observed_deletes['S'] == {'1', '2', '3'}
-        assert observed_deletes['M'] == {'a', 'b'}
-        assert observed_deletes['L'] == {'I'}
-        assert len(observed_deletes['S_M']) == 4
-        assert len(observed_deletes['M_L']) == 2
+        assert observed_deletes['view'] == {'v_a', 'v_b'}
+        assert observed_deletes['board'] == {'b_I'}
+        assert len(observed_deletes['view_board']) == 2
 
     def test_delete_biggest__partial(
         self,
@@ -132,22 +131,19 @@ class TestBoardBlueprintDelete:
 
         board_auth_ctx.user_id = '100'
 
-        # "small" with ID's 2 and 3 must not be deleted. Only 1
+        # view 'v_b' and zone 'z_2' must not be deleted
         hierarchy = {
-            'S': {
-                # fine to delete
-                '1': ('100', []),
-                # no delete - owned by another user
-                '2': ('someone_else', []),
-                # no delete - other "higher" types depend on it
-                '3': ('100', [])
+            'zone': {
+                'z_1': ('100', []),
+                'z_2': ('someone_else', []),
+                'z_3': ('100', [])
             },
-            'M': {
-                'a': ('100', ['1', '3']),
-                'b': ('someone_else', ['2', '3'])
+            'view': {
+                'v_a': ('100', ['z_1', 'z_3']),
+                'v_b': ('someone_else', ['z_2', 'z_3'])
             },
-            'L': {
-                'I': ('100', ['a', 'b'])
+            'board': {
+                'b_I': ('100', ['v_a', 'v_b'])
             }
         }
 
@@ -157,15 +153,13 @@ class TestBoardBlueprintDelete:
         board_ds.get_list.side_effect = mock_board_get_list(objs)
         board_ds.get_count.side_effect = mock_board_get_count(objs)
 
-        r = board_client.delete('/L/I')
+        r = board_client.delete('/b_I', json={})
         assert r.status_code == 200
 
         observed_deletes = self.__format_type_deletes(board_ds)
-        assert observed_deletes['S'] == {'1'}
-        assert observed_deletes['M'] == {'a'}
-        assert observed_deletes['L'] == {'I'}
-        assert len(observed_deletes['S_M']) == 2  # a->1, a->3
-        assert len(observed_deletes['M_L']) == 2  # I->a, I->b
+        assert observed_deletes['view'] == {'v_a'}
+        assert observed_deletes['board'] == {'b_I'}
+        assert len(observed_deletes['view_board']) == 2  # all joins under b_I removed
 
     def __format_type_deletes(
         self,

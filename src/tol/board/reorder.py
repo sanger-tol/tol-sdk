@@ -25,7 +25,7 @@ def reorder_entities(
 
     parent_type, child_type = get_entity_and_child_type_from_parent_id(parent_object_id)
 
-    if parent_type is None or child_type is None:
+    if child_type is None:
         raise InvalidOrderError()
 
     joiner_object_type = f'{child_type}_{parent_type}'
