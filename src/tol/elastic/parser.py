@@ -192,10 +192,6 @@ class _ToElasticApiResourceParser:
 
         if one_relation is None:
             return None
-        
-        print('THIS IS A TEST')
-        print(provenance is None)
-        print(provenance is '')
 
         if provenance is not None:
             return {
@@ -210,8 +206,7 @@ class _ToElasticApiResourceParser:
         return {
             'id': one_relation.id,
             **one_relation.attributes
-        }        
-
+        }
 
 class DefaultElasticUpsertInputParser(
     DataSourceParser[ElasticUpsertInputResource, ElasticApiResource],
@@ -250,7 +245,11 @@ class DefaultElasticUpsertInputParser(
                 }
             }
 
-    def _convert_data_object_to_dict(self, data_object: DataObject, provenance: str | None) -> dict:
+    def _convert_data_object_to_dict(
+        self,
+        data_object: DataObject,
+        provenance: str | None
+    ) -> dict:
         to_ones_dict = {
             k: self._parse_to_one_relation(v, provenance)
             for k, v in data_object._to_one_objects.items()
