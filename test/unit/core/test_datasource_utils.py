@@ -21,8 +21,8 @@ from tol.core.operator import (
     ListGetter,
     Relational
 )
-from tol.elastic.runtime_fields import RuntimeFields
 from tol.core.relationship import RelationshipConfig
+from tol.elastic.runtime_fields import RuntimeFields
 
 
 @pytest.fixture
