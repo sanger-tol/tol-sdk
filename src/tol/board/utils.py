@@ -4,11 +4,14 @@
 
 from __future__ import annotations
 
-from typing import Any, Callable, TYPE_CHECKING
+from typing import Any, TYPE_CHECKING
 
 from nanoid import generate
 
-from .constants import CUSTOM_ID_ALPHABET, PREFIX_MAPPINGS
+from tol.api_base.auth.error import ForbiddenError
+from tol.board.errors import PayloadError
+
+from .constants import CUSTOM_ID_ALPHABET, PREFIX_MAPPINGS, TYPE_HIERARCHY
 from ..api_base.misc import CtxGetter, default_ctx_getter
 from ..core import DataObject, DataSourceFilter
 
@@ -18,7 +21,6 @@ if TYPE_CHECKING:
 
 def generate_entity_id(
     entity_type: str,
-    id_generator: Callable[[str, int], str] = generate,
     fallback_prefix: str | None = None,
 ) -> str:
     """
@@ -30,34 +32,41 @@ def generate_entity_id(
     Returns:
         A generated entity ID with the mapped prefix.
     """
-    prefix = PREFIX_MAPPINGS.get(
-        entity_type,
-        fallback_prefix if fallback_prefix is not None else entity_type[:1].lower(),
-    )
-    return f'{prefix}_{id_generator(CUSTOM_ID_ALPHABET, 12)}'
+    fallback_prefix = fallback_prefix or entity_type[:1].lower()
+    prefix = PREFIX_MAPPINGS.get(entity_type, fallback_prefix)
+    return f'{prefix}_{generate(CUSTOM_ID_ALPHABET, 12)}'
 
 
-def get_entity_type_from_prefix(prefix: str) -> str | None:
+def get_entity_and_child_type_from_parent_id(parent_id: str) -> tuple[str, str | None]:
     """
     Returns the entity type corresponding to the given prefix.
 
     Args:
-        prefix: A single character prefix (e.g., 'b', 'v', 'z', 'c')
+        parent_id: The ID of the parent entity (e.g., 'b_123456789012')
 
     Returns:
         The entity type string (e.g., 'board', 'view', 'zone', 'component'),
         or None if the prefix is not recognized.
 
     Examples:
-        >>> get_entity_type_from_prefix('b')
-        'board'
-        >>> get_entity_type_from_prefix('v')
-        'view'
-        >>> get_entity_type_from_prefix('x')
-        None
+        >>> get_entity_and_child_type_from_parent_id('b_123456789012')
+        ('board', 'view')
+        >>> get_entity_and_child_type_from_parent_id('v_123456789012')
+        ('view', 'zone')
+        >>> get_entity_and_child_type_from_parent_id('x_123456789012')
+        (None, None)
     """
     reverse_mappings = {v: k for k, v in PREFIX_MAPPINGS.items()}
-    return reverse_mappings.get(prefix)
+
+    prefix = parent_id.split('_', 1)[0]
+    parent_type = reverse_mappings.get(prefix)
+
+    if parent_type is None:
+        raise ValueError(f'Unrecognized parent ID prefix: {prefix}')
+
+    child_type = TYPE_HIERARCHY[TYPE_HIERARCHY.index(parent_type) + 1] if parent_type else None
+
+    return parent_type, child_type
 
 
 def save_board_entity_and_children(
@@ -66,10 +75,8 @@ def save_board_entity_and_children(
     user_id: str,
     new_parent_title: str,
     parent_type: str,
-    type_hierarchy: list[str],
     object_type: str | None = None,
     parent_id: str | None = None,
-    id_generator: Callable[[str, int], str] = generate,
 ) -> tuple[str, dict[str, str]]:
     """
     Saves the given entities and their relations to the database.
@@ -94,23 +101,19 @@ def save_board_entity_and_children(
         maps old IDs to newly generated IDs
     """
 
-    root_parent_type = type_hierarchy[0]
+    root_parent_type = TYPE_HIERARCHY[0]
     object_type = object_type or root_parent_type
 
     # Build old -> new ID mapping for all non-joiner types
     id_mapping: dict[str, str] = {}
     for entity_type, objs in entities.items():
-        if entity_type in type_hierarchy:
+        if entity_type in TYPE_HIERARCHY:
             for obj in objs:
                 if obj.id is None:
                     continue
-                id_mapping[obj.id] = generate_entity_id(
-                    entity_type,
-                    id_generator=id_generator,
-                    fallback_prefix='x',
-                )
+                id_mapping[obj.id] = generate_entity_id(entity_type)
 
-    for entity_type in type_hierarchy:
+    for entity_type in TYPE_HIERARCHY:
         for obj in entities.get(entity_type, []):
             if obj.id is None or obj.id not in id_mapping:
                 continue
@@ -134,8 +137,8 @@ def save_board_entity_and_children(
             board_ds.insert(entity_type, [new_obj])
 
     for entity_type, objs in entities.items():
-        if entity_type not in type_hierarchy:
-            parent_t = next(t for t in type_hierarchy if entity_type.endswith(f'_{t}'))
+        if entity_type not in TYPE_HIERARCHY:
+            parent_t = next(t for t in TYPE_HIERARCHY if entity_type.endswith(f'_{t}'))
             child_t = entity_type[: -(len(parent_t) + 1)]
             for obj in objs:
                 child_obj = getattr(obj, child_t)
@@ -206,7 +209,6 @@ def collect_recursive(
     board_ds: SqlDataSource,
     object_type: str,
     parent_objs: list[DataObject],
-    type_hierarchy: list[str],
     collected: dict[str, list[DataObject]] | None = None,
 ) -> dict[str, list[DataObject]]:
     """
@@ -230,15 +232,15 @@ def collect_recursive(
     if collected is None:
         collected = {}
 
-    leaf_child_type = type_hierarchy[-1]
+    leaf_child_type = TYPE_HIERARCHY[-1]
 
     collected.setdefault(object_type, []).extend(parent_objs)
 
     if object_type == leaf_child_type:
         return collected
 
-    parent_index = type_hierarchy.index(object_type)
-    child_type = type_hierarchy[parent_index + 1]
+    parent_index = TYPE_HIERARCHY.index(object_type)
+    child_type = TYPE_HIERARCHY[parent_index + 1]
     joiner_type = f'{child_type}_{object_type}'
 
     all_joins: list[DataObject] = []
@@ -268,7 +270,7 @@ def collect_recursive(
     collected.setdefault(joiner_type, []).extend(all_joins)
 
     if all_child_objs:
-        collect_recursive(board_ds, child_type, all_child_objs, type_hierarchy, collected)
+        collect_recursive(board_ds, child_type, all_child_objs, collected)
 
     return collected
 
@@ -276,7 +278,6 @@ def collect_recursive(
 def serialise_board_entities(
     all_entities: dict[str, list[DataObject]],
     parent_id: str,
-    type_hierarchy: list[str],
     board_ds: SqlDataSource,
     id_mapping: dict[str, str] | None = None,
     ctx_getter: CtxGetter = default_ctx_getter,
@@ -302,8 +303,8 @@ def serialise_board_entities(
     children_lookup: dict[str, list[str]] = {}
 
     for entity_type, objs in all_entities.items():
-        if entity_type not in type_hierarchy:
-            parent_type = next(t for t in type_hierarchy if entity_type.endswith(f'_{t}'))
+        if entity_type not in TYPE_HIERARCHY:
+            parent_type = next(t for t in TYPE_HIERARCHY if entity_type.endswith(f'_{t}'))
             child_type = entity_type[: -(len(parent_type) + 1)]
             for obj in sorted(objs, key=lambda o: getattr(o, 'order', 0)):
                 parent_obj = getattr(obj, parent_type)
@@ -315,7 +316,7 @@ def serialise_board_entities(
     obj_lookup: dict[str, DataObject] = {
         str(obj.id): obj
         for entity_type, objs in all_entities.items()
-        if entity_type in type_hierarchy
+        if entity_type in TYPE_HIERARCHY
         for obj in objs
     }
 
@@ -428,3 +429,32 @@ def get_parent_joiner_objs(
         joiner_object_type,
         object_filters=f
     ))
+
+
+def check_auth_and_required_fields(
+    ctx_getter: CtxGetter,
+    payload: dict[str, Any],
+    required_fields: list[str] | None = None,
+) -> None:
+    """
+    Checks that the user is authenticated and that the required fields are present in the payload.
+
+    Args:
+        ctx_getter: Function to get the current context
+        payload: The request payload to check
+        required_fields: List of required field names
+
+    Raises:
+        ForbiddenError: If the user is not authenticated
+        PayloadError: If any required fields are missing
+    """
+    ctx = ctx_getter()
+    if not ctx.authenticated:
+        raise ForbiddenError()
+
+    if required_fields is None:
+        required_fields = []
+
+    missing_fields = [field for field in required_fields if field not in payload]
+    if missing_fields:
+        raise PayloadError(missing_fields)

@@ -7,7 +7,9 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 from tol.api_base.auth.error import ForbiddenError
+from tol.board.constants import TYPE_HIERARCHY
 from tol.board.errors import DeletionError, NotFoundError
+from tol.board.utils import get_entity_and_child_type_from_parent_id
 
 from ..core import DataObject, DataSourceFilter
 
@@ -77,7 +79,6 @@ def _get_deletable_children(
 def _delete_recursive(
     *,
     board_ds: SqlDataSource,
-    type_hierarchy: list[str],
     leaf_child_type: str,
     parent_type: str,
     parent_objs: list[DataObject],
@@ -90,8 +91,8 @@ def _delete_recursive(
         all_deletable_children: list[DataObject] = []
         all_join_ids: list[str] = []
 
-        parent_index = type_hierarchy.index(parent_type)
-        child_type = type_hierarchy[parent_index + 1]
+        parent_index = TYPE_HIERARCHY.index(parent_type)
+        child_type = TYPE_HIERARCHY[parent_index + 1]
         joiner_type = f'{child_type}_{parent_type}'
 
         for parent_obj in parent_objs:
@@ -129,7 +130,6 @@ def _delete_recursive(
 
         _delete_recursive(
             board_ds=board_ds,
-            type_hierarchy=type_hierarchy,
             leaf_child_type=leaf_child_type,
             parent_type=child_type,
             parent_objs=all_deletable_children,
@@ -144,7 +144,6 @@ def _delete_recursive(
 def _delete_above(
     *,
     board_ds: SqlDataSource,
-    type_hierarchy: list[str],
     root_parent_type: str,
     object_type: str,
     object_id: str,
@@ -154,8 +153,8 @@ def _delete_above(
     if object_type == root_parent_type:
         return
 
-    object_index = type_hierarchy.index(object_type)
-    above_type = type_hierarchy[object_index - 1]
+    object_index = TYPE_HIERARCHY.index(object_type)
+    above_type = TYPE_HIERARCHY[object_index - 1]
     joiner_type = f'{object_type}_{above_type}'
 
     filt = DataSourceFilter(
@@ -194,26 +193,29 @@ def _delete_above(
 def delete_entity(
     *,
     board_ds: SqlDataSource,
-    type_hierarchy: list[str],
-    parent_type: str,
     parent_id: str,
     user_id: str,
     roles: list[str],
 ) -> None:
-    leaf_child_type = type_hierarchy[-1]
-    root_parent_type = type_hierarchy[0]
+
+    if parent_id is None:
+        raise NotFoundError(parent_id)
+
+    parent_type, child_type = get_entity_and_child_type_from_parent_id(parent_id)
+
+    if parent_type not in TYPE_HIERARCHY or child_type not in TYPE_HIERARCHY:
+        raise NotFoundError('board entity')
 
     parent_obj = board_ds.get_one(parent_type, parent_id)
     if parent_obj is None:
-        raise NotFoundError(parent_type)
+        raise NotFoundError('board entity')
 
     if getattr(parent_obj.user, 'id', None) != user_id and 'warden' not in roles:
         raise ForbiddenError()
 
     _delete_above(
         board_ds=board_ds,
-        type_hierarchy=type_hierarchy,
-        root_parent_type=root_parent_type,
+        root_parent_type=parent_type,
         object_type=parent_type,
         object_id=parent_id,
         user_id=user_id,
@@ -222,8 +224,7 @@ def delete_entity(
 
     _delete_recursive(
         board_ds=board_ds,
-        type_hierarchy=type_hierarchy,
-        leaf_child_type=leaf_child_type,
+        leaf_child_type=child_type,
         parent_type=parent_type,
         parent_objs=[parent_obj],
         user_id=user_id,
