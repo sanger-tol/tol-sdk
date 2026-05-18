@@ -150,7 +150,7 @@ def pipeline_steps_blueprint(
                 'Pipeline ID must be provided to run the pipeline.',
                 400
             )
-        
+
         flow_params = {
             'upload_id': upload_id,
             'pipeline_id': pipeline_id,

@@ -5,7 +5,6 @@
 import os
 from datetime import datetime
 from unittest.mock import create_autospec
-from xmlrpc import client
 
 from flask.testing import FlaskClient
 
@@ -310,7 +309,10 @@ class TestRunningPipelinesWithDataSources:
 
         sql_ds.data_object_factory = self.__do_factory
 
-        upload = self.__mock_upload('123456', pipeline_id='111111')  # Database has different pipeline_id
+        upload = self.__mock_upload(
+            '123456',
+            pipeline_id='111111',  # Database has different pipeline_id
+        )
         upload.validation_status = 'validation_system_error'
         sql_ds.get_list.return_value = [upload]
 
