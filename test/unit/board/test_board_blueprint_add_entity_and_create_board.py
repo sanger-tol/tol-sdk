@@ -212,7 +212,8 @@ class TestBoardBlueprintAddEntityAndCreateBoard:
         board_auth_ctx.user_id = '100'
 
         with pytest.raises(Exception):
-            board_client.post('/add-entity/c_component123', json={'attributes': {'title': 'New zone'}})
+            board_client.post(
+                '/add-entity/c_component123', json={'attributes': {'title': 'New zone'}})
 
     def test_add_entity__400_unknown_object_type(
         self,
