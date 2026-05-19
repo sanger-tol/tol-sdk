@@ -174,6 +174,36 @@ class TestRunningPipelinesWithDataSources:
             'upload_and_flow_run_ids': [['123456', 'run_123456']]
         }
 
+    def test_revalidate_upload__400_no_pipeline_id(
+        self,
+        client: FlaskClient,
+        ctx: AuthContext,
+        sql_ds: SqlDataSource,
+        prefect_ds: PrefectDataSource,
+        role: str
+    ):
+        """When the upload has no pipeline_id, revalidation should return 400"""
+        ctx.user_id = '1001'
+        ctx.roles = [role]
+
+        sql_ds.data_object_factory = self.__do_factory
+
+        upload = self.__mock_upload('123456', pipeline_id=None)
+        upload.validation_status = 'validation_system_error'
+        sql_ds.get_list.return_value = [upload]
+
+        with pytest.raises(DataSourceError) as e:
+            client.post(
+                '/run-pipeline/revalidate',
+                json={
+                    'data': {
+                        'upload_ids': ['123456']
+                    }
+                }
+            )
+
+        assert e.value.status_code == 400
+
     def __do_factory(
         self,
         type_: str,
@@ -212,17 +242,21 @@ class TestRunningPipelinesWithDataSources:
 
         return mock_obj
 
-    def __mock_upload(self, id_: str) -> DataObject:
+    def __mock_upload(self, id_: str, pipeline_id: str = '123123') -> DataObject:
         mock_obj: DataObject = create_autospec(DataObject)
 
         mock_obj.type = 'upload'
         mock_obj.id = id_
 
+        pipeline_mock = create_autospec(DataObject)
+        pipeline_mock.id = pipeline_id
+        mock_obj.pipeline = pipeline_mock
+
         attributes = {
             's3_bucket': 's3://bucket/path/to/file',
             's3_filename': 'file.xlsx',
             'spreadsheet_config': 'some_config',
-            'pipeline_id': '123123',
+            'pipeline_id': pipeline_id,
             'destination': 'some_destination',
             'date_started': datetime.now().isoformat()
         }
@@ -260,3 +294,48 @@ class TestRunningPipelinesWithDataSources:
         mock_obj.id = id_
 
         return mock_obj
+
+    def test_revalidate_upload_with_explicit_pipeline_id__200(
+        self,
+        client: FlaskClient,
+        ctx: AuthContext,
+        sql_ds: SqlDataSource,
+        prefect_ds: PrefectDataSource,
+        role: str
+    ):
+        """Test that pipeline_id from request body is used instead of database value"""
+        ctx.user_id = '1001'
+        ctx.roles = [role]
+
+        sql_ds.data_object_factory = self.__do_factory
+
+        upload = self.__mock_upload(
+            '123456',
+            pipeline_id='111111',  # Database has different pipeline_id
+        )
+        upload.validation_status = 'validation_system_error'
+        sql_ds.get_list.return_value = [upload]
+
+        prefect_ds.insert.return_value = [
+            self.__do_factory(
+                type_='flow_run',
+                id_='run_123456',
+                attributes={'parameters': {}},
+            )
+        ]
+
+        response = client.post(
+            '/run-pipeline/revalidate',
+            json={
+                'data': {
+                    'upload_ids': ['123456'],
+                    'pipeline_id': 999999  # Override with different pipeline_id
+                }
+            }
+        )
+
+        assert response.status_code == 200
+        assert response.json == {
+            'success': True,
+            'upload_and_flow_run_ids': [['123456', 'run_123456']]
+        }
