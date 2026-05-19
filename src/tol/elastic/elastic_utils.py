@@ -8,6 +8,7 @@ from caseconverter import kebabcase
 
 from tol.core import DataSource
 
+
 class ElasticUtils:
 
     @staticmethod
@@ -49,17 +50,17 @@ class ElasticUtils:
                 print(f'DELETE INDEX: {index_name}')
             else:
                 eds.es.indices.delete(
-                   index=f'{index_name}'
+                    index=f'{index_name}'
                 )
 
     @classmethod
     def update_aliases(
-        self,
+        cls,
         eds: DataSource,
         mappings: dict,
         dry_run: bool = True
     ):
-        base_prefix = self._base_prefix(eds)
+        base_prefix = cls._base_prefix(eds)
         aliases = []
         for object_type in eds.supported_types:
             for env, mapping in mappings.items():

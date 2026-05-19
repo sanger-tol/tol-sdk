@@ -71,7 +71,7 @@ class TestUpdateAliases:
     def mappings(self):
         return {
             'production': {'old': '2024-09', 'new': '2024-10'},
-            'staging':    {'old': '2024-08', 'new': '2024-09'},
+            'staging': {'old': '2024-08', 'new': '2024-09'},
         }
 
     def test_dry_run_does_not_call_update_aliases(self, mock_eds, mappings):
