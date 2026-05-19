@@ -119,7 +119,7 @@ def board_blueprint(
         - None
         """
 
-        payload = request.json or {}
+        payload = request.get_json(silent=True) or {}
         ctx = ctx_getter()
 
         check_auth_and_required_fields(

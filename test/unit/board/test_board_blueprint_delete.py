@@ -215,6 +215,7 @@ class TestBoardBlueprintDelete:
         mock_small = mock_board_obj('zone', 'z_delete_me', user_id='other_user')
         board_ds.get_one.return_value = mock_small
         board_ds.get_list.return_value = []
+        board_ds.get_count.return_value = 0
 
         r = board_client.delete('/z_delete_me', json={})
 

@@ -277,7 +277,7 @@ def delete_entity(
 
     _delete_above(
         board_ds=board_ds,
-        root_parent_type=parent_type,
+        root_parent_type=TYPE_HIERARCHY[0],
         object_type=parent_type,
         object_id=parent_id,
         user_id=user_id,
