@@ -3,6 +3,7 @@
 import logging
 import re
 from typing import Iterable
+from dataclasses import dataclass
 
 from benchling_sdk.errors import BenchlingError
 from benchling_sdk.models import NamingStrategy
@@ -37,8 +38,8 @@ class StsSampleToCasmBenchlingConverterFactory:
             'identifier': 'scientific_name',
             'relationship_identifier': 'target_species',
         },
-        'labwhere': {
-            'identifier': 'labwhere_id',
+        'tray': {
+            'identifier': 'tray_id',
             'relationship_identifier': 'storage_rack',
         },
         'gal': {
@@ -67,12 +68,12 @@ class StsSampleToCasmBenchlingConverterFactory:
             },
             'storage': {
                 'attribute_map': {
-                    'barcode': 'labwhere',
+                    'barcode': 'tray',
                 },
                 'primary_attribute': 'barcode',
                 'primary_attribute_type': 'attribute',
                 'benchling_relationships': [],
-                'sts_relationships': ['labwhere'],
+                'sts_relationships': ['tray'],
                 'polymorphic_benchling_relationships': [],
                 'converted_value_identifiers': [],
                 'stored_values': {},
@@ -157,7 +158,7 @@ class StsSampleToCasmBenchlingConverterFactory:
                     'sample_metadata_id_v1': 'casm_sample_metadata_v1',
                     'sample_type_v1': 'sample_format',
                     'date_created_v1': 'created_on',
-                    'hazard_group_v1': 'hazard_group',
+                    'hazard_group_v1': 'computed_hazard_group',
                     'genetically_modified_v1': 'genetically_modified',
                     'status_manual_v1': 'sample_status',
                     'programme_id_manual_v1': 'INTERNAL_CASM_SAMPLE_NAME',
@@ -170,7 +171,6 @@ class StsSampleToCasmBenchlingConverterFactory:
                 ],
                 'sts_relationships': [
                     'sample_status',
-                    'hazard_group',
                 ],
                 'polymorphic_benchling_relationships': [],
                 'converted_value_identifiers': [],
@@ -281,8 +281,8 @@ class StsSampleToCasmBenchlingConverterFactory:
                 'attribute_map': {
                     'source_entity_id': 'casm_sample_v1',
                     'destination_container_id': 'container',
-                    'transfer_quantity': 'VOLUME_UL',
-                    'transfer_concentration': 'CONCENTRATION_NG_UL',
+                    # 'transfer_quantity': 'VOLUME_UL',
+                    # 'transfer_concentration': 'CONCENTRATION_NG_UL',
                 },
                 'primary_attribute': None,
                 'benchling_relationships': ['casm_sample_v1'],
@@ -310,12 +310,12 @@ class StsSampleToCasmBenchlingConverterFactory:
             },
             'storage': {
                 'attribute_map': {
-                    'barcode': 'labwhere',
+                    'barcode': 'tray',
                 },
                 'primary_attribute': 'barcode',
                 'primary_attribute_type': 'attribute',
                 'benchling_relationships': [],
-                'sts_relationships': ['labwhere'],
+                'sts_relationships': ['tray'],
                 'polymorphic_benchling_relationships': [],
                 'converted_value_identifiers': [],
                 'stored_values': {},
@@ -403,7 +403,7 @@ class StsSampleToCasmBenchlingConverterFactory:
                     'sample_metadata_id': 'casm_sample_metadata',
                     'sample_type': 'sample_format',
                     'date_created': 'created_on',
-                    'safety_class': 'hazard_group',
+                    'safety_class': 'computed_hazard_group',
                     'genetically_modified': 'genetically_modified',
                     'status_manual': 'sample_status',
                     'programme_id_manual': 'INTERNAL_CASM_SAMPLE_NAME',
@@ -416,7 +416,6 @@ class StsSampleToCasmBenchlingConverterFactory:
                 ],
                 'sts_relationships': [
                     'sample_status',
-                    'hazard_group',
                 ],
                 'polymorphic_benchling_relationships': [],
                 'converted_value_identifiers': [],
@@ -457,7 +456,7 @@ class StsSampleToCasmBenchlingConverterFactory:
                 'converted_value_identifiers': [],
                 'stored_values': {},
             },
-            '12x12_box': {
+            '12x12_box_v2': {
                 'attribute_map': {
                     'barcode': 'storage_rack',
                     'parent_storage_id': 'storage'
@@ -499,7 +498,7 @@ class StsSampleToCasmBenchlingConverterFactory:
                 'primary_attribute': 'barcode',
                 'primary_attribute_type': 'schema_field',
                 'benchling_relationships': [
-                    '12x12_box',
+                    '12x12_box_v2',
                 ],
                 'sts_relationships': [],
                 'polymorphic_benchling_relationships': [],
@@ -527,8 +526,8 @@ class StsSampleToCasmBenchlingConverterFactory:
                 'attribute_map': {
                     'source_entity_id': 'casm_sample',
                     'destination_container_id': 'container',
-                    'transfer_quantity': 'VOLUME_UL',
-                    'transfer_concentration': 'CONCENTRATION_NG_UL',
+                    # 'transfer_quantity': 'VOLUME_UL',
+                    # 'transfer_concentration': 'CONCENTRATION_NG_UL',
                 },
                 'primary_attribute': None,
                 'benchling_relationships': ['casm_sample'],
@@ -589,7 +588,7 @@ class StsSampleToCasmBenchlingConverterFactory:
             },
             'box_and_position': {
                 'values': [
-                    '12x12_box',
+                    '12x12_box_v2',
                     'TUBE_WELL_POSITION'
                 ],
                 'separator': ':'
@@ -677,12 +676,34 @@ class StsSampleToCasmBenchlingConverterFactory:
                 'live biological sample from infectious organism': 'Tissue',
                 'biological sample/tissue from non-infectious organism': 'Tissue',
                 'default': 'DNA'
-            }
+            },
+
         }
     }
     """
         Map of replacements for string objects. Mainly used for data cleanup
     """
+
+    COMPUTED_VALUES = {
+        'production': {
+            'computed_hazard_group': {
+                'computed_from': 'sample_format',
+                'values': {
+                    'Tissue': 'HG2',
+                    'default': 'HG1',
+                }
+            }
+        },
+        'staging': {
+            'computed_hazard_group': {
+                'computed_from': 'sample_format',
+                'values': {
+                    'Tissue': 'HG2',
+                    'default': 'HG1',
+                }
+            }
+        }
+    }
 
     DESTINATION_OBJECT_TYPES = {
         'production': {
@@ -697,7 +718,7 @@ class StsSampleToCasmBenchlingConverterFactory:
         },
         'staging': {
             'box_or_plate': {
-                'RACK_TUBE': '12x12_box',
+                'RACK_TUBE': '12x12_box_v2',
                 'PLATE_WELL': 'casm_96_well_plate'
             },
             'container': {
@@ -823,6 +844,18 @@ class StsSampleToCasmBenchlingConverterFactory:
         factory = self
 
         class StsSampleToCasmBenchlingConverter(DataObjectToDataObjectOrUpdateConverter):
+            @dataclass(slots=True, frozen=True, kw_only=True)
+            class Config:
+                pass
+
+            __slots__ = ['__config']
+            __config: Config
+
+            def __init__(self, data_object_factory, config: Config) -> None:
+                super().__init__(data_object_factory)
+                self.__config = config
+                self._data_object_factory = data_object_factory
+
             def convert(self, data_object: DataObject) -> Iterable[DataObject]:
                 sample = data_object
 
@@ -1054,6 +1087,41 @@ class StsSampleToCasmBenchlingConverterFactory:
                             self._get_sts_relationship_attribute_value(
                                 relationship_object_identifier, sample)
 
+            def _ensure_primary_attribute_available(self, sample, object_map):
+                primary_attribute = object_map['primary_attribute']
+                mapped_attribute = object_map['attribute_map'][primary_attribute]
+
+                if mapped_attribute not in object_map.get('benchling_relationships', []):
+                    return
+
+                if sample.attributes.get(mapped_attribute) is not None:
+                    return
+
+                relationship_object_map = factory.BENCHLING_OBJECT_MAP[factory.mode][mapped_attribute]
+                search_value = self._get_object_primary_attribute_value(
+                    relationship_object_map,
+                    sample
+                )
+
+                if search_value is None:
+                    return
+
+                if search_value in relationship_object_map['stored_values']:
+                    benchling_object = relationship_object_map['stored_values'][search_value]
+                    sample.attributes[mapped_attribute] = (
+                        benchling_object.id if hasattr(benchling_object, 'id') else benchling_object
+                    )
+                    return
+
+                benchling_object_id = self._get_benchling_object_id(
+                    object_type=mapped_attribute,
+                    search_identifier=relationship_object_map['primary_attribute'],
+                    search_value=search_value
+                )
+
+                if benchling_object_id is not None:
+                    sample.attributes[mapped_attribute] = benchling_object_id
+
             def _does_object_exist(self, destination_object_type, sample, object_map):
                 """
                 Checks if the object all ready exists within the
@@ -1073,9 +1141,16 @@ class StsSampleToCasmBenchlingConverterFactory:
                 if 'transfer' == destination_object_type:
                     return self._check_sample_transfers_done(sample, object_map)
                 else:
+                    self._ensure_primary_attribute_available(sample, object_map)
                     attribute = self._get_object_primary_attribute_value(object_map, sample)
+                    print('here')
+                    print(object_map['primary_attribute'])
+                    print(attribute)
+                    if attribute is None:
+                        return False
 
                     if attribute in stored_values or attribute in converted_value_ids:
+                        print('nani!')
                         return True
 
                     benchling_object_id = self._get_benchling_object_id(
@@ -1108,7 +1183,7 @@ class StsSampleToCasmBenchlingConverterFactory:
                     bool - True if the container has contents, False otherwise
 
                 Raises:
-                    Exception: If teh sample has no container in Bechnling
+                    Exception: If the sample has no container in Becnhling
                 """
                 self._populate_relationships(sample, object_map)
 
@@ -1247,15 +1322,37 @@ class StsSampleToCasmBenchlingConverterFactory:
                 self._populate_concatenated_attributes(sample, object_map)
 
                 object_attributes = {
-                    key: (
-                        sample.id
-                        if 'id' == attr_mapping
-                        else sample.attributes.get(attr_mapping)
-                    )
+                    key: self._resolve_attribute_value(attr_mapping, sample)
                     for key, attr_mapping in attribute_map.items()
                 }
+
+                if 'transfer' == factory.destination_object_type:
+                    object_attributes['transfer_quantity'] = 0.001
+                    object_attributes['transfer_concentration'] = 0.001
+
                 self._sanitize_attributes(object_attributes)
                 return object_attributes
+
+            def _resolve_attribute_value(self, attr_mapping, sample):
+                if 'id' == attr_mapping:
+                    return sample.id
+
+                if attr_mapping in factory.COMPUTED_VALUES[factory.mode]:
+                    return self._compute_attribute_value(attr_mapping, sample)
+
+                return sample.attributes.get(attr_mapping)
+
+            @staticmethod
+            def _compute_attribute_value(computed_value_identifier, sample):
+                computed_value = factory.COMPUTED_VALUES[factory.mode][
+                    computed_value_identifier
+                ]
+                source_value = sample.attributes.get(computed_value['computed_from'])
+
+                return computed_value['values'].get(
+                    source_value,
+                    computed_value['values']['default']
+                )
 
             def _populate_polymorphic_benchling_relationships(self, sample, object_map):
                 """
@@ -1346,7 +1443,7 @@ class StsSampleToCasmBenchlingConverterFactory:
                         search_identifier: {'in_list': {'value': [search_value]}}
                     }
                 elif factory.benchling.benchling_types[object_type] in ['assay_result']:
-                    filter_object.and_ = {'entity_id': {'eq': {'value': [search_value]}}}
+                    filter_object.and_ = {'entity_ids': {'in_list': {'value': [search_value]}}}
                 else:
                     raise Exception(
                         f'Configuration error: Unsupported search of type {object_type}'

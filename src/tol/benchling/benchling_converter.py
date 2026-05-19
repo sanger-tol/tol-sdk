@@ -5,6 +5,7 @@
 from __future__ import annotations
 
 import datetime
+import logging
 import typing
 from typing import Any, Iterable, Optional
 from uuid import uuid4
@@ -85,7 +86,10 @@ class BenchlingConverter(Converter[BenchlingReturn, DataObject]):
             input_list: list[BenchlingReturn]
     ) -> Iterable[DataObject]:
         if isinstance(input_list[0], AssayResultsCreateResponse):
-            return self.__convert_assay_results(input_list)
+            return (
+                self.__convert_assay_results(input_)
+                for input_ in input_list
+            )
 
         return (
             self.__convert_return(input_)
