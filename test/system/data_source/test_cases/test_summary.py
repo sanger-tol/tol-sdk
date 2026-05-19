@@ -61,8 +61,8 @@ class TestSummarise:
                 'object_filters': {},
                 'group_by': ['related_object.id'],
                 'stats_fields': ['int_column'],
+                'provenance_override': None,
                 'stats': ['min', 'max'],
-                'provenance_override': 'summarise_one',
             }
         )
 
@@ -74,8 +74,8 @@ class TestSummarise:
             'related',
             'related_summarise'
         )
-        assert rel_obj.summarise_one_root_int_column_min == 1
-        assert rel_obj.summarise_one_root_int_column_max == 5
+        assert rel_obj.root_int_column_min == 1
+        assert rel_obj.root_int_column_max == 5
 
         # change the first `root` to be the biggest
         first_root_obj = data_source.get_one(
@@ -98,8 +98,8 @@ class TestSummarise:
             'related',
             'related_summarise'
         )
-        assert rel_obj.summarise_one_root_int_column_min == 2
-        assert rel_obj.summarise_one_root_int_column_max == 42
+        assert rel_obj.root_int_column_min == 2
+        assert rel_obj.root_int_column_max == 42
 
     def __summary_obj(
         self,

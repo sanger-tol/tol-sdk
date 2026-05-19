@@ -71,8 +71,8 @@ def elastic_datasource(
                 ).to_dict(),
             },
             'related': {
-                'summarise_one_root_int_column_min': {'type': 'double'},
-                'summarise_one_root_int_column_max': {'type': 'double'},
+                'root_int_column_min': {'type': 'double'},
+                'root_int_column_max': {'type': 'double'},
             }
         }
     )
