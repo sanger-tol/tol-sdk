@@ -52,7 +52,6 @@ def board_bp(
 
     return board_blueprint(
         board_ds,
-        type_hierarchy=type_hierarchy,
         ctx_getter=lambda: board_auth_ctx
     )
 
