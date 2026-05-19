@@ -35,8 +35,8 @@ def board_blueprint(
         __name__,
     )
 
-    @board_bp.post('/copy/<string:object_type>/<string:object_id>')
-    def __copy_entity_endpoint(*, object_type: str, object_id: str):
+    @board_bp.post('/copy/<string:object_id>')
+    def __copy_entity_endpoint(*, object_id: str):
 
         payload = request.json or {}
         ctx = ctx_getter()
@@ -49,7 +49,6 @@ def board_blueprint(
 
         return copy_entity(
             board_ds,
-            object_type,
             object_id,
             ctx.user_id,
             payload,

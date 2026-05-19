@@ -52,6 +52,10 @@ def add_entity(
     attributes['filter'] = attributes.get('filter', {})
     attributes['title'] = attributes.get('title', f'New {child_type}')
 
+    if child_type in ('component'):
+        attributes['config'] = {}
+        attributes['filter_pass_through'] = False
+
     new_child_id = generate_entity_id(child_type)
 
     user_stub = board_ds.data_object_factory(
@@ -118,7 +122,6 @@ def add_entity(
     return {
         **serialised_entity,
         'parent_id': parent_id,
-        'parent_order': next_order,
     }, 201
 
 

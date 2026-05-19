@@ -8,6 +8,7 @@ from flask.testing import FlaskClient
 
 import pytest
 
+from tol.api_base.auth import ForbiddenError
 from tol.api_base.misc import AuthContext
 from tol.core import DataSourceError
 from tol.sql import SqlDataSource
@@ -178,3 +179,17 @@ class TestBoardBlueprintReorder:
         obj.to_one_relationships = {'zone': child}
 
         return obj
+
+    def test_reorder__403(
+        self,
+        board_auth_ctx: AuthContext,
+        board_client: FlaskClient,
+    ) -> None:
+        """
+        PATCH without authentication -> 403 Forbidden.
+        """
+
+        with pytest.raises(ForbiddenError) as exc:
+            board_client.patch('/reorder/v_I', json={'order': []})
+
+        assert exc.value.status_code == 403

@@ -11,6 +11,7 @@ import pytest
 
 from tol.api_base.auth import ForbiddenError
 from tol.api_base.misc import AuthContext
+from tol.core import DataSourceError
 from tol.sql import SqlDataSource
 
 from .utils import (
@@ -182,3 +183,17 @@ class TestBoardBlueprintDelete:
             return so_far
 
         return reduce(__effect, call_list, {})
+
+    def test_delete__403(
+        self,
+        board_auth_ctx: AuthContext,
+        board_client: FlaskClient,
+    ) -> None:
+        """
+        DELETE without authentication -> 403 Forbidden.
+        """
+
+        with pytest.raises(ForbiddenError) as exc:
+            board_client.delete('/z_something', json={})
+
+        assert exc.value.status_code == 403

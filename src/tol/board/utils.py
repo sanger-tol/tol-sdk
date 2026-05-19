@@ -298,6 +298,7 @@ def serialise_board_entities(
     Returns:
         Nested dict structure representing the entities
     """
+
     # We loop through the joiner types (e.g. `zone_view`) to build a lookup of parent ID
     # (e.g. `view` ID) -> list of child IDs (e.g. `zone` IDs),
     # which we can use when serializing the children of each object

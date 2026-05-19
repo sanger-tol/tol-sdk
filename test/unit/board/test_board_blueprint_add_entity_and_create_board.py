@@ -148,12 +148,47 @@ class TestBoardBlueprintAddEntityAndCreateBoard:
             for call in factory_calls
         )
 
+    def test_add_component_entity__201(
+        self,
+        board_auth_ctx: AuthContext,
+        board_client: FlaskClient,
+        board_ds: SqlDataSource,
+    ):
+        """
+        POST add a component entity -> 201, response includes new entity with correct attributes.
+
+        Component should return correct attributes including filter_pass_through and config.
+        """
+
+        board_auth_ctx.user_id = '100'
+
+        parent_obj = self.__mock_obj('zone', 'z_parent', user_id='100')
+
+        cast(MagicMock, board_ds).get_one.return_value = parent_obj
+        cast(MagicMock, board_ds).get_list.return_value = []
+
+        r = board_client.post(
+            '/add-entity/z_parent',
+            json={'attributes': {
+                'title': 'New component',
+                'filter': {'a': 1}
+            }}
+        )
+
+        assert r.status_code == 201
+        payload = r.get_json()
+        assert payload['type'] == 'component'
+        assert payload['parent_id'] == 'z_parent'
+        assert payload['title'] == 'New component'
+        assert payload['filter'] == {'a': 1}
+        assert payload['config'] == {}
+        assert payload['filter_pass_through'] is False
+
     def test_add_entity__201(
         self,
         board_auth_ctx: AuthContext,
         board_client: FlaskClient,
         board_ds: SqlDataSource,
-        monkeypatch: pytest.MonkeyPatch,
     ):
         """
         POST add where parent exists and user owns parent -> success.
@@ -180,7 +215,6 @@ class TestBoardBlueprintAddEntityAndCreateBoard:
         payload = r.get_json()
         assert payload['type'] == 'zone'
         assert payload['parent_id'] == 'v_parent'
-        assert payload['parent_order'] == 4
         assert payload['order'] == []
         assert payload['children'] == {}
         assert payload['title'] == 'New S'
@@ -237,7 +271,6 @@ class TestBoardBlueprintAddEntityAndCreateBoard:
         board_auth_ctx: AuthContext,
         board_client: FlaskClient,
         board_ds: SqlDataSource,
-        monkeypatch: pytest.MonkeyPatch,
     ):
         """
         POST add where the resolved parent does not exist -> failure (404).
@@ -258,7 +291,6 @@ class TestBoardBlueprintAddEntityAndCreateBoard:
         board_auth_ctx: AuthContext,
         board_client: FlaskClient,
         board_ds: SqlDataSource,
-        monkeypatch: pytest.MonkeyPatch,
     ):
         """
         POST add where parent is not owned by current user -> failure (403).
@@ -277,7 +309,6 @@ class TestBoardBlueprintAddEntityAndCreateBoard:
         board_auth_ctx: AuthContext,
         board_client: FlaskClient,
         board_ds: SqlDataSource,
-        monkeypatch: pytest.MonkeyPatch,
     ):
         """
         POST add defaults title when attributes.title is missing.
@@ -294,7 +325,6 @@ class TestBoardBlueprintAddEntityAndCreateBoard:
         assert r.status_code == 201
         payload = r.get_json()
         assert payload['title'] == 'New zone'
-        assert payload['parent_order'] == 1
         assert payload['order'] == []
 
     def __mock_obj(
@@ -330,3 +360,31 @@ class TestBoardBlueprintAddEntityAndCreateBoard:
             obj._to_one_objects['user'] = user
 
         return cast(DataObject, obj)
+
+    def test_add_entity__403(
+        self,
+        board_auth_ctx: AuthContext,
+        board_client: FlaskClient,
+    ) -> None:
+        """
+        POST add-entity without authentication -> 403 Forbidden.
+        """
+
+        with pytest.raises(ForbiddenError) as exc:
+            board_client.post('/add-entity/v_parent', json={})
+
+        assert exc.value.status_code == 403
+
+    def test_create_board__403(
+        self,
+        board_auth_ctx: AuthContext,
+        board_client: FlaskClient,
+    ) -> None:
+        """
+        POST create-board without authentication -> 403 Forbidden.
+        """
+
+        with pytest.raises(ForbiddenError) as exc:
+            board_client.post('/create-board', json={})
+
+        assert exc.value.status_code == 403

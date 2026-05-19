@@ -10,6 +10,7 @@ from flask.testing import FlaskClient
 import pytest
 
 import tol.board.utils as board_utils_module
+from tol.api_base.auth import ForbiddenError
 from tol.api_base.misc import AuthContext
 from tol.core import DataObject, DataSourceError
 from tol.sql import SqlDataSource
@@ -62,7 +63,7 @@ class TestBoardBlueprintCopyEntity:
         cast(MagicMock, board_ds).data_object_factory.side_effect = self.__factory
 
         r = board_client.post(
-            '/copy/view/v_orig',
+            '/copy/v_orig',
             json={'new_parent_entity_title': 'Copied View'},
         )
 
@@ -91,7 +92,7 @@ class TestBoardBlueprintCopyEntity:
 
         with pytest.raises(DataSourceError) as exc:
             board_client.post(
-                '/copy/view/v_missing',
+                '/copy/v_missing',
                 json={'new_parent_entity_title': 'Copied View'},
             )
 
@@ -134,7 +135,7 @@ class TestBoardBlueprintCopyEntity:
         cast(MagicMock, board_ds).data_object_factory.side_effect = self.__factory
 
         r = board_client.post(
-            '/copy/board/b_I',
+            '/copy/b_I',
             json={'new_parent_entity_title': 'Board Copy'},
         )
 
@@ -190,7 +191,7 @@ class TestBoardBlueprintCopyEntity:
         cast(MagicMock, board_ds).data_object_factory.side_effect = self.__factory
 
         r = board_client.post(
-            '/copy/view/v_a',
+            '/copy/v_a',
             json={'new_parent_entity_title': 'View Copy'},
         )
 
@@ -219,9 +220,23 @@ class TestBoardBlueprintCopyEntity:
 
         with pytest.raises(DataSourceError) as exc:
             board_client.post(
-                '/copy/view/v_orig',
+                '/copy/v_orig',
                 json={},
             )
 
         assert exc.value.title == 'Payload Error'
         assert exc.value.status_code == 400
+
+    def test_copy_entity__403(
+        self,
+        board_auth_ctx: AuthContext,
+        board_client: FlaskClient,
+    ) -> None:
+        """
+        POST copy without authentication -> 403 Forbidden.
+        """
+
+        with pytest.raises(ForbiddenError) as exc:
+            board_client.post('/copy/v_orig', json={'new_parent_entity_title': 'X'})
+
+        assert exc.value.status_code == 403

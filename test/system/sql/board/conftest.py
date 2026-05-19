@@ -9,7 +9,7 @@ import pytest
 
 from tol.api_base.misc import AuthContext
 from tol.board import board_blueprint
-from tol.board.blueprint import TYPE_HIERARCHY
+from tol.board.constants import TYPE_HIERARCHY
 from tol.core import core_data_object
 from tol.sql import (
     Model,

@@ -9,7 +9,10 @@ from typing import Any, TYPE_CHECKING
 from tol.api_base.misc.auth_context import CtxGetter, default_ctx_getter
 from tol.board.errors import NotFoundError
 from tol.board.utils import (
-    collect_recursive, get_entity_and_child_type_from_parent_id, serialise_board_entities)
+    collect_recursive,
+    get_entity_and_child_type_from_parent_id,
+    serialise_board_entities
+)
 
 if TYPE_CHECKING:
     from ..sql import SqlDataSource

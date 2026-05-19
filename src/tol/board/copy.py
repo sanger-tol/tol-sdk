@@ -6,9 +6,12 @@ from __future__ import annotations
 
 from typing import Any, TYPE_CHECKING
 
+from tol.board.constants import TYPE_HIERARCHY
+
 from .errors import CopyError, NotFoundError
 from .utils import (
     collect_recursive,
+    get_entity_and_child_type_from_parent_id,
     save_board_entity_and_children,
     serialise_board_entities
 )
@@ -19,32 +22,36 @@ if TYPE_CHECKING:
 
 def copy_entity(
     board_ds: SqlDataSource,
-    object_type: str,
     object_id: str,
     user_id: str,
     payload: dict[str, Any],
 ) -> tuple[dict[str, Any], int]:
-    obj = board_ds.get_one(object_type, object_id)
+
+    copy_entity_type, _ = get_entity_and_child_type_from_parent_id(object_id)
+    parent_index = TYPE_HIERARCHY.index(copy_entity_type) - 1
+    parent_type = TYPE_HIERARCHY[parent_index] if parent_index >= 0 else 'board'
+
+    obj = board_ds.get_one(copy_entity_type, object_id)
     if obj is None or obj.id is None:
-        raise NotFoundError(object_type)
+        raise NotFoundError(copy_entity_type)
 
     new_parent_title = payload.get('new_parent_entity_title', f'{obj.title} - copy')
-    parent_type = str(payload.get('parent_entity_type', 'board'))
+    # parent_type = str(payload.get('parent_entity_type', 'board'))
     parent_id = payload.get('parent_entity_id', None)
 
-    all_entities = collect_recursive(board_ds, object_type, [obj])
+    all_entities = collect_recursive(board_ds, copy_entity_type, [obj])
     new_entity_id, id_mapping = save_board_entity_and_children(
         board_ds,
         all_entities,
         user_id,
         new_parent_title,
         parent_type,
-        object_type,
+        copy_entity_type,
         parent_id,
     )
 
-    if not all_entities.get(object_type) or not new_entity_id:
-        raise CopyError(object_type)
+    if not all_entities.get(copy_entity_type) or not new_entity_id:
+        raise CopyError(copy_entity_type)
 
     copied_entity = serialise_board_entities(
         all_entities, obj.id, board_ds, id_mapping)
