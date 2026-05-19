@@ -23,6 +23,17 @@ def get_entity(
     object_id: str,
     ctx_getter: CtxGetter = default_ctx_getter,
 ) -> tuple[dict[str, Any], int]:
+    """
+    Retrieves an entity and its children recursively.
+
+    Args:
+        board_ds (SqlDataSource): The data source for board entities.
+        object_id (str): The ID of the entity to retrieve.
+        ctx_getter (CtxGetter, optional): The context getter for authentication. Defaults to default_ctx_getter.
+
+    Returns:
+        tuple[dict[str, Any], int]: The serialized entity and its HTTP status code.
+    """
 
     parent_type, _ = get_entity_and_child_type_from_parent_id(object_id)
 

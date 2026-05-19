@@ -25,6 +25,20 @@ def _child_is_deletable(
     all_parent_ids: list[str],
     joiner_type: str,
 ) -> bool:
+    """
+    Checks if a child entity is deletable.
+
+    Args:
+        board_ds (SqlDataSource): The data source for board entities.
+        child_obj (DataObject): The child entity to check.
+        parent_type (str): The type of the parent entity.
+        all_parent_ids (list[str]): The IDs of all parent entities.
+        joiner_type (str): The type of the joiner entity.
+
+    Returns:
+        bool: True if the child entity is deletable, False otherwise.
+    """
+
     f = DataSourceFilter(
         and_={
             f'{parent_type}.id': {
@@ -56,6 +70,22 @@ def _get_deletable_children(
     user_id: str,
     roles: list[str],
 ) -> list[DataObject]:
+    """Gets the deletable child entities from a list of joiner objects.
+
+    Args:
+        board_ds (SqlDataSource): The data source for board entities.
+        child_type (str): The type of the child entity.
+        joiner_type (str): The type of the joiner entity.
+        parent_type (str): The type of the parent entity.
+        all_parent_ids (list[str]): The IDs of all parent entities.
+        joins (list[DataObject]): The list of joiner objects.
+        user_id (str): The ID of the user performing the deletion.
+        roles (list[str]): The roles of the user.
+
+    Returns:
+        list[DataObject]: The list of deletable child entities.
+    """
+
     all_child_objs: list[DataObject] = [
         getattr(join, child_type)
         for join in joins
@@ -85,6 +115,17 @@ def _delete_recursive(
     user_id: str,
     roles: list[str],
 ) -> None:
+    """Recursively deletes child entities and their joins up to the leaf child type.
+
+    Args:
+        board_ds (SqlDataSource): The data source for board entities.
+        leaf_child_type (str): The type of the leaf child entity.
+        parent_type (str): The type of the parent entity.
+        parent_objs (list[DataObject]): The list of parent entities.
+        user_id (str): The ID of the user performing the deletion.
+        roles (list[str]): The roles of the user.
+    """
+
     all_parent_ids = [obj.id for obj in parent_objs if obj.id is not None]
 
     if parent_type != leaf_child_type:
@@ -150,6 +191,18 @@ def _delete_above(
     user_id: str,
     roles: list[str],
 ) -> None:
+    """
+    Recursively deletes parent entities and their joins up to the root parent type.
+
+    Args:
+        board_ds (SqlDataSource): The data source for board entities.
+        root_parent_type (str): The type of the root parent entity.
+        object_type (str): The type of the entity to delete.
+        object_id (str): The ID of the entity to delete.
+        user_id (str): The ID of the user performing the deletion.
+        roles (list[str]): The roles of the user.
+    """
+
     if object_type == root_parent_type:
         return
 
@@ -197,6 +250,15 @@ def delete_entity(
     user_id: str,
     roles: list[str],
 ) -> None:
+    """
+    Deletes an entity and all its children recursively.
+
+    Args:
+        board_ds (SqlDataSource): The data source for board entities.
+        parent_id (str): The ID of the entity to delete.
+        user_id (str): The ID of the user performing the deletion.
+        roles (list[str]): The roles of the user.
+    """
 
     if parent_id is None:
         raise NotFoundError(parent_id)

@@ -22,6 +22,17 @@ def reorder_entities(
     parent_object_id: str,
     new_order: list[str],
 ) -> None:
+    """
+    Reorders the child entities of a parent entity.
+
+    Args:
+        board_ds (SqlDataSource): The data source for board entities.
+        parent_object_id (str): The ID of the parent entity.
+        new_order (list[str]): The new order of child entity IDs.
+
+    Raises:
+        InvalidOrderError: If the new order is invalid.
+    """
 
     parent_type, child_type = get_entity_and_child_type_from_parent_id(parent_object_id)
 

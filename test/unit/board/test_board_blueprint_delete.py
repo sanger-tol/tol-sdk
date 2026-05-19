@@ -184,7 +184,7 @@ class TestBoardBlueprintDelete:
 
         return reduce(__effect, call_list, {})
 
-    def test_delete__403(
+    def test_delete__403_unauthenticated(
         self,
         board_auth_ctx: AuthContext,
         board_client: FlaskClient,
@@ -197,3 +197,27 @@ class TestBoardBlueprintDelete:
             board_client.delete('/z_something', json={})
 
         assert exc.value.status_code == 403
+
+    def test_delete__200_warden_bypasses_owner_check(
+        self,
+        board_auth_ctx: AuthContext,
+        board_client: FlaskClient,
+        board_ds: SqlDataSource,
+        type_hierarchy: list[str],
+    ) -> None:
+        """
+        DELETE a zone owned by another user succeeds when the
+        requesting user has the 'warden' role.
+        """
+
+        board_auth_ctx.user_id = '100'
+        board_auth_ctx.roles = ['warden']
+
+        mock_small = mock_board_obj('zone', 'z_delete_me', user_id='other_user')
+        board_ds.get_one.return_value = mock_small
+        board_ds.get_list.return_value = []
+
+        r = board_client.delete('/z_delete_me', json={})
+
+        assert r.status_code == 200
+        assert r.get_json() == {'deleted': True}

@@ -229,7 +229,6 @@ class TestBoardBlueprintCopyEntity:
 
     def test_copy_entity__403(
         self,
-        board_auth_ctx: AuthContext,
         board_client: FlaskClient,
     ) -> None:
         """

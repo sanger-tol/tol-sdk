@@ -26,6 +26,22 @@ def copy_entity(
     user_id: str,
     payload: dict[str, Any],
 ) -> tuple[dict[str, Any], int]:
+    """
+    Copies a board entity and its children.
+
+    Args:
+        board_ds (SqlDataSource): The data source for board entities.
+        object_id (str): The ID of the entity to copy.
+        user_id (str): The ID of the user performing the copy.
+        payload (dict[str, Any]): The payload containing copy details.
+
+    Returns:
+        tuple[dict[str, Any], int]: The copied entity and HTTP status code.
+
+    Raises:
+        NotFoundError: If the entity to copy does not exist.
+        CopyError: If the copy operation fails.
+    """
 
     copy_entity_type, _ = get_entity_and_child_type_from_parent_id(object_id)
     parent_index = TYPE_HIERARCHY.index(copy_entity_type) - 1
@@ -36,7 +52,6 @@ def copy_entity(
         raise NotFoundError(copy_entity_type)
 
     new_parent_title = payload.get('new_parent_entity_title', f'{obj.title} - copy')
-    # parent_type = str(payload.get('parent_entity_type', 'board'))
     parent_id = payload.get('parent_entity_id', None)
 
     all_entities = collect_recursive(board_ds, copy_entity_type, [obj])

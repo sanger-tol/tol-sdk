@@ -37,6 +37,14 @@ def board_blueprint(
 
     @board_bp.post('/copy/<string:object_id>')
     def __copy_entity_endpoint(*, object_id: str):
+        """
+        POST copy a board entity and its children.
+
+        Expects a JSON body with the following fields:
+        - new_parent_entity_title (str, required): The title for the copied entity.
+        - parent_entity_id (str, optional): The ID of the new parent entity to copy under
+        (if not provided, the copied entity will be added at the same level as the original).
+        """
 
         payload = request.json or {}
         ctx = ctx_getter()
@@ -56,6 +64,13 @@ def board_blueprint(
 
     @board_bp.post('/add-entity/<string:parent_id>')
     def __add_entity_endpoint(*, parent_id: str):
+        """
+        POST add a new entity under a given parent entity.
+
+        Expects a JSON body with the following fields:
+        - type (str, required): The type of the entity to add.
+        - attributes (dict, optional): A dictionary of attributes for the new entity.
+        """
 
         payload = request.json or {}
         ctx = ctx_getter()
@@ -75,6 +90,12 @@ def board_blueprint(
 
     @board_bp.post('/create-board')
     def __create_board_endpoint():
+        """
+        POST create a new board with a given title.
+
+        Expects a JSON body with the following fields:
+        - title (str, required): The title for the new board.
+        """
 
         payload = request.json or {}
         ctx = ctx_getter()
@@ -91,6 +112,12 @@ def board_blueprint(
 
     @board_bp.delete('/<string:object_id>')
     def __delete_endpoint(*, object_id: str):
+        """
+        DELETE an entity and all its children.
+
+        Expects a JSON body with the following fields:
+        - None
+        """
 
         payload = request.json or {}
         ctx = ctx_getter()
@@ -147,6 +174,13 @@ def board_blueprint(
 
     @board_bp.get('/get-entity/<string:object_id>')
     def __get_board_entities(*, object_id: str):
+        """
+        GET an entity and all its children recursively.
+
+        Expects a JSON body with the following fields:
+        - None
+        """
+
         return get_entity(
             board_ds,
             object_id,

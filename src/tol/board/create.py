@@ -32,6 +32,25 @@ def add_entity(
     roles: list[str],
     payload: dict[str, Any],
 ) -> tuple[dict[str, Any], int]:
+    """
+    Adds a new entity to the board under the specified parent.
+
+    Args:
+        board_ds (SqlDataSource): The data source for board entities.
+        parent_id (str): The ID of the parent entity.
+        user_id (str): The ID of the user performing the addition.
+        roles (list[str]): The roles of the user.
+        payload (dict[str, Any]): The payload containing entity details.
+
+    Returns:
+        tuple[dict[str, Any], int]: The added entity and HTTP status code.
+
+    Raises:
+        NotFoundError: If the parent entity does not exist.
+        AddError: If the addition operation fails.
+        UnknownTypeError: If the entity type is unknown.
+        ForbiddenError: If the user is not allowed to add the entity.
+    """
 
     parent_type, child_type = get_entity_and_child_type_from_parent_id(parent_id)
 
@@ -130,6 +149,16 @@ def create_board(
     board_ds: SqlDataSource,
     user_id: str,
 ) -> tuple[dict[str, Any], int]:
+    """
+    Creates a new board with an initial view.
+
+    Args:
+        board_ds (SqlDataSource): The data source for board entities.
+        user_id (str): The ID of the user creating the board.
+
+    Returns:
+        tuple[dict[str, Any], int]: The created board and HTTP status code.
+    """
 
     board_type = TYPE_HIERARCHY[0]
     view_type = TYPE_HIERARCHY[1]

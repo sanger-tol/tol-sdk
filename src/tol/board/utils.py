@@ -57,6 +57,7 @@ def get_entity_and_child_type_from_parent_id(parent_id: str) -> tuple[str, str |
         >>> get_entity_and_child_type_from_parent_id('x_123456789012')
         (None, None)
     """
+
     reverse_mappings = {v: k for k, v in PREFIX_MAPPINGS.items()}
 
     prefix = parent_id.split('_', 1)[0]
@@ -230,6 +231,7 @@ def collect_recursive(
     Returns:
         Dict mapping entity types to lists of DataObjects
     """
+
     if collected is None:
         collected = {}
 
@@ -417,6 +419,7 @@ def get_parent_joiner_objs(
     Returns:
         List of joiner DataObjects
     """
+
     parent_object_type = joiner_object_type.split('_')[1]
     f = DataSourceFilter(
         and_={
@@ -450,6 +453,7 @@ def check_auth_and_required_fields(
         ForbiddenError: If the user is not authenticated
         PayloadError: If any required fields are missing
     """
+
     ctx = ctx_getter()
     if not ctx.authenticated:
         raise ForbiddenError()

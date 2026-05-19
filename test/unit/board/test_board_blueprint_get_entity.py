@@ -2,12 +2,14 @@
 #
 # SPDX-License-Identifier: MIT
 
+from unittest.mock import MagicMock
+
 from flask.testing import FlaskClient
 
 import pytest
 
 from tol.api_base.misc import AuthContext
-from tol.core import DataSourceError
+from tol.core import DataSourceError, DataSourceFilter
 from tol.sql import SqlDataSource
 
 from .utils import (
@@ -147,3 +149,150 @@ class TestBoardBlueprintGetEntity:
         assert set(payload['order']) == {'c_1', 'c_2'}
         assert 'c_1' in payload['children']
         assert 'c_2' in payload['children']
+
+    def test_get_entity__component_config_diff_returned_when_authenticated(
+        self,
+        board_auth_ctx: AuthContext,
+        board_client: FlaskClient,
+        board_ds: SqlDataSource,
+        type_hierarchy: list[str],
+    ):
+        """
+        GET a component when authenticated and a board_diff record exists for that
+        user -> config_diff is populated with the diff id and config.
+        """
+
+        board_auth_ctx.user_id = '100'
+
+        hierarchy = {
+            'component': {
+                'c_1': ('100', []),
+            },
+            'zone': {
+                'z_a': ('100', ['c_1']),
+            },
+            'view': {},
+            'board': {},
+        }
+
+        objs = mock_board_hierarchy(hierarchy, type_hierarchy=type_hierarchy)
+
+        diff_obj = MagicMock()
+        diff_obj.id = 'diff_99'
+        diff_obj.config = {'key': 'override_value'}
+
+        def _get_list(object_type: str, *, object_filters: DataSourceFilter):
+            if object_type == 'board_diff':
+                component_id = object_filters.and_['component_id']['eq']['value']
+                user_id = object_filters.and_['user_id']['eq']['value']
+                if component_id == 'c_1' and user_id == '100':
+                    return [diff_obj]
+                return []
+            # fall back to the hierarchy-aware helper for joiner types
+            _, parent = object_type.split('_')
+            parent_id = object_filters.and_[f'{parent}.id']['eq']['value']
+            return [
+                obj for obj in objs[object_type].values()
+                if getattr(obj, parent).id == parent_id
+            ]
+
+        board_ds.get_one.side_effect = mock_board_get_one(objs)
+        board_ds.get_list.side_effect = _get_list
+
+        r = board_client.get('/get-entity/z_a')
+        assert r.status_code == 200
+
+        component = r.get_json()['children']['c_1']
+        assert component['config_diff']['id'] == 'diff_99'
+        assert component['config_diff']['config'] == {'key': 'override_value'}
+
+    def test_get_entity__component_config_diff_null_when_no_diff_exists(
+        self,
+        board_auth_ctx: AuthContext,
+        board_client: FlaskClient,
+        board_ds: SqlDataSource,
+        type_hierarchy: list[str],
+    ):
+        """
+        GET a component when authenticated but no board_diff record exists
+        -> config_diff is present with null id and config.
+        """
+
+        board_auth_ctx.user_id = '100'
+
+        hierarchy = {
+            'component': {
+                'c_1': ('100', []),
+            },
+            'zone': {
+                'z_a': ('100', ['c_1']),
+            },
+            'view': {},
+            'board': {},
+        }
+
+        objs = mock_board_hierarchy(hierarchy, type_hierarchy=type_hierarchy)
+
+        def _get_list(object_type: str, *, object_filters: DataSourceFilter):
+            if object_type == 'board_diff':
+                return []
+            _, parent = object_type.split('_')
+            parent_id = object_filters.and_[f'{parent}.id']['eq']['value']
+            return [
+                obj for obj in objs[object_type].values()
+                if getattr(obj, parent).id == parent_id
+            ]
+
+        board_ds.get_one.side_effect = mock_board_get_one(objs)
+        board_ds.get_list.side_effect = _get_list
+
+        r = board_client.get('/get-entity/z_a')
+        assert r.status_code == 200
+
+        component = r.get_json()['children']['c_1']
+        assert component['config_diff']['id'] is None
+        assert component['config_diff']['config'] is None
+
+    def test_get_entity__component_config_diff_absent_when_unauthenticated(
+        self,
+        board_client: FlaskClient,
+        board_ds: SqlDataSource,
+        type_hierarchy: list[str],
+    ):
+        """
+        GET a component when not authenticated -> config_diff key is still
+        present but both id and config are null (board_diff lookup is skipped).
+        """
+
+        hierarchy = {
+            'component': {
+                'c_1': ('100', []),
+            },
+            'zone': {
+                'z_a': ('100', ['c_1']),
+            },
+            'view': {},
+            'board': {},
+        }
+
+        objs = mock_board_hierarchy(hierarchy, type_hierarchy=type_hierarchy)
+
+        def _get_list(object_type: str, *, object_filters: DataSourceFilter):
+            if object_type == 'board_diff':
+                raise AssertionError('board_diff should not be queried when unauthenticated')
+            _, parent = object_type.split('_')
+            parent_id = object_filters.and_[f'{parent}.id']['eq']['value']
+            return [
+                obj for obj in objs[object_type].values()
+                if getattr(obj, parent).id == parent_id
+            ]
+
+        board_ds.get_one.side_effect = mock_board_get_one(objs)
+        board_ds.get_list.side_effect = _get_list
+
+        r = board_client.get('/get-entity/z_a')
+        assert r.status_code == 200
+
+        component = r.get_json()['children']['c_1']
+        assert component['config_diff']['id'] is None
+        assert component['config_diff']['config'] is None

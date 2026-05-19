@@ -361,7 +361,7 @@ class TestBoardBlueprintAddEntityAndCreateBoard:
 
         return cast(DataObject, obj)
 
-    def test_add_entity__403(
+    def test_add_entity__403_unauthenticated(
         self,
         board_auth_ctx: AuthContext,
         board_client: FlaskClient,
@@ -374,6 +374,29 @@ class TestBoardBlueprintAddEntityAndCreateBoard:
             board_client.post('/add-entity/v_parent', json={})
 
         assert exc.value.status_code == 403
+
+    def test_add_entity__201_warden_bypasses_owner_check(
+        self,
+        board_auth_ctx: AuthContext,
+        board_client: FlaskClient,
+        board_ds: SqlDataSource,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        """
+        POST add-entity where parent is owned by another user,
+        but the requesting user has the 'warden' role -> 201.
+        """
+
+        board_auth_ctx.user_id = '100'
+        board_auth_ctx.roles = ['warden']
+
+        parent_obj = self.__mock_obj('view', 'v_parent', user_id='other_user')
+        cast(MagicMock, board_ds).get_one.return_value = parent_obj
+        cast(MagicMock, board_ds).get_list.return_value = []
+
+        r = board_client.post('/add-entity/v_parent', json={'attributes': {'title': 'New zone'}})
+
+        assert r.status_code == 201
 
     def test_create_board__403(
         self,
