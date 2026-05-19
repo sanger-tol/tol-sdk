@@ -29,7 +29,8 @@ def get_entity(
     Args:
         board_ds (SqlDataSource): The data source for board entities.
         object_id (str): The ID of the entity to retrieve.
-        ctx_getter (CtxGetter, optional): The context getter for authentication. Defaults to default_ctx_getter.
+        ctx_getter (CtxGetter, optional):
+            The context getter for authentication. Defaults to default_ctx_getter.
 
     Returns:
         tuple[dict[str, Any], int]: The serialized entity and its HTTP status code.

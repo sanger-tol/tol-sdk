@@ -220,14 +220,16 @@ class TestCollectRecursive:
 class TestSerialiseBoardEntities:
 
     def test_unknown_parent_id_returns_empty(self) -> None:
-        """serialise_board_entities with a parent_id that doesn't match any entity returns {}."""
+        """
+        serialise board entities with a parent id that doesn't match any entity returns empty dict.
+        """
 
         board_ds = create_autospec(SqlDataSource, spec_set=True)
         result = serialise_board_entities({'view': [], 'zone_view': []}, 'v_missing', board_ds)
         assert result == {}
 
     def test_zone_includes_data_source_fields(self, type_hierarchy: list) -> None:
-        """serialise_board_entities includes data source fields for a zone."""
+        """serialise board entities includes data source fields for a zone."""
 
         zone = mock_board_obj('zone', 'z_1', attributes={'title': 'My Zone'})
         zone.data_source_instance.id = 'dsi_42'
@@ -243,7 +245,7 @@ class TestSerialiseBoardEntities:
         assert result['ui_api_details'] == {'url': 'http://example.com'}
 
     def test_board_includes_owner_and_write_privilege(self, type_hierarchy: list) -> None:
-        """serialise_board_entities for a board includes owner email and write_privilege."""
+        """serialise board entities for a board includes owner email and write_privilege."""
 
         board = mock_board_obj('board', 'b_1', attributes={'title': 'My Board'}, user_id='42')
         board.user.oidc_id = 'user@example.com'
@@ -262,7 +264,7 @@ class TestSerialiseBoardEntities:
 
     def test_board_write_privilege_false_when_different_user(self) -> None:
         """
-        Serialise_board_entities for a board returns
+        Serialise board entities for a board returns
         write_privilege False when current user is not the owner.
         """
 
@@ -302,7 +304,7 @@ class TestSerialiseBoardEntities:
 
     def test_view_children_ordered_by_joiner_order(self, type_hierarchy: list) -> None:
         """
-        Serialise_board_entities orders view children
+        Serialise board entities orders view children
         according to the order field on the joiner objects.
         """
 
@@ -340,7 +342,7 @@ class TestSerialiseBoardEntities:
 
     def test_id_mapping_remaps_ids_in_output(self) -> None:
         """
-        Serialise_board_entities remaps entity IDs in
+        Serialise board entities remaps entity IDs in
         the output according to the provided id_mapping.
         """
 

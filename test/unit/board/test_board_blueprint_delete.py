@@ -11,7 +11,6 @@ import pytest
 
 from tol.api_base.auth import ForbiddenError
 from tol.api_base.misc import AuthContext
-from tol.core import DataSourceError
 from tol.sql import SqlDataSource
 
 from .utils import (
