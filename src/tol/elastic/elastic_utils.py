@@ -6,7 +6,11 @@ import json
 
 from caseconverter import kebabcase
 
-from tol.core import DataSource
+from tol.core import (
+    DataObject,
+    DataSource,
+    DataSourceFilter
+)
 
 
 class ElasticUtils:
@@ -26,6 +30,12 @@ class ElasticUtils:
         build_number: str,
         dry_run: bool = True
     ):
+        """
+        Create a set of indices for the given build number, one for each supported object type.
+        The index names are in the format '{base_prefix}-{build_number}-{object_type}'.
+        If dry_run is True, the index names will be printed instead of actually creating the
+        indices.
+        """
         base_prefix = cls._base_prefix(eds)
         for object_type in eds.supported_types:
             index_name = f'{base_prefix}-{build_number}-{kebabcase(object_type)}'
@@ -43,6 +53,9 @@ class ElasticUtils:
         build_number: str,
         dry_run: bool = True
     ):
+        """
+            Delete a set of indices for the given build number, one for each supported object type.
+        """
         base_prefix = cls._base_prefix(eds)
         for object_type in eds.supported_types:
             index_name = f'{base_prefix}-{build_number}-{kebabcase(object_type)}'
@@ -60,6 +73,9 @@ class ElasticUtils:
         mappings: dict,
         dry_run: bool = True
     ):
+        """
+        Update aliases for the given mappings.
+        """
         base_prefix = cls._base_prefix(eds)
         aliases = []
         for object_type in eds.supported_types:
@@ -84,3 +100,43 @@ class ElasticUtils:
             eds.es.indices.update_aliases({
                 'actions': aliases
             })
+
+    @classmethod
+    def enrich_objects(
+        cls,
+        eds: DataSource,
+        object_type: str,
+        ids: list[str]
+    ) -> None:
+        """
+            Use the objects with the given IDs to enrich all their related (child) objects
+        """
+        for target_object_type in eds.relationships_to_enrich[object_type].keys():
+            source_objects = eds.get_by_ids(object_type, ids)
+            eds.enrich(object_type, source_objects, target_object_type)
+
+    @classmethod
+    def summarise_objects(
+            cls,
+            eds: DataSource,
+            portaldb_ds: DataSource,
+            object_type: str,
+            ids: list[str],
+            data_source_instance: DataObject) -> None:
+        """
+            Use the objects with the given IDs to summarise all their related (parent) objects
+        """
+        f = DataSourceFilter()
+        f.and_ = {
+            'source_object_type': {'eq': {'value': object_type}},
+            'data_source_config.id': {'eq': {'value': data_source_instance.data_source_config.id}}
+        }
+        summaries = list(portaldb_ds.get_list('data_source_config_summary', object_filters=f))
+
+        changes = eds.resummarise_by_ids(
+            summaries,
+            source_object_type=object_type,
+            source_object_ids=ids
+        )
+
+        return changes

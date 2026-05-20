@@ -115,3 +115,118 @@ class TestUpdateAliases:
         ElasticUtils.update_aliases(eds=mock_eds, mappings=mappings)
 
         mock_eds.es.indices.update_aliases.assert_not_called()
+
+
+class TestEnrichObjects:
+
+    def test_calls_enrich_for_each_target_type(self, mock_eds):
+        mock_eds.relationships_to_enrich = {
+            'sample': {'species': {}, 'tolid': {}}
+        }
+        source_objects = [mock.Mock(), mock.Mock()]
+        mock_eds.get_by_ids.return_value = source_objects
+
+        ElasticUtils.enrich_objects(eds=mock_eds, object_type='sample', ids=['1', '2'])
+
+        assert mock_eds.enrich.call_count == 2
+        called_targets = {c.args[2] for c in mock_eds.enrich.call_args_list}
+        assert called_targets == {'species', 'tolid'}
+
+    def test_fetches_source_objects_by_ids(self, mock_eds):
+        mock_eds.relationships_to_enrich = {'sample': {'species': {}}}
+        mock_eds.get_by_ids.return_value = []
+
+        ElasticUtils.enrich_objects(eds=mock_eds, object_type='sample', ids=['10', '20'])
+
+        mock_eds.get_by_ids.assert_called_once_with('sample', ['10', '20'])
+
+    def test_passes_source_objects_to_enrich(self, mock_eds):
+        source_objects = [mock.Mock(), mock.Mock()]
+        mock_eds.relationships_to_enrich = {'sample': {'species': {}}}
+        mock_eds.get_by_ids.return_value = source_objects
+
+        ElasticUtils.enrich_objects(eds=mock_eds, object_type='sample', ids=['1'])
+
+        mock_eds.enrich.assert_called_once_with('sample', source_objects, 'species')
+
+    def test_does_nothing_when_no_relationships(self, mock_eds):
+        mock_eds.relationships_to_enrich = {'sample': {}}
+
+        ElasticUtils.enrich_objects(eds=mock_eds, object_type='sample', ids=['1'])
+
+        mock_eds.enrich.assert_not_called()
+        mock_eds.get_by_ids.assert_not_called()
+
+
+class TestSummariseObjects:
+
+    @pytest.fixture
+    def mock_portaldb_ds(self):
+        return mock.Mock()
+
+    @pytest.fixture
+    def data_source_instance(self):
+        instance = mock.Mock()
+        instance.data_source_config.id = 'cfg-42'
+        return instance
+
+    def test_queries_summaries_by_object_type_and_config(
+        self, mock_eds, mock_portaldb_ds, data_source_instance
+    ):
+        mock_portaldb_ds.get_list.return_value = []
+        mock_eds.resummarise_by_ids.return_value = {}
+
+        ElasticUtils.summarise_objects(
+            eds=mock_eds,
+            portaldb_ds=mock_portaldb_ds,
+            object_type='sample',
+            ids=['1', '2'],
+            data_source_instance=data_source_instance
+        )
+
+        call_args = mock_portaldb_ds.get_list.call_args
+        assert call_args.args[0] == 'data_source_config_summary'
+        f = call_args.kwargs.get(
+            'object_filters',
+            call_args.args[1] if len(call_args.args) > 1 else None
+        )
+        assert f.and_['source_object_type']['eq']['value'] == 'sample'
+        assert f.and_['data_source_config.id']['eq']['value'] == 'cfg-42'
+
+    def test_calls_resummarise_with_summaries_and_ids(
+        self, mock_eds, mock_portaldb_ds, data_source_instance
+    ):
+        summaries = [mock.Mock(), mock.Mock()]
+        mock_portaldb_ds.get_list.return_value = summaries
+        mock_eds.resummarise_by_ids.return_value = {}
+
+        ElasticUtils.summarise_objects(
+            eds=mock_eds,
+            portaldb_ds=mock_portaldb_ds,
+            object_type='sample',
+            ids=['1', '2'],
+            data_source_instance=data_source_instance
+        )
+
+        mock_eds.resummarise_by_ids.assert_called_once_with(
+            summaries,
+            source_object_type='sample',
+            source_object_ids=['1', '2']
+        )
+
+    def test_returns_changes_from_resummarise(
+        self, mock_eds, mock_portaldb_ds, data_source_instance
+    ):
+        mock_portaldb_ds.get_list.return_value = []
+        expected = {'species': ['sp-1', 'sp-2']}
+        mock_eds.resummarise_by_ids.return_value = expected
+
+        result = ElasticUtils.summarise_objects(
+            eds=mock_eds,
+            portaldb_ds=mock_portaldb_ds,
+            object_type='sample',
+            ids=['1'],
+            data_source_instance=data_source_instance
+        )
+
+        assert result == expected

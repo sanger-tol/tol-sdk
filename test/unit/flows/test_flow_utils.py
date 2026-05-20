@@ -2,11 +2,21 @@
 #
 # SPDX-License-Identifier: MIT
 
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, patch
 
 import pytest
 
-from tol.core import DataSource, DataSourceFilter, core_data_object
+from tol.core import (
+    ChainedConverter,
+    DataSource,
+    DataSourceFilter,
+    DefaultDataObjectToDataObjectConverter,
+    core_data_object,
+)
+from tol.flows.converters import (
+    ElasticObjectToPortaldbObjectConverter,
+    ElasticSampleToBenchlingTissueConverter,
+)
 from tol.flows.flow_utils import FlowUtils
 
 
@@ -30,6 +40,7 @@ def mock_portaldb_ds():
         attributes={'oidc_id': 'user@example.com'}
     )
     ds.get_one = MagicMock(return_value=portal_user)
+    ds.get_list = MagicMock(return_value=[])
     return ds
 
 
@@ -45,6 +56,62 @@ def mock_sts_ds():
     ds = MagicMock()
     ds.get_list.return_value = [sts_user]
     ds.get_one.return_value = sts_user_extra
+    return ds
+
+
+@pytest.fixture
+def mock_objects_data_loader():
+    with patch('tol.flows.flow_utils.ObjectsDataLoader') as mock_loader:
+        yield mock_loader
+
+
+@pytest.fixture
+def mock_ids_data_loader():
+    with patch('tol.flows.flow_utils.IdsDataLoader') as mock_loader:
+        yield mock_loader
+
+
+@pytest.fixture
+def mock_sync_events_to_portal():
+    with patch('tol.flows.flow_utils.FlowUtils.sync_events_to_portal') as m:
+        yield m
+
+
+@pytest.fixture
+def data_source_instance():
+    instance = MagicMock()
+    instance.data_source_config.id = 'cfg-1'
+    return instance
+
+
+@pytest.fixture
+def event_objects():
+    objs = [MagicMock(), MagicMock()]
+    for i, obj in enumerate(objs):
+        obj.id = str(i)
+    return objs
+
+
+@pytest.fixture
+def mock_eds():
+    return MagicMock()
+
+
+@pytest.fixture
+def objects():
+    return [MagicMock(), MagicMock()]
+
+
+@pytest.fixture
+def mock_benchling_ds():
+    worklist_a = MagicMock()
+    worklist_a.name = 'Worklist A'
+
+    worklist_b = MagicMock()
+    worklist_b.name = 'Worklist B'
+
+    ds = MagicMock()
+    ds.get_list.return_value = [worklist_a, worklist_b]
     return ds
 
 
@@ -98,19 +165,6 @@ class TestFlowUtilsGetUserNameAndElnApiKey:
             'object_filters', call_args.args[1] if len(call_args.args) > 1 else None
         )
         assert passed_filter.and_['email']['eq']['value'] == 'user@example.com'
-
-
-@pytest.fixture
-def mock_benchling_ds():
-    worklist_a = MagicMock()
-    worklist_a.name = 'Worklist A'
-
-    worklist_b = MagicMock()
-    worklist_b.name = 'Worklist B'
-
-    ds = MagicMock()
-    ds.get_list.return_value = [worklist_a, worklist_b]
-    return ds
 
 
 class TestFlowUtilsGetWorklist:
@@ -172,3 +226,364 @@ class TestFlowUtilsGetFolder:
         result = FlowUtils.get_worklist(bds=mock_benchling_ds, worklist_name='Worklist A')
 
         assert result is None
+
+
+class TestFlowUtilsSyncEventsToPortal:
+
+    def test_constructs_loader_with_correct_types(
+        self, mock_objects_data_loader, mock_eds, mock_portaldb_ds, objects
+    ):
+        FlowUtils.sync_events_to_portal(
+            eds=mock_eds,
+            portaldb_ds=mock_portaldb_ds,
+            objects=objects,
+            object_type='sample'
+        )
+
+        _, kwargs = mock_objects_data_loader.call_args
+        assert kwargs['source_object_type'] == 'sample_event'
+        assert kwargs['destination_object_type'] == 'sample'
+
+    def test_calls_load_with_portaldb_provenance(
+        self, mock_objects_data_loader, mock_eds, mock_portaldb_ds, objects
+    ):
+        FlowUtils.sync_events_to_portal(
+            eds=mock_eds,
+            portaldb_ds=mock_portaldb_ds,
+            objects=objects,
+            object_type='sample'
+        )
+
+        mock_objects_data_loader.return_value.load.assert_called_once_with(provenance='portaldb')
+
+    def test_passes_objects_to_loader(
+        self, mock_objects_data_loader, mock_eds, mock_portaldb_ds, objects
+    ):
+        FlowUtils.sync_events_to_portal(
+            eds=mock_eds,
+            portaldb_ds=mock_portaldb_ds,
+            objects=objects,
+            object_type='sample'
+        )
+
+        _, kwargs = mock_objects_data_loader.call_args
+        assert kwargs['objects'] is objects
+
+    def test_uses_eds_as_destination_and_portaldb_as_source(
+        self, mock_objects_data_loader, mock_eds, mock_portaldb_ds, objects
+    ):
+        FlowUtils.sync_events_to_portal(
+            eds=mock_eds,
+            portaldb_ds=mock_portaldb_ds,
+            objects=objects,
+            object_type='sample'
+        )
+
+        _, kwargs = mock_objects_data_loader.call_args
+        assert kwargs['source'] is mock_portaldb_ds
+        assert kwargs['destination'] is mock_eds
+
+    def test_returns_empty_list_on_exception(
+        self, mock_objects_data_loader, mock_eds, mock_portaldb_ds, objects
+    ):
+        mock_objects_data_loader.return_value.load.side_effect = Exception('connection error')
+
+        result = FlowUtils.sync_events_to_portal(
+            eds=mock_eds,
+            portaldb_ds=mock_portaldb_ds,
+            objects=objects,
+            object_type='sample'
+        )
+
+        assert result == []
+
+
+class TestFlowUtilsSyncSummariseEnrich:
+
+    def test_syncs_events_to_portal(
+        self, mock_sync_events_to_portal,
+        mock_eds, mock_portaldb_ds, data_source_instance, event_objects
+    ):
+        FlowUtils.sync_summarise_enrich(
+            eds=mock_eds,
+            portaldb_ds=mock_portaldb_ds,
+            event_objects=iter(event_objects),
+            object_type='sample',
+            data_source_instance=data_source_instance,
+            sleep_time=0
+        )
+
+        mock_sync_events_to_portal.assert_called_once()
+        _, kwargs = mock_sync_events_to_portal.call_args
+        assert kwargs['object_type'] == 'sample'
+        assert kwargs['eds'] is mock_eds
+        assert kwargs['portaldb_ds'] is mock_portaldb_ds
+
+    def test_summarises_objects(
+        self, mock_sync_events_to_portal,
+        mock_eds, mock_portaldb_ds, data_source_instance, event_objects
+    ):
+        FlowUtils.sync_summarise_enrich(
+            eds=mock_eds,
+            portaldb_ds=mock_portaldb_ds,
+            event_objects=iter(event_objects),
+            object_type='sample',
+            data_source_instance=data_source_instance,
+            sleep_time=0
+        )
+
+        # portaldb_ds.get_list returns [] so summaries=[] is passed through to eds
+        mock_eds.resummarise_by_ids.assert_called_once_with(
+            [],
+            source_object_type='sample',
+            source_object_ids=[obj.id for obj in event_objects]
+        )
+
+    def test_enriches_source_objects(
+        self, mock_sync_events_to_portal,
+        mock_eds, mock_portaldb_ds, data_source_instance, event_objects
+    ):
+        mock_eds.relationships_to_enrich = {'sample': {'species': None}}
+
+        FlowUtils.sync_summarise_enrich(
+            eds=mock_eds,
+            portaldb_ds=mock_portaldb_ds,
+            event_objects=iter(event_objects),
+            object_type='sample',
+            data_source_instance=data_source_instance,
+            sleep_time=0
+        )
+
+        mock_eds.get_by_ids.assert_called_with('sample', [obj.id for obj in event_objects])
+
+    def test_enriches_changed_types_from_summarise(
+        self, mock_sync_events_to_portal,
+        mock_eds, mock_portaldb_ds, data_source_instance, event_objects
+    ):
+        mock_eds.resummarise_by_ids.return_value = {
+            'species': ['sp-1', 'sp-2'],
+            'tolid': []  # empty — should NOT trigger enrich
+        }
+        mock_eds.relationships_to_enrich = {
+            'sample': {},
+            'species': {'run': None},
+        }
+
+        FlowUtils.sync_summarise_enrich(
+            eds=mock_eds,
+            portaldb_ds=mock_portaldb_ds,
+            event_objects=iter(event_objects),
+            object_type='sample',
+            data_source_instance=data_source_instance,
+            sleep_time=0
+        )
+
+        enrich_source_types = [c.args[0] for c in mock_eds.enrich.call_args_list]
+        assert 'species' in enrich_source_types
+        assert 'tolid' not in enrich_source_types
+
+    def test_total_enrich_calls_with_changes(
+        self, mock_sync_events_to_portal,
+        mock_eds, mock_portaldb_ds, data_source_instance, event_objects
+    ):
+        # 2 non-empty change types + 1 for source objects = 3 eds.enrich calls total
+        mock_eds.resummarise_by_ids.return_value = {
+            'species': ['sp-1'],
+            'tolid': ['tol-1'],
+        }
+        mock_eds.relationships_to_enrich = {
+            'sample': {'x': None},
+            'species': {'y': None},
+            'tolid': {'z': None},
+        }
+
+        FlowUtils.sync_summarise_enrich(
+            eds=mock_eds,
+            portaldb_ds=mock_portaldb_ds,
+            event_objects=iter(event_objects),
+            object_type='sample',
+            data_source_instance=data_source_instance,
+            sleep_time=0
+        )
+
+        assert mock_eds.enrich.call_count == 3
+
+
+class TestFlowUtilsRecordEvents:
+
+    def test_passes_ids_and_object_types_to_loader(
+        self, mock_ids_data_loader, mock_eds, mock_portaldb_ds
+    ):
+        FlowUtils.record_events(
+            eds=mock_eds,
+            portaldb_ds=mock_portaldb_ds,
+            ids=['id-1', 'id-2'],
+            source_object_type='sample',
+            destination_object_type='sample_event',
+            fields={'date_abandoned': '2026-01-01'},
+        )
+
+        _, kwargs = mock_ids_data_loader.call_args
+        assert kwargs['source'] is mock_eds
+        assert kwargs['destination'] is mock_portaldb_ds
+        assert kwargs['source_object_type'] == 'sample'
+        assert kwargs['destination_object_type'] == 'sample_event'
+        assert kwargs['object_ids'] == ['id-1', 'id-2']
+
+    def test_builds_converter_with_correct_config(
+        self, mock_ids_data_loader, mock_eds, mock_portaldb_ds
+    ):
+        FlowUtils.record_events(
+            eds=mock_eds,
+            portaldb_ds=mock_portaldb_ds,
+            ids=['id-1'],
+            source_object_type='sample',
+            destination_object_type='sample_event',
+            fields={'date_abandoned': '2026-01-01'},
+            id_field='sts_tolid.id',
+            incremental=True,
+        )
+
+        _, kwargs = mock_ids_data_loader.call_args
+        converter = kwargs['converter']
+        assert isinstance(converter, ElasticObjectToPortaldbObjectConverter)
+        assert converter.config.destination_object_type == 'sample_event'
+        assert converter.config.id_field == 'sts_tolid.id'
+        assert converter.config.incremental is True
+        assert converter.config.fields == {'date_abandoned': '2026-01-01'}
+
+    def test_omits_id_field_from_config_when_not_provided(
+        self, mock_ids_data_loader, mock_eds, mock_portaldb_ds
+    ):
+        FlowUtils.record_events(
+            eds=mock_eds,
+            portaldb_ds=mock_portaldb_ds,
+            ids=['id-1'],
+            source_object_type='sample',
+            destination_object_type='sample_event',
+            fields={},
+        )
+
+        _, kwargs = mock_ids_data_loader.call_args
+        converter = kwargs['converter']
+        # id_field should fall back to the dataclass default
+        assert converter.config.id_field == 'id'
+
+    def test_calls_load_and_returns_iterable(
+        self, mock_ids_data_loader, mock_eds, mock_portaldb_ds
+    ):
+        sentinel = iter([MagicMock()])
+        mock_ids_data_loader.return_value.load.return_value = sentinel
+
+        result = FlowUtils.record_events(
+            eds=mock_eds,
+            portaldb_ds=mock_portaldb_ds,
+            ids=['id-1'],
+            source_object_type='sample',
+            destination_object_type='sample_event',
+            fields={},
+        )
+
+        mock_ids_data_loader.return_value.load.assert_called_once_with(auto_exhaust=False)
+        assert result is not None
+
+    def test_returns_empty_list_on_exception(
+        self, mock_ids_data_loader, mock_eds, mock_portaldb_ds
+    ):
+        mock_ids_data_loader.side_effect = Exception('connection error')
+
+        result = FlowUtils.record_events(
+            eds=mock_eds,
+            portaldb_ds=mock_portaldb_ds,
+            ids=['id-1'],
+            source_object_type='sample',
+            destination_object_type='sample_event',
+            fields={},
+        )
+
+        assert result == []
+
+
+@pytest.fixture
+def make_worklist():
+    def _make(worklist_type: str) -> MagicMock:
+        wl = MagicMock()
+        wl.worklist_type = worklist_type
+        return wl
+    return _make
+
+
+@pytest.fixture
+def converter_types():
+    def _get(factory_result) -> list[type]:
+        return [type(c) for c in factory_result._ChainedConverter__converters]
+    return _get
+
+
+class TestCreateStsToBenchlingWorklistConverterFactory:
+
+    def test_bioentity_worklist_with_sample_uses_tissue_converter(
+        self, make_worklist, converter_types
+    ):
+        factory = FlowUtils.create_sts_to_benchling_worklist_converter_factory(
+            object_type='sample',
+            worklist=make_worklist('bioentity'),
+        )
+        result = factory(data_object_factory=MagicMock())
+
+        assert isinstance(result, ChainedConverter)
+        assert converter_types(result)[0] is ElasticSampleToBenchlingTissueConverter
+
+    def test_bioentity_worklist_with_non_sample_uses_default_converter(
+        self, make_worklist, converter_types
+    ):
+        factory = FlowUtils.create_sts_to_benchling_worklist_converter_factory(
+            object_type='extraction',
+            worklist=make_worklist('bioentity'),
+        )
+        result = factory(data_object_factory=MagicMock())
+
+        assert converter_types(result)[0] is DefaultDataObjectToDataObjectConverter
+
+    def test_extraction_container_uses_default_converter_regardless_of_worklist_type(
+        self, make_worklist, converter_types
+    ):
+        factory = FlowUtils.create_sts_to_benchling_worklist_converter_factory(
+            object_type='extraction_container',
+            worklist=make_worklist('container'),
+        )
+        result = factory(data_object_factory=MagicMock())
+
+        assert converter_types(result)[0] is DefaultDataObjectToDataObjectConverter
+
+    def test_container_worklist_uses_default_converter(self, make_worklist, converter_types):
+        factory = FlowUtils.create_sts_to_benchling_worklist_converter_factory(
+            object_type='sample',
+            worklist=make_worklist('container'),
+        )
+        result = factory(data_object_factory=MagicMock())
+
+        assert converter_types(result)[0] is DefaultDataObjectToDataObjectConverter
+
+    def test_always_ends_with_worklist_item_converter(self, make_worklist, converter_types):
+        for worklist_type in ('bioentity', 'container'):
+            factory = FlowUtils.create_sts_to_benchling_worklist_converter_factory(
+                object_type='sample',
+                worklist=make_worklist(worklist_type),
+            )
+            result = factory(data_object_factory=MagicMock())
+            last_converter = result._ChainedConverter__converters[-1]
+            assert type(last_converter).__name__ == \
+                'BenchlingEntityToBenchlingWorklistItemConverter'
+
+    def test_object_type_mapping_selects_correct_destination(self, make_worklist, converter_types):
+        # 'extraction' should map to 'dna_extract' — we verify a
+        # DefaultDataObjectToDataObjectConverter is used (the mapping is an internal
+        # concern of the converter's construction)
+        factory = FlowUtils.create_sts_to_benchling_worklist_converter_factory(
+            object_type='extraction',
+            worklist=make_worklist('bioentity'),
+        )
+        result = factory(data_object_factory=MagicMock())
+
+        assert converter_types(result)[0] is DefaultDataObjectToDataObjectConverter

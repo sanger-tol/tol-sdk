@@ -2,7 +2,7 @@
 #
 # SPDX-License-Identifier: MIT
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import (
     Iterable
 )
@@ -21,6 +21,7 @@ class ElasticSampleToBenchlingTissueConverter(
 
     @dataclass(slots=True, frozen=True, kw_only=True)
     class Config:
+        extra_attributes: dict = field(default_factory=dict)
         pass
 
     __slots__ = ['__config']
@@ -28,6 +29,7 @@ class ElasticSampleToBenchlingTissueConverter(
 
     def __init__(self, data_object_factory, config: Config):
         super().__init__(data_object_factory)
+        self.__config = config
         self.update_converter = ElasticSampleToBenchlingTissueUpdateConverter(
             data_object_factory=self._data_object_factory,
             config=config
@@ -40,7 +42,7 @@ class ElasticSampleToBenchlingTissueConverter(
             ret = self._data_object_factory(
                 'tissue',
                 id_,
-                attributes=attributes
+                attributes=attributes | self.__config.extra_attributes
             )
             yield ret
         else:

@@ -178,8 +178,9 @@ class TestDataObjectConverter(TestCase):
         )
         converter = DefaultDataObjectToDataObjectConverter(
             data_object_factory=destination.data_object_factory,
-            config=DefaultDataObjectToDataObjectConverter.Config(),
-            id_field='id_field'
+            config=DefaultDataObjectToDataObjectConverter.Config(
+                id_field='id_field'
+            ),
         )
         converter.data_loader = mock_dl
         CoreDataObject = source.data_object_factory  # noqa N806
