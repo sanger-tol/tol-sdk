@@ -4,7 +4,6 @@
 
 from dataclasses import dataclass
 from datetime import datetime, timedelta
-from typing import Dict, List
 
 from tol.core import DataObject, DataSource
 from tol.core.validate import Validator
@@ -23,7 +22,7 @@ class StsFieldsValidator(Validator):
     __slots__ = ['__config', '__datasource', '__fields']
     __config: Config
     __datasource: DataSource
-    __fields: Dict[str, dict]
+    __fields: dict
 
     def __init__(
         self,
@@ -38,7 +37,7 @@ class StsFieldsValidator(Validator):
         self.__datasource = datasource
         self.__fields = self.__initialize_fields_from_datasource()
 
-    def __initialize_fields_from_datasource(self) -> Dict[str, dict]:
+    def __initialize_fields_from_datasource(self) -> dict:
         project = self.__datasource.get_one(
             'project', self.__config.project_code
         )
