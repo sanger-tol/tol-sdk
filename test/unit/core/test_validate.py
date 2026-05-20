@@ -47,6 +47,18 @@ class TestValidator:
             object_stream[0],
         )
 
+    def test_validate_empty_stream(
+        self,
+        mock_validator: Validator,
+    ) -> None:
+
+        results = list(
+            Validator.validate(mock_validator, [])
+        )
+
+        assert results == []
+        mock_validator._validate_data_object.assert_not_called()
+
 
 class TestValidatorAdd:
 
