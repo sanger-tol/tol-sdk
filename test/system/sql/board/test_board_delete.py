@@ -32,13 +32,13 @@ class TestBoardDelete:
 
         hierarchy = {
             'component': {
-                '1': ('100', []),
+                'c_1': ('100', []),
             },
             'zone': {
-                'a': ('100', ['1'])
+                'z_a': ('100', ['c_1'])
             },
             'view': {
-                'I': ('100', ['a'])
+                'v_I': ('100', ['z_a'])
             }
         }
 
@@ -47,7 +47,7 @@ class TestBoardDelete:
         board_auth_ctx.user_id = '100'
 
         r = board_client.delete(
-            '/zone/a'
+            '/z_a'
         )
         assert r.status_code == 200
 
@@ -76,14 +76,14 @@ class TestBoardDelete:
 
         hierarchy = {
             'component': {
-                '1': ('100', []),
+                'c_1': ('100', []),
             },
             'zone': {
-                'a': ('100', ['1'])
+                'z_a': ('100', ['c_1'])
             },
             'view': {
                 # someone else owns this view
-                'I': ('303', ['a'])
+                'v_I': ('303', ['z_a'])
             }
         }
 
@@ -93,7 +93,7 @@ class TestBoardDelete:
 
         with pytest.raises(DataSourceError) as e:
             board_client.delete(
-                '/zone/a'
+                '/z_a'
             )
         assert e.value.status_code == 400
 
@@ -112,18 +112,18 @@ class TestBoardDelete:
 
         hierarchy = {
             'component': {
-                '1': ('100', []),
+                'c_1': ('100', []),
             },
             'zone': {
-                'a': ('100', ['1'])
+                'z_a': ('100', ['c_1'])
             },
             'view': {
                 # four views point to the above zone, and
                 # all belong to user `100`
-                'I': ('100', ['a']),
-                'II': ('100', ['a']),
-                'III': ('100', ['a']),
-                'IV': ('100', ['a']),
+                'v_I': ('100', ['z_a']),
+                'v_II': ('100', ['z_a']),
+                'v_III': ('100', ['z_a']),
+                'v_IV': ('100', ['z_a']),
             }
         }
 
@@ -133,6 +133,6 @@ class TestBoardDelete:
 
         with pytest.raises(DataSourceError) as e:
             board_client.delete(
-                '/zone/a'
+                '/z_a'
             )
         assert e.value.status_code == 400

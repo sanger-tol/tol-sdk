@@ -22,8 +22,9 @@ from .reorder import reorder_entities # noqa
 from .utils import ( # noqa
     collect_recursive,
     generate_entity_id,
-    get_entity_type_from_prefix,
+    get_entity_and_child_type_from_parent_id,
     get_parent_joiner_objs,
     save_board_entity_and_children,
     serialise_board_entities,
+    check_auth_and_required_fields,
 )

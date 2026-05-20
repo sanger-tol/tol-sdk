@@ -4,13 +4,15 @@
 
 from __future__ import annotations
 
-from collections.abc import Callable
 from typing import TYPE_CHECKING
 
 from tol.board.errors import InvalidOrderError
+from tol.board.utils import (
+    get_entity_and_child_type_from_parent_id,
+    get_parent_joiner_objs
+)
 
 if TYPE_CHECKING:
-    from ..core import DataObject
     from ..sql import SqlDataSource
 
 
@@ -19,28 +21,36 @@ def reorder_entities(
     board_ds: SqlDataSource,
     parent_object_id: str,
     new_order: list[str],
-    get_entity_type_from_prefix_fn: Callable[[str], str | None],
-    get_parent_joiner_objs_fn: Callable[..., list[DataObject]],
 ) -> None:
-    parent_prefix = parent_object_id.split('_', 1)[0]
-    parent_object_type = get_entity_type_from_prefix_fn(parent_prefix) or parent_prefix
+    """
+    Reorders the child entities of a parent entity.
 
-    if not new_order:
+    Args:
+        board_ds (SqlDataSource): The data source for board entities.
+        parent_object_id (str): The ID of the parent entity.
+        new_order (list[str]): The new order of child entity IDs.
+
+    Raises:
+        InvalidOrderError: If the new order is invalid.
+    """
+
+    parent_type, child_type = get_entity_and_child_type_from_parent_id(parent_object_id)
+
+    if child_type is None:
         raise InvalidOrderError()
 
-    child_prefix = new_order[0].split('_', 1)[0]
-    child_object_type = get_entity_type_from_prefix_fn(child_prefix) or child_prefix
+    joiner_object_type = f'{child_type}_{parent_type}'
 
-    joiner_object_type = f'{child_object_type}_{parent_object_type}'
-
-    joiner_objs = get_parent_joiner_objs_fn(
+    joiner_objs = get_parent_joiner_objs(
         board_ds,
         parent_object_id,
         joiner_object_type,
     )
+
     actual_child_ids: list[str] = []
+
     for obj in joiner_objs:
-        child_rel = obj.to_one_relationships.get(child_object_type)
+        child_rel = obj.to_one_relationships.get(child_type)
         child_id = getattr(child_rel, 'id', None)
         if child_id is None:
             raise InvalidOrderError()
@@ -51,7 +61,7 @@ def reorder_entities(
 
     joiner_ids_by_child_id: dict[str, str] = {}
     for obj in joiner_objs:
-        child_rel = obj.to_one_relationships.get(child_object_type)
+        child_rel = obj.to_one_relationships.get(child_type)
         child_id = getattr(child_rel, 'id', None)
         joiner_id = getattr(obj, 'id', None)
         if child_id is None or joiner_id is None:

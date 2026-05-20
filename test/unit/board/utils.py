@@ -4,7 +4,7 @@
 
 from itertools import count
 from typing import Any, Callable, Iterator
-from unittest.mock import create_autospec
+from unittest.mock import MagicMock, create_autospec
 
 from tol.core import DataObject, DataSourceFilter
 
@@ -12,29 +12,40 @@ from tol.core import DataObject, DataSourceFilter
 def mock_board_obj(
     type_: str,
     id_: str | None = None,
-    attributes: dict[str, Any] = {},
-    to_one: dict[str, DataObject] = {},
+    attributes: dict[str, Any] | None = None,
+    to_one: dict[str, DataObject] | None = None,
     user_id: str | None = None
 ) -> DataObject:
     """Creates a mock DataObject for a board entity."""
+
+    resolved_attrs: dict[str, Any] = dict(attributes or {})
+    resolved_to_one: dict[str, DataObject] = dict(to_one or {})
 
     obj: DataObject = create_autospec(DataObject)
 
     obj.type = type_
     obj.id = id_
+    obj.oidc_id = None
+    obj.data_source_instance = MagicMock()
+    obj.data_source_instance.id = None
+    obj.data_source_instance.ui_api_details = None
+    obj.order = resolved_attrs.get('order', 0)
 
-    obj._to_one_objects = to_one
-    for k, v in to_one.items():
+    obj._to_one_objects = resolved_to_one
+    obj.to_one_relationships = resolved_to_one
+    for k, v in resolved_to_one.items():
         setattr(obj, k, v)
 
-    obj.attributes = attributes
-    for k, v in attributes.items():
+    obj.attributes = resolved_attrs
+    obj.title = resolved_attrs.get('title', '')
+    for k, v in resolved_attrs.items():
         setattr(obj, k, v)
 
     if user_id is not None:
         user = mock_board_obj('user', user_id)
         obj.user = user
         obj._to_one_objects['user'] = user
+        obj.to_one_relationships['user'] = user
 
     return obj
 

@@ -4,15 +4,21 @@
 
 from __future__ import annotations
 
-from collections.abc import Callable
 from typing import Any, TYPE_CHECKING
 
-from nanoid import generate
-
 from tol.api_base.auth.error import ForbiddenError
-from tol.board.errors import AddError, BadParentError, NotFoundError, UnknownTypeError
+from tol.board.constants import TYPE_HIERARCHY
+from tol.board.errors import (
+    AddError,
+    NotFoundError,
+    UnknownTypeError
+)
 
-from .utils import generate_entity_id, serialise_board_entities
+from .utils import (
+    generate_entity_id,
+    get_entity_and_child_type_from_parent_id,
+    serialise_board_entities
+)
 from ..core import DataSourceFilter
 
 if TYPE_CHECKING:
@@ -20,28 +26,39 @@ if TYPE_CHECKING:
 
 
 def add_entity(
-    *,
     board_ds: SqlDataSource,
-    type_hierarchy: list[str],
-    object_type: str,
     parent_id: str,
     user_id: str,
     roles: list[str],
     payload: dict[str, Any],
-    get_entity_type_from_prefix_fn: Callable[[str], str | None],
 ) -> tuple[dict[str, Any], int]:
+    """
+    Adds a new entity to the board under the specified parent.
 
-    if object_type not in type_hierarchy:
+    Args:
+        board_ds (SqlDataSource): The data source for board entities.
+        parent_id (str): The ID of the parent entity.
+        user_id (str): The ID of the user performing the addition.
+        roles (list[str]): The roles of the user.
+        payload (dict[str, Any]): The payload containing entity details.
+
+    Returns:
+        tuple[dict[str, Any], int]: The added entity and HTTP status code.
+
+    Raises:
+        NotFoundError: If the parent entity does not exist.
+        AddError: If the addition operation fails.
+        UnknownTypeError: If the entity type is unknown.
+        ForbiddenError: If the user is not allowed to add the entity.
+    """
+
+    parent_type, child_type = get_entity_and_child_type_from_parent_id(parent_id)
+
+    if child_type not in TYPE_HIERARCHY:
         raise UnknownTypeError()
 
-    object_index = type_hierarchy.index(object_type)
-    if object_index == 0:
-        raise AddError(object_type)
-
-    expected_parent_type = type_hierarchy[object_index - 1]
-    parent_type = get_entity_type_from_prefix_fn(parent_id.split('_', 1)[0])
-    if parent_type is None or parent_type != expected_parent_type:
-        raise BadParentError(expected_parent_type)
+    if child_type == TYPE_HIERARCHY[0]:
+        raise AddError(child_type)
 
     parent_obj = board_ds.get_one(parent_type, parent_id)
     if parent_obj is None or parent_obj.id is None:
@@ -51,18 +68,14 @@ def add_entity(
         raise ForbiddenError()
 
     attributes = payload.get('attributes', {})
+    attributes['filter'] = attributes.get('filter', {})
+    attributes['title'] = attributes.get('title', f'New {child_type}')
 
-    if 'title' not in attributes:
-        attributes['title'] = f'New {object_type}'
+    if child_type in ('component'):
+        attributes['config'] = {}
+        attributes['filter_pass_through'] = False
 
-    if object_type in ('board', 'view', 'zone', 'component') and 'filter' not in attributes:
-        attributes['filter'] = {}
-
-    new_entity_id = generate_entity_id(
-        object_type,
-        id_generator=generate,
-        fallback_prefix=object_type[:1],
-    )
+    new_child_id = generate_entity_id(child_type)
 
     user_stub = board_ds.data_object_factory(
         type_='user',
@@ -70,14 +83,14 @@ def add_entity(
     )
 
     new_entity = board_ds.data_object_factory(
-        type_=object_type,
-        id_=new_entity_id,
+        type_=child_type,
+        id_=new_child_id,
         attributes=attributes,
         to_one={'user': user_stub},
     )
-    board_ds.insert(object_type, [new_entity])
+    board_ds.insert(child_type, [new_entity])
 
-    joiner_type = f'{object_type}_{parent_type}'
+    joiner_type = f'{child_type}_{parent_type}'
     joins_filter = DataSourceFilter(
         and_={
             f'{parent_type}.id': {
@@ -94,9 +107,9 @@ def add_entity(
         type_=joiner_type,
         attributes={'order': next_order},
         to_one={
-            object_type: board_ds.data_object_factory(
-                type_=object_type,
-                id_=new_entity_id,
+            child_type: board_ds.data_object_factory(
+                type_=child_type,
+                id_=new_child_id,
             ),
             parent_type: board_ds.data_object_factory(
                 type_=parent_type,
@@ -107,43 +120,50 @@ def add_entity(
     board_ds.insert(joiner_type, [join_obj])
 
     serialised_entity = serialise_board_entities(
-        {object_type: [new_entity]},
-        new_entity_id,
-        type_hierarchy,
+        {child_type: [new_entity]},
+        new_child_id,
+        board_ds,
     )
 
     if not serialised_entity:
         serialised_entity = {
-            'id': new_entity_id,
-            'type': object_type,
+            'id': new_child_id,
+            'type': child_type,
             **{
                 k: v for k, v in attributes.items()
-                if k != 'filter' or object_type in ('component', 'zone')
+                if k != 'filter' or child_type in ('component', 'zone')
             },
         }
-        if object_type != 'component':
+        if child_type != 'component':
             serialised_entity['order'] = []
             serialised_entity['children'] = {}
 
     return {
         **serialised_entity,
         'parent_id': parent_id,
-        'parent_order': next_order,
     }, 201
 
 
 def create_board(
     *,
     board_ds: SqlDataSource,
-    type_hierarchy: list[str],
     user_id: str,
-    payload: dict[str, Any],
 ) -> tuple[dict[str, Any], int]:
+    """
+    Creates a new board with an initial view.
 
-    board_type = type_hierarchy[0]
-    view_type = type_hierarchy[1]
+    Args:
+        board_ds (SqlDataSource): The data source for board entities.
+        user_id (str): The ID of the user creating the board.
 
-    board_id = generate_entity_id(board_type, id_generator=generate)
+    Returns:
+        tuple[dict[str, Any], int]: The created board and HTTP status code.
+    """
+
+    board_type = TYPE_HIERARCHY[0]
+    view_type = TYPE_HIERARCHY[1]
+
+    board_id = generate_entity_id(board_type)
 
     user_stub = board_ds.data_object_factory(
         type_='user',
@@ -166,7 +186,7 @@ def create_board(
         'filter': {},
     }
 
-    view_id = generate_entity_id(view_type, id_generator=generate)
+    view_id = generate_entity_id(view_type)
 
     view_obj = board_ds.data_object_factory(
         type_=view_type,
@@ -210,6 +230,6 @@ def create_board(
         view_type: [view_obj],
         joiner_type: [view_board_obj],
     }
-    serialised = serialise_board_entities(entities, board_id, type_hierarchy)
+    serialised = serialise_board_entities(entities, board_id, board_ds)
 
     return serialised, 201
