@@ -6,6 +6,10 @@ SPDX-License-Identifier: MIT
 
 # Changelog
 
+## tol-sdk `2.1.10`
+18-05-2026
+- Fixed pipeline_id being None during revalidation
+
 ## tol-sdk `2.1.9`
 13-05-2026
 - Deal with stats not being present in data loaders
