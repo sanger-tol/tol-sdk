@@ -110,7 +110,7 @@ def board_blueprint(
             user_id=ctx.user_id,
         )
 
-    @board_bp.delete('/<string:object_id>')
+    @board_bp.delete('/delete-entity/<string:object_id>')
     def __delete_endpoint(*, object_id: str):
         """
         DELETE an entity and all its children.

@@ -103,7 +103,7 @@ class TestBoardBlueprintAddEntityAndCreateBoard:
         cast(MagicMock, board_ds).data_object_factory.side_effect = _factory
 
         r = board_client.post('/create_board', json={})
-        assert r.status_code == 405
+        assert r.status_code == 404
 
     def test_create_board__next_order_from_existing_joins(
         self,

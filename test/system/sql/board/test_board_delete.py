@@ -47,7 +47,7 @@ class TestBoardDelete:
         board_auth_ctx.user_id = '100'
 
         r = board_client.delete(
-            '/z_a'
+            '/delete-entity/z_a'
         )
         assert r.status_code == 200
 
@@ -93,7 +93,7 @@ class TestBoardDelete:
 
         with pytest.raises(DataSourceError) as e:
             board_client.delete(
-                '/z_a'
+                '/delete-entity/z_a'
             )
         assert e.value.status_code == 400
 
@@ -133,6 +133,6 @@ class TestBoardDelete:
 
         with pytest.raises(DataSourceError) as e:
             board_client.delete(
-                '/z_a'
+                '/delete-entity/z_a'
             )
         assert e.value.status_code == 400

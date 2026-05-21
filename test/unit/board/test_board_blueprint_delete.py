@@ -41,7 +41,7 @@ class TestBoardBlueprintDelete:
         board_ds.get_list.return_value = []
         board_ds.get_count.return_value = 0
 
-        r = board_client.delete('/z_delete_me', json={})
+        r = board_client.delete('/delete-entity/z_delete_me', json={})
         assert r.status_code == 200
 
         board_ds.delete.assert_any_call('zone', ['z_delete_me'])
@@ -63,7 +63,7 @@ class TestBoardBlueprintDelete:
         board_ds.get_one.return_value = mock_small
 
         with pytest.raises(ForbiddenError):
-            board_client.delete('/z_delete_me', json={})
+            board_client.delete('/delete-entity/z_delete_me', json={})
 
     def test_delete_biggest__total(
         self,
@@ -104,7 +104,7 @@ class TestBoardBlueprintDelete:
         board_ds.get_list.side_effect = mock_board_get_list(objs)
         board_ds.get_count.side_effect = mock_board_get_count(objs)
 
-        r = board_client.delete('/b_I', json={})
+        r = board_client.delete('/delete-entity/b_I', json={})
         assert r.status_code == 200
 
         observed_deletes = self.__format_type_deletes(board_ds)
@@ -153,7 +153,7 @@ class TestBoardBlueprintDelete:
         board_ds.get_list.side_effect = mock_board_get_list(objs)
         board_ds.get_count.side_effect = mock_board_get_count(objs)
 
-        r = board_client.delete('/b_I', json={})
+        r = board_client.delete('/delete-entity/b_I', json={})
         assert r.status_code == 200
 
         observed_deletes = self.__format_type_deletes(board_ds)
@@ -193,7 +193,7 @@ class TestBoardBlueprintDelete:
         """
 
         with pytest.raises(ForbiddenError) as exc:
-            board_client.delete('/z_something', json={})
+            board_client.delete('/delete-entity/z_something', json={})
 
         assert exc.value.status_code == 403
 
@@ -217,7 +217,7 @@ class TestBoardBlueprintDelete:
         board_ds.get_list.return_value = []
         board_ds.get_count.return_value = 0
 
-        r = board_client.delete('/z_delete_me', json={})
+        r = board_client.delete('/delete-entity/z_delete_me', json={})
 
         assert r.status_code == 200
         assert r.get_json() == {'deleted': True}
