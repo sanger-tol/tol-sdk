@@ -100,6 +100,12 @@ def objects():
 
 
 @pytest.fixture
+def mock_record_events():
+    with patch('tol.flows.flow_utils.FlowUtils.record_events') as m:
+        yield m
+
+
+@pytest.fixture
 def mock_benchling_ds():
     worklist_a = MagicMock()
     worklist_a.name = 'Worklist A'
@@ -499,3 +505,271 @@ class TestFlowUtilsRecordEvents:
         )
 
         assert result == []
+
+
+class TestFlowUtilsTolIdIdField:
+
+    def test_tolid_returns_id(self):
+        assert FlowUtils._tolid_id_field('tolid') == 'id'
+
+    def test_sample_returns_sts_tolid_id(self):
+        assert FlowUtils._tolid_id_field('sample') == 'sts_tolid.id'
+
+    def test_other_returns_benchling_tolid_id(self):
+        assert FlowUtils._tolid_id_field('extraction') == 'benchling_tolid.id'
+
+
+class TestFlowUtilsRecordTolIdEvents:
+
+    def test_passes_eds_portaldb_and_ids(
+        self, mock_record_events, mock_eds, mock_portaldb_ds
+    ):
+        FlowUtils.record_tolid_events(
+            eds=mock_eds, portaldb_ds=mock_portaldb_ds,
+            ids=['id-1'], object_type='sample', user_id='user-1'
+        )
+
+        _, kwargs = mock_record_events.call_args
+        assert kwargs['eds'] is mock_eds
+        assert kwargs['portaldb_ds'] is mock_portaldb_ds
+        assert kwargs['ids'] == ['id-1']
+
+    def test_source_object_type_is_object_type(
+        self, mock_record_events, mock_eds, mock_portaldb_ds
+    ):
+        FlowUtils.record_tolid_events(
+            eds=mock_eds, portaldb_ds=mock_portaldb_ds,
+            ids=[], object_type='extraction', user_id='user-1'
+        )
+
+        _, kwargs = mock_record_events.call_args
+        assert kwargs['source_object_type'] == 'extraction'
+
+    def test_destination_object_type_is_tolid_event(
+        self, mock_record_events, mock_eds, mock_portaldb_ds
+    ):
+        FlowUtils.record_tolid_events(
+            eds=mock_eds, portaldb_ds=mock_portaldb_ds,
+            ids=[], object_type='sample', user_id='user-1'
+        )
+
+        _, kwargs = mock_record_events.call_args
+        assert kwargs['destination_object_type'] == 'tolid_event'
+
+    def test_incremental_is_true(
+        self, mock_record_events, mock_eds, mock_portaldb_ds
+    ):
+        FlowUtils.record_tolid_events(
+            eds=mock_eds, portaldb_ds=mock_portaldb_ds,
+            ids=[], object_type='sample', user_id='user-1'
+        )
+
+        _, kwargs = mock_record_events.call_args
+        assert kwargs['incremental'] is True
+
+    def test_fields_contain_topup_date_and_user_id(
+        self, mock_record_events, mock_eds, mock_portaldb_ds
+    ):
+        FlowUtils.record_tolid_events(
+            eds=mock_eds, portaldb_ds=mock_portaldb_ds,
+            ids=[], object_type='sample', user_id='user-99'
+        )
+
+        _, kwargs = mock_record_events.call_args
+        assert 'date_topup_actioned' in kwargs['fields']
+        assert kwargs['fields']['topup_actioned_by'] == 'user-99'
+
+    def test_id_field_uses_tolid_id_field(
+        self, mock_record_events, mock_eds, mock_portaldb_ds
+    ):
+        FlowUtils.record_tolid_events(
+            eds=mock_eds, portaldb_ds=mock_portaldb_ds,
+            ids=[], object_type='sample', user_id='user-1'
+        )
+
+        _, kwargs = mock_record_events.call_args
+        assert kwargs['id_field'] == 'sts_tolid.id'
+
+
+class TestFlowUtilsRecordActionedEvents:
+
+    def test_destination_object_type_includes_object_type(
+        self, mock_record_events, mock_eds, mock_portaldb_ds
+    ):
+        FlowUtils.record_actioned_events(
+            eds=mock_eds, portaldb_ds=mock_portaldb_ds,
+            ids=[], object_type='extraction', user_id='user-1'
+        )
+
+        _, kwargs = mock_record_events.call_args
+        assert kwargs['destination_object_type'] == 'extraction_event'
+
+    def test_fields_contain_topup_date_and_user(
+        self, mock_record_events, mock_eds, mock_portaldb_ds
+    ):
+        FlowUtils.record_actioned_events(
+            eds=mock_eds, portaldb_ds=mock_portaldb_ds,
+            ids=[], object_type='sample', user_id='user-42'
+        )
+
+        _, kwargs = mock_record_events.call_args
+        assert 'date_topup_actioned' in kwargs['fields']
+        assert kwargs['fields']['topup_actioned_by'] == 'user-42'
+
+    def test_no_id_field_override(
+        self, mock_record_events, mock_eds, mock_portaldb_ds
+    ):
+        FlowUtils.record_actioned_events(
+            eds=mock_eds, portaldb_ds=mock_portaldb_ds,
+            ids=[], object_type='sample', user_id='user-1'
+        )
+
+        _, kwargs = mock_record_events.call_args
+        assert 'id_field' not in kwargs
+
+
+class TestFlowUtilsRecordAbandonedEvents:
+
+    def test_destination_object_type_includes_object_type(
+        self, mock_record_events, mock_eds, mock_portaldb_ds
+    ):
+        FlowUtils.record_abandoned_events(
+            eds=mock_eds, portaldb_ds=mock_portaldb_ds,
+            ids=[], object_type='extraction', user_id='user-1'
+        )
+
+        _, kwargs = mock_record_events.call_args
+        assert kwargs['destination_object_type'] == 'extraction_event'
+
+    def test_fields_contain_abandoned_date_and_user(
+        self, mock_record_events, mock_eds, mock_portaldb_ds
+    ):
+        FlowUtils.record_abandoned_events(
+            eds=mock_eds, portaldb_ds=mock_portaldb_ds,
+            ids=[], object_type='sample', user_id='user-7'
+        )
+
+        _, kwargs = mock_record_events.call_args
+        assert 'date_abandoned' in kwargs['fields']
+        assert kwargs['fields']['abandoned_by'] == 'user-7'
+
+    def test_no_id_field_override(
+        self, mock_record_events, mock_eds, mock_portaldb_ds
+    ):
+        FlowUtils.record_abandoned_events(
+            eds=mock_eds, portaldb_ds=mock_portaldb_ds,
+            ids=[], object_type='sample', user_id='user-1'
+        )
+
+        _, kwargs = mock_record_events.call_args
+        assert 'id_field' not in kwargs
+
+
+class TestFlowUtilsRecordReviewEvents:
+
+    def test_destination_object_type_is_tolid_event(
+        self, mock_record_events, mock_eds, mock_portaldb_ds
+    ):
+        FlowUtils.record_review_events(
+            eds=mock_eds, portaldb_ds=mock_portaldb_ds,
+            ids=[], object_type='sample', user_id='user-1'
+        )
+
+        _, kwargs = mock_record_events.call_args
+        assert kwargs['destination_object_type'] == 'tolid_event'
+
+    def test_in_review_true_sets_date_and_user_and_flag(
+        self, mock_record_events, mock_eds, mock_portaldb_ds
+    ):
+        FlowUtils.record_review_events(
+            eds=mock_eds, portaldb_ds=mock_portaldb_ds,
+            ids=[], object_type='sample', user_id='user-5', in_review=True
+        )
+
+        _, kwargs = mock_record_events.call_args
+        assert 'date_sent_to_review' in kwargs['fields']
+        assert kwargs['fields']['sent_to_review_by'] == 'user-5'
+        assert kwargs['fields']['in_review'] is True
+
+    def test_in_review_false_sets_only_flag(
+        self, mock_record_events, mock_eds, mock_portaldb_ds
+    ):
+        FlowUtils.record_review_events(
+            eds=mock_eds, portaldb_ds=mock_portaldb_ds,
+            ids=[], object_type='sample', user_id='user-5', in_review=False
+        )
+
+        _, kwargs = mock_record_events.call_args
+        assert kwargs['fields'] == {'in_review': False}
+
+    def test_id_field_uses_tolid_id_field(
+        self, mock_record_events, mock_eds, mock_portaldb_ds
+    ):
+        FlowUtils.record_review_events(
+            eds=mock_eds, portaldb_ds=mock_portaldb_ds,
+            ids=[], object_type='extraction', user_id='user-1'
+        )
+
+        _, kwargs = mock_record_events.call_args
+        assert kwargs['id_field'] == 'benchling_tolid.id'
+
+    def test_in_review_defaults_to_true(
+        self, mock_record_events, mock_eds, mock_portaldb_ds
+    ):
+        FlowUtils.record_review_events(
+            eds=mock_eds, portaldb_ds=mock_portaldb_ds,
+            ids=[], object_type='sample', user_id='user-1'
+        )
+
+        _, kwargs = mock_record_events.call_args
+        assert kwargs['fields']['in_review'] is True
+
+
+class TestFlowUtilsRecordSpeciesEvents:
+
+    def test_source_and_destination_types(
+        self, mock_record_events, mock_eds, mock_portaldb_ds
+    ):
+        FlowUtils.record_species_events(
+            eds=mock_eds, portaldb_ds=mock_portaldb_ds,
+            ids=[], user_id='user-1'
+        )
+
+        _, kwargs = mock_record_events.call_args
+        assert kwargs['source_object_type'] == 'species'
+        assert kwargs['destination_object_type'] == 'species_event'
+
+    def test_id_field_is_id(
+        self, mock_record_events, mock_eds, mock_portaldb_ds
+    ):
+        FlowUtils.record_species_events(
+            eds=mock_eds, portaldb_ds=mock_portaldb_ds,
+            ids=[], user_id='user-1'
+        )
+
+        _, kwargs = mock_record_events.call_args
+        assert kwargs['id_field'] == 'id'
+
+    def test_fields_contain_date_user_and_reason(
+        self, mock_record_events, mock_eds, mock_portaldb_ds
+    ):
+        FlowUtils.record_species_events(
+            eds=mock_eds, portaldb_ds=mock_portaldb_ds,
+            ids=[], user_id='user-3', recollection_reason='damaged'
+        )
+
+        _, kwargs = mock_record_events.call_args
+        assert 'date_marked_for_recollection' in kwargs['fields']
+        assert kwargs['fields']['marked_for_recollection_by'] == 'user-3'
+        assert kwargs['fields']['marked_for_recollection_reason'] == 'damaged'
+
+    def test_none_reason_passed_through(
+        self, mock_record_events, mock_eds, mock_portaldb_ds
+    ):
+        FlowUtils.record_species_events(
+            eds=mock_eds, portaldb_ds=mock_portaldb_ds,
+            ids=[], user_id='user-1'
+        )
+
+        _, kwargs = mock_record_events.call_args
+        assert kwargs['fields']['marked_for_recollection_reason'] is None

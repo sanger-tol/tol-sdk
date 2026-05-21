@@ -2,6 +2,7 @@
 #
 # SPDX-License-Identifier: MIT
 
+import datetime
 from collections.abc import Iterable
 from itertools import tee
 from time import sleep
@@ -216,3 +217,110 @@ class FlowUtils:
         except Exception as e:
             print(f'Error recording {source_object_type} events: {e}')
             return []
+
+    @staticmethod
+    def _tolid_id_field(object_type: str) -> str:
+        return {'tolid': 'id', 'sample': 'sts_tolid.id'}.get(object_type, 'benchling_tolid.id')
+
+    @classmethod
+    def record_tolid_events(
+        cls,
+        eds: DataSource,
+        portaldb_ds: DataSource,
+        ids: list[str],
+        object_type: str,
+        user_id: str,
+    ) -> Any:
+        print('Recording tolid events', flush=True)
+        return cls.record_events(
+            eds=eds, portaldb_ds=portaldb_ds, ids=ids,
+            source_object_type=object_type,
+            destination_object_type='tolid_event',
+            fields={'date_topup_actioned': datetime.datetime.now(), 'topup_actioned_by': user_id},
+            id_field=cls._tolid_id_field(object_type),
+            incremental=True,
+        )
+
+    @classmethod
+    def record_actioned_events(
+        cls,
+        eds: DataSource,
+        portaldb_ds: DataSource,
+        ids: list[str],
+        object_type: str,
+        user_id: str,
+    ) -> Any:
+        print('Updating actioned events in Elastic', flush=True)
+        return cls.record_events(
+            eds=eds, portaldb_ds=portaldb_ds, ids=ids,
+            source_object_type=object_type,
+            destination_object_type=f'{object_type}_event',
+            fields={'date_topup_actioned': datetime.datetime.now(), 'topup_actioned_by': user_id},
+        )
+
+    @classmethod
+    def record_abandoned_events(
+        cls,
+        eds: DataSource,
+        portaldb_ds: DataSource,
+        ids: list[str],
+        object_type: str,
+        user_id: str,
+    ) -> Any:
+        print('Updating abandoned events in Elastic', flush=True)
+        return cls.record_events(
+            eds=eds, portaldb_ds=portaldb_ds, ids=ids,
+            source_object_type=object_type,
+            destination_object_type=f'{object_type}_event',
+            fields={'date_abandoned': datetime.datetime.now(), 'abandoned_by': user_id},
+        )
+
+    @classmethod
+    def record_review_events(
+        cls,
+        eds: DataSource,
+        portaldb_ds: DataSource,
+        ids: list[str],
+        object_type: str,
+        user_id: str,
+        in_review: bool = True,
+    ) -> Any:
+        print('Updating review events in Elastic', flush=True)
+        fields = (
+            {
+                'date_sent_to_review': datetime.datetime.now(),
+                'sent_to_review_by': user_id,
+                'in_review': True,
+            }
+            if in_review
+            else {'in_review': False}
+        )
+        return cls.record_events(
+            eds=eds, portaldb_ds=portaldb_ds, ids=ids,
+            source_object_type=object_type,
+            destination_object_type='tolid_event',
+            fields=fields,
+            id_field=cls._tolid_id_field(object_type),
+        )
+
+    @classmethod
+    def record_species_events(
+        cls,
+        eds: DataSource,
+        portaldb_ds: DataSource,
+        ids: list[str],
+        user_id: str,
+        recollection_reason: str = None,
+    ) -> Any:
+        print('Recording species events', flush=True)
+        return cls.record_events(
+            eds=eds, portaldb_ds=portaldb_ds, ids=ids,
+            source_object_type='species',
+            destination_object_type='species_event',
+            fields={
+                'date_marked_for_recollection': datetime.datetime.now(),
+                'marked_for_recollection_by': user_id,
+                'marked_for_recollection_reason': recollection_reason,
+            },
+            id_field='id',
+        )
