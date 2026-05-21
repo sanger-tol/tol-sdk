@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: MIT
 import logging
 import re
-from typing import Iterable
+from typing import Iterable, Any
 from dataclasses import dataclass
 
 from benchling_sdk.errors import BenchlingError
@@ -552,21 +552,30 @@ class StsSampleToCasmBenchlingConverterFactory:
             'plate_and_location': {
                 'values': [
                     'casm_96_well_plate_v1',
-                    'TUBE_WELL_POSITION'
+                    {
+                        'primary': 'pos_in_rack',
+                        'fallback': 'TUBE_WELL_POSITION'
+                    }
                 ],
                 'separator': ':'
             },
             'plate_and_location_non_relationship': {
                 'values': [
                     'storage_rack',
-                    'TUBE_WELL_POSITION'
+                    {
+                        'primary': 'pos_in_rack',
+                        'fallback': 'TUBE_WELL_POSITION'
+                    }
                 ],
                 'separator': ':'
             },
             'box_and_position': {
                 'values': [
                     '12x12_box',
-                    'TUBE_WELL_POSITION'
+                    {
+                        'primary': 'pos_in_rack',
+                        'fallback': 'TUBE_WELL_POSITION'
+                    }
                 ],
                 'separator': ':'
             }
@@ -575,21 +584,30 @@ class StsSampleToCasmBenchlingConverterFactory:
             'plate_and_location': {
                 'values': [
                     'casm_96_well_plate',
-                    'TUBE_WELL_POSITION'
+                    {
+                        'primary': 'pos_in_rack',
+                        'fallback': 'TUBE_WELL_POSITION'
+                    }
                 ],
                 'separator': ':'
             },
             'plate_and_location_non_relationship': {
                 'values': [
                     'storage_rack',
-                    'TUBE_WELL_POSITION'
+                    {
+                        'primary': 'pos_in_rack',
+                        'fallback': 'TUBE_WELL_POSITION'
+                    }
                 ],
                 'separator': ':'
             },
             'box_and_position': {
                 'values': [
                     '12x12_box_v2',
-                    'TUBE_WELL_POSITION'
+                    {
+                        'primary': 'pos_in_rack',
+                        'fallback': 'TUBE_WELL_POSITION'
+                    }
                 ],
                 'separator': ':'
             }
@@ -799,13 +817,13 @@ class StsSampleToCasmBenchlingConverterFactory:
     }
 
     destination_object_type: str
-    fields: Iterable[any]
+    fields: Iterable[Any]
 
     def __init__(
             self,
             destination_object_type: str = '',
             previous_object_type: str = '',
-            previous_objects: list = None,
+            previous_value_map: dict[str, str] | None = None,
             detect_destination: bool = False,
             detect_destination_type: str = '',
             mode: str = 'staging',
@@ -826,12 +844,9 @@ class StsSampleToCasmBenchlingConverterFactory:
         else:
             self.detect_destination_type = detect_destination_type
 
-        if previous_object_type and previous_objects:
-            for previous_object in previous_objects:
-                object_map = self.BENCHLING_OBJECT_MAP[self.mode][previous_object_type]
-                identifier = object_map['primary_attribute']
-                key = getattr(previous_object, identifier)
-                object_map['stored_values'][key] = previous_object
+        if previous_object_type and previous_value_map:
+            object_map = self.BENCHLING_OBJECT_MAP[self.mode][previous_object_type]
+            object_map['stored_values'].update(previous_value_map)
 
     def populate_destination(self, destination_object_type):
         self.destination_object_type = destination_object_type
@@ -937,22 +952,22 @@ class StsSampleToCasmBenchlingConverterFactory:
                 return None
 
             @staticmethod
-            def _sanitize_attribute(key: str, value: any, object_type_override: str = ''):
+            def _sanitize_attribute(key: str, value: Any, object_type_override: str = ''):
                 """
-                    This static method sanitizes an attribute making sure it's the
+                    This static method sanitises an attribute making sure it's the
                     correct type expected by Benchling, it will also transform the value of
                     the attribute to a predetermined safe value for
                     Benchling this is configured in VALUE_REPLACEMENTS.
 
                     Args:
-                         key -  This argument specifies the key of the attribute,
-                         value -  This argument specifies the value of the attribute to be cleaned
-                         object_type_override – This argument specifies the cleanup actions to
+                         key - This argument specifies the key of the attribute,
+                         value - This argument specifies the value of the attribute to be cleaned
+                         object_type_override – This argument specifies the clean-up actions to
                          be performed if the attribute does not belong to
                          the destination object of the converter.
 
                     Return:
-                        Any - depends on the value provided and the cleanup performed
+                        Any - depends on the value provided and the clean-up performed
                 """
                 fields = getattr(factory, 'fields', [])
                 
@@ -1052,22 +1067,67 @@ class StsSampleToCasmBenchlingConverterFactory:
                             attribute_mapping in factory.CONCATENATED_VALUES[factory.mode]
                             and sample.attributes.get(attribute_mapping, None) is None
                     ):
-                        separator = factory.CONCATENATED_VALUES[factory.mode][attribute_mapping]['separator']
+                        concatenated_value = factory.CONCATENATED_VALUES[
+                            factory.mode
+                        ][attribute_mapping]
+                        separator = concatenated_value['separator']
 
-                        # Strip out any trailing 0 for the pos_in_rack as benchling strips
-                        # this out on save so it breaks any search queries for bar codes
-                        values = [
-                            re.sub(
-                                r'([A-Za-z]+)0',
-                                r'\1',
-                                sample.attributes.get(attribute, '') or ''
-                            ) if attribute == 'pos_in_rack' else sample.attributes.get(
-                                attribute, ''
-                            ) for attribute in factory.CONCATENATED_VALUES[factory.mode][
-                                attribute_mapping]['values']
+                        values = {}
+                        for attribute in concatenated_value['values']:
+                            attribute_key, value = self._resolve_concatenated_attribute_value(
+                                sample,
+                                attribute
+                            )
+                            values[attribute_key] = value
+
+                        missing_attributes = [
+                            attribute
+                            for attribute, value in values.items()
+                            if value is None or value == ''
                         ]
+                        if missing_attributes:
+                            raise Exception(
+                                f'Sample not ready for import: {sample.id} is missing '
+                                f'the value(s) {missing_attributes} needed to build '
+                                f'{attribute_mapping}'
+                            )
 
-                        sample.attributes[attribute_mapping] = separator.join(filter(None, values))
+                        sample.attributes[attribute_mapping] = separator.join(
+                            str(value) for value in values.values()
+                        )
+
+            @staticmethod
+            def _resolve_concatenated_attribute_value(sample, attribute):
+                if isinstance(attribute, dict):
+                    primary_attribute = attribute['primary']
+                    fallback_attribute = attribute.get('fallback')
+
+                    value = sample.attributes.get(primary_attribute)
+                    selected_attribute = primary_attribute
+                    if value is None or value == '':
+                        value = sample.attributes.get(fallback_attribute)
+                        selected_attribute = fallback_attribute
+
+                    attribute_key = f'{primary_attribute} or {fallback_attribute}'
+                    return attribute_key, StsSampleToCasmBenchlingConverter._sanitize_position_value(
+                        selected_attribute,
+                        value
+                    )
+
+                value = sample.attributes.get(attribute)
+                return attribute, StsSampleToCasmBenchlingConverter._sanitize_position_value(
+                    attribute,
+                    value
+                )
+
+            @staticmethod
+            def _sanitize_position_value(attribute, value):
+                # Strip out any trailing 0 as Benchling strips this out on save,
+                # which breaks search queries for barcodes.
+                if attribute in ['pos_in_rack', 'TUBE_WELL_POSITION']:
+                    return re.sub(r'([A-Za-z]+)0', r'\1', value or '')
+
+                return value
 
             def _populate_sts_relationships(self, sample, object_map):
                 """
@@ -1107,10 +1167,9 @@ class StsSampleToCasmBenchlingConverterFactory:
                     return
 
                 if search_value in relationship_object_map['stored_values']:
-                    benchling_object = relationship_object_map['stored_values'][search_value]
-                    sample.attributes[mapped_attribute] = (
-                        benchling_object.id if hasattr(benchling_object, 'id') else benchling_object
-                    )
+                    sample.attributes[mapped_attribute] = relationship_object_map[
+                        'stored_values'
+                    ][search_value]
                     return
 
                 benchling_object_id = self._get_benchling_object_id(
@@ -1143,14 +1202,11 @@ class StsSampleToCasmBenchlingConverterFactory:
                 else:
                     self._ensure_primary_attribute_available(sample, object_map)
                     attribute = self._get_object_primary_attribute_value(object_map, sample)
-                    print('here')
-                    print(object_map['primary_attribute'])
-                    print(attribute)
+
                     if attribute is None:
                         return False
 
                     if attribute in stored_values or attribute in converted_value_ids:
-                        print('nani!')
                         return True
 
                     benchling_object_id = self._get_benchling_object_id(
@@ -1321,33 +1377,104 @@ class StsSampleToCasmBenchlingConverterFactory:
                 attribute_map = object_map['attribute_map']
                 self._populate_concatenated_attributes(sample, object_map)
 
-                object_attributes = {
-                    key: self._resolve_attribute_value(attr_mapping, sample)
-                    for key, attr_mapping in attribute_map.items()
-                }
+                object_attributes = {}
+                resolved_values = {}
+
+                for key, attr_mapping in attribute_map.items():
+                    if self._is_computed_attribute(attr_mapping):
+                        continue
+
+                    object_attributes[key] = self._resolve_attribute_value(
+                        attr_mapping,
+                        sample
+                    )
+                    resolved_values[attr_mapping] = object_attributes[key]
+                    self._sanitize_resolved_attribute(
+                        key,
+                        attr_mapping,
+                        object_attributes,
+                        resolved_values
+                    )
 
                 if 'transfer' == factory.destination_object_type:
                     object_attributes['transfer_quantity'] = 0.001
                     object_attributes['transfer_concentration'] = 0.001
+                    resolved_values['transfer_quantity'] = object_attributes[
+                        'transfer_quantity'
+                    ]
+                    resolved_values['transfer_concentration'] = object_attributes[
+                        'transfer_concentration'
+                    ]
+                    self._sanitize_resolved_attribute(
+                        'transfer_quantity',
+                        'transfer_quantity',
+                        object_attributes,
+                        resolved_values
+                    )
+                    self._sanitize_resolved_attribute(
+                        'transfer_concentration',
+                        'transfer_concentration',
+                        object_attributes,
+                        resolved_values
+                    )
 
-                self._sanitize_attributes(object_attributes)
+                self._populate_computed_attributes(
+                    object_attributes,
+                    attribute_map,
+                    resolved_values
+                )
                 return object_attributes
 
             def _resolve_attribute_value(self, attr_mapping, sample):
                 if 'id' == attr_mapping:
                     return sample.id
 
-                if attr_mapping in factory.COMPUTED_VALUES[factory.mode]:
-                    return self._compute_attribute_value(attr_mapping, sample)
-
                 return sample.attributes.get(attr_mapping)
 
             @staticmethod
-            def _compute_attribute_value(computed_value_identifier, sample):
+            def _is_computed_attribute(attr_mapping):
+                return attr_mapping in factory.COMPUTED_VALUES[factory.mode]
+
+            def _sanitize_resolved_attribute(
+                    self,
+                    key,
+                    attr_mapping,
+                    object_attributes,
+                    resolved_values
+            ):
+                object_attributes[key] = self._sanitize_attribute(
+                    key,
+                    object_attributes[key]
+                )
+                resolved_values[attr_mapping] = object_attributes[key]
+
+            def _populate_computed_attributes(
+                    self,
+                    object_attributes,
+                    attribute_map,
+                    resolved_values
+            ):
+                for key, attr_mapping in attribute_map.items():
+                    if not self._is_computed_attribute(attr_mapping):
+                        continue
+
+                    object_attributes[key] = self._compute_attribute_value(
+                        attr_mapping,
+                        resolved_values
+                    )
+                    self._sanitize_resolved_attribute(
+                        key,
+                        attr_mapping,
+                        object_attributes,
+                        resolved_values
+                    )
+
+            @staticmethod
+            def _compute_attribute_value(computed_value_identifier, resolved_values):
                 computed_value = factory.COMPUTED_VALUES[factory.mode][
                     computed_value_identifier
                 ]
-                source_value = sample.attributes.get(computed_value['computed_from'])
+                source_value = resolved_values.get(computed_value['computed_from'])
 
                 return computed_value['values'].get(
                     source_value,
@@ -1409,7 +1536,7 @@ class StsSampleToCasmBenchlingConverterFactory:
 
                 Parameters:
                     object_type (str): The type of Benchling object to search for.
-                    search_identifier (str): The identifier to filter the search by (e.g., barcode, schema fields).
+                    search_identifier (str): The identifier to filter the search by (e.g. barcode, schema fields).
                     search_value (str): The value to match the search identifier against.
                     add_to_return (bool): Specifies whether the object should be added to the return list.
                                           Defaults to False.
@@ -1429,6 +1556,7 @@ class StsSampleToCasmBenchlingConverterFactory:
                     - For unsupported object types, an exception is raised indicating a configuration error.
                 """
                 filter_object = DataSourceFilter()
+                is_barcode_lookup = False
                 if 'custom_entity' == factory.benchling.benchling_types[object_type]:
                     schema_filter = DataSourceFilter()
                     schema_filter.and_ = {search_identifier: {'eq': {'value': search_value}}}
@@ -1439,6 +1567,7 @@ class StsSampleToCasmBenchlingConverterFactory:
                       in ['box', 'plate', 'container', 'location']):
                     if 'barcode' == search_identifier:
                         search_identifier = 'barcodes'
+                    is_barcode_lookup = search_identifier == 'barcodes'
                     filter_object.and_ = {
                         search_identifier: {'in_list': {'value': [search_value]}}
                     }
@@ -1460,11 +1589,35 @@ class StsSampleToCasmBenchlingConverterFactory:
                     )
 
                     if add_to_return:
-                        self._return_objects.append(benchling_object)
+                        self._return_objects.append(
+                            self._data_object_factory(
+                                object_type,
+                                benchling_object.id,
+                                attributes=benchling_object.attributes
+                            )
+                        )
 
                     return benchling_object.id
+                except BenchlingError as exc:
+                    if self._is_invalid_barcode_lookup_error(exc, is_barcode_lookup):
+                        return None
+                    raise
                 except StopIteration:
                     return None
+
+            @staticmethod
+            def _is_invalid_barcode_lookup_error(exc: BenchlingError, is_barcode_lookup: bool) -> bool:
+                if not is_barcode_lookup:
+                    return False
+                if getattr(exc, 'status_code', None) != 400:
+                    return False
+
+                message = getattr(exc, 'json', None) or getattr(exc, 'message', None)
+                if not isinstance(message, dict):
+                    return False
+
+                error = message.get('error', {})
+                return isinstance(error, dict) and bool(error.get('invalidBarcodes'))
 
             def _sanitize_attributes(self, object_attributes):
                 for key, value in object_attributes.items():
