@@ -7,15 +7,12 @@ from unittest.mock import MagicMock, patch
 import pytest
 
 from tol.core import (
-    ChainedConverter,
     DataSource,
     DataSourceFilter,
-    DefaultDataObjectToDataObjectConverter,
     core_data_object,
 )
 from tol.flows.converters import (
     ElasticObjectToPortaldbObjectConverter,
-    ElasticSampleToBenchlingTissueConverter,
 )
 from tol.flows.flow_utils import FlowUtils
 
@@ -502,88 +499,3 @@ class TestFlowUtilsRecordEvents:
         )
 
         assert result == []
-
-
-@pytest.fixture
-def make_worklist():
-    def _make(worklist_type: str) -> MagicMock:
-        wl = MagicMock()
-        wl.worklist_type = worklist_type
-        return wl
-    return _make
-
-
-@pytest.fixture
-def converter_types():
-    def _get(factory_result) -> list[type]:
-        return [type(c) for c in factory_result._ChainedConverter__converters]
-    return _get
-
-
-class TestCreateStsToBenchlingWorklistConverterFactory:
-
-    def test_bioentity_worklist_with_sample_uses_tissue_converter(
-        self, make_worklist, converter_types
-    ):
-        factory = FlowUtils.create_sts_to_benchling_worklist_converter_factory(
-            object_type='sample',
-            worklist=make_worklist('bioentity'),
-        )
-        result = factory(data_object_factory=MagicMock())
-
-        assert isinstance(result, ChainedConverter)
-        assert converter_types(result)[0] is ElasticSampleToBenchlingTissueConverter
-
-    def test_bioentity_worklist_with_non_sample_uses_default_converter(
-        self, make_worklist, converter_types
-    ):
-        factory = FlowUtils.create_sts_to_benchling_worklist_converter_factory(
-            object_type='extraction',
-            worklist=make_worklist('bioentity'),
-        )
-        result = factory(data_object_factory=MagicMock())
-
-        assert converter_types(result)[0] is DefaultDataObjectToDataObjectConverter
-
-    def test_extraction_container_uses_default_converter_regardless_of_worklist_type(
-        self, make_worklist, converter_types
-    ):
-        factory = FlowUtils.create_sts_to_benchling_worklist_converter_factory(
-            object_type='extraction_container',
-            worklist=make_worklist('container'),
-        )
-        result = factory(data_object_factory=MagicMock())
-
-        assert converter_types(result)[0] is DefaultDataObjectToDataObjectConverter
-
-    def test_container_worklist_uses_default_converter(self, make_worklist, converter_types):
-        factory = FlowUtils.create_sts_to_benchling_worklist_converter_factory(
-            object_type='sample',
-            worklist=make_worklist('container'),
-        )
-        result = factory(data_object_factory=MagicMock())
-
-        assert converter_types(result)[0] is DefaultDataObjectToDataObjectConverter
-
-    def test_always_ends_with_worklist_item_converter(self, make_worklist, converter_types):
-        for worklist_type in ('bioentity', 'container'):
-            factory = FlowUtils.create_sts_to_benchling_worklist_converter_factory(
-                object_type='sample',
-                worklist=make_worklist(worklist_type),
-            )
-            result = factory(data_object_factory=MagicMock())
-            last_converter = result._ChainedConverter__converters[-1]
-            assert type(last_converter).__name__ == \
-                'BenchlingEntityToBenchlingWorklistItemConverter'
-
-    def test_object_type_mapping_selects_correct_destination(self, make_worklist, converter_types):
-        # 'extraction' should map to 'dna_extract' — we verify a
-        # DefaultDataObjectToDataObjectConverter is used (the mapping is an internal
-        # concern of the converter's construction)
-        factory = FlowUtils.create_sts_to_benchling_worklist_converter_factory(
-            object_type='extraction',
-            worklist=make_worklist('bioentity'),
-        )
-        result = factory(data_object_factory=MagicMock())
-
-        assert converter_types(result)[0] is DefaultDataObjectToDataObjectConverter

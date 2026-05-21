@@ -10,12 +10,9 @@ from typing import Any
 from more_itertools import side_effect
 
 from .converters import (
-    BenchlingEntityToBenchlingWorklistItemConverterFactory,
     ElasticObjectToPortaldbObjectConverter,
-    ElasticSampleToBenchlingTissueConverter,
 )
 from ..core import (
-    ChainedConverter,
     DataObject,
     DataSource,
     DataSourceFilter,
@@ -219,52 +216,3 @@ class FlowUtils:
         except Exception as e:
             print(f'Error recording {source_object_type} events: {e}')
             return []
-
-    @classmethod
-    def create_sts_to_benchling_worklist_converter_factory(
-        cls,
-        object_type: str,
-        worklist: DataObject
-    ):
-        object_type_mapping = {
-            'sample': 'tissue',
-            'extraction': 'dna_extract',
-            'extraction_container': 'tube'
-        }
-
-        def factory(data_object_factory=None):
-            destination_object_type = object_type_mapping.get(object_type, object_type)
-            converters = []
-            # Can put the object directly on to the worklist
-            if worklist.worklist_type == 'bioentity' or object_type == 'extraction_container':
-                converters.append(
-                    ElasticSampleToBenchlingTissueConverter(
-                        data_object_factory,
-                        config=ElasticSampleToBenchlingTissueConverter.Config()
-                    )
-                    if object_type == 'sample'
-                    else DefaultDataObjectToDataObjectConverter(
-                        data_object_factory,
-                        config=DefaultDataObjectToDataObjectConverter.Config(
-                            destination_object_type=destination_object_type
-                        )
-                    )
-                )
-            # Need to convert to a container first
-            elif worklist.worklist_type == 'container':
-                converters.append(
-                    DefaultDataObjectToDataObjectConverter(
-                        data_object_factory,
-                        config=DefaultDataObjectToDataObjectConverter.Config(
-                            destination_object_type='tube',
-                            id_field='benchling_fluidx_container_id'
-                        )
-                    )
-                )
-            converter_class = BenchlingEntityToBenchlingWorklistItemConverterFactory(worklist) \
-                .get_converter_class()
-            converters.append(
-                converter_class(data_object_factory, config=converter_class.Config())
-            )
-            return ChainedConverter(*converters)
-        return factory
