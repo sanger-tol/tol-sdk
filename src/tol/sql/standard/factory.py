@@ -153,11 +153,6 @@ def create_standard_models(
             nullable=True
         )
 
-        requested_fields: Mapped[list[str]] = mapped_column(
-            JSONB,
-            nullable=True
-        )
-
         provenance_override: Mapped[str] = mapped_column(nullable=False, default='')
         config: Mapped[dict[str, Any]] = mapped_column(
             nullable=False,
@@ -618,6 +613,12 @@ def create_standard_models(
         )
 
     class _UserMixin:
+        tours_seen: Mapped[dict] = mapped_column(
+            JSONB,
+            nullable=True,
+            default={},
+            server_default='{}'  # noqa P103
+        )
 
         @declared_attr
         def components(self) -> Mapped[list[Component]]:
