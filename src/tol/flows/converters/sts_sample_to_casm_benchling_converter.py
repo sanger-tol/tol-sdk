@@ -178,6 +178,25 @@ class StsSampleToCasmBenchlingConverterFactory:
                 'naming_strategy': NamingStrategy.REPLACE_NAMES_FROM_PARTS,
                 
             },
+            'casm_qc_result_v1': {
+                'attribute_map': {
+                    'total_volume_ul_v1': 'VOLUME_UL',
+                    'concentration_ngul_v1': 'CONCENTRATION_NG_UL',
+                    'sample_preparation_v1': 'TISSUE_PREPARATION',
+                    'gel_result_v1': 'RNA_RIN',
+                    'sample_id_v1': 'casm_sample_v1'
+                },
+                'primary_attribute': 'sample_id_v1',
+                'primary_attribute_type': 'schema_field',
+                'benchling_relationships': [
+                    'casm_sample_v1',
+                ],
+                'sts_relationships': [],
+                'polymorphic_benchling_relationships': [],
+                'converted_value_identifiers': [],
+                'concatenated_values': [],
+                'stored_values': {},
+            },
             'casm_programme_id_v1': {
                 'attribute_map': {
                     'sample_id_v1': 'casm_sample_v1',
@@ -422,6 +441,25 @@ class StsSampleToCasmBenchlingConverterFactory:
                 'stored_values': {},
                 'naming_strategy': NamingStrategy.REPLACE_NAMES_FROM_PARTS,
                 
+            },
+            'casm_qc_result': {
+                'attribute_map': {
+                    'total_volume_ul': 'VOLUME_UL',
+                    'concentration_ngul': 'CONCENTRATION_NG_UL',
+                    'sample_preparation': 'TISSUE_PREPARATION',
+                    'rin_value': 'RNA_RIN',
+                    'sample_id_v2': 'casm_sample'
+                },
+                'primary_attribute': 'sample_id_v2',
+                'primary_attribute_type': 'schema_field',
+                'benchling_relationships': [
+                    'casm_sample',
+                ],
+                'sts_relationships': [],
+                'polymorphic_benchling_relationships': [],
+                'converted_value_identifiers': [],
+                'concatenated_values': [],
+                'stored_values': {},
             },
             'casm_programme_id': {
                 'attribute_map': {
