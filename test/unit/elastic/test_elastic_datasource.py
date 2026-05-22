@@ -182,7 +182,8 @@ class TestElasticDataSource:
                 to_one={
                     'relationship': CoreDataObject(
                         'reltype',
-                        id_='rel1'
+                        id_='rel1',
+                        provenance_='source_1'
                     )
                 }
             ),
@@ -202,7 +203,6 @@ class TestElasticDataSource:
             'test-obj-type',
             objects,
             id_func=lambda x: x.id,
-            provenance='source_1'
         ))
         expected = {
             '_op_type': 'update',
@@ -341,6 +341,7 @@ class TestElasticDataSource:
                 'reltype',
                 id_='rel1',
                 attributes={'field3': 'string1', 'field4': 'string2'},
+                provenance_='source_1'
             )
         }
 
@@ -357,7 +358,6 @@ class TestElasticDataSource:
             update1,
             field_prefix='prefix',
             candidate_key=['field1'],
-            provenance='source_1'
         ))
         expected = {
             'query': {
@@ -383,8 +383,6 @@ class TestElasticDataSource:
                 }
             }
         }
-        print(update_body)
-        print(expected)
         assert update_body == expected
         mock_elastic_data_source.es.update_by_query.return_value = (2, 0)
         mock_elastic_data_source.update('obj_type', updates, candidate_key=['field1'])

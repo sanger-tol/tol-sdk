@@ -174,7 +174,6 @@ class ElasticDataSource(
         objects: Iterable[DataObject],
         chunk_size: int = 100,
         id_func=lambda x: x.id,
-        provenance: str | None = None,
         merge_collections: bool | None = None,
         **kwargs
     ) -> None:
@@ -194,7 +193,6 @@ class ElasticDataSource(
                         index=index,
                         objects=objects,
                         id_func=id_func,
-                        provenance=provenance
                     )
                 ),
                 stats_only=True,

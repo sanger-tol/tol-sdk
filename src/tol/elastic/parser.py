@@ -26,7 +26,6 @@ class ElasticUpsertInputResource:
     index: str
     objects: Iterable[DataObject]
     id_func: Callable
-    provenance: str | None = None
     field_prefix: str = ''
 
 
@@ -35,7 +34,6 @@ class ElasticUpdateInputResource:
     object_type: str
     update: dict
     candidate_key: Iterable[str]
-    provenance: str | None = None
     field_prefix: str = ''
 
 
@@ -78,7 +76,8 @@ class DefaultElasticApiParser(DataSourceParser[ElasticApiResource, DataObject]):
             type_,
             id_=id_,
             attributes=attributes | runtime_attributes,
-            to_one=to_one
+            to_one=to_one,
+            # provenance_='prov here'
         )
 
     def __make_dates(self, object_type, attribute_name, value):
@@ -187,17 +186,16 @@ class _ToElasticApiResourceParser:
     def _parse_to_one_relation(
         self,
         one_relation: DataObject | None,
-        provenance: str | None
     ) -> dict[str, Any] | None:
 
         if one_relation is None:
             return None
 
-        if provenance is not None:
+        if one_relation.provenance is not None:
             return {
                 'id': {
                     'provenance': {
-                        provenance: {'value': one_relation.id}
+                        one_relation.provenance: {'value': one_relation.id}
                     }
                 },
                 **one_relation.attributes
@@ -225,7 +223,7 @@ class DefaultElasticUpsertInputParser(
     ):
         real_index_name = self.__data_source._get_indices().get(transfer.index)
         for object_ in transfer.objects:
-            obj = self._convert_data_object_to_dict(object_, transfer.provenance)
+            obj = self._convert_data_object_to_dict(object_)
             obj = self._convert_dates(obj)
             obj = self._prefix_fields(obj, transfer.field_prefix)
             obj = self._stringify_ids(obj)
@@ -249,10 +247,9 @@ class DefaultElasticUpsertInputParser(
     def _convert_data_object_to_dict(
         self,
         data_object: DataObject,
-        provenance: str | None
     ) -> dict:
         to_ones_dict = {
-            k: self._parse_to_one_relation(v, provenance)
+            k: self._parse_to_one_relation(v)
             for k, v in data_object._to_one_objects.items()
         }
         return data_object.attributes | to_ones_dict
@@ -303,7 +300,7 @@ class DefaultElasticUpdateInputParser(
             # Don't want key in the upsert as it cannot change anyway
             f.and_[key] = {'eq': {'value': u.pop(key)}}
         u = self._prefix_fields(u, transfer.field_prefix)
-        u = self._convert_data_objects_in_update_to_dict(u, transfer.provenance)
+        u = self._convert_data_objects_in_update_to_dict(u)
         query = ElasticFilterConverter(self.__data_source).convert(
             transfer.object_type, object_filters=f
         )
@@ -318,11 +315,11 @@ class DefaultElasticUpdateInputParser(
             },
         }
 
-    def _convert_data_objects_in_update_to_dict(self, dict_: dict, provenance: str | None) -> dict:
+    def _convert_data_objects_in_update_to_dict(self, dict_: dict) -> dict:
         ret = {}
         for k, v in dict_.items():
             if isinstance(v, DataObject):
-                ret[k] = self._parse_to_one_relation(v, provenance)
+                ret[k] = self._parse_to_one_relation(v)
             else:
                 ret[k] = v
         return ret

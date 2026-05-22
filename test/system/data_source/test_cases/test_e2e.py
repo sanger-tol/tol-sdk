@@ -337,6 +337,7 @@ class TestEndToEnd:
                 'str_column': 'value2',
                 'int_column': 123,
             },
+            provenance_='test_provenance'
         )
 
         obj1 = data_source.data_object_factory(
@@ -350,6 +351,7 @@ class TestEndToEnd:
                 'list_column': ['item1', 'item2'],
             },
             to_one={'related_object': rel1},
+            provenance_='test_provenance'
         )
 
         if data_source.write_mode['root'] == RelationWriteMode.SEPARATE:
@@ -391,6 +393,7 @@ class TestEndToEnd:
                 'bool_column': False,
                 'datetime_column': datetime(2024, 6, 6),
             },
+            provenance_='test_provenance'
         )
 
         obj1 = data_source.data_object_factory(
@@ -403,6 +406,7 @@ class TestEndToEnd:
                 'list_column': ['item1', 'item3'],
             },
             to_one={'related_object': rel1},
+            provenance_='test_provenance'
         )
 
         if data_source.write_mode['root'] == RelationWriteMode.SEPARATE:
