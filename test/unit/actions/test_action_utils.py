@@ -13,6 +13,7 @@ from tol.core import DataSourceError
 def _make_action(class_name: str) -> MagicMock:
     action = MagicMock()
     action.class_name = class_name
+    action.params = {'action_param': 'value_from_action'}
     return action
 
 
@@ -35,7 +36,6 @@ class TestActionUtilsRunActionSuccess:
         with patch('importlib.import_module', return_value=tol_module):
             result = ActionUtils.run_action(
                 action=_make_action('MyAction'),
-                action_params={},
                 params={},
                 user_id='u-1',
                 ids=['id-1'],
@@ -53,7 +53,6 @@ class TestActionUtilsRunActionSuccess:
         with patch('importlib.import_module', return_value=tol_module):
             ActionUtils.run_action(
                 action=_make_action('MyAction'),
-                action_params={},
                 params={},
                 user_id='u-1',
                 ids=['id-1', 'id-2'],
@@ -63,7 +62,7 @@ class TestActionUtilsRunActionSuccess:
 
         instance.run.assert_called_once_with(
             ids=['id-1', 'id-2'],
-            params={'user_id': 'u-1'},
+            params={'user_id': 'u-1', 'action_param': 'value_from_action'},
             object_type='extraction',
             datasource=ds,
         )
@@ -76,8 +75,7 @@ class TestActionUtilsRunActionSuccess:
         with patch('importlib.import_module', return_value=tol_module):
             ActionUtils.run_action(
                 action=_make_action('MyAction'),
-                action_params={'a': 1},
-                params={'b': 2},
+                params={'a': 1},
                 user_id='u-99',
                 ids=['id-1'],
                 object_type='sample',
@@ -94,8 +92,7 @@ class TestActionUtilsRunActionSuccess:
         with patch('importlib.import_module', return_value=tol_module):
             ActionUtils.run_action(
                 action=_make_action('MyAction'),
-                action_params={'key_from_action': 'val_a'},
-                params={'key_from_params': 'val_b'},
+                params={'key_from_action': 'val_a', 'key_from_params': 'val_b'},
                 user_id='u-1',
                 ids=['id-1'],
                 object_type='sample',
@@ -106,25 +103,6 @@ class TestActionUtilsRunActionSuccess:
         assert merged['key_from_action'] == 'val_a'
         assert merged['key_from_params'] == 'val_b'
 
-    def test_params_overrides_action_params_on_collision(self):
-        """params should take priority over action_params for the same key."""
-        action_class, instance = _make_action_class()
-        tol_module = MagicMock()
-        tol_module.MyAction = action_class
-
-        with patch('importlib.import_module', return_value=tol_module):
-            ActionUtils.run_action(
-                action=_make_action('MyAction'),
-                action_params={'shared': 'from_action'},
-                params={'shared': 'from_params'},
-                user_id='u-1',
-                ids=['id-1'],
-                object_type='sample',
-            )
-
-        _, call_kwargs = instance.run.call_args
-        assert call_kwargs['params']['shared'] == 'from_params'
-
     def test_action_ds_defaults_to_none(self):
         action_class, instance = _make_action_class()
         tol_module = MagicMock()
@@ -133,7 +111,6 @@ class TestActionUtilsRunActionSuccess:
         with patch('importlib.import_module', return_value=tol_module):
             ActionUtils.run_action(
                 action=_make_action('MyAction'),
-                action_params={},
                 params={},
                 user_id='u-1',
                 ids=['id-1'],
@@ -153,7 +130,6 @@ class TestActionUtilsRunActionErrors:
             with pytest.raises(DataSourceError) as exc_info:
                 ActionUtils.run_action(
                     action=_make_action('NonExistentAction'),
-                    action_params={},
                     params={},
                     user_id='u-1',
                     ids=['id-1'],
@@ -167,7 +143,6 @@ class TestActionUtilsRunActionErrors:
             with pytest.raises(DataSourceError) as exc_info:
                 ActionUtils.run_action(
                     action=_make_action('AnyAction'),
-                    action_params={},
                     params={},
                     user_id='u-1',
                     ids=['id-1'],
@@ -183,7 +158,6 @@ class TestActionUtilsRunActionErrors:
             with pytest.raises(DataSourceError) as exc_info:
                 ActionUtils.run_action(
                     action=_make_action('MissingAction'),
-                    action_params={},
                     params={},
                     user_id='u-1',
                     ids=['id-1'],

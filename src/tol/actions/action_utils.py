@@ -12,7 +12,6 @@ class ActionUtils:
     @staticmethod
     def run_action(
             action: Any,
-            action_params: dict[str, Any],
             params: dict[str, Any],
             user_id: str,
             ids: list[str],
@@ -45,7 +44,8 @@ class ActionUtils:
                 404
             )
 
-        class_params = {**action_params, **params, 'user_id': user_id}
+        # Always add the action params in here
+        class_params = params | action.params | {'user_id': user_id}
 
         action_instance = action_class()
         status = action_instance.run(

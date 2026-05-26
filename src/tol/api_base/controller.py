@@ -800,12 +800,6 @@ class Controller:
                     403
                 )
 
-        action_params = (
-            action.params
-            if action.params
-            else {}
-        )
-
         if action.flow_name:
             if flow_ds is None:
                 raise DataSourceError(
@@ -815,9 +809,7 @@ class Controller:
                 )
 
             flow_params = {
-                'params': params | action_params | {
-                    'class_name': action.class_name
-                },
+                'params': params,
                 'user_id': user_id,
                 'object_type': object_type,
                 'ids': ids
@@ -832,7 +824,6 @@ class Controller:
 
             user_action_params = {
                 **params,
-                **action_params,
                 'ids': ids,
                 'flow_run_id': flow_run_id,
                 'flow_run_name': flow_run_name
@@ -841,7 +832,6 @@ class Controller:
         elif action.class_name:
             status = ActionUtils.run_action(
                 action=action,
-                action_params=action_params,
                 params=params,
                 user_id=user_id,
                 ids=ids,
@@ -850,7 +840,6 @@ class Controller:
             )
             user_action_params = {
                 **params,
-                **action_params,
                 'ids': ids,
                 'status': status
             }
@@ -932,7 +921,9 @@ class Controller:
             attributes={
                 'flow_name': flow_name,
                 'deployment_name': flow_name,
-                'parameters': flow_params,
+                'parameters': flow_params | {
+                    'action_id': action.id
+                },
                 'tags': [
                     'app_name:portal',
                     f'user_id:{user_id}'
