@@ -12,6 +12,12 @@ from .benchling_tissue_prep_to_elastic_tissue_prep_converter import BenchlingTis
 from .benchling_entity_to_benchling_worklist_item_converter_factory import BenchlingEntityToBenchlingWorklistItemConverterFactory  # noqa F401
 from .benchling_tissue_to_sts_sample_converter import BenchlingTissueToStsSampleConverter  # noqa F401
 from .benchling_sample_to_elastic_sample_converter import BenchlingSampleToElasticSampleConverter  # noqa F401
+from .casm_benchling_sts_sample_converters import (  # noqa F401
+    CasmBenchlingErrorToStsSampleConverter,
+    StsSampleUpdateConverter,
+    error_sts_sample_id,
+    error_to_result,
+)
 from .bioscan_extra_pantheon_species_to_elastic_sample_update_converter import BioscanExtraPantheonSpeciesToElasticSampleUpdateConverter  # noqa 
 from .bioscan_image_to_elastic_sample_update_converter import BioscanImageToElasticSampleUpdateConverter  # noqa F401
 from .bioscan_qc_specimen_to_elastic_sample_update_converter import BioscanQcSpecimenToElasticSampleUpdateConverter  # noqa F401
