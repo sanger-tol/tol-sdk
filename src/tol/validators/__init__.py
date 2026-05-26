@@ -26,3 +26,11 @@ from .unique_value_check import UniqueValueCheckValidator  # noqa
 from .date_sorting import DateSortingValidator  # noqa
 from .taxon_matches_goat import TaxonMatchesGoatValidator  # noqa
 from .json_schema_definition import JsonSchemaDefinitionValidator  # noqa
+from .sts_sample_to_casm_benchling_import_validator import (  # noqa
+    Attribute,
+    StsSampleToCasmBenchlingImportValidator,
+    ValidateObject,
+    failed_validation_objects,
+    validation_errors,
+    validation_failed,
+)
