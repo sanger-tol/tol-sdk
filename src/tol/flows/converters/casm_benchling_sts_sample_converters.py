@@ -22,8 +22,10 @@ class BenchlingLoadErrorResult(TypedDict):
 
 PREFECT_ERROR_CONTEXT_KEYS = (
     'prefect_flow_name',
+    'prefect_flow_run_id',
     'prefect_flow_run_name',
     'prefect_task_name',
+    'prefect_task_run_id',
     'prefect_task_run_name',
 )
 
