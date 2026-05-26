@@ -543,7 +543,8 @@ class DataObjectConverter(Converter[DataObject, BenchlingWrite]):
         return BoxCreate(
             barcode=input_.attributes.get('barcode'),
             parent_storage_id=parent_storage_id,
-            schema_id=self.__ds.schema_ids[input_.type]
+            schema_id=self.__ds.schema_ids[input_.type],
+            project_id=self.__ds.project_id
         )
 
     def __convert_plate(self, input_: DataObject) -> PlateCreate:
@@ -554,7 +555,8 @@ class DataObjectConverter(Converter[DataObject, BenchlingWrite]):
         return PlateCreate(
             barcode=input_.attributes.get('barcode'),
             parent_storage_id=parent_storage_id,
-            schema_id=self.__ds.schema_ids[input_.type]
+            schema_id=self.__ds.schema_ids[input_.type],
+            project_id=self.__ds.project_id
         )
 
     def __convert_container(self, input_: DataObject) -> ContainerCreate:
@@ -570,6 +572,7 @@ class DataObjectConverter(Converter[DataObject, BenchlingWrite]):
             schema_id=self.__ds.schema_ids[input_.type],
             fields=container_fields,
             barcode=input_.attributes.get('barcode'),
+            project_id=self.__ds.project_id,
         )
 
     def __convert_worklist(self, input_: DataObject) -> WorklistCreate:

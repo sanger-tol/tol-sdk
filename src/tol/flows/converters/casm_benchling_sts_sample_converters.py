@@ -20,14 +20,35 @@ class BenchlingLoadErrorResult(TypedDict):
     http_code: int | None
 
 
+PREFECT_ERROR_CONTEXT_KEYS = (
+    'prefect_flow_name',
+    'prefect_flow_run_name',
+    'prefect_task_name',
+    'prefect_task_run_name',
+)
+
+
 def error_to_result(error: ErrorObject) -> BenchlingLoadErrorResult:
     """Serialize a loader ErrorObject into STS-friendly error details."""
     return {
         'object_type': error.object_type,
         'object_id': error.object_id,
         'error_id': error.error_id,
-        'details': error.details,
+        'details': {
+            key: value
+            for key, value in error.details.items()
+            if key not in PREFECT_ERROR_CONTEXT_KEYS
+        },
         'http_code': error.http_code,
+    }
+
+
+def prefect_error_context(details: dict[str, Any]) -> dict[str, Any]:
+    """Extract Prefect metadata from serialized error details."""
+    return {
+        key: details[key]
+        for key in PREFECT_ERROR_CONTEXT_KEYS
+        if key in details
     }
 
 
@@ -66,6 +87,7 @@ class CasmBenchlingErrorToStsSampleConverter(DataObjectToDataObjectOrUpdateConve
                     'eln_error': {
                         **error_to_result(data_object),
                         'loader': data_object.details.get('loader'),
+                        **prefect_error_context(data_object.details),
                     }
                 }
             )
