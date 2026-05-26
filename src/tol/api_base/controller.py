@@ -12,7 +12,6 @@ aggregations, and relationship management with proper validation and authorisati
 
 from __future__ import annotations
 
-import importlib
 import inspect
 from datetime import datetime
 from inspect import BoundArguments
@@ -31,6 +30,7 @@ from .misc import (
     StatsParameters,
     default_ctx_getter,
 )
+from ..actions import ActionUtils
 from ..api_client.exception import (
     BadArgumentCombinationError,
     ObjectNotFoundByIdException,
@@ -815,9 +815,8 @@ class Controller:
                 )
 
             flow_params = {
-                'extra_params': {
-                    **params,
-                    **action_params,
+                'params': params | action_params | {
+                    'class_name': action.class_name
                 },
                 'user_id': user_id,
                 'object_type': object_type,
@@ -840,38 +839,15 @@ class Controller:
             }
 
         elif action.class_name:
-            # Try to import the class from tol.actions first, then fall back to main.actions
-            action_class = None
-            try:
-                tol_actions_module = importlib.import_module('tol.actions')
-                if hasattr(tol_actions_module, action.class_name):
-                    action_class = getattr(tol_actions_module, action.class_name)
-
-                if action_class is None:
-                    main_actions_module = importlib.import_module('main.actions')
-                    if hasattr(main_actions_module, action.class_name):
-                        action_class = getattr(main_actions_module, action.class_name)
-
-            except ImportError:
-                raise DataSourceError(
-                    'Action Class Import Error',
-                    'Class not found in tol.actions or main.actions',
-                    500
-                )
-
-            if action_class is None:
-                raise DataSourceError(
-                    'Action Class Not Found',
-                    f'Action class "{action.class_name}" not found in tol.actions or main.actions',
-                    404
-                )
-
-            class_params = {**action_params, **params, 'user_id': user_id}
-
-            action_instance = action_class()
-            status = action_instance.run(ids=ids, params=class_params,
-                                         object_type=object_type, datasource=action_ds)
-
+            status = ActionUtils.run_action(
+                action=action,
+                action_params=action_params,
+                params=params,
+                user_id=user_id,
+                ids=ids,
+                object_type=object_type,
+                action_ds=action_ds
+            )
             user_action_params = {
                 **params,
                 **action_params,

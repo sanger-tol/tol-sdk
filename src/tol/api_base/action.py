@@ -154,9 +154,8 @@ def action_blueprint(
 
         if action.flow_name:
             flow_params = {
-                'extra_params': {
-                    **params,
-                    **action_params,
+                'params': params | action_params | {
+                    'class_name': action.class_name
                 },
                 'user_id': user_id,
                 'object_type': object_type,
