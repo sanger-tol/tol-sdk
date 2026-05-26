@@ -15,6 +15,7 @@ from .converters import (
     ElasticObjectToBenchlingWorklistItemConverter,
     ElasticObjectToPortaldbObjectConverter,
     ElasticSampleToBenchlingTissueConverter,
+    ErrorObjectConverter,
     StsSampleProjectToElasticSampleConverter,
 )
 from ..benchling.benchling_datasource import BenchlingDataSource
@@ -24,6 +25,7 @@ from ..core import (
     DataSourceFilter,
     DefaultDataLoader,
     DefaultDataObjectToDataObjectConverter,
+    ErrorObject,
     IdsDataLoader,
     ObjectsDataLoader,
 )
@@ -390,7 +392,7 @@ class FlowUtils:
             destination_object_type='tissue',
             dependencies=[],
             converter=ElasticSampleToBenchlingTissueConverter(
-                bds.data_object_factory,
+                data_object_factory=bds.data_object_factory,
                 config=ElasticSampleToBenchlingTissueConverter.Config(
                     extra_attributes=additional_fields
                 )
@@ -425,7 +427,6 @@ class FlowUtils:
             loader2.load(auto_exhaust=False)
         )
 
-        # Exhaust the generator
         return returned_objects2
 
     @classmethod
@@ -436,7 +437,7 @@ class FlowUtils:
         ids: list[str],
         object_type: str | None,
         worklist: DataObject
-    ) -> None:
+    ) -> Iterable[DataObject | ErrorObject]:
         print('Loading entities onto worklist', flush=True)
         try:
             loader = IdsDataLoader(
@@ -468,3 +469,122 @@ class FlowUtils:
         except Exception as e:
             print(f'Error loading samples: {e}')
             return []
+
+    @classmethod
+    def perform_topup_action(
+        cls,
+        eds: DataSource,
+        bds: BenchlingDataSource,
+        ids: list[str],
+        sts_ds: Any,
+        portaldb_ds: DataSource,
+        data_source_instance: DataObject,
+        object_type: str | None,
+        worklist: DataObject,
+        action: str,
+        user_id: str,
+        user_name: str,
+        recollection_reason: str = None,
+        sleep_time: int = 15
+    ) -> Iterable[ErrorObject]:
+        """
+            Performs the requested topup action.
+            Returns an iterable of error objects for any entities that failed
+            at some point
+        """
+        if not ids:
+            return []
+
+        error_filter = ErrorObjectConverter(
+            None,  # We are just passing through, not creating new objects
+            config=ErrorObjectConverter.Config(include=True)
+        )
+
+        if object_type == 'sample':
+            additional_fields = {'assigned_by': user_name}
+            yield from error_filter.convert_iterable(
+                cls.create_benchling_entities_from_elastic_samples(
+                    ids=ids, eds=eds, bds=bds, sts_ds=sts_ds, additional_fields=additional_fields
+                )
+            )
+            cls.sync_samples_to_portal_by_ids(
+                eds=eds, ids=ids, sts_ds=sts_ds, portaldb_ds=portaldb_ds
+            )
+            sleep(sleep_time)
+
+        if worklist is not None:
+            yield from error_filter.convert_iterable(
+                cls.load_entities_onto_worklist(
+                    eds=eds, bds=bds, ids=ids, object_type=object_type, worklist=worklist
+                )
+            )
+
+        if action == 'tum':
+            tolid_events = cls.record_tolid_events(
+                eds=eds, portaldb_ds=portaldb_ds, ids=ids, object_type=object_type, user_id=user_id
+            )
+            yield from error_filter.convert_iterable(tolid_events)
+            object_events = cls.record_actioned_events(
+                eds=eds, portaldb_ds=portaldb_ds, ids=ids, object_type=object_type, user_id=user_id
+            )
+            yield from error_filter.convert_iterable(object_events)
+
+            cls.sync_summarise_enrich(
+                eds=eds,
+                portaldb_ds=portaldb_ds,
+                event_objects=tolid_events,
+                object_type='tolid',
+                data_source_instance=data_source_instance
+            )
+            cls.sync_summarise_enrich(
+                eds=eds,
+                portaldb_ds=portaldb_ds,
+                event_objects=object_events,
+                object_type=object_type,
+                data_source_instance=data_source_instance
+            )
+
+        elif action in ('in_ara_review', 'out_of_ara_review'):
+            review_events = cls.record_review_events(
+                eds=eds,
+                portaldb_ds=portaldb_ds,
+                ids=ids,
+                object_type=object_type,
+                user_id=user_id,
+                in_review=(action == 'in_ara_review')
+            )
+            yield from error_filter.convert_iterable(review_events)
+            cls.sync_summarise_enrich(
+                eds=eds,
+                portaldb_ds=portaldb_ds,
+                event_objects=review_events,
+                object_type=object_type,
+                data_source_instance=data_source_instance
+            )
+
+        elif action == 'abandon':
+            object_events = cls.record_abandoned_events(
+                eds=eds, portaldb_ds=portaldb_ds, ids=ids, object_type=object_type, user_id=user_id
+            )
+            yield from error_filter.convert_iterable(object_events)
+            cls.sync_summarise_enrich(
+                eds=eds,
+                portaldb_ds=portaldb_ds,
+                event_objects=object_events,
+                object_type=object_type,
+                data_source_instance=data_source_instance
+            )
+
+        elif action == 'recollect':
+            species_events = cls.record_species_events(
+                eds=eds, portaldb_ds=portaldb_ds, ids=ids, user_id=user_id,
+                recollection_reason=recollection_reason
+            )
+            yield from error_filter.convert_iterable(species_events)
+            cls.sync_summarise_enrich(
+                eds=eds,
+                portaldb_ds=portaldb_ds,
+                event_objects=species_events,
+                object_type='species',
+                data_source_instance=data_source_instance
+            )

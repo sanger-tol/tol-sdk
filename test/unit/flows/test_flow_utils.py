@@ -9,6 +9,7 @@ import pytest
 from tol.core import (
     DataSource,
     DataSourceFilter,
+    ErrorObject,
     core_data_object,
 )
 from tol.flows.converters import (
@@ -1049,7 +1050,7 @@ class TestFlowUtilsLoadEntitiesOntoWorklist:
     ):
         FlowUtils.load_entities_onto_worklist(
             eds=mock_eds, bds=mock_bds, ids=['id-1', 'id-2'],
-            sobject_type='sample', worklist=worklist
+            object_type='sample', worklist=worklist
         )
 
         _, kwargs = mock_ids_data_loader.call_args
@@ -1104,3 +1105,444 @@ class TestFlowUtilsLoadEntitiesOntoWorklist:
         )
 
         assert result == []
+
+
+class TestFlowUtilsPerformTopupAction:
+
+    @pytest.fixture
+    def mock_create_benchling_entities(self):
+        with patch(
+            'tol.flows.flow_utils.FlowUtils.create_benchling_entities_from_elastic_samples'
+        ) as m:
+            m.return_value = []
+            yield m
+
+    @pytest.fixture
+    def mock_sync_samples_to_portal(self):
+        with patch('tol.flows.flow_utils.FlowUtils.sync_samples_to_portal_by_ids') as m:
+            yield m
+
+    @pytest.fixture
+    def mock_load_entities_onto_worklist(self):
+        with patch('tol.flows.flow_utils.FlowUtils.load_entities_onto_worklist') as m:
+            m.return_value = []
+            yield m
+
+    @pytest.fixture
+    def mock_record_tolid_events(self):
+        with patch('tol.flows.flow_utils.FlowUtils.record_tolid_events') as m:
+            m.return_value = []
+            yield m
+
+    @pytest.fixture
+    def mock_record_actioned_events(self):
+        with patch('tol.flows.flow_utils.FlowUtils.record_actioned_events') as m:
+            m.return_value = []
+            yield m
+
+    @pytest.fixture
+    def mock_record_review_events(self):
+        with patch('tol.flows.flow_utils.FlowUtils.record_review_events') as m:
+            m.return_value = []
+            yield m
+
+    @pytest.fixture
+    def mock_record_abandoned_events(self):
+        with patch('tol.flows.flow_utils.FlowUtils.record_abandoned_events') as m:
+            m.return_value = []
+            yield m
+
+    @pytest.fixture
+    def mock_record_species_events(self):
+        with patch('tol.flows.flow_utils.FlowUtils.record_species_events') as m:
+            m.return_value = []
+            yield m
+
+    @pytest.fixture
+    def mock_sync_summarise_enrich(self):
+        with patch('tol.flows.flow_utils.FlowUtils.sync_summarise_enrich') as m:
+            yield m
+
+    @pytest.fixture
+    def worklist(self):
+        return MagicMock()
+
+    @pytest.fixture
+    def an_error(self):
+        return ErrorObject(details={'message': 'something failed'}, object_type='sample')
+
+    def _call(
+        self,
+        mock_eds, mock_bds, mock_sts_ds, mock_portaldb_ds,
+        data_source_instance, worklist,
+        ids=None, object_type='sample', action='tum',
+        user_id='user-1', user_name='Test User',
+        recollection_reason=None,
+    ):
+        return list(FlowUtils.perform_topup_action(
+            eds=mock_eds,
+            bds=mock_bds,
+            ids=ids if ids is not None else ['id-1'],
+            sts_ds=mock_sts_ds,
+            portaldb_ds=mock_portaldb_ds,
+            data_source_instance=data_source_instance,
+            object_type=object_type,
+            worklist=worklist,
+            action=action,
+            user_id=user_id,
+            user_name=user_name,
+            recollection_reason=recollection_reason,
+            sleep_time=0,
+        ))
+
+    def test_returns_empty_when_ids_empty(
+        self,
+        mock_create_benchling_entities, mock_sync_samples_to_portal,
+        mock_load_entities_onto_worklist, mock_sync_summarise_enrich,
+        mock_record_tolid_events, mock_record_actioned_events,
+        mock_eds, mock_bds, mock_sts_ds, mock_portaldb_ds,
+        data_source_instance, worklist,
+    ):
+        result = self._call(
+            mock_eds, mock_bds, mock_sts_ds, mock_portaldb_ds,
+            data_source_instance, worklist, ids=[],
+        )
+
+        assert result == []
+        mock_create_benchling_entities.assert_not_called()
+        mock_load_entities_onto_worklist.assert_not_called()
+        mock_sync_summarise_enrich.assert_not_called()
+
+    def test_benchling_creation_errors_propagated(
+        self,
+        mock_create_benchling_entities, mock_sync_samples_to_portal,
+        mock_load_entities_onto_worklist, mock_sync_summarise_enrich,
+        mock_record_tolid_events, mock_record_actioned_events,
+        mock_eds, mock_bds, mock_sts_ds, mock_portaldb_ds,
+        data_source_instance, worklist, an_error,
+    ):
+        mock_create_benchling_entities.return_value = [an_error]
+
+        result = self._call(
+            mock_eds, mock_bds, mock_sts_ds, mock_portaldb_ds,
+            data_source_instance, worklist, object_type='sample',
+        )
+
+        assert an_error in result
+
+    def test_benchling_creation_non_errors_filtered_out(
+        self,
+        mock_create_benchling_entities, mock_sync_samples_to_portal,
+        mock_load_entities_onto_worklist, mock_sync_summarise_enrich,
+        mock_record_tolid_events, mock_record_actioned_events,
+        mock_eds, mock_bds, mock_sts_ds, mock_portaldb_ds,
+        data_source_instance, worklist,
+    ):
+        mock_create_benchling_entities.return_value = [MagicMock(), MagicMock()]
+
+        result = self._call(
+            mock_eds, mock_bds, mock_sts_ds, mock_portaldb_ds,
+            data_source_instance, worklist, object_type='sample',
+        )
+
+        assert result == []
+
+    def test_sync_samples_called_for_sample_type(
+        self,
+        mock_create_benchling_entities, mock_sync_samples_to_portal,
+        mock_load_entities_onto_worklist, mock_sync_summarise_enrich,
+        mock_record_tolid_events, mock_record_actioned_events,
+        mock_eds, mock_bds, mock_sts_ds, mock_portaldb_ds,
+        data_source_instance, worklist,
+    ):
+        self._call(
+            mock_eds, mock_bds, mock_sts_ds, mock_portaldb_ds,
+            data_source_instance, worklist, object_type='sample',
+        )
+
+        mock_sync_samples_to_portal.assert_called_once_with(
+            eds=mock_eds, ids=['id-1'], sts_ds=mock_sts_ds, portaldb_ds=mock_portaldb_ds,
+        )
+
+    def test_benchling_creation_skipped_for_non_sample_type(
+        self,
+        mock_create_benchling_entities, mock_sync_samples_to_portal,
+        mock_load_entities_onto_worklist, mock_sync_summarise_enrich,
+        mock_record_tolid_events, mock_record_actioned_events,
+        mock_eds, mock_bds, mock_sts_ds, mock_portaldb_ds,
+        data_source_instance, worklist,
+    ):
+        self._call(
+            mock_eds, mock_bds, mock_sts_ds, mock_portaldb_ds,
+            data_source_instance, worklist, object_type='extraction',
+        )
+
+        mock_create_benchling_entities.assert_not_called()
+        mock_sync_samples_to_portal.assert_not_called()
+
+    def test_worklist_errors_propagated(
+        self,
+        mock_create_benchling_entities, mock_sync_samples_to_portal,
+        mock_load_entities_onto_worklist, mock_sync_summarise_enrich,
+        mock_record_tolid_events, mock_record_actioned_events,
+        mock_eds, mock_bds, mock_sts_ds, mock_portaldb_ds,
+        data_source_instance, worklist, an_error,
+    ):
+        mock_load_entities_onto_worklist.return_value = [an_error]
+
+        result = self._call(
+            mock_eds, mock_bds, mock_sts_ds, mock_portaldb_ds,
+            data_source_instance, worklist,
+        )
+
+        assert an_error in result
+
+    def test_worklist_non_errors_filtered_out(
+        self,
+        mock_create_benchling_entities, mock_sync_samples_to_portal,
+        mock_load_entities_onto_worklist, mock_sync_summarise_enrich,
+        mock_record_tolid_events, mock_record_actioned_events,
+        mock_eds, mock_bds, mock_sts_ds, mock_portaldb_ds,
+        data_source_instance, worklist,
+    ):
+        mock_load_entities_onto_worklist.return_value = [MagicMock()]
+
+        result = self._call(
+            mock_eds, mock_bds, mock_sts_ds, mock_portaldb_ds,
+            data_source_instance, worklist,
+        )
+
+        assert result == []
+
+    def test_worklist_step_skipped_when_none(
+        self,
+        mock_create_benchling_entities, mock_sync_samples_to_portal,
+        mock_load_entities_onto_worklist, mock_sync_summarise_enrich,
+        mock_record_tolid_events, mock_record_actioned_events,
+        mock_eds, mock_bds, mock_sts_ds, mock_portaldb_ds,
+        data_source_instance,
+    ):
+        self._call(
+            mock_eds, mock_bds, mock_sts_ds, mock_portaldb_ds,
+            data_source_instance, worklist=None,
+        )
+
+        mock_load_entities_onto_worklist.assert_not_called()
+
+    def test_tum_tolid_event_errors_propagated(
+        self,
+        mock_create_benchling_entities, mock_sync_samples_to_portal,
+        mock_load_entities_onto_worklist, mock_sync_summarise_enrich,
+        mock_record_tolid_events, mock_record_actioned_events,
+        mock_eds, mock_bds, mock_sts_ds, mock_portaldb_ds,
+        data_source_instance, worklist, an_error,
+    ):
+        mock_record_tolid_events.return_value = [an_error]
+
+        result = self._call(
+            mock_eds, mock_bds, mock_sts_ds, mock_portaldb_ds,
+            data_source_instance, worklist, action='tum',
+        )
+
+        assert an_error in result
+
+    def test_tum_actioned_event_errors_propagated(
+        self,
+        mock_create_benchling_entities, mock_sync_samples_to_portal,
+        mock_load_entities_onto_worklist, mock_sync_summarise_enrich,
+        mock_record_tolid_events, mock_record_actioned_events,
+        mock_eds, mock_bds, mock_sts_ds, mock_portaldb_ds,
+        data_source_instance, worklist, an_error,
+    ):
+        mock_record_actioned_events.return_value = [an_error]
+
+        result = self._call(
+            mock_eds, mock_bds, mock_sts_ds, mock_portaldb_ds,
+            data_source_instance, worklist, action='tum',
+        )
+
+        assert an_error in result
+
+    def test_tum_non_errors_from_events_filtered_out(
+        self,
+        mock_create_benchling_entities, mock_sync_samples_to_portal,
+        mock_load_entities_onto_worklist, mock_sync_summarise_enrich,
+        mock_record_tolid_events, mock_record_actioned_events,
+        mock_eds, mock_bds, mock_sts_ds, mock_portaldb_ds,
+        data_source_instance, worklist,
+    ):
+        mock_record_tolid_events.return_value = [MagicMock()]
+        mock_record_actioned_events.return_value = [MagicMock()]
+
+        result = self._call(
+            mock_eds, mock_bds, mock_sts_ds, mock_portaldb_ds,
+            data_source_instance, worklist, action='tum', object_type='extraction',
+        )
+
+        assert result == []
+
+    def test_tum_sync_summarise_enrich_called_twice(
+        self,
+        mock_create_benchling_entities, mock_sync_samples_to_portal,
+        mock_load_entities_onto_worklist, mock_sync_summarise_enrich,
+        mock_record_tolid_events, mock_record_actioned_events,
+        mock_eds, mock_bds, mock_sts_ds, mock_portaldb_ds,
+        data_source_instance, worklist,
+    ):
+        self._call(
+            mock_eds, mock_bds, mock_sts_ds, mock_portaldb_ds,
+            data_source_instance, worklist, action='tum', object_type='extraction',
+        )
+
+        assert mock_sync_summarise_enrich.call_count == 2
+        types_synced = [c.kwargs['object_type'] for c in mock_sync_summarise_enrich.call_args_list]
+        assert 'tolid' in types_synced
+        assert 'extraction' in types_synced
+
+    def test_in_ara_review_errors_propagated(
+        self,
+        mock_create_benchling_entities, mock_sync_samples_to_portal,
+        mock_load_entities_onto_worklist, mock_sync_summarise_enrich,
+        mock_record_review_events,
+        mock_eds, mock_bds, mock_sts_ds, mock_portaldb_ds,
+        data_source_instance, worklist, an_error,
+    ):
+        mock_record_review_events.return_value = [an_error]
+
+        result = self._call(
+            mock_eds, mock_bds, mock_sts_ds, mock_portaldb_ds,
+            data_source_instance, worklist, action='in_ara_review', object_type='extraction',
+        )
+
+        assert an_error in result
+
+    def test_out_of_ara_review_passes_in_review_false(
+        self,
+        mock_create_benchling_entities, mock_sync_samples_to_portal,
+        mock_load_entities_onto_worklist, mock_sync_summarise_enrich,
+        mock_record_review_events,
+        mock_eds, mock_bds, mock_sts_ds, mock_portaldb_ds,
+        data_source_instance, worklist,
+    ):
+        self._call(
+            mock_eds, mock_bds, mock_sts_ds, mock_portaldb_ds,
+            data_source_instance, worklist, action='out_of_ara_review', object_type='extraction',
+        )
+
+        mock_record_review_events.assert_called_once()
+        assert mock_record_review_events.call_args.kwargs['in_review'] is False
+
+    def test_review_non_errors_filtered_out(
+        self,
+        mock_create_benchling_entities, mock_sync_samples_to_portal,
+        mock_load_entities_onto_worklist, mock_sync_summarise_enrich,
+        mock_record_review_events,
+        mock_eds, mock_bds, mock_sts_ds, mock_portaldb_ds,
+        data_source_instance, worklist,
+    ):
+        mock_record_review_events.return_value = [MagicMock()]
+
+        result = self._call(
+            mock_eds, mock_bds, mock_sts_ds, mock_portaldb_ds,
+            data_source_instance, worklist, action='in_ara_review', object_type='extraction',
+        )
+
+        assert result == []
+
+    def test_abandon_errors_propagated(
+        self,
+        mock_create_benchling_entities, mock_sync_samples_to_portal,
+        mock_load_entities_onto_worklist, mock_sync_summarise_enrich,
+        mock_record_abandoned_events,
+        mock_eds, mock_bds, mock_sts_ds, mock_portaldb_ds,
+        data_source_instance, worklist, an_error,
+    ):
+        mock_record_abandoned_events.return_value = [an_error]
+
+        result = self._call(
+            mock_eds, mock_bds, mock_sts_ds, mock_portaldb_ds,
+            data_source_instance, worklist, action='abandon', object_type='extraction',
+        )
+
+        assert an_error in result
+
+    def test_abandon_non_errors_filtered_out(
+        self,
+        mock_create_benchling_entities, mock_sync_samples_to_portal,
+        mock_load_entities_onto_worklist, mock_sync_summarise_enrich,
+        mock_record_abandoned_events,
+        mock_eds, mock_bds, mock_sts_ds, mock_portaldb_ds,
+        data_source_instance, worklist,
+    ):
+        mock_record_abandoned_events.return_value = [MagicMock()]
+
+        result = self._call(
+            mock_eds, mock_bds, mock_sts_ds, mock_portaldb_ds,
+            data_source_instance, worklist, action='abandon', object_type='extraction',
+        )
+
+        assert result == []
+
+    def test_recollect_errors_propagated(
+        self,
+        mock_create_benchling_entities, mock_sync_samples_to_portal,
+        mock_load_entities_onto_worklist, mock_sync_summarise_enrich,
+        mock_record_species_events,
+        mock_eds, mock_bds, mock_sts_ds, mock_portaldb_ds,
+        data_source_instance, worklist, an_error,
+    ):
+        mock_record_species_events.return_value = [an_error]
+
+        result = self._call(
+            mock_eds, mock_bds, mock_sts_ds, mock_portaldb_ds,
+            data_source_instance, worklist, action='recollect', object_type='sample',
+        )
+
+        assert an_error in result
+
+    def test_recollect_non_errors_filtered_out(
+        self,
+        mock_create_benchling_entities, mock_sync_samples_to_portal,
+        mock_load_entities_onto_worklist, mock_sync_summarise_enrich,
+        mock_record_species_events,
+        mock_eds, mock_bds, mock_sts_ds, mock_portaldb_ds,
+        data_source_instance, worklist,
+    ):
+        mock_record_species_events.return_value = [MagicMock()]
+
+        result = self._call(
+            mock_eds, mock_bds, mock_sts_ds, mock_portaldb_ds,
+            data_source_instance, worklist, action='recollect', object_type='sample',
+        )
+
+        assert result == []
+
+    def test_errors_collected_from_all_stages(
+        self,
+        mock_create_benchling_entities, mock_sync_samples_to_portal,
+        mock_load_entities_onto_worklist, mock_sync_summarise_enrich,
+        mock_record_tolid_events, mock_record_actioned_events,
+        mock_eds, mock_bds, mock_sts_ds, mock_portaldb_ds,
+        data_source_instance, worklist,
+    ):
+        benchling_error = ErrorObject(details={}, object_type='sample', error_id='e-benchling')
+        worklist_error = ErrorObject(details={}, object_type='sample', error_id='e-worklist')
+        tolid_error = ErrorObject(details={}, object_type='sample', error_id='e-tolid')
+        actioned_error = ErrorObject(details={}, object_type='sample', error_id='e-actioned')
+
+        mock_create_benchling_entities.return_value = [benchling_error]
+        mock_load_entities_onto_worklist.return_value = [worklist_error]
+        mock_record_tolid_events.return_value = [tolid_error]
+        mock_record_actioned_events.return_value = [actioned_error]
+
+        result = self._call(
+            mock_eds, mock_bds, mock_sts_ds, mock_portaldb_ds,
+            data_source_instance, worklist,
+            object_type='sample', action='tum',
+        )
+
+        assert benchling_error in result
+        assert worklist_error in result
+        assert tolid_error in result
+        assert actioned_error in result
+        assert len(result) == 4

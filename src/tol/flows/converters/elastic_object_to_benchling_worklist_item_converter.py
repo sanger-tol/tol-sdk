@@ -5,8 +5,8 @@
 from dataclasses import dataclass
 from typing import Iterable
 
-from .benchling_entity_to_benchling_worklist_item_converter_factory import (
-    BenchlingEntityToBenchlingWorklistItemConverterFactory
+from .benchling_entity_to_benchling_worklist_item_converter import (
+    BenchlingEntityToBenchlingWorklistItemConverter
 )
 from .elastic_sample_to_benchling_tissue_converter import ElasticSampleToBenchlingTissueConverter
 from ...core import (
@@ -77,12 +77,14 @@ class ElasticObjectToBenchlingWorklistItemConverter(
                 )
             )
 
-        converter_class = (
-            BenchlingEntityToBenchlingWorklistItemConverterFactory(worklist)
-            .get_converter_class()
+        converters.append(
+            BenchlingEntityToBenchlingWorklistItemConverter(
+                data_object_factory,
+                config=BenchlingEntityToBenchlingWorklistItemConverter.Config(
+                    worklist=worklist
+                )
+            )
         )
-        converters.append(converter_class(data_object_factory, config=converter_class.Config()))
-
         return ChainedConverter(*converters)
 
     def convert(self, data_object: DataObject) -> Iterable[DataObject]:

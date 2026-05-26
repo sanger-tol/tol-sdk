@@ -22,7 +22,7 @@ class ElasticSampleToBenchlingTissueConverter(
     @dataclass(slots=True, frozen=True, kw_only=True)
     class Config:
         extra_attributes: dict = field(default_factory=dict)
-        pass
+        only_if_new: bool = False
 
     __slots__ = ['__config']
     __config: Config
@@ -36,6 +36,8 @@ class ElasticSampleToBenchlingTissueConverter(
         )
 
     def convert(self, data_object: DataObject) -> Iterable[DataObject]:
+        if self.__config.only_if_new and data_object.sts_eln_id is not None:
+            return
         converted_update = self.update_converter._convert_one(data_object)
         if converted_update is not None:
             id_, attributes = converted_update
