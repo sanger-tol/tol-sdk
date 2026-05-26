@@ -6,6 +6,18 @@ SPDX-License-Identifier: MIT
 
 # Changelog
 
+## tol-sdk `2.1.10`
+18-05-2026
+- Fixed pipeline_id being None during revalidation
+
+## tol-sdk `2.1.9`
+13-05-2026
+- Deal with stats not being present in data loaders
+
+## tol-sdk `2.1.8`
+13-05-2026
+- Add "recent" stat
+
 ## tol-sdk `2.1.7`
 07-05-2026
 - Allow DataLoaders to use requested_fields

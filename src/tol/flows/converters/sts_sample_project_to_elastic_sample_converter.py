@@ -111,6 +111,11 @@ class StsSampleProjectToElasticSampleConverter(
                 if s.storage_rack is not None:
                     if s.storage_rack.freezer_tray is not None:
                         attributes['location'] = s.storage_rack.freezer_tray.id
+
+            attributes['disposed'] = False
+            if 'disposal' in s.to_one_relationships and s.disposal is not None:
+                attributes['disposed'] = not s.disposal.restored
+
             # Make tolid a relationship
             if s.public_name is not None and s.public_name != '':
                 to_one['tolid'] = self._data_object_factory(

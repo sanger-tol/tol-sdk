@@ -99,7 +99,7 @@ class DefaultParser(Parser):
 
     def __parse_iterable(
         self,
-        transfer: list[JsonApiResource],
+        transfer: list[JsonApiResource] | None,
     ) -> Iterable[DataObject]:
         if transfer:
             if isinstance(transfer, list):
@@ -150,7 +150,8 @@ class DefaultParser(Parser):
                     # will be an empty list. If it has not been fetched it
                     # will be a dict containing a "links" key.)
                     to_one[name] = None
-                elif data := value.get('data'):
+                elif 'data' in value:
+                    data = value['data']
                     if isinstance(data, list):
                         to_many[name] = [self.__make_stub_data_object(x) for x in data]
                     else:
