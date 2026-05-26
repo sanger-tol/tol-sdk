@@ -86,8 +86,9 @@ class BenchlingConverter(Converter[BenchlingReturn, DataObject]):
     ) -> Iterable[DataObject]:
         if isinstance(input_list[0], AssayResultsCreateResponse):
             return (
-                self.__convert_assay_results(input_)
+                assay_result
                 for input_ in input_list
+                for assay_result in self.__convert_assay_results(input_)
             )
 
         return (

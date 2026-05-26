@@ -7,10 +7,14 @@ from unittest import (
     mock
 )
 
+from benchling_api_client.v2.stable.models.assay_results_create_response import (
+    AssayResultsCreateResponse
+)
 from benchling_sdk.errors import BenchlingError
 
 from tol.benchling import BenchlingDataSource
 from tol.benchling.benchling_converter import (
+    BenchlingConverter,
     CustomEntity,
     Folder,
     Location,
@@ -284,6 +288,20 @@ class TestBenchlingDataSource(TestCase):
         # once for the page of 2, plus 2 single calls
         self.assertEqual(bds.benchling_interface.custom_entities.bulk_create.call_count, 1)
         self.assertEqual(bds.benchling_interface.custom_entities.create.call_count, 2)
+
+    def test_convert_assay_bulk_insert_response(self):
+        _, bds = mock_benchling_data_source()
+        converter = BenchlingConverter(bds)
+        response = AssayResultsCreateResponse(
+            assay_results=['assay_1', 'assay_2', 'assay_3']
+        )
+
+        res = list(converter.convert_return_entities([response]))
+
+        self.assertEqual(3, len(res))
+        self.assertEqual(['assay_1', 'assay_2', 'assay_3'], [obj.id for obj in res])
+        for obj in res:
+            self.assertEqual('assay_result', obj.type)
 
     def __mock_obj(self) -> DataObject:
         obj = mock.create_autospec(DataObject)
