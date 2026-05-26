@@ -11,12 +11,18 @@ from typing import Any
 from more_itertools import side_effect
 
 from .converters import (
+    BenchlingTissueToStsSampleConverter,
+    ElasticObjectToBenchlingWorklistItemConverter,
     ElasticObjectToPortaldbObjectConverter,
+    ElasticSampleToBenchlingTissueConverter,
+    StsSampleProjectToElasticSampleConverter,
 )
+from ..benchling.benchling_datasource import BenchlingDataSource
 from ..core import (
     DataObject,
     DataSource,
     DataSourceFilter,
+    DefaultDataLoader,
     DefaultDataObjectToDataObjectConverter,
     IdsDataLoader,
     ObjectsDataLoader,
@@ -324,3 +330,141 @@ class FlowUtils:
             },
             id_field='id',
         )
+
+    @classmethod
+    def sync_samples_to_portal_by_ids(
+            cls,
+            eds: DataSource,
+            ids: list[str],
+            sts_ds: DataSource,
+            portaldb_ds: DataSource
+    ) -> None:
+        """
+            Takes a list of sample IDs, finds the associated sample_projects in STS,
+            converts them to elastic samples and loads them.
+        """
+        try:
+            f = DataSourceFilter()
+            f.and_ = {'sample.id': {'in_list': {'value': ids}}}
+            # Here we need to get the requested fields from a loader to avoid hardcoding them
+            # here if they change
+            loader_data_object = portaldb_ds.get_one('loader', 14)
+            loader = DefaultDataLoader(
+                source=sts_ds,
+                destination=eds,
+                audit=None,
+                source_object_type='sample_project',
+                destination_object_type='sample',
+                dependencies=[],
+                object_filters=f,
+                convert_class=StsSampleProjectToElasticSampleConverter,
+                requested_fields=loader_data_object.requested_fields,
+                loader_name='STS samples and projects'
+            )
+
+            loader.load(provenance='sts')
+
+        except Exception as e:
+            print(f'Error updating samples: {e}')
+            return []
+
+    @classmethod
+    def create_benchling_entities_from_elastic_samples(
+        cls,
+        ids: list[str],
+        eds: DataSource,
+        bds: BenchlingDataSource,
+        sts_ds: DataSource,
+        additional_fields: dict[str, Any] = {}
+    ):
+        """
+        Use a list of sample IDs to load samples from the portal and
+        create corresponding entities in Benchling, then update the samples
+        in STS with the new Benchling IDs.
+        """
+        loader = IdsDataLoader(
+            source=eds,
+            destination=bds,
+            audit=None,
+            source_object_type='sample',
+            destination_object_type='tissue',
+            dependencies=[],
+            converter=ElasticSampleToBenchlingTissueConverter(
+                bds.data_object_factory,
+                config=ElasticSampleToBenchlingTissueConverter.Config(
+                    extra_attributes=additional_fields
+                )
+            ),
+            loader_name='Benchling Tissue Inserts',
+            object_ids=ids
+        )
+
+        returned_objects = side_effect(
+            lambda obj: print(f'Created Benchling entity: {obj}', flush=True),
+            loader.load(
+                method='insert',
+                auto_exhaust=False
+            )
+        )
+
+        # Update samples in STS with Benchling IDs
+        loader2 = ObjectsDataLoader(
+            source=None,
+            destination=sts_ds,
+            audit=None,
+            source_object_type='tissue',
+            destination_object_type='sample',
+            dependencies=[],
+            convert_class=BenchlingTissueToStsSampleConverter,
+            loader_name='STS Sample Update',
+            objects=returned_objects
+        )
+
+        returned_objects2 = side_effect(
+            lambda obj: print(f'STS Sample Updated: {obj}', flush=True),
+            loader2.load(auto_exhaust=False)
+        )
+
+        # Exhaust the generator
+        return returned_objects2
+
+    @classmethod
+    def load_entities_onto_worklist(
+        cls,
+        eds: DataSource,
+        bds: DataSource,
+        ids: list[str],
+        object_type: str | None,
+        worklist: DataObject
+    ) -> None:
+        print('Loading entities onto worklist', flush=True)
+        try:
+            loader = IdsDataLoader(
+                source=eds,
+                destination=bds,
+                audit=None,
+                source_object_type=object_type,
+                destination_object_type='worklist_item',
+                dependencies=[],
+                converter=ElasticObjectToBenchlingWorklistItemConverter(
+                    data_object_factory=bds.data_object_factory,
+                    config=ElasticObjectToBenchlingWorklistItemConverter.Config(
+                        object_type=object_type, worklist=worklist
+                    )
+                ),
+                loader_name=f'Elastic {object_type} to Benchling Worklist Item',
+                object_ids=ids
+            )
+
+            returned_objects = side_effect(
+                lambda obj: print(f'Adding {object_type} to Worklist: {obj}', flush=True),
+                loader.load(
+                    method='insert',
+                    auto_exhaust=False
+                )
+            )
+            return returned_objects
+
+        except Exception as e:
+            print(f'Error loading samples: {e}')
+            return []

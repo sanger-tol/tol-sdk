@@ -57,6 +57,17 @@ def mock_sts_ds():
 
 
 @pytest.fixture
+def mock_bds():
+    return MagicMock()
+
+
+@pytest.fixture
+def mock_default_data_loader():
+    with patch('tol.flows.flow_utils.DefaultDataLoader') as mock_loader:
+        yield mock_loader
+
+
+@pytest.fixture
 def mock_objects_data_loader():
     with patch('tol.flows.flow_utils.ObjectsDataLoader') as mock_loader:
         yield mock_loader
@@ -773,3 +784,323 @@ class TestFlowUtilsRecordSpeciesEvents:
 
         _, kwargs = mock_record_events.call_args
         assert kwargs['fields']['marked_for_recollection_reason'] is None
+
+
+class TestFlowUtilsSyncSamplesToPortalByIds:
+
+    def test_uses_sts_as_source_and_eds_as_destination(
+        self, mock_default_data_loader, mock_eds, mock_sts_ds, mock_portaldb_ds
+    ):
+        FlowUtils.sync_samples_to_portal_by_ids(
+            eds=mock_eds, ids=['id-1'], sts_ds=mock_sts_ds, portaldb_ds=mock_portaldb_ds
+        )
+
+        _, kwargs = mock_default_data_loader.call_args
+        assert kwargs['source'] is mock_sts_ds
+        assert kwargs['destination'] is mock_eds
+
+    def test_source_and_destination_object_types(
+        self, mock_default_data_loader, mock_eds, mock_sts_ds, mock_portaldb_ds
+    ):
+        FlowUtils.sync_samples_to_portal_by_ids(
+            eds=mock_eds, ids=[], sts_ds=mock_sts_ds, portaldb_ds=mock_portaldb_ds
+        )
+
+        _, kwargs = mock_default_data_loader.call_args
+        assert kwargs['source_object_type'] == 'sample_project'
+        assert kwargs['destination_object_type'] == 'sample'
+
+    def test_filter_contains_ids(
+        self, mock_default_data_loader, mock_eds, mock_sts_ds, mock_portaldb_ds
+    ):
+        FlowUtils.sync_samples_to_portal_by_ids(
+            eds=mock_eds, ids=['s-1', 's-2'], sts_ds=mock_sts_ds, portaldb_ds=mock_portaldb_ds
+        )
+
+        _, kwargs = mock_default_data_loader.call_args
+        f: DataSourceFilter = kwargs['object_filters']
+        assert f.and_['sample.id']['in_list']['value'] == ['s-1', 's-2']
+
+    def test_fetches_requested_fields_from_loader_14(
+        self, mock_default_data_loader, mock_eds, mock_sts_ds, mock_portaldb_ds
+    ):
+        FlowUtils.sync_samples_to_portal_by_ids(
+            eds=mock_eds, ids=[], sts_ds=mock_sts_ds, portaldb_ds=mock_portaldb_ds
+        )
+
+        mock_portaldb_ds.get_one.assert_called_once_with('loader', 14)
+
+    def test_passes_requested_fields_to_loader(
+        self, mock_default_data_loader, mock_eds, mock_sts_ds, mock_portaldb_ds
+    ):
+        requested_fields = MagicMock()
+        mock_portaldb_ds.get_one.return_value.requested_fields = requested_fields
+
+        FlowUtils.sync_samples_to_portal_by_ids(
+            eds=mock_eds, ids=[], sts_ds=mock_sts_ds, portaldb_ds=mock_portaldb_ds
+        )
+
+        _, kwargs = mock_default_data_loader.call_args
+        assert kwargs['requested_fields'] is requested_fields
+
+    def test_uses_sts_sample_project_converter(
+        self, mock_default_data_loader, mock_eds, mock_sts_ds, mock_portaldb_ds
+    ):
+        from tol.flows.converters import StsSampleProjectToElasticSampleConverter
+
+        FlowUtils.sync_samples_to_portal_by_ids(
+            eds=mock_eds, ids=[], sts_ds=mock_sts_ds, portaldb_ds=mock_portaldb_ds
+        )
+
+        _, kwargs = mock_default_data_loader.call_args
+        assert kwargs['convert_class'] is StsSampleProjectToElasticSampleConverter
+
+    def test_calls_load_with_sts_provenance(
+        self, mock_default_data_loader, mock_eds, mock_sts_ds, mock_portaldb_ds
+    ):
+        FlowUtils.sync_samples_to_portal_by_ids(
+            eds=mock_eds, ids=[], sts_ds=mock_sts_ds, portaldb_ds=mock_portaldb_ds
+        )
+
+        mock_default_data_loader.return_value.load.assert_called_once_with(provenance='sts')
+
+    def test_returns_empty_list_on_exception(
+        self, mock_default_data_loader, mock_eds, mock_sts_ds, mock_portaldb_ds
+    ):
+        mock_default_data_loader.side_effect = Exception('connection error')
+
+        result = FlowUtils.sync_samples_to_portal_by_ids(
+            eds=mock_eds, ids=[], sts_ds=mock_sts_ds, portaldb_ds=mock_portaldb_ds
+        )
+
+        assert result == []
+
+
+class TestFlowUtilsCreateBenchlingEntitiesFromElasticSamples:
+
+    @pytest.fixture
+    def mock_tissue_converter(self):
+        with patch('tol.flows.flow_utils.ElasticSampleToBenchlingTissueConverter') as m:
+            yield m
+
+    def test_ids_loader_source_and_destination(
+        self, mock_ids_data_loader, mock_objects_data_loader,
+        mock_eds, mock_bds, mock_sts_ds
+    ):
+        FlowUtils.create_benchling_entities_from_elastic_samples(
+            ids=['s-1'], eds=mock_eds, bds=mock_bds, sts_ds=mock_sts_ds
+        )
+
+        _, kwargs = mock_ids_data_loader.call_args
+        assert kwargs['source'] is mock_eds
+        assert kwargs['destination'] is mock_bds
+
+    def test_ids_loader_object_types(
+        self, mock_ids_data_loader, mock_objects_data_loader,
+        mock_eds, mock_bds, mock_sts_ds
+    ):
+        FlowUtils.create_benchling_entities_from_elastic_samples(
+            ids=[], eds=mock_eds, bds=mock_bds, sts_ds=mock_sts_ds
+        )
+
+        _, kwargs = mock_ids_data_loader.call_args
+        assert kwargs['source_object_type'] == 'sample'
+        assert kwargs['destination_object_type'] == 'tissue'
+
+    def test_ids_loader_passes_ids(
+        self, mock_ids_data_loader, mock_objects_data_loader,
+        mock_eds, mock_bds, mock_sts_ds
+    ):
+        FlowUtils.create_benchling_entities_from_elastic_samples(
+            ids=['s-1', 's-2'], eds=mock_eds, bds=mock_bds, sts_ds=mock_sts_ds
+        )
+
+        _, kwargs = mock_ids_data_loader.call_args
+        assert kwargs['object_ids'] == ['s-1', 's-2']
+
+    def test_ids_loader_load_called_with_insert_and_no_auto_exhaust(
+        self, mock_ids_data_loader, mock_objects_data_loader,
+        mock_eds, mock_bds, mock_sts_ds
+    ):
+        FlowUtils.create_benchling_entities_from_elastic_samples(
+            ids=[], eds=mock_eds, bds=mock_bds, sts_ds=mock_sts_ds
+        )
+
+        mock_ids_data_loader.return_value.load.assert_called_once_with(
+            method='insert', auto_exhaust=False
+        )
+
+    def test_converter_config_passes_additional_fields(
+        self, mock_ids_data_loader, mock_objects_data_loader, mock_tissue_converter,
+        mock_eds, mock_bds, mock_sts_ds
+    ):
+        extra = {'custom_field': 'value'}
+        FlowUtils.create_benchling_entities_from_elastic_samples(
+            ids=[], eds=mock_eds, bds=mock_bds, sts_ds=mock_sts_ds,
+            additional_fields=extra
+        )
+
+        mock_tissue_converter.Config.assert_called_once_with(extra_attributes=extra)
+
+    def test_converter_uses_empty_additional_fields_by_default(
+        self, mock_ids_data_loader, mock_objects_data_loader, mock_tissue_converter,
+        mock_eds, mock_bds, mock_sts_ds
+    ):
+        FlowUtils.create_benchling_entities_from_elastic_samples(
+            ids=[], eds=mock_eds, bds=mock_bds, sts_ds=mock_sts_ds
+        )
+
+        mock_tissue_converter.Config.assert_called_once_with(extra_attributes={})
+
+    def test_objects_loader_destination_is_sts_ds(
+        self, mock_ids_data_loader, mock_objects_data_loader,
+        mock_eds, mock_bds, mock_sts_ds
+    ):
+        FlowUtils.create_benchling_entities_from_elastic_samples(
+            ids=[], eds=mock_eds, bds=mock_bds, sts_ds=mock_sts_ds
+        )
+
+        _, kwargs = mock_objects_data_loader.call_args
+        assert kwargs['destination'] is mock_sts_ds
+
+    def test_objects_loader_object_types(
+        self, mock_ids_data_loader, mock_objects_data_loader,
+        mock_eds, mock_bds, mock_sts_ds
+    ):
+        FlowUtils.create_benchling_entities_from_elastic_samples(
+            ids=[], eds=mock_eds, bds=mock_bds, sts_ds=mock_sts_ds
+        )
+
+        _, kwargs = mock_objects_data_loader.call_args
+        assert kwargs['source_object_type'] == 'tissue'
+        assert kwargs['destination_object_type'] == 'sample'
+
+    def test_objects_loader_uses_benchling_tissue_to_sts_converter(
+        self, mock_ids_data_loader, mock_objects_data_loader,
+        mock_eds, mock_bds, mock_sts_ds
+    ):
+        from tol.flows.converters import BenchlingTissueToStsSampleConverter
+
+        FlowUtils.create_benchling_entities_from_elastic_samples(
+            ids=[], eds=mock_eds, bds=mock_bds, sts_ds=mock_sts_ds
+        )
+
+        _, kwargs = mock_objects_data_loader.call_args
+        assert kwargs['convert_class'] is BenchlingTissueToStsSampleConverter
+
+    def test_objects_loader_load_called_without_auto_exhaust(
+        self, mock_ids_data_loader, mock_objects_data_loader,
+        mock_eds, mock_bds, mock_sts_ds
+    ):
+        FlowUtils.create_benchling_entities_from_elastic_samples(
+            ids=[], eds=mock_eds, bds=mock_bds, sts_ds=mock_sts_ds
+        )
+
+        mock_objects_data_loader.return_value.load.assert_called_once_with(auto_exhaust=False)
+
+    def test_objects_loader_receives_ids_loader_output_as_objects(
+        self, mock_ids_data_loader, mock_objects_data_loader,
+        mock_eds, mock_bds, mock_sts_ds
+    ):
+        FlowUtils.create_benchling_entities_from_elastic_samples(
+            ids=[], eds=mock_eds, bds=mock_bds, sts_ds=mock_sts_ds
+        )
+
+        _, objects_kwargs = mock_objects_data_loader.call_args
+        # The objects passed to the second loader must derive from the first loader's output
+        assert objects_kwargs['objects'] is not None
+
+
+class TestFlowUtilsLoadEntitiesOntoWorklist:
+
+    @pytest.fixture
+    def mock_worklist_converter(self):
+        with patch('tol.flows.flow_utils.ElasticObjectToBenchlingWorklistItemConverter') as m:
+            yield m
+
+    @pytest.fixture
+    def worklist(self):
+        return MagicMock()
+
+    def test_ids_loader_source_and_destination(
+        self, mock_ids_data_loader, mock_eds, mock_bds, worklist
+    ):
+        FlowUtils.load_entities_onto_worklist(
+            eds=mock_eds, bds=mock_bds, ids=['id-1'], object_type='sample', worklist=worklist
+        )
+
+        _, kwargs = mock_ids_data_loader.call_args
+        assert kwargs['source'] is mock_eds
+        assert kwargs['destination'] is mock_bds
+
+    def test_ids_loader_object_types(
+        self, mock_ids_data_loader, mock_eds, mock_bds, worklist
+    ):
+        FlowUtils.load_entities_onto_worklist(
+            eds=mock_eds, bds=mock_bds, ids=[], object_type='extraction', worklist=worklist
+        )
+
+        _, kwargs = mock_ids_data_loader.call_args
+        assert kwargs['source_object_type'] == 'extraction'
+        assert kwargs['destination_object_type'] == 'worklist_item'
+
+    def test_ids_loader_passes_ids(
+        self, mock_ids_data_loader, mock_eds, mock_bds, worklist
+    ):
+        FlowUtils.load_entities_onto_worklist(
+            eds=mock_eds, bds=mock_bds, ids=['id-1', 'id-2'],
+            sobject_type='sample', worklist=worklist
+        )
+
+        _, kwargs = mock_ids_data_loader.call_args
+        assert kwargs['object_ids'] == ['id-1', 'id-2']
+
+    def test_converter_config_passes_object_type_and_worklist(
+        self, mock_ids_data_loader, mock_worklist_converter, mock_eds, mock_bds, worklist
+    ):
+        FlowUtils.load_entities_onto_worklist(
+            eds=mock_eds, bds=mock_bds, ids=[], object_type='sample', worklist=worklist
+        )
+
+        mock_worklist_converter.Config.assert_called_once_with(
+            object_type='sample',
+            worklist=worklist,
+        )
+        mock_worklist_converter.assert_called_once_with(
+            data_object_factory=mock_bds.data_object_factory,
+            config=mock_worklist_converter.Config.return_value,
+        )
+
+    def test_load_called_with_insert_and_no_auto_exhaust(
+        self, mock_ids_data_loader, mock_eds, mock_bds, worklist
+    ):
+        FlowUtils.load_entities_onto_worklist(
+            eds=mock_eds, bds=mock_bds, ids=[], object_type='sample', worklist=worklist
+        )
+
+        mock_ids_data_loader.return_value.load.assert_called_once_with(
+            method='insert', auto_exhaust=False
+        )
+
+    def test_returns_iterable_of_loaded_objects(
+        self, mock_ids_data_loader, mock_eds, mock_bds, worklist
+    ):
+        sentinel = iter([MagicMock()])
+        mock_ids_data_loader.return_value.load.return_value = sentinel
+
+        result = FlowUtils.load_entities_onto_worklist(
+            eds=mock_eds, bds=mock_bds, ids=[], object_type='sample', worklist=worklist
+        )
+
+        assert result is not None
+
+    def test_returns_empty_list_on_exception(
+        self, mock_ids_data_loader, mock_eds, mock_bds, worklist
+    ):
+        mock_ids_data_loader.side_effect = Exception('connection error')
+
+        result = FlowUtils.load_entities_onto_worklist(
+            eds=mock_eds, bds=mock_bds, ids=[], object_type='sample', worklist=worklist
+        )
+
+        assert result == []
