@@ -40,14 +40,20 @@ class TestBoardBlueprintAddEntityAndCreateBoard:
         )
 
         def _factory(*, type_, id_=None, attributes=None, to_one=None):
+            resolved_attributes = (attributes or {})
+            if type_ == 'user':
+                resolved_attributes.setdefault('oidc_id', 'user@example.com')
             return self.__mock_obj(
                 type_,
                 id_=id_,
-                attributes=attributes or {},
+                attributes=resolved_attributes,
                 to_one=to_one or {},
             )
 
         cast(MagicMock, board_ds).data_object_factory.side_effect = _factory
+        cast(MagicMock, board_ds).get_one.side_effect = (
+            lambda type_, id_: _factory(type_=type_, id_=id_) if type_ == 'user' else None
+        )
 
         r = board_client.post(
             '/create-board',
@@ -61,6 +67,7 @@ class TestBoardBlueprintAddEntityAndCreateBoard:
         assert payload['type'] == 'board'
         assert payload['title'] == 'Untitled board'
         assert payload['order'] == ['v_view123456789']
+        assert payload['owner_email'] == 'user@example.com'
         children = (
             payload['children'][0]
             if isinstance(payload['children'], list)
@@ -93,10 +100,13 @@ class TestBoardBlueprintAddEntityAndCreateBoard:
         )
 
         def _factory(*, type_, id_=None, attributes=None, to_one=None):
+            resolved_attributes = (attributes or {})
+            if type_ == 'user':
+                resolved_attributes.setdefault('oidc_id', 'user@example.com')
             return self.__mock_obj(
                 type_,
                 id_=id_,
-                attributes=attributes or {},
+                attributes=resolved_attributes,
                 to_one=to_one or {},
             )
 
@@ -127,16 +137,23 @@ class TestBoardBlueprintAddEntityAndCreateBoard:
 
         existing_join = self.__mock_obj('view_board', id_='j1', attributes={'order': 2})
         cast(MagicMock, board_ds).get_list.return_value = [existing_join]
+        cast(MagicMock, board_ds).get_count.return_value = len([existing_join])
 
         def _factory(*, type_, id_=None, attributes=None, to_one=None):
+            resolved_attributes = (attributes or {})
+            if type_ == 'user':
+                resolved_attributes.setdefault('oidc_id', 'user@example.com')
             return self.__mock_obj(
                 type_,
                 id_=id_,
-                attributes=attributes or {},
+                attributes=resolved_attributes,
                 to_one=to_one or {},
             )
 
         cast(MagicMock, board_ds).data_object_factory.side_effect = _factory
+        cast(MagicMock, board_ds).get_one.side_effect = (
+            lambda type_, id_: _factory(type_=type_, id_=id_) if type_ == 'user' else None
+        )
 
         r = board_client.post('/create-board', json={})
         assert r.status_code == 201
@@ -166,6 +183,7 @@ class TestBoardBlueprintAddEntityAndCreateBoard:
 
         cast(MagicMock, board_ds).get_one.return_value = parent_obj
         cast(MagicMock, board_ds).get_list.return_value = []
+        cast(MagicMock, board_ds).get_count.return_value = 0
 
         r = board_client.post(
             '/add-entity/z_parent',
@@ -179,7 +197,7 @@ class TestBoardBlueprintAddEntityAndCreateBoard:
         payload = r.get_json()
         assert payload['type'] == 'component'
         assert payload['parent_id'] == 'z_parent'
-        assert payload['title'] == 'New component'
+        assert payload['title'] == 'Component 1'
         assert payload['filter'] == {'a': 1}
         assert payload['config'] == {}
         assert payload['filter_pass_through'] is False
@@ -205,10 +223,11 @@ class TestBoardBlueprintAddEntityAndCreateBoard:
 
         cast(MagicMock, board_ds).get_one.return_value = parent_obj
         cast(MagicMock, board_ds).get_list.return_value = [existing_join_1, existing_join_2]
+        cast(MagicMock, board_ds).get_count.return_value = len([existing_join_1, existing_join_2])
 
         r = board_client.post(
             '/add-entity/v_parent',
-            json={'attributes': {'title': 'New S', 'filter': {'a': 1}}}
+            json={'attributes': {'filter': {'a': 1}}}
         )
 
         assert r.status_code == 201
@@ -217,7 +236,7 @@ class TestBoardBlueprintAddEntityAndCreateBoard:
         assert payload['parent_id'] == 'v_parent'
         assert payload['order'] == []
         assert payload['children'] == {}
-        assert payload['title'] == 'New S'
+        assert payload['title'] == 'Zone 3'
 
         inserted_types = [call.args[0] for call in cast(MagicMock, board_ds).insert.call_args_list]
         assert inserted_types == ['zone', 'zone_view']
@@ -319,12 +338,13 @@ class TestBoardBlueprintAddEntityAndCreateBoard:
         parent_obj = self.__mock_obj('view', 'v_parent', user_id='100')
         cast(MagicMock, board_ds).get_one.return_value = parent_obj
         cast(MagicMock, board_ds).get_list.return_value = []
+        cast(MagicMock, board_ds).get_count.return_value = 0
 
         r = board_client.post('/add-entity/v_parent', json={'attributes': {}})
 
         assert r.status_code == 201
         payload = r.get_json()
-        assert payload['title'] == 'New zone'
+        assert payload['title'] == 'Zone 1'
         assert payload['order'] == []
 
     def __mock_obj(
@@ -355,7 +375,7 @@ class TestBoardBlueprintAddEntityAndCreateBoard:
             setattr(obj, k, v)
 
         if user_id is not None:
-            user = self.__mock_obj('user', user_id)
+            user = self.__mock_obj('user', user_id, attributes={'oidc_id': 'user@example.com'})
             obj.user = user
             obj._to_one_objects['user'] = user
 

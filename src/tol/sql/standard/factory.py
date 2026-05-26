@@ -46,7 +46,7 @@ class StandardModels(IterableABC[type[Model]]):
     view_board: type[Model]
     board: type[Model]
     web_app: type[Model]
-    board_diff: type[Model]
+    entity_diff: type[Model]
 
     _user_mixin: type[Any]
 
@@ -72,7 +72,7 @@ class StandardModels(IterableABC[type[Model]]):
                 self.data_source_config,
                 self.loader,
                 self.web_app,
-                self.board_diff
+                self.entity_diff
             ]
         )
 
@@ -427,8 +427,8 @@ def create_standard_models(
             foreign_keys=[user_id]
         )
 
-    class BoardDiff(base_model_class):
-        __tablename__ = 'board_diff'
+    class EntityDiff(base_model_class):
+        __tablename__ = 'entity_diff'
 
         id: Mapped[int] = mapped_column(  # noqa A003
             primary_key=True,
@@ -449,7 +449,7 @@ def create_standard_models(
 
         user = relationship(
             user_model_class_name,
-            back_populates='board_diff',
+            back_populates='entity_diff',
             foreign_keys=[user_id]
         )
 
@@ -653,7 +653,7 @@ def create_standard_models(
             )
 
         @declared_attr
-        def board_diff(self) -> Mapped[list[BoardDiff]]:
+        def entity_diff(self) -> Mapped[list[EntityDiff]]:
             return relationship(
                 back_populates='user'
             )
@@ -673,7 +673,7 @@ def create_standard_models(
         view=View,
         view_board=ViewBoard,
         board=Board,
-        board_diff=BoardDiff,
+        entity_diff=EntityDiff,
         web_app=WebApp,
         _user_mixin=_UserMixin
     )

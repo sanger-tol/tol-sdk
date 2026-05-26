@@ -66,7 +66,9 @@ def get_entity_and_child_type_from_parent_id(parent_id: str) -> tuple[str, str |
     if parent_type is None:
         raise ValueError(f'Unrecognized parent ID prefix: {prefix}')
 
-    child_type = TYPE_HIERARCHY[TYPE_HIERARCHY.index(parent_type) + 1] if parent_type else None
+    parent_index = TYPE_HIERARCHY.index(parent_type)
+    child_type = TYPE_HIERARCHY[parent_index + 1] \
+        if parent_index + 1 < len(TYPE_HIERARCHY) else None
 
     return parent_type, child_type
 
@@ -372,7 +374,7 @@ def serialise_board_entities(
 
         if obj.type == 'component':
             user_config = list(board_ds.get_list(
-                'board_diff',
+                'entity_diff',
                 object_filters=DataSourceFilter(
                     and_={
                         'component_id': {

@@ -120,7 +120,7 @@ class TestBoardBlueprintGetEntity:
         """
         GET a zone entity -> 200, response includes nested components.
 
-        No user authenticated so the board_diff lookup for components is skipped.
+        No user authenticated so the entity_diff lookup for components is skipped.
         """
 
         hierarchy = {
@@ -158,7 +158,7 @@ class TestBoardBlueprintGetEntity:
         type_hierarchy: list[str],
     ):
         """
-        GET a component when authenticated and a board_diff record exists for that
+        GET a component when authenticated and a entity_diff record exists for that
         user -> config_diff is populated with the diff id and config.
         """
 
@@ -182,7 +182,7 @@ class TestBoardBlueprintGetEntity:
         diff_obj.config = {'key': 'override_value'}
 
         def _get_list(object_type: str, *, object_filters: DataSourceFilter):
-            if object_type == 'board_diff':
+            if object_type == 'entity_diff':
                 component_id = object_filters.and_['component_id']['eq']['value']
                 user_id = object_filters.and_['user_id']['eq']['value']
                 if component_id == 'c_1' and user_id == '100':
@@ -214,7 +214,7 @@ class TestBoardBlueprintGetEntity:
         type_hierarchy: list[str],
     ):
         """
-        GET a component when authenticated but no board_diff record exists
+        GET a component when authenticated but no entity_diff record exists
         -> config_diff is present with null id and config.
         """
 
@@ -234,7 +234,7 @@ class TestBoardBlueprintGetEntity:
         objs = mock_board_hierarchy(hierarchy, type_hierarchy=type_hierarchy)
 
         def _get_list(object_type: str, *, object_filters: DataSourceFilter):
-            if object_type == 'board_diff':
+            if object_type == 'entity_diff':
                 return []
             _, parent = object_type.split('_')
             parent_id = object_filters.and_[f'{parent}.id']['eq']['value']
@@ -261,7 +261,7 @@ class TestBoardBlueprintGetEntity:
     ):
         """
         GET a component when not authenticated -> config_diff key is still
-        present but both id and config are null (board_diff lookup is skipped).
+        present but both id and config are null (entity_diff lookup is skipped).
         """
 
         hierarchy = {
@@ -278,8 +278,8 @@ class TestBoardBlueprintGetEntity:
         objs = mock_board_hierarchy(hierarchy, type_hierarchy=type_hierarchy)
 
         def _get_list(object_type: str, *, object_filters: DataSourceFilter):
-            if object_type == 'board_diff':
-                raise AssertionError('board_diff should not be queried when unauthenticated')
+            if object_type == 'entity_diff':
+                raise AssertionError('entity_diff should not be queried when unauthenticated')
             _, parent = object_type.split('_')
             parent_id = object_filters.and_[f'{parent}.id']['eq']['value']
             return [

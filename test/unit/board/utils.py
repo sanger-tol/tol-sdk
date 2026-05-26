@@ -42,7 +42,7 @@ def mock_board_obj(
         setattr(obj, k, v)
 
     if user_id is not None:
-        user = mock_board_obj('user', user_id)
+        user = mock_board_obj('user', user_id, attributes={'oidc_id': 'user@example.com'})
         obj.user = user
         obj._to_one_objects['user'] = user
         obj.to_one_relationships['user'] = user

@@ -108,6 +108,7 @@ def board_blueprint(
         return create_board(
             board_ds=board_ds,
             user_id=ctx.user_id,
+            ctx_getter=ctx_getter,
         )
 
     @board_bp.delete('/delete-entity/<string:object_id>')

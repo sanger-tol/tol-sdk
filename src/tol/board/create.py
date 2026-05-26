@@ -7,6 +7,7 @@ from __future__ import annotations
 from typing import Any, TYPE_CHECKING
 
 from tol.api_base.auth.error import ForbiddenError
+from tol.api_base.misc.auth_context import CtxGetter
 from tol.board.constants import TYPE_HIERARCHY
 from tol.board.errors import (
     AddError,
@@ -69,7 +70,6 @@ def add_entity(
 
     attributes = payload.get('attributes', {})
     attributes['filter'] = attributes.get('filter', {})
-    attributes['title'] = attributes.get('title', f'New {child_type}')
 
     if child_type in ('component'):
         attributes['config'] = {}
@@ -81,14 +81,6 @@ def add_entity(
         type_='user',
         id_=user_id,
     )
-
-    new_entity = board_ds.data_object_factory(
-        type_=child_type,
-        id_=new_child_id,
-        attributes=attributes,
-        to_one={'user': user_stub},
-    )
-    board_ds.insert(child_type, [new_entity])
 
     joiner_type = f'{child_type}_{parent_type}'
     joins_filter = DataSourceFilter(
@@ -102,6 +94,18 @@ def add_entity(
     )
     existing_joins = list(board_ds.get_list(joiner_type, object_filters=joins_filter))
     next_order = max((getattr(join, 'order', 0) for join in existing_joins), default=0) + 1
+
+    next_title_increment = board_ds.get_count(joiner_type, object_filters=joins_filter) + 1
+
+    attributes['title'] = f'{child_type.capitalize()} {next_title_increment}'
+
+    new_entity = board_ds.data_object_factory(
+        type_=child_type,
+        id_=new_child_id,
+        attributes=attributes,
+        to_one={'user': user_stub},
+    )
+    board_ds.insert(child_type, [new_entity])
 
     join_obj = board_ds.data_object_factory(
         type_=joiner_type,
@@ -148,6 +152,7 @@ def create_board(
     *,
     board_ds: SqlDataSource,
     user_id: str,
+    ctx_getter: CtxGetter
 ) -> tuple[dict[str, Any], int]:
     """
     Creates a new board with an initial view.
@@ -170,6 +175,8 @@ def create_board(
         id_=user_id,
     )
 
+    user_obj = board_ds.get_one('user', user_id) or user_stub
+
     board_obj = board_ds.data_object_factory(
         type_=board_type,
         id_=board_id,
@@ -177,7 +184,7 @@ def create_board(
             'title': 'Untitled board',
             'filter': {},
         },
-        to_one={'user': user_stub},
+        to_one={'user': user_obj},
     )
     board_ds.insert(board_type, [board_obj])
 
@@ -230,6 +237,11 @@ def create_board(
         view_type: [view_obj],
         joiner_type: [view_board_obj],
     }
-    serialised = serialise_board_entities(entities, board_id, board_ds)
+    serialised = serialise_board_entities(
+        entities,
+        board_id,
+        board_ds,
+        ctx_getter=ctx_getter
+    )
 
     return serialised, 201

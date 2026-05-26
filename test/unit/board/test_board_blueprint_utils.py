@@ -91,11 +91,12 @@ class TestGetEntityAndChildTypeFromParentId:
         assert parent_type == expected_parent
         assert child_type == expected_child
 
-    def test_leaf_type_raises(self) -> None:
-        """component is the leaf; there is no child type, so it raises IndexError."""
+    def test_leaf_type_returns_none_child(self) -> None:
+        """component is the leaf; child_type is None rather than raising."""
 
-        with pytest.raises((IndexError, ValueError)):
-            get_entity_and_child_type_from_parent_id('c_abc123456789')
+        parent_type, child_type = get_entity_and_child_type_from_parent_id('c_abc123456789')
+        assert parent_type == 'component'
+        assert child_type is None
 
     def test_unknown_prefix_raises(self) -> None:
         """Unknown prefix raises ValueError."""
