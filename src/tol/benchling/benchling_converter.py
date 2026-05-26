@@ -5,7 +5,6 @@
 from __future__ import annotations
 
 import datetime
-import logging
 import typing
 from typing import Any, Iterable, Optional
 from uuid import uuid4
@@ -600,7 +599,7 @@ class DataObjectConverter(Converter[DataObject, BenchlingWrite]):
         source_concentration = None
         if input_.attributes.get('transfer_concentration'):
             source_concentration = Measurement(
-                units="ng/uL",
+                units='ng/uL',
                 value=float(input_.attributes.get('transfer_concentration'))
             )
 

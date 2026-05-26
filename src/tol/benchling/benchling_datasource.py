@@ -4,7 +4,6 @@
 
 from __future__ import annotations
 
-import logging
 import os
 import typing
 from itertools import chain
@@ -629,7 +628,7 @@ class BenchlingDataSource(
 
         if 'assay_result' == self.benchling_types[object_type]:
             response = bulk_method(converted_objects)
-            if hasattr(response, '_errors') and getattr(response, '_errors') != None:
+            if hasattr(response, '_errors') and getattr(response, '_errors') is not None:
                 return self.__retry_bulk_methods_on_singletons(
                     object_type,
                     page,
