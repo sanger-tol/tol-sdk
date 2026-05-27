@@ -172,6 +172,7 @@ class ElasticDataSource(
         self,
         object_type: str,
         objects: Iterable[DataObject],
+        provenance: str | None = None,
         chunk_size: int = 100,
         id_func=lambda x: x.id,
         merge_collections: bool | None = None,
@@ -193,6 +194,7 @@ class ElasticDataSource(
                         index=index,
                         objects=objects,
                         id_func=id_func,
+                        provenance=provenance,
                     )
                 ),
                 stats_only=True,
@@ -206,7 +208,7 @@ class ElasticDataSource(
         self,
         object_type: str,
         updates: Iterable[DataObjectUpdate],
-        provenance: str = '',
+        provenance: str | None = None,
         candidate_key: Iterable[str] = [],
         **kwargs
     ) -> None:
@@ -227,7 +229,7 @@ class ElasticDataSource(
                 index=real_index_name,
                 body=converter.convert(ElasticUpdateInputResource(object_type=object_type,
                                                                   update=update,
-                                                                  field_prefix=provenance,
+                                                                  provenance=provenance,
                                                                   candidate_key=candidate_key)),
                 conflicts='proceed',
                 wait_for_completion=False
@@ -295,7 +297,7 @@ class ElasticDataSource(
             rc = self.relationship_config[object_type]
             relationship_name, attribute = name.split('.')[0], name.split('.')[1]
             if attribute == 'id':
-                return f'{name}.keyword'
+                return f'{name}.value.keyword'
             relationship_object_type = rc.to_one[relationship_name]
             attribute_type = self.attribute_types[relationship_object_type][attribute]
             if attribute_type == 'str':

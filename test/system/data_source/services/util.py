@@ -163,7 +163,7 @@ def upsert_archetypes(prefix: str) -> None:
 
     elastic_ds.es.index(
         index=prefix + '-root',
-        id='#YOLO',
+        id={'provenance': {'prov_1': {'value': '#YOLO'}}},
         document={
             'str_column': 'abc',
             'int_column': 42,
@@ -172,7 +172,7 @@ def upsert_archetypes(prefix: str) -> None:
             'list_column': ['item'],
             # 'dict_column': {'key1': 1},  # dict columns not yet supported in API
             'related_object': {
-                'id': '#REL',
+                'id': {'provenance': {'prov_1': {'value': '#REL'}}},
                 'int_column': 42,
                 'datetime_column': datetime(2021, 1, 1, 0, 0, 0)
             },
@@ -180,7 +180,7 @@ def upsert_archetypes(prefix: str) -> None:
     )
     elastic_ds.es.index(
         index=prefix + '-related',
-        id='#REL',
+        id={'provenance': {'prov_1': {'value': '#REL'}}},
         document={
             'str_column': 'abc',
             'int_column': 42,

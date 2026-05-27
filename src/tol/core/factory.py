@@ -126,7 +126,7 @@ def core_data_object(
             self,
             type_: str,
             id_: str | None = None,
-            provenance_: str | None = None,
+            provenance_: dict | None = None,
             attributes: DataDict | None = None,
             to_one: ToOne | None = None,
             to_many: ToMany | None = None,

@@ -378,7 +378,10 @@ class TestEndToEnd:
         assert ret.datetime_column == datetime(2024, 1, 2)
         assert ret.bool_column is False
         assert ret.list_column == ['item1', 'item2']
-        assert ret.related_object.id == 'rel1'
+        if data_source.__class__.__name__ == 'ElasticDataSource':
+            assert ret.related_object.id == {'provenance': {'test_provenance': {'value': 'rel1'}}}
+        else:
+            assert ret.related_object.id == 'rel1'
         assert ret.related_object.str_column == 'value2'
         assert ret.related_object.int_column == 123
         assert ret.related_object.datetime_column is None
@@ -422,7 +425,10 @@ class TestEndToEnd:
         assert ret.int_column == 3
         assert ret.datetime_column == datetime(2024, 1, 3)
         assert ret.bool_column is True
-        assert ret.related_object.id == 'rel1'
+        if data_source.__class__.__name__ == 'ElasticDataSource':
+            assert ret.related_object.id == {'provenance': {'test_provenance': {'value': 'rel1'}}}
+        else:
+            assert ret.related_object.id == 'rel1'
         assert ret.related_object.str_column == 'value2'
         assert ret.related_object.int_column == 456
         assert ret.related_object.datetime_column == datetime(2024, 6, 6)
@@ -441,7 +447,10 @@ class TestEndToEnd:
         assert ret.int_column == 3
         assert ret.datetime_column == datetime(2024, 1, 3)
         assert ret.bool_column is True
-        assert ret.related_object.id == 'rel1'
+        if data_source.__class__.__name__ == 'ElasticDataSource':
+            assert ret.related_object.id == {'provenance': {'test_provenance': {'value': 'rel1'}}}
+        else:
+            assert ret.related_object.id == 'rel1'
         assert ret.related_object.str_column == 'value2'
         assert ret.related_object.int_column == 456
         assert ret.related_object.datetime_column == datetime(2024, 6, 6)
@@ -642,6 +651,7 @@ class TestEndToEnd:
         first = list(data_source.get_by_ids('root', ['1']))
         assert len(first) == 1
         ret = first[0]
+        print(ret.attributes)
         assert ret.str_column == 'test_2'
         assert ret.int_column is None
         assert ret.datetime_column is None
@@ -670,6 +680,7 @@ class TestEndToEnd:
         second = list(data_source.get_by_ids('root', ['1']))
         assert len(second) == 1
         ret = second[0]
+        print(ret.attributes)
         assert ret.str_column == 'test_2'
         assert ret.int_column == 2
         assert ret.datetime_column == datetime(2024, 1, 2)

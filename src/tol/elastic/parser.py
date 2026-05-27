@@ -26,6 +26,7 @@ class ElasticUpsertInputResource:
     index: str
     objects: Iterable[DataObject]
     id_func: Callable
+    provenance: str | None = None
     field_prefix: str = ''
 
 
@@ -34,6 +35,7 @@ class ElasticUpdateInputResource:
     object_type: str
     update: dict
     candidate_key: Iterable[str]
+    provenance: str | None = None
     field_prefix: str = ''
 
 
@@ -64,7 +66,7 @@ class DefaultElasticApiParser(DataSourceParser[ElasticApiResource, DataObject]):
 
     def _convert_data_dict_to_data_object(self, type_, id_, data, runtime_data):
         attributes = {
-            k: self.__make_dates(type_, k, v) for k, v in data.items()
+            k: self.__make_dates(type_, k, v) for k, v in data.items() 
             if k in self.__data_source.attribute_types[type_]
         }
         runtime_attributes = {
@@ -72,13 +74,28 @@ class DefaultElasticApiParser(DataSourceParser[ElasticApiResource, DataObject]):
             if k in self.__data_source.attribute_types[type_]
         }
         to_one = self.__make_to_one_relations(type_, data)
+        provenance = self.__make_provenance(to_one)
         return self.__data_source.data_object_factory(
             type_,
             id_=id_,
             attributes=attributes | runtime_attributes,
             to_one=to_one,
-            # provenance_='prov here'
+            provenance_=provenance
         )
+
+    def __make_provenance(self, to_one):
+        result = {}
+        for relationship_name, data_object in to_one.items():
+            if (
+                data_object is not None
+                and isinstance(data_object.id, dict)
+                and 'provenance' in data_object.id
+            ):
+                result[relationship_name] = {
+                    source: data_object
+                    for source in data_object.id['provenance']
+                }
+        return result if result else None
 
     def __make_dates(self, object_type, attribute_name, value):
         if self.__data_source.attribute_types[object_type][attribute_name] == 'datetime' and \
@@ -124,7 +141,7 @@ class DefaultElasticApiParser(DataSourceParser[ElasticApiResource, DataObject]):
             type_,
             id_,
             relation_data,
-            {}  # This can be empty because runtime_fields are not applicable for enriched objects
+            {},  # This can be empty because runtime_fields are not applicable for enriched objects
         )
 
 
@@ -223,7 +240,7 @@ class DefaultElasticUpsertInputParser(
     ):
         real_index_name = self.__data_source._get_indices().get(transfer.index)
         for object_ in transfer.objects:
-            obj = self._convert_data_object_to_dict(object_)
+            obj = self._convert_data_object_to_dict(object_, transfer.provenance)
             obj = self._convert_dates(obj)
             obj = self._prefix_fields(obj, transfer.field_prefix)
             obj = self._stringify_ids(obj)
@@ -247,6 +264,7 @@ class DefaultElasticUpsertInputParser(
     def _convert_data_object_to_dict(
         self,
         data_object: DataObject,
+        provenance: str | None,
     ) -> dict:
         to_ones_dict = {
             k: self._parse_to_one_relation(v)
