@@ -12,6 +12,7 @@ import pytest
 import tol.board.utils as board_utils_module
 from tol.api_base.auth import ForbiddenError
 from tol.api_base.misc import AuthContext
+from tol.api_base.misc.auth_context import NotAuthenticatedError
 from tol.core import DataObject, DataSourceError
 from tol.sql import SqlDataSource
 
@@ -207,13 +208,29 @@ class TestBoardBlueprintCopyEntity:
         assert inserted_types.count('zone') == 2
         assert inserted_types.count('zone_view') == 2
 
-    def test_copy_entity__403(
+    def test_copy_entity__401(
         self,
         board_client: FlaskClient,
     ) -> None:
         """
-        POST copy without authentication -> 403 Forbidden.
+        POST copy without authentication -> 401 Unauthorized.
         """
+
+        with pytest.raises(NotAuthenticatedError) as exc:
+            board_client.post('/copy/v_orig', json={'new_parent_entity_title': 'X'})
+
+        assert exc.value.status_code == 401
+
+    def test_copy_entity__403(
+        self,
+        board_auth_ctx: AuthContext,
+        board_client: FlaskClient,
+    ) -> None:
+        """
+        POST copy without sufficient permissions -> 403 Forbidden.
+        """
+
+        board_auth_ctx.user_id = '100'
 
         with pytest.raises(ForbiddenError) as exc:
             board_client.post('/copy/v_orig', json={'new_parent_entity_title': 'X'})

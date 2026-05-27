@@ -286,7 +286,7 @@ def delete_entity(
 
     _delete_recursive(
         board_ds=board_ds,
-        leaf_child_type=child_type,
+        leaf_child_type=TYPE_HIERARCHY[-1] if child_type is not None else parent_type,
         parent_type=parent_type,
         parent_objs=[parent_obj],
         user_id=user_id,

@@ -442,6 +442,7 @@ def check_auth_and_required_fields(
     ctx_getter: CtxGetter,
     payload: dict[str, Any],
     required_fields: list[str] | None = None,
+    owner_id: str | None = None,
 ) -> None:
     """
     Checks that the user is authenticated and that the required fields are present in the payload.
@@ -457,6 +458,11 @@ def check_auth_and_required_fields(
     """
 
     ctx = ctx_getter()
+
+    if owner_id is not None:
+        if 'warden' not in ctx.roles and ctx.user_id != owner_id:
+            raise ForbiddenError()
+
     if not ctx.authenticated:
         raise ForbiddenError()
 

@@ -13,7 +13,7 @@ from .create import add_entity, create_board
 from .delete import delete_entity
 from .get import get_entity
 from .reorder import reorder_entities
-from .utils import check_auth_and_required_fields
+from .utils import check_auth_and_required_fields, get_entity_and_child_type_from_parent_id
 from ..api_base.misc import CtxGetter, default_ctx_getter
 from ..core import DataSourceError
 
@@ -49,9 +49,28 @@ def board_blueprint(
         payload = request.json or {}
         ctx = ctx_getter()
 
+        entity_type, _ = get_entity_and_child_type_from_parent_id(object_id)
+        entity = board_ds.get_one(entity_type, object_id)
+
+        if entity is None:
+            raise DataSourceError(
+                'Not Found',
+                f'No entity found with ID {object_id}',
+                404,
+            )
+
+        destination_id = payload.get('parent_entity_id')
+        if destination_id:
+            destination_type, _ = get_entity_and_child_type_from_parent_id(destination_id)
+            destination = board_ds.get_one(destination_type, destination_id)
+            destination_owner_id = getattr(destination.user, 'id', None) if destination else None
+        else:
+            destination_owner_id = getattr(entity.user, 'id', None)
+
         check_auth_and_required_fields(
             ctx_getter,
             payload,
+            owner_id=destination_owner_id,
         )
 
         return copy_entity(
