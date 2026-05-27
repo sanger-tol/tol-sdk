@@ -7,6 +7,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 from flask import Blueprint, request
+from tol.board.constants import TYPE_HIERARCHY
 
 from .copy import copy_entity
 from .create import add_entity, create_board
@@ -64,6 +65,8 @@ def board_blueprint(
             destination_type, _ = get_entity_and_child_type_from_parent_id(destination_id)
             destination = board_ds.get_one(destination_type, destination_id)
             destination_owner_id = getattr(destination.user, 'id', None) if destination else None
+        elif entity_type == TYPE_HIERARCHY[0]:
+            destination_owner_id = None
         else:
             destination_owner_id = getattr(entity.user, 'id', None)
 

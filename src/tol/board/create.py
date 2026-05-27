@@ -97,7 +97,10 @@ def add_entity(
 
     next_title_increment = board_ds.get_count(joiner_type, object_filters=joins_filter) + 1
 
-    attributes['title'] = f'{child_type.capitalize()} {next_title_increment}'
+    attributes['title'] = ''
+
+    if child_type == 'view':
+        attributes['title'] = f'{child_type.capitalize()} {next_title_increment}'
 
     new_entity = board_ds.data_object_factory(
         type_=child_type,

@@ -72,4 +72,10 @@ def copy_entity(
         all_entities, obj.id, board_ds, id_mapping)
     copied_entity['title'] = new_parent_title
 
+    if copy_entity_type == TYPE_HIERARCHY[0]:
+        new_root_obj = board_ds.get_one(copy_entity_type, new_entity_id)
+        if new_root_obj is not None:
+            copied_entity['owner_email'] = getattr(new_root_obj.user, 'oidc_id', None)
+        copied_entity['write_privilege'] = True
+
     return copied_entity, 201

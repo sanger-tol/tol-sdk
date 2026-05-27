@@ -197,7 +197,7 @@ class TestBoardBlueprintAddEntityAndCreateBoard:
         payload = r.get_json()
         assert payload['type'] == 'component'
         assert payload['parent_id'] == 'z_parent'
-        assert payload['title'] == 'Component 1'
+        assert payload['title'] == ''
         assert payload['filter'] == {'a': 1}
         assert payload['config'] == {}
         assert payload['filter_pass_through'] is False
@@ -236,7 +236,7 @@ class TestBoardBlueprintAddEntityAndCreateBoard:
         assert payload['parent_id'] == 'v_parent'
         assert payload['order'] == []
         assert payload['children'] == {}
-        assert payload['title'] == 'Zone 3'
+        assert payload['title'] == ''
 
         inserted_types = [call.args[0] for call in cast(MagicMock, board_ds).insert.call_args_list]
         assert inserted_types == ['zone', 'zone_view']
@@ -344,7 +344,7 @@ class TestBoardBlueprintAddEntityAndCreateBoard:
 
         assert r.status_code == 201
         payload = r.get_json()
-        assert payload['title'] == 'Zone 1'
+        assert payload['title'] == ''
         assert payload['order'] == []
 
     def __mock_obj(
