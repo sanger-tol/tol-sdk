@@ -583,7 +583,6 @@ class TestBenchlingDataSourceE2E:
             if project_id:
                 benchling_ds.project_id = project_id
 
-
     def __assert_project_id_set(
         self,
         benchling_ds: BenchlingDataSource,
