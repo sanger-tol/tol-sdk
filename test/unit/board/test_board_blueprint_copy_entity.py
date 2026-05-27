@@ -207,26 +207,6 @@ class TestBoardBlueprintCopyEntity:
         assert inserted_types.count('zone') == 2
         assert inserted_types.count('zone_view') == 2
 
-    def test_copy_entity__parent_id_400(
-        self,
-        board_auth_ctx: AuthContext,
-        board_client: FlaskClient,
-    ) -> None:
-        """
-        POST copy without required new_parent_entity_title field -> PayloadError (400).
-        """
-
-        board_auth_ctx.user_id = '100'
-
-        with pytest.raises(DataSourceError) as exc:
-            board_client.post(
-                '/copy/v_orig',
-                json={},
-            )
-
-        assert exc.value.title == 'Payload Error'
-        assert exc.value.status_code == 400
-
     def test_copy_entity__403(
         self,
         board_client: FlaskClient,

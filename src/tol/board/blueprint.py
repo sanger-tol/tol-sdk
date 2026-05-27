@@ -52,7 +52,6 @@ def board_blueprint(
         check_auth_and_required_fields(
             ctx_getter,
             payload,
-            required_fields=['new_parent_entity_title']
         )
 
         return copy_entity(
