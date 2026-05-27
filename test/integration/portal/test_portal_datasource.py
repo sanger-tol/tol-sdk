@@ -2,9 +2,7 @@
 #
 # SPDX-License-Identifier: MIT
 
-from unittest import (
-    TestCase
-)
+import pytest
 
 from tol.core import (
     DataSourceFilter
@@ -14,7 +12,7 @@ from tol.sources.portal import (
 )
 
 
-class TestPortalDataSource(TestCase):
+class TestPortalDataSource:
 
     def test_supported_types(self):
         pds = portal(dataspace='tol_production')
@@ -46,18 +44,18 @@ class TestPortalDataSource(TestCase):
     def test_get_by_id(self):
         pds = portal(dataspace='tol_production')
 
-        ret = pds.get_by_ids('species', ['2708'])
+        ret = pds.get_by_ids('species', ['31033'])
         obj1 = next(ret)
-        self.assertEqual('2708', obj1.id)
+        assert '31033' == obj1.id
 
         # Just pick out a few attributes here to test
-        self.assertEqual(obj1.goat_scientific_name, 'Citrus x limon')
-        self.assertEqual(obj1.goat_chromosome_number, 18)
-        self.assertEqual(obj1.goat_assembly_level, 'Chromosome')
-        self.assertEqual(obj1.goat_long_list, ['DTOL'])
-        self.assertEqual(obj1.goat_phylum_name, 'Streptophyta')
-        self.assertEqual(obj1.tolid_prefix, 'drCitLimo')
-        with self.assertRaises(StopIteration):
+        assert obj1.goat_scientific_name == 'Takifugu rubripes'
+        assert obj1.goat_chromosome_number == 44
+        assert obj1.goat_assembly_level == 'Chromosome'
+        assert obj1.goat_long_list == ['OG', 'VGP']
+        assert obj1.goat_phylum_name == 'Chordata'
+        assert obj1.tolid_prefix == 'fTakRub'
+        with pytest.raises(StopIteration):
             next(ret)
 
     def test_get_list(self):
@@ -66,31 +64,31 @@ class TestPortalDataSource(TestCase):
         f = DataSourceFilter()
         f.and_ = {
             'goat_long_list': {'eq': {'value': 'DTOL'}},
-            'id': {'in_list': {'value': ['2708', '1857951']}}
+            'id': {'in_list': {'value': ['254044', '1857951']}}
         }
         ret = list(pds.get_list('species', object_filters=f))
         obj_ids = [obj.id for obj in ret]
-        assert '2708' in obj_ids
+        assert '254044' in obj_ids
         assert '1857951' in obj_ids
         assert len(obj_ids) == 2
         for obj in ret:
-            if obj.id == '2708':
-                self.assertEqual('2708', obj.id)
-                self.assertEqual(obj.goat_scientific_name, 'Citrus x limon')
-                self.assertEqual(obj.goat_chromosome_number, 18)
-                self.assertEqual(obj.goat_assembly_level, 'Chromosome')
-                self.assertEqual(obj.goat_long_list, ['DTOL'])
-                self.assertEqual(obj.goat_phylum_name, 'Streptophyta')
+            if obj.id == '254044':
+                assert '254044' == obj.id
+                assert obj.goat_scientific_name == 'Oenanthe crocata'
+                assert obj.goat_chromosome_number == 22
+                assert obj.goat_assembly_level is None
+                assert obj.goat_long_list == ['DTOL']
+                assert obj.goat_phylum_name == 'Streptophyta'
+                assert obj.tolid_prefix == 'drOenCroc'
             elif obj.id == '1857951':
-                self.assertEqual('1857951', obj.id)
-                self.assertEqual(obj.goat_scientific_name, 'Acrobasis suavella')
-                self.assertEqual(obj.goat_chromosome_number, 60)
-                self.assertEqual(obj.goat_assembly_level, 'Chromosome')
-                self.assertEqual(obj.goat_long_list, ['DTOL', 'PSYCHE'])
-                self.assertEqual(obj.goat_phylum_name, 'Arthropoda')
-                self.assertEqual(obj.goat_sample_collected, ['DTOL'])
-                self.assertEqual(
-                    obj.goat_country_list,
-                    ['AT', 'BE', 'BG', 'CA', 'CH', 'DE', 'DK', 'ES', 'FI',
-                     'FR', 'GB', 'GR', 'HR', 'IT', 'LU', 'NL', 'PT', 'SE', 'UA', 'US']
-                )
+                assert '1857951' == obj.id
+                assert obj.goat_scientific_name == 'Acrobasis suavella'
+                assert obj.goat_chromosome_number == 60
+                assert obj.goat_assembly_level == 'Chromosome'
+                assert obj.goat_long_list == ['DTOL', 'PSYCHE']
+                assert obj.goat_phylum_name == 'Arthropoda'
+                assert obj.goat_sample_collected == ['DTOL']
+                assert obj.goat_country_list == [
+                    'AT', 'BE', 'BG', 'CA', 'CH', 'DE', 'DK', 'ES', 'FI',
+                    'FR', 'GB', 'GR', 'HR', 'IT', 'LU', 'NL', 'PT', 'SE', 'UA', 'US'
+                ]

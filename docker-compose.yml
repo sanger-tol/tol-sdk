@@ -115,6 +115,7 @@ services:
       - PORTAL_URL
       - PORTAL_API_PATH
       - PORTAL_API_KEY
+      - STS_URL
       - STS_API_KEY
       - BOLD_API_KEY
       - S3_URI
