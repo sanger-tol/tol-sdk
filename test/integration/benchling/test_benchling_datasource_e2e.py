@@ -3,7 +3,6 @@
 # SPDX-License-Identifier: MIT
 
 import datetime
-import logging
 import os
 import time
 import uuid
