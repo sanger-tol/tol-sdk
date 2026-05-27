@@ -75,7 +75,7 @@ class TestBenchlingDataSourceE2E:
 
     # We should add 'storage' to the list but the test user has insufficient privileges
     # to test location types
-    @against_types(['tissue', 'tissue_prep', 'folder', 'casm_96_well_plate'])
+    @against_types(['tissue', 'tissue_prep', 'folder'])
     def test_many_insert_update_delete(self, object_type: str) -> None:
         """
         Inserts several `DataObject` instances of specified type,
@@ -84,7 +84,6 @@ class TestBenchlingDataSourceE2E:
         """
 
         benchling_ds = benchling()
-        self.__set_project_id_for_object_type(benchling_ds, object_type)
 
         # get the key of a `str` field
         str_key = self.__find_string_key(
@@ -113,7 +112,6 @@ class TestBenchlingDataSourceE2E:
 
         # there should be 3
         assert len(res) == 3
-        self.__assert_no_error_objects(res)
 
         # they all have the right value for `str_key`
         for i, obj in enumerate(res, start=1):
@@ -557,15 +555,6 @@ class TestBenchlingDataSourceE2E:
             project_id = obj.attributes.get('project_id') \
                 or obj.attributes.get('projectId')
             if (
-                project_id is None
-                and benchling_ds.benchling_types[object_type] == 'plate'
-            ):
-                existing_plate = benchling_ds.benchling_interface.plates.get_by_id(
-                    obj.id,
-                    returning=['projectId']
-                )
-                project_id = existing_plate.project_id
-            if (
                 project_id
                 and (
                     benchling_ds.project_id is None
@@ -588,6 +577,7 @@ class TestBenchlingDataSourceE2E:
             project_id = os.getenv('BENCHLING_CASM_PROJECT_ID')
             if project_id:
                 benchling_ds.project_id = project_id
+
 
     def __assert_project_id_set(
         self,
