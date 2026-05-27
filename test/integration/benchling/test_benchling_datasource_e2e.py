@@ -558,6 +558,15 @@ class TestBenchlingDataSourceE2E:
             project_id = obj.attributes.get('project_id') \
                 or obj.attributes.get('projectId')
             if (
+                project_id is None
+                and benchling_ds.benchling_types[object_type] == 'plate'
+            ):
+                existing_plate = benchling_ds.benchling_interface.plates.get_by_id(
+                    obj.id,
+                    returning=['projectId']
+                )
+                project_id = existing_plate.project_id
+            if (
                 project_id
                 and (
                     benchling_ds.project_id is None
@@ -578,8 +587,6 @@ class TestBenchlingDataSourceE2E:
     ) -> None:
         if object_type in self.casm_object_types:
             project_id = os.getenv('BENCHLING_CASM_PROJECT_ID')
-            logging.exception('here')
-            logging.exception(project_id)
             if project_id:
                 benchling_ds.project_id = project_id
 
