@@ -5,6 +5,9 @@ SPDX-License-Identifier: MIT
 -->
 
 # Changelog
+## tol-sdk `2.1.11`
+26-05-2026
+- Updated SGP STS -> Benchling flow converter to handle the new SGP data structure
 
 ## tol-sdk `2.1.10`
 18-05-2026
