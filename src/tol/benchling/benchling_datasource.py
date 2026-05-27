@@ -557,6 +557,7 @@ class BenchlingDataSource(
         try:
             if isinstance(obj, DataObject):
                 converted_object = converter.convert(obj)
+
                 ret = method(converted_object)
             else:
                 converted_object = converter.convert_update(obj, object_type)
@@ -627,8 +628,7 @@ class BenchlingDataSource(
 
         if 'assay_result' == self.benchling_types[object_type]:
             response = bulk_method(converted_objects)
-
-            if hasattr(response, '_errors'):
+            if hasattr(response, '_errors') and getattr(response, '_errors') is not None:
                 return self.__retry_bulk_methods_on_singletons(
                     object_type,
                     page,

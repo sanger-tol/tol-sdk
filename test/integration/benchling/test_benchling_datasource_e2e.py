@@ -3,6 +3,7 @@
 # SPDX-License-Identifier: MIT
 
 import datetime
+import os
 import time
 import uuid
 
@@ -24,6 +25,13 @@ class TestBenchlingDataSourceE2E:
     existence/non-existence.
     """
     _str_values = None
+
+    casm_object_types = [
+        '12x12_box_v2',
+        'casm_96_well_plate',
+        'casm_sequencing_container',
+        'casm_tube'
+    ]
 
     can_update = ['tissue', 'tissue_prep', 'casm_sequencing_container']
 
@@ -67,7 +75,7 @@ class TestBenchlingDataSourceE2E:
 
     # We should add 'storage' to the list but the test user has insufficient privileges
     # to test location types
-    @against_types(['tissue', 'tissue_prep', 'folder', 'casm_96_well_plate'])
+    @against_types(['tissue', 'tissue_prep', 'folder'])
     def test_many_insert_update_delete(self, object_type: str) -> None:
         """
         Inserts several `DataObject` instances of specified type,
@@ -162,6 +170,7 @@ class TestBenchlingDataSourceE2E:
     def test_many_insert_delete_update_storage_layers(self, object_type: str) -> None:
         benchling_ds = benchling()
         first_object_type, second_object_type = object_type.split(':', 1)
+        self.__set_project_id_for_object_type(benchling_ds, first_object_type)
         first_str_key = self.__find_string_key(first_object_type, benchling_ds)
         second_str_key = self.__find_string_key(second_object_type, benchling_ds)
 
@@ -179,6 +188,7 @@ class TestBenchlingDataSourceE2E:
         # Insert in a single batch call
         res = list(benchling_ds.insert(first_object_type, first_objs))
         assert len(res) == 3
+        self.__assert_no_error_objects(res)
         first_ids = [r.id for r in res]
 
         # Confirm inserted values in one loop
@@ -212,6 +222,7 @@ class TestBenchlingDataSourceE2E:
 
             second_res = list(benchling_ds.insert(second_object_type, second_objs))
             assert len(second_res) == 3
+            self.__assert_no_error_objects(second_res)
 
             # Confirm inserted second objects
             for i2, obj2 in enumerate(second_res, start=1):
@@ -535,6 +546,59 @@ class TestBenchlingDataSourceE2E:
         objs = benchling_ds.get_list(object_type, object_filters=f)
         return next(objs)
 
+    def __get_parent_storage_id_for_object_type(
+        self,
+        object_type: str,
+        benchling_ds: BenchlingDataSource
+    ) -> str:
+        for obj in benchling_ds.get_list(object_type):
+            project_id = obj.attributes.get('project_id') \
+                or obj.attributes.get('projectId')
+            if (
+                project_id
+                and (
+                    benchling_ds.project_id is None
+                    or object_type in self.casm_object_types
+                )
+            ):
+                benchling_ds.project_id = project_id
+            parent_storage_id = obj.attributes.get('parent_storage_id') \
+                or obj.attributes.get('parentStorageId')
+            if parent_storage_id is not None:
+                return parent_storage_id
+        raise AssertionError(f'No existing {object_type} found with parent_storage_id')
+
+    def __set_project_id_for_object_type(
+        self,
+        benchling_ds: BenchlingDataSource,
+        object_type: str
+    ) -> None:
+        if object_type in self.casm_object_types:
+            project_id = os.getenv('BENCHLING_CASM_PROJECT_ID')
+            if project_id:
+                benchling_ds.project_id = project_id
+
+    def __assert_project_id_set(
+        self,
+        benchling_ds: BenchlingDataSource,
+        object_type: str
+    ) -> None:
+        if benchling_ds.benchling_types[object_type] in ['box', 'plate', 'container']:
+            assert benchling_ds.project_id is not None, (
+                f'No project id configured for {object_type}'
+            )
+
+    def __assert_no_error_objects(self, objects: list[DataObject | ErrorObject]) -> None:
+        error_objects = [
+            obj
+            for obj in objects
+            if isinstance(obj, ErrorObject)
+        ]
+        assert error_objects == [], [
+            error.details
+            for error in error_objects
+        ]
+
     def __assert_relations_filled(
         self,
         obj: DataObject,
@@ -701,6 +765,17 @@ class TestBenchlingDataSourceE2E:
         # Explicitly set the string key
         if str_key is not None:
             atts[str_key] = string_value
+
+        if (
+            parent_storage_id is None
+            and benchling_ds.benchling_types[object_type] in ['box', 'plate']
+        ):
+            atts['parent_storage_id'] = self.__get_parent_storage_id_for_object_type(
+                object_type,
+                benchling_ds
+            )
+
+        self.__assert_project_id_set(benchling_ds, object_type)
 
         # Explicitly set the parent_storage_id and barcode
         if parent_storage_id is not None:
