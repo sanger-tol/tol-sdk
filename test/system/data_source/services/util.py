@@ -7,10 +7,13 @@ import time
 from datetime import datetime
 from uuid import uuid4
 
+from unittest.mock import Mock
+
 from elasticsearch import Elasticsearch
 
 import requests
 
+from tol.core import DataSourceUtils
 from tol.core.relationship import RelationshipConfig
 from tol.elastic import (
     ElasticDataSource,
@@ -53,6 +56,12 @@ def elastic_datasource(
     rc_root.to_one = {
         'related_object': 'related'
     }
+    mock_data_source_config = Mock()
+    mock_data_source_config_relationship = Mock()
+    mock_data_source_config_relationship.source_order = ['source1']
+    mock_data_source_config_relationship.object_type = 'root'
+    mock_data_source_config_relationship.name = 'related_object'
+    mock_data_source_config.data_source_config_relationships = [mock_data_source_config_relationship]
 
     return create_elastic_datasource(
         {
@@ -69,7 +78,7 @@ def elastic_datasource(
                     dependencies=['bool_column'],
                     function_body="emit(!doc['bool_column'].value)"
                 ).to_dict(),
-            },
+            } | DataSourceUtils.add_source_order_to_runtime_fields(mock_data_source_config).get('root', {}),
             'related': {
                 'root_int_column_min': {'type': 'double'},
                 'root_int_column_max': {'type': 'double'},
@@ -163,7 +172,7 @@ def upsert_archetypes(prefix: str) -> None:
 
     elastic_ds.es.index(
         index=prefix + '-root',
-        id={'provenance': {'prov_1': {'value': '#YOLO'}}},
+        id='#YOLO',
         document={
             'str_column': 'abc',
             'int_column': 42,
@@ -180,7 +189,7 @@ def upsert_archetypes(prefix: str) -> None:
     )
     elastic_ds.es.index(
         index=prefix + '-related',
-        id={'provenance': {'prov_1': {'value': '#REL'}}},
+        id='#REL',
         document={
             'str_column': 'abc',
             'int_column': 42,

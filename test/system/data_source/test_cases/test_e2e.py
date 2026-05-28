@@ -316,7 +316,7 @@ class TestEndToEnd:
         """
 
         obj1 = data_source.data_object_factory('root', '1', attributes={})
-        data_source.upsert('root', [obj1])
+        data_source.upsert('root', [obj1], provenance='source1')
         ds_sleep(2)  # Let Elastic settle down after the upsert
 
         # they should all be present now
@@ -336,8 +336,7 @@ class TestEndToEnd:
             attributes={
                 'str_column': 'value2',
                 'int_column': 123,
-            },
-            provenance_='test_provenance'
+            }
         )
 
         obj1 = data_source.data_object_factory(
@@ -350,13 +349,12 @@ class TestEndToEnd:
                 'bool_column': False,
                 'list_column': ['item1', 'item2'],
             },
-            to_one={'related_object': rel1},
-            provenance_='test_provenance'
+            to_one={'related_object': rel1}
         )
 
         if data_source.write_mode['root'] == RelationWriteMode.SEPARATE:
-            data_source.upsert('related', [rel1])
-        returned_ = data_source.upsert('root', [obj1])
+            data_source.upsert('related', [rel1], provenance='source1')
+        returned_ = data_source.upsert('root', [obj1], provenance='source1')
 
         if data_source.return_mode['root'] == ReturnMode.POPULATED:
             returned_root = list(returned_)[0]
@@ -395,8 +393,7 @@ class TestEndToEnd:
                 'int_column': 456,
                 'bool_column': False,
                 'datetime_column': datetime(2024, 6, 6),
-            },
-            provenance_='test_provenance'
+            }
         )
 
         obj1 = data_source.data_object_factory(
@@ -408,13 +405,12 @@ class TestEndToEnd:
                 'bool_column': True,
                 'list_column': ['item1', 'item3'],
             },
-            to_one={'related_object': rel1},
-            provenance_='test_provenance'
+            to_one={'related_object': rel1}
         )
 
         if data_source.write_mode['root'] == RelationWriteMode.SEPARATE:
-            data_source.upsert('related', [rel1])
-        data_source.upsert('root', [obj1])
+            data_source.upsert('related', [rel1], provenance='source1')
+        data_source.upsert('root', [obj1], provenance='source1')
 
         ds_sleep(2)  # Let Elastic settle down after the upsert
 
@@ -437,7 +433,7 @@ class TestEndToEnd:
         assert ret.list_column == ['item1', 'item2', 'item3']
 
         obj1 = data_source.data_object_factory('root', '1', attributes={})
-        data_source.upsert('root', [obj1])
+        data_source.upsert('root', [obj1], provenance='source1')
         ds_sleep(2)  # Let Elastic settle down after the upsert
 
         fourth = list(data_source.get_by_ids('root', ['1']))
@@ -470,7 +466,7 @@ class TestEndToEnd:
             },
             to_one={'related_object': None},
         )
-        data_source.upsert('root', [obj1])
+        data_source.upsert('root', [obj1], provenance='source1')
         ds_sleep(2)  # Let Elastic settle down after the upsert
 
         fifth = list(data_source.get_by_ids('root', ['1']))

@@ -1031,7 +1031,10 @@ class ElasticDataSource(
             if 'type' in properties[property_name]
         }
         runtime_types = {
-            name: self.__map_type(self.runtime_fields[object_type][name]['type'])
+            name: self.__map_type(
+                self.runtime_fields[object_type][name].get('type')
+                or self.runtime_fields[object_type][name].get('value', {}).get('type')
+            )
             for name in self.runtime_fields[object_type].keys()
         } if object_type in self.runtime_fields else {}
         return standard_types | runtime_types
