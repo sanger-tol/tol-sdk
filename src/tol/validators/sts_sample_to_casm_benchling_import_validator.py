@@ -8,14 +8,16 @@ from collections.abc import Iterable as IterableABC
 from typing import Any, Iterable, Optional
 
 from benchling_sdk.errors import BenchlingError
+
 from pydantic import BaseModel, Field
-from typing_extensions import TypedDict
 
 from tol.core import DataObject, DataSourceFilter, ErrorObject
 from tol.flows.converters.sts_sample_to_casm_benchling_converter import (
     StsSampleToCasmBenchlingConverterFactory,
 )
 from tol.sources.benchling import benchling
+
+from typing_extensions import TypedDict
 
 
 class Attribute(TypedDict, total=False):
