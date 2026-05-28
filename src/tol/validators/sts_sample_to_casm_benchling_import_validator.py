@@ -5,7 +5,8 @@
 import copy
 import re
 from collections.abc import Iterable as IterableABC
-from typing import Any, Iterable, Optional, TypedDict
+from typing import Any, Iterable, Optional
+from typing_extensions import TypedDict
 
 from benchling_sdk.errors import BenchlingError
 
