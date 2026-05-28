@@ -7,11 +7,17 @@ from unittest import (
     mock
 )
 
+from benchling_api_client.v2.stable.models.assay_results_create_response import (
+    AssayResultsCreateResponse
+)
+
 from benchling_sdk.errors import BenchlingError
 
 from tol.benchling import BenchlingDataSource
 from tol.benchling.benchling_converter import (
+    BenchlingConverter,
     CustomEntity,
+    DataObjectConverter,
     Folder,
     Location,
     Worklist
@@ -84,6 +90,31 @@ class MockBenchlingDataSource(BenchlingDataSource):
                     }
                 },
             }
+        elif benchling_type == 'box':
+            return {
+                'test_box_type': {
+                    '__id__': 'ts_BOX',
+                },
+            }
+        elif benchling_type == 'plate':
+            return {
+                'test_plate_type': {
+                    '__id__': 'ts_PLATE',
+                },
+            }
+        elif benchling_type == 'container':
+            return {
+                'test_container_type': {
+                    '__id__': 'ts_CONTAINER',
+                    'field_name': {
+                        'name': 'Test Container Field',
+                        'type': 'str',
+                        'benchling_type': 'text',
+                        'required': False,
+                        'is_multi': False
+                    },
+                },
+            }
         else:
             return {}
 
@@ -118,6 +149,17 @@ class TestBenchlingDataSource(TestCase):
                 'name': 'str',
                 'barcode': 'str'
             },
+            'test_container_type': {
+                'field_name': 'str',
+                'barcode': 'str',
+                'parent_storage_id': 'str'
+            },
+            'test_box_type': {
+                'barcode': 'str'
+            },
+            'test_plate_type': {
+                'barcode': 'str'
+            },
             'folder': {
                 'name': 'str'
             },
@@ -142,8 +184,8 @@ class TestBenchlingDataSource(TestCase):
         self.assertEqual(expected, bds.attribute_types)
         self.assertEqual(
             ['test_entity_type', 'test_child_type', 'test_location_type',
-             'folder', 'worklist', 'worklist_item', 'transfer', 'assay_result',
-             'container_content'],
+             'test_container_type', 'test_box_type', 'test_plate_type', 'folder',
+             'worklist', 'worklist_item', 'transfer', 'assay_result', 'container_content'],
             bds.supported_types
         )
 
@@ -155,6 +197,58 @@ class TestBenchlingDataSource(TestCase):
             rc['test_child_type'].to_one
         )
         self.assertEqual({'folder': 'folder'}, rc['test_entity_type'].to_one)
+
+    def test_convert_box_includes_project_id(self):
+        _, bds = mock_benchling_data_source()
+        converter = DataObjectConverter(bds)
+
+        obj = bds.data_object_factory(
+            'test_box_type',
+            None,
+            attributes={
+                'barcode': 'box-123',
+                'parent_storage_id': 'loc_123'
+            }
+        )
+
+        converted = converter.convert(obj)
+
+        self.assertEqual('6789', converted.project_id)
+
+    def test_convert_plate_includes_project_id(self):
+        _, bds = mock_benchling_data_source()
+        converter = DataObjectConverter(bds)
+
+        obj = bds.data_object_factory(
+            'test_plate_type',
+            None,
+            attributes={
+                'barcode': 'plate-123',
+                'parent_storage_id': 'loc_123'
+            }
+        )
+
+        converted = converter.convert(obj)
+
+        self.assertEqual('6789', converted.project_id)
+
+    def test_convert_container_includes_project_id(self):
+        _, bds = mock_benchling_data_source()
+        converter = DataObjectConverter(bds)
+
+        obj = bds.data_object_factory(
+            'test_container_type',
+            None,
+            attributes={
+                'barcode': 'container-123',
+                'parent_storage_id': 'loc_123',
+                'field_name': 'value'
+            }
+        )
+
+        converted = converter.convert(obj)
+
+        self.assertEqual('6789', converted.project_id)
 
     def test_get_by_id_custom_entity(self):
         _, bds = mock_benchling_data_source()
@@ -284,6 +378,20 @@ class TestBenchlingDataSource(TestCase):
         # once for the page of 2, plus 2 single calls
         self.assertEqual(bds.benchling_interface.custom_entities.bulk_create.call_count, 1)
         self.assertEqual(bds.benchling_interface.custom_entities.create.call_count, 2)
+
+    def test_convert_assay_bulk_insert_response(self):
+        _, bds = mock_benchling_data_source()
+        converter = BenchlingConverter(bds)
+        response = AssayResultsCreateResponse(
+            assay_results=['assay_1', 'assay_2', 'assay_3']
+        )
+
+        res = list(converter.convert_return_entities([response]))
+
+        self.assertEqual(3, len(res))
+        self.assertEqual(['assay_1', 'assay_2', 'assay_3'], [obj.id for obj in res])
+        for obj in res:
+            self.assertEqual('assay_result', obj.type)
 
     def __mock_obj(self) -> DataObject:
         obj = mock.create_autospec(DataObject)

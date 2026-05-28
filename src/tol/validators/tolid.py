@@ -57,6 +57,11 @@ class TolidValidator(Validator):
     ) -> None:
 
         obj_species_id = obj.get_field_by_name(self.__config.species_id_field)
+
+        # Skip external lookups when TAXON_ID is empty to avoid invalid /species/None calls.
+        if obj_species_id in (None, ''):
+            return
+
         if self.__config.species_id_field in obj.attributes:
             try:
                 if obj_species_id not in self.__cached_species_ids:
