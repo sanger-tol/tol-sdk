@@ -142,6 +142,48 @@ class TestStsFieldsValidator:
         assert len(validator.errors) == 7
         assert len(validator.warnings) == 0
 
+    def test_template_none_does_not_raise(
+        self,
+        mock_data_source: DataSource,
+    ) -> None:
+        class _TemplateNoneDataSource(DataSource, DetailGetter):
+
+            def __init__(self, config: dict[str, Any]):
+                super().__init__(config, [])
+
+            def get_by_id(self):
+                pass
+
+            def get_one(self, object_type: str, object_id, **kwargs):
+                del object_type, kwargs
+                return self.data_object_factory(
+                    'project',
+                    object_id,
+                    attributes={'template': None},
+                )
+
+            @property
+            def supported_types(self) -> list[str]:
+                return ['project']
+
+        ds = _TemplateNoneDataSource({})
+        core_data_object(ds)
+
+        validator = StsFieldsValidator(
+            config=StsFieldsValidator.Config(project_code='PROJ'),
+            datasource=ds,
+        )
+
+        obj = mock_data_source.data_object_factory(
+            'upload',
+            'sample1',
+            attributes={'key1': 'b'},
+        )
+
+        list(validator.validate([obj]))
+
+        assert validator.results == []
+
     def test_invalid_date_type(
         self,
         validator: StsFieldsValidator,

@@ -4,7 +4,6 @@
 
 from dataclasses import dataclass
 from datetime import datetime, timedelta
-from typing import List
 
 from tol.core import DataObject, DataSource
 from tol.core.validate import Validator
@@ -23,7 +22,7 @@ class StsFieldsValidator(Validator):
     __slots__ = ['__config', '__datasource', '__fields']
     __config: Config
     __datasource: DataSource
-    __fields: List[str | int | float]
+    __fields: dict
 
     def __init__(
         self,
@@ -38,13 +37,25 @@ class StsFieldsValidator(Validator):
         self.__datasource = datasource
         self.__fields = self.__initialize_fields_from_datasource()
 
-    def __initialize_fields_from_datasource(self) -> List[str | int | float]:
+    def __initialize_fields_from_datasource(self) -> dict:
+        project = self.__datasource.get_one(
+            'project', self.__config.project_code
+        )
+
+        template = getattr(project, 'template', None) if project is not None else None
+        if not isinstance(template, dict):
+            return {}
+
+        data_fields = template.get('data_fields', [])
+        if not isinstance(data_fields, list):
+            return {}
+
         return {
             field.get('data_input_key'): field
-            for field in self.__datasource.get_one(
-                'project', self.__config.project_code
-            ).template.get('data_fields', [])
-            if field.get('in_manifest')
+            for field in data_fields
+            if isinstance(field, dict)
+            and field.get('in_manifest')
+            and field.get('data_input_key')
         }
 
     def _validate_data_object(
