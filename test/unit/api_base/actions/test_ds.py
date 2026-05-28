@@ -95,7 +95,7 @@ class TestActionsWithDataSources:
                     'object_type': 'test',
                     'params': {
                         'additional': 'indeeeeed',
-                        'class_name': 'TestAction',
+                        'action_id': '123',
                     }
                 }
             }
@@ -116,11 +116,9 @@ class TestActionsWithDataSources:
             'params': {
                 'additional': 'indeeeeed',
                 'ids': list('abc'),
-                'bool': True,
-                'answer': 42,
                 'flow_run_id': 'uuid123456',
                 'flow_run_name': 'fabulous_flamingo',
-                'class_name': 'TestAction',
+                'action_id': '123',
             }
         }
 
@@ -148,9 +146,7 @@ class TestActionsWithDataSources:
         assert kwargs['attributes']['parameters'] == {
             'params': {
                 'additional': 'indeeeeed',
-                'bool': True,
-                'answer': 42,
-                'class_name': 'TestAction',
+                'action_id': '123',
             },
             'object_type': 'test',
             'ids': list('abc'),
