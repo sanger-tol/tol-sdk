@@ -7,6 +7,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 from flask import Blueprint, request
+
 from tol.board.constants import TYPE_HIERARCHY
 
 from .copy import copy_entity
