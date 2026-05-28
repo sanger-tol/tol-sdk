@@ -6,11 +6,10 @@ import copy
 import re
 from collections.abc import Iterable as IterableABC
 from typing import Any, Iterable, Optional
-from typing_extensions import TypedDict
 
 from benchling_sdk.errors import BenchlingError
-
 from pydantic import BaseModel, Field
+from typing_extensions import TypedDict
 
 from tol.core import DataObject, DataSourceFilter, ErrorObject
 from tol.flows.converters.sts_sample_to_casm_benchling_converter import (
