@@ -203,16 +203,17 @@ class _ToElasticApiResourceParser:
     def _parse_to_one_relation(
         self,
         one_relation: DataObject | None,
+        provenance: str | None,
     ) -> dict[str, Any] | None:
 
         if one_relation is None:
             return None
 
-        if one_relation.provenance is not None:
+        if provenance is not None:
             return {
                 'id': {
                     'provenance': {
-                        one_relation.provenance: {'value': one_relation.id}
+                        provenance: {'value': one_relation.id}
                     }
                 },
                 **one_relation.attributes
@@ -267,7 +268,7 @@ class DefaultElasticUpsertInputParser(
         provenance: str | None,
     ) -> dict:
         to_ones_dict = {
-            k: self._parse_to_one_relation(v)
+            k: self._parse_to_one_relation(v, provenance)
             for k, v in data_object._to_one_objects.items()
         }
         return data_object.attributes | to_ones_dict

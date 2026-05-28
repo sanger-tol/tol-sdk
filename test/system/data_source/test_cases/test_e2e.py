@@ -377,7 +377,7 @@ class TestEndToEnd:
         assert ret.bool_column is False
         assert ret.list_column == ['item1', 'item2']
         if data_source.__class__.__name__ == 'ElasticDataSource':
-            assert ret.related_object.id == {'provenance': {'test_provenance': {'value': 'rel1'}}}
+            assert ret.related_object.id == {'provenance': {'source1': {'value': 'rel1'}}}
         else:
             assert ret.related_object.id == 'rel1'
         assert ret.related_object.str_column == 'value2'
@@ -422,7 +422,7 @@ class TestEndToEnd:
         assert ret.datetime_column == datetime(2024, 1, 3)
         assert ret.bool_column is True
         if data_source.__class__.__name__ == 'ElasticDataSource':
-            assert ret.related_object.id == {'provenance': {'test_provenance': {'value': 'rel1'}}}
+            assert ret.related_object.id == {'provenance': {'source1': {'value': 'rel1'}}}
         else:
             assert ret.related_object.id == 'rel1'
         assert ret.related_object.str_column == 'value2'
@@ -444,7 +444,7 @@ class TestEndToEnd:
         assert ret.datetime_column == datetime(2024, 1, 3)
         assert ret.bool_column is True
         if data_source.__class__.__name__ == 'ElasticDataSource':
-            assert ret.related_object.id == {'provenance': {'test_provenance': {'value': 'rel1'}}}
+            assert ret.related_object.id == {'provenance': {'source1': {'value': 'rel1'}}}
         else:
             assert ret.related_object.id == 'rel1'
         assert ret.related_object.str_column == 'value2'
@@ -552,7 +552,7 @@ class TestEndToEnd:
             },
             to_one={'related_object': None},
         )
-        data_source.upsert('root', [obj1])
+        data_source.upsert('root', [obj1], provenance='source1')
         ds_sleep(2)  # Let Elastic settle down after the upsert
 
         fifth = list(data_source.get_by_ids('root', ['1']))
