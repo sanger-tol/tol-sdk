@@ -303,617 +303,699 @@ class TestDataSourceRegistry:
 
 ---
 
-## 2. Error Handling Strategy for DataSource Operations
+## 2. DataSource Filter Strategy
 
 **Pattern type:** Behavioural (Strategy)
 
 ### Current pattern
 
-Error handling across DataSource operations is ad-hoc and inconsistent. Three different approaches are used depending on where the error occurs:
+Each DataSource implementation has its own filter converter that translates the universal `DataSourceFilter` dataclass into a source-specific query format. Three independent class hierarchies exist with no shared interface:
 
-**Actions** (`src/tol/actions/upsert_action.py`, `src/tol/actions/set_status_action.py`) use bare `except Exception` to catch everything and return error dicts:
-
-```python
-# src/tol/actions/upsert_action.py
-class UpsertAction(Action):
-    def run(self, datasource, ids, object_type, params=None):
-        data_objects = self.__convert_to_data_objects(...)
-        try:
-            datasource.upsert_batch(object_type=object_type, objects=data_objects)
-            return {'success': True}, 200
-        except Exception as e:
-            return {'error': str(e)}, 500
-```
+**API DataSource** (`src/tol/api_client/filter.py`) — serialises filters to a JSON string:
 
 ```python
-# src/tol/actions/set_status_action.py
-class SetStatusAction(Action):
-    def run(self, datasource, ids, object_type, params=None):
-        # ...validation...
-        try:
-            # ...build objects, insert, update parent...
-            return {'success': True}, 200
-        except Exception as e:  # noqa: BLE001
-            return {'error': str(e)}, 500
+# src/tol/api_client/filter.py
+class ApiFilter(ABC):
+    @abstractmethod
+    def dumps(self, filter_: DataSourceFilter) -> Optional[str]:
+        """Emit a filter string from a DataSourceFilter instance"""
+
+class DefaultApiFilter(ApiFilter):
+    __KEYS = ['exact', 'contains', 'in_list', 'range', 'and_']
+
+    def dumps(self, filter_: DataSourceFilter) -> Optional[str]:
+        __dict = self.__to_dict(filter_)
+        return self.__dict_dumper(__dict)
 ```
 
-**HTTP transport** (`src/tol/core/http_client.py`) uses `urllib3.Retry` at the session level for a fixed set of status codes:
+**Elastic DataSource** (`src/tol/elastic/filter.py`) — builds an Elasticsearch bool query dict:
 
 ```python
-# src/tol/core/http_client.py
-def _get_session_with_retries(self) -> requests.Session:
-    retry_strategy = Retry(
-        total=self.__retries,          # default 5
-        backoff_factor=1,
-        status_forcelist=[429, 502, 503, 504]
-    )
+# src/tol/elastic/filter.py
+class ElasticFilterConverter(DataSourceFilterConverter):
+    def convert(self, object_type: str, object_filters: DataSourceFilter | None = None) -> dict:
+        query = {'bool': {'must': [], 'must_not': []}}
+        object_filters = self.__elastic_datasource._preprocess_filter(object_type, object_filters)
+        if object_filters is None:
+            return query
+        if object_filters.and_ is not None:
+            for k, v in object_filters.and_.items():
+                search_field = self.__elastic_datasource._field_or_keyword(object_type, k)
+                for op, constraint in v.items():
+                    if op in ['gt', 'gte', 'lt', 'lte']:
+                        query['bool'][elastic_section].append({'range': {search_field: {op: value}}})
+                    if op in ['eq']:
+                        query['bool'][elastic_section].append({'match': {search_field: value}})
+                    if op in ['contains']:
+                        query['bool'][elastic_section].append({'wildcard': {search_field: ...}})
+                    if op in ['in_list']:
+                        query['bool'][elastic_section].append({'terms': {search_field: value}})
+        return query
 ```
 
-**DataSource subclasses** each implement their own error recovery. For example, `BenchlingDataSource` has a custom method that retries failed bulk upserts by falling back to individual calls.
+**SQL DataSource** (`src/tol/sql/filter.py`) — builds SQLAlchemy `Select` expressions:
 
-Two parallel exception hierarchies exist:
+```python
+# src/tol/sql/filter.py
+class DatabaseFilter(ABC):
+    @abstractmethod
+    def filter(self, query: Select) -> Select:
+        """Filter the Select object using the given model"""
 
-| Hierarchy | Location | Exceptions |
-|---|---|---|
-| `DataSourceError` | `src/tol/core/datasource_error.py` | `UnknownObjectTypeException`, `NoDataObjectFactoryError`, `NotRelationalError` |
-| `BaseRuntimeException` | `src/tol/api_client/exception.py` | `ObjectNotFoundByIdException`, `UnsupportedOperationError`, `BadQueryArgError` |
+class DefaultDatabaseFilter(DatabaseFilter):
+    def filter(self, query: Select) -> Select:
+        query = self.__apply_joins(query, self.__alias_trie, self.__base_model)
+        query = self.__filter_top_and_(query)
+        query = self.__filter_top_exact(query)
+        query = self.__filter_top_contains(query)
+        query = self.__filter_top_in_list(query)
+        query = self.__filter_top_range(query)
+        return query
+```
+
+Additionally, `_Filterable._preprocess_filter()` in `src/tol/core/operator/_filterable.py` performs in-place date normalisation, tightly coupled to each DataSource:
+
+```python
+# src/tol/core/operator/_filterable.py
+class _Filterable(ABC):
+    def _preprocess_filter(self, object_type, object_filters):
+        if object_filters.and_ is not None:
+            for name, value in object_filters.and_.items():
+                metadata = self.get_attribute_metadata_by_name(object_type, name)
+                if metadata['python_type'] == 'datetime' and isinstance(val['value'], str):
+                    object_filters.and_[name][op]['value'] = dateparser.parse(val['value'])
+        return object_filters
+```
+
+A recently-added `DataSourceFilterConverter` ABC (`src/tol/core/datasource_filter_converter.py`) exists but is only used by Elastic:
+
+```python
+# src/tol/core/datasource_filter_converter.py
+class DataSourceFilterConverter(ABC):
+    @abstractmethod
+    def convert(self, object_type: str, object_filters: DataSourceFilter | None = None) -> dict | str:
+        pass
+```
 
 Problems:
 
-1. **Bare `except Exception`** — swallows all errors including `KeyboardInterrupt`-adjacent bugs, makes debugging difficult, and returns a lossy string representation
-2. **No error classification** — transient errors (network timeout, 503) and permanent errors (missing field, unknown type) are handled identically
-3. **No composable error recovery** — each Action/DataSource reimplements its own try/except; there is no way to share or swap recovery strategies
-4. **Two exception hierarchies** — `DataSourceError` and `BaseRuntimeException` are unrelated, so callers cannot catch "any SDK error" without catching `Exception`
-5. **Error context is lost** — `str(e)` discards the exception type, traceback, and any structured fields like `status_code`
+1. **Three unrelated hierarchies** — `ApiFilter`, `ElasticFilterConverter` (extends `DataSourceFilterConverter`), and `DatabaseFilter` share no common interface. Code that works with "a filter converter" cannot be written generically.
+2. **Preprocessing is coupled to DataSource instances** — `_preprocess_filter()` lives on `_Filterable` and requires `self.get_attribute_metadata_by_name()`, making it impossible to test filter preprocessing without a full DataSource.
+3. **Operator handling is duplicated** — each converter independently handles `eq`, `contains`, `in_list`, `gt`, `gte`, `lt`, `lte`, `exists`. Adding a new operator (e.g. `regex`, `not_in_list`) requires changes in three places.
+4. **No composable pipeline** — preprocessing (date normalisation) and conversion (to source query) are entangled. There is no way to add a new preprocessing step (e.g. field aliasing, permission filtering) without modifying the DataSource.
+5. **`ApiFilter.dumps()` returns `str`, `ElasticFilterConverter.convert()` returns `dict`, `DatabaseFilter.filter()` returns `Select`** — the return types are incompatible, preventing a shared strategy interface.
 
 ### Changes required
 
-**Step 1** — Unify the exception hierarchy under `DataSourceError`:
+**Step 1** — Define a unified `FilterStrategy` interface in `src/tol/core/filter_strategy.py`:
 
 ```python
-# src/tol/core/datasource_error.py — add classification
-from enum import Enum, auto
-
-
-class ErrorKind(Enum):
-    """Classifies errors as transient (retryable) or permanent."""
-    TRANSIENT = auto()  # Network timeout, 429, 502, 503, 504
-    PERMANENT = auto()  # Missing field, unknown type, auth failure
-
-
-class DataSourceError(Exception):
-    def __init__(self, title: str = None, detail: str = None,
-                 status_code: int = 500,
-                 kind: ErrorKind = ErrorKind.PERMANENT,
-                 cause: Exception | None = None):
-        self.title = title
-        self.detail = detail
-        self.status_code = status_code
-        self.kind = kind
-        self.__cause__ = cause
-
-    @property
-    def is_transient(self) -> bool:
-        return self.kind == ErrorKind.TRANSIENT
-
-    def __str__(self) -> str:
-        return f'{self.title} - "{self.detail}"'
-
-
-class TransientError(DataSourceError):
-    """A retryable error — network issues, rate limits, temporary unavailability."""
-    def __init__(self, title: str = None, detail: str = None,
-                 status_code: int = 503, cause: Exception | None = None):
-        super().__init__(title, detail, status_code,
-                         kind=ErrorKind.TRANSIENT, cause=cause)
-
-
-class PermanentError(DataSourceError):
-    """A non-retryable error — bad input, missing config, unknown types."""
-    def __init__(self, title: str = None, detail: str = None,
-                 status_code: int = 400, cause: Exception | None = None):
-        super().__init__(title, detail, status_code,
-                         kind=ErrorKind.PERMANENT, cause=cause)
-```
-
-**Step 2** — Define an `ErrorHandler` strategy interface:
-
-```python
-# src/tol/core/error_handler.py
+# src/tol/core/filter_strategy.py
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import Any
+from typing import Any, Generic, TypeVar
 
-from .datasource_error import DataSourceError
+from .datasource_filter import DataSourceFilter
+
+T = TypeVar('T')  # The target query type (str, dict, Select)
 
 
-class ErrorHandler(ABC):
-    """Strategy interface for handling DataSource operation errors."""
+class FilterStrategy(ABC, Generic[T]):
+    """
+    Strategy interface for converting a DataSourceFilter into
+    a source-specific query representation.
+    """
 
     @abstractmethod
-    def handle(
+    def convert(
         self,
-        error: DataSourceError,
-        context: dict[str, Any]
-    ) -> tuple[dict[str, Any], int]:
-        """Handle an error and return a response tuple (body, status_code)."""
+        object_type: str,
+        object_filters: DataSourceFilter | None = None
+    ) -> T | None:
+        """Convert a DataSourceFilter to the target query format."""
 
 
-class DefaultErrorHandler(ErrorHandler):
-    """Preserves current behaviour: return error dict with 500."""
-
-    def handle(self, error, context):
-        return {'error': str(error)}, error.status_code
-
-
-class ClassifyingErrorHandler(ErrorHandler):
+class FilterPreprocessor(ABC):
     """
-    Routes errors based on their ErrorKind.
-    Delegates to separate handlers for transient vs permanent errors.
+    A single preprocessing step applied to a DataSourceFilter
+    before conversion.
+    """
+
+    @abstractmethod
+    def preprocess(
+        self,
+        object_type: str,
+        object_filters: DataSourceFilter
+    ) -> DataSourceFilter:
+        """Transform the filter in place and return it."""
+
+
+class DateNormalisingPreprocessor(FilterPreprocessor):
+    """
+    Converts relative date strings (e.g. '2 days ago') to absolute
+    datetime objects using attribute metadata.
+    """
+
+    def __init__(self, metadata_provider: AttributeMetadataProvider):
+        self._metadata = metadata_provider
+
+    def preprocess(self, object_type, object_filters):
+        if object_filters.and_ is None:
+            return object_filters
+        for name, value in object_filters.and_.items():
+            metadata = self._metadata.get_attribute_metadata_by_name(object_type, name)
+            if metadata is None:
+                continue
+            for op, val in value.items():
+                if 'value' in val and metadata['python_type'] == 'datetime' \
+                        and isinstance(val['value'], str):
+                    import dateparser
+                    object_filters.and_[name][op]['value'] = dateparser.parse(val['value'])
+        return object_filters
+
+
+class AttributeMetadataProvider(ABC):
+    """Extracts attribute metadata lookup from DataSource coupling."""
+
+    @abstractmethod
+    def get_attribute_metadata_by_name(
+        self, object_type: str, field_name: str
+    ) -> dict[str, Any] | None:
+        pass
+
+
+class CompositeFilterStrategy(FilterStrategy[T]):
+    """
+    Composes a pipeline of preprocessors with a final conversion strategy.
+    Decorator pattern applied to FilterStrategy.
     """
 
     def __init__(
         self,
-        transient_handler: ErrorHandler,
-        permanent_handler: ErrorHandler
+        delegate: FilterStrategy[T],
+        preprocessors: list[FilterPreprocessor] | None = None,
     ):
-        self._transient = transient_handler
-        self._permanent = permanent_handler
-
-    def handle(self, error, context):
-        if error.is_transient:
-            return self._transient.handle(error, context)
-        return self._permanent.handle(error, context)
-
-
-class RetryErrorHandler(ErrorHandler):
-    """
-    Retries the failed operation up to max_retries times before delegating
-    to a fallback handler.
-    """
-
-    def __init__(
-        self,
-        max_retries: int = 3,
-        fallback: ErrorHandler | None = None
-    ):
-        self._max_retries = max_retries
-        self._fallback = fallback or DefaultErrorHandler()
-
-    def handle(self, error, context):
-        operation = context.get('operation')
-        if operation is None:
-            return self._fallback.handle(error, context)
-
-        for attempt in range(self._max_retries):
-            try:
-                result = operation()
-                return {'success': True}, 200
-            except DataSourceError as retry_error:
-                if not retry_error.is_transient:
-                    return self._fallback.handle(retry_error, context)
-                error = retry_error
-
-        return self._fallback.handle(error, context)
-
-
-class LoggingErrorHandler(ErrorHandler):
-    """
-    Wraps another handler, logging the error before delegating.
-    Decorator pattern applied to the Strategy.
-    """
-
-    def __init__(self, delegate: ErrorHandler, logger=None):
         self._delegate = delegate
-        self._logger = logger
+        self._preprocessors = preprocessors or []
 
-    def handle(self, error, context):
-        if self._logger:
-            self._logger.error(
-                'DataSource error in %s: %s (kind=%s, status=%d)',
-                context.get('action', 'unknown'),
-                error,
-                error.kind.name,
-                error.status_code
-            )
-        return self._delegate.handle(error, context)
+    def convert(self, object_type, object_filters=None):
+        if object_filters is not None:
+            for preprocessor in self._preprocessors:
+                object_filters = preprocessor.preprocess(object_type, object_filters)
+        return self._delegate.convert(object_type, object_filters)
 ```
 
-**Step 3** — Inject `ErrorHandler` into `Action`:
+**Step 2** — Adapt existing converters to implement `FilterStrategy`:
 
 ```python
-# src/tol/actions/action.py
-from __future__ import annotations
-
-from abc import ABC, abstractmethod
-from typing import Any
-
-from ..core import DataSource
-from ..core.error_handler import DefaultErrorHandler, ErrorHandler
+# src/tol/api_client/filter.py
+from ..core.filter_strategy import FilterStrategy
 
 
-class Action(ABC):
-    def __init__(self, error_handler: ErrorHandler | None = None):
-        self._error_handler = error_handler or DefaultErrorHandler()
+class ApiFilterStrategy(FilterStrategy[str]):
+    """Adapts the existing ApiFilter to the FilterStrategy interface."""
 
-    @abstractmethod
-    def _execute(
-        self,
-        datasource: DataSource,
-        ids: list[str],
-        object_type: str,
-        params: dict[str, Any] | None = None
-    ) -> tuple[dict[str, Any], int]:
-        """Subclasses implement the operation logic here."""
+    __KEYS = ['exact', 'contains', 'in_list', 'range', 'and_']
 
-    def run(
-        self,
-        datasource: DataSource,
-        ids: list[str],
-        object_type: str,
-        params: dict[str, Any] | None = None
-    ) -> tuple[dict[str, Any], int]:
-        """Template method: execute the action, delegate errors to the handler."""
-        try:
-            return self._execute(datasource, ids, object_type, params)
-        except DataSourceError as e:
-            return self._error_handler.handle(e, {
-                'action': type(self).__name__,
-                'ids': ids,
-                'object_type': object_type,
-            })
-```
+    def __init__(self, dict_dumper: DictDumper = default_dict_dumper):
+        self.__dict_dumper = dict_dumper
 
-**Step 4** — Update Action subclasses to use `_execute` instead of `run`:
-
-```python
-# src/tol/actions/upsert_action.py
-class UpsertAction(Action):
-    def _execute(self, datasource, ids, object_type, params=None):
-        data_objects = self.__convert_to_data_objects(
-            datasource=datasource, ids=ids,
-            object_type=object_type, params=params
+    def convert(self, object_type, object_filters=None):
+        if object_filters is None:
+            return None
+        pairs = (
+            (k, getattr(object_filters, k))
+            for k in self.__KEYS
         )
-        datasource.upsert_batch(object_type=object_type, objects=data_objects)
-        return {'success': True}, 200
+        __dict = {k: v for k, v in pairs if v is not None}
+        return self.__dict_dumper(__dict)
 ```
 
 ```python
-# src/tol/actions/set_status_action.py
-class SetStatusAction(Action):
-    def _execute(self, datasource, ids, object_type, params=None):
-        # ...validation (raises PermanentError)...
-        # ...build objects, insert, update parent...
-        return {'success': True}, 200
+# src/tol/elastic/filter.py
+from ..core.filter_strategy import FilterStrategy
+
+
+class ElasticFilterStrategy(FilterStrategy[dict]):
+    """Adapts ElasticFilterConverter to the FilterStrategy interface."""
+
+    def __init__(self, field_resolver: Callable[[str, str], str]):
+        self._field_resolver = field_resolver
+
+    def convert(self, object_type, object_filters=None):
+        query = {'bool': {'must': [], 'must_not': []}}
+        if object_filters is None:
+            return query
+        if object_filters.and_ is not None:
+            for k, v in object_filters.and_.items():
+                search_field = self._field_resolver(object_type, k)
+                for op, constraint in v.items():
+                    search_value = constraint.get('value')
+                    negated = constraint.get('negate', False)
+                    elastic_section = 'must_not' if negated else 'must'
+                    if op in ['gt', 'gte', 'lt', 'lte']:
+                        query['bool'][elastic_section].append(
+                            {'range': {search_field: {op: search_value}}}
+                        )
+                    if op in ['eq']:
+                        query['bool'][elastic_section].append(
+                            {'match': {search_field: search_value}}
+                        )
+                    if op in ['contains']:
+                        query['bool'][elastic_section].append(
+                            {'wildcard': {search_field: {'value': f'{search_value}*'}}}
+                        )
+                    if op in ['in_list']:
+                        query['bool'][elastic_section].append(
+                            {'terms': {search_field: search_value}}
+                        )
+        return query
 ```
 
-**Step 5** — Update `SetStatusAction` validation to use typed errors:
+```python
+# src/tol/sql/filter.py
+from ..core.filter_strategy import FilterStrategy
+from sqlalchemy import Select
+
+
+class SqlFilterStrategy(FilterStrategy[Select]):
+    """Adapts DefaultDatabaseFilter to the FilterStrategy interface."""
+
+    def __init__(self, base_model: type[Model], model_registry: dict[str, type[Model]]):
+        self._base_model = base_model
+        self._model_registry = model_registry
+
+    def convert(self, object_type, object_filters=None):
+        db_filter = DefaultDatabaseFilter(object_filters)
+        query = db_filter.get_query(self._base_model)
+        return db_filter.filter(query)
+```
+
+**Step 3** — Inject `FilterStrategy` into DataSource constructors:
 
 ```python
-# src/tol/actions/set_status_action.py
-from ..core.datasource_error import PermanentError
+# src/tol/elastic/elastic_datasource.py
+class ElasticDataSource(...):
+    def __init__(self, ..., filter_strategy: FilterStrategy[dict] | None = None):
+        ...
+        self.__filter_strategy = filter_strategy or CompositeFilterStrategy(
+            delegate=ElasticFilterStrategy(self._field_or_keyword),
+            preprocessors=[DateNormalisingPreprocessor(self)],
+        )
 
-class SetStatusAction(Action):
-    def _execute(self, datasource, ids, object_type, params=None):
-        if not params or 'status' not in params:
-            raise PermanentError(
-                'Missing status',
-                'Missing status from params',
-                status_code=400
-            )
-        if ids is None or len(ids) == 0:
-            raise PermanentError(
-                'Missing ids',
-                'Missing required param: "ids"',
-                status_code=400
-            )
-        # ...rest of logic without try/except...
+    def __get_page_response(self, object_type, object_filters, ...):
+        query = self.__filter_strategy.convert(object_type, object_filters)
+        ...
+```
+
+```python
+# src/tol/api_client/api_datasource.py
+class ApiDataSource(...):
+    def __init__(self, ..., filter_strategy: FilterStrategy[str] | None = None):
+        ...
+        self.__filter_strategy = filter_strategy or CompositeFilterStrategy(
+            delegate=ApiFilterStrategy(),
+            preprocessors=[DateNormalisingPreprocessor(self)],
+        )
+
+    def __get_filter_string(self, object_filters):
+        return self.__filter_strategy.convert(None, object_filters)
+```
+
+Keep existing classes as backward-compatible wrappers:
+
+```python
+# src/tol/api_client/filter.py — keep for backward compat
+class DefaultApiFilter(ApiFilter):
+    def __init__(self, dict_dumper=default_dict_dumper):
+        self.__strategy = ApiFilterStrategy(dict_dumper)
+
+    def dumps(self, filter_: DataSourceFilter) -> Optional[str]:
+        return self.__strategy.convert(None, filter_)
 ```
 
 Usage:
 
 ```python
-# Before — bare except, no configurability
-action = UpsertAction()
-result, status = action.run(ds, ids=['1'], object_type='sample')
-# On error: always returns {'error': '<str>'}, 500
+# Before — tightly coupled, no way to customise
+ds = ElasticDataSource(config)
+# Date preprocessing happens internally, cannot add steps
 
-# After — default behaviour unchanged
-action = UpsertAction()
-result, status = action.run(ds, ids=['1'], object_type='sample')
-# On error: returns {'error': '<str>'}, <actual_status_code>
+# After — composable pipeline
+from tol.core.filter_strategy import CompositeFilterStrategy, DateNormalisingPreprocessor
 
-# After — with retry strategy for transient errors
-from tol.core.error_handler import (
-    ClassifyingErrorHandler, RetryErrorHandler, DefaultErrorHandler
+# Add a custom preprocessor that restricts queries by permission
+class PermissionPreprocessor(FilterPreprocessor):
+    def __init__(self, user_id: str, allowed_types: list[str]):
+        self._user_id = user_id
+        self._allowed_types = allowed_types
+
+    def preprocess(self, object_type, object_filters):
+        if object_filters.and_ is None:
+            object_filters.and_ = {}
+        object_filters.and_['owner'] = {'eq': {'value': self._user_id}}
+        return object_filters
+
+strategy = CompositeFilterStrategy(
+    delegate=ElasticFilterStrategy(ds._field_or_keyword),
+    preprocessors=[
+        PermissionPreprocessor(user_id='u123', allowed_types=['sample']),
+        DateNormalisingPreprocessor(ds),
+    ],
 )
-handler = ClassifyingErrorHandler(
-    transient_handler=RetryErrorHandler(max_retries=3),
-    permanent_handler=DefaultErrorHandler()
-)
-action = UpsertAction(error_handler=handler)
-result, status = action.run(ds, ids=['1'], object_type='sample')
-# Transient errors retry 3 times; permanent errors fail immediately
+ds = ElasticDataSource(config, filter_strategy=strategy)
 
-# After — with logging
-from tol.core.error_handler import LoggingErrorHandler
-import logging
-logger = logging.getLogger('tol.actions')
-handler = LoggingErrorHandler(DefaultErrorHandler(), logger=logger)
-action = SetStatusAction(error_handler=handler)
+# Override strategy for testing — no network needed
+from tol.core.filter_strategy import FilterStrategy
+
+class NoOpFilterStrategy(FilterStrategy[dict]):
+    def convert(self, object_type, object_filters=None):
+        return {'bool': {'must': [], 'must_not': []}}
+
+test_ds = ElasticDataSource(config, filter_strategy=NoOpFilterStrategy())
 ```
 
 Files that need changes:
 
 | File | Change |
 |---|---|
-| `src/tol/core/datasource_error.py` | Add `ErrorKind`, `TransientError`, `PermanentError`, and `kind`/`cause` fields to `DataSourceError` |
-| `src/tol/core/error_handler.py` | New file — `ErrorHandler` ABC with `DefaultErrorHandler`, `ClassifyingErrorHandler`, `RetryErrorHandler`, `LoggingErrorHandler` |
-| `src/tol/core/__init__.py` | Export `ErrorHandler`, `ErrorKind` |
-| `src/tol/actions/action.py` | Accept `ErrorHandler` in constructor, move `run` to template method calling `_execute` |
-| `src/tol/actions/upsert_action.py` | Rename `run` → `_execute`, remove try/except |
-| `src/tol/actions/set_status_action.py` | Rename `run` → `_execute`, remove try/except, use `PermanentError` for validation |
-| `src/tol/api_client/exception.py` | Make `BaseRuntimeException` extend `DataSourceError` instead of `Exception` |
+| `src/tol/core/filter_strategy.py` | New file — `FilterStrategy[T]` ABC, `FilterPreprocessor` ABC, `DateNormalisingPreprocessor`, `AttributeMetadataProvider`, `CompositeFilterStrategy` |
+| `src/tol/core/__init__.py` | Export `FilterStrategy`, `FilterPreprocessor`, `CompositeFilterStrategy` |
+| `src/tol/api_client/filter.py` | Add `ApiFilterStrategy(FilterStrategy[str])`, keep `DefaultApiFilter` as wrapper |
+| `src/tol/elastic/filter.py` | Add `ElasticFilterStrategy(FilterStrategy[dict])`, keep `ElasticFilterConverter` as wrapper |
+| `src/tol/sql/filter.py` | Add `SqlFilterStrategy(FilterStrategy[Select])`, keep `DefaultDatabaseFilter` unchanged |
+| `src/tol/elastic/elastic_datasource.py` | Accept optional `filter_strategy` in constructor, use it in query methods |
+| `src/tol/api_client/api_datasource.py` | Accept optional `filter_strategy` in constructor, use it in `__get_filter_string` |
+| `src/tol/core/operator/_filterable.py` | Extract date logic to `DateNormalisingPreprocessor`, keep `_preprocess_filter` as thin delegate |
 
 ### Benefits
 
-- Eliminates bare `except Exception` — errors are classified and only `DataSourceError` subtypes are caught
-- Error handling is **injectable** — callers choose retry, logging, or custom strategies without modifying Action code
-- **Transient vs permanent** classification enables intelligent retry at the application level, not just HTTP transport
-- Exception hierarchy is unified — `BaseRuntimeException` becomes a `DataSourceError` subclass, enabling a single catch-all
-- Error context is preserved — `cause` chains the original exception, `status_code` flows through to the response
-- `Action.run()` becomes a clean Template Method — subclasses implement `_execute` with no error handling boilerplate
+- Eliminates three unrelated filter hierarchies — all converters implement `FilterStrategy[T]`
+- Preprocessing is **composable** — add permission filtering, field aliasing, or audit logging as pipeline steps without modifying DataSource code
+- Filter conversion is **injectable** — swap strategies for testing without constructing real DataSources or network connections
+- Adding a new operator only requires implementing it in the relevant `FilterStrategy` — other strategies are unaffected
+- `DateNormalisingPreprocessor` is independently testable without a DataSource instance
+- The `CompositeFilterStrategy` separates preprocessing from conversion, following the Single Responsibility Principle
 
 ### Testing impact
 
-Existing tests that check `action.run()` return values continue to work because `DefaultErrorHandler` preserves the `({'error': str(e)}, status_code)` response format. Tests that directly call `set_status_action.run()` and check for `DataSourceError` raises will need minor updates to expect `PermanentError` instead, though `PermanentError` is a subclass of `DataSourceError` so `pytest.raises(DataSourceError)` still catches it.
+Existing tests that call DataSource methods with `object_filters` continue to work because the default `CompositeFilterStrategy` is wired identically to the current inline behaviour. Tests that directly instantiate `DefaultApiFilter` or `ElasticFilterConverter` are unaffected — these classes remain as wrappers.
 
 ### Testability improvement
 
-- Error handlers are independently testable — each strategy can be unit tested without a real DataSource or Action
-- Actions can be tested with a `MockErrorHandler` to verify that errors are delegated correctly
-- Transient/permanent classification can be asserted directly via `error.is_transient`
-- Retry behaviour is testable without network calls — inject a mock operation that fails N times then succeeds
-- Error context dict is inspectable — tests can verify what metadata is passed to the handler
+- `FilterStrategy` implementations are testable in isolation — pass a `DataSourceFilter`, assert the output format without any network or database
+- `FilterPreprocessor` steps are independently testable — verify date parsing without constructing an Elastic client
+- `CompositeFilterStrategy` can be tested with mock preprocessors to verify pipeline ordering
+- DataSource integration tests can inject a `NoOpFilterStrategy` to isolate non-filter logic
+- New preprocessors (permissions, audit) can be unit tested without touching existing DataSource tests
 
 ### How to write the tests
 
 ```python
-# test/unit/core/test_error_handler.py
+# test/unit/core/test_filter_strategy.py
 import pytest
-from unittest.mock import MagicMock, patch
-from tol.core.datasource_error import (
-    DataSourceError, ErrorKind, TransientError, PermanentError
+from unittest.mock import MagicMock
+from datetime import datetime
+from tol.core.datasource_filter import DataSourceFilter
+from tol.core.filter_strategy import (
+    CompositeFilterStrategy,
+    DateNormalisingPreprocessor,
+    FilterPreprocessor,
+    FilterStrategy,
 )
-from tol.core.error_handler import (
-    DefaultErrorHandler, ClassifyingErrorHandler,
-    RetryErrorHandler, LoggingErrorHandler
-)
 
 
-class TestDefaultErrorHandler:
-    def test_returns_error_dict_with_status_code(self):
-        handler = DefaultErrorHandler()
-        error = DataSourceError('title', 'detail', status_code=404)
-        body, status = handler.handle(error, {})
-        assert body == {'error': 'title - "detail"'}
-        assert status == 404
+class TestFilterStrategy:
+    def test_convert_receives_filter_and_returns_target_type(self):
+        class StubStrategy(FilterStrategy[dict]):
+            def convert(self, object_type, object_filters=None):
+                return {'converted': True}
 
-    def test_handles_transient_and_permanent_equally(self):
-        handler = DefaultErrorHandler()
-        transient = TransientError('timeout', 'timed out')
-        permanent = PermanentError('bad input', 'field missing')
-        _, t_status = handler.handle(transient, {})
-        _, p_status = handler.handle(permanent, {})
-        assert t_status == 503
-        assert p_status == 400
+        strategy = StubStrategy()
+        result = strategy.convert('sample', DataSourceFilter(exact={'name': 'x'}))
+        assert result == {'converted': True}
 
+    def test_convert_with_none_filter(self):
+        class StubStrategy(FilterStrategy[str]):
+            def convert(self, object_type, object_filters=None):
+                return None if object_filters is None else 'has_filter'
 
-class TestClassifyingErrorHandler:
-    def test_routes_transient_to_transient_handler(self):
-        transient_handler = MagicMock(spec=DefaultErrorHandler)
-        transient_handler.handle.return_value = ({'retried': True}, 200)
-        permanent_handler = MagicMock(spec=DefaultErrorHandler)
-        handler = ClassifyingErrorHandler(transient_handler, permanent_handler)
-
-        error = TransientError('timeout', 'timed out')
-        body, status = handler.handle(error, {})
-
-        transient_handler.handle.assert_called_once()
-        permanent_handler.handle.assert_not_called()
-        assert body == {'retried': True}
-
-    def test_routes_permanent_to_permanent_handler(self):
-        transient_handler = MagicMock(spec=DefaultErrorHandler)
-        permanent_handler = MagicMock(spec=DefaultErrorHandler)
-        permanent_handler.handle.return_value = ({'error': 'bad'}, 400)
-        handler = ClassifyingErrorHandler(transient_handler, permanent_handler)
-
-        error = PermanentError('bad input', 'missing field')
-        body, status = handler.handle(error, {})
-
-        permanent_handler.handle.assert_called_once()
-        transient_handler.handle.assert_not_called()
-        assert status == 400
+        strategy = StubStrategy()
+        assert strategy.convert('sample', None) is None
+        assert strategy.convert('sample', DataSourceFilter()) == 'has_filter'
 
 
-class TestRetryErrorHandler:
-    def test_retries_transient_errors(self):
-        call_count = 0
-        def operation():
-            nonlocal call_count
-            call_count += 1
-            if call_count < 3:
-                raise TransientError('fail', f'attempt {call_count}')
-            return True
+class TestFilterPreprocessor:
+    def test_preprocess_modifies_filter_in_place(self):
+        class AddOwnerPreprocessor(FilterPreprocessor):
+            def preprocess(self, object_type, object_filters):
+                if object_filters.and_ is None:
+                    object_filters.and_ = {}
+                object_filters.and_['owner'] = {'eq': {'value': 'user1'}}
+                return object_filters
 
-        handler = RetryErrorHandler(max_retries=3)
-        error = TransientError('fail', 'attempt 0')
-        body, status = handler.handle(error, {'operation': operation})
-
-        assert body == {'success': True}
-        assert status == 200
-        assert call_count == 3
-
-    def test_gives_up_after_max_retries(self):
-        def operation():
-            raise TransientError('fail', 'always fails')
-
-        handler = RetryErrorHandler(max_retries=2)
-        error = TransientError('fail', 'initial')
-        body, status = handler.handle(error, {'operation': operation})
-
-        assert 'error' in body
-        assert status == 503
-
-    def test_permanent_error_during_retry_stops_immediately(self):
-        call_count = 0
-        def operation():
-            nonlocal call_count
-            call_count += 1
-            raise PermanentError('bad', 'not retryable')
-
-        handler = RetryErrorHandler(max_retries=5)
-        error = TransientError('fail', 'initial')
-        body, status = handler.handle(error, {'operation': operation})
-
-        assert call_count == 1  # Stopped after first permanent error
-        assert status == 400
-
-    def test_no_operation_in_context_delegates_to_fallback(self):
-        fallback = MagicMock(spec=DefaultErrorHandler)
-        fallback.handle.return_value = ({'error': 'no op'}, 500)
-        handler = RetryErrorHandler(max_retries=3, fallback=fallback)
-
-        error = TransientError('fail', 'detail')
-        handler.handle(error, {})  # No 'operation' key
-
-        fallback.handle.assert_called_once()
+        preprocessor = AddOwnerPreprocessor()
+        f = DataSourceFilter(and_={'name': {'eq': {'value': 'test'}}})
+        result = preprocessor.preprocess('sample', f)
+        assert 'owner' in result.and_
+        assert result.and_['name'] == {'eq': {'value': 'test'}}
 
 
-class TestLoggingErrorHandler:
-    def test_logs_before_delegating(self):
-        logger = MagicMock()
-        delegate = MagicMock(spec=DefaultErrorHandler)
-        delegate.handle.return_value = ({'error': 'x'}, 500)
-        handler = LoggingErrorHandler(delegate, logger=logger)
+class TestDateNormalisingPreprocessor:
+    def test_converts_relative_date_string_to_datetime(self):
+        metadata_provider = MagicMock()
+        metadata_provider.get_attribute_metadata_by_name.return_value = {
+            'python_type': 'datetime'
+        }
+        preprocessor = DateNormalisingPreprocessor(metadata_provider)
+        f = DataSourceFilter(and_={
+            'created_at': {'gt': {'value': '2 days ago'}}
+        })
 
-        error = PermanentError('bad', 'detail')
-        handler.handle(error, {'action': 'UpsertAction'})
+        result = preprocessor.preprocess('sample', f)
 
-        logger.error.assert_called_once()
-        delegate.handle.assert_called_once()
+        assert isinstance(result.and_['created_at']['gt']['value'], datetime)
 
-    def test_returns_delegate_result(self):
-        delegate = MagicMock(spec=DefaultErrorHandler)
-        delegate.handle.return_value = ({'custom': 'response'}, 422)
-        handler = LoggingErrorHandler(delegate)
+    def test_leaves_non_datetime_fields_unchanged(self):
+        metadata_provider = MagicMock()
+        metadata_provider.get_attribute_metadata_by_name.return_value = {
+            'python_type': 'str'
+        }
+        preprocessor = DateNormalisingPreprocessor(metadata_provider)
+        f = DataSourceFilter(and_={
+            'name': {'eq': {'value': 'test_value'}}
+        })
 
-        error = PermanentError('bad', 'detail')
-        body, status = handler.handle(error, {})
+        result = preprocessor.preprocess('sample', f)
 
-        assert body == {'custom': 'response'}
-        assert status == 422
+        assert result.and_['name']['eq']['value'] == 'test_value'
 
+    def test_handles_none_metadata_gracefully(self):
+        metadata_provider = MagicMock()
+        metadata_provider.get_attribute_metadata_by_name.return_value = None
+        preprocessor = DateNormalisingPreprocessor(metadata_provider)
+        f = DataSourceFilter(and_={
+            'unknown_field': {'eq': {'value': 'x'}}
+        })
 
-# test/unit/core/test_datasource_error.py
-class TestErrorKind:
-    def test_transient_error_is_transient(self):
-        error = TransientError('timeout', 'timed out')
-        assert error.is_transient is True
-        assert error.kind == ErrorKind.TRANSIENT
+        result = preprocessor.preprocess('sample', f)
 
-    def test_permanent_error_is_not_transient(self):
-        error = PermanentError('bad input', 'missing')
-        assert error.is_transient is False
-        assert error.kind == ErrorKind.PERMANENT
+        assert result.and_['unknown_field']['eq']['value'] == 'x'
 
-    def test_default_datasource_error_is_permanent(self):
-        error = DataSourceError('generic', 'detail')
-        assert error.is_transient is False
+    def test_skips_when_and_is_none(self):
+        metadata_provider = MagicMock()
+        preprocessor = DateNormalisingPreprocessor(metadata_provider)
+        f = DataSourceFilter(exact={'name': 'x'})
 
-    def test_cause_chaining(self):
-        original = ValueError('original cause')
-        error = TransientError('wrapper', 'detail', cause=original)
-        assert error.__cause__ is original
+        result = preprocessor.preprocess('sample', f)
 
-    def test_transient_error_inherits_datasource_error(self):
-        error = TransientError('x', 'y')
-        assert isinstance(error, DataSourceError)
-
-    def test_permanent_error_inherits_datasource_error(self):
-        error = PermanentError('x', 'y')
-        assert isinstance(error, DataSourceError)
+        metadata_provider.get_attribute_metadata_by_name.assert_not_called()
+        assert result.exact == {'name': 'x'}
 
 
-# test/unit/actions/test_upsert_action.py
-class TestUpsertActionErrorHandling:
-    def test_delegates_error_to_handler(self):
-        mock_handler = MagicMock(spec=DefaultErrorHandler)
-        mock_handler.handle.return_value = ({'handled': True}, 503)
-        action = UpsertAction(error_handler=mock_handler)
+class TestCompositeFilterStrategy:
+    def test_applies_preprocessors_before_conversion(self):
+        call_order = []
 
-        mock_ds = MagicMock()
-        mock_ds.upsert_batch.side_effect = TransientError('fail', 'timeout')
+        class TrackingPreprocessor(FilterPreprocessor):
+            def __init__(self, label):
+                self.label = label
 
-        body, status = action.run(mock_ds, ['1'], 'sample')
+            def preprocess(self, object_type, object_filters):
+                call_order.append(f'preprocess_{self.label}')
+                return object_filters
 
-        mock_handler.handle.assert_called_once()
-        assert body == {'handled': True}
-        assert status == 503
+        class TrackingStrategy(FilterStrategy[str]):
+            def convert(self, object_type, object_filters=None):
+                call_order.append('convert')
+                return 'result'
 
-    def test_default_handler_preserves_existing_behaviour(self):
-        action = UpsertAction()  # Uses DefaultErrorHandler
-        mock_ds = MagicMock()
-        mock_ds.upsert_batch.side_effect = DataSourceError(
-            'fail', 'detail', status_code=500
+        composite = CompositeFilterStrategy(
+            delegate=TrackingStrategy(),
+            preprocessors=[TrackingPreprocessor('a'), TrackingPreprocessor('b')],
         )
+        composite.convert('sample', DataSourceFilter())
 
-        body, status = action.run(mock_ds, ['1'], 'sample')
+        assert call_order == ['preprocess_a', 'preprocess_b', 'convert']
 
-        assert 'error' in body
-        assert status == 500
+    def test_skips_preprocessing_when_filter_is_none(self):
+        preprocessor = MagicMock(spec=FilterPreprocessor)
+        delegate = MagicMock(spec=FilterStrategy)
+        delegate.convert.return_value = {'empty': True}
 
+        composite = CompositeFilterStrategy(delegate, preprocessors=[preprocessor])
+        result = composite.convert('sample', None)
 
-# test/unit/actions/test_set_status_action.py
-class TestSetStatusActionErrorHandling:
-    def test_validation_errors_are_permanent(self):
-        handler = MagicMock(spec=DefaultErrorHandler)
-        handler.handle.return_value = ({'error': 'bad'}, 400)
-        action = SetStatusAction(error_handler=handler)
+        preprocessor.preprocess.assert_not_called()
+        delegate.convert.assert_called_once_with('sample', None)
+        assert result == {'empty': True}
 
-        body, status = action.run(MagicMock(), ['1'], 'sample', params={})
+    def test_passes_preprocessed_filter_to_delegate(self):
+        class UpperCasePreprocessor(FilterPreprocessor):
+            def preprocess(self, object_type, object_filters):
+                if object_filters.exact:
+                    object_filters.exact = {
+                        k: v.upper() if isinstance(v, str) else v
+                        for k, v in object_filters.exact.items()
+                    }
+                return object_filters
 
-        error_arg = handler.handle.call_args[0][0]
-        assert isinstance(error_arg, PermanentError)
-        assert error_arg.status_code == 400
+        delegate = MagicMock(spec=FilterStrategy)
+        delegate.convert.return_value = 'ok'
 
-    def test_missing_ids_raises_permanent_error(self):
-        handler = MagicMock(spec=DefaultErrorHandler)
-        handler.handle.return_value = ({'error': 'no ids'}, 400)
-        action = SetStatusAction(error_handler=handler)
-
-        body, status = action.run(
-            MagicMock(), [], 'sample',
-            params={'status': 'approved', 'user_id': 'u1'}
+        composite = CompositeFilterStrategy(
+            delegate, preprocessors=[UpperCasePreprocessor()]
         )
+        f = DataSourceFilter(exact={'name': 'hello'})
+        composite.convert('sample', f)
 
-        error_arg = handler.handle.call_args[0][0]
-        assert isinstance(error_arg, PermanentError)
+        called_filter = delegate.convert.call_args[0][1]
+        assert called_filter.exact['name'] == 'HELLO'
+
+    def test_no_preprocessors_delegates_directly(self):
+        delegate = MagicMock(spec=FilterStrategy)
+        delegate.convert.return_value = 'direct'
+
+        composite = CompositeFilterStrategy(delegate)
+        f = DataSourceFilter(exact={'x': 1})
+        result = composite.convert('sample', f)
+
+        assert result == 'direct'
+        delegate.convert.assert_called_once_with('sample', f)
+
+
+# test/unit/api_client/test_api_filter_strategy.py
+class TestApiFilterStrategy:
+    def test_converts_exact_filter_to_json_string(self):
+        from tol.api_client.filter import ApiFilterStrategy
+        strategy = ApiFilterStrategy()
+        f = DataSourceFilter(exact={'name': 'test'})
+
+        result = strategy.convert('sample', f)
+
+        assert '"exact"' in result
+        assert '"name"' in result
+        assert '"test"' in result
+
+    def test_returns_none_for_none_filter(self):
+        from tol.api_client.filter import ApiFilterStrategy
+        strategy = ApiFilterStrategy()
+        assert strategy.convert('sample', None) is None
+
+    def test_excludes_none_filter_fields(self):
+        from tol.api_client.filter import ApiFilterStrategy
+        strategy = ApiFilterStrategy()
+        f = DataSourceFilter(exact={'name': 'x'}, contains=None)
+
+        result = strategy.convert('sample', f)
+
+        assert 'contains' not in result
+
+
+# test/unit/elastic/test_elastic_filter_strategy.py
+class TestElasticFilterStrategy:
+    def test_converts_eq_to_match_query(self):
+        from tol.elastic.filter import ElasticFilterStrategy
+        resolver = lambda obj_type, field: field
+        strategy = ElasticFilterStrategy(field_resolver=resolver)
+
+        f = DataSourceFilter(and_={
+            'name': {'eq': {'value': 'test'}}
+        })
+        result = strategy.convert('sample', f)
+
+        assert {'match': {'name': 'test'}} in result['bool']['must']
+
+    def test_converts_range_operators(self):
+        from tol.elastic.filter import ElasticFilterStrategy
+        resolver = lambda obj_type, field: field
+        strategy = ElasticFilterStrategy(field_resolver=resolver)
+
+        f = DataSourceFilter(and_={
+            'age': {'gte': {'value': 18}}
+        })
+        result = strategy.convert('sample', f)
+
+        assert {'range': {'age': {'gte': 18}}} in result['bool']['must']
+
+    def test_negated_filter_goes_to_must_not(self):
+        from tol.elastic.filter import ElasticFilterStrategy
+        resolver = lambda obj_type, field: field
+        strategy = ElasticFilterStrategy(field_resolver=resolver)
+
+        f = DataSourceFilter(and_={
+            'status': {'eq': {'value': 'deleted', 'negate': True}}
+        })
+        result = strategy.convert('sample', f)
+
+        assert {'match': {'status': 'deleted'}} in result['bool']['must_not']
+
+    def test_returns_empty_bool_for_none_filter(self):
+        from tol.elastic.filter import ElasticFilterStrategy
+        resolver = lambda obj_type, field: field
+        strategy = ElasticFilterStrategy(field_resolver=resolver)
+
+        result = strategy.convert('sample', None)
+
+        assert result == {'bool': {'must': [], 'must_not': []}}
+
+    def test_uses_field_resolver_for_field_names(self):
+        from tol.elastic.filter import ElasticFilterStrategy
+        resolver = MagicMock(return_value='name.keyword')
+        strategy = ElasticFilterStrategy(field_resolver=resolver)
+
+        f = DataSourceFilter(and_={
+            'name': {'eq': {'value': 'x'}}
+        })
+        strategy.convert('sample', f)
+
+        resolver.assert_called_with('sample', 'name')
+
+    def test_in_list_creates_terms_query(self):
+        from tol.elastic.filter import ElasticFilterStrategy
+        resolver = lambda obj_type, field: field
+        strategy = ElasticFilterStrategy(field_resolver=resolver)
+
+        f = DataSourceFilter(and_={
+            'status': {'in_list': {'value': ['active', 'pending']}}
+        })
+        result = strategy.convert('sample', f)
+
+        assert {'terms': {'status': ['active', 'pending']}} in result['bool']['must']
 ```
 
 ### Testing patterns
 
 | Pattern | Category | Where used | Purpose |
 |---|---|---|---|
-| **Arrange-Act-Assert (AAA)** | Structural | All test methods | Each test creates a handler/error, invokes `handle`, and asserts the response — enforcing a consistent structural layout across the test suite |
-| **Test Doubles (Mock/Stub)** | Creational | `TestClassifyingErrorHandler`, `TestRetryErrorHandler`, `TestLoggingErrorHandler`, `TestUpsertActionErrorHandling` | `MagicMock(spec=...)` creates strict test doubles for `ErrorHandler` and `DataSource` to isolate the unit under test |
-| **State-based Testing** | Behavioural | `TestRetryErrorHandler.test_retries_transient_errors` | Uses a `call_count` closure to track how many times the operation was retried — verifying runtime behavioural state across retry cycles |
-| **Behaviour Verification** | Behavioural | `TestLoggingErrorHandler.test_logs_before_delegating` | Asserts that `logger.error` was called exactly once, verifying side-effect behaviour rather than return values |
-| **Negative Testing** | Behavioural | `TestRetryErrorHandler.test_gives_up_after_max_retries`, `TestSetStatusActionErrorHandling.test_missing_ids_raises_permanent_error` | Verifies correct behavioural handling of failure paths — exhausted retries and invalid input |
-| **Polymorphism Testing** | Structural | `TestErrorKind.test_transient_error_inherits_datasource_error` | `isinstance` checks verify the exception hierarchy structure, ensuring catch clauses work correctly across subtypes |
-| **Backward Compatibility Testing** | Behavioural | `TestUpsertActionErrorHandling.test_default_handler_preserves_existing_behaviour` | Confirms that constructing an Action without an explicit handler produces the same behavioural result as the current codebase |
+| **Arrange-Act-Assert (AAA)** | Structural | All test methods | Each test constructs a strategy/filter, invokes `convert` or `preprocess`, and asserts the output — enforcing a consistent structural layout across the test suite |
+| **Test Doubles (Mock/Stub)** | Creational | `TestCompositeFilterStrategy`, `TestDateNormalisingPreprocessor`, `TestElasticFilterStrategy` | `MagicMock(spec=...)` creates strict test doubles for `FilterStrategy`, `FilterPreprocessor`, and `AttributeMetadataProvider` to isolate the unit under test |
+| **Ordering Verification** | Behavioural | `TestCompositeFilterStrategy.test_applies_preprocessors_before_conversion` | Uses a `call_order` list to track the sequence of method invocations — verifying the pipeline executes preprocessors before the final conversion |
+| **Polymorphism Testing** | Structural | `TestFilterStrategy.test_convert_receives_filter_and_returns_target_type` | Verifies that concrete implementations of the generic `FilterStrategy[T]` interface return the expected type — confirming the strategy contract is honoured |
+| **Negative Testing** | Behavioural | `TestCompositeFilterStrategy.test_skips_preprocessing_when_filter_is_none`, `TestDateNormalisingPreprocessor.test_handles_none_metadata_gracefully` | Verifies correct behavioural handling of null/missing inputs without raising exceptions |
+| **State Transformation Testing** | Behavioural | `TestCompositeFilterStrategy.test_passes_preprocessed_filter_to_delegate` | Asserts that the filter object passed to the delegate has been mutated by the preprocessor — verifying the pipeline's data-flow behaviour |
+| **Backward Compatibility Testing** | Behavioural | `TestApiFilterStrategy.test_converts_exact_filter_to_json_string` | Confirms that the new strategy produces output identical to the existing `DefaultApiFilter.dumps()` method — preserving current serialisation behaviour |
 
 ---
 
