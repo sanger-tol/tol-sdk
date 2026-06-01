@@ -153,6 +153,11 @@ def create_standard_models(
             nullable=True
         )
 
+        requested_fields: Mapped[list[str]] = mapped_column(
+            JSONB,
+            nullable=True
+        )
+
         provenance_override: Mapped[str] = mapped_column(nullable=False, default='')
         config: Mapped[dict[str, Any]] = mapped_column(
             nullable=False,
