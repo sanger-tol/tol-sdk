@@ -618,6 +618,12 @@ def create_standard_models(
         )
 
     class _UserMixin:
+        tours_seen: Mapped[dict] = mapped_column(
+            JSONB,
+            nullable=True,
+            default={},
+            server_default='{}'  # noqa P103
+        )
 
         @declared_attr
         def components(self) -> Mapped[list[Component]]:
