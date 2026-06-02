@@ -69,6 +69,6 @@ class DefaultParser(Parser):
                 'sub_category': ds.data_object_factory(
                     'sub_category',
                     transfer.get('sub_category')
-                )  if 'sub_category' in transfer else None,
+                ) if 'sub_category' in transfer else None,
             }
         )

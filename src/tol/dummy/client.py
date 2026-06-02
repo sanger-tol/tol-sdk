@@ -65,9 +65,13 @@ class DummyClient(HttpClient):
                     'date': f'2024-01-{(int(object_id) % 28) + 1:02d}',
                     'type': object_type,
                     'category': ['cat1', 'cat2', 'cat3', 'cat4'][int(object_id) % 4],
-                    'sub_category':['cat1', 'cat2', 'cat3', 'cat4'][(int(object_id)-1) % 4],
+                    'sub_category': ['cat1', 'cat2', 'cat3', 'cat4'][(int(object_id) - 1) % 4],
                     'link': 'https://www.google.com/',
-                    'links': ['https://www.google.com/', 'https://www.instagram.com/', 'https://www.facebook.com/', 'https://www.twitter.com/'][int(object_id)% 4],
+                    'links': [
+                        'https://www.google.com/',
+                        'https://www.instagram.com/',
+                        'https://www.facebook.com/',
+                        'https://www.twitter.com/'][int(object_id) % 4],
                     'image': {
                         'url': 'https://picsum.photos/200/300',
                         'caption': 'cap1',
@@ -77,7 +81,7 @@ class DummyClient(HttpClient):
                         {'url': 'https://picsum.photos/200/300', 'caption': 'cap2'},
                         {'url': 'https://picsum.photos/200/300', 'caption': 'cap3'},
                         {'url': 'https://picsum.photos/200/300', 'caption': 'cap4'},
-                    ][int(object_id)% 4]
+                    ][int(object_id) % 4]
                 })
             else:
                 ret.append(None)

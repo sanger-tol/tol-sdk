@@ -77,17 +77,18 @@ class TestDummyConverter:
                 'images': {'url': 'https://picsum.photos/200/300', 'caption': 'cap1'}
             }
         ]
-        parser = DefaultParser(_get_mock_ds_dict({'record': {
-            'big_string': 'str',
-            'little_string': 'str',
-            'int': 'int',
-            'date': 'datetime',
-            'bool': 'bool',
-            'list': 'list[str]',
-            'link': 'str',
-            'links': 'str',
-            'image': 'dict[str,str]',
-            'images': 'dict[str,str]',
+        parser = DefaultParser(_get_mock_ds_dict({
+            'record': {
+                'big_string': 'str',
+                'little_string': 'str',
+                'int': 'int',
+                'date': 'datetime',
+                'bool': 'bool',
+                'list': 'list[str]',
+                'link': 'str',
+                'links': 'str',
+                'image': 'dict[str,str]',
+                'images': 'dict[str,str]',
             },
             'category': {
                 'name': 'str',
@@ -111,12 +112,12 @@ class TestDummyConverter:
         assert first.attributes['link'] == 'https://www.google.com/'
         assert first.attributes['links'] == 'https://www.google.com/'
         assert first.attributes['image'] == {
-        'url': 'https://picsum.photos/200/300',
-        'caption': 'cap1',
+            'url': 'https://picsum.photos/200/300',
+            'caption': 'cap1',
         }
         assert first.attributes['images'] == {
-        'url': 'https://picsum.photos/200/300',
-        'caption': 'cap1',
+            'url': 'https://picsum.photos/200/300',
+            'caption': 'cap1',
         }
 
         assert first.to_one['category'].type == 'category'

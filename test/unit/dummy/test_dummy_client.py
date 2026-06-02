@@ -39,7 +39,7 @@ class TestDummyClient:
                     {'url': 'https://picsum.photos/200/300', 'caption': 'cap2'},
                     {'url': 'https://picsum.photos/200/300', 'caption': 'cap3'},
                     {'url': 'https://picsum.photos/200/300', 'caption': 'cap4'},
-                ][i % 4],     
+                ][i % 4],
             }
             for i in range(1, 3)
         ]
