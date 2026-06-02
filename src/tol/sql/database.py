@@ -409,7 +409,11 @@ class DefaultDatabase(Database):
 
         tbl_stats = {}
         for tbl, col, card_n in stats:
-            if col == tbl_model[tbl].get_id_column_name():
+            model = tbl_model.get(tbl)
+            if not model:
+                # Table does not belong to one of the models served by the API
+                continue
+            if col == model.get_id_column_name():
                 col = 'id'
             tbl_stats.setdefault(tbl, {})[col] = {'cardinality': card_n}
         return tbl_stats
