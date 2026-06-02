@@ -209,13 +209,13 @@ class MlwhDataSource(DataSource, DetailGetter, ListGetter):
             'hifi_bases_in_barcoded_reads': 'well_metrics.hifi_bases_in_barcoded_reads',
             'irods_path': 'irods.irods_root_collection',
             'irods_file': 'irods.irods_data_relative_path',
-            'is_cell_multi_use': (
-                "CASE "
-                "WHEN well_metrics.is_cell_multi_use = 1 THEN 'True' "
-                "WHEN well_metrics.is_cell_multi_use = 0 THEN 'False' "
-                "ELSE NULL "
-                "END"
-            ),
+            'is_cell_multi_use': """
+                CASE
+                    WHEN well_metrics.is_cell_multi_use = 1 THEN 'True'
+                    WHEN well_metrics.is_cell_multi_use = 0 THEN 'False'
+                    ELSE NULL
+                END
+            """,
             'cell_use_count': 'well_metrics.cell_use_count',
             'cell_id': 'well_metrics.cell_id',
         }
