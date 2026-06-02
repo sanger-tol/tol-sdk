@@ -13,7 +13,7 @@ from tol.core import (
 from tol.core.operator import Relational
 from tol.core.relationship import RelationshipConfig
 from tol.flows.converters import (
-    BenchlingEntityToBenchlingWorklistItemConverterFactory
+    BenchlingEntityToBenchlingWorklistItemConverter
 )
 
 
@@ -76,11 +76,11 @@ class TestBenchlingEntityToStsSampleConverter(TestCase):
             object_=obj1,
         )
 
-        converter_class = \
-            BenchlingEntityToBenchlingWorklistItemConverterFactory(worklist).get_converter_class()
-        converter = converter_class(
+        converter = BenchlingEntityToBenchlingWorklistItemConverter(
             data_object_factory=destination.data_object_factory,
-            config=converter_class.Config()
+            config=BenchlingEntityToBenchlingWorklistItemConverter.Config(
+                worklist=worklist
+            )
         )
 
         converteds = converter.convert(obj1)

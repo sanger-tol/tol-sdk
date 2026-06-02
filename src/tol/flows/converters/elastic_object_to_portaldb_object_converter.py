@@ -30,6 +30,10 @@ class ElasticObjectToPortaldbObjectConverter(
         super().__init__(data_object_factory)
         self.__config = config
 
+    @property
+    def config(self) -> Config:
+        return self.__config
+
     def convert(self, data_object: DataObject) -> Iterable[DataObject]:
         if data_object is not None:
 

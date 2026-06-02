@@ -94,7 +94,8 @@ class TestActionsWithDataSources:
                     'action_name': 'flowexample',
                     'object_type': 'test',
                     'params': {
-                        'additional': 'indeeeeed'
+                        'additional': 'indeeeeed',
+                        'action_id': '123',
                     }
                 }
             }
@@ -115,10 +116,9 @@ class TestActionsWithDataSources:
             'params': {
                 'additional': 'indeeeeed',
                 'ids': list('abc'),
-                'bool': True,
-                'answer': 42,
                 'flow_run_id': 'uuid123456',
-                'flow_run_name': 'fabulous_flamingo'
+                'flow_run_name': 'fabulous_flamingo',
+                'action_id': '123',
             }
         }
 
@@ -144,10 +144,9 @@ class TestActionsWithDataSources:
         assert kwargs['attributes']['flow_name'] == 'example_flow'
         assert kwargs['attributes']['deployment_name'] == 'example_flow'
         assert kwargs['attributes']['parameters'] == {
-            'extra_params': {
+            'params': {
                 'additional': 'indeeeeed',
-                'bool': True,
-                'answer': 42,
+                'action_id': '123',
             },
             'object_type': 'test',
             'ids': list('abc'),
@@ -183,7 +182,7 @@ class TestActionsWithDataSources:
 
         attributes = {
             'flow_name': 'example_flow' if flow_or_action == 'flow' else 'example_action',
-            'class_name': None,
+            'class_name': 'TestAction',
             'params': {
                 'bool': True,
                 'answer': 42

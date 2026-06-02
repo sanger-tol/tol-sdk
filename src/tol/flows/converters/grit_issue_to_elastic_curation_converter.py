@@ -31,7 +31,8 @@ class GritIssueToElasticCurationConverter(
         if data_object.assembled_by in [
             'Blaxter',
             'Jaron Group',
-            'ToL'
+            'ToL',
+            'Lawniczak'
         ]:
             assembly_stats = self.__get_assembly_stats(
                 data_object.attributes.get('assembly_statistics')

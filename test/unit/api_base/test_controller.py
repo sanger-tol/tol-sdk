@@ -607,7 +607,7 @@ class TestPerformAction:
         mock_view = Mock()
         controller = Controller(Mock(), mock_view)
 
-        with patch('tol.api_base.controller.importlib.import_module') as mock_import:
+        with patch('tol.actions.action_utils.importlib.import_module') as mock_import:
             mock_module = Mock()
             mock_module.MyAction = mock_action_class
             mock_import.return_value = mock_module
@@ -770,7 +770,7 @@ class TestPerformAction:
         controller = Controller(Mock(), mock_view)
 
         with patch(
-            'tol.api_base.controller.importlib.import_module',
+            'tol.actions.action_utils.importlib.import_module',
             side_effect=ImportError('no module'),
         ):
             with pytest.raises(DataSourceError) as exc:

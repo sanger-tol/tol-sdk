@@ -89,7 +89,9 @@ class TestElasticSampleToBenchlingTissueConverter(TestCase):
         core_data_object(destination)
         converter = ElasticSampleToBenchlingTissueConverter(
             data_object_factory=destination.data_object_factory,
-            config=ElasticSampleToBenchlingTissueConverter.Config()
+            config=ElasticSampleToBenchlingTissueConverter.Config(
+                extra_attributes={'user': 'test_user'}
+            )
         )
 
         CoreDataObject = source.data_object_factory  # noqa N806
@@ -196,6 +198,7 @@ class TestElasticSampleToBenchlingTissueConverter(TestCase):
             'project': 'project1',
             'study_id': 'cf01ea23-ac45-67e8-9101-11b213141516',
             'cost_code': 'S12345',
+            'user': 'test_user'
         })
 
         with self.assertRaises(StopIteration):
@@ -203,5 +206,33 @@ class TestElasticSampleToBenchlingTissueConverter(TestCase):
 
         converteds = converter.convert(obj2)
         assert next(converteds) is None
+        with self.assertRaises(StopIteration):
+            next(converteds)
+
+    def test_convert_exists_already(self):
+
+        source = _MockDataSource(config={})
+        destination = _MockDataSource(config={})
+        core_data_object(source)
+        core_data_object(destination)
+        converter = ElasticSampleToBenchlingTissueConverter(
+            data_object_factory=destination.data_object_factory,
+            config=ElasticSampleToBenchlingTissueConverter.Config(
+                extra_attributes={'user': 'test_user'},
+                only_if_new=True
+            )
+        )
+
+        CoreDataObject = source.data_object_factory  # noqa N806
+
+        obj1 = CoreDataObject(
+            id_='1234',
+            type_='sample',
+            attributes={
+                'sts_eln_id': 'benchling1',
+            }
+        )
+
+        converteds = converter.convert(obj1)
         with self.assertRaises(StopIteration):
             next(converteds)
