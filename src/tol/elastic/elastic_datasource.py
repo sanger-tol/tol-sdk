@@ -286,7 +286,8 @@ class ElasticDataSource(
 
         if '.' in name:
             # Runtime fields don't behave the same as text fields
-            if object_type in self.runtime_fields and f'{name}.value' in self.runtime_fields[object_type]:
+            if (object_type in self.runtime_fields and
+                    f'{name}.value' in self.runtime_fields[object_type]):
                 return f'{name}.value'
             rc = self.relationship_config[object_type]
             relationship_name, attribute = name.split('.')[0], name.split('.')[1]
@@ -296,8 +297,8 @@ class ElasticDataSource(
             attribute_type = self.attribute_types[relationship_object_type][attribute]
             if attribute_type == 'str':
                 return f'{name}.keyword'
-        
-        else:    
+
+        else:
             if name == 'id':
                 return 'uid.keyword'
             # Runtime fields don't behave the same as text fields

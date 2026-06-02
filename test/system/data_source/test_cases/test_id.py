@@ -211,7 +211,8 @@ class TestID:
         for i, obj in enumerate(descending_objs):
             inverted = 2 - i
             assert obj.id == str(inverted)
-            assert obj.related_object.id == {'provenance': {'source1': {'value': f'relation_{inverted}'}}}
+            assert obj.related_object.id == {
+                'provenance': {'source1': {'value': f'relation_{inverted}'}}}
 
     @against(*all_fixtures)
     def test_filter_relation(

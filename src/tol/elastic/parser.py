@@ -66,7 +66,7 @@ class DefaultElasticApiParser(DataSourceParser[ElasticApiResource, DataObject]):
 
     def _convert_data_dict_to_data_object(self, type_, id_, data, runtime_data):
         attributes = {
-            k: self.__make_dates(type_, k, v) for k, v in data.items() 
+            k: self.__make_dates(type_, k, v) for k, v in data.items()
             if k in self.__data_source.attribute_types[type_]
         }
         runtime_attributes = {

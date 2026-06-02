@@ -140,9 +140,9 @@ class DataSourceUtils:
             if dsrc.object_type not in runtime_fields:
                 runtime_fields[dsrc.object_type] = {}
             runtime_fields[dsrc.object_type][f'{dsrc.name}.id.value'] = RuntimeFields.coalesce(
-                    [f'{dsrc.name}.id.provenance.{source_order}.value'
-                     for source_order in dsrc.source_order]
-                )
+                        [f'{dsrc.name}.id.provenance.{source_order}.value'
+                        for source_order in dsrc.source_order]
+                    )
         return runtime_fields
 
     @classmethod
