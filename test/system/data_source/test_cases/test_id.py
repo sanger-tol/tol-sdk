@@ -173,8 +173,8 @@ class TestID:
         ]
 
         if data_source.write_mode['root'] == RelationWriteMode.SEPARATE:
-            data_source.upsert('related', relations)
-        data_source.upsert('root', roots)
+            data_source.upsert('related', relations, provenance='source1')
+        data_source.upsert('root', roots, provenance='source1')
 
         # let upsert settle
         ds_sleep(5)
@@ -199,7 +199,7 @@ class TestID:
         )
         for i, obj in enumerate(ascending_objs):
             assert obj.id == str(i)
-            assert obj.related_object.id == f'relation_{i}'
+            assert obj.related_object.id == {'provenance': {'source1': {'value': f'relation_{i}'}}}
 
         descending_objs, _ = data_source.get_list_page(
             'root',
@@ -211,7 +211,7 @@ class TestID:
         for i, obj in enumerate(descending_objs):
             inverted = 2 - i
             assert obj.id == str(inverted)
-            assert obj.related_object.id == f'relation_{inverted}'
+            assert obj.related_object.id == {'provenance': {'source1': {'value': f'relation_{inverted}'}}}
 
     @against(*all_fixtures)
     def test_filter_relation(
@@ -243,8 +243,8 @@ class TestID:
         ]
 
         if data_source.write_mode['root'] == RelationWriteMode.SEPARATE:
-            data_source.upsert('related', relations)
-        data_source.upsert('root', roots)
+            data_source.upsert('related', relations, provenance='source1')
+        data_source.upsert('root', roots, provenance='source1')
 
         # let upsert settle
         ds_sleep(5)

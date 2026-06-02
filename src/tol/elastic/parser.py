@@ -319,7 +319,7 @@ class DefaultElasticUpdateInputParser(
             # Don't want key in the upsert as it cannot change anyway
             f.and_[key] = {'eq': {'value': u.pop(key)}}
         u = self._prefix_fields(u, transfer.field_prefix)
-        u = self._convert_data_objects_in_update_to_dict(u)
+        u = self._convert_data_objects_in_update_to_dict(u, transfer.provenance)
         query = ElasticFilterConverter(self.__data_source).convert(
             transfer.object_type, object_filters=f
         )
@@ -334,11 +334,11 @@ class DefaultElasticUpdateInputParser(
             },
         }
 
-    def _convert_data_objects_in_update_to_dict(self, dict_: dict) -> dict:
+    def _convert_data_objects_in_update_to_dict(self, dict_: dict, provenance: str | None) -> dict:
         ret = {}
         for k, v in dict_.items():
             if isinstance(v, DataObject):
-                ret[k] = self._parse_to_one_relation(v)
+                ret[k] = self._parse_to_one_relation(v, provenance)
             else:
                 ret[k] = v
         return ret

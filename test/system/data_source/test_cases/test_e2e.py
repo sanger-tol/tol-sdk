@@ -175,8 +175,8 @@ class TestEndToEnd:
         ]
 
         if data_source.write_mode['root'] == RelationWriteMode.SEPARATE:
-            data_source.upsert('related', related_objects)
-        data_source.upsert('root', data_objects)
+            data_source.upsert('related', related_objects, provenance='source1')
+        data_source.upsert('root', data_objects, provenance='source1')
 
         ds_sleep(2)  # Let Elastic settle down after the upsert
 
@@ -640,14 +640,13 @@ class TestEndToEnd:
                 'datetime_column': datetime(2024, 6, 6),
             },
         )
-        data_source.upsert('root', [obj1])
-        data_source.upsert('related', [rel1, rel2])
+        data_source.upsert('root', [obj1], provenance='source1')
+        data_source.upsert('related', [rel1, rel2], provenance='source1')
         ds_sleep(2)
         # they should all be present now
         first = list(data_source.get_by_ids('root', ['1']))
         assert len(first) == 1
         ret = first[0]
-        print(ret.attributes)
         assert ret.str_column == 'test_2'
         assert ret.int_column is None
         assert ret.datetime_column is None
@@ -671,12 +670,12 @@ class TestEndToEnd:
             'root',
             [update],
             candidate_key=['str_column'],
+            provenance='source1',
         )
         ds_sleep(2)
         second = list(data_source.get_by_ids('root', ['1']))
         assert len(second) == 1
         ret = second[0]
-        print(ret.attributes)
         assert ret.str_column == 'test_2'
         assert ret.int_column == 2
         assert ret.datetime_column == datetime(2024, 1, 2)
@@ -700,7 +699,7 @@ class TestEndToEnd:
                 'list_column': ['item1', 'item3'],
             },
         )
-        data_source.update('root', [update], candidate_key=['int_column'])
+        data_source.update('root', [update], candidate_key=['int_column'], provenance='source1')
         ds_sleep(2)
         third = list(data_source.get_by_ids('root', ['1']))
         assert len(third) == 1
@@ -718,7 +717,7 @@ class TestEndToEnd:
         assert ret.list_column == ['item1', 'item2', 'item3']
 
         update = (None, {'int_column': 2})
-        data_source.update('root', [update], candidate_key=['int_column'])
+        data_source.update('root', [update], candidate_key=['int_column'], provenance='source1')
         ds_sleep(2)
         fourth = list(data_source.get_by_ids('root', ['1']))
         assert len(fourth) == 1
@@ -746,7 +745,7 @@ class TestEndToEnd:
                 'list_column': None,
             },
         )
-        data_source.update('root', [update], candidate_key=['int_column'])
+        data_source.update('root', [update], candidate_key=['int_column'], provenance='source1')
         ds_sleep(5)
         fifth = list(data_source.get_by_ids('root', ['1']))
         assert len(fifth) == 1
@@ -770,7 +769,7 @@ class TestEndToEnd:
             },
         )
         data_source.update(
-            'root', [update], candidate_key_func=lambda x: ['int_column']
+            'root', [update], candidate_key_func=lambda x: ['int_column'], provenance='source1'
         )
         ds_sleep(5)
         sixth = list(data_source.get_by_ids('root', ['1']))
