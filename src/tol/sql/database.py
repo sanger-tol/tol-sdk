@@ -411,6 +411,7 @@ class DefaultDatabase(Database):
         for tbl, col, card_n in stats:
             model = tbl_model.get(tbl)
             if not model:
+                # Table does not belong to one of the models served by the API
                 continue
             if col == model.get_id_column_name():
                 col = 'id'
