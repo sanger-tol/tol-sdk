@@ -6,7 +6,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from tol.actions.topup_action import TopupAction
+from tol.action.actions.topup_action import TopupAction
 from tol.core import DataSourceError
 
 
@@ -72,24 +72,24 @@ def _patch_all(
     """Return a context-manager stack that wires up all external dependencies."""
     perform_errors = perform_errors or []
     return [
-        patch('tol.actions.topup_action.portaldb', return_value=portaldb_ds),
-        patch('tol.actions.topup_action.sts', return_value=sts_ds),
+        patch('tol.action.actions.topup_action.portaldb', return_value=portaldb_ds),
+        patch('tol.action.actions.topup_action.sts', return_value=sts_ds),
         patch(
-            'tol.actions.topup_action.benchling',
+            'tol.action.actions.topup_action.benchling',
             side_effect=[benchling_superuser, benchling_user_bds]
         ),
         patch(
-            'tol.actions.topup_action.DataSourceUtils.get_datasource_by_datasource_instance',
+            'tol.action.actions.topup_action.DataSourceUtils.get_datasource_by_datasource_instance',
             return_value=eds,
         ),
         patch(
-            'tol.actions.topup_action.FlowUtils.get_user_name_and_eln_api_key',
+            'tol.action.actions.topup_action.FlowUtils.get_user_name_and_eln_api_key',
             return_value=(user_name, api_key),
         ),
-        patch('tol.actions.topup_action.FlowUtils.get_folder', return_value=folder),
-        patch('tol.actions.topup_action.FlowUtils.get_worklist', return_value=worklist),
+        patch('tol.action.actions.topup_action.FlowUtils.get_folder', return_value=folder),
+        patch('tol.action.actions.topup_action.FlowUtils.get_worklist', return_value=worklist),
         patch(
-            'tol.actions.topup_action.FlowUtils.perform_topup_action',
+            'tol.action.actions.topup_action.FlowUtils.perform_topup_action',
             return_value=iter(perform_errors),
         ),
     ]

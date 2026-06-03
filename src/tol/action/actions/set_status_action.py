@@ -7,8 +7,8 @@ from __future__ import annotations
 from datetime import datetime, timezone
 from typing import Any
 
-from .action import Action
-from ..core import DataSource, DataSourceError
+from ..action import Action
+from ...core import DataSource, DataSourceError
 
 
 class SetStatusAction(Action):

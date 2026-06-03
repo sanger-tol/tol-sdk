@@ -6,7 +6,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from tol.actions.action_utils import ActionUtils
+from tol.action.action_utils import ActionUtils
 from tol.core import DataSourceError
 
 

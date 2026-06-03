@@ -21,7 +21,7 @@ class ActionUtils:
         # Try to import the class from tol.actions first, then fall back to main.actions
         action_class = None
         try:
-            tol_actions_module = importlib.import_module('tol.actions')
+            tol_actions_module = importlib.import_module('tol.action.actions')
             if hasattr(tol_actions_module, action.class_name):
                 action_class = getattr(tol_actions_module, action.class_name)
 
@@ -40,7 +40,7 @@ class ActionUtils:
         if action_class is None:
             raise DataSourceError(
                 'Action Class Not Found',
-                f'Action class "{action.class_name}" not found in tol.actions or main.actions',
+                f'Action class "{action.class_name}" not found in tol.action.actions or main.actions',
                 404
             )
 
