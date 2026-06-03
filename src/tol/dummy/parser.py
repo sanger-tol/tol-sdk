@@ -59,12 +59,16 @@ class DefaultParser(Parser):
                     else v
                 )
                 for k, v in transfer.items()
-                if k not in ['id', 'type', 'category']
+                if k not in ['id', 'type', 'category', 'sub_category']
             },
             to_one={
                 'category': ds.data_object_factory(
                     'category',
                     transfer.get('category')
-                ) if 'category' in transfer else None
+                ) if 'category' in transfer else None,
+                'sub_category': ds.data_object_factory(
+                    'sub_category',
+                    transfer.get('sub_category')
+                ) if 'sub_category' in transfer else None,
             }
         )
