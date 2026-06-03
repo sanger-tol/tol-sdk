@@ -680,7 +680,7 @@ class TestEndToEnd:
         assert ret.int_column == 2
         assert ret.datetime_column == datetime(2024, 1, 2)
         assert ret.bool_column is False
-        assert ret.related_object.id == 'rel1'
+        assert ret.related_object.id == {'provenance': {'source1': {'value': 'rel1'}}}
         assert ret.related_object.str_column == 'value2'
         assert ret.related_object.int_column == 123
         assert ret.related_object.datetime_column is None
@@ -708,7 +708,7 @@ class TestEndToEnd:
         assert ret.int_column == 2
         assert ret.datetime_column == datetime(2024, 1, 3)
         assert ret.bool_column is True
-        assert ret.related_object.id == 'rel2'
+        assert ret.related_object.id == {'provenance': {'source1': {'value': 'rel2'}}}
         assert ret.related_object.str_column == 'value2'
         assert ret.related_object.int_column == 456
         assert ret.related_object.datetime_column == datetime(2024, 6, 6)
@@ -726,7 +726,7 @@ class TestEndToEnd:
         assert ret.int_column == 2
         assert ret.datetime_column == datetime(2024, 1, 3)
         assert ret.bool_column is True
-        assert ret.related_object.id == 'rel2'
+        assert ret.related_object.id == {'provenance': {'source1': {'value': 'rel2'}}}
         assert ret.related_object.str_column == 'value2'
         assert ret.related_object.int_column == 456
         assert ret.related_object.datetime_column == datetime(2024, 6, 6)

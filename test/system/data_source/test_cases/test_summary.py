@@ -39,7 +39,7 @@ class TestSummarise:
             data_source.data_object_factory(
                 'root',
                 f'root_{i}_indeed',
-                {
+                attributes={
                     'int_column': i,
                     'str_column': str(i)
                 },
@@ -61,7 +61,7 @@ class TestSummarise:
                 'object_filters': {},
                 'group_by': ['related_object.id'],
                 'stats_fields': ['int_column'],
-                'provenance_override': None,
+                'provenance_override': 'source1',
                 'stats': ['min', 'max'],
             }
         )

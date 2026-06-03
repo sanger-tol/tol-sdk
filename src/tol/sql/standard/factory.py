@@ -559,7 +559,7 @@ def create_standard_models(
         )
 
         provenance_override: Mapped[str] = mapped_column(
-            nullable=False,
+            nullable=True,
             default=''
         )
 

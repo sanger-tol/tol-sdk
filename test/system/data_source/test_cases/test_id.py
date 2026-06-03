@@ -199,7 +199,12 @@ class TestID:
         )
         for i, obj in enumerate(ascending_objs):
             assert obj.id == str(i)
-            assert obj.related_object.id == {'provenance': {'source1': {'value': f'relation_{i}'}}}
+            if data_source.__class__.__name__ == 'ElasticDataSource':
+                assert obj.related_object.id == {
+                    'provenance': {'source1': {'value': f'relation_{i}'}}
+                }
+            else:
+                assert obj.related_object.id == f'relation_{i}'
 
         descending_objs, _ = data_source.get_list_page(
             'root',
@@ -211,8 +216,12 @@ class TestID:
         for i, obj in enumerate(descending_objs):
             inverted = 2 - i
             assert obj.id == str(inverted)
-            assert obj.related_object.id == {
-                'provenance': {'source1': {'value': f'relation_{inverted}'}}}
+            if data_source.__class__.__name__ == 'ElasticDataSource':
+                assert obj.related_object.id == {
+                    'provenance': {'source1': {'value': f'relation_{inverted}'}}
+                }
+            else:
+                assert obj.related_object.id == f'relation_{inverted}'
 
     @against(*all_fixtures)
     def test_filter_relation(
