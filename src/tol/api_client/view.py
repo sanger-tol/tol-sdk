@@ -4,6 +4,7 @@
 
 from __future__ import annotations
 
+import json
 import urllib
 from abc import ABC, abstractmethod
 from collections.abc import Iterable
@@ -220,7 +221,7 @@ class DefaultView(View):
                 f" '{rel_name}' because it has no `id` attribute"
             )
             raise ValueError(msg)
-        return {'type': obj.type, 'id': str(obj.id)}
+        return {'type': obj.type, 'id': _serialize_id(obj.id)}
 
     def __convert_attributes(self, attributes: dict[str, Any]) -> dict[str, Any]:
         return {k: self.__convert_value(v) for k, v in attributes.items()}
@@ -232,11 +233,34 @@ class DefaultView(View):
         return val
 
 
+def _serialize_id(oid: Any, /) -> Any:
+    """
+    Serialize an id, preserving dict structure with provenance information,
+    otherwise converts to string.
+    """
+    if oid is None:
+        return None
+    # Preserve dict IDs with provenance structure
+    if isinstance(oid, dict) and 'provenance' in oid:
+        return oid
+    return str(oid)
+
+
 def null_or_str(oid: Any, /):
     """
     Return `oid` as a string if it isn't `None`
     """
-    return None if oid is None else str(oid)
+    return _serialize_id(oid)
+
+
+def _make_hashable_id(id_: Any) -> str:
+    """
+    Convert an id to a hashable string representation.
+    Dicts (with provenance) are converted to JSON strings.
+    """
+    if isinstance(id_, dict):
+        return json.dumps(id_, sort_keys=True, separators=(',', ':'))
+    return str(id_)
 
 
 class IncludedDumps:
@@ -262,6 +286,6 @@ class IncludedDumps:
         """
         Add a new DumpDict to the collection.
         """
-        key = dump['type'], dump['id']
+        key = dump['type'], _make_hashable_id(dump['id'])
         if key not in self.__type_id:
             self.__type_id[key] = dump

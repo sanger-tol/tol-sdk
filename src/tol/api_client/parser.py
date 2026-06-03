@@ -4,6 +4,7 @@
 
 from __future__ import annotations
 
+import json
 import typing
 from abc import ABC, abstractmethod
 from collections.abc import Iterable
@@ -229,6 +230,16 @@ class DefaultParser(Parser):
         return 'date' in lc_type or 'time' in lc_type
 
 
+def _make_hashable_id(id_: Any) -> str:
+    """
+    Convert an id to a hashable string representation.
+    Dicts (with provenance) are converted to JSON strings.
+    """
+    if isinstance(id_, dict):
+        return json.dumps(id_, sort_keys=True, separators=(',', ':'))
+    return str(id_)
+
+
 class DataObjectCatalog:
     """
     A catalog of `DataObject`s keyed by their `type` and `id` attributes.
@@ -244,9 +255,9 @@ class DataObjectCatalog:
         return len(self.__obj_index)
 
     def store(self, obj) -> None:
-        key = obj.type, obj.id
+        key = obj.type, _make_hashable_id(obj.id)
         self.__obj_index[key] = obj
 
     def fetch(self, obj) -> DataObject | None:
-        key = obj.type, obj.id
+        key = obj.type, _make_hashable_id(obj.id)
         return self.__obj_index.get(key)

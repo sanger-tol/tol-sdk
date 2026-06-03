@@ -9,6 +9,7 @@ from functools import wraps
 from typing import Callable
 
 import pytest
+import inspect
 
 
 if typing.TYPE_CHECKING:
@@ -43,11 +44,10 @@ def against(*fixtures: DataSourceFixture) -> Callable:
 
             fixture.before_test()
             ds_instance = fixture.get_ds_instance()
-            test_method(
-                self,
-                data_source=ds_instance,
-                ds_sleep=ds_sleep
-            )
+            kwargs = dict(data_source=ds_instance, ds_sleep=ds_sleep)
+            if 'fixture_name' in inspect.signature(test_method).parameters:
+                kwargs['fixture_name'] = fixture.name
+            test_method(self, **kwargs)
             fixture.after_test()
 
         return wrapper
@@ -63,7 +63,7 @@ def against_api(*fixtures: ApiFixture) -> Callable:
     """
 
     params = [
-        pytest.param(dsf, dsf.url, dsf.sleep, id=dsf.name)
+        pytest.param(dsf, dsf.url, dsf.sleep, dsf.name, id=dsf.name)
         for dsf in fixtures
     ]
 
@@ -78,7 +78,7 @@ def against_api(*fixtures: ApiFixture) -> Callable:
             self,
             data_source: ApiFixture,
             url: str,
-            ds_sleep: Callable[[float], None]
+            ds_sleep: Callable[[float], None],
         ) -> None:
 
             # a little hacky, but the names must match
@@ -90,7 +90,7 @@ def against_api(*fixtures: ApiFixture) -> Callable:
                 self,
                 data_source=ds_instance,
                 url=url,
-                ds_sleep=ds_sleep
+                ds_sleep=ds_sleep,
             )
             fixture.after_test()
 

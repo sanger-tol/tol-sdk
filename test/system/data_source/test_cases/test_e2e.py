@@ -310,7 +310,12 @@ class TestEndToEnd:
         assert len(seventeenth) == 1  # The archetype
 
     @against(*all_fixtures)
-    def test_multiple_upserts(self, data_source: OperableDataSource, ds_sleep):
+    def test_multiple_upserts(
+        self,
+        data_source: OperableDataSource,
+        ds_sleep,
+        fixture_name: str = '',
+    ):
         """
         Upsert a `DataObject` instance, and then upsert again to test upsert behaviour
         """
@@ -376,7 +381,7 @@ class TestEndToEnd:
         assert ret.datetime_column == datetime(2024, 1, 2)
         assert ret.bool_column is False
         assert ret.list_column == ['item1', 'item2']
-        if data_source.__class__.__name__ == 'ElasticDataSource':
+        if fixture_name == 'api -> elastic' or fixture_name == 'elastic':
             assert ret.related_object.id == {'provenance': {'source1': {'value': 'rel1'}}}
         else:
             assert ret.related_object.id == 'rel1'
@@ -421,7 +426,7 @@ class TestEndToEnd:
         assert ret.int_column == 3
         assert ret.datetime_column == datetime(2024, 1, 3)
         assert ret.bool_column is True
-        if data_source.__class__.__name__ == 'ElasticDataSource':
+        if fixture_name == 'api -> elastic' or fixture_name == 'elastic':
             assert ret.related_object.id == {'provenance': {'source1': {'value': 'rel1'}}}
         else:
             assert ret.related_object.id == 'rel1'
@@ -443,7 +448,7 @@ class TestEndToEnd:
         assert ret.int_column == 3
         assert ret.datetime_column == datetime(2024, 1, 3)
         assert ret.bool_column is True
-        if data_source.__class__.__name__ == 'ElasticDataSource':
+        if fixture_name == 'api -> elastic' or fixture_name == 'elastic':
             assert ret.related_object.id == {'provenance': {'source1': {'value': 'rel1'}}}
         else:
             assert ret.related_object.id == 'rel1'
