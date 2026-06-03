@@ -62,9 +62,9 @@ class DummyDataSource(
                 'list': 'list[str]',
                 'dict': 'dict[str,str]',
                 'link': 'str',
-                'links': 'str',
+                'links': 'list[str]',
                 'image': 'dict[str,str]',
-                'images': 'dict[str,str]',
+                'images': 'list[dict[str,str]]',
             },
             'category': {
                 'name': 'str'
