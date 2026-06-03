@@ -79,7 +79,8 @@ def _patch_all(
             side_effect=[benchling_superuser, benchling_user_bds]
         ),
         patch(
-            'tol.action.actions.topup_action.DataSourceUtils.get_datasource_by_datasource_instance',
+            'tol.action.actions.topup_action.DataSourceUtils'
+            '.get_datasource_by_datasource_instance',
             return_value=eds,
         ),
         patch(

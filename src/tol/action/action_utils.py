@@ -40,7 +40,8 @@ class ActionUtils:
         if action_class is None:
             raise DataSourceError(
                 'Action Class Not Found',
-                f'Action class "{action.class_name}" not found in tol.action.actions or main.actions',
+                f'Action class "{action.class_name}" not found in '
+                'tol.action.actions or main.actions',
                 404
             )
 
