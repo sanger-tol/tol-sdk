@@ -74,7 +74,7 @@ class DefaultElasticApiParser(DataSourceParser[ElasticApiResource, DataObject]):
             if k in self.__data_source.attribute_types[type_]
         }
         to_one = self.__make_to_one_relations(type_, data)
-        provenance = self.__make_provenance(to_one)
+        provenance = self.__make_provenances(type_, data)
         return self.__data_source.data_object_factory(
             type_,
             id_=id_,
@@ -83,19 +83,47 @@ class DefaultElasticApiParser(DataSourceParser[ElasticApiResource, DataObject]):
             provenance_=provenance
         )
 
-    def __make_provenance(self, to_one):
-        result = {}
-        for relationship_name, data_object in to_one.items():
-            if (
-                data_object is not None
-                and isinstance(data_object.id, dict)
-                and 'provenance' in data_object.id
-            ):
-                result[relationship_name] = {
-                    source: data_object
-                    for source in data_object.id['provenance']
-                }
-        return result if result else None
+    def __make_provenances(self, type_: str, data: dict[str, Any]) -> dict[str, DataObject | None]:
+        if type_ not in self.__data_source.relationship_config:
+            return {}
+
+        if self.__data_source.relationship_config[type_].to_one is None:
+            return {}
+
+        return {
+            k: self.__make_provenance(data.get(k), v)
+            for k, v in self.__data_source.relationship_config[type_].to_one.items()
+        }
+
+    def __make_provenance(self, relation_data: dict[str, Any] | None, type_: str) -> str | None:
+        if (
+            relation_data is None
+            or not isinstance(relation_data, Mapping)
+        ):
+            return None
+
+        id_ = relation_data.get('id')
+
+        if id_ is None:
+            return None
+
+        if isinstance(id_, dict) and 'provenance' in id_:
+            result = {}
+            for source in id_.get('provenance', {}):
+                result[source] = self._convert_data_dict_to_data_object(
+                    type_,
+                    id_['provenance'][source]['value'],
+                    relation_data,
+                    {}
+                )
+            return result
+
+        return self._convert_data_dict_to_data_object(
+            type_,
+            id_,
+            relation_data,
+            {},  # This can be empty because runtime_fields are not applicable for enriched objects
+        )
 
     def __make_dates(self, object_type, attribute_name, value):
         if self.__data_source.attribute_types[object_type][attribute_name] == 'datetime' and \
@@ -162,7 +190,21 @@ class _ToElasticApiResourceParser:
                 if (param.value != null) {
                     if (ctx._source[param.key] instanceof Map) {
                         for (newParam in param.value.entrySet()) {
-                            ctx._source[param.key][newParam.key] = newParam.value;
+                            if (newParam.value instanceof Map
+                                    && ctx._source[param.key][newParam.key] instanceof Map) {
+                                for (innerParam in newParam.value.entrySet()) {
+                                    if (innerParam.value instanceof Map
+                                            && ctx._source[param.key][newParam.key][innerParam.key] instanceof Map) {
+                                        for (deepParam in innerParam.value.entrySet()) {
+                                            ctx._source[param.key][newParam.key][innerParam.key][deepParam.key] = deepParam.value;
+                                        }
+                                    } else {
+                                        ctx._source[param.key][newParam.key][innerParam.key] = innerParam.value;
+                                    }
+                                }
+                            } else {
+                                ctx._source[param.key][newParam.key] = newParam.value;
+                            }
                         }
                         continue
                     }

@@ -37,7 +37,7 @@ class DataObjectFactory(Protocol):
         attributes: dict[str, Any] | None = None,
         to_one: ToOne | None = None,
         to_many: ToMany | None = None,
-        provenance_: str | None = None,
+        provenance_: dict | None = None,
     ) -> DataObject:
         ...
 

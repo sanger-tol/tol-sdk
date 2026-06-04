@@ -114,13 +114,14 @@ class DefaultParser(Parser):
         ds = self.__get_data_source(type_)
         attributes = self.__convert_attributes(type_, transfer.get('attributes'))
         to_one, to_many = self.__parse_relationships(transfer.get('relationships'))
-
+        provenance = self.__make_provenances(transfer)
         return ds.data_object_factory(
             type_,
             id_=transfer.get('id'),
             attributes=attributes,
             to_one=to_one,
             to_many=to_many,
+            provenance_=provenance
         )
 
     def parse_stats(self, transfer: JsonApiResource) -> dict:
@@ -167,6 +168,24 @@ class DefaultParser(Parser):
             id_=transfer['id'],
             stub=True,
         )
+    
+    def __make_provenances(
+        self,
+        transfer: JsonApiResource
+    ) -> dict[str, DataObject | None]:
+        
+        ds = self.__get_data_source(transfer['type'])
+        result = {}
+        for rel in transfer.get('relationships', {}):
+            if 'provenance' in transfer.get('id'):
+                for source in transfer['id']['provenance']:
+                    value = transfer['id']['provenance'][source]['value']
+                    result[rel][source] = ds.data_object_factory(
+                        transfer['type'],
+                        id_=value,
+                        stub=True,
+                    ) 
+        return result
 
     def __convert_attributes(
         self, type_: str, attributes: dict[str, Any] | None

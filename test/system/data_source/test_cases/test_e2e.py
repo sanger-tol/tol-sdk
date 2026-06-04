@@ -483,6 +483,61 @@ class TestEndToEnd:
         assert ret.bool_column is None
         assert ret.related_object is None
         assert ret.list_column is None
+    
+    @against(elastic, api_elastic)
+    def test_upsert_with_multiple_sources(self, data_source: OperableDataSource, ds_sleep):
+        """
+        Test that upserting with multiple sources works as expected, and provenance is correct.
+        """
+
+        rel_obj1 = data_source.data_object_factory(
+            'related',
+            '1',
+            attributes={'str_column': 'related_value'},
+        )
+        rel_obj2 = data_source.data_object_factory(
+            'related',
+            '2',
+            attributes={'str_column': 'related_value'},
+        )
+        root_obj = data_source.data_object_factory(
+            'root',
+            '1',
+            attributes={
+                'int_column': 1,
+                'str_column': '1'
+            },
+            to_one={
+                'related_object': rel_obj1
+            }
+        )
+        root_obj2 = data_source.data_object_factory(
+            'root',
+            '1',
+            attributes={
+                'int_column': 1,
+                'str_column': '1'
+            },
+            to_one={
+                'related_object': rel_obj2
+            }
+        )
+
+        if data_source.write_mode['root'] == RelationWriteMode.SEPARATE:
+            data_source.upsert('related', [rel_obj1], provenance='source1')
+            data_source.upsert('related', [rel_obj2], provenance='source2')
+        data_source.upsert('root', [root_obj], provenance='source3')
+        data_source.upsert('root', [root_obj2], provenance='source4')
+        ds_sleep(5)
+
+        first = list(data_source.get_by_ids('root', ['1']))
+        ret = first[0]
+        print(ret.provenance)
+        assert ret.int_column == 1
+        assert ret.str_column == '1'
+        assert ret.provenance['related_object']['source3'].id == '1'
+        assert ret.provenance['related_object']['source4'].id == '2'
+
 
     @against(sql, api_sql)
     def test_upsert_dict_attributes(self, data_source: OperableDataSource, ds_sleep):
