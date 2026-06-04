@@ -6,7 +6,7 @@ from typing import Any, Dict
 from unittest import TestCase
 from unittest.mock import Mock
 
-from tol.actions import UpsertAction
+from tol.action.actions import UpsertAction
 from tol.core import DataSource
 
 

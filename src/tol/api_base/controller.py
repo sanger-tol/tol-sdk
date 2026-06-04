@@ -30,7 +30,7 @@ from .misc import (
     StatsParameters,
     default_ctx_getter,
 )
-from ..actions import ActionUtils
+from ..action.action_utils import ActionUtils
 from ..api_client.exception import (
     BadArgumentCombinationError,
     ObjectNotFoundByIdException,

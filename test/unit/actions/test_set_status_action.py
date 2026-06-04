@@ -5,7 +5,7 @@
 from unittest import TestCase
 from unittest.mock import MagicMock
 
-from tol.actions import SetStatusAction
+from tol.action.actions import SetStatusAction
 from tol.core import DataSourceError
 
 

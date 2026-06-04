@@ -113,7 +113,8 @@ class TestGritIssueToElasticCurationConverter(TestCase):
             type_='issue',
             attributes={
                 'created': datetime(2020, 2, 2),
-                'sample_id': 'abCdeFghi1',
+                'sample_id': 'abCdeFghi1-something',
+                'tolid': 'abCdeFghi1',
                 'description': 'Ignore',
                 'assembled_by': 'ToL',
                 'status_changes': [
@@ -184,7 +185,8 @@ class TestGritIssueToElasticCurationConverter(TestCase):
             'contigs_l90_change_per': 0.0,
             'chr_ass': 'found 31 autosomes',
             'ass_percent': '99.97',
-            'assignee_name': 'test'
+            'assignee_name': 'test',
+            'sample_id': 'abCdeFghi1-something',
         })
         self.assertEqual(ret1.tolid.id, 'abCdeFghi1')
 

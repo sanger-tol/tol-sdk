@@ -6,6 +6,11 @@ SPDX-License-Identifier: MIT
 
 # Changelog
 
+## tol-sdk `2.2.0`
+04-06-2026
+- Reorganised action folder to avoid import dependencies
+- Use tolid field rather than sample_id in GRIT issue converter
+
 ## tol-sdk `2.1.12`
 28-05-2026
 - Added all TUM functionality (used to be in a standalone flow)
