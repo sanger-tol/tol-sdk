@@ -28,7 +28,7 @@ class _MockDataSourceRelational(DataSource, Relational):
                 'sample_person', 'person', 'manifest', 'tissue_size', 'sample_species',
                 'species', 'lifestage', 'sex', 'organism_part', 'sample_species_organism_part',
                 'ext_id', 'strain', 'storage_rack', 'freezer_tray', 'hazard_group',
-                'disposal']
+                'disposal', 'sample_event']
 
     @property
     def attribute_types(self):
@@ -60,7 +60,8 @@ class _MockDataSourceRelational(DataSource, Relational):
         rc_sample.to_many = {
             'sample_persons': 'sample_person',
             'sample_species': 'sample_species',
-            'ext_ids': 'ext_id'
+            'ext_ids': 'ext_id',
+            'sample_events': 'sample_event'
         }
         rc_sample_person = RelationshipConfig()
         rc_sample_person.to_one = {
@@ -247,6 +248,43 @@ class _MockDataSourceRelational(DataSource, Relational):
                 }
             )
             return [ext_id1, ext_id2]
+        elif relationship_name == 'sample_events':
+            if source.id == 'test_sample_no_ready':
+                event = source._host.data_object_factory(
+                    id_='test_event_other_only',
+                    type_='sample_event',
+                    attributes={
+                        'type': 'SAMPLE_OTHER_EVENT',
+                        'created_on': datetime.datetime(2024, 3, 3)
+                    }
+                )
+                return [event]
+
+            matching_older = source._host.data_object_factory(
+                id_='test_event_ready_old',
+                type_='sample_event',
+                attributes={
+                    'type': 'SAMPLE_READY_FOR_LAB_PIPELINE',
+                    'created_on': datetime.datetime(2024, 1, 1)
+                }
+            )
+            matching_newer = source._host.data_object_factory(
+                id_='test_event_ready_new',
+                type_='sample_event',
+                attributes={
+                    'type': 'SAMPLE_READY_FOR_LAB_PIPELINE',
+                    'created_on': datetime.datetime(2024, 2, 2)
+                }
+            )
+            other_event = source._host.data_object_factory(
+                id_='test_event_other',
+                type_='sample_event',
+                attributes={
+                    'type': 'SAMPLE_OTHER_EVENT',
+                    'created_on': datetime.datetime(2024, 4, 4)
+                }
+            )
+            return [matching_older, other_event, matching_newer]
 
 
 class _MockDataSource(DataSource, Relational):
@@ -500,6 +538,7 @@ class TestStsSampleProjectToElasticSampleConverter(TestCase):
                 'organism_part': ['LEG', 'HEAD'],
                 'location': 'test_freezer_tray',
                 'disposed': expected_disposed,
+                'ready_for_lab_date': datetime.datetime(2024, 2, 2),
             })
         assert ret1.species.id == 'test_species'
         assert ret1.tolid.id == 'xxTesTest1'
@@ -509,3 +548,43 @@ class TestStsSampleProjectToElasticSampleConverter(TestCase):
 
         with self.assertRaises(StopIteration):
             next(converteds)
+
+    def test_convert_ready_for_lab_date_is_none_when_no_matching_event(self):
+        source = _MockDataSourceRelational(config={})
+        destination = _MockDataSource(config={})
+        core_data_object(source)
+        core_data_object(destination)
+        converter = StsSampleProjectToElasticSampleConverter(
+            data_object_factory=destination.data_object_factory,
+            config=StsSampleProjectToElasticSampleConverter.Config()
+        )
+
+        CoreDataObject = source.data_object_factory  # noqa N806
+        project = CoreDataObject(
+            id_='test_project',
+            type_='project',
+            attributes={'programme': 'test_programme'}
+        )
+        sample = CoreDataObject(
+            id_='test_sample_no_ready',
+            type_='sample',
+            attributes={
+                'col_date': '2020-02-02',
+                'original_collection_date': '2011-01-01 12:00:00',
+                'pre_date': '2000-12-12',
+            }
+        )
+        sample_project = CoreDataObject(
+            id_='test_sample_project',
+            type_='sample_project',
+            attributes={
+                'is_primary': True,
+            },
+            to_one={
+                'sample': sample,
+                'project': project
+            }
+        )
+
+        converted = next(converter.convert(sample_project))
+        self.assertIsNone(converted.attributes['ready_for_lab_date'])

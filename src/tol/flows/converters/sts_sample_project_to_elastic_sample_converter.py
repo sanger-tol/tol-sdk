@@ -18,6 +18,8 @@ from ...core import (
 class StsSampleProjectToElasticSampleConverter(
         DataObjectToDataObjectOrUpdateConverter):
 
+    SAMPLE_READY_FOR_LAB_PIPELINE = 'SAMPLE_READY_FOR_LAB_PIPELINE'
+
     @dataclass(slots=True, frozen=True, kw_only=True)
     class Config:
         pass
@@ -135,6 +137,10 @@ class StsSampleProjectToElasticSampleConverter(
                     sample_species_attributes, sample_species_to_one = \
                         self.__convert_sample_species(ss)
 
+            attributes['ready_for_lab_date'] = self.__ready_for_lab_date(
+                s.sample_events if 'sample_events' in s.to_many_relationships else []
+            )
+
         except DataSourceError:
             print(f'Problem with sample {s.id}')
 
@@ -168,6 +174,21 @@ class StsSampleProjectToElasticSampleConverter(
             'country': splits[0],
             'locality': ' | '.join(splits[1:])
         }
+
+    def __ready_for_lab_date(
+            self,
+            sample_events: Iterable[DataObject]
+    ) -> datetime.datetime:
+        matching_events = [
+            event
+            for event in sample_events
+            if getattr(event, 'attributes', {}).get('type')
+            == self.SAMPLE_READY_FOR_LAB_PIPELINE
+            and getattr(event, 'created_on', None) is not None
+        ]
+        if not matching_events:
+            return None
+        return max(event.created_on for event in matching_events)
 
     def __convert_sample_species(self, data_object: DataObject) -> Iterable[DataObject]:
         organism_parts = []
