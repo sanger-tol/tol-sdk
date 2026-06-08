@@ -147,7 +147,8 @@ class TestID:
     def test_sort_relation(
         self,
         data_source: OperableDataSource,
-        ds_sleep
+        ds_sleep,
+        fixture_name = '',
     ):
 
         relations = [
@@ -199,7 +200,7 @@ class TestID:
         )
         for i, obj in enumerate(ascending_objs):
             assert obj.id == str(i)
-            if data_source.__class__.__name__ == 'ElasticDataSource':
+            if fixture_name == 'api -> elastic' or fixture_name == 'elastic':
                 assert obj.related_object.id == {
                     'provenance': {'source1': {'value': f'relation_{i}'}}
                 }
@@ -216,7 +217,7 @@ class TestID:
         for i, obj in enumerate(descending_objs):
             inverted = 2 - i
             assert obj.id == str(inverted)
-            if data_source.__class__.__name__ == 'ElasticDataSource':
+            if fixture_name == 'api -> elastic' or fixture_name == 'elastic':
                 assert obj.related_object.id == {
                     'provenance': {'source1': {'value': f'relation_{inverted}'}}
                 }

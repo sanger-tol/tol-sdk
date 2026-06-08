@@ -33,7 +33,7 @@ class TestSummarise:
             'related',
             'related_summarise'
         )
-        data_source.upsert('related', [rel_obj], provenance='test_provenance')
+        data_source.upsert('related', [rel_obj], provenance='source1')
 
         root_objs = (
             data_source.data_object_factory(
@@ -49,7 +49,7 @@ class TestSummarise:
             )
             for i in range(1, 6)
         )
-        data_source.upsert('root', root_objs, provenance='test_provenance')
+        data_source.upsert('root', root_objs, provenance='source1')
 
         ds_sleep(5)
 
@@ -83,7 +83,7 @@ class TestSummarise:
             'root_1_indeed'
         )
         first_root_obj.int_column = 42
-        data_source.upsert('root', [first_root_obj], provenance='test_provenance')
+        data_source.upsert('root', [first_root_obj], provenance='source1')
         ds_sleep(5)
 
         # re-summarise from just the changed `root` instance
