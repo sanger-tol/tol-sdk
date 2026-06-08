@@ -532,7 +532,6 @@ class TestEndToEnd:
 
         first = list(data_source.get_by_ids('root', ['1']))
         ret = first[0]
-        print(ret.provenance)
         assert ret.int_column == 1
         assert ret.str_column == '1'
         assert ret.provenance['related_object']['source3'].id == '1'
