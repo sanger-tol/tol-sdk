@@ -182,9 +182,9 @@ class StsSampleProjectToElasticSampleConverter(
         matching_events = [
             event
             for event in sample_events
-            if getattr(event, 'attributes', {}).get('type')
+            if event.event_type
             == self.SAMPLE_READY_FOR_LAB_PIPELINE
-            and getattr(event, 'created_on', None) is not None
+            and event.created_on is not None
         ]
         if not matching_events:
             return None

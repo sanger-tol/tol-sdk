@@ -254,7 +254,7 @@ class _MockDataSourceRelational(DataSource, Relational):
                     id_='test_event_other_only',
                     type_='sample_event',
                     attributes={
-                        'type': 'SAMPLE_OTHER_EVENT',
+                        'event_type': 'SAMPLE_OTHER_EVENT',
                         'created_on': datetime.datetime(2024, 3, 3)
                     }
                 )
@@ -264,7 +264,7 @@ class _MockDataSourceRelational(DataSource, Relational):
                 id_='test_event_ready_old',
                 type_='sample_event',
                 attributes={
-                    'type': 'SAMPLE_READY_FOR_LAB_PIPELINE',
+                    'event_type': 'SAMPLE_READY_FOR_LAB_PIPELINE',
                     'created_on': datetime.datetime(2024, 1, 1)
                 }
             )
@@ -272,7 +272,7 @@ class _MockDataSourceRelational(DataSource, Relational):
                 id_='test_event_ready_new',
                 type_='sample_event',
                 attributes={
-                    'type': 'SAMPLE_READY_FOR_LAB_PIPELINE',
+                    'event_type': 'SAMPLE_READY_FOR_LAB_PIPELINE',
                     'created_on': datetime.datetime(2024, 2, 2)
                 }
             )
@@ -280,7 +280,7 @@ class _MockDataSourceRelational(DataSource, Relational):
                 id_='test_event_other',
                 type_='sample_event',
                 attributes={
-                    'type': 'SAMPLE_OTHER_EVENT',
+                    'event_type': 'SAMPLE_OTHER_EVENT',
                     'created_on': datetime.datetime(2024, 4, 4)
                 }
             )
