@@ -97,6 +97,7 @@ class ElasticDataSource(
                  attribute_metadata: AttributeMetadata = DefaultAttributeMetadata,
                  relationship_cfg: dict[str, RelationshipConfig] | None = None,
                  runtime_fields: dict[str, Any] = {},
+                 filter_strategy=None,
                  **kwargs):
         del kwargs
         super().__init__(
@@ -117,6 +118,7 @@ class ElasticDataSource(
         self._initialise_elasticsearch()
         self.__lazy = False
         self._relationship_cfg = relationship_cfg
+        self._filter_strategy = filter_strategy
 
     @property
     def lazy_fetch(self) -> bool:
@@ -323,7 +325,10 @@ class ElasticDataSource(
         real_index_name = self._get_indices().get(index)
 
         # Prepare query
-        query = ElasticFilterConverter(self).convert(object_type, object_filters)
+        if self._filter_strategy is not None:
+            query = self._filter_strategy.convert(object_type, object_filters)
+        else:
+            query = ElasticFilterConverter(self).convert(object_type, object_filters)
 
         # Prepare fields to request and their runtime_mappings.
         # Filter runtime fields to have only those in the requested tree.

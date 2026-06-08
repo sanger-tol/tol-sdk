@@ -5,7 +5,6 @@
 from __future__ import annotations
 
 import typing
-from abc import ABC
 from collections.abc import Callable, Iterable
 from typing import Any, Protocol
 
@@ -92,6 +91,182 @@ def _local_name(__name: str) -> bool:
     )
 
 
+# Module-level registry — replaces the closure-captured data_source_dict
+_data_source_registry: dict[str, DataSource] = {}
+_one_dict_factory: OneDictFactory = lambda o: ToOneDict(o)
+_many_dict_factory: ManyDictFactory = lambda o: ToManyDict(o)
+
+
+class CoreDataObject(DataObject):
+    """
+    A DataObject that can be created outside of a DataSource, which
+    should prove sufficient for most use-cases. Simply set values
+    on an instance, and they will be interpreted as either:
+
+    - to-one relationships  - if the value is a single DataObject
+    - attributes            - otherwise
+
+    Note there are other supported DataObject classes - any class
+    that inherits from DataObject meets the criteria.
+    """
+
+    def __init__(
+        self,
+        type_: str,
+        id_: str | None = None,
+        provenance_: str | None = None,
+        attributes: DataDict | None = None,
+        to_one: ToOne | None = None,
+        to_many: ToMany | None = None,
+        stub: bool = False,
+        stub_types: Iterable[str] | None = None
+    ):
+        self.__id = id_
+        self.__type = type_
+        self.__provenance = provenance_
+        self.__attributes = {} if attributes is None else attributes
+        self.__to_one_objects = {} if to_one is None else to_one
+        self.__to_many_objects = {} if to_many is None else to_many
+        if stub and id_ is None:
+            raise DataSourceError('ID must be set if stub is True')
+        self.__stub_value = stub
+        self.__stub_types = stub_types
+        if self.__relational:
+            self.__to_one_relations = _one_dict_factory(self)
+            self.__to_many_relations = _many_dict_factory(self)
+
+    def __str__(self) -> str:
+        dump = f'type="{self.type}"'
+
+        if self.id is not None:
+            dump += f', id="{self.id}"'
+
+        return f'CoreDataObject({dump})'
+
+    def __getattribute__(self, name: str, /) -> Any:
+        if _local_name(name):
+            return object.__getattribute__(self, name)
+
+        if self.__stub_value:
+            self.__unstub()
+
+        if name in self.__to_one_names:
+            if name in self._to_one_objects:
+                return self._to_one_objects[name]
+            return self.to_one_relationships.get(name)
+
+        if name in self.__to_many_names:
+            if name in self._to_many_objects:
+                return self._to_many_objects[name]
+            return self.to_many_relationships.get(name, [])
+
+        return self.__attributes.get(name)
+
+    def __setattr__(self, name: str, value: Any, /) -> None:
+        if _local_name(name):
+            object.__setattr__(self, name, value)
+        elif name in self.__to_one_names:
+            self._to_one_objects[name] = value
+        elif name in self.__to_many_names:
+            self._to_many_objects[name] = value
+        else:
+            self.__attributes[name] = value
+
+    def __unstub(self) -> None:
+        self.__stub_value = False
+        # Actually get this object from the datasource
+        possible_types = self.__stub_types if self.__stub_types is not None else [self.__type]
+        for t in possible_types:
+            object_from_datasource = _data_source_registry[t].get_one(t, self.__id)
+            if object_from_datasource is not None:
+                self.__type = object_from_datasource.type
+                self.__attributes = object_from_datasource.attributes
+                self.__to_one_objects = object_from_datasource._to_one_objects
+                break
+
+    @property
+    def type(self) -> str:  # noqa
+        if self.__stub_value and self.__type is None:
+            self.__unstub()
+        return self.__type
+
+    @property
+    def id(self) -> str | None:  # noqa
+        return self.__id
+
+    @id.setter
+    def id(self, new_id: str) -> None:  # noqa
+        self.__id = new_id
+
+    @property
+    def provenance(self) -> str | None:
+        return self.__provenance
+
+    @provenance.setter
+    def provenance(self, new_provenance: str | None) -> None:
+        self.__provenance = new_provenance
+
+    @property
+    def attributes(self) -> dict[str, Any]:
+        if self.__stub_value:
+            self.__unstub()
+        return self.__attributes
+
+    @property
+    def to_one_relationships(self) -> dict[str, DataObject | None]:
+        if not self.__relational:
+            raise NotRelationalError(self)
+        return self.__to_one_relations
+
+    @property
+    def to_many_relationships(self) -> dict[str, list[DataObject]]:
+        if not self.__relational:
+            raise NotRelationalError(self)
+        return self.__to_many_relations
+
+    @property
+    def _to_one_objects(self) -> dict[str, DataObject | None]:
+        return self.__to_one_objects
+
+    @property
+    def _to_many_objects(self) -> dict[str, list[DataObject]]:
+        return self.__to_many_objects
+
+    @property
+    def __relational(self) -> bool:
+        """Whether the hosting DataSource is relational or not"""
+
+        return isinstance(self._host, Relational)
+
+    @property
+    def __relationship_config(self) -> RelationshipConfig | None:
+        return self._host.relationship_config.get(self.type)
+
+    @property
+    def __to_one_names(self) -> list[str]:
+        if not self.__relational:
+            return []
+        cfg = self.__relationship_config
+        return (
+            [] if cfg is None or cfg.to_one is None
+            else list(cfg.to_one.keys())
+        )
+
+    @property
+    def __to_many_names(self) -> list[str]:
+        if not self.__relational:
+            return []
+        cfg = self.__relationship_config
+        return (
+            [] if cfg is None or cfg.to_many is None
+            else list(cfg.to_many.keys())
+        )
+
+    @property
+    def _host(self) -> DataSource | Relational:
+        return _data_source_registry[self.type]
+
+
 def core_data_object(
     *data_sources: DataSource,
     one_dict_factory: OneDictFactory = lambda o: ToOneDict(o),
@@ -99,183 +274,19 @@ def core_data_object(
     data_source_dict_factory: DataSourceDictFactory = lambda *d: DataSourceDict(*d)
 ) -> type[DataObject]:
     """
-    Takes a tuple of DataSource instances, and creates a CoreDataObject
-    implementation that refers to all of them.
+    Register DataSources and return the CoreDataObject class.
 
-    This must be called for the given DataSources to be able to create
-    CoreDataObject instances (as it injects a factory).
+    Same external API as before — takes datasources, returns a class,
+    and injects factories. Now backed by a single CoreDataObject class
+    with an explicit registry.
     """
 
+    global _one_dict_factory, _many_dict_factory
+    _one_dict_factory = one_dict_factory
+    _many_dict_factory = many_dict_factory
+
     data_source_dict = data_source_dict_factory(*data_sources)
-
-    class CoreDataObject(DataObject, ABC):
-        """
-        A DataObject that can be created outside of a DataSource, which
-        should prove sufficient for most use-cases. Simply set values
-        on an instance, and they will be interpreted as either:
-
-        - to-one relationships  - if the value is a single DataObject
-        - attributes            - otherwise
-
-        Note there are other supported DataObject classes - any class
-        that inherits from DataObject meets the criteria.
-        """
-
-        def __init__(
-            self,
-            type_: str,
-            id_: str | None = None,
-            provenance_: str | None = None,
-            attributes: DataDict | None = None,
-            to_one: ToOne | None = None,
-            to_many: ToMany | None = None,
-            stub: bool = False,
-            stub_types: Iterable[str] | None = None
-        ):
-            self.__id = id_
-            self.__type = type_
-            self.__provenance = provenance_
-            self.__attributes = {} if attributes is None else attributes
-            self.__to_one_objects = {} if to_one is None else to_one
-            self.__to_many_objects = {} if to_many is None else to_many
-            if stub and id_ is None:
-                raise DataSourceError('ID must be set if stub is True')
-            self.__stub_value = stub
-            self.__stub_types = stub_types
-            if self.__relational:
-                self.__to_one_relations = one_dict_factory(self)
-                self.__to_many_relations = many_dict_factory(self)
-
-        def __str__(self) -> str:
-            dump = f'type="{self.type}"'
-
-            if self.id is not None:
-                dump += f', id="{self.id}"'
-
-            return f'CoreDataObject({dump})'
-
-        def __getattribute__(self, name: str, /) -> Any:
-            if _local_name(name):
-                return object.__getattribute__(self, name)
-
-            if self.__stub_value:
-                self.__unstub()
-
-            if name in self.__to_one_names:
-                if name in self._to_one_objects:
-                    return self._to_one_objects[name]
-                return self.to_one_relationships.get(name)
-
-            if name in self.__to_many_names:
-                if name in self._to_many_objects:
-                    return self._to_many_objects[name]
-                return self.to_many_relationships.get(name, [])
-
-            return self.__attributes.get(name)
-
-        def __setattr__(self, name: str, value: Any, /) -> None:
-            if _local_name(name):
-                object.__setattr__(self, name, value)
-            elif name in self.__to_one_names:
-                self._to_one_objects[name] = value
-            elif name in self.__to_many_names:
-                self._to_many_objects[name] = value
-            else:
-                self.__attributes[name] = value
-
-        def __unstub(self) -> None:
-            self.__stub_value = False
-            # Actually get this object from the datasource
-            possible_types = self.__stub_types if self.__stub_types is not None else [self.__type]
-            for t in possible_types:
-                object_from_datasource = data_source_dict[t].get_one(t, self.__id)
-                if object_from_datasource is not None:
-                    self.__type = object_from_datasource.type
-                    self.__attributes = object_from_datasource.attributes
-                    self.__to_one_objects = object_from_datasource._to_one_objects
-                    break
-
-        @property
-        def type(self) -> str:  # noqa
-            if self.__stub_value and self.__type is None:
-                self.__unstub()
-            return self.__type
-
-        @property
-        def id(self) -> str | None:  # noqa
-            return self.__id
-
-        @id.setter
-        def id(self, new_id: str) -> None:  # noqa
-            self.__id = new_id
-
-        @property
-        def provenance(self) -> str | None:
-            return self.__provenance
-
-        @provenance.setter
-        def provenance(self, new_provenance: str | None) -> None:
-            self.__provenance = new_provenance
-
-        @property
-        def attributes(self) -> dict[str, Any]:
-            if self.__stub_value:
-                self.__unstub()
-            return self.__attributes
-
-        @property
-        def to_one_relationships(self) -> dict[str, DataObject | None]:
-            if not self.__relational:
-                raise NotRelationalError(self)
-            return self.__to_one_relations
-
-        @property
-        def to_many_relationships(self) -> dict[str, list[DataObject]]:
-            if not self.__relational:
-                raise NotRelationalError(self)
-            return self.__to_many_relations
-
-        @property
-        def _to_one_objects(self) -> dict[str, DataObject | None]:
-            return self.__to_one_objects
-
-        @property
-        def _to_many_objects(self) -> dict[str, list[DataObject]]:
-            return self.__to_many_objects
-
-        @property
-        def __relational(self) -> bool:
-            """Whether the hosting DataSource is relational or not"""
-
-            return isinstance(self._host, Relational)
-
-        @property
-        def __relationship_config(self) -> RelationshipConfig | None:
-            return self._host.relationship_config.get(self.type)
-
-        @property
-        def __to_one_names(self) -> list[str]:
-            if not self.__relational:
-                return []
-            cfg = self.__relationship_config
-            return (
-                [] if cfg is None or cfg.to_one is None
-                else list(cfg.to_one.keys())
-            )
-
-        @property
-        def __to_many_names(self) -> list[str]:
-            if not self.__relational:
-                return []
-            cfg = self.__relationship_config
-            return (
-                [] if cfg is None or cfg.to_many is None
-                else list(cfg.to_many.keys())
-            )
-
-        @property
-        def _host(self) -> DataSource | Relational:
-            return data_source_dict[self.type]
+    _data_source_registry.update(data_source_dict)
 
     def core_data_object_factory(
         type_: str,
@@ -283,7 +294,7 @@ def core_data_object(
         attributes: dict[str, Any] | None = None,
         to_one: ToOne | None = None,
         to_many: ToMany | None = None,
-        stub: bool = False,  # Set stub if only type and id are given on creation
+        stub: bool = False,
         stub_types: Iterable[str] | None = None
     ) -> DataObject:
 

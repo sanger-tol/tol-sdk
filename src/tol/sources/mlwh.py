@@ -2,17 +2,9 @@
 #
 # SPDX-License-Identifier: MIT
 
-import os
-
-from ..core import (
-    core_data_object
-)
-from ..mlwh import (
-    MlwhDataSource
-)
+from ..mlwh import MlwhDataSource
+from .registry import default_registry
 
 
 def mlwh(**kwargs) -> MlwhDataSource:
-    mlwh = MlwhDataSource({'uri': os.getenv('MLWH_URI')})
-    core_data_object(mlwh)
-    return mlwh
+    return default_registry.create('mlwh', **kwargs)

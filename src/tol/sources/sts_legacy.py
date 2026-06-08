@@ -2,20 +2,9 @@
 #
 # SPDX-License-Identifier: MIT
 
-import os
-
-from ..core import (
-    core_data_object
-)
-from ..sts import (
-    StsDataSource
-)
+from ..sts import StsDataSource
+from .registry import default_registry
 
 
 def sts_legacy(**kwargs) -> StsDataSource:
-    sts_legacy = StsDataSource({
-        'url': os.getenv('STS_LEGACY_URL') + os.getenv('STS_LEGACY_API_PATH'),
-        'key': os.getenv('STS_API_KEY')
-    })
-    core_data_object(sts_legacy)
-    return sts_legacy
+    return default_registry.create('sts_legacy', **kwargs)

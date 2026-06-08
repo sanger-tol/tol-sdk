@@ -8,6 +8,7 @@ from json import dumps
 from typing import Any, Callable, Optional
 
 from ..core import DataSourceFilter
+from ..core.filter_strategy import FilterStrategy
 
 
 class ApiFilter(ABC):
@@ -37,6 +38,28 @@ default_dict_dumper: DictDumper = lambda d: dumps(
 )
 
 
+class ApiFilterStrategy(FilterStrategy[str]):
+    """Converts a DataSourceFilter to a JSON:API filter string."""
+
+    __KEYS = ['exact', 'contains', 'in_list', 'range', 'and_']
+
+    def __init__(
+        self,
+        dict_dumper: DictDumper = default_dict_dumper
+    ) -> None:
+        self.__dict_dumper = dict_dumper
+
+    def convert(self, object_type, object_filters=None):
+        if object_filters is None:
+            return None
+        pairs = (
+            (k, getattr(object_filters, k))
+            for k in self.__KEYS
+        )
+        __dict = {k: v for k, v in pairs if v is not None}
+        return self.__dict_dumper(__dict)
+
+
 class DefaultApiFilter(ApiFilter):
 
     __KEYS = ['exact', 'contains', 'in_list', 'range', 'and_']
@@ -45,19 +68,7 @@ class DefaultApiFilter(ApiFilter):
         self,
         dict_dumper: DictDumper = default_dict_dumper
     ) -> None:
-
-        self.__dict_dumper = dict_dumper
+        self.__strategy = ApiFilterStrategy(dict_dumper)
 
     def dumps(self, filter_: DataSourceFilter) -> Optional[str]:
-        __dict = self.__to_dict(filter_)
-        return self.__dict_dumper(__dict)
-
-    def __to_dict(self, filter_: DataSourceFilter) -> dict[str, Any]:
-        pairs = (
-            (k, getattr(filter_, k))
-            for k in self.__KEYS
-        )
-
-        return {
-            k: v for k, v in pairs if v is not None
-        }
+        return self.__strategy.convert(None, filter_)

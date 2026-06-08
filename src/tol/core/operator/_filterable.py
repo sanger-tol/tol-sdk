@@ -5,9 +5,18 @@
 from abc import ABC, abstractmethod
 from typing import Any
 
-import dateparser
-
 from ..datasource_filter import DataSourceFilter
+from ..filter_strategy import AttributeMetadataProvider, DateNormalisingPreprocessor
+
+
+class _DataSourceMetadataAdapter(AttributeMetadataProvider):
+    """Adapts a _Filterable DataSource to the AttributeMetadataProvider interface."""
+
+    def __init__(self, datasource: '_Filterable'):
+        self._datasource = datasource
+
+    def get_attribute_metadata_by_name(self, object_type, field_name):
+        return self._datasource.get_attribute_metadata_by_name(object_type, field_name)
 
 
 class _Filterable(ABC):
@@ -28,17 +37,10 @@ class _Filterable(ABC):
         """
         if object_filters is None:
             return None
-        if object_filters.and_ is not None:
-            for name, value in object_filters.and_.items():
-                metadata = self.get_attribute_metadata_by_name(object_type, name)
-                if metadata is None:
-                    continue
-                for op, val in value.items():
-                    if 'value' in val and metadata['python_type'] == 'datetime' \
-                            and isinstance(val['value'], str):
-                        object_filters.and_[name][op]['value'] = dateparser.parse(val['value'])
-
-        return object_filters
+        preprocessor = DateNormalisingPreprocessor(
+            _DataSourceMetadataAdapter(self)
+        )
+        return preprocessor.preprocess(object_type, object_filters)
 
     @abstractmethod
     def get_attribute_metadata_by_name(self, obj_type: str, field_name: str) -> Any:

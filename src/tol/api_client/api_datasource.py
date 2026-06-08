@@ -77,13 +77,15 @@ class ApiDataSource(
         client_factory: ClientFactory,
         json_converter_factory: JsonConverterFactory,
         do_converter_factory: DOConverterFactory,
-        filter_factory: FilterFactory
+        filter_factory: FilterFactory,
+        filter_strategy=None,
     ) -> None:
 
         self.__client_factory = client_factory
         self.__jc_factory = json_converter_factory
         self.__dc_factory = do_converter_factory
         self.__filter_factory = filter_factory
+        self.__filter_strategy = filter_strategy
         super().__init__({})
         self.write_batch_size = 100
 
@@ -476,6 +478,8 @@ class ApiDataSource(
 
         if object_filters is None:
             return None
+        if self.__filter_strategy is not None:
+            return self.__filter_strategy.convert(None, object_filters)
         return self.__filter_factory().dumps(object_filters)
 
     def __parse_operations(

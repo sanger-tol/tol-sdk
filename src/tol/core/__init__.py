@@ -30,7 +30,14 @@ from .data_object_converter import (  # noqa F401
     DefaultDataObjectToDataObjectConverter,
     SanitisingConverter
 )
-from .factory import core_data_object  # noqa F401
+from .factory import core_data_object, CoreDataObject  # noqa F401
+from .filter_strategy import (  # noqa F401
+    FilterStrategy,
+    FilterPreprocessor,
+    CompositeFilterStrategy,
+    AttributeMetadataProvider,
+    DateNormalisingPreprocessor,
+)
 from .http_client import HttpClient  # noqa F401
 from .requested_fields import ReqFieldsTree  # noqa: F401
 from .validate import (  # noqa F401

@@ -2,22 +2,9 @@
 #
 # SPDX-License-Identifier: MIT
 
-import os
-
-from .defaults import Defaults
-from ..copo import (
-    CopoDataSource,
-    create_copo_datasource
-)
-from ..core import (
-    core_data_object
-)
+from ..copo import CopoDataSource
+from .registry import default_registry
 
 
 def copo(**kwargs) -> CopoDataSource:
-    copo = create_copo_datasource(
-        copo_url=os.getenv('COPO_URL', Defaults.COPO_URL)
-        + os.getenv('COPO_API_PATH', Defaults.COPO_API_PATH)
-    )
-    core_data_object(copo)
-    return copo
+    return default_registry.create('copo', **kwargs)

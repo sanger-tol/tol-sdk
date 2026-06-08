@@ -2,29 +2,14 @@
 #
 # SPDX-License-Identifier: MIT
 
-import os
-
-from .defaults import Defaults
-from ..api_client import (
-    ApiDataSource,
-    create_api_datasource
-)
-from ..core import (
-    core_data_object
-)
+from ..api_client import ApiDataSource
+from .registry import default_registry
 
 
 def sts(
     retries: int = 5,
     status_forcelist: list[int] | None = [429, 500, 502, 503, 504]
 ) -> ApiDataSource:
-    sts = create_api_datasource(
-        api_url=os.getenv('STS_URL', Defaults.STS_URL)
-        + os.getenv('STS_API_PATH', Defaults.STS_API_PATH),
-        token=os.getenv('STS_API_KEY'),
-        data_prefix=os.getenv('STS_API_DATA_PATH', Defaults.STS_API_DATA_PATH),
-        retries=retries,
-        status_forcelist=status_forcelist,
+    return default_registry.create(
+        'sts', retries=retries, status_forcelist=status_forcelist
     )
-    core_data_object(sts)
-    return sts

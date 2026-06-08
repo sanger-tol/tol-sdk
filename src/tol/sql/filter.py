@@ -18,6 +18,7 @@ from sqlalchemy.orm.util import AliasedClass
 
 from .model import Model
 from ..core import DataSourceFilter
+from ..core.filter_strategy import FilterStrategy
 
 
 class AliasTrie(MutableMapping[str, 'AliasTrie']):
@@ -553,3 +554,15 @@ class DefaultDatabaseFilter(DatabaseFilter):
         return (
             value.replace('\\', '\\\\').replace('%', '\\%').replace('_', '\\_')
         )
+
+
+class SqlFilterStrategy(FilterStrategy[Select]):
+    """Adapts DefaultDatabaseFilter to the FilterStrategy interface."""
+
+    def __init__(self, base_model: type[Model]) -> None:
+        self._base_model = base_model
+
+    def convert(self, object_type, object_filters=None):
+        db_filter = DefaultDatabaseFilter(object_filters)
+        query = db_filter.get_query(self._base_model)
+        return db_filter.filter(query)

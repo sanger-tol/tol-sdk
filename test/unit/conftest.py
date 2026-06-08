@@ -7,9 +7,21 @@ from unittest.mock import Mock
 import pytest
 
 from tol.core.datasource import DataSource
-from tol.core.factory import core_data_object
+from tol.core.factory import core_data_object, _data_source_registry
 from tol.core.operator import DetailGetter, Relational
 from tol.core.relationship import RelationshipConfig
+
+
+@pytest.fixture(autouse=True)
+def _clean_datasource_registry():
+    """
+    Snapshot and restore the DataSource registry between tests.
+    Prevents test pollution from core_data_object() calls.
+    """
+    original = dict(_data_source_registry)
+    yield
+    _data_source_registry.clear()
+    _data_source_registry.update(original)
 
 
 class MockRelaionalDatasource(DataSource, DetailGetter, Relational):

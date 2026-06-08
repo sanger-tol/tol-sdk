@@ -4,14 +4,9 @@
 
 import os
 
+from ..api_client import ApiDataSource
 from .defaults import Defaults
-from ..api_client import (
-    ApiDataSource,
-    create_api_datasource
-)
-from ..core import (
-    core_data_object
-)
+from .registry import default_registry
 
 
 def portal(
@@ -19,13 +14,10 @@ def portal(
         dataspace: str = 'tol_production',
         **kwargs
 ) -> ApiDataSource:
-    portal = create_api_datasource(
-        api_url=os.getenv('PORTAL_URL', Defaults.PORTAL_URL)
-        + os.getenv('PORTAL_API_PATH', Defaults.PORTAL_API_PATH),
-        token=os.getenv('PORTAL_API_KEY'),
-        data_prefix=os.getenv('PORTAL_API_DATA_PATH', Defaults.PORTAL_API_DATA_PATH)
-        + f'/{dataspace}',
-        retries=retries
+    data_prefix = (
+        os.getenv('PORTAL_API_DATA_PATH', Defaults.PORTAL_API_DATA_PATH)
+        + f'/{dataspace}'
     )
-    core_data_object(portal)
-    return portal
+    return default_registry.create(
+        'portal', retries=retries, data_prefix=data_prefix, **kwargs
+    )
