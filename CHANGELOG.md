@@ -6,6 +6,10 @@ SPDX-License-Identifier: MIT
 
 # Changelog
 
+## tol-sdk `2.2.1`
+09-06-2026
+- Added ElasticSampleToElasticExtractionContainerUpdateConverter
+
 ## tol-sdk `2.2.0`
 04-06-2026
 - Reorganised action folder to avoid import dependencies
