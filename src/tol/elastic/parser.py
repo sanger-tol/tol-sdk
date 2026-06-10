@@ -73,7 +73,7 @@ class DefaultElasticApiParser(DataSourceParser[ElasticApiResource, DataObject]):
             k: self.__make_dates(type_, k, v[0]) for k, v in runtime_data.items()
             if k in self.__data_source.attribute_types[type_]
         }
-        to_one = self.__make_to_one_relations(type_, data)
+        to_one = self.__make_to_one_relations(type_, data, runtime_data)
         provenance = self.__make_provenances(type_, data)
         return self.__data_source.data_object_factory(
             type_,
@@ -134,7 +134,8 @@ class DefaultElasticApiParser(DataSourceParser[ElasticApiResource, DataObject]):
     def __make_to_one_relations(
         self,
         type_: str,
-        data: dict[str, Any]
+        data: dict[str, Any],
+        runtime_data: dict[str, Any] = None
     ) -> dict[str, DataObject | None]:
 
         if type_ not in self.__data_source.relationship_config:
@@ -144,14 +145,16 @@ class DefaultElasticApiParser(DataSourceParser[ElasticApiResource, DataObject]):
             return {}
 
         return {
-            k: self.__make_to_one_relation(data.get(k), v)
+            k: self.__make_to_one_relation(k, data.get(k), v, runtime_data)
             for k, v in self.__data_source.relationship_config[type_].to_one.items()
         }
 
     def __make_to_one_relation(
         self,
+        relation_name: str,
         relation_data: dict[str, Any] | None,
-        type_: str
+        type_: str,
+        runtime_data: dict[str, Any] = None
     ) -> DataObject | None:
 
         if (
@@ -159,11 +162,27 @@ class DefaultElasticApiParser(DataSourceParser[ElasticApiResource, DataObject]):
             or not isinstance(relation_data, Mapping)
         ):
             return None
-
+        
+        # relationship ids are now created with runtime fields because of provenance
+        # Need to check if the source order id value exists as a runtime field
         id_ = relation_data.get('id')
 
+        if runtime_data is not None:
+            for k, v in runtime_data.items():
+                if k.__contains__(f'{relation_name}.id.value'):
+                    id_ = v[0]
+
+        
         if id_ is None:
             return None
+        
+        import logging
+        logging.error(self._convert_data_dict_to_data_object(
+            type_,
+            id_,
+            relation_data,
+            {}
+        ).id)
 
         return self._convert_data_dict_to_data_object(
             type_,

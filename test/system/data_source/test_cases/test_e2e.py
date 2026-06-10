@@ -381,10 +381,7 @@ class TestEndToEnd:
         assert ret.datetime_column == datetime(2024, 1, 2)
         assert ret.bool_column is False
         assert ret.list_column == ['item1', 'item2']
-        if fixture_name == 'api -> elastic' or fixture_name == 'elastic':
-            assert ret.related_object.id == {'provenance': {'source1': {'value': 'rel1'}}}
-        else:
-            assert ret.related_object.id == 'rel1'
+        assert ret.related_object.id == 'rel1'
         assert ret.related_object.str_column == 'value2'
         assert ret.related_object.int_column == 123
         assert ret.related_object.datetime_column is None
@@ -426,10 +423,7 @@ class TestEndToEnd:
         assert ret.int_column == 3
         assert ret.datetime_column == datetime(2024, 1, 3)
         assert ret.bool_column is True
-        if fixture_name == 'api -> elastic' or fixture_name == 'elastic':
-            assert ret.related_object.id == {'provenance': {'source1': {'value': 'rel1'}}}
-        else:
-            assert ret.related_object.id == 'rel1'
+        assert ret.related_object.id == 'rel1'
         assert ret.related_object.str_column == 'value2'
         assert ret.related_object.int_column == 456
         assert ret.related_object.datetime_column == datetime(2024, 6, 6)
@@ -448,10 +442,7 @@ class TestEndToEnd:
         assert ret.int_column == 3
         assert ret.datetime_column == datetime(2024, 1, 3)
         assert ret.bool_column is True
-        if fixture_name == 'api -> elastic' or fixture_name == 'elastic':
-            assert ret.related_object.id == {'provenance': {'source1': {'value': 'rel1'}}}
-        else:
-            assert ret.related_object.id == 'rel1'
+        assert ret.related_object.id == 'rel1'
         assert ret.related_object.str_column == 'value2'
         assert ret.related_object.int_column == 456
         assert ret.related_object.datetime_column == datetime(2024, 6, 6)
@@ -536,6 +527,7 @@ class TestEndToEnd:
         assert ret.str_column == '1'
         assert ret.provenance['related_object']['source3'].id == '1'
         assert ret.provenance['related_object']['source4'].id == '2'
+        assert ret.related_object.id == '1'
 
 
     @against(sql, api_sql)
@@ -739,7 +731,7 @@ class TestEndToEnd:
         assert ret.int_column == 2
         assert ret.datetime_column == datetime(2024, 1, 2)
         assert ret.bool_column is False
-        assert ret.related_object.id == {'provenance': {'source1': {'value': 'rel1'}}}
+        assert ret.related_object.id == 'rel1'
         assert ret.related_object.str_column == 'value2'
         assert ret.related_object.int_column == 123
         assert ret.related_object.datetime_column is None
@@ -767,7 +759,7 @@ class TestEndToEnd:
         assert ret.int_column == 2
         assert ret.datetime_column == datetime(2024, 1, 3)
         assert ret.bool_column is True
-        assert ret.related_object.id == {'provenance': {'source1': {'value': 'rel2'}}}
+        assert ret.related_object.id == 'rel2'
         assert ret.related_object.str_column == 'value2'
         assert ret.related_object.int_column == 456
         assert ret.related_object.datetime_column == datetime(2024, 6, 6)
@@ -785,7 +777,7 @@ class TestEndToEnd:
         assert ret.int_column == 2
         assert ret.datetime_column == datetime(2024, 1, 3)
         assert ret.bool_column is True
-        assert ret.related_object.id == {'provenance': {'source1': {'value': 'rel2'}}}
+        assert ret.related_object.id == 'rel2'
         assert ret.related_object.str_column == 'value2'
         assert ret.related_object.int_column == 456
         assert ret.related_object.datetime_column == datetime(2024, 6, 6)

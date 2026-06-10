@@ -58,22 +58,15 @@ def elastic_datasource(
     }
     mock_data_source_config = Mock()
     mock_data_source_config_relationship = Mock()
-    mock_data_source_config_relationship.source_order = ['source1']
+    mock_data_source_config_relationship.source_order = ['source1', 'source2', 'source3', 'source4']
     mock_data_source_config_relationship.object_type = 'root'
     mock_data_source_config_relationship.name = 'related_object'
     mock_data_source_config.data_source_config_relationships = [
         mock_data_source_config_relationship
     ]
 
-    return create_elastic_datasource(
-        {
-            'uri': os.environ['ELASTIC_URI'],
-            'user': os.environ['ELASTIC_USER'],
-            'password': os.environ['ELASTIC_PASSWORD'],
-            'index_prefix': prefix
-        },
-        relationship_cfg={'root': rc_root},
-        runtime_fields={
+
+    rtf = {
             'root': {
                 'runtime_column': RuntimeField(
                     field_type='boolean',
@@ -87,6 +80,16 @@ def elastic_datasource(
                 'root_int_column_max': {'type': 'double'},
             }
         }
+
+    return create_elastic_datasource(
+        {
+            'uri': os.environ['ELASTIC_URI'],
+            'user': os.environ['ELASTIC_USER'],
+            'password': os.environ['ELASTIC_PASSWORD'],
+            'index_prefix': prefix
+        },
+        relationship_cfg={'root': rc_root},
+        runtime_fields=rtf
     )
 
 

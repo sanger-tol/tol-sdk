@@ -200,12 +200,7 @@ class TestID:
         )
         for i, obj in enumerate(ascending_objs):
             assert obj.id == str(i)
-            if fixture_name == 'api -> elastic' or fixture_name == 'elastic':
-                assert obj.related_object.id == {
-                    'provenance': {'source1': {'value': f'relation_{i}'}}
-                }
-            else:
-                assert obj.related_object.id == f'relation_{i}'
+            assert obj.related_object.id == f'relation_{i}'
 
         descending_objs, _ = data_source.get_list_page(
             'root',
@@ -217,12 +212,7 @@ class TestID:
         for i, obj in enumerate(descending_objs):
             inverted = 2 - i
             assert obj.id == str(inverted)
-            if fixture_name == 'api -> elastic' or fixture_name == 'elastic':
-                assert obj.related_object.id == {
-                    'provenance': {'source1': {'value': f'relation_{inverted}'}}
-                }
-            else:
-                assert obj.related_object.id == f'relation_{inverted}'
+            assert obj.related_object.id == f'relation_{inverted}'
 
     @against(*all_fixtures)
     def test_filter_relation(
