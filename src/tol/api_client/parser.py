@@ -179,30 +179,22 @@ class DefaultParser(Parser):
         for rel_name, rel_data in transfer.get('relationships', {}).items():
             if isinstance(rel_data, dict) is False or rel_data == {}:
                 continue
-            if 'data' in rel_data:
-                transfer_id = rel_data['data']['id']
-            elif 'id' in rel_data:
-                transfer_id = rel_data['id']
-            else:
-                # This accounts for links which don't need provenance
+            if 'provenance' in rel_data:
+                rel_type = (
+                    rel_data['data'].get('type')
+                    if isinstance(rel_data.get('data'), dict)
+                    else None
+                )
+                rel_ds = self.__get_data_source(rel_type) if rel_type else ds
+                result[rel_name] = {
+                    source: rel_ds.data_object_factory(
+                        rel_type or transfer['type'],
+                        id_=prov_data['value'],
+                        stub=True,
+                    )
+                    for source, prov_data in rel_data['provenance'].items()
+                }
                 continue
-            if 'provenance' in transfer_id:
-                for source in transfer_id['provenance']:
-                    value = transfer_id['provenance'][source]['value']
-                    if result.get(rel_name) is None:
-                        result[rel_name] = {
-                            source: ds.data_object_factory(
-                                transfer['type'],
-                                id_=value,
-                                stub=True,
-                            )
-                    }
-                    else:
-                        result[rel_name][source] = ds.data_object_factory(
-                            transfer['type'],
-                            id_=value,
-                            stub=True,
-                        )
         return result
 
     def __convert_attributes(

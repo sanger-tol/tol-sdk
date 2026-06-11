@@ -182,6 +182,14 @@ class DefaultView(View):
                     one_dump = {'data': self.__dump_stub(one, rel)}
                     if sub_tree := tree.get_sub_tree(rel):
                         included.add_dump(self.__dump_object(one, included, tree=sub_tree))
+                    prov = data_object.provenance
+                    if isinstance(prov, dict) and rel in prov:
+                        rel_prov = prov[rel]
+                        if isinstance(rel_prov, dict):
+                            one_dump['provenance'] = {
+                                source: {'value': str(obj.id)}
+                                for source, obj in rel_prov.items()
+                            }
                 to_ones[rel] = one_dump
         return to_ones
 
