@@ -13,6 +13,9 @@ from tol.sources.portal import (
     portal
 )
 
+from tol.sources.registry import (
+    default_registry
+)
 
 class TestPortalDataSource(TestCase):
 
@@ -63,6 +66,40 @@ class TestPortalDataSource(TestCase):
     def test_get_list(self):
         pds = portal(dataspace='tol_production')
 
+        f = DataSourceFilter()
+        f.and_ = {
+            'goat_long_list': {'eq': {'value': 'DTOL'}},
+            'id': {'in_list': {'value': ['2708', '1857951']}}
+        }
+        ret = list(pds.get_list('species', object_filters=f))
+        obj_ids = [obj.id for obj in ret]
+        assert '2708' in obj_ids
+        assert '1857951' in obj_ids
+        assert len(obj_ids) == 2
+        for obj in ret:
+            if obj.id == '2708':
+                self.assertEqual('2708', obj.id)
+                self.assertEqual(obj.goat_scientific_name, 'Citrus x limon')
+                self.assertEqual(obj.goat_chromosome_number, 18)
+                self.assertEqual(obj.goat_assembly_level, 'Chromosome')
+                self.assertEqual(obj.goat_long_list, ['DTOL'])
+                self.assertEqual(obj.goat_phylum_name, 'Streptophyta')
+            elif obj.id == '1857951':
+                self.assertEqual('1857951', obj.id)
+                self.assertEqual(obj.goat_scientific_name, 'Acrobasis suavella')
+                self.assertEqual(obj.goat_chromosome_number, 60)
+                self.assertEqual(obj.goat_assembly_level, 'Chromosome')
+                self.assertEqual(obj.goat_long_list, ['DTOL', 'PSYCHE'])
+                self.assertEqual(obj.goat_phylum_name, 'Arthropoda')
+                self.assertEqual(obj.goat_sample_collected, ['DTOL'])
+                self.assertEqual(
+                    obj.goat_country_list,
+                    ['AT', 'BE', 'BG', 'CA', 'CH', 'DE', 'DK', 'ES', 'FI',
+                     'FR', 'GB', 'GR', 'HR', 'IT', 'LU', 'NL', 'PT', 'SE', 'UA', 'US']
+                )
+                
+    def test_registry_integration(self):
+        pds = default_registry.create('portal')
         f = DataSourceFilter()
         f.and_ = {
             'goat_long_list': {'eq': {'value': 'DTOL'}},
