@@ -247,4 +247,4 @@ class TestUtils:
         expected_field = RuntimeFields.coalesce(
             ['rel_name.id.provenance.source1.value', 'rel_name.id.provenance.source2.value']
         )
-        assert result == {'sample': {'rel_name.id.value': expected_field}}
+        assert result == {'sample': {'rel_name': expected_field}}

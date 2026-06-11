@@ -340,6 +340,18 @@ class ElasticDataSource(
             else None
         )
         fields = list(runtime_mappings.keys()) if runtime_mappings is not None else None
+        import logging
+        logging.error('RUNTIME MAPPINGS IN _PREPARE_GET_PARAMETERS')
+        logging.error(runtime_mappings)
+        if requested_tree is not None:
+            logging.error('REQUESTED TREE IN _PREPARE_GET_PARAMETERS')
+            logging.error(requested_tree.attribute_names)
+            logging.error(requested_tree.sub_trees())
+            for tree in requested_tree.sub_trees():
+                logging.error('SUB TREE IN REQUESTED TREE')
+                logging.error(tree)
+        logging.error('FIELDS IN _PREPARE_GET_PARAMETERS BEFORE FILTERING')
+        logging.error(fields)
         if requested_tree is not None and fields is not None and runtime_mappings is not None:
             # Filter fields to fetch based on whether they're in the requested tree
             fields = list(filter(
@@ -349,13 +361,19 @@ class ElasticDataSource(
                         object_filters is not None and object_filters.and_ is not None
                         and field in object_filters.and_.keys()
                     )
-                    or sort_by is not None and field in sort_by
+                    or (
+                        sort_by is not None and field in sort_by
+                    )
+                    or requested_tree.get_sub_tree(field) is not None
                 ),
                 fields,
             ))
 
+            logging.error('FIELDS IN _PREPARE_GET_PARAMETERS')
+            logging.error(fields)
             # Only allow the runtime mappings of these fields
             runtime_mappings = {key: runtime_mappings[key] for key in fields}
+            logging.error(runtime_mappings)
 
         return (
             real_index_name,
@@ -512,6 +530,7 @@ class ElasticDataSource(
                                       query={'query': query},
                                       fields=fields,
                                       runtime_mappings=runtime_mappings)
+        
         return self._elastic_converter_factory().convert_list(generator)
 
     def _get_elastic_aggregations(

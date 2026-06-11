@@ -313,8 +313,7 @@ class TestEndToEnd:
     def test_multiple_upserts(
         self,
         data_source: OperableDataSource,
-        ds_sleep,
-        fixture_name: str = '',
+        ds_sleep
     ):
         """
         Upsert a `DataObject` instance, and then upsert again to test upsert behaviour

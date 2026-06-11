@@ -169,20 +169,11 @@ class DefaultElasticApiParser(DataSourceParser[ElasticApiResource, DataObject]):
 
         if runtime_data is not None:
             for k, v in runtime_data.items():
-                if k.__contains__(f'{relation_name}.id.value'):
+                if k.__contains__(f'{relation_name}'):
                     id_ = v[0]
 
-        
         if id_ is None:
             return None
-        
-        import logging
-        logging.error(self._convert_data_dict_to_data_object(
-            type_,
-            id_,
-            relation_data,
-            {}
-        ).id)
 
         return self._convert_data_dict_to_data_object(
             type_,

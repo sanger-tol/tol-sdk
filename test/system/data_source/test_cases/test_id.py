@@ -148,7 +148,6 @@ class TestID:
         self,
         data_source: OperableDataSource,
         ds_sleep,
-        fixture_name = '',
     ):
 
         relations = [
