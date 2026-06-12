@@ -8,6 +8,7 @@ from typing import Iterable
 
 from ...core import (
     DataObject,
+    DataObjectFactory,
     DataObjectToDataObjectOrUpdateConverter
 )
 
@@ -19,25 +20,28 @@ class GritIssueToElasticCurationConverter(
     class Config:
         pass
 
-    __slots__ = ['__config']
-    __config: Config
+    __slots__ = ['_data_object_factory']
+    _data_object_factory: DataObjectFactory
 
-    def __init__(self, data_object_factory, config: Config) -> None:
+    def __init__(self, data_object_factory: DataObjectFactory, config: Config) -> None:
         super().__init__(data_object_factory)
-        self.__config = config
         self._data_object_factory = data_object_factory
 
+        # No config needed for this converter
+        del config
+
     def convert(self, data_object: DataObject) -> Iterable[DataObject]:
-        if data_object.assembled_by in [
+        if data_object.assembled_by in (
             'Blaxter',
             'Jaron Group',
             'ToL',
             'Lawniczak'
-        ]:
+        ):
             assembly_stats = self.__get_assembly_stats(
                 data_object.attributes.get('assembly_statistics')
             )
             chr_data = self.__get_chr_data(data_object.attributes.get('chromosome_result'))
+            assert data_object.status_changes is not None
             attributes = {
                 k: v for k, v in data_object.attributes.items()
                 if k not in ['assembly_statistics', 'chromosome_result', 'description',
