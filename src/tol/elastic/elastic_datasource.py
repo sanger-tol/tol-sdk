@@ -286,9 +286,14 @@ class ElasticDataSource(
 
         if '.' in name:
             # Runtime fields don't behave the same as text fields
+            import logging
+            logging.error('NAME: ' + name)
+            logging.error(self.runtime_fields[object_type])
+            split_name = name.split('.')
             if (object_type in self.runtime_fields
-                    and f'{name}.value' in self.runtime_fields[object_type]):
-                return f'{name}.value'
+                    and f'{split_name[0]}' in self.runtime_fields[object_type]
+                    and split_name[1] == 'id'):
+                return f'{name}'
             rc = self.relationship_config[object_type]
             relationship_name, attribute = name.split('.')[0], name.split('.')[1]
             if attribute == 'id':
