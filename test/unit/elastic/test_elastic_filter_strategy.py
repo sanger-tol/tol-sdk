@@ -105,3 +105,25 @@ class TestElasticFilterStrategy:
 
         assert 'filter' in result['bool']
         assert 'script' in result['bool']['filter']
+        
+    def test_filter_value_empty(self):
+        resolver = lambda obj_type, field: field
+        strategy = ElasticFilterStrategy(field_resolver=resolver)
+
+        f = DataSourceFilter(and_={
+            'name': {'eq': {'value': ''}}
+        })
+        result = strategy.convert('sample', f)
+
+        assert {'match': {'name': ''}} in result['bool']['must']
+    
+    def test_filter_value_null(self):
+        resolver = lambda obj_type, field: field
+        strategy = ElasticFilterStrategy(field_resolver=resolver)
+
+        f = DataSourceFilter(and_={
+            'name': {'eq': {'value': None}}
+        })
+        result = strategy.convert('sample', f)
+
+        assert {'match': {'name': None}} in result['bool']['must']
