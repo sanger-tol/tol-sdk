@@ -168,12 +168,12 @@ class DefaultParser(Parser):
             id_=transfer['id'],
             stub=True,
         )
-    
+
     def __make_provenances(
         self,
         transfer: JsonApiResource
     ) -> dict[str, DataObject | None]:
-        
+
         ds = self.__get_data_source(transfer['type'])
         result = {}
         for rel_name, rel_data in transfer.get('relationships', {}).items():

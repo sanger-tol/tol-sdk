@@ -473,7 +473,7 @@ class TestEndToEnd:
         assert ret.bool_column is None
         assert ret.related_object is None
         assert ret.list_column is None
-    
+
     @against(elastic, api_elastic)
     def test_upsert_with_multiple_sources(self, data_source: OperableDataSource, ds_sleep):
         """
@@ -527,7 +527,6 @@ class TestEndToEnd:
         assert ret.provenance['related_object']['source3'].id == '1'
         assert ret.provenance['related_object']['source4'].id == '2'
         assert ret.related_object.id == '1'
-
 
     @against(sql, api_sql)
     def test_upsert_dict_attributes(self, data_source: OperableDataSource, ds_sleep):

@@ -8,8 +8,9 @@ import typing
 from functools import wraps
 from typing import Callable
 
-import pytest
 import inspect
+
+import pytest
 
 
 if typing.TYPE_CHECKING:
@@ -44,7 +45,7 @@ def against(*fixtures: DataSourceFixture) -> Callable:
 
             fixture.before_test()
             ds_instance = fixture.get_ds_instance()
-            kwargs = dict(data_source=ds_instance, ds_sleep=ds_sleep)
+            kwargs = {data_source: ds_instance, ds_sleep: ds_sleep}
             if 'fixture_name' in inspect.signature(test_method).parameters:
                 kwargs['fixture_name'] = fixture.name
             test_method(self, **kwargs)

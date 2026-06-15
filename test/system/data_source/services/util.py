@@ -58,28 +58,32 @@ def elastic_datasource(
     }
     mock_data_source_config = Mock()
     mock_data_source_config_relationship = Mock()
-    mock_data_source_config_relationship.source_order = ['source1', 'source2', 'source3', 'source4']
+    mock_data_source_config_relationship.source_order = [
+        'source1',
+        'source2',
+        'source3',
+        'source4'
+    ]
     mock_data_source_config_relationship.object_type = 'root'
     mock_data_source_config_relationship.name = 'related_object'
     mock_data_source_config.data_source_config_relationships = [
         mock_data_source_config_relationship
     ]
 
-
     rtf = {
-            'root': {
-                'runtime_column': RuntimeField(
-                    field_type='boolean',
-                    dependencies=['bool_column'],
-                    function_body="emit(!doc['bool_column'].value)"
-                ).to_dict(),
-            } | DataSourceUtils.add_source_order_to_runtime_fields(mock_data_source_config)
-            .get('root', {}),
-            'related': {
-                'root_int_column_min': {'type': 'double'},
-                'root_int_column_max': {'type': 'double'},
-            }
+        'root': {
+            'runtime_column': RuntimeField(
+                field_type='boolean',
+                dependencies=['bool_column'],
+                function_body="emit(!doc['bool_column'].value)"
+            ).to_dict(),
+        } | DataSourceUtils.add_source_order_to_runtime_fields(mock_data_source_config)
+        .get('root', {}),
+        'related': {
+            'root_int_column_min': {'type': 'double'},
+            'root_int_column_max': {'type': 'double'},
         }
+    }
 
     return create_elastic_datasource(
         {

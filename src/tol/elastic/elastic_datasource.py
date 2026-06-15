@@ -527,7 +527,7 @@ class ElasticDataSource(
                                       query={'query': query},
                                       fields=fields,
                                       runtime_mappings=runtime_mappings)
-        
+
         return self._elastic_converter_factory().convert_list(generator)
 
     def _get_elastic_aggregations(

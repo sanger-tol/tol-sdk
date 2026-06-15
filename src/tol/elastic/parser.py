@@ -162,7 +162,7 @@ class DefaultElasticApiParser(DataSourceParser[ElasticApiResource, DataObject]):
             or not isinstance(relation_data, Mapping)
         ):
             return None
-        
+
         # relationship ids are now created with runtime fields because of provenance
         # Need to check if the source order id value exists as a runtime field
         id_ = relation_data.get('id')
@@ -204,12 +204,15 @@ class _ToElasticApiResourceParser:
                                     && ctx._source[param.key][newParam.key] instanceof Map) {
                                 for (innerParam in newParam.value.entrySet()) {
                                     if (innerParam.value instanceof Map
-                                            && ctx._source[param.key][newParam.key][innerParam.key] instanceof Map) {
+                                            && ctx._source[param.key][newParam.key]
+                                            [innerParam.key] instanceof Map) {
                                         for (deepParam in innerParam.value.entrySet()) {
-                                            ctx._source[param.key][newParam.key][innerParam.key][deepParam.key] = deepParam.value;
+                                            ctx._source[param.key][newParam.key]
+                                            [innerParam.key][deepParam.key] = deepParam.value;
                                         }
                                     } else {
-                                        ctx._source[param.key][newParam.key][innerParam.key] = innerParam.value;
+                                        ctx._source[param.key][newParam.key][innerParam.key]
+                                            = innerParam.value;
                                     }
                                 }
                             } else {
