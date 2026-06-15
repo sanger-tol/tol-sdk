@@ -21,6 +21,7 @@ def _get_mock_data_object(
     attributes: dict[str, Any] = {},
     to_one: dict[str, Any] = {},
     to_many: dict[str, Any] = {},
+    provenance_: Optional[str] = None
 ) -> DataObject:
 
     data_object = Mock()

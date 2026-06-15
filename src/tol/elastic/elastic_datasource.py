@@ -285,15 +285,19 @@ class ElasticDataSource(
         """
 
         if '.' in name:
-            # Runtime fields don't behave the same as text fields
-            import logging
-            logging.error('NAME: ' + name)
-            logging.error(self.runtime_fields[object_type])
             split_name = name.split('.')
-            if (object_type in self.runtime_fields
-                    and f'{split_name[0]}' in self.runtime_fields[object_type]
-                    and split_name[1] == 'id'):
-                return f'{name}'
+            # Runtime relationship id fields are exposed as relationship-name fields,
+            # so `<relationship>.id` filters must target `<relationship>`.
+            if object_type in self.runtime_fields:
+                runtime_fields = self.runtime_fields[object_type]
+                if name in runtime_fields:
+                    return name
+                if (
+                    len(split_name) >= 2
+                    and split_name[1] == 'id'
+                    and split_name[0] in runtime_fields
+                ):
+                    return split_name[0]
             rc = self.relationship_config[object_type]
             relationship_name, attribute = name.split('.')[0], name.split('.')[1]
             if attribute == 'id':
@@ -352,7 +356,10 @@ class ElasticDataSource(
                     requested_tree.has_attribute(field)
                     or (
                         object_filters is not None and object_filters.and_ is not None
-                        and field in object_filters.and_.keys()
+                        and (
+                            field in object_filters.and_.keys()
+                            or f'{field}.id' in object_filters.and_.keys()
+                        )
                     )
                     or (
                         sort_by is not None and field in sort_by
