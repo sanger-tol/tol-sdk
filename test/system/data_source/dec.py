@@ -4,14 +4,12 @@
 
 from __future__ import annotations
 
+import inspect
 import typing
 from functools import wraps
 from typing import Callable
 
-import inspect
-
 import pytest
-
 
 if typing.TYPE_CHECKING:
     from .fixtures.api.util import ApiFixture
