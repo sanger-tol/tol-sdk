@@ -105,6 +105,8 @@ class DummyDataSource(
         session: Optional[OperableSession] = None,
         **kwargs
     ) -> Iterable[DataObject]:
+        if object_type not in self.supported_types:
+            raise DataSourceError(f'{object_type} is not supported')
         if object_filters:
             raise DataSourceError('Filtering is not supported')
         objects = self.__client_factory().get_list(
