@@ -6,8 +6,8 @@ from __future__ import annotations
 
 from typing import Any
 
-from .action import Action
-from ..core import DataSource
+from ..action import Action
+from ...core import DataSource
 
 
 class UpsertAction(Action):

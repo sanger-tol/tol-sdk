@@ -5,7 +5,7 @@
 from typing import Any, Dict
 from unittest import TestCase
 
-from tol.actions import Action
+from tol.action import Action
 from tol.core import DataSource
 
 
