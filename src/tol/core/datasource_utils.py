@@ -57,7 +57,7 @@ class DataSourceUtils:
         datasource_config = datasource_instance.data_source_config
         source_kwargs = (
             datasource_instance.api_kwargs
-            if not direct and datasource_instance.api_kwargs
+            if not direct and datasource_instance.api_name  # The test is for the name being set
             else datasource_instance.direct_kwargs
         )
         new_kwargs = dict(source_kwargs) if source_kwargs else {}
@@ -78,7 +78,7 @@ class DataSourceUtils:
                 'attribute_metadata': amd,
                 'runtime_fields': runtime_fields
             })
-        
+
         datasource_name = (
             datasource_instance.api_name
             if not direct and datasource_instance.api_name
