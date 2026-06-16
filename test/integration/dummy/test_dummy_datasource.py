@@ -62,9 +62,9 @@ class TestDummyDataSource(TestCase):
 
         # to-one objects are still set even though this datasource is not Relational
         assert obj._to_one_objects['category'] is not None
-        assert obj._to_one_objects['category'].id == 'cat2'  # 1 % 4 == 1 -> index 1 -> 'cat2'
+        assert obj._to_one_objects['category'].id == 'cat2'  # 1 % 4 == 1 -> index 1
         assert obj._to_one_objects['sub_category'] is not None
-        assert obj._to_one_objects['sub_category'].id == 'cat1'  # (1-1) % 4 == 0 -> index 0 -> 'cat1'
+        assert obj._to_one_objects['sub_category'].id == 'cat1'  # (1-1) % 4 == 0
 
     def test_get_one_record_not_found(self):
         ds = dummy()

@@ -9,11 +9,9 @@ from tol.core import (
     DataSource,
     core_data_object
 )
-
 from tol.core.operator import (
     Relational
 )
-
 from tol.core.relationship import RelationshipConfig
 from tol.flows.converters import (
     DummyRecordToElasticRecordConverter

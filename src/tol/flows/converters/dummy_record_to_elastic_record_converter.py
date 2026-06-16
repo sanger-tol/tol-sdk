@@ -47,7 +47,7 @@ class DummyRecordToElasticRecordConverter(
         ret = self._data_object_factory(
             type_='record',
             id_=str(data_object.id),
-            attributes={k: v for k, v in data_object.attributes.items()},
+            attributes=dict(data_object.attributes),
             to_one=to_one,
         )
 
