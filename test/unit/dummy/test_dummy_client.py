@@ -23,24 +23,6 @@ class TestDummyClient:
                 'type': 'record',
                 'category': ['cat1', 'cat2', 'cat3', 'cat4'][i % 4],
                 'sub_category': ['cat1', 'cat2', 'cat3', 'cat4'][(i - 1) % 4],
-                'link': 'https://www.google.com/',
-                'links': [
-                    'https://www.google.com/',
-                    'https://www.instagram.com/',
-                    'https://www.facebook.com/',
-                    'https://www.twitter.com/',
-                ][i % 4],
-                'image': {
-                    'url': 'https://picsum.photos/200/300',
-                    'caption': 'cap1',
-                },
-                'images': [
-                    {'url': 'https://picsum.photos/200/300', 'caption': 'cap1'},
-                    {'url': 'https://picsum.photos/200/300', 'caption': 'cap2'},
-                    {'url': 'https://picsum.photos/200/300', 'caption': 'cap3'},
-                    {'url': 'https://picsum.photos/200/300', 'caption': 'cap4'},
-                ][i % 4],
-                'sub_category': ['cat1', 'cat2', 'cat3', 'cat4'][(i - 1) % 4],
                 'list': ['alpha', 'beta', 'gamma'],
                 'link': 'https://www.google.com/',
                 'links': [
@@ -85,24 +67,6 @@ class TestDummyClient:
                 'type': 'record',
                 'category': ['cat1', 'cat2', 'cat3', 'cat4'][i % 4],
                 'sub_category': ['cat1', 'cat2', 'cat3', 'cat4'][(i - 1) % 4],
-                'link': 'https://www.google.com/',
-                'links': [
-                    'https://www.google.com/',
-                    'https://www.instagram.com/',
-                    'https://www.facebook.com/',
-                    'https://www.twitter.com/',
-                ][i % 4],
-                'image': {
-                    'url': 'https://picsum.photos/200/300',
-                    'caption': 'cap1',
-                },
-                'images': [
-                    {'url': 'https://picsum.photos/200/300', 'caption': 'cap1'},
-                    {'url': 'https://picsum.photos/200/300', 'caption': 'cap2'},
-                    {'url': 'https://picsum.photos/200/300', 'caption': 'cap3'},
-                    {'url': 'https://picsum.photos/200/300', 'caption': 'cap4'},
-                ][i % 4],
-                'sub_category': ['cat1', 'cat2', 'cat3', 'cat4'][(i - 1) % 4],
                 'list': ['alpha', 'beta', 'gamma'],
                 'link': 'https://www.google.com/',
                 'links': [
@@ -140,4 +104,16 @@ class TestDummyClient:
             {'id': 'cat2', 'name': 'CAT2', 'type': 'category'},
             {'id': 'cat3', 'name': 'CAT3', 'type': 'category'},
             {'id': 'cat4', 'name': 'CAT4', 'type': 'category'},
+        ]
+
+    def test_get_list_sub_category(self):
+        client = DummyClient()
+
+        observed = client.get_list('sub_category')
+
+        assert observed == [
+            {'id': 'cat1', 'name': 'CAT1', 'type': 'sub_category'},
+            {'id': 'cat2', 'name': 'CAT2', 'type': 'sub_category'},
+            {'id': 'cat3', 'name': 'CAT3', 'type': 'sub_category'},
+            {'id': 'cat4', 'name': 'CAT4', 'type': 'sub_category'},
         ]

@@ -92,6 +92,14 @@ class TestDummyDataSource(TestCase):
         assert [c.id for c in categories] == ['cat1', 'cat2', 'cat3', 'cat4']
         assert [c.name for c in categories] == ['CAT1', 'CAT2', 'CAT3', 'CAT4']
 
+    def test_get_list_sub_category(self):
+        ds = dummy()
+        sub_categories = list(ds.get_list('sub_category'))
+
+        assert len(sub_categories) == 4
+        assert [c.id for c in sub_categories] == ['cat1', 'cat2', 'cat3', 'cat4']
+        assert [c.name for c in sub_categories] == ['CAT1', 'CAT2', 'CAT3', 'CAT4']
+
     def test_get_list_unsupported_type(self):
         ds = dummy()
 
