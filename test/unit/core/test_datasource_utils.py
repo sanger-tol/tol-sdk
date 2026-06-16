@@ -45,7 +45,8 @@ def mock_config_datasource() -> DataSource:
                 type_=object_type,
                 id_=object_id,
                 attributes={
-                    'builtin_name': 'portal'
+                    'direct_name': 'portal',
+                    'api_name': 'quasar'
                 }
             )
 
@@ -204,7 +205,18 @@ class TestUtils:
         assert objects[0].id == 'child0'
         assert objects[1].id == 'child1'
 
-    def test_get_datasource(
+    def test_get_datasource_direct(
+            self,
+            mock_config_datasource: DataSource
+    ):
+        ds = DataSourceUtils.get_datasource(
+            datasource_instance_id='tol_production',
+            config_datasource=mock_config_datasource,
+            direct=True
+        )
+        assert isinstance(ds, DataSource)
+
+    def test_get_datasource_via_api(
             self,
             mock_config_datasource: DataSource
     ):

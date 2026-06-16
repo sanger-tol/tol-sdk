@@ -21,7 +21,8 @@ class DataSourceUtils:
     def get_datasource(
         cls,
         datasource_instance_id: str,
-        config_datasource: DataSource
+        config_datasource: DataSource,
+        direct: bool = False
     ) -> DataSource:
         datasource_instance = config_datasource.get_one(
             'data_source_instance',
@@ -31,7 +32,10 @@ class DataSourceUtils:
             raise DataSourceError(
                 f'Datasource instance with id {datasource_instance_id} not found'
             )
-        return cls.get_datasource_by_datasource_instance(datasource_instance)
+        return cls.get_datasource_by_datasource_instance(
+            datasource_instance,
+            direct=direct
+        )
 
     @classmethod
     def get_datasource_by_name(
@@ -47,10 +51,16 @@ class DataSourceUtils:
     def get_datasource_by_datasource_instance(
         cls,
         datasource_instance: DataObject,
+        direct: bool = False,
         **kwargs
     ) -> DataSource:
         datasource_config = datasource_instance.data_source_config
-        new_kwargs = dict(datasource_instance.kwargs) if datasource_instance.kwargs else {}
+        source_kwargs = (
+            datasource_instance.api_kwargs
+            if not direct and datasource_instance.api_kwargs
+            else datasource_instance.direct_kwargs
+        )
+        new_kwargs = dict(source_kwargs) if source_kwargs else {}
         if kwargs:
             new_kwargs.update(kwargs)
         if datasource_config:
@@ -68,8 +78,14 @@ class DataSourceUtils:
                 'attribute_metadata': amd,
                 'runtime_fields': runtime_fields
             })
+        
+        datasource_name = (
+            datasource_instance.api_name
+            if not direct and datasource_instance.api_name
+            else datasource_instance.direct_name
+        )
         return DataSourceUtils.get_datasource_by_name(
-            datasource_instance.builtin_name,
+            datasource_name,
             **new_kwargs
         )
 

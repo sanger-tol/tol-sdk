@@ -449,8 +449,10 @@ def create_standard_models(
 
         id: Mapped[str] = mapped_column(primary_key=True)  # noqa A003
 
-        builtin_name: Mapped[str] = mapped_column(nullable=False)
-        kwargs: Mapped[dict] = mapped_column(JSONB, nullable=True)
+        direct_name: Mapped[str] = mapped_column(nullable=False)
+        direct_kwargs: Mapped[dict] = mapped_column(JSONB, nullable=True)
+        api_name: Mapped[str] = mapped_column(nullable=False)
+        api_kwargs: Mapped[dict] = mapped_column(JSONB, nullable=True)
         publish: Mapped[bool] = mapped_column(nullable=False, default=False)
         ui_api_details: Mapped[dict] = mapped_column(JSONB, nullable=True)
 
