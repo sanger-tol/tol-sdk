@@ -227,8 +227,8 @@ class TestRunningPipelinesWithDataSources:
             attributes={
                 'state': 'Failed',
                 'state_message': (
-                    "Flow run encountered an exception. "
-                    "ValueError: Worksheet named 'Metadata Entry' not found"
+                    'Flow run encountered an exception. '
+                    "ValueError: Worksheet named \'Metadata Entry\' not found"
                 )
             },
         )
@@ -254,8 +254,8 @@ class TestRunningPipelinesWithDataSources:
         synced_upload = upsert_args[1][0]
         assert synced_upload.validation_status == 'validation_system_error'
         assert synced_upload.failure_message == (
-            "Flow run encountered an exception. "
-            "ValueError: Worksheet named 'Metadata Entry' not found"
+            'Flow run encountered an exception. '
+            "ValueError: Worksheet named \'Metadata Entry\' not found"
         )
         assert synced_upload.completed is True
 
