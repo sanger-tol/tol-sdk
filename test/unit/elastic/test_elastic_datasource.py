@@ -202,7 +202,7 @@ class TestElasticDataSource:
             'test-obj-type',
             objects,
             id_func=lambda x: x.id,
-            field_prefix=''
+            provenance='source_1'
         ))
         expected = {
             '_op_type': 'update',
@@ -219,7 +219,13 @@ class TestElasticDataSource:
                         'field2': 'value2',
                         'datefield': dt.isoformat(),
                         'relationship': {
-                            'id': 'rel1'
+                            'id': {
+                                'provenance': {
+                                    'source_1': {
+                                        'value': 'rel1'
+                                    }
+                                }
+                            }
                         },
                         'uid': '1'
                     }
@@ -349,8 +355,9 @@ class TestElasticDataSource:
         update_body = converter.convert(ElasticUpdateInputResource(
             'obj_type',
             update1,
-            field_prefix='',
-            candidate_key=['field1']
+            field_prefix='prefix',
+            candidate_key=['field1'],
+            provenance='source_1'
         ))
         expected = {
             'query': {
@@ -366,9 +373,9 @@ class TestElasticDataSource:
                 'lang': 'painless',
                 'params': {
                     'upsertWith': {
-                        'field2': 'value2',
-                        'relationship': {
-                            'id': 'rel1',
+                        'prefix_field2': 'value2',
+                        'prefix_relationship': {
+                            'id': {'provenance': {'source_1': {'value': 'rel1'}}},
                             'field3': 'string1',
                             'field4': 'string2'
                         }

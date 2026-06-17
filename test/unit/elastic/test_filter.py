@@ -84,3 +84,35 @@ class TestElasticFilter:
         assert expected == filter_converter.convert(
             'obj_type', object_filters
         )
+
+    def test_build_query_relationship_id_runtime_field(
+        self,
+        mock_elastic_data_source: ElasticDataSource,
+    ):
+        mock_elastic_data_source.runtime_fields['obj_type']['relationship'] = {
+            'type': 'keyword',
+            'script': {
+                'source': "emit('rel-1')"
+            }
+        }
+
+        object_filters = DataSourceFilter()
+        object_filters.and_ = {
+            'relationship.id': {
+                'eq': {'value': 'rel-1'}
+            }
+        }
+
+        expected = {
+            'bool': {
+                'must': [
+                    {'match': {'relationship': 'rel-1'}}
+                ],
+                'must_not': []
+            }
+        }
+
+        assert expected == ElasticFilterConverter(mock_elastic_data_source).convert(
+            'obj_type',
+            object_filters,
+        )

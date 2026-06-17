@@ -172,9 +172,9 @@ class ElasticDataSource(
         self,
         object_type: str,
         objects: Iterable[DataObject],
+        provenance: str | None = None,
         chunk_size: int = 100,
         id_func=lambda x: x.id,
-        provenance: str = '',
         merge_collections: bool | None = None,
         **kwargs
     ) -> None:
@@ -194,7 +194,7 @@ class ElasticDataSource(
                         index=index,
                         objects=objects,
                         id_func=id_func,
-                        field_prefix=provenance
+                        provenance=provenance,
                     )
                 ),
                 stats_only=True,
@@ -208,7 +208,7 @@ class ElasticDataSource(
         self,
         object_type: str,
         updates: Iterable[DataObjectUpdate],
-        provenance: str = '',
+        provenance: str | None = None,
         candidate_key: Iterable[str] = [],
         **kwargs
     ) -> None:
@@ -229,7 +229,7 @@ class ElasticDataSource(
                 index=real_index_name,
                 body=converter.convert(ElasticUpdateInputResource(object_type=object_type,
                                                                   update=update,
-                                                                  field_prefix=provenance,
+                                                                  provenance=provenance,
                                                                   candidate_key=candidate_key)),
                 conflicts='proceed',
                 wait_for_completion=False
@@ -283,25 +283,41 @@ class ElasticDataSource(
         """
         Map our field format to Elastic's format
         """
-        if name == 'id':
-            return 'uid.keyword'
-        # Runtime fields don't behave the same as text fields
-        if object_type in self.runtime_fields and name in self.runtime_fields[object_type]:
-            return name
-        # An attribute of the object
-        if name in self.attribute_types[object_type]:
-            field_type = self.attribute_types[object_type][name]
-            if field_type == 'str':
-                return f'{name}.keyword'
+
         if '.' in name:
+            split_name = name.split('.')
+            # Runtime relationship id fields are exposed as relationship-name fields,
+            # so `<relationship>.id` filters must target `<relationship>`.
+            if object_type in self.runtime_fields:
+                runtime_fields = self.runtime_fields[object_type]
+                if name in runtime_fields:
+                    return name
+                if (
+                    len(split_name) >= 2
+                    and split_name[1] == 'id'
+                    and split_name[0] in runtime_fields
+                ):
+                    return split_name[0]
             rc = self.relationship_config[object_type]
             relationship_name, attribute = name.split('.')[0], name.split('.')[1]
             if attribute == 'id':
-                return f'{name}.keyword'
+                return f'{name}.value.keyword'
             relationship_object_type = rc.to_one[relationship_name]
             attribute_type = self.attribute_types[relationship_object_type][attribute]
             if attribute_type == 'str':
                 return f'{name}.keyword'
+
+        else:
+            if name == 'id':
+                return 'uid.keyword'
+            # Runtime fields don't behave the same as text fields
+            if object_type in self.runtime_fields and name in self.runtime_fields[object_type]:
+                return name
+            # An attribute of the object
+            if name in self.attribute_types[object_type]:
+                field_type = self.attribute_types[object_type][name]
+                if field_type == 'str':
+                    return f'{name}.keyword'
         return name
 
     def _prepare_get_parameters(
@@ -340,9 +356,15 @@ class ElasticDataSource(
                     requested_tree.has_attribute(field)
                     or (
                         object_filters is not None and object_filters.and_ is not None
-                        and field in object_filters.and_.keys()
+                        and (
+                            field in object_filters.and_.keys()
+                            or f'{field}.id' in object_filters.and_.keys()
+                        )
                     )
-                    or sort_by is not None and field in sort_by
+                    or (
+                        sort_by is not None and field in sort_by
+                    )
+                    or requested_tree.get_sub_tree(field) is not None
                 ),
                 fields,
             ))
@@ -505,6 +527,7 @@ class ElasticDataSource(
                                       query={'query': query},
                                       fields=fields,
                                       runtime_mappings=runtime_mappings)
+
         return self._elastic_converter_factory().convert_list(generator)
 
     def _get_elastic_aggregations(
@@ -1031,7 +1054,10 @@ class ElasticDataSource(
             if 'type' in properties[property_name]
         }
         runtime_types = {
-            name: self.__map_type(self.runtime_fields[object_type][name]['type'])
+            name: self.__map_type(
+                self.runtime_fields[object_type][name].get('type')
+                or self.runtime_fields[object_type][name].get('value', {}).get('type')
+            )
             for name in self.runtime_fields[object_type].keys()
         } if object_type in self.runtime_fields else {}
         return standard_types | runtime_types

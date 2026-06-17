@@ -26,15 +26,17 @@ class ElasticUpsertInputResource:
     index: str
     objects: Iterable[DataObject]
     id_func: Callable
-    field_prefix: str
+    provenance: str | None = None
+    field_prefix: str = ''
 
 
 @dataclass(slots=True)
 class ElasticUpdateInputResource:
     object_type: str
     update: dict
-    field_prefix: str
     candidate_key: Iterable[str]
+    provenance: str | None = None
+    field_prefix: str = ''
 
 
 class DefaultElasticApiParser(DataSourceParser[ElasticApiResource, DataObject]):
@@ -71,26 +73,17 @@ class DefaultElasticApiParser(DataSourceParser[ElasticApiResource, DataObject]):
             k: self.__make_dates(type_, k, v[0]) for k, v in runtime_data.items()
             if k in self.__data_source.attribute_types[type_]
         }
-        to_one = self.__make_to_one_relations(type_, data)
+        to_one = self.__make_to_one_relations(type_, data, runtime_data)
+        provenance = self.__make_provenances(type_, data)
         return self.__data_source.data_object_factory(
             type_,
             id_=id_,
             attributes=attributes | runtime_attributes,
-            to_one=to_one
+            to_one=to_one,
+            provenance_=provenance
         )
 
-    def __make_dates(self, object_type, attribute_name, value):
-        if self.__data_source.attribute_types[object_type][attribute_name] == 'datetime' and \
-                isinstance(value, str):
-            return dateutil.parser.parse(value)
-        return value
-
-    def __make_to_one_relations(
-        self,
-        type_: str,
-        data: dict[str, Any]
-    ) -> dict[str, DataObject | None]:
-
+    def __make_provenances(self, type_: str, data: dict[str, Any]) -> dict[str, DataObject | None]:
         if type_ not in self.__data_source.relationship_config:
             return {}
 
@@ -98,16 +91,11 @@ class DefaultElasticApiParser(DataSourceParser[ElasticApiResource, DataObject]):
             return {}
 
         return {
-            k: self.__make_to_one_relation(data.get(k), v)
+            k: self.__make_provenance(data.get(k), v)
             for k, v in self.__data_source.relationship_config[type_].to_one.items()
         }
 
-    def __make_to_one_relation(
-        self,
-        relation_data: dict[str, Any] | None,
-        type_: str
-    ) -> DataObject | None:
-
+    def __make_provenance(self, relation_data: dict[str, Any] | None, type_: str) -> str | None:
         if (
             relation_data is None
             or not isinstance(relation_data, Mapping)
@@ -119,11 +107,79 @@ class DefaultElasticApiParser(DataSourceParser[ElasticApiResource, DataObject]):
         if id_ is None:
             return None
 
+        if isinstance(id_, dict) and 'provenance' in id_:
+            result = {}
+            for source in id_.get('provenance', {}):
+                result[source] = self._convert_data_dict_to_data_object(
+                    type_,
+                    id_['provenance'][source]['value'],
+                    relation_data,
+                    {}
+                )
+            return result
+
         return self._convert_data_dict_to_data_object(
             type_,
             id_,
             relation_data,
-            {}  # This can be empty because runtime_fields are not applicable for enriched objects
+            {},  # This can be empty because runtime_fields are not applicable for enriched objects
+        )
+
+    def __make_dates(self, object_type, attribute_name, value):
+        if self.__data_source.attribute_types[object_type][attribute_name] == 'datetime' and \
+                isinstance(value, str):
+            return dateutil.parser.parse(value)
+        return value
+
+    def __make_to_one_relations(
+        self,
+        type_: str,
+        data: dict[str, Any],
+        runtime_data: dict[str, Any] = None
+    ) -> dict[str, DataObject | None]:
+
+        if type_ not in self.__data_source.relationship_config:
+            return {}
+
+        if self.__data_source.relationship_config[type_].to_one is None:
+            return {}
+
+        return {
+            k: self.__make_to_one_relation(k, data.get(k), v, runtime_data)
+            for k, v in self.__data_source.relationship_config[type_].to_one.items()
+        }
+
+    def __make_to_one_relation(
+        self,
+        relation_name: str,
+        relation_data: dict[str, Any] | None,
+        type_: str,
+        runtime_data: dict[str, Any] = None
+    ) -> DataObject | None:
+
+        if (
+            relation_data is None
+            or not isinstance(relation_data, Mapping)
+        ):
+            return None
+
+        # relationship ids are now created with runtime fields because of provenance
+        # Need to check if the source order id value exists as a runtime field
+        id_ = relation_data.get('id')
+
+        if runtime_data is not None:
+            for k, v in runtime_data.items():
+                if k.__contains__(f'{relation_name}'):
+                    id_ = v[0]
+
+        if id_ is None:
+            return None
+
+        return self._convert_data_dict_to_data_object(
+            type_,
+            id_,
+            relation_data,
+            {},  # This can be empty because runtime_fields are not applicable for enriched objects
         )
 
 
@@ -144,7 +200,24 @@ class _ToElasticApiResourceParser:
                 if (param.value != null) {
                     if (ctx._source[param.key] instanceof Map) {
                         for (newParam in param.value.entrySet()) {
-                            ctx._source[param.key][newParam.key] = newParam.value;
+                            if (newParam.value instanceof Map
+                                    && ctx._source[param.key][newParam.key] instanceof Map) {
+                                for (innerParam in newParam.value.entrySet()) {
+                                    if (innerParam.value instanceof Map
+                                            && ctx._source[param.key][newParam.key]
+                                            [innerParam.key] instanceof Map) {
+                                        for (deepParam in innerParam.value.entrySet()) {
+                                            ctx._source[param.key][newParam.key]
+                                            [innerParam.key][deepParam.key] = deepParam.value;
+                                        }
+                                    } else {
+                                        ctx._source[param.key][newParam.key][innerParam.key]
+                                            = innerParam.value;
+                                    }
+                                }
+                            } else {
+                                ctx._source[param.key][newParam.key] = newParam.value;
+                            }
                         }
                         continue
                     }
@@ -178,16 +251,28 @@ class _ToElasticApiResourceParser:
             return dict_
         ret = {}
         for k, v in dict_.items():
-            ret[prefix + '_' + k] = v
+            if k != 'id':
+                ret[prefix + '_' + k] = v
         return ret
 
     def _parse_to_one_relation(
         self,
-        one_relation: DataObject | None
+        one_relation: DataObject | None,
+        provenance: str | None,
     ) -> dict[str, Any] | None:
 
         if one_relation is None:
             return None
+
+        if provenance is not None:
+            return {
+                'id': {
+                    'provenance': {
+                        provenance: {'value': one_relation.id}
+                    }
+                },
+                **one_relation.attributes
+            }
 
         return {
             'id': one_relation.id,
@@ -211,7 +296,7 @@ class DefaultElasticUpsertInputParser(
     ):
         real_index_name = self.__data_source._get_indices().get(transfer.index)
         for object_ in transfer.objects:
-            obj = self._convert_data_object_to_dict(object_)
+            obj = self._convert_data_object_to_dict(object_, transfer.provenance)
             obj = self._convert_dates(obj)
             obj = self._prefix_fields(obj, transfer.field_prefix)
             obj = self._stringify_ids(obj)
@@ -232,9 +317,13 @@ class DefaultElasticUpsertInputParser(
                 }
             }
 
-    def _convert_data_object_to_dict(self, data_object: DataObject) -> dict:
+    def _convert_data_object_to_dict(
+        self,
+        data_object: DataObject,
+        provenance: str | None,
+    ) -> dict:
         to_ones_dict = {
-            k: self._parse_to_one_relation(v)
+            k: self._parse_to_one_relation(v, provenance)
             for k, v in data_object._to_one_objects.items()
         }
         return data_object.attributes | to_ones_dict
@@ -243,8 +332,17 @@ class DefaultElasticUpsertInputParser(
         ret = {}
         for k, v in dict_.items():
             if isinstance(v, dict):
-                if 'id' in v:
-                    v['id'] = str(v['id'])
+                if (
+                    'id' in v
+                    and isinstance(v['id'], dict)
+                    and 'provenance' in v['id']
+                ):
+                    v['id'] = {
+                        'provenance': {
+                            source: {**details, 'value': str(details['value'])}
+                            for source, details in v['id']['provenance'].items()
+                        }
+                    }
                 ret[k] = self._stringify_ids(v)
             else:
                 ret[k] = v
@@ -276,7 +374,7 @@ class DefaultElasticUpdateInputParser(
             # Don't want key in the upsert as it cannot change anyway
             f.and_[key] = {'eq': {'value': u.pop(key)}}
         u = self._prefix_fields(u, transfer.field_prefix)
-        u = self._convert_data_objects_in_update_to_dict(u)
+        u = self._convert_data_objects_in_update_to_dict(u, transfer.provenance)
         query = ElasticFilterConverter(self.__data_source).convert(
             transfer.object_type, object_filters=f
         )
@@ -291,11 +389,11 @@ class DefaultElasticUpdateInputParser(
             },
         }
 
-    def _convert_data_objects_in_update_to_dict(self, dict_: dict) -> dict:
+    def _convert_data_objects_in_update_to_dict(self, dict_: dict, provenance: str | None) -> dict:
         ret = {}
         for k, v in dict_.items():
             if isinstance(v, DataObject):
-                ret[k] = self._parse_to_one_relation(v)
+                ret[k] = self._parse_to_one_relation(v, provenance)
             else:
                 ret[k] = v
         return ret

@@ -147,7 +147,7 @@ class TestID:
     def test_sort_relation(
         self,
         data_source: OperableDataSource,
-        ds_sleep
+        ds_sleep,
     ):
 
         relations = [
@@ -173,8 +173,8 @@ class TestID:
         ]
 
         if data_source.write_mode['root'] == RelationWriteMode.SEPARATE:
-            data_source.upsert('related', relations)
-        data_source.upsert('root', roots)
+            data_source.upsert('related', relations, provenance='source1')
+        data_source.upsert('root', roots, provenance='source1')
 
         # let upsert settle
         ds_sleep(5)
@@ -243,8 +243,8 @@ class TestID:
         ]
 
         if data_source.write_mode['root'] == RelationWriteMode.SEPARATE:
-            data_source.upsert('related', relations)
-        data_source.upsert('root', roots)
+            data_source.upsert('related', relations, provenance='source1')
+        data_source.upsert('root', roots, provenance='source1')
 
         # let upsert settle
         ds_sleep(5)

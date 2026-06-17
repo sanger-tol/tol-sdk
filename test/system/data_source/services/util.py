@@ -5,12 +5,15 @@
 import os
 import time
 from datetime import datetime
+from unittest.mock import Mock
 from uuid import uuid4
+
 
 from elasticsearch import Elasticsearch
 
 import requests
 
+from tol.core import DataSourceUtils
 from tol.core.relationship import RelationshipConfig
 from tol.elastic import (
     ElasticDataSource,
@@ -53,6 +56,34 @@ def elastic_datasource(
     rc_root.to_one = {
         'related_object': 'related'
     }
+    mock_data_source_config = Mock()
+    mock_data_source_config_relationship = Mock()
+    mock_data_source_config_relationship.source_order = [
+        'source1',
+        'source2',
+        'source3',
+        'source4'
+    ]
+    mock_data_source_config_relationship.object_type = 'root'
+    mock_data_source_config_relationship.name = 'related_object'
+    mock_data_source_config.data_source_config_relationships = [
+        mock_data_source_config_relationship
+    ]
+
+    rtf = {
+        'root': {
+            'runtime_column': RuntimeField(
+                field_type='boolean',
+                dependencies=['bool_column'],
+                function_body="emit(!doc['bool_column'].value)"
+            ).to_dict(),
+        } | DataSourceUtils.add_source_order_to_runtime_fields(mock_data_source_config)
+        .get('root', {}),
+        'related': {
+            'root_int_column_min': {'type': 'double'},
+            'root_int_column_max': {'type': 'double'},
+        }
+    }
 
     return create_elastic_datasource(
         {
@@ -62,19 +93,7 @@ def elastic_datasource(
             'index_prefix': prefix
         },
         relationship_cfg={'root': rc_root},
-        runtime_fields={
-            'root': {
-                'runtime_column': RuntimeField(
-                    field_type='boolean',
-                    dependencies=['bool_column'],
-                    function_body="emit(!doc['bool_column'].value)"
-                ).to_dict(),
-            },
-            'related': {
-                'summarise_one_root_int_column_min': {'type': 'double'},
-                'summarise_one_root_int_column_max': {'type': 'double'},
-            }
-        }
+        runtime_fields=rtf
     )
 
 
@@ -172,7 +191,10 @@ def upsert_archetypes(prefix: str) -> None:
             'list_column': ['item'],
             # 'dict_column': {'key1': 1},  # dict columns not yet supported in API
             'related_object': {
-                'id': '#REL',
+                'id': {
+                    'provenance': {'prov_1': {'value': 1}},
+                    'value': 1
+                },
                 'int_column': 42,
                 'datetime_column': datetime(2021, 1, 1, 0, 0, 0)
             },

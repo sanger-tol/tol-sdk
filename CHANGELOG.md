@@ -6,6 +6,14 @@ SPDX-License-Identifier: MIT
 
 # Changelog
 
+## tol-sdk `2.3.0-beta`
+17-6-2026
+- Added provenance to elastic upsert calls
+- Added provenance attribute to data objects to retrieve relationship ids
+- from different sources
+- Added source order to runtime_fields
+- Added/Fixed system tests for new provenance structure
+
 ## tol-sdk `2.2.2`
 09-06-2026
 - Bug fixes for the SGP STS -> Benchling flow converter

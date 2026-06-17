@@ -4,6 +4,7 @@
 
 from __future__ import annotations
 
+import json
 import typing
 from abc import ABC, abstractmethod
 from collections.abc import Iterable
@@ -113,13 +114,14 @@ class DefaultParser(Parser):
         ds = self.__get_data_source(type_)
         attributes = self.__convert_attributes(type_, transfer.get('attributes'))
         to_one, to_many = self.__parse_relationships(transfer.get('relationships'))
-
+        provenance = self.__make_provenances(transfer)
         return ds.data_object_factory(
             type_,
             id_=transfer.get('id'),
             attributes=attributes,
             to_one=to_one,
             to_many=to_many,
+            provenance_=provenance
         )
 
     def parse_stats(self, transfer: JsonApiResource) -> dict:
@@ -166,6 +168,34 @@ class DefaultParser(Parser):
             id_=transfer['id'],
             stub=True,
         )
+
+    def __make_provenances(
+        self,
+        transfer: JsonApiResource
+    ) -> dict[str, DataObject | None]:
+
+        ds = self.__get_data_source(transfer['type'])
+        result = {}
+        for rel_name, rel_data in transfer.get('relationships', {}).items():
+            if isinstance(rel_data, dict) is False or rel_data == {}:
+                continue
+            if 'provenance' in rel_data:
+                rel_type = (
+                    rel_data['data'].get('type')
+                    if isinstance(rel_data.get('data'), dict)
+                    else None
+                )
+                rel_ds = self.__get_data_source(rel_type) if rel_type else ds
+                result[rel_name] = {
+                    source: rel_ds.data_object_factory(
+                        rel_type or transfer['type'],
+                        id_=prov_data['value'],
+                        stub=True,
+                    )
+                    for source, prov_data in rel_data['provenance'].items()
+                }
+                continue
+        return result
 
     def __convert_attributes(
         self, type_: str, attributes: dict[str, Any] | None
@@ -229,6 +259,16 @@ class DefaultParser(Parser):
         return 'date' in lc_type or 'time' in lc_type
 
 
+def _make_hashable_id(id_: Any) -> str:
+    """
+    Convert an id to a hashable string representation.
+    Dicts (with provenance) are converted to JSON strings.
+    """
+    if isinstance(id_, dict):
+        return json.dumps(id_, sort_keys=True, separators=(',', ':'))
+    return str(id_)
+
+
 class DataObjectCatalog:
     """
     A catalog of `DataObject`s keyed by their `type` and `id` attributes.
@@ -244,9 +284,9 @@ class DataObjectCatalog:
         return len(self.__obj_index)
 
     def store(self, obj) -> None:
-        key = obj.type, obj.id
+        key = obj.type, _make_hashable_id(obj.id)
         self.__obj_index[key] = obj
 
     def fetch(self, obj) -> DataObject | None:
-        key = obj.type, obj.id
+        key = obj.type, _make_hashable_id(obj.id)
         return self.__obj_index.get(key)

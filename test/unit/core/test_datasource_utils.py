@@ -3,6 +3,7 @@
 # SPDX-License-Identifier: MIT
 
 from typing import Any, Iterable, Optional
+from unittest.mock import MagicMock
 
 import pytest
 
@@ -21,6 +22,7 @@ from tol.core.operator import (
     Relational
 )
 from tol.core.relationship import RelationshipConfig
+from tol.elastic.runtime_fields import RuntimeFields
 
 
 @pytest.fixture
@@ -213,3 +215,36 @@ class TestUtils:
             config_datasource=mock_config_datasource
         )
         assert isinstance(ds, DataSource)
+
+    def test_add_source_order_to_runtime_fields_empty(self):
+        config = MagicMock()
+        config.data_source_config_relationships = []
+
+        result = DataSourceUtils.add_source_order_to_runtime_fields(config)
+
+        assert result == {}
+
+    def test_add_source_order_to_runtime_fields_skips_none_source_order(self):
+        rel = MagicMock()
+        rel.source_order = None
+        config = MagicMock()
+        config.data_source_config_relationships = [rel]
+
+        result = DataSourceUtils.add_source_order_to_runtime_fields(config)
+
+        assert result == {}
+
+    def test_add_source_order_to_runtime_fields_with_source_order(self):
+        rel = MagicMock()
+        rel.source_order = ['source1', 'source2']
+        rel.object_type = 'sample'
+        rel.name = 'rel_name'
+        config = MagicMock()
+        config.data_source_config_relationships = [rel]
+
+        result = DataSourceUtils.add_source_order_to_runtime_fields(config)
+
+        expected_field = RuntimeFields.coalesce(
+            ['rel_name.id.provenance.source1.value', 'rel_name.id.provenance.source2.value']
+        )
+        assert result == {'sample': {'rel_name': expected_field}}

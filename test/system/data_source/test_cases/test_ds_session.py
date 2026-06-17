@@ -43,8 +43,8 @@ class TestDataSourceSession:
             )
 
             if data_source.write_mode['root'] == RelationWriteMode.SEPARATE:
-                sess.upsert('related', [rel])
-            sess.upsert('root', [root])
+                sess.upsert('related', [rel], provenance='source1')
+            sess.upsert('root', [root], provenance='source1')
 
             ds_sleep(2)
 
@@ -101,8 +101,8 @@ class TestDataSourceSession:
             )
 
             if data_source.write_mode['root'] == RelationWriteMode.SEPARATE:
-                sess1.upsert('related', [rel])
-            sess1.upsert('root', [root])
+                sess1.upsert('related', [rel], provenance='source1')
+            sess1.upsert('root', [root], provenance='source1')
 
         ds_sleep(2)
 
