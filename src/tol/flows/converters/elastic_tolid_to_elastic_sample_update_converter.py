@@ -28,20 +28,20 @@ class ElasticTolidToElasticSampleUpdateConverter(
         self._data_object_factory = data_object_factory
 
     def convert(self, data_object: DataObject) -> Iterable[DataObjectUpdate]:
-        if data_object.tolid_species is not None and data_object.tolid_specimen is not None:
-            species = data_object.to_one_relationships['tolid_species']
-            specimen = data_object.to_one_relationships['tolid_specimen']
+        if data_object.species is not None and data_object.specimen is not None:
+            species = data_object.to_one_relationships['species']
+            specimen = data_object.to_one_relationships['specimen']
             yield (
                 None,
                 {
-                    'tolid_tolid': self._data_object_factory(
+                    'tolid': self._data_object_factory(
                         'tolid',
                         data_object.id
                     ),
-                    'sts_species.id':
+                    'species.id':
                         data_object.requested_taxonomy_id
                         if data_object.requested_taxonomy_id is not None
                         else species.id,
-                    'sts_specimen.id': specimen.id
+                    'specimen.id': specimen.id
                 }
             )

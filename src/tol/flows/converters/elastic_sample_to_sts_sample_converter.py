@@ -37,8 +37,8 @@ class ElasticSampleToStsSampleConverter(
             data_object.id,
             attributes={
                 'public_name':
-                    data_object.tolid_tolid.id
-                    if data_object.tolid_tolid else None,
+                    data_object.tolid.id
+                    if data_object.tolid else None,
                 'eln_id': data_object.benchling_eln_tissue_id,
                 'ep_exported': True if data_object.benchling_eln_tissue_id else False,
                 'eln_updated_at': eln_updated_at,

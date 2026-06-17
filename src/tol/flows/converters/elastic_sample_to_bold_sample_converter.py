@@ -53,8 +53,8 @@ class ElasticSampleToBoldSampleConverter(
         attributes = {
             'bold_recordset_code_arr': project_code,
             'sampleid':
-                data_object.sts_specimen.id
-                if data_object.sts_specimen is not None else '',
+                data_object.specimen.id
+                if data_object.specimen is not None else '',
             'fieldid': '',
             'inst': 'Wellcome Sanger Institute',
             'phylum': 'Arthropoda',

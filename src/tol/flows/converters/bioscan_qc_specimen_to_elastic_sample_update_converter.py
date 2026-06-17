@@ -31,6 +31,6 @@ class BioscanQcSpecimenToElasticSampleUpdateConverter(
         if data_object is not None and data_object.id is not None:
 
             yield (None, {
-                'sts_specimen.id': data_object.id,
+                'specimen.id': data_object.id,
                 'sanger_qc_result': data_object.sanger_qc_result,
                 'sanger_qc_description': data_object.sanger_qc_description})

@@ -33,7 +33,7 @@ class _MockDataSource(DataSource, Relational):
     def relationship_config(self):
         rc_sample = RelationshipConfig()
         rc_sample.to_one = {
-            'sts_specimen': 'specimen'
+            'specimen': 'specimen'
         }
         return {'sample': rc_sample}
 
@@ -78,15 +78,15 @@ class TestElasticSampleToElasticSequencingRequestUpdateConverter(TestCase):
             type_='sample',
             attributes={},
             to_one={
-                'sts_specimen': specimen
+                'specimen': specimen
             }
         )
 
         converteds = converter.convert(obj1)
         id1, attributes1 = next(converteds)
         self.assertIsNone(id1)
-        self.assertEqual(attributes1.get('mlwh_sample').id, 'sample1')
-        self.assertEqual(attributes1.get('mlwh_specimen.id'), 'specimen1')
+        self.assertEqual(attributes1.get('sample').id, 'sample1')
+        self.assertEqual(attributes1.get('specimen.id'), 'specimen1')
 
         with self.assertRaises(StopIteration):
             next(converteds)
