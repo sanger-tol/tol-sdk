@@ -204,6 +204,108 @@ class TestRunningPipelinesWithDataSources:
 
         assert e.value.status_code == 400
 
+    def test_sync_upload_status__captures_prefect_failure_message(
+        self,
+        client: FlaskClient,
+        ctx: AuthContext,
+        sql_ds: SqlDataSource,
+        prefect_ds: PrefectDataSource,
+        role: str
+    ):
+        ctx.user_id = '1001'
+        ctx.roles = [role]
+
+        sql_ds.data_object_factory = self.__do_factory
+
+        upload = self.__mock_upload('123456')
+        upload.flow_run_id = 'run_123456'
+        sql_ds.get_list.return_value = [upload]
+
+        prefect_ds.get_flow_run.return_value = self.__do_factory(
+            type_='flow_run',
+            id_='run_123456',
+            attributes={
+                'state': 'Failed',
+                'state_message': (
+                    "Flow run encountered an exception. "
+                    "ValueError: Worksheet named 'Metadata Entry' not found"
+                )
+            },
+        )
+
+        response = client.post(
+            '/run-pipeline/sync-status',
+            json={
+                'data': {
+                    'upload_ids': ['123456']
+                }
+            }
+        )
+
+        assert response.status_code == 200
+        assert response.json == {
+            'success': True,
+            'upload_ids': ['123456']
+        }
+
+        sql_ds.upsert.assert_called_once()
+        upsert_args, _ = sql_ds.upsert.call_args
+        assert upsert_args[0] == 'upload'
+        synced_upload = upsert_args[1][0]
+        assert synced_upload.validation_status == 'validation_system_error'
+        assert synced_upload.failure_message == (
+            "Flow run encountered an exception. "
+            "ValueError: Worksheet named 'Metadata Entry' not found"
+        )
+        assert synced_upload.completed is True
+
+    def test_sync_upload_status__captures_timeout(
+        self,
+        client: FlaskClient,
+        ctx: AuthContext,
+        sql_ds: SqlDataSource,
+        prefect_ds: PrefectDataSource,
+        role: str
+    ):
+        ctx.user_id = '1001'
+        ctx.roles = [role]
+
+        sql_ds.data_object_factory = self.__do_factory
+
+        upload = self.__mock_upload('123456')
+        upload.flow_run_id = 'run_123456'
+        sql_ds.get_list.return_value = [upload]
+
+        prefect_ds.get_flow_run.return_value = self.__do_factory(
+            type_='flow_run',
+            id_='run_123456',
+            attributes={
+                'state': 'TimedOut',
+                'state_message': 'Flow run exceeded its timeout.'
+            },
+        )
+
+        response = client.post(
+            '/run-pipeline/sync-status',
+            json={
+                'data': {
+                    'upload_ids': ['123456']
+                }
+            }
+        )
+
+        assert response.status_code == 200
+        assert response.json == {
+            'success': True,
+            'upload_ids': ['123456']
+        }
+
+        sql_ds.upsert.assert_called_once()
+        upsert_args, _ = sql_ds.upsert.call_args
+        synced_upload = upsert_args[1][0]
+        assert synced_upload.validation_status == 'validation_timeout'
+        assert synced_upload.failure_message == 'Flow run exceeded its timeout.'
+
     def __do_factory(
         self,
         type_: str,
