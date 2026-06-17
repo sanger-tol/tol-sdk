@@ -28,8 +28,8 @@ class ElasticTolidToElasticCurationUpdateConverter(
         self._data_object_factory = data_object_factory
 
     def convert(self, data_object: DataObject) -> Iterable[DataObjectUpdate]:
-        if data_object is not None and data_object.tolid_species is not None:
+        if data_object is not None and data_object.species is not None:
             yield (None, {
-                'grit_tolid.id': data_object.id,
-                'species': {'id': data_object.tolid_species.id}
+                'tolid.id': data_object.id,
+                'species': {'id': data_object.species.id}
             })

@@ -48,7 +48,7 @@ class TestBioscanQcSpecimenToElasticSampleUpdateConverter(TestCase):
         converteds = converter.convert(obj1)
         ret1 = next(converteds)
         self.assertEqual(ret1, (None, {
-            'sts_specimen.id': 'SPECIMEN1',
+            'specimen.id': 'SPECIMEN1',
             'sanger_qc_result': '1',
             'sanger_qc_description': '2'
         }))

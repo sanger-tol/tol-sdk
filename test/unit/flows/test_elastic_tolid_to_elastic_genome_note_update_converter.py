@@ -33,7 +33,7 @@ class _MockDataSource(DataSource, Relational):
     def relationship_config(self):
         rc_tolid = RelationshipConfig()
         rc_tolid.to_one = {
-            'tolid_species': 'species'
+            'species': 'species'
         }
         return {'tolid': rc_tolid}
 
@@ -78,16 +78,16 @@ class TestElasticTolidToElasticGenomeNoteUpdateConverter(TestCase):
             type_='tolid',
             attributes={},
             to_one={
-                'tolid_species': species
+                'species': species
             }
         )
 
         converteds = converter.convert(obj1)
         id1, attributes1 = next(converteds)
         self.assertIsNone(id1)
-        print(attributes1)
-        assert attributes1['gn_tolid.id'] == 'tolid1'
-        assert attributes1['gn_species'].id == 'species1'
+
+        assert attributes1['tolid.id'] == 'tolid1'
+        assert attributes1['species'].id == 'species1'
 
         with self.assertRaises(StopIteration):
             next(converteds)

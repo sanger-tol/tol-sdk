@@ -32,7 +32,7 @@ class _MockDataSourceRelational(DataSource, Relational):
     def relationship_config(self):
         rc_tolid = RelationshipConfig()
         rc_tolid.to_one = {
-            'tolid_species': 'species'
+            'species': 'species'
         }
         return {'tolid': rc_tolid}
 
@@ -76,7 +76,7 @@ class TestElasticTolidToElasticSampleUpdateConverter(TestCase):
             id_='abCdeFghi1',
             type_='tolid',
             to_one={
-                'tolid_species': CoreDataObject('species', '1234')
+                'species': CoreDataObject('species', '1234')
             }
         )
 
@@ -84,20 +84,20 @@ class TestElasticTolidToElasticSampleUpdateConverter(TestCase):
             id_='cdEfgHilk1',
             type_='tolid',
             to_one={
-                'tolid_species': CoreDataObject('species', '5678')
+                'species': CoreDataObject('species', '5678')
             }
         )
 
         converteds = converter.convert(obj1)
         ret1 = next(converteds)
         self.assertEqual(ret1, (None, {
-            'grit_tolid.id': 'abCdeFghi1',
+            'tolid.id': 'abCdeFghi1',
             'species': {'id': '1234'},
         }))
 
         converteds = converter.convert(obj2)
         ret2 = next(converteds)
         self.assertEqual(ret2, (None, {
-            'grit_tolid.id': 'cdEfgHilk1',
+            'tolid.id': 'cdEfgHilk1',
             'species': {'id': '5678'},
         }))

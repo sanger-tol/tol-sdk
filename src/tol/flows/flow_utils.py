@@ -228,7 +228,7 @@ class FlowUtils:
 
     @staticmethod
     def _tolid_id_field(object_type: str) -> str:
-        return {'tolid': 'id', 'sample': 'sts_tolid.id'}.get(object_type, 'benchling_tolid.id')
+        return {'tolid': 'id', 'sample': 'tolid.id'}.get(object_type, 'tolid.id')
 
     @classmethod
     def record_tolid_events(
