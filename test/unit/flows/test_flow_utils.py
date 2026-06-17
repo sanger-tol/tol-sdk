@@ -455,7 +455,7 @@ class TestFlowUtilsRecordEvents:
             source_object_type='sample',
             destination_object_type='sample_event',
             fields={'date_abandoned': '2026-01-01'},
-            id_field='sts_tolid.id',
+            id_field='tolid.id',
             incremental=True,
         )
 
@@ -463,7 +463,7 @@ class TestFlowUtilsRecordEvents:
         converter = kwargs['converter']
         assert isinstance(converter, ElasticObjectToPortaldbObjectConverter)
         assert converter.config.destination_object_type == 'sample_event'
-        assert converter.config.id_field == 'sts_tolid.id'
+        assert converter.config.id_field == 'tolid.id'
         assert converter.config.incremental is True
         assert converter.config.fields == {'date_abandoned': '2026-01-01'}
 
@@ -525,10 +525,10 @@ class TestFlowUtilsTolIdIdField:
         assert FlowUtils._tolid_id_field('tolid') == 'id'
 
     def test_sample_returns_sts_tolid_id(self):
-        assert FlowUtils._tolid_id_field('sample') == 'sts_tolid.id'
+        assert FlowUtils._tolid_id_field('sample') == 'tolid.id'
 
     def test_other_returns_benchling_tolid_id(self):
-        assert FlowUtils._tolid_id_field('extraction') == 'benchling_tolid.id'
+        assert FlowUtils._tolid_id_field('extraction') == 'tolid.id'
 
 
 class TestFlowUtilsRecordTolIdEvents:
@@ -600,7 +600,7 @@ class TestFlowUtilsRecordTolIdEvents:
         )
 
         _, kwargs = mock_record_events.call_args
-        assert kwargs['id_field'] == 'sts_tolid.id'
+        assert kwargs['id_field'] == 'tolid.id'
 
 
 class TestFlowUtilsRecordActionedEvents:
@@ -723,7 +723,7 @@ class TestFlowUtilsRecordReviewEvents:
         )
 
         _, kwargs = mock_record_events.call_args
-        assert kwargs['id_field'] == 'benchling_tolid.id'
+        assert kwargs['id_field'] == 'tolid.id'
 
     def test_in_review_defaults_to_true(
         self, mock_record_events, mock_eds, mock_portaldb_ds
