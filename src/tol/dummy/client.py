@@ -35,7 +35,7 @@ class DummyClient(HttpClient):
         self,
         object_type: str
     ) -> Optional[DummyTransfer]:
-        if object_type in ['category', 'sub_category']:
+        if object_type == 'category':
             return self.__get_detail_data(object_type, self._CATEGORY_IDS)
         return self.__get_detail_data(object_type, range(20000))
 
@@ -44,7 +44,7 @@ class DummyClient(HttpClient):
         object_type: str,
         object_ids: Iterable[str]
     ) -> Optional[DummyTransfer]:
-        if object_type in ['category', 'sub_category']:
+        if object_type == 'category':
             return self.__get_detail_category(object_type, object_ids)
         return self.__get_detail_record(object_type, object_ids)
 

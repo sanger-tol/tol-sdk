@@ -93,9 +93,6 @@ class TestDummyConverter:
             'category': {
                 'name': 'str',
             },
-            'sub_category': {
-                'name': 'str',
-            },
         }))
         converter = DummyConverter(parser)
         (out_, _) = converter.convert_list(in_)
@@ -122,5 +119,5 @@ class TestDummyConverter:
         assert first.to_one['category'].type == 'category'
         assert first.to_one['category'].id == 'cat1'
 
-        assert first.to_one['sub_category'].type == 'sub_category'
+        assert first.to_one['sub_category'].type == 'category'
         assert first.to_one['sub_category'].id == 'cat4'

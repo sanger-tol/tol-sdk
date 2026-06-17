@@ -105,15 +105,3 @@ class TestDummyClient:
             {'id': 'cat3', 'name': 'CAT3', 'type': 'category'},
             {'id': 'cat4', 'name': 'CAT4', 'type': 'category'},
         ]
-
-    def test_get_list_sub_category(self):
-        client = DummyClient()
-
-        observed = client.get_list('sub_category')
-
-        assert observed == [
-            {'id': 'cat1', 'name': 'CAT1', 'type': 'sub_category'},
-            {'id': 'cat2', 'name': 'CAT2', 'type': 'sub_category'},
-            {'id': 'cat3', 'name': 'CAT3', 'type': 'sub_category'},
-            {'id': 'cat4', 'name': 'CAT4', 'type': 'sub_category'},
-        ]

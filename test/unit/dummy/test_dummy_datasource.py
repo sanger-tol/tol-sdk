@@ -110,7 +110,7 @@ class TestDummyDataSource:
         `DummyDataSource().supported_types` calls
         `config_attribute_types()` on client
         """
-        expected = ['record', 'category', 'sub_category']
+        expected = ['record', 'category']
 
         ds = DummyDataSource(
             None,

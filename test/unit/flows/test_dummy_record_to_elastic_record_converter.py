@@ -22,7 +22,7 @@ class _MockDataSourceRelational(DataSource, Relational):
 
     @property
     def supported_types(self):
-        return ['record', 'category', 'sub_category']
+        return ['record', 'category']
 
     @property
     def attribute_types(self):
@@ -33,7 +33,7 @@ class _MockDataSourceRelational(DataSource, Relational):
         rc_record = RelationshipConfig()
         rc_record.to_one = {
             'category': 'category',
-            'sub_category': 'sub_category',
+            'sub_category': 'category',
         }
         return {'record': rc_record}
 
@@ -64,7 +64,7 @@ class TestDummyRecordToElasticRecordConverter(TestCase):
             id_='cat2'
         )
         sub_category = source.data_object_factory(
-            type_='sub_category',
+            type_='category',
             id_='cat1'
         )
 

@@ -29,7 +29,6 @@ class DummyRecordToElasticRecordConverter(
     def convert(self, data_object: DataObject) -> Iterable[DataObject]:
         if data_object.id is None:
             return
-        # Safely access to-one relationships without triggering lazy fetches
         to_cat = data_object.to_one_relationships.get('category')
         to_sub = data_object.to_one_relationships.get('sub_category')
 
@@ -39,7 +38,7 @@ class DummyRecordToElasticRecordConverter(
                 if to_cat is not None and to_cat.id is not None else None
             ),
             'sub_category': (
-                self._data_object_factory(type_='sub_category', id_=to_sub.id)
+                self._data_object_factory(type_='category', id_=to_sub.id)
                 if to_sub is not None and to_sub.id is not None else None
             ),
         }
