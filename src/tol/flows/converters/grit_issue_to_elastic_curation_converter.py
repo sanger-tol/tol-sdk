@@ -119,6 +119,7 @@ class GritIssueToElasticCurationConverter(
         """
         if data:
             att_search = re.search(rf'{att}\s*([0-9]\w*)\s*([0-9]\w*)', data)
+            assert att_search is not None
             att_before = int(att_search.group(1))
             att_after = int(att_search.group(2))
             att_change_per = (att_after - att_before) / att_before * 100
