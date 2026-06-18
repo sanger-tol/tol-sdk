@@ -161,7 +161,7 @@ class GritIssueToElasticCurationConverter(
         else:
             return {}
 
-    def __get_contamination_data(self, contamination_attribute: str) -> dict:
+    def __get_contamination_data(self, contamination_attribute: str) -> dict[str, str | bool]:
         """
         Function to parse the fields
         `total_removed`, `total_removed_percent`, `count_removed`, `count_removed_percent`,
