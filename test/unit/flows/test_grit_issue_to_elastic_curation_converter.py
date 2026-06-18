@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: MIT
 
 from datetime import datetime
-from unittest import (TestCase)
+import pytest
 
 from tol.core import (
     DataObject,
@@ -86,7 +86,7 @@ class _MockDataSourceRelational2(DataSource, Relational):
         raise NotImplementedError()
 
 
-class TestGritIssueToElasticCurationConverter(TestCase):
+class TestGritIssueToElasticCurationConverter:
     def test_convert(self):
 
         source = _MockDataSourceRelational(config={})
@@ -140,9 +140,9 @@ class TestGritIssueToElasticCurationConverter(TestCase):
         )
         converteds = converter.convert(issue)
         ret1 = next(converteds)
-        self.assertEqual('KEY-123', ret1.id)
-        self.assertEqual('curation', ret1.type)
-        self.assertEqual(ret1.attributes, {
+        assert ret1.id == 'KEY-123'
+        assert ret1.type == 'curation'
+        assert ret1.attributes == {
             'assembled_by': 'ToL',
             'created': datetime(2020, 2, 2),
             'mid_range_date': datetime(2020, 2, 3),
@@ -187,13 +187,13 @@ class TestGritIssueToElasticCurationConverter(TestCase):
             'ass_percent': '99.97',
             'assignee_name': 'test',
             'sample_id': 'abCdeFghi1-something',
-        })
-        self.assertEqual(ret1.tolid.id, 'abCdeFghi1')
+        }
+        assert ret1.tolid.id == 'abCdeFghi1'
 
-        with self.assertRaises(StopIteration):
+        with pytest.raises(StopIteration):
             next(converteds)
 
         issue.assembled_by = 'Someone Else'
         converteds = converter.convert(issue)
-        with self.assertRaises(StopIteration):
+        with pytest.raises(StopIteration):
             next(converteds)
