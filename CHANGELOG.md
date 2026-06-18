@@ -6,6 +6,10 @@ SPDX-License-Identifier: MIT
 
 # Changelog
 
+## tol-sdk `2.2.2`
+09-06-2026
+- Bug fixes for the SGP STS -> Benchling flow converter
+
 ## tol-sdk `2.2.1`
 09-06-2026
 - Added ElasticSampleToElasticExtractionContainerUpdateConverter
