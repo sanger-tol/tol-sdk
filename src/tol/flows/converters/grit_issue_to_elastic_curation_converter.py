@@ -23,6 +23,9 @@ class GritIssueToElasticCurationConverter(
     __slots__ = ['_data_object_factory']
     _data_object_factory: DataObjectFactory
 
+    ATTRIBUTES_PARSED_SEPARATELY = ('assembly_statistics', 'chromosome_result', 'status_changes')
+    ATTRIBUTES_IGNORED = ('description', 'tolid', 'linked_issues')
+
     def __init__(self, data_object_factory: DataObjectFactory, config: Config) -> None:
         super().__init__(data_object_factory)
         self._data_object_factory = data_object_factory
@@ -37,21 +40,28 @@ class GritIssueToElasticCurationConverter(
             'ToL',
             'Lawniczak'
         ):
+            # Parse the fields in ATTRIBUTES_PARSED_SEPARATELY
             assembly_stats = self.__get_assembly_stats(
                 data_object.attributes.get('assembly_statistics')
             )
             chr_data = self.__get_chr_data(data_object.attributes.get('chromosome_result'))
             assert data_object.status_changes is not None
-            attributes = {
-                k: v for k, v in data_object.attributes.items()
-                if k not in ['assembly_statistics', 'chromosome_result', 'description',
-                             'tolid', 'status_changes', 'linked_issues']
-            } | {
+            status_changes = {
                 self.__sanitise_attribute_name(sc['next_status']) + '_date': sc['end_date']
                 for sc in data_object.status_changes
-            } | {
-                'assignee_name': data_object.assignee.name if data_object.assignee else None,
-            } | assembly_stats | chr_data
+            }
+            optional_attributes = {
+                'assignee_name': data_object.assignee.name if data_object.assignee else None
+            }
+
+            # The rest of the attributes are just copied across from the input data object
+            unchanged_attributes = {
+                key: value for key, value in data_object.attributes.items()
+                if key not in self.ATTRIBUTES_PARSED_SEPARATELY + self.ATTRIBUTES_IGNORED
+            }
+
+            # Combine all of these to form the attributes dict
+            attributes = assembly_stats | chr_data | status_changes | optional_attributes | unchanged_attributes
 
             to_one_relations = {
                 'tolid': self._data_object_factory(
