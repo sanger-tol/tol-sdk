@@ -3,8 +3,8 @@
 # SPDX-License-Identifier: MIT
 
 import re
+from collections.abc import Iterable
 from dataclasses import dataclass
-from typing import Iterable, Literal
 
 from ...core import (
     DataObject,
