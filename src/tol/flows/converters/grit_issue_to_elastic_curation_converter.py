@@ -161,27 +161,40 @@ class GritIssueToElasticCurationConverter(
         else:
             return {}
 
-    def __get_contamination_data(self, contamination_attribute: str) -> dict[str, str | bool]:
+    def __get_contamination_data(
+        self, contamination_attribute: str
+    ) -> dict[str, str | None | bool]:
         """
         Function to parse the fields
         `total_removed`, `total_removed_percent`, `count_removed`, `count_removed_percent`,
         `largest_removed` and `is_abnormal`
         from the `contamination` attribute of the input data object (which is a big block of text)
         """
-        regex_pattern = (
-            r'Contamination report for assembly labelled (?P<run>hap1|primary)\n'
-            r'Total length of scaffolds removed: (?P<lr>[0-9,]+) \((?P<lr_pc>[0-9\.]+) %\)\n'
-            r'Scaffolds removed: (?P<sr>[0-9,]+) \((?P<sr_pc>[0-9\.]+) %\)\n'
-            r'Largest scaffold removed: \((?P<lsr>[0-9,]+)\)'
+        def __get_group(match: re.Match | None, group: int) -> str | None:
+            """
+            Shortcut function to extract the contents of a capturing group from a regex match,
+            or None if no matches were found
+            """
+            return match.group(group) if match is not None else None
+
+        match_total_removed = re.search(
+            r'Total length of scaffolds removed: ([0-9,]+) \(([0-9\.]+) %\)',
+            contamination_attribute
+        )
+        match_count_removed = re.search(
+            r'Scaffolds removed: ([0-9,]+) \(([0-9\.]+) %\)',
+            contamination_attribute
+        )
+        match_largest_removed = re.search(
+            r'Largest scaffold removed: \(([0-9,]+)\)',
+            contamination_attribute
         )
 
-        match = re.search(regex_pattern, contamination_attribute)
-        assert match is not None
         return {
-            'contamination_total_removed': match.group('lr'),
-            'contamination_total_removed_percent': match.group('lr_pc'),
-            'contamination_count_removed': match.group('sr'),
-            'contamination_count_removed_percent': match.group('sr_pc'),
-            'contamination_largest_removed': match.group('lsr'),
+            'contamination_total_removed': __get_group(match_total_removed, 1),
+            'contamination_total_removed_percent': __get_group(match_total_removed, 2),
+            'contamination_count_removed': __get_group(match_count_removed, 1),
+            'contamination_count_removed_percent': __get_group(match_count_removed, 2),
+            'contamination_largest_removed': __get_group(match_largest_removed, 1),
             'contamination_is_abnormal': 'Abnormal contamination report' in contamination_attribute
         }
