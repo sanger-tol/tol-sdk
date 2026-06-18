@@ -23,7 +23,10 @@ class GritIssueToElasticCurationConverter(
     __slots__ = ['_data_object_factory']
     _data_object_factory: DataObjectFactory
 
-    ATTRIBUTES_PARSED_SEPARATELY = ('assembly_statistics', 'chromosome_result', 'treeval_data', 'status_changes')
+    ATTRIBUTES_PARSED_SEPARATELY = (
+        'assembly_statistics', 'chromosome_result', 'treeval_data',
+        'contamination_data', 'status_changes'
+    )
     ATTRIBUTES_IGNORED = ('description', 'tolid', 'linked_issues')
 
     def __init__(self, data_object_factory: DataObjectFactory, config: Config) -> None:
@@ -53,6 +56,9 @@ class GritIssueToElasticCurationConverter(
                 for key, value in data_object.treeval_data
             }
 
+            assert data_object.contamination is not None
+            contamination_data = self.__get_contamination_data(data_object.contamination)
+
             assert data_object.status_changes is not None
             status_changes = {
                 self.__sanitise_attribute_name(sc['next_status']) + '_date': sc['end_date']
@@ -71,7 +77,7 @@ class GritIssueToElasticCurationConverter(
 
             # Combine all of these to form the attributes dict
             attributes = (
-                assembly_stats | chr_data | treeval_data |
+                assembly_stats | chr_data | treeval_data | contamination_data |
                 status_changes | optional_attributes | unchanged_attributes
             )
 
@@ -151,3 +157,28 @@ class GritIssueToElasticCurationConverter(
             }
         else:
             return {}
+    
+    def __get_contamination_data(self, contamination_attribute: str) -> dict:
+        """
+        Function to parse the fields
+        `total_removed`, `total_removed_percent`, `count_removed`, `count_removed_percent`,
+        `largest_removed` and `is_abnormal`
+        from the `contamination` attribute of the input data object (which is a big block of text)
+        """
+        regex_pattern = (
+            r'Contamination report for assembly labelled (?P<run>hap1|primary)\n'
+            r'Total length of scaffolds removed: (?P<lr>[0-9,]+) \((?P<lr_pc>[0-9\.]+) %\)\n'
+            r'Scaffolds removed: (?P<sr>[0-9,]+) \((?P<sr_pc>[0-9\.]+) %\)\n'
+            r'Largest scaffold removed: \((?P<lsr>[0-9,]+)\)'
+        )
+
+        match = re.search(regex_pattern, contamination_attribute)
+        assert match is not None
+        return {
+            'contamination_total_removed': match.group('lr'),
+            'contamination_total_removed_percent': match.group('lr_pc'),
+            'contamination_count_removed': match.group('sr'),
+            'contamination_count_removed_percent': match.group('sr_pc'),
+            'contamination_largest_removed': match.group('lsr'),
+            'contamination_is_abnormal': 'Abnormal contamination report' in contamination_attribute
+        }
