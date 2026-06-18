@@ -23,7 +23,7 @@ class GritIssueToElasticCurationConverter(
     __slots__ = ['_data_object_factory']
     _data_object_factory: DataObjectFactory
 
-    ATTRIBUTES_PARSED_SEPARATELY = ('assembly_statistics', 'chromosome_result', 'status_changes')
+    ATTRIBUTES_PARSED_SEPARATELY = ('assembly_statistics', 'chromosome_result', 'treeval_data', 'status_changes')
     ATTRIBUTES_IGNORED = ('description', 'tolid', 'linked_issues')
 
     def __init__(self, data_object_factory: DataObjectFactory, config: Config) -> None:
@@ -44,12 +44,21 @@ class GritIssueToElasticCurationConverter(
             assembly_stats = self.__get_assembly_stats(
                 data_object.attributes.get('assembly_statistics')
             )
+            
             chr_data = self.__get_chr_data(data_object.attributes.get('chromosome_result'))
+            
+            assert data_object.treeval_data is not None
+            treeval_data = {
+                f'treeval_${key}': value
+                for key, value in data_object.treeval_data
+            }
+
             assert data_object.status_changes is not None
             status_changes = {
                 self.__sanitise_attribute_name(sc['next_status']) + '_date': sc['end_date']
                 for sc in data_object.status_changes
             }
+            
             optional_attributes = {
                 'assignee_name': data_object.assignee.name if data_object.assignee else None
             }
@@ -61,7 +70,10 @@ class GritIssueToElasticCurationConverter(
             }
 
             # Combine all of these to form the attributes dict
-            attributes = assembly_stats | chr_data | status_changes | optional_attributes | unchanged_attributes
+            attributes = (
+                assembly_stats | chr_data | treeval_data |
+                status_changes | optional_attributes | unchanged_attributes
+            )
 
             to_one_relations = {
                 'tolid': self._data_object_factory(
