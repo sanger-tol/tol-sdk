@@ -110,101 +110,102 @@ def save_board_entity_and_children(
 
     # Build old -> new ID mapping for all non-joiner types
     id_mapping: dict[str, str] = {}
-    for entity_type, objs in entities.items():
-        if entity_type in TYPE_HIERARCHY:
-            for obj in objs:
-                if obj.id is None:
-                    continue
-                id_mapping[obj.id] = generate_entity_id(entity_type)
+    with board_ds.get_session() as session:
+        for entity_type, objs in entities.items():
+            if entity_type in TYPE_HIERARCHY:
+                for obj in objs:
+                    if obj.id is None:
+                        continue
+                    id_mapping[obj.id] = generate_entity_id(entity_type)
 
-    for entity_type in TYPE_HIERARCHY:
-        for obj in entities.get(entity_type, []):
-            if obj.id is None or obj.id not in id_mapping:
-                continue
-            original_user = obj.to_one_relationships.get('user')
-            user_stub = board_ds.data_object_factory(
-                type_=original_user.type if original_user else 'user',
-                id_=user_id,
-            )
-            to_one = {
-                rel_name: (user_stub if rel_name == 'user' else rel_obj)
-                for rel_name, rel_obj in obj.to_one_relationships.items()
-            }
-            new_obj = board_ds.data_object_factory(
-                type_=entity_type,
-                id_=id_mapping[obj.id],
-                attributes={
-                    **obj.attributes, 'title': new_parent_title}
-                if entity_type == root_parent_type else obj.attributes,
-                to_one=to_one,
-            )
-            board_ds.insert(entity_type, [new_obj])
-
-    for entity_type, objs in entities.items():
-        if entity_type not in TYPE_HIERARCHY:
-            parent_t = next(t for t in TYPE_HIERARCHY if entity_type.endswith(f'_{t}'))
-            child_t = entity_type[: -(len(parent_t) + 1)]
-            for obj in objs:
-                child_obj = getattr(obj, child_t)
-                parent_obj = getattr(obj, parent_t)
-                if child_obj.id is None or parent_obj.id is None:
+        for entity_type in TYPE_HIERARCHY:
+            for obj in entities.get(entity_type, []):
+                if obj.id is None or obj.id not in id_mapping:
                     continue
-                if child_obj.id not in id_mapping or parent_obj.id not in id_mapping:
-                    continue
-                new_obj = board_ds.data_object_factory(
-                    type_=entity_type,
-                    attributes={'order': obj.order},
-                    to_one={
-                        child_t: board_ds.data_object_factory(
-                            type_=child_t,
-                            id_=id_mapping[child_obj.id],
-                        ),
-                        parent_t: board_ds.data_object_factory(
-                            type_=parent_t,
-                            id_=id_mapping[parent_obj.id],
-                        ),
-                    },
+                original_user = obj.to_one_relationships.get('user')
+                user_stub = session.data_object_factory(
+                    type_=original_user.type if original_user else 'user',
+                    id_=user_id,
                 )
-                board_ds.insert(entity_type, [new_obj])
+                to_one = {
+                    rel_name: (user_stub if rel_name == 'user' else rel_obj)
+                    for rel_name, rel_obj in obj.to_one_relationships.items()
+                }
+                new_obj = session.data_object_factory(
+                    type_=entity_type,
+                    id_=id_mapping[obj.id],
+                    attributes={
+                        **obj.attributes, 'title': new_parent_title}
+                    if entity_type == root_parent_type else obj.attributes,
+                    to_one=to_one,
+                )
+                session.insert(entity_type, [new_obj])
 
-    root_objects = entities.get(object_type, [])
-    root_source_id = next(
-        (obj.id for obj in root_objects if obj.id is not None and obj.id in id_mapping),
-        None,
-    )
-    if root_source_id is None:
-        raise ValueError(f'No valid root object found for {object_type}')
+        for entity_type, objs in entities.items():
+            if entity_type not in TYPE_HIERARCHY:
+                parent_t = next(t for t in TYPE_HIERARCHY if entity_type.endswith(f'_{t}'))
+                child_t = entity_type[: -(len(parent_t) + 1)]
+                for obj in objs:
+                    child_obj = getattr(obj, child_t)
+                    parent_obj = getattr(obj, parent_t)
+                    if child_obj.id is None or parent_obj.id is None:
+                        continue
+                    if child_obj.id not in id_mapping or parent_obj.id not in id_mapping:
+                        continue
+                    new_obj = session.data_object_factory(
+                        type_=entity_type,
+                        attributes={'order': obj.order},
+                        to_one={
+                            child_t: session.data_object_factory(
+                                type_=child_t,
+                                id_=id_mapping[child_obj.id],
+                            ),
+                            parent_t: session.data_object_factory(
+                                type_=parent_t,
+                                id_=id_mapping[parent_obj.id],
+                            ),
+                        },
+                    )
+                    session.insert(entity_type, [new_obj])
 
-    if parent_id is not None:
-        joiner_type = f'{object_type}_{parent_type}'
-        num_parent_joins = board_ds.get_count(
-            joiner_type,
-            object_filters=DataSourceFilter(
-                and_={
-                    f'{parent_type}.id': {
-                        'eq': {
-                            'value': parent_id
+        root_objects = entities.get(object_type, [])
+        root_source_id = next(
+            (obj.id for obj in root_objects if obj.id is not None and obj.id in id_mapping),
+            None,
+        )
+        if root_source_id is None:
+            raise ValueError(f'No valid root object found for {object_type}')
+
+        if parent_id is not None:
+            joiner_type = f'{object_type}_{parent_type}'
+            num_parent_joins = board_ds.get_count(
+                joiner_type,
+                object_filters=DataSourceFilter(
+                    and_={
+                        f'{parent_type}.id': {
+                            'eq': {
+                                'value': parent_id
+                            }
                         }
                     }
-                }
+                )
             )
-        )
-        new_root_id = id_mapping[root_source_id]
-        joiner_obj = board_ds.data_object_factory(
-            type_=joiner_type,
-            attributes={'order': num_parent_joins + 1},
-            to_one={
-                object_type: board_ds.data_object_factory(
-                    type_=object_type,
-                    id_=new_root_id,
-                ),
-                parent_type: board_ds.data_object_factory(
-                    type_=parent_type,
-                    id_=parent_id,
-                ),
-            },
-        )
-        board_ds.insert(joiner_type, [joiner_obj])
+            new_root_id = id_mapping[root_source_id]
+            joiner_obj = session.data_object_factory(
+                type_=joiner_type,
+                attributes={'order': num_parent_joins + 1},
+                to_one={
+                    object_type: session.data_object_factory(
+                        type_=object_type,
+                        id_=new_root_id,
+                    ),
+                    parent_type: session.data_object_factory(
+                        type_=parent_type,
+                        id_=parent_id,
+                    ),
+                },
+            )
+            session.insert(joiner_type, [joiner_obj])
 
     return id_mapping[root_source_id], id_mapping
 

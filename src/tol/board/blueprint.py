@@ -16,6 +16,7 @@ from .delete import delete_entity
 from .get import get_entity
 from .reorder import reorder_entities
 from .utils import check_auth_and_required_fields, get_entity_and_child_type_from_parent_id
+from ..api_base.auth.error import ForbiddenError
 from ..api_base.misc import CtxGetter, default_ctx_getter
 from ..core import DataSourceError
 
@@ -50,6 +51,9 @@ def board_blueprint(
 
         payload = request.json or {}
         ctx = ctx_getter()
+
+        if len(ctx.roles) == 0:
+            raise ForbiddenError()
 
         entity_type, _ = get_entity_and_child_type_from_parent_id(object_id)
         entity = board_ds.get_one(entity_type, object_id)

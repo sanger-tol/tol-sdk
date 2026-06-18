@@ -28,6 +28,11 @@ def board_ds(
         t: {} for t in TYPE_HIERARCHY
     }
 
+    # get_session() is used as a context manager; yield the same mock so
+    # session.insert / session.data_object_factory are recorded on mock_ds.
+    mock_ds.get_session.return_value.__enter__.return_value = mock_ds
+    mock_ds.get_session.return_value.__exit__.return_value = False
+
     return mock_ds
 
 

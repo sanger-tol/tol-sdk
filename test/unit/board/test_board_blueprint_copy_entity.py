@@ -53,6 +53,7 @@ class TestBoardBlueprintCopyEntity:
         """
 
         board_auth_ctx.user_id = '100'
+        board_auth_ctx.roles = ['tol']
 
         view = mock_board_obj('view', 'v_orig', attributes={'title': 'My View'}, user_id='100')
         board_ds.get_one.return_value = view
@@ -88,6 +89,7 @@ class TestBoardBlueprintCopyEntity:
         """
 
         board_auth_ctx.user_id = '100'
+        board_auth_ctx.roles = ['tol']
 
         board_ds.get_one.return_value = None
 
@@ -113,6 +115,7 @@ class TestBoardBlueprintCopyEntity:
         """
 
         board_auth_ctx.user_id = '100'
+        board_auth_ctx.roles = ['tol']
 
         hierarchy = {
             'zone': {},
@@ -167,6 +170,7 @@ class TestBoardBlueprintCopyEntity:
         """
 
         board_auth_ctx.user_id = '100'
+        board_auth_ctx.roles = ['tol']
 
         hierarchy = {
             'component': {},
@@ -231,6 +235,23 @@ class TestBoardBlueprintCopyEntity:
         """
 
         board_auth_ctx.user_id = '100'
+
+        with pytest.raises(ForbiddenError) as exc:
+            board_client.post('/copy/v_orig', json={'new_parent_entity_title': 'X'})
+
+        assert exc.value.status_code == 403
+
+    def test_copy_entity_no_roles__403(
+        self,
+        board_auth_ctx: AuthContext,
+        board_client: FlaskClient,
+    ) -> None:
+        """
+        POST copy without sufficient permissions -> 403 Forbidden.
+        """
+
+        board_auth_ctx.user_id = '100'
+        board_auth_ctx.roles = []
 
         with pytest.raises(ForbiddenError) as exc:
             board_client.post('/copy/v_orig', json={'new_parent_entity_title': 'X'})

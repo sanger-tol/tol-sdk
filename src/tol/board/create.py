@@ -102,29 +102,30 @@ def add_entity(
     if child_type == 'view':
         attributes['title'] = f'{child_type.capitalize()} {next_title_increment}'
 
-    new_entity = board_ds.data_object_factory(
-        type_=child_type,
-        id_=new_child_id,
-        attributes=attributes,
-        to_one={'user': user_stub},
-    )
-    board_ds.insert(child_type, [new_entity])
+    with board_ds.get_session() as session:
+        new_entity = session.data_object_factory(
+            type_=child_type,
+            id_=new_child_id,
+            attributes=attributes,
+            to_one={'user': user_stub},
+        )
+        session.insert(child_type, [new_entity])
 
-    join_obj = board_ds.data_object_factory(
-        type_=joiner_type,
-        attributes={'order': next_order},
-        to_one={
-            child_type: board_ds.data_object_factory(
-                type_=child_type,
-                id_=new_child_id,
-            ),
-            parent_type: board_ds.data_object_factory(
-                type_=parent_type,
-                id_=parent_id,
-            ),
-        },
-    )
-    board_ds.insert(joiner_type, [join_obj])
+        join_obj = session.data_object_factory(
+            type_=joiner_type,
+            attributes={'order': next_order},
+            to_one={
+                child_type: session.data_object_factory(
+                    type_=child_type,
+                    id_=new_child_id,
+                ),
+                parent_type: session.data_object_factory(
+                    type_=parent_type,
+                    id_=parent_id,
+                ),
+            },
+        )
+        session.insert(joiner_type, [join_obj])
 
     serialised_entity = serialise_board_entities(
         {child_type: [new_entity]},
@@ -173,67 +174,69 @@ def create_board(
 
     board_id = generate_entity_id(board_type)
 
-    user_stub = board_ds.data_object_factory(
-        type_='user',
-        id_=user_id,
-    )
+    with board_ds.get_session() as session:
 
-    user_obj = board_ds.get_one('user', user_id) or user_stub
+        user_stub = session.data_object_factory(
+            type_='user',
+            id_=user_id,
+        )
 
-    board_obj = board_ds.data_object_factory(
-        type_=board_type,
-        id_=board_id,
-        attributes={
-            'title': 'Untitled board',
+        user_obj = session.get_one('user', user_id) or user_stub
+
+        board_obj = session.data_object_factory(
+            type_=board_type,
+            id_=board_id,
+            attributes={
+                'title': 'Untitled board',
+                'filter': {},
+            },
+            to_one={'user': user_obj},
+        )
+        session.insert(board_type, [board_obj])
+
+        view_attributes = {
+            'title': 'View 1',
             'filter': {},
-        },
-        to_one={'user': user_obj},
-    )
-    board_ds.insert(board_type, [board_obj])
+        }
 
-    view_attributes = {
-        'title': 'View 1',
-        'filter': {},
-    }
+        view_id = generate_entity_id(view_type)
 
-    view_id = generate_entity_id(view_type)
+        view_obj = session.data_object_factory(
+            type_=view_type,
+            id_=view_id,
+            attributes=view_attributes,
+            to_one={'user': user_stub},
+        )
+        session.insert(view_type, [view_obj])
 
-    view_obj = board_ds.data_object_factory(
-        type_=view_type,
-        id_=view_id,
-        attributes=view_attributes,
-        to_one={'user': user_stub},
-    )
-    board_ds.insert(view_type, [view_obj])
-
-    joiner_type = f'{view_type}_{board_type}'
-    joins_filter = DataSourceFilter(
-        and_={
-            f'{board_type}.id': {
-                'eq': {
-                    'value': board_id,
+        joiner_type = f'{view_type}_{board_type}'
+        joins_filter = DataSourceFilter(
+            and_={
+                f'{board_type}.id': {
+                    'eq': {
+                        'value': board_id,
+                    }
                 }
             }
-        }
-    )
-    existing_joins = list(board_ds.get_list(joiner_type, object_filters=joins_filter))
-    next_order = max((getattr(join, 'order', 0) for join in existing_joins), default=0) + 1
+        )
+        existing_joins = list(session.get_list(joiner_type, object_filters=joins_filter))
+        next_order = max((getattr(join, 'order', 0) for join in existing_joins), default=0) + 1
 
-    view_board_obj = board_ds.data_object_factory(
-        type_=joiner_type,
-        attributes={'order': next_order},
-        to_one={
-            view_type: board_ds.data_object_factory(
-                type_=view_type,
-                id_=view_id,
-            ),
-            board_type: board_ds.data_object_factory(
-                type_=board_type,
-                id_=board_id,
-            ),
-        },
-    )
-    board_ds.insert(joiner_type, [view_board_obj])
+        view_board_obj = session.data_object_factory(
+            type_=joiner_type,
+            attributes={'order': next_order},
+            to_one={
+                view_type: session.data_object_factory(
+                    type_=view_type,
+                    id_=view_id,
+                ),
+                board_type: session.data_object_factory(
+                    type_=board_type,
+                    id_=board_id,
+                ),
+            },
+        )
+        session.insert(joiner_type, [view_board_obj])
 
     entities = {
         board_type: [board_obj],
