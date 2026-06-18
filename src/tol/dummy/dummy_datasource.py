@@ -59,10 +59,18 @@ class DummyDataSource(
                 'bool': 'bool',
                 'date': 'datetime',
                 'int': 'int',
-                'list': 'list[str]'
+                'list': 'list[str]',
+                'dict': 'dict[str,str]',
+                'link': 'str',
+                'links': 'list[str]',
+                'image': 'dict[str,str]',
+                'images': 'list[dict[str,str]]',
             },
             'category': {
                 'name': 'str'
+            },
+            'sub_category': {
+                'name': 'str',
             }
         }
 

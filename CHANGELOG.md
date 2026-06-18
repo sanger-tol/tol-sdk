@@ -6,6 +6,27 @@ SPDX-License-Identifier: MIT
 
 # Changelog
 
+## tol-sdk `2.2.2`
+09-06-2026
+- Bug fixes for the SGP STS -> Benchling flow converter
+
+## tol-sdk `2.2.1`
+09-06-2026
+- Added ElasticSampleToElasticExtractionContainerUpdateConverter
+
+## tol-sdk `2.2.0`
+04-06-2026
+- Reorganised action folder to avoid import dependencies
+- Use tolid field rather than sample_id in GRIT issue converter
+
+## tol-sdk `2.1.12`
+28-05-2026
+- Added all TUM functionality (used to be in a standalone flow)
+
+## tol-sdk `2.1.11`
+26-05-2026
+- Updated SGP STS -> Benchling flow converter to handle the new SGP data structure
+
 ## tol-sdk `2.1.10`
 18-05-2026
 - Fixed pipeline_id being None during revalidation

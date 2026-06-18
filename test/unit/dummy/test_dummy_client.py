@@ -22,6 +22,24 @@ class TestDummyClient:
                 'date': f'2024-01-{(i % 28) + 1:02d}',
                 'type': 'record',
                 'category': ['cat1', 'cat2', 'cat3', 'cat4'][i % 4],
+                'sub_category': ['cat1', 'cat2', 'cat3', 'cat4'][(i - 1) % 4],
+                'link': 'https://www.google.com/',
+                'links': [
+                    'https://www.google.com/',
+                    'https://www.instagram.com/',
+                    'https://www.facebook.com/',
+                    'https://www.twitter.com/',
+                ][i % 4],
+                'image': {
+                    'url': 'https://picsum.photos/200/300',
+                    'caption': 'cap1',
+                },
+                'images': [
+                    {'url': 'https://picsum.photos/200/300', 'caption': 'cap1'},
+                    {'url': 'https://picsum.photos/200/300', 'caption': 'cap2'},
+                    {'url': 'https://picsum.photos/200/300', 'caption': 'cap3'},
+                    {'url': 'https://picsum.photos/200/300', 'caption': 'cap4'},
+                ][i % 4],
             }
             for i in range(1, 3)
         ]
@@ -47,6 +65,24 @@ class TestDummyClient:
                 'date': f'2024-01-{(i % 28) + 1:02d}',
                 'type': 'record',
                 'category': ['cat1', 'cat2', 'cat3', 'cat4'][i % 4],
+                'sub_category': ['cat1', 'cat2', 'cat3', 'cat4'][(i - 1) % 4],
+                'link': 'https://www.google.com/',
+                'links': [
+                    'https://www.google.com/',
+                    'https://www.instagram.com/',
+                    'https://www.facebook.com/',
+                    'https://www.twitter.com/',
+                ][i % 4],
+                'image': {
+                    'url': 'https://picsum.photos/200/300',
+                    'caption': 'cap1',
+                },
+                'images': [
+                    {'url': 'https://picsum.photos/200/300', 'caption': 'cap1'},
+                    {'url': 'https://picsum.photos/200/300', 'caption': 'cap2'},
+                    {'url': 'https://picsum.photos/200/300', 'caption': 'cap3'},
+                    {'url': 'https://picsum.photos/200/300', 'caption': 'cap4'},
+                ][i % 4],
             }
             for i in range(0, 2)
         ]

@@ -146,17 +146,10 @@ def action_blueprint(
 
         action = __get_action(object_type, action_name)
 
-        action_params = (
-            action.params
-            if action.params
-            else {}
-        )
-
         if action.flow_name:
             flow_params = {
-                'extra_params': {
-                    **params,
-                    **action_params,
+                'params': params | {
+                    'action_id': action.id
                 },
                 'user_id': user_id,
                 'object_type': object_type,
@@ -171,7 +164,6 @@ def action_blueprint(
 
             user_action_params = {
                 **params,
-                **action_params,
                 'ids': ids,
                 'flow_run_id': flow_run_id,
                 'flow_run_name': flow_run_name
@@ -204,7 +196,7 @@ def action_blueprint(
                     404
                 )
 
-            class_params = {**action_params, **params, 'user_id': user_id}
+            class_params = {**params, 'user_id': user_id}
 
             action_instance = action_class()
             status = action_instance.run(ids=ids, params=class_params,
@@ -212,7 +204,6 @@ def action_blueprint(
 
             user_action_params = {
                 **params,
-                **action_params,
                 'ids': ids,
                 'status': status
             }

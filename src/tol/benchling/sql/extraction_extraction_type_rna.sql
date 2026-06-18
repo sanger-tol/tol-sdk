@@ -111,9 +111,9 @@ rna_requests AS (
 		loc.name AS location,
 		box.barcode AS rack,
 		tp.bt_id AS bnt_id,
+		tp.name$ AS eln_tissue_prep_name,
 		ssid.sanger_sample_id,
-		'rna'::varchar AS extraction_type,
-		tp.name$ AS eln_tissue_prep_name
+		'rna'::varchar AS extraction_type
 	FROM tissue_prep$raw AS tp
 	LEFT JOIN tissue$raw AS t
 		ON tp.tissue = t.id

@@ -31,7 +31,8 @@ class GritIssueToElasticCurationConverter(
         if data_object.assembled_by in [
             'Blaxter',
             'Jaron Group',
-            'ToL'
+            'ToL',
+            'Lawniczak'
         ]:
             assembly_stats = self.__get_assembly_stats(
                 data_object.attributes.get('assembly_statistics')
@@ -40,7 +41,7 @@ class GritIssueToElasticCurationConverter(
             attributes = {
                 k: v for k, v in data_object.attributes.items()
                 if k not in ['assembly_statistics', 'chromosome_result', 'description',
-                             'sample_id', 'status_changes', 'linked_issues']
+                             'tolid', 'status_changes', 'linked_issues']
             } | {
                 self.__sanitise_attribute_name(sc['next_status']) + '_date': sc['end_date']
                 for sc in data_object.status_changes
@@ -51,7 +52,7 @@ class GritIssueToElasticCurationConverter(
             to_one_relations = {
                 'tolid': self._data_object_factory(
                     'tolid',
-                    data_object.attributes.get('sample_id')
+                    data_object.attributes.get('tolid')
                 )
             }
             ret = self._data_object_factory(

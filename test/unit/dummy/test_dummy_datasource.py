@@ -17,16 +17,17 @@ from tol.dummy import DummyDataSource
 def _get_mock_data_object(
     type_: str,
     id_: Optional[str],
-    attributes: dict[str, Any] = {},
-    to_one: dict[str, Any] = {}
+    attributes: Optional[dict[str, Any]] = None,
+    to_one: Optional[dict[str, Any]] = None
 ) -> DataObject:
 
     data_object = Mock()
 
     data_object.type = type_
     data_object.id = id_
-    data_object.attributes = attributes
-    data_object._to_one_objects = to_one
+    data_object.attributes = attributes or {}
+    data_object.to_one = to_one or {}
+    data_object._to_one_objects = to_one or {}
 
     return data_object
 
@@ -109,7 +110,7 @@ class TestDummyDataSource:
         `DummyDataSource().supported_types` calls
         `config_attribute_types()` on client
         """
-        expected = ['record', 'category']
+        expected = ['record', 'category', 'sub_category']
 
         ds = DummyDataSource(
             None,

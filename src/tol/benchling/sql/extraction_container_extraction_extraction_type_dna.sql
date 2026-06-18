@@ -74,69 +74,121 @@ WITH locations AS (
     FROM sg
 ),
 
-latest_nanodrop_conc AS (    
+-- Latest nanodrop per (sample, tube). Unnest the sample_tube_id jsonb array so each measurement is attributed to the container it was taken on
+latest_nanodrop_conc AS (
     SELECT
-        nanod.sample_id,
-        nanod.nanodrop_concentration_ngul,
-        nanod._260_280_ratio AS "dna_260_280_ratio",
-        nanod._260_230_ratio AS "dna_260_230_ratio"
-    FROM nanodrop_measurements_v2$raw AS nanod
-    WHERE nanod.created_at$ = (        
-        SELECT MAX(sub.created_at$)
-        FROM nanodrop_measurements_v2$raw AS sub
-        WHERE sub.sample_id = nanod.sample_id
-    )
+        sample_id,
+        tube_id,
+        nanodrop_concentration_ngul,
+        dna_260_280_ratio,
+        dna_260_230_ratio
+    FROM (
+        SELECT
+            nanod.sample_id,
+            tube.value AS tube_id, -- specific container this result belongs to
+            nanod.nanodrop_concentration_ngul,
+            nanod._260_280_ratio AS dna_260_280_ratio,
+            nanod._260_230_ratio AS dna_260_230_ratio,
+            ROW_NUMBER() OVER (
+                PARTITION BY nanod.sample_id, tube.value
+                ORDER BY nanod.created_at$ DESC
+            ) AS rn
+        FROM nanodrop_measurements_v2$raw AS nanod
+        -- unnest the array of tube IDs; LEFT JOIN keeps rows even if no tube recorded
+        LEFT JOIN LATERAL jsonb_array_elements_text(nanod.sample_tube_id) AS tube(value) ON TRUE
+    ) ranked
+    WHERE ranked.rn = 1
 ),
 
+-- Latest qubit per (sample, tube)
 latest_qubit_conc AS (
     SELECT
-        qbit.sample_id,
-        qbit.qubit_concentration_ngul
-    FROM qubit_measurements_v2$raw as qbit
-    WHERE qbit.created_at$ = (
-        SELECT MAX(sub.created_at$)
-        FROM qubit_measurements_v2$raw AS sub
-        WHERE sub.sample_id = qbit.sample_id
-    )
+        sample_id,
+        tube_id,
+        qubit_concentration_ngul
+    FROM (
+        SELECT
+            qbit.sample_id,
+            tube.value AS tube_id,
+            qbit.qubit_concentration_ngul,
+            ROW_NUMBER() OVER (
+                PARTITION BY qbit.sample_id, tube.value
+                ORDER BY qbit.created_at$ DESC
+            ) AS rn
+        FROM qubit_measurements_v2$raw AS qbit
+        LEFT JOIN LATERAL jsonb_array_elements_text(qbit.sample_tube_id) AS tube(value) ON TRUE
+    ) ranked
+    WHERE ranked.rn = 1
 ),
 
+-- Latest yield per (sample, tube)
 latest_yield AS (
     SELECT
-        dnay.sample_id,
-        dnay.yield
-    FROM yield_v2$raw as dnay
-    WHERE dnay.created_at$ = (
-        SELECT MAX(sub.created_at$)
-        FROM yield_v2$raw AS sub
-        WHERE sub.sample_id = dnay.sample_id
-    )
+        sample_id,
+        tube_id,
+        yield
+    FROM (
+        SELECT
+            dnay.sample_id,
+            tube.value AS tube_id,
+            dnay.yield,
+            ROW_NUMBER() OVER (
+                PARTITION BY dnay.sample_id, tube.value
+                ORDER BY dnay.created_at$ DESC
+            ) AS rn
+        FROM yield_v2$raw AS dnay
+        LEFT JOIN LATERAL jsonb_array_elements_text(dnay.sample_tube_id) AS tube(value) ON TRUE
+    ) ranked
+    WHERE ranked.rn = 1
 ),
 
+-- Latest femto per (sample, tube)
 latest_femto AS (
     SELECT
-        femto.sample_id,
-        femto.femto_date_code,
-        femto.femto_profile_description AS femto_description,
-        femto.gqn_dnaex
-    FROM femto_dna_extract_v2$raw AS femto
-    WHERE femto.created_at$ = (
-        SELECT MAX(sub.created_at$)
-        FROM femto_dna_extract_v2$raw as sub
-        WHERE sub.sample_id = femto.sample_id
-    )
+        sample_id,
+        tube_id,
+        femto_date_code,
+        femto_description,
+        gqn_dnaex
+    FROM (
+        SELECT
+            femto.sample_id,
+            tube.value AS tube_id,
+            femto.femto_date_code,
+            femto.femto_profile_description AS femto_description,
+            femto.gqn_dnaex,
+            ROW_NUMBER() OVER (
+                PARTITION BY femto.sample_id, tube.value
+                ORDER BY femto.created_at$ DESC
+            ) AS rn
+        FROM femto_dna_extract_v2$raw AS femto
+        LEFT JOIN LATERAL jsonb_array_elements_text(femto.sample_tube_id) AS tube(value) ON TRUE
+    ) ranked
+    WHERE ranked.rn = 1
 ),
 
+-- Latest decision making per (sample, tube). This schema stores the current tube
+-- in sample_tube_id (jsonb array).
 latest_decision_making AS (
     SELECT
-        dnad.sample_id,
-        dnad.next_step,
-        qc_passfail AS extraction_qc_result
-    FROM dna_decision_making_v2$raw AS dnad
-    WHERE dnad.created_at$ = (
-        SELECT MAX(sub.created_at$)
-        FROM dna_decision_making_v2$raw AS sub
-        WHERE sub.sample_id = dnad.sample_id
-    )
+        sample_id,
+        tube_id,
+        next_step,
+        extraction_qc_result
+    FROM (
+        SELECT
+            dnad.sample_id,
+            tube.value AS tube_id,
+            dnad.next_step,
+            dnad.qc_passfail AS extraction_qc_result,
+            ROW_NUMBER() OVER (
+                PARTITION BY dnad.sample_id, tube.value
+                ORDER BY dnad.created_at$ DESC
+            ) AS rn
+        FROM dna_decision_making_v2$raw AS dnad
+        LEFT JOIN LATERAL jsonb_array_elements_text(dnad.sample_tube_id) AS tube(value) ON TRUE
+    ) ranked
+    WHERE ranked.rn = 1
 ),
 
 corelab_extraction_containers AS (
@@ -191,16 +243,22 @@ corelab_extraction_containers AS (
         ON tp.id = dna.tissue_prep
     LEFT JOIN tissue$raw AS t
         ON t.id = tp.tissue
-    LEFT JOIN latest_nanodrop_conc -- Results chunk
+    -- Results chunk: now matched on BOTH the DNA extract entity AND the specific container, so each tube only shows results recorded against it
+    LEFT JOIN latest_nanodrop_conc
         ON dna.id = latest_nanodrop_conc.sample_id
+        AND con.id = latest_nanodrop_conc.tube_id
     LEFT JOIN latest_qubit_conc
         ON dna.id = latest_qubit_conc.sample_id
+        AND con.id = latest_qubit_conc.tube_id
     LEFT JOIN latest_yield
         ON dna.id = latest_yield.sample_id
+        AND con.id = latest_yield.tube_id
     LEFT JOIN latest_femto
         ON dna.id = latest_femto.sample_id
+        AND con.id = latest_femto.tube_id
     LEFT JOIN latest_decision_making
-        ON dna.id = latest_decision_making.sample_id -- End Results chunk
+        ON dna.id = latest_decision_making.sample_id
+        AND con.id = latest_decision_making.tube_id -- End Results chunk
     LEFT JOIN folder$raw AS f
         ON dna.folder_id$ = f.id
     LEFT JOIN project$raw AS proj

@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: MIT
 
 from typing import Any
-from unittest.mock import PropertyMock, create_autospec
+from unittest.mock import Mock, PropertyMock, create_autospec
 
 from pytest import fixture
 
@@ -104,6 +104,46 @@ class TestTolidValidator:
         assert validator.results
         assert len(validator.errors) == 1
         assert len(validator.warnings) == 1
+
+    def test_none_species_id_skips_tolid_lookup(self) -> None:
+
+        mock_datasource = _MockDataSource(config={})
+        mock_datasource.get_one = Mock(
+            side_effect=AssertionError('species lookup should be skipped for None TAXON_ID')
+        )
+
+        test_config = TolidValidator.Config(
+            species_id_field='TAXON_ID',
+            specimen_id_field='SPECIMEN_ID',
+            error_ignore_field='IGNORE_FIELD',
+            error_ignore_value='IGNORE_VALUE',
+            warning_detail='TEST WARNING'
+        )
+
+        validator = TolidValidator(
+            config=test_config,
+            datasource=mock_datasource,
+        )
+
+        obj = create_autospec(DataObject, instance=True)
+        obj.id = 1
+        type(obj).attributes = PropertyMock(
+            return_value={
+                'TAXON_ID': None,
+                'SPECIMEN_ID': 'SPECABC',
+                'IGNORE_FIELD': 'IGNORE_VALUE',
+            }
+        )
+        obj.get_field_by_name.side_effect = lambda name: {
+            'TAXON_ID': None,
+            'SPECIMEN_ID': 'SPECABC',
+            'IGNORE_FIELD': 'IGNORE_VALUE',
+        }.get(name)
+
+        list(validator.validate([obj]))
+
+        assert len(validator.errors) == 0
+        assert len(validator.warnings) == 0
 
     def __make_side_effect(self, object_id):
         # Helper to create side effect function for get_field_by_name

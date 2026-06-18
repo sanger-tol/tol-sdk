@@ -9,9 +9,15 @@ from .benchling_sequencing_request_to_elastic_sequencing_request_converter impor
     BenchlingSequencingRequestToElasticSequencingRequestConverter
 )
 from .benchling_tissue_prep_to_elastic_tissue_prep_converter import BenchlingTissuePrepToElasticTissuePrepConverter  # noqa F401
-from .benchling_entity_to_benchling_worklist_item_converter_factory import BenchlingEntityToBenchlingWorklistItemConverterFactory  # noqa F401
+from .benchling_entity_to_benchling_worklist_item_converter import BenchlingEntityToBenchlingWorklistItemConverter  # noqa F401
 from .benchling_tissue_to_sts_sample_converter import BenchlingTissueToStsSampleConverter  # noqa F401
 from .benchling_sample_to_elastic_sample_converter import BenchlingSampleToElasticSampleConverter  # noqa F401
+from .casm_benchling_sts_sample_converters import (  # noqa F401
+    CasmBenchlingErrorToStsSampleConverter,
+    StsSampleUpdateConverter,
+    error_sts_sample_id,
+    error_to_result,
+)
 from .bioscan_extra_pantheon_species_to_elastic_sample_update_converter import BioscanExtraPantheonSpeciesToElasticSampleUpdateConverter  # noqa 
 from .bioscan_image_to_elastic_sample_update_converter import BioscanImageToElasticSampleUpdateConverter  # noqa F401
 from .bioscan_qc_specimen_to_elastic_sample_update_converter import BioscanQcSpecimenToElasticSampleUpdateConverter  # noqa F401
@@ -19,10 +25,12 @@ from .bioscan_qc_uksi_entry_to_elastic_sample_update_converter import BioscanQcU
 from .bold_bin_to_elastic_sample_update_converter import BoldBinToElasticSampleUpdateConverter  # noqa F401
 from .bold_sample_to_elastic_sample_update_converter import BoldSampleToElasticSampleUpdateConverter  # noqa F401
 from .buffering_converter import BufferingConverter  # noqa F401
+from .elastic_object_to_benchling_worklist_item_converter import ElasticObjectToBenchlingWorklistItemConverter  # noqa F401
 from .elastic_object_to_portaldb_object_converter import ElasticObjectToPortaldbObjectConverter  # noqa F401
 from .elastic_sample_to_benchling_tissue_converter import ElasticSampleToBenchlingTissueConverter  # noqa F401
 from .elastic_sample_to_benchling_tissue_update_converter import ElasticSampleToBenchlingTissueUpdateConverter  # noqa F401
 from .elastic_sample_to_bold_sample_converter import ElasticSampleToBoldSampleConverter  # noqa F401
+from .elastic_sample_to_elastic_extraction_container_update_converter import ElasticSampleToElasticExtractionContainerUpdateConverter  # noqa F401
 from .elastic_sample_to_elastic_sequencing_request_update_converter import ElasticSampleToElasticSequencingRequestUpdateConverter  # noqa F401
 from .elastic_sample_to_sts_sample_converter import ElasticSampleToStsSampleConverter  # noqa F401
 from .elastic_sequencing_request_to_sts_sequencing_request_converter import ElasticSequencingRequestToStsSequencingRequestConverter  # noqa F401
@@ -31,6 +39,7 @@ from .elastic_species_to_sts_species_converter import ElasticSpeciesToStsSpecies
 from .elastic_tolid_to_elastic_curation_update_converter import ElasticTolidToElasticCurationUpdateConverter  # noqa F401
 from .elastic_tolid_to_elastic_genome_note_update_converter import ElasticTolidToElasticGenomeNoteUpdateConverter  # noqa F401
 from .elastic_tolid_to_elastic_sample_update_converter import ElasticTolidToElasticSampleUpdateConverter  # noqa F401
+from .error_object_converter import ErrorObjectConverter  # noqa F401
 from .gap_assembly_to_elastic_assembly_converter import GapAssemblyToElasticAssemblyConverter  # noqa F401
 from .gap_assembly_to_elastic_assembly_analysis_converter import GapAssemblyToElasticAssemblyAnalysisConverter  # noqa F401
 from .genome_notes_genome_note_to_elastic_genome_note_converter import GenomeNotesGenomeNoteToElasticGenomeNoteConverter  # noqa F401

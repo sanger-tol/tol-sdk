@@ -66,13 +66,17 @@ class Validator(ABC):
         Validates a stream of `DataObject` instances.
         """
 
+        last_obj: DataObject | None = None
+
         for obj in object_stream:
             if isinstance(obj, DataObject):
                 self._validate_data_object(obj)
+                last_obj = obj
 
             yield obj
 
-        self._post_validation(obj)
+        if last_obj is not None:
+            self._post_validation(last_obj)
 
     def add_warning(
         self,

@@ -54,7 +54,8 @@ class DefaultDataObjectToDataObjectConverter(DataObjectToDataObjectOrUpdateConve
 
     @dataclass(slots=True, frozen=True, kw_only=True)
     class Config:
-        pass
+        destination_object_type: str | None = None
+        id_field: str | None = None
 
     __slots__ = ['__config']
     __config: Config
@@ -63,14 +64,11 @@ class DefaultDataObjectToDataObjectConverter(DataObjectToDataObjectOrUpdateConve
         self,
         data_object_factory: DataObjectFactory,
         config: Config,
-        destination_object_type: str | None = None,
-        id_field: str | None = None
+        **kwargs
     ):
 
         super().__init__(data_object_factory)
         self.__config = config
-        self.__dest_object_type = destination_object_type
-        self.__id_field = id_field
 
     def convert(
         self,
@@ -84,20 +82,20 @@ class DefaultDataObjectToDataObjectConverter(DataObjectToDataObjectOrUpdateConve
         """
         if data_object is not None and data_object.id is not None:
             dest_type = (
-                self.__dest_object_type
-                if self.__dest_object_type is not None
+                self.__config.destination_object_type
+                if self.__config.destination_object_type is not None
                 else self.data_loader._destination_object_type
             )
             ret = self._data_object_factory(
                 id_=(
-                    data_object.id if self.__id_field is None
-                    else data_object.get_field_by_name(self.__id_field)
+                    data_object.id if self.__config.id_field is None
+                    else data_object.get_field_by_name(self.__config.id_field)
                 ),
                 type_=dest_type,
                 attributes={
                     k: v
                     for k, v in data_object.attributes.items()
-                    if k != self.__id_field
+                    if k != self.__config.id_field
                 }
             )
             yield ret
