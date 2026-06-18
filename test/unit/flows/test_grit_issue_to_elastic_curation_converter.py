@@ -133,8 +133,8 @@ class TestGritIssueToElasticCurationConverter:
                 ],
                 'assembly_statistics': 'scaffolds\ntotal 333046658 333047658\ncount 41 36\nN50 11581856 11581856\nL50 3 4    \nN90 7014107 7711609\nL90 27 27\n\ncontigs\ntotal 333046218 333046218\ncount 44 44\nN50 11581856 11581856\nL50 13 13\nN90 7014107 7014107\nL90 27 27\n',  # noqa E501
                 'chromosome_result': 'found 31 autosomes and W and Z and MT\nTotal length 333047658\nChr length 332949469\nChr length 99.97 %\n',  # noqa E501,
-                'treeval_data': {"jbrowse": "ilLysCori70_1", "jb_server": "prod", "jb_scaffold": "SCAFFOLD_1", "start": "2023-11-24T14:50:15.000+0000", "btk_pr": "", "btk_hp": "", "higlass": "", "hic_plot": "Y", "kmer_plot": "N", "taxon_id": 268709},  # noqa E501
-                'contamination': 'Total length of scaffolds removed: 3,524,370 (0.6 %) Scaffolds removed: 6 (1.0 %) Largest scaffold removed: (2,278,162) FCS-GX contaminant species (number of scaffolds; total length of scaffolds): Spiroplasma endosymbiont of Danaus chrysippus, mycoplasmas (2; 1,159,264) Lactococcus laudensis, firmicutes (1; 2,278,162) Lactococcus paracarnosus, firmicutes (1; 52,695) Streptococcus parauberis, firmicutes (1; 20,530) Yalta virus, eukaryotic viruses (1; 13,719) Abnormal contamination report: in assembly primary LARGEST_SCAFFOLD_REMOVED is 2278162 which is above the alarm threshold 1800000.0. ',  # noqa E501
+                'treeval_data': {"jbrowse": "ilLysCori39_1", "jb_server": "prod", "jb_scaffold": "SCAFFOLD_1", "start": "2023-11-22T12:57:44.000+0000", "btk_pr": "ilLysCori39.20231118", "btk_hp": "ilLysCori39.20231118.haplotigs", "higlass": "", "hic_plot": "Y", "kmer_plot": "N", "taxon_id": 268709},  # noqa E501
+                'contamination': 'Total length of scaffolds removed: 143,860 (0.0 %) Scaffolds removed: 6 (4.2 %) Largest scaffold removed: (39,584) FCS-GX contaminant species (number of scaffolds; total length of scaffolds): Sodalis glossinidius, g-proteobacteria (1; 39,584) Candidatus Symbiopectobacterium sp. Clec_Harlan, g-proteobacteria (1; 34,354) Mitochondrion (4; 69,905) Barcodes (1; 17) ',  # noqa E501
             },
             to_one={
                 'reporter': user,
@@ -190,6 +190,23 @@ class TestGritIssueToElasticCurationConverter:
             'ass_percent': '99.97',
             'assignee_name': 'test',
             'sample_id': 'abCdeFghi1-something',
+            'treeval_jbrowse': 'ilLysCori39_1',
+            'treeval_jb_server': 'prod',
+            'treeval_jb_scaffold': 'SCAFFOLD_1',
+            'treeval_start': '2023-11-22T12:57:44.000+0000',
+            'treeval_btk_pr': 'ilLysCori39.20231118',
+            'treeval_btk_hp': 'ilLysCori39.20231118.haplotigs',
+            'treeval_higlass': '',
+            'treeval_hic_plot': 'Y',
+            'treeval_kmer_plot': 'N',
+            'treeval_taxon_id': 268709,
+            # TODO Parse to number
+            'contamination_total_removed': '143,860',
+            'contamination_total_removed_percent': '0.0',
+            'contamination_count_removed': '6',
+            'contamination_count_removed_percent': '4.2',
+            'contamination_largest_removed': '39,584',
+            'contamination_is_abnormal': False,
         }
         assert ret1.tolid.id == 'abCdeFghi1'
 
