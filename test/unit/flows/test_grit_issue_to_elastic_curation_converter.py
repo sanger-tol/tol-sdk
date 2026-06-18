@@ -200,12 +200,11 @@ class TestGritIssueToElasticCurationConverter:
             'treeval_hic_plot': 'Y',
             'treeval_kmer_plot': 'N',
             'treeval_taxon_id': 268709,
-            # TODO Parse to number
-            'contamination_total_removed': '143,860',
-            'contamination_total_removed_percent': '0.0',
-            'contamination_count_removed': '6',
-            'contamination_count_removed_percent': '4.2',
-            'contamination_largest_removed': '39,584',
+            'contamination_total_removed': 143_860,
+            'contamination_total_removed_percent': 0.0,
+            'contamination_count_removed': 6,
+            'contamination_count_removed_percent': 4.2,
+            'contamination_largest_removed': 39_584,
             'contamination_is_abnormal': False,
         }
         assert ret1.tolid.id == 'abCdeFghi1'
