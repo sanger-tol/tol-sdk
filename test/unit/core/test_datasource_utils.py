@@ -239,10 +239,8 @@ class TestUtils:
         rel.source_order = ['source1', 'source2']
         rel.object_type = 'sample'
         rel.name = 'rel_name'
-        config = MagicMock()
-        config.data_source_config_relationships = [rel]
 
-        result = DataSourceUtils.add_source_order_to_runtime_fields(config)
+        result = DataSourceUtils.add_source_order_to_runtime_fields([rel])
 
         expected_field = RuntimeFields.coalesce(
             ['rel_name.id.provenance.source1.value', 'rel_name.id.provenance.source2.value']

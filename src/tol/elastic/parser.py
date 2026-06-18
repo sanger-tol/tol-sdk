@@ -27,7 +27,6 @@ class ElasticUpsertInputResource:
     objects: Iterable[DataObject]
     id_func: Callable
     provenance: str | None = None
-    field_prefix: str = ''
 
 
 @dataclass(slots=True)
@@ -36,7 +35,6 @@ class ElasticUpdateInputResource:
     update: dict
     candidate_key: Iterable[str]
     provenance: str | None = None
-    field_prefix: str = ''
 
 
 class DefaultElasticApiParser(DataSourceParser[ElasticApiResource, DataObject]):
@@ -247,7 +245,7 @@ class _ToElasticApiResourceParser:
         return s.replace('\n', ' ')
 
     def _prefix_fields(self, dict_: dict, prefix: str) -> dict:
-        if prefix == '':
+        if not prefix or prefix == '':
             return dict_
         ret = {}
         for k, v in dict_.items():
@@ -298,7 +296,6 @@ class DefaultElasticUpsertInputParser(
         for object_ in transfer.objects:
             obj = self._convert_data_object_to_dict(object_, transfer.provenance)
             obj = self._convert_dates(obj)
-            obj = self._prefix_fields(obj, transfer.field_prefix)
             obj = self._stringify_ids(obj)
             uid = transfer.id_func(object_)
             obj = self._add_uid(obj, uid)
@@ -326,7 +323,9 @@ class DefaultElasticUpsertInputParser(
             k: self._parse_to_one_relation(v, provenance)
             for k, v in data_object._to_one_objects.items()
         }
-        return data_object.attributes | to_ones_dict
+        # We are currently prefixing the attributes with the provenance. Later we will
+        # implement provenance similar to the to_one relationships
+        return self._prefix_fields(data_object.attributes, provenance) | to_ones_dict
 
     def _stringify_ids(self, dict_: dict) -> dict:
         ret = {}
@@ -373,7 +372,6 @@ class DefaultElasticUpdateInputParser(
         for key in transfer.candidate_key:
             # Don't want key in the upsert as it cannot change anyway
             f.and_[key] = {'eq': {'value': u.pop(key)}}
-        u = self._prefix_fields(u, transfer.field_prefix)
         u = self._convert_data_objects_in_update_to_dict(u, transfer.provenance)
         query = ElasticFilterConverter(self.__data_source).convert(
             transfer.object_type, object_filters=f
@@ -390,10 +388,13 @@ class DefaultElasticUpdateInputParser(
         }
 
     def _convert_data_objects_in_update_to_dict(self, dict_: dict, provenance: str | None) -> dict:
-        ret = {}
+        ret_relationships = {}
+        ret_attributes = {}
         for k, v in dict_.items():
             if isinstance(v, DataObject):
-                ret[k] = self._parse_to_one_relation(v, provenance)
+                ret_relationships[k] = self._parse_to_one_relation(v, provenance)
             else:
-                ret[k] = v
-        return ret
+                ret_attributes[k] = v
+        # We are currently prefixing the attributes with the provenance. Later we will
+        # implement provenance similar to the to_one relationships
+        return self._prefix_fields(ret_attributes, provenance) | ret_relationships

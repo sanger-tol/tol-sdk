@@ -1107,6 +1107,48 @@ class TestFlowUtilsLoadEntitiesOntoWorklist:
         assert result == []
 
 
+class TestFlowUtilsGetSectionFilter:
+
+    def test_returns_expected_filters_for_all_sections(self):
+        destination_id = 'cfg-1'
+        result = FlowUtils.get_section_filters(destination_id)
+
+        assert result == {
+            '1': {
+                'loader.candidate_key': {'exists': {'negate': True}},
+                'loader.ids_attribute': {'exists': {'negate': True}},
+                'ids_data_source_instance.id': {'exists': {'negate': True}},
+                'destination_data_source_instance.id': {'eq': {'value': destination_id}},
+            },
+            '2': {
+                'loader.candidate_key': {'exists': {'negate': True}},
+                'ids_data_source_instance.id': {
+                    'exists': {},
+                    'eq': {'value': destination_id, 'negate': True},
+                },
+                'destination_data_source_instance.id': {'eq': {'value': destination_id}},
+            },
+            '3': {
+                'loader.candidate_key': {'exists': {'negate': True}},
+                'ids_data_source_instance.id': {'eq': {'value': destination_id}},
+                'destination_data_source_instance.id': {'eq': {'value': destination_id}},
+            },
+            '4': {
+                'loader.candidate_key': {'exists': {'negate': True}},
+                'source_data_source_instance.id': {'eq': {'value': destination_id}},
+                'destination_data_source_instance.id': {'eq': {'value': destination_id}},
+            },
+            '5': {
+                'loader.candidate_key': {'exists': {}},
+                'destination_data_source_instance.id': {'eq': {'value': destination_id}},
+            },
+        }
+
+    def test_raises_for_invalid_section(self):
+        with pytest.raises(ValueError, match='Invalid section: 99'):
+            FlowUtils.get_filter_for_section('99', 'cfg-1')
+
+
 class TestFlowUtilsPerformTopupAction:
 
     @pytest.fixture
@@ -1546,3 +1588,4 @@ class TestFlowUtilsPerformTopupAction:
         assert tolid_error in result
         assert actioned_error in result
         assert len(result) == 4
+

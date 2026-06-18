@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: MIT
 
 import importlib
-from typing import Iterator
+from typing import Iterable, Iterator
 
 from dacite import from_dict
 
@@ -54,8 +54,9 @@ class DataSourceUtils:
         if kwargs:
             new_kwargs.update(kwargs)
         if datasource_config:
+            relationships = list(datasource_config.data_source_config_relationships)
             relationship_config = cls.get_relationship_config_from_data_source_config(
-                datasource_config
+                relationships=relationships,
             )
             amd = data_source_attribute_metadata(
                 datasource_config
@@ -64,7 +65,7 @@ class DataSourceUtils:
                 datasource_config
             )
             runtime_fields_with_source_order = cls.add_source_order_to_runtime_fields(
-                datasource_config
+                relationships=relationships,
             )
             new_kwargs.update({
                 'relationship_cfg': relationship_config,
@@ -79,10 +80,10 @@ class DataSourceUtils:
     @classmethod
     def get_relationship_config_from_data_source_config(
         cls,
-        datasource_config: DataObject
+        relationships: Iterable[DataObject]
     ) -> dict:
         relationship_cfg = {}
-        for rel in datasource_config.data_source_config_relationships:
+        for rel in relationships:
             for obj_type in [rel.object_type, rel.foreign_object_type]:
                 if obj_type not in relationship_cfg:
                     relationship_cfg[obj_type] = {
@@ -130,10 +131,10 @@ class DataSourceUtils:
     @classmethod
     def add_source_order_to_runtime_fields(
         cls,
-        datasource_config: DataObject,
+        relationships: Iterable[DataObject]
     ) -> dict:
         runtime_fields = {}
-        for dsrc in datasource_config.data_source_config_relationships:
+        for dsrc in relationships:
             if dsrc.source_order is None:
                 continue
             from ..elastic.runtime_fields import RuntimeFields  # Break circular import cycle
