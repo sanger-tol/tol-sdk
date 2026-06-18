@@ -47,24 +47,25 @@ class GritIssueToElasticCurationConverter(
             assembly_stats = self.__get_assembly_stats(
                 data_object.attributes.get('assembly_statistics')
             )
-
             chr_data = self.__get_chr_data(data_object.attributes.get('chromosome_result'))
-
-            assert data_object.treeval_data is not None
-            treeval_data = {
-                f'treeval_${key}': value
-                for key, value in data_object.treeval_data
-            }
-
-            assert data_object.contamination is not None
-            contamination_data = self.__get_contamination_data(data_object.contamination)
-
-            assert data_object.status_changes is not None
-            status_changes = {
-                self.__sanitise_attribute_name(sc['next_status']) + '_date': sc['end_date']
-                for sc in data_object.status_changes
-            }
-
+            treeval_data = (
+                {f'treeval_{key}': value for key, value in data_object.treeval_data}
+                if data_object.treeval_data is not None
+                else {}
+            )
+            contamination_data = (
+                self.__get_contamination_data(data_object.contamination)
+                if data_object.contamination is not None
+                else {}
+            )
+            status_changes = (
+                {
+                    self.__sanitise_attribute_name(sc['next_status']) + '_date': sc['end_date']
+                    for sc in data_object.status_changes
+                }
+                if data_object.status_changes is not None
+                else {}
+            )
             optional_attributes = {
                 'assignee_name': data_object.assignee.name if data_object.assignee else None
             }
@@ -121,7 +122,6 @@ class GritIssueToElasticCurationConverter(
         """
         if data:
             att_search = re.search(rf'{att}\s*([0-9]\w*)\s*([0-9]\w*)', data)
-            assert att_search is not None
             att_before = int(att_search.group(1))
             att_after = int(att_search.group(2))
             att_change_per = (att_after - att_before) / att_before * 100
