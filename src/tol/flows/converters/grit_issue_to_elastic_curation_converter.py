@@ -47,9 +47,9 @@ class GritIssueToElasticCurationConverter(
             assembly_stats = self.__get_assembly_stats(
                 data_object.attributes.get('assembly_statistics')
             )
-            
+
             chr_data = self.__get_chr_data(data_object.attributes.get('chromosome_result'))
-            
+
             assert data_object.treeval_data is not None
             treeval_data = {
                 f'treeval_${key}': value
@@ -64,7 +64,7 @@ class GritIssueToElasticCurationConverter(
                 self.__sanitise_attribute_name(sc['next_status']) + '_date': sc['end_date']
                 for sc in data_object.status_changes
             }
-            
+
             optional_attributes = {
                 'assignee_name': data_object.assignee.name if data_object.assignee else None
             }
@@ -77,8 +77,10 @@ class GritIssueToElasticCurationConverter(
 
             # Combine all of these to form the attributes dict
             attributes = (
-                assembly_stats | chr_data | treeval_data | contamination_data |
-                status_changes | optional_attributes | unchanged_attributes
+                assembly_stats | chr_data
+                | treeval_data | contamination_data
+                | status_changes | optional_attributes
+                | unchanged_attributes
             )
 
             to_one_relations = {
@@ -158,7 +160,7 @@ class GritIssueToElasticCurationConverter(
             }
         else:
             return {}
-    
+
     def __get_contamination_data(self, contamination_attribute: str) -> dict:
         """
         Function to parse the fields
