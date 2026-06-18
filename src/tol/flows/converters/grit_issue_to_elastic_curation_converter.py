@@ -49,7 +49,7 @@ class GritIssueToElasticCurationConverter(
             )
             chr_data = self.__get_chr_data(data_object.attributes.get('chromosome_result'))
             treeval_data = (
-                {f'treeval_{key}': value for key, value in data_object.treeval_data}
+                {f'treeval_{key}': value for key, value in data_object.treeval_data.items()}
                 if data_object.treeval_data is not None
                 else {}
             )
