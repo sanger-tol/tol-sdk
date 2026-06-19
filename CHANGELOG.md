@@ -19,6 +19,9 @@ SPDX-License-Identifier: MIT
     - grit_treeval_hic_plot
     - grit_treeval_kmer_plot
     - grit_treeval_taxon_id
+    - grit_treeval_hap1_analysis
+    - grit_treeval_hap2_analysis
+    - grit_treeval_merged_analysis
     - grit_contamination_total_removed
     - grit_contamination_total_removed_percent
     - grit_contamination_count_removed
@@ -27,6 +30,7 @@ SPDX-License-Identifier: MIT
     - grit_contamination_is_abnormal
 - GritIssueToElasticCurationConverter now no longer exposes the following fields:
     - grit_treeval_data
+    - grit_treeval
     - grit_contamination
 
 ## tol-sdk `2.2.2`

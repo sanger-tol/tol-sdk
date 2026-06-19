@@ -5,6 +5,7 @@
 import re
 from collections.abc import Iterable
 from dataclasses import dataclass
+from typing import Any
 
 from ...core import (
     DataObject,
@@ -48,11 +49,7 @@ class GritIssueToElasticCurationConverter(
                 data_object.attributes.get('assembly_statistics')
             )
             chr_data = self.__get_chr_data(data_object.attributes.get('chromosome_result'))
-            treeval_data = (
-                {f'treeval_{key}': value for key, value in data_object.treeval_data.items()}
-                if data_object.treeval_data is not None
-                else {}
-            )
+            treeval_data = self.__get_treeval_data(data_object)
             contamination_data = (
                 self.__get_contamination_data(data_object.contamination)
                 if data_object.contamination is not None
@@ -160,6 +157,32 @@ class GritIssueToElasticCurationConverter(
             }
         else:
             return {}
+
+    def __get_treeval_data(self, data_object: DataObject) -> dict[str, Any]:
+        """
+        Function to parse the fields out from the `treeval_data` and `treeval` attributes
+        """
+        # Extract each key-value pair from the `treeval_data` dict attribute,
+        # and give them the 'treeval_' prefix
+        extracted_treeval_data = (
+            {f'treeval_{key}': value for key, value in data_object.treeval_data.items()}
+            if data_object.treeval_data is not None
+            else {}
+        )
+
+        # Parse the `treeval` attribute
+        treeval_attribute = data_object.treeval or ""
+        hap1_match = re.search(r'hap1: ([a-zA-Z]*[0-9]*_[a-zA-Z0-9-]*)', treeval_attribute)
+        hap2_match = re.search(r'hap2: ([a-zA-Z]*[0-9]*_[a-zA-Z0-9-]*)', treeval_attribute)
+        merged_match = re.search(r'merged: ([a-zA-Z]*[0-9]*_[a-zA-Z0-9-]*)', treeval_attribute)
+        analyses = {
+            'treeval_hap1_analysis': hap1_match.group(1) if hap1_match is not None else None,
+            'treeval_hap2_analysis': hap2_match.group(1) if hap2_match is not None else None,
+            'treeval_merged_analysis': merged_match.group(1) if merged_match is not None else None,
+        }
+
+        # Combine the two into one dict
+        return extracted_treeval_data | analyses
 
     def __get_contamination_data(
         self, contamination_attribute: str
