@@ -17,6 +17,30 @@ SPDX-License-Identifier: MIT
 - Added more security to `board_bp` endpoints
 - Added `upsert_batch` to allow for sessioned re-ordering of board entities.
 - Added ability for `warden` role to bypass user needing to be owner requirements to edit boards & board entities.
+- GritIssueToElasticCurationConverter now also extracts the following fields:
+    - grit_treeval_jbrowse
+    - grit_treeval_jb_server
+    - grit_treeval_jb_scaffold
+    - grit_treeval_start
+    - grit_treeval_btk_pr
+    - grit_treeval_btk_hp
+    - grit_treeval_higlass
+    - grit_treeval_hic_plot
+    - grit_treeval_kmer_plot
+    - grit_treeval_taxon_id
+    - grit_treeval_hap1_analysis
+    - grit_treeval_hap2_analysis
+    - grit_treeval_merged_analysis
+    - grit_contamination_total_removed
+    - grit_contamination_total_removed_percent
+    - grit_contamination_count_removed
+    - grit_contamination_count_removed_percent
+    - grit_contamination_largest_removed
+    - grit_contamination_is_abnormal
+- GritIssueToElasticCurationConverter now no longer exposes the following fields:
+    - grit_treeval_data
+    - grit_treeval
+    - grit_contamination
 
 ## tol-sdk `2.2.2`
 09-06-2026
