@@ -134,7 +134,7 @@ class TestGritIssueToElasticCurationConverter:
                 'assembly_statistics': 'scaffolds\ntotal 333046658 333047658\ncount 41 36\nN50 11581856 11581856\nL50 3 4    \nN90 7014107 7711609\nL90 27 27\n\ncontigs\ntotal 333046218 333046218\ncount 44 44\nN50 11581856 11581856\nL50 13 13\nN90 7014107 7014107\nL90 27 27\n',  # noqa E501
                 'chromosome_result': 'found 31 autosomes and W and Z and MT\nTotal length 333047658\nChr length 332949469\nChr length 99.97 %\n',  # noqa E501
                 'treeval': 'hap1: ilLysCori39_1 hap2: ilLysCori39_2 merged: ilLysCori39_3',
-                'treeval_data': {"jbrowse": "ilLysCori39_1", "jb_server": "prod", "jb_scaffold": "SCAFFOLD_1", "start": "2023-11-22T12:57:44.000+0000", "btk_pr": "ilLysCori39.20231118", "btk_hp": "ilLysCori39.20231118.haplotigs", "higlass": "", "hic_plot": "Y", "kmer_plot": "N", "taxon_id": 268709},  # noqa E501
+                'treeval_data': '{"jbrowse": "ilLysCori39_1", "jb_server": "prod", "jb_scaffold": "SCAFFOLD_1", "start": "2023-11-22T12:57:44.000+0000", "btk_pr": "ilLysCori39.20231118", "btk_hp": "ilLysCori39.20231118.haplotigs", "higlass": "", "hic_plot": "Y", "kmer_plot": "N", "taxon_id": 268709}',  # noqa E501
                 'contamination': 'Total length of scaffolds removed: 143,860 (0.0 %) Scaffolds removed: 6 (4.2 %) Largest scaffold removed: (39,584) FCS-GX contaminant species (number of scaffolds; total length of scaffolds): Sodalis glossinidius, g-proteobacteria (1; 39,584) Candidatus Symbiopectobacterium sp. Clec_Harlan, g-proteobacteria (1; 34,354) Mitochondrion (4; 69,905) Barcodes (1; 17) ',  # noqa E501
             },
             to_one={
