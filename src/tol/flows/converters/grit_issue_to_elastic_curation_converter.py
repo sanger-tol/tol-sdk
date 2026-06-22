@@ -171,7 +171,7 @@ class GritIssueToElasticCurationConverter(
         )
 
         # Parse the `treeval` attribute
-        treeval_attribute = data_object.treeval or ""
+        treeval_attribute = data_object.treeval or ''
         hap1_match = re.search(r'hap1: ([a-zA-Z]*[0-9]*_[a-zA-Z0-9-]*)', treeval_attribute)
         hap2_match = re.search(r'hap2: ([a-zA-Z]*[0-9]*_[a-zA-Z0-9-]*)', treeval_attribute)
         merged_match = re.search(r'merged: ([a-zA-Z]*[0-9]*_[a-zA-Z0-9-]*)', treeval_attribute)
