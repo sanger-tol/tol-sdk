@@ -6,6 +6,10 @@ SPDX-License-Identifier: MIT
 
 # Changelog
 
+## tol-sdk `2.3.1`
+22-6-2026
+- Fix bug in GritIssueToElasticCurationConverter
+
 ## tol-sdk `2.3.0`
 22-06-2026
 - Added POST `add-entity` endpoint to `board_bp`
