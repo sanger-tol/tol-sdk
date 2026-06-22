@@ -2,8 +2,8 @@
 #
 # SPDX-License-Identifier: MIT
 
-import re
 import json
+import re
 from collections.abc import Iterable
 from dataclasses import dataclass
 from typing import Any
@@ -163,7 +163,7 @@ class GritIssueToElasticCurationConverter(
         """
         Function to parse the fields out from the `treeval_data` and `treeval` attributes
         """
-        treeval_data_dict = json.loads(data_object.treeval_data or '{}')
+        treeval_data_dict = json.loads(data_object.treeval_data or str({}))
 
         # Extract each key-value pair from the `treeval_data` dict attribute,
         # and give them the 'treeval_' prefix
