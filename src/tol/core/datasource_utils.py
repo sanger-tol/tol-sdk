@@ -54,23 +54,29 @@ class DataSourceUtils:
         if kwargs:
             new_kwargs.update(kwargs)
         if datasource_config:
+            attributes = list(datasource_config.data_source_config_attributes)
             relationships = list(datasource_config.data_source_config_relationships)
             relationship_config = cls.get_relationship_config_from_data_source_config(
                 relationships=relationships,
             )
-            amd = data_source_attribute_metadata(
-                datasource_config
-            )
+            amd = data_source_attribute_metadata(data_source_config)
             runtime_fields = cls.get_runtime_fields_from_data_source_config(
-                datasource_config
+                attributes=attributes
             )
-            runtime_fields_with_source_order = cls.add_source_order_to_runtime_fields(
-                relationships=relationships,
-            )
+            runtime_fields_with_source_order_attributes = \
+                cls.add_source_order_to_runtime_fields_attributes(
+                    attributes=attributes,
+                )
+            runtime_fields_with_source_order_relationships = \
+                cls.add_source_order_to_runtime_fields_relationships(
+                    relationships=relationships,
+                )
             new_kwargs.update({
                 'relationship_cfg': relationship_config,
                 'attribute_metadata': amd,
-                'runtime_fields': runtime_fields | runtime_fields_with_source_order
+                'runtime_fields':
+                    runtime_fields | runtime_fields_with_source_order_attributes |
+                    runtime_fields_with_source_order_relationships
             })
         return DataSourceUtils.get_datasource_by_name(
             datasource_instance.builtin_name,
@@ -104,14 +110,10 @@ class DataSourceUtils:
     @classmethod
     def get_runtime_fields_from_data_source_config(
         cls,
-        datasource_config: DataObject
+        attributes: Iterable[DataObject]
     ) -> dict:
         runtime_fields = {}
-        f = DataSourceFilter()
-        f.and_ = {
-            'runtime_definition': {'exists': {}}
-        }
-        for dsa in datasource_config.data_source_config_attributes:
+        for dsa in attributes:
             if dsa.runtime_definition is None:
                 continue
             if dsa.object_type not in runtime_fields:
@@ -129,7 +131,25 @@ class DataSourceUtils:
         return runtime_fields
 
     @classmethod
-    def add_source_order_to_runtime_fields(
+    def add_source_order_to_runtime_fields_attributes(
+        cls,
+        attributes: Iterable[DataObject]
+    ) -> dict:
+        runtime_fields = {}
+        for dsra in attributes:
+            if dsra.source_order is None:
+                continue
+            from ..elastic.runtime_fields import RuntimeFields  # Break circular import cycle
+            if dsra.object_type not in runtime_fields:
+                runtime_fields[dsra.object_type] = {}
+            runtime_fields[dsra.object_type][f'{dsra.name}'] = RuntimeFields.coalesce(
+                [f'{dsra.name}.provenance.{source_order}.value'
+                 for source_order in dsra.source_order]
+            )
+        return runtime_fields
+
+    @classmethod
+    def add_source_order_to_runtime_fields_relationships(
         cls,
         relationships: Iterable[DataObject]
     ) -> dict:

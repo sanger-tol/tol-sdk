@@ -244,14 +244,23 @@ class _ToElasticApiResourceParser:
         """
         return s.replace('\n', ' ')
 
-    def _prefix_fields(self, dict_: dict, prefix: str) -> dict:
-        if not prefix or prefix == '':
-            return dict_
-        ret = {}
-        for k, v in dict_.items():
-            if k != 'id':
-                ret[prefix + '_' + k] = v
-        return ret
+    def _parse_attribute(
+        self,
+        value: Any | None,
+        provenance: str | None,
+    ) -> dict[str, Any] | None:
+
+        if value is None:
+            return None
+
+        if provenance is not None:
+            return {
+                'provenance': {
+                    provenance: {'value': value.id}
+                }
+            }
+
+        return value
 
     def _parse_to_one_relation(
         self,
@@ -319,13 +328,15 @@ class DefaultElasticUpsertInputParser(
         data_object: DataObject,
         provenance: str | None,
     ) -> dict:
+        attributes_dict = {
+            k: self._parse_attribute(v, provenance)
+            for k, v in data_object.attributes.items()
+        }
         to_ones_dict = {
             k: self._parse_to_one_relation(v, provenance)
             for k, v in data_object._to_one_objects.items()
         }
-        # We are currently prefixing the attributes with the provenance. Later we will
-        # implement provenance similar to the to_one relationships
-        return self._prefix_fields(data_object.attributes, provenance) | to_ones_dict
+        return attributes_dict | to_ones_dict
 
     def _stringify_ids(self, dict_: dict) -> dict:
         ret = {}
@@ -388,13 +399,10 @@ class DefaultElasticUpdateInputParser(
         }
 
     def _convert_data_objects_in_update_to_dict(self, dict_: dict, provenance: str | None) -> dict:
-        ret_relationships = {}
-        ret_attributes = {}
+        ret = {}
         for k, v in dict_.items():
             if isinstance(v, DataObject):
-                ret_relationships[k] = self._parse_to_one_relation(v, provenance)
+                ret[k] = self._parse_to_one_relation(v, provenance)
             else:
-                ret_attributes[k] = v
-        # We are currently prefixing the attributes with the provenance. Later we will
-        # implement provenance similar to the to_one relationships
-        return self._prefix_fields(ret_attributes, provenance) | ret_relationships
+                ret[k] = self.__parse_attribute(v, provenance)
+        return ret

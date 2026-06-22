@@ -283,7 +283,7 @@ class ElasticDataSource(
         """
         Map our field format to Elastic's format
         """
-
+        print(self.runtime_fields)
         if '.' in name:
             split_name = name.split('.')
             # Runtime relationship id fields are exposed as relationship-name fields,
@@ -310,14 +310,15 @@ class ElasticDataSource(
         else:
             if name == 'id':
                 return 'uid.keyword'
-            # Runtime fields don't behave the same as text fields
-            if object_type in self.runtime_fields and name in self.runtime_fields[object_type]:
-                return name
             # An attribute of the object
             if name in self.attribute_types[object_type]:
                 field_type = self.attribute_types[object_type][name]
                 if field_type == 'str':
-                    return f'{name}.keyword'
+                    return f'{name}.value.keyword'
+                return f'{name}.value'
+            # Runtime fields don't behave the same as text fields
+            if object_type in self.runtime_fields and name in self.runtime_fields[object_type]:
+                return name
         return name
 
     def _prepare_get_parameters(

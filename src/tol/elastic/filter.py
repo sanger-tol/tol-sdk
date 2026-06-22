@@ -71,6 +71,7 @@ class ElasticFilterConverter(DataSourceFilterConverter):
                         query['bool'][elastic_section].append({
                             'terms': {search_field: search_value, 'boost': 1.0}
                         })
+        print(query)
         return query
 
     def _get_field_comparison_filter(self, field1: str, field2: str, op: str, negated: bool) -> \
