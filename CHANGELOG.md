@@ -6,6 +6,18 @@ SPDX-License-Identifier: MIT
 
 # Changelog
 
+## tol-sdk `2.3.0`
+22-06-2026
+- Added POST `add-entity` endpoint to `board_bp`
+- Added POST `create-board` endpoint to `board_bp`
+- Added DELETE `delete-entity` endpoint to `board_bp`
+- Added PATCH `reorder` endpoint to `board_bp`
+- Added GET `get-entity` endpoint to `board_bp`
+- Added POST `copy` endpoint to `board_bp`
+- Added more security to `board_bp` endpoints
+- Added `upsert_batch` to allow for sessioned re-ordering of board entities.
+- Added ability for `warden` role to bypass user needing to be owner requirements to edit boards & board entities.
+
 ## tol-sdk `2.2.2`
 09-06-2026
 - Bug fixes for the SGP STS -> Benchling flow converter
