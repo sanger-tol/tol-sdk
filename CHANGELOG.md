@@ -9,6 +9,8 @@ SPDX-License-Identifier: MIT
 ## tol-sdk `2.3.2`
 23-06-2026
 - Avoid caching data in JsonDataSource and children
+- Enhance DummyDataSource
+- Better errors when running pipelines
 
 ## tol-sdk `2.3.1`
 22-06-2026

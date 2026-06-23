@@ -15,8 +15,10 @@ from .converter import (
 from ..core import DataObject, DataSource, DataSourceError, DataSourceFilter
 from ..core.operator import (
     DetailGetter,
-    ListGetter
+    ListGetter,
+    Relational
 )
+from ..core.relationship import RelationshipConfig
 
 if typing.TYPE_CHECKING:
     from ..core.session import OperableSession
@@ -30,7 +32,8 @@ class DummyDataSource(
 
     # the supported operators
     DetailGetter,
-    ListGetter
+    ListGetter,
+    Relational,
 ):
     """
     A `DataSource` that outputs dummy data.
@@ -68,9 +71,6 @@ class DummyDataSource(
             },
             'category': {
                 'name': 'str'
-            },
-            'sub_category': {
-                'name': 'str',
             }
         }
 
@@ -80,6 +80,31 @@ class DummyDataSource(
         return list(
             self.attribute_types.keys()
         )
+
+    @property
+    @cache
+    def relationship_config(self) -> dict[str, RelationshipConfig]:
+        rc_record = RelationshipConfig()
+        rc_record.to_one = {
+            'category': 'category',
+            'sub_category': 'category',
+        }
+        return {'record': rc_record}
+
+    def get_to_one_relation(
+        self,
+        source: DataObject,
+        relationship_name: str,
+
+    ) -> Optional[DataObject]:
+        return source._to_one_objects.get(relationship_name)
+
+    def get_to_many_relations(
+        self,
+        source: DataObject,
+        relationship_name: str,
+    ) -> Iterable[DataObject]:
+        return source._to_many_objects.get(relationship_name, [])
 
     def get_by_id(
         self,
@@ -105,6 +130,8 @@ class DummyDataSource(
         session: Optional[OperableSession] = None,
         **kwargs
     ) -> Iterable[DataObject]:
+        if object_type not in self.supported_types:
+            raise DataSourceError(f'{object_type} is not supported')
         if object_filters:
             raise DataSourceError('Filtering is not supported')
         objects = self.__client_factory().get_list(

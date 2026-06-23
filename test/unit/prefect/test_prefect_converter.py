@@ -36,6 +36,7 @@ class TestDefaultPrefectConverter(IsolatedAsyncioTestCase):
             'hello',
             dep_id,
             'star',
+            'flow failed',
             list(ascii_lowercase),
             'hahahaha',
             {c: f'test_{c}' for c in 'abc'}
@@ -60,6 +61,7 @@ class TestDefaultPrefectConverter(IsolatedAsyncioTestCase):
                 'deployment_name': 'jerry',
                 'flow_name': 'tom',
                 'state': 'star',
+                'state_message': 'flow failed',
                 'tags': list(ascii_lowercase),
                 'idempotency_key': 'hahahaha',
                 'parameters': {
@@ -89,6 +91,7 @@ class TestDefaultPrefectConverter(IsolatedAsyncioTestCase):
                 '__name__',
                 f'ID_{i % 3}',
                 'yooooooo',
+                None,
                 [],
                 'sdksdj',
                 {}
@@ -112,6 +115,7 @@ class TestDefaultPrefectConverter(IsolatedAsyncioTestCase):
         name: str,
         dep_id: str,
         state_name: str,
+        state_message: str | None,
         tags: list[str],
         idempotency_key: str,
         parameters: dict[str, Any]
@@ -123,6 +127,9 @@ class TestDefaultPrefectConverter(IsolatedAsyncioTestCase):
         type(mock_fr).name = PropertyMock(return_value=name)
         type(mock_fr).deployment_id = PropertyMock(return_value=dep_id)
         type(mock_fr).state_name = PropertyMock(return_value=state_name)
+        type(mock_fr).state = PropertyMock(
+            return_value=Mock(message=state_message)
+        )
         type(mock_fr).tags = PropertyMock(return_value=tags)
         type(mock_fr).idempotency_key = PropertyMock(
             return_value=idempotency_key
