@@ -23,13 +23,14 @@ class TestDummyClient:
                 'type': 'record',
                 'category': ['cat1', 'cat2', 'cat3', 'cat4'][i % 4],
                 'sub_category': ['cat1', 'cat2', 'cat3', 'cat4'][(i - 1) % 4],
+                'list': ['alpha', 'beta', 'gamma'],
                 'link': 'https://www.google.com/',
                 'links': [
                     'https://www.google.com/',
                     'https://www.instagram.com/',
                     'https://www.facebook.com/',
                     'https://www.twitter.com/',
-                ][i % 4],
+                ],
                 'image': {
                     'url': 'https://picsum.photos/200/300',
                     'caption': 'cap1',
@@ -39,7 +40,7 @@ class TestDummyClient:
                     {'url': 'https://picsum.photos/200/300', 'caption': 'cap2'},
                     {'url': 'https://picsum.photos/200/300', 'caption': 'cap3'},
                     {'url': 'https://picsum.photos/200/300', 'caption': 'cap4'},
-                ][i % 4],
+                ],
             }
             for i in range(1, 3)
         ]
@@ -66,13 +67,14 @@ class TestDummyClient:
                 'type': 'record',
                 'category': ['cat1', 'cat2', 'cat3', 'cat4'][i % 4],
                 'sub_category': ['cat1', 'cat2', 'cat3', 'cat4'][(i - 1) % 4],
+                'list': ['alpha', 'beta', 'gamma'],
                 'link': 'https://www.google.com/',
                 'links': [
                     'https://www.google.com/',
                     'https://www.instagram.com/',
                     'https://www.facebook.com/',
                     'https://www.twitter.com/',
-                ][i % 4],
+                ],
                 'image': {
                     'url': 'https://picsum.photos/200/300',
                     'caption': 'cap1',
@@ -82,12 +84,24 @@ class TestDummyClient:
                     {'url': 'https://picsum.photos/200/300', 'caption': 'cap2'},
                     {'url': 'https://picsum.photos/200/300', 'caption': 'cap3'},
                     {'url': 'https://picsum.photos/200/300', 'caption': 'cap4'},
-                ][i % 4],
+                ],
             }
             for i in range(0, 2)
         ]
 
         observed = client.get_list('record')
-        assert len(observed) == 10000
+        assert len(observed) == 20000
         assert observed[0] == objs[0]
         assert observed[1] == objs[1]
+
+    def test_get_list_category(self):
+        client = DummyClient()
+
+        observed = client.get_list('category')
+
+        assert observed == [
+            {'id': 'cat1', 'name': 'CAT1', 'type': 'category'},
+            {'id': 'cat2', 'name': 'CAT2', 'type': 'category'},
+            {'id': 'cat3', 'name': 'CAT3', 'type': 'category'},
+            {'id': 'cat4', 'name': 'CAT4', 'type': 'category'},
+        ]
