@@ -6,8 +6,12 @@ SPDX-License-Identifier: MIT
 
 # Changelog
 
+## tol-sdk `2.3.2`
+23-06-2026
+- Avoid caching data in JsonDataSource and children
+
 ## tol-sdk `2.3.1`
-22-6-2026
+22-06-2026
 - Fix bug in GritIssueToElasticCurationConverter
 
 ## tol-sdk `2.3.0`
