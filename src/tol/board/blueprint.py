@@ -4,37 +4,28 @@
 
 from __future__ import annotations
 
-import typing
+from typing import TYPE_CHECKING
 
-from flask import Blueprint
+from flask import Blueprint, request
 
-from ..api_base.auth import ForbiddenError
-from ..api_base.misc import (
-    CtxGetter,
-    default_ctx_getter
-)
-from ..core import (
-    DataObject,
-    DataSourceError,
-    DataSourceFilter
-)
+from tol.board.constants import TYPE_HIERARCHY
 
-if typing.TYPE_CHECKING:
+from .copy import copy_entity
+from .create import add_entity, create_board
+from .delete import delete_entity
+from .get import get_entity
+from .reorder import reorder_entities
+from .utils import check_auth_and_required_fields, get_entity_and_child_type_from_parent_id
+from ..api_base.auth.error import ForbiddenError
+from ..api_base.misc import CtxGetter, default_ctx_getter
+from ..core import DataSourceError
+
+if TYPE_CHECKING:
     from ..sql import SqlDataSource
-
-
-TYPE_HIERARCHY = [
-    'board',
-    'view',
-    'zone',
-    'component',
-]
 
 
 def board_blueprint(
     board_ds: SqlDataSource,
-    type_hierarchy: list[str] = TYPE_HIERARCHY,
-
     ctx_getter: CtxGetter = default_ctx_getter,
 ) -> Blueprint:
     """
@@ -44,263 +35,183 @@ def board_blueprint(
 
     board_bp = Blueprint(
         'dashboards',
-        __name__
+        __name__,
     )
 
-    smallest_type = type_hierarchy[-1]
-    biggest_type = type_hierarchy[0]
-
-    def __smaller_is_deletable(
-        smaller_obj: DataObject,
-        bigger_type: str,
-        all_bigger_ids: list[str],
-        joiner_type: str
-    ) -> bool:
+    @board_bp.post('/copy/<string:object_id>')
+    def __copy_entity_endpoint(*, object_id: str):
         """
-        Reasons a smaller row can't be deleted:
+        POST copy a board entity and its children.
 
-        1. It doesn't belong to the user that
-           is initiating the delete (managed by
-           the calling function before this one).
-
-        2. Other bigger rows point to this smaller
-           (e.g. this `zone` is in another `view`).
+        Expects a JSON body with the following fields:
+        - new_parent_entity_title (str, required): The title for the copied entity.
+        - parent_entity_id (str, optional): The ID of the new parent entity to copy under
+        (if not provided, the copied entity will be added at the same level as the original).
         """
 
-        f = DataSourceFilter(
-            and_={
-                f'{bigger_type}.id': {
-                    'in_list': {
-                        'value': all_bigger_ids,
-                        'negate': True
-                    }
-                },
-                f'{smaller_obj.type}.id': {
-                    'eq': {
-                        'value': smaller_obj.id
-                    }
-                },
-            }
-        )
-        count = board_ds.get_count(
-            joiner_type,
-            object_filters=f
-        )
+        payload = request.json or {}
+        ctx = ctx_getter()
 
-        return count == 0
-
-    def __get_deletable_smallers(
-        smaller_type: str,
-        joiner_type: str,
-        bigger_type: str,
-        all_bigger_ids: list[str],
-        joins: list[DataObject],
-        user_id: str
-    ) -> list[DataObject]:
-        """
-        Given a bigger->smaller relation (e.g.
-        `zone` rows in a `view`) and the join
-        rows that define it (e.g. `zone_view`),
-        this function gets the smaller rows
-        (here `zone`) that can be deleted.
-        """
-
-        all_smaller_objs: list[DataObject] = [
-            getattr(join, smaller_type)
-            for join in joins
-        ]
-
-        return [
-            obj for obj in all_smaller_objs
-            if obj.user.id == user_id
-            and __smaller_is_deletable(
-                obj,
-                bigger_type,
-                all_bigger_ids,
-                joiner_type
-            )
-        ]
-
-    def __delete_recursive(
-        bigger_type: str,
-        bigger_objs: list[DataObject],
-        user_id: str
-    ) -> None:
-        """
-        Given a list of bigger, containing objects (e.g. `view`),
-        deletes the contained objects (`zone`->`component`)
-        recursively.
-
-        Stops recursion within a branch in which its head can't
-        be deleted.
-        """
-
-        all_bigger_ids = [obj.id for obj in bigger_objs]
-
-        if bigger_type != smallest_type:
-            all_deletable_smallers = []
-            all_join_ids = []
-
-            bigger_index = type_hierarchy.index(bigger_type)
-            smaller_type = type_hierarchy[bigger_index + 1]
-            joiner_type = f'{smaller_type}_{bigger_type}'
-
-            for bigger_obj in bigger_objs:
-                joins_filter = DataSourceFilter(
-                    and_={
-                        f'{bigger_obj.type}.id': {
-                            'eq': {
-                                'value': bigger_obj.id
-                            }
-                        }
-                    }
-                )
-                joins = list(
-                    board_ds.get_list(
-                        joiner_type,
-                        object_filters=joins_filter
-                    )
-                )
-
-                deletable_smallers = __get_deletable_smallers(
-                    smaller_type,
-                    joiner_type,
-                    bigger_type,
-                    all_bigger_ids,
-                    joins,
-                    user_id
-                )
-                all_deletable_smallers.extend(deletable_smallers)
-
-                join_ids = [j.id for j in joins]
-                all_join_ids.extend(join_ids)
-
-            # delete the joins first
-            board_ds.delete(joiner_type, all_join_ids)
-
-            __delete_recursive(smaller_type, all_deletable_smallers, user_id)
-
-        board_ds.delete(bigger_type, all_bigger_ids)
-
-    def __delete_above(
-        object_type: str,
-        object_id: str,
-        user_id: str
-    ) -> None:
-        """
-        Deletes the (sole) joining table entry pointing to the specified
-        `object_type`, if it's not the biggest type (aka `board`).
-
-        Fails if:
-        - there is more than one joining entry (e.g. `zone_view` -> `zone`)
-        - the (sole) joining entry does not belong to the authenticated user
-        """
-
-        if object_type == biggest_type:
-            return
-
-        object_index = type_hierarchy.index(object_type)
-        above_type = type_hierarchy[object_index - 1]
-        joiner_type = f'{object_type}_{above_type}'
-
-        f = DataSourceFilter(
-            and_={
-                f'{object_type}.id': {
-                    'eq': {
-                        'value': object_id
-                    }
-                }
-            }
-        )
-
-        above_count = board_ds.get_count(joiner_type, object_filters=f)
-        if above_count == 0:
-            return
-        if above_count > 1:
-            raise DataSourceError(
-                'Deletion Error',
-                f'More than one {above_type}s instances point '
-                f'to this {object_type}.',
-                400
-            )
-
-        (joiner_obj,) = list(
-            board_ds.get_list(
-                joiner_type,
-                object_filters=f
-            )
-        )
-
-        above_obj: DataObject = getattr(joiner_obj, above_type)
-        if above_obj.user.id != user_id:
-            raise DataSourceError(
-                'Deletion Error',
-                f'The linked {above_type} is not yours.',
-                400
-            )
-
-        board_ds.delete(joiner_type, [joiner_obj.id])
-
-    def delete(
-        bigger_type: str,
-        bigger_id: str,
-        user_id: str
-    ) -> None:
-        """
-        Given a bigger, containing object (e.g. `view`):
-
-        - Deletes the sole join to an above object if one exists
-          (here `board`). Raises a `DataSourceError` if either:
-            1. the above object does not belong to the user
-               calling this method.
-            2. there is more than one above join (e.g. if this
-               `zone` is in more than one `board`) regardless
-               of user-ownership.
-        - Recursively deletes all descendents (here
-          `zone`->`component`), ending branching at any node
-          that can't be deleted.
-        - Deletes this bigger, containing object (here `view`).
-        """
-
-        bigger_obj = board_ds.get_one(bigger_type, bigger_id)
-
-        if bigger_obj is None:
-            raise DataSourceError(
-                'Not Found',
-                f'The given {bigger_type} was not found.',
-                404
-            )
-
-        if bigger_obj.user.id != user_id:
+        if len(ctx.roles) == 0:
             raise ForbiddenError()
 
-        __delete_above(
-            bigger_type,
-            bigger_id,
-            user_id
-        )
+        entity_type, _ = get_entity_and_child_type_from_parent_id(object_id)
+        entity = board_ds.get_one(entity_type, object_id)
 
-        __delete_recursive(
-            bigger_type,
-            [bigger_obj],
-            user_id
-        )
-
-    @board_bp.delete('/<string:object_type>/<string:object_id>')
-    def __delete_endpoint(*, object_type: str, object_id: str):
-        if object_type not in type_hierarchy:
+        if entity is None:
             raise DataSourceError(
-                'Unknown Type',
-                'The given type is not recognised in the hierarchy',
-                400
+                'Not Found',
+                f'No entity found with ID {object_id}',
+                404,
             )
 
-        delete(
-            object_type,
+        destination_id = payload.get('parent_entity_id')
+        if destination_id:
+            destination_type, _ = get_entity_and_child_type_from_parent_id(destination_id)
+            destination = board_ds.get_one(destination_type, destination_id)
+            destination_owner_id = getattr(destination.user, 'id', None) if destination else None
+        elif entity_type == TYPE_HIERARCHY[0]:
+            destination_owner_id = None
+        else:
+            destination_owner_id = getattr(entity.user, 'id', None)
+
+        check_auth_and_required_fields(
+            ctx_getter,
+            payload,
+            owner_id=destination_owner_id,
+        )
+
+        return copy_entity(
+            board_ds,
             object_id,
-            ctx_getter().user_id
+            ctx.user_id,
+            payload,
+        )
+
+    @board_bp.post('/add-entity/<string:parent_id>')
+    def __add_entity_endpoint(*, parent_id: str):
+        """
+        POST add a new entity under a given parent entity.
+
+        Expects a JSON body with the following fields:
+        - type (str, required): The type of the entity to add.
+        - attributes (dict, optional): A dictionary of attributes for the new entity.
+        """
+
+        payload = request.json or {}
+        ctx = ctx_getter()
+
+        check_auth_and_required_fields(
+            ctx_getter,
+            payload
+        )
+
+        return add_entity(
+            board_ds,
+            parent_id,
+            ctx.user_id,
+            ctx.roles,
+            payload,
+        )
+
+    @board_bp.post('/create-board')
+    def __create_board_endpoint():
+        """
+        POST create a new board with a given title.
+
+        Expects a JSON body with the following fields:
+        - title (str, required): The title for the new board.
+        """
+
+        payload = request.json or {}
+        ctx = ctx_getter()
+
+        check_auth_and_required_fields(
+            ctx_getter,
+            payload
+        )
+
+        return create_board(
+            board_ds=board_ds,
+            user_id=ctx.user_id,
+            ctx_getter=ctx_getter,
+        )
+
+    @board_bp.delete('/delete-entity/<string:object_id>')
+    def __delete_endpoint(*, object_id: str):
+        """
+        DELETE an entity and all its children.
+
+        Expects a JSON body with the following fields:
+        - None
+        """
+
+        payload = request.get_json(silent=True) or {}
+        ctx = ctx_getter()
+
+        check_auth_and_required_fields(
+            ctx_getter,
+            payload
+        )
+
+        delete_entity(
+            board_ds=board_ds,
+            parent_id=object_id,
+            user_id=ctx.user_id,
+            roles=ctx.roles,
         )
 
         return {'deleted': True}, 200
+
+    @board_bp.patch('/reorder/<string:parent_id>')
+    def __reorder_endpoint(*, parent_id: str):
+        """
+        Reorders child entities under a given parent entity.
+
+        Expects a JSON body with an 'order' field containing a
+        list of child entity IDs in the desired order.
+
+        Validates that the provided order includes all and only the actual child IDs.
+        """
+        payload = request.json or {}
+        new_order = payload.get('order')
+
+        check_auth_and_required_fields(
+            ctx_getter,
+            payload,
+            required_fields=['order']
+        )
+
+        if not isinstance(new_order, list) or not all(isinstance(item, str) for item in new_order):
+            raise DataSourceError(
+                'Bad Request',
+                'The field "order" must be a list of strings.',
+                400,
+            )
+
+        reorder_entities(
+            board_ds=board_ds,
+            parent_object_id=parent_id,
+            new_order=new_order,
+        )
+
+        return {
+            'order': new_order,
+        }, 200
+
+    @board_bp.get('/get-entity/<string:object_id>')
+    def __get_board_entities(*, object_id: str):
+        """
+        GET an entity and all its children recursively.
+
+        Expects a JSON body with the following fields:
+        - None
+        """
+
+        return get_entity(
+            board_ds,
+            object_id,
+            ctx_getter,
+        )
 
     return board_bp

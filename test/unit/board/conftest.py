@@ -10,28 +10,12 @@ from flask.testing import FlaskClient
 import pytest
 
 from tol.api_base.misc import AuthContext
-from tol.board import board_blueprint
+from tol.board import TYPE_HIERARCHY, board_blueprint
 from tol.sql import SqlDataSource
-
-
-@pytest.fixture(scope='package')
-def type_hierarchy() -> list[str]:
-    """
-    Imitates the (descending-order) type
-    hierarchy (at time of writing):
-
-    - board
-    - view
-    - zone
-    - component
-    """
-
-    return ['L', 'M', 'S']
 
 
 @pytest.fixture
 def board_ds(
-    type_hierarchy: list[str]
 ) -> SqlDataSource:
 
     mock_ds: SqlDataSource = create_autospec(
@@ -39,10 +23,13 @@ def board_ds(
         spec_set=True
     )
 
-    mock_ds.supported_types = type_hierarchy
+    mock_ds.supported_types = TYPE_HIERARCHY
     mock_ds.attribute_types = {
-        t: {} for t in type_hierarchy
+        t: {} for t in TYPE_HIERARCHY
     }
+
+    mock_ds.get_session.return_value.__enter__.return_value = mock_ds
+    mock_ds.get_session.return_value.__exit__.return_value = False
 
     return mock_ds
 
@@ -56,12 +43,10 @@ def board_auth_ctx() -> AuthContext:
 def board_bp(
     board_ds: SqlDataSource,
     board_auth_ctx: AuthContext,
-    type_hierarchy: list[str]
 ) -> Blueprint:
 
     return board_blueprint(
         board_ds,
-        type_hierarchy=type_hierarchy,
         ctx_getter=lambda: board_auth_ctx
     )
 
@@ -78,3 +63,8 @@ def board_app(board_bp: Blueprint) -> Flask:
 @pytest.fixture
 def board_client(board_app: Flask) -> FlaskClient:
     return board_app.test_client()
+
+
+@pytest.fixture
+def type_hierarchy() -> list[str]:
+    return list(TYPE_HIERARCHY)
