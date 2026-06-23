@@ -21,5 +21,6 @@ class FlowRunObject(DataObject):
     name: Optional[str]
     tags: Optional[list[str]]
     state: Optional[str]
+    state_message: Optional[str]
     idempotency_key: Optional[str]
     parameters: Optional[dict[str, Any]]

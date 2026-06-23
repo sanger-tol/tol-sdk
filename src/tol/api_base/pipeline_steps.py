@@ -49,6 +49,13 @@ REQUIRED_FIELDS: List = [
     'dry_run'
 ]
 
+FAILED_FLOW_STATES = {
+    'FAILED': 'validation_system_error',
+    'CRASHED': 'validation_system_error',
+    'CANCELLED': 'validation_system_error',
+    'TIMEDOUT': 'validation_timeout',
+}
+
 
 def pipeline_steps_blueprint(
     sql_ds: SqlDataSource,
@@ -206,6 +213,31 @@ def pipeline_steps_blueprint(
             if role not in ctx.roles:
                 raise ForbiddenError()
 
+    def __get_validation_status_for_flow_state(
+        flow_state: str | None
+    ) -> str | None:
+        if not flow_state:
+            return None
+
+        return FAILED_FLOW_STATES.get(flow_state.upper())
+
+    def __get_failure_message(
+        flow_run: Any,
+        validation_status: str | None
+    ) -> str | None:
+        if validation_status is None:
+            return None
+
+        state_message = getattr(flow_run, 'state_message', None)
+        if state_message:
+            return state_message
+
+        state = getattr(flow_run, 'state', None)
+        if state:
+            return f'Flow run failed in Prefect with state "{state}".'
+
+        return 'Flow run failed in Prefect.'
+
     @bp.route('/revalidate', methods=['POST'])
     def revalidate_upload() -> tuple[dict[str, str], int]:
 
@@ -287,6 +319,77 @@ def pipeline_steps_blueprint(
 
         return {'success': True, 'upload_and_flow_run_ids': list(zip(upload_ids,
                                                                      flow_run_ids))}, 200
+
+    @bp.route('/sync-status', methods=['POST'])
+    def sync_upload_status() -> tuple[dict[str, Any], int]:
+
+        ctx = ctx_getter()
+        __check_auth(ctx)
+
+        body: dict[str, Any] = request.json.get('data', {})
+        __check_required_fields(body, required_fields=['upload_ids'])
+
+        upload_ids: list[str] = body['upload_ids']
+
+        f = DataSourceFilter()
+        f.and_ = {
+            'id': {'in_list': {'value': upload_ids}}}
+
+        existing_uploads = list(sql_ds.get_list(
+            'upload',
+            object_filters=f
+        ))
+
+        if not existing_uploads:
+            raise DataSourceError(
+                'Not Found',
+                'No uploads found for the provided upload IDs.',
+                404
+            )
+
+        uploads_to_update = []
+        synced_upload_ids = []
+
+        for upload in existing_uploads:
+            flow_run_id = getattr(upload, 'flow_run_id', None)
+            if not flow_run_id:
+                continue
+
+            flow_run = prefect_ds.get_flow_run(flow_run_id)
+            if flow_run is None:
+                continue
+
+            validation_status = __get_validation_status_for_flow_state(
+                getattr(flow_run, 'state', None)
+            )
+
+            if validation_status is None:
+                continue
+
+            uploads_to_update.append(sql_ds.data_object_factory(
+                'upload',
+                upload.id,
+                attributes={
+                    'validation_status': validation_status,
+                    'failure_message': __get_failure_message(
+                        flow_run,
+                        validation_status
+                    ),
+                    'completed': True,
+                },
+            ))
+            synced_upload_ids.append(upload.id)
+
+        if uploads_to_update:
+            sql_ds.upsert(
+                'upload',
+                uploads_to_update
+            )
+
+        return {
+            'success': True,
+            'upload_ids': synced_upload_ids
+        }, 200
 
     @bp.post('')
     def run_pipeline_steps() -> tuple[dict[str, Any], int]:
