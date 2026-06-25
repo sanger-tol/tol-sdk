@@ -635,6 +635,18 @@ def create_standard_models(
         )
 
         @declared_attr
+        def name(self) -> Mapped[str | None]:
+            return mapped_column()
+
+        @declared_attr
+        def email(self) -> Mapped[str | None]:
+            return mapped_column()
+
+        @declared_attr
+        def workplace(self) -> Mapped[str | None]:
+            return mapped_column()
+
+        @declared_attr
         def components(self) -> Mapped[list[Component]]:
             return relationship(
                 back_populates='user'
