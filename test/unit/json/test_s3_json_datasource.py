@@ -16,7 +16,7 @@ from tol.json import (
 
 
 class MockS3JsonDataSource(S3JsonDataSource):
-    def _load_json_from_s3(self, s3_bucket, s3_object):
+    def _load_json(self):
         return [
             {
                 'Id': 1,

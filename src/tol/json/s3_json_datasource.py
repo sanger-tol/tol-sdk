@@ -45,7 +45,7 @@ class S3JsonDataSource(
         self.config = config
         self.id_attribute = config.get('id_attribute')
 
-        bucket, object_name = self._extract_object_and_bucket(self.uri)
+        self.bucket, self.object_name = self._extract_object_and_bucket(self.uri)
 
         # Initialize MinIO client
         self.minio_client = Minio(
@@ -55,21 +55,10 @@ class S3JsonDataSource(
             secure=secure
         )
 
-        # Load JSON data from S3
-        raw_data = self._load_json_from_s3(bucket, object_name)
-
-        # Set raw data
-        self._raw_data = raw_data
-        self._keyed_by_id = {
-            v[self.id_attribute]: v
-            for v in self._raw_data
-            if self.id_attribute in v
-        }
-
-    def _load_json_from_s3(self, bucket: str, object_name: str):
+    def _load_json(self):
         """Fetch and load JSON data from an S3 bucket."""
         try:
-            response = self.minio_client.get_object(bucket, object_name)
+            response = self.minio_client.get_object(self.bucket, self.object_name)
             json_data = json.load(BytesIO(response.read()))  # Read and parse JSON
             return json_data
         except Exception as e:
