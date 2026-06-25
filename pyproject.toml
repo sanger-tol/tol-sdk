@@ -45,7 +45,7 @@ irods = ["python-irodsclient == 3.1.0"]
 jira = ["atlassian-python-api==3.41.14"]
 json = ["minio == 7.2.15"]
 mysql = ["mysql-connector-python==9.5.0"]
-postgresql = ["SQLAlchemy == 2.0.35", "psycopg2-binary == 2.9.9"]
+postgresql = ["SQLAlchemy == 2.0.35", "psycopg2-binary == 2.9.12"]
 prefect = ["prefect == 2.20.18", "griffe < 1.0.0"]
 sheets = [
     "pandas == 2.1.4",

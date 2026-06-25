@@ -11,6 +11,8 @@ SPDX-License-Identifier: MIT
 - Avoid caching data in JsonDataSource and children
 - Enhance DummyDataSource
 - Better errors when running pipelines
+- Re-add the `grit_treeval`, `grit_treeval_data` and `grit_contamination` fields
+  extracted by GritIssueToElasticCurationConverter
 
 ## tol-sdk `2.3.1`
 22-06-2026
