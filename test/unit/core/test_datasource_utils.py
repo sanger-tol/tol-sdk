@@ -21,6 +21,7 @@ from tol.core.operator import (
     ListGetter,
     Relational
 )
+from tol.core.operator.provenancer import ProvenanceField
 from tol.core.relationship import RelationshipConfig
 from tol.elastic.runtime_fields import RuntimeFields
 
@@ -216,33 +217,37 @@ class TestUtils:
         )
         assert isinstance(ds, DataSource)
 
-    def test_add_source_order_to_runtime_fields_empty(self):
-        config = MagicMock()
-        config.data_source_config_relationships = []
-
-        result = DataSourceUtils.add_source_order_to_runtime_fields(config)
-
-        assert result == {}
-
-    def test_add_source_order_to_runtime_fields_skips_none_source_order(self):
+    def test_get_provenance_fields_skips_none_source_order(self):
         rel = MagicMock()
         rel.source_order = None
         config = MagicMock()
         config.data_source_config_relationships = [rel]
 
-        result = DataSourceUtils.add_source_order_to_runtime_fields(config)
+        result = DataSourceUtils.get_provenance_fields([], [rel])
 
         assert result == {}
 
-    def test_add_source_order_to_runtime_fields_with_source_order(self):
+    def test_get_provenance_fields_with_source_order(self):
+        att = MagicMock()
+        att.source_order = ['source1', 'source2']
+        att.return_type = 'int'
+        att.object_type = 'sample'
+        att.name = 'att_name'
         rel = MagicMock()
         rel.source_order = ['source1', 'source2']
         rel.object_type = 'sample'
         rel.name = 'rel_name'
+        rel.return_type = None
 
-        result = DataSourceUtils.add_source_order_to_runtime_fields([rel])
-
-        expected_field = RuntimeFields.coalesce(
-            ['rel_name.id.provenance.source1.value', 'rel_name.id.provenance.source2.value']
-        )
-        assert result == {'sample': {'rel_name': expected_field}}
+        result = DataSourceUtils.get_provenance_fields([att], [rel])
+        assert result == {
+            'sample': {
+                'att_name': ProvenanceField(
+                    source_order=['source1', 'source2'],
+                    return_type='int'
+                ),
+                'rel_name': ProvenanceField(
+                    source_order=['source1', 'source2'],
+                    return_type='str'
+                )
+            }}

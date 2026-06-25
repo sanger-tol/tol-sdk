@@ -28,6 +28,8 @@ from .converter import (
 )
 from .filter import ElasticFilterConverter
 from .parser import ElasticUpdateInputResource, ElasticUpsertInputResource
+from .runtime_fields import RuntimeFields
+
 from ..core import (
     AttributeMetadata,
     DataId,
@@ -48,6 +50,7 @@ from ..core.operator import (
     LegacyAggregator,
     ListGetter,
     PageGetter,
+    Provenancer,
     RelationWriteMode,
     Relational,
     Statter,
@@ -56,6 +59,7 @@ from ..core.operator import (
     Upserter,
 )
 from ..core.operator.aggregator import AggregationResult, AggregationResultData
+from ..core.operator.provenancer import ProvenanceFields
 from ..core.operator.updater import DataObjectUpdate
 from ..core.relationship import (
     RelationshipConfig
@@ -80,6 +84,7 @@ class ElasticDataSource(
     DetailGetter,
     Enricher,
     PageGetter,
+    Provenancer,
     ListGetter,
     LegacyAggregator,
     Relational,
@@ -97,6 +102,7 @@ class ElasticDataSource(
                  attribute_metadata: AttributeMetadata = DefaultAttributeMetadata,
                  relationship_cfg: dict[str, RelationshipConfig] | None = None,
                  runtime_fields: dict[str, Any] = {},
+                 provenance_fields: ProvenanceFields = {},
                  **kwargs):
         del kwargs
         super().__init__(
@@ -113,7 +119,8 @@ class ElasticDataSource(
         Only FKs pointing to IDs are currently supported
         """
         attribute_metadata.host = self
-        self.runtime_fields = runtime_fields
+        self.provenance_fields = provenance_fields
+        self.runtime_fields = runtime_fields | self.__add_runtime_fields_from_provenance_fields()
         self._initialise_elasticsearch()
         self.__lazy = False
         self._relationship_cfg = relationship_cfg
@@ -1132,3 +1139,18 @@ class ElasticDataSource(
 
         if source.type not in self.relationship_config:
             raise DataSourceError('This type has no relationships')
+
+    def __add_runtime_fields_from_provenance_fields(
+        self,
+    ) -> dict:
+        runtime_fields = {}
+        for field_name, provenance_field in self.provenance_fields.items():
+            if provenance_field.object_type not in runtime_fields:
+                runtime_fields[provenance_field.object_type] = {}
+            runtime_fields[provenance_field.object_type][f'{provenance_field.name}'] = \
+                RuntimeFields.coalesce(
+                    [f'{provenance_field.name}.provenance.{source_order}.value'
+                    for source_order in provenance_field.source_order],
+                    return_type=provenance_field.return_type or 'str'
+                )
+        return runtime_fields

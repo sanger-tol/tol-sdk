@@ -12,6 +12,7 @@ from .data_source_attribute_metadata import data_source_attribute_metadata
 from .datasource import DataSource
 from .datasource_error import DataSourceError
 from .datasource_filter import DataSourceFilter
+from .operator.provenancer import ProvenanceField, ProvenanceFields
 from .relationship import RelationshipConfig
 
 
@@ -63,20 +64,14 @@ class DataSourceUtils:
             runtime_fields = cls.get_runtime_fields_from_data_source_config(
                 attributes=attributes
             )
-            runtime_fields_with_source_order_attributes = \
-                cls.add_source_order_to_runtime_fields_attributes(
-                    attributes=attributes,
-                )
-            runtime_fields_with_source_order_relationships = \
-                cls.add_source_order_to_runtime_fields_relationships(
-                    relationships=relationships,
-                )
             new_kwargs.update({
                 'relationship_cfg': relationship_config,
                 'attribute_metadata': amd,
-                'runtime_fields':
-                    runtime_fields | runtime_fields_with_source_order_attributes |
-                    runtime_fields_with_source_order_relationships
+                'runtime_fields': runtime_fields,
+                'provenance_fields': cls.get_provenance_fields(
+                    attributes=attributes,
+                    relationships=relationships
+                ),
             })
         return DataSourceUtils.get_datasource_by_name(
             datasource_instance.builtin_name,
@@ -131,40 +126,18 @@ class DataSourceUtils:
         return runtime_fields
 
     @classmethod
-    def add_source_order_to_runtime_fields_attributes(
-        cls,
-        attributes: Iterable[DataObject]
-    ) -> dict:
-        runtime_fields = {}
-        for dsra in attributes:
-            if dsra.source_order is None:
+    def get_provenance_fields(cls, attributes, relationships) -> ProvenanceFields:
+        provenance_fields = {}
+        for dsca in attributes + relationships:
+            if dsca.source_order is None:
                 continue
-            from ..elastic.runtime_fields import RuntimeFields  # Break circular import cycle
-            if dsra.object_type not in runtime_fields:
-                runtime_fields[dsra.object_type] = {}
-            runtime_fields[dsra.object_type][f'{dsra.name}'] = RuntimeFields.coalesce(
-                [f'{dsra.name}.provenance.{source_order}.value'
-                 for source_order in dsra.source_order]
+            if dsca.object_type not in provenance_fields:
+                provenance_fields[dsca.object_type] = {}
+            provenance_fields[dsca.object_type][dsca.name] = ProvenanceField(
+                source_order=dsca.source_order,
+                return_type=dsca.return_type or 'str'
             )
-        return runtime_fields
-
-    @classmethod
-    def add_source_order_to_runtime_fields_relationships(
-        cls,
-        relationships: Iterable[DataObject]
-    ) -> dict:
-        runtime_fields = {}
-        for dsrc in relationships:
-            if dsrc.source_order is None:
-                continue
-            from ..elastic.runtime_fields import RuntimeFields  # Break circular import cycle
-            if dsrc.object_type not in runtime_fields:
-                runtime_fields[dsrc.object_type] = {}
-            runtime_fields[dsrc.object_type][f'{dsrc.name}'] = RuntimeFields.coalesce(
-                [f'{dsrc.name}.id.provenance.{source_order}.value'
-                 for source_order in dsrc.source_order]
-            )
-        return runtime_fields
+        return provenance_fields
 
     @classmethod
     def get_ids(
