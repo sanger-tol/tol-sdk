@@ -256,7 +256,7 @@ class TestElasticDataSource:
         mock_elastic_data_source.upsert('index', objects, id_func=lambda x: x.field1)
         mock_elastic_data_source.helpers.bulk.assert_called_once()
 
-    def test_upsert_add_prefix_and_id(self, mock_elastic_data_source: ElasticDataSource):
+    def test_upsert_add_id(self, mock_elastic_data_source: ElasticDataSource):
         CoreDataObject = mock_elastic_data_source.data_object_factory  # noqa N806
 
         objects = [
@@ -275,8 +275,7 @@ class TestElasticDataSource:
         generator = converter.convert(ElasticUpsertInputResource(
             'test-obj-type',
             objects,
-            id_func=lambda x: x.field1,
-            field_prefix='pre'
+            id_func=lambda x: x.field1
         ))
         expected = {
             '_op_type': 'update',
@@ -289,8 +288,8 @@ class TestElasticDataSource:
                 'lang': 'painless',
                 'params': {
                     'upsertWith': {
-                        'pre_field1': 'value1',
-                        'pre_field2': 'value2',
+                        'field1': 'value1',
+                        'field2': 'value2',
                         'uid': 'value1'
                     }
                 }
@@ -308,8 +307,8 @@ class TestElasticDataSource:
                 'lang': 'painless',
                 'params': {
                     'upsertWith': {
-                        'pre_field1': 'value3',
-                        'pre_field2': 'value4',
+                        'field1': 'value3',
+                        'field2': 'value4',
                         'uid': 'value3'
                     }
                 }
@@ -355,7 +354,6 @@ class TestElasticDataSource:
         update_body = converter.convert(ElasticUpdateInputResource(
             'obj_type',
             update1,
-            field_prefix='prefix',
             candidate_key=['field1'],
             provenance='source_1'
         ))
@@ -373,8 +371,8 @@ class TestElasticDataSource:
                 'lang': 'painless',
                 'params': {
                     'upsertWith': {
-                        'prefix_field2': 'value2',
-                        'prefix_relationship': {
+                        'field2': 'value2',
+                        'relationship': {
                             'id': {'provenance': {'source_1': {'value': 'rel1'}}},
                             'field3': 'string1',
                             'field4': 'string2'

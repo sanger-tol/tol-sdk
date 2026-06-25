@@ -290,21 +290,17 @@ class ElasticDataSource(
         """
         Map our field format to Elastic's format
         """
-        print(self.runtime_fields)
+        # If this is a provenance field, we need to use the actual field name in Elastic
+        if object_type in self.provenance_fields and name in self.provenance_fields[object_type]:
+            actual_field = f'{name}.value'
+            return self._field_or_keyword(object_type, actual_field)
+
+        # If this is a runtime field, we need to use the actual field name in Elastic
+        # regardless of its type
+        if object_type in self.runtime_fields and name in self.runtime_fields[object_type]:
+            return name
+
         if '.' in name:
-            split_name = name.split('.')
-            # Runtime relationship id fields are exposed as relationship-name fields,
-            # so `<relationship>.id` filters must target `<relationship>`.
-            if object_type in self.runtime_fields:
-                runtime_fields = self.runtime_fields[object_type]
-                if name in runtime_fields:
-                    return name
-                if (
-                    len(split_name) >= 2
-                    and split_name[1] == 'id'
-                    and split_name[0] in runtime_fields
-                ):
-                    return split_name[0]
             rc = self.relationship_config[object_type]
             relationship_name, attribute = name.split('.')[0], name.split('.')[1]
             if attribute == 'id':
@@ -313,7 +309,6 @@ class ElasticDataSource(
             attribute_type = self.attribute_types[relationship_object_type][attribute]
             if attribute_type == 'str':
                 return f'{name}.keyword'
-
         else:
             if name == 'id':
                 return 'uid.keyword'
@@ -321,11 +316,8 @@ class ElasticDataSource(
             if name in self.attribute_types[object_type]:
                 field_type = self.attribute_types[object_type][name]
                 if field_type == 'str':
-                    return f'{name}.value.keyword'
-                return f'{name}.value'
-            # Runtime fields don't behave the same as text fields
-            if object_type in self.runtime_fields and name in self.runtime_fields[object_type]:
-                return name
+                    return f'{name}.keyword'
+                return f'{name}'
         return name
 
     def _prepare_get_parameters(
@@ -1144,13 +1136,14 @@ class ElasticDataSource(
         self,
     ) -> dict:
         runtime_fields = {}
-        for field_name, provenance_field in self.provenance_fields.items():
-            if provenance_field.object_type not in runtime_fields:
-                runtime_fields[provenance_field.object_type] = {}
-            runtime_fields[provenance_field.object_type][f'{provenance_field.name}'] = \
-                RuntimeFields.coalesce(
-                    [f'{provenance_field.name}.provenance.{source_order}.value'
-                    for source_order in provenance_field.source_order],
-                    return_type=provenance_field.return_type or 'str'
-                )
+        for object_type, fields in self.provenance_fields.items():
+            for field_name, provenance_field in fields.items():
+                if object_type not in runtime_fields:
+                    runtime_fields[object_type] = {}
+                runtime_fields[object_type][f'{field_name}'] = \
+                    RuntimeFields.coalesce(
+                        [f'{field_name}.provenance.{source_order}.value'
+                        for source_order in provenance_field.source_order],
+                        return_type=provenance_field.return_type or 'str'
+                    )
         return runtime_fields

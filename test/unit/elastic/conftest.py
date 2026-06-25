@@ -7,6 +7,7 @@ from unittest import mock
 import pytest
 
 from tol.core import DefaultAttributeMetadata, core_data_object
+from tol.core.operator.provenancer import ProvenanceField
 from tol.core.relationship import RelationshipConfig
 from tol.elastic import (
     ElasticDataSource,
@@ -98,7 +99,21 @@ def mock_elastic_data_source() -> ElasticDataSource:
                 )
             }
         },
-        attribute_metadata=MockAttributeMetadata
+        attribute_metadata=MockAttributeMetadata,
+        provenance_fields={
+            'obj_type': {
+                'relationship': ProvenanceField(
+                    source_order=['source_1', 'source_2'],
+                    return_type=None
+                )
+            },
+            'reltype': {
+                'parent': ProvenanceField(
+                    source_order=['source_1', 'source_2'],
+                    return_type=None
+                )
+            }
+        }
     )
     manager.data_source = eds
     core_data_object(eds)
