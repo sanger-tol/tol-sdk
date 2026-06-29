@@ -26,8 +26,7 @@ class GritIssueToElasticCurationConverter(
     _data_object_factory: DataObjectFactory
 
     ATTRIBUTES_PARSED_SEPARATELY = (
-        'assembly_statistics', 'chromosome_result', 'treeval',
-        'treeval_data', 'contamination', 'status_changes'
+        'assembly_statistics', 'chromosome_result', 'status_changes'
     )
     ATTRIBUTES_IGNORED = ('description', 'tolid', 'linked_issues')
 

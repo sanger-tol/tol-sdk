@@ -18,6 +18,8 @@ SPDX-License-Identifier: MIT
 
 - Enhance DummyDataSource
 - Better errors when running pipelines
+- Re-add the `grit_treeval`, `grit_treeval_data` and `grit_contamination` fields
+  extracted by GritIssueToElasticCurationConverter
 
 ## tol-sdk `2.3.1`
 
