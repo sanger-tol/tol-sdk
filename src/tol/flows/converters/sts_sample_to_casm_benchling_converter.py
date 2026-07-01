@@ -1285,7 +1285,26 @@ class StsSampleToCasmBenchlingConverterFactory:
         Raises:
             ValueError: If dynamic box-plate schema selection fails.
         """
-        object_map = self.BENCHLING_OBJECT_MAP[self.mode][destination_object_type]
+        base_object_map = self.BENCHLING_OBJECT_MAP[self.mode][destination_object_type]
+        object_map = {
+            **base_object_map,
+            'attribute_map': dict(base_object_map['attribute_map']),
+            'benchling_relationships': list(
+                base_object_map['benchling_relationships']
+            ),
+            'sts_relationships': list(base_object_map['sts_relationships']),
+            'polymorphic_benchling_relationships': list(
+                base_object_map['polymorphic_benchling_relationships']
+            ),
+            'concatenated_values': list(
+                base_object_map.get('concatenated_values', [])
+            ),
+        }
+        if 'benchling_multiselect_relationships' in base_object_map:
+            object_map['benchling_multiselect_relationships'] = list(
+                base_object_map['benchling_multiselect_relationships']
+            )
+
         self.apply_box_plate_schema_relationships(
             self.mode,
             destination_object_type,
@@ -1371,8 +1390,8 @@ class StsSampleToCasmBenchlingConverterFactory:
                             sample,
                             factory.destination_object_type,
                         )
-                        object_map['converted_value_identifiers'] = \
-                            object_map['converted_value_identifiers'] + [primary_attribute]
+                        if primary_attribute not in object_map['converted_value_identifiers']:
+                            object_map['converted_value_identifiers'].append(primary_attribute)
 
                     if 'naming_strategy' in object_map and object_map['naming_strategy']:
                         object_attributes['naming_strategy'] = object_map['naming_strategy']

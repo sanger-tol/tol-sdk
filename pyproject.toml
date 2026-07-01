@@ -8,7 +8,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "tol-sdk"
-version = "2.3.3"
+version = "2.3.4"
 description = "SDK for interaction with ToL, Sanger and external services"
 readme = "README.md"
 authors = [

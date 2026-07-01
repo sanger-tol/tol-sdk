@@ -6,6 +6,12 @@ SPDX-License-Identifier: MIT
 
 # Changelog
 
+## tol-sdk `2.3.4`
+
+01-07-2026
+
+- Added unit tests for the STS to CASM Benchling converter and enhanced `object_map` handling
+
 ## tol-sdk `2.3.3`
 
 25-06-2026
