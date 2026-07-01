@@ -3,8 +3,8 @@
 # SPDX-License-Identifier: MIT
 
 import importlib.util
-from types import SimpleNamespace
 from pathlib import Path
+from types import SimpleNamespace
 from unittest import TestCase
 
 
