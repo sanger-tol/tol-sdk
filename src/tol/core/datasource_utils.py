@@ -60,7 +60,7 @@ class DataSourceUtils:
             relationship_config = cls.get_relationship_config_from_data_source_config(
                 relationships=relationships,
             )
-            amd = data_source_attribute_metadata(data_source_config)
+            amd = data_source_attribute_metadata(datasource_config)
             runtime_fields = cls.get_runtime_fields_from_data_source_config(
                 attributes=attributes
             )

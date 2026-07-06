@@ -29,7 +29,6 @@ from .converter import (
 from .filter import ElasticFilterConverter
 from .parser import ElasticUpdateInputResource, ElasticUpsertInputResource
 from .runtime_fields import RuntimeFields
-
 from ..core import (
     AttributeMetadata,
     DataId,
@@ -120,7 +119,10 @@ class ElasticDataSource(
         """
         attribute_metadata.host = self
         self.provenance_fields = provenance_fields
-        self.runtime_fields = runtime_fields | self.__add_runtime_fields_from_provenance_fields()
+        self.runtime_fields = self.__merge_nested_dicts(
+            runtime_fields,
+            self.__add_runtime_fields_from_provenance_fields(),
+        )
         self._initialise_elasticsearch()
         self.__lazy = False
         self._relationship_cfg = relationship_cfg
@@ -293,18 +295,22 @@ class ElasticDataSource(
         # If this is a provenance field, we need to use the actual field name in Elastic
         if object_type in self.provenance_fields and name in self.provenance_fields[object_type]:
             actual_field = f'{name}.value'
+            print(f'Provenance field {name} in {object_type} maps to {actual_field}')
             return self._field_or_keyword(object_type, actual_field)
 
         # If this is a runtime field, we need to use the actual field name in Elastic
         # regardless of its type
         if object_type in self.runtime_fields and name in self.runtime_fields[object_type]:
+            print(f'Runtime field {name} in {object_type} maps to {name}')
             return name
 
+        print(f'Field {name} in {object_type} is not runtime or provenance')
+        print(f'Runtime fields are: {self.runtime_fields.get(object_type, {})}')
         if '.' in name:
             rc = self.relationship_config[object_type]
             relationship_name, attribute = name.split('.')[0], name.split('.')[1]
             if attribute == 'id':
-                return f'{name}.value.keyword'
+                return f'{name}.keyword'
             relationship_object_type = rc.to_one[relationship_name]
             attribute_type = self.attribute_types[relationship_object_type][attribute]
             if attribute_type == 'str':
@@ -1140,10 +1146,21 @@ class ElasticDataSource(
             for field_name, provenance_field in fields.items():
                 if object_type not in runtime_fields:
                     runtime_fields[object_type] = {}
-                runtime_fields[object_type][f'{field_name}'] = \
-                    RuntimeFields.coalesce(
-                        [f'{field_name}.provenance.{source_order}.value'
-                        for source_order in provenance_field.source_order],
-                        return_type=provenance_field.return_type or 'str'
-                    )
+                runtime_fields[object_type][f'{field_name}'] = RuntimeFields.coalesce(
+                    [
+                        f'{field_name}.provenance.{source_order}.value'
+                        for source_order in provenance_field.source_order
+                    ],
+                    return_type=provenance_field.return_type or 'str'
+                )
         return runtime_fields
+
+    def __merge_nested_dicts(self, left: dict[str, Any], right: dict[str, Any]) -> dict[str, Any]:
+        merged = dict(left)
+        for key, right_value in right.items():
+            left_value = merged.get(key)
+            if isinstance(left_value, dict) and isinstance(right_value, dict):
+                merged[key] = left_value | right_value
+            else:
+                merged[key] = right_value
+        return merged

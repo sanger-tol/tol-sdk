@@ -102,13 +102,13 @@ def mock_elastic_data_source() -> ElasticDataSource:
         attribute_metadata=MockAttributeMetadata,
         provenance_fields={
             'obj_type': {
-                'relationship': ProvenanceField(
+                'relationship.id': ProvenanceField(
                     source_order=['source_1', 'source_2'],
                     return_type=None
                 )
             },
             'reltype': {
-                'parent': ProvenanceField(
+                'parent.id': ProvenanceField(
                     source_order=['source_1', 'source_2'],
                     return_type=None
                 )

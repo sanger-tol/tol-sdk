@@ -636,7 +636,9 @@ class FlowUtils:
         elif section == '3':
             return {
                 'loader.candidate_key': {'exists': {'negate': True}},
-                'ids_data_source_instance.id': {'eq': {'value': destination_data_source_instance_id}},
+                'ids_data_source_instance.id': {'eq': {
+                    'value': destination_data_source_instance_id
+                }},
                 'destination_data_source_instance.id': {'eq': {
                     'value': destination_data_source_instance_id
                 }},

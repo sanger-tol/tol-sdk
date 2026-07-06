@@ -23,7 +23,6 @@ from tol.core.operator import (
 )
 from tol.core.operator.provenancer import ProvenanceField
 from tol.core.relationship import RelationshipConfig
-from tol.elastic.runtime_fields import RuntimeFields
 
 
 @pytest.fixture

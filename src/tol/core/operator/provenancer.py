@@ -2,7 +2,6 @@
 #
 # SPDX-License-Identifier: MIT
 
-import typing
 from abc import ABC
 from dataclasses import dataclass
 
@@ -14,6 +13,7 @@ class ProvenanceField:
 
 
 ProvenanceFields = dict[str, ProvenanceField]
+
 
 class Provenancer(ABC):
     pass

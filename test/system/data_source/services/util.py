@@ -82,7 +82,6 @@ def elastic_datasource(
         mock_data_source_config_attribute.name = att
         attributes.append(mock_data_source_config_attribute)
 
-    mock_data_source_config = Mock()
     mock_data_source_config_relationship = Mock()
     mock_data_source_config_relationship.source_order = [
         'source1',
@@ -106,11 +105,13 @@ def elastic_datasource(
                 dependencies=['bool_column'],
                 function_body="emit(!doc['bool_column'].value)"
             ).to_dict(),
-        } | provenance_runtime_fields_attributes.get('root', {}) | provenance_runtime_fields_relationships.get('root', {}),
+        } | provenance_runtime_fields_attributes.get('root', {})
+          | provenance_runtime_fields_relationships.get('root', {}),
         'related': {
             'root_int_column_min': {'type': 'double'},
             'root_int_column_max': {'type': 'double'},
-        } | provenance_runtime_fields_attributes.get('related', {}) | provenance_runtime_fields_relationships.get('related', {})
+        } | provenance_runtime_fields_attributes.get('related', {})
+          | provenance_runtime_fields_relationships.get('related', {})
     }
 
     return create_elastic_datasource(
