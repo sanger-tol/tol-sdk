@@ -50,7 +50,7 @@ class GritIssueToElasticCurationConverter(
             )
             chr_data = self.__get_chr_data(data_object.attributes.get('chromosome_result'))
             treeval_data = self.__get_treeval_data(data_object)
-            treeval_links = self.__get_treeval_links(treeval_data)
+            treeval_links = self.__get_treeval_links(data_object, treeval_data)
             contamination_data = (
                 self.__get_contamination_data(data_object.contamination)
                 if data_object.contamination is not None
