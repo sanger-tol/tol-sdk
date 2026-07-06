@@ -6,6 +6,16 @@ SPDX-License-Identifier: MIT
 
 # Changelog
 
+## tol-sdk `2.3.5`
+
+06-07-2026
+
+- Added the following fields to GritIssueToElasticCurationConverter:
+  - `grit_treeval_hic_map_link`
+  - `grit_treeval_kmer_spectra_link`
+  - `grit_treeval_jbrowse_link`
+  - `grit_jira_issue_id`
+
 ## tol-sdk `2.3.4`
 
 01-07-2026

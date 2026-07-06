@@ -50,6 +50,7 @@ class GritIssueToElasticCurationConverter(
             )
             chr_data = self.__get_chr_data(data_object.attributes.get('chromosome_result'))
             treeval_data = self.__get_treeval_data(data_object)
+            treeval_links = self.__get_treeval_links(data_object, treeval_data)
             contamination_data = (
                 self.__get_contamination_data(data_object.contamination)
                 if data_object.contamination is not None
@@ -66,6 +67,9 @@ class GritIssueToElasticCurationConverter(
             optional_attributes = {
                 'assignee_name': data_object.assignee.name if data_object.assignee else None
             }
+            individual_attributes = {
+                'jira_issue_id': data_object.id
+            }
 
             # The rest of the attributes are just copied across from the input data object
             unchanged_attributes = {
@@ -76,8 +80,9 @@ class GritIssueToElasticCurationConverter(
             # Combine all of these to form the attributes dict
             attributes = (
                 assembly_stats | chr_data
-                | treeval_data | contamination_data
-                | status_changes | optional_attributes
+                | treeval_data | treeval_links
+                | contamination_data | status_changes
+                | optional_attributes | individual_attributes
                 | unchanged_attributes
             )
 
@@ -185,6 +190,48 @@ class GritIssueToElasticCurationConverter(
 
         # Combine the two into one dict
         return extracted_treeval_data | analyses
+
+    def __get_treeval_links(
+        self,
+        data_object: DataObject,
+        treeval_data: dict[str, Any]
+    ) -> dict[str, str | None]:
+        """
+        Function to parse the fields
+        `treeval_hic_map_link`, `treeval_kmer_spectra_link` and `treeval_jbrowse_link`
+        from the data object, using values in the already parsed `treeval_data` dict
+        """
+        # The image links should use the Merged analysis if we're combining for curation,
+        # else use the Hap1 analysis
+        treeval_labels = data_object.labels or []
+        preferred_analysis = treeval_data[
+            'treeval_merged_analysis'
+            if 'combine_for_curation' in treeval_labels
+            else 'treeval_hap1_analysis'
+        ]
+
+        # Extract the attributes needed to build the jbrowse link
+        jbrowse = treeval_data.get('treeval_jbrowse')
+        jbrowse_server_url = 'tol-dev' if treeval_data.get('treeval_jb_server') == 'dev' else 'tol'
+        # `or` is used here instead of a default in `get` because it should be a default
+        # for an empty string as well
+        jbrowse_scaffold = treeval_data.get('treeval_jb_scaffold') or 'SCAFFOLD_1'
+
+        return {
+            'treeval_hic_map_link': (
+                f'https://treeval.cog.sanger.ac.uk/pretextsnapshot_{preferred_analysis}.png'
+            ),
+            'treeval_kmer_spectra_link': (
+                f'https://treeval.cog.sanger.ac.uk/kmerspectra_{preferred_analysis}.png'
+            ),
+            'treeval_jbrowse_link': (
+                r'http://jbrowse.' + jbrowse_server_url + r'.sanger.ac.uk/jbrowse2/'
+                + r'?config=config.json&assembly=' + jbrowse + r'&session=spec-{%22views%22:[{'
+                + r'%22assembly%22:%22' + jbrowse + r'%22,%22loc%22:%22' + jbrowse_scaffold
+                + r'%22,%22type%22:%22LinearGenomeView%22,%22tracks%22:[%22' + jbrowse
+                + r'-ReferenceSequenceTrack%22]}]}'
+            ) if jbrowse else None
+        }
 
     def __get_contamination_data(
         self, contamination_attribute: str

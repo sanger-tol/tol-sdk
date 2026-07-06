@@ -131,6 +131,7 @@ class TestGritIssueToElasticCurationConverter:
                         'end_date': datetime(2020, 2, 4)
                     }
                 ],
+                'labels': ['BLAX', 'combine_for_curation', 'manual_submission'],
                 'assembly_statistics': 'scaffolds\ntotal 333046658 333047658\ncount 41 36\nN50 11581856 11581856\nL50 3 4    \nN90 7014107 7711609\nL90 27 27\n\ncontigs\ntotal 333046218 333046218\ncount 44 44\nN50 11581856 11581856\nL50 13 13\nN90 7014107 7014107\nL90 27 27\n',  # noqa E501
                 'chromosome_result': 'found 31 autosomes and W and Z and MT\nTotal length 333047658\nChr length 332949469\nChr length 99.97 %\n',  # noqa E501
                 'treeval': 'hap1: ilLysCori39_1 hap2: ilLysCori39_2 merged: ilLysCori39_3',
@@ -148,6 +149,7 @@ class TestGritIssueToElasticCurationConverter:
         assert ret1.type == 'curation'
         assert ret1.attributes == {
             'assembled_by': 'ToL',
+            'labels': ['BLAX', 'combine_for_curation', 'manual_submission'],
             'created': datetime(2020, 2, 2),
             'mid_range_date': datetime(2020, 2, 3),
             'closed_date': datetime(2020, 2, 4),
@@ -204,15 +206,19 @@ class TestGritIssueToElasticCurationConverter:
             'treeval_hap1_analysis': 'ilLysCori39_1',
             'treeval_hap2_analysis': 'ilLysCori39_2',
             'treeval_merged_analysis': 'ilLysCori39_3',
-            'contamination_total_removed': 143_860,
+            'contamination_total_removed': 143_860.0,
             'contamination_total_removed_percent': 0.0,
-            'contamination_count_removed': 6,
+            'contamination_count_removed': 6.0,
             'contamination_count_removed_percent': 4.2,
-            'contamination_largest_removed': 39_584,
+            'contamination_largest_removed': 39_584.0,
             'contamination_is_abnormal': False,
             'treeval': 'hap1: ilLysCori39_1 hap2: ilLysCori39_2 merged: ilLysCori39_3',
             'treeval_data': '{"jbrowse": "ilLysCori39_1", "jb_server": "prod", "jb_scaffold": "SCAFFOLD_1", "start": "2023-11-22T12:57:44.000+0000", "btk_pr": "ilLysCori39.20231118", "btk_hp": "ilLysCori39.20231118.haplotigs", "higlass": "", "hic_plot": "Y", "kmer_plot": "N", "taxon_id": 268709}',  # noqa E501
+            'treeval_hic_map_link': 'https://treeval.cog.sanger.ac.uk/pretextsnapshot_ilLysCori39_3.png',  # noqa E501
+            'treeval_kmer_spectra_link': 'https://treeval.cog.sanger.ac.uk/kmerspectra_ilLysCori39_3.png',  # noqa E501
+            'treeval_jbrowse_link': r'http://jbrowse.tol.sanger.ac.uk/jbrowse2/?config=config.json&assembly=ilLysCori39_1&session=spec-{%22views%22:[{%22assembly%22:%22ilLysCori39_1%22,%22loc%22:%22SCAFFOLD_1%22,%22type%22:%22LinearGenomeView%22,%22tracks%22:[%22ilLysCori39_1-ReferenceSequenceTrack%22]}]}',  # noqa E501
             'contamination': 'Total length of scaffolds removed: 143,860 (0.0 %) Scaffolds removed: 6 (4.2 %) Largest scaffold removed: (39,584) FCS-GX contaminant species (number of scaffolds; total length of scaffolds): Sodalis glossinidius, g-proteobacteria (1; 39,584) Candidatus Symbiopectobacterium sp. Clec_Harlan, g-proteobacteria (1; 34,354) Mitochondrion (4; 69,905) Barcodes (1; 17) ',  # noqa E501
+            'jira_issue_id': 'KEY-123',
         }
         assert ret1.tolid.id == 'abCdeFghi1'
 
