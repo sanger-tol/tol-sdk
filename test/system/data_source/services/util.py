@@ -14,6 +14,7 @@ from elasticsearch import Elasticsearch
 import requests
 
 from tol.core import DataSourceUtils
+from tol.core.operator.provenancer import ProvenanceField
 from tol.core.relationship import RelationshipConfig
 from tol.elastic import (
     ElasticDataSource,
@@ -54,50 +55,9 @@ def elastic_datasource(
 
     rc_root = RelationshipConfig()
     rc_root.to_one = {
-        'related_object': 'related'
+        'related_object': 'related',
+        'another_related_object': 'related'
     }
-    attributes = []
-    for obj_type, att in [
-        ('root', 'str_column'),
-        ('root', 'int_column'),
-        ('root', 'datetime_column'),
-        ('root', 'bool_column'),
-        ('root', 'list_column'),
-        ('related', 'str_column'),
-        ('related', 'int_column'),
-        ('related', 'datetime_column'),
-        ('related', 'bool_column'),
-        ('related', 'list_column'),
-        ('related', 'root_int_column_min'),
-        ('related', 'root_int_column_max'),
-    ]:
-        mock_data_source_config_attribute = Mock()
-        mock_data_source_config_attribute.source_order = [
-            'source1',
-            'source2',
-            'source3',
-            'source4'
-        ]
-        mock_data_source_config_attribute.object_type = obj_type
-        mock_data_source_config_attribute.name = att
-        attributes.append(mock_data_source_config_attribute)
-
-    mock_data_source_config_relationship = Mock()
-    mock_data_source_config_relationship.source_order = [
-        'source1',
-        'source2',
-        'source3',
-        'source4'
-    ]
-    mock_data_source_config_relationship.object_type = 'root'
-    mock_data_source_config_relationship.name = 'related_object'
-    relationships = [
-        mock_data_source_config_relationship
-    ]
-    provenance_runtime_fields_attributes = \
-        DataSourceUtils.add_source_order_to_runtime_fields_attributes(attributes)
-    provenance_runtime_fields_relationships = \
-        DataSourceUtils.add_source_order_to_runtime_fields_relationships(relationships)
     rtf = {
         'root': {
             'runtime_column': RuntimeField(
@@ -105,13 +65,11 @@ def elastic_datasource(
                 dependencies=['bool_column'],
                 function_body="emit(!doc['bool_column'].value)"
             ).to_dict(),
-        } | provenance_runtime_fields_attributes.get('root', {})
-          | provenance_runtime_fields_relationships.get('root', {}),
+        },
         'related': {
             'root_int_column_min': {'type': 'double'},
             'root_int_column_max': {'type': 'double'},
-        } | provenance_runtime_fields_attributes.get('related', {})
-          | provenance_runtime_fields_relationships.get('related', {})
+        }
     }
 
     return create_elastic_datasource(
@@ -122,7 +80,19 @@ def elastic_datasource(
             'index_prefix': prefix
         },
         relationship_cfg={'root': rc_root},
-        runtime_fields=rtf
+        runtime_fields=rtf,
+        provenance_fields={
+            'root': {
+                'related_object.id': ProvenanceField(
+                    source_order=['source1', 'source2', 'source3', 'source4'],
+                    return_type=None
+                ),
+                # 'str_column': ProvenanceField(
+                #     source_order=['source1', 'source2', 'source3', 'source4'],
+                #     return_type='str'
+                # ),
+            },
+        }
     )
 
 

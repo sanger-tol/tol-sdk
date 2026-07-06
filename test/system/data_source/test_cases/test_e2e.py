@@ -524,6 +524,7 @@ class TestEndToEnd:
         ret = first[0]
         assert ret.int_column == 1
         assert ret.str_column == '1'
+        print(f'PROVENANCE: {ret.provenance}')
         assert ret.provenance['related_object']['source3'].id == '1'
         assert ret.provenance['related_object']['source4'].id == '2'
         assert ret.related_object.id == '1'

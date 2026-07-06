@@ -424,7 +424,7 @@ class ElasticDataSource(
             page=page,
             requested_tree=requested_tree,
         )
-
+        print(f'RAW RESPONSE: {resp}')
         return (
             self._elastic_converter_factory().convert_list(
                 resp['hits']['hits']
@@ -448,10 +448,12 @@ class ElasticDataSource(
             sort_by=sort_by,
             requested_tree=requested_tree,
         )
+        print(f'Getting page for {object_type} with query: {query}, fields: {fields}, runtime_mappings: {runtime_mappings}')
         sort = self._build_elasticsearch_sort(object_type, sort_by)
         if page_size is None:
             page_size = self.get_page_size()
         from_ = (page - 1) * page_size if page is not None else None
+        print(f'DOING SEARCH WITH fields={fields}, runtime_mappings={runtime_mappings}')
         return self.es.search(
             from_=from_,
             size=page_size,
@@ -526,6 +528,8 @@ class ElasticDataSource(
             object_filters=object_filters,
             requested_tree=requested_tree,
         )
+        print(f'Getting list for {object_type} with query: {query}, fields: {fields}, runtime_mappings: {runtime_mappings}')
+        print(f'DOING SEARCH WITH fields={fields}, runtime_mappings={runtime_mappings}')
         generator = self.helpers.scan(self.es,
                                       index=real_index_name,
                                       scroll='10m',
@@ -1009,7 +1013,7 @@ class ElasticDataSource(
     @ttl_cache(ttl=3600)
     def _get_indices(self) -> dict[str, str]:
         # Get all as the actual indexes may not have the correct prefix
-        results = self.es.indices.get_alias('*')
+        results = self.es.indices.get_alias(index='*')
         aliased_indexes = {
             alias: index
             for index, aliases in results.items()
@@ -1146,12 +1150,12 @@ class ElasticDataSource(
             for field_name, provenance_field in fields.items():
                 if object_type not in runtime_fields:
                     runtime_fields[object_type] = {}
-                runtime_fields[object_type][f'{field_name}'] = RuntimeFields.coalesce(
+                runtime_fields[object_type][f'{field_name}.value'] = RuntimeFields.coalesce(
                     [
                         f'{field_name}.provenance.{source_order}.value'
                         for source_order in provenance_field.source_order
                     ],
-                    return_type=provenance_field.return_type or 'str'
+                    return_type=provenance_field.return_type or 'keyword'
                 )
         return runtime_fields
 

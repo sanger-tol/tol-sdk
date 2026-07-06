@@ -20,7 +20,7 @@ services:
       - test-network
 
   elastic:
-    image: elasticsearch:7.17.28
+    image: elasticsearch:8.19.14
     environment:
       - discovery.type=single-node
     networks:

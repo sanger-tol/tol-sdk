@@ -52,6 +52,7 @@ class DefaultElasticApiParser(DataSourceParser[ElasticApiResource, DataObject]):
             type_ = self._data_source._real_index_to_object_type(transfer['_index'])
             id_ = transfer['_id']
             attributes = transfer['_source']
+            print(f'ENTIRE TRANSFER: {transfer}')
             runtime_attributes = transfer['fields'] if 'fields' in transfer else {}
             return self._convert_data_dict_to_data_object(
                 type_,
@@ -85,17 +86,19 @@ class DefaultElasticApiParser(DataSourceParser[ElasticApiResource, DataObject]):
         if type_ not in self._data_source.provenance_fields:
             return {}
 
+        # This picks out the relationships that have provenance
+        relationships_with_provenance = {
+            k: self.__make_provenance_for_relationship(v, type_) for k, v in data.items()
+            if f'{k}.id' in self._data_source.provenance_fields[type_]
+        }
+        
         # This picks out all the direct attributes that have provenance
         attributes_with_provenance = {
             k: v for k, v in data.items()
             if k in self._data_source.provenance_fields[type_]
+            and k not in relationships_with_provenance
         }
-        # This picks out the relationships that have provenance
-        relationships_with_provenance = {
-            k: self.__make_provenance_for_relationship(v, type_) for k, v in data.items()
-            if k.rsplit('.', 1)[0] in self._data_source.provenance_fields[type_]
-        }
-
+        
         return attributes_with_provenance | relationships_with_provenance
 
     def __make_provenance_for_relationship(
@@ -151,7 +154,13 @@ class DefaultElasticApiParser(DataSourceParser[ElasticApiResource, DataObject]):
             return {}
 
         return {
-            k: self.__make_to_one_relation(k, data.get(k), v, runtime_data)
+            k: self.__make_to_one_relation(
+                relation_name=k,
+                relation_data=data.get(k),
+                parent_type=type_,
+                child_type=v,
+                runtime_data=runtime_data
+            )
             for k, v in self._data_source.relationship_config[type_].to_one.items()
         }
 
@@ -159,7 +168,8 @@ class DefaultElasticApiParser(DataSourceParser[ElasticApiResource, DataObject]):
         self,
         relation_name: str,
         relation_data: dict[str, Any] | None,
-        type_: str,
+        parent_type: str,
+        child_type: str,
         runtime_data: dict[str, Any] = None
     ) -> DataObject | None:
 
@@ -171,17 +181,19 @@ class DefaultElasticApiParser(DataSourceParser[ElasticApiResource, DataObject]):
 
         id_ = relation_data.get('id')
         # If this relation is provenanced, we need to get the id from the runtime fields
-        if type_ in self._data_source.provenance_fields and \
-                f'{relation_name}.id' in self._data_source.provenance_fields[type_] and \
+        print(f'Checking provenance for {relation_name} in {parent_type}, runtime_data: {runtime_data}, provenance_fields: {self._data_source.provenance_fields}')
+        if parent_type in self._data_source.provenance_fields and \
+                f'{relation_name}.id' in self._data_source.provenance_fields[parent_type] and \
                 runtime_data is not None and \
-                f'{relation_name}.id' in runtime_data:
-            id_ = runtime_data[f'{relation_name}.id'][0]
+                f'{relation_name}.id.value' in runtime_data:
+            id_ = runtime_data[f'{relation_name}.id.value'][0]
+            print(f'Found provenance for {relation_name} in {parent_type}, using id: {id_}')
 
         if id_ is None:
             return None
 
         return self._convert_data_dict_to_data_object(
-            type_,
+            child_type,
             id_,
             relation_data,
             {},  # This can be empty because runtime_fields are not applicable for enriched objects
@@ -253,6 +265,7 @@ class _ToElasticApiResourceParser:
 
     def _parse_attribute(
         self,
+        object_type: str,
         name: str,
         value: Any | None,
         provenance: str | None,
@@ -261,7 +274,9 @@ class _ToElasticApiResourceParser:
         if value is None:
             return None
 
-        if provenance is not None and name in self._data_source.provenance_fields:
+        if provenance is not None and \
+                object_type in self._data_source.provenance_fields and \
+                name in self._data_source.provenance_fields[object_type]:
             return {
                 'provenance': {
                     provenance: {'value': value}
@@ -341,7 +356,7 @@ class DefaultElasticUpsertInputParser(
         provenance: str | None,
     ) -> dict:
         attributes_dict = {
-            k: self._parse_attribute(k, v, provenance)
+            k: self._parse_attribute(data_object.type, k, v, provenance)
             for k, v in data_object.attributes.items()
         }
         to_ones_dict = {
@@ -420,5 +435,5 @@ class DefaultElasticUpdateInputParser(
             if isinstance(v, DataObject):
                 ret[k] = self._parse_to_one_relation(object_type, k, v, provenance)
             else:
-                ret[k] = self._parse_attribute(k, v, provenance)
+                ret[k] = self._parse_attribute(object_type, k, v, provenance)
         return ret
