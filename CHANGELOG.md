@@ -14,6 +14,7 @@ SPDX-License-Identifier: MIT
   - `grit_treeval_hic_map_link`
   - `grit_treeval_kmer_spectra_link`
   - `grit_treeval_jbrowse_link`
+  - `grit_jira_issue_id`
 
 ## tol-sdk `2.3.4`
 

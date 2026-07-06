@@ -67,6 +67,9 @@ class GritIssueToElasticCurationConverter(
             optional_attributes = {
                 'assignee_name': data_object.assignee.name if data_object.assignee else None
             }
+            individual_attributes = {
+                'jira_issue_id': data_object.id
+            }
 
             # The rest of the attributes are just copied across from the input data object
             unchanged_attributes = {
@@ -79,7 +82,8 @@ class GritIssueToElasticCurationConverter(
                 assembly_stats | chr_data
                 | treeval_data | treeval_links
                 | contamination_data | status_changes
-                | optional_attributes | unchanged_attributes
+                | optional_attributes | individual_attributes
+                | unchanged_attributes
             )
 
             to_one_relations = {

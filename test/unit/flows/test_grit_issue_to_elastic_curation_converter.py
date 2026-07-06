@@ -218,6 +218,7 @@ class TestGritIssueToElasticCurationConverter:
             'treeval_kmer_spectra_link': 'https://treeval.cog.sanger.ac.uk/kmerspectra_ilLysCori39_3.png',  # noqa E501
             'treeval_jbrowse_link': r'http://jbrowse.tol.sanger.ac.uk/jbrowse2/?config=config.json&assembly=ilLysCori39_1&session=spec-{%22views%22:[{%22assembly%22:%22ilLysCori39_1%22,%22loc%22:%22SCAFFOLD_1%22,%22type%22:%22LinearGenomeView%22,%22tracks%22:[%22ilLysCori39_1-ReferenceSequenceTrack%22]}]}',  # noqa E501
             'contamination': 'Total length of scaffolds removed: 143,860 (0.0 %) Scaffolds removed: 6 (4.2 %) Largest scaffold removed: (39,584) FCS-GX contaminant species (number of scaffolds; total length of scaffolds): Sodalis glossinidius, g-proteobacteria (1; 39,584) Candidatus Symbiopectobacterium sp. Clec_Harlan, g-proteobacteria (1; 34,354) Mitochondrion (4; 69,905) Barcodes (1; 17) ',  # noqa E501
+            'jira_issue_id': 'KEY-123',
         }
         assert ret1.tolid.id == 'abCdeFghi1'
 
