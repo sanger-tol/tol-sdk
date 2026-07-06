@@ -211,7 +211,7 @@ class GritIssueToElasticCurationConverter(
         jbrowse_server_url = 'tol-dev' if treeval_data.get('treeval_jb_server') == 'dev' else 'tol'
         # `or` is used here instead of a default in `get` because it should be a default
         # for an empty string as well
-        jbrowse_scaffold = treeval_data.get('treeval_jb_server') or 'SCAFFOLD_1'
+        jbrowse_scaffold = treeval_data.get('treeval_jb_scaffold') or 'SCAFFOLD_1'
 
         return {
             'treeval_hic_map_link': (
@@ -221,7 +221,7 @@ class GritIssueToElasticCurationConverter(
                 f'https://treeval.cog.sanger.ac.uk/kmerspectra_{preferred_analysis}.png'
             ),
             'treeval_jbrowse_link': (
-                r'http://jbrowse/' + jbrowse_server_url + r'.sanger.ac.uk/jbrowse2/'
+                r'http://jbrowse.' + jbrowse_server_url + r'.sanger.ac.uk/jbrowse2/'
                 + r'?config=config.json&assembly=' + jbrowse + r'&session=spec-{%22views%22:[{'
                 + r'%22assembly%22:%22' + jbrowse + r'%22,%22loc%22:%22' + jbrowse_scaffold
                 + r'%22,%22type%22:%22LinearGenomeView%22,%22tracks%22:[%22' + jbrowse
