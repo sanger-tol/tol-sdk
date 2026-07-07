@@ -21,7 +21,7 @@ def _get_mock_data_object(
     attributes: dict[str, Any] = {},
     to_one: dict[str, Any] = {},
     to_many: dict[str, Any] = {},
-    provenance_: Optional[str] = None
+    provenance_: dict[str, Any] = {}
 ) -> DataObject:
 
     data_object = Mock()
@@ -30,6 +30,8 @@ def _get_mock_data_object(
     data_object.id = id_
     data_object.attributes = attributes
     data_object._to_one_objects = to_one
+    data_object._to_many_objects = to_many
+    data_object.provenance = provenance_
 
     return data_object
 
@@ -67,13 +69,21 @@ class TestJsonApiConverter:
                 {
                     'type': 'A',
                     'id': str(i),
-                    'attributes': {'int_I': i}
+                    'attributes': {
+                        'int_I': i,
+                        'provenance': {
+                            'int_I': {
+                                'source_1': i,
+                                'source_2': i + 1
+                            }
+                        }
+                    }
                 }
                 for i in range(4)
             ]
         }
 
-        parser = DefaultParser(_get_mock_ds_dict({'A': {}}))
+        parser = DefaultParser(_get_mock_ds_dict({'A': {'int_I': 'int'}}))
         converter = JsonApiConverter(parser)
         (out_, _) = converter.convert_list(in_)
 
@@ -83,6 +93,12 @@ class TestJsonApiConverter:
             assert out_i.type == 'A'
             assert out_i.id == str(i)
             assert out_i.attributes == {'int_I': i}
+            assert out_i.provenance == {
+                'int_I': {
+                    'source_1': i,
+                    'source_2': i + 1
+                }
+            }
 
     def test_no_optional(self):
         """Optional fields not specified"""
@@ -148,7 +164,13 @@ class TestJsonApiConverter:
                     'a': now,
                     'b': now,
                     'c': now,
-                    'd': now
+                    'd': now,
+                    'provenance': {
+                        'a': {
+                            'source_1': now,
+                            'source_2': now
+                        }
+                    }
                 }
             }
         }
@@ -177,6 +199,8 @@ class TestJsonApiConverter:
                 datetime
             )
         assert isinstance(observed.attributes['d'], str)
+        assert isinstance(observed.provenance['a']['source_1'], datetime)
+        assert isinstance(observed.provenance['a']['source_2'], datetime)
 
     def test_count(self):
 
@@ -264,6 +288,12 @@ class TestDataObjectConverter:
                 str(i),
                 attributes={
                     'happy_days': i
+                },
+                provenance_={
+                    'happy_days': {
+                        'source_1': i,
+                        'source_2': i + 1
+                    }
                 }
             )
             for i in range(3)
@@ -275,7 +305,13 @@ class TestDataObjectConverter:
                     'type': 'B',
                     'id': str(i),
                     'attributes': {
-                        'happy_days': i
+                        'happy_days': i,
+                        'provenance': {
+                            'happy_days': {
+                                'source_1': i,
+                                'source_2': i + 1
+                            }
+                        }
                     }
                 }
                 for i in range(3)

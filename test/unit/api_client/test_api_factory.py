@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: MIT
 
 from typing import Any, Optional
-from unittest.mock import Mock, PropertyMock
+from unittest.mock import Mock, PropertyMock, patch
 
 import responses
 from responses.matchers import (
@@ -76,45 +76,55 @@ class TestCreateApiDatasource:
         mock_do_factory.return_value = mock_data_object
         api_ds.data_object_factory = mock_do_factory
 
-        in_ = {
-            'data': {
-                'type': 'test',
-                'id': '200',
-                'attributes': {
-                    'yes': False
+        with patch.object(type(api_ds), 'attribute_types', new_callable=PropertyMock) \
+                as mock_attribute_types:
+            mock_attribute_types.return_value = {'test': {'yes': 'bool'}}
+
+            in_ = {
+                'data': {
+                    'type': 'test',
+                    'id': '200',
+                    'attributes': {
+                        'yes': False,
+                        'provenance': {
+                            'yes': {
+                                'source_1': False,
+                                'source_2': True
+                            }
+                        }
+                    }
                 }
             }
-        }
 
-        responses.get(
-            f'{FAKE_API_URL}/data/test/200',
-            json=in_,
-            match=[
-                header_matcher({'token': 'lol'}),
-            ]
-        )
-        responses.get(
-            f'{FAKE_API_URL}/data/test/404',
-            status=404,
-            match=[
-                header_matcher({'token': 'lol'}),
-            ]
-        )
-        self.__responses_preflight_check('test', ['detailGet'])
+            responses.get(
+                f'{FAKE_API_URL}/data/test/200',
+                json=in_,
+                match=[
+                    header_matcher({'token': 'lol'}),
+                ]
+            )
+            responses.get(
+                f'{FAKE_API_URL}/data/test/404',
+                status=404,
+                match=[
+                    header_matcher({'token': 'lol'}),
+                ]
+            )
+            self.__responses_preflight_check('test', ['detailGet'])
 
-        observed = list(
-            api_ds.get_by_id('test', ['404', '200'])
-        )
+            observed = list(
+                api_ds.get_by_id('test', ['404', '200'])
+            )
 
-        mock_do_factory.assert_called_once_with(
-            'test',
-            id_='200',
-            attributes={'yes': False},
-            to_one={},
-            to_many={},
-            provenance_={}
-        )
-        assert observed == [None, mock_data_object]
+            mock_do_factory.assert_called_once_with(
+                'test',
+                id_='200',
+                attributes={'yes': False},
+                to_one={},
+                to_many={},
+                provenance_={'yes': {'source_1': False, 'source_2': True}}
+            )
+            assert observed == [None, mock_data_object]
 
     @responses.activate
     def test_delete(self):
@@ -148,20 +158,27 @@ class TestCreateApiDatasource:
         def __mock_object(
             type_: str,
             id_: Optional[str] = None,
-            data: Optional[dict[str, Any]] = {}
+            attributes: Optional[dict[str, Any]] = {},
+            provenance: Optional[dict[str, Any]] = {}
         ) -> Mock:
 
             mock_object = Mock()
             type(mock_object).type = PropertyMock(return_value=type_)
             type(mock_object).id = PropertyMock(return_value=id_)
             type(mock_object).attributes = PropertyMock(
-                return_value=data
+                return_value=attributes
+            )
+            type(mock_object).provenance = PropertyMock(
+                return_value=provenance
             )
 
             return mock_object
 
         in_ = [
-            __mock_object('a_test_lol', str(i + 1), {'test_int': i})
+            __mock_object(
+                type_='a_test_lol',
+                id_=str(i + 1),
+                attributes={'test_int': i})
             for i in range(4)
         ]
         expected_list = [
@@ -169,7 +186,7 @@ class TestCreateApiDatasource:
                 'type': 'a_test_lol',
                 'id': str(i + 1),
                 'attributes': {
-                    'test_int': i
+                    'test_int': i,
                 }
             }
             for i in range(4)

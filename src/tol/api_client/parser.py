@@ -114,14 +114,14 @@ class DefaultParser(Parser):
         ds = self.__get_data_source(type_)
         attributes = self.__convert_attributes(type_, transfer.get('attributes'))
         to_one, to_many = self.__parse_relationships(transfer.get('relationships'))
-        #provenance = self.__make_provenances(transfer)
+        provenance = self.__make_provenance(transfer)
         return ds.data_object_factory(
             type_,
             id_=transfer.get('id'),
             attributes=attributes,
             to_one=to_one,
             to_many=to_many,
-            #provenance_=provenance
+            provenance_=provenance
         )
 
     def parse_stats(self, transfer: JsonApiResource) -> dict:
@@ -169,32 +169,41 @@ class DefaultParser(Parser):
             stub=True,
         )
 
-    def __make_provenances(
+    def __make_provenance(
         self,
         transfer: JsonApiResource
     ) -> dict[str, DataObject | None]:
 
         ds = self.__get_data_source(transfer['type'])
         result = {}
-        for rel_name, rel_data in transfer.get('relationships', {}).items():
-            if isinstance(rel_data, dict) is False or rel_data == {}:
-                continue
-            if 'provenance' in rel_data:
-                rel_type = (
-                    rel_data['data'].get('type')
-                    if isinstance(rel_data.get('data'), dict)
-                    else None
-                )
-                rel_ds = self.__get_data_source(rel_type) if rel_type else ds
-                result[rel_name] = {
-                    source: rel_ds.data_object_factory(
-                        rel_type or transfer['type'],
-                        id_=prov_data['value'],
-                        stub=True,
-                    )
-                    for source, prov_data in rel_data['provenance'].items()
+        for field_name, field_provenance in transfer.get('attributes', {}).get('provenance', {}).items():
+            # Attributes
+            print(f"field_name: {field_name}, field_provenance: {field_provenance}")
+            if field_name in ds.attribute_types.get(transfer['type'], {}):
+                print(f"Converting attribute provenance for field: {field_name}")
+                result[field_name] = {
+                    source: self.__convert_attribute(transfer['type'], field_name, prov_data)
+                    for source, prov_data in field_provenance.items()
                 }
-                continue
+            else:
+                print(f'Treating {field_name} as a relationship provenance')
+                # Relationships
+                if field_name in transfer.get('relationships', {}):
+                    rel_type = (
+                        transfer['relationships'][field_name]['data'].get('type')
+                        if isinstance(transfer['relationships'][field_name].get('data'), dict)
+                        else None
+                    )
+                    rel_ds = self.__get_data_source(rel_type) if rel_type else ds
+                    result[field_name] = {
+                        source: rel_ds.data_object_factory(
+                            rel_type or transfer['type'],
+                            id_=prov_data['value'],
+                            stub=True,
+                        )
+                        for source, prov_data in field_provenance.items()
+                    }
+        print(f"Provenance result: {result}")
         return result
 
     def __convert_attributes(
@@ -203,12 +212,16 @@ class DefaultParser(Parser):
         if not attributes:
             return {}
 
+        return {
+            k: self.__convert_attribute(type_, k, v)
+            for k, v in attributes.items()
+            if k != 'provenance'
+        }
+
+    def __convert_attribute(self, type_: str, field_name: str, value: Any) -> Any:
         datetime_keys = self.__get_datetime_keys(type_)
 
-        return {
-            k: (dateutil_parse(v) if k in datetime_keys and v is not None else v)
-            for k, v in attributes.items()
-        }
+        return dateutil_parse(value) if field_name in datetime_keys and value is not None else value
 
     def __convert_stats(self, type_: str, stats: dict[str, Any] | None) -> dict[str, Any]:
         # {'field': {'min': value, 'max': value}

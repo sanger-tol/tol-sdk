@@ -133,9 +133,10 @@ class DefaultView(View):
         # Stub trees are created by requested_fields paths ending in ".id"
         if not tree.is_stub:
             self.__add_attributes(data_object, dump, tree)
+            self.__add_provenance_for_attributes(data_object, dump)
         if tree.has_relationships:
             self.__add_relationships(data_object, dump, included, tree)
-        self.__add_provenance(data_object, dump, included, tree)
+            self.__add_provenance_for_relationships(data_object, dump, included, tree)
         return dump
 
     def __add_attributes(
@@ -170,24 +171,39 @@ class DefaultView(View):
         if rel_dict:
             dump['relationships'] = rel_dict
 
-    def __add_provenance(
+    def __add_provenance_for_attributes(
+        self,
+        data_object: DataObject,
+        dump: DumpDict
+    ) -> DumpDict:
+        prov_att_dict = self.__dump_att_provenance(
+            data_object, dump['attributes'] if 'attributes' in dump else {}
+        )
+        if prov_att_dict:
+            if 'attributes' not in dump or dump['attributes'] is None:
+                dump['attributes'] = {}
+            if 'provenance' not in dump['attributes'] or dump['attributes']['provenance'] is None:
+                dump['attributes']['provenance'] = {}
+            dump['attributes']['provenance'] |= prov_att_dict
+
+    def __add_provenance_for_relationships(
         self,
         data_object: DataObject,
         dump: DumpDict,
         included: IncludedDumps,
         tree: ReqFieldsTree
     ) -> DumpDict:
-        prov_att_dict = self.__dump_att_provenance(
-            data_object, dump['attributes'] if 'attributes' in dump else {}
-        )
         prov_rel_dict = self.__dump_to_one_provenance(
             data_object, included, dump['relationships'] if 'relationships' in dump else {},
             tree
         )
-        if prov_rel_dict or prov_att_dict:
+        if prov_rel_dict:
             if 'attributes' not in dump or dump['attributes'] is None:
                 dump['attributes'] = {}
-            dump['attributes']['provenance'] = prov_att_dict | prov_rel_dict
+            if 'provenance' not in dump['attributes'] \
+                    or dump['attributes']['provenance'] is None:
+                dump['attributes']['provenance'] = {}
+            dump['attributes']['provenance'] |= prov_rel_dict
 
     def __dump_to_one_relationships(
         self,

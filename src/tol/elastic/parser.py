@@ -52,7 +52,6 @@ class DefaultElasticApiParser(DataSourceParser[ElasticApiResource, DataObject]):
             type_ = self._data_source._real_index_to_object_type(transfer['_index'])
             id_ = transfer['_id']
             attributes = transfer['_source']
-            print(f'ENTIRE TRANSFER: {transfer}')
             runtime_attributes = transfer['fields'] if 'fields' in transfer else {}
             return self._convert_data_dict_to_data_object(
                 type_,

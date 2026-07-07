@@ -140,6 +140,9 @@ class TestDefaultView:
                     'id': 'Species mockus',
                     'attributes': {
                         'common_name': 'common mock species',
+                        'provenance': {
+                            'common_name': {'source_1': 'common mock species'}
+                        }
                     },
                     'relationships': {
                         'specimen_list': {
@@ -153,6 +156,9 @@ class TestDefaultView:
                     'id': 'Species anothermockus',
                     'attributes': {
                         'common_name': 'another mock species',
+                        'provenance': {
+                            'common_name': {'source_1': 'another mock species'}
+                        }
                     },
                     'relationships': {
                         'specimen_list': {
