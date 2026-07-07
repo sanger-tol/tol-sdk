@@ -114,14 +114,14 @@ class DefaultParser(Parser):
         ds = self.__get_data_source(type_)
         attributes = self.__convert_attributes(type_, transfer.get('attributes'))
         to_one, to_many = self.__parse_relationships(transfer.get('relationships'))
-        provenance = self.__make_provenances(transfer)
+        #provenance = self.__make_provenances(transfer)
         return ds.data_object_factory(
             type_,
             id_=transfer.get('id'),
             attributes=attributes,
             to_one=to_one,
             to_many=to_many,
-            provenance_=provenance
+            #provenance_=provenance
         )
 
     def parse_stats(self, transfer: JsonApiResource) -> dict:
@@ -262,10 +262,8 @@ class DefaultParser(Parser):
 def _make_hashable_id(id_: Any) -> str:
     """
     Convert an id to a hashable string representation.
-    Dicts (with provenance) are converted to JSON strings.
+    Dicts are converted to JSON strings.
     """
-    if isinstance(id_, dict):
-        return json.dumps(id_, sort_keys=True, separators=(',', ':'))
     return str(id_)
 
 

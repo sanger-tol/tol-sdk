@@ -106,7 +106,7 @@ class TestElasticFilter:
         expected = {
             'bool': {
                 'must': [
-                    {'match': {'relationship.id.value.keyword': 'rel-1'}}
+                    {'match': {'relationship.id.value': 'rel-1'}}
                 ],
                 'must_not': []
             }

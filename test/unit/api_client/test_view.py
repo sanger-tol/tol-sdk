@@ -93,6 +93,24 @@ class TestDefaultView:
             'data': {
                 'type': 'specimen_typ',
                 'id': 'SPMN/5678',
+                'attributes': {
+                    'provenance': {
+                        'species_rel': {
+                            'source_1': {
+                                'data': {
+                                    'type': 'species_typ',
+                                    'id': 'Species mockus',
+                                }
+                            },
+                            'source_2': {
+                                'data': {
+                                    'type': 'species_typ',
+                                    'id': 'Species anothermockus',
+                                }
+                            }
+                        }
+                    },
+                },
                 'relationships': {
                     'accession_rel': None,
                     'sex_rel': None,
@@ -127,6 +145,19 @@ class TestDefaultView:
                         'specimen_list': {
                             'links': {
                                 'related': '/random/species_typ/Species%20mockus/specimen_list',
+                            },
+                        }
+                    },
+                }, {
+                    'type': 'species_typ',
+                    'id': 'Species anothermockus',
+                    'attributes': {
+                        'common_name': 'another mock species',
+                    },
+                    'relationships': {
+                        'specimen_list': {
+                            'links': {
+                                'related': '/random/species_typ/Species%20anothermockus/specimen_list',
                             },
                         }
                     },
@@ -355,6 +386,24 @@ class TestDefaultViewInBlueprint:
             'data': {
                 'type': 'specimen_typ',
                 'id': 'SPMN/5678',
+                'attributes': {
+                    'provenance': {
+                        'species_rel': {
+                            'source_1': {
+                                'data': {
+                                    'type': 'species_typ',
+                                    'id': 'Species mockus',
+                                }
+                            },
+                            'source_2': {
+                                'data': {
+                                    'type': 'species_typ',
+                                    'id': 'Species anothermockus',
+                                }
+                            }
+                        }
+                    },
+                },
                 'relationships': {
                     'accession_rel': None,
                     'sample_list': {
@@ -373,12 +422,36 @@ class TestDefaultViewInBlueprint:
                 {
                     'type': 'species_typ',
                     'id': 'Species mockus',
-                    'attributes': {'common_name': 'common mock species'},
+                    'attributes': {
+                        'common_name': 'common mock species',
+                        'provenance': {
+                            'common_name': {'source_1': 'common mock species'}
+                        }
+                    },
                     'relationships': {
                         'specimen_list': {
                             'links': {
                                 'related': (
                                     '/super_data/species_typ/Species%20mockus/specimen_list'
+                                )
+                            }
+                        }
+                    },
+                },
+{
+                    'type': 'species_typ',
+                    'id': 'Species anothermockus',
+                    'attributes': {
+                        'common_name': 'another mock species',
+                        'provenance': {
+                            'common_name': {'source_1': 'another mock species'}
+                        }
+                    },
+                    'relationships': {
+                        'specimen_list': {
+                            'links': {
+                                'related': (
+                                    '/super_data/species_typ/Species%20anothermockus/specimen_list'
                                 )
                             }
                         }

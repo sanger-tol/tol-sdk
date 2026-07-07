@@ -158,6 +158,24 @@ def mock_rel_ds():
             # Will not be dumped with include_all_to_ones=False
             'common_name': 'common mock species',
         },
+        provenance_={
+            'common_name': {
+                'source_1': 'common mock species'
+            }
+        }
+    )
+    type_obj['species_typ', 'Species anothermockus'] = mdo(
+        'species_typ',
+        id_='Species anothermockus',
+        attributes={
+            # Will not be dumped with include_all_to_ones=False
+            'common_name': 'another mock species',
+        },
+        provenance_={
+            'common_name': {
+                'source_1': 'another mock species'
+            }
+        }
     )
     type_obj['specimen_typ', 'SPMN/5678'] = mdo(
         'specimen_typ',
@@ -167,6 +185,12 @@ def mock_rel_ds():
             'sex_rel': None,
             'species_rel': type_obj['species_typ', 'Species mockus'],
         },
+        provenance_={
+            'species_rel': {
+                'source_1': type_obj['species_typ', 'Species mockus'],
+                'source_2': type_obj['species_typ', 'Species anothermockus']
+            }
+        }
     )
 
     def mock_get_by_id(object_type: str, object_ids, **kwargs):

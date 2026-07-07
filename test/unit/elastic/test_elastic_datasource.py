@@ -135,8 +135,10 @@ class TestElasticDataSource:
                 ]
             }
         }
-        assert fields == ['field7', 'field8', 'relationship.id']
-        assert list(cast(dict, runtime_mappings).keys()) == ['field7', 'field8', 'relationship.id']
+        assert fields == ['field7', 'field8', 'relationship.id.value']
+        assert list(cast(dict, runtime_mappings).keys()) == [
+            'field7', 'field8', 'relationship.id.value'
+        ]
 
         # Test with requested tree.
         # Both fields and mappings should have filters
