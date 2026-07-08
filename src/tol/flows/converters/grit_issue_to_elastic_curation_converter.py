@@ -204,11 +204,11 @@ class GritIssueToElasticCurationConverter(
         # The image links should use the Merged analysis if we're combining for curation,
         # else use the Hap1 analysis
         treeval_labels = data_object.labels or []
-        preferred_analysis = treeval_data[
+        preferred_analysis = treeval_data.get(
             'treeval_merged_analysis'
             if 'combine_for_curation' in treeval_labels
             else 'treeval_hap1_analysis'
-        ]
+        )
 
         # Extract the attributes needed to build the jbrowse link
         jbrowse = treeval_data.get('treeval_jbrowse')
@@ -220,10 +220,10 @@ class GritIssueToElasticCurationConverter(
         return {
             'treeval_hic_map_link': (
                 f'https://treeval.cog.sanger.ac.uk/pretextsnapshot_{preferred_analysis}.png'
-            ),
+            ) if preferred_analysis else None,
             'treeval_kmer_spectra_link': (
                 f'https://treeval.cog.sanger.ac.uk/kmerspectra_{preferred_analysis}.png'
-            ),
+            ) if preferred_analysis else None,
             'treeval_jbrowse_link': (
                 r'http://jbrowse.' + jbrowse_server_url + r'.sanger.ac.uk/jbrowse2/'
                 + r'?config=config.json&assembly=' + jbrowse + r'&session=spec-{%22views%22:[{'
