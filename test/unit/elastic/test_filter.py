@@ -63,7 +63,7 @@ class TestElasticFilter:
                     {'range': {'field3': {'lt': 16}}},
                     {'range': {'field3': {'gte': 2}}},
                     {'wildcard': {'field4.keyword': {'value': 'abc*', 'boost': 1.0}}},
-                    {'terms': {'field5.keyword': ['one', 'two'], 'boost': 1.0}},
+                    {'terms': {'field5.value': ['one', 'two'], 'boost': 1.0}},  # provenanced
                     {'match': {'field6': 5}},
                     {'range': {'field8': {'gt': datetime(2022, 1, 1, 0, 0)}}},
                     {'range': {'field8': {'lte': datetime(2023, 1, 1, 0, 0)}}},

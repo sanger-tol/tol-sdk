@@ -87,10 +87,10 @@ def elastic_datasource(
                     source_order=['source1', 'source2', 'source3', 'source4'],
                     return_type=None
                 ),
-                # 'str_column': ProvenanceField(
-                #     source_order=['source1', 'source2', 'source3', 'source4'],
-                #     return_type='str'
-                # ),
+                'str_column': ProvenanceField(
+                    source_order=['source1', 'source2', 'source3', 'source4'],
+                    return_type='keyword'
+                ),
             },
         }
     )
@@ -183,7 +183,14 @@ def upsert_archetypes(prefix: str) -> None:
         index=prefix + '-root',
         id='#YOLO',
         document={
-            'str_column': 'abc',
+            'str_column': {
+                'provenance': {
+                    'source1': {'value': 'abc'},
+                    'source2': {'value': 'abc'},
+                    'source3': {'value': 'abc'},
+                    'source4': {'value': 'abc'},
+                }
+            },
             'int_column': 42,
             'datetime_column': datetime(2020, 1, 1, 0, 0, 0),
             'bool_column': True,

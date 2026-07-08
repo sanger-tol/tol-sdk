@@ -506,7 +506,7 @@ class TestEndToEnd:
             '1',
             attributes={
                 'int_column': 1,
-                'str_column': '1'
+                'str_column': '2'
             },
             to_one={
                 'related_object': rel_obj2
@@ -525,6 +525,9 @@ class TestEndToEnd:
         assert ret.str_column == '1'
         assert ret.provenance['related_object']['source3'].id == '1'
         assert ret.provenance['related_object']['source4'].id == '2'
+        assert ret.provenance['str_column']['source3'] == '1'
+        assert ret.provenance['str_column']['source4'] == '2'
+        assert 'int_column' not in ret.provenance
         assert ret.related_object.id == '1'
 
     @against(sql, api_sql)

@@ -135,9 +135,9 @@ class TestElasticDataSource:
                 ]
             }
         }
-        assert fields == ['field7', 'field8', 'relationship.id.value']
+        assert fields == ['field7', 'field8', 'field5.value','relationship.id.value']
         assert list(cast(dict, runtime_mappings).keys()) == [
-            'field7', 'field8', 'relationship.id.value'
+            'field7', 'field8', 'field5.value', 'relationship.id.value'
         ]
 
         # Test with requested tree.
@@ -188,6 +188,22 @@ class TestElasticDataSource:
         )
         assert fields == ['relationship.id.value']
         assert list(cast(dict, runtime_mappings).keys()) == ['relationship.id.value']
+
+        # API default requested tree has no explicit attributes, so direct
+        # provenanced attributes must still be fetched via `<attribute>.value`.
+        requested_tree = ReqFieldsTree('obj_type', mock_elastic_data_source)
+        (
+            _,
+            _,
+            fields,
+            runtime_mappings
+        ) = mock_elastic_data_source._prepare_get_parameters(
+            object_type='obj_type',
+            object_filters=None,
+            requested_tree=requested_tree,
+        )
+        assert 'field5.value' in fields
+        assert 'field5.value' in list(cast(dict, runtime_mappings).keys())
 
     def test_upsert(self, mock_elastic_data_source: ElasticDataSource):
         CoreDataObject = mock_elastic_data_source.data_object_factory  # noqa N806
