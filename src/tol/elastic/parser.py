@@ -11,6 +11,7 @@ from typing import Any, TYPE_CHECKING
 
 import dateutil
 
+from .elastic_utils import ElasticUtils
 from .filter import ElasticFilterConverter
 from ..core import DataObject, DataSourceFilter, DataSourceParser
 
@@ -71,12 +72,19 @@ class DefaultElasticApiParser(DataSourceParser[ElasticApiResource, DataObject]):
             k: self.__make_dates(type_, k, v[0]) for k, v in runtime_data.items()
             if k in self._data_source.attribute_types[type_]
         }
+        provenanced_attributes = {
+            ElasticUtils.actual_attribute(k): v[0] for k, v in runtime_data.items()
+            if type_ in self._data_source.provenance_fields
+            and ElasticUtils.actual_attribute(k) in self._data_source.provenance_fields[type_]
+            and ElasticUtils.actual_attribute(k) in self._data_source.attribute_types[type_]
+        }
+        print(f'PROVENANCED ATTRIBUTES: {provenanced_attributes} runtime_data: {runtime_data}, provenance_fields: {self._data_source.provenance_fields.get(type_, {})}, attribute_types: {self._data_source.attribute_types.get(type_, {})}')  # --- IGNORE ---
         to_one = self.__make_to_one_relations(type_, data, runtime_data)
         provenance = self.__make_provenances(type_, data)
         return self._data_source.data_object_factory(
             type_,
             id_=id_,
-            attributes=attributes | runtime_attributes,
+            attributes=attributes | runtime_attributes | provenanced_attributes,
             to_one=to_one,
             provenance_=provenance
         )
@@ -93,9 +101,11 @@ class DefaultElasticApiParser(DataSourceParser[ElasticApiResource, DataObject]):
         
         # This picks out all the direct attributes that have provenance
         attributes_with_provenance = {
-            k: v for k, v in data.items()
+            k: {source: details['value']} for k, v in data.items()
             if k in self._data_source.provenance_fields[type_]
             and k not in relationships_with_provenance
+            and 'provenance' in v
+            for source, details in v['provenance'].items()
         }
         
         return attributes_with_provenance | relationships_with_provenance

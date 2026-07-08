@@ -140,3 +140,11 @@ class ElasticUtils:
         )
 
         return changes
+
+    @classmethod
+    def actual_attribute(cls, attribute_name: str) -> str:
+        # Converts a runtime field name to the actual attribute name
+        # e.g. 'relationship.id.value' -> 'relationship.id'
+        if attribute_name.endswith('.value'):
+            return attribute_name[:-6]
+        return attribute_name

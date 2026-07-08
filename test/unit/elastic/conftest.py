@@ -78,7 +78,10 @@ def mock_elastic_data_source() -> ElasticDataSource:
         data_object_update_converter_factory=manager.data_object_update_converter_factory,
         relationship_cfg={
             'obj_type': RelationshipConfig(
-                to_one={'relationship': 'reltype'},
+                to_one={
+                    'relationship': 'reltype',
+                    'another_relationship': 'reltype'
+                },
                 to_many={'children': 'reltype'}
             ),
             'reltype': RelationshipConfig(

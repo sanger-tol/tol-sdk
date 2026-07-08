@@ -26,6 +26,7 @@ from .converter import (
     ElasticUpdateInputConverter,
     ElasticUpsertInputConverter,
 )
+from .elastic_utils import ElasticUtils
 from .filter import ElasticFilterConverter
 from .parser import ElasticUpdateInputResource, ElasticUpsertInputResource
 from .runtime_fields import RuntimeFields
@@ -1065,8 +1066,17 @@ class ElasticDataSource(
                 or self.runtime_fields[object_type][name].get('value', {}).get('type')
             )
             for name in self.runtime_fields[object_type].keys()
+            if ElasticUtils.actual_attribute(name) not in self.provenance_fields.get(object_type, {})
         } if object_type in self.runtime_fields else {}
-        return standard_types | runtime_types
+
+        provenance_types = {
+            name: self.__map_type(
+                self.provenance_fields[object_type][name].return_type
+            )
+            for name in self.provenance_fields[object_type].keys()
+            if not name.endswith('.id')
+        } if object_type in self.provenance_fields else {}
+        return standard_types | runtime_types | provenance_types
 
     @property
     @ttl_cache(ttl=3600)
