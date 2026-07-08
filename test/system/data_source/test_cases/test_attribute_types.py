@@ -11,6 +11,7 @@ import pytest
 from tol.core import (
     OperableDataSource,
 )
+from tol.core.operator.provenancer import ProvenanceField
 
 from ..dec import against
 from ..fixtures import all_fixtures, api_elastic, api_sql, elastic, sql
@@ -28,7 +29,6 @@ class TestAttributeTypes:
         Tests that the attribute types are correctly reported for each object type.
         """
 
-        attribute_types = data_source.attribute_types
         expected = {
             'root': {
                 'str_column': 'str',
@@ -48,4 +48,34 @@ class TestAttributeTypes:
                 'root_int_column_max': 'double',
             }
         }
-        assert attribute_types == expected
+        assert data_source.attribute_types == expected
+
+    @against(elastic, api_elastic)
+    def test_supported_types(self, data_source: OperableDataSource, ds_sleep):
+        """
+        Tests that the supported types are correctly reported for each object type.
+        """
+
+        expected = {'root', 'related'}
+        assert set(data_source.supported_types) == expected
+
+    @against(elastic)
+    def test_provenance_fields(self, data_source: OperableDataSource, ds_sleep):
+        """
+        Tests that the provenance fields are correctly reported for each object type.
+        """
+
+        expected = {
+            'root': {
+                'related_object.id': ProvenanceField(
+                    source_order=['source1', 'source2', 'source3', 'source4'],
+                    return_type=None
+                ),
+                'str_column': ProvenanceField(
+                    source_order=['source1', 'source2', 'source3', 'source4'],
+                    return_type='keyword'
+                ),
+            },
+        }
+        assert data_source.provenance_fields == expected
+
