@@ -108,7 +108,7 @@ class TestEndToEnd:
             for id_ in ids
         ]
 
-        data_source.upsert('root', data_objects)
+        data_source.upsert('root', data_objects, provenance='source1')
         ds_sleep(2)  # Let Elastic settle down after the upsert
 
         # they should all be present now
@@ -512,7 +512,6 @@ class TestEndToEnd:
                 'related_object': rel_obj2
             }
         )
-
         if data_source.write_mode['root'] == RelationWriteMode.SEPARATE:
             data_source.upsert('related', [rel_obj1], provenance='source1')
             data_source.upsert('related', [rel_obj2], provenance='source2')
@@ -524,7 +523,6 @@ class TestEndToEnd:
         ret = first[0]
         assert ret.int_column == 1
         assert ret.str_column == '1'
-        print(f'PROVENANCE: {ret.provenance}')
         assert ret.provenance['related_object']['source3'].id == '1'
         assert ret.provenance['related_object']['source4'].id == '2'
         assert ret.related_object.id == '1'
@@ -540,7 +538,7 @@ class TestEndToEnd:
         """
 
         obj1 = data_source.data_object_factory('root', '1', attributes={})
-        data_source.upsert('root', [obj1])
+        data_source.upsert('root', [obj1], provenance='source1')
         ds_sleep(2)  # Let Elastic settle down after the upsert
         first = list(data_source.get_by_ids('root', ['1']))
         assert len(first) == 1
@@ -573,7 +571,7 @@ class TestEndToEnd:
                 'dict_column': {'key1': 8, 'key3': 9},
             },
         )
-        returned_ = data_source.upsert('root', [obj1])
+        returned_ = data_source.upsert('root', [obj1], provenance='source1')
 
         if data_source.return_mode['root'] == ReturnMode.POPULATED:
             returned_root = list(returned_)[0]
@@ -586,7 +584,7 @@ class TestEndToEnd:
         assert ret.dict_column == {'key1': 8, 'key2': 7, 'key3': 9}
 
         obj1 = data_source.data_object_factory('root', '1', attributes={})
-        data_source.upsert('root', [obj1])
+        data_source.upsert('root', [obj1], provenance='source1')
 
         ds_sleep(2)  # Let Elastic settle down after the upsert
         fourth = list(data_source.get_by_ids('root', ['1']))
@@ -644,7 +642,7 @@ class TestEndToEnd:
                 'dict_column': {'key3': 8, 'key4': 9},
             },
         )
-        data_source.upsert('root', [update], merge_collections=False)
+        data_source.upsert('root', [update], merge_collections=False, provenance='source1')
         ds_sleep(2)  # Let Elastic settle down after the upsert
 
         second = list(data_source.get_by_ids('root', ['11']))
@@ -661,7 +659,7 @@ class TestEndToEnd:
             attributes={'str_column': 'testy'},
         )
         with pytest.raises(DataSourceError):
-            data_source.upsert('root', [obj1], merge_collections=False)
+            data_source.upsert('root', [obj1], merge_collections=False, provenance='source1')
 
     @against(elastic)  # `Updater` not implemented on `Api`- or `SqlDataSource`
     def test_update(self, data_source: OperableDataSource, ds_sleep):
@@ -848,7 +846,7 @@ class TestEndToEnd:
             )
             for id_ in range(10)
         ]
-        data_source.upsert('root', data_objects)
+        data_source.upsert('root', data_objects, provenance='source1')
         ds_sleep(2)
 
         cnt = data_source.get_count('root')
@@ -889,7 +887,7 @@ class TestEndToEnd:
                     },
                 )
             )
-        data_source.upsert('root', data_objects)
+        data_source.upsert('root', data_objects, provenance='source1')
 
         # PostgreSQL set to ANALYZE tables every 5 seconds with
         # `autovacuum_naptime=5` in docker-compose.yml
@@ -942,7 +940,7 @@ class TestEndToEnd:
             for i, id_ in enumerate(ids)
         ]
 
-        data_source.upsert('root', data_objects)
+        data_source.upsert('root', data_objects, provenance='source1')
         ds_sleep(5)  # Let Elastic settle down after the upsert
 
         stats = data_source.get_stats(
@@ -1031,7 +1029,7 @@ class TestEndToEnd:
             requested_fields=['str_column', 'bool_column'],
             loader_name='e2e loader',
         )
-        loader.load(provenance='e2e')
+        loader.load(provenance='source1')
         ds_sleep(5)
 
         f = DataSourceFilter()

@@ -295,17 +295,13 @@ class ElasticDataSource(
         # If this is a provenance field, we need to use the actual field name in Elastic
         if object_type in self.provenance_fields and name in self.provenance_fields[object_type]:
             actual_field = f'{name}.value'
-            print(f'Provenance field {name} in {object_type} maps to {actual_field}')
             return self._field_or_keyword(object_type, actual_field)
 
         # If this is a runtime field, we need to use the actual field name in Elastic
         # regardless of its type
         if object_type in self.runtime_fields and name in self.runtime_fields[object_type]:
-            print(f'Runtime field {name} in {object_type} maps to {name}')
             return name
 
-        print(f'Field {name} in {object_type} is not runtime or provenance')
-        print(f'Runtime fields are: {self.runtime_fields.get(object_type, {})}')
         if '.' in name:
             rc = self.relationship_config[object_type]
             relationship_name, attribute = name.split('.')[0], name.split('.')[1]
@@ -356,6 +352,10 @@ class ElasticDataSource(
         )
         fields = list(runtime_mappings.keys()) if runtime_mappings is not None else None
         if requested_tree is not None and fields is not None and runtime_mappings is not None:
+            def relation_sub_tree_requested(field_name: str) -> bool:
+                relation_name = field_name.split('.', 1)[0]
+                return requested_tree.get_sub_tree(relation_name) is not None
+
             # Filter fields to fetch based on whether they're in the requested tree
             fields = list(filter(
                 lambda field: (
@@ -371,6 +371,7 @@ class ElasticDataSource(
                         sort_by is not None and field in sort_by
                     )
                     or requested_tree.get_sub_tree(field) is not None
+                    or relation_sub_tree_requested(field)
                 ),
                 fields,
             ))
@@ -424,7 +425,6 @@ class ElasticDataSource(
             page=page,
             requested_tree=requested_tree,
         )
-        print(f'RAW RESPONSE: {resp}')
         return (
             self._elastic_converter_factory().convert_list(
                 resp['hits']['hits']
@@ -448,12 +448,10 @@ class ElasticDataSource(
             sort_by=sort_by,
             requested_tree=requested_tree,
         )
-        print(f'Getting page for {object_type} with query: {query}, fields: {fields}, runtime_mappings: {runtime_mappings}')
         sort = self._build_elasticsearch_sort(object_type, sort_by)
         if page_size is None:
             page_size = self.get_page_size()
         from_ = (page - 1) * page_size if page is not None else None
-        print(f'DOING SEARCH WITH fields={fields}, runtime_mappings={runtime_mappings}')
         return self.es.search(
             from_=from_,
             size=page_size,
@@ -528,8 +526,6 @@ class ElasticDataSource(
             object_filters=object_filters,
             requested_tree=requested_tree,
         )
-        print(f'Getting list for {object_type} with query: {query}, fields: {fields}, runtime_mappings: {runtime_mappings}')
-        print(f'DOING SEARCH WITH fields={fields}, runtime_mappings={runtime_mappings}')
         generator = self.helpers.scan(self.es,
                                       index=real_index_name,
                                       scroll='10m',

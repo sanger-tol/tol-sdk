@@ -191,8 +191,12 @@ def upsert_archetypes(prefix: str) -> None:
             # 'dict_column': {'key1': 1},  # dict columns not yet supported in API
             'related_object': {
                 'id': {
-                    'provenance': {'prov_1': {'value': 1}},
-                    'value': 1
+                    'provenance': {
+                        'source1': {'value': '#REL'},
+                        'source2': {'value': '#REL'},
+                        'source3': {'value': '#REL'},
+                        'source4': {'value': '#REL'},
+                    },
                 },
                 'int_column': 42,
                 'datetime_column': datetime(2021, 1, 1, 0, 0, 0)

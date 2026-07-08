@@ -178,15 +178,12 @@ class DefaultParser(Parser):
         result = {}
         for field_name, field_provenance in transfer.get('attributes', {}).get('provenance', {}).items():
             # Attributes
-            print(f"field_name: {field_name}, field_provenance: {field_provenance}")
             if field_name in ds.attribute_types.get(transfer['type'], {}):
-                print(f"Converting attribute provenance for field: {field_name}")
                 result[field_name] = {
                     source: self.__convert_attribute(transfer['type'], field_name, prov_data)
                     for source, prov_data in field_provenance.items()
                 }
             else:
-                print(f'Treating {field_name} as a relationship provenance')
                 # Relationships
                 if field_name in transfer.get('relationships', {}):
                     rel_type = (
@@ -198,12 +195,11 @@ class DefaultParser(Parser):
                     result[field_name] = {
                         source: rel_ds.data_object_factory(
                             rel_type or transfer['type'],
-                            id_=prov_data['value'],
+                            id_=prov_data['data']['id'],
                             stub=True,
                         )
                         for source, prov_data in field_provenance.items()
                     }
-        print(f"Provenance result: {result}")
         return result
 
     def __convert_attributes(

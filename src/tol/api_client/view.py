@@ -129,7 +129,6 @@ class DefaultView(View):
         argument.  Related objects are accumulated in the `incldued` array.
         """
         dump = {'type': data_object.type, 'id': null_or_str(data_object.id)}
-        print(f'TREE: {type(tree)} {tree} {null_or_str(data_object.id)}')  # --- IGNORE ---
         # Stub trees are created by requested_fields paths ending in ".id"
         if not tree.is_stub:
             self.__add_attributes(data_object, dump, tree)
@@ -246,13 +245,24 @@ class DefaultView(View):
         provenance = {}
         for rel in relationships:
             if data_object.provenance and rel in data_object.provenance:
+                rel_provenance = data_object.provenance[rel]
+                if not isinstance(rel_provenance, dict):
+                    continue
+
                 provenance[rel] = {}
-                for source, obj in data_object.provenance[rel].items():
+                for source, obj in rel_provenance.items():
+                    if obj is None:
+                        continue
+
                     one_dump = {'data': self.__dump_stub(obj, rel)}
-                    if rel in relationships and 'data' in relationships[rel]:
+                    rel_dump = relationships.get(rel)
+                    if isinstance(rel_dump, dict) and 'data' in rel_dump:
                         if sub_tree := tree.get_sub_tree(rel):
                             included.add_dump(self.__dump_object(obj, included, tree=sub_tree))
                     provenance[rel][source] = one_dump
+
+                if not provenance[rel]:
+                    del provenance[rel]
         return provenance
 
     def __dump_to_many_relationships(

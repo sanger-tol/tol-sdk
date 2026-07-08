@@ -180,16 +180,17 @@ class DefaultElasticApiParser(DataSourceParser[ElasticApiResource, DataObject]):
 
         id_ = relation_data.get('id')
         # If this relation is provenanced, we need to get the id from the runtime fields
-        print(f'Checking provenance for {relation_name} in {parent_type}, runtime_data: {runtime_data}, provenance_fields: {self._data_source.provenance_fields}')
         if parent_type in self._data_source.provenance_fields and \
                 f'{relation_name}.id' in self._data_source.provenance_fields[parent_type] and \
                 runtime_data is not None and \
                 f'{relation_name}.id.value' in runtime_data:
             id_ = runtime_data[f'{relation_name}.id.value'][0]
-            print(f'Found provenance for {relation_name} in {parent_type}, using id: {id_}')
 
         if id_ is None:
             return None
+        if isinstance(id_, dict):
+            raise ValueError(f'Unexpected dict for id of relation {relation_name} in {parent_type}: {id_}. provenance_fields={self._data_source.provenance_fields[parent_type]}'
+            f'runtime_fields={runtime_data}')
 
         return self._convert_data_dict_to_data_object(
             child_type,
