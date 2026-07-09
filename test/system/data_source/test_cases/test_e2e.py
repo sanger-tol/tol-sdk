@@ -531,6 +531,40 @@ class TestEndToEnd:
         assert 'int_column' not in ret.provenance
         assert ret.related_object.id == '1'
 
+        root_obj3 = data_source.data_object_factory(
+            'root',
+            '1',
+            attributes={
+                'int_column': None,
+                'str_column': None
+            },
+            to_one={
+                'related_object': None,
+            }
+        )
+        data_source.upsert('root', [root_obj3], provenance='source4')
+        ds_sleep(5)
+
+        second = list(data_source.get_by_ids('root', ['1']))
+        ret = second[0]
+        assert ret.str_column == '1'
+        assert ret.related_object.id == '1'
+        assert ret.provenance['str_column']['source4'] is None
+        assert 'source4' in ret.provenance['related_object']
+        assert ret.provenance['related_object']['source4'] is None
+
+        # Insert that same object with a higher priority source
+        data_source.upsert('root', [root_obj3], provenance='source1')
+        ds_sleep(5)
+
+        second = list(data_source.get_by_ids('root', ['1']))
+        ret = second[0]
+        assert ret.str_column is None
+        assert ret.related_object is None
+        assert ret.provenance['str_column']['source1'] is None
+        assert 'source1' in ret.provenance['related_object']
+        assert ret.provenance['related_object']['source1'] is None
+
     @against(sql, api_sql)
     def test_upsert_dict_attributes(self, data_source: OperableDataSource, ds_sleep):
         """

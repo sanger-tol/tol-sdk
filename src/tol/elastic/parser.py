@@ -13,6 +13,7 @@ import dateutil
 
 from .elastic_utils import ElasticUtils
 from .filter import ElasticFilterConverter
+from .runtime_fields import RuntimeFields
 from ..core import DataObject, DataSourceFilter, DataSourceParser
 
 if TYPE_CHECKING:
@@ -64,20 +65,35 @@ class DefaultElasticApiParser(DataSourceParser[ElasticApiResource, DataObject]):
             return None
 
     def _convert_data_dict_to_data_object(self, type_, id_, data, runtime_data):
+        direct_provenance_attrs = {
+            k for k in self._data_source.provenance_fields.get(type_, {})
+            if not k.endswith('.id')
+        }
+
         attributes = {
             k: self.__make_dates(type_, k, v) for k, v in data.items()
             if k in self._data_source.attribute_types[type_]
+            and k not in direct_provenance_attrs
         }
         runtime_attributes = {
             k: self.__make_dates(type_, k, v[0]) for k, v in runtime_data.items()
             if k in self._data_source.attribute_types[type_]
         }
         provenanced_attributes = {
-            ElasticUtils.actual_attribute(k): v[0] for k, v in runtime_data.items()
+            ElasticUtils.actual_attribute(k): self.__normalise_runtime_value(v[0])
+            for k, v in runtime_data.items()
             if type_ in self._data_source.provenance_fields
             and ElasticUtils.actual_attribute(k) in self._data_source.provenance_fields[type_]
             and ElasticUtils.actual_attribute(k) in self._data_source.attribute_types[type_]
         }
+
+        for attr_name in direct_provenance_attrs:
+            if (
+                attr_name in self._data_source.attribute_types.get(type_, {})
+                and attr_name not in provenanced_attributes
+            ):
+                provenanced_attributes[attr_name] = None
+
         to_one = self.__make_to_one_relations(type_, data, runtime_data)
         provenance = self.__make_provenances(type_, data)
         return self._data_source.data_object_factory(
@@ -101,7 +117,7 @@ class DefaultElasticApiParser(DataSourceParser[ElasticApiResource, DataObject]):
         # This picks out all the direct attributes that have provenance
         attributes_with_provenance = {
             k: {
-                source: details['value']
+                source: self.__normalise_runtime_value(details['value'])
                 for source, details in v['provenance'].items()
             }
             for k, v in data.items()
@@ -132,9 +148,13 @@ class DefaultElasticApiParser(DataSourceParser[ElasticApiResource, DataObject]):
         if isinstance(id_, dict) and 'provenance' in id_:
             result = {}
             for source in id_.get('provenance', {}):
+                source_id = self.__normalise_runtime_value(id_['provenance'][source]['value'])
+                if source_id is None:
+                    result[source] = None
+                    continue
                 result[source] = self._convert_data_dict_to_data_object(
                     type_,
-                    id_['provenance'][source]['value'],
+                    source_id,
                     relation_data,
                     {}
                 )
@@ -198,7 +218,7 @@ class DefaultElasticApiParser(DataSourceParser[ElasticApiResource, DataObject]):
                 f'{relation_name}.id' in self._data_source.provenance_fields[parent_type] and \
                 runtime_data is not None and \
                 f'{relation_name}.id.value' in runtime_data:
-            id_ = runtime_data[f'{relation_name}.id.value'][0]
+            id_ = self.__normalise_runtime_value(runtime_data[f'{relation_name}.id.value'][0])
 
         if id_ is None:
             return None
@@ -217,8 +237,23 @@ class DefaultElasticApiParser(DataSourceParser[ElasticApiResource, DataObject]):
             {},  # This can be empty because runtime_fields are not applicable for enriched objects
         )
 
+    def __normalise_runtime_value(self, value: Any) -> Any:
+        if value == RuntimeFields.NULL_SENTINEL:
+            return None
+        return value
+
 
 class _ToElasticApiResourceParser:
+    def __should_use_null_sentinel(self, object_type: str, provenance_field: str) -> bool:
+        if (
+            object_type not in self._data_source.provenance_fields
+            or provenance_field not in self._data_source.provenance_fields[object_type]
+        ):
+            return False
+
+        field_cfg = self._data_source.provenance_fields[object_type][provenance_field]
+        return (field_cfg.return_type or 'keyword') == 'keyword'
+
     def _convert_dates(self, dict_: dict) -> dict:
         ret = {}
         for k, v in dict_.items():
@@ -288,18 +323,20 @@ class _ToElasticApiResourceParser:
         value: Any | None,
         provenance: str | None,
     ) -> dict[str, Any] | None:
-
-        if value is None:
-            return None
-
         if provenance is not None and \
                 object_type in self._data_source.provenance_fields and \
                 name in self._data_source.provenance_fields[object_type]:
+            parsed_value = value
+            if value is None and self.__should_use_null_sentinel(object_type, name):
+                parsed_value = RuntimeFields.NULL_SENTINEL
             return {
                 'provenance': {
-                    provenance: {'value': value}
+                    provenance: {'value': parsed_value}
                 }
             }
+
+        if value is None:
+            return None
 
         return value
 
@@ -312,6 +349,19 @@ class _ToElasticApiResourceParser:
     ) -> dict[str, Any] | None:
 
         if one_relation is None:
+            if provenance is not None and \
+                    object_type in self._data_source.provenance_fields and \
+                    f'{name}.id' in self._data_source.provenance_fields[object_type]:
+                parsed_value = None
+                if self.__should_use_null_sentinel(object_type, f'{name}.id'):
+                    parsed_value = RuntimeFields.NULL_SENTINEL
+                return {
+                    'id': {
+                        'provenance': {
+                            provenance: {'value': parsed_value}
+                        }
+                    }
+                }
             return None
 
         if provenance is not None and \

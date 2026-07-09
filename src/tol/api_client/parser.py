@@ -186,17 +186,27 @@ class DefaultParser(Parser):
             else:
                 # Relationships
                 if field_name in transfer.get('relationships', {}):
+                    rel_entry = transfer['relationships'][field_name]
                     rel_type = (
-                        transfer['relationships'][field_name]['data'].get('type')
-                        if isinstance(transfer['relationships'][field_name].get('data'), dict)
+                        rel_entry['data'].get('type')
+                        if isinstance(rel_entry, dict)
+                        and isinstance(rel_entry.get('data'), dict)
                         else None
                     )
                     rel_ds = self.__get_data_source(rel_type) if rel_type else ds
                     result[field_name] = {
-                        source: rel_ds.data_object_factory(
-                            rel_type or transfer['type'],
-                            id_=prov_data['data']['id'],
-                            stub=True,
+                        source: (
+                            None
+                            if (
+                                prov_data is None
+                                or not isinstance(prov_data, dict)
+                                or prov_data.get('data') is None
+                            )
+                            else rel_ds.data_object_factory(
+                                rel_type or transfer['type'],
+                                id_=prov_data['data']['id'],
+                                stub=True,
+                            )
                         )
                         for source, prov_data in field_provenance.items()
                     }

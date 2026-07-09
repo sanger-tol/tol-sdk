@@ -1179,7 +1179,8 @@ class ElasticDataSource(
                         f'{field_name}.provenance.{source_order}.value'
                         for source_order in provenance_field.source_order
                     ],
-                    return_type=provenance_field.return_type or 'keyword'
+                    return_type=provenance_field.return_type or 'keyword',
+                    null_wins=True,
                 )
         return runtime_fields
 

@@ -458,11 +458,15 @@ class TestElasticDataSource:
         returned = iter(mock_elastic_data_source.get_list('obj_type'))
         mock_elastic_data_source.helpers.scan.assert_called_once()
         first = next(returned)
-        assert first.attributes == {'field1': 'value1', 'field2': 'value2', 'field7': 'Hello'}
+        assert first.attributes == {
+            'field1': 'value1', 'field2': 'value2', 'field5': None, 'field7': 'Hello'
+        }
         assert first.id == '1'
         assert first.type == 'obj_type'
         second = next(returned)
-        assert second.attributes == {'field1': 'value3', 'field2': 'value4', 'field7': 'Hello'}
+        assert second.attributes == {
+            'field1': 'value3', 'field2': 'value4', 'field5': None, 'field7': 'Hello'
+        }
         assert second.id == '2'
         assert second.type == 'obj_type'
         try:
@@ -494,11 +498,15 @@ class TestElasticDataSource:
         mock_elastic_data_source.es.search.assert_called_once()
         assert total == 2
         first = next(returned)
-        assert first.attributes == {'field1': 'value1', 'field2': 'value2', 'field7': 'Hello'}
+        assert first.attributes == {
+            'field1': 'value1', 'field2': 'value2', 'field5': None, 'field7': 'Hello'
+        }
         assert first.id == '1'
         assert first.type == 'obj_type'
         second = next(returned)
-        assert second.attributes == {'field1': 'value3', 'field2': 'value4', 'field7': 'Hello'}
+        assert second.attributes == {
+            'field1': 'value3', 'field2': 'value4', 'field5': None, 'field7': 'Hello'
+        }
         assert second.id == '2'
         assert second.type == 'obj_type'
         try:
@@ -543,6 +551,7 @@ class TestElasticDataSource:
         assert first.attributes == {
             'field1': 'value3',
             'field2': 'value4',
+            'field5': None,
             'field7': 'Hello'
         }
         assert first.id == '2'

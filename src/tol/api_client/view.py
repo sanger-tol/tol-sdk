@@ -251,6 +251,7 @@ class DefaultView(View):
                 provenance[rel] = {}
                 for source, obj in rel_provenance.items():
                     if obj is None:
+                        provenance[rel][source] = {'data': None}
                         continue
 
                     one_dump = {'data': self.__dump_stub(obj, rel)}
