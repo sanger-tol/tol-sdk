@@ -4,7 +4,6 @@
 
 from __future__ import annotations
 
-import json
 import typing
 from abc import ABC, abstractmethod
 from collections.abc import Iterable
@@ -176,7 +175,8 @@ class DefaultParser(Parser):
 
         ds = self.__get_data_source(transfer['type'])
         result = {}
-        for field_name, field_provenance in transfer.get('attributes', {}).get('provenance', {}).items():
+        provenance_attribute = transfer.get('attributes', {}).get('provenance', {})
+        for field_name, field_provenance in provenance_attribute.items():
             # Attributes
             if field_name in ds.attribute_types.get(transfer['type'], {}):
                 result[field_name] = {
@@ -217,7 +217,11 @@ class DefaultParser(Parser):
     def __convert_attribute(self, type_: str, field_name: str, value: Any) -> Any:
         datetime_keys = self.__get_datetime_keys(type_)
 
-        return dateutil_parse(value) if field_name in datetime_keys and value is not None else value
+        return (
+            dateutil_parse(value)
+            if field_name in datetime_keys and value is not None
+            else value
+        )
 
     def __convert_stats(self, type_: str, stats: dict[str, Any] | None) -> dict[str, Any]:
         # {'field': {'min': value, 'max': value}

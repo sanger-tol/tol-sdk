@@ -498,7 +498,8 @@ class TestEndToEnd:
                 'str_column': '1'
             },
             to_one={
-                'related_object': rel_obj1
+                'related_object': rel_obj1,
+                'another_related_object': rel_obj1
             }
         )
         root_obj2 = data_source.data_object_factory(
@@ -984,7 +985,7 @@ class TestEndToEnd:
             )
             for id_ in range(10)
         ]
-        data_source.upsert('root', data_objects)
+        data_source.upsert('root', data_objects, provenance='source1')
         ds_sleep(2)
 
         # Get by ID

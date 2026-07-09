@@ -357,6 +357,22 @@ class ElasticDataSource(
                 relation_name = field_name.split('.', 1)[0]
                 return requested_tree.get_sub_tree(relation_name) is not None
 
+            def direct_provenanced_attribute_requested(field_name: str) -> bool:
+                if not field_name.endswith('.value'):
+                    return False
+
+                base_name = ElasticUtils.actual_attribute(field_name)
+                if '.' in base_name:
+                    return False
+
+                if base_name not in self.provenance_fields.get(object_type, {}):
+                    return False
+
+                return (
+                    requested_tree.has_attribute(base_name)
+                    or len(requested_tree.attribute_names) == 0
+                )
+
             # Filter fields to fetch based on whether they're in the requested tree
             fields = list(filter(
                 lambda field: (
@@ -373,6 +389,7 @@ class ElasticDataSource(
                     )
                     or requested_tree.get_sub_tree(field) is not None
                     or relation_sub_tree_requested(field)
+                    or direct_provenanced_attribute_requested(field)
                 ),
                 fields,
             ))
@@ -1066,7 +1083,8 @@ class ElasticDataSource(
                 or self.runtime_fields[object_type][name].get('value', {}).get('type')
             )
             for name in self.runtime_fields[object_type].keys()
-            if ElasticUtils.actual_attribute(name) not in self.provenance_fields.get(object_type, {})
+            if ElasticUtils.actual_attribute(name)
+            not in self.provenance_fields.get(object_type, {})
         } if object_type in self.runtime_fields else {}
 
         provenance_types = {

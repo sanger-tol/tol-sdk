@@ -5,7 +5,6 @@
 import os
 import time
 from datetime import datetime
-from unittest.mock import Mock
 from uuid import uuid4
 
 
@@ -13,7 +12,6 @@ from elasticsearch import Elasticsearch
 
 import requests
 
-from tol.core import DataSourceUtils
 from tol.core.operator.provenancer import ProvenanceField
 from tol.core.relationship import RelationshipConfig
 from tol.elastic import (
@@ -208,6 +206,9 @@ def upsert_archetypes(prefix: str) -> None:
                 'int_column': 42,
                 'datetime_column': datetime(2021, 1, 1, 0, 0, 0)
             },
+            'another_related_object': {
+                'id': '#REL'
+            }
         }
     )
     elastic_ds.es.index(

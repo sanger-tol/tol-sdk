@@ -2,19 +2,13 @@
 #
 # SPDX-License-Identifier: MIT
 
-from datetime import datetime
-from time import sleep
-from typing import Dict, Iterable
-
-import pytest
-
 from tol.core import (
     OperableDataSource,
 )
 from tol.core.operator.provenancer import ProvenanceField
 
 from ..dec import against
-from ..fixtures import all_fixtures, api_elastic, api_sql, elastic, sql
+from ..fixtures import api_elastic, elastic
 
 
 class TestAttributeTypes:
@@ -78,4 +72,3 @@ class TestAttributeTypes:
             },
         }
         assert data_source.provenance_fields == expected
-

@@ -4,7 +4,6 @@
 
 from __future__ import annotations
 
-import json
 import urllib
 from abc import ABC, abstractmethod
 from collections.abc import Iterable

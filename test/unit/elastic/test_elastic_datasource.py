@@ -135,7 +135,7 @@ class TestElasticDataSource:
                 ]
             }
         }
-        assert fields == ['field7', 'field8', 'field5.value','relationship.id.value']
+        assert fields == ['field7', 'field8', 'field5.value', 'relationship.id.value']
         assert list(cast(dict, runtime_mappings).keys()) == [
             'field7', 'field8', 'field5.value', 'relationship.id.value'
         ]
@@ -186,8 +186,10 @@ class TestElasticDataSource:
             object_filters=None,
             requested_tree=requested_tree,
         )
-        assert fields == ['relationship.id.value']
-        assert list(cast(dict, runtime_mappings).keys()) == ['relationship.id.value']
+        assert set(fields) == {'relationship.id.value', 'field5.value'}
+        assert list(cast(dict, runtime_mappings).keys()) == [
+            'field5.value', 'relationship.id.value'
+        ]
 
     def test_upsert(self, mock_elastic_data_source: ElasticDataSource):
         CoreDataObject = mock_elastic_data_source.data_object_factory  # noqa N806
@@ -410,6 +412,7 @@ class TestElasticDataSource:
                     'must_not': []
                 }
             },
+            'runtime_mappings': dict(mock_elastic_data_source.runtime_fields['obj_type']),
             'script': {
                 'source': DefaultElasticUpdateInputParser(mock_elastic_data_source)._update_script,
                 'lang': 'painless',
@@ -537,7 +540,6 @@ class TestElasticDataSource:
 
         returned = iter(mock_elastic_data_source.get_by_id('obj_type', ['2', '1']))
         first = next(returned)
-        print(first.attributes)
         assert first.attributes == {
             'field1': 'value3',
             'field2': 'value4',

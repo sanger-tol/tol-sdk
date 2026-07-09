@@ -78,7 +78,6 @@ class DefaultElasticApiParser(DataSourceParser[ElasticApiResource, DataObject]):
             and ElasticUtils.actual_attribute(k) in self._data_source.provenance_fields[type_]
             and ElasticUtils.actual_attribute(k) in self._data_source.attribute_types[type_]
         }
-        print(f'PROVENANCED ATTRIBUTES: {provenanced_attributes} runtime_data: {runtime_data}, provenance_fields: {self._data_source.provenance_fields.get(type_, {})}, attribute_types: {self._data_source.attribute_types.get(type_, {})}')  # --- IGNORE ---
         to_one = self.__make_to_one_relations(type_, data, runtime_data)
         provenance = self.__make_provenances(type_, data)
         return self._data_source.data_object_factory(
@@ -98,16 +97,21 @@ class DefaultElasticApiParser(DataSourceParser[ElasticApiResource, DataObject]):
             k: self.__make_provenance_for_relationship(v, type_) for k, v in data.items()
             if f'{k}.id' in self._data_source.provenance_fields[type_]
         }
-        
+
         # This picks out all the direct attributes that have provenance
         attributes_with_provenance = {
-            k: {source: details['value']} for k, v in data.items()
+            k: {
+                source: details['value']
+                for source, details in v['provenance'].items()
+            }
+            for k, v in data.items()
             if k in self._data_source.provenance_fields[type_]
             and k not in relationships_with_provenance
+            and v is not None
+            and isinstance(v, dict)
             and 'provenance' in v
-            for source, details in v['provenance'].items()
         }
-        
+
         return attributes_with_provenance | relationships_with_provenance
 
     def __make_provenance_for_relationship(
@@ -199,8 +203,12 @@ class DefaultElasticApiParser(DataSourceParser[ElasticApiResource, DataObject]):
         if id_ is None:
             return None
         if isinstance(id_, dict):
-            raise ValueError(f'Unexpected dict for id of relation {relation_name} in {parent_type}: {id_}. provenance_fields={self._data_source.provenance_fields[parent_type]}'
-            f'runtime_fields={runtime_data}')
+            raise ValueError(
+                f'Unexpected dict for id of relation {relation_name} '
+                f'in {parent_type}: {id_}. '
+                f'provenance_fields={self._data_source.provenance_fields[parent_type]}'
+                f' runtime_fields={runtime_data}'
+            )
 
         return self._convert_data_dict_to_data_object(
             child_type,
@@ -426,8 +434,14 @@ class DefaultElasticUpdateInputParser(
         query = ElasticFilterConverter(self._data_source).convert(
             transfer.object_type, object_filters=f
         )
+        runtime_mappings = (
+            dict(self._data_source.runtime_fields[transfer.object_type])
+            if transfer.object_type in self._data_source.runtime_fields
+            else None
+        )
         return {
             'query': query,
+            'runtime_mappings': runtime_mappings,
             'script': {
                 'source': self._update_script,
                 'lang': 'painless',

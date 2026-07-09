@@ -36,7 +36,7 @@ class TestID:
             for i in range(3)
         )
 
-        data_source.upsert('root', objs)
+        data_source.upsert('root', objs, provenance='source1')
 
         # let upsert settle
         ds_sleep(5)
@@ -93,7 +93,7 @@ class TestID:
             for i in range(3)
         )
 
-        data_source.upsert('root', objs)
+        data_source.upsert('root', objs, provenance='source1')
 
         # let upsert settle
         ds_sleep(5)
