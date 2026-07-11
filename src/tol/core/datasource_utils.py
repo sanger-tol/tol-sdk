@@ -22,8 +22,11 @@ class DataSourceUtils:
     def get_datasource(
         cls,
         datasource_instance_id: str,
-        config_datasource: DataSource
+        config_datasource: DataSource | None = None
     ) -> DataSource:
+        if config_datasource is None:
+            from ..sources.portaldb import portaldb
+            config_datasource = portaldb()
         datasource_instance = config_datasource.get_one(
             'data_source_instance',
             datasource_instance_id
@@ -128,14 +131,14 @@ class DataSourceUtils:
     @classmethod
     def get_provenance_fields(cls, attributes, relationships) -> ProvenanceFields:
         provenance_fields = {}
-        for dsca in attributes + relationships:
+        for dsca, suffix in [(d, '') for d in attributes] + [(d, '.id') for d in relationships]:
             if dsca.source_order is None:
                 continue
             if dsca.object_type not in provenance_fields:
                 provenance_fields[dsca.object_type] = {}
-            provenance_fields[dsca.object_type][dsca.name] = ProvenanceField(
+            provenance_fields[dsca.object_type][f'{dsca.name}{suffix}'] = ProvenanceField(
                 source_order=dsca.source_order,
-                return_type=dsca.return_type or 'str'
+                return_type=dsca.return_type or 'keyword'
             )
         return provenance_fields
 
