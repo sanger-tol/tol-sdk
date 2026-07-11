@@ -514,6 +514,7 @@ def create_standard_models(
         source: Mapped[str] = mapped_column(nullable=True)
         acts_as: Mapped[str] = mapped_column(nullable=True)
         runtime_definition: Mapped[dict] = mapped_column(JSONB, nullable=True)
+        source_order: Mapped[list[str]] = mapped_column(JSONB, nullable=True)
 
     class DataSourceConfigRelationship(base_model_class):
         __tablename__ = 'data_source_config_relationship'
