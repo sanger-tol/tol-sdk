@@ -247,6 +247,6 @@ class TestUtils:
                 ),
                 'rel_name.id': ProvenanceField(
                     source_order=['source1', 'source2'],
-                    return_type='str'
+                    return_type='keyword'
                 )
             }}
