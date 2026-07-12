@@ -31,5 +31,8 @@ class ElasticTolidToElasticCurationUpdateConverter(
         if data_object is not None and data_object.species is not None:
             yield (None, {
                 'tolid.id': data_object.id,
-                'species': {'id': data_object.species.id}
+                'species': self._data_object_factory(
+                    'species',
+                    data_object.species.id
+                )
             })
