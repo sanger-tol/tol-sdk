@@ -2,28 +2,11 @@
 #
 # SPDX-License-Identifier: MIT
 
-import importlib.util
-from pathlib import Path
 from types import SimpleNamespace
 from unittest import TestCase
 
-
-_CONVERTER_PATH = (
-    Path(__file__).parents[3]
-    / 'src'
-    / 'tol'
-    / 'flows'
-    / 'converters'
-    / 'sts_sample_to_casm_benchling_converter.py'
-)
-_SPEC = importlib.util.spec_from_file_location(
-    'sts_sample_to_casm_benchling_converter',
-    _CONVERTER_PATH,
-)
-_MODULE = importlib.util.module_from_spec(_SPEC)
-_SPEC.loader.exec_module(_MODULE)
-StsSampleToCasmBenchlingConverterFactory = (
-    _MODULE.StsSampleToCasmBenchlingConverterFactory
+from tol.flows.converters import (
+    StsSampleToCasmBenchlingConverterFactory
 )
 
 
