@@ -524,14 +524,40 @@ class TestEndToEnd:
         ret = first[0]
         assert ret.int_column == 1
         assert ret.str_column == '1'
+        assert ret.related_object.id == '1'
+        assert ret.another_related_object.id == '1'
         assert ret.provenance['related_object']['source3'].id == '1'
         assert ret.provenance['related_object']['source4'].id == '2'
         assert ret.provenance['str_column']['source3'] == '1'
         assert ret.provenance['str_column']['source4'] == '2'
         assert 'int_column' not in ret.provenance
-        assert ret.related_object.id == '1'
+        assert 'another_related_object' not in ret.provenance
 
         root_obj3 = data_source.data_object_factory(
+            'root',
+            '1',
+            attributes={
+                'int_column': 27,
+            },
+            to_one={
+            }
+        )
+        data_source.upsert('root', [root_obj3], provenance='source1')
+        ds_sleep(10)
+
+        ret = data_source.get_one('root', '1')
+
+        assert ret.int_column == 27
+        assert ret.str_column == '1'  # No change as not mentioned
+        assert ret.related_object.id == '1'  # No change as not mentioned
+        assert ret.another_related_object.id == '1'  # No change as not mentioned
+        assert ret.provenance['related_object']['source3'].id == '1'
+        assert ret.provenance['related_object']['source4'].id == '2'
+        assert ret.provenance['str_column']['source3'] == '1'
+        assert ret.provenance['str_column']['source4'] == '2'
+        assert 'source1' not in ret.provenance['related_object']
+
+        root_obj4 = data_source.data_object_factory(
             'root',
             '1',
             attributes={
@@ -542,25 +568,29 @@ class TestEndToEnd:
                 'related_object': None,
             }
         )
-        data_source.upsert('root', [root_obj3], provenance='source4')
+        data_source.upsert('root', [root_obj4], provenance='source4')
         ds_sleep(5)
 
         second = list(data_source.get_by_ids('root', ['1']))
         ret = second[0]
+        assert ret.int_column is None
         assert ret.str_column == '1'
         assert ret.related_object.id == '1'
+        assert ret.another_related_object.id == '1'  # No change as not mentioned
         assert ret.provenance['str_column']['source4'] is None
         assert 'source4' in ret.provenance['related_object']
         assert ret.provenance['related_object']['source4'] is None
 
         # Insert that same object with a higher priority source
-        data_source.upsert('root', [root_obj3], provenance='source1')
+        data_source.upsert('root', [root_obj4], provenance='source1')
         ds_sleep(5)
 
         second = list(data_source.get_by_ids('root', ['1']))
         ret = second[0]
+        assert ret.int_column is None
         assert ret.str_column is None
         assert ret.related_object is None
+        assert ret.another_related_object.id == '1'  # No change as not mentioned
         assert ret.provenance['str_column']['source1'] is None
         assert 'source1' in ret.provenance['related_object']
         assert ret.provenance['related_object']['source1'] is None
