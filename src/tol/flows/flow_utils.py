@@ -280,7 +280,7 @@ class FlowUtils:
             eds=eds, portaldb_ds=portaldb_ds, ids=ids,
             source_object_type=object_type,
             destination_object_type=f'{object_type}_event',
-            fields={'date_abandoned': datetime.datetime.now(), 'abandoned_by': user_id},
+            fields={'date_abandoned': datetime.datetime.now(), 'abandoned_by': user_id, 'date_topup_actioned': None},
         )
 
     @classmethod
