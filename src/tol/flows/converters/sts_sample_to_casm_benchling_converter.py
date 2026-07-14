@@ -1285,7 +1285,26 @@ class StsSampleToCasmBenchlingConverterFactory:
         Raises:
             ValueError: If dynamic box-plate schema selection fails.
         """
-        object_map = self.BENCHLING_OBJECT_MAP[self.mode][destination_object_type]
+        base_object_map = self.BENCHLING_OBJECT_MAP[self.mode][destination_object_type]
+        object_map = {
+            **base_object_map,
+            'attribute_map': dict(base_object_map['attribute_map']),
+            'benchling_relationships': list(
+                base_object_map['benchling_relationships']
+            ),
+            'sts_relationships': list(base_object_map['sts_relationships']),
+            'polymorphic_benchling_relationships': list(
+                base_object_map['polymorphic_benchling_relationships']
+            ),
+            'concatenated_values': list(
+                base_object_map.get('concatenated_values', [])
+            ),
+        }
+        if 'benchling_multiselect_relationships' in base_object_map:
+            object_map['benchling_multiselect_relationships'] = list(
+                base_object_map['benchling_multiselect_relationships']
+            )
+
         self.apply_box_plate_schema_relationships(
             self.mode,
             destination_object_type,
@@ -1368,10 +1387,11 @@ class StsSampleToCasmBenchlingConverterFactory:
                     if 'transfer' != factory.destination_object_type:
                         primary_attribute = self._get_object_primary_attribute_value(
                             object_map,
-                            sample
+                            sample,
+                            factory.destination_object_type,
                         )
-                        object_map['converted_value_identifiers'] = \
-                            object_map['converted_value_identifiers'] + [primary_attribute]
+                        if primary_attribute not in object_map['converted_value_identifiers']:
+                            object_map['converted_value_identifiers'].append(primary_attribute)
 
                     if 'naming_strategy' in object_map and object_map['naming_strategy']:
                         object_attributes['naming_strategy'] = object_map['naming_strategy']
@@ -1415,27 +1435,38 @@ class StsSampleToCasmBenchlingConverterFactory:
                 )
 
             @staticmethod
-            def _sanitize_attribute(key: str, value: Any, object_type_override: str = ''):
+            def _get_benchling_schema(benchling_object_type: str) -> dict[str, Any]:
+                """Return Benchling schema metadata for an object type.
+
+                Args:
+                    benchling_object_type: Benchling object type to inspect.
+
+                Returns:
+                    dict[str, Any]: Schema field metadata, or an empty dict for transfers.
+                """
+                if benchling_object_type == 'transfer':
+                    return {}
+
+                benchling_type = factory.benchling.benchling_types[benchling_object_type]
+                return factory.benchling.schemas[benchling_type][benchling_object_type]
+
+            @staticmethod
+            def _sanitize_attribute(
+                    key: str,
+                    value: Any,
+                    benchling_schema: dict[str, Any],
+            ):
                 """Coerce and replace a value according to Benchling schema metadata.
 
                 Args:
                     key: Benchling field or attribute key to sanitize.
                     value: Raw value from STS or relationship resolution.
-                    object_type_override: Optional object type whose schema should be
-                        used instead of the current destination schema.
+                    benchling_schema: Benchling schema metadata for the object type.
 
                 Returns:
                     Any: Value coerced into the shape expected by Benchling.
                 """
-                fields = getattr(factory, 'fields', [])
-
-                if '' != object_type_override:
-                    benchling_type = factory.benchling.benchling_types[object_type_override]
-                    if (
-                            benchling_type
-                            and object_type_override in factory.benchling.schemas[benchling_type]
-                    ):
-                        fields = factory.benchling.schemas[benchling_type][object_type_override]
+                fields = benchling_schema
 
                 if fields and key in fields:
                     if 'int' == fields[key]['type']:
@@ -1458,11 +1489,15 @@ class StsSampleToCasmBenchlingConverterFactory:
                             value = [value]
 
                     if fields[key]['is_multi'] and isinstance(value, (list, tuple, set)):
+                        sanitized_values = []
                         for v in value:
                             if 'str' == fields[key]['type']:
-                                v = str(v)
+                                sanitized_values.append(str(v))
                             elif 'int' == fields[key]['type']:
-                                v = int(v)
+                                sanitized_values.append(int(v))
+                            else:
+                                sanitized_values.append(v)
+                        value = sanitized_values
 
                     if 'genetically_modified' == key:
                         value = factory.VALUE_REPLACEMENTS[factory.mode][key]['default']
@@ -1642,7 +1677,8 @@ class StsSampleToCasmBenchlingConverterFactory:
                 )
                 search_value = self._get_object_primary_attribute_value(
                     relationship_object_map,
-                    sample
+                    sample,
+                    mapped_attribute,
                 )
 
                 if search_value is None:
@@ -1686,7 +1722,11 @@ class StsSampleToCasmBenchlingConverterFactory:
                     return self._check_sample_transfers_done(sample, object_map)
                 else:
                     self._ensure_primary_attribute_available(sample, object_map)
-                    attribute = self._get_object_primary_attribute_value(object_map, sample)
+                    attribute = self._get_object_primary_attribute_value(
+                        object_map,
+                        sample,
+                        destination_object_type,
+                    )
 
                     if attribute is None:
                         return False
@@ -1747,12 +1787,13 @@ class StsSampleToCasmBenchlingConverterFactory:
 
                 return contents_found
 
-            def _get_object_primary_attribute_value(self, object_map, sample):
+            def _get_object_primary_attribute_value(self, object_map, sample, object_map_key):
                 """Resolve and sanitize the primary attribute value for an object map.
 
                 Args:
                     object_map: Object map containing primary attribute metadata.
                     sample: STS sample data object to inspect.
+                    object_map_key: Benchling object type used for schema lookup.
 
                 Returns:
                     Any: Primary attribute value, or None when unavailable.
@@ -1781,12 +1822,13 @@ class StsSampleToCasmBenchlingConverterFactory:
                 else:
                     attribute_value = sample.attributes.get(sts_attribute_identifier, None)
 
-                attribute_value = self._sanitize_attribute(
-                    sts_attribute_identifier,
-                    attribute_value
-                )
+                benchling_schema = self._get_benchling_schema(object_map_key)
 
-                return attribute_value
+                return self._sanitize_attribute(
+                    benchling_attribute_identifier,
+                    attribute_value,
+                    benchling_schema,
+                )
 
             def _populate_relationships(self, sample, object_map):
                 """Populate all configured relationship values on a sample.
@@ -1820,7 +1862,8 @@ class StsSampleToCasmBenchlingConverterFactory:
                     if sample.attributes.get(benchling_object_identifier, None) is None:
                         search_value = self._get_object_primary_attribute_value(
                             relationship_object_map,
-                            sample
+                            sample,
+                            benchling_object_identifier,
                         )
 
                         if search_value is not None:
@@ -1953,7 +1996,8 @@ class StsSampleToCasmBenchlingConverterFactory:
                 """
                 object_attributes[key] = self._sanitize_attribute(
                     key,
-                    object_attributes[key]
+                    object_attributes[key],
+                    self._get_benchling_schema(factory.destination_object_type),
                 )
                 resolved_values[attr_mapping] = object_attributes[key]
 
@@ -2152,7 +2196,11 @@ class StsSampleToCasmBenchlingConverterFactory:
                     object_attributes: Mutable Benchling attributes to sanitize.
                 """
                 for key, value in object_attributes.items():
-                    object_attributes[key] = self._sanitize_attribute(key, value)
+                    object_attributes[key] = self._sanitize_attribute(
+                        key,
+                        value,
+                        self._get_benchling_schema(factory.destination_object_type),
+                    )
 
             def _populate_multiselect_benchling_relationships(self, sample, object_map):
                 """Populate multiselect Benchling relationship ids on a sample.
@@ -2181,7 +2229,8 @@ class StsSampleToCasmBenchlingConverterFactory:
                             for relationship_object_map in relationship_object_maps:
                                 search_value = self._get_object_primary_attribute_value(
                                     relationship_object_map,
-                                    sample
+                                    sample,
+                                    relationship_object_identifier,
                                 )
 
                                 if search_value is not None:

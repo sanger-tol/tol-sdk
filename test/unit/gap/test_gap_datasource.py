@@ -16,8 +16,9 @@ from tol.gap import (
 
 
 class MockGapDataSource(GapDataSource):
-    def _load_json_from_s3(self, s3_bucket, s3_object):
-        if s3_object == 'data/assembly.json':
+
+    def _load_json(self):
+        if self.object_name == 'data/assembly.json':
             return [{
                 'accession': 'GCA_002706865.2',
                 'project': 'Lepidoptera',
@@ -48,7 +49,7 @@ class MockGapDataSource(GapDataSource):
                     '/lustre/scratch123/tol/projects/lepidoptera/data/insects/Spodoptera_litura'
                 )
             }]
-        if s3_object == 'GCA_002706865.2/data/analysis.json':
+        if self.object_name == 'GCA_002706865.2/data/analysis.json':
             return [{
                 'analysis': 'Sequence Composition',
                 'result': 'Base Content',

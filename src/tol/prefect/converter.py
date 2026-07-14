@@ -75,6 +75,7 @@ class DefaultPrefectConverter(PrefectConverter):
             'flow_name': flow_name,
             'deployment_name': deployment_name,
             'state': flow_run.state_name,
+            'state_message': getattr(flow_run.state, 'message', None),
             'tags': flow_run.tags,
             'idempotency_key': flow_run.idempotency_key,
             'parameters': flow_run.parameters

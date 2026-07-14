@@ -2,7 +2,7 @@
 #
 # SPDX-License-Identifier: MIT
 
-from functools import cache
+from functools import cache, cached_property
 from typing import Any, Dict, Iterable, Optional
 
 from dateutil import parser as dateutil_parser
@@ -40,10 +40,12 @@ class JsonDataSource(
             config,
             expected=['uri', 'type', 'id_attribute', 'mappings']
         )
-        self._raw_data = self._load_json()
-        self._keyed_by_id = {
+
+    @cached_property
+    def _keyed_by_id(self) -> Dict:
+        return {
             v[self.id_attribute]: v
-            for v in self._raw_data
+            for v in self._load_json()
             if self.id_attribute in v
         }
 
@@ -107,7 +109,7 @@ class JsonDataSource(
 
         return (
             self.__create_data_object(self._keyed_by_id[object_id])
-            if self._keyed_by_id[object_id] is not None else None
+            if object_id in self._keyed_by_id else None
             for object_id in object_ids
         )
 
@@ -125,7 +127,7 @@ class JsonDataSource(
             raise DataSourceError('Filtering is not supported on JsonDataSource')
         if object_type not in self.supported_types:
             raise DataSourceError(f'{object_type} is not supported')
-        for entry in self._raw_data:
+        for entry in self._load_json():
             id_ = entry.get(self.id_attribute)
             if id_ is not None and id_ != '':
                 yield self.__create_data_object(entry)

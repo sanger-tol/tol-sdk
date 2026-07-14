@@ -76,3 +76,4 @@ from .combine_fields_converter import CombineFieldsConverter  # noqa F401
 from .auto_detect_manifest_type_converter import AutoDetectManifestTypeConverter # noqa F401
 from .time_string_to_time import TimeStringToTimeConverter # noqa F401
 from .genome_note_converter import GenomeNoteConverter  # noqa F401
+from .dummy_record_to_elastic_record_converter import DummyRecordToElasticRecordConverter  # noqa F401
