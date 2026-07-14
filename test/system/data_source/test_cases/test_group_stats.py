@@ -43,7 +43,7 @@ class TestGroupStats:
             for i, id_ in enumerate(ids)
         ]
 
-        data_source.upsert('root', data_objects)
+        data_source.upsert('root', data_objects, provenance='source1')
         ds_sleep(5)  # Let Elastic settle down after the upsert
 
         stats = list(data_source.get_group_stats(
@@ -84,7 +84,7 @@ class TestGroupStats:
             )
             for i, id_ in enumerate(ids)
         ]
-        data_source.upsert('root', data_objects)
+        data_source.upsert('root', data_objects, provenance='source1')
         ds_sleep(5)  # Let Elastic settle down after the upsert
 
         stats = list(data_source.get_group_stats(
@@ -154,7 +154,7 @@ class TestGroupStats:
             for i, id_ in enumerate(ids)
         ]
 
-        data_source.upsert('root', data_objects)
+        data_source.upsert('root', data_objects, provenance='source1')
         ds_sleep(5)  # Let Elastic settle down after the upsert
 
         f = DataSourceFilter()

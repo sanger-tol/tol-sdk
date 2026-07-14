@@ -108,7 +108,7 @@ class TestEndToEnd:
             for id_ in ids
         ]
 
-        data_source.upsert('root', data_objects)
+        data_source.upsert('root', data_objects, provenance='source1')
         ds_sleep(2)  # Let Elastic settle down after the upsert
 
         # they should all be present now
@@ -175,8 +175,8 @@ class TestEndToEnd:
         ]
 
         if data_source.write_mode['root'] == RelationWriteMode.SEPARATE:
-            data_source.upsert('related', related_objects)
-        data_source.upsert('root', data_objects)
+            data_source.upsert('related', related_objects, provenance='source1')
+        data_source.upsert('root', data_objects, provenance='source1')
 
         ds_sleep(2)  # Let Elastic settle down after the upsert
 
@@ -310,13 +310,17 @@ class TestEndToEnd:
         assert len(seventeenth) == 1  # The archetype
 
     @against(*all_fixtures)
-    def test_multiple_upserts(self, data_source: OperableDataSource, ds_sleep):
+    def test_multiple_upserts(
+        self,
+        data_source: OperableDataSource,
+        ds_sleep
+    ):
         """
         Upsert a `DataObject` instance, and then upsert again to test upsert behaviour
         """
 
         obj1 = data_source.data_object_factory('root', '1', attributes={})
-        data_source.upsert('root', [obj1])
+        data_source.upsert('root', [obj1], provenance='source1')
         ds_sleep(2)  # Let Elastic settle down after the upsert
 
         # they should all be present now
@@ -336,7 +340,7 @@ class TestEndToEnd:
             attributes={
                 'str_column': 'value2',
                 'int_column': 123,
-            },
+            }
         )
 
         obj1 = data_source.data_object_factory(
@@ -349,12 +353,12 @@ class TestEndToEnd:
                 'bool_column': False,
                 'list_column': ['item1', 'item2'],
             },
-            to_one={'related_object': rel1},
+            to_one={'related_object': rel1}
         )
 
         if data_source.write_mode['root'] == RelationWriteMode.SEPARATE:
-            data_source.upsert('related', [rel1])
-        returned_ = data_source.upsert('root', [obj1])
+            data_source.upsert('related', [rel1], provenance='source1')
+        returned_ = data_source.upsert('root', [obj1], provenance='source1')
 
         if data_source.return_mode['root'] == ReturnMode.POPULATED:
             returned_root = list(returned_)[0]
@@ -390,7 +394,7 @@ class TestEndToEnd:
                 'int_column': 456,
                 'bool_column': False,
                 'datetime_column': datetime(2024, 6, 6),
-            },
+            }
         )
 
         obj1 = data_source.data_object_factory(
@@ -402,12 +406,12 @@ class TestEndToEnd:
                 'bool_column': True,
                 'list_column': ['item1', 'item3'],
             },
-            to_one={'related_object': rel1},
+            to_one={'related_object': rel1}
         )
 
         if data_source.write_mode['root'] == RelationWriteMode.SEPARATE:
-            data_source.upsert('related', [rel1])
-        data_source.upsert('root', [obj1])
+            data_source.upsert('related', [rel1], provenance='source1')
+        data_source.upsert('root', [obj1], provenance='source1')
 
         ds_sleep(2)  # Let Elastic settle down after the upsert
 
@@ -427,7 +431,7 @@ class TestEndToEnd:
         assert ret.list_column == ['item1', 'item2', 'item3']
 
         obj1 = data_source.data_object_factory('root', '1', attributes={})
-        data_source.upsert('root', [obj1])
+        data_source.upsert('root', [obj1], provenance='source1')
         ds_sleep(2)  # Let Elastic settle down after the upsert
 
         fourth = list(data_source.get_by_ids('root', ['1']))
@@ -457,7 +461,7 @@ class TestEndToEnd:
             },
             to_one={'related_object': None},
         )
-        data_source.upsert('root', [obj1])
+        data_source.upsert('root', [obj1], provenance='source1')
         ds_sleep(2)  # Let Elastic settle down after the upsert
 
         fifth = list(data_source.get_by_ids('root', ['1']))
@@ -470,6 +474,127 @@ class TestEndToEnd:
         assert ret.related_object is None
         assert ret.list_column is None
 
+    @against(elastic, api_elastic)
+    def test_upsert_with_multiple_sources(self, data_source: OperableDataSource, ds_sleep):
+        """
+        Test that upserting with multiple sources works as expected, and provenance is correct.
+        """
+
+        rel_obj1 = data_source.data_object_factory(
+            'related',
+            '1',
+            attributes={'str_column': 'related_value'},
+        )
+        rel_obj2 = data_source.data_object_factory(
+            'related',
+            '2',
+            attributes={'str_column': 'related_value'},
+        )
+        root_obj = data_source.data_object_factory(
+            'root',
+            '1',
+            attributes={
+                'int_column': 1,
+                'str_column': '1'
+            },
+            to_one={
+                'related_object': rel_obj1,
+                'another_related_object': rel_obj1
+            }
+        )
+        root_obj2 = data_source.data_object_factory(
+            'root',
+            '1',
+            attributes={
+                'int_column': 1,
+                'str_column': '2'
+            },
+            to_one={
+                'related_object': rel_obj2
+            }
+        )
+        if data_source.write_mode['root'] == RelationWriteMode.SEPARATE:
+            data_source.upsert('related', [rel_obj1], provenance='source1')
+            data_source.upsert('related', [rel_obj2], provenance='source2')
+        data_source.upsert('root', [root_obj], provenance='source3')
+        data_source.upsert('root', [root_obj2], provenance='source4')
+        ds_sleep(5)
+
+        first = list(data_source.get_by_ids('root', ['1']))
+        ret = first[0]
+        assert ret.int_column == 1
+        assert ret.str_column == '1'
+        assert ret.related_object.id == '1'
+        assert ret.another_related_object.id == '1'
+        assert ret.provenance['related_object']['source3'].id == '1'
+        assert ret.provenance['related_object']['source4'].id == '2'
+        assert ret.provenance['str_column']['source3'] == '1'
+        assert ret.provenance['str_column']['source4'] == '2'
+        assert 'int_column' not in ret.provenance
+        assert 'another_related_object' not in ret.provenance
+
+        root_obj3 = data_source.data_object_factory(
+            'root',
+            '1',
+            attributes={
+                'int_column': 27,
+            },
+            to_one={
+            }
+        )
+        data_source.upsert('root', [root_obj3], provenance='source1')
+        ds_sleep(10)
+
+        ret = data_source.get_one('root', '1')
+
+        assert ret.int_column == 27
+        assert ret.str_column == '1'  # No change as not mentioned
+        assert ret.related_object.id == '1'  # No change as not mentioned
+        assert ret.another_related_object.id == '1'  # No change as not mentioned
+        assert ret.provenance['related_object']['source3'].id == '1'
+        assert ret.provenance['related_object']['source4'].id == '2'
+        assert ret.provenance['str_column']['source3'] == '1'
+        assert ret.provenance['str_column']['source4'] == '2'
+        assert 'source1' not in ret.provenance['related_object']
+
+        root_obj4 = data_source.data_object_factory(
+            'root',
+            '1',
+            attributes={
+                'int_column': None,
+                'str_column': None
+            },
+            to_one={
+                'related_object': None,
+            }
+        )
+        data_source.upsert('root', [root_obj4], provenance='source4')
+        ds_sleep(5)
+
+        second = list(data_source.get_by_ids('root', ['1']))
+        ret = second[0]
+        assert ret.int_column is None
+        assert ret.str_column == '1'
+        assert ret.related_object.id == '1'
+        assert ret.another_related_object.id == '1'  # No change as not mentioned
+        assert ret.provenance['str_column']['source4'] is None
+        assert 'source4' in ret.provenance['related_object']
+        assert ret.provenance['related_object']['source4'] is None
+
+        # Insert that same object with a higher priority source
+        data_source.upsert('root', [root_obj4], provenance='source1')
+        ds_sleep(5)
+
+        second = list(data_source.get_by_ids('root', ['1']))
+        ret = second[0]
+        assert ret.int_column is None
+        assert ret.str_column is None
+        assert ret.related_object is None
+        assert ret.another_related_object.id == '1'  # No change as not mentioned
+        assert ret.provenance['str_column']['source1'] is None
+        assert 'source1' in ret.provenance['related_object']
+        assert ret.provenance['related_object']['source1'] is None
+
     @against(sql, api_sql)
     def test_upsert_dict_attributes(self, data_source: OperableDataSource, ds_sleep):
         """
@@ -481,7 +606,7 @@ class TestEndToEnd:
         """
 
         obj1 = data_source.data_object_factory('root', '1', attributes={})
-        data_source.upsert('root', [obj1])
+        data_source.upsert('root', [obj1], provenance='source1')
         ds_sleep(2)  # Let Elastic settle down after the upsert
         first = list(data_source.get_by_ids('root', ['1']))
         assert len(first) == 1
@@ -514,7 +639,7 @@ class TestEndToEnd:
                 'dict_column': {'key1': 8, 'key3': 9},
             },
         )
-        returned_ = data_source.upsert('root', [obj1])
+        returned_ = data_source.upsert('root', [obj1], provenance='source1')
 
         if data_source.return_mode['root'] == ReturnMode.POPULATED:
             returned_root = list(returned_)[0]
@@ -527,7 +652,7 @@ class TestEndToEnd:
         assert ret.dict_column == {'key1': 8, 'key2': 7, 'key3': 9}
 
         obj1 = data_source.data_object_factory('root', '1', attributes={})
-        data_source.upsert('root', [obj1])
+        data_source.upsert('root', [obj1], provenance='source1')
 
         ds_sleep(2)  # Let Elastic settle down after the upsert
         fourth = list(data_source.get_by_ids('root', ['1']))
@@ -543,7 +668,7 @@ class TestEndToEnd:
             },
             to_one={'related_object': None},
         )
-        data_source.upsert('root', [obj1])
+        data_source.upsert('root', [obj1], provenance='source1')
         ds_sleep(2)  # Let Elastic settle down after the upsert
 
         fifth = list(data_source.get_by_ids('root', ['1']))
@@ -585,7 +710,7 @@ class TestEndToEnd:
                 'dict_column': {'key3': 8, 'key4': 9},
             },
         )
-        data_source.upsert('root', [update], merge_collections=False)
+        data_source.upsert('root', [update], merge_collections=False, provenance='source1')
         ds_sleep(2)  # Let Elastic settle down after the upsert
 
         second = list(data_source.get_by_ids('root', ['11']))
@@ -602,7 +727,7 @@ class TestEndToEnd:
             attributes={'str_column': 'testy'},
         )
         with pytest.raises(DataSourceError):
-            data_source.upsert('root', [obj1], merge_collections=False)
+            data_source.upsert('root', [obj1], merge_collections=False, provenance='source1')
 
     @against(elastic)  # `Updater` not implemented on `Api`- or `SqlDataSource`
     def test_update(self, data_source: OperableDataSource, ds_sleep):
@@ -631,8 +756,8 @@ class TestEndToEnd:
                 'datetime_column': datetime(2024, 6, 6),
             },
         )
-        data_source.upsert('root', [obj1])
-        data_source.upsert('related', [rel1, rel2])
+        data_source.upsert('root', [obj1], provenance='source1')
+        data_source.upsert('related', [rel1, rel2], provenance='source1')
         ds_sleep(2)
         # they should all be present now
         first = list(data_source.get_by_ids('root', ['1']))
@@ -661,6 +786,7 @@ class TestEndToEnd:
             'root',
             [update],
             candidate_key=['str_column'],
+            provenance='source1',
         )
         ds_sleep(2)
         second = list(data_source.get_by_ids('root', ['1']))
@@ -689,7 +815,7 @@ class TestEndToEnd:
                 'list_column': ['item1', 'item3'],
             },
         )
-        data_source.update('root', [update], candidate_key=['int_column'])
+        data_source.update('root', [update], candidate_key=['int_column'], provenance='source1')
         ds_sleep(2)
         third = list(data_source.get_by_ids('root', ['1']))
         assert len(third) == 1
@@ -707,7 +833,7 @@ class TestEndToEnd:
         assert ret.list_column == ['item1', 'item2', 'item3']
 
         update = (None, {'int_column': 2})
-        data_source.update('root', [update], candidate_key=['int_column'])
+        data_source.update('root', [update], candidate_key=['int_column'], provenance='source1')
         ds_sleep(2)
         fourth = list(data_source.get_by_ids('root', ['1']))
         assert len(fourth) == 1
@@ -735,7 +861,7 @@ class TestEndToEnd:
                 'list_column': None,
             },
         )
-        data_source.update('root', [update], candidate_key=['int_column'])
+        data_source.update('root', [update], candidate_key=['int_column'], provenance='source1')
         ds_sleep(5)
         fifth = list(data_source.get_by_ids('root', ['1']))
         assert len(fifth) == 1
@@ -759,7 +885,7 @@ class TestEndToEnd:
             },
         )
         data_source.update(
-            'root', [update], candidate_key_func=lambda x: ['int_column']
+            'root', [update], candidate_key_func=lambda x: ['int_column'], provenance='source1'
         )
         ds_sleep(5)
         sixth = list(data_source.get_by_ids('root', ['1']))
@@ -788,7 +914,7 @@ class TestEndToEnd:
             )
             for id_ in range(10)
         ]
-        data_source.upsert('root', data_objects)
+        data_source.upsert('root', data_objects, provenance='source1')
         ds_sleep(2)
 
         cnt = data_source.get_count('root')
@@ -829,7 +955,7 @@ class TestEndToEnd:
                     },
                 )
             )
-        data_source.upsert('root', data_objects)
+        data_source.upsert('root', data_objects, provenance='source1')
 
         # PostgreSQL set to ANALYZE tables every 5 seconds with
         # `autovacuum_naptime=5` in docker-compose.yml
@@ -882,7 +1008,7 @@ class TestEndToEnd:
             for i, id_ in enumerate(ids)
         ]
 
-        data_source.upsert('root', data_objects)
+        data_source.upsert('root', data_objects, provenance='source1')
         ds_sleep(5)  # Let Elastic settle down after the upsert
 
         stats = data_source.get_stats(
@@ -923,7 +1049,7 @@ class TestEndToEnd:
             )
             for id_ in range(10)
         ]
-        data_source.upsert('root', data_objects)
+        data_source.upsert('root', data_objects, provenance='source1')
         ds_sleep(2)
 
         # Get by ID
@@ -971,7 +1097,7 @@ class TestEndToEnd:
             requested_fields=['str_column', 'bool_column'],
             loader_name='e2e loader',
         )
-        loader.load(provenance='e2e')
+        loader.load(provenance='source1')
         ds_sleep(5)
 
         f = DataSourceFilter()

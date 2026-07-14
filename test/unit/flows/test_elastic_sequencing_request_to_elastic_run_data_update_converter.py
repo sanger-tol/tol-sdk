@@ -32,9 +32,9 @@ class _MockDataSourceRelational(DataSource, Relational):
     def relationship_config(self):
         rc_sequencing_request = RelationshipConfig()
         rc_sequencing_request.to_one = {
-            'benchling_sample': 'sample',
-            'benchling_extraction': 'extraction',
-            'benchling_extraction_container': 'extraction_container'
+            'sample': 'sample',
+            'extraction': 'extraction',
+            'extraction_container': 'extraction_container'
         }
         return {'sequencing_request': rc_sequencing_request}
 
@@ -72,9 +72,9 @@ class TestElasticSequencingRequestToElasticRunDataUpdateConverter(TestCase):
             id_='SEQREQ1',
             type_='sequencing_request',
             to_one={
-                'benchling_sample': sample1,
-                'benchling_extraction': extraction1,
-                'benchling_extraction_container': extraction_container1
+                'sample': sample1,
+                'extraction': extraction1,
+                'extraction_container': extraction_container1
             }
         )
 
@@ -83,26 +83,26 @@ class TestElasticSequencingRequestToElasticRunDataUpdateConverter(TestCase):
             id_='SEQREQ2',
             type_='sequencing_request',
             to_one={
-                'benchling_sample': sample2
+                'sample': sample2
             }
         )
 
         converteds = converter.convert(obj1)
         (id1, ret1) = next(converteds)
         assert id1 is None
-        assert ret1['mlwh_sequencing_request.id'] == 'SEQREQ1'
-        assert 'benchling_sample' in ret1
-        assert ret1['benchling_sample'].id == sample1.id
-        assert 'benchling_extraction' in ret1
-        assert ret1['benchling_extraction'].id == extraction1.id
-        assert 'benchling_extraction_container' in ret1
-        assert ret1['benchling_extraction_container'].id == extraction_container1.id
+        assert ret1['sequencing_request.id'] == 'SEQREQ1'
+        assert 'sample' in ret1
+        assert ret1['sample'].id == sample1.id
+        assert 'extraction' in ret1
+        assert ret1['extraction'].id == extraction1.id
+        assert 'extraction_container' in ret1
+        assert ret1['extraction_container'].id == extraction_container1.id
 
         converteds = converter.convert(obj2)
         (id2, ret2) = next(converteds)
         assert id2 is None
-        assert ret2['mlwh_sequencing_request.id'] == 'SEQREQ2'
-        assert 'benchling_sample' in ret2
-        assert ret2['benchling_sample'].id == sample2.id
-        assert 'benchling_extraction' not in ret2
-        assert 'benchling_extraction_container' not in ret2
+        assert ret2['sequencing_request.id'] == 'SEQREQ2'
+        assert 'sample' in ret2
+        assert ret2['sample'].id == sample2.id
+        assert 'extraction' not in ret2
+        assert 'extraction_container' not in ret2

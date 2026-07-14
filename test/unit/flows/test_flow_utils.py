@@ -455,7 +455,7 @@ class TestFlowUtilsRecordEvents:
             source_object_type='sample',
             destination_object_type='sample_event',
             fields={'date_abandoned': '2026-01-01'},
-            id_field='sts_tolid.id',
+            id_field='tolid.id',
             incremental=True,
         )
 
@@ -463,7 +463,7 @@ class TestFlowUtilsRecordEvents:
         converter = kwargs['converter']
         assert isinstance(converter, ElasticObjectToPortaldbObjectConverter)
         assert converter.config.destination_object_type == 'sample_event'
-        assert converter.config.id_field == 'sts_tolid.id'
+        assert converter.config.id_field == 'tolid.id'
         assert converter.config.incremental is True
         assert converter.config.fields == {'date_abandoned': '2026-01-01'}
 
@@ -525,10 +525,10 @@ class TestFlowUtilsTolIdIdField:
         assert FlowUtils._tolid_id_field('tolid') == 'id'
 
     def test_sample_returns_sts_tolid_id(self):
-        assert FlowUtils._tolid_id_field('sample') == 'sts_tolid.id'
+        assert FlowUtils._tolid_id_field('sample') == 'tolid.id'
 
     def test_other_returns_benchling_tolid_id(self):
-        assert FlowUtils._tolid_id_field('extraction') == 'benchling_tolid.id'
+        assert FlowUtils._tolid_id_field('extraction') == 'tolid.id'
 
 
 class TestFlowUtilsRecordTolIdEvents:
@@ -600,7 +600,7 @@ class TestFlowUtilsRecordTolIdEvents:
         )
 
         _, kwargs = mock_record_events.call_args
-        assert kwargs['id_field'] == 'sts_tolid.id'
+        assert kwargs['id_field'] == 'tolid.id'
 
 
 class TestFlowUtilsRecordActionedEvents:
@@ -723,7 +723,7 @@ class TestFlowUtilsRecordReviewEvents:
         )
 
         _, kwargs = mock_record_events.call_args
-        assert kwargs['id_field'] == 'benchling_tolid.id'
+        assert kwargs['id_field'] == 'tolid.id'
 
     def test_in_review_defaults_to_true(
         self, mock_record_events, mock_eds, mock_portaldb_ds
@@ -1105,6 +1105,48 @@ class TestFlowUtilsLoadEntitiesOntoWorklist:
         )
 
         assert result == []
+
+
+class TestFlowUtilsGetSectionFilter:
+
+    def test_returns_expected_filters_for_all_sections(self):
+        destination_id = 'cfg-1'
+        result = FlowUtils.get_section_filters(destination_id)
+
+        assert result == {
+            '1': {
+                'loader.candidate_key': {'exists': {'negate': True}},
+                'loader.ids_attribute': {'exists': {'negate': True}},
+                'ids_data_source_instance.id': {'exists': {'negate': True}},
+                'destination_data_source_instance.id': {'eq': {'value': destination_id}},
+            },
+            '2': {
+                'loader.candidate_key': {'exists': {'negate': True}},
+                'ids_data_source_instance.id': {
+                    'exists': {},
+                    'eq': {'value': destination_id, 'negate': True},
+                },
+                'destination_data_source_instance.id': {'eq': {'value': destination_id}},
+            },
+            '3': {
+                'loader.candidate_key': {'exists': {'negate': True}},
+                'ids_data_source_instance.id': {'eq': {'value': destination_id}},
+                'destination_data_source_instance.id': {'eq': {'value': destination_id}},
+            },
+            '4': {
+                'loader.candidate_key': {'exists': {'negate': True}},
+                'source_data_source_instance.id': {'eq': {'value': destination_id}},
+                'destination_data_source_instance.id': {'eq': {'value': destination_id}},
+            },
+            '5': {
+                'loader.candidate_key': {'exists': {}},
+                'destination_data_source_instance.id': {'eq': {'value': destination_id}},
+            },
+        }
+
+    def test_raises_for_invalid_section(self):
+        with pytest.raises(ValueError, match='Invalid section: 99'):
+            FlowUtils.get_filter_for_section('99', 'cfg-1')
 
 
 class TestFlowUtilsPerformTopupAction:

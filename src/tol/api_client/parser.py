@@ -113,13 +113,14 @@ class DefaultParser(Parser):
         ds = self.__get_data_source(type_)
         attributes = self.__convert_attributes(type_, transfer.get('attributes'))
         to_one, to_many = self.__parse_relationships(transfer.get('relationships'))
-
+        provenance = self.__make_provenance(transfer)
         return ds.data_object_factory(
             type_,
             id_=transfer.get('id'),
             attributes=attributes,
             to_one=to_one,
             to_many=to_many,
+            provenance_=provenance
         )
 
     def parse_stats(self, transfer: JsonApiResource) -> dict:
@@ -167,18 +168,70 @@ class DefaultParser(Parser):
             stub=True,
         )
 
+    def __make_provenance(
+        self,
+        transfer: JsonApiResource
+    ) -> dict[str, DataObject | None]:
+
+        ds = self.__get_data_source(transfer['type'])
+        result = {}
+        provenance_attribute = transfer.get('attributes', {}).get('provenance', {})
+        for field_name, field_provenance in provenance_attribute.items():
+            # Attributes
+            if field_name in ds.attribute_types.get(transfer['type'], {}):
+                result[field_name] = {
+                    source: self.__convert_attribute(transfer['type'], field_name, prov_data)
+                    for source, prov_data in field_provenance.items()
+                }
+            else:
+                # Relationships
+                if field_name in transfer.get('relationships', {}):
+                    rel_entry = transfer['relationships'][field_name]
+                    rel_type = (
+                        rel_entry['data'].get('type')
+                        if isinstance(rel_entry, dict)
+                        and isinstance(rel_entry.get('data'), dict)
+                        else None
+                    )
+                    rel_ds = self.__get_data_source(rel_type) if rel_type else ds
+                    result[field_name] = {
+                        source: (
+                            None
+                            if (
+                                prov_data is None
+                                or not isinstance(prov_data, dict)
+                                or prov_data.get('data') is None
+                            )
+                            else rel_ds.data_object_factory(
+                                rel_type or transfer['type'],
+                                id_=prov_data['data']['id'],
+                                stub=True,
+                            )
+                        )
+                        for source, prov_data in field_provenance.items()
+                    }
+        return result
+
     def __convert_attributes(
         self, type_: str, attributes: dict[str, Any] | None
     ) -> dict[str, Any]:
         if not attributes:
             return {}
 
+        return {
+            k: self.__convert_attribute(type_, k, v)
+            for k, v in attributes.items()
+            if k != 'provenance'
+        }
+
+    def __convert_attribute(self, type_: str, field_name: str, value: Any) -> Any:
         datetime_keys = self.__get_datetime_keys(type_)
 
-        return {
-            k: (dateutil_parse(v) if k in datetime_keys and v is not None else v)
-            for k, v in attributes.items()
-        }
+        return (
+            dateutil_parse(value)
+            if field_name in datetime_keys and value is not None
+            else value
+        )
 
     def __convert_stats(self, type_: str, stats: dict[str, Any] | None) -> dict[str, Any]:
         # {'field': {'min': value, 'max': value}
@@ -229,6 +282,14 @@ class DefaultParser(Parser):
         return 'date' in lc_type or 'time' in lc_type
 
 
+def _make_hashable_id(id_: Any) -> str:
+    """
+    Convert an id to a hashable string representation.
+    Dicts are converted to JSON strings.
+    """
+    return str(id_)
+
+
 class DataObjectCatalog:
     """
     A catalog of `DataObject`s keyed by their `type` and `id` attributes.
@@ -244,9 +305,9 @@ class DataObjectCatalog:
         return len(self.__obj_index)
 
     def store(self, obj) -> None:
-        key = obj.type, obj.id
+        key = obj.type, _make_hashable_id(obj.id)
         self.__obj_index[key] = obj
 
     def fetch(self, obj) -> DataObject | None:
-        key = obj.type, obj.id
+        key = obj.type, _make_hashable_id(obj.id)
         return self.__obj_index.get(key)

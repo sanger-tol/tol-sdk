@@ -34,10 +34,10 @@ class _MockDataSource(DataSource, Relational):
     def relationship_config(self):
         rc_sample = RelationshipConfig()
         rc_sample.to_one = {
-            'sts_sampleset': 'sampleset',
-            'sts_species': 'species',
-            'sts_specimen': 'specimen',
-            'sts_tolid': 'tolid'
+            'sampleset': 'sampleset',
+            'species': 'species',
+            'specimen': 'specimen',
+            'tolid': 'tolid'
         }
         return {'sample': rc_sample}
 
@@ -149,10 +149,10 @@ class TestElasticSampleToBenchlingTissueUpdateConverter(TestCase):
                 'sts_cost_code': 'S12345',
             },
             to_one={
-                'sts_species': species,
-                'sts_specimen': specimen,
-                'sts_tolid': tolid,
-                'sts_sampleset': sampleset
+                'species': species,
+                'specimen': specimen,
+                'tolid': tolid,
+                'sampleset': sampleset
             }
         )
         obj2 = CoreDataObject(

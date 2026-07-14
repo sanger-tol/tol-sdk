@@ -309,7 +309,7 @@ def test(ctx, type_, pytest_options):
 
     click.echo('Running tests...')
     if type_ in {'unit', 'system', 'integration'}:
-        verbosity = '-v' if type_ == 'unit' else '-vv'
+        verbosity = '-vv'
         # shlex will correctly re-quote any quoted arguments from the command
         # line:
         pytest_cmd = shlex.join(['pytest', verbosity, type_, *pytest_options])

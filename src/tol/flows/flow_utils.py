@@ -228,7 +228,7 @@ class FlowUtils:
 
     @staticmethod
     def _tolid_id_field(object_type: str) -> str:
-        return {'tolid': 'id', 'sample': 'sts_tolid.id'}.get(object_type, 'benchling_tolid.id')
+        return {'tolid': 'id', 'sample': 'tolid.id'}.get(object_type, 'tolid.id')
 
     @classmethod
     def record_tolid_events(
@@ -592,3 +592,77 @@ class FlowUtils:
                 object_type='species',
                 data_source_instance=data_source_instance
             )
+
+    @classmethod
+    def get_section_filters(
+        cls,
+        destination_data_source_instance_id: str
+    ) -> dict:
+        """
+            Get the filter for the given section of the loader.
+            This is used to filter the loader objects to only those that are relevant
+            for the given section.
+        """
+        return {
+            str(section): cls.get_filter_for_section(
+                str(section), destination_data_source_instance_id
+            )
+            for section in range(1, 6)
+        }
+
+    @classmethod
+    def get_filter_for_section(
+        cls,
+        section: str,
+        destination_data_source_instance_id: str
+    ) -> dict:
+        if section == '1':
+            return {
+                'loader.candidate_key': {'exists': {'negate': True}},
+                'loader.ids_attribute': {'exists': {'negate': True}},
+                'ids_data_source_instance.id': {'exists': {'negate': True}},
+                'destination_data_source_instance.id': {'eq': {
+                    'value': destination_data_source_instance_id
+                }},
+            }
+        elif section == '2':
+            return {
+                'loader.candidate_key': {'exists': {'negate': True}},
+
+                'ids_data_source_instance.id': {
+                    'exists': {},
+                    'eq': {'value': destination_data_source_instance_id, 'negate': True}
+                },
+                'destination_data_source_instance.id': {'eq': {
+                    'value': destination_data_source_instance_id
+                }},
+            }
+        elif section == '3':
+            return {
+                'loader.candidate_key': {'exists': {'negate': True}},
+                'ids_data_source_instance.id': {'eq': {
+                    'value': destination_data_source_instance_id
+                }},
+                'destination_data_source_instance.id': {'eq': {
+                    'value': destination_data_source_instance_id
+                }},
+            }
+        elif section == '4':
+            return {
+                'loader.candidate_key': {'exists': {'negate': True}},
+                'source_data_source_instance.id': {'eq': {
+                    'value': destination_data_source_instance_id
+                }},
+                'destination_data_source_instance.id': {'eq': {
+                    'value': destination_data_source_instance_id
+                }},
+            }
+        elif section == '5':
+            return {
+                'loader.candidate_key': {'exists': {}},
+                'destination_data_source_instance.id': {'eq': {
+                    'value': destination_data_source_instance_id
+                }},
+            }
+        else:
+            raise ValueError(f'Invalid section: {section}')

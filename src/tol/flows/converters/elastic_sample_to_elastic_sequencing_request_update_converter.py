@@ -28,14 +28,14 @@ class ElasticSampleToElasticSequencingRequestUpdateConverter(
         self._data_object_factory = data_object_factory
 
     def convert(self, data_object: DataObject) -> Iterable[DataObjectUpdate]:
-        specimen = data_object.to_one_relationships['sts_specimen']
+        specimen = data_object.to_one_relationships['specimen']
         yield (
             None,
             {
-                'mlwh_sample': self._data_object_factory(
+                'sample': self._data_object_factory(
                     'sample',
                     data_object.id
                 ),
-                'mlwh_specimen.id': specimen.id
+                'specimen.id': specimen.id
             }
         )

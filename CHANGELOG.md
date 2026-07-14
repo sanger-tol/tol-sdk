@@ -6,6 +6,14 @@ SPDX-License-Identifier: MIT
 
 # Changelog
 
+## tol-sdk `2.4.0`
+
+10-07-2026
+
+- Added provenance to elastic upsert calls
+- Added source order to runtime_fields
+- Allow to-one relationships and attributes to optionally support provenance
+
 ## tol-sdk `2.3.5`
 
 06-07-2026

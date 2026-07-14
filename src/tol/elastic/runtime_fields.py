@@ -65,6 +65,8 @@ class RuntimeField:
 
 
 class RuntimeFields:
+    NULL_SENTINEL = '__TOL_PROVENANCE_NULL__'
+
     @classmethod
     def date_interval(cls, start_date: str, end_date: str, unit: str = 'days'):
         rf = RuntimeField(
@@ -117,12 +119,29 @@ class RuntimeFields:
         return rf.to_dict()
 
     @classmethod
-    def coalesce(cls, fields: list[str], return_type: str = 'keyword'):
+    def coalesce(
+            cls,
+            fields: list[str],
+            return_type: str = 'keyword',
+            null_wins: bool = False
+    ):
         keyword = '.keyword' if return_type == 'keyword' else ''
-        rf = RuntimeField(
-            field_type=return_type,
-            dependencies=[],  # No dependencies as we check in function_body
-            function_body='else '.join(
+        if null_wins and return_type == 'keyword':
+            # sentinel is a real indexed keyword value written at upsert time;
+            # standard size > 0 check is sufficient to find it.
+            function_body = 'else '.join(
+                [
+                    f"if (doc.containsKey('{field}{keyword}') "
+                    f"&& doc['{field}{keyword}'].size() > 0) {{"
+                    f"emit(doc['{field}{keyword}'].value);"
+                    f'return;'
+                    f'}}'
+                    for field in fields
+                ]
+            )
+            params = {}
+        else:
+            function_body = 'else '.join(
                 [
                     f"if (doc.containsKey('{field}{keyword}') "
                     f"&& doc['{field}{keyword}'].size() > 0) {{"
@@ -131,6 +150,12 @@ class RuntimeFields:
                     for field in fields
                 ]
             )
+            params = {}
+        rf = RuntimeField(
+            field_type=return_type,
+            dependencies=[],  # No dependencies as we check in function_body
+            function_body=function_body,
+            params=params,
         )
         return rf.to_dict()
 

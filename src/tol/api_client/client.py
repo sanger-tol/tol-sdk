@@ -194,6 +194,7 @@ class JsonApiClient(HttpClient):
         object_type: str,
         transfer: JsonApiTransfer,
         merge_collections: bool | None = None,
+        provenance: str | None = None,
     ) -> None:
         """
         Takes a `JsonApiTransfer` containing a `list` of
@@ -206,6 +207,7 @@ class JsonApiClient(HttpClient):
         url = self.__upsert_url(object_type)
         params = self.__no_none_value_dict(
             merge_collections=merge_collections,
+            provenance=provenance
         )
 
         headers = self._merge_headers()

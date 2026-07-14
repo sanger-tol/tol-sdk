@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: MIT
 
 import importlib
-from typing import Iterator
+from typing import Iterable, Iterator
 
 from dacite import from_dict
 
@@ -12,6 +12,7 @@ from .data_source_attribute_metadata import data_source_attribute_metadata
 from .datasource import DataSource
 from .datasource_error import DataSourceError
 from .datasource_filter import DataSourceFilter
+from .operator.provenancer import ProvenanceField, ProvenanceFields
 from .relationship import RelationshipConfig
 
 
@@ -21,8 +22,11 @@ class DataSourceUtils:
     def get_datasource(
         cls,
         datasource_instance_id: str,
-        config_datasource: DataSource
+        config_datasource: DataSource | None = None
     ) -> DataSource:
+        if config_datasource is None:
+            from ..sources.portaldb import portaldb
+            config_datasource = portaldb()
         datasource_instance = config_datasource.get_one(
             'data_source_instance',
             datasource_instance_id
@@ -54,19 +58,23 @@ class DataSourceUtils:
         if kwargs:
             new_kwargs.update(kwargs)
         if datasource_config:
+            attributes = list(datasource_config.data_source_config_attributes)
+            relationships = list(datasource_config.data_source_config_relationships)
             relationship_config = cls.get_relationship_config_from_data_source_config(
-                datasource_config
+                relationships=relationships,
             )
-            amd = data_source_attribute_metadata(
-                datasource_config
-            )
+            amd = data_source_attribute_metadata(datasource_config)
             runtime_fields = cls.get_runtime_fields_from_data_source_config(
-                datasource_config
+                attributes=attributes
             )
             new_kwargs.update({
                 'relationship_cfg': relationship_config,
                 'attribute_metadata': amd,
-                'runtime_fields': runtime_fields
+                'runtime_fields': runtime_fields,
+                'provenance_fields': cls.get_provenance_fields(
+                    attributes=attributes,
+                    relationships=relationships
+                ),
             })
         return DataSourceUtils.get_datasource_by_name(
             datasource_instance.builtin_name,
@@ -76,10 +84,10 @@ class DataSourceUtils:
     @classmethod
     def get_relationship_config_from_data_source_config(
         cls,
-        datasource_config: DataObject
+        relationships: Iterable[DataObject]
     ) -> dict:
         relationship_cfg = {}
-        for rel in datasource_config.data_source_config_relationships:
+        for rel in relationships:
             for obj_type in [rel.object_type, rel.foreign_object_type]:
                 if obj_type not in relationship_cfg:
                     relationship_cfg[obj_type] = {
@@ -100,14 +108,10 @@ class DataSourceUtils:
     @classmethod
     def get_runtime_fields_from_data_source_config(
         cls,
-        datasource_config: DataObject
+        attributes: Iterable[DataObject]
     ) -> dict:
         runtime_fields = {}
-        f = DataSourceFilter()
-        f.and_ = {
-            'runtime_definition': {'exists': {}}
-        }
-        for dsa in datasource_config.data_source_config_attributes:
+        for dsa in attributes:
             if dsa.runtime_definition is None:
                 continue
             if dsa.object_type not in runtime_fields:
@@ -123,6 +127,20 @@ class DataSourceUtils:
                     'script': {'source': dsa.runtime_definition['script']}
                 }
         return runtime_fields
+
+    @classmethod
+    def get_provenance_fields(cls, attributes, relationships) -> ProvenanceFields:
+        provenance_fields = {}
+        for dsca, suffix in [(d, '') for d in attributes] + [(d, '.id') for d in relationships]:
+            if dsca.source_order is None:
+                continue
+            if dsca.object_type not in provenance_fields:
+                provenance_fields[dsca.object_type] = {}
+            provenance_fields[dsca.object_type][f'{dsca.name}{suffix}'] = ProvenanceField(
+                source_order=dsca.source_order,
+                return_type=dsca.return_type or 'keyword'
+            )
+        return provenance_fields
 
     @classmethod
     def get_ids(

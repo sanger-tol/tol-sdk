@@ -7,6 +7,7 @@ from unittest import mock
 import pytest
 
 from tol.core import DefaultAttributeMetadata, core_data_object
+from tol.core.operator.provenancer import ProvenanceField
 from tol.core.relationship import RelationshipConfig
 from tol.elastic import (
     ElasticDataSource,
@@ -77,7 +78,10 @@ def mock_elastic_data_source() -> ElasticDataSource:
         data_object_update_converter_factory=manager.data_object_update_converter_factory,
         relationship_cfg={
             'obj_type': RelationshipConfig(
-                to_one={'relationship': 'reltype'},
+                to_one={
+                    'relationship': 'reltype',
+                    'another_relationship': 'reltype'
+                },
                 to_many={'children': 'reltype'}
             ),
             'reltype': RelationshipConfig(
@@ -98,7 +102,25 @@ def mock_elastic_data_source() -> ElasticDataSource:
                 )
             }
         },
-        attribute_metadata=MockAttributeMetadata
+        attribute_metadata=MockAttributeMetadata,
+        provenance_fields={
+            'obj_type': {
+                'field5': ProvenanceField(
+                    source_order=['source_1', 'source_2'],
+                    return_type='keyword'
+                ),
+                'relationship.id': ProvenanceField(
+                    source_order=['source_1', 'source_2'],
+                    return_type=None
+                )
+            },
+            'reltype': {
+                'parent.id': ProvenanceField(
+                    source_order=['source_1', 'source_2'],
+                    return_type=None
+                )
+            }
+        }
     )
     manager.data_source = eds
     core_data_object(eds)

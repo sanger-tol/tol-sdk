@@ -352,6 +352,7 @@ def _core_blueprint(
             object_type,
             objects,
             merge_collections=request_args.merge_collections,
+            provenance=request_args.provenance,
         )
 
     @data_handler.route('/<object_type>:aggregations', methods=['POST'])

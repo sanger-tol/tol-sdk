@@ -28,8 +28,8 @@ class ElasticSampleToElasticExtractionContainerUpdateConverter(
         self._data_object_factory = data_object_factory
 
     def convert(self, data_object: DataObject) -> Iterable[DataObjectUpdate]:
-        if data_object is not None and data_object.sts_sampleset is not None:
+        if data_object is not None and data_object.sampleset is not None:
             yield (None, {
-                'benchling_sample.id': data_object.id,
-                'sampleset': {'id': data_object.sts_sampleset.id}
+                'sample.id': data_object.id,
+                'sampleset': {'id': data_object.sampleset.id}
             })

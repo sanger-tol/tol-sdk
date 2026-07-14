@@ -157,8 +157,7 @@ def create_standard_models(
             JSONB,
             nullable=True
         )
-
-        provenance_override: Mapped[str] = mapped_column(nullable=False, default='')
+        provenance_override: Mapped[str] = mapped_column(nullable=True)
         config: Mapped[dict[str, Any]] = mapped_column(
             nullable=False,
             default={}
@@ -515,6 +514,7 @@ def create_standard_models(
         source: Mapped[str] = mapped_column(nullable=True)
         acts_as: Mapped[str] = mapped_column(nullable=True)
         runtime_definition: Mapped[dict] = mapped_column(JSONB, nullable=True)
+        source_order: Mapped[list[str]] = mapped_column(JSONB, nullable=True)
 
     class DataSourceConfigRelationship(base_model_class):
         __tablename__ = 'data_source_config_relationship'
@@ -569,7 +569,7 @@ def create_standard_models(
         )
 
         provenance_override: Mapped[str] = mapped_column(
-            nullable=False,
+            nullable=True,
             default=''
         )
 

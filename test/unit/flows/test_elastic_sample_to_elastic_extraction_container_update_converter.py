@@ -32,7 +32,7 @@ class _MockDataSourceRelational(DataSource, Relational):
     def relationship_config(self):
         rc_sample = RelationshipConfig()
         rc_sample.to_one = {
-            'sts_sampleset': 'sampleset'
+            'sampleset': 'sampleset'
         }
         return {'sample': rc_sample}
 
@@ -76,7 +76,7 @@ class TestElasticSampleToElasticExtractionContainerUpdateConverter(TestCase):
             id_='1234',
             type_='sample',
             to_one={
-                'sts_sampleset': CoreDataObject('sampleset', '5678')
+                'sampleset': CoreDataObject('sampleset', '5678')
             }
         )
 
@@ -84,20 +84,20 @@ class TestElasticSampleToElasticExtractionContainerUpdateConverter(TestCase):
             id_='2345',
             type_='sample',
             to_one={
-                'sts_sampleset': CoreDataObject('sampleset', '6789')
+                'sampleset': CoreDataObject('sampleset', '6789')
             }
         )
 
         converteds = converter.convert(obj1)
         ret1 = next(converteds)
         self.assertEqual(ret1, (None, {
-            'benchling_sample.id': '1234',
+            'sample.id': '1234',
             'sampleset': {'id': '5678'},
         }))
 
         converteds = converter.convert(obj2)
         ret2 = next(converteds)
         self.assertEqual(ret2, (None, {
-            'benchling_sample.id': '2345',
+            'sample.id': '2345',
             'sampleset': {'id': '6789'},
         }))

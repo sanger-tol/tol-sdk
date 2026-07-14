@@ -65,7 +65,7 @@ class TestListGetCursor:
             )
             for i in range(1, 51)
         )
-        data_source.upsert('root', objs)
+        data_source.upsert('root', objs, provenance='source1')
         ds_sleep(7)
 
         # start from beginning (no `search_after`) on "fizz"
@@ -180,7 +180,8 @@ class TestListGetCursor:
         )
         data_source.upsert(
             'root',
-            objs
+            objs,
+            provenance='source1'
         )
         ds_sleep(7)
 
@@ -257,7 +258,7 @@ class TestListGetCursor:
             for i in range(13)
         )
 
-        data_source.upsert('related', objs)
+        data_source.upsert('related', objs, provenance='source1')
 
         fetched = list(
             data_source.get_list('related')

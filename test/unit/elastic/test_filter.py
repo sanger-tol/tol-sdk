@@ -63,7 +63,7 @@ class TestElasticFilter:
                     {'range': {'field3': {'lt': 16}}},
                     {'range': {'field3': {'gte': 2}}},
                     {'wildcard': {'field4.keyword': {'value': 'abc*', 'boost': 1.0}}},
-                    {'terms': {'field5.keyword': ['one', 'two'], 'boost': 1.0}},
+                    {'terms': {'field5.value': ['one', 'two'], 'boost': 1.0}},  # provenanced
                     {'match': {'field6': 5}},
                     {'range': {'field8': {'gt': datetime(2022, 1, 1, 0, 0)}}},
                     {'range': {'field8': {'lte': datetime(2023, 1, 1, 0, 0)}}},
@@ -83,4 +83,36 @@ class TestElasticFilter:
 
         assert expected == filter_converter.convert(
             'obj_type', object_filters
+        )
+
+    def test_build_query_relationship_id_runtime_field(
+        self,
+        mock_elastic_data_source: ElasticDataSource,
+    ):
+        mock_elastic_data_source.runtime_fields['obj_type']['relationship'] = {
+            'type': 'keyword',
+            'script': {
+                'source': "emit('rel-1')"
+            }
+        }
+
+        object_filters = DataSourceFilter()
+        object_filters.and_ = {
+            'relationship.id': {
+                'eq': {'value': 'rel-1'}
+            }
+        }
+
+        expected = {
+            'bool': {
+                'must': [
+                    {'match': {'relationship.id.value': 'rel-1'}}
+                ],
+                'must_not': []
+            }
+        }
+
+        assert expected == ElasticFilterConverter(mock_elastic_data_source).convert(
+            'obj_type',
+            object_filters,
         )

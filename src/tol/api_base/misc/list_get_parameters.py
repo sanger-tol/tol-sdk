@@ -72,6 +72,13 @@ class ListGetParameters:
         return self.__parse_to_boolean('merge_collections', merge_cllctns)
 
     @property
+    def provenance(self) -> str | None:
+        """
+        The optional provenance string to associate with the upserted records.
+        """
+        return self.__request_args.get('provenance')
+
+    @property
     def requested_fields(self) -> list[str] | None:
         """
         The list of requested fields.

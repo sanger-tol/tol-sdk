@@ -67,7 +67,7 @@ class BioscanImageToElasticSampleUpdateConverter(
         attributes = {
             # For a Bioscan image, the specimen id and sample id are the same,
             # because a Bioscan sample is the whole specimen (an entire insect)
-            'sts_specimen.id': sample_id,
+            'specimen.id': sample_id,
             'url': bioscan_image_url,
             'modified': input_.attributes['last_modified']
         }

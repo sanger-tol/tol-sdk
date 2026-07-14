@@ -28,14 +28,14 @@ class ElasticTolidToElasticGenomeNoteUpdateConverter(
         self._data_object_factory = data_object_factory
 
     def convert(self, data_object: DataObject) -> Iterable[DataObjectUpdate]:
-        species = data_object.to_one_relationships['tolid_species']
+        species = data_object.to_one_relationships['species']
         yield (
             None,
             {
-                'gn_species': self._data_object_factory(
+                'species': self._data_object_factory(
                     'species',
                     species.id
                 ),
-                'gn_tolid.id': data_object.id
+                'tolid.id': data_object.id
             }
         )
