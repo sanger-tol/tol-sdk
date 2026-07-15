@@ -15,7 +15,8 @@ import click
 from dotenv import load_dotenv
 
 from ..core import (
-    DataSourceFilter
+    DataSourceFilter,
+    DataSourceUtils,
 )
 
 
@@ -378,21 +379,15 @@ def flow(ctx, filename):
 
 @cli.command()
 @click.option(
-    '--source',
-    default='portal',
-    type=click.Choice(
-        [
-            'portal',
-            'goat',
-            'grit',
-            'sts',
-            'tolid',
-            'tolqc',
-            'workflows',
-        ]
-    ),
-    help='Source DataSource',
+    '--dataspace',
+    default='tol_production',
+    help='Data source instance ID (dataspace), e.g. tol_production.',
     show_default=True,
+)
+@click.option(
+    '--source',
+    default=None,
+    help='Deprecated alias for --dataspace.',
 )
 @click.option(
     '--operation',
@@ -433,16 +428,27 @@ def flow(ctx, filename):
     show_default=True,
 )
 @click.pass_context
-def data(ctx, source, operation, type_, filter_, fields, converter, output):
+def data(ctx, dataspace, source, operation, type_, filter_, fields, converter, output):
     """
     Fetch data from a DataSource.
     """
     env_file = ctx.parent.params['env_file']
     if os.path.exists(env_file):
         load_dotenv(ctx.parent.params['env_file'])
-    module = importlib.import_module(f'tol.sources.{source}')
-    class_ = getattr(module, source)
-    ds = class_()
+
+    if source:
+        if dataspace != 'tol_production' and source != dataspace:
+            raise click.UsageError(
+                'Provide only one of --dataspace or --source (deprecated alias).'
+            )
+        click.secho(
+            'Warning: --source is deprecated; use --dataspace instead.',
+            fg='yellow'
+        )
+        dataspace = source
+
+    ds = DataSourceUtils.get_datasource(dataspace)
+
     f = DataSourceFilter()
     if filter_ is not None:
         try:
