@@ -2,8 +2,6 @@
 #
 # SPDX-License-Identifier: MIT
 
-import json
-import os
 from unittest import (
     TestCase
 )

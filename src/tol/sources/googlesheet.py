@@ -2,14 +2,15 @@
 #
 # SPDX-License-Identifier: MIT
 
+import json
+import os
+
 from ..core import (
     core_data_object
 )
 from ..google_sheets import (
     GoogleSheetDataSource
 )
-import json
-import os
 
 
 def googlesheet(googlesheet_id: str, mappings: dict = None, **kwargs) -> GoogleSheetDataSource:
