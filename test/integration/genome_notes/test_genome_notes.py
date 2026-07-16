@@ -6,13 +6,13 @@ from unittest import (
     TestCase
 )
 
-from tol.sources.genome_notes import genome_notes
+from tol.core import DataSourceUtils
 
 
 class TestGenomeNotesDataSource(TestCase):
 
     def test_attribute_types(self):
-        gns = genome_notes()
+        gns = DataSourceUtils.get_datasource('genome_notes_spreadsheet')
         expected_attribute_types = {
             'id': 'str',
             'bioproject': 'str',
@@ -45,7 +45,7 @@ class TestGenomeNotesDataSource(TestCase):
         assert gns.attribute_types['genome_note'] == expected_attribute_types
 
     def test_get_list_genome_notes(self):
-        gns = genome_notes()
+        gns = DataSourceUtils.get_datasource('genome_notes_spreadsheet')
 
         ret = gns.get_list('genome_note')
         obj = next(ret, None)
