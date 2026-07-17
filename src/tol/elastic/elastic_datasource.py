@@ -265,6 +265,7 @@ class ElasticDataSource(
             group_statter_group_by=summary.group_by,
             group_statter_stats_fields=summary.stats_fields,
             group_statter_stats=summary.stats,
+            group_statter_version=summary.version
         )
         loader.load(provenance=summary.provenance_override)
 
@@ -470,16 +471,18 @@ class ElasticDataSource(
         if page_size is None:
             page_size = self.get_page_size()
         from_ = (page - 1) * page_size if page is not None else None
-        return self.es.search(
-            from_=from_,
-            size=page_size,
-            index=real_index_name,
-            query=query,
-            sort=sort,
-            fields=fields,
-            runtime_mappings=runtime_mappings,
-            search_after=search_after
-        )
+        search_kwargs = {
+            'from_': from_,
+            'size': page_size,
+            'index': real_index_name,
+            'query': query,
+            'sort': sort,
+            'fields': fields,
+            'search_after': search_after,
+        }
+        if runtime_mappings is not None:
+            search_kwargs['runtime_mappings'] = runtime_mappings
+        return self.es.search(**search_kwargs)
 
     def _build_elasticsearch_sort(
         self,
@@ -544,13 +547,16 @@ class ElasticDataSource(
             object_filters=object_filters,
             requested_tree=requested_tree,
         )
-        generator = self.helpers.scan(self.es,
-                                      index=real_index_name,
-                                      scroll='10m',
-                                      size=500,
-                                      query={'query': query},
-                                      fields=fields,
-                                      runtime_mappings=runtime_mappings)
+        scan_kwargs = {
+            'index': real_index_name,
+            'scroll': '10m',
+            'size': 500,
+            'query': {'query': query},
+            'fields': fields,
+        }
+        if runtime_mappings is not None:
+            scan_kwargs['runtime_mappings'] = runtime_mappings
+        generator = self.helpers.scan(self.es, **scan_kwargs)
 
         return self._elastic_converter_factory().convert_list(generator)
 
@@ -564,14 +570,16 @@ class ElasticDataSource(
             object_type=object_type,
             object_filters=object_filters,
         )
-        resp = self.es.search(
-            size=0,
-            index=real_index_name,
-            query=query,
-            aggregations=elastic_aggregations,
-            fields=fields,
-            runtime_mappings=runtime_mappings
-        )
+        search_kwargs = {
+            'size': 0,
+            'index': real_index_name,
+            'query': query,
+            'aggregations': elastic_aggregations,
+            'fields': fields,
+        }
+        if runtime_mappings is not None:
+            search_kwargs['runtime_mappings'] = runtime_mappings
+        resp = self.es.search(**search_kwargs)
         return resp['aggregations']
 
     def __apply_cumulative_transformation_to_aggregations_result(
@@ -1014,14 +1022,16 @@ class ElasticDataSource(
             object_filters=object_filters,
         )
         # We are not using es.count so that we can use runtime fields
-        resp = self.es.search(
-            index=real_index_name,
-            track_total_hits=True,
-            size=0,
-            query=query,
-            fields=fields,
-            runtime_mappings=runtime_mappings
-        )
+        search_kwargs = {
+            'index': real_index_name,
+            'track_total_hits': True,
+            'size': 0,
+            'query': query,
+            'fields': fields,
+        }
+        if runtime_mappings is not None:
+            search_kwargs['runtime_mappings'] = runtime_mappings
+        resp = self.es.search(**search_kwargs)
         return resp['hits']['total']['value']
 
     @ttl_cache(ttl=3600)

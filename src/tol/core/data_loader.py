@@ -301,6 +301,8 @@ class GroupStatterDataLoader(DefaultDataLoader):
                 append_string = append_string.lower()
                 if append_string != '':
                     append_string = f'{append_string}_'
+                if data_loader._group_statter_version is not None:
+                    append_string = f'{append_string}{data_loader._group_statter_version}_'
                 attributes = {}
                 attributes[f'{source_object_type}_{append_string}count'] \
                     = data_object['stats']['count']
@@ -334,7 +336,8 @@ class GroupStatterDataLoader(DefaultDataLoader):
         converter: Converter | None = None,
         group_statter_group_by: Optional[str] = None,
         group_statter_stats_fields: Optional[List[str]] = [],
-        group_statter_stats: Optional[List[str]] = ['min', 'max']
+        group_statter_stats: Optional[List[str]] = ['min', 'max'],
+        group_statter_version: Optional[str] = None
     ):
         if convert_class is None:
             convert_class = self.get_default_converter()
@@ -350,6 +353,7 @@ class GroupStatterDataLoader(DefaultDataLoader):
         self._group_statter_group_by = group_statter_group_by
         self._group_statter_stats_fields = group_statter_stats_fields
         self._group_statter_stats = group_statter_stats
+        self._group_statter_version = group_statter_version
 
     def _get_source_objects(self) -> Iterable:
         source_objs = self._source.get_group_stats(

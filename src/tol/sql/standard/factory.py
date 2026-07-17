@@ -573,6 +573,11 @@ def create_standard_models(
             default=''
         )
 
+        version: Mapped[str] = mapped_column(
+            nullable=True,
+            default=''
+        )
+
         data_source_config_id: Mapped[int] = mapped_column(
             ForeignKey('data_source_config.id'),
             nullable=False

@@ -489,9 +489,8 @@ class DefaultElasticUpdateInputParser(
             if transfer.object_type in self._data_source.runtime_fields
             else None
         )
-        return {
+        payload = {
             'query': query,
-            'runtime_mappings': runtime_mappings,
             'script': {
                 'source': self._update_script,
                 'lang': 'painless',
@@ -500,6 +499,9 @@ class DefaultElasticUpdateInputParser(
                 }
             },
         }
+        if runtime_mappings is not None:
+            payload['runtime_mappings'] = runtime_mappings
+        return payload
 
     def _convert_data_objects_in_update_to_dict(
         self, object_type: str, dict_: dict, provenance: str | None

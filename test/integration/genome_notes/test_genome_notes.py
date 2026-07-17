@@ -21,7 +21,7 @@ class TestGenomeNotesDataSource(TestCase):
             'species_family': 'str',
             'species_species': 'str',
             'tolid': 'str',
-            'ncbi_taxon_id': 'int',
+            'taxid': 'int',
             'genome_size': 'float',
             'scaffold_n50_length': 'float',
             'no_of_scaffolds': 'int',

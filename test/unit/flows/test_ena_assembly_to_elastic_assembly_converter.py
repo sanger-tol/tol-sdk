@@ -14,7 +14,7 @@ from tol.core.operator import (
 )
 from tol.core.relationship import RelationshipConfig
 from tol.flows.converters import (
-    GenomeNotesGenomeNoteToElasticGenomeNoteConverter
+    EnaAssemblyToElasticAssemblyConverter
 )
 
 
@@ -22,7 +22,7 @@ class _MockDataSourceRelational(DataSource, Relational):
 
     @property
     def supported_types(self):
-        return ['assembly', 'genome_note', 'tolid', 'species']
+        return ['assembly', 'species']
 
     @property
     def attribute_types(self):
@@ -30,13 +30,12 @@ class _MockDataSourceRelational(DataSource, Relational):
 
     @property
     def relationship_config(self):
-        rc_genome_note = RelationshipConfig()
-        rc_genome_note.to_one = {
-            'assembly': 'assembly',
-            'tolid': 'tolid',
-            'species': 'species'
+        rc_assembly = RelationshipConfig()
+        rc_assembly.to_one = {
+            'species': 'species',
+            'host_species': 'species'
         }
-        return {'genome_note': rc_genome_note}
+        return {'assembly': rc_assembly}
 
     def get_to_one_relation(
         self,
@@ -55,50 +54,45 @@ class _MockDataSource(DataSource):
 
     @property
     def supported_types(self):
-        return ['genome_note']
+        return ['assembly']
 
     @property
     def attribute_types(self):
         raise NotImplementedError()
 
 
-class TestGenomeNotesGenomeNoteToElasticGenomeNoteConverter(TestCase):
+class TestEnaAssemblyToElasticAssemblyConverter(TestCase):
     def test_convert(self):
 
         source = _MockDataSource(config={})
         destination = _MockDataSourceRelational(config={})
         core_data_object(source)
         core_data_object(destination)
-        converter = GenomeNotesGenomeNoteToElasticGenomeNoteConverter(
+        converter = EnaAssemblyToElasticAssemblyConverter(
             data_object_factory=destination.data_object_factory,
-            config=GenomeNotesGenomeNoteToElasticGenomeNoteConverter.Config()
+            config=EnaAssemblyToElasticAssemblyConverter.Config()
         )
 
         CoreDataObject = source.data_object_factory  # noqa N806
         obj1 = CoreDataObject(
             id_='Test1',
-            type_='genome_note',
+            type_='assembly',
             attributes={
-                'passed_pr': True,
-                'assembly_accession': 'assembly1',
-                'tolid': 'tolid1',
-                'taxid': 123,
-                'another_attribute': 'another_value',
-                'authors': 'Author1, Author2, Author3'
+                'strain': '123456',
+                'tax_id': '123',
+                'host_tax_id': '456',
+                'another_attribute': ''
             }
         )
         converteds = converter.convert(obj1)
         ret1 = next(converteds)
         self.assertEqual('Test1', ret1.id)
-        self.assertEqual('genome_note', ret1.type)
+        self.assertEqual('assembly', ret1.type)
         self.assertEqual(ret1.attributes, {
-            'passed_pr': True,
-            'another_attribute': 'another_value',
-            'authors': ['Author1', 'Author2', 'Author3']
+            'strain': '123456',
         })
-        self.assertEqual(ret1.to_one_relationships['assembly'].id, 'assembly1')
-        self.assertEqual(ret1.to_one_relationships['tolid'].id, 'tolid1')
         self.assertEqual(ret1.to_one_relationships['species'].id, '123')
+        self.assertEqual(ret1.to_one_relationships['host_species'].id, '456')
 
         with self.assertRaises(StopIteration):
             next(converteds)

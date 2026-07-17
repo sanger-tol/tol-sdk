@@ -63,6 +63,7 @@ class TestSummarise:
                 'stats_fields': ['int_column'],
                 'provenance_override': 'source1',
                 'stats': ['min', 'max'],
+                'version': None
             }
         )
 
