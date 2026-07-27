@@ -54,9 +54,9 @@ class JsonApiClient(HttpClient):
         url = self.__detail_url(object_type, object_id)
         headers = self._merge_headers()
 
-        params = {}
-        if requested_tree:
-            params['requested_fields'] = requested_tree.to_paths()
+        params = self.__no_none_value_dict(
+            requested_fields=requested_tree.to_paths() if requested_tree else None
+        )
 
         return self.__fetch_detail(
             url,
@@ -463,6 +463,11 @@ class JsonApiClient(HttpClient):
         return f'{self.__config_url}/return_mode'
 
     def __no_none_value_dict(self, **kwargs) -> dict[str, Any]:
+        """
+        Returns a dictionary for the `Request` object's `params` parameter,
+        omitting any keys in `kwargs` where the value is `None` and joining
+        any `list` values with comma.
+        """
         str_params = {}
         for k, v in kwargs.items():
             if v is None:
