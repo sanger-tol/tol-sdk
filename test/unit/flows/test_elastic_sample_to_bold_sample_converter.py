@@ -34,7 +34,7 @@ class _MockDataSource(DataSource, Relational):
     def relationship_config(self):
         rc_sample = RelationshipConfig()
         rc_sample.to_one = {
-            'sts_specimen': 'specimen',
+            'specimen': 'specimen',
         }
         return {'sample': rc_sample}
 
@@ -93,7 +93,7 @@ class TestElasticSampleToBoldSampleConverter(TestCase):
                 'sts_COLLECTION_METHOD': 'MALAISE_TRAP'
             },
             to_one={
-                'sts_specimen': specimen
+                'specimen': specimen
             }
         )
         obj2 = CoreDataObject(

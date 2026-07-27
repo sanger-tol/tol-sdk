@@ -30,8 +30,8 @@ class ElasticSampleToBenchlingTissueUpdateConverter(
     def _convert_one(self, data_object: DataObject) -> DataObjectUpdate:
         if data_object is None:
             return
-        species = data_object.to_one_relationships['sts_species']
-        specimen = data_object.to_one_relationships['sts_specimen']
+        species = data_object.to_one_relationships['species']
+        specimen = data_object.to_one_relationships['specimen']
 
         if species is not None and specimen is not None:
             ret = (
@@ -50,7 +50,7 @@ class ElasticSampleToBenchlingTissueUpdateConverter(
                     'location': data_object.sts_labwhere_parentage,
                     'tray': data_object.sts_labwhere_name,
                     'specimen_id': specimen.id,
-                    'programme_id': data_object.sts_tolid.id,
+                    'programme_id': data_object.tolid.id,
                     'biosample_id': data_object.sts_biosample_accession,
                     'biospecimen_id': data_object.calc_biospecimen_id,  # Needs work
                     'organism_part':
@@ -71,7 +71,7 @@ class ElasticSampleToBenchlingTissueUpdateConverter(
                     # 'lab_work_category': data_object.sts_lab_work_category,
                     'family_representative': ', '.join(species.goat_family_representative)
                         if species.goat_family_representative is not None else None,
-                    'sample_set_id': data_object.sts_sampleset.id,
+                    'sample_set_id': data_object.sampleset.id,
                     'rd_sample': data_object.sts_send_rd,
                     'sts_id': int(data_object.id),
                     # 'remaining_weight':,

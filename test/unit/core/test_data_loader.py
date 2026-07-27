@@ -399,6 +399,7 @@ class TestDataLoader(TestCase):
             group_statter_group_by=['group_by_field'],
             group_statter_stats_fields=['field1', 'field2.attribute'],
             group_statter_stats=['min', 'max'],
+            group_statter_version='special_filter',
             loader_name='test_loader'
         )
 
@@ -407,20 +408,20 @@ class TestDataLoader(TestCase):
         obj1 = next(destination.upserted)
         self.assertEqual('value1', obj1.id)
         self.assertEqual('destination_type', obj1.type)
-        self.assertEqual(3, obj1.source_type_count)
-        self.assertEqual('A', obj1.source_type_field1_min)
-        self.assertEqual('Z', obj1.source_type_field1_max)
-        self.assertEqual('B', obj1.source_type_field2_attribute_min)
-        self.assertEqual('C', obj1.source_type_field2_attribute_max)
+        self.assertEqual(3, obj1.source_type_special_filter_count)
+        self.assertEqual('A', obj1.source_type_field1_special_filter_min)
+        self.assertEqual('Z', obj1.source_type_field1_special_filter_max)
+        self.assertEqual('B', obj1.source_type_field2_attribute_special_filter_min)
+        self.assertEqual('C', obj1.source_type_field2_attribute_special_filter_max)
 
         obj2 = next(destination.upserted)
         self.assertEqual('value2', obj2.id)
         self.assertEqual('destination_type', obj2.type)
-        self.assertEqual(17, obj2.source_type_count)
-        self.assertIsNone(obj2.source_type_field1_min)
-        self.assertIsNone(obj2.source_type_field1_max)
-        self.assertIsNone(obj2.source_type_field2_attribute_min)
-        self.assertIsNone(obj2.source_type_field2_attribute_max)
+        self.assertEqual(17, obj2.source_type_special_filter_count)
+        self.assertIsNone(obj2.source_type_field1_special_filter_min)
+        self.assertIsNone(obj2.source_type_field1_special_filter_max)
+        self.assertIsNone(obj2.source_type_field2_attribute_special_filter_min)
+        self.assertIsNone(obj2.source_type_field2_attribute_special_filter_max)
 
         with self.assertRaises(StopIteration):
             next(destination.upserted)

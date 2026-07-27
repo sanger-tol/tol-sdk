@@ -7,10 +7,12 @@ import time
 from datetime import datetime
 from uuid import uuid4
 
+
 from elasticsearch import Elasticsearch
 
 import requests
 
+from tol.core.operator.provenancer import ProvenanceField
 from tol.core.relationship import RelationshipConfig
 from tol.elastic import (
     ElasticDataSource,
@@ -51,7 +53,21 @@ def elastic_datasource(
 
     rc_root = RelationshipConfig()
     rc_root.to_one = {
-        'related_object': 'related'
+        'related_object': 'related',
+        'another_related_object': 'related'
+    }
+    rtf = {
+        'root': {
+            'runtime_column': RuntimeField(
+                field_type='boolean',
+                dependencies=['bool_column'],
+                function_body="emit(!doc['bool_column'].value)"
+            ).to_dict(),
+        },
+        'related': {
+            'root_int_column_min': {'type': 'double'},
+            'root_int_column_max': {'type': 'double'},
+        }
     }
 
     return create_elastic_datasource(
@@ -62,18 +78,18 @@ def elastic_datasource(
             'index_prefix': prefix
         },
         relationship_cfg={'root': rc_root},
-        runtime_fields={
+        runtime_fields=rtf,
+        provenance_fields={
             'root': {
-                'runtime_column': RuntimeField(
-                    field_type='boolean',
-                    dependencies=['bool_column'],
-                    function_body="emit(!doc['bool_column'].value)"
-                ).to_dict(),
+                'related_object.id': ProvenanceField(
+                    source_order=['source1', 'source2', 'source3', 'source4'],
+                    return_type=None
+                ),
+                'str_column': ProvenanceField(
+                    source_order=['source1', 'source2', 'source3', 'source4'],
+                    return_type='keyword'
+                ),
             },
-            'related': {
-                'summarise_one_root_int_column_min': {'type': 'double'},
-                'summarise_one_root_int_column_max': {'type': 'double'},
-            }
         }
     )
 
@@ -165,17 +181,34 @@ def upsert_archetypes(prefix: str) -> None:
         index=prefix + '-root',
         id='#YOLO',
         document={
-            'str_column': 'abc',
+            'str_column': {
+                'provenance': {
+                    'source1': {'value': 'abc'},
+                    'source2': {'value': 'abc'},
+                    'source3': {'value': 'abc'},
+                    'source4': {'value': 'abc'},
+                }
+            },
             'int_column': 42,
             'datetime_column': datetime(2020, 1, 1, 0, 0, 0),
             'bool_column': True,
             'list_column': ['item'],
             # 'dict_column': {'key1': 1},  # dict columns not yet supported in API
             'related_object': {
-                'id': '#REL',
+                'id': {
+                    'provenance': {
+                        'source1': {'value': '#REL'},
+                        'source2': {'value': '#REL'},
+                        'source3': {'value': '#REL'},
+                        'source4': {'value': '#REL'},
+                    },
+                },
                 'int_column': 42,
                 'datetime_column': datetime(2021, 1, 1, 0, 0, 0)
             },
+            'another_related_object': {
+                'id': '#REL'
+            }
         }
     )
     elastic_ds.es.index(

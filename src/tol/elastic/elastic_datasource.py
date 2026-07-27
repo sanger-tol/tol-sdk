@@ -26,8 +26,10 @@ from .converter import (
     ElasticUpdateInputConverter,
     ElasticUpsertInputConverter,
 )
+from .elastic_utils import ElasticUtils
 from .filter import ElasticFilterConverter
 from .parser import ElasticUpdateInputResource, ElasticUpsertInputResource
+from .runtime_fields import RuntimeFields
 from ..core import (
     AttributeMetadata,
     DataId,
@@ -48,6 +50,7 @@ from ..core.operator import (
     LegacyAggregator,
     ListGetter,
     PageGetter,
+    Provenancer,
     RelationWriteMode,
     Relational,
     Statter,
@@ -56,6 +59,7 @@ from ..core.operator import (
     Upserter,
 )
 from ..core.operator.aggregator import AggregationResult, AggregationResultData
+from ..core.operator.provenancer import ProvenanceFields
 from ..core.operator.updater import DataObjectUpdate
 from ..core.relationship import (
     RelationshipConfig
@@ -80,6 +84,7 @@ class ElasticDataSource(
     DetailGetter,
     Enricher,
     PageGetter,
+    Provenancer,
     ListGetter,
     LegacyAggregator,
     Relational,
@@ -97,6 +102,7 @@ class ElasticDataSource(
                  attribute_metadata: AttributeMetadata = DefaultAttributeMetadata,
                  relationship_cfg: dict[str, RelationshipConfig] | None = None,
                  runtime_fields: dict[str, Any] = {},
+                 provenance_fields: ProvenanceFields = {},
                  **kwargs):
         del kwargs
         super().__init__(
@@ -113,7 +119,11 @@ class ElasticDataSource(
         Only FKs pointing to IDs are currently supported
         """
         attribute_metadata.host = self
-        self.runtime_fields = runtime_fields
+        self.provenance_fields = provenance_fields
+        self.runtime_fields = self.__merge_nested_dicts(
+            runtime_fields,
+            self.__add_runtime_fields_from_provenance_fields(),
+        )
         self._initialise_elasticsearch()
         self.__lazy = False
         self._relationship_cfg = relationship_cfg
@@ -172,9 +182,9 @@ class ElasticDataSource(
         self,
         object_type: str,
         objects: Iterable[DataObject],
+        provenance: str | None = None,
         chunk_size: int = 100,
         id_func=lambda x: x.id,
-        provenance: str = '',
         merge_collections: bool | None = None,
         **kwargs
     ) -> None:
@@ -194,7 +204,7 @@ class ElasticDataSource(
                         index=index,
                         objects=objects,
                         id_func=id_func,
-                        field_prefix=provenance
+                        provenance=provenance,
                     )
                 ),
                 stats_only=True,
@@ -208,7 +218,7 @@ class ElasticDataSource(
         self,
         object_type: str,
         updates: Iterable[DataObjectUpdate],
-        provenance: str = '',
+        provenance: str | None = None,
         candidate_key: Iterable[str] = [],
         **kwargs
     ) -> None:
@@ -229,7 +239,7 @@ class ElasticDataSource(
                 index=real_index_name,
                 body=converter.convert(ElasticUpdateInputResource(object_type=object_type,
                                                                   update=update,
-                                                                  field_prefix=provenance,
+                                                                  provenance=provenance,
                                                                   candidate_key=candidate_key)),
                 conflicts='proceed',
                 wait_for_completion=False
@@ -255,6 +265,7 @@ class ElasticDataSource(
             group_statter_group_by=summary.group_by,
             group_statter_stats_fields=summary.stats_fields,
             group_statter_stats=summary.stats,
+            group_statter_version=summary.version
         )
         loader.load(provenance=summary.provenance_override)
 
@@ -283,16 +294,16 @@ class ElasticDataSource(
         """
         Map our field format to Elastic's format
         """
-        if name == 'id':
-            return 'uid.keyword'
-        # Runtime fields don't behave the same as text fields
+        # If this is a provenance field, we need to use the actual field name in Elastic
+        if object_type in self.provenance_fields and name in self.provenance_fields[object_type]:
+            actual_field = f'{name}.value'
+            return self._field_or_keyword(object_type, actual_field)
+
+        # If this is a runtime field, we need to use the actual field name in Elastic
+        # regardless of its type
         if object_type in self.runtime_fields and name in self.runtime_fields[object_type]:
             return name
-        # An attribute of the object
-        if name in self.attribute_types[object_type]:
-            field_type = self.attribute_types[object_type][name]
-            if field_type == 'str':
-                return f'{name}.keyword'
+
         if '.' in name:
             rc = self.relationship_config[object_type]
             relationship_name, attribute = name.split('.')[0], name.split('.')[1]
@@ -302,6 +313,15 @@ class ElasticDataSource(
             attribute_type = self.attribute_types[relationship_object_type][attribute]
             if attribute_type == 'str':
                 return f'{name}.keyword'
+        else:
+            if name == 'id':
+                return 'uid.keyword'
+            # An attribute of the object
+            if name in self.attribute_types[object_type]:
+                field_type = self.attribute_types[object_type][name]
+                if field_type == 'str':
+                    return f'{name}.keyword'
+                return f'{name}'
         return name
 
     def _prepare_get_parameters(
@@ -334,15 +354,43 @@ class ElasticDataSource(
         )
         fields = list(runtime_mappings.keys()) if runtime_mappings is not None else None
         if requested_tree is not None and fields is not None and runtime_mappings is not None:
+            def relation_sub_tree_requested(field_name: str) -> bool:
+                relation_name = field_name.split('.', 1)[0]
+                return requested_tree.get_sub_tree(relation_name) is not None
+
+            def direct_provenanced_attribute_requested(field_name: str) -> bool:
+                if not field_name.endswith('.value'):
+                    return False
+
+                base_name = ElasticUtils.actual_attribute(field_name)
+                if '.' in base_name:
+                    return False
+
+                if base_name not in self.provenance_fields.get(object_type, {}):
+                    return False
+
+                return (
+                    requested_tree.has_attribute(base_name)
+                    or len(requested_tree.attribute_names) == 0
+                )
+
             # Filter fields to fetch based on whether they're in the requested tree
             fields = list(filter(
                 lambda field: (
                     requested_tree.has_attribute(field)
                     or (
                         object_filters is not None and object_filters.and_ is not None
-                        and field in object_filters.and_.keys()
+                        and (
+                            field in object_filters.and_.keys()
+                            or f'{field}.id' in object_filters.and_.keys()
+                        )
                     )
-                    or sort_by is not None and field in sort_by
+                    or (
+                        sort_by is not None and field in sort_by
+                    )
+                    or requested_tree.get_sub_tree(field) is not None
+                    or relation_sub_tree_requested(field)
+                    or direct_provenanced_attribute_requested(field)
                 ),
                 fields,
             ))
@@ -396,7 +444,6 @@ class ElasticDataSource(
             page=page,
             requested_tree=requested_tree,
         )
-
         return (
             self._elastic_converter_factory().convert_list(
                 resp['hits']['hits']
@@ -424,16 +471,18 @@ class ElasticDataSource(
         if page_size is None:
             page_size = self.get_page_size()
         from_ = (page - 1) * page_size if page is not None else None
-        return self.es.search(
-            from_=from_,
-            size=page_size,
-            index=real_index_name,
-            query=query,
-            sort=sort,
-            fields=fields,
-            runtime_mappings=runtime_mappings,
-            search_after=search_after
-        )
+        search_kwargs = {
+            'from_': from_,
+            'size': page_size,
+            'index': real_index_name,
+            'query': query,
+            'sort': sort,
+            'fields': fields,
+            'search_after': search_after,
+        }
+        if runtime_mappings is not None:
+            search_kwargs['runtime_mappings'] = runtime_mappings
+        return self.es.search(**search_kwargs)
 
     def _build_elasticsearch_sort(
         self,
@@ -498,13 +547,17 @@ class ElasticDataSource(
             object_filters=object_filters,
             requested_tree=requested_tree,
         )
-        generator = self.helpers.scan(self.es,
-                                      index=real_index_name,
-                                      scroll='10m',
-                                      size=500,
-                                      query={'query': query},
-                                      fields=fields,
-                                      runtime_mappings=runtime_mappings)
+        scan_kwargs = {
+            'index': real_index_name,
+            'scroll': '10m',
+            'size': 500,
+            'query': {'query': query},
+            'fields': fields,
+        }
+        if runtime_mappings is not None:
+            scan_kwargs['runtime_mappings'] = runtime_mappings
+        generator = self.helpers.scan(self.es, **scan_kwargs)
+
         return self._elastic_converter_factory().convert_list(generator)
 
     def _get_elastic_aggregations(
@@ -517,14 +570,16 @@ class ElasticDataSource(
             object_type=object_type,
             object_filters=object_filters,
         )
-        resp = self.es.search(
-            size=0,
-            index=real_index_name,
-            query=query,
-            aggregations=elastic_aggregations,
-            fields=fields,
-            runtime_mappings=runtime_mappings
-        )
+        search_kwargs = {
+            'size': 0,
+            'index': real_index_name,
+            'query': query,
+            'aggregations': elastic_aggregations,
+            'fields': fields,
+        }
+        if runtime_mappings is not None:
+            search_kwargs['runtime_mappings'] = runtime_mappings
+        resp = self.es.search(**search_kwargs)
         return resp['aggregations']
 
     def __apply_cumulative_transformation_to_aggregations_result(
@@ -967,20 +1022,22 @@ class ElasticDataSource(
             object_filters=object_filters,
         )
         # We are not using es.count so that we can use runtime fields
-        resp = self.es.search(
-            index=real_index_name,
-            track_total_hits=True,
-            size=0,
-            query=query,
-            fields=fields,
-            runtime_mappings=runtime_mappings
-        )
+        search_kwargs = {
+            'index': real_index_name,
+            'track_total_hits': True,
+            'size': 0,
+            'query': query,
+            'fields': fields,
+        }
+        if runtime_mappings is not None:
+            search_kwargs['runtime_mappings'] = runtime_mappings
+        resp = self.es.search(**search_kwargs)
         return resp['hits']['total']['value']
 
     @ttl_cache(ttl=3600)
     def _get_indices(self) -> dict[str, str]:
         # Get all as the actual indexes may not have the correct prefix
-        results = self.es.indices.get_alias('*')
+        results = self.es.indices.get_alias(index='*')
         aliased_indexes = {
             alias: index
             for index, aliases in results.items()
@@ -1031,10 +1088,23 @@ class ElasticDataSource(
             if 'type' in properties[property_name]
         }
         runtime_types = {
-            name: self.__map_type(self.runtime_fields[object_type][name]['type'])
+            name: self.__map_type(
+                self.runtime_fields[object_type][name].get('type')
+                or self.runtime_fields[object_type][name].get('value', {}).get('type')
+            )
             for name in self.runtime_fields[object_type].keys()
+            if ElasticUtils.actual_attribute(name)
+            not in self.provenance_fields.get(object_type, {})
         } if object_type in self.runtime_fields else {}
-        return standard_types | runtime_types
+
+        provenance_types = {
+            name: self.__map_type(
+                self.provenance_fields[object_type][name].return_type
+            )
+            for name in self.provenance_fields[object_type].keys()
+            if not name.endswith('.id')
+        } if object_type in self.provenance_fields else {}
+        return standard_types | runtime_types | provenance_types
 
     @property
     @ttl_cache(ttl=3600)
@@ -1105,3 +1175,31 @@ class ElasticDataSource(
 
         if source.type not in self.relationship_config:
             raise DataSourceError('This type has no relationships')
+
+    def __add_runtime_fields_from_provenance_fields(
+        self,
+    ) -> dict:
+        runtime_fields = {}
+        for object_type, fields in self.provenance_fields.items():
+            for field_name, provenance_field in fields.items():
+                if object_type not in runtime_fields:
+                    runtime_fields[object_type] = {}
+                runtime_fields[object_type][f'{field_name}.value'] = RuntimeFields.coalesce(
+                    [
+                        f'{field_name}.provenance.{source_order}.value'
+                        for source_order in provenance_field.source_order
+                    ],
+                    return_type=provenance_field.return_type or 'keyword',
+                    null_wins=True,
+                )
+        return runtime_fields
+
+    def __merge_nested_dicts(self, left: dict[str, Any], right: dict[str, Any]) -> dict[str, Any]:
+        merged = dict(left)
+        for key, right_value in right.items():
+            left_value = merged.get(key)
+            if isinstance(left_value, dict) and isinstance(right_value, dict):
+                merged[key] = left_value | right_value
+            else:
+                merged[key] = right_value
+        return merged

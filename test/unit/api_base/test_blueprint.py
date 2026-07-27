@@ -568,6 +568,7 @@ class TestBlueprintRelational(TestCase):
             'int': False,
             'lol': 349508
         }
+        type(self.__mock_object).provenance = {}
 
         def __get_recursive_relation(
             __s: DataObject,

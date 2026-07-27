@@ -131,8 +131,10 @@ class DefaultView(View):
         # Stub trees are created by requested_fields paths ending in ".id"
         if not tree.is_stub:
             self.__add_attributes(data_object, dump, tree)
+            self.__add_provenance_for_attributes(data_object, dump)
         if tree.has_relationships:
             self.__add_relationships(data_object, dump, included, tree)
+            self.__add_provenance_for_relationships(data_object, dump, included, tree)
         return dump
 
     def __add_attributes(
@@ -167,6 +169,40 @@ class DefaultView(View):
         if rel_dict:
             dump['relationships'] = rel_dict
 
+    def __add_provenance_for_attributes(
+        self,
+        data_object: DataObject,
+        dump: DumpDict
+    ) -> DumpDict:
+        prov_att_dict = self.__dump_att_provenance(
+            data_object, dump['attributes'] if 'attributes' in dump else {}
+        )
+        if prov_att_dict:
+            if 'attributes' not in dump or dump['attributes'] is None:
+                dump['attributes'] = {}
+            if 'provenance' not in dump['attributes'] or dump['attributes']['provenance'] is None:
+                dump['attributes']['provenance'] = {}
+            dump['attributes']['provenance'] |= prov_att_dict
+
+    def __add_provenance_for_relationships(
+        self,
+        data_object: DataObject,
+        dump: DumpDict,
+        included: IncludedDumps,
+        tree: ReqFieldsTree
+    ) -> DumpDict:
+        prov_rel_dict = self.__dump_to_one_provenance(
+            data_object, included, dump['relationships'] if 'relationships' in dump else {},
+            tree
+        )
+        if prov_rel_dict:
+            if 'attributes' not in dump or dump['attributes'] is None:
+                dump['attributes'] = {}
+            if 'provenance' not in dump['attributes'] \
+                    or dump['attributes']['provenance'] is None:
+                dump['attributes']['provenance'] = {}
+            dump['attributes']['provenance'] |= prov_rel_dict
+
     def __dump_to_one_relationships(
         self,
         data_object: DataObject,
@@ -183,6 +219,51 @@ class DefaultView(View):
                         included.add_dump(self.__dump_object(one, included, tree=sub_tree))
                 to_ones[rel] = one_dump
         return to_ones
+
+    def __dump_att_provenance(
+        self,
+        data_object: DataObject,
+        attributes: dict[str, Any],
+    ) -> dict[str, Any]:
+        provenance = {}
+        for att in attributes:
+            if data_object.provenance and att in data_object.provenance:
+                provenance[att] = {
+                    source: self.__convert_value(att)
+                    for source, att in data_object.provenance[att].items()
+                }
+        return provenance
+
+    def __dump_to_one_provenance(
+        self,
+        data_object: DataObject,
+        included: IncludedDumps,
+        relationships: dict[str, Any],
+        tree: ReqFieldsTree,
+    ) -> RelationshipDump:
+        provenance = {}
+        for rel in relationships:
+            if data_object.provenance and rel in data_object.provenance:
+                rel_provenance = data_object.provenance[rel]
+                if not isinstance(rel_provenance, dict):
+                    continue
+
+                provenance[rel] = {}
+                for source, obj in rel_provenance.items():
+                    if obj is None:
+                        provenance[rel][source] = {'data': None}
+                        continue
+
+                    one_dump = {'data': self.__dump_stub(obj, rel)}
+                    rel_dump = relationships.get(rel)
+                    if isinstance(rel_dump, dict) and 'data' in rel_dump:
+                        if sub_tree := tree.get_sub_tree(rel):
+                            included.add_dump(self.__dump_object(obj, included, tree=sub_tree))
+                    provenance[rel][source] = one_dump
+
+                if not provenance[rel]:
+                    del provenance[rel]
+        return provenance
 
     def __dump_to_many_relationships(
         self,
@@ -220,7 +301,7 @@ class DefaultView(View):
                 f" '{rel_name}' because it has no `id` attribute"
             )
             raise ValueError(msg)
-        return {'type': obj.type, 'id': str(obj.id)}
+        return {'type': obj.type, 'id': _serialize_id(obj.id)}
 
     def __convert_attributes(self, attributes: dict[str, Any]) -> dict[str, Any]:
         return {k: self.__convert_value(v) for k, v in attributes.items()}
@@ -232,11 +313,27 @@ class DefaultView(View):
         return val
 
 
+def _serialize_id(oid: Any, /) -> Any:
+    """
+    Serialize an id, converting to string.
+    """
+    if oid is None:
+        return None
+    return str(oid)
+
+
 def null_or_str(oid: Any, /):
     """
     Return `oid` as a string if it isn't `None`
     """
-    return None if oid is None else str(oid)
+    return _serialize_id(oid)
+
+
+def _make_hashable_id(id_: Any) -> str:
+    """
+    Convert an id to a hashable string representation.
+    """
+    return str(id_)
 
 
 class IncludedDumps:
@@ -262,6 +359,6 @@ class IncludedDumps:
         """
         Add a new DumpDict to the collection.
         """
-        key = dump['type'], dump['id']
+        key = dump['type'], _make_hashable_id(dump['id'])
         if key not in self.__type_id:
             self.__type_id[key] = dump

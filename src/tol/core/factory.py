@@ -36,7 +36,8 @@ class DataObjectFactory(Protocol):
         id_: str | None = None,
         attributes: dict[str, Any] | None = None,
         to_one: ToOne | None = None,
-        to_many: ToMany | None = None
+        to_many: ToMany | None = None,
+        provenance_: dict | None = None,
     ) -> DataObject:
         ...
 
@@ -125,7 +126,7 @@ def core_data_object(
             self,
             type_: str,
             id_: str | None = None,
-            provenance_: str | None = None,
+            provenance_: dict | None = None,
             attributes: DataDict | None = None,
             to_one: ToOne | None = None,
             to_many: ToMany | None = None,
@@ -283,6 +284,7 @@ def core_data_object(
         attributes: dict[str, Any] | None = None,
         to_one: ToOne | None = None,
         to_many: ToMany | None = None,
+        provenance_: str | None = None,
         stub: bool = False,  # Set stub if only type and id are given on creation
         stub_types: Iterable[str] | None = None
     ) -> DataObject:
@@ -293,6 +295,7 @@ def core_data_object(
             attributes=attributes,
             to_one=to_one,
             to_many=to_many,
+            provenance_=provenance_,
             stub=stub,
             stub_types=stub_types
         )

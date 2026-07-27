@@ -57,7 +57,7 @@ class TestTreeOfSex:
             converter=converter,
         )
 
-        loader.load(provenance='')
+        loader.load(provenance='source1')
 
         ds_sleep(5)
 

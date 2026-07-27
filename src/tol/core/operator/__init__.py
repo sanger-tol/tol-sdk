@@ -18,6 +18,7 @@ from .legacy_aggregator import LegacyAggregator
 from .list_getter import ListGetter
 from .operator_config import OperatorDict  # noqa
 from .page_getter import PageGetter
+from .provenancer import Provenancer
 from .relational import Relational
 from .statter import Statter
 from .summariser import Summariser
@@ -39,6 +40,7 @@ ALL_OPERATORS = (
     LegacyAggregator,
     ListGetter,
     PageGetter,
+    Provenancer,
     Statter,
     Updater,
     Upserter,
@@ -61,6 +63,7 @@ class AllOperatorType(
     LegacyAggregator,
     ListGetter,
     PageGetter,
+    Provenancer,
     Statter,
     Updater,
     Upserter,
@@ -87,6 +90,7 @@ Operator = Union[
     ListGetter,
     PageGetter,
     Relational,
+    Provenancer,
     Statter,
     Summariser,
     Updater,

@@ -33,13 +33,13 @@ class TestSummarise:
             'related',
             'related_summarise'
         )
-        data_source.upsert('related', [rel_obj])
+        data_source.upsert('related', [rel_obj], provenance='source1')
 
         root_objs = (
             data_source.data_object_factory(
                 'root',
                 f'root_{i}_indeed',
-                {
+                attributes={
                     'int_column': i,
                     'str_column': str(i)
                 },
@@ -49,7 +49,7 @@ class TestSummarise:
             )
             for i in range(1, 6)
         )
-        data_source.upsert('root', root_objs)
+        data_source.upsert('root', root_objs, provenance='source1')
 
         ds_sleep(5)
 
@@ -61,8 +61,9 @@ class TestSummarise:
                 'object_filters': {},
                 'group_by': ['related_object.id'],
                 'stats_fields': ['int_column'],
+                'provenance_override': 'source1',
                 'stats': ['min', 'max'],
-                'provenance_override': 'summarise_one',
+                'version': None
             }
         )
 
@@ -74,8 +75,8 @@ class TestSummarise:
             'related',
             'related_summarise'
         )
-        assert rel_obj.summarise_one_root_int_column_min == 1
-        assert rel_obj.summarise_one_root_int_column_max == 5
+        assert rel_obj.root_int_column_min == 1
+        assert rel_obj.root_int_column_max == 5
 
         # change the first `root` to be the biggest
         first_root_obj = data_source.get_one(
@@ -83,7 +84,7 @@ class TestSummarise:
             'root_1_indeed'
         )
         first_root_obj.int_column = 42
-        data_source.upsert('root', [first_root_obj])
+        data_source.upsert('root', [first_root_obj], provenance='source1')
         ds_sleep(5)
 
         # re-summarise from just the changed `root` instance
@@ -98,8 +99,8 @@ class TestSummarise:
             'related',
             'related_summarise'
         )
-        assert rel_obj.summarise_one_root_int_column_min == 2
-        assert rel_obj.summarise_one_root_int_column_max == 42
+        assert rel_obj.root_int_column_min == 2
+        assert rel_obj.root_int_column_max == 42
 
     def __summary_obj(
         self,

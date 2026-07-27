@@ -135,8 +135,10 @@ class TestElasticDataSource:
                 ]
             }
         }
-        assert fields == ['field7', 'field8']
-        assert list(cast(dict, runtime_mappings).keys()) == ['field7', 'field8']
+        assert fields == ['field7', 'field8', 'field5.value', 'relationship.id.value']
+        assert list(cast(dict, runtime_mappings).keys()) == [
+            'field7', 'field8', 'field5.value', 'relationship.id.value'
+        ]
 
         # Test with requested tree.
         # Both fields and mappings should have filters
@@ -167,6 +169,28 @@ class TestElasticDataSource:
         assert fields == ['field7', 'field8']
         assert list(cast(dict, runtime_mappings).keys()) == ['field7', 'field8']
 
+        # Test with requested relation subtree.
+        # relation runtime fields must be retained for provenanced relation ids.
+        requested_tree = ReqFieldsTree(
+            'obj_type',
+            mock_elastic_data_source,
+            ['relationship.field3']
+        )
+        (
+            _,
+            _,
+            fields,
+            runtime_mappings
+        ) = mock_elastic_data_source._prepare_get_parameters(
+            object_type='obj_type',
+            object_filters=None,
+            requested_tree=requested_tree,
+        )
+        assert set(fields) == {'relationship.id.value', 'field5.value'}
+        assert list(cast(dict, runtime_mappings).keys()) == [
+            'field5.value', 'relationship.id.value'
+        ]
+
     def test_upsert(self, mock_elastic_data_source: ElasticDataSource):
         CoreDataObject = mock_elastic_data_source.data_object_factory  # noqa N806
 
@@ -177,13 +201,19 @@ class TestElasticDataSource:
                 attributes={
                     'field1': 'value1',
                     'field2': 'value2',
+                    'field5': 'value5',  # provenanced
                     'datefield': dt
                 },
                 to_one={
                     'relationship': CoreDataObject(
                         'reltype',
                         id_='rel1'
+                    ),
+                    'another_relationship': CoreDataObject(
+                        'reltype',
+                        id_='rel2'
                     )
+
                 }
             ),
             CoreDataObject(
@@ -202,7 +232,7 @@ class TestElasticDataSource:
             'test-obj-type',
             objects,
             id_func=lambda x: x.id,
-            field_prefix=''
+            provenance='source_1'
         ))
         expected = {
             '_op_type': 'update',
@@ -217,9 +247,25 @@ class TestElasticDataSource:
                     'upsertWith': {
                         'field1': 'value1',
                         'field2': 'value2',
+                        'field5': {
+                            'provenance': {
+                                'source_1': {
+                                    'value': 'value5'
+                                }
+                            }
+                        },
                         'datefield': dt.isoformat(),
                         'relationship': {
-                            'id': 'rel1'
+                            'id': {
+                                'provenance': {
+                                    'source_1': {
+                                        'value': 'rel1'
+                                    }
+                                }
+                            }
+                        },
+                        'another_relationship': {
+                            'id': 'rel2'
                         },
                         'uid': '1'
                     }
@@ -250,7 +296,7 @@ class TestElasticDataSource:
         mock_elastic_data_source.upsert('index', objects, id_func=lambda x: x.field1)
         mock_elastic_data_source.helpers.bulk.assert_called_once()
 
-    def test_upsert_add_prefix_and_id(self, mock_elastic_data_source: ElasticDataSource):
+    def test_upsert_add_id(self, mock_elastic_data_source: ElasticDataSource):
         CoreDataObject = mock_elastic_data_source.data_object_factory  # noqa N806
 
         objects = [
@@ -269,8 +315,7 @@ class TestElasticDataSource:
         generator = converter.convert(ElasticUpsertInputResource(
             'test-obj-type',
             objects,
-            id_func=lambda x: x.field1,
-            field_prefix='pre'
+            id_func=lambda x: x.field1
         ))
         expected = {
             '_op_type': 'update',
@@ -283,8 +328,8 @@ class TestElasticDataSource:
                 'lang': 'painless',
                 'params': {
                     'upsertWith': {
-                        'pre_field1': 'value1',
-                        'pre_field2': 'value2',
+                        'field1': 'value1',
+                        'field2': 'value2',
                         'uid': 'value1'
                     }
                 }
@@ -302,8 +347,8 @@ class TestElasticDataSource:
                 'lang': 'painless',
                 'params': {
                     'upsertWith': {
-                        'pre_field1': 'value3',
-                        'pre_field2': 'value4',
+                        'field1': 'value3',
+                        'field2': 'value4',
                         'uid': 'value3'
                     }
                 }
@@ -331,9 +376,15 @@ class TestElasticDataSource:
         update1 = {
             'field1': 'value1',
             'field2': 'value2',
+            'field5': 'value5',  # provenanced
             'relationship': CoreDataObject(
                 'reltype',
                 id_='rel1',
+                attributes={'field3': 'string1', 'field4': 'string2'}
+            ),
+            'another_relationship': CoreDataObject(
+                'reltype',
+                id_='rel2',
                 attributes={'field3': 'string1', 'field4': 'string2'}
             )
         }
@@ -349,8 +400,8 @@ class TestElasticDataSource:
         update_body = converter.convert(ElasticUpdateInputResource(
             'obj_type',
             update1,
-            field_prefix='',
-            candidate_key=['field1']
+            candidate_key=['field1'],
+            provenance='source_1'
         ))
         expected = {
             'query': {
@@ -361,14 +412,27 @@ class TestElasticDataSource:
                     'must_not': []
                 }
             },
+            'runtime_mappings': dict(mock_elastic_data_source.runtime_fields['obj_type']),
             'script': {
                 'source': DefaultElasticUpdateInputParser(mock_elastic_data_source)._update_script,
                 'lang': 'painless',
                 'params': {
                     'upsertWith': {
                         'field2': 'value2',
+                        'field5': {
+                            'provenance': {
+                                'source_1': {
+                                    'value': 'value5'
+                                }
+                            },
+                        },
                         'relationship': {
-                            'id': 'rel1',
+                            'id': {'provenance': {'source_1': {'value': 'rel1'}}},
+                            'field3': 'string1',
+                            'field4': 'string2'
+                        },
+                        'another_relationship': {
+                            'id': 'rel2',
                             'field3': 'string1',
                             'field4': 'string2'
                         }
@@ -394,11 +458,15 @@ class TestElasticDataSource:
         returned = iter(mock_elastic_data_source.get_list('obj_type'))
         mock_elastic_data_source.helpers.scan.assert_called_once()
         first = next(returned)
-        assert first.attributes == {'field1': 'value1', 'field2': 'value2', 'field7': 'Hello'}
+        assert first.attributes == {
+            'field1': 'value1', 'field2': 'value2', 'field5': None, 'field7': 'Hello'
+        }
         assert first.id == '1'
         assert first.type == 'obj_type'
         second = next(returned)
-        assert second.attributes == {'field1': 'value3', 'field2': 'value4', 'field7': 'Hello'}
+        assert second.attributes == {
+            'field1': 'value3', 'field2': 'value4', 'field5': None, 'field7': 'Hello'
+        }
         assert second.id == '2'
         assert second.type == 'obj_type'
         try:
@@ -430,11 +498,15 @@ class TestElasticDataSource:
         mock_elastic_data_source.es.search.assert_called_once()
         assert total == 2
         first = next(returned)
-        assert first.attributes == {'field1': 'value1', 'field2': 'value2', 'field7': 'Hello'}
+        assert first.attributes == {
+            'field1': 'value1', 'field2': 'value2', 'field5': None, 'field7': 'Hello'
+        }
         assert first.id == '1'
         assert first.type == 'obj_type'
         second = next(returned)
-        assert second.attributes == {'field1': 'value3', 'field2': 'value4', 'field7': 'Hello'}
+        assert second.attributes == {
+            'field1': 'value3', 'field2': 'value4', 'field5': None, 'field7': 'Hello'
+        }
         assert second.id == '2'
         assert second.type == 'obj_type'
         try:
@@ -449,8 +521,22 @@ class TestElasticDataSource:
             {
                 '_index': 'test-obj-type',
                 '_id': '1',
-                '_source': {'field1': 'value1', 'field2': 'value2'},
-                'fields': {'field7': ['Hello']}
+                '_source': {
+                    'field1': 'value1',
+                    'field2': 'value2',
+                    'field5': {'provenance': {'source_1': {'value': 'value5'}}},
+                    'relationship': {
+                        'id': {'provenance': {'source_1': {'value': 'rel1'}}}
+                    },
+                    'another_relationship': {
+                        'id': 'rel2'
+                    },
+                },
+                'fields': {
+                    'field7': ['Hello'],
+                    'field5.value': ['value5'],
+                    'relationship.id.value': ['rel1']
+                },
             },
             {
                 '_index': 'test-obj-type',
@@ -462,13 +548,29 @@ class TestElasticDataSource:
 
         returned = iter(mock_elastic_data_source.get_by_id('obj_type', ['2', '1']))
         first = next(returned)
-        assert first.attributes == {'field1': 'value3', 'field2': 'value4', 'field7': 'Hello'}
+        assert first.attributes == {
+            'field1': 'value3',
+            'field2': 'value4',
+            'field5': None,
+            'field7': 'Hello'
+        }
         assert first.id == '2'
         assert first.type == 'obj_type'
         second = next(returned)
-        assert second.attributes == {'field1': 'value1', 'field2': 'value2', 'field7': 'Hello'}
+        assert second.attributes == {
+            'field1': 'value1',
+            'field2': 'value2',
+            'field5': 'value5',
+            'field7': 'Hello'
+        }
         assert second.id == '1'
         assert second.type == 'obj_type'
+        assert second.relationship.id == 'rel1'
+        assert second.another_relationship.id == 'rel2'
+        assert second.provenance['field5']['source_1'] == 'value5'
+        assert second.provenance['relationship']['source_1'].id == 'rel1'
+        assert 'field1' not in second.provenance
+        assert 'another_relationship' not in second.provenance
         try:
             next(returned)
         except StopIteration:
@@ -1208,7 +1310,7 @@ class TestElasticDataSource:
 
     def test_relationships_to_enrich(self, mock_elastic_data_source: ElasticDataSource):
         expected = {
-            'reltype': {'obj_type': ['relationship']},
+            'reltype': {'obj_type': ['relationship', 'another_relationship']},
             'obj_type': {'reltype': ['parent']}
         }
         assert mock_elastic_data_source.relationships_to_enrich == expected

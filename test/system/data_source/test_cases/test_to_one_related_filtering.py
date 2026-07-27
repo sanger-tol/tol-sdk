@@ -90,7 +90,7 @@ class TestToOneRelatedFiltering:
                 'str_column': 'hello, world',
             }
         )
-        data_source.upsert('related', [related_obj])
+        data_source.upsert('related', [related_obj], provenance='source1')
 
         root_objs = [
             data_source.data_object_factory(
@@ -105,4 +105,4 @@ class TestToOneRelatedFiltering:
             )
             for i, c in enumerate('abc')
         ]
-        data_source.upsert('root', root_objs)
+        data_source.upsert('root', root_objs, provenance='source1')

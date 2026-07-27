@@ -33,8 +33,8 @@ class _MockDataSource(DataSource, Relational):
     def relationship_config(self):
         rc_tolid = RelationshipConfig()
         rc_tolid.to_one = {
-            'tolid_species': 'species',
-            'tolid_specimen': 'specimen'
+            'species': 'species',
+            'specimen': 'specimen'
         }
         return {'tolid': rc_tolid}
 
@@ -91,8 +91,8 @@ class TestElasticTolidToElasticSampleUpdateConverter(TestCase):
             type_='tolid',
             attributes={},
             to_one={
-                'tolid_species': species,
-                'tolid_specimen': specimen
+                'species': species,
+                'specimen': specimen
             }
         )
         obj2 = CoreDataObject(
@@ -102,8 +102,8 @@ class TestElasticTolidToElasticSampleUpdateConverter(TestCase):
                 'requested_taxonomy_id': 'subspecies1'
             },
             to_one={
-                'tolid_species': species,
-                'tolid_specimen': specimen
+                'species': species,
+                'specimen': specimen
             }
         )
         obj3 = CoreDataObject(
@@ -115,9 +115,9 @@ class TestElasticTolidToElasticSampleUpdateConverter(TestCase):
         converteds = converter.convert(obj1)
         id1, attributes1 = next(converteds)
         self.assertIsNone(id1)
-        self.assertEqual(attributes1.get('tolid_tolid').id, 'tolid1')
-        self.assertEqual(attributes1.get('sts_species.id'), 'species1')
-        self.assertEqual(attributes1.get('sts_specimen.id'), 'specimen1')
+        self.assertEqual(attributes1.get('tolid').id, 'tolid1')
+        self.assertEqual(attributes1.get('species.id'), 'species1')
+        self.assertEqual(attributes1.get('specimen.id'), 'specimen1')
 
         with self.assertRaises(StopIteration):
             next(converteds)
@@ -125,9 +125,9 @@ class TestElasticTolidToElasticSampleUpdateConverter(TestCase):
         converteds = converter.convert(obj2)
         id1, attributes1 = next(converteds)
         self.assertIsNone(id1)
-        self.assertEqual(attributes1.get('tolid_tolid').id, 'tolid2')
-        self.assertEqual(attributes1.get('sts_species.id'), 'subspecies1')
-        self.assertEqual(attributes1.get('sts_specimen.id'), 'specimen1')
+        self.assertEqual(attributes1.get('tolid').id, 'tolid2')
+        self.assertEqual(attributes1.get('species.id'), 'subspecies1')
+        self.assertEqual(attributes1.get('specimen.id'), 'specimen1')
 
         with self.assertRaises(StopIteration):
             next(converteds)

@@ -35,6 +35,22 @@ class TestRuntimeFields:
             }
         """.split())
 
+    def test_coalesce_keyword_null_wins(self):
+        rf = RuntimeFields.coalesce(
+            ['field1', 'field2'],
+            null_wins=True,
+        )
+        assert ''.join(rf['script']['source'].split()) == ''.join("""
+            if (1==1) {
+                if (doc.containsKey('field1.keyword') && doc['field1.keyword'].size() > 0) {
+                    emit(doc['field1.keyword'].value); return;
+                } else if (doc.containsKey('field2.keyword') && doc['field2.keyword'].size() > 0) {
+                    emit(doc['field2.keyword'].value); return;
+                }
+            }
+        """.split())
+        assert rf['script']['params'] == {}
+
     def test_latest_date(self):
         rf = RuntimeFields.latest_date(
             ['field1', 'field2'],

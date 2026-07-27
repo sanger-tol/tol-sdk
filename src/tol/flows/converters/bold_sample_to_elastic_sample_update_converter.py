@@ -30,5 +30,5 @@ class BoldSampleToElasticSampleUpdateConverter(
     def convert(self, data_object: DataObject) -> Iterable[DataObjectUpdate]:
         if data_object is not None:
             yield (None, {
-                'sts_specimen.id': data_object.id
+                'specimen.id': data_object.id
             } | data_object.attributes)

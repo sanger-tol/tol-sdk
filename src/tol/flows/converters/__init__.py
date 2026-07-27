@@ -39,6 +39,7 @@ from .elastic_species_to_sts_species_converter import ElasticSpeciesToStsSpecies
 from .elastic_tolid_to_elastic_curation_update_converter import ElasticTolidToElasticCurationUpdateConverter  # noqa F401
 from .elastic_tolid_to_elastic_genome_note_update_converter import ElasticTolidToElasticGenomeNoteUpdateConverter  # noqa F401
 from .elastic_tolid_to_elastic_sample_update_converter import ElasticTolidToElasticSampleUpdateConverter  # noqa F401
+from .ena_assembly_to_elastic_assembly_converter import EnaAssemblyToElasticAssemblyConverter  # noqa F401
 from .error_object_converter import ErrorObjectConverter  # noqa F401
 from .gap_assembly_to_elastic_assembly_converter import GapAssemblyToElasticAssemblyConverter  # noqa F401
 from .gap_assembly_to_elastic_assembly_analysis_converter import GapAssemblyToElasticAssemblyAnalysisConverter  # noqa F401

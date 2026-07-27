@@ -18,7 +18,7 @@ from tol.flows.converters import (
 )
 
 
-class _MockDataSourceRelational(DataSource, Relational):
+class _MockDataSourceSource(DataSource, Relational):
 
     @property
     def supported_types(self):
@@ -32,7 +32,7 @@ class _MockDataSourceRelational(DataSource, Relational):
     def relationship_config(self):
         rc_tolid = RelationshipConfig()
         rc_tolid.to_one = {
-            'tolid_species': 'species'
+            'species': 'species'
         }
         return {'tolid': rc_tolid}
 
@@ -49,21 +49,41 @@ class _MockDataSourceRelational(DataSource, Relational):
         raise NotImplementedError()
 
 
-class _MockDataSource(DataSource):
+class _MockDataSourceDestination(DataSource):
     @property
     def supported_types(self):
-        return ['curation']
+        return ['curation', 'species', 'tolid']
 
     @property
     def attribute_types(self):
+        raise NotImplementedError()
+
+    @property
+    def relationship_config(self):
+        rc_tolid = RelationshipConfig()
+        rc_tolid.to_one = {
+            'species': 'species'
+        }
+        return {'tolid': rc_tolid}
+
+    def get_to_one_relation(
+        self,
+        source: DataObject,
+        relationship_name: str
+    ):
+        raise NotImplementedError()
+
+    def get_to_many_relations(
+        self
+    ):
         raise NotImplementedError()
 
 
 class TestElasticTolidToElasticSampleUpdateConverter(TestCase):
     def test_convert(self):
 
-        source = _MockDataSourceRelational(config={})
-        destination = _MockDataSource(config={})
+        source = _MockDataSourceSource(config={})
+        destination = _MockDataSourceDestination(config={})
         core_data_object(source)
         core_data_object(destination)
         converter = ElasticTolidToElasticCurationUpdateConverter(
@@ -76,7 +96,7 @@ class TestElasticTolidToElasticSampleUpdateConverter(TestCase):
             id_='abCdeFghi1',
             type_='tolid',
             to_one={
-                'tolid_species': CoreDataObject('species', '1234')
+                'species': CoreDataObject('species', '1234')
             }
         )
 
@@ -84,20 +104,18 @@ class TestElasticTolidToElasticSampleUpdateConverter(TestCase):
             id_='cdEfgHilk1',
             type_='tolid',
             to_one={
-                'tolid_species': CoreDataObject('species', '5678')
+                'species': CoreDataObject('species', '5678')
             }
         )
 
         converteds = converter.convert(obj1)
-        ret1 = next(converteds)
-        self.assertEqual(ret1, (None, {
-            'grit_tolid.id': 'abCdeFghi1',
-            'species': {'id': '1234'},
-        }))
+        id1, attributes1 = next(converteds)
+        assert id1 is None
+        assert attributes1['tolid.id'] == 'abCdeFghi1'
+        assert attributes1['species'].id == '1234'
 
         converteds = converter.convert(obj2)
-        ret2 = next(converteds)
-        self.assertEqual(ret2, (None, {
-            'grit_tolid.id': 'cdEfgHilk1',
-            'species': {'id': '5678'},
-        }))
+        id2, attributes2 = next(converteds)
+        assert id2 is None
+        assert attributes2['tolid.id'] == 'cdEfgHilk1'
+        assert attributes2['species'].id == '5678'

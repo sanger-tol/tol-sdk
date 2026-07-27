@@ -93,6 +93,24 @@ class TestDefaultView:
             'data': {
                 'type': 'specimen_typ',
                 'id': 'SPMN/5678',
+                'attributes': {
+                    'provenance': {
+                        'species_rel': {
+                            'source_1': {
+                                'data': {
+                                    'type': 'species_typ',
+                                    'id': 'Species mockus',
+                                }
+                            },
+                            'source_2': {
+                                'data': {
+                                    'type': 'species_typ',
+                                    'id': 'Species anothermockus',
+                                }
+                            }
+                        }
+                    },
+                },
                 'relationships': {
                     'accession_rel': None,
                     'sex_rel': None,
@@ -103,13 +121,13 @@ class TestDefaultView:
                         },
                     },
                     'sample_list': {
-                        'links': {'related': '/random/specimen_typ/SPMN%2F5678/sample_list'},
+                        'links': {'related': '/rnd/specimen_typ/SPMN%2F5678/sample_list'},
                     },
                 },
             }
         }
         rft1 = ReqFieldsTree('specimen_typ', mock_rel_ds, include_all_to_ones=False)
-        dump1 = DefaultView(rft1, prefix='/random').dump(mock_specimen)
+        dump1 = DefaultView(rft1, prefix='/rnd').dump(mock_specimen)
         assert dump1 == expected1
 
         # The `species_typ` object will be present in an `included` list when
@@ -122,11 +140,31 @@ class TestDefaultView:
                     'id': 'Species mockus',
                     'attributes': {
                         'common_name': 'common mock species',
+                        'provenance': {
+                            'common_name': {'source_1': 'common mock species'}
+                        }
                     },
                     'relationships': {
                         'specimen_list': {
                             'links': {
-                                'related': '/random/species_typ/Species%20mockus/specimen_list',
+                                'related': '/rnd/species_typ/Species%20mockus/specimen_list',
+                            },
+                        }
+                    },
+                }, {
+                    'type': 'species_typ',
+                    'id': 'Species anothermockus',
+                    'attributes': {
+                        'common_name': 'another mock species',
+                        'provenance': {
+                            'common_name': {'source_1': 'another mock species'}
+                        }
+                    },
+                    'relationships': {
+                        'specimen_list': {
+                            'links': {
+                                'related': '/rnd/species_typ/'
+                                           'Species%20anothermockus/specimen_list',
                             },
                         }
                     },
@@ -135,7 +173,7 @@ class TestDefaultView:
         }
 
         rft2 = ReqFieldsTree('specimen_typ', mock_rel_ds, include_all_to_ones=True)
-        dump2 = DefaultView(rft2, prefix='/random').dump(mock_specimen)
+        dump2 = DefaultView(rft2, prefix='/rnd').dump(mock_specimen)
         assert dump2 == expected2
 
     def test_to_many_dump(self, mock_data_object, mock_rel_ds):
@@ -355,6 +393,24 @@ class TestDefaultViewInBlueprint:
             'data': {
                 'type': 'specimen_typ',
                 'id': 'SPMN/5678',
+                'attributes': {
+                    'provenance': {
+                        'species_rel': {
+                            'source_1': {
+                                'data': {
+                                    'type': 'species_typ',
+                                    'id': 'Species mockus',
+                                }
+                            },
+                            'source_2': {
+                                'data': {
+                                    'type': 'species_typ',
+                                    'id': 'Species anothermockus',
+                                }
+                            }
+                        }
+                    },
+                },
                 'relationships': {
                     'accession_rel': None,
                     'sample_list': {
@@ -373,12 +429,35 @@ class TestDefaultViewInBlueprint:
                 {
                     'type': 'species_typ',
                     'id': 'Species mockus',
-                    'attributes': {'common_name': 'common mock species'},
+                    'attributes': {
+                        'common_name': 'common mock species',
+                        'provenance': {
+                            'common_name': {'source_1': 'common mock species'}
+                        }
+                    },
                     'relationships': {
                         'specimen_list': {
                             'links': {
                                 'related': (
                                     '/super_data/species_typ/Species%20mockus/specimen_list'
+                                )
+                            }
+                        }
+                    },
+                }, {
+                    'type': 'species_typ',
+                    'id': 'Species anothermockus',
+                    'attributes': {
+                        'common_name': 'another mock species',
+                        'provenance': {
+                            'common_name': {'source_1': 'another mock species'}
+                        }
+                    },
+                    'relationships': {
+                        'specimen_list': {
+                            'links': {
+                                'related': (
+                                    '/super_data/species_typ/Species%20anothermockus/specimen_list'
                                 )
                             }
                         }
