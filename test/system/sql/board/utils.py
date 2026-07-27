@@ -49,8 +49,10 @@ def insert_board_hierarchy(
         'data_source_instance',
         id_='tol_system_test',
         attributes={
-            'builtin_name': 'elastic-test',
-            'kwargs': {},
+            'direct_name': 'sql',
+            'direct_kwargs': {},
+            'api_name': 'elastic-test',
+            'api_kwargs': {},
             'publish': True,
             'ui_api_details': {
                 'url': 'http://example.com',

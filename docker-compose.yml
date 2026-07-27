@@ -128,6 +128,7 @@ services:
       - ELASTIC_USER
       - ELASTIC_PASSWORD
       - ELASTIC_INDEX_PREFIX
+      - QUASAR_URL
     networks:
       - api-base-test-network
 

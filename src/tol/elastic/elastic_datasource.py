@@ -354,9 +354,14 @@ class ElasticDataSource(
         )
         fields = list(runtime_mappings.keys()) if runtime_mappings is not None else None
         if requested_tree is not None and fields is not None and runtime_mappings is not None:
+            request_includes_all_root_attributes = len(requested_tree.attribute_names) == 0
+
             def relation_sub_tree_requested(field_name: str) -> bool:
                 relation_name = field_name.split('.', 1)[0]
                 return requested_tree.get_sub_tree(relation_name) is not None
+
+            def root_runtime_field_requested(field_name: str) -> bool:
+                return request_includes_all_root_attributes and '.' not in field_name
 
             def direct_provenanced_attribute_requested(field_name: str) -> bool:
                 if not field_name.endswith('.value'):
@@ -371,7 +376,7 @@ class ElasticDataSource(
 
                 return (
                     requested_tree.has_attribute(base_name)
-                    or len(requested_tree.attribute_names) == 0
+                    or request_includes_all_root_attributes
                 )
 
             # Filter fields to fetch based on whether they're in the requested tree
@@ -388,6 +393,7 @@ class ElasticDataSource(
                     or (
                         sort_by is not None and field in sort_by
                     )
+                    or root_runtime_field_requested(field)
                     or requested_tree.get_sub_tree(field) is not None
                     or relation_sub_tree_requested(field)
                     or direct_provenanced_attribute_requested(field)

@@ -26,8 +26,8 @@ class DataSourceUtils:
         direct: bool = False
     ) -> DataSource:
         if config_datasource is None:
-            from ..sources.portaldb import portaldb
-            config_datasource = portaldb()
+            from ..sources.quasar import quasar
+            config_datasource = quasar()
         datasource_instance = config_datasource.get_one(
             'data_source_instance',
             datasource_instance_id

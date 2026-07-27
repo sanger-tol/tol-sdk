@@ -6,19 +6,17 @@ from unittest import (
     TestCase
 )
 
+from tol.api_client import ApiDataSource
 from tol.core import (
     DataSourceUtils
 )
-from tol.sources.portaldb import (
-    portaldb
-)
+from tol.elastic import ElasticDataSource
 
 
 class TestDataSourceUtils(TestCase):
 
     def __get_ds(self):
-        dsi = portaldb().get_one('data_source_instance', 'test')
-        return DataSourceUtils.get_datasource_by_datasource_instance(dsi)
+        return DataSourceUtils.get_datasource('test', direct=True)
 
     def test_attribute_types(self):
         ds = self.__get_ds()
@@ -48,6 +46,12 @@ class TestDataSourceUtils(TestCase):
         self.assertEqual(obj1.int, 1)
         self.assertEqual(obj1.calc_double_the_int, 2)  # Calculated attribute
 
-    def test_get_datasource(self):
-        ds = DataSourceUtils.get_datasource('test')
-        assert ds.supported_types == ['record', 'category']
+    def test_get_datasource_direct(self):
+        ds = DataSourceUtils.get_datasource('test', direct=True)
+        assert isinstance(ds, ElasticDataSource)
+        assert set(ds.supported_types) == {'record', 'category'}
+
+    def test_get_datasource_via_api(self):
+        ds = DataSourceUtils.get_datasource('test', direct=False)
+        assert isinstance(ds, ApiDataSource)
+        assert set(ds.supported_types) == {'record', 'category'}
