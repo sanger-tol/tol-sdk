@@ -73,6 +73,7 @@ def add_entity(
     
     if child_type in ('zone'):
         attributes['filter_exclude_incoming'] = False
+        attributes['translations'] = {}
 
     if child_type in ('component'):
         attributes['config'] = {}
