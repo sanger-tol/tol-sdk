@@ -45,6 +45,8 @@ class StsSpeciesToElasticSpeciesConverter(
         ret = self._data_object_factory(
             'species',
             data_object.id,
-            attributes=data_object.attributes | statuses,
+            attributes={
+                k: v for k, v in (data_object.attributes | statuses).items() if v is not None
+            }
         )
         yield ret

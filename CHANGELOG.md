@@ -6,6 +6,20 @@ SPDX-License-Identifier: MIT
 
 # Changelog
 
+## tol-sdk `2.4.2`
+
+28-07-2026
+
+- Added source_order to attribute_metadata
+
+
+## tol-sdk `2.4.1`
+
+17-07-2026
+
+- Allow a version string to be passed in to ElasticDataSource.summarise()
+
+
 ## tol-sdk `2.4.0`
 
 10-07-2026

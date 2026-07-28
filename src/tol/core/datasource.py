@@ -128,6 +128,7 @@ class DataSource(ABC):
                     'cardinality': am.get_cardinality(object_type, attribute_name),
                     'authoritative': am.is_authoritative(object_type, attribute_name),
                     'source': am.get_source(object_type, attribute_name),
+                    'source_order': am.get_source_order(object_type, attribute_name),
                     'acts_as': am.get_acts_as(object_type, attribute_name),
                     'available_on_relationships':
                         am.is_available_on_relationships(

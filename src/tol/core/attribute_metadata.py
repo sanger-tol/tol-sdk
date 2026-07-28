@@ -60,6 +60,15 @@ class AttributeMetadata(ABC):
         """
 
     @abstractmethod
+    def get_source_order(
+            self,
+            object_type: str,
+            attribute_name: str) -> Optional[int]:
+        """
+        The order of the source of the attribute (for provenance)
+        """
+
+    @abstractmethod
     def is_authoritative(
         self,
         object_type: str,
@@ -155,6 +164,15 @@ class DefaultAttributeMetadata(AttributeMetadata):
             attribute_name: str) -> Optional[str]:
         """
         The source of the attribute i.e becnhling, sts etc
+        """
+        return None
+
+    def get_source_order(
+            self,
+            object_type: str,
+            attribute_name: str) -> Optional[str]:
+        """
+        The source order of the attribute (for provenance)
         """
         return None
 
