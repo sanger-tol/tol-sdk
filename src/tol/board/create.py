@@ -70,7 +70,7 @@ def add_entity(
 
     attributes = payload.get('attributes', {})
     attributes['filter'] = attributes.get('filter', {})
-    
+
     if child_type in ('zone'):
         attributes['filter_exclude_incoming'] = False
         attributes['translations'] = {}

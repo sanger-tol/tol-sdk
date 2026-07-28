@@ -288,7 +288,7 @@ def create_standard_models(
             default=False,
             server_default='false'  # noqa P103
         )
-        
+
         translations = mapped_column(  # noqa A003
             type_=JSONB(),
             nullable=False,
