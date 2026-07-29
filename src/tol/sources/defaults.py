@@ -50,3 +50,6 @@ class Defaults:
     LABWHERE_API_PATH = '/api'
 
     ENA_URL = 'https://www.ebi.ac.uk'
+
+    OPEN_CITATIONS_URL = 'https://api.opencitations.net'
+    OPEN_CITATIONS_API_PATH = '/meta/v1'

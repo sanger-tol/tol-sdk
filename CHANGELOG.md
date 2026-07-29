@@ -11,6 +11,7 @@ SPDX-License-Identifier: MIT
 28-07-2026
 
 - Added source_order to attribute_metadata
+- Added an OpenCitations datasource for metadata lookups
 
 
 ## tol-sdk `2.4.1`
@@ -18,7 +19,6 @@ SPDX-License-Identifier: MIT
 17-07-2026
 
 - Allow a version string to be passed in to ElasticDataSource.summarise()
-
 
 ## tol-sdk `2.4.0`
 
