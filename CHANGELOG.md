@@ -6,13 +6,24 @@ SPDX-License-Identifier: MIT
 
 # Changelog
 
+## tol-sdk `2.4.4`
+
+02-08-2026
+
+- Don't allow nulls through certain converters
+
+## tol-sdk `2.4.3`
+
+28-07-2026
+
+- Added an OpenCitations datasource for metadata lookups
+
 ## tol-sdk `2.4.2`
 
 28-07-2026
 
 - Added source_order to attribute_metadata
 - Added an OpenCitations datasource for metadata lookups
-
 
 ## tol-sdk `2.4.1`
 

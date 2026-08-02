@@ -401,10 +401,6 @@ class TestTolqcDataToElasticRunDataConverter(TestCase):
             'reporting_category': 'rnaseq',
             'tag_index': 'data1_tag_index',
             'manual_qc': 'data1_manual_qc',
-            'tag_sequence': None,
-            'tag2_sequence': None,
-            'auto_qc': None,
-            'qc': None,
             'reads': 200,
             'bases': 12345,
             'bases_a': 123,
@@ -427,20 +423,7 @@ class TestTolqcDataToElasticRunDataConverter(TestCase):
             'tag_index': 'data2_tag_index',
             'manual_qc': 'data2_manual_qc',
             'run_start': 'time1',
-            'tag_sequence': None,
-            'tag2_sequence': None,
-            'auto_qc': None,
-            'qc': None,
             'run': 'run1_id',
-            'position': None,
-            'run_complete': None,
-            'reads': None,
-            'bases': None,
-            'bases_a': None,
-            'bases_c': None,
-            'bases_g': None,
-            'bases_t': None,
-            'read_length_n50': None
         })
 
         with self.assertRaises(StopIteration):
@@ -456,21 +439,7 @@ class TestTolqcDataToElasticRunDataConverter(TestCase):
             'tag_index': 'data3_tag_index',
             'manual_qc': 'data3_manual_qc',
             'instrument_model': 'model1',
-            'tag_sequence': None,
-            'tag2_sequence': None,
-            'auto_qc': None,
-            'qc': None,
             'run': 'run2_id',
-            'position': None,
-            'run_start': None,
-            'run_complete': None,
-            'reads': None,
-            'bases': None,
-            'bases_a': None,
-            'bases_c': None,
-            'bases_g': None,
-            'bases_t': None,
-            'read_length_n50': None
         })
 
         with self.assertRaises(StopIteration):
@@ -485,17 +454,6 @@ class TestTolqcDataToElasticRunDataConverter(TestCase):
             'reporting_category': 'rnaseq',
             'tag_index': 'data4_tag_index',
             'manual_qc': 'data4_manual_qc',
-            'tag_sequence': None,
-            'tag2_sequence': None,
-            'auto_qc': None,
-            'qc': None,
-            'reads': None,
-            'bases': None,
-            'bases_a': None,
-            'bases_c': None,
-            'bases_g': None,
-            'bases_t': None,
-            'read_length_n50': None
         })
         assert ret4.sequencing_request.id == 'sample1_id'
 
@@ -511,17 +469,6 @@ class TestTolqcDataToElasticRunDataConverter(TestCase):
             'reporting_category': 'rnaseq',
             'tag_index': 'data5_tag_index',
             'manual_qc': 'data5_manual_qc',
-            'tag_sequence': None,
-            'tag2_sequence': None,
-            'auto_qc': None,
-            'qc': None,
-            'reads': None,
-            'bases': None,
-            'bases_a': None,
-            'bases_c': None,
-            'bases_g': None,
-            'bases_t': None,
-            'read_length_n50': None
         })
         assert ret5.tolid.id == 'specimen1_id'
         assert ret5.specimen is None
@@ -539,18 +486,7 @@ class TestTolqcDataToElasticRunDataConverter(TestCase):
             'reporting_category': 'rnaseq',
             'tag_index': 'data6_tag_index',
             'manual_qc': 'data6_manual_qc',
-            'auto_qc': None,
-            'qc': None,
-            'tag_sequence': None,
-            'tag2_sequence': None,
             'biospecimen_id': 'accession1_id',
-            'reads': None,
-            'bases': None,
-            'bases_a': None,
-            'bases_c': None,
-            'bases_g': None,
-            'bases_t': None,
-            'read_length_n50': None
         })
         assert ret6.sequencing_request.id == 'sample3_id'
         assert ret6.specimen is None
@@ -568,19 +504,6 @@ class TestTolqcDataToElasticRunDataConverter(TestCase):
             'reporting_category': 'rnaseq',
             'tag_index': 'data7_tag_index',
             'manual_qc': 'data7_manual_qc',
-            'auto_qc': None,
-            'qc': None,
-            'tag_sequence': None,
-            'tag2_sequence': None,
-            'auto_qc': None,
-            'qc': None,
-            'reads': None,
-            'bases': None,
-            'bases_a': None,
-            'bases_c': None,
-            'bases_g': None,
-            'bases_t': None,
-            'read_length_n50': None
         })
         assert ret7.sequencing_request.id == 'sample4_id'
         assert ret7.specimen is None
@@ -594,19 +517,8 @@ class TestTolqcDataToElasticRunDataConverter(TestCase):
         self.assertEqual('run_data', ret8.type)
         self.assertEqual(ret8.attributes, {
             'tag_index': 'data7_tag_index',
-            'tag_sequence': None,
-            'tag2_sequence': None,
             'manual_qc': 'data7_manual_qc',
-            'auto_qc': None,
-            'qc': None,
             'reporting_category': 'rnaseq',
-            'reads': None,
-            'bases': None,
-            'bases_a': None,
-            'bases_c': None,
-            'bases_g': None,
-            'bases_t': None,
-            'read_length_n50': None,
             'images': [
                 {
                     'url': 'https://test-bucket.cog.sanger.ac.uk/folder1_id/file1',

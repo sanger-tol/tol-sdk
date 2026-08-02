@@ -32,6 +32,7 @@ class MlwhRunDataToElasticRunDataConverter(
             k: v
             for k, v in data_object.attributes.items()
             if k not in ['supplier_name', 'taxon_id', 'sample_ref', 'tolid', 'study_id']
+            and v is not None
         }
         to_one_relations = {
             'specimen': self._data_object_factory(
