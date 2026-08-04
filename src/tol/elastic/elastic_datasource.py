@@ -5,6 +5,9 @@
 from __future__ import annotations
 
 import numbers
+import random
+import re
+import time
 import typing
 from collections.abc import Callable, Iterable
 from datetime import datetime
@@ -18,6 +21,7 @@ from caseconverter import (
 )
 
 from elasticsearch import (Elasticsearch, helpers)
+from elasticsearch.exceptions import TransportError
 
 from ._aggregations import ElasticAggregator
 from .client import ElasticClient
@@ -147,6 +151,11 @@ class ElasticDataSource(
     def _default_write_mode(self) -> RelationWriteMode:
         return RelationWriteMode.FUSED
 
+    _SEARCH_RETRY_STATUS_CODES = (429,)
+    _SEARCH_MAX_RETRIES = 5
+    _SEARCH_BASE_DELAY = 1.0   # seconds
+    _SEARCH_MAX_DELAY = 60.0  # seconds
+
     def _initialise_elasticsearch(self):
         self.es = Elasticsearch(
             self.uri,
@@ -156,6 +165,27 @@ class ElasticDataSource(
             retry_on_timeout=True
         )
         self.helpers = helpers
+
+    def __with_backoff(self, fn: Callable, **kwargs):
+        """Call `fn(**kwargs)` with exponential backoff on transient 429 errors."""
+        for attempt in range(self._SEARCH_MAX_RETRIES + 1):
+            try:
+                return fn(**kwargs)
+            except TransportError as exc:
+                if exc.status_code not in self._SEARCH_RETRY_STATUS_CODES \
+                        or attempt == self._SEARCH_MAX_RETRIES:
+                    raise
+                delay = min(
+                    self._SEARCH_BASE_DELAY * (2 ** attempt) + random.uniform(0, 1),
+                    self._SEARCH_MAX_DELAY,
+                )
+                time.sleep(delay)
+
+    def _search_with_backoff(self, **kwargs) -> dict:
+        return self.__with_backoff(self.es.search, **kwargs)
+
+    def _update_by_query_with_backoff(self, **kwargs) -> dict:
+        return self.__with_backoff(self.es.update_by_query, **kwargs)
 
     def get_cursor_page(
         self,
@@ -235,7 +265,7 @@ class ElasticDataSource(
             # We can get the candidate key dynamically from the actual update
             if 'candidate_key_func' in kwargs:
                 candidate_key = kwargs['candidate_key_func'](update)
-            self.es.update_by_query(
+            self._update_by_query_with_backoff(
                 index=real_index_name,
                 body=converter.convert(ElasticUpdateInputResource(object_type=object_type,
                                                                   update=update,
@@ -294,6 +324,20 @@ class ElasticDataSource(
         """
         Map our field format to Elastic's format
         """
+        # If this is specifying a particular provenance source, we need to use the actual
+        # field name in Elastic
+        if match := re.fullmatch(r'([^\[\]]+)\[([^\[\]]+)\](\..+)?', name):
+            base_name, source, suffix = match.groups()
+            provenance_name = f'{base_name}{suffix or ""}'
+            if object_type in self.provenance_fields \
+                    and provenance_name in self.provenance_fields[object_type]:
+                actual_field = f'{provenance_name}.provenance.{source}.value'
+                # Keep recursion for bracketed relation attributes so normal keyword
+                # mapping still applies (e.g. relation[source].id).
+                if suffix is not None:
+                    return self._field_or_keyword(object_type, actual_field)
+                return actual_field
+
         # If this is a provenance field, we need to use the actual field name in Elastic
         if object_type in self.provenance_fields and name in self.provenance_fields[object_type]:
             actual_field = f'{name}.value'
@@ -305,14 +349,18 @@ class ElasticDataSource(
             return name
 
         if '.' in name:
-            rc = self.relationship_config[object_type]
-            relationship_name, attribute = name.split('.')[0], name.split('.')[1]
-            if attribute == 'id':
-                return f'{name}.keyword'
-            relationship_object_type = rc.to_one[relationship_name]
-            attribute_type = self.attribute_types[relationship_object_type][attribute]
-            if attribute_type == 'str':
-                return f'{name}.keyword'
+            rc = self.relationship_config[object_type] if self.relationship_config else None
+            relationship_name, remainder = name.split('.', 1)
+            attribute = remainder.split('.', 1)[0]
+
+            # Only apply relation handling when the prefix is actually a relation.
+            if rc is not None and relationship_name in rc.to_one:
+                if attribute == 'id':
+                    return f'{name}.keyword'
+                relationship_object_type = rc.to_one[relationship_name]
+                attribute_type = self.attribute_types[relationship_object_type][attribute]
+                if attribute_type == 'str':
+                    return f'{name}.keyword'
         else:
             if name == 'id':
                 return 'uid.keyword'
@@ -482,7 +530,7 @@ class ElasticDataSource(
         }
         if runtime_mappings is not None:
             search_kwargs['runtime_mappings'] = runtime_mappings
-        return self.es.search(**search_kwargs)
+        return self._search_with_backoff(**search_kwargs)
 
     def _build_elasticsearch_sort(
         self,
@@ -579,7 +627,7 @@ class ElasticDataSource(
         }
         if runtime_mappings is not None:
             search_kwargs['runtime_mappings'] = runtime_mappings
-        resp = self.es.search(**search_kwargs)
+        resp = self._search_with_backoff(**search_kwargs)
         return resp['aggregations']
 
     def __apply_cumulative_transformation_to_aggregations_result(
@@ -1031,7 +1079,7 @@ class ElasticDataSource(
         }
         if runtime_mappings is not None:
             search_kwargs['runtime_mappings'] = runtime_mappings
-        resp = self.es.search(**search_kwargs)
+        resp = self._search_with_backoff(**search_kwargs)
         return resp['hits']['total']['value']
 
     @ttl_cache(ttl=3600)

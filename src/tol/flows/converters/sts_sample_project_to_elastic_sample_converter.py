@@ -144,15 +144,21 @@ class StsSampleProjectToElasticSampleConverter(
         except DataSourceError:
             print(f'Problem with sample {s.id}')
 
+        merged_attributes = (
+            attributes
+            | person_attributes
+            | sample_species_attributes
+            | ext_id_attributes
+        )
+
         ret = self._data_object_factory(
             'sample',
             s.id,
-            attributes=(
-                attributes
-                | person_attributes
-                | sample_species_attributes
-                | ext_id_attributes
-            ),
+            attributes={
+                key: value
+                for key, value in merged_attributes.items()
+                if value is not None
+            },
             to_one=to_one | sample_species_to_one
         )
         yield ret

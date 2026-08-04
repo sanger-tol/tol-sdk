@@ -44,8 +44,8 @@ SELECT
 	t.tubewell_id AS tissue_fluidx_id,
 	t.taxon_id,
 	t.specimen_id,
-	t.location,
-	t.tray,
+	t.location AS location_parentage,
+	t.tray AS location_name,
 	t.rack_id,
 	t.tube_position,
 	t.remaining_weight

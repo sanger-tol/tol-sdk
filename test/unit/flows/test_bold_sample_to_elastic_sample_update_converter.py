@@ -61,9 +61,9 @@ class TestBoldSampleToElasticSampleUpdateConverter(TestCase):
         ret1 = next(converteds)
         self.assertEqual(ret1, (None, {
             'specimen.id': 'BOLD1',
-            'species': 'Species name',
-            'taxid': 1234,
-            'other': 'other',
+            'bold_species': 'Species name',
+            'bold_taxid': 1234,
+            'bold_other': 'other',
         }))
 
         obj2 = CoreDataObject(
@@ -80,7 +80,7 @@ class TestBoldSampleToElasticSampleUpdateConverter(TestCase):
         ret2 = next(converteds)
         self.assertEqual(ret2, (None, {
             'specimen.id': 'BOLD2',
-            'species': None,
-            'taxid': 1234,
-            'other': 'other',
+            'bold_species': None,
+            'bold_taxid': 1234,
+            'bold_other': 'other',
         }))

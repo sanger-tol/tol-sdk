@@ -57,15 +57,15 @@ class TestLabwhereLocationToElasticSampleConverter(TestCase):
         converteds = converter.convert(obj1)
         ret1 = next(converteds)
         self.assertEqual(ret1, (None, {
-            'sts_location': 'lw-location-1234',
-            'parentage': 'Site1 / Building1 / Freezer1 / Shelf1',
-            'name': 'Tray1'
+            'location': 'lw-location-1234',
+            'location_parentage': 'Site1 / Building1 / Freezer1 / Shelf1',
+            'location_name': 'Tray1'
         }))
 
         converteds = converter.convert(obj2)
         ret2 = next(converteds)
         self.assertEqual(ret2, (None, {
-            'sts_location': 'lw-location-5678',
-            'parentage': 'Site2 / Building2 / Freezer2 / Shelf2',
-            'name': 'Tray2'
+            'location': 'lw-location-5678',
+            'location_parentage': 'Site2 / Building2 / Freezer2 / Shelf2',
+            'location_name': 'Tray2'
         }))

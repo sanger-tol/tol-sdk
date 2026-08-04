@@ -6,6 +6,13 @@ SPDX-License-Identifier: MIT
 
 # Changelog
 
+## tol-sdk `2.4.5`
+
+04-08-2026
+
+- Made location fields have same names from different sources
+- Allow provenance fields to be specified in filters, e.g. relation[source].id
+
 ## tol-sdk `2.4.4`
 
 02-08-2026

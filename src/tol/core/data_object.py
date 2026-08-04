@@ -4,6 +4,7 @@
 
 from __future__ import annotations
 
+import re
 import typing
 from abc import ABC, abstractmethod
 from collections.abc import Iterable
@@ -127,7 +128,12 @@ class DataObject(_AnyKeyProtocol, ABC):
         field_names = field_name.split('.')
         current_obj = self
         for name in field_names:
-            current_obj = getattr(current_obj, name)
+            if match := re.fullmatch(r'([^\[]+)\[([^\]]+)\]', name):
+                # It's a provenanced field
+                field, source = match.groups()
+                current_obj = current_obj.provenance.get(field, {}).get(source)
+            else:
+                current_obj = getattr(current_obj, name)
             if current_obj is None:
                 return None
         return current_obj

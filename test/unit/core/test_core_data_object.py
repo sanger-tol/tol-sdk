@@ -416,6 +416,10 @@ class TestCoreDataObject:
             attributes={'an_attr': 'attr_value'},
             to_one={'rel': related_obj}
         )
+        obj.provenance = {
+            'an_attr': {'source1': 'attr_value'},
+            'rel': {'source1': related_obj}
+        }
 
         # Attributes
         val = obj.get_field_by_name('an_attr')
@@ -434,4 +438,16 @@ class TestCoreDataObject:
         # Null relations
         other_obj.other_attr = None
         val = obj.get_field_by_name('rel.other.other_attr')
+        assert val is None
+
+        # Provenanced attributes
+        val = obj.get_field_by_name('an_attr[source1]')
+        assert val == 'attr_value'
+        val = obj.get_field_by_name('an_attr[source2]')
+        assert val is None
+
+        # Provenanced relationships
+        val = obj.get_field_by_name('rel[source1].related_attr')
+        assert val == 42
+        val = obj.get_field_by_name('rel[source2].related_attr')
         assert val is None

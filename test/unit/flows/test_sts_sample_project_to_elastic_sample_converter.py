@@ -524,7 +524,6 @@ class TestStsSampleProjectToElasticSampleConverter(TestCase):
                 'col_date': datetime.datetime(2020, 2, 2),
                 'original_collection_date': datetime.datetime(2011, 1, 1, 12),
                 'pre_date': datetime.datetime(2000, 12, 12),
-                'public_name': None,
                 'other': 'another',
                 'action1_name': 'full name1',
                 'action2_name': 'full name2',
@@ -549,7 +548,7 @@ class TestStsSampleProjectToElasticSampleConverter(TestCase):
         with self.assertRaises(StopIteration):
             next(converteds)
 
-    def test_convert_ready_for_lab_date_is_none_when_no_matching_event(self):
+    def test_convert_ready_for_lab_date_is_missing_when_no_matching_event(self):
         source = _MockDataSourceRelational(config={})
         destination = _MockDataSource(config={})
         core_data_object(source)
@@ -587,4 +586,4 @@ class TestStsSampleProjectToElasticSampleConverter(TestCase):
         )
 
         converted = next(converter.convert(sample_project))
-        self.assertIsNone(converted.attributes['ready_for_lab_date'])
+        self.assertNotIn('ready_for_lab_date', converted.attributes)

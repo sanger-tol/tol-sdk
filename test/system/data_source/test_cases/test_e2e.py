@@ -533,6 +533,43 @@ class TestEndToEnd:
         assert 'int_column' not in ret.provenance
         assert 'another_related_object' not in ret.provenance
 
+        # Check that provenanced fields can be used in filters
+        f = DataSourceFilter()
+        f.and_ = {
+            'str_column[source4]': {'eq': {'value': '2'}}
+        }
+        ret = list(data_source.get_list('root', object_filters=f))
+        assert len(ret) == 1
+        assert ret[0].id == '1'
+        assert ret[0].str_column == '1'
+        assert ret[0].get_field_by_name('str_column[source3]') == '1'
+        assert ret[0].get_field_by_name('str_column[source4]') == '2'
+        # Check that provenanced fields can be used in filters
+        f = DataSourceFilter()
+        f.and_ = {
+            'str_column[source3]': {'eq': {'value': '2'}}
+        }
+        ret = list(data_source.get_list('root', object_filters=f))
+        assert len(ret) == 0
+
+        # Check that provenanced relationships can be used in filters
+        f = DataSourceFilter()
+        f.and_ = {
+            'related_object[source4].id': {'eq': {'value': '2'}}
+        }
+        ret = list(data_source.get_list('root', object_filters=f))
+        assert len(ret) == 1
+        assert ret[0].id == '1'
+        assert ret[0].related_object.id == '1'
+        assert ret[0].get_field_by_name('related_object[source3].id') == '1'
+        assert ret[0].get_field_by_name('related_object[source4].id') == '2'
+        f = DataSourceFilter()
+        f.and_ = {
+            'related_object[source3].id': {'eq': {'value': '2'}}
+        }
+        ret = list(data_source.get_list('root', object_filters=f))
+        assert len(ret) == 0
+
         root_obj3 = data_source.data_object_factory(
             'root',
             '1',
