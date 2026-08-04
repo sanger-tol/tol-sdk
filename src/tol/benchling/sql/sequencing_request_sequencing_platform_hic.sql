@@ -58,7 +58,7 @@ WITH hic_submissions AS (
 	WHERE hic.archived$ = 'FALSE'
 		AND ssid.sanger_sample_id IS NOT NULL
 		AND ssid.sanger_sample_id != ''
-		AND proj.name = 'ToL Core Lab'
+		AND proj.name IN ('ToL Core Lab', 'Blaxter Lab')
 		AND wfts.status_type = 'COMPLETED'
 
 ),
