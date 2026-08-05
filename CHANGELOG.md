@@ -11,7 +11,7 @@ SPDX-License-Identifier: MIT
 28-07-2026
 
 - Add filter_exclude_incoming to component and zone
-- Add translations to zone
+- Add advanced translations to zone
 
 ## tol-sdk `2.4.5`
 
