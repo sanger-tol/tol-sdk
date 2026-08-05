@@ -118,6 +118,7 @@ def get_board_attributes(
             'data_source_instance_id': 'tol_system_test',
             'component_type': 'table',
             'widget_type': 'idk this is a test',
+            'filter_exclude_incoming': False,
             'filter_pass_through': False
         }
 

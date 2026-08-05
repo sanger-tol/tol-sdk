@@ -194,7 +194,20 @@ def create_standard_models(
             default={},
             server_default='{}'  # noqa P103
         )
-        filter_pass_through: Mapped[bool] = mapped_column(nullable=False)
+
+        # If true, don't add the filter to the filter chain
+        filter_pass_through: Mapped[bool] = mapped_column(
+            nullable=False,
+            default=False,
+            server_default='false'  # noqa P103                                                  
+        )
+
+        # If true, exclude incoming filter for this component
+        filter_exclude_incoming: Mapped[bool] = mapped_column(
+            nullable=False,
+            default=False,
+            server_default='false'  # noqa P103
+        )
 
         user_id: Mapped[int] = mapped_column(
             ForeignKey(f'{user_table_name}.id'),
@@ -263,6 +276,20 @@ def create_standard_models(
         title: Mapped[str] = mapped_column(nullable=False)
         object_type: Mapped[str] = mapped_column(nullable=False)
         filter = mapped_column(  # noqa A003
+            type_=JSONB(),
+            nullable=False,
+            default={},
+            server_default='{}'  # noqa P103
+        )
+
+        # If true, exclude incoming filter for this component
+        filter_exclude_incoming: Mapped[bool] = mapped_column(
+            nullable=False,
+            default=False,
+            server_default='false'  # noqa P103
+        )
+
+        translations = mapped_column(  # noqa A003
             type_=JSONB(),
             nullable=False,
             default={},
