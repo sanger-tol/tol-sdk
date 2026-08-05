@@ -138,8 +138,8 @@ rna_requests AS (
 	LEFT JOIN folder$raw AS f 
 		ON tp.folder_id$ = f.id
 	WHERE sub_con.id IS NOT NULL
-		AND proj.name = 'ToL Core Lab'
-		AND f.name = 'Sample Prep'
+		AND proj.name IN ('ToL Core Lab', 'Blaxter Lab')
+		AND f.name IN ('Sample Prep', 'Nematodes')
 		AND tpsub.downstream_application = 'RNA'
 )
 
