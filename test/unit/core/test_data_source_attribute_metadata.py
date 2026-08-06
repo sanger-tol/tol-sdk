@@ -111,7 +111,10 @@ class TestDataSourceAttributeMetadata(TestCase):
         self.assertEqual(2, dsam.get_cardinality('object_type1', 'attribute_15'))
         self.assertEqual('status', dsam.get_acts_as('object_type1', 'attribute_15'))
         self.assertIsNone(dsam.get_source('object_type1', 'attribute_15'))
-        self.assertEqual(['source1', 'source2'], dsam.get_source_order('object_type1', 'attribute_15'))
+        self.assertEqual(
+            ['source1', 'source2'],
+            dsam.get_source_order('object_type1', 'attribute_15')
+        )
         # Given attributes for attribute16
         self.assertEqual('Display name 16', dsam.get_display_name('object_type1', 'attribute_16'))
         self.assertFalse(dsam.is_authoritative('object_type1', 'attribute_16'))
