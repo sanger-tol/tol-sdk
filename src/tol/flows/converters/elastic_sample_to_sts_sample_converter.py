@@ -28,9 +28,9 @@ class ElasticSampleToStsSampleConverter(
         self._data_object_factory = data_object_factory
 
     def convert(self, data_object: DataObject) -> Iterable[DataObject]:
-        eln_updated_at = data_object.sts_eln_updated_at
+        eln_updated_at = data_object.eln_updated_at
         if not eln_updated_at \
-                and data_object.benchling_eln_tissue_id is not None:
+                and data_object.eln_tissue_id is not None:
             eln_updated_at = datetime.now()
         yield self._data_object_factory(
             'sample',
@@ -39,8 +39,8 @@ class ElasticSampleToStsSampleConverter(
                 'public_name':
                     data_object.tolid.id
                     if data_object.tolid else None,
-                'eln_id': data_object.benchling_eln_tissue_id,
-                'ep_exported': True if data_object.benchling_eln_tissue_id else False,
+                'eln_id': data_object.eln_tissue_id,
+                'ep_exported': True if data_object.eln_tissue_id else False,
                 'eln_updated_at': eln_updated_at,
             }
         )

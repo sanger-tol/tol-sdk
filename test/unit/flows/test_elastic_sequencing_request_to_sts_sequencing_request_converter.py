@@ -42,17 +42,17 @@ class TestElasticSequencingRequestToStsSequencingRequestConverter(TestCase):
             id_='test1',
             type_='sequencing_request',
             attributes={
-                'benchling_fluidx_id': 'value1',
-                'benchling_sequencing_platform': 'pacbio',
-                'benchling_completion_date': datetime.fromtimestamp(1234)
+                'fluidx_id': 'value1',
+                'sequencing_platform': 'pacbio',
+                'completion_date': datetime.fromtimestamp(1234)
             }
         )
         obj2 = CoreDataObject(
             id_='test2',
             type_='sequencing_request',
             attributes={
-                'benchling_fluidx_id': 'value2',
-                'benchling_sequencing_platform': 'hic'
+                'fluidx_id': 'value2',
+                'sequencing_platform': 'hic'
             }
         )
 

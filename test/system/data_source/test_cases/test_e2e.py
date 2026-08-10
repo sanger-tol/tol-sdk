@@ -533,6 +533,30 @@ class TestEndToEnd:
         assert 'int_column' not in ret.provenance
         assert 'another_related_object' not in ret.provenance
 
+        # Requested relationship fields should include runtime mappings for
+        # provenanced relation ids, regardless of whether the relation is
+        # requested in the `requested_fields` argument.
+        f = DataSourceFilter()
+        f.and_ = {
+            'str_column': {'eq': {'value': '1'}}
+        }
+        ret = list(data_source.get_list(
+            'root',
+            object_filters=f,
+            requested_fields=['str_column', 'related_object']
+        ))
+        assert len(ret) == 1
+        assert ret[0].str_column == '1'
+        assert ret[0].related_object.id == '1'
+        ret = list(data_source.get_list(
+            'root',
+            object_filters=f,
+            requested_fields=['str_column']
+        ))
+        assert len(ret) == 1
+        assert ret[0].str_column == '1'
+        assert ret[0].related_object.id == '1'
+
         # Check that provenanced fields can be used in filters
         f = DataSourceFilter()
         f.and_ = {

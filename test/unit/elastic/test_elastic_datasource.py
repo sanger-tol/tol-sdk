@@ -166,8 +166,10 @@ class TestElasticDataSource:
                 'must_not': []
             }
         }
-        assert fields == ['field7', 'field8']
-        assert list(cast(dict, runtime_mappings).keys()) == ['field7', 'field8']
+        assert fields == ['field7', 'field8', 'relationship.id.value']
+        assert list(cast(dict, runtime_mappings).keys()) == [
+            'field7', 'field8', 'relationship.id.value'
+        ]
 
         # Test with requested relation subtree.
         # relation runtime fields must be retained for provenanced relation ids.

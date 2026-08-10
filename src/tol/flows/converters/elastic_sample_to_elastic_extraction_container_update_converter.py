@@ -31,5 +31,8 @@ class ElasticSampleToElasticExtractionContainerUpdateConverter(
         if data_object is not None and data_object.sampleset is not None:
             yield (None, {
                 'sample.id': data_object.id,
-                'sampleset': {'id': data_object.sampleset.id}
+                'sampleset': self._data_object_factory(
+                    'sampleset',
+                    data_object.sampleset.id
+                )
             })

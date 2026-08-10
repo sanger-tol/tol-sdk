@@ -406,6 +406,22 @@ class ElasticDataSource(
                 relation_name = field_name.split('.', 1)[0]
                 return requested_tree.get_sub_tree(relation_name) is not None
 
+            def provenanced_to_one_relation_id_requested(field_name: str) -> bool:
+                if not field_name.endswith('.id.value'):
+                    return False
+
+                base_name = ElasticUtils.actual_attribute(field_name)
+                if not base_name.endswith('.id'):
+                    return False
+
+                if base_name not in self.provenance_fields.get(object_type, {}):
+                    return False
+
+                relation_name = base_name.rsplit('.', 1)[0]
+                to_one = self.relationship_config.get(object_type)
+                return to_one is not None and to_one.to_one is not None \
+                    and relation_name in to_one.to_one
+
             def direct_provenanced_attribute_requested(field_name: str) -> bool:
                 if not field_name.endswith('.value'):
                     return False
@@ -438,6 +454,7 @@ class ElasticDataSource(
                     )
                     or requested_tree.get_sub_tree(field) is not None
                     or relation_sub_tree_requested(field)
+                    or provenanced_to_one_relation_id_requested(field)
                     or direct_provenanced_attribute_requested(field)
                 ),
                 fields,

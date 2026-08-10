@@ -79,7 +79,7 @@ class TestElasticSampleToStsSampleConverter(TestCase):
             id_='1234',
             type_='sample',
             attributes={
-                'benchling_eln_tissue_id': 'tissue_id',
+                'eln_tissue_id': 'tissue_id',
             },
             to_one={
                 'tolid': tolid
@@ -89,9 +89,9 @@ class TestElasticSampleToStsSampleConverter(TestCase):
             id_='test2',
             type_='sample',
             attributes={
-                'benchling_eln_tissue_id': 'tissue_id2',
-                'sts_eln_updated_at': datetime(2020, 1, 1),
-                'sts_ep_exported': True
+                'eln_tissue_id': 'tissue_id2',
+                'eln_updated_at': datetime(2020, 1, 1),
+                'ep_exported': True
             }
         )
 
@@ -99,8 +99,8 @@ class TestElasticSampleToStsSampleConverter(TestCase):
             id_='test3',
             type_='sample',
             attributes={
-                'sts_eln_updated_at': None,
-                'sts_ep_exported': False
+                'eln_updated_at': None,
+                'ep_exported': False
             }
         )
 
@@ -122,7 +122,7 @@ class TestElasticSampleToStsSampleConverter(TestCase):
         converteds = converter.convert(obj2)
         ret1 = next(converteds)
         self.assertEqual('test2', ret1.id)
-        self.assertEqual(obj1.type, ret1.type)
+        self.assertEqual(obj2.type, ret1.type)
         self.assertEqual(ret1.attributes, {
             'public_name': None,
             'eln_id': 'tissue_id2',
