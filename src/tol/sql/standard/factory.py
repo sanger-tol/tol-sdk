@@ -281,6 +281,13 @@ def create_standard_models(
             default={},
             server_default='{}'  # noqa P103
         )
+        
+        # If true, don't add the filter to the filter chain
+        filter_pass_through: Mapped[bool] = mapped_column(
+            nullable=False,
+            default=False,
+            server_default='false'  # noqa P103                                                  
+        )
 
         # If true, exclude incoming filter for this component
         filter_exclude_incoming: Mapped[bool] = mapped_column(
