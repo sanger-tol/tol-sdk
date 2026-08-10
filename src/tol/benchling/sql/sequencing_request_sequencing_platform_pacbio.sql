@@ -17,29 +17,32 @@ Output: Table with cols:
 
 1) sts_id: [integer] Tissue metadata. Origin: STS
 2) taxon_id: [character] Tissue metadata. Origin: STS
-3) submission_sample_id: [character] Foreign key to other entities and results in Benchling. Origin: BWH
-4) extraction_id: [character] Original DNA extract entity name. For pooled samples, the first DNA extract pooled. Origin: BWH
-5) submission_sample_name: [character] Entity name. Origin: BWH
-6) fluidx_container_id: [character] Container id of the DNA fluidx tube. Origin: BWH
-7) tube_id: [character] Barcode of the DNA container.
-7) programme_id: [character] ToLID. Origin: BWH
-8) specimen_id: [character] Specimen ID. Origin: STS
-9) tube_name: [character] Name of the submission tube/container.
-10) sanger_sample_id: [character] Sanger Sample ID or Sanger UUID of the PacBio submission. 
-11) plate_name: [character] Name of submission plate.
-12) library_type: [character] Library type.
-13) number_of_smrt_cells_required: [double precision]
-14) sheared_femto_fragment_size_bp: [double precision]
-15) post_spri_concentration_ngul: [double precision]
-16) post_spri_volume_ul: [jsonb]
-17) nanodrop_260280: [double precision] 
-18) nanodrop_260230: [double precision]
-19) nanodrop_concentration_ngul: [double precision]
-20) sample_prep_additional_requirements: [character]
-21) library_batch_id: [character] Library batch ID from LR Benchling. Origin: BWH
-22) completion_date: [Date]
-23) sequencing_platform: [character] Sequencing platform: pacbio.
-24) source: [character] Data source: v1, v1_pooled, v2, v2_pooled, legacy_bnt
+3) tissue_prep_id: [character] Tissue preparation ID. Origin: BWH
+4) submission_sample_id: [character] Foreign key to other entities and results in Benchling. Origin: BWH
+5) extraction_id: [character] Original DNA extract entity ID. For pooled samples, the first DNA extract pooled. Origin: BWH
+6) submission_sample_name: [character] Submission sample entity name. Origin: BWH
+7) fluidx_container_id: [character] Container ID of the DNA fluidx tube. Origin: BWH
+8) programme_id: [character] ToLID. Origin: BWH
+9) specimen_id: [character] Specimen ID. Origin: STS
+10) tube_id: [character] Barcode of the submission container, not available for plate submissions.
+11) sanger_sample_id: [character] Sanger Sample ID of the PacBio submission. 
+12) plate_name: [character] Name of submission plate, not available for tube-based submissions.
+13) library_type: [character] Library type.
+14) number_of_smrt_cells_required: [double precision]
+15) sheared_femto_fragment_size_bp: [double precision]
+16) post_spri_concentration_ngul: [double precision]
+17) post_spri_volume_ul: [jsonb]
+18) nanodrop_260280: [double precision] 
+19) nanodrop_260230: [double precision]
+20) nanodrop_concentration_ngul: [double precision]
+21) sample_prep_additional_requirements: [character]
+22) library_batch_id: [character] Library batch ID from LR Benchling. Origin: BWH
+23) library_container_id: [character] Library container ID from long read sequencing team. Origin: BWH
+24) spri_type: [character] SPRI type used for sample preparation.
+25) bead_type: [character] Bead type used for SPRI.
+26) completion_date: [date]
+27) sequencing_platform: [character] Sequencing platform: pacbio.
+28) source: [character] Data source: v1, v1_pooled, v2, v2_pooled, legacy_bnt
 
 NOTES: 
 
@@ -53,10 +56,18 @@ for the plate based submissions.
 
 */
 
+WITH lr_library_container AS (
+    SELECT DISTINCT ON (lr.sanger_sample_id)
+        lr.sanger_sample_id,
+        well.name$ AS library_container_id
+    FROM lr_long_read_sequencing$raw AS lr
+    LEFT JOIN long_read_well$raw AS well
+        ON lr.container = well.id
+    WHERE lr.sanger_sample_id IS NOT NULL
+),
+
 -- container based submissions
-WITH 
 pacbio_submissions_container_routine AS (
-	
 	SELECT DISTINCT
 		t.sts_id,
 		t.taxon_id,
@@ -84,6 +95,7 @@ pacbio_submissions_container_routine AS (
 		nano.nanodrop_concentration_ngul AS nanodrop_concentration_ngul,
 		NULL::varchar AS sample_prep_additional_requirements,
 		NULL::varchar AS library_batch_id,
+		lrc.library_container_id AS library_container_id,
 		spri.spri_type,
 		spri.bead_type,
 		pbsum.submission_date AS completion_date, 
@@ -114,6 +126,12 @@ pacbio_submissions_container_routine AS (
         ON subsam.folder_id$ = f.id
 	LEFT JOIN sanger_sample_id$raw AS ssid 
 		ON con.id = ssid.sample_tube
+	LEFT JOIN lr_library_container AS lrc
+		ON lrc.sanger_sample_id = CASE
+			WHEN pbsum.submission_date < DATE '2025-09-01'
+				THEN con.name
+			ELSE ssid.sanger_sample_id
+		END
 	LEFT JOIN femto_pacbio_prep_v2$raw AS femto
 		ON femto.sample_id = subsam.id
 	LEFT JOIN qubit_measurements_v2$raw AS qubit
@@ -137,7 +155,6 @@ pacbio_submissions_container_routine AS (
 ),
 
 pacbio_submissions_container_pooled AS (
-
 	SELECT DISTINCT
 		t.sts_id,
 		t.taxon_id,
@@ -165,6 +182,7 @@ pacbio_submissions_container_pooled AS (
 		nano.nanodrop_concentration_ngul AS nanodrop_concentration_ngul,
 		NULL::varchar AS sample_prep_additional_requirements,
 		NULL::varchar AS library_batch_id,
+		lrc.library_container_id AS library_container_id,
 		spri.spri_type AS spri_type,
 		spri.bead_type AS bead_type,
 		pbsum.submission_date AS completion_date, 
@@ -197,6 +215,12 @@ pacbio_submissions_container_pooled AS (
 		ON subsam.folder_id$ = f.id
 	LEFT JOIN sanger_sample_id$raw AS ssid 
 		ON con.id = ssid.sample_tube
+	LEFT JOIN lr_library_container AS lrc
+		ON lrc.sanger_sample_id = CASE
+			WHEN pbsum.submission_date < DATE '2025-09-01'
+				THEN con.name
+			ELSE ssid.sanger_sample_id
+		END
 	LEFT JOIN femto_pacbio_prep_v2$raw AS femto
 		ON femto.sample_id = subsam.id
 	LEFT JOIN qubit_measurements_v2$raw AS qubit
@@ -220,7 +244,6 @@ pacbio_submissions_container_pooled AS (
 ),
 
 pacbio_submissions_container_legacy_deprecated AS (
-	
 	SELECT DISTINCT
 		t.sts_id,
 		t.taxon_id,
@@ -244,6 +267,7 @@ pacbio_submissions_container_legacy_deprecated AS (
 		nano.nanodrop_concentration_ngul AS nanodrop_concentration_ngul,
 		NULL::varchar AS sample_prep_additional_requirements,
 		NULL::varchar AS library_batch_id,
+		lrc.library_container_id AS library_container_id,
 		spri.spri_type AS spri_type,
 		spri.bead_type AS bead_type,
 		subsam.created_at$ AS completion_date, 
@@ -268,6 +292,8 @@ pacbio_submissions_container_legacy_deprecated AS (
 		ON nano.sample_id = subsam.id -- Chunk to add nanodrop data to legacy submissions
 	LEFT JOIN spri_info_v2$raw AS spri
 		ON spri.sample_id = subsam.id -- Chunk to add spri data to legacy submissions
+	LEFT JOIN lr_library_container AS lrc
+		ON lrc.sanger_sample_id = con.name
 	LEFT JOIN container_content$raw AS cc_dna -- Chunk to add DNA fluidx id
 		ON dna.id = cc_dna.entity_id
 	LEFT JOIN container$raw AS c_dna 
@@ -311,6 +337,7 @@ pacbio_submissions_plate_automated_manifest AS (
 		pbsubm_p.nanodrop_concentration_ngul,
 		pbsubm_p.sample_prep_additional_requirements,
 		NULL::varchar AS library_batch_id,
+		lrc.library_container_id AS library_container_id,
 		spri.spri_type,
 		spri.bead_type,
 		DATE(pbsubm_p.created_at$) AS completion_date, 
@@ -341,6 +368,8 @@ pacbio_submissions_plate_automated_manifest AS (
 		ON subsam.folder_id$ = f.id
 	LEFT JOIN spri_info_v2$raw AS spri
 		ON spri.sample_id = subsam.id
+	LEFT JOIN lr_library_container AS lrc
+		ON lrc.sanger_sample_id = con.name
 	LEFT JOIN workflow_task$raw AS wft
 		ON pbsubm_p.workflow_task_id$ = wft.id
 	LEFT JOIN workflow_task_status$raw AS wfts
@@ -357,7 +386,6 @@ pacbio_submissions_plate_automated_manifest AS (
 ),
 
 pacbio_submissions_plate_automated_manifest_pooled AS (
-
 	SELECT DISTINCT	
 		t.sts_id,
 		t.taxon_id,
@@ -381,6 +409,7 @@ pacbio_submissions_plate_automated_manifest_pooled AS (
 		pbsubm_p.nanodrop_concentration_ngul,
 		pbsubm_p.sample_prep_additional_requirements,
 		NULL::varchar AS library_batch_id,
+		lrc.library_container_id AS library_container_id,
 		spri.spri_type AS spri_type,
 		spri.bead_type AS bead_type,
 		DATE(pbsubm_p.created_at$) AS completion_date, 
@@ -405,6 +434,8 @@ pacbio_submissions_plate_automated_manifest_pooled AS (
 		ON c_pool.id = tube.id -- End of DNA fluidx id Chunk
 	LEFT JOIN container$raw AS con -- To add sanger uuid
 		ON pbsubm_p.sanger_uuid ->> 0 = con.id
+	LEFT JOIN lr_library_container AS lrc
+		ON lrc.sanger_sample_id = con.name
 	LEFT JOIN plate$raw AS plt 
 		ON con.plate_id = plt.id
 	LEFT JOIN project$raw AS proj
@@ -425,7 +456,6 @@ pacbio_submissions_plate_automated_manifest_pooled AS (
 ),
 
 pacbio_submissions_plate_routine AS (
-
 	SELECT 
 		t.sts_id,
 		t.taxon_id,
@@ -436,7 +466,7 @@ pacbio_submissions_plate_routine AS (
 		c_dna.id AS fluidx_container_id,
 		t.programme_id,
 		t.specimen_id,
-		c_subsam.name AS tube_id,
+		NULL::varchar AS tube_id,
 		ssid.sanger_sample_id AS sanger_sample_id,
 		plate.name$ AS plate_name,
 		pbsubm_p.sequencing_type AS library_type,
@@ -449,6 +479,7 @@ pacbio_submissions_plate_routine AS (
 		nano.nanodrop_concentration_ngul AS nanodrop_concentration_ngul,
 		NULL::varchar AS sample_prep_additional_requirements,
 		lpb.name$ AS library_batch_id,
+		lrc.library_container_id AS library_container_id,
 		spri.spri_type AS spri_type,
 		spri.bead_type AS bead_type,
 		pbsubm_p.created_at$ AS completion_date,
@@ -487,10 +518,12 @@ pacbio_submissions_plate_routine AS (
 		ON nano.sample_id = subsam.id
 	LEFT JOIN spri_info_v2$raw AS spri
 		ON spri.sample_id = subsam.id
-	LEFT JOIN lr_long_read_library_preparation_b$raw AS lr_proc -- Chunk to add LR lib prep batch ID
+	LEFT JOIN lr_long_read_library_preparation_b$raw AS lr_proc -- Chunk to add LR info
 		ON lr_proc.sanger_sample_id = ssid.sanger_sample_id
 	LEFT JOIN lr_library_preparation_batch$raw AS lpb
-		ON lr_proc.library_preparation_batch = lpb.id -- End of chunk to add LR lib prep batch ID
+		ON lr_proc.library_preparation_batch = lpb.id
+	LEFT JOIN lr_library_container AS lrc
+		ON lrc.sanger_sample_id = ssid.sanger_sample_id -- End of chunk to add LR info
 	LEFT JOIN project$raw AS proj 
 		ON subsam.project_id$ = proj.id
 	 LEFT JOIN folder$raw AS f 
@@ -519,7 +552,7 @@ pacbio_submissions_plate_routine_pooled AS (
 		c_pool.id AS fluidx_container_id,
 		t.programme_id,
 		t.specimen_id,
-		c_subsam.name AS tube_id,
+		NULL::varchar AS tube_id,
 		ssid.sanger_sample_id AS sanger_sample_id,
 		plate.name$ AS plate_name,
 		pbsubm_p.sequencing_type AS library_type,
@@ -532,6 +565,7 @@ pacbio_submissions_plate_routine_pooled AS (
 		nano.nanodrop_concentration_ngul AS nanodrop_concentration_ngul,
 		NULL::varchar AS sample_prep_additional_requirements,
 		lpb.name$ AS library_batch_id,
+		lrc.library_container_id AS library_container_id,
 		spri.spri_type AS spri_type,
 		spri.bead_type AS bead_type,
 		pbsubm_p.created_at$ AS completion_date,
@@ -570,10 +604,12 @@ pacbio_submissions_plate_routine_pooled AS (
 		ON dna.tissue_prep = tp.id
 	LEFT JOIN tissue$raw AS t 
 		ON tp.tissue = t.id -- End of Tissue metadata Chunk
-	LEFT JOIN lr_long_read_library_preparation_b$raw AS lr_proc -- Chunk to add LR lib prep batch ID
+	LEFT JOIN lr_long_read_library_preparation_b$raw AS lr_proc -- Chunk to add LR info
 		ON lr_proc.sanger_sample_id = ssid.sanger_sample_id
 	LEFT JOIN lr_library_preparation_batch$raw AS lpb
-		ON lr_proc.library_preparation_batch = lpb.id -- End of chunk to add LR lib prep batch ID
+		ON lr_proc.library_preparation_batch = lpb.id
+	LEFT JOIN lr_library_container AS lrc
+		ON lrc.sanger_sample_id = ssid.sanger_sample_id -- End of chunk to add LR info
 	LEFT JOIN project$raw AS proj
 		ON subsam.project_id$ = proj.id
 	 LEFT JOIN folder$raw AS f 
