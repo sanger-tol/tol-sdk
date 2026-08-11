@@ -296,11 +296,24 @@ def create_standard_models(
             server_default='false'  # noqa P103
         )
 
-        translations = mapped_column(  # noqa A003
+        attribute_translations = mapped_column(  # noqa A003
             type_=JSONB(),
             nullable=False,
             default={},
             server_default='{}'  # noqa P103
+        )
+        
+        relationship_translations = mapped_column(  # noqa A003
+            type_=JSONB(),
+            nullable=False,
+            default={},
+            server_default='{}'  # noqa P103
+        )
+        
+        auto_translations: Mapped[bool] = mapped_column(
+            nullable=False,
+            default=True,
+            server_default='true'  # noqa P103
         )
 
         component_zones: Mapped[list[ComponentZone]] = relationship(
