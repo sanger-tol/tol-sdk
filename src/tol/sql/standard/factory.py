@@ -302,14 +302,9 @@ def create_standard_models(
             default={},
             server_default='{}'  # noqa P103
         )
-        
-        relationship_translations = mapped_column(  # noqa A003
-            type_=JSONB(),
-            nullable=False,
-            default={},
-            server_default='{}'  # noqa P103
-        )
-        
+
+        translation_path: Mapped[str] = mapped_column(nullable=True)
+
         auto_translations: Mapped[bool] = mapped_column(
             nullable=False,
             default=True,

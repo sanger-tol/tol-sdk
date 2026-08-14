@@ -77,7 +77,6 @@ def add_entity(
 
     if child_type in ('zone'):
         attributes['attribute_translations'] = {}
-        attributes['relationship_translations'] = {}
         attributes['auto_translations'] = True
 
     if child_type in ('component'):
