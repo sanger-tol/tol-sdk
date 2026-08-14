@@ -76,8 +76,8 @@ def add_entity(
         attributes['filter_exclude_incoming'] = False
 
     if child_type in ('zone'):
+        attributes['relationship_translation'] = True
         attributes['attribute_translations'] = {}
-        attributes['auto_translations'] = True
 
     if child_type in ('component'):
         attributes['config'] = {}
