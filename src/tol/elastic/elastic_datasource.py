@@ -124,13 +124,20 @@ class ElasticDataSource(
         """
         attribute_metadata.host = self
         self.provenance_fields = provenance_fields
-        self.runtime_fields = self.__merge_nested_dicts(
-            runtime_fields,
-            self.__add_runtime_fields_from_provenance_fields(),
-        )
         self._initialise_elasticsearch()
+        self._base_runtime_fields = runtime_fields
+        self.refresh_provenance_runtime_fields()
         self.__lazy = False
         self._relationship_cfg = relationship_cfg
+
+    def refresh_provenance_runtime_fields(self) -> None:
+        # Rebuild provenance runtime mappings from current index mappings.
+        type(self)._get_indices.cache_clear()
+        self.runtime_fields = self.__merge_nested_dicts(
+            self._base_runtime_fields,
+            self.__add_runtime_fields_from_provenance_fields(),
+        )
+        type(self).attribute_types.fget.cache_clear()
 
     @property
     def lazy_fetch(self) -> bool:
@@ -781,7 +788,10 @@ class ElasticDataSource(
         for stats_field in stats_fields:
             stats_values[stats_field] = {}
             for stat in stats:
-                stat_value = aggregation_result[f'{stats_field}_{stat}']['value']
+                stat_value = self.__extract_aggregation_value(
+                    aggregation_result[f'{stats_field}_{stat}'],
+                    stat,
+                )
                 python_type = self.get_python_type_by_name(object_type, stats_field)
                 if python_type == 'datetime' and stat_value is not None \
                         and stat in ['min', 'max']:
@@ -906,7 +916,10 @@ class ElasticDataSource(
                 for stat in stats:
                     if f'{stats_field}_{stat}' not in v:  # For recent, this stat may not exist
                         continue
-                    stat_value = v[f'{stats_field}_{stat}']['value']
+                    stat_value = self.__extract_aggregation_value(
+                        v[f'{stats_field}_{stat}'],
+                        stat,
+                    )
                     python_type = self.get_python_type_by_name(object_type, stats_field)
                     if python_type == 'datetime' and stat_value is not None \
                             and stat in ['min', 'max']:
@@ -958,121 +971,65 @@ class ElasticDataSource(
 
     def __get_union_aggregation(self, object_type, field):
         """
-        This function is building up a union of all elements of a list in
-        the aggregated field
-        init_script: This is what is run at the start of each bucket
-        map_script: This builds up a list, PER SHARD, of the elements in all
-        records in the bucket
-        combine_script: This just returns the per-shard list in our case
-        reduce_script: This combines the per-shard lists into the final list
-        See information on scripted metrics for Elastic for more details
+        This function is building up a union of all unique terms in a field.
+        The result is capped by the terms aggregation size.
         """
         field_or_keyword = self._field_or_keyword(object_type, field)
-        agg = {
-            'scripted_metric': {
-                'init_script': 'state.list = []',
-                'map_script': f"""
-                    for (element in doc['{field_or_keyword}']) {{
-                        if (!state.list.contains(element)) {{
-                            state.list.add(element)
-                        }}
-                    }}
-                """,
-                'combine_script': 'return state.list',
-                'reduce_script': """
-                    ArrayList ret = [];
-                    for (a in states) {
-                        for (element in a) {
-                            if (!ret.contains(element)) {
-                                ret.add(element)
-                            }
-                        }
-                    }
-                    return ret;
-                """
+
+        return {
+            'terms': {
+                'field': field_or_keyword,
+                'size': 10000,
+                'order': {'_key': 'asc'},
             }
         }
-        return agg
 
     def __get_string_aggregation(self, object_type, field, stat):
         """
-        This function is calculating the min and max of a string
+        This function is calculating the min and max of a string.
+        Uses terms ordered by key and returns the first bucket.
 
         """
         field_or_keyword = self._field_or_keyword(object_type, field)
-        comparator = '>'
-        if stat == 'min':
-            comparator = '<'
-        agg = {
-            'scripted_metric': {
-                'init_script': 'state.stat = null',
-                'map_script': f"""
-                    for (ss in doc['{field_or_keyword}']) {{
-                        if (state.stat == null) {{
-                            state.stat = ss; continue
-                        }}
-                        if (ss.compareTo(state.stat) {comparator} 0) {{
-                            state.stat = ss
-                        }}
-                    }}
-                    """,
-                'combine_script': 'return state.stat',
-                'reduce_script': f"""
-                    String ret = null;
-                    for (a in states) {{
-                        if (a == null) {{
-                            continue
-                        }}
-                        if (ret == null) {{
-                            ret = a;
-                            continue
-                        }}
-                        if (a.compareTo(ret) {comparator} 0) {{
-                            ret = a
-                        }}
-                    }}
-                    return ret;
-                """
+
+        order = 'asc' if stat == 'min' else 'desc'
+        return {
+            'terms': {
+                'field': field_or_keyword,
+                'order': {'_key': order},
+                'size': 1,
             }
         }
-        return agg
+
+    def __extract_aggregation_value(self, aggregation_result: dict[str, Any], stat: str) -> Any:
+        if 'value' in aggregation_result:
+            return aggregation_result['value']
+
+        buckets = aggregation_result.get('buckets')
+        if isinstance(buckets, list) and len(buckets) > 0:
+            if stat == 'union':
+                return [bucket.get('key') for bucket in buckets]
+            return buckets[0].get('key')
+
+        if stat == 'union':
+            return []
+
+        return None
 
     def __get_unique_count_aggregation(self, object_type, field):
         """
-        This function is calculating the unique values in the given field
+        This function is calculating the unique values in the given field.
+        Uses cardinality, which is approximate.
 
         """
         field_or_keyword = self._field_or_keyword(object_type, field)
-        agg = {
-            'scripted_metric': {
-                'params': {
-                    'fieldName': field_or_keyword
-                },
-                'init_script': 'state.list = []',
-                'map_script': """
-                    if(doc[params.fieldName].size() > 0) {
-                        state.list.add(doc[params.fieldName].value);
-                    }
-                    """,
-                'combine_script': 'return state.list;',
-                'reduce_script': """
-                    Map uniqueValueMap = new HashMap();
-                    int count = 0;
-                    for(shardList in states) {
-                        if(shardList != null) {
-                            for(key in shardList) {
-                                if(!uniqueValueMap.containsKey(key)) {
-                                    count +=1;
-                                    uniqueValueMap.put(key, key);
-                                }
-                            }
-                        }
-                    }
-                    return count;
-                """
+
+        return {
+            'cardinality': {
+                'field': field_or_keyword,
+                'precision_threshold': 40000,
             }
         }
-        return agg
 
     def get_count(
         self,
@@ -1131,21 +1088,91 @@ class ElasticDataSource(
     def __map_type(self, type_: str) -> str:
         if type_ in ['text', 'keyword']:
             return 'str'
+        if type_ == 'integer':
+            return 'int'
         if type_ == 'long':
             return 'int'
+        if type_ in ['float', 'double', 'half_float', 'scaled_float']:
+            return 'float'
         if type_ == 'date':
             return 'datetime'
         if type_ == 'boolean':
             return 'bool'
         return type_
 
+    def __normalise_runtime_field_type(self, type_: str | None) -> str:
+        if type_ in [None, 'text', 'keyword', 'str']:
+            return 'keyword'
+        if type_ in ['integer', 'long', 'int']:
+            return 'long'
+        if type_ in ['float', 'double', 'half_float', 'scaled_float']:
+            return 'double'
+        if type_ in ['date', 'datetime']:
+            return 'date'
+        if type_ in ['boolean', 'bool']:
+            return 'boolean'
+        return type_
+
+    def __get_provenance_return_type(self, object_type: str, field_name: str) -> str:
+        provenance_field = self.provenance_fields[object_type][field_name]
+        if provenance_field.return_type is not None:
+            return self.__normalise_runtime_field_type(provenance_field.return_type)
+
+        index_or_alias_name = self.__get_index_or_alias(object_type)
+        try:
+            real_index_name = self._get_indices().get(index_or_alias_name)
+            mapping = self.es.indices.get_mapping(index=index_or_alias_name)
+        except Exception:
+            return 'keyword'
+
+        if not isinstance(mapping, dict):
+            return 'keyword'
+
+        mapping_key = real_index_name
+        if mapping_key not in mapping:
+            if index_or_alias_name in mapping:
+                mapping_key = index_or_alias_name
+            elif len(mapping) == 1:
+                mapping_key = next(iter(mapping.keys()))
+        if mapping_key is None or mapping_key not in mapping:
+            return 'keyword'
+
+        properties = mapping.get(mapping_key, {}).get('mappings', {}).get('properties', {})
+        source_order = provenance_field.source_order[0] if provenance_field.source_order else None
+        if source_order is None:
+            return 'keyword'
+
+        path = f'{field_name}.provenance.{source_order}.value'.split('.')
+        current = properties
+        for part in path:
+            node = current.get(part)
+            if not isinstance(node, dict):
+                return 'keyword'
+            if 'type' in node and part == path[-1]:
+                return self.__normalise_runtime_field_type(node['type'])
+            current = node.get('properties', {})
+
+        return 'keyword'
+
     def _get_attribute_types_for_object_type(self, object_type: str) -> dict:
         index_or_alias_name = self.__get_index_or_alias(object_type)
         real_index_name = self._get_indices().get(index_or_alias_name)
         mapping = self.es.indices.get_mapping(index=index_or_alias_name)
-        if 'properties' not in mapping[real_index_name]['mappings']:
+        if not isinstance(mapping, dict):
             return {}
-        properties = mapping[real_index_name]['mappings']['properties']
+
+        mapping_key = real_index_name
+        if mapping_key not in mapping:
+            if index_or_alias_name in mapping:
+                mapping_key = index_or_alias_name
+            elif len(mapping) == 1:
+                mapping_key = next(iter(mapping.keys()))
+        if mapping_key is None or mapping_key not in mapping:
+            return {}
+
+        if 'properties' not in mapping[mapping_key]['mappings']:
+            return {}
+        properties = mapping[mapping_key]['mappings']['properties']
         standard_types = {
             'id' if property_name == 'uid' else property_name:
                 self.__map_type(properties[property_name]['type'])
@@ -1164,7 +1191,7 @@ class ElasticDataSource(
 
         provenance_types = {
             name: self.__map_type(
-                self.provenance_fields[object_type][name].return_type
+                self.__get_provenance_return_type(object_type, name)
             )
             for name in self.provenance_fields[object_type].keys()
             if not name.endswith('.id')
@@ -1254,7 +1281,7 @@ class ElasticDataSource(
                         f'{field_name}.provenance.{source_order}.value'
                         for source_order in provenance_field.source_order
                     ],
-                    return_type=provenance_field.return_type or 'keyword',
+                    return_type=self.__get_provenance_return_type(object_type, field_name),
                     null_wins=True,
                 )
         return runtime_fields

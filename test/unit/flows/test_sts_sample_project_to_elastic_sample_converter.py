@@ -24,7 +24,7 @@ class _MockDataSourceRelational(DataSource, Relational):
     def supported_types(self):
         return ['sample_project', 'sample', 'project', 'sample_export_options',
                 'location', 'gal', 'preservation_approach', 'sampleset',
-                'specimen', 'preservative_solution', 'collection_method',
+                'specimen', 'preservation_solution', 'collection_method',
                 'sample_person', 'person', 'manifest', 'tissue_size', 'sample_species',
                 'species', 'lifestage', 'sex', 'organism_part', 'sample_species_organism_part',
                 'ext_id', 'strain', 'storage_rack', 'freezer_tray', 'hazard_group',
@@ -49,7 +49,7 @@ class _MockDataSourceRelational(DataSource, Relational):
             'manifest': 'manifest',
             'specimen': 'specimen',
             'preservation_approach': 'preservation_approach',
-            'preservative_solution': 'preservative_solution',
+            'preservation_solution': 'preservation_solution',
             'collection_method': 'collection_method',
             'hazard_group': 'hazard_group',
             'tissue_size': 'tissue_size',
@@ -414,7 +414,7 @@ class TestStsSampleProjectToElasticSampleConverter(TestCase):
             )
             solution = CoreDataObject(
                 id_='test_solution',
-                type_='preservative_solution',
+                type_='preservation_solution',
                 attributes={
                     'solution': 'solution'
                 }
@@ -435,7 +435,7 @@ class TestStsSampleProjectToElasticSampleConverter(TestCase):
             )
             solution = CoreDataObject(
                 id_='test_solution',
-                type_='preservative_solution',
+                type_='preservation_solution',
                 attributes={
                     'solution': 'solution'
                 }
@@ -458,7 +458,7 @@ class TestStsSampleProjectToElasticSampleConverter(TestCase):
                 'location': location,
                 'gal': gal,
                 'preservation_approach': approach,
-                'preservative_solution': solution,
+                'preservation_solution': solution,
                 'collection_method': method,
                 'hazard_group': hazard_group,
                 'specimen': specimen,
@@ -516,7 +516,7 @@ class TestStsSampleProjectToElasticSampleConverter(TestCase):
                 'gal_abbreviation': 'TESTGAL',
                 'gal_name': 'Test Gal',
                 'preservation_approach': 'approach',
-                'preservative_solution': 'solution',
+                'preservation_solution': 'solution',
                 'collection_method_desc': 'method_desc',
                 'hazard_group': 'level1',
                 'tissue_size': 'huge',

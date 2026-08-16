@@ -495,7 +495,11 @@ class TestEndToEnd:
             '1',
             attributes={
                 'int_column': 1,
-                'str_column': '1'
+                'str_column': '1',
+                'int_column_prov': 1,
+                'str_column_prov': '1',
+                'datetime_column_prov': datetime(2020, 1, 1, 0, 0, 0),
+                'bool_column_prov': True,
             },
             to_one={
                 'related_object': rel_obj1,
@@ -506,8 +510,12 @@ class TestEndToEnd:
             'root',
             '1',
             attributes={
-                'int_column': 1,
-                'str_column': '2'
+                'int_column': 2,
+                'str_column': '2',
+                'int_column_prov': 2,
+                'str_column_prov': '2',
+                'datetime_column_prov': datetime(2020, 2, 1, 0, 0, 0),
+                'bool_column_prov': False
             },
             to_one={
                 'related_object': rel_obj2
@@ -522,14 +530,23 @@ class TestEndToEnd:
 
         first = list(data_source.get_by_ids('root', ['1']))
         ret = first[0]
-        assert ret.int_column == 1
-        assert ret.str_column == '1'
+        assert ret.int_column == 2
+        assert ret.str_column == '2'
+        assert ret.int_column_prov == 1
+        assert ret.str_column_prov == '1'
+        assert ret.datetime_column_prov.month == 1
+        assert ret.bool_column_prov is True
         assert ret.related_object.id == '1'
         assert ret.another_related_object.id == '1'
         assert ret.provenance['related_object']['source3'].id == '1'
         assert ret.provenance['related_object']['source4'].id == '2'
-        assert ret.provenance['str_column']['source3'] == '1'
-        assert ret.provenance['str_column']['source4'] == '2'
+        assert ret.provenance['int_column_prov']['source3'] == 1
+        assert ret.provenance['int_column_prov']['source4'] == 2
+        assert ret.provenance['str_column_prov']['source3'] == '1'
+        assert ret.provenance['str_column_prov']['source4'] == '2'
+        assert ret.provenance['datetime_column_prov']['source3'].month == 1
+        assert ret.provenance['datetime_column_prov']['source4'].month == 2
+        assert ret.provenance['bool_column_prov']['source4'] is False
         assert 'int_column' not in ret.provenance
         assert 'another_related_object' not in ret.provenance
 
@@ -538,40 +555,40 @@ class TestEndToEnd:
         # requested in the `requested_fields` argument.
         f = DataSourceFilter()
         f.and_ = {
-            'str_column': {'eq': {'value': '1'}}
+            'str_column_prov': {'eq': {'value': '1'}}
         }
         ret = list(data_source.get_list(
             'root',
             object_filters=f,
-            requested_fields=['str_column', 'related_object']
+            requested_fields=['str_column_prov', 'related_object']
         ))
         assert len(ret) == 1
-        assert ret[0].str_column == '1'
+        assert ret[0].str_column_prov == '1'
         assert ret[0].related_object.id == '1'
         ret = list(data_source.get_list(
             'root',
             object_filters=f,
-            requested_fields=['str_column']
+            requested_fields=['str_column_prov']
         ))
         assert len(ret) == 1
-        assert ret[0].str_column == '1'
+        assert ret[0].str_column_prov == '1'
         assert ret[0].related_object.id == '1'
 
         # Check that provenanced fields can be used in filters
         f = DataSourceFilter()
         f.and_ = {
-            'str_column[source4]': {'eq': {'value': '2'}}
+            'str_column_prov[source4]': {'eq': {'value': '2'}}
         }
         ret = list(data_source.get_list('root', object_filters=f))
         assert len(ret) == 1
         assert ret[0].id == '1'
-        assert ret[0].str_column == '1'
-        assert ret[0].get_field_by_name('str_column[source3]') == '1'
-        assert ret[0].get_field_by_name('str_column[source4]') == '2'
+        assert ret[0].str_column_prov == '1'
+        assert ret[0].get_field_by_name('str_column_prov[source3]') == '1'
+        assert ret[0].get_field_by_name('str_column_prov[source4]') == '2'
         # Check that provenanced fields can be used in filters
         f = DataSourceFilter()
         f.and_ = {
-            'str_column[source3]': {'eq': {'value': '2'}}
+            'str_column_prov[source3]': {'eq': {'value': '2'}}
         }
         ret = list(data_source.get_list('root', object_filters=f))
         assert len(ret) == 0
@@ -609,13 +626,13 @@ class TestEndToEnd:
         ret = data_source.get_one('root', '1')
 
         assert ret.int_column == 27
-        assert ret.str_column == '1'  # No change as not mentioned
+        assert ret.str_column_prov == '1'  # No change as not mentioned
         assert ret.related_object.id == '1'  # No change as not mentioned
         assert ret.another_related_object.id == '1'  # No change as not mentioned
         assert ret.provenance['related_object']['source3'].id == '1'
         assert ret.provenance['related_object']['source4'].id == '2'
-        assert ret.provenance['str_column']['source3'] == '1'
-        assert ret.provenance['str_column']['source4'] == '2'
+        assert ret.provenance['str_column_prov']['source3'] == '1'
+        assert ret.provenance['str_column_prov']['source4'] == '2'
         assert 'source1' not in ret.provenance['related_object']
 
         root_obj4 = data_source.data_object_factory(
@@ -623,7 +640,7 @@ class TestEndToEnd:
             '1',
             attributes={
                 'int_column': None,
-                'str_column': None
+                'str_column_prov': None
             },
             to_one={
                 'related_object': None,
@@ -635,10 +652,10 @@ class TestEndToEnd:
         second = list(data_source.get_by_ids('root', ['1']))
         ret = second[0]
         assert ret.int_column is None
-        assert ret.str_column == '1'
+        assert ret.str_column_prov == '1'
         assert ret.related_object.id == '1'
         assert ret.another_related_object.id == '1'  # No change as not mentioned
-        assert ret.provenance['str_column']['source4'] is None
+        assert ret.provenance['str_column_prov']['source4'] is None
         assert 'source4' in ret.provenance['related_object']
         assert ret.provenance['related_object']['source4'] is None
 
@@ -649,10 +666,10 @@ class TestEndToEnd:
         second = list(data_source.get_by_ids('root', ['1']))
         ret = second[0]
         assert ret.int_column is None
-        assert ret.str_column is None
+        assert ret.str_column_prov is None
         assert ret.related_object is None
         assert ret.another_related_object.id == '1'  # No change as not mentioned
-        assert ret.provenance['str_column']['source1'] is None
+        assert ret.provenance['str_column_prov']['source1'] is None
         assert 'source1' in ret.provenance['related_object']
         assert ret.provenance['related_object']['source1'] is None
 

@@ -76,9 +76,9 @@ class StsSampleProjectToElasticSampleConverter(
             if 'preservation_approach' in s.to_one_relationships:
                 if s.preservation_approach is not None:
                     attributes['preservation_approach'] = s.preservation_approach.approach
-            if 'preservative_solution' in s.to_one_relationships:
-                if s.preservative_solution is not None:
-                    attributes['preservative_solution'] = s.preservative_solution.solution
+            if 'preservation_solution' in s.to_one_relationships:
+                if s.preservation_solution is not None:
+                    attributes['preservation_solution'] = s.preservation_solution.solution
             if 'collection_method' in s.to_one_relationships:
                 if s.collection_method is not None:
                     attributes['collection_method_desc'] = s.collection_method.method

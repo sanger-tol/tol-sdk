@@ -229,24 +229,22 @@ class TestUtils:
     def test_get_provenance_fields_with_source_order(self):
         att = MagicMock()
         att.source_order = ['source1', 'source2']
-        att.return_type = 'int'
         att.object_type = 'sample'
         att.name = 'att_name'
         rel = MagicMock()
         rel.source_order = ['source1', 'source2']
         rel.object_type = 'sample'
         rel.name = 'rel_name'
-        rel.return_type = None
 
         result = DataSourceUtils.get_provenance_fields([att], [rel])
         assert result == {
             'sample': {
                 'att_name': ProvenanceField(
                     source_order=['source1', 'source2'],
-                    return_type='int'
+                    return_type=None
                 ),
                 'rel_name.id': ProvenanceField(
                     source_order=['source1', 'source2'],
-                    return_type='keyword'
+                    return_type=None
                 )
             }}

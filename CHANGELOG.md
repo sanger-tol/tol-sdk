@@ -6,6 +6,12 @@ SPDX-License-Identifier: MIT
 
 # Changelog
 
+## tol-sdk `2.4.8`
+
+12-08-2026
+
+- Corrections to provenanced fields return types
+
 ## tol-sdk `2.4.7`
 
 07-08-2026

@@ -85,9 +85,21 @@ def elastic_datasource(
                     source_order=['source1', 'source2', 'source3', 'source4'],
                     return_type=None
                 ),
-                'str_column': ProvenanceField(
+                'int_column_prov': ProvenanceField(
                     source_order=['source1', 'source2', 'source3', 'source4'],
-                    return_type='keyword'
+                    return_type=None
+                ),
+                'str_column_prov': ProvenanceField(
+                    source_order=['source1', 'source2', 'source3', 'source4'],
+                    return_type=None
+                ),
+                'datetime_column_prov': ProvenanceField(
+                    source_order=['source1', 'source2', 'source3', 'source4'],
+                    return_type=None
+                ),
+                'bool_column_prov': ProvenanceField(
+                    source_order=['source1', 'source2', 'source3', 'source4'],
+                    return_type=None
                 ),
             },
         }
@@ -181,7 +193,12 @@ def upsert_archetypes(prefix: str) -> None:
         index=prefix + '-root',
         id='#YOLO',
         document={
-            'str_column': {
+            'str_column': 'abc',
+            'int_column': 42,
+            'datetime_column': datetime(2020, 1, 1, 0, 0, 0),
+            'bool_column': True,
+            'list_column': ['item'],
+            'str_column_prov': {
                 'provenance': {
                     'source1': {'value': 'abc'},
                     'source2': {'value': 'abc'},
@@ -189,10 +206,30 @@ def upsert_archetypes(prefix: str) -> None:
                     'source4': {'value': 'abc'},
                 }
             },
-            'int_column': 42,
-            'datetime_column': datetime(2020, 1, 1, 0, 0, 0),
-            'bool_column': True,
-            'list_column': ['item'],
+            'int_column_prov': {
+                'provenance': {
+                    'source1': {'value': 42},
+                    'source2': {'value': 42},
+                    'source3': {'value': 42},
+                    'source4': {'value': 42},
+                }
+            },
+            'datetime_column_prov': {
+                'provenance': {
+                    'source1': {'value': datetime(2020, 1, 1, 0, 0, 0)},
+                    'source2': {'value': datetime(2020, 1, 1, 0, 0, 0)},
+                    'source3': {'value': datetime(2020, 1, 1, 0, 0, 0)},
+                    'source4': {'value': datetime(2020, 1, 1, 0, 0, 0)},
+                }
+            },
+            'bool_column_prov': {
+                'provenance': {
+                    'source1': {'value': True},
+                    'source2': {'value': True},
+                    'source3': {'value': True},
+                    'source4': {'value': True},
+                }
+            },
             # 'dict_column': {'key1': 1},  # dict columns not yet supported in API
             'related_object': {
                 'id': {
@@ -220,6 +257,18 @@ def upsert_archetypes(prefix: str) -> None:
             'datetime_column': datetime(2020, 1, 1, 0, 0, 0),
             'bool_column': True,
             'list_column': ['item'],
+            'root_int_column_min': 100,
+            'root_int_column_max': 200,
+            'root_str_column_min': '100',
+            'root_str_column_max': '200',
+            'root_datetime_column_min': datetime(2020, 1, 1, 0, 0, 0),
+            'root_datetime_column_max': datetime(2020, 1, 1, 0, 0, 0),
+            'root_int_column_prov_min': 100,
+            'root_int_column_prov_max': 200,
+            'root_str_column_prov_min': '100',
+            'root_str_column_prov_max': '200',
+            'root_datetime_column_prov_min': datetime(2020, 1, 1, 0, 0, 0),
+            'root_datetime_column_prov_max': datetime(2020, 1, 1, 0, 0, 0),
             # 'dict_column': {'key1': 1},
         }
     )

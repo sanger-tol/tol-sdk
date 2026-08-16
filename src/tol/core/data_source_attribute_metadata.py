@@ -129,7 +129,7 @@ def data_source_attribute_metadata(
             attribute = self.__get_attribute(object_type, attribute_name)
             if attribute is None:
                 return super().get_source_order(object_type, attribute_name)
-            return attribute.source
+            return attribute.source_order
 
         def get_acts_as(
                 self,

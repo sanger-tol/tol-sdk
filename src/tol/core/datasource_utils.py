@@ -138,7 +138,7 @@ class DataSourceUtils:
                 provenance_fields[dsca.object_type] = {}
             provenance_fields[dsca.object_type][f'{dsca.name}{suffix}'] = ProvenanceField(
                 source_order=dsca.source_order,
-                return_type=dsca.return_type or 'keyword'
+                return_type=None
             )
         return provenance_fields
 

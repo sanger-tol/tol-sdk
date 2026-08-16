@@ -80,7 +80,11 @@ class DefaultElasticApiParser(DataSourceParser[ElasticApiResource, DataObject]):
             if k in self._data_source.attribute_types[type_]
         }
         provenanced_attributes = {
-            ElasticUtils.actual_attribute(k): self.__normalise_runtime_value(v[0])
+            ElasticUtils.actual_attribute(k): self.__make_dates(
+                type_,
+                ElasticUtils.actual_attribute(k),
+                self.__normalise_runtime_value(v[0]),
+            )
             for k, v in runtime_data.items()
             if type_ in self._data_source.provenance_fields
             and ElasticUtils.actual_attribute(k) in self._data_source.provenance_fields[type_]
@@ -117,7 +121,11 @@ class DefaultElasticApiParser(DataSourceParser[ElasticApiResource, DataObject]):
         # This picks out all the direct attributes that have provenance
         attributes_with_provenance = {
             k: {
-                source: self.__normalise_runtime_value(details['value'])
+                source: self.__make_dates(
+                    type_,
+                    k,
+                    self.__normalise_runtime_value(details['value']),
+                )
                 for source, details in v['provenance'].items()
             }
             for k, v in data.items()
