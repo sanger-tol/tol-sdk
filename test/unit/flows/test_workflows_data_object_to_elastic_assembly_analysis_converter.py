@@ -18,29 +18,44 @@ from tol.flows.converters import (
 )
 
 
-class _Workflow:
-    def __init__(self, name, version, description):
-        self.name = name
-        self.version = version
-        self.description = description
-
-
-class _WorkflowRun:
-    def __init__(self, workflow, started_at, ended_at):
-        self.workflow = workflow
-        self.started_at = started_at
-        self.ended_at = ended_at
-
-
-class _MockDataSourceSource(DataSource):
+class _MockDataSourceSource(DataSource, Relational):
 
     @property
     def supported_types(self):
-        return ['workflow_data']
+        return ['workflow', 'workflow_run', 'data_object']
 
     @property
     def attribute_types(self):
         raise NotImplementedError()
+
+    @property
+    def relationship_config(self):
+        rc_workflow_run = RelationshipConfig()
+        rc_workflow_run.to_one = {
+            'workflow': 'workflow'
+        }
+        rc_data_object = RelationshipConfig()
+        rc_data_object.to_one = {
+            'output_workflow_run': 'workflow_run'
+        }
+        return {
+            'workflow_run': rc_workflow_run,
+            'data_object': rc_data_object
+        }
+
+    def get_to_one_relation(
+        self,
+        source: DataObject,
+        relationship_name: str
+    ):
+        pass
+
+    def get_to_many_relations(
+        self,
+        source: DataObject,
+        relationship_name: str
+    ):
+        pass
 
 
 class _MockDataSourceDestination(DataSource, Relational):
@@ -98,24 +113,41 @@ class TestWorkflowsDataObjectToElasticAssemblyAnalysisConverter(TestCase):
             config=WorkflowsDataObjectToElasticAssemblyAnalysisConverter.Config()
         )
 
-        workflow = _Workflow('curation-workflow', '1.0.0', 'Pipeline run')
-        workflow_run = _WorkflowRun(
-            workflow,
-            '2026-08-01T11:00:00Z',
-            '2026-08-01T12:00:00Z'
+        CoreDataObject = source.data_object_factory  # noqa N806
+
+        workflow = CoreDataObject(
+            'workflow',
+            'curation-workflow',
+            attributes={
+                'name': 'curation-workflow',
+                'version': '1.0.0',
+                'description': 'Pipeline run'
+            }
+        )
+        workflow_run = CoreDataObject(
+            'workflow_run',
+            'wf-run-1',
+            to_one={
+                'workflow': workflow
+            },
+            attributes={
+                'started_at': '2026-08-01T11:00:00Z',
+                'ended_at': '2026-08-01T12:00:00Z'
+            }
         )
 
-        CoreDataObject = source.data_object_factory  # noqa N806
         obj1 = CoreDataObject(
             id_='wf-1',
-            type_='workflow_data',
+            type_='data_object',
             attributes={
                 'assembly_accession': 'GCA_123456',
                 'tax_id': '9606',
-                'workflow_run': workflow_run,
                 'extra_identifiers': {
                     'busco_lineage': 'metazoa_odb10'
                 }
+            },
+            to_one={
+                'output_workflow_run': workflow_run
             }
         )
         converteds = converter.convert(obj1)
@@ -141,24 +173,39 @@ class TestWorkflowsDataObjectToElasticAssemblyAnalysisConverter(TestCase):
         source = _MockDataSourceSource(config={})
         core_data_object(source)
 
-        workflow = _Workflow('curation-workflow', '1.0.0', 'Pipeline run')
-        workflow_run = _WorkflowRun(
-            workflow,
-            '2026-08-01T11:00:00Z',
-            '2026-08-01T12:00:00Z'
-        )
-
         CoreDataObject = source.data_object_factory  # noqa N806
+        workflow = CoreDataObject(
+            'workflow',
+            'curation-workflow',
+            attributes={
+                'name': 'curation-workflow',
+                'version': '1.0.0',
+                'description': 'Pipeline run'
+            }
+        )
+        workflow_run = CoreDataObject(
+            'workflow_run',
+            'wf-run-1',
+            to_one={
+                'workflow': workflow
+            },
+            attributes={
+                'started_at': '2026-08-01T11:00:00Z',
+                'ended_at': '2026-08-01T12:00:00Z'
+            }
+        )
         obj1 = CoreDataObject(
             id_='out-1',
-            type_='workflow_data',
+            type_='data_object',
             attributes={
                 'assembly_accession': 'GCA_123456',
-                'output_workflow_run': workflow_run,
                 'run_accession': 'ERR000001',
                 'extra_identifiers': {
                     'busco_lineage': 'metazoa_odb10'
                 }
+            },
+            to_one={
+                'output_workflow_run': workflow_run
             }
         )
 
@@ -176,7 +223,7 @@ class TestWorkflowsDataObjectToElasticAssemblyAnalysisConverter(TestCase):
         CoreDataObject = source.data_object_factory  # noqa N806
         obj1 = CoreDataObject(
             id_='out-1',
-            type_='workflow_data',
+            type_='data_object',
             attributes={
                 'assembly_accession': 'GCA_123456',
                 'output_workflow_run': None

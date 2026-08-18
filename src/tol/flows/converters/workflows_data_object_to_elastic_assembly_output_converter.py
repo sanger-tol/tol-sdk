@@ -12,6 +12,7 @@ from ...core import (
     DataObject,
     DataObjectToDataObjectOrUpdateConverter
 )
+from ...utils import convert_s3_to_https
 
 
 class WorkflowsDataObjectToElasticAssemblyOutputConverter(
@@ -31,7 +32,7 @@ class WorkflowsDataObjectToElasticAssemblyOutputConverter(
 
     def convert(self, data_object: DataObject) -> Iterable[DataObject]:
         attributes = {
-            'url': data_object.url,
+            'url': convert_s3_to_https(data_object.url),
             'file_format': data_object.file_format,
             'path': data_object.path,
             'description': data_object.description
