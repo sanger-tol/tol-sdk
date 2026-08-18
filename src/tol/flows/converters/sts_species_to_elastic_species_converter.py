@@ -42,11 +42,16 @@ class StsSpeciesToElasticSpeciesConverter(
         if data_object.sequencing_material_status is not None:
             statuses['sequencing_material_status'] = data_object.sequencing_material_status.status
 
+        attributes = data_object.attributes
+        if data_object.prefix:
+            attributes['tolid_prefix'] = data_object.prefix
+            del attributes['prefix']
+
         ret = self._data_object_factory(
             'species',
             data_object.id,
             attributes={
-                k: v for k, v in (data_object.attributes | statuses).items() if v is not None
+                k: v for k, v in (attributes | statuses).items() if v is not None
             }
         )
         yield ret

@@ -6,6 +6,12 @@ SPDX-License-Identifier: MIT
 
 # Changelog
 
+## tol-sdk `2.4.9`
+
+18-08-2026
+
+- Added GAP workflow converters
+
 ## tol-sdk `2.4.8`
 
 12-08-2026

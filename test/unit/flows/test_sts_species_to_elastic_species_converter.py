@@ -113,7 +113,7 @@ class TestStsSpeciesToElasticSpeciesConverter(TestCase):
         obj1 = CoreDataObject(
             id_='test1',
             type_='species',
-            attributes={'attribute1': 'value1'},
+            attributes={'attribute1': 'value1', 'prefix': 'prefix1'},
             to_one={'sequencing_material_status': sequencing_material_status}
         )
         obj2 = CoreDataObject(
@@ -127,6 +127,7 @@ class TestStsSpeciesToElasticSpeciesConverter(TestCase):
         self.assertEqual(obj1.type, ret1.type)
         self.assertEqual(ret1.attributes, {
             'attribute1': 'value1',
+            'tolid_prefix': 'prefix1',
             'sequencing_material_status': 'status1',
             'lws1_date': datetime(2023, 1, 1),
             'lws2_date': datetime(2024, 1, 1),
