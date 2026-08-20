@@ -35,7 +35,7 @@ class ElasticSampleToBenchlingTissueUpdateConverter(
 
         if species is not None and specimen is not None:
             ret = (
-                data_object.eln_tissue_id,
+                data_object.eln_tissue_id or data_object.eln_id,
                 {
                     'rack_id': data_object.rackid,
                     'tube_well_id': data_object.tubeid,
@@ -84,7 +84,7 @@ class ElasticSampleToBenchlingTissueUpdateConverter(
             return ret
 
     def convert(self, data_object: DataObject) -> Iterable[DataObjectUpdate]:
-        if data_object.eln_tissue_id is not None:
+        if data_object.eln_tissue_id is not None or data_object.eln_id is not None:
             ret = self._convert_one(data_object)
             if ret is not None:
                 yield ret
