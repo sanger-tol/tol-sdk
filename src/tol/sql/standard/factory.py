@@ -302,8 +302,6 @@ def create_standard_models(
             server_default='true'  # noqa P103
         )
 
-        translation_path: Mapped[str] = mapped_column(nullable=True)
-
         attribute_translations = mapped_column(  # noqa A003
             type_=JSONB(),
             nullable=False,
