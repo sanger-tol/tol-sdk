@@ -2,6 +2,7 @@
 #
 # SPDX-License-Identifier: MIT
 
+from datetime import datetime
 from typing import Any
 from unittest.mock import create_autospec
 
@@ -41,7 +42,11 @@ class TestSummarise:
                 f'root_{i}_indeed',
                 attributes={
                     'int_column': i,
-                    'str_column': str(i)
+                    'str_column': str(i),
+                    'datetime_column': datetime(2020, i, 1, 0, 0, 0),
+                    'int_column_prov': i,
+                    'str_column_prov': str(i),
+                    'datetime_column_prov': datetime(2020, i, 1, 0, 0, 0)
                 },
                 to_one={
                     'related_object': rel_obj
@@ -60,7 +65,14 @@ class TestSummarise:
                 'destination_object_type': 'related',
                 'object_filters': {},
                 'group_by': ['related_object.id'],
-                'stats_fields': ['int_column'],
+                'stats_fields': [
+                    'int_column',
+                    'str_column',
+                    'datetime_column',
+                    'int_column_prov',
+                    'str_column_prov',
+                    'datetime_column_prov',
+                ],
                 'provenance_override': 'source1',
                 'stats': ['min', 'max'],
                 'version': None
@@ -77,13 +89,25 @@ class TestSummarise:
         )
         assert rel_obj.root_int_column_min == 1
         assert rel_obj.root_int_column_max == 5
+        assert rel_obj.root_str_column_min == '1'
+        assert rel_obj.root_str_column_max == '5'
+        assert rel_obj.root_datetime_column_min == datetime(2020, 1, 1, 0, 0, 0)
+        assert rel_obj.root_datetime_column_max == datetime(2020, 5, 1, 0, 0, 0)
+        assert rel_obj.root_int_column_prov_min == 1
+        assert rel_obj.root_int_column_prov_max == 5
+        assert rel_obj.root_str_column_prov_min == '1'
+        assert rel_obj.root_str_column_prov_max == '5'
+        assert rel_obj.root_datetime_column_prov_min == datetime(2020, 1, 1, 0, 0, 0)
+        assert rel_obj.root_datetime_column_prov_max == datetime(2020, 5, 1, 0, 0, 0)
 
         # change the first `root` to be the biggest
-        first_root_obj = data_source.get_one(
+        first_root_obj = data_source.data_object_factory(
             'root',
-            'root_1_indeed'
+            'root_1_indeed',
+            attributes={
+                'int_column': 42
+            }
         )
-        first_root_obj.int_column = 42
         data_source.upsert('root', [first_root_obj], provenance='source1')
         ds_sleep(5)
 

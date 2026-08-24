@@ -41,6 +41,7 @@ def application() -> Flask:
         # reset the caches
         ElasticDataSource._get_indices.cache_clear()
         ElasticDataSource.attribute_types.fget.cache_clear()
+        elastic_ds.refresh_provenance_runtime_fields()
 
         return {}, 200
 
