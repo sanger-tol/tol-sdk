@@ -377,6 +377,7 @@ class TestTaxonMatchesGoatValidator:
             )
 
         # Expect there to be no warnings or errors for a taxon_id not found in GoaT
+        # and is in the exemption list
         assert len(validator.warnings) == 0
         assert len(validator.errors) == 0
         mock_goat.get_one.assert_not_called()
