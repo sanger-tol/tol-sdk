@@ -9,6 +9,7 @@ from typing import Any
 
 from pika.adapters.blocking_connection import BlockingChannel
 from pika.spec import Basic, BasicProperties
+
 from pydantic import ValidationError
 
 from .config import RabbitmqConfig
@@ -40,7 +41,9 @@ class NotificationConsumer:
         self.__channel: BlockingChannel | None = None
 
     def start(self) -> None:
-        """Connect, declare quality of service, and block in the consume loop."""
+        """
+        Connect, declare quality of service, and block in the consume loop.
+        """
         self.__install_signal_handlers()
         self.__connection.connect()
         self.__channel = self.__connection.channel
@@ -103,7 +106,7 @@ class NotificationConsumer:
                     )
                     continue
                 dispatcher(delivery)
-        except Exception:
+        except Exception:  # noqa: BLE001
             LOGGER.exception('Dispatcher failed, nacking.')
             ch.basic_nack(delivery_tag=method.delivery_tag, requeue=False)
             return
@@ -111,7 +114,13 @@ class NotificationConsumer:
         ch.basic_ack(delivery_tag=method.delivery_tag)
 
     def __install_signal_handlers(self) -> None:
+        """
+        Install signal handlers to gracefully
+        stop consuming on SIGINT/SIGTERM.
+        """
+
         def handler(signum: int, frame: Any) -> None:
+            """Handle SIGINT/SIGTERM by stopping the consumer."""
             LOGGER.info('received signal %d, shutting down', signum)
             self.stop()
 
@@ -120,6 +129,7 @@ class NotificationConsumer:
 
 
 if __name__ == '__main__':
+    """Run the notification consumer."""
     config = RabbitmqConfig.from_env()
     connection = RabbitmqConnection(config)
 

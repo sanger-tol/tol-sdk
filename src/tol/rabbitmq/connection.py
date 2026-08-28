@@ -8,6 +8,7 @@ import ssl
 import pika
 import pika.exceptions
 from pika.adapters.blocking_connection import BlockingChannel
+
 from tol.rabbitmq.config import RabbitmqConfig
 
 LOGGER = logging.getLogger(__name__)
@@ -33,10 +34,12 @@ class RabbitmqConnection:
         self.__channel: BlockingChannel | None = None
 
     def __enter__(self) -> 'RabbitmqConnection':
+        """Connect to RabbitMQ and return self."""
         self.connect()
         return self
 
     def __exit__(self, *exc: object) -> None:
+        """Close the connection to RabbitMQ."""
         self.close()
 
     @property
@@ -67,22 +70,29 @@ class RabbitmqConnection:
         """Build the pika ConnectionParameters from the RabbitmqConfig."""
         ssl_options = None
         if self.__config.use_ssl:
-            ssl_options = pika.SSLOptions(ssl.create_default_context(), self.__config.host)
+            ssl_options = pika.SSLOptions(
+                ssl.create_default_context(), self.__config.host)
         return pika.ConnectionParameters(
             host=self.__config.host,
             port=self.__config.port,
             virtual_host=self.__config.vhost,
             credentials=pika.PlainCredentials(
-                username=self.__config.username, password=self.__config.password),
+                username=self.__config.username,
+                password=self.__config.password),
             ssl_options=ssl_options
         )
 
     def __declare_topology(self) -> None:
-        """Declare the exchange, queue, and binding for the notification system."""
+        """
+        Declare the exchange, queue, and binding for the notification system.
+        """
         channel = self.channel
         channel.exchange_declare(
-            exchange=self.__config.exchange, exchange_type='topic', durable=True,
+            exchange=self.__config.exchange,
+            exchange_type='topic',
+            durable=True,
         )
         channel.queue_declare(queue=self.__config.queue, durable=True)
         channel.queue_bind(queue=self.__config.queue,
-                           exchange=self.__config.exchange, routing_key=self.__config.routing_key)
+                           exchange=self.__config.exchange,
+                           routing_key=self.__config.routing_key)

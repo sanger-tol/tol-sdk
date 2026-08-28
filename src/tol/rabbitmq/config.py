@@ -8,6 +8,7 @@ from dataclasses import dataclass
 
 @dataclass(frozen=True, slots=True)
 class RabbitmqConfig:
+    """Configuration for connecting to RabbitMQ."""
     host: str
     port: int
     username: str
@@ -31,7 +32,8 @@ class RabbitmqConfig:
             exchange=os.getenv(f'{prefix}EXCHANGE', 'notification'),
             queue=os.getenv(f'{prefix}QUEUE', 'notification'),
             routing_key=os.getenv(f'{prefix}ROUTING_KEY', 'notification'),
-            management_url=os.getenv(f'{prefix}MANAGEMENT_URL', 'http://127.0.0.1:15672'),
+            management_url=os.getenv(f'{prefix}MANAGEMENT_URL',
+                                     'http://127.0.0.1:15672'),
             use_ssl=os.getenv(f'{prefix}USE_SSL', 'false').lower() == 'true',
             write_batch_size=int(os.getenv(f'{prefix}WRITE_BATCH_SIZE', 100)),
         )

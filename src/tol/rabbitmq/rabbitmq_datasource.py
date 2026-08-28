@@ -7,14 +7,15 @@ from collections.abc import Callable, Iterable
 from typing import Any, Optional
 
 import pika.exceptions
+
 import requests
 
-from ..core import (DataObject, DataSource, DataSourceError, DataSourceFilter,
-                    ErrorObject, ReqFieldsTree)
-from ..core.operator import DetailGetter, Inserter, ListGetter
 from .config import RabbitmqConfig
 from .connection import RabbitmqConnection
 from .converter import MessageToObjectConverter, ObjectToMessageConverter
+from ..core import (DataObject, DataSource, DataSourceError, DataSourceFilter,
+                    ErrorObject, ReqFieldsTree)
+from ..core.operator import DetailGetter, Inserter, ListGetter
 
 if typing.TYPE_CHECKING:
     from ..core.session import OperableSession
@@ -49,10 +50,12 @@ class RabbitmqDataSource(DataSource, Inserter, DetailGetter, ListGetter):
 
     @property
     def supported_types(self) -> list[str]:
+        """Return the list of supported object types for this data source."""
         return ['notification_message']
 
     @property
     def attribute_types(self) -> dict[str, dict[str, str]]:
+        """Return the attribute types for each supported object type."""
         return {
             'notification_message': {
                 'body': 'dict[str, Any]',
@@ -71,6 +74,7 @@ class RabbitmqDataSource(DataSource, Inserter, DetailGetter, ListGetter):
         requested_tree: ReqFieldsTree | None = None,
         **kwargs: Any,
     ) -> Iterable[DataObject | ErrorObject] | None:
+        """Insert a batch of objects into RabbitMQ."""
         self.__validate_object_type(object_type)
 
         converter = self.__to_message()
@@ -109,6 +113,9 @@ class RabbitmqDataSource(DataSource, Inserter, DetailGetter, ListGetter):
         requested_tree: ReqFieldsTree | None = None,
         **kwargs: Any,
     ) -> Iterable[Optional[DataObject]]:
+        """
+        Get an Iterable of `DataObject` instances by their IDs from RabbitMQ.
+        """
         self.__validate_object_type(object_type)
 
         wanted = list(object_ids)
@@ -131,6 +138,7 @@ class RabbitmqDataSource(DataSource, Inserter, DetailGetter, ListGetter):
         requested_tree: ReqFieldsTree | None = None,
         **kwargs: Any,
     ) -> Iterable[DataObject]:
+        """Get a list of `DataObject` instances from RabbitMQ."""
         self.__validate_object_type(object_type)
 
         if object_filters is not None:
@@ -143,6 +151,7 @@ class RabbitmqDataSource(DataSource, Inserter, DetailGetter, ListGetter):
         return self.__fetch_messages()
 
     def __fetch_messages(self) -> list[DataObject]:
+        """Fetch messages from the RabbitMQ queue using the Management API."""
         url = (
             f'{self.__config.management_url}'
             f'/api/queues/{self.__config.vhost}/{self.__config.queue}/get'
@@ -176,6 +185,9 @@ class RabbitmqDataSource(DataSource, Inserter, DetailGetter, ListGetter):
         ]
 
     def __extract_message_id(self, msg: dict[str, Any]) -> str | None:
+        """
+        Extract the message ID from a RabbitMQ management-API message dict.
+        """
         props = msg.get('properties') or {}
         return props.get('message_id')
 
@@ -184,6 +196,10 @@ class RabbitmqDataSource(DataSource, Inserter, DetailGetter, ListGetter):
         obj: DataObject,
         exc: Exception,
     ) -> ErrorObject:
+        """
+        Create an `ErrorObject` for a failed insertion or operation on a
+        `DataObject` of type `notification_message`.
+        """
         return ErrorObject(
             details={'exception': str(exc)},
             object_type='notification_message',
@@ -193,6 +209,7 @@ class RabbitmqDataSource(DataSource, Inserter, DetailGetter, ListGetter):
         )
 
     def __validate_object_type(self, object_type: str) -> None:
+        """Validate that the object type is supported by this data source."""
         if object_type != 'notification_message':
             raise DataSourceError(
                 title='Bad Request',

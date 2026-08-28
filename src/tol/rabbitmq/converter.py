@@ -8,9 +8,9 @@ from typing import Any
 
 import pika
 
+from .schema import generate_unique_id
 from ..core import DataObject
 from ..core.core_converter import Converter
-from .schema import generate_unique_id
 
 PublishMessage = tuple[str, pika.BasicProperties]
 """The (body, properties) pair passed to `channel.basic_publish`."""
@@ -29,6 +29,7 @@ class DefaultObjectToMessageConverter(ObjectToMessageConverter):
     """Serialises a `NotificationMessageObject` to a JSON AMQP message."""
 
     def convert(self, input_: DataObject) -> PublishMessage:
+        """Convert a `NotificationMessageObject` to a JSON AMQP message."""
         body = json.dumps(input_.body)
         properties = pika.BasicProperties(
             content_type='application/json',
@@ -41,9 +42,14 @@ class DefaultObjectToMessageConverter(ObjectToMessageConverter):
 
 
 class DefaultMessageToObjectConverter(MessageToObjectConverter):
-    """Deserialises a management-API message into attributes for a `DataObject`."""
+    """
+    Deserialises a management-API message into attributes for a `DataObject`.
+    """
 
     def convert(self, input_: dict[str, Any]) -> dict[str, Any]:
+        """
+        Convert a management-API message into attributes for a `DataObject`.
+        """
         payload = input_['payload']
         if input_.get('payload_encoding') == 'base64':
             payload = base64.b64decode(payload).decode('utf-8')
@@ -59,6 +65,7 @@ class DefaultMessageToObjectConverter(MessageToObjectConverter):
         }
 
     def __parse_body(self, payload: str) -> Any:
+        """Parse the message body, which may be JSON or a raw string."""
         try:
             return json.loads(payload)
         except json.JSONDecodeError:
