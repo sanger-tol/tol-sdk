@@ -57,6 +57,7 @@ sheets = [
 
 ]
 s3 = ["minio == 7.2.15"]
+rabbitmq = ["pika == 1.4.4"]
 all = [
     "tol-sdk[api-base]",
     "tol-sdk[benchling]",
@@ -67,7 +68,9 @@ all = [
     "tol-sdk[mysql]",
     "tol-sdk[postgresql]",
     "tol-sdk[prefect]",
-    "tol-sdk[sheets]"
+    "tol-sdk[sheets]",
+    "tol-sdk[s3]",
+    "tol-sdk[rabbitmq]"
 ]
 docs = [
     "sphinx",
