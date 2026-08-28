@@ -2,6 +2,8 @@
 #
 # SPDX-License-Identifier: MIT
 
+from __future__ import annotations
+
 import typing
 from collections.abc import Callable, Iterable
 from typing import Any, Optional
