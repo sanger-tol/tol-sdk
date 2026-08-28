@@ -2,32 +2,19 @@
 #
 # SPDX-License-Identifier: MIT
 
-from collections.abc import Callable, Iterable
 import typing
+from collections.abc import Callable, Iterable
 from typing import Any, Optional
 
 import pika.exceptions
 import requests
 
-from ..core import (
-    DataObject,
-    DataSource,
-    DataSourceError,
-    DataSourceFilter,
-    ErrorObject,
-    ReqFieldsTree
-)
-from ..core.operator import (
-    DetailGetter,
-    Inserter,
-    ListGetter,
-)
+from ..core import (DataObject, DataSource, DataSourceError, DataSourceFilter,
+                    ErrorObject, ReqFieldsTree)
+from ..core.operator import DetailGetter, Inserter, ListGetter
 from .config import RabbitmqConfig
 from .connection import RabbitmqConnection
-from .converter import (
-    MessageToObjectConverter,
-    ObjectToMessageConverter,
-)
+from .converter import MessageToObjectConverter, ObjectToMessageConverter
 
 if typing.TYPE_CHECKING:
     from ..core.session import OperableSession

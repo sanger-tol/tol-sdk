@@ -2,14 +2,8 @@
 #
 # SPDX-License-Identifier: MIT
 
-from .rabbitmq_datasource import RabbitmqDataSource
-from .factory import create_rabbitmq_datasource
-from .schema import (
-    NotificationChannel,
-    NotificationDelivery,
-    NotificationRequest,
-    Recipient,
-    RecipientDict,
-    create_deliveries,
-    generate_unique_id
-)
+from .factory import create_rabbitmq_datasource  # noqa F401
+from .rabbitmq_datasource import RabbitmqDataSource  # noqa F401
+from .schema import (NotificationChannel, NotificationDelivery,  # noqa F401
+                     NotificationRequest, Recipient, RecipientDict,
+                     create_deliveries, generate_unique_id)

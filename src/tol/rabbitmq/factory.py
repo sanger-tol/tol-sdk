@@ -5,10 +5,8 @@
 from ..core import core_data_object
 from .config import RabbitmqConfig
 from .connection import RabbitmqConnection
-from .converter import (
-    DefaultMessageToObjectConverter,
-    DefaultObjectToMessageConverter,
-)
+from .converter import (DefaultMessageToObjectConverter,
+                        DefaultObjectToMessageConverter)
 from .rabbitmq_datasource import RabbitmqDataSource
 
 

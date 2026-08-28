@@ -8,7 +8,6 @@ import ssl
 import pika
 import pika.exceptions
 from pika.adapters.blocking_connection import BlockingChannel
-
 from tol.rabbitmq.config import RabbitmqConfig
 
 LOGGER = logging.getLogger(__name__)
@@ -50,8 +49,8 @@ class RabbitmqConnection:
     def connect(self) -> None:
         """Connect to RabbitMQ and declare the exchange/queue/binding."""
         LOGGER.info(
-            f'Connecting to RabbitMQ at {self.__config.host}: \
-                {self.__config.port} vhost {self.__config.vhost}')
+            'Connecting to RabbitMQ at %s:%s vhost %s', self.__config.host,
+            self.__config.port, self.__config.vhost)
         self.__connection = pika.BlockingConnection(self.__build_parameters())
         self.__channel = self.__connection.channel()
         self.__declare_topology()

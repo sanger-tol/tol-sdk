@@ -3,6 +3,7 @@
 # SPDX-License-Identifier: MIT
 
 from enum import StrEnum
+
 from nanoid import generate
 from pydantic import BaseModel, Field
 
