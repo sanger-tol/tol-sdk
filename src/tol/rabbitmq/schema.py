@@ -10,8 +10,6 @@ from pydantic import BaseModel, Field
 def generate_unique_id() -> str:
     return generate()
 
- # TODO: This might not be generic enough, so we might need to refactor
-
 
 class NotificationChannel(StrEnum):
     EMAIL = 'email'

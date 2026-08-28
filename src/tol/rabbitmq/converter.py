@@ -3,7 +3,6 @@
 # SPDX-License-Identifier: MIT
 
 import base64
-import binascii
 import json
 from typing import Any
 
@@ -11,13 +10,12 @@ import pika
 
 from ..core import DataObject
 from ..core.core_converter import Converter
-from .rabbitmq_object import NotificationMessageObject
 from .schema import generate_unique_id
 
 PublishMessage = tuple[str, pika.BasicProperties]
 """The (body, properties) pair passed to `channel.basic_publish`."""
 
-ObjectToMessageConverter = Converter[NotificationMessageObject, PublishMessage]
+ObjectToMessageConverter = Converter[DataObject, PublishMessage]
 """Converts a `DataObject` int a publishable AMQP message."""
 
 MessageToObjectConverter = Converter[dict[str, Any], dict[str, Any]]
@@ -30,7 +28,7 @@ attributes dict suitable for `data_object_factory`.
 class DefaultObjectToMessageConverter(ObjectToMessageConverter):
     """Serialises a `NotificationMessageObject` to a JSON AMQP message."""
 
-    def convert(self, input_: NotificationMessageObject) -> PublishMessage:
+    def convert(self, input_: DataObject) -> PublishMessage:
         body = json.dumps(input_.body)
         properties = pika.BasicProperties(
             content_type='application/json',
