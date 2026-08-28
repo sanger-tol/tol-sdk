@@ -6,7 +6,7 @@ from dataclasses import dataclass
 import os
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, slots=True)
 class RabbitmqConfig:
     host: str
     port: int
@@ -29,7 +29,7 @@ class RabbitmqConfig:
             vhost=os.getenv(f'{prefix}VHOST', '/'),
             exchange=os.getenv(f'{prefix}EXCHANGE', 'notification'),
             queue=os.getenv(f'{prefix}QUEUE', 'notification'),
-            routing_key=os.getenv(f'{prefix}ROUTING_KEY', 'notifcation'),
+            routing_key=os.getenv(f'{prefix}ROUTING_KEY', 'notification'),
             management_url=os.getenv(f'{prefix}MANAGEMENT_URL', 'http://127.0.0.1:15672'),
-            use_ssl=bool(os.getenv(f'{prefix}USE_SSL', 'false').lower() == 'true')
+            use_ssl=os.getenv(f'{prefix}USE_SSL', 'false').lower() == 'true'
         )
