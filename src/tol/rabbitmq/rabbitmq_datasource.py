@@ -7,6 +7,7 @@ from __future__ import annotations
 import typing
 from collections.abc import Callable, Iterable
 from typing import Any, Optional
+from urllib.parse import quote
 
 import pika.exceptions
 
@@ -90,7 +91,10 @@ class RabbitmqDataSource(DataSource, Inserter, DetailGetter, ListGetter):
                         body, properties = converter.convert(obj)
                         channel.basic_publish(
                             exchange=self.__config.exchange,
-                            routing_key=self.__config.routing_key,
+                            routing_key=(
+                                getattr(obj, 'routing_key', None)
+                                or self.__config.routing_key
+                            ),
                             body=body,
                             properties=properties,
                         )
@@ -156,7 +160,8 @@ class RabbitmqDataSource(DataSource, Inserter, DetailGetter, ListGetter):
         """Fetch messages from the RabbitMQ queue using the Management API."""
         url = (
             f'{self.__config.management_url}'
-            f'/api/queues/{self.__config.vhost}/{self.__config.queue}/get'
+            f'/api/queues/{quote(self.__config.vhost, safe="")}'
+            f'/{self.__config.queue}/get'
         )
 
         payload = {

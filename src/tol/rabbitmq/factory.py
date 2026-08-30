@@ -13,9 +13,6 @@ from ..core import core_data_object
 def create_rabbitmq_datasource(config: RabbitmqConfig) -> RabbitmqDataSource:
     """
     Create a `RabbitmqDataSource` wired with default converters and connection.
-
-    callers MUST run `core_data_object(ds)` on the returned instance before use
-    so that `data_object_factory` is injected.
     """
     def connection_factory() -> RabbitmqConnection:
         """Create a new `RabbitmqConnection` using the given config."""
