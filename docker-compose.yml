@@ -128,8 +128,33 @@ services:
       - ELASTIC_USER
       - ELASTIC_PASSWORD
       - ELASTIC_INDEX_PREFIX
+      - RABBITMQ_HOST
+      - RABBITMQ_PORT
+      - RABBITMQ_USERNAME
+      - RABBITMQ_PASSWORD
+      - RABBITMQ_MANAGEMENT_URL
+    depends_on:
+      tol-sdk-python-rabbitmq:
+        condition: service_healthy
     networks:
       - api-base-test-network
+
+  tol-sdk-python-rabbitmq:
+    image: rabbitmq:3-management
+    container_name: rabbitmq
+    environment:
+      - RABBITMQ_DEFAULT_USER=test-user
+      - RABBITMQ_DEFAULT_PASS=test-password
+    ports:
+      - 5672:5672
+      - 15672:15672
+    networks:
+      - api-base-test-network
+    healthcheck:
+      test: rabbitmq-diagnostics -q ping
+      interval: 5s
+      timeout: 5s
+      retries: 10
 
 networks:
   api-base-test-network: {}

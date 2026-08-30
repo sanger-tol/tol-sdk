@@ -98,8 +98,16 @@ integration-test-python-package:
   extends: .unit-test-python-package
   image: $BUILT_IMAGE
   stage: integration test
+  services:
+    - name: rabbitmq:3-management
+      alias: rabbitmq
   variables:
     TEST_TYPE: integration
+    RABBITMQ_HOST: rabbitmq
+    RABBITMQ_PORT: "5672"
+    RABBITMQ_USERNAME: guest
+    RABBITMQ_PASSWORD: guest
+    RABBITMQ_MANAGEMENT_URL: http://rabbitmq:15672
   needs:
     - unit-test-python-package
   rules:
