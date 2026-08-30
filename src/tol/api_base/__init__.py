@@ -8,5 +8,6 @@ from .blueprint import (  # noqa
     data_blueprint
 )
 from .data_upload import data_upload_blueprint  # noqa
+from .notification import notification_blueprint  # noqa
 from .pipeline_steps import pipeline_steps_blueprint # noqa
 from .system import system_blueprint  # noqa
