@@ -17,11 +17,13 @@ from tol.rabbitmq.schema import NotificationChannel
 
 @pytest.fixture(scope='module')
 def config():
+    """Return a `RabbitmqConfig` instance from environment variables"""
     return RabbitmqConfig.from_env()
 
 
 @pytest.fixture(scope='module')
 def api_url():
+    """Return the base URL for the notification API."""
     if 'LOCALHOST' in os.environ:
         return 'http://localhost:9025'
     return 'http://system-test-api-notification:5000'
@@ -29,6 +31,7 @@ def api_url():
 
 @pytest.fixture(autouse=True)
 def purge_queue(config):
+    """Purge all messages from the RabbitMQ queue."""
     requests.delete(
         f'{config.management_url}'
         f'/api/queues/%2F/{config.queue}/contents',
@@ -72,6 +75,7 @@ def _poll_messages(config, timeout=10):
 
 
 def _request_body(notification_id, **overrides):
+    """Return a notification request body with optional overrides."""
     base = {
         'id': notification_id,
         'channels': ['email'],
@@ -85,6 +89,10 @@ def _request_body(notification_id, **overrides):
 
 class TestNotificationSystem:
     def test_post_valid_request_lands_on_queue(self, config, api_url):
+        """
+        Post a valid notification request and ensure it
+        lands on the RabbitMQ queue.
+        """
         body = _request_body('system-notification-1')
 
         response = requests.post(
@@ -102,6 +110,10 @@ class TestNotificationSystem:
         )
 
     def test_post_then_consume(self, config, api_url):
+        """
+        Post a notification request and then consume
+        it from the RabbitMQ queue.
+        """
         body = _request_body(
             'system-notification-2',
             channels=['email', 'slack'],
@@ -134,6 +146,7 @@ class TestNotificationSystem:
         }
 
     def test_post_invalid_request_returns_400(self, api_url):
+        """Post an invalid notification request and expect a 400 response."""
         body = _request_body(
             'system-notification-3',
             recipients=[]

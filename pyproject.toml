@@ -68,8 +68,7 @@ all = [
     "tol-sdk[mysql]",
     "tol-sdk[postgresql]",
     "tol-sdk[prefect]",
-    "tol-sdk[sheets]",
-    "tol-sdk[s3]"
+    "tol-sdk[sheets]"
 ]
 docs = [
     "sphinx",

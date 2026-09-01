@@ -7,23 +7,8 @@ from unittest.mock import Mock, create_autospec
 
 from pika.adapters.blocking_connection import BlockingChannel
 
-from tol.rabbitmq.config import RabbitmqConfig
 from tol.rabbitmq.factory import create_rabbitmq_datasource
 from tol.rabbitmq.rabbitmq_datasource import RabbitmqDataSource
-
-
-def _config():
-    return RabbitmqConfig(
-        host='rabbitmq-host',
-        port=5672,
-        username='test-user',
-        password='test-password',
-        vhost='test-vhost',
-        exchange='notification',
-        queue='notification',
-        routing_key='notification',
-        management_url='http://rabbitmq-mgmt:15672'
-    )
 
 
 def _stub_broker(monkeypatch):
@@ -40,13 +25,12 @@ def _stub_broker(monkeypatch):
     return mock_blocking, mock_channel
 
 
-def test_returns_configured_datasource(monkeypatch):
+def test_returns_configured_datasource(monkeypatch, config):
     """
     Test that create_rabbitmq_datasource returns a
     properly configured RabbitmqDataSource.
     """
     mock_blocking, mock_channel = _stub_broker(monkeypatch)
-    config = _config()
 
     ds = create_rabbitmq_datasource(config)
 

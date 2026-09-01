@@ -6,7 +6,6 @@ import json
 import signal
 from unittest.mock import Mock, PropertyMock, create_autospec
 
-from pika.adapters.blocking_connection import BlockingChannel
 from pika.spec import Basic
 
 import pytest
@@ -14,12 +13,6 @@ import pytest
 from tol.rabbitmq.connection import RabbitmqConnection
 from tol.rabbitmq.consumer import NotificationConsumer
 from tol.rabbitmq.schema import NotificationChannel
-
-
-@pytest.fixture
-def mock_channel():
-    """Create a mock BlockingChannel for testing."""
-    return create_autospec(BlockingChannel, spec_set=True)
 
 
 @pytest.fixture

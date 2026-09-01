@@ -6,53 +6,20 @@ import pytest
 
 import requests
 
-from tol.core import core_data_object
-from tol.rabbitmq import (
-    NotificationRequest,
-    RabbitmqConfig,
-    create_rabbitmq_datasource
-)
+from tol.rabbitmq import NotificationRequest
 from tol.rabbitmq.connection import RabbitmqConnection
 from tol.rabbitmq.consumer import NotificationConsumer
 from tol.rabbitmq.schema import NotificationChannel
 
 
-@pytest.fixture(scope='module')
-def config():
-    return RabbitmqConfig.from_env()
-
-
-@pytest.fixture(scope='module')
-def datasource(config):
-    ds = create_rabbitmq_datasource(config)
-    core_data_object(ds)
-    return ds
-
-
 @pytest.fixture
 def received():
+    """Return a list to which dispatched notifications will be appended"""
     return []
 
 
-@pytest.fixture(autouse=True)
-def purge_queue(config):
-    requests.delete(
-        f'{config.management_url}'
-        f'/api/queues/%2F/{config.queue}/contents',
-        auth=(config.username, config.password),
-        timeout=10
-    )
-
-    yield
-
-
-@pytest.fixture(scope='module', autouse=True)
-def declare_topology(config):
-    with RabbitmqConnection(config):
-        pass
-
-
 def _queue_depth(config):
+    """Return the number of messages in the RabbitMQ queue"""
     response = requests.get(
         f'{config.management_url}/api/queues/%2F/{config.queue}',
         auth=(config.username, config.password),
@@ -63,6 +30,7 @@ def _queue_depth(config):
 
 
 def _publish(datasource, body, message_id):
+    """Publish a message to the RabbitMQ queue"""
     message = datasource.data_object_factory(
         'notification_message',
         id_=message_id,
@@ -78,6 +46,9 @@ class TestConsumerAgainstBroker:
         datasource,
         received
     ):
+        """
+        Test that a valid notification request is dispatched and acknowledged
+        """
         request = NotificationRequest.model_validate({
             'id': 'notification-1',
             'channels': ['email', 'slack'],
@@ -123,6 +94,7 @@ class TestConsumerAgainstBroker:
         datasource,
         received
     ):
+        """Test that an invalid notification payload is nacked"""
         _publish(datasource, {'not': 'a notification'}, 'bad-1')
 
         consumer = NotificationConsumer(
