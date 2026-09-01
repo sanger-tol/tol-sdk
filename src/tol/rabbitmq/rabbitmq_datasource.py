@@ -104,7 +104,7 @@ class RabbitmqDataSource(DataSource, Inserter, DetailGetter, ListGetter):
         except pika.exceptions.AMQPError as e:
             raise DataSourceError(
                 title='Connection Error',
-                detail=f'Could not connect to RabbitMQ: {e}',
+                detail=f'Could not connect to RabbitMQ: {e!r}',
                 status_code=500,
             ) from e
 

@@ -12,10 +12,10 @@ from pika.spec import Basic, BasicProperties
 
 from pydantic import ValidationError
 
-from .config import RabbitmqConfig
-from .connection import RabbitmqConnection
-from .schema import (NotificationChannel, NotificationDelivery,
-                     NotificationRequest, create_deliveries)
+from tol.rabbitmq.config import RabbitmqConfig
+from tol.rabbitmq.connection import RabbitmqConnection
+from tol.rabbitmq.schema import (NotificationChannel, NotificationDelivery,
+                                 NotificationRequest, create_deliveries)
 
 LOGGER = logging.getLogger(__name__)
 
@@ -130,6 +130,11 @@ class NotificationConsumer:
 
 if __name__ == '__main__':
     """Run the notification consumer."""
+    logging.basicConfig(
+        level=logging.INFO,
+        format='%(asctime)s %(levelname)s %(name)s: %(message)s'
+    )
+
     config = RabbitmqConfig.from_env()
     connection = RabbitmqConnection(config)
 

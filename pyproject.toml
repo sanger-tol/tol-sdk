@@ -35,6 +35,7 @@ dependencies = [
   "dateparser == 1.2.1",
   "pydantic == 2.11.4",
   "nanoid == 2.0.0",
+  "pika == 1.4.4"
 ]
 
 [project.optional-dependencies]
@@ -57,7 +58,6 @@ sheets = [
 
 ]
 s3 = ["minio == 7.2.15"]
-rabbitmq = ["pika == 1.4.4"]
 all = [
     "tol-sdk[api-base]",
     "tol-sdk[benchling]",
@@ -69,8 +69,7 @@ all = [
     "tol-sdk[postgresql]",
     "tol-sdk[prefect]",
     "tol-sdk[sheets]",
-    "tol-sdk[s3]",
-    "tol-sdk[rabbitmq]"
+    "tol-sdk[s3]"
 ]
 docs = [
     "sphinx",

@@ -3,12 +3,13 @@
 # SPDX-License-Identifier: MIT
 
 import pytest
+
 import requests
 
 from tol.core import core_data_object
 from tol.rabbitmq import (
-    RabbitmqConfig,
     NotificationRequest,
+    RabbitmqConfig,
     create_rabbitmq_datasource
 )
 from tol.rabbitmq.connection import RabbitmqConnection

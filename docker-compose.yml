@@ -50,9 +50,16 @@ services:
       # needs to be set, but doesn't matter at all
       - ELASTIC_PASSWORD=anything
       - ELASTIC_INDEX_PREFIX=test
+      - RABBITMQ_HOST=tol-sdk-python-rabbitmq
+      - RABBITMQ_PORT=5672
+      - RABBITMQ_USERNAME=test-user
+      - RABBITMQ_PASSWORD=test-password
+      - RABBITMQ_MANAGEMENT_URL=http://tol-sdk-python-rabbitmq:15672
+      - NOTIFICATION_API_URL=http://system-test-api-notification:5000
     depends_on:
       - system-test-api-elastic
       - system-test-api-sql
+      - system-test-api-notification
     networks:
       - api-base-test-network
 
@@ -91,6 +98,26 @@ services:
     ports:
       - '9021:5000'
 
+  system-test-api-notification:
+    build: .
+    container_name: api-notification
+    command: flask --app notification run --host 0.0.0.0 --debugger
+    working_dir: /test/system/data_source/services
+    environment:
+      - RABBITMQ_HOST=tol-sdk-python-rabbitmq
+      - RABBITMQ_PORT=5672
+      - RABBITMQ_USERNAME=test-user
+      - RABBITMQ_PASSWORD=test-password
+      - RABBITMQ_MANAGEMENT_URL=http://tol-sdk-python-rabbitmq:15672
+      - FLASK_DEBUG=1
+    depends_on:
+      tol-sdk-python-rabbitmq:
+        condition: service_healthy
+    networks:
+      - api-base-test-network
+    ports:
+      - '9025:5000'
+
   tol-sdk-python-integration-test:
     build: .
     container_name: integration-test
@@ -128,11 +155,11 @@ services:
       - ELASTIC_USER
       - ELASTIC_PASSWORD
       - ELASTIC_INDEX_PREFIX
-      - RABBITMQ_HOST
-      - RABBITMQ_PORT
-      - RABBITMQ_USERNAME
-      - RABBITMQ_PASSWORD
-      - RABBITMQ_MANAGEMENT_URL
+      - RABBITMQ_HOST=tol-sdk-python-rabbitmq
+      - RABBITMQ_PORT=5672
+      - RABBITMQ_USERNAME=test-user
+      - RABBITMQ_PASSWORD=test-password
+      - RABBITMQ_MANAGEMENT_URL=http://tol-sdk-python-rabbitmq:15672
     depends_on:
       tol-sdk-python-rabbitmq:
         condition: service_healthy

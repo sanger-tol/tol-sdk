@@ -65,6 +65,8 @@ def notification_blueprint(
 
         results = rabbitmq_ds.insert_batch('notification_message', [message])
 
+        # RabbitmqDataSource.insert_batch always returns a list with one
+        # entry per input object - None/empty cannot occur here.
         if results is None:
             raise DataSourceError(
                 'Insert Failed',
