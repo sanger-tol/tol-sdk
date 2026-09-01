@@ -55,7 +55,7 @@ class TestConsumerAgainstBroker:
             'type': 'test_type',
             'recipients': [
                 {'email': 'test1@example.com'},
-                {'user_id': 'user_2'}
+                {'email': 'nowrequired@example.com', 'user_id': 'user_2'}
             ],
             'context': {'key': 'value'}
         })

@@ -117,7 +117,8 @@ class TestNotificationSystem:
         body = _request_body(
             'system-notification-2',
             channels=['email', 'slack'],
-            recipients=[{'user_id': 'user_1'}]
+            recipients=[{'email': 'nowrequired@example.com',
+                         'user_id': 'user_1'}]
         )
         requests.post(
             f'{api_url}/notification', json=body, timeout=10
