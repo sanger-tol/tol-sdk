@@ -79,8 +79,9 @@ system-test-python-package:
     DOCKER_TLS_VERIFY: "1"
   before_script:
     - cd test/system
-    - docker-compose up -d db elastic
-    - docker-compose up -d system-test-api-sql system-test-api-elastic
+    - docker-compose up -d db elastic rabbitmq
+    - sleep 15
+    - docker-compose up -d system-test-api-sql system-test-api-elastic system-test-api-notification
   script:
     - docker-compose run system-test
   rules:

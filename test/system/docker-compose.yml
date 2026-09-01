@@ -103,8 +103,7 @@ services:
     networks:
       - test-network
     depends_on:
-      rabbitmq:
-        condition: service_healthy
+      - rabbitmq
     restart: always
 
 networks:
