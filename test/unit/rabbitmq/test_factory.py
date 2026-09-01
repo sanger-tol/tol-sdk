@@ -58,16 +58,25 @@ def test_returns_configured_datasource(monkeypatch, config):
     assert parameters.credentials.username == 'test-user'
     assert parameters.credentials.password == 'test-password'
 
-    mock_channel.exchange_declare.assert_called_once_with(
-        exchange='notification',
+    mock_channel.exchange_declare.assert_any_call(
+        exchange=config.exchange,
         exchange_type='topic',
         durable=True
     )
-    mock_channel.queue_declare.assert_called_once_with(
-        queue='notification',
+    mock_channel.exchange_declare.assert_any_call(
+        exchange=config.dlx,
+        exchange_type='topic',
         durable=True
     )
-    mock_channel.queue_bind.assert_called_once_with(
+    mock_channel.queue_declare.assert_any_call(
+        queue=config.queue,
+        durable=True,
+        arguments={
+            'x-dead-letter-exchange': config.dlx,
+            'x-dead-letter-routing-key': f'dead.{config.queue}'
+        }
+    )
+    mock_channel.queue_bind.assert_any_call(
         queue='notification',
         exchange='notification',
         routing_key='notification'

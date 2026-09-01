@@ -8,11 +8,17 @@ from unittest.mock import Mock, PropertyMock, create_autospec
 
 from pika.spec import Basic
 
+from pydantic import ValidationError
+
 import pytest
 
 from tol.rabbitmq.connection import RabbitmqConnection
-from tol.rabbitmq.consumer import NotificationConsumer
-from tol.rabbitmq.schema import NotificationChannel
+from tol.rabbitmq.consumer import MessageConsumer
+from tol.rabbitmq.handlers import notification_handler
+from tol.rabbitmq.schema import (
+    MessageEnvelope,
+    NotificationChannel
+)
 
 
 @pytest.fixture
@@ -24,27 +30,18 @@ def mock_connection(mock_channel):
 
 
 @pytest.fixture
-def email_dispatcher():
-    """Create a mock email dispatcher for testing."""
+def handler():
+    """Create a mock handler for testing."""
     return Mock()
 
 
 @pytest.fixture
-def slack_dispatcher():
-    """Create a mock slack dispatcher for testing."""
-    return Mock()
-
-
-@pytest.fixture
-def consumer(mock_connection, email_dispatcher, slack_dispatcher):
-    """Create a NotificationConsumer with mock dependencies for testing."""
-    return NotificationConsumer(
+def consumer(mock_connection, handler):
+    """Create a MessageConsumer with a single mock handler."""
+    return MessageConsumer(
         mock_connection,
         'notification',
-        {
-            NotificationChannel.EMAIL: email_dispatcher,
-            NotificationChannel.SLACK: slack_dispatcher
-        }
+        {'notification': handler}
     )
 
 
@@ -62,101 +59,86 @@ def restore_signal_handlers():
 
 def _on_message(consumer, mock_channel, body, delivery_tag=42):
     """Invoke the private message callback directly."""
-    callback = consumer._NotificationConsumer__on_message
+    callback = consumer._MessageConsumer__on_message
     method = Basic.Deliver(delivery_tag=delivery_tag)
     callback(mock_channel, method, Mock(), body)
 
 
-def _request_body(**overrides):
+def _envelope_body(**overrides):
     """
-    Create a JSON-encoded notification request body with optional overrides.
+    Create a JSON-encoded message envelope body with optional overrides.
     """
     base = {
-        'id': 'notification-1',
-        'channels': ['email', 'slack'],
-        'type': 'test_type',
-        'recipients': [{'email': 'test1@example.com'}],
-        'context': {'key': 'value'}
+        'id': 'message-1',
+        'type': 'notification',
+        'context': {
+            'id': 'notification-1',
+            'channels': ['email', 'slack'],
+            'type': 'test_type',
+            'recipients': [{'email': 'test1@example.com'}],
+            'context': {'key': 'value'}
+        }
     }
     base.update(overrides)
     return json.dumps(base).encode('utf-8')
 
 
-class TestOnMessage:
+class TestMessageConsumer:
     def test_valid_message_dispatches_and_acks(
         self,
         consumer,
         mock_channel,
-        email_dispatcher,
-        slack_dispatcher
+        handler
     ):
         """
         Test that a valid message is dispatched
         to the correct dispatchers and acknowledged.
         """
-        _on_message(consumer, mock_channel, _request_body())
+        _on_message(consumer, mock_channel, _envelope_body())
 
-        email_dispatcher.assert_called_once()
-        slack_dispatcher.assert_called_once()
+        handler.assert_called_once()
+        envelope = handler.call_args.args[0]
 
-        email_delivery = email_dispatcher.call_args.args[0]
-        assert email_delivery.channel == NotificationChannel.EMAIL
-        assert email_delivery.notification_id == 'notification-1'
-        assert email_delivery.recipient.email == 'test1@example.com'
-        assert email_delivery.type == 'test_type'
-        assert email_delivery.context == {'key': 'value'}
-        assert email_delivery.delivery_id
-
-        slack_delivery = slack_dispatcher.call_args.args[0]
-        assert slack_delivery.channel == NotificationChannel.SLACK
-        assert (
-            slack_delivery.notification_id
-            == email_delivery.notification_id
-        )
-        assert slack_delivery.delivery_id != email_delivery.delivery_id
+        assert isinstance(envelope, MessageEnvelope)
+        assert envelope.id == 'message-1'
+        assert envelope.type == 'notification'
 
         mock_channel.basic_ack.assert_called_once_with(delivery_tag=42)
         mock_channel.basic_nack.assert_not_called()
 
-    def test_fan_out_per_recipient(
+    def test_unknown_type_nacks(
         self,
         consumer,
         mock_channel,
-        email_dispatcher
+        handler
     ):
         """
-        Test that a message with multiple recipients is fanned out
-        to each recipient.
+        Test that a message with no registered handler
+        is nacked (lands on the DLQ).
         """
-        body = _request_body(
-            channels=['email'],
-            recipients=[
-                {'email': 'test1@example.com'},
-                {'user_id': 'user_2'}
-            ]
+
+        _on_message(consumer, mock_channel, _envelope_body(type='mystery'))
+
+        handler.assert_not_called()
+        mock_channel.basic_nack.assert_called_once_with(
+            delivery_tag=42,
+            requeue=False
         )
 
-        _on_message(consumer, mock_channel, body)
-
-        assert email_dispatcher.call_count == 2
-        emails = [
-            c.args[0].recipient.email
-            for c in email_dispatcher.call_args_list
-        ]
-        assert emails == ['test1@example.com', None]
+        mock_channel.basic_ack.assert_not_called()
 
     def test_invalid_json_nacks(
         self,
         consumer,
         mock_channel,
-        email_dispatcher
+        handler
     ):
         """
         Test that an invalid JSON message is nacked and not dispatched.
         """
         _on_message(consumer, mock_channel, b'not json')
 
-        email_dispatcher.assert_not_called()
+        handler.assert_not_called()
         mock_channel.basic_nack.assert_called_once_with(
             delivery_tag=42,
             requeue=False
@@ -167,64 +149,39 @@ class TestOnMessage:
         self,
         consumer,
         mock_channel,
-        email_dispatcher
+        handler
     ):
         """
-        Test that a message failing schema validation is
-        nacked and not dispatched.
+        Test that an envelope missing required fields is nacked.
         """
-        _on_message(consumer, mock_channel, _request_body(recipients=[]))
+        _on_message(consumer, mock_channel, json.dumps({'id': 'm-1'}).encode())
 
-        email_dispatcher.assert_not_called()
+        handler.assert_not_called()
         mock_channel.basic_nack.assert_called_once_with(
             delivery_tag=42,
             requeue=False
         )
         mock_channel.basic_ack.assert_not_called()
 
-    def test_dispatcher_failure_nacks(
+    def test_handler_failure_nacks(
         self,
         consumer,
         mock_channel,
-        email_dispatcher,
-        slack_dispatcher
+        handler
     ):
         """
-        Test that if a dispatcher raises an exception, the message is nacked.
+        Test that if the handler raises, the message is nacked.
         """
-        email_dispatcher.side_effect = RuntimeError('smtp down')
+        handler.side_effect = RuntimeError('smtp down')
 
-        _on_message(consumer, mock_channel, _request_body())
+        _on_message(consumer, mock_channel, _envelope_body())
 
-        email_dispatcher.assert_called_once()
-        slack_dispatcher.assert_not_called()
+        handler.assert_called_once()
         mock_channel.basic_nack.assert_called_once_with(
             delivery_tag=42,
             requeue=False
         )
         mock_channel.basic_ack.assert_not_called()
-
-    def test_missing_dispatcher_skips_channel(
-        self,
-        mock_connection,
-        mock_channel,
-        email_dispatcher
-    ):
-        """
-        Test that if a channel has no dispatcher, it is skipped
-        and the message is still acknowledged.
-        """
-        consumer = NotificationConsumer(
-            mock_connection,
-            'notification',
-            {NotificationChannel.EMAIL: email_dispatcher}
-        )
-
-        _on_message(consumer, mock_channel, _request_body())
-
-        email_dispatcher.assert_called_once()
-        mock_channel.basic_ack.assert_called_once_with(delivery_tag=42)
-        mock_channel.basic_nack.assert_not_called()
 
 
 class TestStartStop:
@@ -303,3 +260,104 @@ class TestStartStop:
         )
         mock_channel.stop_consuming.assert_called_once()
         mock_connection.close.assert_called_once()
+
+
+class TestNotificationHandler:
+    """Pure function tests - no consumer involved"""
+
+    def _envelope(self, **context_overrrides):
+        """Build a MessageEnvelope wrapping a notification request."""
+        context = {
+            'id': 'notification-1',
+            'channels': ['email', 'slack'],
+            'type': 'test_type',
+            'recipients': [{'email': 'test1@example.com'}],
+            'context': {'key': 'value'}
+        }
+        context.update(context_overrrides)
+        return MessageEnvelope(
+            id='message-1',
+            type='notification',
+            context=context
+        )
+
+    def test_fans_out_and_dispatches(self):
+        """
+        Test that a notification envelope is fanned out
+        to the correct per-channel dispatchers.
+        """
+        email_dispatcher = Mock()
+        slack_dispatcher = Mock()
+        handle = notification_handler({
+            NotificationChannel.EMAIL: email_dispatcher,
+            NotificationChannel.SLACK: slack_dispatcher
+        })
+
+        handle(self._envelope())
+
+        email_dispatcher.assert_called_once()
+        slack_dispatcher.assert_called_once()
+
+        email_delivery = email_dispatcher.call_args.args[0]
+        assert email_delivery.channel == NotificationChannel.EMAIL
+        assert email_delivery.notification_id == 'notification-1'
+        assert email_delivery.recipient.email == 'test1@example.com'
+        assert email_delivery.type == 'test_type'
+        assert email_delivery.context == {'key': 'value'}
+        assert email_delivery.delivery_id
+
+        slack_delivery = slack_dispatcher.call_args.args[0]
+        assert slack_delivery.channel == NotificationChannel.SLACK
+        assert (
+            slack_delivery.notification_id
+            == email_delivery.notification_id
+        )
+        assert slack_delivery.delivery_id != email_delivery.delivery_id
+
+    def test_fan_out_per_recipient(self):
+        """
+        Test that a message with multiple recipients is fanned out
+        to each recipient.
+        """
+        email_dispatcher = Mock()
+        handle = notification_handler({
+            NotificationChannel.EMAIL: email_dispatcher
+        })
+
+        handle(self._envelope(
+            channels=['email'],
+            recipients=[
+                {'email': 'test1@example.com'},
+                {'email': 'test2@example.com'}
+            ]
+        ))
+
+        assert email_dispatcher.call_count == 2
+        emails = [
+            c.args[0].recipient.email
+            for c in email_dispatcher.call_args_list
+        ]
+        assert emails == ['test1@example.com', 'test2@example.com']
+
+    def test_missing_dispatcher_skips_channel(self):
+        """
+        Test that a channel with no dispatcher is skipped
+        while registered channels are still dispatched.
+        """
+        email_dispatcher = Mock()
+        handle = notification_handler({
+            NotificationChannel.EMAIL: email_dispatcher
+        })
+
+        handle(self._envelope())
+
+        email_dispatcher.assert_called_once()
+
+    def test_invalid_context_raises(self):
+        """
+        Test that an invalid notification context raises ValidationError
+        """
+        handle = notification_handler({})
+
+        with pytest.raises(ValidationError):
+            handle(self._envelope(recipients=[]))

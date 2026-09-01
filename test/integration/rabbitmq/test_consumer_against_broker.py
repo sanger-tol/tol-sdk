@@ -8,8 +8,9 @@ import requests
 
 from tol.rabbitmq import NotificationRequest
 from tol.rabbitmq.connection import RabbitmqConnection
-from tol.rabbitmq.consumer import NotificationConsumer
-from tol.rabbitmq.schema import NotificationChannel
+from tol.rabbitmq.consumer import MessageConsumer
+from tol.rabbitmq.handlers import notification_handler
+from tol.rabbitmq.schema import NotificationChannel, wrap_in_envelope
 
 
 @pytest.fixture
@@ -62,7 +63,7 @@ class TestConsumerAgainstBroker:
 
         _publish(
             datasource,
-            request.model_dump(mode='json'),
+            wrap_in_envelope(request),
             'notification-1'
         )
 
@@ -71,10 +72,10 @@ class TestConsumerAgainstBroker:
             NotificationChannel.SLACK: received.append
         }
 
-        consumer = NotificationConsumer(
+        consumer = MessageConsumer(
             RabbitmqConnection(config),
             config.queue,
-            dispatchers
+            {'notification': notification_handler(dispatchers)}
         )
 
         consumer.process_one()
@@ -97,7 +98,7 @@ class TestConsumerAgainstBroker:
         """Test that an invalid notification payload is nacked"""
         _publish(datasource, {'not': 'a notification'}, 'bad-1')
 
-        consumer = NotificationConsumer(
+        consumer = MessageConsumer(
             RabbitmqConnection(config),
             config.queue,
             {NotificationChannel.EMAIL: received.append}

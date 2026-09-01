@@ -11,7 +11,8 @@ import requests
 
 from tol.rabbitmq import RabbitmqConfig
 from tol.rabbitmq.connection import RabbitmqConnection
-from tol.rabbitmq.consumer import NotificationConsumer
+from tol.rabbitmq.consumer import MessageConsumer
+from tol.rabbitmq.handlers import notification_handler
 from tol.rabbitmq.schema import NotificationChannel
 
 
@@ -127,12 +128,14 @@ class TestNotificationSystem:
         _poll_messages(config)
 
         received = []
-        consumer = NotificationConsumer(
+        consumer = MessageConsumer(
             RabbitmqConnection(config),
             config.queue,
             {
-                NotificationChannel.EMAIL: received.append,
-                NotificationChannel.SLACK: received.append
+                'notification': notification_handler({
+                    NotificationChannel.EMAIL: received.append,
+                    NotificationChannel.SLACK: received.append
+                })
             }
         )
         consumer.process_one()

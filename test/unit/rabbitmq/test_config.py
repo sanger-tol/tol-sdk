@@ -8,7 +8,7 @@ from tol.rabbitmq import RabbitmqConfig
 class TestRabbitmqConfigFromEnv:
     def test_default(self, monkeypatch):
         """
-        Test that RabbitmqConfig.from_env() returns the expected 
+        Test that RabbitmqConfig.from_env() returns the expected
         default values when no environment variables are set.
         """
         for var in ('APP_NAME', 'DLX', 'EXCHANGE'):

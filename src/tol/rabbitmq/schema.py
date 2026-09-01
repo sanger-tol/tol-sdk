@@ -92,3 +92,15 @@ def create_deliveries(notification_request: NotificationRequest
         for channel in notification_request.channels
         for recipient in notification_request.recipients
     ]
+
+
+def wrap_in_envelope(request: NotificationRequest) -> dict:
+    """
+    Serialise a NotificationRequest as an envelope payload for publishing
+    """
+    return {
+        'id': request.id,
+        'version': request.version,
+        'type': 'notification',
+        'context': request.model_dump(mode='json')
+    }

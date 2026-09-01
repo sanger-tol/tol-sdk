@@ -2,9 +2,9 @@
 #
 # SPDX-License-Identifier: MIT
 
-from dataclasses import dataclass
 import logging
 import ssl
+from dataclasses import dataclass
 
 import pika
 import pika.exceptions

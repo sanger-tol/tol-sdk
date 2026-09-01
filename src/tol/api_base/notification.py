@@ -13,7 +13,7 @@ from pydantic import ValidationError
 from .auth import ForbiddenError
 from .misc import CtxGetter, default_ctx_getter
 from ..core import DataSourceError, ErrorObject
-from ..rabbitmq.schema import NotificationRequest
+from ..rabbitmq.schema import NotificationRequest, wrap_in_envelope
 
 if TYPE_CHECKING:
     from ..rabbitmq import RabbitmqDataSource
@@ -59,7 +59,7 @@ def notification_blueprint(
             'notification_message',
             id_=notification_request.id,
             attributes={
-                'body': notification_request.model_dump(mode='json')
+                'body': wrap_in_envelope(notification_request)
             }
         )
 
