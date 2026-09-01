@@ -2,6 +2,7 @@
 #
 # SPDX-License-Identifier: MIT
 
+from dataclasses import dataclass
 import logging
 import ssl
 
@@ -12,6 +13,64 @@ from pika.adapters.blocking_connection import BlockingChannel
 from tol.rabbitmq.config import RabbitmqConfig
 
 LOGGER = logging.getLogger(__name__)
+
+
+@dataclass(frozen=True, slots=True)
+class QueueSpec:
+    """Declares one queue, its bindings and its dead-letter queue"""
+    name: str
+    binding_keys: tuple[str, ...]
+    dead_letter: bool = True
+
+
+def declare_topology(
+    channel: BlockingChannel,
+    exchange: str,
+    specs: list[QueueSpec],
+    dlx: str | None = None,
+) -> None:
+    """Declare the topic exchange plus each QueueSpec's queue/bindings/DLQ."""
+    channel.exchange_declare(
+        exchange=exchange,
+        exchange_type='topic',
+        durable=True
+    )
+
+    if dlx is not None:
+        channel.exchange_declare(
+            exchange=dlx,
+            exchange_type='topic',
+            durable=True
+        )
+
+    for spec in specs:
+        arguments = None
+        if spec.dead_letter and dlx is not None:
+            arguments = {
+                'x-dead-letter-exchange': dlx,
+                'x-dead-letter-routing-key': f'dead.{spec.name}'
+            }
+        channel.queue_declare(
+            queue=spec.name,
+            durable=True,
+            arguments=arguments
+        )
+
+        for key in spec.binding_keys:
+            channel.queue_bind(
+                queue=spec.name,
+                exchange=exchange,
+                routing_key=key
+            )
+
+        if spec.dead_letter and dlx is not None:
+            dead_queue = f'{spec.name}.dead'
+            channel.queue_declare(queue=dead_queue, durable=True)
+            channel.queue_bind(
+                queue=dead_queue,
+                exchange=dlx,
+                routing_key=f'dead.{spec.name}'
+            )
 
 
 class RabbitmqConnection:
@@ -86,13 +145,15 @@ class RabbitmqConnection:
         """
         Declare the exchange, queue, and binding for the notification system.
         """
-        channel = self.channel
-        channel.exchange_declare(
-            exchange=self.__config.exchange,
-            exchange_type='topic',
-            durable=True,
+        spec = QueueSpec(
+            name=self.__config.queue,
+            binding_keys=(self.__config.routing_key,),
+            dead_letter=True
         )
-        channel.queue_declare(queue=self.__config.queue, durable=True)
-        channel.queue_bind(queue=self.__config.queue,
-                           exchange=self.__config.exchange,
-                           routing_key=self.__config.routing_key)
+
+        declare_topology(
+            self.channel,
+            self.__config.exchange,
+            [spec],
+            dlx=self.__config.dlx
+        )
