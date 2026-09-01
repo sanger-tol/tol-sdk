@@ -6,11 +6,12 @@ SPDX-License-Identifier: MIT
 
 # Changelog
 
-## tol-sdk `2.4.10`
+## tol-sdk `2.5.0`
 
-25-08-2026
+01-09-2026
 
 - Added `exempt_taxon_ids` to GoaT validator config to allow for taxon ID 32644 to pass validation
+- Added GAP workflow converters
 
 ## tol-sdk `2.4.9`
 
