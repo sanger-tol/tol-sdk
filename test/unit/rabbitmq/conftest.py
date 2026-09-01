@@ -23,7 +23,7 @@ def config():
         exchange='notification',
         queue='notification',
         routing_key='notification',
-        management_url='http://rabbitmq-mgmt:15672'
+        management_url='http://rabbitmq-mgmt:15672',
     )
 
 

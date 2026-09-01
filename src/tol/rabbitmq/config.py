@@ -18,6 +18,8 @@ class RabbitmqConfig:
     queue: str
     routing_key: str
     management_url: str
+    app_name: str = ''
+    dlx: str = 'tol.dlx'
     use_ssl: bool = False
     write_batch_size: int = 100
 
@@ -29,11 +31,13 @@ class RabbitmqConfig:
             username=os.getenv(f'{prefix}USERNAME', 'guest'),
             password=os.getenv(f'{prefix}PASSWORD', 'guest'),
             vhost=os.getenv(f'{prefix}VHOST', '/'),
-            exchange=os.getenv(f'{prefix}EXCHANGE', 'notification'),
+            exchange=os.getenv(f'{prefix}EXCHANGE', 'tol'),
             queue=os.getenv(f'{prefix}QUEUE', 'notification'),
             routing_key=os.getenv(f'{prefix}ROUTING_KEY', 'notification'),
             management_url=os.getenv(f'{prefix}MANAGEMENT_URL',
                                      'http://127.0.0.1:15672'),
             use_ssl=os.getenv(f'{prefix}USE_SSL', 'false').lower() == 'true',
             write_batch_size=int(os.getenv(f'{prefix}WRITE_BATCH_SIZE', 100)),
+            app_name=os.getenv(f'{prefix}APP_NAME', ''),
+            dlx=os.getenv(f'{prefix}DLX', 'tol.dlx'),
         )
