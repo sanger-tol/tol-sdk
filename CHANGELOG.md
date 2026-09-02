@@ -6,6 +6,12 @@ SPDX-License-Identifier: MIT
 
 # Changelog
 
+## tol-sdk `2.5.1`
+
+02-09-2026
+
+- Ensure enriching works when the id field is a provenance field
+
 ## tol-sdk `2.5.0`
 
 01-09-2026

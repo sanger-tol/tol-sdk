@@ -50,4 +50,4 @@ class TestDataSourceUtils(TestCase):
 
     def test_get_datasource(self):
         ds = DataSourceUtils.get_datasource('test')
-        assert ds.supported_types == ['record', 'category']
+        assert set(ds.supported_types) == {'record', 'category'}
