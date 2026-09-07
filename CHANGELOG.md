@@ -6,6 +6,12 @@ SPDX-License-Identifier: MIT
 
 # Changelog
 
+## tol-sdk `2.5.2`
+
+07-09-2026
+
+- Added `SetRelationshipAction` to set (or clear, via a null `related_id`) a to-one relationship on one or more objects
+
 ## tol-sdk `2.5.1`
 
 02-09-2026
