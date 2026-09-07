@@ -37,7 +37,7 @@ class SetRelationshipAction(Action):
                 400
             )
 
-        if not params.get('related_id'):
+        if 'related_id' not in params:
             raise DataSourceError(
                 'Missing related_id',
                 'Missing required param: "related_id"',
@@ -57,7 +57,12 @@ class SetRelationshipAction(Action):
         related_type = datasource.relationship_config[object_type].to_one[relationship]
 
         try:
-            related_object = datasource.get_one(related_type, related_id)
+            # a null related_id clears the relationship instead of looking up a related object
+            related_object = (
+                datasource.get_one(related_type, related_id)
+                if related_id is not None
+                else None
+            )
 
             updated_objects = self.__build_updated_objects(
                 datasource=datasource,
