@@ -74,6 +74,14 @@ SELECT
 		WHEN subsam.id IS NOT NULL THEN 'Yes'
 		ELSE 'No'
 	END AS spried,
+	CASE
+		WHEN subsam.id IS NOT NULL THEN si.type_of_shearing
+		ELSE NULL
+	END AS type_of_shearing,
+	CASE
+		WHEN subsam.id IS NOT NULL THEN si.shearing_speed
+		ELSE NULL
+	END AS shearing_speed,
     base.submitted_submission_date AS completion_date,
     'v1'::varchar AS source
 
@@ -91,6 +99,8 @@ LEFT JOIN submission_samples$raw AS subsam
     ON subsam.id = base.entity_id
 LEFT JOIN dna_extract$raw subsam_dna
     ON subsam.original_dna_extract = subsam_dna.id
+LEFT JOIN shearing_step_v2$raw AS si
+	ON subsam.id = si.sample_id
 -- subsampled subsample
 LEFT JOIN submission_samples$raw AS subsubsam
 	ON subsam.submission_sample = subsubsam.id
@@ -124,6 +134,8 @@ SELECT
 	c.barcode AS tube_id,
 	ss.shearing_required AS sheared,
 	ss.spri_required AS spried,
+	si.type_of_shearing,
+	si.shearing_speed,
 	out.submission_date AS completion_date,
 	'v2'::varchar AS source
 FROM ont_submissions_output$raw AS out
@@ -143,6 +155,8 @@ LEFT JOIN sanger_sample_id$raw AS ssid
 	ON ssid.sample_tube = c.id
 LEFT JOIN ont_shear_spri_decision$raw AS ss
 	ON ss.submission_sample = subsam.id
+LEFT JOIN shearing_step_v2$raw AS si
+	ON subsam.id = si.sample_id
 LEFT JOIN workflow_task$raw AS wft
 	ON out.workflow_task_id$ = wft.id
 LEFT JOIN workflow_task_status$raw AS wfts
