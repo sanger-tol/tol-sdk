@@ -2,6 +2,7 @@
 #
 # SPDX-License-Identifier: MIT
 
+from .set_relationship_action import SetRelationshipAction  # noqa
 from .set_status_action import SetStatusAction  # noqa
 from .topup_action import TopupAction  # noqa
 from .upsert_action import UpsertAction  # noqa
