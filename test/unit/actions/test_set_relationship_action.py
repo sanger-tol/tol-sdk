@@ -174,6 +174,25 @@ class TestSetRelationshipAction(TestCase):
         for id_ in ids:
             datasource.get_one.assert_any_call(object_type, id_)
 
+    def test_null_related_id_clears_relationship_on_each_parent(self):
+        ids = ['id1', 'id2']
+        object_type = 'specimen'
+        datasource, _, parents = _make_datasource(ids, object_type, 'species1')
+
+        self.action.run(
+            datasource=datasource,
+            ids=ids,
+            object_type=object_type,
+            params={'relationship': 'species', 'related_id': None},
+        )
+
+        for parent in parents.values():
+            self.assertIsNone(parent.species)
+        datasource.get_one.assert_any_call(object_type, 'id1')
+        self.assertNotIn(
+            ('species', None), [call.args for call in datasource.get_one.call_args_list]
+        )
+
     def test_relationship_set_on_each_parent(self):
         ids = ['id1', 'id2']
         object_type = 'specimen'
