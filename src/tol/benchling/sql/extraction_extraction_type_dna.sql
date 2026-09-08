@@ -44,8 +44,7 @@ SELECT DISTINCT
     dna.extraction_protocol,
     dm.qc_passfail AS extraction_qc_result,
     dm.next_step AS next_step,
-    'dna'::varchar AS extraction_type,
-    f.name AS folder_name
+    'dna'::varchar AS extraction_type
 FROM dna_extract$raw AS dna
 LEFT JOIN tissue_prep$raw AS tp
      ON tp.id = dna.tissue_prep
