@@ -4,18 +4,16 @@ SQL Query: LRES Submissions Benchling Warehouse
 Output: Table with cols: 
 
 1) sanger_sample_id: Sanger sample identifier
-2) extraction_id: Extraction identifier (same as sanger_sample_id)
+2) extraction_id: Extraction identifier of the LR entity created
 3) fluidx_id: Fluidx ID of the submitted tissue prep container
 4) completion_date: Date the submission was completed
-5) next_step: LRES, Small Arthropod MagAttract, or RNA
+5) next_step: LRES, Small Arthropod MagAttract, or RNA for Core Lab.
 6) extraction_type: Type of extraction (lres)
 
 NOTES: 
 
 1) Data Model: Result Assays attached to container level.
 2) All sample information is retrived using Benchling Storage. 
-   By lab procedure, all LRES submission tubes are located at SciOps ToL Lab
-   in Benchling Storage App.
 */
 
 SELECT DISTINCT
@@ -27,16 +25,22 @@ SELECT DISTINCT
 	t.specimen_id,
 	tp.name$ AS eln_tissue_prep_name,
 	ssid.sanger_sample_id,
-	ssid.sanger_sample_id AS extraction_id,
+	dna.id AS extraction_id,
 	sub_con.barcode AS fluidx_id,
 	sub_con.id AS fluidx_container_id,
 	DATE(tpsub.submitted_submission_date) AS completion_date,
-	COALESCE(
-		tpsub.downstream_application,
-		CASE
-			WHEN tpsub.created_at$ < DATE '2026-04-15' THEN 'LRES'
-		END
-	) AS next_step,
+	DATE(dna.created_at$) AS lres_extraction_date, -- new column
+	dna.name$ AS extraction_name,
+-- 	AS manual_vs_automatic,
+	dna.extraction_protocol AS extraction_protocol,
+	output.decision AS next_step,
+		CASE 
+		WHEN output.decision IN ('Submit to Library Prep', 'On Hold for ULI', 'Pass')
+			THEN 'Yes'
+		WHEN output.decision = 'On Review'
+			THEN NULL
+		ELSE 'No'
+	END AS extraction_qc_result,
 	'lres'::varchar AS extraction_type
 FROM tissue_prep$raw AS tp
 LEFT JOIN tissue$raw AS t
@@ -57,6 +61,12 @@ LEFT JOIN project$raw AS proj
 	ON tp.project_id$ = proj.id
 LEFT JOIN folder$raw AS f 
 	ON tp.folder_id$ = f.id
+-- LR information joins start here
+LEFT JOIN dna_extract$raw AS dna
+	ON dna.tissue_prep = tp.id
+	AND dna.project_id$ = 'src_REvgPRH1dy' -- the LR project ID
+LEFT JOIN lr_long_read_dna_extraction_output$raw AS output
+	ON dna.id = output.sample_id
 WHERE sub_con.id IS NOT NULL
 	AND proj.name = 'ToL Core Lab'
 	AND f.name = 'Sample Prep'
