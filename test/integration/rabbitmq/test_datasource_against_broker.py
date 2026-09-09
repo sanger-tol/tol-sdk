@@ -4,9 +4,10 @@
 
 import json
 
+import requests
+
 from .broker import peek_messages
 
-import requests
 
 QUEUE = 'notification'
 

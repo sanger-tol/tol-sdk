@@ -24,7 +24,7 @@ def wait_for_depth(config, queue, expected, timeout=10):
     """
     Poll until the queue holds exactly 'expected' messages.
 
-    Publishing is asynchronous from the client's perspective, so a 
+    Publishing is asynchronous from the client's perspective, so a
     one-shot depth check immediately after publish races the broker.
     Returns the depth once it equals 'expected; raises TimeoutError
     if that doesn't happen in time.
