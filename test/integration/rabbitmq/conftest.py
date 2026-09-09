@@ -4,11 +4,11 @@
 
 import pytest
 
-import requests
-
 from tol.core import core_data_object
 from tol.rabbitmq import RabbitmqConfig, create_rabbitmq_datasource
 from tol.rabbitmq.connection import QueueSpec, RabbitmqConnection
+
+from .broker import purge, wait_for_depth
 
 QUEUE = 'notification'
 
@@ -30,12 +30,8 @@ def datasource(config):
 @pytest.fixture(autouse=True)
 def purge_queue(config):
     """Purge the RabbitMQ queue before each test"""
-    requests.delete(
-        f'{config.management_url}'
-        f'/api/queues/%2F/{QUEUE}/contents',
-        auth=(config.username, config.password),
-        timeout=10
-    )
+    purge(config, QUEUE)
+    wait_for_depth(config, QUEUE, 0)
 
     yield
 

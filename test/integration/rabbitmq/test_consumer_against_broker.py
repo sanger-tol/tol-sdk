@@ -4,13 +4,13 @@
 
 import pytest
 
-import requests
-
 from tol.rabbitmq import NotificationRequest
 from tol.rabbitmq.connection import RabbitmqConnection
 from tol.rabbitmq.consumer import MessageConsumer
 from tol.rabbitmq.handlers import notification_handler
 from tol.rabbitmq.schema import NotificationChannel, wrap_in_envelope
+
+from .broker import queue_depth
 
 QUEUE = 'notification'
 
@@ -19,17 +19,6 @@ QUEUE = 'notification'
 def received():
     """Return a list to which dispatched notifications will be appended"""
     return []
-
-
-def _queue_depth(config):
-    """Return the number of messages in the RabbitMQ queue"""
-    response = requests.get(
-        f'{config.management_url}/api/queues/%2F/{QUEUE}',
-        auth=(config.username, config.password),
-        timeout=10
-    )
-    response.raise_for_status()
-    return response.json().get('messages', 0)
 
 
 def _publish(datasource, body, message_id):
@@ -89,7 +78,7 @@ class TestConsumerAgainstBroker:
             NotificationChannel.SLACK
         }
         assert len({d.delivery_id for d in received}) == 4
-        assert _queue_depth(config) == 0
+        assert queue_depth(config, QUEUE) == 0
 
     def test_invalid_payload_nacked(
         self,
@@ -111,4 +100,4 @@ class TestConsumerAgainstBroker:
         consumer.process_one()
 
         assert received == []
-        assert _queue_depth(config) == 0
+        assert queue_depth(config, QUEUE) == 0

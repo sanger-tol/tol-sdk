@@ -2,8 +2,9 @@
 #
 # SPDX-License-Identifier: MIT
 
-
 import json
+
+from .broker import peek_messages
 
 import requests
 
@@ -19,28 +20,6 @@ def _message(datasource, message_id, num):
     )
 
 
-def _peek_messages(config, count=10):
-    """
-    Fetch messages from the queue via the management API.
-
-    ack_requeue_true puts them back afterwards, so this is
-    non-destructive (though it marks them redelivered - never
-    assert on that flag).
-    """
-    response = requests.post(
-        f'{config.management_url}/api/queues/%2F/{QUEUE}/get',
-        json={
-            'count': count,
-            'ackmode': 'ack_requeue_true',
-            'encoding': 'auto'
-        },
-        auth=(config.username, config.password),
-        timeout=10
-    )
-    response.raise_for_status()
-    return response.json()
-
-
 class TestDataSourceAgainstBroker:
     def test_insert_then_get_list(self, config, datasource):
         """
@@ -52,7 +31,7 @@ class TestDataSourceAgainstBroker:
         results = list(datasource.insert('notification_message', objects))
         assert results == objects
 
-        messages = _peek_messages(config)
+        messages = peek_messages(config, QUEUE)
         ids = [m['properties']['message_id'] for m in messages]
         assert ids == ['msg-0', 'msg-1']
         assert [json.loads(m['payload']) for m in messages] == [
@@ -64,7 +43,7 @@ class TestDataSourceAgainstBroker:
         objects = [_message(datasource, 'msg-props', 1)]
         list(datasource.insert('notification_message', objects))
 
-        (message, ) = _peek_messages(config, count=1)
+        (message, ) = peek_messages(config, QUEUE, count=1)
         properties = message['properties']
 
         assert properties['delivery_mode'] == 2
