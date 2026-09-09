@@ -10,19 +10,13 @@ import pika.exceptions
 
 import pytest
 
-import requests
-
 from tol.core import (
     DataSourceError,
-    DataSourceFilter,
     ErrorObject,
     core_data_object
 )
 from tol.rabbitmq.connection import RabbitmqConnection
-from tol.rabbitmq.converter import (
-    DefaultMessageToObjectConverter,
-    DefaultObjectToMessageConverter
-)
+from tol.rabbitmq.converter import DefaultObjectToMessageConverter
 from tol.rabbitmq.rabbitmq_datasource import RabbitmqDataSource
 
 
@@ -41,8 +35,7 @@ def datasource(config, connection_factory):
     ds = RabbitmqDataSource(
         config,
         connection_factory,
-        DefaultObjectToMessageConverter,
-        DefaultMessageToObjectConverter
+        DefaultObjectToMessageConverter
     )
     core_data_object(ds)
     return ds
@@ -57,35 +50,6 @@ def _message(datasource, message_id, body):
     )
 
 
-def _management_message(message_id, body, payload_encoding='string'):
-    """
-    Create a mock management API message with the given body and encoding.
-    """
-    payload = json.dumps(body)
-    if payload_encoding == 'base64':
-        import base64
-        payload = base64.b64encode(payload.encode('utf-8')).decode('ascii')
-    return {
-        'payload': payload,
-        'payload_encoding': payload_encoding,
-        'routing_key': 'notification',
-        'redelivered': False,
-        'properties': {'message_id': message_id}
-    }
-
-
-def _mock_post(monkeypatch, messages):
-    """Patch `requests.post` to return the given messages."""
-    response = Mock()
-    response.json.return_value = messages
-    mock_post = Mock(return_value=response)
-    monkeypatch.setattr(
-        'tol.rabbitmq.rabbitmq_datasource.requests.post',
-        mock_post
-    )
-    return mock_post
-
-
 class TestObjectTypeValidation:
     def test_insert_batch_bad_type(self, datasource):
         """
@@ -94,20 +58,6 @@ class TestObjectTypeValidation:
         with pytest.raises(DataSourceError) as exc_info:
             list(datasource.insert_batch('bad_type', []))
         assert exc_info.value.status_code == 400
-
-    def test_get_by_id_bad_type(self, datasource):
-        """
-        Test that getting by ID with a bad type raises a DataSourceError.
-        """
-        with pytest.raises(DataSourceError):
-            list(datasource.get_by_id('bad_type', ['msg-1']))
-
-    def test_get_list_bad_type(self, datasource):
-        """
-        Test that getting a list with a bad type raises a DataSourceError.
-        """
-        with pytest.raises(DataSourceError):
-            list(datasource.get_list('bad_type'))
 
 
 class TestInsertbatch:
@@ -240,8 +190,7 @@ class TestInsertbatch:
         ds = RabbitmqDataSource(
             config,
             connection_factory,
-            DefaultObjectToMessageConverter,
-            DefaultMessageToObjectConverter
+            DefaultObjectToMessageConverter
         )
         core_data_object(ds)
 
@@ -257,128 +206,3 @@ class TestInsertbatch:
         assert results_list == objects
         assert connection_factory.call_count == 2
         assert mock_channel.basic_publish.call_count == 3
-
-
-class TestGetById:
-    def test_found_and_missing_ids(self, datasource, monkeypatch):
-        """
-        Test that get_by_id returns DataObjects for found messages and None
-        for missing messages, in the order of the requested IDs.
-        """
-        _mock_post(monkeypatch, [
-            _management_message('msg-1', {'n': 1}),
-            _management_message('msg-2', {'n': 2})
-        ])
-
-        results = list(
-            datasource.get_by_id(
-                'notification_message',
-                ['msg-2', 'unknown-id', 'msg-1']
-            )
-        )
-
-        assert len(results) == 3
-        assert results[0].id == 'msg-2'
-        assert results[0].body == {'n': 2}
-        assert results[1] is None
-        assert results[2].id == 'msg-1'
-
-    def test_management_api_called_correctly(
-        self,
-        datasource,
-        monkeypatch
-    ):
-        """
-        Test that the management API is called correctly when getting by ID.
-        """
-        mock_post = _mock_post(monkeypatch, [])
-
-        list(datasource.get_by_id('notification_message', ['msg-1']))
-
-        mock_post.assert_called_once_with(
-            'http://rabbitmq-mgmt:15672'
-            '/api/queues/test-vhost/notification/get',
-            json={
-                'count': 20,
-                'ackmode': 'ack_requeue_true',
-                'encoding': 'auto'
-            },
-            auth=('test-user', 'test-password'),
-            timeout=10
-        )
-
-    def test_default_vhost_is_url_encoded(
-        self,
-        config,
-        connection_factory,
-        monkeypatch
-    ):
-        """
-        Test that the default vhost is URL-encoded in the management API call.
-        """
-        config = dataclasses.replace(config, vhost='/')
-        ds = RabbitmqDataSource(
-            config,
-            connection_factory,
-            DefaultObjectToMessageConverter,
-            DefaultMessageToObjectConverter
-        )
-        core_data_object(ds)
-        mock_post = _mock_post(monkeypatch, [])
-
-        list(ds.get_list('notification_message'))
-
-        assert '/api/queues/%2F/notification/get' in (
-            mock_post.call_args.args[0]
-        )
-
-    def test_management_api_error(self, datasource, monkeypatch):
-        """
-        Test that if the management API returns
-        an error, a DataSourceError is raised.
-        """
-        response = Mock()
-        response.raise_for_status.side_effect = (
-            requests.HTTPError('401 Client Error')
-        )
-        monkeypatch.setattr(
-            'tol.rabbitmq.rabbitmq_datasource.requests.post',
-            Mock(return_value=response)
-        )
-
-        with pytest.raises(DataSourceError) as exc_info:
-            list(datasource.get_by_id('notification_message', ['msg-1']))
-
-        assert exc_info.value.status_code == 502
-
-
-class TestGetList:
-    def test_yields_all_messages(self, datasource, monkeypatch):
-        """
-        Test that get_list yields all messages returned by the management API.
-        """
-        _mock_post(monkeypatch, [
-            _management_message('msg-1', {'n': 1}),
-            _management_message('msg-2', {'n': 2},
-                                payload_encoding='base64')
-        ])
-
-        results = list(datasource.get_list('notification_message'))
-
-        assert [obj.id for obj in results] == ['msg-1', 'msg-2']
-        assert [obj.body for obj in results] == [{'n': 1}, {'n': 2}]
-
-    def test_filters_rejected(self, datasource):
-        """
-        Test that if a DataSourceFilter is provided, it is rejected with a
-        DataSourceError, since filtering is not supported for this datasource.
-        """
-        mock_filter = create_autospec(DataSourceFilter, spec_set=True)
-
-        with pytest.raises(DataSourceError) as exc_info:
-            list(datasource.get_list(
-                'notification_message',
-                object_filters=mock_filter
-            ))
-
-        assert exc_info.value.status_code == 400

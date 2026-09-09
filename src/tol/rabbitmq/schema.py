@@ -46,7 +46,7 @@ class NotificationRequest(BaseModel):
     @model_validator(mode='after')
     def _email_channel_requires_emails(self) -> 'NotificationRequest':
         """
-        Becasue no central user service exists yet, publishers need emails
+        Because no central user service exists yet, publishers need emails
         in the context when using the email channel, otherwise they won't get
         delivered.
         """

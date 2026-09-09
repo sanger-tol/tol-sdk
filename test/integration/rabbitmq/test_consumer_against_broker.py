@@ -12,6 +12,8 @@ from tol.rabbitmq.consumer import MessageConsumer
 from tol.rabbitmq.handlers import notification_handler
 from tol.rabbitmq.schema import NotificationChannel, wrap_in_envelope
 
+QUEUE = 'notification'
+
 
 @pytest.fixture
 def received():
@@ -22,7 +24,7 @@ def received():
 def _queue_depth(config):
     """Return the number of messages in the RabbitMQ queue"""
     response = requests.get(
-        f'{config.management_url}/api/queues/%2F/{config.queue}',
+        f'{config.management_url}/api/queues/%2F/{QUEUE}',
         auth=(config.username, config.password),
         timeout=10
     )
@@ -74,7 +76,7 @@ class TestConsumerAgainstBroker:
 
         consumer = MessageConsumer(
             RabbitmqConnection(config),
-            config.queue,
+            QUEUE,
             {'notification': notification_handler(dispatchers)}
         )
 
@@ -100,8 +102,10 @@ class TestConsumerAgainstBroker:
 
         consumer = MessageConsumer(
             RabbitmqConnection(config),
-            config.queue,
-            {NotificationChannel.EMAIL: received.append}
+            QUEUE,
+            {'notification': notification_handler(
+                {NotificationChannel.EMAIL: received.append}
+            )}
         )
 
         consumer.process_one()

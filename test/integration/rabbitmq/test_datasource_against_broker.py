@@ -3,7 +3,11 @@
 # SPDX-License-Identifier: MIT
 
 
+import json
+
 import requests
+
+QUEUE = 'notification'
 
 
 def _message(datasource, message_id, num):
@@ -15,40 +19,61 @@ def _message(datasource, message_id, num):
     )
 
 
+def _peek_messages(config, count=10):
+    """
+    Fetch messages from the queue via the management API.
+
+    ack_requeue_true puts them back afterwards, so this is
+    non-destructive (though it marks them redelivered - never
+    assert on that flag).
+    """
+    response = requests.post(
+        f'{config.management_url}/api/queues/%2F/{QUEUE}/get',
+        json={
+            'count': count,
+            'ackmode': 'ack_requeue_true',
+            'encoding': 'auto'
+        },
+        auth=(config.username, config.password),
+        timeout=10
+    )
+    response.raise_for_status()
+    return response.json()
+
+
 class TestDataSourceAgainstBroker:
-    def test_insert_then_get_list(self, datasource):
+    def test_insert_then_get_list(self, config, datasource):
         """
-        Insert two notification messages and then fetch them with `get_list`
+        Insert two notification messages and then fetch them
+        via the management API.
         """
         objects = [_message(datasource, f'msg-{i}', i) for i in range(2)]
 
         results = list(datasource.insert('notification_message', objects))
         assert results == objects
 
-        fetched = list(datasource.get_list('notification_message'))
-        assert [obj.id for obj in fetched] == ['msg-0', 'msg-1']
-        assert [obj.body for obj in fetched] == [{'n': 0}, {'n': 1}]
+        messages = _peek_messages(config)
+        ids = [m['properties']['message_id'] for m in messages]
+        assert ids == ['msg-0', 'msg-1']
+        assert [json.loads(m['payload']) for m in messages] == [
+            {'n': 0}, {'n': 1}
+        ]
 
-    def test_get_by_id(self, datasource):
-        """Fetch a notification message by its ID."""
-        objects = [_message(datasource, f'msg-{i}', i) for i in range(2)]
+    def test_insert_marks_persistent_and_json(self, config, datasource):
+        """Check the AMQP properties set on published messages."""
+        objects = [_message(datasource, 'msg-props', 1)]
         list(datasource.insert('notification_message', objects))
 
-        fetched, missing = list(
-            datasource.get_by_id(
-                'notification_message',
-                ['msg-1', 'unknown-id']
-            )
-        )
+        (message, ) = _peek_messages(config, count=1)
+        properties = message['properties']
 
-        assert fetched.id == 'msg-1'
-        assert fetched.body == {'n': 1}
-        assert missing is None
+        assert properties['delivery_mode'] == 2
+        assert properties['content_type'] == 'application/json'
 
     def test_topology_declared(self, config):
         """Check that the RabbitMQ topology has been declared."""
         response = requests.get(
-            f'{config.management_url}/api/queues/%2F/{config.queue}',
+            f'{config.management_url}/api/queues/%2F/{QUEUE}',
             auth=(config.username, config.password),
             timeout=10
         )

@@ -2,12 +2,18 @@
 #
 # SPDX-License-Identifier: MIT
 
+import dataclasses
 import json
 from unittest.mock import Mock, create_autospec
 
 from pika.adapters.blocking_connection import BlockingChannel
 
-from tol.rabbitmq.factory import create_rabbitmq_datasource
+import pytest
+
+from tol.rabbitmq.config import RabbitmqConfig
+from tol.rabbitmq.connection import RabbitmqConnection
+from tol.rabbitmq.consumer import MessageConsumer
+from tol.rabbitmq.factory import create_consumer, create_rabbitmq_datasource
 from tol.rabbitmq.rabbitmq_datasource import RabbitmqDataSource
 
 
@@ -68,19 +74,6 @@ def test_returns_configured_datasource(monkeypatch, config):
         exchange_type='topic',
         durable=True
     )
-    mock_channel.queue_declare.assert_any_call(
-        queue=config.queue,
-        durable=True,
-        arguments={
-            'x-dead-letter-exchange': config.dlx,
-            'x-dead-letter-routing-key': f'dead.{config.queue}'
-        }
-    )
-    mock_channel.queue_bind.assert_any_call(
-        queue='notification',
-        exchange='notification',
-        routing_key='notification'
-    )
     mock_channel.basic_publish.assert_called_once()
 
     published = mock_channel.basic_publish.call_args.kwargs
@@ -88,3 +81,65 @@ def test_returns_configured_datasource(monkeypatch, config):
     assert published['routing_key'] == 'notification'
     assert json.loads(published['body']) == {'n': 1}
     assert published['properties'].message_id == 'msg-1'
+
+
+def _config_with_app():
+    """Creates a RabbitmqConfig object with app_name provided"""
+    return RabbitmqConfig(
+        host='rabbitmq-host',
+        port=5672,
+        username='test-user',
+        password='test-password',
+        vhost='test-vhost',
+        exchange='tol',
+        routing_key='notification',
+        management_url='http://rabbitmq-mgmt:15672',
+        app_name='portal'
+    )
+
+
+class TestCreateConsumer:
+    def test_returns_consumer_with_app_queue(self, monkeypatch):
+        """
+        Test that create_consumer declares the app's queue
+        and returns a MessageConsumer bound to it.
+        """
+        mock_blocking, mock_channel = _stub_broker(monkeypatch)
+
+        consumer = create_consumer(_config_with_app(), {})
+
+        assert isinstance(consumer, MessageConsumer)
+
+        mock_channel.queue_declare.assert_any_call(
+            queue='portal.notify',
+            durable=True,
+            arguments={
+                'x-dead-letter-exchange': 'tol.dlx',
+                'x-dead-letter-routing-key': 'dead.portal.notify'
+            }
+        )
+        mock_channel.queue_bind.assert_any_call(
+            queue='portal.notify',
+            exchange='tol',
+            routing_key='notify.portal.*'
+        )
+
+    def test_empty_app_name_raises(self):
+        """Test that create_consumer requires an app name."""
+        config = dataclasses.replace(_config_with_app(), app_name='')
+
+        with pytest.raises(ValueError):
+            create_consumer(config, {})
+
+    def test_connect_twice_is_idempotent(self, monkeypatch):
+        """
+        Test that connecting an open connection is a no-op and does nothing.
+        """
+        mock_blocking, _ = _stub_broker(monkeypatch)
+
+        conn = RabbitmqConnection(_config_with_app())
+
+        conn.connect()
+        conn.connect()
+
+        assert mock_blocking.call_count == 1

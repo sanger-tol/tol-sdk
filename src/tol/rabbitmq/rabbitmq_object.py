@@ -10,4 +10,3 @@ class NotificationMessageObject(DataObject):
     body: dict
     routing_key: str | None
     headers: dict | None
-    redelivered: bool | None

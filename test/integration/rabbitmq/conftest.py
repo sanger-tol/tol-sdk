@@ -8,7 +8,9 @@ import requests
 
 from tol.core import core_data_object
 from tol.rabbitmq import RabbitmqConfig, create_rabbitmq_datasource
-from tol.rabbitmq.connection import RabbitmqConnection
+from tol.rabbitmq.connection import QueueSpec, RabbitmqConnection
+
+QUEUE = 'notification'
 
 
 @pytest.fixture(scope='module')
@@ -30,7 +32,7 @@ def purge_queue(config):
     """Purge the RabbitMQ queue before each test"""
     requests.delete(
         f'{config.management_url}'
-        f'/api/queues/%2F/{config.queue}/contents',
+        f'/api/queues/%2F/{QUEUE}/contents',
         auth=(config.username, config.password),
         timeout=10
     )
@@ -44,5 +46,6 @@ def declare_topology(config):
     Declare the RabbitMQ topology (exchange, queue, and binding)
     before any tests run.
     """
-    with RabbitmqConnection(config):
+    specs = [QueueSpec(name=QUEUE, binding_keys=(config.routing_key,))]
+    with RabbitmqConnection(config, specs=specs):
         pass

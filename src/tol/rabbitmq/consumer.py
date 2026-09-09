@@ -128,11 +128,11 @@ if __name__ == '__main__':
         format='%(asctime)s %(levelname)s %(name)s: %(message)s'
     )
 
+    from tol.rabbitmq.factory import create_consumer
     from tol.rabbitmq.handlers import notification_handler
     from tol.rabbitmq.schema import NotificationChannel
 
     config = RabbitmqConfig.from_env()
-    connection = RabbitmqConnection(config)
 
     # Log only until real senders are implemented - fine for testing
     dispatchers = {
@@ -140,11 +140,8 @@ if __name__ == '__main__':
         NotificationChannel.SLACK: lambda d: LOGGER.info('SLACK: %s', d),
     }
 
-    consumer = MessageConsumer(
-        connection,
-        config.queue,
-        {
-            'notification': notification_handler(dispatchers)
-        }
+    consumer = create_consumer(
+        config=config,
+        handlers={'notification': notification_handler(dispatchers)}
     )
     consumer.start()

@@ -78,17 +78,19 @@ class RabbitmqConnection:
     Thin wrapper around pika BlockingConnection.
 
     Declares the exchange/queue/binding shape on connect.
-    User as a context manager, or call connect()/close() manually.
+    Use as a context manager, or call connect()/close() manually.
     """
 
-    __slots__ = ('__config', '__connection', '__channel')
+    __slots__ = ('__config', '__specs', '__connection', '__channel')
 
     def __init__(
         self,
-        config: RabbitmqConfig
+        config: RabbitmqConfig,
+        specs: list[QueueSpec] | None = None
     ) -> None:
 
         self.__config = config
+        self.__specs = specs if specs is not None else []
         self.__connection: pika.BlockingConnection | None = None
         self.__channel: BlockingChannel | None = None
 
@@ -110,9 +112,14 @@ class RabbitmqConnection:
 
     def connect(self) -> None:
         """Connect to RabbitMQ and declare the exchange/queue/binding."""
+        if self.__connection is not None and self.__connection.is_open:
+            LOGGER.debug('Already connected to RabbitMQ; skipping connect')
+            return
+
         LOGGER.info(
             'Connecting to RabbitMQ at %s:%s vhost %s', self.__config.host,
             self.__config.port, self.__config.vhost)
+
         self.__connection = pika.BlockingConnection(self.__build_parameters())
         self.__channel = self.__connection.channel()
         self.__declare_topology()
@@ -145,15 +152,9 @@ class RabbitmqConnection:
         """
         Declare the exchange, queue, and binding for the notification system.
         """
-        spec = QueueSpec(
-            name=self.__config.queue,
-            binding_keys=(self.__config.routing_key,),
-            dead_letter=True
-        )
-
         declare_topology(
             self.channel,
             self.__config.exchange,
-            [spec],
+            self.__specs,
             dlx=self.__config.dlx
         )

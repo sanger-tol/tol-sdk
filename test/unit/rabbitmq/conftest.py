@@ -21,7 +21,6 @@ def config():
         password='test-password',
         vhost='test-vhost',
         exchange='notification',
-        queue='notification',
         routing_key='notification',
         management_url='http://rabbitmq-mgmt:15672',
     )

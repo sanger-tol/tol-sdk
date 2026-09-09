@@ -15,6 +15,8 @@ from tol.rabbitmq.consumer import MessageConsumer
 from tol.rabbitmq.handlers import notification_handler
 from tol.rabbitmq.schema import NotificationChannel
 
+QUEUE = 'notification'
+
 
 @pytest.fixture(scope='module')
 def config():
@@ -35,7 +37,7 @@ def purge_queue(config):
     """Purge all messages from the RabbitMQ queue."""
     requests.delete(
         f'{config.management_url}'
-        f'/api/queues/%2F/{config.queue}/contents',
+        f'/api/queues/%2F/{QUEUE}/contents',
         auth=(config.username, config.password),
         timeout=10
     )
@@ -47,7 +49,7 @@ def _poll_messages(config, timeout=10):
     """Poll the management API until a message is visible."""
     url = (
         f'{config.management_url}'
-        f'/api/queues/%2F/{config.queue}/get'
+        f'/api/queues/%2F/{QUEUE}/get'
     )
     payload = {
         'count': 1,
@@ -130,7 +132,7 @@ class TestNotificationSystem:
         received = []
         consumer = MessageConsumer(
             RabbitmqConnection(config),
-            config.queue,
+            QUEUE,
             {
                 'notification': notification_handler({
                     NotificationChannel.EMAIL: received.append,
