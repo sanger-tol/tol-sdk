@@ -8,9 +8,12 @@ SPDX-License-Identifier: MIT
 
 ## tol-sdk `2.5.2`
 
-07-09-2026
+10-09-2026
 
 - Added `SetRelationshipAction` to set (or clear, via a null `related_id`) a to-one relationship on one or more objects
+- Corrected issues with enriched provenanced fields
+- Corrected bug with [] field selectors
+- Make specimen a proper relationship from tissue_prep
 
 ## tol-sdk `2.5.1`
 
