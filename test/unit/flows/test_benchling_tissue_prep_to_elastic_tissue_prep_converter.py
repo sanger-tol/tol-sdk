@@ -45,6 +45,7 @@ class _MockDataSourceRelational(DataSource, Relational):
             'sample': 'sample',
             'species': 'species',
             'tolid': 'tolid',
+            'specimen': 'specimen',
         }
         return {'tissue_prep': rc_tissue_prep}
 
@@ -80,6 +81,7 @@ class TestBenchlingTissuePrepToElasticTissuePrepConverter(TestCase):
             attributes={'sts_id': 'sts_id_1',
                         'taxon_id': 'taxon_id_1',
                         'programme_id': 'programme_id_1',
+                        'specimen_id': 'specimen_id_1',
                         'eln_tissue_prep_name': 'tissue_prep_name1',
                         'weight_mg': 12,
                         'tissue_prep_type': None
@@ -109,6 +111,7 @@ class TestBenchlingTissuePrepToElasticTissuePrepConverter(TestCase):
         self.assertEqual(ret1.sample.id, 'sts_id_1')
         self.assertEqual(ret1.species.id, 'taxon_id_1')
         self.assertEqual(ret1.tolid.id, 'programme_id_1')
+        self.assertEqual(ret1.specimen.id, 'specimen_id_1')
 
         converteds = converter.convert(obj2)
         ret2 = next(converteds)
@@ -122,3 +125,4 @@ class TestBenchlingTissuePrepToElasticTissuePrepConverter(TestCase):
         self.assertEqual(ret2.sample.id, 'sts_id_2')
         self.assertEqual(ret2.species.id, 'taxon_id_2')
         self.assertTrue(ret2.tolid is None)
+        self.assertTrue(ret2.specimen is None)
