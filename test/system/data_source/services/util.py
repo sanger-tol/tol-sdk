@@ -102,12 +102,17 @@ def elastic_datasource(
                     return_type=None
                 ),
             },
-        'related': {
-            'str_column_prov': ProvenanceField(
-                source_order=['source1', 'source2', 'source3', 'source4'],
-                return_type=None
-            ),
-        },
+            'related': {
+                'str_column_prov': ProvenanceField(
+                    source_order=['source1', 'source2', 'source3', 'source4'],
+                    return_type=None
+                ),
+            }
+        }
+    )
+
+
+def __get_indices_names(prefix: str) -> dict[str, str]:
     # Returns dict of index_actual_name to index_alias_name
     uuid = uuid4().hex
 

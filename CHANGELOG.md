@@ -6,14 +6,6 @@ SPDX-License-Identifier: MIT
 
 # Changelog
 
-## tol-sdk `2.5.2`
-
-10-09-2026
-
-- Corrected issues with enriched provenanced fields
-- Corrected bug with [] field selectors
-- Make specimen a proper relationship from tissue_prep
-
 ## tol-sdk `2.5.1`
 
 02-09-2026
