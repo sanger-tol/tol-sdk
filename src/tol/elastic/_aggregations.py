@@ -44,7 +44,7 @@ class ElasticAggregator(ABC):
             {
                 'date-aggregation': {
                     'date_histogram': {
-                        'field': x_axis,
+                        'field': self._field_or_keyword(object_type, x_axis),
                         'calendar_interval': date_interval,
                         'time_zone': 'Europe/London',
                     },
@@ -87,7 +87,7 @@ class ElasticAggregator(ABC):
                     'aggs': {
                         'date-aggregation': {
                             'date_histogram': {
-                                'field': x_axis,
+                                'field': self._field_or_keyword(object_type, x_axis),
                                 'calendar_interval': date_interval,
                                 'time_zone': 'Europe/London',
                             },

@@ -68,7 +68,7 @@ class Enricher(ABC):
             target_object_type: the object type of the target index
         """
         for obj in source_data:
-            obj_dict = {'id': obj.id}
+            obj_dict = {}
             # Get the values of the enriching fields
             for field in enriching_fields:
                 obj_dict[field] = obj.get_field_by_name(field)

@@ -2,6 +2,8 @@
 #
 # SPDX-License-Identifier: MIT
 
+from unittest import mock
+
 from tol.elastic import ElasticDataSource
 
 
@@ -40,14 +42,22 @@ class TestElasticAggregator:
                 },
             ]
         }]
-        actual_result = mock_elastic_data_source._get_date_aggregation(
-            'obj_type',
-            None,
-            'datefield',
-            '1M',
-        )
+        with mock.patch.object(
+            mock_elastic_data_source,
+            '_field_or_keyword',
+            return_value='datefield.value',
+        ) as field_or_keyword:
+            actual_result = mock_elastic_data_source._get_date_aggregation(
+                'obj_type',
+                None,
+                'datefield',
+                '1M',
+            )
         assert actual_result == expected_result
-        mock_elastic_data_source.es.search.assert_called_once()
+        field_or_keyword.assert_called_once_with('obj_type', 'datefield')
+        search_kwargs = mock_elastic_data_source.es.search.call_args.kwargs
+        assert search_kwargs['aggregations']['date-aggregation']['date_histogram']['field'] \
+            == 'datefield.value'
 
     def test_date_aggregation_segmented(self, mock_elastic_data_source: ElasticDataSource):
         # Mock the result of the Elastic API call
@@ -128,15 +138,28 @@ class TestElasticAggregator:
                 ]
             },
         ]
-        actual_result = mock_elastic_data_source._get_date_aggregation_segmented(
-            'obj_type',
-            None,
-            'datefield',
-            '1M',
-            'field3',
-        )
+        with mock.patch.object(
+            mock_elastic_data_source,
+            '_field_or_keyword',
+            side_effect=lambda object_type, field: f'{field}.value',
+        ) as field_or_keyword:
+            actual_result = mock_elastic_data_source._get_date_aggregation_segmented(
+                'obj_type',
+                None,
+                'datefield',
+                '1M',
+                'field3',
+            )
         assert actual_result == expected_result
-        mock_elastic_data_source.es.search.assert_called_once()
+        assert field_or_keyword.call_args_list == [
+            mock.call('obj_type', 'field3'),
+            mock.call('obj_type', 'datefield'),
+        ]
+        search_kwargs = mock_elastic_data_source.es.search.call_args.kwargs
+        aggregations = search_kwargs['aggregations']['break-down-by-aggregation']
+        assert aggregations['terms']['field'] == 'field3.value'
+        assert aggregations['aggs']['date-aggregation']['date_histogram']['field'] \
+            == 'datefield.value'
 
     def test_scatter_aggregation(self, mock_elastic_data_source: ElasticDataSource):
         # TODO Once the scatter aggregation has been implemented
