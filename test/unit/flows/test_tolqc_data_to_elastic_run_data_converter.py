@@ -22,8 +22,11 @@ class _MockDataSourceRelational(DataSource, Relational):
 
     @property
     def supported_types(self):
-        return ['data', 'run', 'sample', 'platform', 'species', 'specimen',
-                'accession', 'library', 'library_type', 'folder', 'folder_location']
+        return [
+            'data', 'run', 'sample', 'platform', 'species', 'specimen',
+            'accession', 'library', 'library_type', 'folder', 'folder_location',
+            'qc_dict'
+        ]
 
     @property
     def attribute_types(self):
@@ -36,7 +39,10 @@ class _MockDataSourceRelational(DataSource, Relational):
             'run': 'run',
             'sample': 'sample',
             'library': 'library',
-            'folder': 'folder'
+            'folder': 'folder',
+            'qc': 'qc_dict',
+            'lims_qc': 'qc_dict',
+            'auto_qc': 'qc_dict',
         }
         rc_run = RelationshipConfig()
         rc_run.to_one = {
@@ -214,20 +220,40 @@ class TestTolqcDataToElasticRunDataConverter(TestCase):
 
         CoreDataObject = source.data_object_factory # noqa N806
 
-        # with no relationships
+        lims_qc1 = CoreDataObject(
+            id_='data1_lims_qc',
+            type_='qc_dict',
+            attributes={}
+        )
+        auto_qc1 = CoreDataObject(
+            id_='data1_auto_qc',
+            type_='qc_dict',
+            attributes={}
+        )
+        qc1 = CoreDataObject(
+            id_='data1_qc',
+            type_='qc_dict',
+            attributes={}
+        )
+
+        # with qc relationships
         obj1 = CoreDataObject(
             id_='data1_id',
             type_='data',
             attributes={
                 'tag_index': 'data1_tag_index',
-                'lims_qc': 'data1_manual_qc',
                 'reads': 200,
                 'bases': 12345,
                 'bases_a': 123,
                 'bases_c': 234,
                 'bases_g': 345,
                 'bases_t': 456,
-                'read_length_n50': 12345.6}
+                'read_length_n50': 12345.6},
+            to_one={
+                'lims_qc': lims_qc1,
+                'auto_qc': auto_qc1,
+                'qc': qc1
+            }
         )
 
         # with data.run relationship
@@ -240,8 +266,7 @@ class TestTolqcDataToElasticRunDataConverter(TestCase):
         obj2 = CoreDataObject(
             id_='data2_id',
             type_='data',
-            attributes={'tag_index': 'data2_tag_index',
-                        'lims_qc': 'data2_manual_qc'},
+            attributes={'tag_index': 'data2_tag_index'},
             to_one={'run': run1}
         )
 
@@ -262,9 +287,10 @@ class TestTolqcDataToElasticRunDataConverter(TestCase):
         obj3 = CoreDataObject(
             id_='data3_id',
             type_='data',
-            attributes={'tag_index': 'data3_tag_index',
-                        'lims_qc': 'data3_manual_qc'},
-            to_one={'run': run2}
+            attributes={'tag_index': 'data3_tag_index'},
+            to_one={
+                'run': run2,
+            }
         )
 
         # with data.sample relationship
@@ -277,8 +303,7 @@ class TestTolqcDataToElasticRunDataConverter(TestCase):
         obj4 = CoreDataObject(
             id_='data4_id',
             type_='data',
-            attributes={'tag_index': 'data4_tag_index',
-                        'lims_qc': 'data4_manual_qc'},
+            attributes={'tag_index': 'data4_tag_index'},
             to_one={'sample': sample1}
         )
 
@@ -299,8 +324,7 @@ class TestTolqcDataToElasticRunDataConverter(TestCase):
         obj5 = CoreDataObject(
             id_='data5_id',
             type_='data',
-            attributes={'tag_index': 'data5_tag_index',
-                        'lims_qc': 'data5_manual_qc'},
+            attributes={'tag_index': 'data5_tag_index'},
             to_one={'sample': sample2}
         )
 
@@ -328,8 +352,7 @@ class TestTolqcDataToElasticRunDataConverter(TestCase):
         obj6 = CoreDataObject(
             id_='data6_id',
             type_='data',
-            attributes={'tag_index': 'data6_tag_index',
-                        'lims_qc': 'data6_manual_qc'},
+            attributes={'tag_index': 'data6_tag_index'},
             to_one={'sample': sample3}
         )
 
@@ -357,8 +380,7 @@ class TestTolqcDataToElasticRunDataConverter(TestCase):
         obj7 = CoreDataObject(
             id_='data7_id',
             type_='data',
-            attributes={'tag_index': 'data7_tag_index',
-                        'lims_qc': 'data7_manual_qc'},
+            attributes={'tag_index': 'data7_tag_index'},
             to_one={'sample': sample4}
         )
 
@@ -385,8 +407,7 @@ class TestTolqcDataToElasticRunDataConverter(TestCase):
             id_='data8_id',
             type_='data',
             attributes={
-                'tag_index': 'data7_tag_index',
-                'lims_qc': 'data7_manual_qc'
+                'tag_index': 'data8_tag_index',
             },
             to_one={'folder': folder1}
         )
@@ -400,7 +421,9 @@ class TestTolqcDataToElasticRunDataConverter(TestCase):
         self.assertEqual(ret1.attributes, {
             'reporting_category': 'rnaseq',
             'tag_index': 'data1_tag_index',
-            'manual_qc': 'data1_manual_qc',
+            'auto_qc': 'data1_auto_qc',
+            'qc': 'data1_qc',
+            'manual_qc': 'data1_lims_qc',
             'reads': 200,
             'bases': 12345,
             'bases_a': 123,
@@ -421,7 +444,6 @@ class TestTolqcDataToElasticRunDataConverter(TestCase):
         self.assertEqual(ret2.attributes, {
             'reporting_category': 'rnaseq',
             'tag_index': 'data2_tag_index',
-            'manual_qc': 'data2_manual_qc',
             'run_start': 'time1',
             'run': 'run1_id',
         })
@@ -437,7 +459,6 @@ class TestTolqcDataToElasticRunDataConverter(TestCase):
         self.assertEqual(ret3.attributes, {
             'reporting_category': 'rnaseq',
             'tag_index': 'data3_tag_index',
-            'manual_qc': 'data3_manual_qc',
             'instrument_model': 'model1',
             'run': 'run2_id',
         })
@@ -453,7 +474,6 @@ class TestTolqcDataToElasticRunDataConverter(TestCase):
         self.assertEqual(ret4.attributes, {
             'reporting_category': 'rnaseq',
             'tag_index': 'data4_tag_index',
-            'manual_qc': 'data4_manual_qc',
         })
         assert ret4.sequencing_request.id == 'sample1_id'
 
@@ -468,7 +488,6 @@ class TestTolqcDataToElasticRunDataConverter(TestCase):
         self.assertEqual(ret5.attributes, {
             'reporting_category': 'rnaseq',
             'tag_index': 'data5_tag_index',
-            'manual_qc': 'data5_manual_qc',
         })
         assert ret5.tolid.id == 'specimen1_id'
         assert ret5.specimen is None
@@ -485,7 +504,6 @@ class TestTolqcDataToElasticRunDataConverter(TestCase):
         self.assertEqual(ret6.attributes, {
             'reporting_category': 'rnaseq',
             'tag_index': 'data6_tag_index',
-            'manual_qc': 'data6_manual_qc',
             'biospecimen_id': 'accession1_id',
         })
         assert ret6.sequencing_request.id == 'sample3_id'
@@ -503,7 +521,6 @@ class TestTolqcDataToElasticRunDataConverter(TestCase):
         self.assertEqual(ret7.attributes, {
             'reporting_category': 'rnaseq',
             'tag_index': 'data7_tag_index',
-            'manual_qc': 'data7_manual_qc',
         })
         assert ret7.sequencing_request.id == 'sample4_id'
         assert ret7.specimen is None
@@ -516,8 +533,7 @@ class TestTolqcDataToElasticRunDataConverter(TestCase):
         self.assertEqual('data8_id', ret8.id)
         self.assertEqual('run_data', ret8.type)
         self.assertEqual(ret8.attributes, {
-            'tag_index': 'data7_tag_index',
-            'manual_qc': 'data7_manual_qc',
+            'tag_index': 'data8_tag_index',
             'reporting_category': 'rnaseq',
             'images': [
                 {
