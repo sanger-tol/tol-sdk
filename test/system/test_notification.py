@@ -10,7 +10,7 @@ import pytest
 import requests
 
 from tol.rabbitmq import RabbitmqConfig
-from tol.rabbitmq.connection import RabbitmqConnection
+from tol.rabbitmq.connection import QueueSpec, RabbitmqConnection
 from tol.rabbitmq.consumer import MessageConsumer
 from tol.rabbitmq.handlers import notification_handler
 from tol.rabbitmq.schema import NotificationChannel
@@ -22,6 +22,16 @@ QUEUE = 'notification'
 def config():
     """Return a `RabbitmqConfig` instance from environment variables"""
     return RabbitmqConfig.from_env()
+
+
+@pytest.fixture(scope='module', autouse=True)
+def declare_topology(config):
+    """
+    Declare the notification queue topology before any tests run.
+    """
+    specs = [QueueSpec(name=QUEUE, binding_keys=(config.routing_key,))]
+    with RabbitmqConnection(config, specs=specs):
+        pass
 
 
 @pytest.fixture(scope='module')
