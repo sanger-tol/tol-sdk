@@ -33,13 +33,21 @@ SELECT DISTINCT
 	dna.name$ AS extraction_name,
 -- 	AS manual_vs_automatic,
 	dna.extraction_protocol AS extraction_protocol,
-	output.decision AS next_step,
-		CASE 
+	CASE
+		WHEN ssc.final_sample_decision IS NOT NULL
+			THEN ssc.final_sample_decision
+		ELSE output.decision
+	END AS next_step,
+	CASE 
+		WHEN ssc.final_sample_decision IN ('Submit to Library Prep', 'Submit to ULI')
+			THEN 'Yes'
+		WHEN ssc.final_sample_decision IN ('Fail')
+			THEN 'No'
 		WHEN output.decision IN ('Submit to Library Prep', 'On Hold for ULI', 'Pass')
 			THEN 'Yes'
 		WHEN output.decision = 'On Review'
 			THEN NULL
-		ELSE 'No'
+		ELSE NULL
 	END AS extraction_qc_result,
 	'lres'::varchar AS extraction_type
 FROM tissue_prep$raw AS tp
@@ -64,9 +72,12 @@ LEFT JOIN folder$raw AS f
 -- LR information joins start here
 LEFT JOIN dna_extract$raw AS dna
 	ON dna.tissue_prep = tp.id
+	AND dna.archived$ = false
 	AND dna.project_id$ = 'src_REvgPRH1dy' -- the LR project ID
 LEFT JOIN lr_long_read_dna_extraction_output$raw AS output
 	ON dna.id = output.sample_id
+LEFT JOIN lr_dna_extraction_sample_status_check_output$raw AS ssc
+	ON ssc.sample_id = dna.id
 WHERE sub_con.id IS NOT NULL
 	AND proj.name = 'ToL Core Lab'
 	AND f.name = 'Sample Prep'
