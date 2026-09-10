@@ -18,7 +18,7 @@ class ActionUtils:
             object_type: str,
             action_ds: DataSource | None = None
     ) -> dict[str, bool]:
-        # Try to import the class from tol.actions first, then fall back to main.actions
+        # Try to import the class from tol.action.actions first, then fall back to main.actions
         action_class = None
         try:
             tol_actions_module = importlib.import_module('tol.action.actions')
