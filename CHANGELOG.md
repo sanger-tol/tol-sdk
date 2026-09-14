@@ -6,6 +6,12 @@ SPDX-License-Identifier: MIT
 
 # Changelog
 
+## tol-sdk `2.5.3`
+
+14-09-2026
+
+- Support new QC relationships in ToLQC converters
+
 ## tol-sdk `2.5.2`
 
 10-09-2026
