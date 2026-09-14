@@ -29,7 +29,7 @@ SELECT DISTINCT
 	sub_con.barcode AS fluidx_id,
 	sub_con.id AS fluidx_container_id,
 	DATE(tpsub.submitted_submission_date) AS completion_date,
-	DATE(dna.created_at$) AS lres_extraction_date, -- new column
+	DATE(dna.created_at$) AS lres_extraction_date,
 	dna.name$ AS extraction_name,
 -- 	AS manual_vs_automatic,
 	dna.extraction_protocol AS extraction_protocol,
