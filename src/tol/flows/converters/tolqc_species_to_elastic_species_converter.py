@@ -59,6 +59,6 @@ class TolqcSpeciesToElasticSpeciesConverter(
         ret = self._data_object_factory(
             'species',
             data_object.attributes['taxon_id'],
-            attributes=target_attributes
+            attributes={k: v for k, v in target_attributes.items() if v is not None}
         )
         return iter([ret])

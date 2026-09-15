@@ -12,6 +12,7 @@ from tol.core.relationship import RelationshipConfig
 from tol.elastic import (
     ElasticDataSource,
     RuntimeField,
+    RuntimeFields,
 )
 from tol.elastic.factory import _ConverterFactoriesManager
 
@@ -26,6 +27,29 @@ class MockElasticDataSource(ElasticDataSource):
             'hidden-reltype': {'aliases': {'test-reltype': {}}}
         }
         self.index_prefix = 'test'
+
+    def refresh_provenance_runtime_fields(self) -> None:
+        # Keep unit tests isolated from alias/mapping lookups during init.
+        # Build provenanced runtime fields using explicit return_type when
+        # provided, otherwise default to keyword.
+        runtime_fields = {}
+        for object_type, fields in self.provenance_fields.items():
+            object_runtime_fields = runtime_fields.setdefault(object_type, {})
+            for field_name, provenance_field in fields.items():
+                return_type = provenance_field.return_type or 'keyword'
+                object_runtime_fields[f'{field_name}.value'] = RuntimeFields.coalesce(
+                    [
+                        f'{field_name}.provenance.{source_order}.value'
+                        for source_order in provenance_field.source_order
+                    ],
+                    return_type=return_type,
+                    null_wins=True,
+                )
+
+        self.runtime_fields = self._ElasticDataSource__merge_nested_dicts(
+            self._base_runtime_fields,
+            runtime_fields,
+        )
 
     @property
     def attribute_types(self):

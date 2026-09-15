@@ -166,8 +166,10 @@ class TestElasticDataSource:
                 'must_not': []
             }
         }
-        assert fields == ['field7', 'field8']
-        assert list(cast(dict, runtime_mappings).keys()) == ['field7', 'field8']
+        assert fields == ['field7', 'field8', 'relationship.id.value']
+        assert list(cast(dict, runtime_mappings).keys()) == [
+            'field7', 'field8', 'relationship.id.value'
+        ]
 
         # Test with requested relation subtree.
         # relation runtime fields must be retained for provenanced relation ids.
@@ -444,6 +446,22 @@ class TestElasticDataSource:
         mock_elastic_data_source.es.update_by_query.return_value = (2, 0)
         mock_elastic_data_source.update('obj_type', updates, candidate_key=['field1'])
         assert mock_elastic_data_source.es.update_by_query.call_count == 2
+
+    def test_update_with_provenanced_candidate_key(
+        self, mock_elastic_data_source: ElasticDataSource
+    ) -> None:
+        updates = [(None, {'field5': 'value5', 'field2': 'updated'})]
+        mock_elastic_data_source.es.update_by_query.return_value = (1, 0)
+
+        mock_elastic_data_source.update('obj_type', updates, candidate_key=['field5'])
+
+        mock_elastic_data_source.es.update_by_query.assert_called_once()
+        (_, kwargs) = mock_elastic_data_source.es.update_by_query.call_args
+        assert kwargs['body']['query']['bool']['must'] == [
+            {'match': {'field5.value': 'value5'}}
+        ]
+        assert kwargs['body']['runtime_mappings'] == \
+            mock_elastic_data_source.runtime_fields['obj_type']
 
     def test_get_list(self, mock_elastic_data_source: ElasticDataSource):
         mock_elastic_data_source.helpers.scan.return_value = [
@@ -1317,9 +1335,9 @@ class TestElasticDataSource:
 
     def test_get_enrich_update(self, mock_elastic_data_source: ElasticDataSource):
         expected = [
-            (None, {'parent': {'id': 'id1', 'field1': 'value1', 'field2': 'value2'},
+            (None, {'parent': {'field1': 'value1', 'field2': 'value2'},
                     'parent.id': 'id1'}),
-            (None, {'parent': {'id': 'id2', 'field1': 'value3', 'field2': 'value4'},
+            (None, {'parent': {'field1': 'value3', 'field2': 'value4'},
                     'parent.id': 'id2'})
         ]
 

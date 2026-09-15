@@ -398,6 +398,7 @@ class FlowUtils:
             converter=ElasticSampleToBenchlingTissueConverter(
                 data_object_factory=bds.data_object_factory,
                 config=ElasticSampleToBenchlingTissueConverter.Config(
+                    only_if_new=True,
                     extra_attributes=additional_fields
                 )
             ),
@@ -527,10 +528,12 @@ class FlowUtils:
             tolid_events = cls.record_tolid_events(
                 eds=eds, portaldb_ds=portaldb_ds, ids=ids, object_type=object_type, user_id=user_id
             )
+            tolid_events = list(tolid_events)
             yield from error_filter.convert_iterable(tolid_events)
             object_events = cls.record_actioned_events(
                 eds=eds, portaldb_ds=portaldb_ds, ids=ids, object_type=object_type, user_id=user_id
             )
+            object_events = list(object_events)
             yield from error_filter.convert_iterable(object_events)
 
             cls.sync_summarise_enrich(
@@ -557,6 +560,7 @@ class FlowUtils:
                 user_id=user_id,
                 in_review=(action == 'in_ara_review')
             )
+            review_events = list(review_events)
             yield from error_filter.convert_iterable(review_events)
             cls.sync_summarise_enrich(
                 eds=eds,
@@ -570,6 +574,7 @@ class FlowUtils:
             object_events = cls.record_abandoned_events(
                 eds=eds, portaldb_ds=portaldb_ds, ids=ids, object_type=object_type, user_id=user_id
             )
+            object_events = list(object_events)
             yield from error_filter.convert_iterable(object_events)
             cls.sync_summarise_enrich(
                 eds=eds,
@@ -584,6 +589,7 @@ class FlowUtils:
                 eds=eds, portaldb_ds=portaldb_ds, ids=ids, user_id=user_id,
                 recollection_reason=recollection_reason
             )
+            species_events = list(species_events)
             yield from error_filter.convert_iterable(species_events)
             cls.sync_summarise_enrich(
                 eds=eds,

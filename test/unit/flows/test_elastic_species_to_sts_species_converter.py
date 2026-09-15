@@ -42,15 +42,15 @@ class TestElasticSpeciesToStsSpeciesConverter(TestCase):
             id_='test1',
             type_='species',
             attributes={
-                'sts_species_id': 123,
-                'goat_genome_size': 123456789.9,
-                'goat_family_representative': ['PROJ1'],
-                'goat_echabs92': ['echabs1'],
-                'goat_habreg_2017': ['habreg1', 'habreg2'],
-                'goat_marhabreg-2017': ['marhabreg1', 'marhabreg2'],
-                'goat_waca_1981': ['waca1'],
-                'goat_isb_wildlife_act_1976': ['isb1'],
-                'goat_protection_of_badgers_act_1992': ['badger1'],
+                'species_id': 123,
+                'genome_size': 123456789.9,
+                'family_representative': ['PROJ1'],
+                'echabs92': ['echabs1'],
+                'habreg_2017': ['habreg1', 'habreg2'],
+                'marhabreg-2017': ['marhabreg1', 'marhabreg2'],
+                'waca_1981': ['waca1'],
+                'isb_wildlife_act_1976': ['isb1'],
+                'protection_of_badgers_act_1992': ['badger1'],
                 'tolid_prefix': 'abCdeFghi'
             }
         )
@@ -58,7 +58,7 @@ class TestElasticSpeciesToStsSpeciesConverter(TestCase):
             id_='test2',
             type_='species',
             attributes={
-                'sts_species_id': 456
+                'species_id': 456
             }
         )
 

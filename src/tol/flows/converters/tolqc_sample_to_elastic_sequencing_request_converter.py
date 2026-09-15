@@ -50,7 +50,7 @@ class TolqcSampleToElasticSequencingRequestConverter(
         ret = self._data_object_factory(
             'sequencing_request',
             data_object.id,
-            attributes=target_attributes,
+            attributes={k: v for k, v in target_attributes.items() if v is not None},
             to_one=target_to_one
         )
 

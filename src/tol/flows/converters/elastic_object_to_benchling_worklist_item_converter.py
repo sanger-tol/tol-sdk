@@ -72,7 +72,7 @@ class ElasticObjectToBenchlingWorklistItemConverter(
                     data_object_factory,
                     config=DefaultDataObjectToDataObjectConverter.Config(
                         destination_object_type='tube',
-                        id_field='benchling_fluidx_container_id'
+                        id_field='fluidx_container_id'
                     )
                 )
             )

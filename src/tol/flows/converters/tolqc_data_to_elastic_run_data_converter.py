@@ -33,9 +33,12 @@ class TolqcDataToElasticRunDataConverter(DataObjectToDataObjectOrUpdateConverter
         target_attributes['tag_index'] = data_object.tag_index
         target_attributes['tag_sequence'] = data_object.tag1_id
         target_attributes['tag2_sequence'] = data_object.tag2_id
-        target_attributes['manual_qc'] = data_object.lims_qc
-        target_attributes['auto_qc'] = data_object.auto_qc
-        target_attributes['qc'] = data_object.qc
+        target_attributes['manual_qc'] = data_object.lims_qc.id \
+            if data_object.lims_qc is not None else None
+        target_attributes['auto_qc'] = data_object.auto_qc.id \
+            if data_object.auto_qc is not None else None
+        target_attributes['qc'] = data_object.qc.id \
+            if data_object.qc is not None else None
         target_attributes['read_length_n50'] = data_object.read_length_n50
         target_attributes['reads'] = data_object.reads
         target_attributes['bases'] = data_object.bases
@@ -97,7 +100,7 @@ class TolqcDataToElasticRunDataConverter(DataObjectToDataObjectOrUpdateConverter
         ret = self._data_object_factory(
             'run_data',
             data_object.id,
-            attributes=target_attributes,
+            attributes={k: v for k, v in target_attributes.items() if v is not None},
             to_one=target_to_one
         )
         yield ret

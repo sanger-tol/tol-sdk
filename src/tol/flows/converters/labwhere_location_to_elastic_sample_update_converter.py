@@ -30,7 +30,7 @@ class LabwhereLocationToElasticSampleUpdateConverter(
     def convert(self, data_object: DataObject) -> Iterable[DataObjectUpdate]:
         if data_object is not None:
             yield (None, {
-                'sts_location': data_object.id,
-                'name': data_object.name,
-                'parentage': data_object.parentage
+                'location': data_object.id,
+                'location_name': data_object.name,
+                'location_parentage': data_object.parentage
             })

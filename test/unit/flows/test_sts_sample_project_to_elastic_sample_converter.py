@@ -24,7 +24,7 @@ class _MockDataSourceRelational(DataSource, Relational):
     def supported_types(self):
         return ['sample_project', 'sample', 'project', 'sample_export_options',
                 'location', 'gal', 'preservation_approach', 'sampleset',
-                'specimen', 'preservative_solution', 'collection_method',
+                'specimen', 'preservation_solution', 'collection_method',
                 'sample_person', 'person', 'manifest', 'tissue_size', 'sample_species',
                 'species', 'lifestage', 'sex', 'organism_part', 'sample_species_organism_part',
                 'ext_id', 'strain', 'storage_rack', 'freezer_tray', 'hazard_group',
@@ -49,7 +49,7 @@ class _MockDataSourceRelational(DataSource, Relational):
             'manifest': 'manifest',
             'specimen': 'specimen',
             'preservation_approach': 'preservation_approach',
-            'preservative_solution': 'preservative_solution',
+            'preservation_solution': 'preservation_solution',
             'collection_method': 'collection_method',
             'hazard_group': 'hazard_group',
             'tissue_size': 'tissue_size',
@@ -414,7 +414,7 @@ class TestStsSampleProjectToElasticSampleConverter(TestCase):
             )
             solution = CoreDataObject(
                 id_='test_solution',
-                type_='preservative_solution',
+                type_='preservation_solution',
                 attributes={
                     'solution': 'solution'
                 }
@@ -435,7 +435,7 @@ class TestStsSampleProjectToElasticSampleConverter(TestCase):
             )
             solution = CoreDataObject(
                 id_='test_solution',
-                type_='preservative_solution',
+                type_='preservation_solution',
                 attributes={
                     'solution': 'solution'
                 }
@@ -458,7 +458,7 @@ class TestStsSampleProjectToElasticSampleConverter(TestCase):
                 'location': location,
                 'gal': gal,
                 'preservation_approach': approach,
-                'preservative_solution': solution,
+                'preservation_solution': solution,
                 'collection_method': method,
                 'hazard_group': hazard_group,
                 'specimen': specimen,
@@ -516,7 +516,7 @@ class TestStsSampleProjectToElasticSampleConverter(TestCase):
                 'gal_abbreviation': 'TESTGAL',
                 'gal_name': 'Test Gal',
                 'preservation_approach': 'approach',
-                'preservative_solution': 'solution',
+                'preservation_solution': 'solution',
                 'collection_method_desc': 'method_desc',
                 'hazard_group': 'level1',
                 'tissue_size': 'huge',
@@ -524,7 +524,6 @@ class TestStsSampleProjectToElasticSampleConverter(TestCase):
                 'col_date': datetime.datetime(2020, 2, 2),
                 'original_collection_date': datetime.datetime(2011, 1, 1, 12),
                 'pre_date': datetime.datetime(2000, 12, 12),
-                'public_name': None,
                 'other': 'another',
                 'action1_name': 'full name1',
                 'action2_name': 'full name2',
@@ -549,7 +548,7 @@ class TestStsSampleProjectToElasticSampleConverter(TestCase):
         with self.assertRaises(StopIteration):
             next(converteds)
 
-    def test_convert_ready_for_lab_date_is_none_when_no_matching_event(self):
+    def test_convert_ready_for_lab_date_is_missing_when_no_matching_event(self):
         source = _MockDataSourceRelational(config={})
         destination = _MockDataSource(config={})
         core_data_object(source)
@@ -587,4 +586,4 @@ class TestStsSampleProjectToElasticSampleConverter(TestCase):
         )
 
         converted = next(converter.convert(sample_project))
-        self.assertIsNone(converted.attributes['ready_for_lab_date'])
+        self.assertNotIn('ready_for_lab_date', converted.attributes)

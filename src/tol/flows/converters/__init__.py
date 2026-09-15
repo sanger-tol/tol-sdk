@@ -62,6 +62,7 @@ from .sts_project_to_elastic_sample_update_converter import StsProjectToElasticS
 from .sts_sample_project_to_elastic_sample_converter import StsSampleProjectToElasticSampleConverter  # noqa F401
 from .sts_sampleset_to_elastic_sampleset_converter import StsSamplesetToElasticSamplesetConverter  # noqa F401
 from .sts_species_to_elastic_species_converter import StsSpeciesToElasticSpeciesConverter  # noqa F401
+from .tolid_species_to_elastic_species_converter import TolidSpeciesToElasticSpeciesConverter  # noqa F401
 from .tolid_specimen_to_elastic_tolid_converter import TolidSpecimenToElasticTolidConverter  # noqa F401
 from .tolqc_data_to_elastic_run_data_converter import TolqcDataToElasticRunDataConverter  # noqa F401
 from .tolqc_sample_to_elastic_sequencing_request_converter import TolqcSampleToElasticSequencingRequestConverter  # noqa F401
@@ -78,3 +79,5 @@ from .auto_detect_manifest_type_converter import AutoDetectManifestTypeConverter
 from .time_string_to_time import TimeStringToTimeConverter # noqa F401
 from .genome_note_converter import GenomeNoteConverter  # noqa F401
 from .dummy_record_to_elastic_record_converter import DummyRecordToElasticRecordConverter  # noqa F401
+from .workflows_data_object_to_elastic_assembly_analysis_converter import WorkflowsDataObjectToElasticAssemblyAnalysisConverter  # noqa F401
+from .workflows_data_object_to_elastic_assembly_output_converter import WorkflowsDataObjectToElasticAssemblyOutputConverter  # noqa F401

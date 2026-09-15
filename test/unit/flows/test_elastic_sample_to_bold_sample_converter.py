@@ -79,18 +79,18 @@ class TestElasticSampleToBoldSampleConverter(TestCase):
             id_='1234',
             type_='sample',
             attributes={
-                'sts_gal_name': 'GENOME ACQUISITION LABORATORY',
-                'sts_gal_abbreviation': 'GAL',
-                'sts_organism_part': ['LEG', 'ARM'],
-                'sts_rackid': 'GAL_1234_5678',
-                'sts_CONTRIBUTORS':
+                'gal_name': 'GENOME ACQUISITION LABORATORY',
+                'gal_abbreviation': 'GAL',
+                'organism_part': ['LEG', 'ARM'],
+                'rackid': 'GAL_1234_5678',
+                'CONTRIBUTORS':
                     'Person One;Institution One;p1@i1.ac.uk;primary contact|'
                     'Person Two;Institution Two;p2@i2.ac.uk;plated specimens',
-                'sts_col_date': datetime(2024, 1, 1),
-                'sts_COUNTRY_OF_COLLECTION': 'UNITED KINGDOM',
-                'sts_latitude': '1.23456',
-                'sts_longitude': '54.321123',
-                'sts_COLLECTION_METHOD': 'MALAISE_TRAP'
+                'col_date': datetime(2024, 1, 1),
+                'COUNTRY_OF_COLLECTION': 'UNITED KINGDOM',
+                'latitude': '1.23456',
+                'longitude': '54.321123',
+                'COLLECTION_METHOD': 'MALAISE_TRAP'
             },
             to_one={
                 'specimen': specimen

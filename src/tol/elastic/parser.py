@@ -65,9 +65,12 @@ class DefaultElasticApiParser(DataSourceParser[ElasticApiResource, DataObject]):
             return None
 
     def _convert_data_dict_to_data_object(self, type_, id_, data, runtime_data):
+        # Enrichment flattens a related object, so its provenanced attributes arrive as
+        # plain values and must be treated as standard attributes.
         direct_provenance_attrs = {
             k for k in self._data_source.provenance_fields.get(type_, {})
             if not k.endswith('.id')
+            and not self.__is_enriched_value(data.get(k))
         }
 
         attributes = {
@@ -80,7 +83,11 @@ class DefaultElasticApiParser(DataSourceParser[ElasticApiResource, DataObject]):
             if k in self._data_source.attribute_types[type_]
         }
         provenanced_attributes = {
-            ElasticUtils.actual_attribute(k): self.__normalise_runtime_value(v[0])
+            ElasticUtils.actual_attribute(k): self.__make_dates(
+                type_,
+                ElasticUtils.actual_attribute(k),
+                self.__normalise_runtime_value(v[0]),
+            )
             for k, v in runtime_data.items()
             if type_ in self._data_source.provenance_fields
             and ElasticUtils.actual_attribute(k) in self._data_source.provenance_fields[type_]
@@ -117,7 +124,11 @@ class DefaultElasticApiParser(DataSourceParser[ElasticApiResource, DataObject]):
         # This picks out all the direct attributes that have provenance
         attributes_with_provenance = {
             k: {
-                source: self.__normalise_runtime_value(details['value'])
+                source: self.__make_dates(
+                    type_,
+                    k,
+                    self.__normalise_runtime_value(details['value']),
+                )
                 for source, details in v['provenance'].items()
             }
             for k, v in data.items()
@@ -166,6 +177,11 @@ class DefaultElasticApiParser(DataSourceParser[ElasticApiResource, DataObject]):
             relation_data,
             {},  # This can be empty because runtime_fields are not applicable for enriched objects
         )
+
+    def __is_enriched_value(self, value: Any) -> bool:
+        if value is None:
+            return False
+        return not (isinstance(value, Mapping) and 'provenance' in value)
 
     def __make_dates(self, object_type, attribute_name, value):
         if self._data_source.attribute_types[object_type][attribute_name] == 'datetime' and \

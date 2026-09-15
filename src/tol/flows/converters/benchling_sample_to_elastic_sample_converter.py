@@ -35,6 +35,7 @@ class BenchlingSampleToElasticSampleConverter(
                     f'{k}': v
                     for k, v in data_object.attributes.items()
                     if k not in ['taxon_id', 'specimen_id', 'programme_id']
+                    and v is not None
                 },
                 to_one={
                     'species': self._data_object_factory(

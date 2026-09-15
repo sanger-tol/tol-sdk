@@ -59,5 +59,5 @@ class TestBoldSampleToElasticSampleUpdateConverter(TestCase):
         ret1 = next(converteds)
         self.assertEqual(ret1, (None, {
             'bold_bin_uri': 'BOLD1',
-            'taxonomy': {'kingdom': {'kingdom1': 10}}
+            'bold_taxonomy': {'kingdom': {'kingdom1': 10}}
         }))

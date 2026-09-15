@@ -200,6 +200,7 @@ class TestBoardBlueprintAddEntityAndCreateBoard:
         assert payload['title'] == ''
         assert payload['filter'] == {'a': 1}
         assert payload['config'] == {}
+        assert payload['filter_exclude_incoming'] is False
         assert payload['filter_pass_through'] is False
 
     def test_add_entity__201(

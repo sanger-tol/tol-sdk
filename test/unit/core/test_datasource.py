@@ -77,6 +77,13 @@ class _TestAttributeMetadata(DefaultAttributeMetadata):
             return 'status'
         return None
 
+    def get_source_order(self, object_type, attribute_name):
+        if object_type == 'object_type1' and attribute_name == 'attribute1':
+            return ['source1', 'source2']
+        if object_type == 'object_type2' and attribute_name == 'attribute3':
+            return ['source3', 'source4']
+        return None
+
 
 class _TestDataSourceAttributes(DataSource, Relational):
     def __init__(self, config: Dict):
@@ -153,6 +160,7 @@ class TestDataSource(TestCase):
                         'available_on_relationships': True,
                         'authoritative': True,
                         'source': 'test_source',
+                        'source_order': ['source1', 'source2'],
                         'acts_as': 'status'
                     },
                     'attribute2': {
@@ -163,6 +171,7 @@ class TestDataSource(TestCase):
                         'available_on_relationships': True,
                         'authoritative': True,
                         'source': 'test_source',
+                        'source_order': None,
                         'acts_as': 'status'
                     }
                 },
@@ -175,6 +184,7 @@ class TestDataSource(TestCase):
                         'available_on_relationships': False,
                         'authoritative': False,
                         'source': 'test_source',
+                        'source_order': ['source3', 'source4'],
                         'acts_as': None
                     },
                     'attribute4': {
@@ -185,6 +195,7 @@ class TestDataSource(TestCase):
                         'available_on_relationships': False,
                         'authoritative': False,
                         'source': 'test_source',
+                        'source_order': None,
                         'acts_as': None
                     }
                 }
@@ -203,6 +214,7 @@ class TestDataSource(TestCase):
                 'available_on_relationships': True,
                 'authoritative': True,
                 'source': 'test_source',
+                'source_order': ['source1', 'source2'],
                 'acts_as': 'status'
             }
         )
@@ -216,6 +228,7 @@ class TestDataSource(TestCase):
                 'available_on_relationships': False,
                 'authoritative': False,
                 'source': 'test_source',
+                'source_order': ['source3', 'source4'],
                 'acts_as': None
             }
         )

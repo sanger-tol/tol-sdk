@@ -71,9 +71,16 @@ def add_entity(
     attributes = payload.get('attributes', {})
     attributes['filter'] = attributes.get('filter', {})
 
+    if child_type in ('zone') or child_type in ('component'):
+        attributes['filter_pass_through'] = False
+        attributes['filter_exclude_incoming'] = False
+
+    if child_type in ('zone'):
+        attributes['relationship_translation'] = True
+        attributes['attribute_translations'] = {}
+
     if child_type in ('component'):
         attributes['config'] = {}
-        attributes['filter_pass_through'] = False
 
     new_child_id = generate_entity_id(child_type)
 

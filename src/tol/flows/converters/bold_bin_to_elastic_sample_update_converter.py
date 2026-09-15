@@ -31,4 +31,6 @@ class BoldBinToElasticSampleUpdateConverter(
         if data_object is not None:
             yield (None, {
                 'bold_bin_uri': data_object.id
-            } | data_object.attributes)
+            } | {
+                f'bold_{k}': v for k, v in data_object.attributes.items()
+            })

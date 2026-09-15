@@ -3,9 +3,10 @@
 # SPDX-License-Identifier: MIT
 
 from typing import Any, Iterable
-from unittest.mock import create_autospec
+from unittest.mock import create_autospec, patch
 
 from tol.core import DataObject
+from tol.sources.goat import GoatDataSource
 from tol.validators import TaxonMatchesGoatValidator
 
 
@@ -321,3 +322,62 @@ class TestTaxonMatchesGoatValidator:
         # Expect there to be a warning for the incorrect genus
         assert len(validator.warnings) == 1
         assert len(validator.errors) == 0
+
+    def test_exempt_taxon_ids_pass_regardless_of_goat_data(
+        self,
+        mock_objs: Iterable[DataObject]
+    ) -> None:
+        """
+        Ensures an exempt taxon ID produces no warnings or errors
+        and is not queried from GoaT
+        """
+        del mock_objs
+        mock_one = create_autospec(DataObject)
+        mock_one.id = 'a'
+
+        def __get_field_by_name_one(name: str) -> Any:
+            match name:
+                case 'TAXON_ID':
+                    return '32644'
+                case 'SCIENTIFIC_NAME':
+                    return 'Arenicola marina'
+                case 'GENUS':
+                    return 'Arenicola'
+                case 'FAMILY':
+                    return 'Arenicolidae'
+                case 'SUPERFAMILY':
+                    return 'INVALID'
+                case 'PHYLUM':
+                    return 'Annelida'
+                case 'KINGDOM':
+                    return 'Metazoa'
+                case 'SUPERKINGDOM':
+                    return None
+                case 'DOMAIN':
+                    return 'Eukaryota'
+        mock_one.get_field_by_name.side_effect = __get_field_by_name_one
+
+        config = TaxonMatchesGoatValidator.Config(
+            species_field='SCIENTIFIC_NAME',
+            genus_field='GENUS',
+            family_field='FAMILY',
+            exempt_taxon_ids=['32644']
+        )
+
+        mock_goat = create_autospec(GoatDataSource, instance=True)
+
+        with patch(
+            'tol.validators.taxon_matches_goat.goat',
+            return_value=mock_goat
+        ):
+            validator = TaxonMatchesGoatValidator(config)
+
+            list(
+                validator.validate(iter([mock_one]))
+            )
+
+        # Expect there to be no warnings or errors for a taxon_id not found in GoaT
+        # and is in the exemption list
+        assert len(validator.warnings) == 0
+        assert len(validator.errors) == 0
+        mock_goat.get_one.assert_not_called()

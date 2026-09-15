@@ -29,15 +29,15 @@ class ElasticSampleToBoldSampleConverter(
         self._data_object_factory = data_object_factory
 
     def convert(self, data_object: DataObject) -> Iterable[DataObject]:
-        loc = f'{data_object.sts_gal_name} - {data_object.sts_gal_abbreviation}'
+        loc = f'{data_object.gal_name} - {data_object.gal_abbreviation}'
         if len(loc) == 51:
-            loc = f'{data_object.sts_gal_name}- {data_object.sts_gal_abbreviation}'
+            loc = f'{data_object.gal_name}- {data_object.gal_abbreviation}'
         if len(loc) > 50:
             loc = 'dummy'
-        if data_object.sts_gal_name is None:
+        if data_object.gal_name is None:
             loc = ''
-        if data_object.sts_rackid is not None:
-            project_code = data_object.sts_rackid.split('_')[0]
+        if data_object.rackid is not None:
+            project_code = data_object.rackid.split('_')[0]
         else:
             project_code = ''
         upd_codes = {
@@ -64,26 +64,26 @@ class ElasticSampleToBoldSampleConverter(
             'notes': '',
             'voucher_type': '',
             'tissue_type':
-                ' | '.join(data_object.sts_organism_part)
-                if data_object.sts_organism_part is not None else '',
-            'collectors': self.__extract_names_from_contributors(data_object.sts_CONTRIBUTORS),
+                ' | '.join(data_object.organism_part)
+                if data_object.organism_part is not None else '',
+            'collectors': self.__extract_names_from_contributors(data_object.CONTRIBUTORS),
             'collection_date_start':
-                data_object.sts_col_date.strftime('%Y-%m-%d')
-                if data_object.sts_col_date is not None else '',
+                data_object.col_date.strftime('%Y-%m-%d')
+                if data_object.col_date is not None else '',
             'country/ocean':
-                data_object.sts_COUNTRY_OF_COLLECTION.title()
-                if data_object.sts_COUNTRY_OF_COLLECTION is not None else '',
+                data_object.COUNTRY_OF_COLLECTION.title()
+                if data_object.COUNTRY_OF_COLLECTION is not None else '',
             'province/state': '',
             'coord':
-                f'{data_object.sts_latitude},{data_object.sts_longitude}'
-                if data_object.sts_latitude is not None
-                and data_object.sts_longitude is not None else '',
+                f'{data_object.latitude},{data_object.longitude}'
+                if data_object.latitude is not None
+                and data_object.longitude is not None else '',
             'elev': '',
             'elev_accuracy': '',
             'collection_date_end': '',
             'sampling_protocol':
-                data_object.sts_COLLECTION_METHOD.replace('_', ' ').title()
-                if data_object.sts_COLLECTION_METHOD is not None else '',
+                data_object.COLLECTION_METHOD.replace('_', ' ').title()
+                if data_object.COLLECTION_METHOD is not None else '',
         }
         ret = self._data_object_factory(
             'sample',

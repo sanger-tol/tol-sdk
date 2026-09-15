@@ -49,13 +49,33 @@ class _MockDataSourceRelational(DataSource, Relational):
         raise NotImplementedError()
 
 
-class _MockDataSource(DataSource):
+class _MockDataSourceDestination(DataSource, Relational):
     @property
     def supported_types(self):
-        return ['extraction_container']
+        return ['extraction_container', 'sampleset']
 
     @property
     def attribute_types(self):
+        raise NotImplementedError()
+
+    @property
+    def relationship_config(self):
+        rc_extraction_container = RelationshipConfig()
+        rc_extraction_container.to_one = {
+            'sampleset': 'sampleset'
+        }
+        return {'extraction_container': rc_extraction_container}
+
+    def get_to_one_relation(
+        self,
+        source: DataObject,
+        relationship_name: str
+    ):
+        raise NotImplementedError()
+
+    def get_to_many_relations(
+        self
+    ):
         raise NotImplementedError()
 
 
@@ -63,7 +83,7 @@ class TestElasticSampleToElasticExtractionContainerUpdateConverter(TestCase):
     def test_convert(self):
 
         source = _MockDataSourceRelational(config={})
-        destination = _MockDataSource(config={})
+        destination = _MockDataSourceDestination(config={})
         core_data_object(source)
         core_data_object(destination)
         converter = ElasticSampleToElasticExtractionContainerUpdateConverter(
@@ -89,15 +109,19 @@ class TestElasticSampleToElasticExtractionContainerUpdateConverter(TestCase):
         )
 
         converteds = converter.convert(obj1)
-        ret1 = next(converteds)
-        self.assertEqual(ret1, (None, {
-            'sample.id': '1234',
-            'sampleset': {'id': '5678'},
-        }))
+        filter_id1, update_dict1 = next(converteds)
+        self.assertIsNone(filter_id1)
+        self.assertEqual(update_dict1['sample.id'], '1234')
+        sampleset1 = update_dict1['sampleset']
+        self.assertIsInstance(sampleset1, DataObject)
+        self.assertEqual(sampleset1.type, 'sampleset')
+        self.assertEqual(sampleset1.id, '5678')
 
         converteds = converter.convert(obj2)
-        ret2 = next(converteds)
-        self.assertEqual(ret2, (None, {
-            'sample.id': '2345',
-            'sampleset': {'id': '6789'},
-        }))
+        filter_id2, update_dict2 = next(converteds)
+        self.assertIsNone(filter_id2)
+        self.assertEqual(update_dict2['sample.id'], '2345')
+        sampleset2 = update_dict2['sampleset']
+        self.assertIsInstance(sampleset2, DataObject)
+        self.assertEqual(sampleset2.type, 'sampleset')
+        self.assertEqual(sampleset2.id, '6789')

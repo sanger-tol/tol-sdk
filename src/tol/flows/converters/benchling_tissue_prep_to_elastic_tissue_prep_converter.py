@@ -35,21 +35,26 @@ class BenchlingTissuePrepToElasticTissuePrepConverter(
                    for k, v in data_object.attributes.items()
                    if k not in ['sts_id',
                                 'taxon_id',
-                                'programme_id']}
+                                'programme_id',
+                                'specimen_id',]}
             },
             to_one={
                 'sample': self._data_object_factory(
                     'sample',
-                    data_object.sts_id
+                    str(data_object.sts_id)
                 ) if data_object.sts_id is not None else None,
                 'species': self._data_object_factory(
                     'species',
-                    data_object.taxon_id
+                    str(data_object.taxon_id)
                 ) if data_object.taxon_id is not None else None,
                 'tolid': self._data_object_factory(
                     'tolid',
                     data_object.programme_id
                 ) if data_object.programme_id is not None else None,
+                'specimen': self._data_object_factory(
+                    'specimen',
+                    data_object.specimen_id
+                ) if data_object.specimen_id is not None else None,
             }
         )
         return iter([ret])

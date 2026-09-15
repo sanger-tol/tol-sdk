@@ -23,6 +23,7 @@ class TaxonMatchesGoatValidator(Validator):
         kingdom_field: str | None = None
         superkingdom_field: str | None = None
         domain_field: str | None = None
+        exempt_taxon_ids: list[str] | None = None
 
     __slots__ = ['__config', '__goat_datasource', '_cached_taxa']
     __config: Config
@@ -44,6 +45,9 @@ class TaxonMatchesGoatValidator(Validator):
         if taxon_id in self._cached_taxa:
             taxon = self._cached_taxa[taxon_id]
         else:
+            if str(taxon_id) in (self.__config.exempt_taxon_ids or []):
+                return
+
             taxon = self.__goat_datasource.get_one('taxon', taxon_id)
 
             # Add this taxon to cached taxa.

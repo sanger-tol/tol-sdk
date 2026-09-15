@@ -941,7 +941,10 @@ class TestFlowUtilsCreateBenchlingEntitiesFromElasticSamples:
             additional_fields=extra
         )
 
-        mock_tissue_converter.Config.assert_called_once_with(extra_attributes=extra)
+        mock_tissue_converter.Config.assert_called_once_with(
+            only_if_new=True,
+            extra_attributes=extra
+        )
 
     def test_converter_uses_empty_additional_fields_by_default(
         self, mock_ids_data_loader, mock_objects_data_loader, mock_tissue_converter,
@@ -951,7 +954,10 @@ class TestFlowUtilsCreateBenchlingEntitiesFromElasticSamples:
             ids=[], eds=mock_eds, bds=mock_bds, sts_ds=mock_sts_ds
         )
 
-        mock_tissue_converter.Config.assert_called_once_with(extra_attributes={})
+        mock_tissue_converter.Config.assert_called_once_with(
+            only_if_new=True,
+            extra_attributes={}
+        )
 
     def test_objects_loader_destination_is_sts_ds(
         self, mock_ids_data_loader, mock_objects_data_loader,

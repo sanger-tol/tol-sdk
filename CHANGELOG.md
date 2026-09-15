@@ -6,6 +6,93 @@ SPDX-License-Identifier: MIT
 
 # Changelog
 
+## tol-sdk `2.6.0`
+
+15-09-2026
+
+- Support new QC relationships in ToLQC converters
+
+## tol-sdk `2.5.2`
+
+10-09-2026
+
+- Added `SetRelationshipAction` to set (or clear, via a null `related_id`) a to-one relationship on one or more objects
+- Corrected issues with enriched provenanced fields
+- Corrected bug with [] field selectors
+- Make specimen a proper relationship from tissue_prep
+
+## tol-sdk `2.5.1`
+
+02-09-2026
+
+- Ensure enriching works when the id field is a provenance field
+
+## tol-sdk `2.5.0`
+
+01-09-2026
+
+- Added `exempt_taxon_ids` to GoaT validator config to allow for taxon ID 32644 to pass validation
+- Added GAP workflow converters
+
+## tol-sdk `2.4.9`
+
+24-08-2026
+
+- Added filterPassThrough on zones
+- Split out relationship and attribute translation
+
+## tol-sdk `2.4.8`
+
+12-08-2026
+
+- Corrections to provenanced fields return types
+
+## tol-sdk `2.4.7`
+
+07-08-2026
+
+- Add filter_exclude_incoming to component and zone
+- Add advanced translations to zone
+
+## tol-sdk `2.4.6`
+
+06-08-2026
+
+- Add filter_exclude_incoming to component and zone
+- Add advanced translations to zone
+
+## tol-sdk `2.4.5`
+
+04-08-2026
+
+- Made location fields have same names from different sources
+- Allow provenance fields to be specified in filters, e.g. relation[source].id
+
+## tol-sdk `2.4.4`
+
+02-08-2026
+
+- Don't allow nulls through certain converters
+
+## tol-sdk `2.4.3`
+
+28-07-2026
+
+- Added an OpenCitations datasource for metadata lookups
+
+## tol-sdk `2.4.2`
+
+28-07-2026
+
+- Added source_order to attribute_metadata
+- Added an OpenCitations datasource for metadata lookups
+
+## tol-sdk `2.4.1`
+
+17-07-2026
+
+- Allow a version string to be passed in to ElasticDataSource.summarise()
+
 ## tol-sdk `2.4.0`
 
 10-07-2026

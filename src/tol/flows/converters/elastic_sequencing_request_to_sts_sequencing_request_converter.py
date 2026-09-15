@@ -29,16 +29,16 @@ class ElasticSequencingRequestToStsSequencingRequestConverter(
 
     def convert(self, data_object: DataObject) -> Iterable[DataObject]:
         submission_date = datetime.fromtimestamp(0)
-        if 'benchling_completion_date' in data_object.attributes and \
-                data_object.benchling_completion_date is not None:
-            submission_date = data_object.benchling_completion_date
+        if 'completion_date' in data_object.attributes and \
+                data_object.completion_date is not None:
+            submission_date = data_object.completion_date
 
         ret = self._data_object_factory(
             'sequencing_request',
             data_object.id,
             attributes={
-                'fluidx_id': data_object.benchling_fluidx_id,
-                'platform': data_object.benchling_sequencing_platform.upper(),
+                'fluidx_id': data_object.fluidx_id,
+                'platform': data_object.sequencing_platform.upper(),
                 'submission_date': submission_date
             })
         return iter([ret])

@@ -99,10 +99,10 @@ class TestElasticSampleToBenchlingTissueConverter(TestCase):
             id_='species1',
             type_='species',
             attributes={
-                'sts_taxon_group': 'order1',
-                'sts_genome_size': 100,
-                'sts_scientific_name': 'scientific1',
-                'goat_family_representative': ['family1', 'family2']
+                'taxon_group': 'order1',
+                'genome_size': 100,
+                'scientific_name': 'scientific1',
+                'family_representative': ['family1', 'family2']
             }
         )
 
@@ -128,27 +128,27 @@ class TestElasticSampleToBenchlingTissueConverter(TestCase):
             id_='1234',
             type_='sample',
             attributes={
-                'benchling_eln_tissue_id': 'benchling1',
-                'sts_rackid': 'rack1',
-                'sts_tubeid': 'tube1',
-                'sts_pos_in_rack': 'pos1',
-                'sts_labwhere_parentage': 'parentage',
-                'sts_labwhere_name': 'tray_name',
-                'sts_biosample_accession': 'biosample1',
+                'eln_tissue_id': 'benchling1',
+                'rackid': 'rack1',
+                'tubeid': 'tube1',
+                'pos_in_rack': 'pos1',
+                'location_parentage': 'parentage',
+                'location_name': 'tray_name',
+                'biosample_accession': 'biosample1',
                 'calc_biospecimen_id': 'biospecimen1',
-                'sts_organism_part': ['part1', 'part2'],
-                'sts_lifestage': 'lifestage1',
-                'sts_sex': 'sex1',
-                'sts_tissue_size': 'size1',
-                'sts_hazard_group': 'level1',
-                'sts_preservation_approach': 'approach1',
-                'sts_receive_date': datetime(2022, 1, 1),
-                'sts_tollab_assign_date': datetime(2023, 1, 1),
-                'sts_send_rd': 'rd',
-                'sts_priority': '1',
-                'sts_project': 'project1',
-                'sts_sequencescape_study_id': 'cf01ea23-ac45-67e8-9101-11b213141516',
-                'sts_cost_code': 'S12345',
+                'organism_part': ['part1', 'part2'],
+                'lifestage': 'lifestage1',
+                'sex': 'sex1',
+                'tissue_size': 'size1',
+                'hazard_group': 'level1',
+                'preservation_approach': 'approach1',
+                'receive_date': datetime(2022, 1, 1),
+                'tollab_assign_date': datetime(2023, 1, 1),
+                'send_rd': 'rd',
+                'priority': '1',
+                'project': 'project1',
+                'sequencescape_study_id': 'cf01ea23-ac45-67e8-9101-11b213141516',
+                'cost_code': 'S12345',
             },
             to_one={
                 'species': species,
@@ -161,10 +161,9 @@ class TestElasticSampleToBenchlingTissueConverter(TestCase):
             id_='test2',
             type_='sample',
             attributes={
-                'benchling_eln_tissue_id': 'benchling1'
+                'eln_tissue_id': 'benchling1'
             }
         )
-
         converteds = converter.convert(obj1)
         ret1 = next(converteds)
         self.assertEqual('benchling1', ret1.id)
@@ -229,7 +228,7 @@ class TestElasticSampleToBenchlingTissueConverter(TestCase):
             id_='1234',
             type_='sample',
             attributes={
-                'sts_eln_id': 'benchling1',
+                'eln_id': 'benchling1',
             }
         )
 

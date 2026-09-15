@@ -76,9 +76,9 @@ class StsSampleProjectToElasticSampleConverter(
             if 'preservation_approach' in s.to_one_relationships:
                 if s.preservation_approach is not None:
                     attributes['preservation_approach'] = s.preservation_approach.approach
-            if 'preservative_solution' in s.to_one_relationships:
-                if s.preservative_solution is not None:
-                    attributes['preservative_solution'] = s.preservative_solution.solution
+            if 'preservation_solution' in s.to_one_relationships:
+                if s.preservation_solution is not None:
+                    attributes['preservation_solution'] = s.preservation_solution.solution
             if 'collection_method' in s.to_one_relationships:
                 if s.collection_method is not None:
                     attributes['collection_method_desc'] = s.collection_method.method
@@ -144,15 +144,21 @@ class StsSampleProjectToElasticSampleConverter(
         except DataSourceError:
             print(f'Problem with sample {s.id}')
 
+        merged_attributes = (
+            attributes
+            | person_attributes
+            | sample_species_attributes
+            | ext_id_attributes
+        )
+
         ret = self._data_object_factory(
             'sample',
             s.id,
-            attributes=(
-                attributes
-                | person_attributes
-                | sample_species_attributes
-                | ext_id_attributes
-            ),
+            attributes={
+                key: value
+                for key, value in merged_attributes.items()
+                if value is not None
+            },
             to_one=to_one | sample_species_to_one
         )
         yield ret
