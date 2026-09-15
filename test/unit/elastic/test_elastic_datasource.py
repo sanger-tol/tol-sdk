@@ -188,9 +188,9 @@ class TestElasticDataSource:
             object_filters=None,
             requested_tree=requested_tree,
         )
-        assert set(fields) == {'relationship.id.value', 'field5.value', 'field7', 'field8'}
+        assert set(fields) == {'relationship.id.value', 'field5.value'}
         assert set(cast(dict, runtime_mappings).keys()) == {
-            'field5.value', 'relationship.id.value', 'field7', 'field8'
+            'field5.value', 'relationship.id.value'
         }
 
     def test_upsert(self, mock_elastic_data_source: ElasticDataSource):
