@@ -66,9 +66,54 @@ WITH lr_library_container AS (
     WHERE lr.sanger_sample_id IS NOT NULL
 ),
 
+femto_latest AS (
+	SELECT DISTINCT ON (sample_id)
+		sample_id,
+		average_fragment_size
+	FROM femto_pacbio_prep_v2$raw
+	ORDER BY sample_id, created_at$ DESC
+),
+
+qubit_latest AS (
+	SELECT DISTINCT ON (sample_id)
+		sample_id,
+		qubit_concentration_ngul
+	FROM qubit_measurements_v2$raw
+	ORDER BY sample_id, created_at$ DESC
+),
+
+nanodrop_latest AS (
+	SELECT DISTINCT ON (sample_id)
+        sample_id,
+		_260_280_ratio,
+		_260_230_ratio,
+		nanodrop_concentration_ngul
+    FROM nanodrop_measurements_v2$raw
+    ORDER BY sample_id, created_at$ DESC
+),
+
+spri_latest AS (
+    SELECT DISTINCT ON (sample_id)
+        sample_id,
+		spri_type,
+		bead_type
+    FROM spri_info_v2$raw
+    ORDER BY sample_id, created_at$ DESC
+),
+	
+shearing_latest AS (
+	SELECT DISTINCT ON (sample_id)
+		sample_id,
+		type_of_shearing,
+		shearing_speed
+	FROM shearing_step_v2$raw
+	ORDER BY sample_id, created_at$ DESC
+),
+
 -- container based submissions
 pacbio_submissions_container_routine AS (
 	SELECT DISTINCT
+		'pacbio_submissions_container_routine'::varchar AS kaynak,
 		t.sts_id,
 		t.taxon_id,
 		tp.id AS tissue_prep_id,
@@ -95,6 +140,8 @@ pacbio_submissions_container_routine AS (
 		nano.nanodrop_concentration_ngul AS nanodrop_concentration_ngul,
 		NULL::varchar AS sample_prep_additional_requirements,
 		NULL::varchar AS library_batch_id,
+		si.type_of_shearing,
+		si.shearing_speed,
 		lrc.library_container_id AS library_container_id,
 		spri.spri_type,
 		spri.bead_type,
@@ -120,6 +167,8 @@ pacbio_submissions_container_routine AS (
 		ON cc_dna.container_id = c_dna.id
 	LEFT JOIN tube$raw AS tube 
 		ON c_dna.id = tube.id -- End of DNA fluidx id Chunk
+	LEFT JOIN shearing_latest AS si
+		ON si.sample_id = subsam.id
 	LEFT JOIN project$raw AS proj
 		ON subsam.project_id$ = proj.id
 	 LEFT JOIN folder$raw AS f 
@@ -132,13 +181,13 @@ pacbio_submissions_container_routine AS (
 				THEN con.name
 			ELSE ssid.sanger_sample_id
 		END
-	LEFT JOIN femto_pacbio_prep_v2$raw AS femto
+	LEFT JOIN femto_latest AS femto
 		ON femto.sample_id = subsam.id
-	LEFT JOIN qubit_measurements_v2$raw AS qubit
+	LEFT JOIN qubit_latest AS qubit
 		ON qubit.sample_id = subsam.id
-	LEFT JOIN nanodrop_measurements_v2$raw AS nano
+	LEFT JOIN nanodrop_latest AS nano
 		ON nano.sample_id = subsam.id
-	LEFT JOIN spri_info_v2$raw AS spri
+	LEFT JOIN spri_latest AS spri
 		ON spri.sample_id = subsam.id
 	LEFT JOIN workflow_task$raw AS wft
 		ON pbsum.workflow_task_id$ = wft.id
@@ -156,6 +205,7 @@ pacbio_submissions_container_routine AS (
 
 pacbio_submissions_container_pooled AS (
 	SELECT DISTINCT
+		'pacbio_submissions_container_pooled'::varchar AS kaynak,
 		t.sts_id,
 		t.taxon_id,
 		tp.id AS tissue_prep_id,
@@ -182,6 +232,8 @@ pacbio_submissions_container_pooled AS (
 		nano.nanodrop_concentration_ngul AS nanodrop_concentration_ngul,
 		NULL::varchar AS sample_prep_additional_requirements,
 		NULL::varchar AS library_batch_id,
+		si.type_of_shearing,
+		si.shearing_speed,
 		lrc.library_container_id AS library_container_id,
 		spri.spri_type AS spri_type,
 		spri.bead_type AS bead_type,
@@ -221,14 +273,16 @@ pacbio_submissions_container_pooled AS (
 				THEN con.name
 			ELSE ssid.sanger_sample_id
 		END
-	LEFT JOIN femto_pacbio_prep_v2$raw AS femto
+	LEFT JOIN femto_latest AS femto
 		ON femto.sample_id = subsam.id
-	LEFT JOIN qubit_measurements_v2$raw AS qubit
+	LEFT JOIN qubit_latest AS qubit
 		ON qubit.sample_id = subsam.id
-	LEFT JOIN nanodrop_measurements_v2$raw AS nano
+	LEFT JOIN nanodrop_latest AS nano
 		ON nano.sample_id = subsam.id
-	LEFT JOIN spri_info_v2$raw AS spri
+	LEFT JOIN spri_latest AS spri
 		ON spri.sample_id = subsam.id
+	LEFT JOIN shearing_latest AS si
+		ON si.sample_id = subsam.id
 	LEFT JOIN workflow_task$raw AS wft
 		ON pbsum.workflow_task_id$ = wft.id
 	LEFT JOIN workflow_task_status$raw AS wfts
@@ -245,6 +299,7 @@ pacbio_submissions_container_pooled AS (
 
 pacbio_submissions_container_legacy_deprecated AS (
 	SELECT DISTINCT
+		'pacbio_submissions_container_legacy_deprecated'::varchar AS kaynak,
 		t.sts_id,
 		t.taxon_id,
 		tp.id AS tissue_prep_id,
@@ -267,6 +322,8 @@ pacbio_submissions_container_legacy_deprecated AS (
 		nano.nanodrop_concentration_ngul AS nanodrop_concentration_ngul,
 		NULL::varchar AS sample_prep_additional_requirements,
 		NULL::varchar AS library_batch_id,
+		NULL::varchar AS type_of_shearing,
+		NULL::int AS shearing_speed,
 		lrc.library_container_id AS library_container_id,
 		spri.spri_type AS spri_type,
 		spri.bead_type AS bead_type,
@@ -284,13 +341,13 @@ pacbio_submissions_container_legacy_deprecated AS (
 		ON dna.tissue_prep = tp.id 
 	LEFT JOIN tissue$raw AS t 
 		ON tp.tissue = t.id -- End of Tissue metadata Chunk
-	LEFT JOIN femto_pacbio_prep_v2$raw AS femto
+	LEFT JOIN femto_latest AS femto
 		ON femto.sample_id = subsam.id -- Chunk to add femto data to legacy submissions
-	LEFT JOIN qubit_measurements_v2$raw AS qubit
+	LEFT JOIN qubit_latest AS qubit
 		ON qubit.sample_id = subsam.id -- Chunk to add qubit data to legacy submissions
-	LEFT JOIN nanodrop_measurements_v2$raw AS nano
+	LEFT JOIN nanodrop_latest AS nano
 		ON nano.sample_id = subsam.id -- Chunk to add nanodrop data to legacy submissions
-	LEFT JOIN spri_info_v2$raw AS spri
+	LEFT JOIN spri_latest AS spri
 		ON spri.sample_id = subsam.id -- Chunk to add spri data to legacy submissions
 	LEFT JOIN lr_library_container AS lrc
 		ON lrc.sanger_sample_id = con.name
@@ -315,6 +372,7 @@ pacbio_submissions_container_legacy_deprecated AS (
 -- plate based submissions
 pacbio_submissions_plate_automated_manifest AS (
 	SELECT DISTINCT	
+		'pacbio_submissions_plate_automated_manifest'::varchar AS kaynak,
 		t.sts_id,
 		t.taxon_id,
 		tp.id AS tissue_prep_id,
@@ -337,6 +395,8 @@ pacbio_submissions_plate_automated_manifest AS (
 		pbsubm_p.nanodrop_concentration_ngul,
 		pbsubm_p.sample_prep_additional_requirements,
 		NULL::varchar AS library_batch_id,
+		si.type_of_shearing,
+		si.shearing_speed,
 		lrc.library_container_id AS library_container_id,
 		spri.spri_type,
 		spri.bead_type,
@@ -366,8 +426,10 @@ pacbio_submissions_plate_automated_manifest AS (
 		ON subsam.project_id$ = proj.id
 	LEFT JOIN folder$raw AS f 
 		ON subsam.folder_id$ = f.id
-	LEFT JOIN spri_info_v2$raw AS spri
+	LEFT JOIN spri_latest AS spri
 		ON spri.sample_id = subsam.id
+	LEFT JOIN shearing_latest AS si
+		ON si.sample_id = subsam.id
 	LEFT JOIN lr_library_container AS lrc
 		ON lrc.sanger_sample_id = con.name
 	LEFT JOIN workflow_task$raw AS wft
@@ -386,7 +448,8 @@ pacbio_submissions_plate_automated_manifest AS (
 ),
 
 pacbio_submissions_plate_automated_manifest_pooled AS (
-	SELECT DISTINCT	
+	SELECT DISTINCT
+		'pacbio_submissions_plate_automated_manifest_pooled'::varchar AS kaynak,
 		t.sts_id,
 		t.taxon_id,
 		tp.id AS tissue_prep_id,
@@ -409,6 +472,8 @@ pacbio_submissions_plate_automated_manifest_pooled AS (
 		pbsubm_p.nanodrop_concentration_ngul,
 		pbsubm_p.sample_prep_additional_requirements,
 		NULL::varchar AS library_batch_id,
+		si.type_of_shearing,
+		si.shearing_speed,
 		lrc.library_container_id AS library_container_id,
 		spri.spri_type AS spri_type,
 		spri.bead_type AS bead_type,
@@ -436,13 +501,15 @@ pacbio_submissions_plate_automated_manifest_pooled AS (
 		ON pbsubm_p.sanger_uuid ->> 0 = con.id
 	LEFT JOIN lr_library_container AS lrc
 		ON lrc.sanger_sample_id = con.name
+	LEFT JOIN shearing_latest AS si
+		ON si.sample_id = subsam.id
 	LEFT JOIN plate$raw AS plt 
 		ON con.plate_id = plt.id
 	LEFT JOIN project$raw AS proj
 		ON subsam.project_id$ = proj.id
 	LEFT JOIN folder$raw AS f 
 		ON subsam.folder_id$ = f.id
-	LEFT JOIN spri_info_v2$raw AS spri
+	LEFT JOIN spri_latest AS spri
 		ON spri.sample_id = subsam.id
 	LEFT JOIN workflow_task$raw AS wft
 		ON pbsubm_p.workflow_task_id$ = wft.id
@@ -457,6 +524,7 @@ pacbio_submissions_plate_automated_manifest_pooled AS (
 
 pacbio_submissions_plate_routine AS (
 	SELECT 
+		'pacbio_submissions_plate_routine'::varchar AS kaynak,
 		t.sts_id,
 		t.taxon_id,
 		tp.id AS tissue_prep_id,
@@ -479,6 +547,8 @@ pacbio_submissions_plate_routine AS (
 		nano.nanodrop_concentration_ngul AS nanodrop_concentration_ngul,
 		NULL::varchar AS sample_prep_additional_requirements,
 		lpb.name$ AS library_batch_id,
+		si.type_of_shearing,
+		si.shearing_speed,
 		lrc.library_container_id AS library_container_id,
 		spri.spri_type AS spri_type,
 		spri.bead_type AS bead_type,
@@ -510,14 +580,16 @@ pacbio_submissions_plate_routine AS (
 		ON con.plate_id = plate.id
 	LEFT JOIN sanger_sample_id$raw AS ssid
 		ON con.id = ssid.sample_tube
-	LEFT JOIN femto_pacbio_prep_v2$raw AS femto
+	LEFT JOIN femto_latest AS femto
 		ON femto.sample_id = subsam.id
-	LEFT JOIN qubit_measurements_v2$raw AS qubit
+	LEFT JOIN qubit_latest AS qubit
 		ON qubit.sample_id = subsam.id
-	LEFT JOIN nanodrop_measurements_v2$raw AS nano
+	LEFT JOIN nanodrop_latest AS nano
 		ON nano.sample_id = subsam.id
-	LEFT JOIN spri_info_v2$raw AS spri
+	LEFT JOIN spri_latest AS spri
 		ON spri.sample_id = subsam.id
+	LEFT JOIN shearing_latest AS si
+		ON si.sample_id = subsam.id
 	LEFT JOIN lr_long_read_library_preparation_b$raw AS lr_proc -- Chunk to add LR info
 		ON lr_proc.sanger_sample_id = ssid.sanger_sample_id
 	LEFT JOIN lr_library_preparation_batch$raw AS lpb
@@ -543,6 +615,7 @@ pacbio_submissions_plate_routine AS (
 
 pacbio_submissions_plate_routine_pooled AS (
 	SELECT
+		'pacbio_submissions_plate_routine_pooled'::varchar AS kaynak,
 		t.sts_id,
 		t.taxon_id,
 		tp.id AS tissue_prep_id,
@@ -565,6 +638,8 @@ pacbio_submissions_plate_routine_pooled AS (
 		nano.nanodrop_concentration_ngul AS nanodrop_concentration_ngul,
 		NULL::varchar AS sample_prep_additional_requirements,
 		lpb.name$ AS library_batch_id,
+		si.type_of_shearing,
+		si.shearing_speed,
 		lrc.library_container_id AS library_container_id,
 		spri.spri_type AS spri_type,
 		spri.bead_type AS bead_type,
@@ -584,14 +659,16 @@ pacbio_submissions_plate_routine_pooled AS (
 		ON con.plate_id = plate.id -- End of chunk to get the plate ID
 	LEFT JOIN sanger_sample_id$raw AS ssid
 		ON con.id = ssid.sample_tube
-	LEFT JOIN femto_pacbio_prep_v2$raw AS femto
+	LEFT JOIN femto_latest AS femto
 		ON femto.sample_id = subsam.id
-	LEFT JOIN qubit_measurements_v2$raw AS qubit
+	LEFT JOIN qubit_latest AS qubit
 		ON qubit.sample_id = subsam.id
-	LEFT JOIN nanodrop_measurements_v2$raw AS nano
+	LEFT JOIN nanodrop_latest AS nano
 		ON nano.sample_id = subsam.id
-	LEFT JOIN spri_info_v2$raw AS spri
+	LEFT JOIN spri_latest AS spri
 		ON spri.sample_id = subsam.id
+	LEFT JOIN shearing_latest AS si
+		ON si.sample_id = subsam.id
 	LEFT JOIN pooled_samples$raw AS pool 
 		ON subsam.pooled_sample = pool.id
 	LEFT JOIN container_content$raw AS cc_pool -- Chunk to connect pooled sample to the FluidX tube

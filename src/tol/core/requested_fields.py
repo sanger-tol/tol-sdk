@@ -4,11 +4,15 @@
 
 from __future__ import annotations
 
+import re
 from collections.abc import Iterable, Iterator
 
 from . import DataSourceError, OperableDataSource
 from .operator import Relational
 from .relationship import RelationshipConfig
+
+
+_PROVENANCE_SOURCE_REF = re.compile(r'\[[^\[\]]+\]')
 
 
 def requested_fields_to_tree(func):
@@ -154,6 +158,10 @@ class ReqFieldsTree:
     ) -> None:
         err_title = 'Bad Requested Fields Path Element'
         for path_str in requested_fields:
+            # A specific provenance source (e.g. `name[source]`) is not an attribute in its
+            # own right; it is served under the attribute it belongs to, in the provenance
+            # object, so request that attribute instead.
+            path_str = _PROVENANCE_SOURCE_REF.sub('', path_str)
             tree = self
             for name in path_str.split('.'):
                 if name == '':

@@ -102,6 +102,12 @@ def elastic_datasource(
                     return_type=None
                 ),
             },
+            'related': {
+                'str_column_prov': ProvenanceField(
+                    source_order=['source1', 'source2', 'source3', 'source4'],
+                    return_type=None
+                ),
+            }
         }
     )
 
@@ -241,7 +247,9 @@ def upsert_archetypes(prefix: str) -> None:
                     },
                 },
                 'int_column': 42,
-                'datetime_column': datetime(2021, 1, 1, 0, 0, 0)
+                'datetime_column': datetime(2021, 1, 1, 0, 0, 0),
+                # Enrichment flattens the related object's provenanced attributes
+                'str_column_prov': 'abc',
             },
             'another_related_object': {
                 'id': '#REL'
@@ -257,6 +265,14 @@ def upsert_archetypes(prefix: str) -> None:
             'datetime_column': datetime(2020, 1, 1, 0, 0, 0),
             'bool_column': True,
             'list_column': ['item'],
+            'str_column_prov': {
+                'provenance': {
+                    'source1': {'value': 'abc'},
+                    'source2': {'value': 'abc'},
+                    'source3': {'value': 'abc'},
+                    'source4': {'value': 'abc'},
+                }
+            },
             'root_int_column_min': 100,
             'root_int_column_max': 200,
             'root_str_column_min': '100',

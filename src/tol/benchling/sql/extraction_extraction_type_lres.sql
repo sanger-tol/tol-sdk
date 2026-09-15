@@ -25,7 +25,7 @@ SELECT DISTINCT
 	t.specimen_id,
 	tp.name$ AS eln_tissue_prep_name,
 	ssid.sanger_sample_id,
-	ssid.sanger_sample_id AS extraction_id,
+	dna.id AS extraction_id,
 	sub_con.barcode AS fluidx_id,
 	sub_con.id AS fluidx_container_id,
 	DATE(tpsub.submitted_submission_date) AS completion_date,
