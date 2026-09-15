@@ -1159,7 +1159,7 @@ class TestEndToEnd:
         assert stats['int_column']['unique'] == 4
         assert stats['int_column']['cardinality'] == 4
 
-    @against(elastic, api_elastic)
+    @against(elastic)
     def test_runtime_fields(self, data_source: OperableDataSource, ds_sleep):
         """
         Upsert a `DataObject` instance, and then query a runtime field
