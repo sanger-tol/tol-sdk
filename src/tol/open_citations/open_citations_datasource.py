@@ -7,8 +7,8 @@ from typing import Callable, Iterable, Optional
 
 from .client import OpenCitationsApiClient
 from .converter import OpenCitationsApiConverter
-from ..core import DataObject, DataSource, DataSourceError
-from ..core.operator import DetailGetter
+from ..core import DataObject, DataSource, DataSourceError, DataSourceFilter
+from ..core.operator import DetailGetter, ListGetter
 
 ClientFactory = Callable[[], OpenCitationsApiClient]
 OpenCitationsConverterFactory = Callable[[], OpenCitationsApiConverter]
@@ -17,6 +17,7 @@ OpenCitationsConverterFactory = Callable[[], OpenCitationsApiConverter]
 class OpenCitationsDataSource(
     DataSource,
     DetailGetter,
+    ListGetter,
 ):
     """
     A `DataSource` that connects to a remote OpenCitations API.
@@ -86,6 +87,38 @@ class OpenCitationsDataSource(
             converted_objects,
             requested_object_ids,
         )
+
+    def get_one(
+        self,
+        object_type: str,
+        object_id: str,
+        **kwargs,
+    ) -> Optional[DataObject]:
+        if object_id.lower().startswith('pmid:'):
+            objects = self.get_list(
+                object_type,
+                DataSourceFilter(and_={
+                    'id': {'in_list': {'value': [object_id]}},
+                }),
+                **kwargs,
+            )
+            return next(iter(objects), None)
+        return super().get_one(object_type, object_id, **kwargs)
+
+    def get_list(
+        self,
+        object_type: str,
+        object_filters: Optional[DataSourceFilter] = None,
+        **kwargs,
+    ) -> Iterable[DataObject]:
+        self.__validate_object_type(object_type)
+        object_ids = object_filters.and_['id']['in_list']['value']
+        open_citations_response = self.__client.get_detail(object_type, object_ids)
+        converted_objects, _ = self.__converter_factory().convert_list(
+            object_type,
+            open_citations_response,
+        ) if open_citations_response is not None else ([], 0)
+        return iter(converted_objects)
 
     def __validate_object_type(self, object_type: str) -> None:
         if object_type not in self.supported_types:
