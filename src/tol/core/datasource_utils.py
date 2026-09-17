@@ -22,11 +22,12 @@ class DataSourceUtils:
     def get_datasource(
         cls,
         datasource_instance_id: str,
-        config_datasource: DataSource | None = None
+        config_datasource: DataSource | None = None,
+        direct: bool = False
     ) -> DataSource:
         if config_datasource is None:
-            from ..sources.portaldb import portaldb
-            config_datasource = portaldb()
+            from ..sources.quasar import quasar
+            config_datasource = quasar()
         datasource_instance = config_datasource.get_one(
             'data_source_instance',
             datasource_instance_id
@@ -35,7 +36,10 @@ class DataSourceUtils:
             raise DataSourceError(
                 f'Datasource instance with id {datasource_instance_id} not found'
             )
-        return cls.get_datasource_by_datasource_instance(datasource_instance)
+        return cls.get_datasource_by_datasource_instance(
+            datasource_instance,
+            direct=direct
+        )
 
     @classmethod
     def get_datasource_by_name(
@@ -51,10 +55,16 @@ class DataSourceUtils:
     def get_datasource_by_datasource_instance(
         cls,
         datasource_instance: DataObject,
+        direct: bool = False,
         **kwargs
     ) -> DataSource:
         datasource_config = datasource_instance.data_source_config
-        new_kwargs = dict(datasource_instance.kwargs) if datasource_instance.kwargs else {}
+        source_kwargs = (
+            datasource_instance.api_kwargs
+            if not direct and datasource_instance.api_name  # The test is for the name being set
+            else datasource_instance.direct_kwargs
+        )
+        new_kwargs = dict(source_kwargs) if source_kwargs else {}
         if kwargs:
             new_kwargs.update(kwargs)
         if datasource_config:
@@ -76,8 +86,14 @@ class DataSourceUtils:
                     relationships=relationships
                 ),
             })
+
+        datasource_name = (
+            datasource_instance.api_name
+            if not direct and datasource_instance.api_name
+            else datasource_instance.direct_name
+        )
         return DataSourceUtils.get_datasource_by_name(
-            datasource_instance.builtin_name,
+            datasource_name,
             **new_kwargs
         )
 
