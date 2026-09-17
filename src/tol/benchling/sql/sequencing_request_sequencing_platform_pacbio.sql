@@ -113,7 +113,6 @@ shearing_latest AS (
 -- container based submissions
 pacbio_submissions_container_routine AS (
 	SELECT DISTINCT
-		'pacbio_submissions_container_routine'::varchar AS kaynak,
 		t.sts_id,
 		t.taxon_id,
 		tp.id AS tissue_prep_id,
@@ -205,7 +204,6 @@ pacbio_submissions_container_routine AS (
 
 pacbio_submissions_container_pooled AS (
 	SELECT DISTINCT
-		'pacbio_submissions_container_pooled'::varchar AS kaynak,
 		t.sts_id,
 		t.taxon_id,
 		tp.id AS tissue_prep_id,
@@ -299,7 +297,6 @@ pacbio_submissions_container_pooled AS (
 
 pacbio_submissions_container_legacy_deprecated AS (
 	SELECT DISTINCT
-		'pacbio_submissions_container_legacy_deprecated'::varchar AS kaynak,
 		t.sts_id,
 		t.taxon_id,
 		tp.id AS tissue_prep_id,
@@ -372,7 +369,6 @@ pacbio_submissions_container_legacy_deprecated AS (
 -- plate based submissions
 pacbio_submissions_plate_automated_manifest AS (
 	SELECT DISTINCT	
-		'pacbio_submissions_plate_automated_manifest'::varchar AS kaynak,
 		t.sts_id,
 		t.taxon_id,
 		tp.id AS tissue_prep_id,
@@ -449,7 +445,6 @@ pacbio_submissions_plate_automated_manifest AS (
 
 pacbio_submissions_plate_automated_manifest_pooled AS (
 	SELECT DISTINCT
-		'pacbio_submissions_plate_automated_manifest_pooled'::varchar AS kaynak,
 		t.sts_id,
 		t.taxon_id,
 		tp.id AS tissue_prep_id,
@@ -524,7 +519,6 @@ pacbio_submissions_plate_automated_manifest_pooled AS (
 
 pacbio_submissions_plate_routine AS (
 	SELECT 
-		'pacbio_submissions_plate_routine'::varchar AS kaynak,
 		t.sts_id,
 		t.taxon_id,
 		tp.id AS tissue_prep_id,
@@ -615,7 +609,6 @@ pacbio_submissions_plate_routine AS (
 
 pacbio_submissions_plate_routine_pooled AS (
 	SELECT
-		'pacbio_submissions_plate_routine_pooled'::varchar AS kaynak,
 		t.sts_id,
 		t.taxon_id,
 		tp.id AS tissue_prep_id,
