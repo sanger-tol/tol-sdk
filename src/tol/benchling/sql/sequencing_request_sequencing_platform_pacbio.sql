@@ -41,8 +41,9 @@ Output: Table with cols:
 24) spri_type: [character] SPRI type used for sample preparation.
 25) bead_type: [character] Bead type used for SPRI.
 26) completion_date: [date]
-27) sequencing_platform: [character] Sequencing platform: pacbio.
-28) source: [character] Data source: v1, v1_pooled, v2, v2_pooled, legacy_bnt
+27) library_prep_receipt_date: [varchar] LR Library prep receipt date, only available for samples in LR Benchling.
+28) sequencing_platform: [character] Sequencing platform: pacbio.
+29) source: [character] Data source: v1, v1_pooled, v2, v2_pooled, legacy_bnt
 
 NOTES: 
 
@@ -144,7 +145,8 @@ pacbio_submissions_container_routine AS (
 		lrc.library_container_id AS library_container_id,
 		spri.spri_type,
 		spri.bead_type,
-		pbsum.submission_date AS completion_date, 
+		pbsum.submission_date AS completion_date,
+		NULL::varchar AS library_prep_receipt_date,
 		'pacbio'::varchar AS sequencing_platform,
 		'v1'::varchar AS source
 	FROM pacbio_sequencing_submission2$raw AS pbsum
@@ -236,6 +238,7 @@ pacbio_submissions_container_pooled AS (
 		spri.spri_type AS spri_type,
 		spri.bead_type AS bead_type,
 		pbsum.submission_date AS completion_date, 
+		NULL::varchar AS library_prep_receipt_date,
 		'pacbio'::varchar AS sequencing_platform,
 		'v1_pooled'::varchar AS source
 	FROM pacbio_sequencing_submission2$raw AS pbsum
@@ -324,7 +327,8 @@ pacbio_submissions_container_legacy_deprecated AS (
 		lrc.library_container_id AS library_container_id,
 		spri.spri_type AS spri_type,
 		spri.bead_type AS bead_type,
-		subsam.created_at$ AS completion_date, 
+		subsam.created_at$ AS completion_date,
+		NULL::varchar AS library_prep_receipt_date,
 		'pacbio'::varchar AS sequencing_platform,
 		'legacy_bnt'::varchar AS source
 	FROM submission_samples$raw AS subsam
@@ -396,7 +400,8 @@ pacbio_submissions_plate_automated_manifest AS (
 		lrc.library_container_id AS library_container_id,
 		spri.spri_type,
 		spri.bead_type,
-		DATE(pbsubm_p.created_at$) AS completion_date, 
+		DATE(pbsubm_p.created_at$) AS completion_date,
+		NULL::varchar AS library_prep_receipt_date,
 		'pacbio'::varchar AS sequencing_platform,
 		'v2'::varchar AS source
 	FROM pacbio_submission_plate_output$raw AS pbsubm_p
@@ -472,7 +477,8 @@ pacbio_submissions_plate_automated_manifest_pooled AS (
 		lrc.library_container_id AS library_container_id,
 		spri.spri_type AS spri_type,
 		spri.bead_type AS bead_type,
-		DATE(pbsubm_p.created_at$) AS completion_date, 
+		DATE(pbsubm_p.created_at$ AS completion_date,
+		NULL::varchar AS library_prep_receipt_date,
 		'pacbio'::varchar AS sequencing_platform,
 		'v2_pooled'::varchar AS source
 	FROM pacbio_submission_plate_output$raw AS pbsubm_p
@@ -547,6 +553,7 @@ pacbio_submissions_plate_routine AS (
 		spri.spri_type AS spri_type,
 		spri.bead_type AS bead_type,
 		pbsubm_p.created_at$ AS completion_date,
+		sr.date_in_lab AS library_prep_receipt_date,
 		'pacbio'::varchar AS sequencing_platform,
 		'v2'::varchar AS SOURCE
 	FROM pacbio_sequencing_submission_plate_output$raw AS pbsubm_p
@@ -589,7 +596,9 @@ pacbio_submissions_plate_routine AS (
 	LEFT JOIN lr_library_preparation_batch$raw AS lpb
 		ON lr_proc.library_preparation_batch = lpb.id
 	LEFT JOIN lr_library_container AS lrc
-		ON lrc.sanger_sample_id = ssid.sanger_sample_id -- End of chunk to add LR info
+		ON lrc.sanger_sample_id = ssid.sanger_sample_id
+	LEFT JOIN lr_sample_receipt$raw AS sr
+		ON subsam.id = sr.contents -- End of chunk to add LR info
 	LEFT JOIN project$raw AS proj 
 		ON subsam.project_id$ = proj.id
 	 LEFT JOIN folder$raw AS f 
@@ -637,6 +646,7 @@ pacbio_submissions_plate_routine_pooled AS (
 		spri.spri_type AS spri_type,
 		spri.bead_type AS bead_type,
 		pbsubm_p.created_at$ AS completion_date,
+		sr.date_in_lab AS library_prep_receipt_date,
 		'pacbio'::varchar AS sequencing_platform,
 		'v2'::varchar AS SOURCE
 	FROM pacbio_sequencing_submission_plate_output$raw AS pbsubm_p
@@ -679,7 +689,9 @@ pacbio_submissions_plate_routine_pooled AS (
 	LEFT JOIN lr_library_preparation_batch$raw AS lpb
 		ON lr_proc.library_preparation_batch = lpb.id
 	LEFT JOIN lr_library_container AS lrc
-		ON lrc.sanger_sample_id = ssid.sanger_sample_id -- End of chunk to add LR info
+		ON lrc.sanger_sample_id = ssid.sanger_sample_id
+	LEFT JOIN lr_sample_receipt$raw AS sr
+		ON subsam.id = sr.contents -- End of chunk to add LR info
 	LEFT JOIN project$raw AS proj
 		ON subsam.project_id$ = proj.id
 	 LEFT JOIN folder$raw AS f 
