@@ -39,8 +39,25 @@ class TestOpenCitationsDataSource(TestCase):
 
         self.assertIsNotNone(obj)
         self.assertEqual(obj.id, '10.1126/science.1231143')
-        self.assertEqual(obj.type, 'meta')
-        self.assertIn('pmid:23287718', obj.attributes['id'])
+        self.assertEqual(obj.pmid, '23287718')
+        self.assertEqual(
+            obj.title,
+            'Multiplex Genome Engineering Using CRISPR/Cas Systems',
+        )
+        self.assertEqual(obj.pub_date, '2013-01-03')
+
+    def test_get_by_ids_with_doi_and_pmid(self):
+        ods = open_citations()
+
+        objects = list(ods.get_by_ids(
+            'meta',
+            ['10.1038/nphys1170', 'pmid:23287718'],
+        ))
+
+        self.assertEqual(
+            [obj.id for obj in objects],
+            ['10.1038/nphys1170', '10.1126/science.1231143'],
+        )
 
     def test_get_list_by_doi_and_pmid(self):
         ods = open_citations()
@@ -48,7 +65,7 @@ class TestOpenCitationsDataSource(TestCase):
         objects = ods.get_list(
             'meta',
             DataSourceFilter(and_={
-                'id': {
+                'reference_id': {
                     'in_list': {
                         'value': [
                             '10.1038/nphys1170',

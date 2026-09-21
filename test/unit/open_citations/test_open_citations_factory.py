@@ -61,7 +61,6 @@ class TestCreateOpenCitationsDatasource:
             'meta',
             id_='10.1000/test',
             attributes={
-                'id': 'doi:10.1000/test isbn:9780000000000 omid:br/1234',
                 'title': 'A reference title',
                 'author': 'Example, Alice; Writer, Bob',
                 'pub_date': '2024-01-01',
@@ -103,7 +102,6 @@ class TestCreateOpenCitationsDatasource:
             'meta',
             id_='10.1000/test',
             attributes={
-                'id': 'doi:10.1000/test omid:br/1234',
                 'title': 'A reference title',
                 'author': 'Example, Alice; Writer, Bob',
                 'pub_date': '2024-01-01',
@@ -145,7 +143,6 @@ class TestCreateOpenCitationsDatasource:
             'meta',
             id_='10.1000/test',
             attributes={
-                'id': 'omid:br/1234 doi:10.1000/test',
                 'title': 'A reference title',
                 'author': 'Example, Alice; Writer, Bob',
                 'pub_date': '2024-01-01',
@@ -156,24 +153,34 @@ class TestCreateOpenCitationsDatasource:
         assert observed == [mock_data_object]
 
     @responses.activate
-    def test_get_one_by_pmid(self):
+    def test_get_by_id_with_doi_and_pmid(self):
         open_citations_ds = create_open_citations_datasource(FAKE_API_URL)
-        mock_data_object = _get_mock_data_object(
-            type_='meta',
-            id_='10.1000/test',
+        doi_object = _get_mock_data_object('meta', '10.1000/test')
+        pmid_object = _get_mock_data_object(
+            'meta',
+            '10.1000/another-test',
+            {'pmid': '12345678'},
         )
-        open_citations_ds.data_object_factory = Mock(return_value=mock_data_object)
+        open_citations_ds.data_object_factory = Mock(
+            side_effect=[pmid_object, doi_object],
+        )
         responses.get(
-            f'{FAKE_API_URL}/metadata/pmid:12345678',
-            json=[{'id': 'pmid:12345678 doi:10.1000/test'}],
+            f'{FAKE_API_URL}/metadata/doi:10.1000/test__pmid:12345678__pmid:404',
+            json=[
+                {'id': 'pmid:12345678 doi:10.1000/another-test'},
+                {'id': 'doi:10.1000/test'},
+            ],
         )
 
-        observed = open_citations_ds.get_one('meta', 'pmid:12345678')
+        observed = list(open_citations_ds.get_by_id(
+            'meta',
+            ['10.1000/test', 'pmid:12345678', 'pmid:404'],
+        ))
 
-        assert observed == mock_data_object
+        assert observed == [doi_object, pmid_object, None]
 
     @responses.activate
-    def test_get_list_filters_by_mixed_doi_and_pmid_identifiers(self):
+    def test_get_list_filters_by_mixed_doi_and_pmid_ids(self):
         """The ID-list filter supports identifiers in composite API IDs."""
 
         open_citations_ds = create_open_citations_datasource(FAKE_API_URL)
@@ -207,7 +214,7 @@ class TestCreateOpenCitationsDatasource:
         observed = list(open_citations_ds.get_list(
             'meta',
             object_filters=DataSourceFilter(and_={
-                'id': {
+                'reference_id': {
                     'in_list': {
                         'value': ['10.1000/test', 'pmid:12345678'],
                     },
@@ -222,7 +229,6 @@ class TestCreateOpenCitationsDatasource:
             ), {
                 'id_': '10.1000/test',
                 'attributes': {
-                    'id': 'doi:10.1000/test omid:br/1234',
                     'title': 'DOI reference title',
                 },
             }),
@@ -231,7 +237,7 @@ class TestCreateOpenCitationsDatasource:
             ), {
                 'id_': '10.1000/another-test',
                 'attributes': {
-                    'id': 'pmid:12345678 doi:10.1000/another-test',
+                    'pmid': '12345678',
                     'title': 'PMID reference title',
                 },
             }),

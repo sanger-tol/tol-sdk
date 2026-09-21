@@ -48,7 +48,7 @@ class TestOpenCitationsApiConverter:
         """Test convert()."""
 
         parser = DefaultParser(_get_mock_ds_dict({'meta': {
-            'id': 'str',
+            'pmid': 'str',
             'title': 'str',
             'author': 'str',
             'pub_date': 'str',
@@ -72,7 +72,6 @@ class TestOpenCitationsApiConverter:
         assert observed.type == 'meta'
         assert observed.id == '10.1000/test'
         assert observed.attributes == {
-            'id': 'doi:10.1000/test omid:br/1234',
             'title': 'A reference title',
             'author': 'Example, Alice',
             'pub_date': '2024-01-01',
@@ -84,7 +83,7 @@ class TestOpenCitationsApiConverter:
         """Test convert_list()."""
 
         parser = DefaultParser(_get_mock_ds_dict({'meta': {
-            'id': 'str',
+            'pmid': 'str',
             'title': 'str',
         }}))
         converter = OpenCitationsApiConverter(parser)
@@ -109,3 +108,16 @@ class TestOpenCitationsApiConverter:
         second = observed[1]
         assert second.type == 'meta'
         assert second.id == '10.1000/test-2'
+
+    def test_convert_pmid(self):
+        parser = DefaultParser(_get_mock_ds_dict({'meta': {
+            'pmid': 'str',
+        }}))
+        converter = OpenCitationsApiConverter(parser)
+
+        observed = converter.convert('meta', {
+            'id': 'doi:10.1000/test pmid:12345678',
+        })
+
+        assert observed.id == '10.1000/test'
+        assert observed.attributes == {'pmid': '12345678'}
