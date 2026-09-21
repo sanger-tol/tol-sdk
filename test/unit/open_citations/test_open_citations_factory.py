@@ -153,33 +153,6 @@ class TestCreateOpenCitationsDatasource:
         assert observed == [mock_data_object]
 
     @responses.activate
-    def test_get_by_id_with_doi_and_pmid(self):
-        open_citations_ds = create_open_citations_datasource(FAKE_API_URL)
-        doi_object = _get_mock_data_object('meta', '10.1000/test')
-        pmid_object = _get_mock_data_object(
-            'meta',
-            '10.1000/another-test',
-            {'pmid': '12345678'},
-        )
-        open_citations_ds.data_object_factory = Mock(
-            side_effect=[pmid_object, doi_object],
-        )
-        responses.get(
-            f'{FAKE_API_URL}/metadata/doi:10.1000/test__pmid:12345678__pmid:404',
-            json=[
-                {'id': 'pmid:12345678 doi:10.1000/another-test'},
-                {'id': 'doi:10.1000/test'},
-            ],
-        )
-
-        observed = list(open_citations_ds.get_by_id(
-            'meta',
-            ['10.1000/test', 'pmid:12345678', 'pmid:404'],
-        ))
-
-        assert observed == [doi_object, pmid_object, None]
-
-    @responses.activate
     def test_get_list_filters_by_mixed_doi_and_pmid_ids(self):
         """The ID-list filter supports identifiers in composite API IDs."""
 

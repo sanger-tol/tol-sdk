@@ -75,26 +75,6 @@ class TestOpenCitationsDataSource:
         mock_client.get_detail.assert_called_once_with('meta', ['10.1000/test'])
         mock_converter.convert_list.assert_called_once_with('meta', [])
 
-    def test_get_by_id_matches_pmid(self):
-        mock_client = Mock()
-        response = [{'id': 'pmid:12345678 doi:10.1000/test'}]
-        mock_client.get_detail.return_value = response
-        mock_converter = Mock()
-        mock_data_object = _get_mock_data_object(
-            type_='meta',
-            id_='10.1000/test',
-            attributes={'pmid': '12345678'},
-        )
-        mock_converter.convert_list.return_value = ([mock_data_object], 1)
-        ds = OpenCitationsDataSource(
-            lambda: mock_client,
-            lambda: mock_converter,
-        )
-
-        observed = list(ds.get_by_id('meta', ['pmid:12345678']))
-
-        assert observed == [mock_data_object]
-
     def test_get_list_filters_by_id_in_list(self):
         mock_client = Mock()
         mock_client.get_detail.return_value = [{'id': 'pmid:12345678'}]

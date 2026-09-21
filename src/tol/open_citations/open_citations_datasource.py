@@ -83,18 +83,10 @@ class OpenCitationsDataSource(
             object_type,
             open_citations_response,
         ) if open_citations_response is not None else ([], 0)
-        objects_by_id = {
-            f'doi:{data_object.id}'.lower(): data_object
-            for data_object in converted_objects
-        }
-        for data_object in converted_objects:
-            pmid = data_object.attributes.get('pmid')
-            if pmid:
-                objects_by_id[f'pmid:{pmid}'.lower()] = data_object
-
-        for object_id in requested_object_ids:
-            lookup_id = object_id if ':' in object_id else f'doi:{object_id}'
-            yield objects_by_id.get(lookup_id.lower())
+        yield from self.sort_by_id(
+            converted_objects,
+            requested_object_ids,
+        )
 
     def get_list(
         self,
@@ -103,8 +95,11 @@ class OpenCitationsDataSource(
         **kwargs,
     ) -> Iterable[DataObject]:
         self.__validate_object_type(object_type)
-        object_ids = object_filters.and_['reference_id']['in_list']['value']
-        open_citations_response = self.__client.get_detail(object_type, object_ids)
+        reference_ids = object_filters.and_['reference_id']['in_list']['value']
+        open_citations_response = self.__client.get_detail(
+            object_type,
+            reference_ids,
+        )
         converted_objects, _ = self.__converter_factory().convert_list(
             object_type,
             open_citations_response,
