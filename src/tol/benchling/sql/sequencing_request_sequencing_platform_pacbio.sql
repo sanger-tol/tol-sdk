@@ -57,17 +57,7 @@ for the plate based submissions.
 
 */
 
-WITH lr_library_container AS (
-    SELECT DISTINCT ON (lr.sanger_sample_id)
-        lr.sanger_sample_id,
-        well.name$ AS library_container_id
-    FROM lr_long_read_sequencing$raw AS lr
-    LEFT JOIN long_read_well$raw AS well
-        ON lr.container = well.id
-    WHERE lr.sanger_sample_id IS NOT NULL
-),
-
-femto_latest AS (
+WITH femto_latest AS (
 	SELECT DISTINCT ON (sample_id)
 		sample_id,
 		average_fragment_size
@@ -139,14 +129,14 @@ pacbio_submissions_container_routine AS (
 		nano._260_230_ratio AS nanodrop_260230,
 		nano.nanodrop_concentration_ngul AS nanodrop_concentration_ngul,
 		NULL::varchar AS sample_prep_additional_requirements,
-		NULL::varchar AS library_batch_id,
+		lpb.name$ AS library_batch_id,
 		si.type_of_shearing,
 		si.shearing_speed,
-		lrc.library_container_id AS library_container_id,
+		psbc.barcode AS library_container_id,
 		spri.spri_type,
 		spri.bead_type,
 		pbsum.submission_date AS completion_date,
-		NULL::varchar AS library_prep_receipt_date,
+		sr.date_in_lab AS library_prep_receipt_date,
 		'pacbio'::varchar AS sequencing_platform,
 		'v1'::varchar AS source
 	FROM pacbio_sequencing_submission2$raw AS pbsum
@@ -176,12 +166,28 @@ pacbio_submissions_container_routine AS (
         ON subsam.folder_id$ = f.id
 	LEFT JOIN sanger_sample_id$raw AS ssid 
 		ON con.id = ssid.sample_tube
-	LEFT JOIN lr_library_container AS lrc
-		ON lrc.sanger_sample_id = CASE
+	LEFT JOIN lr_long_read_library_preparation_b_output$raw AS psb -- Chunk to add LR information
+		ON psb.sanger_sample_id = CASE
 			WHEN pbsum.submission_date < DATE '2025-09-01'
 				THEN con.name
 			ELSE ssid.sanger_sample_id
 		END
+	LEFT JOIN container$raw AS psbc
+		ON psb.container = psbc.id
+	LEFT JOIN lr_sample_receipt$raw AS sr
+		ON sr.sanger_sample_id = CASE
+			WHEN pbsum.submission_date < DATE '2025-09-01'
+				THEN con.name
+			ELSE ssid.sanger_sample_id
+		END
+	LEFT JOIN lr_library_preparation_sample_batching_output$raw AS lpbo
+		ON lpbo.sanger_sample_id = CASE
+			WHEN pbsum.submission_date < DATE '2025-09-01'
+				THEN con.name
+			ELSE ssid.sanger_sample_id
+		END
+	LEFT JOIN lr_library_preparation_batch$raw AS lpb
+		ON lpbo.library_preparation_batch = lpb.id -- End of LR information Chunk
 	LEFT JOIN femto_latest AS femto
 		ON femto.sample_id = subsam.id
 	LEFT JOIN qubit_latest AS qubit
@@ -234,11 +240,11 @@ pacbio_submissions_container_pooled AS (
 		NULL::varchar AS library_batch_id,
 		si.type_of_shearing,
 		si.shearing_speed,
-		lrc.library_container_id AS library_container_id,
+		NULL::varchar AS library_container_id,
 		spri.spri_type AS spri_type,
 		spri.bead_type AS bead_type,
 		pbsum.submission_date AS completion_date, 
-		NULL::varchar AS library_prep_receipt_date,
+		NULL::date AS library_prep_receipt_date,
 		'pacbio'::varchar AS sequencing_platform,
 		'v1_pooled'::varchar AS source
 	FROM pacbio_sequencing_submission2$raw AS pbsum
@@ -268,12 +274,6 @@ pacbio_submissions_container_pooled AS (
 		ON subsam.folder_id$ = f.id
 	LEFT JOIN sanger_sample_id$raw AS ssid 
 		ON con.id = ssid.sample_tube
-	LEFT JOIN lr_library_container AS lrc
-		ON lrc.sanger_sample_id = CASE
-			WHEN pbsum.submission_date < DATE '2025-09-01'
-				THEN con.name
-			ELSE ssid.sanger_sample_id
-		END
 	LEFT JOIN femto_latest AS femto
 		ON femto.sample_id = subsam.id
 	LEFT JOIN qubit_latest AS qubit
@@ -324,11 +324,11 @@ pacbio_submissions_container_legacy_deprecated AS (
 		NULL::varchar AS library_batch_id,
 		NULL::varchar AS type_of_shearing,
 		NULL::int AS shearing_speed,
-		lrc.library_container_id AS library_container_id,
+		NULL::varchar AS library_container_id,
 		spri.spri_type AS spri_type,
 		spri.bead_type AS bead_type,
 		subsam.created_at$ AS completion_date,
-		NULL::varchar AS library_prep_receipt_date,
+		NULL::date AS library_prep_receipt_date,
 		'pacbio'::varchar AS sequencing_platform,
 		'legacy_bnt'::varchar AS source
 	FROM submission_samples$raw AS subsam
@@ -343,15 +343,13 @@ pacbio_submissions_container_legacy_deprecated AS (
 	LEFT JOIN tissue$raw AS t 
 		ON tp.tissue = t.id -- End of Tissue metadata Chunk
 	LEFT JOIN femto_latest AS femto
-		ON femto.sample_id = subsam.id -- Chunk to add femto data to legacy submissions
+		ON femto.sample_id = subsam.id
 	LEFT JOIN qubit_latest AS qubit
-		ON qubit.sample_id = subsam.id -- Chunk to add qubit data to legacy submissions
+		ON qubit.sample_id = subsam.id
 	LEFT JOIN nanodrop_latest AS nano
-		ON nano.sample_id = subsam.id -- Chunk to add nanodrop data to legacy submissions
+		ON nano.sample_id = subsam.id
 	LEFT JOIN spri_latest AS spri
-		ON spri.sample_id = subsam.id -- Chunk to add spri data to legacy submissions
-	LEFT JOIN lr_library_container AS lrc
-		ON lrc.sanger_sample_id = con.name
+		ON spri.sample_id = subsam.id
 	LEFT JOIN container_content$raw AS cc_dna -- Chunk to add DNA fluidx id
 		ON dna.id = cc_dna.entity_id
 	LEFT JOIN container$raw AS c_dna 
@@ -397,11 +395,11 @@ pacbio_submissions_plate_automated_manifest AS (
 		NULL::varchar AS library_batch_id,
 		si.type_of_shearing,
 		si.shearing_speed,
-		lrc.library_container_id AS library_container_id,
+		NULL::varchar AS library_container_id,
 		spri.spri_type,
 		spri.bead_type,
 		DATE(pbsubm_p.created_at$) AS completion_date,
-		NULL::varchar AS library_prep_receipt_date,
+		NULL::date AS library_prep_receipt_date,
 		'pacbio'::varchar AS sequencing_platform,
 		'v2'::varchar AS source
 	FROM pacbio_submission_plate_output$raw AS pbsubm_p
@@ -431,8 +429,6 @@ pacbio_submissions_plate_automated_manifest AS (
 		ON spri.sample_id = subsam.id
 	LEFT JOIN shearing_latest AS si
 		ON si.sample_id = subsam.id
-	LEFT JOIN lr_library_container AS lrc
-		ON lrc.sanger_sample_id = con.name
 	LEFT JOIN workflow_task$raw AS wft
 		ON pbsubm_p.workflow_task_id$ = wft.id
 	LEFT JOIN workflow_task_status$raw AS wfts
@@ -474,11 +470,11 @@ pacbio_submissions_plate_automated_manifest_pooled AS (
 		NULL::varchar AS library_batch_id,
 		si.type_of_shearing,
 		si.shearing_speed,
-		lrc.library_container_id AS library_container_id,
+		NULL::varchar AS library_container_id,
 		spri.spri_type AS spri_type,
 		spri.bead_type AS bead_type,
-		DATE(pbsubm_p.created_at$ AS completion_date,
-		NULL::varchar AS library_prep_receipt_date,
+		DATE(pbsubm_p.created_at$)AS completion_date,
+		NULL::date AS library_prep_receipt_date,
 		'pacbio'::varchar AS sequencing_platform,
 		'v2_pooled'::varchar AS source
 	FROM pacbio_submission_plate_output$raw AS pbsubm_p
@@ -500,8 +496,6 @@ pacbio_submissions_plate_automated_manifest_pooled AS (
 		ON c_pool.id = tube.id -- End of DNA fluidx id Chunk
 	LEFT JOIN container$raw AS con -- To add sanger uuid
 		ON pbsubm_p.sanger_uuid ->> 0 = con.id
-	LEFT JOIN lr_library_container AS lrc
-		ON lrc.sanger_sample_id = con.name
 	LEFT JOIN shearing_latest AS si
 		ON si.sample_id = subsam.id
 	LEFT JOIN plate$raw AS plt 
@@ -549,7 +543,7 @@ pacbio_submissions_plate_routine AS (
 		lpb.name$ AS library_batch_id,
 		si.type_of_shearing,
 		si.shearing_speed,
-		lrc.library_container_id AS library_container_id,
+		psbc.barcode AS library_container_id,
 		spri.spri_type AS spri_type,
 		spri.bead_type AS bead_type,
 		pbsubm_p.created_at$ AS completion_date,
@@ -595,10 +589,12 @@ pacbio_submissions_plate_routine AS (
 		ON lr_proc.sanger_sample_id = ssid.sanger_sample_id
 	LEFT JOIN lr_library_preparation_batch$raw AS lpb
 		ON lr_proc.library_preparation_batch = lpb.id
-	LEFT JOIN lr_library_container AS lrc
-		ON lrc.sanger_sample_id = ssid.sanger_sample_id
 	LEFT JOIN lr_sample_receipt$raw AS sr
-		ON subsam.id = sr.contents -- End of chunk to add LR info
+		ON subsam.id = sr.contents
+	LEFT JOIN lr_long_read_library_preparation_b_output$raw AS psb
+		ON psb.sanger_sample_id = ssid.sanger_sample_id
+	LEFT JOIN container$raw AS psbc
+		ON psb.container = psbc.id -- End of chunk to add LR info
 	LEFT JOIN project$raw AS proj 
 		ON subsam.project_id$ = proj.id
 	 LEFT JOIN folder$raw AS f 
@@ -642,7 +638,7 @@ pacbio_submissions_plate_routine_pooled AS (
 		lpb.name$ AS library_batch_id,
 		si.type_of_shearing,
 		si.shearing_speed,
-		lrc.library_container_id AS library_container_id,
+		psbc.barcode AS library_container_id,
 		spri.spri_type AS spri_type,
 		spri.bead_type AS bead_type,
 		pbsubm_p.created_at$ AS completion_date,
@@ -688,10 +684,12 @@ pacbio_submissions_plate_routine_pooled AS (
 		ON lr_proc.sanger_sample_id = ssid.sanger_sample_id
 	LEFT JOIN lr_library_preparation_batch$raw AS lpb
 		ON lr_proc.library_preparation_batch = lpb.id
-	LEFT JOIN lr_library_container AS lrc
-		ON lrc.sanger_sample_id = ssid.sanger_sample_id
 	LEFT JOIN lr_sample_receipt$raw AS sr
-		ON subsam.id = sr.contents -- End of chunk to add LR info
+		ON subsam.id = sr.contents
+	LEFT JOIN lr_long_read_library_preparation_b_output$raw AS psb
+		ON psb.sanger_sample_id = ssid.sanger_sample_id
+	LEFT JOIN container$raw AS psbc
+		ON psb.container = psbc.id -- End of chunk to add LR info
 	LEFT JOIN project$raw AS proj
 		ON subsam.project_id$ = proj.id
 	 LEFT JOIN folder$raw AS f 
