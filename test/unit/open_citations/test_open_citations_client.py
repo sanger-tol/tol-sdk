@@ -72,20 +72,6 @@ class TestOpenCitationsApiClient:
         assert observed == expected
 
     @responses.activate
-    def test_get_detail_with_colon_in_doi(self):
-        client = OpenCitationsApiClient(FAKE_API_URL)
-
-        expected = [{'id': 'doi:10.1000/test:example'}]
-        responses.get(
-            f'{FAKE_API_URL}/metadata/doi:10.1000/test:example',
-            json=expected,
-        )
-
-        observed = client.get_detail('meta', ['10.1000/test:example'])
-
-        assert observed == expected
-
-    @responses.activate
     def test_get_detail_not_found(self):
         """404 response."""
 

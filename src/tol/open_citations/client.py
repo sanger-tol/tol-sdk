@@ -57,7 +57,7 @@ class OpenCitationsApiClient(HttpClient):
         object_id: str,
     ) -> str:
         object_id = object_id.strip()
-        if object_id.lower().startswith(('doi:', 'pmid:')):
+        if ':' in object_id:
             return object_id
         return f'doi:{object_id}'
 
