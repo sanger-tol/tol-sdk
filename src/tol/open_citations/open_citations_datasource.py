@@ -95,7 +95,15 @@ class OpenCitationsDataSource(
         **kwargs,
     ) -> Iterable[DataObject]:
         self.__validate_object_type(object_type)
-        reference_ids = object_filters.and_['reference_id']['in_list']['value']
+        reference_ids = None
+        if object_filters is not None and object_filters.and_ is not None:
+            reference_filter = object_filters.and_.get('reference_id') or {}
+            in_list_filter = reference_filter.get('in_list') or {}
+            reference_ids = in_list_filter.get('value')
+        if reference_ids is None:
+            raise DataSourceError(
+                'Filter must contain reference_id in_list filter'
+            )
         open_citations_response = self.__client.get_detail(
             object_type,
             reference_ids,
