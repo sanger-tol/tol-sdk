@@ -7,7 +7,6 @@ from typing import List
 
 from tol.core import DataObject, DataSourceUtils
 from tol.core.validate import Validator
-from tol.sources.portaldb import portaldb
 
 
 class AllowedValuesFromDataSourceValidator(Validator):
@@ -40,8 +39,7 @@ class AllowedValuesFromDataSourceValidator(Validator):
             or self.__initialize_list_from_datasource()
 
     def __initialize_list_from_datasource(self) -> List[str | int | float]:
-        dsi = portaldb().get_one('data_source_instance', self.__config.datasource_instance_id)
-        ds = DataSourceUtils.get_datasource_by_datasource_instance(dsi)
+        ds = DataSourceUtils.get_datasource(self.__config.datasource_instance_id)
         return [
             obj.get_field_by_name(
                 self.__config.datasource_field_name
