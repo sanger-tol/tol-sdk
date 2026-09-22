@@ -518,7 +518,7 @@ pacbio_submissions_plate_automated_manifest_pooled AS (
 ),
 
 pacbio_submissions_plate_routine AS (
-	SELECT 
+	SELECT DISTINCT
 		t.sts_id,
 		t.taxon_id,
 		tp.id AS tissue_prep_id,
