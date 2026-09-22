@@ -7,7 +7,7 @@ from unittest.mock import Mock
 
 import pytest
 
-from tol.core import DataObject, DataSourceError
+from tol.core import DataObject, DataSourceError, DataSourceFilter
 from tol.open_citations import OpenCitationsDataSource
 
 
@@ -74,6 +74,54 @@ class TestOpenCitationsDataSource:
         assert observed is None
         mock_client.get_detail.assert_called_once_with('meta', ['10.1000/test'])
         mock_converter.convert_list.assert_called_once_with('meta', [])
+
+    def test_get_list_filters_by_id_in_list(self):
+        mock_client = Mock()
+        mock_client.get_detail.return_value = [{'id': 'pmid:12345678'}]
+        mock_converter = Mock()
+        mock_data_object = _get_mock_data_object(
+            type_='meta',
+            id_='10.1000/test',
+        )
+        mock_converter.convert_list.return_value = ([mock_data_object], 1)
+
+        ds = OpenCitationsDataSource(
+            lambda: mock_client,
+            lambda: mock_converter,
+        )
+
+        observed = list(ds.get_list(
+            'meta',
+            object_filters=DataSourceFilter(and_={
+                'reference_id': {'in_list': {'value': ['pmid:12345678']}},
+            }),
+        ))
+
+        assert observed == [mock_data_object]
+        mock_client.get_detail.assert_called_once_with('meta', ['pmid:12345678'])
+        mock_converter.convert_list.assert_called_once_with(
+            'meta',
+            [{'id': 'pmid:12345678'}],
+        )
+
+    @pytest.mark.parametrize('object_filters', [
+        None,
+        DataSourceFilter(),
+        DataSourceFilter(and_={}),
+        DataSourceFilter(and_={'reference_id': None}),
+        DataSourceFilter(and_={'reference_id': {}}),
+        DataSourceFilter(and_={'reference_id': {'in_list': None}}),
+        DataSourceFilter(and_={'reference_id': {'in_list': {}}}),
+    ])
+    def test_get_list_requires_reference_ids(self, object_filters):
+        ds = OpenCitationsDataSource(lambda: Mock(), lambda: Mock())
+
+        with pytest.raises(DataSourceError) as error:
+            list(ds.get_list('meta', object_filters=object_filters))
+
+        assert error.value.title == (
+            'Filter must contain reference_id in_list filter'
+        )
 
     def test_bad_object_type(self):
         """A bad object type -> raise DataSourceError()."""

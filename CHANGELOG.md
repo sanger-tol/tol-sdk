@@ -6,6 +6,12 @@ SPDX-License-Identifier: MIT
 
 # Changelog
 
+## tol-sdk `2.8.0`
+
+21-09-2026
+
+- Added OpenCitations lookup and filtering by DOI and PubMed IDs
+
 ## tol-sdk `2.7.0`
 
 17-09-2026

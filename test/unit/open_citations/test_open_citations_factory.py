@@ -7,7 +7,7 @@ from unittest.mock import Mock
 
 import responses
 
-from tol.core import DataObject
+from tol.core import DataObject, DataSourceFilter
 from tol.open_citations import create_open_citations_datasource
 
 
@@ -61,7 +61,6 @@ class TestCreateOpenCitationsDatasource:
             'meta',
             id_='10.1000/test',
             attributes={
-                'id': 'doi:10.1000/test isbn:9780000000000 omid:br/1234',
                 'title': 'A reference title',
                 'author': 'Example, Alice; Writer, Bob',
                 'pub_date': '2024-01-01',
@@ -103,7 +102,6 @@ class TestCreateOpenCitationsDatasource:
             'meta',
             id_='10.1000/test',
             attributes={
-                'id': 'doi:10.1000/test omid:br/1234',
                 'title': 'A reference title',
                 'author': 'Example, Alice; Writer, Bob',
                 'pub_date': '2024-01-01',
@@ -145,7 +143,6 @@ class TestCreateOpenCitationsDatasource:
             'meta',
             id_='10.1000/test',
             attributes={
-                'id': 'omid:br/1234 doi:10.1000/test',
                 'title': 'A reference title',
                 'author': 'Example, Alice; Writer, Bob',
                 'pub_date': '2024-01-01',
@@ -154,3 +151,67 @@ class TestCreateOpenCitationsDatasource:
             },
         )
         assert observed == [mock_data_object]
+
+    @responses.activate
+    def test_get_list_filters_by_mixed_doi_and_pmid_ids(self):
+        """The ID-list filter supports identifiers in composite API IDs."""
+
+        open_citations_ds = create_open_citations_datasource(FAKE_API_URL)
+
+        mock_do_factory = Mock()
+        doi_data_object = _get_mock_data_object(
+            type_='meta',
+            id_='10.1000/test',
+        )
+        pmid_data_object = _get_mock_data_object(
+            type_='meta',
+            id_='10.1000/another-test',
+        )
+        mock_do_factory.side_effect = [doi_data_object, pmid_data_object]
+        open_citations_ds.data_object_factory = mock_do_factory
+
+        responses.get(
+            f'{FAKE_API_URL}/metadata/doi:10.1000/test__pmid:12345678',
+            json=[
+                {
+                    'id': 'doi:10.1000/test omid:br/1234',
+                    'title': 'DOI reference title',
+                },
+                {
+                    'id': 'pmid:12345678 doi:10.1000/another-test',
+                    'title': 'PMID reference title',
+                },
+            ],
+        )
+
+        observed = list(open_citations_ds.get_list(
+            'meta',
+            object_filters=DataSourceFilter(and_={
+                'reference_id': {
+                    'in_list': {
+                        'value': ['10.1000/test', 'pmid:12345678'],
+                    },
+                },
+            }),
+        ))
+
+        assert observed == [doi_data_object, pmid_data_object]
+        assert mock_do_factory.call_args_list == [
+            ((
+                'meta',
+            ), {
+                'id_': '10.1000/test',
+                'attributes': {
+                    'title': 'DOI reference title',
+                },
+            }),
+            ((
+                'meta',
+            ), {
+                'id_': '10.1000/another-test',
+                'attributes': {
+                    'pmid': '12345678',
+                    'title': 'PMID reference title',
+                },
+            }),
+        ]
