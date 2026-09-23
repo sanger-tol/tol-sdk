@@ -132,8 +132,10 @@ pacbio_submissions_container_routine AS (
 		nano.nanodrop_concentration_ngul AS nanodrop_concentration_ngul,
 		NULL::varchar AS sample_prep_additional_requirements,
 		lpb.name$ AS library_batch_id,
+		lpb.name$ AS library_batch_id,
 		si.type_of_shearing,
 		si.shearing_speed,
+		psbc.barcode AS library_container_id,
 		psbc.barcode AS library_container_id,
 		spri.spri_type,
 		spri.bead_type,
@@ -181,6 +183,22 @@ pacbio_submissions_container_routine AS (
         ON subsam.folder_id$ = f.id
 	LEFT JOIN sanger_sample_id$raw AS ssid 
 		ON con.id = ssid.sample_tube
+	LEFT JOIN lr_long_read_library_preparation_b_output$raw AS psb -- Chunk to add LR information
+		ON psb.sanger_sample_id = CASE
+			WHEN pbsum.submission_date < DATE '2025-09-01'
+				THEN con.name
+			ELSE ssid.sanger_sample_id
+		END
+	LEFT JOIN container$raw AS psbc
+		ON psb.container = psbc.id
+	LEFT JOIN lr_sample_receipt$raw AS sr
+		ON sr.sanger_sample_id = CASE
+			WHEN pbsum.submission_date < DATE '2025-09-01'
+				THEN con.name
+			ELSE ssid.sanger_sample_id
+		END
+	LEFT JOIN lr_library_preparation_sample_batching_output$raw AS lpbo
+		ON lpbo.sanger_sample_id = CASE
 	LEFT JOIN lr_long_read_library_preparation_b_output$raw AS psb -- Chunk to add LR information
 		ON psb.sanger_sample_id = CASE
 			WHEN pbsum.submission_date < DATE '2025-09-01'
@@ -259,6 +277,7 @@ pacbio_submissions_container_pooled AS (
 		NULL::varchar AS library_batch_id,
 		si.type_of_shearing,
 		si.shearing_speed,
+		NULL::varchar AS library_container_id,
 		NULL::varchar AS library_container_id,
 		spri.spri_type AS spri_type,
 		spri.bead_type AS bead_type,
@@ -346,6 +365,7 @@ pacbio_submissions_container_legacy_deprecated AS (
 		NULL::varchar AS type_of_shearing,
 		NULL::int AS shearing_speed,
 		NULL::varchar AS library_container_id,
+		NULL::varchar AS library_container_id,
 		spri.spri_type AS spri_type,
 		spri.bead_type AS bead_type,
 		subsam.created_at$ AS completion_date,
@@ -367,11 +387,15 @@ pacbio_submissions_container_legacy_deprecated AS (
 		ON tp.tissue = t.id -- End of Tissue metadata Chunk
 	LEFT JOIN femto_latest AS femto
 		ON femto.sample_id = subsam.id
+		ON femto.sample_id = subsam.id
 	LEFT JOIN qubit_latest AS qubit
+		ON qubit.sample_id = subsam.id
 		ON qubit.sample_id = subsam.id
 	LEFT JOIN nanodrop_latest AS nano
 		ON nano.sample_id = subsam.id
+		ON nano.sample_id = subsam.id
 	LEFT JOIN spri_latest AS spri
+		ON spri.sample_id = subsam.id
 		ON spri.sample_id = subsam.id
 	LEFT JOIN container_content$raw AS cc_dna -- Chunk to add DNA fluidx id
 		ON dna.id = cc_dna.entity_id
@@ -418,6 +442,7 @@ pacbio_submissions_plate_automated_manifest AS (
 		NULL::varchar AS library_batch_id,
 		si.type_of_shearing,
 		si.shearing_speed,
+		NULL::varchar AS library_container_id,
 		NULL::varchar AS library_container_id,
 		spri.spri_type,
 		spri.bead_type,
@@ -496,6 +521,7 @@ pacbio_submissions_plate_automated_manifest_pooled AS (
 		si.type_of_shearing,
 		si.shearing_speed,
 		NULL::varchar AS library_container_id,
+		NULL::varchar AS library_container_id,
 		spri.spri_type AS spri_type,
 		spri.bead_type AS bead_type,
 		DATE(pbsubm_p.created_at$)AS completion_date,
@@ -545,6 +571,7 @@ pacbio_submissions_plate_automated_manifest_pooled AS (
 ),
 
 pacbio_submissions_plate_routine AS (
+	SELECT DISTINCT
 	SELECT DISTINCT
 		t.sts_id,
 		t.taxon_id,
@@ -682,6 +709,7 @@ pacbio_submissions_plate_routine_pooled AS (
 		lpb.name$ AS library_batch_id,
 		si.type_of_shearing,
 		si.shearing_speed,
+		psbc.barcode AS library_container_id,
 		psbc.barcode AS library_container_id,
 		spri.spri_type AS spri_type,
 		spri.bead_type AS bead_type,

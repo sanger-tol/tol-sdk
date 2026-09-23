@@ -6,6 +6,20 @@ SPDX-License-Identifier: MIT
 
 # Changelog
 
+## tol-sdk `2.8.0`
+
+21-09-2026
+
+- Added OpenCitations lookup and filtering by DOI and PubMed IDs
+
+## tol-sdk `2.7.0`
+
+17-09-2026
+
+- Add quasar() source
+- Add support for direct and via-api versions of datasources
+- Add assembly_span from GoaT
+
 ## tol-sdk `2.6.0`
 
 15-09-2026

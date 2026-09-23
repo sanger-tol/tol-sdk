@@ -112,7 +112,13 @@ class DefaultParser(Parser):
         allowed_attributes = self.__dict[type_].attribute_types[type_]
 
         for key, value in attributes.items():
-            if key in allowed_attributes:
+            if key != 'id' and key in allowed_attributes:
                 ret[key] = value
+
+        if 'pmid' in allowed_attributes:
+            for identifier in self.__split_identifiers(attributes.get('id', '')):
+                if identifier.lower().startswith('pmid:'):
+                    ret['pmid'] = identifier[5:]
+                    break
 
         return ret
