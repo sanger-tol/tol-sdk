@@ -42,8 +42,10 @@ Output: Table with cols:
 25) bead_type: [character] Bead type used for SPRI.
 26) completion_date: [date]
 27) library_prep_receipt_date: [varchar] LR Library prep receipt date, only available for samples in LR Benchling.
-28) sequencing_platform: [character] Sequencing platform: pacbio.
-29) source: [character] Data source: v1, v1_pooled, v2, v2_pooled, legacy_bnt
+28) library_prep_completion_date: [varchar] LR Library prep completion date, only available for samples in LR Benchling.
+29) library_prep_qc_decision: [varchar] LR Library prep QC decision, only available for samples in LR Benchling.
+30) sequencing_platform: [character] Sequencing platform: pacbio.
+31) source: [character] Data source: v1, v1_pooled, v2, v2_pooled, legacy_bnt
 
 NOTES: 
 
@@ -137,6 +139,19 @@ pacbio_submissions_container_routine AS (
 		spri.bead_type,
 		pbsum.submission_date AS completion_date,
 		sr.date_in_lab AS library_prep_receipt_date,
+		CASE
+			WHEN lps.id IS NOT NULL
+				THEN DATE(lpsc.created_at$)
+			ELSE DATE(psb.created_at$)
+		END AS library_prep_completion_date,
+		CASE 
+			WHEN lps.id IS NOT NULL THEN
+				CASE WHEN lpsc.final_sample_decision IS NOT NULL
+					THEN lpsc.final_sample_decision
+				ELSE NULL
+			END
+			ELSE psb.decision 
+		END AS library_prep_qc_decision,
 		'pacbio'::varchar AS sequencing_platform,
 		'v1'::varchar AS source
 	FROM pacbio_sequencing_submission2$raw AS pbsum
@@ -187,7 +202,11 @@ pacbio_submissions_container_routine AS (
 			ELSE ssid.sanger_sample_id
 		END
 	LEFT JOIN lr_library_preparation_batch$raw AS lpb
-		ON lpbo.library_preparation_batch = lpb.id -- End of LR information Chunk
+		ON lpbo.library_preparation_batch = lpb.id
+	LEFT JOIN lr_lib_prep_sample_status_check$raw AS lps
+		ON lps.sanger_sample_id = ssid.sanger_sample_id
+	LEFT JOIN lr_lib_prep_sample_status_check_output AS lpsc
+		ON lpsc.sanger_sample_id = ssid.sanger_sample_id -- End of LR information Chunk
 	LEFT JOIN femto_latest AS femto
 		ON femto.sample_id = subsam.id
 	LEFT JOIN qubit_latest AS qubit
@@ -245,6 +264,8 @@ pacbio_submissions_container_pooled AS (
 		spri.bead_type AS bead_type,
 		pbsum.submission_date AS completion_date, 
 		NULL::date AS library_prep_receipt_date,
+		NULL::date AS library_prep_completion_date,
+		NULL::varchar AS library_prep_qc_decision,
 		'pacbio'::varchar AS sequencing_platform,
 		'v1_pooled'::varchar AS source
 	FROM pacbio_sequencing_submission2$raw AS pbsum
@@ -329,6 +350,8 @@ pacbio_submissions_container_legacy_deprecated AS (
 		spri.bead_type AS bead_type,
 		subsam.created_at$ AS completion_date,
 		NULL::date AS library_prep_receipt_date,
+		NULL::date AS library_prep_completion_date,
+		NULL::varchar AS library_prep_qc_decision,
 		'pacbio'::varchar AS sequencing_platform,
 		'legacy_bnt'::varchar AS source
 	FROM submission_samples$raw AS subsam
@@ -400,6 +423,8 @@ pacbio_submissions_plate_automated_manifest AS (
 		spri.bead_type,
 		DATE(pbsubm_p.created_at$) AS completion_date,
 		NULL::date AS library_prep_receipt_date,
+		NULL::date AS library_prep_completion_date,
+		NULL::varchar AS library_prep_qc_decision,
 		'pacbio'::varchar AS sequencing_platform,
 		'v2'::varchar AS source
 	FROM pacbio_submission_plate_output$raw AS pbsubm_p
@@ -475,6 +500,8 @@ pacbio_submissions_plate_automated_manifest_pooled AS (
 		spri.bead_type AS bead_type,
 		DATE(pbsubm_p.created_at$)AS completion_date,
 		NULL::date AS library_prep_receipt_date,
+		NULL::date AS library_prep_completion_date,
+		NULL::varchar AS library_prep_qc_decision,
 		'pacbio'::varchar AS sequencing_platform,
 		'v2_pooled'::varchar AS source
 	FROM pacbio_submission_plate_output$raw AS pbsubm_p
@@ -548,6 +575,19 @@ pacbio_submissions_plate_routine AS (
 		spri.bead_type AS bead_type,
 		pbsubm_p.created_at$ AS completion_date,
 		sr.date_in_lab AS library_prep_receipt_date,
+		CASE
+			WHEN lps.id IS NOT NULL
+				THEN DATE(lpsc.created_at$)
+			ELSE DATE(psb.created_at$)
+		END AS library_prep_completion_date,
+		CASE 
+			WHEN lps.id IS NOT NULL THEN
+				CASE WHEN lpsc.final_sample_decision IS NOT NULL
+					THEN lpsc.final_sample_decision
+				ELSE NULL
+			END
+			ELSE psb.decision 
+		END AS library_prep_qc_decision,
 		'pacbio'::varchar AS sequencing_platform,
 		'v2'::varchar AS SOURCE
 	FROM pacbio_sequencing_submission_plate_output$raw AS pbsubm_p
@@ -594,7 +634,11 @@ pacbio_submissions_plate_routine AS (
 	LEFT JOIN lr_long_read_library_preparation_b_output$raw AS psb
 		ON psb.sanger_sample_id = ssid.sanger_sample_id
 	LEFT JOIN container$raw AS psbc
-		ON psb.container = psbc.id -- End of chunk to add LR info
+		ON psb.container = psbc.id
+	LEFT JOIN lr_lib_prep_sample_status_check$raw AS lps
+		ON lps.sanger_sample_id = ssid.sanger_sample_id
+	LEFT JOIN lr_lib_prep_sample_status_check_output AS lpsc
+		ON lpsc.sanger_sample_id = ssid.sanger_sample_id -- End of chunk to add LR info
 	LEFT JOIN project$raw AS proj 
 		ON subsam.project_id$ = proj.id
 	 LEFT JOIN folder$raw AS f 
@@ -643,6 +687,19 @@ pacbio_submissions_plate_routine_pooled AS (
 		spri.bead_type AS bead_type,
 		pbsubm_p.created_at$ AS completion_date,
 		sr.date_in_lab AS library_prep_receipt_date,
+		CASE
+			WHEN lps.id IS NOT NULL
+				THEN DATE(lpsc.created_at$)
+			ELSE DATE(psb.created_at$)
+		END AS library_prep_completion_date,
+		CASE 
+			WHEN lps.id IS NOT NULL THEN
+				CASE WHEN lpsc.final_sample_decision IS NOT NULL
+					THEN lpsc.final_sample_decision
+				ELSE NULL
+			END
+			ELSE psb.decision 
+		END AS library_prep_qc_decision,
 		'pacbio'::varchar AS sequencing_platform,
 		'v2'::varchar AS SOURCE
 	FROM pacbio_sequencing_submission_plate_output$raw AS pbsubm_p
@@ -689,7 +746,11 @@ pacbio_submissions_plate_routine_pooled AS (
 	LEFT JOIN lr_long_read_library_preparation_b_output$raw AS psb
 		ON psb.sanger_sample_id = ssid.sanger_sample_id
 	LEFT JOIN container$raw AS psbc
-		ON psb.container = psbc.id -- End of chunk to add LR info
+		ON psb.container = psbc.id
+	LEFT JOIN lr_lib_prep_sample_status_check$raw AS lps
+		ON lps.sanger_sample_id = ssid.sanger_sample_id
+	LEFT JOIN lr_lib_prep_sample_status_check_output AS lpsc
+		ON lpsc.sanger_sample_id = ssid.sanger_sample_id -- End of chunk to add LR info
 	LEFT JOIN project$raw AS proj
 		ON subsam.project_id$ = proj.id
 	 LEFT JOIN folder$raw AS f 
