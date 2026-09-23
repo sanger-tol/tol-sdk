@@ -46,7 +46,7 @@ class WorkflowsDataObjectToElasticAssemblyAnalysisConverter(
             if data_object.tax_id:
                 relationships['species'] = self._data_object_factory(
                     'species',
-                    data_object.tax_id
+                    str(data_object.tax_id)
                 )
 
             ret = self._data_object_factory(
