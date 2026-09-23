@@ -8,7 +8,7 @@ from typing import Callable, Iterable, Optional
 from .client import OpenCitationsApiClient
 from .converter import OpenCitationsApiConverter
 from ..core import DataObject, DataSource, DataSourceError, DataSourceFilter
-from ..core.operator import DetailGetter, ListGetter
+from ..core.operator import DetailGetter, ListGetter, PageGetter
 
 ClientFactory = Callable[[], OpenCitationsApiClient]
 OpenCitationsConverterFactory = Callable[[], OpenCitationsApiConverter]
@@ -18,6 +18,7 @@ class OpenCitationsDataSource(
     DataSource,
     DetailGetter,
     ListGetter,
+    PageGetter,
 ):
     """
     A `DataSource` that connects to a remote OpenCitations API.
@@ -113,6 +114,23 @@ class OpenCitationsDataSource(
             open_citations_response,
         ) if open_citations_response is not None else ([], 0)
         return iter(converted_objects)
+
+    def get_list_page(
+        self,
+        object_type: str,
+        page_number: int,
+        page_size: Optional[int] = None,
+        object_filters: Optional[DataSourceFilter] = None,
+        sort_by: Optional[str] = None,
+        **kwargs,
+    ) -> tuple[Iterable[DataObject], int]:
+        converted_objects = list(self.get_list(
+            object_type,
+            object_filters=object_filters,
+        ))
+        size = page_size if page_size else self.get_page_size()
+        start = (page_number - 1) * size
+        return converted_objects[start:start + size], len(converted_objects)
 
     def __validate_object_type(self, object_type: str) -> None:
         if object_type not in self.supported_types:
