@@ -68,13 +68,13 @@ class TestBioscanImageToElasticSampleUpdateConverter(TestCase):
         # Create the data objects that we expected to have been the results of the conversions
         expected1 = (None, {
             'specimen.id': 'sample_one',
-            'url': 'https://BUCKET_NAME_ONE.cog.sanger.ac.uk/sample_one.jpeg',
-            'modified': datetime(2020, 1, 1),
+            'image_url': 'https://BUCKET_NAME_ONE.cog.sanger.ac.uk/sample_one.jpeg',
+            'image_modified': datetime(2020, 1, 1),
         })
         expected2 = (None, {
             'specimen.id': 'sample_two',
-            'url': 'https://BUCKET_NAME_TWO.cog.sanger.ac.uk/prefix/sample_two.png',
-            'modified': datetime(2023, 5, 7),
+            'image_url': 'https://BUCKET_NAME_TWO.cog.sanger.ac.uk/prefix/sample_two.png',
+            'image_modified': datetime(2023, 5, 7),
         })
 
         # Check whether the converted data objects are the same as we expected
