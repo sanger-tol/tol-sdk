@@ -148,7 +148,7 @@ pacbio_submissions_container_routine AS (
 			WHEN lps.id IS NOT NULL THEN
 				CASE WHEN lpsc.final_sample_decision IS NOT NULL
 					THEN lpsc.final_sample_decision
-				ELSE NULL
+				ELSE 'Sample Status Check'
 			END
 			ELSE psb.decision 
 		END AS library_prep_qc_decision,
@@ -584,7 +584,7 @@ pacbio_submissions_plate_routine AS (
 			WHEN lps.id IS NOT NULL THEN
 				CASE WHEN lpsc.final_sample_decision IS NOT NULL
 					THEN lpsc.final_sample_decision
-				ELSE NULL
+				ELSE 'Sample Status Check'
 			END
 			ELSE psb.decision 
 		END AS library_prep_qc_decision,
@@ -696,7 +696,7 @@ pacbio_submissions_plate_routine_pooled AS (
 			WHEN lps.id IS NOT NULL THEN
 				CASE WHEN lpsc.final_sample_decision IS NOT NULL
 					THEN lpsc.final_sample_decision
-				ELSE NULL
+				ELSE 'Sample Status Check'
 			END
 			ELSE psb.decision 
 		END AS library_prep_qc_decision,

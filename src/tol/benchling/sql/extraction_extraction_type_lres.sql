@@ -46,7 +46,7 @@ SELECT DISTINCT
 		WHEN output.decision IN ('Submit to Library Prep', 'On Hold for ULI', 'Pass')
 			THEN 'Yes'
 		WHEN output.decision = 'On Review'
-			THEN NULL
+			THEN 'Sample Status Check'
 		ELSE NULL
 	END AS extraction_qc_result,
 	'lres'::varchar AS extraction_type
