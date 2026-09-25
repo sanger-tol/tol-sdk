@@ -269,6 +269,8 @@ class MlwhDataSource(DataSource, DetailGetter, ListGetter):
             'study_id': 'mlwh_study.id_study_lims',
             # 'study_uuid': 'study.uuid',
             'order_date': "DATE_FORMAT(MIN(events.created_at), '%Y-%m-%dT%H:%i:%s')",
+            'library_start_date': 'library_start_date',
+            'library_complete_date': 'library_complete_date'
         }
 
     def _get_sequencing_request_query(self, clause: str):
@@ -299,6 +301,24 @@ class MlwhDataSource(DataSource, DetailGetter, ListGetter):
                 REPLACE(mlwh_study.uuid_study_lims, '-', '')
               ) = study.uuid
               AND mlwh_study.id_lims = 'SQSCP'
+            LEFT JOIN (
+              SELECT
+                s.friendly_name,
+                MAX(CASE WHEN et.key = 'library_start' THEN e.created_at END) AS library_start_date,
+                MAX(CASE WHEN et.key = 'library_complete' THEN e.created_at END) AS library_complete_date
+              FROM 
+                events AS e
+              LEFT JOIN event_types AS et 
+                ON e.event_type_id = et.id
+              LEFT JOIN roles AS r
+                ON r.event_id = e.id
+              LEFT JOIN subjects AS s
+                ON r.subject_id = s.id
+              LEFT JOIN subject_types AS st
+                ON s.subject_type_id = st.id
+              GROUP BY s.friendly_name
+              ) AS sample_events
+                ON sample_events.friendly_name = sample.friendly_name
             WHERE {clause}
               AND event_types.key = 'order_made'
             GROUP BY sample.friendly_name
