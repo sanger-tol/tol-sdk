@@ -301,7 +301,7 @@ class MlwhDataSource(DataSource, DetailGetter, ListGetter):
                 REPLACE(mlwh_study.uuid_study_lims, '-', '')
               ) = study.uuid
               AND mlwh_study.id_lims = 'SQSCP'
-            LEFT JOIN (
+            LEFT JOIN ( # only applicable for rna and hic libraries
               SELECT
                 s.friendly_name,
                 MAX(CASE WHEN et.key = 'library_start' THEN e.created_at END) AS library_start_date,
