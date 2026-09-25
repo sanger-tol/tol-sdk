@@ -36,6 +36,8 @@ SELECT DISTINCT
 	CASE
 		WHEN ssc.final_sample_decision IS NOT NULL
 			THEN ssc.final_sample_decision
+		WHEN output.decision IN ('On Hold for ULI', 'Fail')
+			THEN NULL
 		ELSE output.decision
 	END AS next_step,
 	CASE 
@@ -43,9 +45,9 @@ SELECT DISTINCT
 			THEN 'Yes'
 		WHEN ssc.final_sample_decision IN ('Fail')
 			THEN 'No'
-		WHEN output.decision IN ('Submit to Library Prep', 'On Hold for ULI', 'Pass')
+		WHEN output.decision IN ('Submit to Library Prep', 'Pass')
 			THEN 'Yes'
-		WHEN output.decision = 'On Review'
+		WHEN output.decision IN ('On Hold for ULI', 'Fail')
 			THEN 'Sample Status Check'
 		ELSE NULL
 	END AS extraction_qc_result,
