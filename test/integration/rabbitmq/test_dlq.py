@@ -4,6 +4,8 @@
 
 import pytest
 
+import requests
+
 from tol.rabbitmq.connection import RabbitmqConnection
 from tol.rabbitmq.consumer import MessageConsumer
 
@@ -71,3 +73,14 @@ class TestDeadLetterQueue:
 
         assert queue_depth(config, QUEUE) == 0
         assert wait_for_depth(config, DEAD_QUEUE, 1) == 1
+        
+    def test_dead_queue_is_bounded(self, config):
+        """The dead-letter queue is declared with a max length."""
+        response = requests.get(
+            f'{config.management_url}/api/queues/%2F/{DEAD_QUEUE}',
+            auth=(config.username, config.password),
+            timeout=10
+        )
+        response.raise_for_status()
+        
+        assert response.json()['arguments']['x-max-length'] == 10_000

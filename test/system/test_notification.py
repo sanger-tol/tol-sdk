@@ -20,7 +20,7 @@ from tol.rabbitmq.schema import (
 )
 
 QUEUE = 'sdk-test.notify'
-BINDING_KEY = 'notify.sdk-test.*'
+BINDING_KEY = 'notify.sdk-test.#'
 ROUTING_KEY = 'notify.sdk-test.message'
 
 

@@ -6,3 +6,4 @@ import re
 
 BUS_MESSAGE = 'bus_message'
 ROUTING_KEY_PATTERN = re.compile(r'^[a-z0-9_-]+(\.[a-z0-9_-]+){2,}$')
+NAME_PATTERN = re.compile(r'^[a-z0-9_-]+$')

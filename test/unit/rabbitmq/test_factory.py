@@ -119,15 +119,24 @@ class TestCreateConsumer:
         mock_channel.queue_bind.assert_any_call(
             queue='portal.notify',
             exchange='tol',
-            routing_key='notify.portal.*'
+            routing_key='notify.portal.#'
         )
 
-    def test_empty_app_name_raises(self):
-        """Test that create_consumer requires an app name."""
-        config = dataclasses.replace(_config_with_app(), app_name='')
+    @pytest.mark.parametrize(
+        'app_name', ['', 'Portal', 'portal.app', 'portal*', 'por tal']
+    )
+    def test_invalid_app_name_raises(self, app_name):
+        """app_name must be one lowercase routing-key word"""
+        config = dataclasses.replace(_config_with_app(), app_name=app_name)
 
         with pytest.raises(ValueError):
             create_consumer(config, {})
+
+    @pytest.mark.parametrize('category', ['', 'notify.x', 'notify#'])
+    def test_invalid_category_raises(self, category):
+        """Cateogry must be one lowercase routing-key word."""
+        with pytest.raises(ValueError):
+            create_consumer(_config_with_app(), {}, category=category)
 
     def test_connect_twice_is_idempotent(self, monkeypatch):
         """

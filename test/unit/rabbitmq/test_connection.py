@@ -2,15 +2,18 @@
 #
 # SPDX-License-Identifier: MIT
 
+import pytest
+
 from tol.rabbitmq.connection import QueueSpec, declare_topology
 
 
 class TestDeclareTopology:
     def test_queue_with_dlq(self, mock_channel):
+        """A queue and it's dead letter counterpart are created."""
         specs = [
             QueueSpec(
                 name='portal.notify',
-                binding_keys=('notify.portal.*',)
+                binding_keys=('notify.portal.#',)
             )
         ]
 
@@ -42,11 +45,12 @@ class TestDeclareTopology:
         mock_channel.queue_bind.assert_any_call(
             queue='portal.notify',
             exchange='tol',
-            routing_key='notify.portal.*'
+            routing_key='notify.portal.#'
         )
         mock_channel.queue_declare.assert_any_call(
             queue='portal.notify.dead',
-            durable=True
+            durable=True,
+            arguments={'x-max-length': 10_000}
         )
         mock_channel.queue_bind.assert_any_call(
             queue='portal.notify.dead',
@@ -55,6 +59,7 @@ class TestDeclareTopology:
         )
 
     def test_no_dlq_when_disabled(self, mock_channel):
+        """Ensure the option to not create a dlq is available."""
         specs = [
             QueueSpec(
                 name='q',
@@ -75,3 +80,31 @@ class TestDeclareTopology:
             durable=True,
             arguments=None
         )
+
+    def test_dead_max_length_is_configurable(self, mock_channel):
+        """A dlq max length can also be customisable."""
+        specs = [
+            QueueSpec(
+                name='q',
+                binding_keys=('notify.q.#',),
+                dead_max_length=5
+            )
+        ]
+
+        declare_topology(mock_channel, 'tol', specs, dlx='tol.dlx')
+
+        mock_channel.queue_declare.assert_any_call(
+            queue='q.dead',
+            durable=True,
+            arguments={'x-max-length': 5}
+        )
+
+
+class TestQueueSpec:
+    def test_str_binding_raises(self):
+        """A bare string (missing trailing comma) is rejected."""
+        with pytest.raises(TypeError):
+            QueueSpec(
+                name='q',
+                binding_keys=('notify.q.#'),  # pyright: ignore[reportArgumentType]
+            )

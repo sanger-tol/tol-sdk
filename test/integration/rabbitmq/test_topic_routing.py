@@ -18,8 +18,8 @@ def declare_routing_topology(config):
     """Declare the two app queues with their topic bindings."""
 
     specs = [
-        QueueSpec(name=APP_A_QUEUE, binding_keys=('notify.appa.*',)),
-        QueueSpec(name=APP_B_QUEUE, binding_keys=('notify.appb.*',))
+        QueueSpec(name=APP_A_QUEUE, binding_keys=('notify.appa.#',)),
+        QueueSpec(name=APP_B_QUEUE, binding_keys=('notify.appb.#',))
     ]
 
     with RabbitmqConnection(config, specs=specs):
@@ -64,7 +64,7 @@ class TestTopicRouting:
         assert queue_depth(config, APP_B_QUEUE) == 0
 
     def test_wildcard_subtype_matches(self, config, datasource):
-        """Any single-word subtype matches the '<category>.<app>.*' binding"""
+        """Any subtype matches the '<category>.<app>.#' binding"""
         _publish(datasource, 'notify.appb.urgent', 'route-2')
 
         assert wait_for_depth(config, APP_B_QUEUE, 1) == 1
@@ -77,4 +77,11 @@ class TestTopicRouting:
 
         assert exc_info.value.status_code == 422
         assert queue_depth(config, APP_A_QUEUE) == 0
+        assert queue_depth(config, APP_B_QUEUE) == 0
+        
+    def test_multi_word_subtype_matches(self, config, datasource):
+        """'#' matches subtypes spanning several words"""
+        _publish(datasource, 'notify.appa.sample.received', 'route-4')
+
+        assert wait_for_depth(config, APP_A_QUEUE, 1) == 1
         assert queue_depth(config, APP_B_QUEUE) == 0

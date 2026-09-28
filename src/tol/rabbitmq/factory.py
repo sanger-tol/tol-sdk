@@ -4,6 +4,7 @@
 
 from .config import RabbitmqConfig
 from .connection import QueueSpec, RabbitmqConnection
+from .constants import NAME_PATTERN
 from .consumer import Handler, MessageConsumer
 from .converter import DefaultObjectToMessageConverter
 from .rabbitmq_datasource import RabbitmqDataSource
@@ -41,16 +42,19 @@ def create_consumer(
     Create a `MessageConsumer` for this app, declaring its queue topology.
 
     Requires `config.app_name`; the queue is named `<app>.<category>` and
-    bound to `<category>.<app>.*` on the topic exchange.
+    bound to `<category>.<app>.#` on the topic exchange.
     """
-    if not config.app_name:
-        raise ValueError('RabbitmqConfig.app_name is required for a consumer')
+    for label, value in (('app_name', config.app_name), ('category', category)):
+        if not NAME_PATTERN.match(value):
+            raise ValueError(
+                f'{label} {value!r} must match {NAME_PATTERN.pattern}'
+            )
 
     queue = f'{config.app_name}.{category}'
     specs = [
         QueueSpec(
             name=queue,
-            binding_keys=(f'{category}.{config.app_name}.*',)
+            binding_keys=(f'{category}.{config.app_name}.#',)
         )
     ]
 

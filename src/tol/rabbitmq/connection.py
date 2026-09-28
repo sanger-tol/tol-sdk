@@ -21,6 +21,15 @@ class QueueSpec:
     name: str
     binding_keys: tuple[str, ...]
     dead_letter: bool = True
+    dead_max_length: int = 10_000
+
+    def __post_init__(self) -> None:
+        # ('key') is a str, not a tuple, it would bind one chartacter at a time
+        if isinstance(self.binding_keys, str):
+            raise TypeError(
+                f'QueueSpec {self.name!r}: binding_keys must be a tuple, '
+                f'got str {self.binding_keys!r} (missing trailing comma?)'
+            )
 
 
 def declare_topology(
@@ -65,7 +74,11 @@ def declare_topology(
 
         if spec.dead_letter and dlx is not None:
             dead_queue = f'{spec.name}.dead'
-            channel.queue_declare(queue=dead_queue, durable=True)
+            channel.queue_declare(
+                queue=dead_queue,
+                durable=True,
+                arguments={'x-max-length': spec.dead_max_length}
+            )
             channel.queue_bind(
                 queue=dead_queue,
                 exchange=dlx,
