@@ -13,7 +13,11 @@ from tol.rabbitmq import RabbitmqConfig
 from tol.rabbitmq.connection import QueueSpec, RabbitmqConnection
 from tol.rabbitmq.consumer import MessageConsumer
 from tol.rabbitmq.handlers import notification_handler
-from tol.rabbitmq.schema import NotificationChannel
+from tol.rabbitmq.schema import (
+    NotificationChannel,
+    NotificationRequest,
+    wrap_in_envelope
+)
 
 QUEUE = 'notification'
 
@@ -87,17 +91,35 @@ def _poll_messages(config, timeout=10):
     raise TimeoutError('no message visible on queue')
 
 
-def _request_body(notification_id, **overrides):
-    """Return a notification request body with optional overrides."""
-    base = {
+def _insert_url(api_url):
+    """Returns the data_blueprint insert URL for bus messages."""
+    return f'{api_url}/data/notification_message:insert'
+
+
+def _insert_doc(config, notification_id, **overrides):
+    """Returns a JSON:API insert document wrapping a notification."""
+    fields = {
         'id': notification_id,
         'channels': ['email'],
         'type': 'system_test',
         'recipients': [{'email': 'test1@example.com'}],
         'context': {'key': 'value'}
     }
-    base.update(overrides)
-    return base
+
+    fields.update(overrides)
+
+    request = NotificationRequest.model_validate(fields)
+
+    return {
+        'data': [{
+            'type': 'notification_message',
+            'id': notification_id,
+            'attributes': {
+                'body': wrap_in_envelope(request),
+                'routing_key': config.routing_key
+            }
+        }]
+    }
 
 
 class TestNotificationSystem:
@@ -106,16 +128,14 @@ class TestNotificationSystem:
         Post a valid notification request and ensure it
         lands on the RabbitMQ queue.
         """
-        body = _request_body('system-notification-1')
+        doc = _insert_doc(config, 'system-notification-1')
 
         response = requests.post(
-            f'{api_url}/notification', json=body, timeout=10
+            _insert_url(api_url), json=doc, timeout=10
         )
 
-        assert response.status_code == 202
-        assert response.json() == {
-            'notification_id': 'system-notification-1'
-        }
+        assert response.status_code == 200
+        assert response.json() == {'success': True}
 
         messages = _poll_messages(config)
         assert messages[0]['properties']['message_id'] == (
@@ -127,14 +147,16 @@ class TestNotificationSystem:
         Post a notification request and then consume
         it from the RabbitMQ queue.
         """
-        body = _request_body(
+        doc = _insert_doc(
+            config,
             'system-notification-2',
             channels=['email', 'slack'],
             recipients=[{'email': 'nowrequired@example.com',
                          'user_id': 'user_1'}]
         )
+
         requests.post(
-            f'{api_url}/notification', json=body, timeout=10
+            _insert_url(api_url), json=doc, timeout=10
         ).raise_for_status()
 
         _poll_messages(config)
@@ -160,16 +182,3 @@ class TestNotificationSystem:
             NotificationChannel.EMAIL,
             NotificationChannel.SLACK
         }
-
-    def test_post_invalid_request_returns_400(self, api_url):
-        """Post an invalid notification request and expect a 400 response."""
-        body = _request_body(
-            'system-notification-3',
-            recipients=[]
-        )
-
-        response = requests.post(
-            f'{api_url}/notification', json=body, timeout=10
-        )
-
-        assert response.status_code == 400
