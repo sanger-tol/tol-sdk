@@ -15,7 +15,6 @@ class RabbitmqConfig:
     password: str
     vhost: str
     exchange: str
-    routing_key: str
     management_url: str
     app_name: str = ''
     dlx: str = 'tol.dlx'
@@ -31,7 +30,6 @@ class RabbitmqConfig:
             password=os.getenv(f'{prefix}PASSWORD', 'guest'),
             vhost=os.getenv(f'{prefix}VHOST', '/'),
             exchange=os.getenv(f'{prefix}EXCHANGE', 'tol'),
-            routing_key=os.getenv(f'{prefix}ROUTING_KEY', 'notification'),
             management_url=os.getenv(f'{prefix}MANAGEMENT_URL',
                                      'http://127.0.0.1:15672'),
             use_ssl=os.getenv(f'{prefix}USE_SSL', 'false').lower() == 'true',

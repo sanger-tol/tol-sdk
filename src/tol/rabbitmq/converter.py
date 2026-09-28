@@ -3,10 +3,10 @@
 # SPDX-License-Identifier: MIT
 
 import json
+import time
 
 import pika
 
-from .schema import generate_unique_id
 from ..core import DataObject
 from ..core.core_converter import Converter
 
@@ -18,16 +18,27 @@ ObjectToMessageConverter = Converter[DataObject, PublishMessage]
 
 
 class DefaultObjectToMessageConverter(ObjectToMessageConverter):
-    """Serialises a `NotificationMessageObject` to a JSON AMQP message."""
+    """Serialises a `bus_message` to a JSON AMQP message."""
+
+    def __init__(self, app_id: str | None = None) -> None:
+        self.__app_id = app_id
 
     def convert(self, input_: DataObject) -> PublishMessage:
-        """Convert a `NotificationMessageObject` to a JSON AMQP message."""
-        body = json.dumps(input_.body)
+        """Convert a `bus_message` to a JSON AMQP message."""
+        body = input_.body
+        if not isinstance(body, dict):
+            raise TypeError(
+                f'bus_message {input_.id!r}: body must be a dict',
+                f'got {type(body).__name__}'
+            )
         properties = pika.BasicProperties(
             content_type='application/json',
             delivery_mode=2,  # persistent
-            message_id=input_.id or generate_unique_id(),
+            message_id=input_.id,
+            type=body['type'],
+            app_id=self.__app_id,
+            timestamp=int(time.time()),
             headers=input_.headers,
         )
 
-        return body, properties
+        return json.dumps(input_.body), properties

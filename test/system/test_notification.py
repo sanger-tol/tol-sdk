@@ -19,7 +19,9 @@ from tol.rabbitmq.schema import (
     wrap_in_envelope
 )
 
-QUEUE = 'notification'
+QUEUE = 'sdk-test.notify'
+BINDING_KEY = 'notify.sdk-test.*'
+ROUTING_KEY = 'notify.sdk-test.message'
 
 
 @pytest.fixture(scope='module')
@@ -33,7 +35,7 @@ def declare_topology(config):
     """
     Declare the notification queue topology before any tests run.
     """
-    specs = [QueueSpec(name=QUEUE, binding_keys=(config.routing_key,))]
+    specs = [QueueSpec(name=QUEUE, binding_keys=(BINDING_KEY,))]
     with RabbitmqConnection(config, specs=specs):
         pass
 
@@ -93,10 +95,10 @@ def _poll_messages(config, timeout=10):
 
 def _insert_url(api_url):
     """Returns the data_blueprint insert URL for bus messages."""
-    return f'{api_url}/data/notification_message:insert'
+    return f'{api_url}/data/bus_message:insert'
 
 
-def _insert_doc(config, notification_id, **overrides):
+def _insert_doc(notification_id, **overrides):
     """Returns a JSON:API insert document wrapping a notification."""
     fields = {
         'id': notification_id,
@@ -112,14 +114,19 @@ def _insert_doc(config, notification_id, **overrides):
 
     return {
         'data': [{
-            'type': 'notification_message',
+            'type': 'bus_message',
             'id': notification_id,
             'attributes': {
                 'body': wrap_in_envelope(request),
-                'routing_key': config.routing_key
+                'routing_key': ROUTING_KEY
             }
         }]
     }
+
+
+def _attributes(doc):
+    """Return the attributes of the single resource in an insert doc."""
+    return doc['data'][0]['attributes']
 
 
 class TestNotificationSystem:
@@ -128,7 +135,7 @@ class TestNotificationSystem:
         Post a valid notification request and ensure it
         lands on the RabbitMQ queue.
         """
-        doc = _insert_doc(config, 'system-notification-1')
+        doc = _insert_doc('system-notification-1')
 
         response = requests.post(
             _insert_url(api_url), json=doc, timeout=10
@@ -148,7 +155,6 @@ class TestNotificationSystem:
         it from the RabbitMQ queue.
         """
         doc = _insert_doc(
-            config,
             'system-notification-2',
             channels=['email', 'slack'],
             recipients=[{'email': 'nowrequired@example.com',
@@ -182,3 +188,35 @@ class TestNotificationSystem:
             NotificationChannel.EMAIL,
             NotificationChannel.SLACK
         }
+
+    def test_invalid_envelope_returns_400(self, api_url):
+        """A body that is not a MessageEnvelope is rejected by the ds."""
+        doc = _insert_doc('system-notification-3')
+        _attributes(doc)['body'] = {'not': 'an envelope'}
+
+        response = requests.post(_insert_url(api_url), json=doc, timeout=10)
+
+        assert response.status_code == 400
+        assert 'system-notification-3' in (
+            response.json()['errors'][0]['detail']
+        )
+
+    def test_email_recipient_without_address_returns_400(self, api_url):
+        """The fat-message rule is enforced on the HTTP path"""
+        doc = _insert_doc('system-notification-4')
+        _attributes(doc)['body']['context']['recipients'] = [
+            {'user_id': 'user_1'}
+        ]
+
+        response = requests.post(_insert_url(api_url), json=doc, timeout=10)
+
+        assert response.status_code == 400
+
+    def test_unroutable_key_returns_422(self, api_url):
+        """A routing key with no bound queue is rejected, not dropped."""
+        doc = _insert_doc('system-notification-5')
+        _attributes(doc)['routing_key'] = 'notify.nobody.message'
+
+        response = requests.post(_insert_url(api_url), json=doc, timeout=10)
+
+        assert response.status_code == 422

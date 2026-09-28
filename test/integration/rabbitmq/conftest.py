@@ -9,8 +9,7 @@ from tol.rabbitmq import RabbitmqConfig, create_rabbitmq_datasource
 from tol.rabbitmq.connection import QueueSpec, RabbitmqConnection
 
 from .broker import purge, wait_for_depth
-
-QUEUE = 'notification'
+from .constants import BINDING_KEY, QUEUE
 
 
 @pytest.fixture(scope='module')
@@ -42,6 +41,6 @@ def declare_topology(config):
     Declare the RabbitMQ topology (exchange, queue, and binding)
     before any tests run.
     """
-    specs = [QueueSpec(name=QUEUE, binding_keys=(config.routing_key,))]
+    specs = [QueueSpec(name=QUEUE, binding_keys=(BINDING_KEY,))]
     with RabbitmqConnection(config, specs=specs):
         pass

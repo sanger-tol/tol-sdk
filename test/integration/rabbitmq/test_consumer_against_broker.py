@@ -10,9 +10,8 @@ from tol.rabbitmq.consumer import MessageConsumer
 from tol.rabbitmq.handlers import notification_handler
 from tol.rabbitmq.schema import NotificationChannel, wrap_in_envelope
 
-from .broker import queue_depth
-
-QUEUE = 'notification'
+from .broker import publish_raw, queue_depth
+from .constants import QUEUE, ROUTING_KEY
 
 
 @pytest.fixture
@@ -22,13 +21,13 @@ def received():
 
 
 def _publish(datasource, body, message_id):
-    """Publish a message to the RabbitMQ queue"""
+    """Publish a validated bus message through the datasource"""
     message = datasource.data_object_factory(
-        'notification_message',
+        'bus_message',
         id_=message_id,
-        attributes={'body': body}
+        attributes={'body': body, 'routing_key': ROUTING_KEY}
     )
-    list(datasource.insert_batch('notification_message', [message]))
+    datasource.insert_batch('bus_message', [message])
 
 
 class TestConsumerAgainstBroker:
@@ -87,7 +86,7 @@ class TestConsumerAgainstBroker:
         received
     ):
         """Test that an invalid notification payload is nacked"""
-        _publish(datasource, {'not': 'a notification'}, 'bad-1')
+        publish_raw(config, ROUTING_KEY, {'not': 'a notification'})
 
         consumer = MessageConsumer(
             RabbitmqConnection(config),

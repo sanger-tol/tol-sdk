@@ -7,48 +7,51 @@ import json
 import requests
 
 from .broker import peek_messages
-
-
-QUEUE = 'notification'
+from .constants import QUEUE, ROUTING_KEY
 
 
 def _message(datasource, message_id, num):
-    """Create a notification message object."""
+    """Create a `bus_message` with a valid envelope."""
     return datasource.data_object_factory(
-        'notification_message',
+        'bus_message',
         id_=message_id,
-        attributes={'body': {'n': num}}
+        attributes={
+            'body': {'id': message_id, 'type': 'test', 'context': {'n': num}},
+            'routing_key': ROUTING_KEY
+        }
     )
 
 
 class TestDataSourceAgainstBroker:
-    def test_insert_then_get_list(self, config, datasource):
+    def test_insert_then_peek(self, config, datasource):
         """
-        Insert two notification messages and then fetch them
-        via the management API.
+        Insert two messages and then fetch them via the management API.
         """
         objects = [_message(datasource, f'msg-{i}', i) for i in range(2)]
 
-        results = list(datasource.insert('notification_message', objects))
+        results = list(datasource.insert('bus_message', objects))
         assert results == objects
 
         messages = peek_messages(config, QUEUE)
         ids = [m['properties']['message_id'] for m in messages]
         assert ids == ['msg-0', 'msg-1']
-        assert [json.loads(m['payload']) for m in messages] == [
+        assert [json.loads(m['payload'])['context'] for m in messages] == [
             {'n': 0}, {'n': 1}
         ]
 
-    def test_insert_marks_persistent_and_json(self, config, datasource):
+    def test_insert_sets_amqp_properties(self, config, datasource):
         """Check the AMQP properties set on published messages."""
-        objects = [_message(datasource, 'msg-props', 1)]
-        list(datasource.insert('notification_message', objects))
+        list(datasource.insert(
+            'bus_message', [_message(datasource, 'msg-props', 1)]
+        ))
 
         (message, ) = peek_messages(config, QUEUE, count=1)
+
         properties = message['properties']
 
         assert properties['delivery_mode'] == 2
         assert properties['content_type'] == 'application/json'
+        assert properties['type'] == 'test'
 
     def test_topology_declared(self, config):
         """Check that the RabbitMQ topology has been declared."""

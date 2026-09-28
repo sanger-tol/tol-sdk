@@ -10,22 +10,36 @@ from typing import Any, Optional
 
 import pika.exceptions
 
+from pydantic import ValidationError
+
 from .config import RabbitmqConfig
 from .connection import RabbitmqConnection
+from .constants import BUS_MESSAGE, ROUTING_KEY_PATTERN
 from .converter import ObjectToMessageConverter
-from ..core import (DataObject, DataSource, DataSourceError,
-                    ErrorObject, ReqFieldsTree)
+from .schema import MessageEnvelope, NotificationRequest
+from ..core import DataObject, DataSource, DataSourceError, ReqFieldsTree
 from ..core.operator import Inserter
 
 if typing.TYPE_CHECKING:
+    from pika.adapters.blocking_connection import BlockingChannel
+
     from ..core.session import OperableSession
+
+
+def _bad_request(obj: DataObject, detail: str) -> DataSourceError:
+    """Return a 400 error naming the offending object."""
+    return DataSourceError(
+        title='Bad Request',
+        detail=f'{BUS_MESSAGE} {obj.id!r}: {detail}',
+        status_code=400
+    )
 
 
 class RabbitmqDataSource(DataSource, Inserter):
     """
     A `DataSource` backed by a RabbitMQ broker.
 
-    Publishes messages via AMQP (`Inserter`).
+    Publishes validated `MessageEnvelope's via AMQP (`Inserter`).
 
     Most users should use `create_rabbitmq_datasource()` rather than
     instantiating this directly.
@@ -47,13 +61,13 @@ class RabbitmqDataSource(DataSource, Inserter):
     @property
     def supported_types(self) -> list[str]:
         """Return the list of supported object types for this data source."""
-        return ['notification_message']
+        return [BUS_MESSAGE]
 
     @property
     def attribute_types(self) -> dict[str, dict[str, str]]:
         """Return the attribute types for each supported object type."""
         return {
-            'notification_message': {
+            BUS_MESSAGE: {
                 'body': 'dict[str, Any]',
                 'routing_key': 'str',
                 'headers': 'dict[str, Any]'
@@ -68,60 +82,95 @@ class RabbitmqDataSource(DataSource, Inserter):
         requested_fields: list[str] | None = None,
         requested_tree: ReqFieldsTree | None = None,
         **kwargs: Any,
-    ) -> Iterable[DataObject | ErrorObject] | None:
-        """Insert a batch of objects into RabbitMQ."""
+    ) -> list[DataObject]:
+        """
+        Validate whole batch, then publish it with publisher confirms.
+
+        Raises `DataSourceError` on any failures. A failure mid-publish
+        leaves earlier messages in the batch already published.
+        """
         self.__validate_object_type(object_type)
 
+        batch = [(obj, self.__validate_message(obj)) for obj in objects]
+
         converter = self.__to_message()
-        results: list[DataObject | ErrorObject] = []
 
         try:
             with self.__connection_factory() as conn:
                 channel = conn.channel
-                for obj in objects:
-                    try:
-                        body, properties = converter.convert(obj)
-                        channel.basic_publish(
-                            exchange=self.__config.exchange,
-                            routing_key=(
-                                getattr(obj, 'routing_key', None)
-                                or self.__config.routing_key
-                            ),
-                            body=body,
-                            properties=properties,
-                        )
-                        results.append(obj)
-                    except pika.exceptions.AMQPError as e:
-                        results.append(self.__make_error(obj, e))
+                channel.confirm_delivery()
+                for obj, routing_key in batch:
+                    self.__publish(channel, converter, obj, routing_key)
         except pika.exceptions.AMQPError as e:
             raise DataSourceError(
-                title='Connection Error',
-                detail=f'Could not connect to RabbitMQ: {e!r}',
-                status_code=500,
+                title='Publish Failed',
+                detail=f'Could not publish to RabbitMQ: {e!r}',
+                status_code=500
             ) from e
 
-        return results
+        return [obj for obj, _ in batch]
 
-    def __make_error(
+    def __publish(
         self,
+        channel: BlockingChannel,
+        converter: ObjectToMessageConverter,
         obj: DataObject,
-        exc: Exception,
-    ) -> ErrorObject:
-        """
-        Create an `ErrorObject` for a failed insertion or operation on a
-        `DataObject` of type `notification_message`.
-        """
-        return ErrorObject(
-            details={'exception': str(exc)},
-            object_type='notification_message',
-            object_id=obj.id,
-            object_=obj,
-            http_code=500
-        )
+        routing_key: str
+    ) -> None:
+        """Publish one message; an unbound routing key raises 422."""
+        body, properties = converter.convert(obj)
+        try:
+            channel.basic_publish(
+                exchange=self.__config.exchange,
+                routing_key=routing_key,
+                body=body,
+                properties=properties,
+                mandatory=True
+            )
+        except pika.exceptions.UnroutableError as e:
+            raise DataSourceError(
+                title='Unroutable Message',
+                detail=(
+                    f'No queue is bound to the routing key '
+                    f'{routing_key!r} (id {obj.id!r})'
+                ),
+                status_code=422
+            ) from e
+
+    def __validate_message(self, obj: DataObject) -> str:
+        """Raises a 400 unless `obj` is a publishable bus message"""
+        routing_key = obj.routing_key
+        if (
+            not isinstance(routing_key, str)
+            or not ROUTING_KEY_PATTERN.match(routing_key)
+        ):
+            raise _bad_request(
+                obj,
+                f'routing_key {routing_key!r} must be '
+                '<category>.<app>.<subtype>'
+            )
+
+        try:
+            envelope = MessageEnvelope.model_validate(obj.body)
+            if envelope.type == 'notification':
+                NotificationRequest.model_validate(envelope.context)
+        except ValidationError as e:
+            raise _bad_request(
+                obj,
+                str(e.errors(include_url=False, include_input=False))
+            ) from e
+
+        if envelope.id != obj.id:
+            raise _bad_request(
+                obj,
+                f'envelope id {envelope.id!r} does not match object id'
+            )
+
+        return routing_key
 
     def __validate_object_type(self, object_type: str) -> None:
         """Validate that the object type is supported by this data source."""
-        if object_type != 'notification_message':
+        if object_type != BUS_MESSAGE:
             raise DataSourceError(
                 title='Bad Request',
                 detail=f'Unsupported object type: {object_type!r}',

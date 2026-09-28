@@ -4,9 +4,12 @@
 
 """Helpers for inspecting a real RabbitMQ broker in integration tests."""
 
+import json
 import time
 
 import requests
+
+from tol.rabbitmq.connection import RabbitmqConnection
 
 
 def queue_depth(config, queue):
@@ -75,3 +78,19 @@ def peek_messages(config, queue, count=10):
     )
     response.raise_for_status()
     return response.json()
+
+
+def publish_raw(config, routing_key, body):
+    """
+    Publish `body` straight to the exchange, bypassing datasource
+    validation. For poison-message testing only.
+    """
+    with RabbitmqConnection(config) as connection:
+        channel = connection.channel
+        channel.confirm_delivery()
+        channel.basic_publish(
+            exchange=config.exchange,
+            routing_key=routing_key,
+            body=json.dumps(body),
+            mandatory=True
+        )

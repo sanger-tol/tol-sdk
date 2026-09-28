@@ -6,17 +6,14 @@ import json
 
 import pytest
 
-import tol.rabbitmq.converter as converter_module
 from tol.core import DataSource, core_data_object
-from tol.rabbitmq.converter import (
-    DefaultObjectToMessageConverter
-)
+from tol.rabbitmq.converter import DefaultObjectToMessageConverter
 
 
 class _MockDataSource(DataSource):
     @property
     def supported_types(self):
-        return ['notification_message']
+        return ['bus_message']
 
     @property
     def attribute_types(self):
@@ -31,59 +28,57 @@ def data_object_factory():
     return datasource.data_object_factory
 
 
+def _message(data_object_factory, headers=None):
+    """Create a `bus_message` with a valid envelope body."""
+    return data_object_factory(
+        'bus_message',
+        id_='message-1',
+        attributes={
+            'body': {
+                'id': 'message-1',
+                'type': 'test',
+                'context': {'answer': 42}
+            },
+            'headers': headers
+        }
+    )
+
+
 class TestDefaultObjectToMessageConverter:
     def test_convert_serialises_body_and_properties(
-        self,
-        data_object_factory
-    ):
-        """
-        Test that the DefaultObjectToMessageConverter
-        correctly serialises the body and sets properties.
-        """
-        body = {
-            'notification_id': 'notification-1',
-            'context': {'answer': 42}
-        }
-        headers = {'source': 'unit-test'}
-        message = data_object_factory(
-            'notification_message',
-            id_='message-1',
-            attributes={
-                'body': body,
-                'headers': headers
-            }
-        )
-
-        serialised_body, properties = (
-            DefaultObjectToMessageConverter().convert(message)
-        )
-
-        assert json.loads(serialised_body) == body
-        assert properties.content_type == 'application/json'
-        assert properties.delivery_mode == 2
-        assert properties.message_id == 'message-1'
-        assert properties.headers == headers
-
-    def test_convert_generates_missing_message_id(
         self,
         data_object_factory,
         monkeypatch
     ):
         """
-        Test that if a DataObject has no id, the converter generates
-        a unique message_id for the properties.
+        Test that the converter serialises the body and sets
+        the AMQP properties from the object and envelope
         """
         monkeypatch.setattr(
-            converter_module,
-            'generate_unique_id',
-            lambda: 'generated-message-id'
+            'tol.rabbitmq.converter.time.time',
+            lambda: 1700000000.5
         )
-        message = data_object_factory(
-            'notification_message',
-            attributes={'body': {'key': 'value'}}
+        message = _message(data_object_factory, headers={'source': 'unit'})
+
+        serialised_body, properties = (
+            DefaultObjectToMessageConverter().convert(message)
         )
 
-        _, properties = DefaultObjectToMessageConverter().convert(message)
+        assert json.loads(serialised_body) == message.body
+        assert properties.content_type == 'application/json'
+        assert properties.delivery_mode == 2
+        assert properties.message_id == 'message-1'
+        assert properties.type == 'test'
+        assert properties.timestamp == 1700000000
+        assert properties.app_id is None
+        assert properties.headers == {'source': 'unit'}
 
-        assert properties.message_id == 'generated-message-id'
-        assert properties.headers is None
+    def test_convert_stamps_app_id(self, data_object_factory):
+        """Test that a configured app_id is set on the properties."""
+        message = _message(data_object_factory)
+
+        _, properties = (
+            DefaultObjectToMessageConverter(app_id='portal').convert(message)
+        )
+
+        assert properties.app_id == 'portal'

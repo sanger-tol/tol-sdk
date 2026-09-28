@@ -10,14 +10,12 @@ import pika.exceptions
 
 import pytest
 
-from tol.core import (
-    DataSourceError,
-    ErrorObject,
-    core_data_object
-)
+from tol.core import DataSourceError, core_data_object
 from tol.rabbitmq.connection import RabbitmqConnection
 from tol.rabbitmq.converter import DefaultObjectToMessageConverter
 from tol.rabbitmq.rabbitmq_datasource import RabbitmqDataSource
+
+ROUTING_KEY = 'notify.portal.message'
 
 
 @pytest.fixture
@@ -41,12 +39,35 @@ def datasource(config, connection_factory):
     return ds
 
 
-def _message(datasource, message_id, body):
-    """Create a DataObject representing a notification message."""
+def _envelope(message_id, type_='test', context=None):
+    """Returns a valid envelope body."""
+    return {
+        'id': message_id,
+        'type': type_,
+        'context': context if context is not None else {}
+    }
+
+
+def _notification(message_id, recipients):
+    """Returns a notification envelope body with the given recipients."""
+    return _envelope(message_id, type_='notification', context={
+        'id': message_id,
+        'channels': ['email'],
+        'type': 'unit_test',
+        'recipients': recipients,
+        'context': {}
+    })
+
+
+def _message(datasource, message_id, body=None, routing_key=ROUTING_KEY):
+    """Create a `bus_message`; defaults to a valid envelope."""
     return datasource.data_object_factory(
-        'notification_message',
+        'bus_message',
         id_=message_id,
-        attributes={'body': body}
+        attributes={
+            'body': body if body is not None else _envelope(message_id),
+            'routing_key': routing_key
+        }
     )
 
 
@@ -60,119 +81,169 @@ class TestObjectTypeValidation:
         assert exc_info.value.status_code == 400
 
 
-class TestInsertbatch:
-    def test_success(self, datasource, mock_channel):
-        """Test successful insertion of a batch of messages."""
-        objects = [
-            _message(datasource, f'msg-{i}', {'n': i})
-            for i in range(3)
-        ]
+class TestMessageValidation:
+    @pytest.mark.parametrize('routing_key', [
+        None,
+        '',
+        'notification',
+        'notify.portal',
+        'notify.portal.*',
+        'notify.#.message',
+        'Notify.portal.message',
+        'notify..message'
+    ])
+    def test_invalid_routing_raises_400(
+        self,
+        datasource,
+        mock_channel,
+        routing_key
+    ):
+        """Routing keys must be >=3 lowercase words with no wildcards"""
+        obj = _message(datasource, 'msg-1', routing_key=routing_key)
 
-        results = list(
-            datasource.insert_batch('notification_message', objects)
+        with pytest.raises(DataSourceError) as exc_info:
+            datasource.insert_batch('bus_message', [obj])
+
+        assert exc_info.value.status_code == 400
+        mock_channel.basic_publish.assert_not_called()
+
+    def test_multi_word_subtype_is_valid(self, datasource, mock_channel):
+        """Subtypes can span several words."""
+        obj = _message(
+            datasource, 'msg-1', routing_key='notify.portal.sample.received'
         )
 
+        datasource.insert_batch('bus_message', [obj])
+
+        mock_channel.basic_publish.assert_called_once()
+
+    def test_invalid_envelope_raises_400(self, datasource, mock_channel):
+        """A body that is not a MessageEnvelope is rejected."""
+        obj = _message(datasource, 'msg-1', body={'not': 'an envelope'})
+
+        with pytest.raises(DataSourceError) as exc_info:
+            datasource.insert_batch('bus_message', [obj])
+
+        assert exc_info.value.status_code == 400
+        mock_channel.basic_publish.assert_not_called()
+
+    def test_notification_without_email_raises_400(
+        self,
+        datasource,
+        mock_channel
+    ):
+        """Notification payloads are validated (fat-message rule)."""
+        body = _notification('msg-1', [{'user_id': 'user-1'}])
+        obj = _message(datasource, 'msg-1', body=body)
+
+        with pytest.raises(DataSourceError) as exc_info:
+            datasource.insert_batch('bus_message', [obj])
+
+        assert exc_info.value.status_code == 400
+        mock_channel.basic_publish.assert_not_called()
+
+    def test_valid_notification_publishes(self, datasource, mock_channel):
+        """A notification with every email present is published"""
+        body = _notification('msg-1', [{'email': 'a@example.com'}])
+        obj = _message(datasource, 'msg-1', body=body)
+
+        datasource.insert_batch('bus_message', [obj])
+
+        mock_channel.basic_publish.assert_called_once()
+
+    def test_id_mismatch_raises_400(self, datasource, mock_channel):
+        """The envelope id must equal the object id."""
+        obj = _message(datasource, 'msg-1', body=_envelope('other-id'))
+
+        with pytest.raises(DataSourceError) as exc_info:
+            datasource.insert_batch('bus_message', [obj])
+
+        assert exc_info.value.status_code == 400
+        mock_channel.basic_publish.assert_not_called()
+
+    def test_one_invalid_object_publishes_nothing(
+        self,
+        datasource,
+        mock_channel,
+        connection_factory
+    ):
+        """Validation is an all-or-nothing per batch and names the object"""
+        objects = [
+            _message(datasource, 'msg-0'),
+            _message(datasource, 'msg-1', routing_key='bad'),
+            _message(datasource, 'msg-2'),
+        ]
+
+        with pytest.raises(DataSourceError) as exc_info:
+            datasource.insert_batch('bus_message', objects)
+
+        assert exc_info.value.status_code == 400
+        assert 'msg-1' in exc_info.value.detail
+        connection_factory.assert_not_called()
+        mock_channel.basic_publish.assert_not_called()
+
+
+class TestPublish:
+    def test_success(self, datasource, mock_channel):
+        """Test successful publication of a batch of messages"""
+        objects = [_message(datasource, f'msg-{i}') for i in range(3)]
+
+        results = datasource.insert_batch('bus_message', objects)
+
         assert results == objects
+        mock_channel.confirm_delivery.assert_called_once_with()
         assert mock_channel.basic_publish.call_count == 3
 
-        first = mock_channel.basic_publish.call_args_list[0]
-        assert first.kwargs['exchange'] == 'notification'
-        assert first.kwargs['routing_key'] == 'notification'
-        assert json.loads(first.kwargs['body']) == {'n': 0}
+        first = mock_channel.basic_publish.call_args_list[0].kwargs
+        assert first['exchange'] == 'notification'
+        assert first['routing_key'] == ROUTING_KEY
+        assert first['mandatory'] is True
+        assert json.loads(first['body']) == _envelope('msg-0')
 
-        properties = first.kwargs['properties']
+        properties = first['properties']
         assert properties.content_type == 'application/json'
         assert properties.delivery_mode == 2
         assert properties.message_id == 'msg-0'
+        assert properties.type == 'test'
 
-    def test_partial_failure(
-        self,
-        datasource,
-        mock_channel
-    ):
-        """
-        Test that if one message fails to publish, the others still succeed
-        and the failed message is returned as an ErrorObject.
-        """
-        mock_channel.basic_publish.side_effect = [
-            None,
-            pika.exceptions.AMQPError('broker said no'),
-            None
-        ]
-        objects = [
-            _message(datasource, f'msg-{i}', {'n': i})
-            for i in range(3)
-        ]
-
-        results = list(
-            datasource.insert_batch('notification_message', objects)
+    def test_unroutable_raises_422(self, datasource, mock_channel):
+        """A routing key with no bound queue raises 422."""
+        mock_channel.basic_publish.side_effect = (
+            pika.exceptions.UnroutableError([])
         )
 
-        assert len(results) == 3
-        assert results[0] is objects[0]
-        assert results[2] is objects[2]
+        with pytest.raises(DataSourceError) as exc_info:
+            datasource.insert_batch(
+                'bus_message', [_message(datasource, 'msg-1')]
+            )
 
-        error = results[1]
-        assert isinstance(error, ErrorObject)
-        assert error.object_type == 'notification_message'
-        assert error.object_id == 'msg-1'
-        assert error.object_ is objects[1]
-        assert error.http_code == 500
+        assert exc_info.value.status_code == 422
+        assert 'msg-1' in exc_info.value.detail
 
-    def test_object_routing_key_overrides_config(
-        self,
-        datasource,
-        mock_channel
-    ):
-        """
-        Test that if a DataObject has a routing_key attribute, it overrides
-        the default routing_key in the config when publishing.
-        """
-        obj = datasource.data_object_factory(
-            'notification_message',
-            id_='msg-1',
-            attributes={
-                'body': {'n': 1},
-                'routing_key': 'notification.urgent'
-            }
+    def test_nack_raises_500(self, datasource, mock_channel):
+        """A broker nack raises 500."""
+        mock_channel.basic_publish.side_effect = (
+            pika.exceptions.NackError([])
         )
 
-        list(datasource.insert_batch('notification_message', [obj]))
+        with pytest.raises(DataSourceError) as exc_info:
+            datasource.insert_batch(
+                'bus_message', [_message(datasource, 'msg-1')]
+            )
 
-        published = mock_channel.basic_publish.call_args.kwargs
-        assert published['routing_key'] == 'notification.urgent'
-        assert published['exchange'] == 'notification'
+        assert exc_info.value.status_code == 500
 
-    def test_missing_routing_key_falls_back_to_config(
-        self,
-        datasource,
-        mock_channel
-    ):
-        """
-        Test that if a DataObject has no routing_key attribute, the default
-        routing_key from the config is used when publishing.
-        """
-        obj = _message(datasource, 'msg-1', {'n': 1})
-
-        list(datasource.insert_batch('notification_message', [obj]))
-
-        published = mock_channel.basic_publish.call_args.kwargs
-        assert published['routing_key'] == 'notification'
-
-    def test_connection_failure(
-        self,
-        datasource,
-        connection_factory
-    ):
-        """Test that a connection failure raises a DataSourceError."""
+    def test_connection_failure(self, datasource, connection_factory):
+        """Test that a connetion failure raises a DataSourceError."""
         mock_connection = connection_factory.return_value
         mock_connection.__enter__.side_effect = (
             pika.exceptions.AMQPError('connection refused')
         )
-        obj = _message(datasource, 'msg-1', {'n': 1})
 
         with pytest.raises(DataSourceError) as exc_info:
-            list(datasource.insert_batch('notification_message', [obj]))
+            datasource.insert_batch(
+                'bus_message', [_message(datasource, 'msg-1')]
+            )
 
         assert exc_info.value.status_code == 500
 
@@ -183,8 +254,8 @@ class TestInsertbatch:
         mock_channel
     ):
         """
-        Test that if the write_batch_size is set, the datasource splits
-        the messages into multiple batches and calls basic_publish for each.
+        Test that the datasource splits messages by write_batch_size,
+        opening one connection per batch.
         """
         config = dataclasses.replace(config, write_batch_size=2)
         ds = RabbitmqDataSource(
@@ -194,15 +265,11 @@ class TestInsertbatch:
         )
         core_data_object(ds)
 
-        objects = [
-            _message(ds, f'msg-{i}', {'n': i})
-            for i in range(3)
-        ]
+        objects = [_message(ds, f'msg-{i}') for i in range(3)]
 
-        results = ds.insert('notification_message', objects)
+        results = ds.insert('bus_message', objects)
         assert results is not None
 
-        results_list = list(results)
-        assert results_list == objects
+        assert list(results) == objects
         assert connection_factory.call_count == 2
         assert mock_channel.basic_publish.call_count == 3

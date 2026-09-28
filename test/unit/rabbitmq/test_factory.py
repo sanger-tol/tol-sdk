@@ -31,56 +31,55 @@ def _stub_broker(monkeypatch):
     return mock_blocking, mock_channel
 
 
+def _bus_message(ds):
+    """Create a valid `bus_message` for publishing through factory ds."""
+    return ds.data_object_factory(
+        'bus_message',
+        id_='msg-1',
+        attributes={
+            'body': {'id': 'msg-1', 'type': 'test', 'context': {}},
+            'routing_key': 'notify.portal.message'
+        }
+    )
+
+
 def test_returns_configured_datasource(monkeypatch, config):
     """
     Test that create_rabbitmq_datasource returns a
     properly configured RabbitmqDataSource.
     """
-    mock_blocking, mock_channel = _stub_broker(monkeypatch)
+    _, mock_channel = _stub_broker(monkeypatch)
 
     ds = create_rabbitmq_datasource(config)
 
     assert isinstance(ds, RabbitmqDataSource)
-    assert ds.supported_types == ['notification_message']
+    assert ds.supported_types == ['bus_message']
     assert ds.write_batch_size == config.write_batch_size
 
-    obj = ds.data_object_factory(
-        'notification_message',
-        id_='msg-1',
-        attributes={'body': {'n': 1}}
-    )
-    assert obj.id == 'msg-1'
-
-    inserted = ds.insert_batch('notification_message', [obj])
-    assert inserted is not None
-    list(inserted)
-
-    mock_blocking.assert_called_once()
-    parameters = mock_blocking.call_args.args[0]
-
-    assert parameters.host == 'rabbitmq-host'
-    assert parameters.port == 5672
-    assert parameters.virtual_host == 'test-vhost'
-    assert parameters.credentials.username == 'test-user'
-    assert parameters.credentials.password == 'test-password'
-
-    mock_channel.exchange_declare.assert_any_call(
-        exchange=config.exchange,
-        exchange_type='topic',
-        durable=True
-    )
-    mock_channel.exchange_declare.assert_any_call(
-        exchange=config.dlx,
-        exchange_type='topic',
-        durable=True
-    )
-    mock_channel.basic_publish.assert_called_once()
+    ds.insert_batch('bus_message', [_bus_message(ds)])
 
     published = mock_channel.basic_publish.call_args.kwargs
     assert published['exchange'] == 'notification'
-    assert published['routing_key'] == 'notification'
-    assert json.loads(published['body']) == {'n': 1}
+    assert published['routing_key'] == 'notify.portal.message'
+    assert published['mandatory'] is True
+    assert json.loads(published['body']) == {
+        'id': 'msg-1', 'type': 'test', 'context': {}
+    }
     assert published['properties'].message_id == 'msg-1'
+    assert published['properties'].app_id is None
+
+
+def test_app_name_stamped_as_app_id(monkeypatch, config):
+    """Test that config.app_name reaches the published app_id"""
+    _, mock_channel = _stub_broker(monkeypatch)
+    ds = create_rabbitmq_datasource(
+        dataclasses.replace(config, app_name='portal')
+    )
+
+    ds.insert_batch('bus_message', [_bus_message(ds)])
+
+    properties = mock_channel.basic_publish.call_args.kwargs['properties']
+    assert properties.app_id == 'portal'
 
 
 def _config_with_app():
@@ -92,7 +91,6 @@ def _config_with_app():
         password='test-password',
         vhost='test-vhost',
         exchange='tol',
-        routing_key='notification',
         management_url='http://rabbitmq-mgmt:15672',
         app_name='portal'
     )

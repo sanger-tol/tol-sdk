@@ -7,10 +7,10 @@ import pytest
 from tol.rabbitmq.connection import RabbitmqConnection
 from tol.rabbitmq.consumer import MessageConsumer
 
-from .broker import purge, queue_depth, wait_for_depth
+from .broker import publish_raw, purge, queue_depth, wait_for_depth
+from .constants import QUEUE, ROUTING_KEY
 
 
-QUEUE = 'notification'
 DEAD_QUEUE = f'{QUEUE}.dead'
 
 
@@ -34,17 +34,14 @@ class TestDeadLetterQueue:
         and lands on the dead-letter queue.
         """
         message = datasource.data_object_factory(
-            'notification_message',
+            'bus_message',
             id_='poison-1',
             attributes={
-                'body': {
-                    'id': 'poison-1',
-                    'type': 'notification',
-                    'context': {'irrelevant': 'payload'}
-                }
+                'body': {'id': 'poison-1', 'type': 'poison', 'context': {}},
+                'routing_key': ROUTING_KEY
             }
         )
-        list(datasource.insert_batch('notification_message', [message]))
+        datasource.insert_batch('bus_message', [message])
 
         def exploding_handler(envelope):
             raise RuntimeError('handler blew up')
@@ -52,7 +49,7 @@ class TestDeadLetterQueue:
         consumer = MessageConsumer(
             RabbitmqConnection(config),
             QUEUE,
-            {'notification': exploding_handler}
+            {'poison': exploding_handler}
         )
         consumer.process_one()
 
@@ -63,12 +60,7 @@ class TestDeadLetterQueue:
         """
         A message that fails envelope validation is also dead-lettered.
         """
-        message = datasource.data_object_factory(
-            'notification_message',
-            id_='poison-2',
-            attributes={'body': {'not': 'an envelope'}}
-        )
-        list(datasource.insert_batch('notification_message', [message]))
+        publish_raw(config, ROUTING_KEY, {'not': 'an envelope'})
 
         consumer = MessageConsumer(
             RabbitmqConnection(config),

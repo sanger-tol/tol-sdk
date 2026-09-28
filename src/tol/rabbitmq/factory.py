@@ -18,10 +18,14 @@ def create_rabbitmq_datasource(config: RabbitmqConfig) -> RabbitmqDataSource:
         """Create a new `RabbitmqConnection` using the given config."""
         return RabbitmqConnection(config)
 
+    def converter_factory() -> DefaultObjectToMessageConverter:
+        """Create a converter stamping messages with the apps id."""
+        return DefaultObjectToMessageConverter(app_id=config.app_name or None)
+
     ds = RabbitmqDataSource(
         config=config,
         connection_factory=connection_factory,
-        to_message_converter_factory=DefaultObjectToMessageConverter
+        to_message_converter_factory=converter_factory
     )
 
     core_data_object(ds)

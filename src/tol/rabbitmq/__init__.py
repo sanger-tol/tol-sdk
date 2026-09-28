@@ -4,6 +4,7 @@
 
 from .config import RabbitmqConfig  # noqa F401
 from .connection import QueueSpec, RabbitmqConnection  # noqa F401
+from .constants import *  # noqa F401
 from .consumer import MessageConsumer  # noqa F401
 from .factory import create_consumer, create_rabbitmq_datasource  # noqa F401
 from .handlers import notification_handler  # noqa F401
