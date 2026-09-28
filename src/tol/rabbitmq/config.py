@@ -20,6 +20,12 @@ class RabbitmqConfig:
     dlx: str = 'tol.dlx'
     use_ssl: bool = False
     write_batch_size: int = 100
+    heartbeat: int = 60
+    blocked_connection_timeout: float = 36.0
+    socket_timeout: float = 10.0
+    connection_attempts: int = 3
+    retry_delay: float = 2.0
+    ca_file: str | None = None
 
     @classmethod
     def from_env(cls, prefix: str = 'RABBITMQ_') -> 'RabbitmqConfig':
@@ -36,4 +42,12 @@ class RabbitmqConfig:
             write_batch_size=int(os.getenv(f'{prefix}WRITE_BATCH_SIZE', 100)),
             app_name=os.getenv(f'{prefix}APP_NAME', ''),
             dlx=os.getenv(f'{prefix}DLX', 'tol.dlx'),
+            heartbeat=int(os.getenv(f'{prefix}HEARTBEAT', '60')),
+            blocked_connection_timeout=float(
+                os.getenv(f'{prefix}BLOCKED_CONNECTION_TIMEOUT', '36')
+            ),
+            socket_timeout=float(os.getenv(f'{prefix}SOCKET_TIMEOUT', '10')),
+            connection_attempts=int(os.getenv(f'{prefix}CONNECTION_ATTEMPTS', '3')),
+            retry_delay=float(os.getenv(f'{prefix}RETRY_DELAY', '2')),
+            ca_file=os.getenv(f'{prefix}CA_FILE') or None,
         )

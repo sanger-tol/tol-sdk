@@ -120,22 +120,39 @@ class RabbitmqConnection:
     def channel(self) -> BlockingChannel:
         """The raw pika channel. Raises if not connected."""
         if self.__channel is None:
-            raise pika.exceptions.ConnectionClosedByBroker(0, 'Not connected')
+            raise RuntimeError('RabbitmqConnection is not connected')
         return self.__channel
 
     def connect(self) -> None:
-        """Connect to RabbitMQ and declare the exchange/queue/binding."""
-        if self.__connection is not None and self.__connection.is_open:
+        """
+        Connect (or reopen a dead channel) and declare the topology.
+        No-op when the connection and channel are both open.
+        """
+        if self.__is_open():
             LOGGER.debug('Already connected to RabbitMQ; skipping connect')
             return
 
-        LOGGER.info(
-            'Connecting to RabbitMQ at %s:%s vhost %s', self.__config.host,
-            self.__config.port, self.__config.vhost)
+        if self.__connection is not None and self.__connection.is_open:
+            LOGGER.warning('RabbitMQ channel closed; reopening')
+        else:
+            LOGGER.info(
+                'Connecting to RabbitMQ at %s:%s vhost %s', self.__config.host,
+                self.__config.port, self.__config.vhost
+            )
 
-        self.__connection = pika.BlockingConnection(self.__build_parameters())
+            self.__connection = pika.BlockingConnection(self.__build_parameters())
+
         self.__channel = self.__connection.channel()
         self.__declare_topology()
+
+    def __is_open(self) -> bool:
+        """Returns true when both the connection and channel are usable."""
+        return (
+            self.__connection is not None
+            and self.__connection.is_open
+            and self.__channel is not None
+            and self.__channel.is_open
+        )
 
     def close(self) -> None:
         """Close the connection to RabbitMQ, if open."""
@@ -149,8 +166,8 @@ class RabbitmqConnection:
         """Build the pika ConnectionParameters from the RabbitmqConfig."""
         ssl_options = None
         if self.__config.use_ssl:
-            ssl_options = pika.SSLOptions(
-                ssl.create_default_context(), self.__config.host)
+            context = ssl.create_default_context(cafile=self.__config.ca_file)
+            ssl_options = pika.SSLOptions(context, self.__config.host)
         return pika.ConnectionParameters(
             host=self.__config.host,
             port=self.__config.port,
@@ -158,7 +175,14 @@ class RabbitmqConnection:
             credentials=pika.PlainCredentials(
                 username=self.__config.username,
                 password=self.__config.password),
-            ssl_options=ssl_options
+            ssl_options=ssl_options,
+            heartbeat=self.__config.heartbeat,
+            blocked_connection_timeout=(
+                self.__config.blocked_connection_timeout
+            ),
+            socket_timeout=self.__config.socket_timeout,
+            connection_attempts=self.__config.connection_attempts,
+            retry_delay=self.__config.retry_delay
         )
 
     def __declare_topology(self) -> None:
