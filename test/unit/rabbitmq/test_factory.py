@@ -97,7 +97,6 @@ def _config_with_app():
         password='test-password',
         vhost='test-vhost',
         exchange='tol',
-        management_url='http://rabbitmq-mgmt:15672',
         app_name='portal'
     )
 

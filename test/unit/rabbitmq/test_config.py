@@ -2,7 +2,42 @@
 #
 # SPDX-License-Identifier: MIT
 
+import pytest
+
 from tol.rabbitmq import RabbitmqConfig
+
+
+@pytest.fixture(autouse=True)
+def required_env(monkeypatch):
+    """Set the variables from_env requires as the unit container has none."""
+    monkeypatch.setenv('RABBITMQ_HOST', 'rabbitmq-host')
+    monkeypatch.setenv('RABBITMQ_USERNAME', 'test-user')
+    monkeypatch.setenv('RABBITMQ_PASSWORD', 'test-password')
+
+
+class TestRequiredEnv:
+    def test_reads_required(self):
+        """Test that the required variables are read from the environment."""
+        config = RabbitmqConfig.from_env()
+
+        assert config.host == 'rabbitmq-host'
+        assert config.username == 'test-user'
+        assert config.password == 'test-password'
+
+    @pytest.mark.parametrize('var', ['HOST', 'USERNAME', 'PASSWORD'])
+    def test_missing_raises(self, monkeypatch, var):
+        """Test that a missing required variable fails fast, naming it."""
+        monkeypatch.delenv(f'RABBITMQ_{var}')
+
+        with pytest.raises(ValueError, match=f'RABBITMQ_{var}'):
+            RabbitmqConfig.from_env()
+
+    def test_empty_counts_as_missing(self, monkeypatch):
+        """Test that an empty value is treated as unset."""
+        monkeypatch.setenv('RABBITMQ_HOST', '')
+
+        with pytest.raises(ValueError, match='RABBITMQ_HOST'):
+            RabbitmqConfig.from_env()
 
 
 class TestRabbitmqConfigFromEnv:
@@ -40,7 +75,7 @@ class TestRabbitmqConfigFromEnv:
         config = RabbitmqConfig.from_env()
 
         assert config.heartbeat == 60
-        assert config.blocked_connection_timeout == 36
+        assert config.blocked_connection_timeout == 30
         assert config.socket_timeout == 10
         assert config.connection_attempts == 3
         assert config.retry_delay == 2

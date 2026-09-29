@@ -5,17 +5,20 @@
 """Helpers for inspecting a real RabbitMQ broker in integration tests."""
 
 import json
+import os
 import time
 
 import requests
 
 from tol.rabbitmq.connection import RabbitmqConnection
 
+MANAGEMENT_URL = os.environ['RABBITMQ_MANAGEMENT_URL']
+
 
 def queue_depth(config, queue):
     """Return the number of messages in the given queue."""
     response = requests.get(
-        f'{config.management_url}/api/queues/%2F/{queue}',
+        f'{MANAGEMENT_URL}/api/queues/%2F/{queue}',
         auth=(config.username, config.password),
         timeout=10
     )
@@ -52,7 +55,7 @@ def wait_for_depth(config, queue, expected, timeout=10):
 def purge(config, queue):
     """Delete all messages from the given queue."""
     requests.delete(
-        f'{config.management_url}/api/queues/%2F/{queue}/contents',
+        f'{MANAGEMENT_URL}/api/queues/%2F/{queue}/contents',
         auth=(config.username, config.password),
         timeout=10
     )
@@ -67,7 +70,7 @@ def peek_messages(config, queue, count=10):
     assert on that flag).
     """
     response = requests.post(
-        f'{config.management_url}/api/queues/%2F/{queue}/get',
+        f'{MANAGEMENT_URL}/api/queues/%2F/{queue}/get',
         json={
             'count': count,
             'ackmode': 'ack_requeue_true',

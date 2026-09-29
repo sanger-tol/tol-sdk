@@ -20,6 +20,7 @@ from tol.rabbitmq.schema import (
 )
 
 QUEUE = 'sdk-test.notify'
+MANAGEMENT_URL = os.environ['RABBITMQ_MANAGEMENT_URL']
 BINDING_KEY = 'notify.sdk-test.#'
 ROUTING_KEY = 'notify.sdk-test.message'
 
@@ -52,7 +53,7 @@ def api_url():
 def purge_queue(config):
     """Purge all messages from the RabbitMQ queue."""
     requests.delete(
-        f'{config.management_url}'
+        f'{MANAGEMENT_URL}'
         f'/api/queues/%2F/{QUEUE}/contents',
         auth=(config.username, config.password),
         timeout=10
@@ -64,7 +65,7 @@ def purge_queue(config):
 def _poll_messages(config, timeout=10):
     """Poll the management API until a message is visible."""
     url = (
-        f'{config.management_url}'
+        f'{MANAGEMENT_URL}'
         f'/api/queues/%2F/{QUEUE}/get'
     )
     payload = {

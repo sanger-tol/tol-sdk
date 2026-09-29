@@ -9,7 +9,12 @@ import requests
 from tol.rabbitmq.connection import RabbitmqConnection
 from tol.rabbitmq.consumer import MessageConsumer
 
-from .broker import publish_raw, purge, queue_depth, wait_for_depth
+from .broker import (
+    MANAGEMENT_URL,
+    publish_raw, purge,
+    queue_depth,
+    wait_for_depth
+)
 from .constants import CREATED_AT, QUEUE, ROUTING_KEY, SOURCE
 
 
@@ -82,7 +87,7 @@ class TestDeadLetterQueue:
     def test_dead_queue_is_bounded(self, config):
         """The dead-letter queue is declared with a max length."""
         response = requests.get(
-            f'{config.management_url}/api/queues/%2F/{DEAD_QUEUE}',
+            f'{MANAGEMENT_URL}/api/queues/%2F/{DEAD_QUEUE}',
             auth=(config.username, config.password),
             timeout=10
         )

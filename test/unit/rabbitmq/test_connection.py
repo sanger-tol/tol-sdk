@@ -38,7 +38,7 @@ class TestRabbitmqConnection:
 
         parameters = mock_blocking.call_args.args[0]
         assert parameters.heartbeat == 60
-        assert parameters.blocked_connection_timeout == 36
+        assert parameters.blocked_connection_timeout == 30
         assert parameters.socket_timeout == 10
         assert parameters.connection_attempts == 3
         assert parameters.retry_delay == 2

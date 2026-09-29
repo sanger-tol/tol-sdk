@@ -6,7 +6,7 @@ import json
 
 import requests
 
-from .broker import peek_messages
+from .broker import MANAGEMENT_URL, peek_messages
 from .constants import CREATED_AT, QUEUE, ROUTING_KEY, SOURCE
 
 
@@ -62,7 +62,7 @@ class TestDataSourceAgainstBroker:
     def test_topology_declared(self, config):
         """Check that the RabbitMQ topology has been declared."""
         response = requests.get(
-            f'{config.management_url}/api/queues/%2F/{QUEUE}',
+            f'{MANAGEMENT_URL}/api/queues/%2F/{QUEUE}',
             auth=(config.username, config.password),
             timeout=10
         )
