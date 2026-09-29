@@ -138,7 +138,7 @@ pacbio_submissions_container_routine AS (
 		spri.spri_type,
 		spri.bead_type,
 		pbsum.submission_date AS completion_date,
-		sr.date_in_lab AS library_prep_receipt_date,
+		sr.date_arrived_in_lab AS library_prep_receipt_date,
 		CASE
 			WHEN lps.id IS NOT NULL
 				THEN DATE(lpsc.created_at$)
@@ -189,7 +189,7 @@ pacbio_submissions_container_routine AS (
 		END
 	LEFT JOIN container$raw AS psbc
 		ON psb.container = psbc.id
-	LEFT JOIN lr_sample_receipt$raw AS sr
+	LEFT JOIN lr_dna_extraction_sample_receipt_output$raw AS sr
 		ON sr.sanger_sample_id = CASE
 			WHEN pbsum.submission_date < DATE '2025-09-01'
 				THEN con.name
@@ -574,7 +574,7 @@ pacbio_submissions_plate_routine AS (
 		spri.spri_type AS spri_type,
 		spri.bead_type AS bead_type,
 		pbsubm_p.created_at$ AS completion_date,
-		sr.date_in_lab AS library_prep_receipt_date,
+		sr.date_arrived_in_lab AS library_prep_receipt_date,
 		CASE
 			WHEN lps.id IS NOT NULL
 				THEN DATE(lpsc.created_at$)
@@ -629,8 +629,8 @@ pacbio_submissions_plate_routine AS (
 		ON lr_proc.sanger_sample_id = ssid.sanger_sample_id
 	LEFT JOIN lr_library_preparation_batch$raw AS lpb
 		ON lr_proc.library_preparation_batch = lpb.id
-	LEFT JOIN lr_sample_receipt$raw AS sr
-		ON subsam.id = sr.contents
+	LEFT JOIN lr_library_preparation_sample_receipt_output$raw AS sr
+		ON sr.sanger_sample_id = ssid.sanger_sample_id
 	LEFT JOIN lr_long_read_library_preparation_b_output$raw AS psb
 		ON psb.sanger_sample_id = ssid.sanger_sample_id
 	LEFT JOIN container$raw AS psbc
@@ -686,7 +686,7 @@ pacbio_submissions_plate_routine_pooled AS (
 		spri.spri_type AS spri_type,
 		spri.bead_type AS bead_type,
 		pbsubm_p.created_at$ AS completion_date,
-		sr.date_in_lab AS library_prep_receipt_date,
+		sr.date_arrived_in_lab AS library_prep_receipt_date,
 		CASE
 			WHEN lps.id IS NOT NULL
 				THEN DATE(lpsc.created_at$)
@@ -741,8 +741,8 @@ pacbio_submissions_plate_routine_pooled AS (
 		ON lr_proc.sanger_sample_id = ssid.sanger_sample_id
 	LEFT JOIN lr_library_preparation_batch$raw AS lpb
 		ON lr_proc.library_preparation_batch = lpb.id
-	LEFT JOIN lr_sample_receipt$raw AS sr
-		ON subsam.id = sr.contents
+	LEFT JOIN lr_library_preparation_sample_receipt_output$raw AS sr
+		ON sr.sanger_sample_id = ssid.sanger_sample_id
 	LEFT JOIN lr_long_read_library_preparation_b_output$raw AS psb
 		ON psb.sanger_sample_id = ssid.sanger_sample_id
 	LEFT JOIN container$raw AS psbc
