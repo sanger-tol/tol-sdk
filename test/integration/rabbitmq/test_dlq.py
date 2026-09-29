@@ -73,7 +73,7 @@ class TestDeadLetterQueue:
 
         assert queue_depth(config, QUEUE) == 0
         assert wait_for_depth(config, DEAD_QUEUE, 1) == 1
-        
+
     def test_dead_queue_is_bounded(self, config):
         """The dead-letter queue is declared with a max length."""
         response = requests.get(
@@ -82,5 +82,5 @@ class TestDeadLetterQueue:
             timeout=10
         )
         response.raise_for_status()
-        
+
         assert response.json()['arguments']['x-max-length'] == 10_000

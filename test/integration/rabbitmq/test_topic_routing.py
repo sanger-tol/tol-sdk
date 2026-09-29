@@ -78,7 +78,7 @@ class TestTopicRouting:
         assert exc_info.value.status_code == 422
         assert queue_depth(config, APP_A_QUEUE) == 0
         assert queue_depth(config, APP_B_QUEUE) == 0
-        
+
     def test_multi_word_subtype_matches(self, config, datasource):
         """'#' matches subtypes spanning several words"""
         _publish(datasource, 'notify.appa.sample.received', 'route-4')
