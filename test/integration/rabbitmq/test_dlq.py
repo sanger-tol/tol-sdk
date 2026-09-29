@@ -10,7 +10,7 @@ from tol.rabbitmq.connection import RabbitmqConnection
 from tol.rabbitmq.consumer import MessageConsumer
 
 from .broker import publish_raw, purge, queue_depth, wait_for_depth
-from .constants import QUEUE, ROUTING_KEY
+from .constants import CREATED_AT, QUEUE, ROUTING_KEY, SOURCE
 
 
 DEAD_QUEUE = f'{QUEUE}.dead'
@@ -39,7 +39,12 @@ class TestDeadLetterQueue:
             'bus_message',
             id_='poison-1',
             attributes={
-                'body': {'id': 'poison-1', 'type': 'poison', 'context': {}},
+                'body': {
+                    'id': 'poison-1',
+                    'type': 'poison',
+                    'source': SOURCE,
+                    'created_at': CREATED_AT,
+                    'context': {}},
                 'routing_key': ROUTING_KEY
             }
         )

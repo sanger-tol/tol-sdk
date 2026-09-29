@@ -2,7 +2,6 @@
 #
 # SPDX-License-Identifier: MIT
 
-import logging
 from collections.abc import Callable
 
 from tol.rabbitmq.consumer import Handler
@@ -14,8 +13,6 @@ from tol.rabbitmq.schema import (
     create_deliveries
 )
 
-LOGGER = logging.getLogger(__name__)
-
 Dispatcher = Callable[[NotificationDelivery], None]
 
 
@@ -26,19 +23,20 @@ def notification_handler(
     Build a handler that fans out a notification envelope
     into per-channel deliveries and dispatches each one.
 
-    Register under the 'notification' message type.
+    Register under the 'notification' message type. Dispatchers must be
+    idempotent on `delivery_id`: a redelivery or DLQ replay re-runs every
+    delivery, including ones that have already succeeded.
     """
     def handle(envelope: MessageEnvelope) -> None:
         request = NotificationRequest.model_validate(envelope.context)
-        for delivery in create_deliveries(request):
-            dispatcher = dispatchers.get(delivery.channel)
-            if dispatcher is None:
-                LOGGER.warning(
-                    'No dispatcher for channel %s, skipping',
-                    delivery.channel
-                )
-                continue
 
-            dispatcher(delivery)
+        missing = set(request.channels) - dispatchers.keys()
+        if missing:
+            raise LookupError(
+                f'No dispatcher for channel(s): {", ".join(sorted(missing))}'
+            )
+
+        for delivery in create_deliveries(request):
+            dispatchers[delivery.channel](delivery)
 
     return handle

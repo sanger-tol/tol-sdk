@@ -11,7 +11,7 @@ from tol.rabbitmq.handlers import notification_handler
 from tol.rabbitmq.schema import NotificationChannel, wrap_in_envelope
 
 from .broker import publish_raw, queue_depth
-from .constants import QUEUE, ROUTING_KEY
+from .constants import QUEUE, ROUTING_KEY, SOURCE
 
 
 @pytest.fixture
@@ -53,7 +53,7 @@ class TestConsumerAgainstBroker:
 
         _publish(
             datasource,
-            wrap_in_envelope(request),
+            wrap_in_envelope(request, SOURCE).model_dump(mode='json'),
             'notification-1'
         )
 

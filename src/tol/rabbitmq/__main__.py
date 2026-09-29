@@ -10,6 +10,7 @@ Run under the restarting supervisor - the process exits on connection loss.
 """
 
 import logging
+
 from .config import RabbitmqConfig
 from .factory import create_consumer
 from .handlers import notification_handler

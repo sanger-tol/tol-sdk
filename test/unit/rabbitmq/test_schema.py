@@ -2,6 +2,8 @@
 #
 # SPDX-License-Identifier: MIT
 
+from datetime import UTC, datetime
+
 from pydantic import ValidationError
 
 import pytest
@@ -11,11 +13,12 @@ from tol.rabbitmq.schema import (
     NotificationChannel,
     NotificationRequest,
     Recipient,
-    create_deliveries
+    create_deliveries,
+    wrap_in_envelope
 )
 
 
-def _request(**overrides) -> dict:
+def _request(**overrides: object) -> dict[str, object]:
     """Return a base notification request dictionary."""
     base = {
         'id': 'notification-1',
@@ -23,6 +26,19 @@ def _request(**overrides) -> dict:
         'type': 'test_type',
         'recipients': [{'email': 'test1@example.com'}],
         'context': {'key': 'value'}
+    }
+    base.update(overrides)
+    return base
+
+
+def _envelope(**overrides) -> dict:
+    """Returns a base message envelope dictionary."""
+    base = {
+        'id': 'env-1',
+        'type': 'send_confirmation',
+        'source': 'portal',
+        'created_at': '2026-09-29T12:00:00Z',
+        'context': {'user': 'me'}
     }
     base.update(overrides)
     return base
@@ -107,7 +123,10 @@ class TestCreateDeliveries:
         ]
         assert {delivery.notification_id
                 for delivery in deliveries} == {'notification-1'}
-        assert len({delivery.delivery_id for delivery in deliveries}) == 4
+        assert [d.delivery_id for d in deliveries] == [
+            'notification-1:email:0', 'notification-1:email:1',
+            'notification-1:slack:0', 'notification-1:slack:1',
+        ]
 
     def test_recipient_fields_carried_over(self):
         """
@@ -131,12 +150,10 @@ class TestMessageEnvelope:
         Test that a MessageEnvelope can be
         round-tripped through model validation.
         """
-        envelope = MessageEnvelope.model_validate({
-            'id': 'env-1',
-            'type': 'send_confirmation',
-            'context': {'user': 'me'}
-        })
+        envelope = MessageEnvelope.model_validate(_envelope())
         assert envelope.version == 1
+        assert envelope.correlation_id is None
+        assert envelope.created_at == datetime(2026, 9, 29, 12, tzinfo=UTC)
 
     def test_requires_type_and_context(self):
         """
@@ -144,6 +161,44 @@ class TestMessageEnvelope:
         """
         with pytest.raises(ValidationError):
             MessageEnvelope.model_validate({'id': 'env-1'})
+
+    @pytest.mark.parametrize('field', ['source', 'created_at'])
+    def test_additional_fields_required(self, field):
+        """Test that source and created_at are required"""
+        body = _envelope()
+        del body[field]
+        with pytest.raises(ValidationError):
+            MessageEnvelope.model_validate(body)
+
+    def test_naive_created_at_rejected(self):
+        """Test that a timezone-less created_at is rejected."""
+        with pytest.raises(ValidationError):
+            MessageEnvelope.model_validate(
+                _envelope(created_at='2026-09-29T12:00:00')
+            )
+
+
+class TestWrapInEnvelope:
+    def test_wraps_request(self):
+        request = NotificationRequest.model_validate(_request())
+
+        envelope = wrap_in_envelope(request, 'portal', correlation_id='c-1')
+
+        assert envelope.id == 'notification-1'
+        assert envelope.type == 'notification'
+        assert envelope.source == 'portal'
+        assert envelope.correlation_id == 'c-1'
+        assert envelope.created_at.tzinfo is not None
+        assert NotificationRequest.model_validate(envelope.context) == request
+
+    def test_json_dum_round_trips(self):
+        """Test that the wire form re-validates as an envelope."""
+        request = NotificationRequest.model_validate(_request())
+
+        body = wrap_in_envelope(request, 'portal').model_dump(mode='json')
+
+        assert isinstance(body['created_at'], str)
+        assert MessageEnvelope.model_validate(body).source == 'portal'
 
 
 class TestEmailChannelRequiresEmails:

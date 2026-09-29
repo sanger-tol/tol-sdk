@@ -8,6 +8,7 @@ from tol.core import DataSourceError
 from tol.rabbitmq.connection import QueueSpec, RabbitmqConnection
 
 from .broker import purge, queue_depth, wait_for_depth
+from .constants import CREATED_AT, SOURCE
 
 APP_A_QUEUE = 'appa.notify'
 APP_B_QUEUE = 'appb.notify'
@@ -41,7 +42,12 @@ def _publish(datasource, routing_key, message_id):
         'bus_message',
         id_=message_id,
         attributes={
-            'body': {'id': message_id, 'type': 'test', 'context': {}},
+            'body': {
+                'id': message_id,
+                'type': 'test',
+                'source': SOURCE,
+                'created_at': CREATED_AT,
+                'context': {}},
             'routing_key': routing_key
         }
     )

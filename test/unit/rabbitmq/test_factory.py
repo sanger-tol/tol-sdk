@@ -16,6 +16,14 @@ from tol.rabbitmq.consumer import MessageConsumer
 from tol.rabbitmq.factory import create_consumer, create_rabbitmq_datasource
 from tol.rabbitmq.rabbitmq_datasource import RabbitmqDataSource
 
+BODY = {
+    'id': 'msg-1',
+    'type': 'test',
+    'source': 'sdk-test',
+    'created_at': '2026-09-29T12:00:00Z',
+    'context': {}
+}
+
 
 def _stub_broker(monkeypatch):
     """Patch pika so `connect()` succeeds without a real broker."""
@@ -37,7 +45,7 @@ def _bus_message(ds):
         'bus_message',
         id_='msg-1',
         attributes={
-            'body': {'id': 'msg-1', 'type': 'test', 'context': {}},
+            'body': BODY,
             'routing_key': 'notify.portal.message'
         }
     )
@@ -62,9 +70,7 @@ def test_returns_configured_datasource(monkeypatch, config):
     assert published['exchange'] == 'notification'
     assert published['routing_key'] == 'notify.portal.message'
     assert published['mandatory'] is True
-    assert json.loads(published['body']) == {
-        'id': 'msg-1', 'type': 'test', 'context': {}
-    }
+    assert json.loads(published['body']) == BODY
     assert published['properties'].message_id == 'msg-1'
     assert published['properties'].app_id is None
 

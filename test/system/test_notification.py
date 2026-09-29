@@ -117,7 +117,8 @@ def _insert_doc(notification_id, **overrides):
             'type': 'bus_message',
             'id': notification_id,
             'attributes': {
-                'body': wrap_in_envelope(request),
+                'body': wrap_in_envelope(
+                    request, 'sdk-test').model_dump(mode='json'),
                 'routing_key': ROUTING_KEY
             }
         }]

@@ -44,6 +44,8 @@ def _envelope(message_id, type_='test', context=None):
     return {
         'id': message_id,
         'type': type_,
+        'source': 'sdk-test',
+        'created_at': '2026-09-29T12:00:00Z',
         'context': context if context is not None else {}
     }
 

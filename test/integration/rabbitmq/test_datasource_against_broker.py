@@ -7,7 +7,7 @@ import json
 import requests
 
 from .broker import peek_messages
-from .constants import QUEUE, ROUTING_KEY
+from .constants import CREATED_AT, QUEUE, ROUTING_KEY, SOURCE
 
 
 def _message(datasource, message_id, num):
@@ -16,7 +16,13 @@ def _message(datasource, message_id, num):
         'bus_message',
         id_=message_id,
         attributes={
-            'body': {'id': message_id, 'type': 'test', 'context': {'n': num}},
+            'body': {
+                'id': message_id,
+                'type': 'test',
+                'source': SOURCE,
+                'created_at': CREATED_AT,
+                'context': {'n': num}
+            },
             'routing_key': ROUTING_KEY
         }
     )

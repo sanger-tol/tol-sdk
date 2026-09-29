@@ -4,6 +4,7 @@
 
 import json
 import signal
+from datetime import UTC, datetime
 from unittest.mock import Mock, PropertyMock, create_autospec
 
 import pika.exceptions
@@ -72,6 +73,8 @@ def _envelope_body(**overrides):
     base = {
         'id': 'message-1',
         'type': 'notification',
+        'source': 'sdk-test',
+        'created_at': '2026-09-29T12:00:00Z',
         'context': {
             'id': 'notification-1',
             'channels': ['email', 'slack'],
@@ -318,6 +321,8 @@ class TestNotificationHandler:
         return MessageEnvelope(
             id='message-1',
             type='notification',
+            source='sdk-test',
+            created_at=datetime(2026, 9, 29, 12, tzinfo=UTC),
             context=context
         )
 
@@ -344,7 +349,7 @@ class TestNotificationHandler:
         assert email_delivery.recipient.email == 'test1@example.com'
         assert email_delivery.type == 'test_type'
         assert email_delivery.context == {'key': 'value'}
-        assert email_delivery.delivery_id
+        assert email_delivery.delivery_id == 'notification-1:email:0'
 
         slack_delivery = slack_dispatcher.call_args.args[0]
         assert slack_delivery.channel == NotificationChannel.SLACK
@@ -352,7 +357,7 @@ class TestNotificationHandler:
             slack_delivery.notification_id
             == email_delivery.notification_id
         )
-        assert slack_delivery.delivery_id != email_delivery.delivery_id
+        assert slack_delivery.delivery_id == 'notification-1:slack:0'
 
     def test_fan_out_per_recipient(self):
         """
@@ -379,19 +384,20 @@ class TestNotificationHandler:
         ]
         assert emails == ['test1@example.com', 'test2@example.com']
 
-    def test_missing_dispatcher_skips_channel(self):
+    def test_missing_dispatcher_raises_before_dispatching(self):
         """
-        Test that a channel with no dispatcher is skipped
-        while registered channels are still dispatched.
+        A channel with no dispatcher raises (-> DLQ) and nothing is
+        dispatched, so a replay after deploy doesn't duplicate the others.
         """
         email_dispatcher = Mock()
         handle = notification_handler({
             NotificationChannel.EMAIL: email_dispatcher
         })
 
-        handle(self._envelope())
+        with pytest.raises(LookupError, match='slack'):
+            handle(self._envelope())
 
-        email_dispatcher.assert_called_once()
+        email_dispatcher.assert_not_called()
 
     def test_invalid_context_raises(self):
         """

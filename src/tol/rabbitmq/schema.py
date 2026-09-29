@@ -2,11 +2,12 @@
 #
 # SPDX-License-Identifier: MIT
 
+from datetime import UTC, datetime
 from enum import StrEnum
 
 from nanoid import generate
 
-from pydantic import BaseModel, Field, model_validator
+from pydantic import AwareDatetime, BaseModel, Field, model_validator
 
 
 def generate_unique_id() -> str:
@@ -28,10 +29,15 @@ class MessageEnvelope(BaseModel):
     """
     Every message on the bus. The consumer routes by `type`;
     each handler owns the meaning of `context`.
+
+    Delivery is at-least-once: handlers must be idempotent on `id`.
     """
     id: str  # noqa A003
     version: int = 1
     type: str  # noqa A003
+    source: str
+    created_at: AwareDatetime
+    correlation_id: str | None = None
     context: dict[str, object]
 
 
@@ -73,14 +79,16 @@ class NotificationDelivery(BaseModel):
 def create_deliveries(notification_request: NotificationRequest
                       ) -> list[NotificationDelivery]:
     """
-    Create a list of `NotificationDelivery`
-    instances for the given `NotificationRequest`.
+    Fan out a request into one delivery per (channel, recipient).
+
+    `delivery_id` is deterministic, so a redelivered request produces the
+    same ids, senders will deduplicate it.
     """
     return [
         NotificationDelivery(
             notification_id=notification_request.id,
             version=notification_request.version,
-            delivery_id=generate_unique_id(),
+            delivery_id=f'{notification_request.id}:{channel}:{index}',
             channel=channel,
             recipient=Recipient(
                 user_id=recipient.user_id,
@@ -90,17 +98,25 @@ def create_deliveries(notification_request: NotificationRequest
             context=notification_request.context,
         )
         for channel in notification_request.channels
-        for recipient in notification_request.recipients
+        for index, recipient in enumerate(notification_request.recipients)
     ]
 
 
-def wrap_in_envelope(request: NotificationRequest) -> dict:
+def wrap_in_envelope(
+    request: NotificationRequest,
+    source: str,
+    correlation_id: str | None = None
+) -> MessageEnvelope:
     """
-    Serialise a NotificationRequest as an envelope payload for publishing
+    Wrap a NotificationRequest in a bus envelope.
+    Publish with `.model_dump(mode='json')`.
     """
-    return {
-        'id': request.id,
-        'version': request.version,
-        'type': 'notification',
-        'context': request.model_dump(mode='json')
-    }
+    return MessageEnvelope(
+        id=request.id,
+        version=request.version,
+        type='notification',
+        source=source,
+        created_at=datetime.now(UTC),
+        correlation_id=correlation_id,
+        context=request.model_dump(mode='json'),
+    )
