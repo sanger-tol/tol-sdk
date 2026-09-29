@@ -53,7 +53,7 @@ class TestDeadLetterQueue:
             QUEUE,
             {'poison': exploding_handler}
         )
-        consumer.process_one()
+        assert consumer.process_one()
 
         assert queue_depth(config, QUEUE) == 0
         assert wait_for_depth(config, DEAD_QUEUE, 1) == 1
@@ -69,7 +69,7 @@ class TestDeadLetterQueue:
             QUEUE,
             {}
         )
-        consumer.process_one()
+        assert consumer.process_one()
 
         assert queue_depth(config, QUEUE) == 0
         assert wait_for_depth(config, DEAD_QUEUE, 1) == 1

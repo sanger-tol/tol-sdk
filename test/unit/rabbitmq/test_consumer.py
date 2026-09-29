@@ -6,6 +6,7 @@ import json
 import signal
 from unittest.mock import Mock, PropertyMock, create_autospec
 
+import pika.exceptions
 from pika.spec import Basic
 
 from pydantic import ValidationError
@@ -193,22 +194,37 @@ class TestStartStop:
         restore_signal_handlers
     ):
         """
-        Test that starting the consumer sets up the connection,
-        begins consuming messages, and registers signal handlers.
+        start() connects, consumes and closes when the loop exits.
         """
-
         consumer.start()
 
         mock_connection.connect.assert_called_once()
         mock_channel.basic_qos.assert_called_once_with(prefetch_count=1)
-        mock_channel.basic_consume.assert_called_once()
         assert (
             mock_channel.basic_consume.call_args.kwargs['queue']
             == 'notification'
         )
         mock_channel.start_consuming.assert_called_once()
+        mock_connection.close.assert_called_once()
 
-    def test_signal_handlers_stop_consuming(
+    def test_start_closes_on_connection_loss(
+        self,
+        consumer,
+        mock_connection,
+        mock_channel,
+        restore_signal_handlers
+    ):
+        """A consume-loop error still closes, then propagates."""
+        mock_channel.start_consuming.side_effect = (
+            pika.exceptions.StreamLostError('gone')
+        )
+
+        with pytest.raises(pika.exceptions.StreamLostError):
+            consumer.start()
+
+        mock_connection.close.assert_called_once()
+
+    def test_signal_requests_threadsafe_stop(
         self,
         consumer,
         mock_connection,
@@ -216,49 +232,73 @@ class TestStartStop:
         restore_signal_handlers
     ):
         """
-        Test that the signal handlers for SIGINT and SIGTERM
-        stop consuming and close the connection.
-        """
-        consumer.start()
-
-        handler = signal.getsignal(signal.SIGTERM)
-        assert callable(handler)
-
-        handler(signal.SIGTERM, None)
-
-        mock_channel.stop_consuming.assert_called_once()
-        mock_connection.close.assert_called_once()
-
-    def test_stop_without_start_is_safe(self, consumer, mock_connection):
-        """
-        Test that calling stop() without start() does not raise an error.
-        """
-        consumer.stop()
-
-        mock_connection.close.assert_called_once()
-
-    def test_process_one(
-        self,
-        consumer,
-        mock_connection,
-        mock_channel
-    ):
-        """
-        Test that process_one() processes a single message and then stops.
+        SIGTERM schedule stop_consuming on the ioloop instead of calling it
+        directly, and does not close the connection itself.
         """
         connection_events = Mock()
         type(mock_channel).connection = PropertyMock(
             return_value=connection_events
         )
+        consumer.start()
+        mock_connection.close.reset_mock()
 
-        consumer.process_one()
+        handler = signal.getsignal(signal.SIGTERM)
+        assert callable(handler)
+        handler(signal.SIGTERM, None)
 
-        mock_connection.connect.assert_called_once()
-        mock_channel.basic_consume.assert_called_once()
+        connection_events.add_callback_threadsafe.assert_called_once_with(
+            mock_channel.stop_consuming
+        )
+
+        mock_channel.stop_consuming.assert_not_called()
+        mock_connection.close.assert_not_called()
+
+    def test_stop_without_start_is_noop(self, consumer, mock_connection):
+        """stop() before start() does nothing."""
+        consumer.stop()
+
+        mock_connection.close.assert_not_called()
+
+    def test_process_one_times_out(
+        self,
+        consumer,
+        mock_connection,
+        mock_channel
+    ):
+        """No delivery within the timne limit returns False and closes."""
+        connection_events = Mock()
+        type(mock_channel).connection = PropertyMock(
+            return_value=connection_events
+        )
+
+        assert consumer.process_one() is False
+
         connection_events.process_data_events.assert_called_once_with(
             time_limit=5
         )
-        mock_channel.stop_consuming.assert_called_once()
+        mock_connection.close.assert_called_once()
+
+    def test_process_one_handles_message(
+        self,
+        consumer,
+        mock_connection,
+        mock_channel,
+        handler
+    ):
+        """A delivered message returns True."""
+        connection_events = Mock()
+        connection_events.process_data_events.side_effect = (
+            lambda time_limit: _on_message(
+                consumer, mock_channel, _envelope_body()
+            )
+        )
+        type(mock_channel).connection = PropertyMock(
+            return_value=connection_events
+        )
+
+        assert consumer.process_one() is True
+
+        handler.assert_called_once()
         mock_connection.close.assert_called_once()
 
 

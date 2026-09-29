@@ -178,7 +178,7 @@ class TestNotificationSystem:
                 })
             }
         )
-        consumer.process_one()
+        assert consumer.process_one()
 
         assert len(received) == 2
         assert {d.notification_id for d in received} == {

@@ -68,7 +68,7 @@ class TestConsumerAgainstBroker:
             {'notification': notification_handler(dispatchers)}
         )
 
-        consumer.process_one()
+        assert consumer.process_one()
 
         assert len(received) == 4
         assert {d.notification_id for d in received} == {'notification-1'}
@@ -96,7 +96,7 @@ class TestConsumerAgainstBroker:
             )}
         )
 
-        consumer.process_one()
+        assert consumer.process_one()
 
         assert received == []
         assert queue_depth(config, QUEUE) == 0
