@@ -2,17 +2,19 @@
 #
 # SPDX-License-Identifier: MIT
 
-import pytest
+import multiprocessing
+import os
+import time
 
-import requests
+import pytest
 
 from tol.rabbitmq.connection import RabbitmqConnection
 from tol.rabbitmq.consumer import MessageConsumer
 
 from .broker import (
-    MANAGEMENT_URL,
     publish_raw, purge,
     queue_depth,
+    queue_info,
     wait_for_depth
 )
 from .constants import CREATED_AT, QUEUE, ROUTING_KEY, SOURCE
@@ -28,6 +30,30 @@ def purge_dead_queue(config):
     wait_for_depth(config, DEAD_QUEUE, 0)
 
     yield
+
+
+def _get_then_crash(config):
+    """Child process: take the message unacked, then die without closing."""
+    connection = RabbitmqConnection(config)
+    connection.connect()
+    deadline = time.monotonic() + 5
+    while time.monotonic() < deadline:
+        method, _, _ = connection.channel.basic_get(QUEUE, auto_ack=False)
+        if method is not None:
+            os._exit(0)
+        time.sleep(0.2)
+    os._exit(1)
+
+
+def _crashed_delivery(config):
+    """
+    Returns True if a consumer received the message and then crashed;
+    False once the broker stops serving it.
+    """
+    process = multiprocessing.Process(target=_get_then_crash, args=(config,))
+    process.start()
+    process.join(timeout=15)
+    return process.exitcode == 0
 
 
 class TestDeadLetterQueue:
@@ -84,13 +110,29 @@ class TestDeadLetterQueue:
         assert queue_depth(config, QUEUE) == 0
         assert wait_for_depth(config, DEAD_QUEUE, 1) == 1
 
-    def test_dead_queue_is_bounded(self, config):
-        """The dead-letter queue is declared with a max length."""
-        response = requests.get(
-            f'{MANAGEMENT_URL}/api/queues/%2F/{DEAD_QUEUE}',
-            auth=(config.username, config.password),
-            timeout=10
-        )
-        response.raise_for_status()
+    def test_queue_arguments(self, config):
+        """App and dead queues are quorum with the expected limits."""
+        main = queue_info(config, QUEUE)
+        dead = queue_info(config, DEAD_QUEUE)
 
-        assert response.json()['arguments']['x-max-length'] == 10_000
+        assert main['type'] == 'quorum'
+        assert main['arguments']['x-delivery-limit'] == 5
+        assert main['arguments']['x-dead-letter-strategy'] == 'at-least-once'
+        assert dead['type'] == 'quorum'
+        assert dead['arguments']['x-max-length'] == 10_000
+
+    def test_redelivery_after_crash_is_bounded(self, config):
+        """
+        A message whose consumer keeps dying before the ack is
+        dead-lettered after the delivery limit, not redelivered forever.
+        """
+        publish_raw(config, ROUTING_KEY, {'not': 'acked'})
+
+        deliveries = 0
+        for _ in range(10):
+            if not _crashed_delivery(config):
+                break
+            deliveries += 1
+
+        assert deliveries <= 6
+        assert wait_for_depth(config, DEAD_QUEUE, 1) == 1

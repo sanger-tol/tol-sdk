@@ -100,7 +100,7 @@ integration-test-python-package:
   image: $BUILT_IMAGE
   stage: integration test
   services:
-    - name: rabbitmq:3-management
+    - name: rabbitmq:4.3-management
       alias: rabbitmq
   variables:
     TEST_TYPE: integration

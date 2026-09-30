@@ -28,6 +28,7 @@ class RabbitmqConfig:
     connection_attempts: int = 3
     retry_delay: float = 2.0
     ca_file: str | None = None
+    declare_exchanges: bool = True
 
     @classmethod
     def from_env(cls, prefix: str = 'RABBITMQ_') -> 'RabbitmqConfig':
@@ -60,4 +61,7 @@ class RabbitmqConfig:
             connection_attempts=int(os.getenv(f'{prefix}CONNECTION_ATTEMPTS', '3')),
             retry_delay=float(os.getenv(f'{prefix}RETRY_DELAY', '2')),
             ca_file=os.getenv(f'{prefix}CA_FILE') or None,
+            declare_exchanges=os.getenv(
+                f'{prefix}DECLARE_EXCHANGES', 'true'
+            ).lower() == 'true'
         )

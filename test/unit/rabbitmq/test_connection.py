@@ -4,7 +4,7 @@
 
 import dataclasses
 import ssl
-from unittest.mock import Mock, create_autospec
+from unittest.mock import Mock, create_autospec, call
 
 import pytest
 
@@ -79,6 +79,18 @@ class TestRabbitmqConnection:
         assert mock_pika_connection.channel.call_count == 2
         assert mock_channel.exchange_declare.call_count == 4
 
+    def test_declare_exchanges_flag_reaches_topology(
+        self, config, pika_stub, mock_channel
+    ):
+        """config.declare_excahges=False make exchange declares passive."""
+        config = dataclasses.replace(config, declare_exchanges=False)
+
+        RabbitmqConnection(config).connect()
+
+        mock_channel.exchange_declare.assert_any_call(
+            exchange=config.exchange, passive=True
+        )
+
 
 class TestDeclareTopology:
     def test_queue_with_dlq(self, mock_channel):
@@ -111,8 +123,12 @@ class TestDeclareTopology:
             queue='portal.notify',
             durable=True,
             arguments={
+                'x-queue-type': 'quorum',
+                'x-delivery-limit': 5,
                 'x-dead-letter-exchange': 'tol.dlx',
-                'x-dead-letter-routing-key': 'dead.portal.notify'
+                'x-dead-letter-routing-key': 'dead.portal.notify',
+                'x-dead-letter-strategy': 'at-least-once',
+                'x-overflow': 'reject-publish'
             }
         )
         mock_channel.queue_bind.assert_any_call(
@@ -123,7 +139,7 @@ class TestDeclareTopology:
         mock_channel.queue_declare.assert_any_call(
             queue='portal.notify.dead',
             durable=True,
-            arguments={'x-max-length': 10_000}
+            arguments={'x-queue-type': 'quorum', 'x-max-length': 10_000}
         )
         mock_channel.queue_bind.assert_any_call(
             queue='portal.notify.dead',
@@ -151,7 +167,7 @@ class TestDeclareTopology:
         mock_channel.queue_declare.assert_called_once_with(
             queue='q',
             durable=True,
-            arguments=None
+            arguments={'x-queue-type': 'quorum', 'x-delivery-limit': 5}
         )
 
     def test_dead_max_length_is_configurable(self, mock_channel):
@@ -169,8 +185,40 @@ class TestDeclareTopology:
         mock_channel.queue_declare.assert_any_call(
             queue='q.dead',
             durable=True,
-            arguments={'x-max-length': 5}
+            arguments={'x-queue-type': 'quorum', 'x-max-length': 5}
         )
+
+    def test_delivery_limit_is_configurable(self, mock_channel):
+        """The redelivery cap can be set per queue."""
+        specs = [
+            QueueSpec(
+                name='q',
+                binding_keys=('notify.q.#',),
+                dead_letter=False,
+                delivery_limit=2
+            )
+        ]
+
+        declare_topology(mock_channel, 'tol', specs, dlx='tol.dlx')
+
+        mock_channel.queue_declare.assert_called_once_with(
+            queue='q',
+            durable=True,
+            arguments={'x-queue-type': 'quorum', 'x-delivery-limit': 2}
+        )
+
+    def test_passives_exchanges(self, mock_channel):
+        """
+        Already declared (ops/default) queues are only checked never declared.
+        """
+        declare_topology(
+            mock_channel, 'tol', [], dlx='tol.dlx', declare_exchanges=False
+        )
+
+        assert mock_channel.exchange_declare.call_args_list == [
+            call(exchange='tol', passive=True),
+            call(exchange='tol.dlx', passive=True)
+        ]
 
 
 class TestQueueSpec:

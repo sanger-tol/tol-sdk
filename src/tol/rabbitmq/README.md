@@ -15,9 +15,18 @@ messages between ToL applications.
 | -------------------- | ----------------------- | ----------------------------- |
 | Exchange             | `tol` (topic)           | `RABBITMQ_EXCHANGE`           |
 | Dead-letter exchange | `tol.dlx`               | `RABBITMQ_DLX`                |
-| App queue            | `<app>.<category>`      | e.g. `portal.notify`          |
+| App queue            | `<app>.<category>`      | e.g. `portal.notify`; quorum  |
 | Binding              | `<category>.<app>.#`    | declared by `create_consumer` |
-| Dead queue           | `<app>.<category>.dead` | `x-max-length` 10000          |
+| Dead queue           | `<app>.<category>.dead` | quorum, `x-max-length` 10000  |
+
+All queues are quorum queues (RabbitMQ 4.x). App queues also set:
+
+- `x-delivery-limit` 5 (`QueueSpec.delivery_limit`). This caps
+  redeliveries of a message that keeps killing its consumer before the
+  ack. Once the limit is reached, the message is dead-lettered.
+- `x-dead-letter-strategy: at-least-once`, so a dead-lettered message is
+  not lost if the dead queue is briefly unavailable. This requires
+  `x-overflow: reject-publish`.
 
 Routing keys are `<category>.<app>.<subtype>[.<more>]`: at least three
 dot-separated words of `[a-z0-9_-]`, with no wildcards. Examples:
@@ -189,6 +198,23 @@ Dedupe on `envelope.id` (handlers) or `delivery_id` (dispatchers).
 - A handler blocks heartbeats while it runs. Keep handlers well under
   `RABBITMQ_HEARTBEAT`.
 
+### Broker setup (staging/production)
+
+- Ops own the exchanges `tol` and `tol.dlx` and create them from the
+  broker definitions file. Apps run with `RABBITMQ_DECLARE_EXCHANGES=false`,
+  so the SDK only checks passively that the exchanges exist; if one is
+  missing, the app fails at startup.
+- Create one broker user per app per vhost (`staging`, `production`),
+  with these permissions:
+
+| Permission | Pattern                        |
+| ---------- | ------------------------------ |
+| configure  | `^<app>\..*$`                  |
+| write      | `^(tol\|tol\.dlx\|<app>\..*)$` |
+| read       | `^(tol\|tol\.dlx\|<app>\..*)$` |
+
+- Alert when any `*.dead` queue has a depth greater than 0.
+
 ## Environment variables
 
 Prefix `RABBITMQ_` (change it via `RabbitmqConfig.from_env(prefix=...)`).
@@ -202,6 +228,7 @@ Prefix `RABBITMQ_` (change it via `RabbitmqConfig.from_env(prefix=...)`).
 | `VHOST`                      | `/`          |                                                         |
 | `EXCHANGE`                   | `tol`        |                                                         |
 | `DLX`                        | `tol.dlx`    |                                                         |
+| `DECLARE_EXCHANGES`          | `true`       | `false` in staging/prod: exchanges are ops-owned        |
 | `APP_NAME`                   | `''`         | required by `create_consumer`; stamped as AMQP `app_id` |
 | `USE_SSL`                    | `false`      |                                                         |
 | `CA_FILE`                    | unset        | CA bundle for an internal CA                            |

@@ -22,6 +22,7 @@ class QueueSpec:
     binding_keys: tuple[str, ...]
     dead_letter: bool = True
     dead_max_length: int = 10_000
+    delivery_limit: int = 5
 
     def __post_init__(self) -> None:
         # ('key') is a str, not a tuple, it would bind one chartacter at a time
@@ -37,28 +38,42 @@ def declare_topology(
     exchange: str,
     specs: list[QueueSpec],
     dlx: str | None = None,
+    declare_exchanges: bool = True
 ) -> None:
-    """Declare the topic exchange plus each QueueSpec's queue/bindings/DLQ."""
-    channel.exchange_declare(
-        exchange=exchange,
-        exchange_type='topic',
-        durable=True
-    )
+    """
+    Declare the exchanges plus each QueueSpec's quorum queue, bindings
+    and dead-letter queue.
 
-    if dlx is not None:
-        channel.exchange_declare(
-            exchange=dlx,
-            exchange_type='topic',
-            durable=True
-        )
+    With `declare_exchanges=False` the exchanges should already exist and 
+    will not cause errors on config mismatch.
+    The system will fail fast if this is not the case.
+    """
+    for name in (exchange, dlx):
+        if name is None:
+            continue
+        if declare_exchanges:
+            channel.exchange_declare(
+                exchange=name,
+                exchange_type='topic',
+                durable=True
+            )
+        else:
+            channel.exchange_declare(exchange=name, passive=True)
 
     for spec in specs:
-        arguments = None
+        arguments: dict[str, object] = {
+            'x-queue-type': 'quorum',
+            'x-delivery-limit': spec.delivery_limit
+        }
+
         if spec.dead_letter and dlx is not None:
-            arguments = {
+            arguments |= {
                 'x-dead-letter-exchange': dlx,
-                'x-dead-letter-routing-key': f'dead.{spec.name}'
+                'x-dead-letter-routing-key': f'dead.{spec.name}',
+                'x-dead-letter-strategy': 'at-least-once',
+                'x-overflow': 'reject-publish',
             }
+
         channel.queue_declare(
             queue=spec.name,
             durable=True,
@@ -77,7 +92,10 @@ def declare_topology(
             channel.queue_declare(
                 queue=dead_queue,
                 durable=True,
-                arguments={'x-max-length': spec.dead_max_length}
+                arguments={
+                    'x-queue-type': 'quorum',
+                    'x-max-length': spec.dead_max_length
+                }
             )
             channel.queue_bind(
                 queue=dead_queue,
@@ -187,11 +205,12 @@ class RabbitmqConnection:
 
     def __declare_topology(self) -> None:
         """
-        Declare the exchange, queue, and binding for the notification system.
+        Declare the parameters, and binding for the notification system.
         """
         declare_topology(
             self.channel,
             self.__config.exchange,
             self.__specs,
-            dlx=self.__config.dlx
+            dlx=self.__config.dlx,
+            declare_exchanges=self.__config.declare_exchanges
         )

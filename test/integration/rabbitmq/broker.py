@@ -15,15 +15,20 @@ from tol.rabbitmq.connection import RabbitmqConnection
 MANAGEMENT_URL = os.environ['RABBITMQ_MANAGEMENT_URL']
 
 
-def queue_depth(config, queue):
-    """Return the number of messages in the given queue."""
+def queue_info(config, queue):
+    """Returns the management API's description of a queue."""
     response = requests.get(
         f'{MANAGEMENT_URL}/api/queues/%2F/{queue}',
         auth=(config.username, config.password),
         timeout=10
     )
     response.raise_for_status()
-    return response.json().get('messages', 0)
+    return response.json()
+
+
+def queue_depth(config, queue):
+    """Return the number of messages in the given queue."""
+    return queue_info(config, queue).get('messages', 0)
 
 
 def wait_for_depth(config, queue, expected, timeout=10):

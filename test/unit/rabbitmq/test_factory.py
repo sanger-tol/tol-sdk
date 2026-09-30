@@ -117,8 +117,12 @@ class TestCreateConsumer:
             queue='portal.notify',
             durable=True,
             arguments={
+                'x-queue-type': 'quorum',
+                'x-delivery-limit': 5,
                 'x-dead-letter-exchange': 'tol.dlx',
-                'x-dead-letter-routing-key': 'dead.portal.notify'
+                'x-dead-letter-routing-key': 'dead.portal.notify',
+                'x-dead-letter-strategy': 'at-least-once',
+                'x-overflow': 'reject-publish'
             }
         )
         mock_channel.queue_bind.assert_any_call(
