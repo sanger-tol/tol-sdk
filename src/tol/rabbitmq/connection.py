@@ -44,7 +44,7 @@ def declare_topology(
     Declare the exchanges plus each QueueSpec's quorum queue, bindings
     and dead-letter queue.
 
-    With `declare_exchanges=False` the exchanges should already exist and 
+    With `declare_exchanges=False` the exchanges should already exist and
     will not cause errors on config mismatch.
     The system will fail fast if this is not the case.
     """
