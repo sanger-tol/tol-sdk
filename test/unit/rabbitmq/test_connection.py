@@ -4,7 +4,7 @@
 
 import dataclasses
 import ssl
-from unittest.mock import Mock, create_autospec, call
+from unittest.mock import Mock, call, create_autospec
 
 import pytest
 

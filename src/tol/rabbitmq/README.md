@@ -1,3 +1,9 @@
+<!--
+SPDX-FileCopyrightText: 2026 Genome Research Ltd.
+
+SPDX-License-Identifier: MIT
+-->
+
 # tol.rabbitmq — the ToL message bus
 
 A thin layer over RabbitMQ (pika, blocking) for publishing and consuming
