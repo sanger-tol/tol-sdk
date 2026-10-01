@@ -7,7 +7,6 @@ import ssl
 from dataclasses import dataclass
 
 import pika
-import pika.exceptions
 from pika.adapters.blocking_connection import BlockingChannel
 
 from tol.rabbitmq.config import RabbitmqConfig
@@ -25,7 +24,7 @@ class QueueSpec:
     delivery_limit: int = 5
 
     def __post_init__(self) -> None:
-        # ('key') is a str, not a tuple, it would bind one chartacter at a time
+        # if ('key') is a str, not a tuple, it would bind one chartacter at a time
         if isinstance(self.binding_keys, str):
             raise TypeError(
                 f'QueueSpec {self.name!r}: binding_keys must be a tuple, '
@@ -48,6 +47,8 @@ def declare_topology(
     will not cause errors on config mismatch.
     The system will fail fast if this is not the case.
     """
+
+    # Declare the main exchange and the dead-letter exchange (if any) first.
     for name in (exchange, dlx):
         if name is None:
             continue
@@ -66,6 +67,8 @@ def declare_topology(
             'x-delivery-limit': spec.delivery_limit
         }
 
+        # Prepare the arguments for the main queue,
+        # including dead-letter settings if applicable.
         if spec.dead_letter and dlx is not None:
             arguments |= {
                 'x-dead-letter-exchange': dlx,
@@ -74,12 +77,14 @@ def declare_topology(
                 'x-overflow': 'reject-publish',
             }
 
+        # Declare the main queue with the prepared arguments.
         channel.queue_declare(
             queue=spec.name,
             durable=True,
             arguments=arguments
         )
 
+        # Declare the bindings for the main queue.
         for key in spec.binding_keys:
             channel.queue_bind(
                 queue=spec.name,
@@ -87,6 +92,7 @@ def declare_topology(
                 routing_key=key
             )
 
+        # Declare the dead-letter queue and its binding if applicable.
         if spec.dead_letter and dlx is not None:
             dead_queue = f'{spec.name}.dead'
             channel.queue_declare(
@@ -97,6 +103,8 @@ def declare_topology(
                     'x-max-length': spec.dead_max_length
                 }
             )
+
+            # Bind the dead-letter queue to the dead-letter exchange.
             channel.queue_bind(
                 queue=dead_queue,
                 exchange=dlx,
@@ -177,6 +185,7 @@ class RabbitmqConnection:
         if self.__connection is not None and self.__connection.is_open:
             LOGGER.info('Closing RabbitMQ connection')
             self.__connection.close()
+
         self.__connection = None
         self.__channel = None
 
@@ -186,6 +195,7 @@ class RabbitmqConnection:
         if self.__config.use_ssl:
             context = ssl.create_default_context(cafile=self.__config.ca_file)
             ssl_options = pika.SSLOptions(context, self.__config.host)
+
         return pika.ConnectionParameters(
             host=self.__config.host,
             port=self.__config.port,

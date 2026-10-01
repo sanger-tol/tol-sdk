@@ -11,7 +11,35 @@ _REQUIRED = ('HOST', 'USERNAME', 'PASSWORD')
 
 @dataclass(frozen=True, slots=True)
 class RabbitmqConfig:
-    """Configuration for connecting to RabbitMQ."""
+    """Configuration for connecting to RabbitMQ.
+
+    Attributes:
+        host (str): RabbitMQ broker hostname or IP address.
+        port (int): AMQP port to connect to, typically 5672.
+        username (str): Account name used to authenticate to RabbitMQ.
+        password (str): Password corresponding to ``username``.
+        vhost (str): Virtual host namespace to connect to, usually ``/``.
+        exchange (str): Default exchange name used for publishing messages.
+        app_name (str): Optional application name reported in client metadata.
+        dlx (str): Dead-letter exchange name used when messages are rejected or
+            expired.
+        use_ssl (bool): Whether TLS/SSL should be enabled for the connection.
+        write_batch_size (int): Number of messages to buffer before flushing a
+            batch.
+        heartbeat (int): Server/client heartbeat interval in seconds to detect
+            dead connections.
+        blocked_connection_timeout (float): Maximum time in seconds that a
+            connection may remain blocked before timing out.
+        socket_timeout (float): Timeout in seconds for socket read/write
+            operations.
+        connection_attempts (int): Number of times to retry establishing a
+            connection.
+        retry_delay (float): Delay in seconds between retry attempts.
+        ca_file (str | None): Optional path to a CA certificate file for TLS
+            verification.
+        declare_exchanges (bool): Whether required exchanges should be declared on
+            the broker automatically when the client starts.
+    """
     host: str
     port: int
     username: str

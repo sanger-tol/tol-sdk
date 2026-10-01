@@ -27,11 +27,13 @@ def main() -> None:
     )
 
     # Log only dispatchers until real ones exist
+    # Create dispatchers: <key>: <fn>
     dispatchers = {
         NotificationChannel.EMAIL: lambda d: LOGGER.info('EMAIL: %s', d),
         NotificationChannel.SLACK: lambda d: LOGGER.info('SLACK: %s', d)
     }
 
+    # Create the consumer and pass in config & handlers
     consumer = create_consumer(
         RabbitmqConfig.from_env(),
         handlers={'notification': notification_handler(dispatchers)}
