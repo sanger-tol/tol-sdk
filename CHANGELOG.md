@@ -6,6 +6,12 @@ SPDX-License-Identifier: MIT
 
 # Changelog
 
+## tol-sdk `2.9.0`
+
+01-10-2026
+
+- Rabbitmq Datasource, consumer & messages
+
 ## tol-sdk `2.8.1`
 
 23-09-2026
