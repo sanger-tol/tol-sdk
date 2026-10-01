@@ -134,5 +134,5 @@ class TestDeadLetterQueue:
                 break
             deliveries += 1
 
-        assert deliveries <= 6
+        assert deliveries == 6
         assert wait_for_depth(config, DEAD_QUEUE, 1) == 1
