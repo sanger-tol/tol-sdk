@@ -51,7 +51,8 @@ class TopupAction(Action):
         portaldb_ds = portaldb()
         data_source_instance = portaldb_ds.get_one('data_source_instance', 'tol_production')
         eds = DataSourceUtils.get_datasource_by_datasource_instance(
-            data_source_instance
+            data_source_instance,
+            direct=True
         )
         sts_ds = sts()
         benchling_superuser = benchling()

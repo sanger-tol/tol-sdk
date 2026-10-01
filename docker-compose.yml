@@ -155,6 +155,7 @@ services:
       - ELASTIC_USER
       - ELASTIC_PASSWORD
       - ELASTIC_INDEX_PREFIX
+      - QUASAR_URL
       - RABBITMQ_HOST=tol-sdk-python-rabbitmq
       - RABBITMQ_PORT=5672
       - RABBITMQ_USERNAME=test-user

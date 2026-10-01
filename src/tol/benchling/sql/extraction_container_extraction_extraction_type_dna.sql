@@ -167,8 +167,7 @@ latest_femto AS (
     WHERE ranked.rn = 1
 ),
 
--- Latest decision making per (sample, tube). This schema stores the current tube
--- in sample_tube_id (jsonb array).
+-- Latest decision making per (sample, tube). This schema stores the current tube in sample_tube_id (jsonb array).
 latest_decision_making AS (
     SELECT
         sample_id,

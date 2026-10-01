@@ -475,6 +475,43 @@ class TestEndToEnd:
         assert ret.list_column is None
 
     @against(elastic, api_elastic)
+    def test_enriched_relation_provenanced_attribute(
+        self,
+        data_source: OperableDataSource,
+        ds_sleep
+    ):
+        """
+        Enrichment flattens the related object, so a provenanced attribute of `related`
+        is held as a plain value on the enriched relation and must still be returned.
+        """
+
+        rel_obj = data_source.data_object_factory(
+            'related',
+            'rel_prov',
+            attributes={
+                'str_column': 'related_value',
+                'str_column_prov': 'enriched_value',
+            },
+        )
+        root_obj = data_source.data_object_factory(
+            'root',
+            'root_prov',
+            attributes={'str_column': 'root_value'},
+            to_one={'related_object': rel_obj},
+        )
+
+        if data_source.write_mode['root'] == RelationWriteMode.SEPARATE:
+            data_source.upsert('related', [rel_obj], provenance='source1')
+        data_source.upsert('root', [root_obj], provenance='source1')
+        ds_sleep(2)  # Let Elastic settle down after the upsert
+
+        ret = data_source.get_one('root', 'root_prov')
+
+        assert ret.related_object.id == 'rel_prov'
+        assert ret.related_object.str_column == 'related_value'
+        assert ret.related_object.str_column_prov == 'enriched_value'
+
+    @against(elastic, api_elastic)
     def test_upsert_with_multiple_sources(self, data_source: OperableDataSource, ds_sleep):
         """
         Test that upserting with multiple sources works as expected, and provenance is correct.
@@ -573,6 +610,17 @@ class TestEndToEnd:
         assert len(ret) == 1
         assert ret[0].str_column_prov == '1'
         assert ret[0].related_object.id == '1'
+
+        # A specific provenance source in `requested_fields` resolves to the attribute
+        # it belongs to, whose value is served in the provenance object.
+        ret = list(data_source.get_list(
+            'root',
+            object_filters=f,
+            requested_fields=['str_column_prov[source4]']
+        ))
+        assert len(ret) == 1
+        assert ret[0].str_column_prov == '1'
+        assert ret[0].get_field_by_name('str_column_prov[source4]') == '2'
 
         # Check that provenanced fields can be used in filters
         f = DataSourceFilter()

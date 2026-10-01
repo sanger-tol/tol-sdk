@@ -65,9 +65,12 @@ class DefaultElasticApiParser(DataSourceParser[ElasticApiResource, DataObject]):
             return None
 
     def _convert_data_dict_to_data_object(self, type_, id_, data, runtime_data):
+        # Enrichment flattens a related object, so its provenanced attributes arrive as
+        # plain values and must be treated as standard attributes.
         direct_provenance_attrs = {
             k for k in self._data_source.provenance_fields.get(type_, {})
             if not k.endswith('.id')
+            and not self.__is_enriched_value(data.get(k))
         }
 
         attributes = {
@@ -174,6 +177,11 @@ class DefaultElasticApiParser(DataSourceParser[ElasticApiResource, DataObject]):
             relation_data,
             {},  # This can be empty because runtime_fields are not applicable for enriched objects
         )
+
+    def __is_enriched_value(self, value: Any) -> bool:
+        if value is None:
+            return False
+        return not (isinstance(value, Mapping) and 'provenance' in value)
 
     def __make_dates(self, object_type, attribute_name, value):
         if self._data_source.attribute_types[object_type][attribute_name] == 'datetime' and \

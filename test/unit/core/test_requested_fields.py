@@ -80,6 +80,24 @@ class TestRequestedFieldsTree:
         with pytest.raises(DataSourceError):
             ReqFieldsTree('sample_typ', mock_rel_ds, requested_fields=[bad_path])
 
+    @pytest.mark.parametrize(
+        'source_path,expected',
+        [
+            ('id[sts]', ['id']),
+            ('specimen_rel[sts].id', ['id', 'specimen_rel.id']),
+            ('specimen_rel.id[sts]', ['id', 'specimen_rel.id']),
+        ],
+    )
+    def test_provenance_source_paths_use_base_attribute(
+        self, mock_rel_ds, source_path, expected
+    ):
+        rft = ReqFieldsTree(
+            'sample_typ',
+            mock_rel_ds,
+            requested_fields=['id', source_path],
+        )
+        assert rft.to_paths() == expected
+
     def test_de_dup_paths(self, mock_rel_ds):
         rft1 = ReqFieldsTree(
             'sample_typ',

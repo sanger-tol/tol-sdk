@@ -6,6 +6,42 @@ SPDX-License-Identifier: MIT
 
 # Changelog
 
+## tol-sdk `2.8.1`
+
+23-09-2026
+
+- Minor changes to converters
+
+## tol-sdk `2.8.0`
+
+21-09-2026
+
+- Added OpenCitations lookup and filtering by DOI and PubMed IDs
+- Added paginated OpenCitations list access for PubMed ID lookup
+
+## tol-sdk `2.7.0`
+
+17-09-2026
+
+- Add quasar() source
+- Add support for direct and via-api versions of datasources
+- Add assembly_span from GoaT
+
+## tol-sdk `2.6.0`
+
+15-09-2026
+
+- Support new QC relationships in ToLQC converters
+
+## tol-sdk `2.5.2`
+
+10-09-2026
+
+- Added `SetRelationshipAction` to set (or clear, via a null `related_id`) a to-one relationship on one or more objects
+- Corrected issues with enriched provenanced fields
+- Corrected bug with [] field selectors
+- Make specimen a proper relationship from tissue_prep
+
 ## tol-sdk `2.5.1`
 
 02-09-2026

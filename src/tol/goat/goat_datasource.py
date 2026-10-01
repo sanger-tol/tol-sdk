@@ -98,6 +98,7 @@ class GoatDataSource(
                 'lineage': 'List[str]',
                 'sample_collected': 'List[str]',
                 'country_list': 'List[str]',
+                'assembly_span': 'int',
             }
         }
 

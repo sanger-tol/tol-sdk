@@ -7,8 +7,8 @@ from typing import Callable, Iterable, Optional
 
 from .client import OpenCitationsApiClient
 from .converter import OpenCitationsApiConverter
-from ..core import DataObject, DataSource, DataSourceError
-from ..core.operator import DetailGetter
+from ..core import DataObject, DataSource, DataSourceError, DataSourceFilter
+from ..core.operator import DetailGetter, ListGetter, PageGetter
 
 ClientFactory = Callable[[], OpenCitationsApiClient]
 OpenCitationsConverterFactory = Callable[[], OpenCitationsApiConverter]
@@ -17,6 +17,8 @@ OpenCitationsConverterFactory = Callable[[], OpenCitationsApiConverter]
 class OpenCitationsDataSource(
     DataSource,
     DetailGetter,
+    ListGetter,
+    PageGetter,
 ):
     """
     A `DataSource` that connects to a remote OpenCitations API.
@@ -44,7 +46,7 @@ class OpenCitationsDataSource(
     def attribute_types(self) -> dict[str, dict[str, str]]:
         return {
             'meta': {
-                'id': 'str',
+                'pmid': 'str',
                 'title': 'str',
                 'author': 'str',
                 'pub_date': 'str',
@@ -86,6 +88,49 @@ class OpenCitationsDataSource(
             converted_objects,
             requested_object_ids,
         )
+
+    def get_list(
+        self,
+        object_type: str,
+        object_filters: Optional[DataSourceFilter] = None,
+        **kwargs,
+    ) -> Iterable[DataObject]:
+        self.__validate_object_type(object_type)
+        reference_ids = None
+        if object_filters is not None and object_filters.and_ is not None:
+            reference_filter = object_filters.and_.get('reference_id') or {}
+            in_list_filter = reference_filter.get('in_list') or {}
+            reference_ids = in_list_filter.get('value')
+        if reference_ids is None:
+            raise DataSourceError(
+                'Filter must contain reference_id in_list filter'
+            )
+        open_citations_response = self.__client.get_detail(
+            object_type,
+            reference_ids,
+        )
+        converted_objects, _ = self.__converter_factory().convert_list(
+            object_type,
+            open_citations_response,
+        ) if open_citations_response is not None else ([], 0)
+        return iter(converted_objects)
+
+    def get_list_page(
+        self,
+        object_type: str,
+        page_number: int,
+        page_size: Optional[int] = None,
+        object_filters: Optional[DataSourceFilter] = None,
+        sort_by: Optional[str] = None,
+        **kwargs,
+    ) -> tuple[Iterable[DataObject], int]:
+        converted_objects = list(self.get_list(
+            object_type,
+            object_filters=object_filters,
+        ))
+        size = page_size if page_size else self.get_page_size()
+        start = (page_number - 1) * size
+        return converted_objects[start:start + size], len(converted_objects)
 
     def __validate_object_type(self, object_type: str) -> None:
         if object_type not in self.supported_types:

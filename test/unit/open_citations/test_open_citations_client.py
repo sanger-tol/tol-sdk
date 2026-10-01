@@ -56,6 +56,22 @@ class TestOpenCitationsApiClient:
         assert observed == expected
 
     @responses.activate
+    def test_get_detail_with_pmid_identifier(self):
+        """Preserves PubMed identifiers used for metadata lookup."""
+
+        client = OpenCitationsApiClient(FAKE_API_URL)
+
+        expected = [{'id': 'pmid:12345678'}]
+        responses.get(
+            f'{FAKE_API_URL}/metadata/pmid:12345678',
+            json=expected,
+        )
+
+        observed = client.get_detail('meta', ['pmid:12345678'])
+
+        assert observed == expected
+
+    @responses.activate
     def test_get_detail_not_found(self):
         """404 response."""
 
