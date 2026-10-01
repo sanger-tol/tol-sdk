@@ -75,7 +75,8 @@ class TestDeadLetterQueue:
                     'type': 'poison',
                     'source': SOURCE,
                     'created_at': CREATED_AT,
-                    'context': {}},
+                    'context': {}
+                },
                 'routing_key': ROUTING_KEY
             }
         )

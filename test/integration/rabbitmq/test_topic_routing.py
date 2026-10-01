@@ -47,7 +47,8 @@ def _publish(datasource, routing_key, message_id):
                 'type': 'test',
                 'source': SOURCE,
                 'created_at': CREATED_AT,
-                'context': {}},
+                'context': {}
+            },
             'routing_key': routing_key
         }
     )
