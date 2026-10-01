@@ -7,7 +7,7 @@ SPDX-License-Identifier: MIT
 # tol.rabbitmq — the ToL message bus
 
 A thin layer over RabbitMQ (pika, blocking) for publishing and consuming
-messages between ToL applications.
+messages between ToL applications and processes.
 
 - **Publishers** write `bus_message` objects through a `RabbitmqDataSource`,
   either directly in Python or over HTTP via `data_blueprint`.
