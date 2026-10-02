@@ -2,9 +2,9 @@
 #
 # SPDX-License-Identifier: MIT
 
-import pytest
-
 from jinja2 import TemplateNotFound, UndefinedError
+
+import pytest
 
 from tol.notify import TemplateRenderer
 
