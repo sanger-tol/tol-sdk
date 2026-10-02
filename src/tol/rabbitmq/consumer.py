@@ -129,3 +129,9 @@ class MessageConsumer:
             return
 
         ch.basic_ack(delivery_tag=method.delivery_tag)
+        LOGGER.info(
+            'Handled %s %s from %s',
+            envelope.type,
+            envelope.id,
+            envelope.source
+        )
