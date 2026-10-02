@@ -192,6 +192,43 @@ replay sends the email again.
 Dedupe on `envelope.id` (handlers) or `delivery_id` (dispatchers).
 `delivery_id` is deterministic: `<notification id>:<channel>:<recipient index>`.
 
+## Email
+
+```python
+from tol.notify import EmailConfig, EmailSender, TemplateRenderer
+from tol.rabbitmq import NotificationChannel, email_dispatcher, notification_handler
+
+handler = notification_handler({
+    NotificationChannel.EMAIL: email_dispatcher(
+        EmailSender(EmailConfig.from_env()),
+        TemplateRenderer(['templates/email']),
+    ),
+})
+```
+
+- **Templates.** The notification `type` names the template pair:
+  `<type>.subject.txt` and `<type>.body.html`. App directories are
+  searched in order, then the SDK's own templates.
+- **Branding.** Extend `tol_base.html` (blocks `title`, `header`,
+  `content`, `footer`). A custom-branded app shadows it by putting its own
+  `tol_base.html` in its template directory.
+- **Template context** is the request `context` plus `recipient`.
+  `recipient` is reserved: it overrides any context key of the same name.
+- **Escaping.** The body is HTML-escaped. The subject is not escaped, and
+  its whitespace (including newlines) is collapsed to single spaces.
+- **One email per recipient,** so recipients never see each other's
+  addresses.
+- **Failures go to the dead queue:** a missing template variable, an
+  unknown `type`, or any SMTP error. There is no automatic retry yet.
+- `tol.notify` does not depend on the bus. Send directly with
+  `EmailSender.send(to, subject, html_body, text_body=None)`.
+
+**Do not run a production email consumer until handler idempotency
+lands.** Until then, a replay re-sends every email in the notification.
+
+Locally, the compose stack runs mailpit. Every email sent in tests is
+captured and viewable at http://localhost:8025.
+
 ## Deployment
 
 - Run consumers under a **restarting supervisor** (k8s Deployment, or
@@ -247,3 +284,17 @@ Prefix `RABBITMQ_` (change it via `RabbitmqConfig.from_env(prefix=...)`).
 
 `RABBITMQ_MANAGEMENT_URL` is read only by the integration and system test
 helpers. The SDK itself does not use it.
+
+Email uses the prefix `SMTP_` (change it via `EmailConfig.from_env(prefix=...)`).
+
+| Variable   | Default              | Notes                                                  |
+| ---------- | -------------------- | ------------------------------------------------------ |
+| `HOST`     | **required**         |                                                        |
+| `FROM`     | **required**         | sender address                                         |
+| `SECURITY` | `starttls`           | `starttls`, `ssl` or `none`                            |
+| `PORT`     | `587` / `465` / `25` | follows `SECURITY`                                     |
+| `USERNAME` | unset                | set both or neither; refused when `SECURITY` is `none` |
+| `PASSWORD` | unset                |                                                        |
+| `TIMEOUT`  | `30`                 | seconds                                                |
+
+`MAILPIT_URL` is read only by the integration test.
