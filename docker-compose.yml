@@ -161,8 +161,15 @@ services:
       - RABBITMQ_USERNAME=test-user
       - RABBITMQ_PASSWORD=test-password
       - RABBITMQ_MANAGEMENT_URL=http://tol-sdk-python-rabbitmq:15672
+      - SMTP_HOST=tol-sdk-python-mailpit
+      - SMTP_PORT=1025
+      - SMTP_SECURITY=none
+      - SMTP_FROM=noreply@tol-sdk.test
+      - MAILPIT_URL=http://tol-sdk-python-mailpit:8025
     depends_on:
       tol-sdk-python-rabbitmq:
+        condition: service_healthy
+      tol-sdk-python-mailpit:
         condition: service_healthy
     networks:
       - api-base-test-network
@@ -180,6 +187,18 @@ services:
       - api-base-test-network
     healthcheck:
       test: rabbitmq-diagnostics -q ping
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  tol-sdk-python-mailpit:
+    image: axllent/mailpit:v1.31.3
+    ports:
+      - 8025:8025
+    networks:
+      - api-base-test-network
+    healthcheck:
+      test: ["CMD", "/mailpit", "readyz"]
       interval: 5s
       timeout: 5s
       retries: 10

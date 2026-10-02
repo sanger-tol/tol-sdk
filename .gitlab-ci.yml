@@ -102,6 +102,8 @@ integration-test-python-package:
   services:
     - name: rabbitmq:4.3-management
       alias: rabbitmq
+    - name: axllent/mailpit:v1.31.3
+      alias: mailpit
   variables:
     TEST_TYPE: integration
     RABBITMQ_HOST: rabbitmq
@@ -109,6 +111,11 @@ integration-test-python-package:
     RABBITMQ_USERNAME: guest
     RABBITMQ_PASSWORD: guest
     RABBITMQ_MANAGEMENT_URL: http://rabbitmq:15672
+    SMTP_HOST: mailpit
+    SMTP_PORT: "1025"
+    SMTP_SECURITY: none
+    SMTP_FROM: noreply@tol-sdk.test
+    MAILPIT_URL: http:mailpit:8025
   needs:
     - unit-test-python-package
   rules:

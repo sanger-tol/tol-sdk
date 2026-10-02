@@ -35,7 +35,8 @@ dependencies = [
   "dateparser == 1.2.1",
   "pydantic >= 2.13.5, < 3.0.0",
   "nanoid == 2.0.0",
-  "pika == 1.4.4"
+  "pika == 1.4.4",
+  "jinja2 == 3.1.6",
 ]
 
 [project.optional-dependencies]
@@ -82,6 +83,7 @@ where = ["src"]
 [tool.setuptools.package-data]
 "tol" = ["../certs/cacert.pem"]
 "tol.benchling.sql" = ["*.sql"]
+"tol.notify" = ["templates/*.html"]
 
 [project.scripts]
 tol = "tol.cli:cli"

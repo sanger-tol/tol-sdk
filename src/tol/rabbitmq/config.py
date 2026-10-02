@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: MIT
 
 import os
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 
 _REQUIRED = ('HOST', 'USERNAME', 'PASSWORD')
@@ -43,7 +43,7 @@ class RabbitmqConfig:
     host: str
     port: int
     username: str
-    password: str
+    password: str = field(repr=False)  # hide in logs
     vhost: str
     exchange: str
     app_name: str = ''
