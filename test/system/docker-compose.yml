@@ -38,6 +38,11 @@ services:
       interval: 5s
       timeout: 5s
       retries: 10
+
+  mailpit:
+    image: axllent/mailpit:v1.31.3
+    networks:
+      - test-network
     
   system-test:
     image: ${BUILT_IMAGE}
@@ -55,9 +60,16 @@ services:
       - RABBITMQ_PASSWORD=test-password
       - RABBITMQ_MANAGEMENT_URL=http://rabbitmq:15672
       - RABBITMQ_APP_NAME=sdk-test
+      - SMTP_HOST=mailpit
+      - SMTP_PORT=1025
+      - SMTP_SECURITY=none
+      - SMTP_FROM=noreply@tol-sdk.test
+      - MAILPIT_URL=http://mailpit:8025
     depends_on:
       - db
       - elastic
+      - rabbitmq
+      - mailpit
       - system-test-api-elastic
       - system-test-api-sql
       - system-test-api-notification
