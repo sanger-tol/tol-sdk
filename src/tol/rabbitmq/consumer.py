@@ -8,22 +8,20 @@ from collections.abc import Callable
 from typing import Any
 
 from pika.adapters.blocking_connection import BlockingChannel
-
-from pydantic import ValidationError
+from pika.spec import Basic
 
 from tol.rabbitmq.connection import RabbitmqConnection
-from tol.rabbitmq.schema import MessageEnvelope
 
 LOGGER = logging.getLogger(__name__)
 
-Handler = Callable[[MessageEnvelope], None]
+OnMessage = Callable[[Basic.Deliver, bytes], None]
+"""Handles one delivery; raising rejects it."""
 
 
 class MessageConsumer:
     """
-    Generic consumer: validates each message as a `MessageEnvelope`,
-    dispatches to the handler registered for `envelope.type`, then acks.
-    Any failure nacks with requeue=False (message lands in the DLQ).
+    The AMQP side of consuming: passes each delivery to `on_message`, acks
+    if it returns and nacks with requeue=False (dead queue) if it raises.
 
     No in-process reconnect: on connection loss `start()` raises and the
     process should exit - a restarting supervisor should take it from there.
@@ -33,11 +31,11 @@ class MessageConsumer:
         self,
         connection: RabbitmqConnection,
         queue: str,
-        handlers: dict[str, Handler]
+        on_message: OnMessage
     ) -> None:
         self.__connection = connection
         self.__queue = queue
-        self.__handlers = handlers
+        self.__deliver = on_message
         self.__channel: BlockingChannel | None = None
         self.__received = False
 
@@ -105,33 +103,23 @@ class MessageConsumer:
         signal.signal(signal.SIGTERM, handler)
 
     def __on_message(self, ch, method, properties, body) -> None:
-        """Validate envelope, dispatch by type, ack. Nack on failure."""
+        """Pass the delivery on; ack on success, nack on any failure."""
         self.__received = True
 
         try:
-            envelope = MessageEnvelope.model_validate_json(body)
-        except ValidationError:
-            LOGGER.error('Invalid message envelope, nacking')
-            ch.basic_nack(delivery_tag=method.delivery_tag, requeue=False)
-            return
-
-        handler = self.__handlers.get(envelope.type)
-        if handler is None:
-            LOGGER.error('No handler for type %s, nacking', envelope.type)
-            ch.basic_nack(delivery_tag=method.delivery_tag, requeue=False)
-            return
-
-        try:
-            handler(envelope)
+            self.__deliver(method, body)
         except Exception:  # noqa BLE001
-            LOGGER.exception('Handler failed for %s, nacking', envelope.id)
+            LOGGER.exception(
+                'Failed to handle message %s, nacking',
+                properties.message_id
+            )
             ch.basic_nack(delivery_tag=method.delivery_tag, requeue=False)
             return
 
         ch.basic_ack(delivery_tag=method.delivery_tag)
         LOGGER.info(
             'Handled %s %s from %s',
-            envelope.type,
-            envelope.id,
-            envelope.source
+            properties.type,
+            properties.message_id,
+            properties.app_id
         )

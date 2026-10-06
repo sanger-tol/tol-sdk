@@ -6,6 +6,7 @@ from typing import Union
 
 from .aggregator import Aggregator, AggregationResult  # noqa
 from .counter import Counter
+from .consumer import Consumer  # noqa F401
 from .cursor import Cursor
 from .declare import get_operator_member_names  # noqa
 from .deleter import Deleter

@@ -6,14 +6,17 @@ import dataclasses
 from unittest.mock import Mock, PropertyMock, create_autospec
 
 import pika.exceptions
+from pika.spec import Basic
 
 import pytest
 
 from tol.core import DataSourceError, core_data_object
-from tol.rabbitmq.connection import RabbitmqConnection
+from tol.rabbitmq.connection import QueueSpec, RabbitmqConnection
 from tol.rabbitmq.converter import DefaultObjectToMessageConverter
 from tol.rabbitmq.rabbitmq_datasource import RabbitmqDataSource
 from tol.rabbitmq.schema import MessageEnvelope
+
+from . import fakes
 
 
 @pytest.fixture
@@ -66,6 +69,41 @@ def _published(mock_channel, index=0):
     """Return the publish kwargs and decoded envelope of the nth publish."""
     kwargs = mock_channel.basic_publish.call_args_list[index].kwargs
     return kwargs, MessageEnvelope.model_validate_json(kwargs['body'])
+
+
+def _body(message_type='test'):
+    """A received envelope body, as published by another app."""
+    return MessageEnvelope.model_validate({
+        'id': 'msg-1',
+        'type': message_type,
+        'source': 'other-app',
+        'created_at': '2026-10-06T12:00:00Z',
+        'context': {'n': 1}
+    }).model_dump_json().encode()
+
+
+def _deliver(mock_channel, body=None):
+    """Make the next consume deliver `body` once (or nothing)."""
+    def deliver(time_limit):
+        if body is None:
+            return
+        callback = (
+            mock_channel.basic_consume.call_args.kwargs['on_message_callback']
+        )
+        method = Basic.Deliver(delivery_tag=42, routing_key='notify.portal.test')
+        callback(mock_channel, method, Mock(), body)
+
+    events = Mock()
+    events.process_data_events.side_effect = deliver
+    type(mock_channel).connection = PropertyMock(return_value=events)
+
+
+def _assert_nacked(mock_channel):
+    """The delivery was dead-lettered, not acked."""
+    mock_channel.basic_nack.assert_called_once_with(
+        delivery_tag=42, requeue=False
+    )
+    mock_channel.basic_ack.assert_not_called()
 
 
 class TestConstruction:
@@ -336,3 +374,101 @@ class TestPublish:
         assert list(results) == objects
         assert connection_factory.call_count == 2
         assert mock_channel.basic_publish.call_count == 3
+
+
+class TestConsume:
+    def test_declares_app_queue(
+        self,
+        datasource,
+        connection_factory,
+        mock_channel
+    ):
+        """The queue is `<app>.<category>`, bound to `<category>.<app>.#`."""
+        _deliver(mock_channel)
+
+        datasource.consume({}, category='action', time_limit=1)
+
+        connection_factory.assert_called_once_with(specs=[
+            QueueSpec(name='portal.action', binding_keys=('action.portal.#',))
+        ])
+        assert (
+            mock_channel.basic_consume.call_args.kwargs['queue']
+            == 'portal.action'
+        )
+
+    def test_passes_output_message_to_handler_and_acks(
+        self,
+        datasource,
+        mock_channel
+    ):
+        """The handler for the message_type gets an `output_message`."""
+        received = []
+        _deliver(mock_channel, _body())
+
+        datasource.consume(
+            {'test': fakes.spec('RecordingHandler', sink=received)},
+            time_limit=1
+        )
+
+        (obj,) = received
+        assert obj.type == 'output_message'
+        assert obj.id == 'msg-1'
+        assert obj.message_type == 'test'
+        assert obj.source == 'other-app'
+        assert obj.context == {'n': 1}
+        mock_channel.basic_ack.assert_called_once_with(delivery_tag=42)
+
+    def test_unknown_type_nacks(self, datasource, mock_channel):
+        """A message_type with no handler is dead-lettered."""
+        _deliver(mock_channel, _body('mystery'))
+
+        datasource.consume({}, time_limit=1)
+
+        _assert_nacked(mock_channel)
+
+    def test_invalid_body_nacks(self, datasource, mock_channel):
+        """A body that is not an envelope is dead-lettered."""
+        received = []
+        _deliver(mock_channel, b'not an envelope')
+
+        datasource.consume(
+            {'test': fakes.spec('RecordingHandler', sink=received)},
+            time_limit=1
+        )
+
+        assert received == []
+        _assert_nacked(mock_channel)
+
+    def test_handler_failure_nacks(self, datasource, mock_channel):
+        """A raising handler dead-letters the message."""
+        _deliver(mock_channel, _body())
+
+        datasource.consume(
+            {'test': fakes.spec('RaisingHandler')}, time_limit=1
+        )
+
+        _assert_nacked(mock_channel)
+
+    def test_bad_spec_fails_before_connecting(
+        self,
+        datasource,
+        connection_factory
+    ):
+        """An unknown class fails at startup."""
+        with pytest.raises(AttributeError):
+            datasource.consume({'test': fakes.spec('DoesNotExist')})
+
+        connection_factory.assert_not_called()
+
+    def test_non_handler_class_raises(self, datasource, connection_factory):
+        """A class that isn't a Handler is refused at startup."""
+        with pytest.raises(TypeError):
+            datasource.consume({'test': fakes.spec('NotAHandler')})
+
+        connection_factory.assert_not_called()
+
+    @pytest.mark.parametrize('category', ['', 'notify.x', 'notify#'])
+    def test_invalid_category_raises(self, datasource, category):
+        """Category must be one lowercase routing-key word."""
+        with pytest.raises(ValueError):
+            datasource.consume({}, category=category)

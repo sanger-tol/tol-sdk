@@ -14,7 +14,6 @@ from tol.rabbitmq.schema import (
     NotificationRequest,
     Recipient,
     create_deliveries,
-    wrap_in_envelope
 )
 
 
@@ -176,29 +175,6 @@ class TestMessageEnvelope:
             MessageEnvelope.model_validate(
                 _envelope(created_at='2026-09-29T12:00:00')
             )
-
-
-class TestWrapInEnvelope:
-    def test_wraps_request(self):
-        request = NotificationRequest.model_validate(_request())
-
-        envelope = wrap_in_envelope(request, 'portal', correlation_id='c-1')
-
-        assert envelope.id == 'notification-1'
-        assert envelope.type == 'notification'
-        assert envelope.source == 'portal'
-        assert envelope.correlation_id == 'c-1'
-        assert envelope.created_at.tzinfo is not None
-        assert NotificationRequest.model_validate(envelope.context) == request
-
-    def test_json_dum_round_trips(self):
-        """Test that the wire form re-validates as an envelope."""
-        request = NotificationRequest.model_validate(_request())
-
-        body = wrap_in_envelope(request, 'portal').model_dump(mode='json')
-
-        assert isinstance(body['created_at'], str)
-        assert MessageEnvelope.model_validate(body).source == 'portal'
 
 
 class TestEmailChannelRequiresEmails:

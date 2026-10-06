@@ -2,7 +2,6 @@
 #
 # SPDX-License-Identifier: MIT
 
-from datetime import UTC, datetime
 from enum import StrEnum
 
 from nanoid import generate
@@ -100,23 +99,3 @@ def create_deliveries(notification_request: NotificationRequest
         for channel in notification_request.channels
         for index, recipient in enumerate(notification_request.recipients)
     ]
-
-
-def wrap_in_envelope(
-    request: NotificationRequest,
-    source: str,
-    correlation_id: str | None = None
-) -> MessageEnvelope:
-    """
-    Wrap a NotificationRequest in a bus envelope.
-    Publish with `.model_dump(mode='json')`.
-    """
-    return MessageEnvelope(
-        id=request.id,
-        version=request.version,
-        type='notification',
-        source=source,
-        created_at=datetime.now(UTC),
-        correlation_id=correlation_id,
-        context=request.model_dump(mode='json'),
-    )

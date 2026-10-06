@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: MIT
 
 import dataclasses
-from unittest.mock import Mock, create_autospec
+from unittest.mock import Mock, PropertyMock, create_autospec
 
 from pika.adapters.blocking_connection import BlockingChannel
 
@@ -11,8 +11,7 @@ import pytest
 
 from tol.rabbitmq.config import RabbitmqConfig
 from tol.rabbitmq.connection import RabbitmqConnection
-from tol.rabbitmq.consumer import MessageConsumer
-from tol.rabbitmq.factory import create_consumer, create_rabbitmq_datasource
+from tol.rabbitmq.factory import create_rabbitmq_datasource
 from tol.rabbitmq.rabbitmq_datasource import RabbitmqDataSource
 from tol.rabbitmq.schema import MessageEnvelope
 
@@ -86,17 +85,15 @@ def test_invalid_app_name_raises(config, app_name):
         )
 
 
-class TestCreateConsumer:
-    def test_returns_consumer_with_app_queue(self, monkeypatch):
-        """
-        Test that create_consumer declares the app's queue
-        and returns a MessageConsumer bound to it.
-        """
-        mock_blocking, mock_channel = _stub_broker(monkeypatch)
+class TestConsumeTopology:
+    def test_declares_app_queue(self, monkeypatch):
+        """consume() declares the app queue on a real RabbitmqConnection."""
+        _, mock_channel = _stub_broker(monkeypatch)
+        type(mock_channel).connection = PropertyMock(return_value=Mock())
 
-        consumer = create_consumer(_config_with_app(), {})
-
-        assert isinstance(consumer, MessageConsumer)
+        create_rabbitmq_datasource(_config_with_app()).consume(
+            {}, time_limit=0
+        )
 
         mock_channel.queue_declare.assert_any_call(
             queue='portal.notify',
@@ -116,26 +113,8 @@ class TestCreateConsumer:
             routing_key='notify.portal.#'
         )
 
-    @pytest.mark.parametrize(
-        'app_name', ['', 'Portal', 'portal.app', 'portal*', 'por tal']
-    )
-    def test_invalid_app_name_raises(self, app_name):
-        """app_name must be one lowercase routing-key word"""
-        config = dataclasses.replace(_config_with_app(), app_name=app_name)
-
-        with pytest.raises(ValueError):
-            create_consumer(config, {})
-
-    @pytest.mark.parametrize('category', ['', 'notify.x', 'notify#'])
-    def test_invalid_category_raises(self, category):
-        """Cateogry must be one lowercase routing-key word."""
-        with pytest.raises(ValueError):
-            create_consumer(_config_with_app(), {}, category=category)
-
     def test_connect_twice_is_idempotent(self, monkeypatch):
-        """
-        Test that connecting an open connection is a no-op and does nothing.
-        """
+        """Connecting an open connection is a no-op."""
         mock_blocking, _ = _stub_broker(monkeypatch)
 
         conn = RabbitmqConnection(_config_with_app())

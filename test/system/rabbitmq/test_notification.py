@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2026 Genome Research Ltd.
+#
+# SPDX-License-Identifier: MIT
+
 import json
 import os
 
@@ -5,10 +9,9 @@ import pytest
 
 import requests
 
-from tol.rabbitmq.connection import RabbitmqConnection
-from tol.rabbitmq.consumer import MessageConsumer
-from tol.rabbitmq.handlers import notification_handler
 from tol.rabbitmq.schema import NotificationChannel
+
+from . import fakes
 
 from .broker import peek_messages, wait_for_depth
 from .constants import QUEUE
@@ -73,7 +76,7 @@ class TestNotificationApi:
         assert message['properties']['message_id'] == 'system-notification-1'
         assert json.loads(message['payload'])['source'] == config.app_name
 
-    def test_post_then_consume(self, config, api_url):
+    def test_post_then_consume(self, config, api_url, datasource):
         """A posted notification is fanned out by the consumer."""
         doc = _insert_doc(
             'system-notification-2',
@@ -86,17 +89,14 @@ class TestNotificationApi:
         wait_for_depth(config, QUEUE, 1)
 
         received = []
-        consumer = MessageConsumer(
-            RabbitmqConnection(config),
-            QUEUE,
+        datasource.consume(
             {
-                'notification': notification_handler({
-                    NotificationChannel.EMAIL: received.append,
-                    NotificationChannel.SLACK: received.append
-                })
-            }
+                'notification': fakes.notification_handler_spec(
+                    email=received, slack=received
+                )
+            },
+            time_limit=5
         )
-        assert consumer.process_one()
 
         assert len(received) == 2
         assert {d.notification_id for d in received} == {

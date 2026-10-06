@@ -4,13 +4,10 @@
 
 import pytest
 
-from tol.rabbitmq.connection import RabbitmqConnection
-from tol.rabbitmq.consumer import MessageConsumer
-from tol.rabbitmq.handlers import notification_handler
-from tol.rabbitmq.schema import NotificationChannel
-
+from . import fakes
 from .broker import publish_raw, queue_depth
 from .constants import QUEUE, ROUTING_KEY
+from tol.rabbitmq.schema import NotificationChannel
 
 
 @pytest.fixture
@@ -50,18 +47,14 @@ class TestConsumerAgainstBroker:
             'context': {'key': 'value'}
         }, 'notification-1')
 
-        dispatchers = {
-            NotificationChannel.EMAIL: received.append,
-            NotificationChannel.SLACK: received.append
-        }
-
-        consumer = MessageConsumer(
-            RabbitmqConnection(config),
-            QUEUE,
-            {'notification': notification_handler(dispatchers)}
+        datasource.consume(
+            {
+                'notification': fakes.notification_handler_spec(
+                    email=received, slack=received
+                )
+            },
+            time_limit=5
         )
-
-        assert consumer.process_one()
 
         assert len(received) == 4
         assert {d.notification_id for d in received} == {'notification-1'}
@@ -81,15 +74,14 @@ class TestConsumerAgainstBroker:
         """Test that an invalid notification payload is nacked"""
         publish_raw(config, ROUTING_KEY, {'not': 'a notification'})
 
-        consumer = MessageConsumer(
-            RabbitmqConnection(config),
-            QUEUE,
-            {'notification': notification_handler(
-                {NotificationChannel.EMAIL: received.append}
-            )}
+        datasource.consume(
+            {
+                'notification': fakes.notification_handler_spec(
+                    email=received
+                )
+            },
+            time_limit=5
         )
-
-        assert consumer.process_one()
 
         assert received == []
         assert queue_depth(config, QUEUE) == 0

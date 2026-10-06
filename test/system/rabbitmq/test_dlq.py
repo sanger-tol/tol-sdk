@@ -9,7 +9,8 @@ import time
 import pytest
 
 from tol.rabbitmq.connection import RabbitmqConnection
-from tol.rabbitmq.consumer import MessageConsumer
+
+from . import fakes
 
 from .broker import (
     publish_raw, purge,
@@ -73,15 +74,10 @@ class TestDeadLetterQueue:
         )
         datasource.insert_batch('bus_message', [message])
 
-        def exploding_handler(envelope):
-            raise RuntimeError('handler blew up')
-
-        consumer = MessageConsumer(
-            RabbitmqConnection(config),
-            QUEUE,
-            {'poison': exploding_handler}
+        datasource.consume(
+            {'poison': fakes.spec('RaisingHandler')},
+            time_limit=5
         )
-        assert consumer.process_one()
 
         assert queue_depth(config, QUEUE) == 0
         assert wait_for_depth(config, DEAD_QUEUE, 1) == 1
@@ -92,12 +88,7 @@ class TestDeadLetterQueue:
         """
         publish_raw(config, ROUTING_KEY, {'not': 'an envelope'})
 
-        consumer = MessageConsumer(
-            RabbitmqConnection(config),
-            QUEUE,
-            {}
-        )
-        assert consumer.process_one()
+        datasource.consume({}, time_limit=5)
 
         assert queue_depth(config, QUEUE) == 0
         assert wait_for_depth(config, DEAD_QUEUE, 1) == 1

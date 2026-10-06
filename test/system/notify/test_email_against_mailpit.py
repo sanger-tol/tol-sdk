@@ -9,14 +9,11 @@ import pytest
 
 import requests
 
-from tol.notify import EmailConfig, EmailSender, TemplateRenderer
+from tol.notify import EmailConfig, EmailSender
 from tol.rabbitmq import (
-    NotificationChannel,
-    NotificationRequest,
-    Recipient,
-    email_dispatcher,
-    notification_handler,
-    wrap_in_envelope
+    NotificationHandler,
+    RabbitmqConfig,
+    create_rabbitmq_datasource
 )
 
 MAILPIT_URL = os.environ['MAILPIT_URL']
@@ -66,6 +63,12 @@ def sender():
     return EmailSender(EmailConfig.from_env())
 
 
+@pytest.fixture
+def data_object_factory():
+    """The factory of a RabbitmqDataSource, for building output_messages."""
+    return create_rabbitmq_datasource(RabbitmqConfig.from_env()).data_object_factory
+
+
 class TestEmailSender:
     def test_delivers_html_email(self, sender):
         """Test that a real SMTP round trip delivers the message intact."""
@@ -81,7 +84,7 @@ class TestEmailSender:
 
 
 class TestNotificationPipeline:
-    def test_one_branded_email_per_recipient(self, sender, tmp_path):
+    def test_one_branded_email_per_recipient(self, data_object_factory, tmp_path):
         """Test handler -> dispatcher -> renderer -> SMTP end to end."""
         (tmp_path / 'sample_ready.subject.txt').write_text(
             'Sample {{ sample }} is ready\n'
@@ -93,24 +96,31 @@ class TestNotificationPipeline:
             '{% endblock %}'
         )
 
-        handle = notification_handler({
-            NotificationChannel.EMAIL: email_dispatcher(
-                sender, TemplateRenderer([tmp_path])
-            )
-        })
+        handler = NotificationHandler(NotificationHandler.Config(channels={
+            'email': {
+                'module': 'tol.rabbitmq.dispatchers',
+                'class_name': 'EmailDispatcher',
+                'config_details': {'template_dirs': [str(tmp_path)]}
+            }
+        }))
 
-        request = NotificationRequest(
-            id='n1',
-            channels=[NotificationChannel.EMAIL],
-            type='sample_ready',
-            recipients=[
-                Recipient(email='a@example.com'),
-                Recipient(email='b@example.com')
-            ],
-            context={'sample': '<b>X1</b>'}
-        )
-
-        handle(wrap_in_envelope(request, source='sdk-test'))
+        handler.handle(data_object_factory(
+            'output_message',
+            id_='n1',
+            attributes={
+                'message_type': 'notification',
+                'context': {
+                    'id': 'n1',
+                    'channels': ['email'],
+                    'type': 'sample_ready',
+                    'recipients': [
+                        {'email': 'a@example.com'},
+                        {'email': 'b@example.com'}
+                    ],
+                    'context': {'sample': '<b>X1</b>'}
+                }
+            }
+        ))
 
         messages = [_message(m['ID']) for m in _wait_for_messages(2)]
         assert sorted(m['To'][0]['Address'] for m in messages) == [

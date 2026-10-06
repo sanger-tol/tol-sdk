@@ -9,14 +9,11 @@ from jinja2 import TemplateNotFound
 import pytest
 
 from tol.notify import EmailSendError, EmailSender, TemplateRenderer
-from tol.rabbitmq.dispatchers import email_dispatcher
-from tol.rabbitmq.handlers import notification_handler
+from tol.rabbitmq.dispatchers import EmailDispatcher
 from tol.rabbitmq.schema import (
     NotificationChannel,
     NotificationDelivery,
-    NotificationRequest,
-    Recipient,
-    wrap_in_envelope
+    Recipient
 )
 
 
@@ -49,17 +46,25 @@ def renderer():
     return renderer
 
 
-class TestEmailDispatchers:
+def _dispatcher(sender, renderer=None, **config):
+    """An EmailDispatcher with an injected sender (and renderer)."""
+    return EmailDispatcher(
+        EmailDispatcher.Config(**config),
+        sender=sender,
+        renderer=renderer
+    )
+
+
+class TestEmailDispatcher:
     def test_renders_type_and_sends_to_recipient(self, sender, renderer):
         """Test that the type picks the template and one email is sent."""
         delivery = _delivery()
 
-        email_dispatcher(sender, renderer)(delivery)
+        _dispatcher(sender, renderer).dispatch(delivery)
 
         renderer.render.assert_called_once_with(
             'sample_ready', {'sample': 'X', 'recipient': delivery.recipient}
         )
-
         sender.send.assert_called_once_with(
             ['a@example.com'], 'Subject', '<p>Body</p>'
         )
@@ -68,7 +73,7 @@ class TestEmailDispatchers:
         """Test that a publisher cannot spoof the reserved recipient key."""
         delivery = _delivery(context={'recipient': 'spoofed'})
 
-        email_dispatcher(sender, renderer)(delivery)
+        _dispatcher(sender, renderer).dispatch(delivery)
 
         context = renderer.render.call_args.args[1]
         assert context['recipient'] == delivery.recipient
@@ -78,7 +83,7 @@ class TestEmailDispatchers:
         delivery = _delivery(recipient=Recipient(user_id='u1'))
 
         with pytest.raises(ValueError, match='n1:email:0'):
-            email_dispatcher(sender, renderer)(delivery)
+            _dispatcher(sender, renderer).dispatch(delivery)
 
         sender.send.assert_not_called()
 
@@ -87,7 +92,7 @@ class TestEmailDispatchers:
         renderer.render.side_effect = TemplateNotFound('sample_ready')
 
         with pytest.raises(TemplateNotFound):
-            email_dispatcher(sender, renderer)(_delivery())
+            _dispatcher(sender, renderer).dispatch(_delivery())
 
         sender.send.assert_not_called()
 
@@ -96,29 +101,19 @@ class TestEmailDispatchers:
         sender.send.side_effect = EmailSendError(['a@example.com'], 'sad')
 
         with pytest.raises(EmailSendError):
-            email_dispatcher(sender, renderer)(_delivery())
+            _dispatcher(sender, renderer).dispatch(_delivery())
 
-
-class TestWithNotificationHandler:
-    def test_one_email_per_recipient(self, sender, renderer):
-        """Test that each recipient gets their own email."""
-        request = NotificationRequest(
-            id='n1',
-            channels=[NotificationChannel.EMAIL],
-            type='sample_ready',
-            recipients=[
-                Recipient(email='a@example.com'),
-                Recipient(email='b@example.com')
-            ],
-            context={'sample': 'X'}
+    def test_config_template_dirs_are_searched(self, sender, tmp_path):
+        """Without an injected renderer, Config.template_dirs is used."""
+        (tmp_path / 'sample_ready.subject.txt').write_text('Sample {{ sample }}')
+        (tmp_path / 'sample_ready.body.html').write_text(
+            '<p>{{ recipient.email }}</p>'
         )
 
-        handle = notification_handler({
-            NotificationChannel.EMAIL: email_dispatcher(sender, renderer)
-        })
+        _dispatcher(sender, template_dirs=[str(tmp_path)]).dispatch(
+            _delivery()
+        )
 
-        handle(wrap_in_envelope(request, source='sdk-test'))
-
-        assert [c.args[0] for c in sender.send.call_args_list] == [
-            ['a@example.com'], ['b@example.com']
-        ]
+        sender.send.assert_called_once_with(
+            ['a@example.com'], 'Sample X', '<p>a@example.com</p>'
+        )

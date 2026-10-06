@@ -4,6 +4,7 @@
 
 from __future__ import annotations
 
+import functools
 import typing
 from collections.abc import Callable, Iterable
 from typing import Any, Optional
@@ -13,7 +14,7 @@ import pika.exceptions
 from pydantic import ValidationError
 
 from .config import RabbitmqConfig
-from .connection import RabbitmqConnection
+from .connection import QueueSpec, RabbitmqConnection
 from .constants import (
     BUS_MESSAGE,
     DEFAULT_CATEGORY,
@@ -21,13 +22,28 @@ from .constants import (
     OUTPUT_MESSAGE,
     TYPE_PATTERN
 )
-from .converter import ObjectToMessageConverter, PublishMessage
+from .consumer import MessageConsumer
+from .converter import (
+    DefaultMessageToObjectConverter,
+    MessageToObjectConverter,
+    ObjectToMessageConverter,
+    PublishMessage
+)
 from .schema import NotificationRequest, generate_unique_id
-from ..core import DataObject, DataSource, DataSourceError, ReqFieldsTree
-from ..core.operator import Inserter
+from .spec import instantiate
+from ..core import (
+    DataObject,
+    DataObjectFactory,
+    DataSource,
+    DataSourceError,
+    Handler,
+    ReqFieldsTree
+)
+from ..core.operator import Consumer, Inserter
 
 if typing.TYPE_CHECKING:
     from pika.adapters.blocking_connection import BlockingChannel
+    from pika.spec import Basic
 
     from ..core.session import OperableSession
 
@@ -41,13 +57,14 @@ def _bad_request(obj: DataObject, detail: str) -> DataSourceError:
     )
 
 
-class RabbitmqDataSource(DataSource, Inserter):
+class RabbitmqDataSource(DataSource, Inserter, Consumer):
     """
     A `DataSource` backed by a RabbitMQ broker.
 
-    Publishes `bus_message` objects (`Inserter`). Each one is wrapped in a
-    `MessageEnvelope` and routed by `<category>.<target_app>.<message_type>`;
-    callers never build either.
+    Publishes `bus_message` objects (`Inserter`), wrapping each in a
+    `MessageEnvelope` routed by `<category>.<target_app>.<message_type>`.
+    Consumes this app's queue (`Consumer`), passing each message to its
+    handler as an `output_message`.
 
     Most users should use `create_rabbitmq_datasource()` rather than
     instantiating this directly.
@@ -56,8 +73,11 @@ class RabbitmqDataSource(DataSource, Inserter):
     def __init__(
         self,
         config: RabbitmqConfig,
-        connection_factory: Callable[[], RabbitmqConnection],
-        to_message_converter_factory: Callable[[], ObjectToMessageConverter]
+        connection_factory: Callable[..., RabbitmqConnection],
+        to_message_converter_factory: Callable[[], ObjectToMessageConverter],
+        to_object_converter_factory: Callable[
+            [DataObjectFactory], MessageToObjectConverter
+        ] = DefaultMessageToObjectConverter
     ) -> None:
         if not NAME_PATTERN.fullmatch(config.app_name):
             raise ValueError(
@@ -68,6 +88,7 @@ class RabbitmqDataSource(DataSource, Inserter):
         self.__config = config
         self.__connection_factory = connection_factory
         self.__to_message = to_message_converter_factory
+        self.__to_object = to_object_converter_factory
         self.write_batch_size = config.write_batch_size
 
         super().__init__({})
@@ -136,6 +157,68 @@ class RabbitmqDataSource(DataSource, Inserter):
             ) from e
 
         return [obj for obj, _, _ in batch]
+
+    def consume(
+        self,
+        handlers: dict[str, dict[str, Any]],
+        category: str = DEFAULT_CATEGORY,
+        time_limit: float | None = None,
+        **kwargs: Any
+    ) -> None:
+        """
+        Consume this app's `<app>.<category>` queue, passing each
+        `output_message` to the handler configured for its `message_type`.
+
+        `handlers` maps message type to a `{'module', 'class_name',
+        'config_details'}` spec; all are built before subscribing.
+        Blocks until SIGINT/SIGTERM or connection loss. With `time_limit`,
+        handles at most one message within that many seconds, then returns.
+        """
+        if not NAME_PATTERN.fullmatch(category):
+            raise ValueError(
+                f'category {category!r} must match {NAME_PATTERN.pattern}'
+            )
+
+        built = {
+            message_type: instantiate(
+                spec, Handler, data_object_factory=self.data_object_factory
+            )
+            for message_type, spec in handlers.items()
+        }
+        to_object = self.__to_object(self.data_object_factory)
+
+        app = self.__config.app_name
+        queue = f'{app}.{category}'
+        connection = self.__connection_factory(specs=[
+            QueueSpec(name=queue, binding_keys=(f'{category}.{app}.#',))
+        ])
+        connection.connect()
+
+        consumer = MessageConsumer(
+            connection,
+            queue,
+            functools.partial(self.__handle_message, built, to_object)
+        )
+        if time_limit is None:
+            consumer.start()
+        else:
+            consumer.process_one(time_limit)
+
+    def __handle_message(
+        self,
+        handlers: dict[str, Handler],
+        to_object: MessageToObjectConverter,
+        method: Basic.Deliver,
+        body: bytes
+    ) -> None:
+        """Convert a delivery to an `output_message` and pass it on."""
+        obj = to_object.convert((method, body))
+        handler = handlers.get(obj.message_type)  # type: ignore
+        if handler is None:
+            raise LookupError(
+                f'No handler for message type {obj.message_type!r}'
+            )
+        handler.handle(obj)
 
     def __prepare(
         self,

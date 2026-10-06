@@ -17,13 +17,13 @@ messages between ToL applications and processes.
 
 ## Topology
 
-| Thing                | Name                    | Notes                         |
-| -------------------- | ----------------------- | ----------------------------- |
-| Exchange             | `tol` (topic)           | `RABBITMQ_EXCHANGE`           |
-| Dead-letter exchange | `tol.dlx`               | `RABBITMQ_DLX`                |
-| App queue            | `<app>.<category>`      | e.g. `portal.notify`; quorum  |
-| Binding              | `<category>.<app>.#`    | declared by `create_consumer` |
-| Dead queue           | `<app>.<category>.dead` | quorum, `x-max-length` 10000  |
+| Thing                | Name                    | Notes                        |
+| -------------------- | ----------------------- | ---------------------------- |
+| Exchange             | `tol` (topic)           | `RABBITMQ_EXCHANGE`          |
+| Dead-letter exchange | `tol.dlx`               | `RABBITMQ_DLX`               |
+| App queue            | `<app>.<category>`      | e.g. `portal.notify`; quorum |
+| Binding              | `<category>.<app>.#`    | declared by `consume()`      |
+| Dead queue           | `<app>.<category>.dead` | quorum, `x-max-length` 10000 |
 
 All queues are quorum queues (RabbitMQ 4.x). App queues also set:
 
@@ -74,14 +74,14 @@ For `type == "notification"`, `context` is a full `NotificationRequest`.
 
 ## Publishing
 
-| Attribute        | Default                 | Notes                                          |
-| ---------------- | ----------------------- | ---------------------------------------------- |
-| `message_type`   | **required**            | lowercase words, dot-separated allowed         |
-| `context`        | `{}`                    | handler-owned payload                          |
-| `target_app`     | own `RABBITMQ_APP_NAME` | the app whose queue receives the message       |
-| `category`       | `notify`                |                                                |
-| `correlation_id` | unset                   |                                                |
-| `headers`        | unset                   | AMQP headers                                   |
+| Attribute        | Default                 | Notes                                    |
+| ---------------- | ----------------------- | ---------------------------------------- |
+| `message_type`   | **required**            | lowercase words, dot-separated allowed   |
+| `context`        | `{}`                    | handler-owned payload                    |
+| `target_app`     | own `RABBITMQ_APP_NAME` | the app whose queue receives the message |
+| `category`       | `notify`                |                                          |
+| `correlation_id` | unset                   |                                          |
+| `headers`        | unset                   | AMQP headers                             |
 
 The datasource derives the routing key
 `<category>.<target_app>.<message_type>`.
@@ -139,45 +139,70 @@ Otherwise it is an open relay: messages carry recipients and content.
 Each batch is validated in full before anything is published. Publishing
 uses publisher confirms and `mandatory=True`.
 
-| Failure                                                       | Status |
-| ------------------------------------------------------------- | ------ |
-| Invalid `message_type`/`target_app`/`category`/`context`/request | 400 |
-| No queue bound for the routing key (unroutable)               | 422    |
-| Any other broker error                                        | 500    |
+| Failure                                                          | Status |
+| ---------------------------------------------------------------- | ------ |
+| Invalid `message_type`/`target_app`/`category`/`context`/request | 400    |
+| No queue bound for the routing key (unroutable)                  | 422    |
+| Any other broker error                                           | 500    |
 
 ## Consuming
 
-```python
-from tol.rabbitmq import (
-    NotificationChannel, RabbitmqConfig, create_consumer, notification_handler,
-)
+`RabbitmqDataSource` is a `Consumer`. Handlers are specified like pipeline
+steps: one `{module, class_name, config_details}` spec per message type.
 
-consumer = create_consumer(
-    RabbitmqConfig.from_env(),          # needs RABBITMQ_APP_NAME
-    handlers={
-        'notification': notification_handler({
-            NotificationChannel.EMAIL: send_email,
-        }),
+```python
+from tol.rabbitmq import RabbitmqConfig, create_rabbitmq_datasource
+
+ds = create_rabbitmq_datasource(RabbitmqConfig.from_env())  # needs RABBITMQ_APP_NAME
+ds.consume({
+    'sample.received': {
+        'module': 'main.handlers',
+        'class_name': 'SampleReceivedHandler',
+        'config_details': {'extra_info': 'some_value'},
     },
-    category='notify',
-)
-consumer.start()                        # blocks; SIGINT/SIGTERM stop cleanly
+})                                      # blocks; SIGINT/SIGTERM stop cleanly
 ```
 
-`python -m tol.rabbitmq` runs a log-only example consumer.
+A handler subclasses `tol.core.Handler`, declares a nested `Config`
+dataclass and implements `handle(obj)`:
 
-- `create_consumer` validates `app_name` and `category` against
-  `^[a-z0-9_-]+$`, declares the queue, the binding and the dead queue, and
-  connects eagerly. A topology error fails at startup.
+```python
+from dataclasses import dataclass
+
+from tol.core import DataObject, Handler
+
+
+class SampleReceivedHandler(Handler):
+    @dataclass(frozen=True, kw_only=True)
+    class Config:
+        extra_info: str
+
+    def __init__(self, config: Config, data_object_factory, **kwargs):
+        self.__config = config
+
+    def handle(self, obj: DataObject) -> None:
+        ...  # obj is an `output_message`
+```
+
+An `output_message` has `message_type`, `version`, `context`, `source`,
+`created_at`, `correlation_id`, `routing_key` and `redelivered`; its id is
+the envelope id.
+
+- `consume(handlers, category='notify')` consumes `<app>.<category>`,
+  bound to `<category>.<app>.#`. It validates `category`, builds every
+  handler, declares the queue, the binding and the dead queue, and connects
+  before consuming. A bad spec or topology error fails at startup.
 - `prefetch_count=1`: one message in flight per consumer process. Scale by
   running more processes.
 - Handler outcome:
   - It returns: the message is **acked**.
-  - It raises, the envelope is invalid, or there is no handler for `type`:
-    the message is **nacked without requeue** and goes to the dead queue.
-- `notification_handler` fans a request out into one `NotificationDelivery`
-  per (channel, recipient) pair. If any requested channel has no
-  dispatcher, it raises before dispatching anything.
+  - It raises, the envelope is invalid, or there is no handler for its
+    `message_type`: the message is **nacked without requeue** and goes to
+    the dead queue.
+- `NotificationHandler` fans a `notification` request out into one
+  `NotificationDelivery` per (channel, recipient) pair. Its `channels`
+  config maps each channel to a `Dispatcher` spec. If any requested channel
+  has no dispatcher, it raises before dispatching anything.
 - SIGINT/SIGTERM let the in-flight handler finish and ack, then the
   connection closes.
 
@@ -192,22 +217,28 @@ Replays re-run _every_ delivery in a notification, including the ones that
 already succeeded. For example, if email succeeded and Slack raised, a
 replay sends the email again.
 
-Dedupe on `envelope.id` (handlers) or `delivery_id` (dispatchers).
+Dedupe on `obj.id` (handlers) or `delivery_id` (dispatchers).
 `delivery_id` is deterministic: `<notification id>:<channel>:<recipient index>`.
 
 ## Email
 
 ```python
-from tol.notify import EmailConfig, EmailSender, TemplateRenderer
-from tol.rabbitmq import NotificationChannel, email_dispatcher, notification_handler
-
-handler = notification_handler({
-    NotificationChannel.EMAIL: email_dispatcher(
-        EmailSender(EmailConfig.from_env()),
-        TemplateRenderer(['templates/email']),
-    ),
+ds.consume({
+    'notification': {
+        'module': 'tol.rabbitmq.handlers',
+        'class_name': 'NotificationHandler',
+        'config_details': {'channels': {
+            'email': {
+                'module': 'tol.rabbitmq.dispatchers',
+                'class_name': 'EmailDispatcher',
+                'config_details': {'template_dirs': ['templates/email']},
+            },
+        }},
+    },
 })
 ```
+
+`EmailDispatcher` reads SMTP settings from the `SMTP_*` environment.
 
 - **Templates.** The notification `type` names the template pair:
   `<type>.subject.txt` and `<type>.body.html`. App directories are
@@ -265,25 +296,25 @@ captured and viewable at http://localhost:8025.
 
 Prefix `RABBITMQ_` (change it via `RabbitmqConfig.from_env(prefix=...)`).
 
-| Variable                     | Default      | Notes                                                   |
-| ---------------------------- | ------------ | ------------------------------------------------------- |
-| `HOST`                       | **required** |                                                         |
-| `USERNAME`                   | **required** |                                                         |
-| `PASSWORD`                   | **required** |                                                         |
-| `PORT`                       | `5672`       |                                                         |
-| `VHOST`                      | `/`          |                                                         |
-| `EXCHANGE`                   | `tol`        |                                                         |
-| `DLX`                        | `tol.dlx`    |                                                         |
-| `DECLARE_EXCHANGES`          | `true`       | `false` in staging/prod: exchanges are ops-owned        |
+| Variable                     | Default      | Notes                                                                 |
+| ---------------------------- | ------------ | --------------------------------------------------------------------- |
+| `HOST`                       | **required** |                                                                       |
+| `USERNAME`                   | **required** |                                                                       |
+| `PASSWORD`                   | **required** |                                                                       |
+| `PORT`                       | `5672`       |                                                                       |
+| `VHOST`                      | `/`          |                                                                       |
+| `EXCHANGE`                   | `tol`        |                                                                       |
+| `DLX`                        | `tol.dlx`    |                                                                       |
+| `DECLARE_EXCHANGES`          | `true`       | `false` in staging/prod: exchanges are ops-owned                      |
 | `APP_NAME`                   | **required** | to publish or consume; stamped as envelope `source` and AMQP `app_id` |
-| `USE_SSL`                    | `false`      |                                                         |
-| `CA_FILE`                    | unset        | CA bundle for an internal CA                            |
-| `WRITE_BATCH_SIZE`           | `100`        |                                                         |
-| `HEARTBEAT`                  | `60`         | seconds                                                 |
-| `BLOCKED_CONNECTION_TIMEOUT` | `30`         | seconds                                                 |
-| `SOCKET_TIMEOUT`             | `10`         | seconds                                                 |
-| `CONNECTION_ATTEMPTS`        | `3`          |                                                         |
-| `RETRY_DELAY`                | `2`          | seconds                                                 |
+| `USE_SSL`                    | `false`      |                                                                       |
+| `CA_FILE`                    | unset        | CA bundle for an internal CA                                          |
+| `WRITE_BATCH_SIZE`           | `100`        |                                                                       |
+| `HEARTBEAT`                  | `60`         | seconds                                                               |
+| `BLOCKED_CONNECTION_TIMEOUT` | `30`         | seconds                                                               |
+| `SOCKET_TIMEOUT`             | `10`         | seconds                                                               |
+| `CONNECTION_ATTEMPTS`        | `3`          |                                                                       |
+| `RETRY_DELAY`                | `2`          | seconds                                                               |
 
 `RABBITMQ_MANAGEMENT_URL` is read only by the system test
 helpers. The SDK itself does not use it.
