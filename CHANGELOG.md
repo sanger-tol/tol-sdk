@@ -8,9 +8,12 @@ SPDX-License-Identifier: MIT
 
 ## tol-sdk `2.9.0`
 
-01-10-2026
+06-10-2026
 
-- Rabbitmq Datasource, consumer & messages
+- Rabbitmq Datasource
+- Handler ABC
+- Consumer ABC
+- Email Sender class
 
 ## tol-sdk `2.8.1`
 
