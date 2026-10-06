@@ -5,5 +5,3 @@
 QUEUE = 'sdk-test.notify'
 BINDING_KEY = 'notify.sdk-test.#'
 ROUTING_KEY = 'notify.sdk-test.message'
-SOURCE = 'sdk-test'
-CREATED_AT = '2026-09-29T12:00Z'

@@ -3,7 +3,6 @@
 # SPDX-License-Identifier: MIT
 
 import dataclasses
-import json
 from unittest.mock import Mock, create_autospec
 
 from pika.adapters.blocking_connection import BlockingChannel
@@ -15,14 +14,7 @@ from tol.rabbitmq.connection import RabbitmqConnection
 from tol.rabbitmq.consumer import MessageConsumer
 from tol.rabbitmq.factory import create_consumer, create_rabbitmq_datasource
 from tol.rabbitmq.rabbitmq_datasource import RabbitmqDataSource
-
-BODY = {
-    'id': 'msg-1',
-    'type': 'test',
-    'source': 'sdk-test',
-    'created_at': '2026-09-29T12:00:00Z',
-    'context': {}
-}
+from tol.rabbitmq.schema import MessageEnvelope
 
 
 def _stub_broker(monkeypatch):
@@ -44,10 +36,20 @@ def _bus_message(ds):
     return ds.data_object_factory(
         'bus_message',
         id_='msg-1',
-        attributes={
-            'body': BODY,
-            'routing_key': 'notify.portal.message'
-        }
+        attributes={'message_type': 'message'}
+    )
+
+
+def _config_with_app():
+    """Creates a RabbitmqConfig object with app_name provided"""
+    return RabbitmqConfig(
+        host='rabbitmq-host',
+        port=5672,
+        username='test-user',
+        password='test-password',
+        vhost='test-vhost',
+        exchange='tol',
+        app_name='portal'
     )
 
 
@@ -70,35 +72,18 @@ def test_returns_configured_datasource(monkeypatch, config):
     assert published['exchange'] == 'notification'
     assert published['routing_key'] == 'notify.portal.message'
     assert published['mandatory'] is True
-    assert json.loads(published['body']) == BODY
-    assert published['properties'].message_id == 'msg-1'
-    assert published['properties'].app_id is None
+    envelope = MessageEnvelope.model_validate_json(published['body'])
+    assert envelope.source == 'portal'
+    assert published['properties'].app_id == 'portal'
 
 
-def test_app_name_stamped_as_app_id(monkeypatch, config):
-    """Test that config.app_name reaches the published app_id"""
-    _, mock_channel = _stub_broker(monkeypatch)
-    ds = create_rabbitmq_datasource(
-        dataclasses.replace(config, app_name='portal')
-    )
-
-    ds.insert_batch('bus_message', [_bus_message(ds)])
-
-    properties = mock_channel.basic_publish.call_args.kwargs['properties']
-    assert properties.app_id == 'portal'
-
-
-def _config_with_app():
-    """Creates a RabbitmqConfig object with app_name provided"""
-    return RabbitmqConfig(
-        host='rabbitmq-host',
-        port=5672,
-        username='test-user',
-        password='test-password',
-        vhost='test-vhost',
-        exchange='tol',
-        app_name='portal'
-    )
+@pytest.mark.parametrize('app_name', ['', 'Portal', 'portal.app'])
+def test_invalid_app_name_raises(config, app_name):
+    """Publishing needs app_name: it becomes the envelope source."""
+    with pytest.raises(ValueError):
+        create_rabbitmq_datasource(
+            dataclasses.replace(config, app_name=app_name)
+        )
 
 
 class TestCreateConsumer:

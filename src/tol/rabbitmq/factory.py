@@ -4,7 +4,7 @@
 
 from .config import RabbitmqConfig
 from .connection import QueueSpec, RabbitmqConnection
-from .constants import NAME_PATTERN
+from .constants import DEFAULT_CATEGORY, NAME_PATTERN
 from .consumer import Handler, MessageConsumer
 from .converter import DefaultObjectToMessageConverter
 from .rabbitmq_datasource import RabbitmqDataSource
@@ -21,7 +21,7 @@ def create_rabbitmq_datasource(config: RabbitmqConfig) -> RabbitmqDataSource:
 
     def converter_factory() -> DefaultObjectToMessageConverter:
         """Create a converter stamping messages with the apps id."""
-        return DefaultObjectToMessageConverter(app_id=config.app_name or None)
+        return DefaultObjectToMessageConverter(source=config.app_name)
 
     ds = RabbitmqDataSource(
         config=config,
@@ -36,7 +36,7 @@ def create_rabbitmq_datasource(config: RabbitmqConfig) -> RabbitmqDataSource:
 def create_consumer(
     config: RabbitmqConfig,
     handlers: dict[str, Handler],
-    category: str = 'notify'
+    category: str = DEFAULT_CATEGORY
 ) -> MessageConsumer:
     """
     Create a `MessageConsumer` for this app, declaring its queue topology.

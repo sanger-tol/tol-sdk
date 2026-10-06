@@ -14,9 +14,14 @@ from pydantic import ValidationError
 
 from .config import RabbitmqConfig
 from .connection import RabbitmqConnection
-from .constants import BUS_MESSAGE, ROUTING_KEY_PATTERN
-from .converter import ObjectToMessageConverter
-from .schema import MessageEnvelope, NotificationRequest
+from .constants import (
+    BUS_MESSAGE,
+    DEFAULT_CATEGORY,
+    NAME_PATTERN,
+    TYPE_PATTERN
+)
+from .converter import ObjectToMessageConverter, PublishMessage
+from .schema import NotificationRequest, generate_unique_id
 from ..core import DataObject, DataSource, DataSourceError, ReqFieldsTree
 from ..core.operator import Inserter
 
@@ -39,7 +44,9 @@ class RabbitmqDataSource(DataSource, Inserter):
     """
     A `DataSource` backed by a RabbitMQ broker.
 
-    Publishes validated `MessageEnvelope's via AMQP (`Inserter`).
+    Publishes `bus_message` objects (`Inserter`). Each one is wrapped in a
+    `MessageEnvelope` and routed by `<category>.<target_app>.<message_type>`;
+    callers never build either.
 
     Most users should use `create_rabbitmq_datasource()` rather than
     instantiating this directly.
@@ -51,6 +58,12 @@ class RabbitmqDataSource(DataSource, Inserter):
         connection_factory: Callable[[], RabbitmqConnection],
         to_message_converter_factory: Callable[[], ObjectToMessageConverter]
     ) -> None:
+        if not NAME_PATTERN.fullmatch(config.app_name):
+            raise ValueError(
+                f'app_name {config.app_name!r} must match '
+                f'{NAME_PATTERN.pattern}'
+            )
+
         self.__config = config
         self.__connection_factory = connection_factory
         self.__to_message = to_message_converter_factory
@@ -68,8 +81,11 @@ class RabbitmqDataSource(DataSource, Inserter):
         """Return the attribute types for each supported object type."""
         return {
             BUS_MESSAGE: {
-                'body': 'dict[str, Any]',
-                'routing_key': 'str',
+                'message_type': 'str',
+                'context': 'dict[str, Any]',
+                'target_app': 'str',
+                'category': 'str',
+                'correlation_id': 'str',
                 'headers': 'dict[str, Any]'
             }
         }
@@ -84,23 +100,23 @@ class RabbitmqDataSource(DataSource, Inserter):
         **kwargs: Any,
     ) -> list[DataObject]:
         """
-        Validate whole batch, then publish it with publisher confirms.
+        Validate and wrap the whole batch, then publish it with publisher
+        confirms. Objects without an id are returned with a generated one.
 
         Raises `DataSourceError` on any failures. A failure mid-publish
         leaves earlier messages in the batch already published.
         """
         self.__validate_object_type(object_type)
 
-        batch = [(obj, self.__validate_message(obj)) for obj in objects]
-
         converter = self.__to_message()
+        batch = [self.__prepare(obj, converter) for obj in objects]
 
         try:
             with self.__connection_factory() as conn:
                 channel = conn.channel
                 channel.confirm_delivery()
-                for obj, routing_key in batch:
-                    self.__publish(channel, converter, obj, routing_key)
+                for obj, routing_key, message in batch:
+                    self.__publish(channel, obj, routing_key, message)
         except pika.exceptions.AMQPError as e:
             raise DataSourceError(
                 title='Publish Failed',
@@ -108,17 +124,62 @@ class RabbitmqDataSource(DataSource, Inserter):
                 status_code=500
             ) from e
 
-        return [obj for obj, _ in batch]
+        return [obj for obj, _, _ in batch]
+
+    def __prepare(
+        self,
+        obj: DataObject,
+        converter: ObjectToMessageConverter
+    ) -> tuple[DataObject, str, PublishMessage]:
+        """Return `obj` (with an id), its routing key and message; 400 if invalid."""
+        if obj.id is None:
+            obj = self.data_object_factory(
+                BUS_MESSAGE,
+                id_=generate_unique_id(),
+                attributes=obj.attributes
+            )
+
+        routing_key = self.__routing_key(obj)
+
+        try:
+            message = converter.convert(obj)
+            if obj.message_type == 'notification':
+                NotificationRequest.model_validate(obj.context)
+        except ValidationError as e:
+            raise _bad_request(
+                obj,
+                str(e.errors(include_url=False, include_input=False))
+            ) from e
+
+        return obj, routing_key, message
+
+    def __routing_key(self, obj: DataObject) -> str:
+        """Return `<category>.<target_app>.<message_type>`; 400 if invalid."""
+        parts = (
+            ('category', obj.category or DEFAULT_CATEGORY, NAME_PATTERN),
+            ('target_app', obj.target_app or self.__config.app_name, NAME_PATTERN),
+            ('message_type', obj.message_type, TYPE_PATTERN),
+        )
+        validated: list[str] = []
+        for label, value, pattern in parts:
+            if not isinstance(value, str) or not pattern.fullmatch(value):
+                raise _bad_request(
+                    obj,
+                    f'{label} {value!r} must match {pattern.pattern}'
+                )
+            validated.append(value)
+
+        return '.'.join(validated)
 
     def __publish(
         self,
         channel: BlockingChannel,
-        converter: ObjectToMessageConverter,
         obj: DataObject,
-        routing_key: str
+        routing_key: str,
+        message: PublishMessage
     ) -> None:
         """Publish one message; an unbound routing key raises 422."""
-        body, properties = converter.convert(obj)
+        body, properties = message
         try:
             channel.basic_publish(
                 exchange=self.__config.exchange,
@@ -136,37 +197,6 @@ class RabbitmqDataSource(DataSource, Inserter):
                 ),
                 status_code=422
             ) from e
-
-    def __validate_message(self, obj: DataObject) -> str:
-        """Raises a 400 unless `obj` is a publishable bus message"""
-        routing_key = obj.routing_key
-        if (
-            not isinstance(routing_key, str)
-            or not ROUTING_KEY_PATTERN.match(routing_key)
-        ):
-            raise _bad_request(
-                obj,
-                f'routing_key {routing_key!r} must be '
-                '<category>.<app>.<subtype>'
-            )
-
-        try:
-            envelope = MessageEnvelope.model_validate(obj.body)
-            if envelope.type == 'notification':
-                NotificationRequest.model_validate(envelope.context)
-        except ValidationError as e:
-            raise _bad_request(
-                obj,
-                str(e.errors(include_url=False, include_input=False))
-            ) from e
-
-        if envelope.id != obj.id:
-            raise _bad_request(
-                obj,
-                f'envelope id {envelope.id!r} does not match object id'
-            )
-
-        return routing_key
 
     def __validate_object_type(self, object_type: str) -> None:
         """Validate that the object type is supported by this data source."""

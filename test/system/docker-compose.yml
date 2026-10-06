@@ -54,6 +54,7 @@ services:
       - RABBITMQ_USERNAME=test-user
       - RABBITMQ_PASSWORD=test-password
       - RABBITMQ_MANAGEMENT_URL=http://rabbitmq:15672
+      - RABBITMQ_APP_NAME=sdk-test
     depends_on:
       - db
       - elastic
@@ -100,6 +101,7 @@ services:
       - RABBITMQ_USERNAME=test-user
       - RABBITMQ_PASSWORD=test-password
       - RABBITMQ_MANAGEMENT_URL=http://rabbitmq:15672
+      - RABBITMQ_APP_NAME=sdk-test
     networks:
       - test-network
     depends_on:

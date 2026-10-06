@@ -17,7 +17,7 @@ from .broker import (
     queue_info,
     wait_for_depth
 )
-from .constants import CREATED_AT, QUEUE, ROUTING_KEY, SOURCE
+from .constants import QUEUE, ROUTING_KEY
 
 
 DEAD_QUEUE = f'{QUEUE}.dead'
@@ -69,16 +69,7 @@ class TestDeadLetterQueue:
         message = datasource.data_object_factory(
             'bus_message',
             id_='poison-1',
-            attributes={
-                'body': {
-                    'id': 'poison-1',
-                    'type': 'poison',
-                    'source': SOURCE,
-                    'created_at': CREATED_AT,
-                    'context': {}
-                },
-                'routing_key': ROUTING_KEY
-            }
+            attributes={'message_type': 'poison'}
         )
         datasource.insert_batch('bus_message', [message])
 

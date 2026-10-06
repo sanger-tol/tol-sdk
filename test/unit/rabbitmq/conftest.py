@@ -21,6 +21,7 @@ def config():
         password='test-password',
         vhost='test-vhost',
         exchange='notification',
+        app_name='portal'
     )
 
 

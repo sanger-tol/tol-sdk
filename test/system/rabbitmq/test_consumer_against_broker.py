@@ -4,14 +4,13 @@
 
 import pytest
 
-from tol.rabbitmq import NotificationRequest
 from tol.rabbitmq.connection import RabbitmqConnection
 from tol.rabbitmq.consumer import MessageConsumer
 from tol.rabbitmq.handlers import notification_handler
-from tol.rabbitmq.schema import NotificationChannel, wrap_in_envelope
+from tol.rabbitmq.schema import NotificationChannel
 
 from .broker import publish_raw, queue_depth
-from .constants import QUEUE, ROUTING_KEY, SOURCE
+from .constants import QUEUE, ROUTING_KEY
 
 
 @pytest.fixture
@@ -20,12 +19,12 @@ def received():
     return []
 
 
-def _publish(datasource, body, message_id):
-    """Publish a validated bus message through the datasource"""
+def _publish(datasource, message_type, context, message_id):
+    """Publish a bus message through the datasource."""
     message = datasource.data_object_factory(
         'bus_message',
         id_=message_id,
-        attributes={'body': body, 'routing_key': ROUTING_KEY}
+        attributes={'message_type': message_type, 'context': context}
     )
     datasource.insert_batch('bus_message', [message])
 
@@ -40,7 +39,7 @@ class TestConsumerAgainstBroker:
         """
         Test that a valid notification request is dispatched and acknowledged
         """
-        request = NotificationRequest.model_validate({
+        _publish(datasource, 'notification', {
             'id': 'notification-1',
             'channels': ['email', 'slack'],
             'type': 'test_type',
@@ -49,13 +48,7 @@ class TestConsumerAgainstBroker:
                 {'email': 'nowrequired@example.com', 'user_id': 'user_2'}
             ],
             'context': {'key': 'value'}
-        })
-
-        _publish(
-            datasource,
-            wrap_in_envelope(request, SOURCE).model_dump(mode='json'),
-            'notification-1'
-        )
+        }, 'notification-1')
 
         dispatchers = {
             NotificationChannel.EMAIL: received.append,

@@ -2,11 +2,11 @@
 #
 # SPDX-License-Identifier: MIT
 
-import json
-import time
+from datetime import UTC, datetime
 
 import pika
 
+from .schema import MessageEnvelope
 from ..core import DataObject
 from ..core.core_converter import Converter
 
@@ -18,27 +18,32 @@ ObjectToMessageConverter = Converter[DataObject, PublishMessage]
 
 
 class DefaultObjectToMessageConverter(ObjectToMessageConverter):
-    """Serialises a `bus_message` to a JSON AMQP message."""
+    """Wraps a `bus_message` in a `MessageEnvelope` and serialises it."""
 
-    def __init__(self, app_id: str | None = None) -> None:
-        self.__app_id = app_id
+    def __init__(self, source: str) -> None:
+        self.__source = source
 
     def convert(self, input_: DataObject) -> PublishMessage:
-        """Convert a `bus_message` to a JSON AMQP message."""
-        body = input_.body
-        if not isinstance(body, dict):
-            raise TypeError(
-                f'bus_message {input_.id!r}: body must be a dict',
-                f'got {type(body).__name__}'
-            )
+        """Raises `pydantic.ValidationError` if the attributes are invalid."""
+        context = input_.context
+        envelope = MessageEnvelope.model_validate({
+            'id': input_.id,
+            'type': input_.message_type,
+            'source': self.__source,
+            'created_at': datetime.now(UTC),
+            'correlation_id': input_.correlation_id,
+            'context': {} if context is None else context,
+        })
+
         properties = pika.BasicProperties(
             content_type='application/json',
             delivery_mode=2,  # persistent
-            message_id=input_.id,
-            type=body['type'],
-            app_id=self.__app_id,
-            timestamp=int(time.time()),
+            message_id=envelope.id,
+            type=envelope.type,
+            app_id=self.__source,
+            correlation_id=envelope.correlation_id,
+            timestamp=int(envelope.created_at.timestamp()),
             headers=input_.headers,
         )
 
-        return json.dumps(input_.body), properties
+        return envelope.model_dump_json(), properties

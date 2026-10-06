@@ -49,7 +49,8 @@ different arguments fails with `PRECONDITION_FAILED`. In dev, run
 
 ## Message envelope
 
-Every message body is a `MessageEnvelope`:
+Every message body on the wire is a `MessageEnvelope`. `RabbitmqDataSource`
+builds it from the `bus_message` attributes; publishers never do:
 
 ```json
 {
@@ -63,39 +64,41 @@ Every message body is a `MessageEnvelope`:
 }
 ```
 
-- `id` is the message id and must equal the `bus_message` object id.
-- `type` selects the consumer handler.
-- `context` is owned by that handler.
-- `created_at` must be timezone-aware.
+- `id` is the `bus_message` object id, generated if the object has none.
+- `type` is the `message_type` attribute and selects the consumer handler.
+- `source` (the publisher's `RABBITMQ_APP_NAME`) and `created_at` are
+  stamped by the datasource. A caller-supplied `source` is ignored.
+- `context` is owned by the handler.
 
 For `type == "notification"`, `context` is a full `NotificationRequest`.
-Use `wrap_in_envelope(request, source)` to build it.
 
 ## Publishing
+
+| Attribute        | Default                 | Notes                                          |
+| ---------------- | ----------------------- | ---------------------------------------------- |
+| `message_type`   | **required**            | lowercase words, dot-separated allowed         |
+| `context`        | `{}`                    | handler-owned payload                          |
+| `target_app`     | own `RABBITMQ_APP_NAME` | the app whose queue receives the message       |
+| `category`       | `notify`                |                                                |
+| `correlation_id` | unset                   |                                                |
+| `headers`        | unset                   | AMQP headers                                   |
+
+The datasource derives the routing key
+`<category>.<target_app>.<message_type>`.
 
 ### Python
 
 ```python
-from tol.rabbitmq import (
-    NotificationRequest, RabbitmqConfig, create_rabbitmq_datasource,
-    generate_unique_id, wrap_in_envelope,
-)
+from tol.rabbitmq import RabbitmqConfig, create_rabbitmq_datasource
 
-ds = create_rabbitmq_datasource(RabbitmqConfig.from_env())
+ds = create_rabbitmq_datasource(RabbitmqConfig.from_env())  # needs RABBITMQ_APP_NAME
 
-request = NotificationRequest(
-    id=generate_unique_id(),
-    channels=['email'],
-    type='sample_received',
-    recipients=[{'email': 'someone@sanger.ac.uk'}],
-    context={'sample_id': 'S123'},
-)
 message = ds.data_object_factory(
     'bus_message',
-    id_=request.id,
     attributes={
-        'body': wrap_in_envelope(request, source='portal').model_dump(mode='json'),
-        'routing_key': 'notify.portal.sample_received',
+        'message_type': 'sample_received',
+        'context': {'sample_id': 'S123'},
+        'target_app': 'portal',
     },
 )
 ds.insert_batch('bus_message', [message])
@@ -118,10 +121,10 @@ Then send a JSON:API insert to `POST /api/v1/data/bus_message:insert`:
   "data": [
     {
       "type": "bus_message",
-      "id": "<envelope id>",
       "attributes": {
-        "body": { "...": "envelope" },
-        "routing_key": "notify.portal.sample_received"
+        "message_type": "sample_received",
+        "context": { "sample_id": "S123" },
+        "target_app": "portal"
       }
     }
   ]
@@ -136,11 +139,11 @@ Otherwise it is an open relay: messages carry recipients and content.
 Each batch is validated in full before anything is published. Publishing
 uses publisher confirms and `mandatory=True`.
 
-| Failure                                                | Status |
-| ------------------------------------------------------ | ------ |
-| Bad routing key, invalid envelope/request, id mismatch | 400    |
-| No queue bound for the routing key (unroutable)        | 422    |
-| Any other broker error                                 | 500    |
+| Failure                                                       | Status |
+| ------------------------------------------------------------- | ------ |
+| Invalid `message_type`/`target_app`/`category`/`context`/request | 400 |
+| No queue bound for the routing key (unroutable)               | 422    |
+| Any other broker error                                        | 500    |
 
 ## Consuming
 
@@ -272,7 +275,7 @@ Prefix `RABBITMQ_` (change it via `RabbitmqConfig.from_env(prefix=...)`).
 | `EXCHANGE`                   | `tol`        |                                                         |
 | `DLX`                        | `tol.dlx`    |                                                         |
 | `DECLARE_EXCHANGES`          | `true`       | `false` in staging/prod: exchanges are ops-owned        |
-| `APP_NAME`                   | `''`         | required by `create_consumer`; stamped as AMQP `app_id` |
+| `APP_NAME`                   | **required** | to publish or consume; stamped as envelope `source` and AMQP `app_id` |
 | `USE_SSL`                    | `false`      |                                                         |
 | `CA_FILE`                    | unset        | CA bundle for an internal CA                            |
 | `WRITE_BATCH_SIZE`           | `100`        |                                                         |
