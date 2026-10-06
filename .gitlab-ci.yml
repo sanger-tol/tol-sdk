@@ -79,7 +79,7 @@ system-test-python-package:
     DOCKER_TLS_VERIFY: "1"
   before_script:
     - cd test/system
-    - docker-compose up -d db elastic rabbitmq
+    - docker-compose up -d db elastic rabbitmq mailpit
     - sleep 15
     - docker-compose up -d system-test-api-sql system-test-api-elastic system-test-api-notification
   script:
@@ -99,23 +99,8 @@ integration-test-python-package:
   extends: .unit-test-python-package
   image: $BUILT_IMAGE
   stage: integration test
-  services:
-    - name: rabbitmq:4.3-management
-      alias: rabbitmq
-    - name: axllent/mailpit:v1.31.3
-      alias: mailpit
   variables:
     TEST_TYPE: integration
-    RABBITMQ_HOST: rabbitmq
-    RABBITMQ_PORT: "5672"
-    RABBITMQ_USERNAME: guest
-    RABBITMQ_PASSWORD: guest
-    RABBITMQ_MANAGEMENT_URL: http://rabbitmq:15672
-    SMTP_HOST: mailpit
-    SMTP_PORT: "1025"
-    SMTP_SECURITY: none
-    SMTP_FROM: noreply@tol-sdk.test
-    MAILPIT_URL: http:mailpit:8025
   needs:
     - unit-test-python-package
   rules:
