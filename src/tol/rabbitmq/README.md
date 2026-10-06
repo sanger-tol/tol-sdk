@@ -282,7 +282,7 @@ Prefix `RABBITMQ_` (change it via `RabbitmqConfig.from_env(prefix=...)`).
 | `CONNECTION_ATTEMPTS`        | `3`          |                                                         |
 | `RETRY_DELAY`                | `2`          | seconds                                                 |
 
-`RABBITMQ_MANAGEMENT_URL` is read only by the integration and system test
+`RABBITMQ_MANAGEMENT_URL` is read only by the system test
 helpers. The SDK itself does not use it.
 
 Email uses the prefix `SMTP_` (change it via `EmailConfig.from_env(prefix=...)`).
@@ -297,4 +297,4 @@ Email uses the prefix `SMTP_` (change it via `EmailConfig.from_env(prefix=...)`)
 | `PASSWORD` | unset                |                                                        |
 | `TIMEOUT`  | `30`                 | seconds                                                |
 
-`MAILPIT_URL` is read only by the integration test.
+`MAILPIT_URL` is read only by the system tests.
