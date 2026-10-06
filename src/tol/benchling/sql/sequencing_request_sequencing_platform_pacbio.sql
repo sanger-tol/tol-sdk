@@ -41,8 +41,8 @@ Output: Table with cols:
 24) spri_type: [character] SPRI type used for sample preparation.
 25) bead_type: [character] Bead type used for SPRI.
 26) completion_date: [date]
-27) library_prep_receipt_date: [varchar] LR Library prep receipt date, only available for samples in LR Benchling.
-28) library_prep_completion_date: [varchar] LR Library prep completion date, only available for samples in LR Benchling.
+27) library_start_date: [varchar] LR Library prep receipt date, only available for samples in LR Benchling.
+28) library_complete_date: [varchar] LR Library prep completion date, only available for samples in LR Benchling.
 29) library_prep_qc_decision: [varchar] LR Library prep QC decision, only available for samples in LR Benchling.
 30) sequencing_platform: [character] Sequencing platform: pacbio.
 31) source: [character] Data source: v1, v1_pooled, v2, v2_pooled, legacy_bnt
@@ -138,12 +138,12 @@ pacbio_submissions_container_routine AS (
 		spri.spri_type,
 		spri.bead_type,
 		pbsum.submission_date AS completion_date,
-		sr.date_arrived_in_lab AS library_prep_receipt_date,
+		sr.date_arrived_in_lab AS library_start_date,
 		CASE
 			WHEN lps.id IS NOT NULL
 				THEN DATE(lpsc.created_at$)
 			ELSE DATE(psb.created_at$)
-		END AS library_prep_completion_date,
+		END AS library_complete_date,
 		CASE 
 			WHEN lps.id IS NOT NULL THEN
 				CASE WHEN lpsc.final_sample_decision IS NOT NULL
@@ -263,8 +263,8 @@ pacbio_submissions_container_pooled AS (
 		spri.spri_type AS spri_type,
 		spri.bead_type AS bead_type,
 		pbsum.submission_date AS completion_date, 
-		NULL::date AS library_prep_receipt_date,
-		NULL::date AS library_prep_completion_date,
+		NULL::date AS library_start_date,
+		NULL::date AS library_complete_date,
 		NULL::varchar AS library_prep_qc_decision,
 		'pacbio'::varchar AS sequencing_platform,
 		'v1_pooled'::varchar AS source
@@ -349,8 +349,8 @@ pacbio_submissions_container_legacy_deprecated AS (
 		spri.spri_type AS spri_type,
 		spri.bead_type AS bead_type,
 		subsam.created_at$ AS completion_date,
-		NULL::date AS library_prep_receipt_date,
-		NULL::date AS library_prep_completion_date,
+		NULL::date AS library_start_date,
+		NULL::date AS library_complete_date,
 		NULL::varchar AS library_prep_qc_decision,
 		'pacbio'::varchar AS sequencing_platform,
 		'legacy_bnt'::varchar AS source
@@ -422,8 +422,8 @@ pacbio_submissions_plate_automated_manifest AS (
 		spri.spri_type,
 		spri.bead_type,
 		DATE(pbsubm_p.created_at$) AS completion_date,
-		NULL::date AS library_prep_receipt_date,
-		NULL::date AS library_prep_completion_date,
+		NULL::date AS library_start_date,
+		NULL::date AS library_complete_date,
 		NULL::varchar AS library_prep_qc_decision,
 		'pacbio'::varchar AS sequencing_platform,
 		'v2'::varchar AS source
@@ -499,8 +499,8 @@ pacbio_submissions_plate_automated_manifest_pooled AS (
 		spri.spri_type AS spri_type,
 		spri.bead_type AS bead_type,
 		DATE(pbsubm_p.created_at$)AS completion_date,
-		NULL::date AS library_prep_receipt_date,
-		NULL::date AS library_prep_completion_date,
+		NULL::date AS library_start_date,
+		NULL::date AS library_complete_date,
 		NULL::varchar AS library_prep_qc_decision,
 		'pacbio'::varchar AS sequencing_platform,
 		'v2_pooled'::varchar AS source
@@ -574,12 +574,12 @@ pacbio_submissions_plate_routine AS (
 		spri.spri_type AS spri_type,
 		spri.bead_type AS bead_type,
 		pbsubm_p.created_at$ AS completion_date,
-		sr.date_arrived_in_lab AS library_prep_receipt_date,
+		sr.date_arrived_in_lab AS library_start_date,
 		CASE
 			WHEN lps.id IS NOT NULL
 				THEN DATE(lpsc.created_at$)
 			ELSE DATE(psb.created_at$)
-		END AS library_prep_completion_date,
+		END AS library_complete_date,
 		CASE 
 			WHEN lps.id IS NOT NULL THEN
 				CASE WHEN lpsc.final_sample_decision IS NOT NULL
@@ -686,12 +686,12 @@ pacbio_submissions_plate_routine_pooled AS (
 		spri.spri_type AS spri_type,
 		spri.bead_type AS bead_type,
 		pbsubm_p.created_at$ AS completion_date,
-		sr.date_arrived_in_lab AS library_prep_receipt_date,
+		sr.date_arrived_in_lab AS library_start_date,
 		CASE
 			WHEN lps.id IS NOT NULL
 				THEN DATE(lpsc.created_at$)
 			ELSE DATE(psb.created_at$)
-		END AS library_prep_completion_date,
+		END AS library_complete_date,
 		CASE 
 			WHEN lps.id IS NOT NULL THEN
 				CASE WHEN lpsc.final_sample_decision IS NOT NULL
