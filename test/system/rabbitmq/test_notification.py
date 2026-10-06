@@ -12,7 +12,6 @@ import requests
 from tol.rabbitmq.schema import NotificationChannel
 
 from . import fakes
-
 from .broker import peek_messages, wait_for_depth
 from .constants import QUEUE
 

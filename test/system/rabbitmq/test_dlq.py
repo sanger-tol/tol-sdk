@@ -11,7 +11,6 @@ import pytest
 from tol.rabbitmq.connection import RabbitmqConnection
 
 from . import fakes
-
 from .broker import (
     publish_raw, purge,
     queue_depth,

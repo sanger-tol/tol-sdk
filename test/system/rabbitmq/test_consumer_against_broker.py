@@ -4,10 +4,11 @@
 
 import pytest
 
+from tol.rabbitmq.schema import NotificationChannel
+
 from . import fakes
 from .broker import publish_raw, queue_depth
 from .constants import QUEUE, ROUTING_KEY
-from tol.rabbitmq.schema import NotificationChannel
 
 
 @pytest.fixture
