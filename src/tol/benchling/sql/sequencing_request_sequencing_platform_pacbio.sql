@@ -764,6 +764,118 @@ pacbio_submissions_plate_routine_pooled AS (
 		AND proj.name = 'ToL Core Lab' -- Selecting ToL Core Lab submissions only
 		AND f.name IN ('Routine Throughput', 'PacBio prep', 'Submissions', 'Core Lab Entities', 'Benchling MS Project Move')
 		AND wfts.status_type = 'COMPLETED'
+),
+
+pacbio_submissions_from_lres AS (
+	SELECT
+		sr.sanger_sample_id,
+		lpb.name$ AS library_batch_id,
+		psbc.barcode AS library_container_id,
+		sr.date_arrived_in_lab AS library_start_date,
+		CASE
+			WHEN lps.id IS NOT NULL
+				THEN DATE(lpsc.created_at$)
+			ELSE DATE (psb.created_at$)
+		END AS library_complete_date,
+		CASE 
+			WHEN lps.id IS NOT NULL THEN
+				CASE WHEN lpsc.final_sample_decision IS NOT NULL
+					THEN lpsc.final_sample_decision
+				ELSE 'Sample Status Check'
+			END
+			ELSE psb.decision 
+		END AS library_prep_qc_decision
+	FROM lr_library_preparation_sample_receipt_output$raw AS sr
+	LEFT JOIN lr_long_read_library_preparation_b$raw AS lr_proc
+		ON lr_proc.sanger_sample_id = sr.sanger_sample_id
+	LEFT JOIN lr_library_preparation_batch$raw AS lpb
+		ON lr_proc.library_preparation_batch = lpb.id
+	LEFT JOIN lr_long_read_library_preparation_b_output$raw AS psb
+		ON psb.sanger_sample_id = sr.sanger_sample_id
+	LEFT JOIN container$raw AS psbc
+		ON psb.container = psbc.id
+	LEFT JOIN lr_lib_prep_sample_status_check$raw AS lps
+		ON lps.sanger_sample_id = sr.sanger_sample_id
+	LEFT JOIN lr_lib_prep_sample_status_check_output AS lpsc
+		ON lpsc.sanger_sample_id = sr.sanger_sample_id
+),
+
+lres_pacbio_submissions AS (
+	SELECT DISTINCT
+		t.sts_id,
+		t.taxon_id,
+		tp.id AS tissue_prep_id,
+		NULL::varchar AS submission_sample_id,
+		ssid.sanger_sample_id AS extraction_id,
+		NULL::varchar AS submission_sample_name,
+	 	NULL::varchar AS fluidx_container_id,
+		t.programme_id,
+		t.specimen_id,
+		NULL::varchar AS tube_id,
+		ssid.sanger_sample_id AS sanger_sample_id,
+		NULL::varchar AS plate_name,
+		CASE 
+			WHEN lr_lib.library_start_date IS NOT NULL THEN 'LI'::varchar 
+		ELSE NULL
+		END AS library_type,
+		NULL::float8 AS number_of_smrt_cells_required,
+		NULL::float8 AS sheared_femto_fragment_size_bp,
+		NULL::float8 AS post_spri_concentration_ngul,
+		NULL::jsonb AS post_spri_volume_ul,
+		NULL::float8 AS nanodrop_260280,
+		NULL::float8 AS nanodrop_260230,
+		NULL::float8 AS nanodrop_concentration_ngul,
+		NULL::varchar AS sample_prep_additional_requirements,
+		lr_lib.library_batch_id,
+		NULL::varchar AS type_of_shearing,
+		NULL::int AS shearing_speed,
+		lr_lib.library_container_id,
+		NULL::varchar AS spri_type,
+		NULL::varchar AS bead_type,
+		DATE(tpsub.submitted_submission_date) AS completion_date,
+		lr_lib.library_start_date,
+		lr_lib.library_complete_date,
+		lr_lib.library_prep_qc_decision,
+		'pacbio'::varchar AS sequencing_platform,
+		'v1'::varchar AS source
+	FROM tissue_prep$raw AS tp
+	LEFT JOIN tissue$raw AS t
+		ON tp.tissue = t.id
+	LEFT JOIN container_content$raw AS cc 
+		ON tp.id = cc.entity_id
+	LEFT JOIN container$raw AS c 
+		ON cc.container_id = c.id
+	LEFT JOIN tissue_prep_submission_workflow_output$raw AS tpsub
+		ON c.id = tpsub.sample_tube_id
+	LEFT JOIN container$raw AS sub_con
+		ON tpsub.sample_tube_id = sub_con.id
+	LEFT JOIN storage$raw AS stor 
+		ON c.location_id = stor.id
+	LEFT JOIN sanger_sample_id$raw AS ssid 
+		ON c.id = ssid.sample_tube
+	LEFT JOIN project$raw AS proj
+		ON tp.project_id$ = proj.id
+	LEFT JOIN folder$raw AS f 
+		ON tp.folder_id$ = f.id
+	-- LR information joins start here
+	LEFT JOIN dna_extract$raw AS dna
+		ON dna.tissue_prep = tp.id
+		AND dna.archived$ = false
+		AND dna.project_id$ = 'src_REvgPRH1dy' -- the LR project ID
+	LEFT JOIN lr_long_read_dna_extraction_output$raw AS output
+		ON dna.id = output.sample_id
+	LEFT JOIN lr_dna_extraction_sample_status_check$raw AS sc
+		ON sc.sanger_sample_id = ssid.sanger_sample_id
+	LEFT JOIN lr_dna_extraction_sample_status_check_output$raw AS ssc
+		ON ssc.sample_id = dna.id
+	LEFT JOIN lr_lib
+		ON lr_lib.sanger_sample_id = ssid.sanger_sample_id
+	WHERE sub_con.id IS NOT NULL
+		AND proj.name = 'ToL Core Lab'
+		AND f.name = 'Sample Prep'
+		AND tpsub.downstream_application IS DISTINCT FROM 'RNA'
+		AND library_start_date IS NOT NULL
+	ORDER BY completion_date DESC
 )
 
 SELECT *
@@ -786,4 +898,7 @@ FROM pacbio_submissions_plate_routine
 UNION 
 SELECT *
 FROM pacbio_submissions_plate_routine_pooled
+UNION
+SELECT *
+FROM pacbio_submissions_from_lres
 ORDER BY source DESC
