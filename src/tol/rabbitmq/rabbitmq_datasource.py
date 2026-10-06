@@ -18,6 +18,7 @@ from .constants import (
     BUS_MESSAGE,
     DEFAULT_CATEGORY,
     NAME_PATTERN,
+    OUTPUT_MESSAGE,
     TYPE_PATTERN
 )
 from .converter import ObjectToMessageConverter, PublishMessage
@@ -74,7 +75,7 @@ class RabbitmqDataSource(DataSource, Inserter):
     @property
     def supported_types(self) -> list[str]:
         """Return the list of supported object types for this data source."""
-        return [BUS_MESSAGE]
+        return [BUS_MESSAGE, OUTPUT_MESSAGE]
 
     @property
     def attribute_types(self) -> dict[str, dict[str, str]]:
@@ -87,6 +88,16 @@ class RabbitmqDataSource(DataSource, Inserter):
                 'category': 'str',
                 'correlation_id': 'str',
                 'headers': 'dict[str, Any]'
+            },
+            OUTPUT_MESSAGE: {
+                'message_type': 'str',
+                'version': 'int',
+                'context': 'dict[str, Any]',
+                'source': 'str',
+                'created_at': 'datetime',
+                'correlation_id': 'str',
+                'routing_key': 'str',
+                'redelivered': 'bool'
             }
         }
 
@@ -199,7 +210,7 @@ class RabbitmqDataSource(DataSource, Inserter):
             ) from e
 
     def __validate_object_type(self, object_type: str) -> None:
-        """Validate that the object type is supported by this data source."""
+        """Only `bus_message` can be inserted. `output_message` is read-only."""
         if object_type != BUS_MESSAGE:
             raise DataSourceError(
                 title='Bad Request',

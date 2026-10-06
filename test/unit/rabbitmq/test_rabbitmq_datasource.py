@@ -89,6 +89,20 @@ class TestObjectTypeValidation:
             list(datasource.insert_batch('bad_type', []))
         assert exc_info.value.status_code == 400
 
+    def test_output_message_is_read_only(self, datasource, mock_channel):
+        """output_message is supported for consuming, not inserting."""
+        obj = datasource.data_object_factory(
+            'output_message',
+            id_='msg-1',
+            attributes={'message_type': 'message'}
+        )
+
+        with pytest.raises(DataSourceError) as exc_info:
+            datasource.insert_batch('output_message', [obj])
+
+        assert exc_info.value.status_code == 400
+        mock_channel.basic_publish.assert_not_called()
+
 
 class TestRoutingKey:
     def test_defaults_to_own_app_and_notify(self, datasource, mock_channel):

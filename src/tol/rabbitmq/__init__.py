@@ -5,6 +5,10 @@
 from .config import RabbitmqConfig  # noqa F401
 from .connection import QueueSpec, RabbitmqConnection  # noqa F401
 from .constants import *  # noqa F401
+from .converter import (  # noqa F401
+    DefaultMessageToObjectConverter,
+    DefaultObjectToMessageConverter
+)
 from .consumer import MessageConsumer  # noqa F401
 from .dispatchers import EmailSender, email_dispatcher  # noqa F401
 from .factory import create_consumer, create_rabbitmq_datasource  # noqa F401

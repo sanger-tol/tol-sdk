@@ -63,7 +63,7 @@ def test_returns_configured_datasource(monkeypatch, config):
     ds = create_rabbitmq_datasource(config)
 
     assert isinstance(ds, RabbitmqDataSource)
-    assert ds.supported_types == ['bus_message']
+    assert ds.supported_types == ['bus_message', 'output_message']
     assert ds.write_batch_size == config.write_batch_size
 
     ds.insert_batch('bus_message', [_bus_message(ds)])

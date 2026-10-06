@@ -5,9 +5,11 @@
 from datetime import UTC, datetime
 
 import pika
+from pika.spec import Basic
 
+from .constants import OUTPUT_MESSAGE
 from .schema import MessageEnvelope
-from ..core import DataObject
+from ..core import DataObject, DataObjectFactory
 from ..core.core_converter import Converter
 
 PublishMessage = tuple[str, pika.BasicProperties]
@@ -47,3 +49,37 @@ class DefaultObjectToMessageConverter(ObjectToMessageConverter):
         )
 
         return envelope.model_dump_json(), properties
+
+
+ReceivedMessage = tuple[Basic.Deliver, bytes]
+"""The (method, body) pair a consumer receives from the broker."""
+
+MessageToObjectConverter = Converter[ReceivedMessage, DataObject]
+"""Converts a received AMPQ message into an `output_message`"""
+
+
+class DefaultMessageToObjectConverter(MessageToObjectConverter):
+    """Unwraps a `MessageEnvelope` into an `output_message`"""
+
+    def __init__(self, data_object_factory: DataObjectFactory) -> None:
+        self.__factory = data_object_factory
+
+    def convert(self, input_: ReceivedMessage) -> DataObject:
+        """Raises `pydantic.ValidationError` if the body is not an envelope."""
+        method, body = input_
+        envelope = MessageEnvelope.model_validate_json(body)
+
+        return self.__factory(
+            OUTPUT_MESSAGE,
+            id_=envelope.id,
+            attributes={
+                'message_type': envelope.type,
+                'version': envelope.version,
+                'context': envelope.context,
+                'source': envelope.source,
+                'created_at': envelope.created_at,
+                'correlation_id': envelope.correlation_id,
+                'routing_key': method.routing_key,
+                'redelivered': method.redelivered
+            }
+        )
