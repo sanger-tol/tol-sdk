@@ -6,6 +6,15 @@ SPDX-License-Identifier: MIT
 
 # Changelog
 
+## tol-sdk `2.9.0`
+
+06-10-2026
+
+- Rabbitmq Datasource
+- Handler ABC
+- Consumer ABC
+- Email Sender class
+
 ## tol-sdk `2.8.1`
 
 23-09-2026

@@ -8,14 +8,14 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "tol-sdk"
-version = "2.8.1"
+version = "2.9.0"
 description = "SDK for interaction with ToL, Sanger and external services"
 readme = "README.md"
 authors = [
     { name = "ToL Platforms Team", email = "tol-platforms@sanger.ac.uk" }
 ]
 license = { text = "MIT" }
-requires-python = ">=3.10"
+requires-python = ">=3.11"
 classifiers = [
     "Programming Language :: Python :: 3",
     "License :: OSI Approved :: MIT License",
@@ -35,6 +35,8 @@ dependencies = [
   "dateparser == 1.2.1",
   "pydantic >= 2.13.5, < 3.0.0",
   "nanoid == 2.0.0",
+  "pika == 1.4.4",
+  "jinja2 == 3.1.6",
 ]
 
 [project.optional-dependencies]
@@ -81,6 +83,7 @@ where = ["src"]
 [tool.setuptools.package-data]
 "tol" = ["../certs/cacert.pem"]
 "tol.benchling.sql" = ["*.sql"]
+"tol.notify" = ["templates/*.html"]
 
 [project.scripts]
 tol = "tol.cli:cli"
