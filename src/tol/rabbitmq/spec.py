@@ -11,8 +11,7 @@ T = TypeVar('T')
 
 def instantiate(spec: Mapping[str, Any], base: type[T], **kwargs: Any) -> T:
     """
-    Build `{'module', 'class_name', 'config_details'}` the way pipelines
-    build steps: `cls(config=cls.Config(**config_details), **kwargs)`.
+    Build `{'module', 'class_name', 'config_details'}`.
 
     Raises `TypeError` unless the class subclasses `base`.
     """
