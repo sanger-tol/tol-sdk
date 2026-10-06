@@ -304,11 +304,13 @@ class MlwhDataSource(DataSource, DetailGetter, ListGetter):
             LEFT JOIN ( # only applicable for rna and hic libraries
               SELECT
                 s.friendly_name,
-                MAX(CASE WHEN et.key = 'library_start' THEN e.created_at END) AS library_start_date,
-                MAX(CASE WHEN et.key = 'library_complete' THEN e.created_at END) AS library_complete_date
-              FROM 
+                MAX(CASE WHEN et.key = 'library_start' THEN e.created_at END)
+                    AS library_start_date,
+                MAX(CASE WHEN et.key = 'library_complete' THEN e.created_at END)
+                    AS library_complete_date
+              FROM
                 events AS e
-              LEFT JOIN event_types AS et 
+              LEFT JOIN event_types AS et
                 ON e.event_type_id = et.id
               LEFT JOIN roles AS r
                 ON r.event_id = e.id
