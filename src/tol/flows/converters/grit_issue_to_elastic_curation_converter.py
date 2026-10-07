@@ -126,7 +126,7 @@ class GritIssueToElasticCurationConverter(
             att_search = re.search(rf'{att}\s*([0-9]\w*)\s*([0-9]\w*)', data)
             att_before = int(att_search.group(1))
             att_after = int(att_search.group(2))
-            att_change_per = (att_after - att_before) / att_before * 100
+            att_change_per = (att_after - att_before) / att_before * 100 if att_before else None
             return {
                 f'{contig_or_scaffold}_{att.lower()}_before': att_before,
                 f'{contig_or_scaffold}_{att.lower()}_after': att_after,

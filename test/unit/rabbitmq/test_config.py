@@ -57,7 +57,7 @@ class TestRabbitmqConfigFromEnv:
         assert config.declare_exchanges is True
 
     def test_overrides(self, monkeypatch):
-        monkeypatch.setenv('RABBITMQ_APP_NAME', 'portal')
+        monkeypatch.setenv('APP_NAME', 'portal')
         monkeypatch.setenv('RABBITMQ_DLX', 'custom.dlx')
         monkeypatch.setenv('RABBITMQ_DECLARE_EXCHANGES', 'false')
 

@@ -6,6 +6,14 @@ SPDX-License-Identifier: MIT
 
 # Changelog
 
+## tol-sdk `2.9.1`
+
+07-10-2026
+
+- Avoid divide by zero error in Grit converter
+- Added tol.sources.rabbitmq()
+- Use APP_NAME instead of RABBITMQ_APP_NAME
+
 ## tol-sdk `2.9.0`
 
 06-10-2026
