@@ -101,13 +101,7 @@ integration-test-python-package:
   stage: integration test
   variables:
     TEST_TYPE: integration
-    RABBITMQ_HOST: $RABBITMQ_HOST
-    RABBITMQ_PORT: "$RABBITMQ_PORT"
     APP_NAME: integration-test
-    RABBITMQ_USERNAME: $RABBITMQ_USERNAME
-    RABBITMQ_PASSWORD: $RABBITMQ_PASSWORD
-    RABBITMQ_USE_SSL: $RABBITMQ_USE_SSL
-    RABBITMQ_VHOST: $RABBITMQ_VHOST
   needs:
     - unit-test-python-package
   rules:
