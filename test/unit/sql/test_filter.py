@@ -163,6 +163,10 @@ class TestSqlFilterOptions:
             or (operator == 'in_list' and match_anywhere)
         assert ('LIKE' in observed) == bool(uses_pattern)
         if uses_pattern:
+            assert '#>>' in observed
+            assert 'TEXT[]' in observed
+            assert 'jsonb_extract_path_text' not in observed
+            assert [] in compiled.params.values()
             assert ('ILIKE' in observed) == case_insensitive
             pattern = 'Abc'
             if match_anywhere and operator != 'eq':

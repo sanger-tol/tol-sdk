@@ -12,11 +12,11 @@ from itertools import chain
 from typing import Any, Dict, Iterable, Iterator, Optional, Tuple
 
 from sqlalchemy import (
-    BinaryExpression, JSON, Select, case, cast, false, func, inspect, literal,
+    BinaryExpression, JSON, Select, Text, case, cast, false, func, inspect, literal,
     not_, or_, select,
 )
 from sqlalchemy import column as sql_column
-from sqlalchemy.dialects.postgresql import JSONB
+from sqlalchemy.dialects.postgresql import ARRAY, JSONB
 from sqlalchemy.orm import MappedColumn, aliased
 from sqlalchemy.orm.util import AliasedClass
 
@@ -409,7 +409,9 @@ class DefaultDatabaseFilter(DatabaseFilter):
                 operator == 'contains' or case_insensitive
                 or (operator == 'in_list' and match_anywhere)
             ):
-                text_value = func.jsonb_extract_path_text(entries.c.value)
+                text_value = entries.c.value.op('#>>', return_type=Text)(
+                    literal([], type_=ARRAY(Text))
+                )
                 comparison = self.__string_match(
                     text_value, candidate, case_insensitive,
                     match_anywhere if operator != 'eq' else False,

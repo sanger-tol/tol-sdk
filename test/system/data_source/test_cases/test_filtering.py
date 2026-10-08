@@ -246,7 +246,7 @@ class TestFiltering:
         } == {'sql-literal'}
 
     @against(elastic, api_elastic, sql, api_sql)
-    def test_contains_options(self, data_source: OperableDataSource, ds_sleep, fixture_name):
+    def test_contains_options(self, data_source: OperableDataSource, ds_sleep, fixture_name=None):
         values = {
             'lower-prefix': 'sapiens alpha',
             'mixed-prefix': 'Sapiens alpha',
