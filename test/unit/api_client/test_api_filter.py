@@ -14,6 +14,19 @@ class TestDefaultApiFilter:
     """Test the `DefaultApiFilter().dumps()` method"""
 
     @pytest.mark.parametrize('case_insensitive', [False, True])
+    @pytest.mark.parametrize('match_anywhere', [False, True])
+    def test_in_list_options(self, case_insensitive, match_anywhere):
+        constraint = {
+            'value': ['abc', 'def'],
+            'case_insensitive': case_insensitive,
+            'match_anywhere': match_anywhere,
+        }
+        filters = DataSourceFilter(and_={'name': {'in_list': constraint}})
+        assert loads(DefaultApiFilter().dumps(filters)) == {
+            'and_': {'name': {'in_list': constraint}}
+        }
+
+    @pytest.mark.parametrize('case_insensitive', [False, True])
     def test_eq_case_insensitive(self, case_insensitive):
         constraint = {'value': 'abc', 'case_insensitive': case_insensitive}
         filters = DataSourceFilter(and_={'name': {'eq': constraint}})

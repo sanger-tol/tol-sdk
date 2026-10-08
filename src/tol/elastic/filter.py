@@ -81,10 +81,45 @@ class ElasticFilterConverter(DataSourceFilterConverter):
                             'exists': {'field': search_field}
                         })
                     if op in ['in_list']:
-                        query['bool'][elastic_section].append({
-                            'terms': {search_field: search_value, 'boost': 1.0}
-                        })
+                        query['bool'][elastic_section].append(self._in_list_query(
+                            search_field,
+                            search_value,
+                            case_insensitive=constraint.get('case_insensitive', False),
+                            match_anywhere=constraint.get('match_anywhere', False)
+                        ))
         return query
+
+    def _in_list_query(
+        self,
+        search_field: str,
+        values: list[Any],
+        case_insensitive: bool = False,
+        match_anywhere: bool = False
+    ) -> dict[str, Any]:
+        if not values:
+            return {'match_none': {}}
+        if not case_insensitive and not match_anywhere:
+            return {'terms': {search_field: values, 'boost': 1.0}}
+
+        clauses = []
+        for value in values:
+            if isinstance(value, str) and match_anywhere:
+                literal_value = value.replace('\\', '\\\\') \
+                    .replace('*', '\\*').replace('?', '\\?')
+                clauses.append({'wildcard': {search_field: {
+                    'value': f'*{literal_value}*',
+                    'case_insensitive': bool(case_insensitive),
+                    'boost': 1.0
+                }}})
+            elif isinstance(value, str) and case_insensitive:
+                clauses.append({'term': {search_field: {
+                    'value': value,
+                    'case_insensitive': True
+                }}})
+            else:
+                clauses.append({'term': {search_field: {'value': value}}})
+
+        return {'bool': {'should': clauses, 'minimum_should_match': 1}}
 
     def _get_field_comparison_filter(self, field1: str, field2: str, op: str, negated: bool) -> \
             dict[str, dict[str, str]]:

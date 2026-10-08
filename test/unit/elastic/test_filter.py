@@ -13,6 +13,58 @@ from tol.elastic.filter import ElasticFilterConverter
 
 class TestElasticFilter:
     @pytest.mark.parametrize('case_insensitive', [None, False, True])
+    @pytest.mark.parametrize('match_anywhere', [None, False, True])
+    @pytest.mark.parametrize('negate', [False, True])
+    @pytest.mark.parametrize('values', [[], ['Abc', 'Def'], [5, True], ['Abc', 5, True]])
+    def test_in_list_options(
+        self, mock_elastic_data_source, case_insensitive, match_anywhere, negate, values
+    ):
+        constraint = {'value': values, 'negate': negate}
+        if case_insensitive is not None:
+            constraint['case_insensitive'] = case_insensitive
+        if match_anywhere is not None:
+            constraint['match_anywhere'] = match_anywhere
+        filters = DataSourceFilter(and_={'field4': {'in_list': constraint}})
+        if not values:
+            clause = {'match_none': {}}
+        elif not case_insensitive and not match_anywhere:
+            clause = {'terms': {'field4.keyword': values, 'boost': 1.0}}
+        else:
+            alternatives = []
+            for value in values:
+                if isinstance(value, str) and match_anywhere:
+                    alternatives.append({'wildcard': {'field4.keyword': {
+                        'value': f'*{value}*',
+                        'case_insensitive': bool(case_insensitive),
+                        'boost': 1.0,
+                    }}})
+                elif isinstance(value, str) and case_insensitive:
+                    alternatives.append({'term': {'field4.keyword': {
+                        'value': value, 'case_insensitive': True
+                    }}})
+                else:
+                    alternatives.append({'term': {'field4.keyword': {'value': value}}})
+            clause = {'bool': {'should': alternatives, 'minimum_should_match': 1}}
+        assert ElasticFilterConverter(mock_elastic_data_source).convert(
+            'obj_type', filters
+        ) == {'bool': {
+            'must': [] if negate else [clause],
+            'must_not': [clause] if negate else [],
+        }}
+
+    def test_in_list_literal_wildcards(self, mock_elastic_data_source):
+        filters = DataSourceFilter(and_={'field4': {'in_list': {
+            'value': [r'a*b?c\d'], 'match_anywhere': True
+        }}})
+        query = ElasticFilterConverter(mock_elastic_data_source).convert('obj_type', filters)
+        assert query['bool']['must'] == [{'bool': {
+            'should': [{'wildcard': {'field4.keyword': {
+                'value': r'*a\*b\?c\\d*', 'case_insensitive': False, 'boost': 1.0
+            }}}],
+            'minimum_should_match': 1,
+        }}]
+
+    @pytest.mark.parametrize('case_insensitive', [None, False, True])
     @pytest.mark.parametrize('negate', [False, True])
     @pytest.mark.parametrize('value', ['Abc*?', 5, True])
     def test_eq_case_insensitive(
