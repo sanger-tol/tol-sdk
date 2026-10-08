@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2026 Genome Research Ltd.
+#
+# SPDX-License-Identifier: MIT
+
 import pytest
 
 from sqlalchemy import Boolean, Column, Integer, String
@@ -15,7 +19,7 @@ BaseModel = model_base()
 class FilterExample(BaseModel):
     __tablename__ = 'filter_example'
 
-    id = Column(String, primary_key=True)
+    id = Column(String, primary_key=True)  # noqa A003
     text_column = Column(String)
     int_column = Column(Integer)
     bool_column = Column(Boolean)

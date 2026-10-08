@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2026 Genome Research Ltd.
+#
+# SPDX-License-Identifier: MIT
+
 from tol.core import DataSourceFilter, OperableDataSource
 
 from ..dec import against
