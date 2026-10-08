@@ -117,8 +117,63 @@ class TestSqlFilterOptions:
             'value': 'Abc', 'case_insensitive': True, 'match_anywhere': True
         }, literal_binds=False)
         assert '@>' in str(compiled)
-        assert 'LIKE' not in str(compiled)
+        assert 'CASE WHEN' in str(compiled)
         assert ['Abc'] in compiled.params.values()
+
+    @pytest.mark.parametrize('operator', ['contains', 'eq', 'in_list'])
+    @pytest.mark.parametrize('search_values', [None, False, True])
+    @pytest.mark.parametrize('negate', [False, True])
+    def test_json_dictionary_values(self, operator, search_values, negate):
+        constraint = {'value': ['Abc'] if operator == 'in_list' else 'Abc',
+                      'negate': negate}
+        if search_values is not None:
+            constraint['search_values'] = search_values
+        compiled = compile_filter('list_column', operator, constraint, literal_binds=False)
+        observed = str(compiled)
+        assert ('jsonb_each' in observed) == (search_values is not False)
+        if search_values is not False:
+            assert 'EXISTS' in observed
+            assert 'CASE WHEN' in observed
+            assert 'filter_example.id' not in observed.split('EXISTS', 1)[1]
+        assert ('IS NULL' in observed) == negate
+
+    @pytest.mark.parametrize('operator', ['contains', 'eq', 'in_list'])
+    @pytest.mark.parametrize('value', [42, True, None, '42'])
+    def test_json_value_types(self, operator, value):
+        compiled = compile_filter('list_column', operator, {
+            'value': [value] if operator == 'in_list' else value
+        }, literal_binds=False)
+        assert 'jsonb_each' in str(compiled)
+        if operator != 'contains' or not isinstance(value, str):
+            assert any(
+                type(parameter) is type(value) and parameter == value
+                for parameter in compiled.params.values()
+            )
+
+    @pytest.mark.parametrize('operator', ['contains', 'eq', 'in_list'])
+    @pytest.mark.parametrize('case_insensitive', [False, True])
+    @pytest.mark.parametrize('match_anywhere', [False, True])
+    def test_json_string_options(self, operator, case_insensitive, match_anywhere):
+        compiled = compile_filter('list_column', operator, {
+            'value': ['Abc'] if operator == 'in_list' else 'Abc',
+            'case_insensitive': case_insensitive, 'match_anywhere': match_anywhere
+        }, literal_binds=False)
+        observed = str(compiled)
+        uses_pattern = operator == 'contains' or case_insensitive \
+            or (operator == 'in_list' and match_anywhere)
+        assert ('LIKE' in observed) == bool(uses_pattern)
+        if uses_pattern:
+            assert ('ILIKE' in observed) == case_insensitive
+            pattern = 'Abc'
+            if match_anywhere and operator != 'eq':
+                pattern = '%Abc%'
+            elif operator == 'contains':
+                pattern = 'Abc%'
+            assert pattern in compiled.params.values()
+
+    def test_json_empty_list(self):
+        compiled = compile_filter('list_column', 'in_list', {'value': []}, literal_binds=False)
+        assert 'WHERE false' in str(compiled)
 
     @pytest.mark.parametrize('case_insensitive', [False, True])
     @pytest.mark.parametrize('match_anywhere', [False, True])

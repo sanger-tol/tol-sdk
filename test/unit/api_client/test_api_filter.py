@@ -13,6 +13,16 @@ from tol.core import DataSourceFilter
 class TestDefaultApiFilter:
     """Test the `DefaultApiFilter().dumps()` method"""
 
+    @pytest.mark.parametrize('operator', ['contains', 'eq', 'in_list'])
+    @pytest.mark.parametrize('search_values', [False, True])
+    def test_search_values_option(self, operator, search_values):
+        constraint = {'value': ['abc'] if operator == 'in_list' else 'abc',
+                      'search_values': search_values}
+        filters = DataSourceFilter(and_={'metadata': {operator: constraint}})
+        assert loads(DefaultApiFilter().dumps(filters)) == {
+            'and_': {'metadata': {operator: constraint}}
+        }
+
     @pytest.mark.parametrize('case_insensitive', [False, True])
     @pytest.mark.parametrize('match_anywhere', [False, True])
     def test_in_list_options(self, case_insensitive, match_anywhere):

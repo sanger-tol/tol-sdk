@@ -6,6 +6,84 @@ from ..fixtures import api_elastic, api_sql, elastic, sql
 
 class TestFiltering:
     @against(sql, api_sql)
+    def test_dictionary_value_filters(self, data_source: OperableDataSource, ds_sleep):
+        values = {
+            'exact': {'name': 'sapiens', 'alternative': 'human'},
+            'mixed': {'name': 'SAPIENS'},
+            'substring': {'name': 'Homo sapiens'},
+            'prefix': {'name': 'sapiens alpha'},
+            'other': {'name': 'musculus'},
+            'key-only': {'sapiens': 'unrelated'},
+            'nested': {'name': {'nested': 'sapiens'}},
+            'array-value': {'name': ['sapiens']},
+            'number': {'count': 42},
+            'string-number': {'count': '42'},
+            'boolean': {'flag': True},
+            'json-null': {'value': None},
+            'empty': {},
+            'null': None,
+            'literal': {'name': r'a%b_c\d'},
+            'literal-decoy': {'name': r'axbyc\d'},
+        }
+        data_source.upsert('root', [
+            data_source.data_object_factory(
+                'root', object_id, attributes={'dict_column': value}
+            )
+            for object_id, value in values.items()
+        ], provenance='source1')
+        ds_sleep(7)
+
+        cases = [
+            ('contains', {'value': 'sapiens'}, {'exact', 'mixed', 'substring', 'prefix'}),
+            ('contains', {'value': 'sapiens', 'case_insensitive': False},
+             {'exact', 'substring', 'prefix'}),
+            ('contains', {'value': 'sapiens', 'match_anywhere': False},
+             {'exact', 'mixed', 'prefix'}),
+            ('eq', {'value': 'sapiens'}, {'exact'}),
+            ('eq', {'value': 'sapiens', 'case_insensitive': True}, {'exact', 'mixed'}),
+            ('eq', {'value': 'human'}, {'exact'}),
+            ('in_list', {'value': ['sapiens', 'musculus']}, {'exact', 'other'}),
+            ('in_list', {'value': ['sapiens', 'musculus'], 'case_insensitive': True},
+             {'exact', 'mixed', 'other'}),
+            ('in_list', {'value': ['sapiens'], 'match_anywhere': True},
+             {'exact', 'substring', 'prefix'}),
+            ('in_list', {'value': ['sapiens'], 'match_anywhere': True,
+                         'case_insensitive': True}, {'exact', 'mixed', 'substring', 'prefix'}),
+            ('in_list', {'value': []}, set()),
+            ('eq', {'value': values['exact'], 'search_values': False}, {'exact'}),
+            ('in_list', {'value': [values['exact']], 'search_values': False}, {'exact'}),
+            ('contains', {'value': 'sapiens', 'search_values': False}, set()),
+        ]
+        for operator in ('contains', 'eq', 'in_list'):
+            for candidate, expected in (
+                (42, {'number'}), ('42', {'string-number'}), (True, {'boolean'}),
+            ):
+                cases.append((operator, {
+                    'value': [candidate] if operator == 'in_list' else candidate
+                }, expected))
+            cases.append((operator, {
+                'value': [r'a%b_c\d'] if operator == 'in_list' else r'a%b_c\d',
+                'case_insensitive': True, 'match_anywhere': True,
+            }, {'literal'}))
+        for operator, constraint, expected in cases:
+            for search_values in (None, True):
+                if 'search_values' in constraint and search_values is True:
+                    continue
+                for negate in (False, True):
+                    options = {**constraint, 'negate': negate}
+                    if search_values is not None:
+                        options['search_values'] = search_values
+                    filters = DataSourceFilter(and_={
+                        'id': {'in_list': {'value': list(values)}},
+                        'dict_column': {operator: options},
+                    })
+                    observed = {
+                        obj.id for obj in data_source.get_list('root', object_filters=filters)
+                    }
+                    expected_ids = set(values) - expected if negate else expected
+                    assert observed == expected_ids, (operator, options, observed)
+
+    @against(sql, api_sql)
     def test_array_contains_options(self, data_source: OperableDataSource, ds_sleep):
         values = {'exact': ['Abc'], 'case': ['abc'], 'substring': ['xAbcx']}
         data_source.upsert('root', [
