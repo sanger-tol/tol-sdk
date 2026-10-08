@@ -281,6 +281,12 @@ def create_standard_models(
             default={},
             server_default='{}'  # noqa P103
         )
+        config = mapped_column(
+            type_=JSONB(),
+            nullable=False,
+            default={},
+            server_default='{}'  # noqa P103
+        )
 
         # If true, don't add the filter to the filter chain
         filter_pass_through: Mapped[bool] = mapped_column(
@@ -384,6 +390,12 @@ def create_standard_models(
             default={},
             server_default='{}'  # noqa P103
         )
+        config = mapped_column(
+            type_=JSONB(),
+            nullable=False,
+            default={},
+            server_default='{}'  # noqa P103
+        )
 
         zone_views: Mapped[list[ZoneView]] = relationship(
             back_populates='view'
@@ -445,6 +457,12 @@ def create_standard_models(
 
         title: Mapped[str] = mapped_column(nullable=False)
         filter = mapped_column(  # noqa A003
+            type_=JSONB(),
+            nullable=False,
+            default={},
+            server_default='{}'  # noqa P103
+        )
+        config = mapped_column(
             type_=JSONB(),
             nullable=False,
             default={},

@@ -70,6 +70,7 @@ def add_entity(
 
     attributes = payload.get('attributes', {})
     attributes['filter'] = attributes.get('filter', {})
+    attributes.setdefault('config', {})
 
     if child_type in ('zone') or child_type in ('component'):
         attributes['filter_pass_through'] = False
@@ -78,9 +79,6 @@ def add_entity(
     if child_type in ('zone'):
         attributes['relationship_translation'] = True
         attributes['attribute_translations'] = {}
-
-    if child_type in ('component'):
-        attributes['config'] = {}
 
     new_child_id = generate_entity_id(child_type)
 
@@ -196,6 +194,7 @@ def create_board(
             attributes={
                 'title': 'Untitled board',
                 'filter': {},
+                'config': {},
             },
             to_one={'user': user_obj},
         )
@@ -204,6 +203,7 @@ def create_board(
         view_attributes = {
             'title': 'View 1',
             'filter': {},
+            'config': {},
         }
 
         view_id = generate_entity_id(view_type)
