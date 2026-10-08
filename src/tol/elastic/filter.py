@@ -55,12 +55,25 @@ class ElasticFilterConverter(DataSourceFilterConverter):
                             query,
                             elastic_section,
                             search_field,
-                            search_value
+                            search_value,
+                            case_insensitive=constraint.get('case_insensitive', False)
                         )
                     if op in ['contains']:
+                        literal_value = str(search_value).replace('\\', '\\\\') \
+                            .replace('*', '\\*').replace('?', '\\?')
+                        pattern = f'{literal_value}*'
+                        if constraint.get('match_anywhere', False):
+                            pattern = f'*{pattern}'
+                        case_insensitive = constraint.get('case_insensitive', True)
+                        if case_insensitive is None:
+                            case_insensitive = True
                         query['bool'][elastic_section].append({
                             'wildcard': {
-                                search_field: {'value': f'{search_value}*', 'boost': 1.0}
+                                search_field: {
+                                    'value': pattern,
+                                    'case_insensitive': case_insensitive,
+                                    'boost': 1.0
+                                }
                             }
                         })
                     if op in ['exists']:
@@ -113,8 +126,18 @@ class ElasticFilterConverter(DataSourceFilterConverter):
         query: dict[str, Any],
         elastic_section: str,
         search_field: str,
-        search_value: str
+        search_value: Any,
+        case_insensitive: bool = False
     ) -> dict[str, Any]:
+
+        if case_insensitive and isinstance(search_value, str):
+            query['bool'][elastic_section].append({
+                'term': {search_field: {
+                    'value': search_value,
+                    'case_insensitive': True
+                }}
+            })
+            return query
 
         query['bool'][elastic_section].append({
             'match': {search_field: search_value}
