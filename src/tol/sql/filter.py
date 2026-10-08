@@ -11,7 +11,7 @@ from functools import reduce
 from itertools import chain
 from typing import Any, Dict, Iterable, Iterator, Optional, Tuple
 
-from sqlalchemy import BinaryExpression, Select, cast, inspect, not_, select
+from sqlalchemy import BinaryExpression, Select, cast, false, inspect, not_, or_, select
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import MappedColumn, aliased
 from sqlalchemy.orm.util import AliasedClass
@@ -320,6 +320,19 @@ class DefaultDatabaseFilter(DatabaseFilter):
         value, negate = self.__parse_value_negate(term)
         expression = column.in_(value)
 
+        case_insensitive = term.get('case_insensitive', False)
+        match_anywhere = term.get('match_anywhere', False)
+        if self.__column_is_str(column) and (case_insensitive or match_anywhere):
+            alternatives = []
+            for candidate in value:
+                if isinstance(candidate, str):
+                    alternatives.append(self.__string_match(
+                        column, candidate, case_insensitive, match_anywhere
+                    ))
+                else:
+                    alternatives.append(column == candidate)
+            expression = or_(*alternatives) if alternatives else false()
+
         return self.__negatable_filter(
             query,
             expression,
@@ -341,7 +354,9 @@ class DefaultDatabaseFilter(DatabaseFilter):
                 query,
                 column,
                 value,
-                negate
+                negate,
+                case_insensitive=term.get('case_insensitive', True),
+                match_anywhere=term.get('match_anywhere', True)
             )
         else:
             return self.__filter_contains_list(
@@ -359,11 +374,18 @@ class DefaultDatabaseFilter(DatabaseFilter):
         query: Select,
         column: MappedColumn,
         value: str,
-        negate: bool
+        negate: bool,
+        case_insensitive: bool = True,
+        match_anywhere: bool = True
     ) -> Select:
 
-        ilike = self.__get_ilike_term(value)
-        expression = column.ilike(ilike)
+        if case_insensitive is None:
+            case_insensitive = True
+        if match_anywhere is None:
+            match_anywhere = True
+        expression = self.__string_match(
+            column, value, case_insensitive, match_anywhere, prefix=True
+        )
 
         return self.__negatable_filter(
             query,
@@ -399,6 +421,9 @@ class DefaultDatabaseFilter(DatabaseFilter):
 
         value, negate = self.__parse_value_negate(term)
         expression = column == value
+        if term.get('case_insensitive', False) \
+                and self.__column_is_str(column) and isinstance(value, str):
+            expression = self.__string_match(column, value, True, False)
 
         return self.__negatable_filter(
             query,
@@ -547,6 +572,23 @@ class DefaultDatabaseFilter(DatabaseFilter):
             column,
             model=trie.alias,
         )
+
+    def __string_match(
+        self,
+        column: MappedColumn,
+        value: str,
+        case_insensitive: bool,
+        match_anywhere: bool,
+        prefix: bool = False
+    ) -> BinaryExpression:
+        pattern = self.__escape_ilike(value)
+        if match_anywhere:
+            pattern = f'%{pattern}%'
+        elif prefix:
+            pattern = f'{pattern}%'
+        if case_insensitive:
+            return column.ilike(pattern, escape='\\')
+        return column.like(pattern, escape='\\')
 
     def __get_ilike_term(self, value: str) -> str:
         escaped = self.__escape_ilike(value)

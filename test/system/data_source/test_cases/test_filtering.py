@@ -1,11 +1,30 @@
 from tol.core import DataSourceFilter, OperableDataSource
 
 from ..dec import against
-from ..fixtures import api_elastic, elastic
+from ..fixtures import api_elastic, api_sql, elastic, sql
 
 
-class TestElasticContains:
-    @against(elastic, api_elastic)
+class TestFiltering:
+    @against(sql, api_sql)
+    def test_array_contains_options(self, data_source: OperableDataSource, ds_sleep):
+        values = {'exact': ['Abc'], 'case': ['abc'], 'substring': ['xAbcx']}
+        data_source.upsert('root', [
+            data_source.data_object_factory(
+                'root', object_id, attributes={'list_column': value}
+            )
+            for object_id, value in values.items()
+        ], provenance='source1')
+        ds_sleep(7)
+        filters = DataSourceFilter(and_={
+            'list_column': {'contains': {
+                'value': 'Abc', 'case_insensitive': True, 'match_anywhere': True
+            }},
+        })
+        assert {
+            obj.id for obj in data_source.get_list('root', object_filters=filters)
+        } == {'exact'}
+
+    @against(elastic, api_elastic, sql, api_sql)
     def test_in_list_options(self, data_source: OperableDataSource, ds_sleep):
         values = {
             'lower': 'sapiens',
@@ -20,6 +39,9 @@ class TestElasticContains:
             'similar': 'sapienz',
             'literal': r'Homo a*b?c\d',
             'wildcard-decoy': r'Homo axbyc\d',
+            'sql-literal': r'Homo a%b_c\d',
+            'sql-wildcard-decoy': r'Homo axbyc\d',
+            'null': None,
         }
         data_source.upsert('root', [
             data_source.data_object_factory(
@@ -84,7 +106,14 @@ class TestElasticContains:
             obj.id for obj in data_source.get_list('root', object_filters=literal_filter)
         } == {'literal'}
 
-    @against(elastic, api_elastic)
+        sql_literal_filter = DataSourceFilter(and_={'str_column': {'in_list': {
+            'value': [r'a%b_c\d'], 'match_anywhere': True
+        }}})
+        assert {
+            obj.id for obj in data_source.get_list('root', object_filters=sql_literal_filter)
+        } == {'sql-literal'}
+
+    @against(elastic, api_elastic, sql, api_sql)
     def test_eq_case_insensitive(self, data_source: OperableDataSource, ds_sleep):
         values = {
             'lower': 'homo sapiens',
@@ -94,6 +123,9 @@ class TestElasticContains:
             'similar': 'homo sapienz',
             'literal': 'Homo *sapiens?',
             'wildcard-decoy': 'Homo xsapiensx',
+            'sql-literal': r'Homo %sapiens_\d',
+            'sql-wildcard-decoy': r'Homo xsapiensx\d',
+            'null': None,
         }
         data_source.upsert('root', [
             data_source.data_object_factory(
@@ -128,8 +160,15 @@ class TestElasticContains:
             obj.id for obj in data_source.get_list('root', object_filters=literal_filter)
         } == {'literal'}
 
-    @against(elastic, api_elastic)
-    def test_contains_options(self, data_source: OperableDataSource, ds_sleep):
+        sql_literal_filter = DataSourceFilter(and_={'str_column': {'eq': {
+            'value': r'homo %sapiens_\d', 'case_insensitive': True
+        }}})
+        assert {
+            obj.id for obj in data_source.get_list('root', object_filters=sql_literal_filter)
+        } == {'sql-literal'}
+
+    @against(elastic, api_elastic, sql, api_sql)
+    def test_contains_options(self, data_source: OperableDataSource, ds_sleep, fixture_name):
         values = {
             'lower-prefix': 'sapiens alpha',
             'mixed-prefix': 'Sapiens alpha',
@@ -139,6 +178,9 @@ class TestElasticContains:
             'similar': 'Homo sapienz',
             'literal': r'Homo a*b?c\d',
             'wildcard-decoy': r'Homo axbyc\d',
+            'sql-literal': r'Homo a%b_c\d',
+            'sql-wildcard-decoy': r'Homo axbyc\d',
+            'null': None,
         }
         objects = [
             data_source.data_object_factory(
@@ -154,7 +196,10 @@ class TestElasticContains:
                 expected = {'lower-prefix'}
                 if case_insensitive is not False:
                     expected.add('mixed-prefix')
-                if match_anywhere:
+                matches_anywhere = match_anywhere
+                if matches_anywhere is None:
+                    matches_anywhere = fixture_name in ('sql', 'api -> sql')
+                if matches_anywhere:
                     expected.update({'middle', 'end'})
                     if case_insensitive is not False:
                         expected.add('mixed-middle')
@@ -190,3 +235,10 @@ class TestElasticContains:
         assert {
             obj.id for obj in data_source.get_list('root', object_filters=literal_filter)
         } == {'literal'}
+
+        sql_literal_filter = DataSourceFilter(and_={'str_column': {'contains': {
+            'value': r'a%b_c\d', 'match_anywhere': True
+        }}})
+        assert {
+            obj.id for obj in data_source.get_list('root', object_filters=sql_literal_filter)
+        } == {'sql-literal'}
