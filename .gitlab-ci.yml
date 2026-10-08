@@ -101,6 +101,7 @@ integration-test-python-package:
   stage: integration test
   variables:
     TEST_TYPE: integration
+    APP_NAME: integration-test
   needs:
     - unit-test-python-package
   rules:
