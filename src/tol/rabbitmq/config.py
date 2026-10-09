@@ -79,7 +79,7 @@ class RabbitmqConfig:
             exchange=os.getenv(f'{prefix}EXCHANGE', 'tol'),
             use_ssl=os.getenv(f'{prefix}USE_SSL', 'false').lower() == 'true',
             write_batch_size=int(os.getenv(f'{prefix}WRITE_BATCH_SIZE', 100)),
-            app_name=os.getenv(f'{prefix}APP_NAME', ''),
+            app_name=os.getenv('APP_NAME', ''),
             dlx=os.getenv(f'{prefix}DLX', 'tol.dlx'),
             heartbeat=int(os.getenv(f'{prefix}HEARTBEAT', '60')),
             blocked_connection_timeout=float(

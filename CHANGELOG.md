@@ -6,6 +6,20 @@ SPDX-License-Identifier: MIT
 
 # Changelog
 
+## tol-sdk `2.10.0`
+
+08-10-2026
+
+- Added case_insensitive and match_anywhere options to filters
+
+## tol-sdk `2.9.1`
+
+07-10-2026
+
+- Avoid divide by zero error in Grit converter
+- Added tol.sources.rabbitmq()
+- Use APP_NAME instead of RABBITMQ_APP_NAME
+
 ## tol-sdk `2.9.0`
 
 06-10-2026

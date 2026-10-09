@@ -12,6 +12,7 @@ from sqlalchemy import (
     JSON,
     event,
 )
+from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import (
     Mapped,
     mapped_column,
@@ -50,7 +51,7 @@ class Root(ModelBase):
         nullable=True
     )
     dict_column: Mapped[dict] = mapped_column(
-        type_=JSON,
+        type_=JSONB,
         nullable=True
     )
     runtime_column: Mapped[bool] = mapped_column(nullable=True)
