@@ -6,6 +6,12 @@ SPDX-License-Identifier: MIT
 
 # Changelog
 
+## tol-sdk `2.10.1`
+
+12-10-2026
+
+- Deal with merged taxon IDs from GoaT
+
 ## tol-sdk `2.10.0`
 
 08-10-2026

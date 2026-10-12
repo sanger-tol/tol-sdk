@@ -54,10 +54,14 @@ class DefaultParser(Parser):
         ds = self.__get_data_source(type_)
         raw_attributes = transfer.get('result')
         attributes = self.__convert_attributes(type_, raw_attributes)
+        original_object_ids = transfer.get('original_object_ids')
+        requested_id, new_id = self.__get_id(raw_attributes, original_object_ids)
+        if new_id is not None:
+            attributes['new_taxon_id'] = new_id
 
         return ds.data_object_factory(
             type_,
-            id_=transfer.get('result').get('taxon_id'),
+            id_=requested_id,
             attributes=attributes,
             to_one=self.__parse_to_ones(transfer)
         )
@@ -114,6 +118,22 @@ class DefaultParser(Parser):
                 ret['lineage'] = [ancestor['scientific_name']] + ret['lineage']
 
         return ret
+
+    def __get_id(
+        self,
+        raw_attributes: dict[str, Any],
+        original_object_ids: list[str] | None = None
+    ) -> tuple[str, str | None]:
+        # If this record has a merged taxon id, use that
+        taxon_id = raw_attributes.get('taxon_id')
+        taxon_names = raw_attributes.get('taxon_names')
+        if original_object_ids is not None:
+            for name in taxon_names:
+                if name.get('class') == 'merged taxon id':
+                    old_taxon_id = name.get('name')
+                    if old_taxon_id in original_object_ids:
+                        return old_taxon_id, taxon_id
+        return taxon_id, None
 
     def __parse_to_ones(
         self,
