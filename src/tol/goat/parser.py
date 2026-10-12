@@ -126,7 +126,7 @@ class DefaultParser(Parser):
     ) -> tuple[str, str | None]:
         # If this record has a merged taxon id, use that
         taxon_id = raw_attributes.get('taxon_id')
-        taxon_names = raw_attributes.get('taxon_names')
+        taxon_names = raw_attributes.get('taxon_names', [])
         if original_object_ids is not None:
             for name in taxon_names:
                 if name.get('class') == 'merged taxon id':
