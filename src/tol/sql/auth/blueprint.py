@@ -4,6 +4,8 @@
 
 from __future__ import annotations
 
+import os
+import ssl
 from datetime import datetime, timedelta
 from typing import Any, Callable, Optional
 from urllib.parse import urlencode
@@ -15,6 +17,7 @@ from ..session import SessionFactory, create_session_factory
 from ...api_base.auth import (
     AuthBlueprint,
     AuthManager,
+    ForbiddenError,
     OidcConfig,
     StateNotFoundError,
     env_oidc_config,
@@ -49,6 +52,7 @@ class DbAuthManager(AuthManager):
         oidc_id_target: str,
         oidc_ext_mapping: dict[str, str],
         authorisation_manager: AuthorisationManager,
+        keycloak_registration: bool = False
     ) -> None:
         """
         Initialize the database authentication manager.
@@ -68,6 +72,7 @@ class DbAuthManager(AuthManager):
         self.__oidc_id_target = oidc_id_target
         self.__ext_map = oidc_ext_mapping
         self.__authorisation_manager = authorisation_manager
+        self.__keycloak_registration = keycloak_registration
 
     def login(self) -> dict[str, str]:
         """
@@ -152,6 +157,110 @@ class DbAuthManager(AuthManager):
             ctx.user_id = user_id
             ctx.roles = role_names
             ctx.memberships = memberships
+        
+        if self.__keycloak_registration:
+            self.__authenticate_keycloak(ctx, token)
+            return
+
+    def __authenticate_keycloak(self, ctx: AuthContext, token: str) -> None:
+        import jwt
+        from jwt import PyJWKClient
+
+        try:
+            unverified_issuer = jwt.decode(
+                token,
+                options={'verify_signature': False}
+            ).get('iss')
+            allowed_issuers = {
+                os.getenv(name) for name in (
+                    'KEYCLOAK_DEV_REALM_URL',
+                    'KEYCLOAK_STAGING_REALM_URL',
+                    'KEYCLOAK_PRODUCTION_REALM_URL',
+                    'KEYCLOAK_STAGING_DEV_REALM_URL',
+                    'KEYCLOAK_STAGING_STAGING_REALM_URL',
+                    'KEYCLOAK_STAGING_PRODUCTION_REALM_URL',
+                )
+            }
+            if unverified_issuer is None or unverified_issuer not in allowed_issuers:
+                raise ForbiddenError()
+
+            jwks_client = PyJWKClient(
+                f'{unverified_issuer}/protocol/openid-connect/certs',
+                ssl_context=ssl._create_unverified_context()
+            )
+            signing_key = jwks_client.get_signing_key_from_jwt(token)
+            decoded_token = jwt.decode(
+                token,
+                signing_key.key,
+                issuer=unverified_issuer,
+                algorithms=['RS256'],
+                options={'require': ['exp', 'iss', 'aud'], 'verify_aud': False},
+            )
+        except ForbiddenError:
+            raise
+        except (jwt.PyJWTError, KeyError, TypeError, ValueError) as exc:
+            raise ForbiddenError() from exc
+
+        audience = decoded_token['aud']
+        if audience != 'quasar' and not (
+            isinstance(audience, list) and 'quasar' in audience
+        ):
+            raise ForbiddenError()
+
+        user_model = self.__models.user_class
+        keycloak_info_model = self.__models.keycloak_info_class
+        if keycloak_info_model is None:
+            raise RuntimeError('Keycloak registration model is not configured')
+
+        email = decoded_token.get('email')
+        subject = decoded_token.get('sub')
+        name = decoded_token.get('name')
+        if not email or not subject:
+            raise ForbiddenError()
+
+        with self.__session_factory() as sess:
+            users = sess.query(user_model).filter_by(email=email).all()
+            if len(users) > 1:
+                raise ForbiddenError()
+            if users:
+                user = users[0]
+            else:
+                user = user_model.get_or_create(
+                    sess,
+                    email,
+                    name=name,
+                    email=email,
+                )
+
+            keycloak_infos = sess.query(keycloak_info_model).filter_by(
+                user_id=user.id
+            ).all()
+            matching_id = any(info.id == subject for info in keycloak_infos)
+            matching_issuer = any(
+                info.environment == unverified_issuer for info in keycloak_infos
+            )
+            matching_pair = any(
+                info.id == subject and info.environment == unverified_issuer
+                for info in keycloak_infos
+            )
+
+            if not matching_pair:
+                if matching_id or matching_issuer:
+                    raise ForbiddenError()
+                sess.add(keycloak_info_model(
+                    id=subject,
+                    environment=unverified_issuer,
+                    user_id=user.id,
+                ))
+                sess.commit()
+
+            ctx.user_id = str(user.id)
+            ctx.roles = user.role_names
+            ctx.memberships = (
+                self.__authorisation_manager.get_user_memberships(user)
+                if self.__authorisation_manager
+                else []
+            )
 
     def revoke_token(self, token: str) -> None:
         """
@@ -596,7 +705,8 @@ def __db_auth_manager(
     oidc_id_target: str,
     oidc_ext_mapping: dict[str, str],
     prefix_with_name: bool,
-    authorisation_manager: Optional[AuthorisationManager] = None
+    authorisation_manager: Optional[AuthorisationManager] = None,
+    keycloak_registration: bool = False,
 ) -> tuple[DbAuthManager, ModelTuple]:
     """
     Create a database authentication manager with all required components.
@@ -635,6 +745,7 @@ def __db_auth_manager(
         role_mixin_class,
         token_expiry_delta,
         prefix_with_name,
+        keycloak_registration
     )
 
     auth_manager = DbAuthManager(
@@ -645,6 +756,7 @@ def __db_auth_manager(
         oidc_id_target,
         oidc_ext_mapping,
         authorisation_manager,
+        keycloak_registration
     )
 
     return auth_manager, model_tuple
@@ -667,6 +779,7 @@ def db_auth_blueprint(
     token_expiry_delta: timedelta = timedelta(days=7),
     oidc_id_target: str = 'email',
     oidc_ext_mapping: dict[str, str] = {},
+    keycloak_registration: bool = False
 ) -> DbAuthBlueprint:
     """
     Create a Flask Blueprint for database-backed authentication with OIDC.
@@ -700,6 +813,7 @@ def db_auth_blueprint(
                        (default: 'email')
         oidc_ext_mapping: Dictionary mapping OIDC response field names to local
                          user attribute names for additional user information
+        keycloak_registration: Enable Keycloak JWT authentication and user registration
 
     Returns:
         DbAuthBlueprint: Flask Blueprint instance containing authentication endpoints
@@ -729,6 +843,7 @@ def db_auth_blueprint(
         oidc_ext_mapping,
         prefix_with_name,
         authorisation_manager=authorisation_manager,
+        keycloak_registration=keycloak_registration
     )
 
     auth_bp = DbAuthBlueprint(auth_manager, url_prefix, models)
