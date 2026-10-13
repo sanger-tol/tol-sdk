@@ -157,7 +157,7 @@ class DbAuthManager(AuthManager):
             ctx.user_id = user_id
             ctx.roles = role_names
             ctx.memberships = memberships
-        
+
         if self.__keycloak_registration:
             self.__authenticate_keycloak(ctx, token)
             return

@@ -8,7 +8,9 @@ from types import SimpleNamespace
 from cryptography.hazmat.primitives.asymmetric import rsa
 
 import jwt
+
 import pytest
+
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Mapped, declared_attr, mapped_column, sessionmaker
 
@@ -22,11 +24,11 @@ from tol.sql.auth.models import create_models
 
 class UserMixin:
     @declared_attr
-    def name(cls) -> Mapped[str | None]:
+    def name(self) -> Mapped[str | None]:
         return mapped_column(nullable=True)
 
     @declared_attr
-    def email(cls) -> Mapped[str]:
+    def email(self) -> Mapped[str]:
         return mapped_column()
 
 

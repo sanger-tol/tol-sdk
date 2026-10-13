@@ -147,10 +147,11 @@ class AuthRoleBinding:
     user_id: str
     role_id: str
 
+
 class AuthKeycloakInfo(ABC):
     """Stores Keycloak registration information for a user."""
 
-    id: str
+    id: str  # noqa A003
     environment: str
     user_id: int
     user: Optional[AuthUser]
@@ -554,7 +555,7 @@ def create_models(
             back_populates='_role_bindings',
             foreign_keys=[role_id]
         )
-    
+
     # We only want the Keycloak tables if keycloak_registration is enabled
     # At the moment this is only for Quasar
     keycloak_info_class: Optional[type[AuthKeycloakInfo]] = None
