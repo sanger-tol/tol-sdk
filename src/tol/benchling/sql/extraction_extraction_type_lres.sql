@@ -61,6 +61,10 @@ LEFT JOIN container$raw AS c
 	ON cc.container_id = c.id
 LEFT JOIN tissue_prep_submission_workflow_output$raw AS tpsub
 	ON c.id = tpsub.sample_tube_id
+LEFT JOIN workflow_task$raw AS wft
+		ON tpsub.workflow_task_id$ = wft.id
+LEFT JOIN workflow_task_status$raw AS wfts
+	ON wft.workflow_task_status_id = wfts.id
 LEFT JOIN container$raw AS sub_con
 	ON tpsub.sample_tube_id = sub_con.id
 LEFT JOIN storage$raw AS stor 
@@ -84,3 +88,4 @@ WHERE sub_con.id IS NOT NULL
 	AND proj.name = 'ToL Core Lab'
 	AND f.name = 'Sample Prep'
 	AND tpsub.downstream_application IS DISTINCT FROM 'RNA'
+	AND wfts.status_type = 'COMPLETED'
