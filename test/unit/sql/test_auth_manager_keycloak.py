@@ -133,8 +133,10 @@ class TestDbAuthManagerKeycloak:
     ) -> None:
         _, manager, _, _ = self.set_up_test(monkeypatch, jwt_keys)
 
-        with pytest.raises(ForbiddenError):
+        with pytest.raises(ForbiddenError) as error:
             manager.authenticate(AuthContext(), '')
+
+        assert error.value.errors[0]['detail'] == 'Not enough segments'
 
     def test_issuer_not_being_an_expected_keycloak_realm_is_forbidden(
         self,

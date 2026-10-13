@@ -163,8 +163,13 @@ class DbAuthManager(AuthManager):
             return
 
     def __authenticate_keycloak(self, ctx: AuthContext, token: str) -> None:
-        import jwt
-        from jwt import PyJWKClient
+        try:
+            import jwt
+            from jwt import PyJWKClient
+        except ModuleNotFoundError as exc:
+            raise RuntimeError(
+                'Keycloak authentication requires PyJWT; install tol-sdk[keycloak].'
+            ) from exc
 
         try:
             unverified_issuer = jwt.decode(
@@ -183,7 +188,6 @@ class DbAuthManager(AuthManager):
             }
             if unverified_issuer is None or unverified_issuer not in allowed_issuers:
                 raise ForbiddenError()
-
             jwks_client = PyJWKClient(
                 f'{unverified_issuer}/protocol/openid-connect/certs',
                 ssl_context=ssl._create_unverified_context()
@@ -196,16 +200,16 @@ class DbAuthManager(AuthManager):
                 algorithms=['RS256'],
                 options={'require': ['exp', 'iss', 'aud'], 'verify_aud': False},
             )
-        except ForbiddenError:
-            raise
+        except ForbiddenError as error:
+            raise ForbiddenError(error)
         except (jwt.PyJWTError, KeyError, TypeError, ValueError) as exc:
-            raise ForbiddenError() from exc
+            raise ForbiddenError(f'{exc}') from exc
 
         audience = decoded_token['aud']
         if audience != 'quasar' and not (
             isinstance(audience, list) and 'quasar' in audience
         ):
-            raise ForbiddenError()
+            raise ForbiddenError('Audience mismatch')
 
         user_model = self.__models.user_class
         keycloak_info_model = self.__models.keycloak_info_class
@@ -216,12 +220,12 @@ class DbAuthManager(AuthManager):
         subject = decoded_token.get('sub')
         name = decoded_token.get('name')
         if not email or not subject:
-            raise ForbiddenError()
+            raise ForbiddenError('Email or subject missing in token')
 
         with self.__session_factory() as sess:
             users = sess.query(user_model).filter_by(email=email).all()
             if len(users) > 1:
-                raise ForbiddenError()
+                raise ForbiddenError('Multiple users found with the same email')
             if users:
                 user = users[0]
             else:
@@ -246,7 +250,10 @@ class DbAuthManager(AuthManager):
 
             if not matching_pair:
                 if matching_id or matching_issuer:
-                    raise ForbiddenError()
+                    raise ForbiddenError(
+                        'Keycloak ID or environment '
+                        'already exists in separate entry'
+                    )
                 sess.add(keycloak_info_model(
                     id=subject,
                     environment=unverified_issuer,
