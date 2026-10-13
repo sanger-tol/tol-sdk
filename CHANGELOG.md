@@ -6,6 +6,12 @@ SPDX-License-Identifier: MIT
 
 # Changelog
 
+## tol-sdk `2.10.1`
+
+13-10-2026
+
+- Tweaks to GAP flows
+
 ## tol-sdk `2.10.0`
 
 08-10-2026

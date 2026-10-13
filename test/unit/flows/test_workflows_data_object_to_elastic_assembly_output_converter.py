@@ -112,7 +112,7 @@ class TestWorkflowsDataObjectToElasticAssemblyOutputConverter(TestCase):
             'workflow',
             'curation-workflow',
             attributes={
-                'name': 'curation-workflow',
+                'name': 'busco',
                 'version': '1.0.0',
                 'description': 'Pipeline run'
             }
@@ -163,7 +163,7 @@ class TestWorkflowsDataObjectToElasticAssemblyOutputConverter(TestCase):
         self.assertEqual(ret1.to_one_relationships['species'].id, '9606')
         self.assertEqual(
             ret1.to_one_relationships['assembly_analysis'].id,
-            'GCA_123456_curation-workflow_ERR000001_metazoa_odb10'
+            'GCA_123456_busco_metazoa_odb10'
         )
 
         with self.assertRaises(StopIteration):
@@ -196,7 +196,5 @@ class TestWorkflowsDataObjectToElasticAssemblyOutputConverter(TestCase):
         )
 
         converteds = converter.convert(obj1)
-        ret1 = next(converteds)
-        self.assertIsNone(ret1.assembly_analysis)
         with self.assertRaises(StopIteration):
             next(converteds)

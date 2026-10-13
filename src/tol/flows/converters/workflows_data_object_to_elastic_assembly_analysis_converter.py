@@ -67,9 +67,17 @@ class WorkflowsDataObjectToElasticAssemblyAnalysisConverter(
         ):
             return None
         result = f'{data_object_instance.assembly_accession}_{run.workflow.name}'
-        if data_object_instance.run_accession:
-            result = f'{result}_{data_object_instance.run_accession}'
-        busco_lineage = (data_object_instance.extra_identifiers or {}).get('busco_lineage')
-        if busco_lineage:
-            result = f'{result}_{busco_lineage}'
+
+        if run.workflow.name == 'busco':
+            busco_lineage = (data_object_instance.extra_identifiers or {}).get('busco_lineage')
+            if busco_lineage:
+                return f'{result}_{busco_lineage}'
+            return None
+
+        if run.workflow.name == 'readmapping':
+            run_accession = data_object_instance.run_accession
+            if run_accession:
+                return f'{result}_{run_accession}'
+            return None
+
         return result
