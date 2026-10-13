@@ -6,7 +6,7 @@ SPDX-License-Identifier: MIT
 
 # Changelog
 
-## tol-sdk `2.10.1`
+## tol-sdk `2.11.0`
 
 12-10-2026
 
