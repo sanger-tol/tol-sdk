@@ -293,7 +293,7 @@ def create_models(
         )
 
         if keycloak_registration:
-            keycloak_ids: Mapped[list[Any]] = relationship(
+            keycloak_infos: Mapped[list[Any]] = relationship(
                 'KeycloakInfo',
                 back_populates='user'
             )
@@ -573,7 +573,7 @@ def create_models(
 
             user = relationship(
                 'User',
-                back_populates='keycloak_ids',
+                back_populates='keycloak_infos',
                 foreign_keys=[user_id]
             )
 
