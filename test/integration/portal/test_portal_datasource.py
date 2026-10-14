@@ -33,7 +33,7 @@ class TestPortalDataSource:
         assert 'species' in pds.attribute_types
         assert pds.attribute_types['species']['scientific_name'] == 'str'
         assert pds.attribute_types['species']['genome_size'] == 'int'
-        assert pds.attribute_types['species']['sample_sts_submit_date_max'] == 'datetime'
+        assert pds.attribute_types['species']['sample_submit_date_max'] == 'datetime'
 
     def test_relationship_config(self):
         pds = portal(dataspace='tol_production')
