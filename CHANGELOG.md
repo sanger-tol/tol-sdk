@@ -11,6 +11,8 @@ SPDX-License-Identifier: MIT
 14-10-2026
 
 - Allow configuration on boards, views, and zones
+- Update integration tests to support provenance
+
 ## tol-sdk `2.11.0`
 
 12-10-2026
