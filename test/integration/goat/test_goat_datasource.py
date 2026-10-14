@@ -50,6 +50,18 @@ class TestGoatDataSource(TestCase):
         with self.assertRaises(StopIteration):
             next(ret)
 
+    def test_get_by_id_with_merged_taxon_id(self):
+        gds = goat()
+
+        ret = gds.get_by_ids('taxon', ['152678'])
+        obj1 = next(ret)
+        self.assertEqual('152678', obj1.id)
+        self.assertEqual('158314', obj1.new_taxon_id)
+        ret = gds.get_by_ids('taxon', ['158314'])
+        obj2 = next(ret)
+        self.assertEqual('158314', obj2.id)
+        self.assertIsNone(obj2.new_taxon_id)
+
     def test_get_list(self):
         gds = goat()
 

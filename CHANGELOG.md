@@ -8,9 +8,20 @@ SPDX-License-Identifier: MIT
 
 ## tol-sdk `3.0.0`
 
-08-10-2026
+14-10-2026
 
 - Allow configuration on boards, views, and zones
+## tol-sdk `2.11.0`
+
+12-10-2026
+
+- Deal with merged taxon IDs from GoaT
+
+## tol-sdk `2.10.0`
+
+08-10-2026
+
+- Added case_insensitive and match_anywhere options to filters
 
 ## tol-sdk `2.9.1`
 

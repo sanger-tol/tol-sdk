@@ -11,8 +11,12 @@ from functools import reduce
 from itertools import chain
 from typing import Any, Dict, Iterable, Iterator, Optional, Tuple
 
-from sqlalchemy import BinaryExpression, Select, cast, inspect, not_, select
-from sqlalchemy.dialects.postgresql import JSONB
+from sqlalchemy import (
+    BinaryExpression, JSON, Select, Text, case, cast, false, func, inspect, literal,
+    not_, or_, select,
+)
+from sqlalchemy import column as sql_column
+from sqlalchemy.dialects.postgresql import ARRAY, JSONB
 from sqlalchemy.orm import MappedColumn, aliased
 from sqlalchemy.orm.util import AliasedClass
 
@@ -318,7 +322,24 @@ class DefaultDatabaseFilter(DatabaseFilter):
     ) -> Select:
 
         value, negate = self.__parse_value_negate(term)
+        if self.__search_json_values(column, term):
+            return self.__negatable_filter(
+                query, self.__json_values_match(column, 'in_list', term), column, negate
+            )
         expression = column.in_(value)
+
+        case_insensitive = term.get('case_insensitive', False)
+        match_anywhere = term.get('match_anywhere', False)
+        if self.__column_is_str(column) and (case_insensitive or match_anywhere):
+            alternatives = []
+            for candidate in value:
+                if isinstance(candidate, str):
+                    alternatives.append(self.__string_match(
+                        column, candidate, case_insensitive, match_anywhere
+                    ))
+                else:
+                    alternatives.append(column == candidate)
+            expression = or_(*alternatives) if alternatives else false()
 
         return self.__negatable_filter(
             query,
@@ -336,12 +357,19 @@ class DefaultDatabaseFilter(DatabaseFilter):
 
         value, negate = self.__parse_value_negate(term)
 
+        if self.__search_json_values(column, term):
+            return self.__negatable_filter(
+                query, self.__json_values_match(column, 'contains', term), column, negate
+            )
+
         if self.__column_is_str(column):
             return self.__filter_contains_str(
                 query,
                 column,
                 value,
-                negate
+                negate,
+                case_insensitive=term.get('case_insensitive', True),
+                match_anywhere=term.get('match_anywhere', True)
             )
         else:
             return self.__filter_contains_list(
@@ -354,16 +382,77 @@ class DefaultDatabaseFilter(DatabaseFilter):
     def __column_is_str(self, column: MappedColumn) -> bool:
         return column.type.python_type is str
 
+    def __search_json_values(self, column: MappedColumn, term: dict[str, Any]) -> bool:
+        return isinstance(column.type, JSON) and term.get('search_values', True) \
+            and 'field' not in term
+
+    def __json_values_match(
+        self, column: MappedColumn, operator: str, term: dict[str, Any]
+    ) -> BinaryExpression:
+        json_column = cast(column, JSONB)
+        is_object = func.jsonb_typeof(json_column) == 'object'
+        safe_object = case((is_object, json_column), else_=literal({}, type_=JSONB))
+        entries = func.jsonb_each(safe_object).table_valued(
+            sql_column('key'), sql_column('value', JSONB)
+        )
+        candidates = term['value'] if operator == 'in_list' else [term.get('value')]
+        case_insensitive = term.get('case_insensitive', operator == 'contains')
+        match_anywhere = term.get('match_anywhere', operator == 'contains')
+        if operator == 'contains':
+            if case_insensitive is None:
+                case_insensitive = True
+            if match_anywhere is None:
+                match_anywhere = True
+        alternatives = []
+        for candidate in candidates:
+            if isinstance(candidate, str) and (
+                operator == 'contains' or case_insensitive
+                or (operator == 'in_list' and match_anywhere)
+            ):
+                text_value = entries.c.value.op('#>>', return_type=Text)(
+                    literal([], type_=ARRAY(Text))
+                )
+                comparison = self.__string_match(
+                    text_value, candidate, case_insensitive,
+                    match_anywhere if operator != 'eq' else False,
+                    prefix=operator == 'contains'
+                )
+                alternatives.append(
+                    (func.jsonb_typeof(entries.c.value) == 'string') & comparison
+                )
+            else:
+                alternatives.append(entries.c.value == literal(candidate, type_=JSONB))
+        predicate = or_(*alternatives) if alternatives else false()
+        value_match = select(1).select_from(entries).where(predicate).correlate(
+            column.table
+        ).exists()
+        if operator == 'contains':
+            fallback = json_column.op('@>')(literal([term.get('value')], type_=JSONB))
+        elif operator == 'eq':
+            fallback = json_column == literal(term.get('value'), type_=JSONB)
+        else:
+            fallback = json_column.in_([
+                literal(candidate, type_=JSONB) for candidate in candidates
+            ])
+        return case((is_object, value_match), else_=fallback)
+
     def __filter_contains_str(
         self,
         query: Select,
         column: MappedColumn,
         value: str,
-        negate: bool
+        negate: bool,
+        case_insensitive: bool = True,
+        match_anywhere: bool = True
     ) -> Select:
 
-        ilike = self.__get_ilike_term(value)
-        expression = column.ilike(ilike)
+        if case_insensitive is None:
+            case_insensitive = True
+        if match_anywhere is None:
+            match_anywhere = True
+        expression = self.__string_match(
+            column, value, case_insensitive, match_anywhere, prefix=True
+        )
 
         return self.__negatable_filter(
             query,
@@ -398,7 +487,14 @@ class DefaultDatabaseFilter(DatabaseFilter):
     ) -> Select:
 
         value, negate = self.__parse_value_negate(term)
+        if self.__search_json_values(column, term):
+            return self.__negatable_filter(
+                query, self.__json_values_match(column, 'eq', term), column, negate
+            )
         expression = column == value
+        if term.get('case_insensitive', False) \
+                and self.__column_is_str(column) and isinstance(value, str):
+            expression = self.__string_match(column, value, True, False)
 
         return self.__negatable_filter(
             query,
@@ -547,6 +643,23 @@ class DefaultDatabaseFilter(DatabaseFilter):
             column,
             model=trie.alias,
         )
+
+    def __string_match(
+        self,
+        column: MappedColumn,
+        value: str,
+        case_insensitive: bool,
+        match_anywhere: bool,
+        prefix: bool = False
+    ) -> BinaryExpression:
+        pattern = self.__escape_ilike(value)
+        if match_anywhere:
+            pattern = f'%{pattern}%'
+        elif prefix:
+            pattern = f'{pattern}%'
+        if case_insensitive:
+            return column.ilike(pattern, escape='\\')
+        return column.like(pattern, escape='\\')
 
     def __get_ilike_term(self, value: str) -> str:
         escaped = self.__escape_ilike(value)
