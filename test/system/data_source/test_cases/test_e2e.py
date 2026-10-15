@@ -1366,7 +1366,7 @@ class TestEndToEnd:
         assert stats['int_column']['unique'] == 4
         assert stats['int_column']['cardinality'] == 4
 
-    @against(elastic)
+    @against(elastic, api_elastic)
     def test_runtime_fields(self, data_source: OperableDataSource, ds_sleep):
         """
         Upsert a `DataObject` instance, and then query a runtime field
@@ -1390,8 +1390,10 @@ class TestEndToEnd:
         assert len(first) == 2
         ret = first[0]
         assert ret.runtime_column is True
+        assert ret.attributes['runtime_column'] is True
         ret = first[1]
         assert ret.runtime_column is False
+        assert ret.attributes['runtime_column'] is False
 
         # Get list by runtime field query
         f = DataSourceFilter()

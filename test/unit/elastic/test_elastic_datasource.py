@@ -149,6 +149,20 @@ class TestUidSubstitution:
 
 class TestElasticDataSource:
 
+    def test_default_requested_tree_preserves_runtime_fields(
+        self, mock_elastic_data_source: ElasticDataSource
+    ):
+        requested_tree = ReqFieldsTree('obj_type', mock_elastic_data_source)
+        _, _, fields, runtime_mappings = mock_elastic_data_source._prepare_get_parameters(
+            object_type='obj_type',
+            object_filters=None,
+            requested_tree=requested_tree,
+        )
+
+        expected_fields = {'field7', 'field8', 'field5.value', 'relationship.id.value'}
+        assert set(fields) == expected_fields
+        assert set(cast(dict, runtime_mappings)) == expected_fields
+
     def test_requested_tree_filtering(self, mock_elastic_data_source: ElasticDataSource):
         # Test no requested tree
         f = DataSourceFilter()
@@ -229,9 +243,9 @@ class TestElasticDataSource:
             object_filters=None,
             requested_tree=requested_tree,
         )
-        assert set(fields) == {'relationship.id.value', 'field5.value'}
+        assert set(fields) == {'field7', 'field8', 'relationship.id.value', 'field5.value'}
         assert set(cast(dict, runtime_mappings).keys()) == {
-            'field5.value', 'relationship.id.value'
+            'field7', 'field8', 'field5.value', 'relationship.id.value'
         }
 
     def test_upsert(self, mock_elastic_data_source: ElasticDataSource):

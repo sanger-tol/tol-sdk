@@ -449,6 +449,7 @@ class ElasticDataSource(
             fields = list(filter(
                 lambda field: (
                     requested_tree.has_attribute(field)
+                    or (not requested_tree.attribute_names and '.' not in field)
                     or (
                         object_filters is not None and object_filters.and_ is not None
                         and (
