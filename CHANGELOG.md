@@ -8,9 +8,10 @@ SPDX-License-Identifier: MIT
 
 ## tol-sdk `2.11.0`
 
-12-10-2026
+13-10-2026
 
 - Deal with merged taxon IDs from GoaT
+- Added keycloak_registration option to db_auth_blueprint
 
 ## tol-sdk `2.10.0`
 

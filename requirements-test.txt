@@ -10,5 +10,6 @@
 
 flask_testing==0.8.1
 pytest==7.3.1
+PyJWT[crypto]==2.15.1
 responses
 requests_mock

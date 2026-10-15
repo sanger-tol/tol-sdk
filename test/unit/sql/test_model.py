@@ -4,20 +4,49 @@
 
 from __future__ import annotations
 
+from datetime import timedelta
 from typing import List
 from unittest.mock import MagicMock, PropertyMock
 
 import pytest
 
 from sqlalchemy import Boolean, Column, ForeignKey, Integer, String
-from sqlalchemy.orm import Mapped, mapped_column, relationship
+from sqlalchemy.orm import Mapped, configure_mappers, mapped_column, relationship
 
 from tol.sql import model_base
+from tol.sql.auth.models import create_models
 from tol.sql.exception import BadColumnError
 from tol.sql.model import InstanceToManyDict, InstanceToOneDict
 
 
 BaseModel = model_base()
+
+
+class TestAuthModelCreation:
+    def test_keycloak_info_model_only_created_when_enabled(self):
+        def create_auth_models(keycloak_registration: bool):
+            base = model_base()
+            return base, create_models(
+                base,
+                'user',
+                'oidc_id',
+                object,
+                object,
+                False,
+                object,
+                timedelta(days=1),
+                False,
+                keycloak_registration,
+            )
+
+        disabled_base, disabled_models = create_auth_models(False)
+        assert disabled_models.keycloak_info_class is None
+        assert 'keycloak_info' not in disabled_base.metadata.tables
+
+        enabled_base, enabled_models = create_auth_models(True)
+        assert enabled_models.keycloak_info_class is not None
+        assert 'keycloak_info' in enabled_base.metadata.tables
+        configure_mappers()
 
 
 class _Example(BaseModel):
