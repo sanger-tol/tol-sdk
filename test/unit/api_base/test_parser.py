@@ -22,6 +22,35 @@ def tz1():
 
 
 class TestDefaultParser:
+    @pytest.mark.parametrize('values', [
+        [],
+        [None],
+        ['1998-05-30T11:30:07+01:00'],
+        ['1998-05-30T11:30:07+01:00', None, '2020-01-01T00:00:00+00:00'],
+    ])
+    def test_datetime_lists(self, mock_rel_ds_dict, values):
+        document = {
+            'data': {
+                'type': 'dna_typ',
+                'id': 'DNA009',
+                'attributes': {
+                    'date': values,
+                    'provenance': {'date': {'source_1': values}},
+                },
+            },
+        }
+        (parsed,) = DefaultParser(mock_rel_ds_dict).parse_json_doc(document)
+        expected = [datetime.fromisoformat(value) if value is not None else None
+                    for value in values]
+
+        assert parsed.date == expected
+        assert parsed.provenance['date']['source_1'] == expected
+        assert type(parsed.date) is list
+        assert all(value is None or isinstance(value, datetime) for value in parsed.date)
+        dumped = DefaultView(ReqFieldsTree('dna_typ', mock_rel_ds_dict['dna_typ'])).dump(parsed)
+        assert dumped['data']['attributes']['date'] == values
+        assert dumped['data']['attributes']['provenance']['date']['source_1'] == values
+
     def test_no_attributes(self, mock_rel_ds_dict):
         """
         Parse with no attributes (or relationships), just type and ID.

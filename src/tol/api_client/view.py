@@ -307,6 +307,10 @@ class DefaultView(View):
         return {k: self.__convert_value(v) for k, v in attributes.items()}
 
     def __convert_value(self, val: Any, /) -> Any:
+        if isinstance(val, list):
+            return [self.__convert_value(item) for item in val]
+        if isinstance(val, dict):
+            return {key: self.__convert_value(value) for key, value in val.items()}
         if isinstance(val, date):
             # `datetime` is a subclass of `date`
             return val.isoformat()

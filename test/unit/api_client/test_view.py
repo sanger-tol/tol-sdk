@@ -2,6 +2,8 @@
 #
 # SPDX-License-Identifier: MIT
 
+import json
+from datetime import date, datetime
 from unittest.mock import create_autospec
 
 from flask import Flask
@@ -27,6 +29,27 @@ def sample_req_fields_tree(mock_rel_ds):
 
 
 class TestDefaultView:
+    def test_dump_nested_dates(self, mock_data_object, sample_req_fields_tree):
+        values = [datetime(2020, 2, 1), datetime(2020, 1, 1), None]
+        obj = mock_data_object(
+            'sample_typ', id_='SMPL9606',
+            attributes={'lims_id': values},
+            provenance_={'lims_id': {
+                'source_1': values,
+                'source_2': {'dates': [date(2020, 1, 1)]},
+            }},
+        )
+
+        dumped = DefaultView(sample_req_fields_tree).dump(obj)
+        attributes = dumped['data']['attributes']
+        expected = ['2020-02-01T00:00:00', '2020-01-01T00:00:00', None]
+
+        assert attributes['lims_id'] == expected
+        assert attributes['provenance']['lims_id']['source_1'] == expected
+        assert attributes['provenance']['lims_id']['source_2'] == {'dates': ['2020-01-01']}
+        assert json.loads(json.dumps(dumped)) == dumped
+        assert obj.lims_id == values
+
     def test_dump_one_object(self, mock_data_object, sample_req_fields_tree):
         """
         Test dumping one object with no relationships

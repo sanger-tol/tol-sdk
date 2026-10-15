@@ -89,6 +89,14 @@ def elastic_datasource(
                     source_order=['source1', 'source2', 'source3', 'source4'],
                     return_type=None
                 ),
+                'float_column_prov': ProvenanceField(
+                    source_order=['source1', 'source2', 'source3', 'source4'],
+                    return_type=None
+                ),
+                'list_column_prov': ProvenanceField(
+                    source_order=['source1', 'source2', 'source3', 'source4'],
+                    return_type=None
+                ),
                 'str_column_prov': ProvenanceField(
                     source_order=['source1', 'source2', 'source3', 'source4'],
                     return_type=None
@@ -218,6 +226,18 @@ def upsert_archetypes(prefix: str) -> None:
                     'source2': {'value': 42},
                     'source3': {'value': 42},
                     'source4': {'value': 42},
+                }
+            },
+            'float_column_prov': {
+                'provenance': {
+                    source: {'value': 1.25}
+                    for source in ['source1', 'source2', 'source3', 'source4']
+                }
+            },
+            'list_column_prov': {
+                'provenance': {
+                    source: {'value': ['item']}
+                    for source in ['source1', 'source2', 'source3', 'source4']
                 }
             },
             'datetime_column_prov': {

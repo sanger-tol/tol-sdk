@@ -5,6 +5,7 @@
 from datetime import datetime
 from time import sleep
 from typing import Dict, Iterable
+from unittest import mock
 
 import pytest
 
@@ -474,6 +475,124 @@ class TestEndToEnd:
         assert ret.related_object is None
         assert ret.list_column is None
 
+    @against(elastic)
+    def test_enrich(self, data_source: OperableDataSource, ds_sleep):
+        initial = {
+            'str_column': 'original',
+            'int_column': 1,
+            'root_int_column_min': 0.5,
+            'datetime_column': datetime(2020, 1, 1),
+            'bool_column': True,
+            'list_column': ['original'],
+            'str_column_prov': 'original provenance',
+        }
+        related = data_source.data_object_factory('related', 'enrich_source', attributes=initial)
+        other = data_source.data_object_factory('related', 'enrich_other', attributes=initial)
+        data_source.upsert('related', [related, other], provenance='source1')
+        relationships = [
+            {'related_object': related, 'another_related_object': other},
+            {'related_object': related, 'another_related_object': other},
+            {'related_object': other, 'another_related_object': related},
+            {'related_object': other, 'another_related_object': other},
+        ]
+        roots = [
+            data_source.data_object_factory(
+                'root', f'enrich_{index}',
+                attributes={'str_column': 'root value'},
+                to_one=relations,
+            )
+            for index, relations in enumerate(relationships)
+        ]
+        data_source.upsert('root', roots, provenance='source1')
+        data_source.upsert('root', [data_source.data_object_factory(
+            'root', roots[0].id, to_one={'related_object': other}
+        )], provenance='source2')
+        ds_sleep(5)
+
+        index_name = f'{data_source.index_prefix}-root'
+        before = {
+            root.id: data_source.es.get(index=index_name, id=root.id)['_source']
+            for root in roots
+        }
+        assert before[roots[0].id]['related_object']['id'] == {
+            'provenance': {
+                'source1': {'value': related.id},
+                'source2': {'value': other.id},
+            }
+        }
+        updated = {
+            'str_column': 'updated',
+            'int_column': 17,
+            'root_int_column_min': 1.25,
+            'datetime_column': datetime(2024, 6, 6, 12, 30),
+            'bool_column': False,
+            'list_column': ['wing', 'leg', 'wing'],
+            'str_column_prov': 'updated provenance',
+        }
+        for attributes in [updated, dict.fromkeys(updated)]:
+            expected = dict(attributes)
+            if expected['list_column'] is not None:
+                expected['list_column'] = ['original', 'wing', 'leg']
+            data_source.upsert('related', [data_source.data_object_factory(
+                'related', related.id, attributes=attributes
+            )], provenance='source1')
+            ds_sleep(5)
+            source = data_source.get_one('related', related.id)
+            assert source.list_column == expected['list_column']
+            submitted = []
+            update_by_query = data_source.es.update_by_query
+
+            def submit_update(**kwargs):
+                assert kwargs['wait_for_completion'] is False
+                response = update_by_query(**kwargs)
+                submitted.append(response['task'])
+                return response
+
+            with mock.patch.object(data_source.es, 'update_by_query', side_effect=submit_update):
+                data_source.enrich('related', [source], 'root')
+
+            assert len(submitted) == 2
+            updated_counts = []
+            for task_id in submitted:
+                task = data_source.es.tasks.get(
+                    task_id=task_id, wait_for_completion=True,
+                    timeout='30s', request_timeout=35,
+                )
+                assert task['completed'] is True
+                assert 'error' not in task
+                response = task['response']
+                assert response['timed_out'] is False
+                assert response['failures'] == []
+                assert response['version_conflicts'] == 0
+                updated_counts.append(response['updated'])
+            assert sorted(updated_counts) == [1, 2]
+            data_source.es.indices.refresh(index=index_name)
+
+            for root, relations in zip(roots, relationships):
+                stored = data_source.es.get(index=index_name, id=root.id)['_source']
+                returned = data_source.get_one('root', root.id)
+                assert returned.str_column == 'root value'
+                for relation_name, original in relations.items():
+                    if original.id != related.id:
+                        assert stored[relation_name] == before[root.id][relation_name]
+                        continue
+                    assert stored[relation_name]['id'] == before[root.id][relation_name]['id']
+                    enriched = returned.get_field_by_name(relation_name)
+                    assert enriched.id == related.id
+                    for field, value in expected.items():
+                        actual = enriched.get_field_by_name(field)
+                        assert type(actual) is type(value)
+                        if isinstance(value, datetime):
+                            value = value.replace(tzinfo=actual.tzinfo)
+                        assert actual == value
+                        if value is None:
+                            assert stored[relation_name][field] is None
+                if root.id == roots[0].id:
+                    assert returned.provenance['related_object']['source1'].id == related.id
+                    assert returned.provenance['related_object']['source2'].id == other.id
+                if all(original.id != related.id for original in relations.values()):
+                    assert stored == before[root.id]
+
     @against(elastic, api_elastic)
     def test_enriched_relation_provenanced_attribute(
         self,
@@ -535,6 +654,8 @@ class TestEndToEnd:
                 'str_column': '1',
                 'int_column_prov': 1,
                 'str_column_prov': '1',
+                'float_column_prov': 1.25,
+                'list_column_prov': ['wing', 'leg', 'wing'],
                 'datetime_column_prov': datetime(2020, 1, 1, 0, 0, 0),
                 'bool_column_prov': True,
             },
@@ -551,6 +672,8 @@ class TestEndToEnd:
                 'str_column': '2',
                 'int_column_prov': 2,
                 'str_column_prov': '2',
+                'float_column_prov': 2.5,
+                'list_column_prov': ['antenna'],
                 'datetime_column_prov': datetime(2020, 2, 1, 0, 0, 0),
                 'bool_column_prov': False
             },
@@ -571,8 +694,21 @@ class TestEndToEnd:
         assert ret.str_column == '2'
         assert ret.int_column_prov == 1
         assert ret.str_column_prov == '1'
-        assert ret.datetime_column_prov.month == 1
+        assert ret.float_column_prov == 1.25
+        assert ret.list_column_prov == ['wing', 'leg', 'wing']
+        assert ret.datetime_column_prov == datetime(
+            2020, 1, 1, tzinfo=ret.datetime_column_prov.tzinfo
+        )
         assert ret.bool_column_prov is True
+        for field, expected_type in [
+            ('int_column_prov', int),
+            ('float_column_prov', float),
+            ('str_column_prov', str),
+            ('datetime_column_prov', datetime),
+            ('bool_column_prov', bool),
+            ('list_column_prov', list),
+        ]:
+            assert type(ret.get_field_by_name(field)) is expected_type
         assert ret.related_object.id == '1'
         assert ret.another_related_object.id == '1'
         assert ret.provenance['related_object']['source3'].id == '1'
@@ -581,6 +717,10 @@ class TestEndToEnd:
         assert ret.provenance['int_column_prov']['source4'] == 2
         assert ret.provenance['str_column_prov']['source3'] == '1'
         assert ret.provenance['str_column_prov']['source4'] == '2'
+        assert ret.provenance['float_column_prov']['source3'] == 1.25
+        assert ret.provenance['float_column_prov']['source4'] == 2.5
+        assert ret.provenance['list_column_prov']['source3'] == ['wing', 'leg', 'wing']
+        assert ret.provenance['list_column_prov']['source4'] == ['antenna']
         assert ret.provenance['datetime_column_prov']['source3'].month == 1
         assert ret.provenance['datetime_column_prov']['source4'].month == 2
         assert ret.provenance['bool_column_prov']['source4'] is False
@@ -621,6 +761,16 @@ class TestEndToEnd:
         assert len(ret) == 1
         assert ret[0].str_column_prov == '1'
         assert ret[0].get_field_by_name('str_column_prov[source4]') == '2'
+
+        f = DataSourceFilter()
+        f.and_ = {'list_column_prov': {'contains': {'value': 'wing'}}}
+        ret = list(data_source.get_list(
+            'root', object_filters=f, requested_fields=['list_column_prov']
+        ))
+        assert len(ret) == 1
+        assert ret[0].list_column_prov == ['wing', 'leg', 'wing']
+        f.and_ = {'list_column_prov': {'contains': {'value': 'antenna'}}}
+        assert list(data_source.get_list('root', object_filters=f)) == []
 
         # Check that provenanced fields can be used in filters
         f = DataSourceFilter()
@@ -720,6 +870,63 @@ class TestEndToEnd:
         assert ret.provenance['str_column_prov']['source1'] is None
         assert 'source1' in ret.provenance['related_object']
         assert ret.provenance['related_object']['source1'] is None
+
+    @against(elastic, api_elastic)
+    def test_provenanced_list_types(self, data_source: OperableDataSource, ds_sleep):
+        expected = {
+            'int_column_prov': [3, 1, 3],
+            'float_column_prov': [2.5, 1.25, 2.5],
+            'str_column_prov': ['wing', 'leg', 'wing'],
+            'datetime_column_prov': [datetime(2020, 2, 1), datetime(2020, 1, 1)],
+            'bool_column_prov': [True, False, True],
+        }
+        obj = data_source.data_object_factory('root', 'lists', attributes=expected)
+        data_source.upsert('root', [obj], provenance='source1')
+        ds_sleep(5)
+
+        returned = data_source.get_one('root', 'lists')
+        for field, values in expected.items():
+            actual = returned.get_field_by_name(field)
+            assert type(actual) is list
+            assert len(actual) == len(values)
+            for actual_item, expected_item in zip(actual, values):
+                assert type(actual_item) is type(expected_item)
+                if isinstance(expected_item, datetime):
+                    expected_item = expected_item.replace(tzinfo=actual_item.tzinfo)
+                assert actual_item == expected_item
+            assert returned.provenance[field]['source1'] == actual
+
+    @against(elastic, api_elastic)
+    def test_provenanced_list_precedence(self, data_source: OperableDataSource, ds_sleep):
+        cases = [
+            ({'source1': ['wing', 'leg', 'wing'], 'source2': ['antenna']},
+             ['wing', 'leg', 'wing']),
+            ({'source1': ['leg'], 'source2': ['wing']}, ['leg']),
+            ({'source2': ['leg']}, ['leg']),
+            ({'source1': [], 'source2': ['leg']}, ['leg']),
+            ({'source1': [None], 'source2': ['leg']}, ['leg']),
+            ({'source1': None, 'source2': ['leg']}, None),
+            ({'source1': 'leg', 'source2': ['wing']}, 'leg'),
+            ({'source1': ['leg'], 'source2': 'wing'}, ['leg']),
+            ({'source1': [], 'source2': []}, None),
+        ]
+        for source in ['source1', 'source2']:
+            objects = [
+                data_source.data_object_factory(
+                    'root', str(index), attributes={'list_column_prov': sources[source]}
+                )
+                for index, (sources, expected) in enumerate(cases)
+                if source in sources
+            ]
+            data_source.upsert('root', objects, provenance=source)
+        ds_sleep(5)
+
+        for index, (sources, expected) in enumerate(cases):
+            returned = data_source.get_one('root', str(index))
+            assert returned.list_column_prov == expected
+            assert type(returned.list_column_prov) is type(expected)
+            for source, value in sources.items():
+                assert returned.provenance['list_column_prov'][source] == value
 
     @against(sql, api_sql)
     def test_upsert_dict_attributes(self, data_source: OperableDataSource, ds_sleep):

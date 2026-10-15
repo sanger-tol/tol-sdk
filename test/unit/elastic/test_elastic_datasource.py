@@ -6,6 +6,8 @@ from datetime import datetime
 from typing import cast
 from unittest import mock
 
+import pytest
+
 from tol.core import (
     DataObject,
     DataSourceError,
@@ -20,10 +22,49 @@ from tol.elastic import (
     ElasticUpsertInputConverter,
     ElasticUpsertInputResource,
 )
-from tol.elastic.parser import DefaultElasticUpdateInputParser, DefaultElasticUpsertInputParser
+from tol.elastic.parser import (
+    DefaultElasticApiParser,
+    DefaultElasticUpdateInputParser,
+    DefaultElasticUpsertInputParser,
+)
 
 
 dt = datetime.fromtimestamp(1234567890)
+
+
+class TestProvenanceLists:
+    @pytest.mark.parametrize('source_values,runtime_values,expected', [
+        ({'source_1': ['wing', 'leg', 'wing']}, ['leg', 'wing'], ['wing', 'leg', 'wing']),
+        ({'source_1': ['leg']}, ['leg'], ['leg']),
+        ({'source_1': 'leg', 'source_2': ['wing']}, ['leg'], 'leg'),
+        ({'source_2': ['wing', 'leg']}, ['leg', 'wing'], ['wing', 'leg']),
+        ({'source_1': [], 'source_2': ['leg']}, ['leg'], ['leg']),
+        ({'source_1': [None], 'source_2': ['leg']}, ['leg'], ['leg']),
+        ({'source_1': None, 'source_2': ['leg']}, ['leg'], ['leg']),
+        ({'source_1': '__TOL_PROVENANCE_NULL__', 'source_2': ['leg']},
+         ['__TOL_PROVENANCE_NULL__'], None),
+        ({}, ['leg', 'wing'], 'leg'),
+    ])
+    def test_provenanced_list(
+        self, mock_elastic_data_source, source_values,
+        runtime_values, expected
+    ):
+        parser = DefaultElasticApiParser(mock_elastic_data_source)
+        species = parser.parse({
+            '_index': 'test-obj-type',
+            '_id': 'id1',
+            '_source': {
+                'field5': {'provenance': {
+                    source: {'value': value} for source, value in source_values.items()
+                }},
+            },
+            'fields': {'field5.value': runtime_values},
+        })
+
+        assert species.field5 == expected
+        for source, value in source_values.items():
+            expected_source = None if value == '__TOL_PROVENANCE_NULL__' else value
+            assert species.provenance['field5'][source] == expected_source
 
 
 class TestUidSubstitution:
@@ -1333,7 +1374,12 @@ class TestElasticDataSource:
         }
         assert mock_elastic_data_source.relationships_to_enrich == expected
 
-    def test_get_enrich_update(self, mock_elastic_data_source: ElasticDataSource):
+    @pytest.mark.parametrize('enriching_fields', [
+        ['field1', 'field2'],
+        ['id', 'field1', 'field2'],
+    ])
+    def test_get_enrich_update(self, mock_elastic_data_source: ElasticDataSource,
+                               enriching_fields):
         expected = [
             (None, {'parent': {'field1': 'value1', 'field2': 'value2'},
                     'parent.id': 'id1'}),
@@ -1341,7 +1387,6 @@ class TestElasticDataSource:
                     'parent.id': 'id2'})
         ]
 
-        enriching_fields = ['field1', 'field2']
         source_data = [
             mock_elastic_data_source.data_object_factory(
                 'obj_type',
