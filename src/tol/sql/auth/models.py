@@ -148,6 +148,15 @@ class AuthRoleBinding:
     role_id: str
 
 
+class AuthKeycloakInfo(ABC):
+    """Stores Keycloak registration information for a user."""
+
+    id: str  # noqa A003
+    environment: str
+    user_id: int
+    user: Optional[AuthUser]
+
+
 class ModelTuple(NamedTuple):
     """
     Contains the `ModelClass` variables required
@@ -159,6 +168,7 @@ class ModelTuple(NamedTuple):
     token_class: type[AuthToken]
     role_class: type[AuthRole]
     role_binding_class: type[AuthRoleBinding]
+    keycloak_info_class: Optional[type[AuthKeycloakInfo]] = None
 
 
 def create_models(
@@ -170,7 +180,8 @@ def create_models(
     token_is_pk: bool,
     role_mixin_class: ModelClass,
     token_expiry_delta: timedelta,
-    prefix_with_name: bool
+    prefix_with_name: bool,
+    keycloak_registration: bool
 ) -> ModelTuple:
     """
     Creates the OIDC db models, given a suitable base (and
@@ -280,6 +291,12 @@ def create_models(
         _role_bindings: Mapped[list[RoleBinding]] = relationship(
             back_populates='user'
         )
+
+        if keycloak_registration:
+            keycloak_infos: Mapped[list[Any]] = relationship(
+                'KeycloakInfo',
+                back_populates='user'
+            )
 
         @classmethod
         def get_id_column_name(cls) -> str:
@@ -539,10 +556,34 @@ def create_models(
             foreign_keys=[role_id]
         )
 
+    # We only want the Keycloak tables if keycloak_registration is enabled
+    # At the moment this is only for Quasar
+    keycloak_info_class: Optional[type[AuthKeycloakInfo]] = None
+    if keycloak_registration:
+        class KeycloakInfo(model_base, AuthKeycloakInfo):
+            __tablename__ = 'keycloak_info'
+
+            id: Mapped[str] = mapped_column(  # noqa A003
+                primary_key=True
+            )
+            environment: Mapped[str] = mapped_column()
+            user_id: Mapped[int] = mapped_column(
+                ForeignKey('user.user_id' if prefix_with_name else 'user.id')
+            )
+
+            user = relationship(
+                'User',
+                back_populates='keycloak_infos',
+                foreign_keys=[user_id]
+            )
+
+        keycloak_info_class = KeycloakInfo
+
     return ModelTuple(
         state_class=State,
         token_class=Token,
         user_class=User,
         role_class=Role,
-        role_binding_class=RoleBinding
+        role_binding_class=RoleBinding,
+        keycloak_info_class=keycloak_info_class
     )

@@ -532,8 +532,6 @@ class DefaultElasticUpdateInputParser(
         }
         if runtime_mappings is not None:
             payload['runtime_mappings'] = runtime_mappings
-        import json
-        print(json.dumps(payload, indent=2, default=str))
         return payload
 
     def _convert_data_objects_in_update_to_dict(
