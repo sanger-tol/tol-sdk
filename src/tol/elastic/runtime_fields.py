@@ -127,13 +127,13 @@ class RuntimeFields:
     ):
         keyword = '.keyword' if return_type == 'keyword' else ''
         if return_type == 'date':
-            emit_value = "doc['{field}{keyword}'].value.toInstant().toEpochMilli()"
+            emit_value = 'value.toInstant().toEpochMilli()'
         elif return_type == 'long':
-            emit_value = "((Number) doc['{field}{keyword}'].value).longValue()"
+            emit_value = '((Number) value).longValue()'
         elif return_type == 'double':
-            emit_value = "((Number) doc['{field}{keyword}'].value).doubleValue()"
+            emit_value = '((Number) value).doubleValue()'
         else:
-            emit_value = "doc['{field}{keyword}'].value"
+            emit_value = 'value'
         if null_wins and return_type == 'keyword':
             # sentinel is a real indexed keyword value written at upsert time;
             # standard size > 0 check is sufficient to find it.
@@ -141,7 +141,7 @@ class RuntimeFields:
                 [
                     f"if (doc.containsKey('{field}{keyword}') "
                     f"&& doc['{field}{keyword}'].size() > 0) {{"
-                    f'emit({emit_value.format(field=field, keyword=keyword)});'
+                    f"for (def value : doc['{field}{keyword}']) {{emit({emit_value});}}"
                     f'return;'
                     f'}}'
                     for field in fields
@@ -153,7 +153,7 @@ class RuntimeFields:
                 [
                     f"if (doc.containsKey('{field}{keyword}') "
                     f"&& doc['{field}{keyword}'].size() > 0) {{"
-                    f'emit({emit_value.format(field=field, keyword=keyword)});'
+                    f"for (def value : doc['{field}{keyword}']) {{emit({emit_value});}}"
                     f'}}'
                     for field in fields
                 ]
