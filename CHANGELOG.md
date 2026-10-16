@@ -6,11 +6,19 @@ SPDX-License-Identifier: MIT
 
 # Changelog
 
-## tol-sdk `2.10.1`
+## tol-sdk `2.11.1`
 
-13-10-2026
+19-10-2026
 
 - Tweaks to GAP flows
+
+## tol-sdk `2.11.0`
+
+16-10-2026
+
+- Deal with merged taxon IDs from GoaT
+- Added keycloak_registration option to db_auth_blueprint
+- Fixed bugs arising from provenance release
 
 ## tol-sdk `2.10.0`
 

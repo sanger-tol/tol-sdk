@@ -2,6 +2,8 @@
 #
 # SPDX-License-Identifier: MIT
 
+import pytest
+
 from tol.elastic import (
     RuntimeFields
 )
@@ -28,9 +30,9 @@ class TestRuntimeFields:
         assert ''.join(rf['script']['source'].split()) == ''.join("""
             if (1==1) {
                 if (doc.containsKey('field1.keyword') && doc['field1.keyword'].size() > 0) {
-                    emit(doc['field1.keyword'].value);
+                    for (def value : doc['field1.keyword']) {emit(value);}
                 } else if (doc.containsKey('field2.keyword') && doc['field2.keyword'].size() > 0) {
-                    emit(doc['field2.keyword'].value);
+                    for (def value : doc['field2.keyword']) {emit(value);}
                 }
             }
         """.split())
@@ -43,13 +45,28 @@ class TestRuntimeFields:
         assert ''.join(rf['script']['source'].split()) == ''.join("""
             if (1==1) {
                 if (doc.containsKey('field1.keyword') && doc['field1.keyword'].size() > 0) {
-                    emit(doc['field1.keyword'].value); return;
+                    for (def value : doc['field1.keyword']) {emit(value);} return;
                 } else if (doc.containsKey('field2.keyword') && doc['field2.keyword'].size() > 0) {
-                    emit(doc['field2.keyword'].value); return;
+                    for (def value : doc['field2.keyword']) {emit(value);} return;
                 }
             }
         """.split())
         assert rf['script']['params'] == {}
+
+    @pytest.mark.parametrize('return_type,conversion', [
+        ('long', '((Number) value).longValue()'),
+        ('double', '((Number) value).doubleValue()'),
+        ('date', 'value.toInstant().toEpochMilli()'),
+        ('boolean', 'value'),
+    ])
+    def test_coalesce_multivalue_conversion(self, return_type, conversion):
+        runtime_field = RuntimeFields.coalesce(['field1', 'field2'], return_type=return_type)
+        script = runtime_field['script']['source']
+
+        assert "for (def value : doc['field1'])" in script
+        assert "for (def value : doc['field2'])" in script
+        assert f'emit({conversion});' in script
+        assert '}else if ' in script
 
     def test_latest_date(self):
         rf = RuntimeFields.latest_date(

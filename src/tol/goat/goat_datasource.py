@@ -121,6 +121,9 @@ class GoatDataSource(
         object_ids_str = [str(object_id) for object_id in object_ids]
         client = self.__client_factory()
         goat_response, _ = client.get_detail(object_type, object_ids_str)
+        if goat_response is not None:
+            for obj in goat_response:
+                obj['original_object_ids'] = object_ids_str
         goat_converter = self.__gc_factory()
 
         converted_objects, _ = goat_converter.convert_list(goat_response) \

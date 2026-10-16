@@ -33,6 +33,8 @@ class TestAttributeTypes:
                 'runtime_column': 'bool',
                 'str_column_prov': 'str',
                 'int_column_prov': 'int',
+                'float_column_prov': 'float',
+                'list_column_prov': 'str',
                 'datetime_column_prov': 'datetime',
                 'bool_column_prov': 'bool',
             },
@@ -81,6 +83,14 @@ class TestAttributeTypes:
                     return_type=None
                 ),
                 'int_column_prov': ProvenanceField(
+                    source_order=['source1', 'source2', 'source3', 'source4'],
+                    return_type=None
+                ),
+                'float_column_prov': ProvenanceField(
+                    source_order=['source1', 'source2', 'source3', 'source4'],
+                    return_type=None
+                ),
+                'list_column_prov': ProvenanceField(
                     source_order=['source1', 'source2', 'source3', 'source4'],
                     return_type=None
                 ),
