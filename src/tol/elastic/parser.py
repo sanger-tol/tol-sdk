@@ -86,7 +86,7 @@ class DefaultElasticApiParser(DataSourceParser[ElasticApiResource, DataObject]):
             ElasticUtils.actual_attribute(k): self.__make_dates(
                 type_,
                 ElasticUtils.actual_attribute(k),
-                self.__normalise_runtime_value(v[0]),
+                self.__provenanced_value(type_, ElasticUtils.actual_attribute(k), data, v),
             )
             for k, v in runtime_data.items()
             if type_ in self._data_source.provenance_fields
@@ -110,6 +110,19 @@ class DefaultElasticApiParser(DataSourceParser[ElasticApiResource, DataObject]):
             to_one=to_one,
             provenance_=provenance
         )
+
+    def __provenanced_value(self, object_type, attribute_name, data, runtime_values):
+        attribute = data.get(attribute_name)
+        if isinstance(attribute, Mapping) and 'provenance' in attribute:
+            field = self._data_source.provenance_fields[object_type][attribute_name]
+            for source in field.source_order:
+                value = attribute['provenance'].get(source, {}).get('value')
+                if isinstance(value, list):
+                    if any(item is not None for item in value):
+                        return [self.__normalise_runtime_value(item) for item in value]
+                elif value is not None:
+                    break
+        return self.__normalise_runtime_value(runtime_values[0]) if runtime_values else None
 
     def __make_provenances(self, type_: str, data: dict[str, Any]) -> dict[str, DataObject | None]:
         if type_ not in self._data_source.provenance_fields:
@@ -184,6 +197,8 @@ class DefaultElasticApiParser(DataSourceParser[ElasticApiResource, DataObject]):
         return not (isinstance(value, Mapping) and 'provenance' in value)
 
     def __make_dates(self, object_type, attribute_name, value):
+        if isinstance(value, list):
+            return [self.__make_dates(object_type, attribute_name, item) for item in value]
         if self._data_source.attribute_types[object_type][attribute_name] == 'datetime' and \
                 isinstance(value, str):
             return dateutil.parser.parse(value)

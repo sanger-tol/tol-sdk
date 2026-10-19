@@ -87,8 +87,8 @@ def auth_bp(db_uri, oidc_config):
 def full_models_list(auth_bp: DbAuthBlueprint):
 
     return [
-        *auth_bp.models,
-        *create_models_list,
+        model for model in (*auth_bp.models, *create_models_list)
+        if model is not None
     ]
 
 

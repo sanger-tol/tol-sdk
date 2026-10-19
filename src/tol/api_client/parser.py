@@ -225,6 +225,8 @@ class DefaultParser(Parser):
         }
 
     def __convert_attribute(self, type_: str, field_name: str, value: Any) -> Any:
+        if isinstance(value, list):
+            return [self.__convert_attribute(type_, field_name, item) for item in value]
         datetime_keys = self.__get_datetime_keys(type_)
 
         return (
