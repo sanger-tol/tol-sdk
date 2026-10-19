@@ -6,11 +6,18 @@ SPDX-License-Identifier: MIT
 
 # Changelog
 
-## tol-sdk `2.11.1`
+## tol-sdk `3.0.1`
 
 19-10-2026
 
 - Tweaks to GAP flows
+
+## tol-sdk `3.0.0`
+
+14-10-2026
+
+- Allow configuration on boards, views, and zones
+- Update integration tests to support provenance
 
 ## tol-sdk `2.11.0`
 

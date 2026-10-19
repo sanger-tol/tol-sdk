@@ -66,6 +66,7 @@ class TestBoardBlueprintAddEntityAndCreateBoard:
         assert payload['id'] == 'b_board12345678'
         assert payload['type'] == 'board'
         assert payload['title'] == 'Untitled board'
+        assert payload['config'] == {}
         assert payload['order'] == ['v_view123456789']
         assert payload['owner_email'] == 'user@example.com'
         children = (
@@ -75,6 +76,7 @@ class TestBoardBlueprintAddEntityAndCreateBoard:
         )
         assert 'v_view123456789' in children
         assert children['v_view123456789']['title'] == 'View 1'
+        assert children['v_view123456789']['config'] == {}
 
         inserted_types = [call.args[0] for call in cast(MagicMock, board_ds).insert.call_args_list]
         assert inserted_types == ['board', 'view', 'view_board']
@@ -189,7 +191,8 @@ class TestBoardBlueprintAddEntityAndCreateBoard:
             '/add-entity/z_parent',
             json={'attributes': {
                 'title': 'New component',
-                'filter': {'a': 1}
+                'filter': {'a': 1},
+                'config': {'display': 'compact'},
             }}
         )
 
@@ -199,7 +202,7 @@ class TestBoardBlueprintAddEntityAndCreateBoard:
         assert payload['parent_id'] == 'z_parent'
         assert payload['title'] == ''
         assert payload['filter'] == {'a': 1}
-        assert payload['config'] == {}
+        assert payload['config'] == {'display': 'compact'}
         assert payload['filter_exclude_incoming'] is False
         assert payload['filter_pass_through'] is False
 
@@ -228,7 +231,10 @@ class TestBoardBlueprintAddEntityAndCreateBoard:
 
         r = board_client.post(
             '/add-entity/v_parent',
-            json={'attributes': {'filter': {'a': 1}}}
+            json={'attributes': {
+                'filter': {'a': 1},
+                'config': {'layout': 'wide'},
+            }}
         )
 
         assert r.status_code == 201
@@ -238,6 +244,7 @@ class TestBoardBlueprintAddEntityAndCreateBoard:
         assert payload['order'] == []
         assert payload['children'] == {}
         assert payload['title'] == ''
+        assert payload['config'] == {'layout': 'wide'}
 
         inserted_types = [call.args[0] for call in cast(MagicMock, board_ds).insert.call_args_list]
         assert inserted_types == ['zone', 'zone_view']
