@@ -28,7 +28,7 @@ class _MockDataSourceRelational(DataSource, Relational):
                 'sample_person', 'person', 'manifest', 'tissue_size', 'sample_species',
                 'species', 'lifestage', 'sex', 'organism_part', 'sample_species_organism_part',
                 'ext_id', 'strain', 'storage_rack', 'freezer_tray', 'hazard_group',
-                'disposal', 'sample_event']
+                'storage_disposal', 'sample_event']
 
     @property
     def attribute_types(self):
@@ -55,7 +55,7 @@ class _MockDataSourceRelational(DataSource, Relational):
             'tissue_size': 'tissue_size',
             'sample_export_options': 'sample_export_options',
             'storage_rack': 'storage_rack',
-            'disposal': 'disposal',
+            'storage_disposal': 'storage_disposal',
         }
         rc_sample.to_many = {
             'sample_persons': 'sample_person',
@@ -291,7 +291,7 @@ class _MockDataSource(DataSource, Relational):
 
     @property
     def supported_types(self):
-        return ['sample', 'species', 'tolid', 'specimen', 'manifest', 'sampleset', 'disposal']
+        return ['sample', 'species', 'tolid', 'specimen', 'manifest', 'sampleset', 'storage_disposal']
 
     @property
     def attribute_types(self):
@@ -306,7 +306,7 @@ class _MockDataSource(DataSource, Relational):
             'tolid': 'tolid',
             'manifest': 'manifest',
             'sampleset': 'sampleset',
-            'disposal': 'disposal',
+            'storage_disposal': 'storage_disposal',
         }
         return {'sample': rc_sample}
 
@@ -352,7 +352,7 @@ class TestStsSampleProjectToElasticSampleConverter(TestCase):
                 disposal_attributes['restored'] = is_restored
             disposal = CoreDataObject(
                 id_='test_disposal',
-                type_='disposal',
+                type_='storage_disposal',
                 attributes=disposal_attributes
             )
 
@@ -469,7 +469,7 @@ class TestStsSampleProjectToElasticSampleConverter(TestCase):
                 'storage_rack': storage_rack,
             }
             if include_disposal:
-                sample_to_one['disposal'] = disposal
+                sample_to_one['storage_disposal'] = disposal
 
             sample = CoreDataObject(
                 id_='test_sample',
