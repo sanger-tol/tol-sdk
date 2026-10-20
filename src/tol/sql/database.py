@@ -15,7 +15,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Load, MappedColumn, Session, joinedload, load_only, raiseload
 from sqlalchemy.orm.attributes import flag_modified
 
-from .filter import DatabaseFilter
+from .filter import DatabaseFilter, DefaultDatabaseFilter
 from .model import Model
 from .session import SessionFactory
 from .sort import DatabaseSorter
@@ -478,15 +478,21 @@ class DefaultDatabase(Database):
         query = select().select_from(model)
         filter_query = self.__get_filter_query(tablename, filters=filters) if filters else None
 
+        group_filters = DefaultDatabaseFilter(None)
+        group_filters.get_query(model)
+        for field in [*group_by, *stats_fields]:
+            group_filters.add_field(field)
+        query = group_filters.filter(query)
+
         query = self.__apply_group_by(
             query,
             model,
             group_by,
-            filters,
+            group_filters,
         )
         query = self.__apply_stats(
             query,
-            filters,
+            group_filters,
             model,
             stats_fields,
             stats,
@@ -654,11 +660,7 @@ class DefaultDatabase(Database):
         field: str
     ) -> MappedColumn:
 
-        column = filters.get_column(field)
-        if '.' in field:
-            filters.add_field(field)
-
-        return column
+        return filters.get_column(field)
 
     def __get_stat_clause(
         self,
