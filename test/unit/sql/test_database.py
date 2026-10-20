@@ -11,12 +11,13 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from sqlalchemy import Integer
+from sqlalchemy import ForeignKey, Integer, create_engine
 from sqlalchemy.exc import IntegrityError
-from sqlalchemy.orm import mapped_column
+from sqlalchemy.orm import Session, mapped_column, relationship
 
-from tol.core import DataSourceError
+from tol.core import DataSourceError, DataSourceFilter
 from tol.sql.database import DefaultDatabase
+from tol.sql.filter import DefaultDatabaseFilter
 from tol.sql.model import model_base
 
 
@@ -37,6 +38,15 @@ class _OverrideIdModel(Base):
 
     def get_id_column_name():
         return 'id_other'
+
+
+class _GroupModel(Base):
+    __tablename__ = 'test_group'
+
+    id = mapped_column(Integer, primary_key=True)  # noqa: A003
+    int_column = mapped_column(Integer)
+    parent_id = mapped_column(ForeignKey('test_group.id'))
+    parent = relationship('_GroupModel', remote_side=[id])
 
 
 class _SessionMock:
@@ -121,6 +131,47 @@ class _SessionMock:
 
 
 class TestDefaultDatabase:
+    @pytest.mark.parametrize('with_stats', [False, True])
+    @pytest.mark.parametrize('filtered', [False, True])
+    def test_group_stats_nested_relationship(self, with_stats, filtered):
+        engine = create_engine('sqlite://')
+        Base.metadata.create_all(engine)
+        with Session(engine) as session:
+            session.add_all([
+                _GroupModel(id=1, int_column=10),
+                _GroupModel(id=2, int_column=20),
+                _GroupModel(id=3, int_column=30, parent_id=1),
+                _GroupModel(id=4, int_column=40, parent_id=2),
+                _GroupModel(id=5, int_column=50, parent_id=1),
+                _GroupModel(id=6, int_column=60, parent_id=3),
+                _GroupModel(id=7, int_column=70, parent_id=3),
+                _GroupModel(id=8, int_column=80, parent_id=4),
+            ])
+            session.commit()
+            db = DefaultDatabase(lambda: session, [_GroupModel])
+            object_filter = DataSourceFilter(exact={'int_column': 60}) if filtered else None
+            observed = db.get_group_stats(
+                'test_group',
+                group_by=['parent.parent.int_column'],
+                stats_fields=['parent.int_column'] if with_stats else [],
+                stats=['sum'] if with_stats else [],
+                in_session=session,
+                filters=DefaultDatabaseFilter(object_filter),
+            )
+
+        expected_groups = [(10, 1, 30)] if filtered else [
+            (None, 5, 40), (10, 2, 60), (20, 1, 40),
+        ]
+        assert observed == [
+            {
+                'key': {'parent.parent.int_column': key},
+                'stats': {'count': count} | (
+                    {'parent.int_column': {'sum': total}} if with_stats else {}
+                ),
+            }
+            for key, count, total in expected_groups
+        ]
+
     def test_get_by_id_not_found(self):
         """get_by_id() gets a non-existent row -> return None"""
 

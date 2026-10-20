@@ -119,7 +119,7 @@ class TestWorkflowsDataObjectToElasticAssemblyAnalysisConverter(TestCase):
             'workflow',
             'curation-workflow',
             attributes={
-                'name': 'curation-workflow',
+                'name': 'busco',
                 'version': '1.0.0',
                 'description': 'Pipeline run'
             }
@@ -153,10 +153,10 @@ class TestWorkflowsDataObjectToElasticAssemblyAnalysisConverter(TestCase):
         converteds = converter.convert(obj1)
         ret1 = next(converteds)
 
-        self.assertEqual('GCA_123456_curation-workflow_metazoa_odb10', ret1.id)
+        self.assertEqual('GCA_123456_busco_metazoa_odb10', ret1.id)
         self.assertEqual('assembly_analysis', ret1.type)
         self.assertEqual(ret1.attributes, {
-            'workflow_name': 'curation-workflow',
+            'workflow_name': 'busco',
             'workflow_version': '1.0.0',
             'workflow_description': 'Pipeline run',
             'start_date': '2026-08-01T11:00:00Z',
@@ -168,7 +168,7 @@ class TestWorkflowsDataObjectToElasticAssemblyAnalysisConverter(TestCase):
         with self.assertRaises(StopIteration):
             next(converteds)
 
-    def test_analysis_id(self):
+    def test_analysis_id_standard(self):
 
         source = _MockDataSourceSource(config={})
         core_data_object(source)
@@ -178,7 +178,7 @@ class TestWorkflowsDataObjectToElasticAssemblyAnalysisConverter(TestCase):
             'workflow',
             'curation-workflow',
             attributes={
-                'name': 'curation-workflow',
+                'name': 'normal',
                 'version': '1.0.0',
                 'description': 'Pipeline run'
             }
@@ -211,7 +211,101 @@ class TestWorkflowsDataObjectToElasticAssemblyAnalysisConverter(TestCase):
 
         ret1 = WorkflowsDataObjectToElasticAssemblyAnalysisConverter.analysis_id(obj1)
         self.assertEqual(
-            'GCA_123456_curation-workflow_ERR000001_metazoa_odb10',
+            'GCA_123456_normal',
+            ret1
+        )
+
+    def test_analysis_id_busco(self):
+
+        source = _MockDataSourceSource(config={})
+        core_data_object(source)
+
+        CoreDataObject = source.data_object_factory  # noqa N806
+        workflow = CoreDataObject(
+            'workflow',
+            'curation-workflow',
+            attributes={
+                'name': 'busco',
+                'version': '1.0.0',
+                'description': 'Pipeline run'
+            }
+        )
+        workflow_run = CoreDataObject(
+            'workflow_run',
+            'wf-run-1',
+            to_one={
+                'workflow': workflow
+            },
+            attributes={
+                'started_at': '2026-08-01T11:00:00Z',
+                'ended_at': '2026-08-01T12:00:00Z'
+            }
+        )
+        obj1 = CoreDataObject(
+            id_='out-1',
+            type_='data_object',
+            attributes={
+                'assembly_accession': 'GCA_123456',
+                'run_accession': 'ERR000001',
+                'extra_identifiers': {
+                    'busco_lineage': 'metazoa_odb10'
+                }
+            },
+            to_one={
+                'output_workflow_run': workflow_run
+            }
+        )
+
+        ret1 = WorkflowsDataObjectToElasticAssemblyAnalysisConverter.analysis_id(obj1)
+        self.assertEqual(
+            'GCA_123456_busco_metazoa_odb10',
+            ret1
+        )
+
+    def test_analysis_id_readmapping(self):
+
+        source = _MockDataSourceSource(config={})
+        core_data_object(source)
+
+        CoreDataObject = source.data_object_factory  # noqa N806
+        workflow = CoreDataObject(
+            'workflow',
+            'curation-workflow',
+            attributes={
+                'name': 'readmapping',
+                'version': '1.0.0',
+                'description': 'Pipeline run'
+            }
+        )
+        workflow_run = CoreDataObject(
+            'workflow_run',
+            'wf-run-1',
+            to_one={
+                'workflow': workflow
+            },
+            attributes={
+                'started_at': '2026-08-01T11:00:00Z',
+                'ended_at': '2026-08-01T12:00:00Z'
+            }
+        )
+        obj1 = CoreDataObject(
+            id_='out-1',
+            type_='data_object',
+            attributes={
+                'assembly_accession': 'GCA_123456',
+                'run_accession': 'ERR000001',
+                'extra_identifiers': {
+                    'busco_lineage': 'metazoa_odb10'
+                }
+            },
+            to_one={
+                'output_workflow_run': workflow_run
+            }
+        )
+
+        ret1 = WorkflowsDataObjectToElasticAssemblyAnalysisConverter.analysis_id(obj1)
+        self.assertEqual(
+            'GCA_123456_readmapping_ERR000001',
             ret1
         )
 
