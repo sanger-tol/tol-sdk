@@ -291,7 +291,10 @@ class _MockDataSource(DataSource, Relational):
 
     @property
     def supported_types(self):
-        return ['sample', 'species', 'tolid', 'specimen', 'manifest', 'sampleset', 'storage_disposal']
+        return [
+            'sample', 'species', 'tolid', 'specimen', 'manifest', 'sampleset',
+            'storage_disposal'
+        ]
 
     @property
     def attribute_types(self):
