@@ -16,15 +16,19 @@ class RuntimeField:
     (when `function` and `function_kwargs` are provided) or by a domain-specific script string
     (when a `script`) is provided
     """
+    # Script variant
     script: str | None = None
+    type: str | None = None
+
+    # Function variant
     function: str | None = None
     function_kwargs: dict[str, str | RuntimeField] | None = None
 
     def __post_init__(self) -> None:
-        has_script = self.script is not None
+        has_script_info = self.script is not None and self.type is not None
         has_function_info = self.function is not None and self.function_kwargs is not None
 
-        if has_script == has_function_info:
+        if has_script_info == has_function_info:
             raise ValueError(
                 'A runtime field must be either a source-specific script variant '
                 '(has the `script` attribute) or a source-independent function variant '
