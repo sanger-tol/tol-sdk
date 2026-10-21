@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: MIT
 
 import importlib
-from typing import cast, Iterable, Iterator
+from typing import Iterable, Iterator, cast
 
 from dacite import from_dict
 
@@ -160,11 +160,10 @@ class DataSourceUtils:
                 runtime_fields[object_type][name] = att.runtime_definition['script']
             else:
                 # Invalid variant
-                raise DataSourceError(
-                    'Invalid runtime field defintion',
-                    'The JSON defition of a runtime field should have either a "function" key ' +
+                raise DataSourceError('Invalid runtime field defintion', (
+                    'The JSON defition of a runtime field should have either a "function" key '
                     'or a "script" key'
-                )
+                ))
 
         return runtime_fields
 

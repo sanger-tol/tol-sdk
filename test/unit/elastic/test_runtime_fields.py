@@ -60,7 +60,10 @@ class TestRuntimeFields:
         ('boolean', 'value'),
     ])
     def test_coalesce_multivalue_conversion(self, return_type, conversion):
-        runtime_field = ElasticRuntimeFields.coalesce(['field1', 'field2'], return_type=return_type)
+        runtime_field = ElasticRuntimeFields.coalesce(
+            ['field1', 'field2'],
+            return_type=return_type
+        )
         script = runtime_field['script']['source']
 
         assert "for (def value : doc['field1'])" in script
