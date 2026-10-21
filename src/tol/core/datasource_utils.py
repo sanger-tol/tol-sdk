@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: MIT
 
 import importlib
-from typing import Iterable, Iterator
+from typing import cast, Iterable, Iterator
 
 from dacite import from_dict
 
@@ -14,6 +14,7 @@ from .datasource_error import DataSourceError
 from .datasource_filter import DataSourceFilter
 from .operator.provenancer import ProvenanceField, ProvenanceFields
 from .relationship import RelationshipConfig
+from .runtime_fields import FunctionRuntimeField, RuntimeField
 
 
 class DataSourceUtils:
@@ -125,23 +126,46 @@ class DataSourceUtils:
     def get_runtime_fields_from_data_source_config(
         cls,
         attributes: Iterable[DataObject]
-    ) -> dict:
-        runtime_fields = {}
-        for dsa in attributes:
-            if dsa.runtime_definition is None:
+    ) -> dict[str, dict[str, RuntimeField]]:
+        # A dictionary grouping runtime fields by object type,
+        # then their name within that object type
+        runtime_fields: dict[str, dict[str, RuntimeField]] = {}
+
+        # Loop through each attribute config and form a `RuntimeField` from it
+        # (each `att` corresponds to a row in the `data_source_config_attribute` table)
+        for att in attributes:
+            # For typing purposes, extract the name and object type from `att`.
+            # `DataObject` assumes any attribute can be `None`, but the corresponding columns
+            # in the database for these attribute are NOT NULL
+            object_type = cast(str, att.object_type)
+            name = cast(str, att.name)
+
+            # If the value in the database is NULL for this attribute, then there's no definition
+            if att.runtime_definition is None:
                 continue
-            if dsa.object_type not in runtime_fields:
-                runtime_fields[dsa.object_type] = {}
-            if 'function' in dsa.runtime_definition:
-                from ..elastic.runtime_fields import ElasticRuntimeFields  # Break circular import cycle
-                method = getattr(ElasticRuntimeFields, dsa.runtime_definition['function'])
-                runtime_fields[dsa.object_type][dsa.name] = \
-                    method(**dsa.runtime_definition.get('function_kwargs', {}))
-            if 'script' in dsa.runtime_definition:
-                runtime_fields[dsa.object_type][dsa.name] = {
-                    'type': dsa.runtime_definition.get('type', 'keyword'),
-                    'script': {'source': dsa.runtime_definition['script']}
-                }
+
+            # If we haven't seen this object type yet, create its dictionary in `runtime_fields`
+            if att.object_type not in runtime_fields:
+                runtime_fields[object_type] = {}
+
+            # Add a `RuntimeField` to `runtime_fields` depending on the variant
+            if 'function' in att.runtime_definition:
+                # Function runtime fields should use the `FunctionRuntimeField` variant
+                runtime_fields[object_type][name] = FunctionRuntimeField(
+                    att.runtime_definition['function'],
+                    **att.runtime_definition['function_kwargs']
+                )
+            elif 'script' in att.runtime_definition:
+                # Script runtime fields should use the `str` variant
+                runtime_fields[object_type][name] = att.runtime_definition['script']
+            else:
+                # Invalid variant
+                raise DataSourceError(
+                    'Invalid runtime field defintion',
+                    'The JSON defition of a runtime field should have either a "function" key ' +
+                    'or a "script" key'
+                )
+
         return runtime_fields
 
     @classmethod

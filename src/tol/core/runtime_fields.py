@@ -11,7 +11,7 @@ class FunctionRuntimeField:
     The variant of a runtime field specifying a source-independent function to operate on data
     """
     function: str
-    params: dict[str, str | RuntimeField]
+    function_kwargs: dict[str, str | RuntimeField]
 
 
 RuntimeField = FunctionRuntimeField | str
