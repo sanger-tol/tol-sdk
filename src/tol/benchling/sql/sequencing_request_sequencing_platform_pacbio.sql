@@ -766,7 +766,7 @@ pacbio_submissions_plate_routine_pooled AS (
 		AND wfts.status_type = 'COMPLETED'
 ),
 
-pacbio_submissions_from_lres AS (
+lres_library_information AS (
 	SELECT
 		sr.sanger_sample_id,
 		lpb.name$ AS library_batch_id,
@@ -800,7 +800,7 @@ pacbio_submissions_from_lres AS (
 		ON lpsc.sanger_sample_id = sr.sanger_sample_id
 ),
 
-lres_pacbio_submissions AS (
+pacbio_submissions_from_lres AS (
 	SELECT DISTINCT
 		t.sts_id,
 		t.taxon_id,
@@ -808,7 +808,7 @@ lres_pacbio_submissions AS (
 		NULL::varchar AS submission_sample_id,
 		ssid.sanger_sample_id AS extraction_id,
 		NULL::varchar AS submission_sample_name,
-	 	NULL::varchar AS fluidx_container_id,
+		NULL::varchar AS fluidx_container_id,
 		t.programme_id,
 		t.specimen_id,
 		NULL::varchar AS tube_id,
@@ -816,7 +816,7 @@ lres_pacbio_submissions AS (
 		NULL::varchar AS plate_name,
 		CASE 
 			WHEN lr_lib.library_start_date IS NOT NULL THEN 'LI'::varchar 
-		ELSE NULL
+			ELSE NULL
 		END AS library_type,
 		NULL::float8 AS number_of_smrt_cells_required,
 		NULL::float8 AS sheared_femto_fragment_size_bp,
@@ -849,8 +849,6 @@ lres_pacbio_submissions AS (
 		ON c.id = tpsub.sample_tube_id
 	LEFT JOIN container$raw AS sub_con
 		ON tpsub.sample_tube_id = sub_con.id
-	LEFT JOIN storage$raw AS stor 
-		ON c.location_id = stor.id
 	LEFT JOIN sanger_sample_id$raw AS ssid 
 		ON c.id = ssid.sample_tube
 	LEFT JOIN project$raw AS proj
@@ -858,17 +856,7 @@ lres_pacbio_submissions AS (
 	LEFT JOIN folder$raw AS f 
 		ON tp.folder_id$ = f.id
 	-- LR information joins start here
-	LEFT JOIN dna_extract$raw AS dna
-		ON dna.tissue_prep = tp.id
-		AND dna.archived$ = false
-		AND dna.project_id$ = 'src_REvgPRH1dy' -- the LR project ID
-	LEFT JOIN lr_long_read_dna_extraction_output$raw AS output
-		ON dna.id = output.sample_id
-	LEFT JOIN lr_dna_extraction_sample_status_check$raw AS sc
-		ON sc.sanger_sample_id = ssid.sanger_sample_id
-	LEFT JOIN lr_dna_extraction_sample_status_check_output$raw AS ssc
-		ON ssc.sample_id = dna.id
-	LEFT JOIN lr_lib
+	LEFT JOIN lres_library_information AS lr_lib
 		ON lr_lib.sanger_sample_id = ssid.sanger_sample_id
 	WHERE sub_con.id IS NOT NULL
 		AND proj.name = 'ToL Core Lab'
