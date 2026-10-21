@@ -35,7 +35,12 @@ from .factory import core_data_object  # noqa F401
 from .handler import Handler  # noqa F401
 from .http_client import HttpClient  # noqa F401
 from .requested_fields import ReqFieldsTree  # noqa: F401
-from .runtime_fields import RuntimeField, RuntimeFields  # noqa F401
+from .runtime_fields import (  # noqa F401
+    FunctionRuntimeField,
+    RuntimeField,
+    RuntimeFields,
+    ScriptRuntimeField
+)
 from .validate import (  # noqa F401
     Validator,
     ValidationSeverity,

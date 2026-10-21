@@ -14,7 +14,7 @@ from .datasource_error import DataSourceError
 from .datasource_filter import DataSourceFilter
 from .operator.provenancer import ProvenanceField, ProvenanceFields
 from .relationship import RelationshipConfig
-from .runtime_fields import RuntimeField
+from .runtime_fields import FunctionRuntimeField, RuntimeField, ScriptRuntimeField
 
 
 class DataSourceUtils:
@@ -152,13 +152,14 @@ class DataSourceUtils:
             # Add a `RuntimeField` to `runtime_fields` depending on the variant
             if 'function' in dsa.runtime_definition:
                 # Function runtime fields should use the function variant
-                runtime_fields[object_type][name] = RuntimeField(
+                runtime_fields[object_type][name] = FunctionRuntimeField(
                     function=dsa.runtime_definition['function'],
                     function_kwargs=dsa.runtime_definition['function_kwargs']
                 )
             elif 'script' in dsa.runtime_definition:
                 # Script runtime fields should use the script variant
-                runtime_fields[object_type][name] = RuntimeField(
+                runtime_fields[object_type][name] = ScriptRuntimeField(
+                    type=dsa.runtime_definition['type'],
                     script=dsa.runtime_definition['script']
                 )
             else:

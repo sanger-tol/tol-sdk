@@ -6,41 +6,27 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from typing import Literal
 
 
 @dataclass(slots=True, kw_only=True)
-class RuntimeField:
-    """
-    The Python representation of a field that is evaluated at runtime.
-    A RuntimeField can be either a generic function with name and parameters
-    (when `function` and `function_kwargs` are provided) or by a domain-specific script string
-    (when a `script`) is provided
-    """
-    kind: Literal['function', 'script']
+class FunctionRuntimeField:
+    function: str
+    function_kwargs: dict[str, str | RuntimeField]
 
-    # Function variant
-    function: str | None = None
-    function_kwargs: dict[str, str | RuntimeField] | None = None
 
-    # Script variant
-    script: str | None = None
-    type: str | None = None
+@dataclass(slots=True, kw_only=True)
+class ScriptRuntimeField:
+    type: str
+    script: str
 
-    def __post_init__(self) -> None:
-        has_script_info = self.script is not None and self.type is not None
-        has_function_info = self.function is not None and self.function_kwargs is not None
 
-        if has_script_info == has_function_info:
-            raise ValueError(
-                'A runtime field must be either a source-specific script variant '
-                '(has the `script` attribute) or a source-independent function variant '
-                '(has the `function` and `function_kwargs` attributes)'
-            )
-        elif has_function_info:
-            self.kind = "function"
-        else: # has_script_info
-            self.kind = "script"
+type RuntimeField = FunctionRuntimeField | ScriptRuntimeField
+"""
+The Python representation of a field that is evaluated at runtime.
+A RuntimeField can be either a generic function with name and parameters
+(when an instance of `FunctionRuntimeField`) or a domain-specific script
+(when an instance of `ScriptRuntimeField`)
+"""
 
 
 class RuntimeFields(ABC):
