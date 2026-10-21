@@ -2,7 +2,7 @@
 #
 # SPDX-License-Identifier: MIT
 
-class RuntimeField:
+class ElasticRuntimeField:
     def __init__(
             self,
             field_type: str,
@@ -23,7 +23,7 @@ class RuntimeField:
     def __unpack_dependencies(self, dependencies):
         ret = []
         for dependency in dependencies:
-            if isinstance(dependency, RuntimeField):
+            if isinstance(dependency, ElasticRuntimeField):
                 ret.extend(dependency.dependencies)
             else:
                 ret.append(dependency)
@@ -64,12 +64,12 @@ class RuntimeField:
         }
 
 
-class RuntimeFields:
+class ElasticRuntimeFields:
     NULL_SENTINEL = '__TOL_PROVENANCE_NULL__'
 
     @classmethod
     def date_interval(cls, start_date: str, end_date: str, unit: str = 'days'):
-        rf = RuntimeField(
+        rf = ElasticRuntimeField(
             field_type='long',
             dependencies=[start_date, end_date],
             function_body=f"""
@@ -84,7 +84,7 @@ class RuntimeFields:
     @classmethod
     def latest_date(cls, date_fields: list[str], allow_missing: bool = True):
         deps = date_fields if not allow_missing else []
-        rf = RuntimeField(
+        rf = ElasticRuntimeField(
             field_type='date',
             dependencies=deps,
             params={'dates': date_fields},
@@ -109,7 +109,7 @@ class RuntimeFields:
     @classmethod
     def math(cls, first: str, second: str, operation: str = '/',
              return_type: str = 'double'):
-        rf = RuntimeField(
+        rf = ElasticRuntimeField(
             field_type=return_type,
             dependencies=[first, second],
             function_body=f"""
@@ -159,7 +159,7 @@ class RuntimeFields:
                 ]
             )
             params = {}
-        rf = RuntimeField(
+        rf = ElasticRuntimeField(
             field_type=return_type,
             dependencies=[],  # No dependencies as we check in function_body
             function_body=function_body,
@@ -170,7 +170,7 @@ class RuntimeFields:
     @classmethod
     def substring(cls, field: str, start: int, end: int, return_type: str = 'keyword'):
         keyword = '.keyword' if return_type == 'keyword' else ''
-        rf = RuntimeField(
+        rf = ElasticRuntimeField(
             field_type=return_type,
             dependencies=[f'{field}{keyword}'],
             function_body=f"emit(doc['{field}{keyword}'].value.substring({start}, {end}));"

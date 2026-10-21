@@ -33,7 +33,7 @@ from .converter import (
 from .elastic_utils import ElasticUtils
 from .filter import ElasticFilterConverter
 from .parser import ElasticUpdateInputResource, ElasticUpsertInputResource
-from .runtime_fields import RuntimeFields
+from .runtime_fields import ElasticRuntimeFields
 from ..core import (
     AttributeMetadata,
     DataId,
@@ -1277,7 +1277,7 @@ class ElasticDataSource(
             for field_name, provenance_field in fields.items():
                 if object_type not in runtime_fields:
                     runtime_fields[object_type] = {}
-                runtime_fields[object_type][f'{field_name}.value'] = RuntimeFields.coalesce(
+                runtime_fields[object_type][f'{field_name}.value'] = ElasticRuntimeFields.coalesce(
                     [
                         f'{field_name}.provenance.{source_order}.value'
                         for source_order in provenance_field.source_order

@@ -11,8 +11,8 @@ from tol.core.operator.provenancer import ProvenanceField
 from tol.core.relationship import RelationshipConfig
 from tol.elastic import (
     ElasticDataSource,
-    RuntimeField,
-    RuntimeFields,
+    ElasticRuntimeField,
+    ElasticRuntimeFields,
 )
 from tol.elastic.factory import _ConverterFactoriesManager
 
@@ -37,7 +37,7 @@ class MockElasticDataSource(ElasticDataSource):
             object_runtime_fields = runtime_fields.setdefault(object_type, {})
             for field_name, provenance_field in fields.items():
                 return_type = provenance_field.return_type or 'keyword'
-                object_runtime_fields[f'{field_name}.value'] = RuntimeFields.coalesce(
+                object_runtime_fields[f'{field_name}.value'] = ElasticRuntimeFields.coalesce(
                     [
                         f'{field_name}.provenance.{source_order}.value'
                         for source_order in provenance_field.source_order
@@ -114,12 +114,12 @@ def mock_elastic_data_source() -> ElasticDataSource:
         },
         runtime_fields={
             'obj_type': {
-                'field7': RuntimeField(
+                'field7': ElasticRuntimeField(
                     field_type='keyword',
                     dependencies=[],
                     function_body="emit('Hello')"
                 ),
-                'field8': RuntimeField(
+                'field8': ElasticRuntimeField(
                     field_type='date',
                     dependencies=['datefield'],
                     function_body="emit(doc['datefield'].value.toEpochMilli())"

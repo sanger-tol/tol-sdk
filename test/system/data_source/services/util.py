@@ -16,7 +16,7 @@ from tol.core.operator.provenancer import ProvenanceField
 from tol.core.relationship import RelationshipConfig
 from tol.elastic import (
     ElasticDataSource,
-    RuntimeField,
+    ElasticRuntimeField,
     create_elastic_datasource
 )
 
@@ -58,7 +58,7 @@ def elastic_datasource(
     }
     rtf = {
         'root': {
-            'runtime_column': RuntimeField(
+            'runtime_column': ElasticRuntimeField(
                 field_type='boolean',
                 dependencies=['bool_column'],
                 function_body="emit(!doc['bool_column'].value)"

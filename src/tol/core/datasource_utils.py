@@ -133,8 +133,8 @@ class DataSourceUtils:
             if dsa.object_type not in runtime_fields:
                 runtime_fields[dsa.object_type] = {}
             if 'function' in dsa.runtime_definition:
-                from ..elastic.runtime_fields import RuntimeFields  # Break circular import cycle
-                method = getattr(RuntimeFields, dsa.runtime_definition['function'])
+                from ..elastic.runtime_fields import ElasticRuntimeFields  # Break circular import cycle
+                method = getattr(ElasticRuntimeFields, dsa.runtime_definition['function'])
                 runtime_fields[dsa.object_type][dsa.name] = \
                     method(**dsa.runtime_definition.get('function_kwargs', {}))
             if 'script' in dsa.runtime_definition:
