@@ -13,6 +13,7 @@ from .datasource import *  # noqa F401
 from .datasource_error import DataSourceError  # noqa F401
 from .datasource_filter import DataSourceFilter  # noqa F401
 from .datasource_filter_converter import DataSourceFilterConverter  # noqa F401
+from .datasource_parser import DataSourceParser  # noqa F401
 from .datasource_utils import DataSourceUtils  # noqa F401
 from .data_loader import (  # noqa F401
     DataLoader,
@@ -34,9 +35,9 @@ from .factory import core_data_object  # noqa F401
 from .handler import Handler  # noqa F401
 from .http_client import HttpClient  # noqa F401
 from .requested_fields import ReqFieldsTree  # noqa: F401
+from .runtime_fields import RuntimeField, FunctionRuntimeField  # noqa F401
 from .validate import (  # noqa F401
     Validator,
     ValidationSeverity,
     ValidationResult
 )
-from .datasource_parser import DataSourceParser  # noqa F401
