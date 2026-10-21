@@ -10,10 +10,58 @@ from tol.core import (
 )
 
 from ..dec import against
-from ..fixtures import all_fixtures, api_elastic, elastic
+from ..fixtures import all_fixtures, api_elastic, api_sql, elastic, sql
 
 
 class TestGroupStats:
+
+    @against(sql, api_sql)
+    def test_group_stats_multi_hop(self, data_source: OperableDataSource, ds_sleep):
+        related_objects = [
+            data_source.data_object_factory(
+                'related',
+                id_,
+                attributes={'str_column': value},
+            )
+            for id_, value in [
+                ('group_source', 'source'),
+                ('group_alpha', 'alpha'),
+                ('group_beta', 'beta'),
+            ]
+        ]
+        data_source.upsert('related', related_objects)
+
+        root_objects = [
+            data_source.data_object_factory(
+                'root',
+                f'group_root_{index}',
+                to_one={
+                    'related_object': related_objects[0],
+                    'another_related': related_objects[target_index],
+                },
+            )
+            for index, target_index in enumerate([1, 1, 2])
+        ]
+        data_source.upsert('root', root_objects)
+
+        group_field = 'my_root.another_related.str_column'
+        stats = list(data_source.get_group_stats(
+            'related',
+            group_by=[group_field],
+            stats_fields=[],
+            stats=[],
+            object_filters=None,
+        ))
+
+        assert len(stats) == 3
+        assert {
+            group['key'][group_field]: group['stats']
+            for group in stats
+        } == {
+            'alpha': {'count': 2},
+            'beta': {'count': 1},
+            None: {'count': 3},
+        }
 
     @against(*all_fixtures)
     def test_group_stats_simple(self, data_source: OperableDataSource, ds_sleep):

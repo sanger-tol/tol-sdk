@@ -6,6 +6,13 @@ SPDX-License-Identifier: MIT
 
 # Changelog
 
+## tol-sdk `3.0.1`
+
+19-10-2026
+
+- Tweaks to GAP flows
+- SqlDatasource GroupStatter now works with multi-hops
+
 ## tol-sdk `3.0.0`
 
 14-10-2026

@@ -665,6 +665,22 @@ class TestFlowUtilsRecordAbandonedEvents:
         assert 'date_abandoned' in kwargs['fields']
         assert kwargs['fields']['abandoned_by'] == 'user-7'
 
+    def test_tolid_is_marked_abandoned(
+        self, mock_record_events, mock_eds, mock_portaldb_ds
+    ):
+        FlowUtils.record_abandoned_events(
+            eds=mock_eds, portaldb_ds=mock_portaldb_ds,
+            ids=['tolid-1'], object_type='tolid', user_id='user-7'
+        )
+
+        _, kwargs = mock_record_events.call_args
+        assert kwargs['source_object_type'] == 'tolid'
+        assert kwargs['destination_object_type'] == 'tolid_event'
+        assert kwargs['ids'] == ['tolid-1']
+        assert 'date_abandoned' in kwargs['fields']
+        assert kwargs['fields']['abandoned_by'] == 'user-7'
+        assert kwargs['fields']['date_topup_actioned'] is None
+
     def test_no_id_field_override(
         self, mock_record_events, mock_eds, mock_portaldb_ds
     ):
