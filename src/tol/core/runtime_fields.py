@@ -7,18 +7,25 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 
-@dataclass(slots=True)
-class FunctionRuntimeField:
+@dataclass(slots=True, kw_only=True)
+class RuntimeField:
     """
-    The variant of a runtime field specifying a source-independent function to operate on data
+    The Python representation of a field that is evaluated at runtime.
+    A RuntimeField can be either a generic function with name and parameters
+    (when `function` and `function_kwargs` are provided) or by a domain-specific script string
+    (when a `script`) is provided
     """
-    function: str
-    function_kwargs: dict[str, str | RuntimeField]
+    script: str | None = None
+    function: str | None = None
+    function_kwargs: dict[str, str | RuntimeField] | None = None
 
+    def __post_init__(self) -> None:
+        has_script = self.script is not None
+        has_function_info = self.function is not None and self.function_kwargs is not None
 
-RuntimeField = FunctionRuntimeField | str
-"""
-The Python representation of a field that is evaluated at runtime.
-A RuntimeField can be represented by either a generic function with name and parameters
-(when an instance of `FunctionRuntimeField`) or by a domain-specific script string (when a `str`)
-"""
+        if has_script == has_function_info:
+            raise ValueError(
+                'A runtime field must be either a source-specific script variant '
+                '(has the `script` attribute) or a source-independent function variant '
+                '(has the `function` and `function_kwargs` attributes)'
+            )
