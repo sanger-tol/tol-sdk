@@ -6,6 +6,7 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
+from typing import Literal
 
 
 @dataclass(slots=True, kw_only=True)
@@ -16,13 +17,15 @@ class RuntimeField:
     (when `function` and `function_kwargs` are provided) or by a domain-specific script string
     (when a `script`) is provided
     """
-    # Script variant
-    script: str | None = None
-    type: str | None = None
+    kind: Literal['function', 'script']
 
     # Function variant
     function: str | None = None
     function_kwargs: dict[str, str | RuntimeField] | None = None
+
+    # Script variant
+    script: str | None = None
+    type: str | None = None
 
     def __post_init__(self) -> None:
         has_script_info = self.script is not None and self.type is not None
@@ -34,6 +37,10 @@ class RuntimeField:
                 '(has the `script` attribute) or a source-independent function variant '
                 '(has the `function` and `function_kwargs` attributes)'
             )
+        elif has_function_info:
+            self.kind = "function"
+        else: # has_script_info
+            self.kind = "script"
 
 
 class RuntimeFields(ABC):
