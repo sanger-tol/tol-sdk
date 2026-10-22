@@ -33,7 +33,7 @@ from .converter import (
 from .elastic_utils import ElasticUtils
 from .filter import ElasticFilterConverter
 from .parser import ElasticUpdateInputResource, ElasticUpsertInputResource
-from .runtime_fields import LEGACYElasticRuntimeFields
+from .runtime_fields import ElasticRuntimeFields
 from ..core import (
     AttributeMetadata,
     DataId,
@@ -126,7 +126,7 @@ class ElasticDataSource(
         attribute_metadata.host = self
         self.provenance_fields = provenance_fields
         self._initialise_elasticsearch()
-        self._base_runtime_fields = runtime_fields
+        self._base_runtime_fields = _runtime_fields_to_dicts(runtime_fields)
         self.refresh_provenance_runtime_fields()
         self.__lazy = False
         self._relationship_cfg = relationship_cfg
@@ -1278,7 +1278,7 @@ class ElasticDataSource(
             for field_name, provenance_field in fields.items():
                 if object_type not in runtime_fields:
                     runtime_fields[object_type] = {}
-                runtime_fields[object_type][f'{field_name}.value'] = LEGACYElasticRuntimeFields.coalesce(
+                runtime_fields[object_type][f'{field_name}.value'] = ElasticRuntimeFields.coalesce_script(
                     [
                         f'{field_name}.provenance.{source_order}.value'
                         for source_order in provenance_field.source_order
