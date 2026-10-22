@@ -28,11 +28,9 @@ class ElasticRuntimeFields(RuntimeFields):
     @classmethod
     def generate_function(
         cls,
-        # field_type: str,
         dependencies: list[str],
         function_body: str,
         function_default: str = '',
-        # params: dict = {}
     ) -> str:
         main_body = f"""
             {cls.__if_dependencies_exist(dependencies)} {{
@@ -69,6 +67,35 @@ class ElasticRuntimeFields(RuntimeFields):
                 f"if ({' && '.join(conditions)})"
             )
         return 'if (1==1)'
+
+    @classmethod
+    def date_interval_script(
+        cls,
+        start_date: str,
+        end_date: str,
+        unit: str = 'days'
+    ) -> str:
+        return cls.generate_function(
+            field_type: 'long',
+            dependencies=[start_date, end_date],
+        )
+        return super().date_interval_script(start_date, end_date, unit)
+
+    @classmethod
+    def latest_date_script(cls, date_fields: list[str], allow_missing: bool = True) -> str:
+        return super().latest_date_script(date_fields, allow_missing)
+
+    @classmethod
+    def math_script(cls, first: str, second: str, operation: str = '/', return_type: str = 'double') -> str:
+        return super().math_script(first, second, operation, return_type)
+
+    @classmethod
+    def coalesce_script(cls, fields: list[str], return_type: str = 'keyword', null_wins: bool = False) -> str:
+        return super().coalesce_script(fields, return_type, null_wins)
+
+    @classmethod
+    def substring_script(cls, field: str, start: int, end: int, return_type: str = 'keyword') -> str:
+        return super().substring_script(field, start, end, return_type)
 
 
 # TODO How does it know what `field_type` is currently when it's a function runtime field?

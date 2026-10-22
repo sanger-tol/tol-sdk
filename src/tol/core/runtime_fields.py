@@ -6,13 +6,15 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
+from typing import Any
 
 
 @dataclass(slots=True, kw_only=True)
 class FunctionRuntimeField:
     function: str
-    function_kwargs: dict[str, str | RuntimeField]
+    function_kwargs: dict[str, Any]
     # TODO I need to be able to nest like a tree. How? Extra kwargs?
+    # DOESN'T MATTER FOR THIS TICKET. COULD IN FUTURE HAVE IS_LAST FLAG, OR DETERMINE WITHIN FUNC?
 
 
 @dataclass(slots=True, kw_only=True)
@@ -93,7 +95,7 @@ class RuntimeFields(ABC):
     def coalesce_script(
         cls,
         fields: list[str],
-        return_type: str = 'keyword',
+        return_type: str,
         null_wins: bool = False
     ) -> str:
         """
