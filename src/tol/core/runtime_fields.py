@@ -12,6 +12,7 @@ from dataclasses import dataclass
 class FunctionRuntimeField:
     function: str
     function_kwargs: dict[str, str | RuntimeField]
+    # TODO I need to be able to nest like a tree. How? Extra kwargs?
 
 
 @dataclass(slots=True, kw_only=True)
