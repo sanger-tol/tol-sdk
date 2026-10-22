@@ -126,7 +126,7 @@ class ElasticDataSource(
         attribute_metadata.host = self
         self.provenance_fields = provenance_fields
         self._initialise_elasticsearch()
-        self._base_runtime_fields = _runtime_fields_to_dicts(runtime_fields)
+        self._base_runtime_fields = ElasticRuntimeFields.convert_to_request_dict(runtime_fields)
         self.refresh_provenance_runtime_fields()
         self.__lazy = False
         self._relationship_cfg = relationship_cfg
