@@ -10,7 +10,9 @@ import re
 import time
 import typing
 from collections.abc import Callable, Iterable
+from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime
+from itertools import islice
 from typing import Any
 
 from cachetools.func import ttl_cache
@@ -159,9 +161,11 @@ class ElasticDataSource(
         return RelationWriteMode.FUSED
 
     _SEARCH_RETRY_STATUS_CODES = (429,)
+    _UPDATE_RETRY_STATUS_CODES = (429, 502, 503, 504)
     _SEARCH_MAX_RETRIES = 5
     _SEARCH_BASE_DELAY = 1.0   # seconds
     _SEARCH_MAX_DELAY = 60.0  # seconds
+    _UPDATE_MAX_CONCURRENT_TASKS = 10
 
     def _initialise_elasticsearch(self):
         self.es = Elasticsearch(
@@ -169,6 +173,7 @@ class ElasticDataSource(
             http_auth=(self.user, self.password),
             timeout=30,
             max_retries=10,
+            retry_on_status=(429, 502, 503, 504),
             retry_on_timeout=True
         )
         self.helpers = helpers
@@ -193,6 +198,83 @@ class ElasticDataSource(
 
     def _update_by_query_with_backoff(self, **kwargs) -> dict:
         return self.__with_backoff(self.es.update_by_query, **kwargs)
+
+    @staticmethod
+    def __is_retryable_update_failure(failure: Any) -> bool:
+        if isinstance(failure, list):
+            return any(
+                ElasticDataSource.__is_retryable_update_failure(item)
+                for item in failure
+            )
+        if not isinstance(failure, dict):
+            return False
+        if failure.get('status') in ElasticDataSource._UPDATE_RETRY_STATUS_CODES or \
+                failure.get('type') == 'es_rejected_execution_exception':
+            return True
+        return any(
+            ElasticDataSource.__is_retryable_update_failure(failure.get(key))
+            for key in ('cause', 'root_cause', 'caused_by')
+        )
+
+    def __wait_for_update_task(self, task_id: str) -> dict:
+        while True:
+            task = self.__with_backoff(
+                self.es.tasks.get,
+                task_id=task_id,
+                wait_for_completion=True,
+                timeout='1s',
+            )
+            if task.get('completed'):
+                return task
+
+    def __update_with_backoff(self, index: str, body: dict) -> None:
+        last_failure: Any = None
+        for attempt in range(self._SEARCH_MAX_RETRIES + 1):
+            try:
+                submission = self._update_by_query_with_backoff(
+                    index=index,
+                    body=body,
+                    conflicts='proceed',
+                    wait_for_completion=False,
+                )
+                task_id = submission.get('task')
+                if not task_id:
+                    raise DataSourceError('Elasticsearch did not return an update task ID')
+
+                task = self.__wait_for_update_task(task_id)
+                if 'error' in task:
+                    last_failure = task['error']
+                    if not self.__is_retryable_update_failure(last_failure):
+                        raise DataSourceError(f'Update task {task_id} failed: {last_failure}')
+                else:
+                    response = task.get('response', {})
+                    failures = response.get('failures', [])
+                    if failures and not all(
+                        self.__is_retryable_update_failure(failure) for failure in failures
+                    ):
+                        raise DataSourceError(
+                            f'Update task {task_id} failed for {len(failures)} documents'
+                        )
+                    if failures:
+                        last_failure = failures
+                    elif response.get('version_conflicts', 0) > 0:
+                        last_failure = f"{response['version_conflicts']} version conflicts"
+                    else:
+                        return
+            except TransportError as exc:
+                if exc.status_code not in self._UPDATE_RETRY_STATUS_CODES:
+                    raise
+                last_failure = exc
+
+            if attempt == self._SEARCH_MAX_RETRIES:
+                raise DataSourceError(
+                    f'Update failed after {attempt + 1} attempts: {last_failure}'
+                )
+            delay = min(
+                self._SEARCH_BASE_DELAY * (2 ** attempt) + random.uniform(0, 1),
+                self._SEARCH_MAX_DELAY,
+            )
+            time.sleep(delay)
 
     def get_cursor_page(
         self,
@@ -233,8 +315,9 @@ class ElasticDataSource(
 
         index = self.__get_index_or_alias(object_type)
         converter = self._data_object_converter_factory()
-        (no_of_operations, no_of_errors) = \
-            self.helpers.bulk(
+        no_of_operations = 0
+        no_of_errors = 0
+        for succeeded, _ in self.helpers.streaming_bulk(
                 self.es,
                 converter.convert(
                     ElasticUpsertInputResource(
@@ -244,9 +327,15 @@ class ElasticDataSource(
                         provenance=provenance,
                     )
                 ),
-                stats_only=True,
-                chunk_size=chunk_size
-        )
+                chunk_size=chunk_size,
+                max_retries=self._SEARCH_MAX_RETRIES,
+                initial_backoff=self._SEARCH_BASE_DELAY,
+                max_backoff=self._SEARCH_MAX_DELAY,
+                raise_on_error=False,
+        ):
+            no_of_operations += 1
+            if not succeeded:
+                no_of_errors += 1
         if no_of_errors > 0:
             raise DataSourceError(f'{no_of_errors} errors encountered '
                                   f'upserting {no_of_operations} objects')
@@ -266,20 +355,36 @@ class ElasticDataSource(
         index = self.__get_index_or_alias(object_type)
         real_index_name = self._get_indices().get(index)
         converter = self._data_object_update_converter_factory()
-        for (_, update) in updates:
-            # converter takes update, returns candidate key and body
+        candidate_key_func = kwargs.get('candidate_key_func')
+        errors = []
+        with ThreadPoolExecutor(max_workers=self._UPDATE_MAX_CONCURRENT_TASKS) as executor:
+            update_iterator = iter(updates)
+            while update_batch := list(islice(update_iterator, self._UPDATE_MAX_CONCURRENT_TASKS)):
+                tasks = []
+                for _, update in update_batch:
+                    update_candidate_key = (
+                        candidate_key_func(update) if candidate_key_func else candidate_key
+                    )
+                    body = converter.convert(ElasticUpdateInputResource(
+                        object_type=object_type,
+                        update=update,
+                        provenance=provenance,
+                        candidate_key=update_candidate_key,
+                    ))
+                    tasks.append(executor.submit(
+                        self.__update_with_backoff,
+                        real_index_name,
+                        body,
+                    ))
 
-            # We can get the candidate key dynamically from the actual update
-            if 'candidate_key_func' in kwargs:
-                candidate_key = kwargs['candidate_key_func'](update)
-            self._update_by_query_with_backoff(
-                index=real_index_name,
-                body=converter.convert(ElasticUpdateInputResource(object_type=object_type,
-                                                                  update=update,
-                                                                  provenance=provenance,
-                                                                  candidate_key=candidate_key)),
-                conflicts='proceed',
-                wait_for_completion=False
+                for task in tasks:
+                    try:
+                        task.result()
+                    except Exception as exc:
+                        errors.append(exc)
+        if errors:
+            raise DataSourceError(
+                f'{len(errors)} updates failed: {"; ".join(map(str, errors))}'
             )
 
     def _summarise(

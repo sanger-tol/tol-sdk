@@ -26,6 +26,11 @@ class MockElasticDataSource(ElasticDataSource):
             'test-obj-type': {'aliases': {}},
             'hidden-reltype': {'aliases': {'test-reltype': {}}}
         }
+        self.es.update_by_query.return_value = {'task': 'test-task'}
+        self.es.tasks.get.return_value = {
+            'completed': True,
+            'response': {'failures': [], 'version_conflicts': 0},
+        }
         self.index_prefix = 'test'
 
     def refresh_provenance_runtime_fields(self) -> None:

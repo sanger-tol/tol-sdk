@@ -12,6 +12,7 @@ SPDX-License-Identifier: MIT
 
 - Improving download efficiency by refactoring __getattribute__,
 _convert_data_dict_to_data_object and __make_dates
+- Make ElasticDataSource updates/upserts more resilient to errors
 
 ## tol-sdk `3.0.1`
 
