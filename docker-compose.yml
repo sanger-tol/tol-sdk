@@ -176,6 +176,10 @@ services:
       - RABBITMQ_PASSWORD
       - RABBITMQ_USE_SSL
       - APP_NAME
+      - PREFECT_URL
+      - PREFECT_API_PATH
+      - TEST_PREFECT_FLOW_NAME
+      - TEST_PREFECT_DEPLOYMENT_NAME
     networks:
       - api-base-test-network
 

@@ -2,8 +2,10 @@
 #
 # SPDX-License-Identifier: MIT
 
+from __future__ import annotations
+
 import asyncio
-from typing import Any, Callable, Iterable, Optional, Union
+from typing import TYPE_CHECKING, Any, Callable, Iterable, Optional, Union
 from uuid import UUID
 
 from prefect.client.orchestration import PrefectClient
@@ -16,16 +18,21 @@ from .filter import PrefectFilter
 from .prefect_object import FlowRunObject
 from ..core import DataSource, DataSourceError, DataSourceFilter
 from ..core.operator import (
+    Deleter,
     DetailGetter,
     Inserter,
     ListGetter,
     PageGetter
 )
 
+if TYPE_CHECKING:
+    from ..core.session import OperableSession
+
 
 class PrefectDataSource(
     DataSource,
 
+    Deleter,
     DetailGetter,
     Inserter,
     ListGetter,
@@ -174,6 +181,21 @@ class PrefectDataSource(
 
         iter_result = self.insert_flow_run_iterable([obj])
         return list(iter_result)[0]
+
+    def delete(
+        self,
+        object_type: str,
+        object_ids: Iterable[str],
+        session: Optional[OperableSession] = None
+    ) -> None:
+        self.__validate_object_type(object_type)
+
+        asyncio.run(self.__async_delete(object_ids))
+
+    async def __async_delete(self, object_ids: Iterable[str]) -> None:
+        async with self.__client_factory() as client:
+            for flow_run_id in object_ids:
+                await client.delete_flow_run(UUID(flow_run_id))
 
     async def get_names(
         self,

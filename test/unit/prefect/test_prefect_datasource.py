@@ -5,6 +5,7 @@
 from typing import Any, Optional
 from unittest import IsolatedAsyncioTestCase
 from unittest.mock import Mock, PropertyMock, call, create_autospec
+from uuid import uuid4
 
 from prefect.client.orchestration import PrefectClient
 from prefect.client.schemas.objects import Flow
@@ -15,6 +16,7 @@ from prefect.exceptions import ObjectNotFound
 import pytest
 
 from tol.core import DataSourceError, DataSourceFilter
+from tol.core.operator import Deleter
 from tol.prefect import PrefectDataSource
 from tol.prefect.converter import (
     DefaultObjectConverter,
@@ -497,6 +499,49 @@ class TestPrefectDataSource(IsolatedAsyncioTestCase):
         )
 
         assert observed == expected
+
+    def test_delete(self):
+        mock_client = self.__mock_client()
+        prefect_ds = PrefectDataSource(lambda: mock_client, None, None, None)
+        flow_run_ids = [uuid4(), uuid4()]
+
+        assert isinstance(prefect_ds, Deleter)
+        assert prefect_ds.delete(
+            'flow_run', (str(flow_run_id) for flow_run_id in flow_run_ids)
+        ) is None
+
+        assert mock_client.delete_flow_run.await_args_list == [
+            call(flow_run_id) for flow_run_id in flow_run_ids
+        ]
+
+    def test_delete_bad_type(self):
+        mock_client = self.__mock_client()
+        prefect_ds = PrefectDataSource(lambda: mock_client, None, None, None)
+
+        with pytest.raises(DataSourceError):
+            prefect_ds.delete('bad_type', [str(uuid4())])
+
+        mock_client.__aenter__.assert_not_awaited()
+        mock_client.delete_flow_run.assert_not_awaited()
+
+    def test_delete_empty(self):
+        mock_client = self.__mock_client()
+        prefect_ds = PrefectDataSource(lambda: mock_client, None, None, None)
+
+        assert prefect_ds.delete('flow_run', []) is None
+
+        mock_client.delete_flow_run.assert_not_awaited()
+
+    def test_delete_missing(self):
+        mock_client = self.__mock_client()
+        mock_client.delete_flow_run.side_effect = ObjectNotFound(Mock())
+        prefect_ds = PrefectDataSource(lambda: mock_client, None, None, None)
+        flow_run_id = uuid4()
+
+        with pytest.raises(ObjectNotFound):
+            prefect_ds.delete('flow_run', [str(flow_run_id)])
+
+        mock_client.delete_flow_run.assert_awaited_once_with(flow_run_id)
 
     def __mock_flow_run_object(
         self,

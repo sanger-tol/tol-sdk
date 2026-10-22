@@ -20,6 +20,10 @@ COPY requirements-test.txt .
 COPY requirements requirements
 RUN pip install -r requirements-test.txt
 
+COPY src/certs/cacert.pem /
+RUN cat /cacert.pem >> /usr/local/lib/python3.12/site-packages/certifi/cacert.pem
+ENV REQUESTS_CA_BUNDLE=/usr/local/lib/python3.12/site-packages/certifi/cacert.pem
+
 # copy in the source
 COPY src src
 
