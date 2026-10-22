@@ -2,13 +2,26 @@
 #
 # SPDX-License-Identifier: MIT
 
-from ..core import RuntimeField, RuntimeFields
+from ..core import FunctionRuntimeField, RuntimeField, RuntimeFields
 
 
 class ElasticRuntimeFields(RuntimeFields):
     @classmethod
     def convert_to_request(cls, runtime_field: RuntimeField):
-        if runtime_field.kind == "script":
+        # TODO Need to find this data somehow. Should there be an ElasticFunctionRuntimeField?
+        field_type = 'PLACEHOLDER'
+        params = {}
+
+        if isinstance(runtime_field, FunctionRuntimeField):
+            # return {
+            #     'type': field_type,
+            #     'script': {
+            #         'source': cls.generate_function(),
+            #         'params': self.params
+            #     }
+            # }
+            ...
+        else:  # Instance of ScriptRuntimeField
             return {
                 'type': runtime_field.type,
                 'script': {'source': runtime_field.script}
@@ -17,13 +30,24 @@ class ElasticRuntimeFields(RuntimeFields):
     @classmethod
     def generate_function(
         cls,
-        field_type: str,
+        # field_type: str,
         dependencies: list[str],
         function_body: str,
         function_default: str = '',
-        params: dict = {}
-    ) -> dict:
-        unpacked_dependencies = cls.__unpack_dependencies(dependencies)
+        # params: dict = {}
+    ) -> str:
+        main_body = f"""
+            {cls.__if_dependencies_exist(dependencies)} {{
+                {function_body}
+            }}
+        """
+        if function_default:
+            main_body += f"""
+                else {{
+                    {function_default}
+                }}
+            """
+        return f'{main_body}'
 
     @classmethod
     def __unpack_dependencies(cls, dependencies) -> list:
@@ -35,10 +59,21 @@ class ElasticRuntimeFields(RuntimeFields):
                 ret.append(dependency)
         return ret
 
-    @
+    @classmethod
+    def __if_dependencies_exist(cls, dependencies: list[str]):
+        unpacked_dependencies = cls.__unpack_dependencies(dependencies)
+        conditions = [
+            f"doc.containsKey('{dep}') && "
+            f"doc['{dep}'].size() > 0" for dep in unpacked_dependencies
+        ]
+        if unpacked_dependencies:
+            return (
+                f"if ({' && '.join(conditions)})"
+            )
+        return 'if (1==1)'
 
 
-
+# TODO How does it know what `field_type` is currently when it's a function runtime field?
 class ElasticRuntimeField:
     def __init__(
             self,
