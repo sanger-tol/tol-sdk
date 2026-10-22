@@ -8,19 +8,17 @@ from ..core import FunctionRuntimeField, RuntimeField, RuntimeFields
 class ElasticRuntimeFields(RuntimeFields):
     @classmethod
     def convert_to_request(cls, runtime_field: RuntimeField):
-        # TODO Need to find this data somehow. Should there be an ElasticFunctionRuntimeField?
-        field_type = 'PLACEHOLDER'
-        params = {}
-
         if isinstance(runtime_field, FunctionRuntimeField):
-            # return {
-            #     'type': field_type,
-            #     'script': {
-            #         'source': cls.generate_function(),
-            #         'params': self.params
-            #     }
-            # }
-            ...
+            function_script_generator = getattr(cls, f'{runtime_field.function}')
+            function_script = function_script_generator(**runtime_field.function_kwargs)
+
+            return {
+                'type': runtime_field.function_kwargs['field_type'],
+                'script': {
+                    'source': function_script,
+                    'params': runtime_field.function_kwargs.get('params', {})
+                }
+            }
         else:  # Instance of ScriptRuntimeField
             return {
                 'type': runtime_field.type,
