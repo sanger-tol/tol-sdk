@@ -33,7 +33,7 @@ from .converter import (
 from .elastic_utils import ElasticUtils
 from .filter import ElasticFilterConverter
 from .parser import ElasticUpdateInputResource, ElasticUpsertInputResource
-from .runtime_fields import ElasticRuntimeFields
+from .runtime_fields import LEGACYElasticRuntimeFields
 from ..core import (
     AttributeMetadata,
     DataId,
@@ -42,7 +42,8 @@ from ..core import (
     DataSourceError,
     DataSourceFilter,
     DefaultAttributeMetadata,
-    GroupStatterDataLoader
+    GroupStatterDataLoader,
+    RuntimeField
 )
 from ..core.operator import (
     Aggregator,
@@ -105,7 +106,7 @@ class ElasticDataSource(
                  data_object_update_converter_factory: DataObjectUpdateConverterFactory,
                  attribute_metadata: AttributeMetadata = DefaultAttributeMetadata,
                  relationship_cfg: dict[str, RelationshipConfig] | None = None,
-                 runtime_fields: dict[str, Any] = {},
+                 runtime_fields: dict[str, RuntimeField] = {},
                  provenance_fields: ProvenanceFields = {},
                  **kwargs):
         del kwargs
@@ -1277,7 +1278,7 @@ class ElasticDataSource(
             for field_name, provenance_field in fields.items():
                 if object_type not in runtime_fields:
                     runtime_fields[object_type] = {}
-                runtime_fields[object_type][f'{field_name}.value'] = ElasticRuntimeFields.coalesce(
+                runtime_fields[object_type][f'{field_name}.value'] = LEGACYElasticRuntimeFields.coalesce(
                     [
                         f'{field_name}.provenance.{source_order}.value'
                         for source_order in provenance_field.source_order

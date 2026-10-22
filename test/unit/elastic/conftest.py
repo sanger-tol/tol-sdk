@@ -12,7 +12,7 @@ from tol.core.relationship import RelationshipConfig
 from tol.elastic import (
     ElasticDataSource,
     ElasticRuntimeField,
-    ElasticRuntimeFields,
+    LEGACYElasticRuntimeFields,
 )
 from tol.elastic.factory import _ConverterFactoriesManager
 
@@ -37,7 +37,7 @@ class MockElasticDataSource(ElasticDataSource):
             object_runtime_fields = runtime_fields.setdefault(object_type, {})
             for field_name, provenance_field in fields.items():
                 return_type = provenance_field.return_type or 'keyword'
-                object_runtime_fields[f'{field_name}.value'] = ElasticRuntimeFields.coalesce(
+                object_runtime_fields[f'{field_name}.value'] = LEGACYElasticRuntimeFields.coalesce(
                     [
                         f'{field_name}.provenance.{source_order}.value'
                         for source_order in provenance_field.source_order

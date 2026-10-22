@@ -2,6 +2,43 @@
 #
 # SPDX-License-Identifier: MIT
 
+from ..core import RuntimeField, RuntimeFields
+
+
+class ElasticRuntimeFields(RuntimeFields):
+    @classmethod
+    def convert_to_request(cls, runtime_field: RuntimeField):
+        if runtime_field.kind == "script":
+            return {
+                'type': runtime_field.type,
+                'script': {'source': runtime_field.script}
+            }
+
+    @classmethod
+    def generate_function(
+        cls,
+        field_type: str,
+        dependencies: list[str],
+        function_body: str,
+        function_default: str = '',
+        params: dict = {}
+    ) -> dict:
+        unpacked_dependencies = cls.__unpack_dependencies(dependencies)
+
+    @classmethod
+    def __unpack_dependencies(cls, dependencies) -> list:
+        ret = []
+        for dependency in dependencies:
+            if isinstance(dependency, ElasticRuntimeField):
+                ret.extend(dependency.dependencies)
+            else:
+                ret.append(dependency)
+        return ret
+
+    @
+
+
+
 class ElasticRuntimeField:
     def __init__(
             self,
@@ -64,7 +101,7 @@ class ElasticRuntimeField:
         }
 
 
-class ElasticRuntimeFields:
+class LEGACYElasticRuntimeFields:
     NULL_SENTINEL = '__TOL_PROVENANCE_NULL__'
 
     @classmethod

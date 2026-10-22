@@ -5,13 +5,13 @@
 import pytest
 
 from tol.elastic import (
-    ElasticRuntimeFields
+    LEGACYElasticRuntimeFields
 )
 
 
 class TestRuntimeFields:
     def test_math(self):
-        rf = ElasticRuntimeFields.math(
+        rf = LEGACYElasticRuntimeFields.math(
             'field1',
             'field2',
             operation='/'
@@ -24,7 +24,7 @@ class TestRuntimeFields:
         """.split())
 
     def test_coalesce(self):
-        rf = ElasticRuntimeFields.coalesce(
+        rf = LEGACYElasticRuntimeFields.coalesce(
             ['field1', 'field2']
         )
         assert ''.join(rf['script']['source'].split()) == ''.join("""
@@ -38,7 +38,7 @@ class TestRuntimeFields:
         """.split())
 
     def test_coalesce_keyword_null_wins(self):
-        rf = ElasticRuntimeFields.coalesce(
+        rf = LEGACYElasticRuntimeFields.coalesce(
             ['field1', 'field2'],
             null_wins=True,
         )
@@ -60,7 +60,7 @@ class TestRuntimeFields:
         ('boolean', 'value'),
     ])
     def test_coalesce_multivalue_conversion(self, return_type, conversion):
-        runtime_field = ElasticRuntimeFields.coalesce(
+        runtime_field = LEGACYElasticRuntimeFields.coalesce(
             ['field1', 'field2'],
             return_type=return_type
         )
@@ -72,7 +72,7 @@ class TestRuntimeFields:
         assert '}else if ' in script
 
     def test_latest_date(self):
-        rf = ElasticRuntimeFields.latest_date(
+        rf = LEGACYElasticRuntimeFields.latest_date(
             ['field1', 'field2'],
             allow_missing=False
         )
@@ -97,7 +97,7 @@ class TestRuntimeFields:
         assert rf['script']['params']['dates'] == ['field1', 'field2']
 
     def test_date_interval(self):
-        rf = ElasticRuntimeFields.date_interval(
+        rf = LEGACYElasticRuntimeFields.date_interval(
             start_date='field1',
             end_date='field2'
         )
@@ -112,7 +112,7 @@ class TestRuntimeFields:
         """.split())
 
     def test_substring(self):
-        rf = ElasticRuntimeFields.substring(
+        rf = LEGACYElasticRuntimeFields.substring(
             'field1',
             start=0,
             end=5
