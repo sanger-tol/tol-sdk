@@ -154,12 +154,12 @@ class DataSourceUtils:
                 # Function runtime fields should use the function variant
                 runtime_fields[object_type][name] = FunctionRuntimeField(
                     function=dsa.runtime_definition['function'],
-                    function_kwargs=dsa.runtime_definition['function_kwargs']
+                    function_kwargs=dsa.runtime_definition.get('function_kwargs', {})
                 )
             elif 'script' in dsa.runtime_definition:
                 # Script runtime fields should use the script variant
                 runtime_fields[object_type][name] = ScriptRuntimeField(
-                    type=dsa.runtime_definition['type'],
+                    type=dsa.runtime_definition.get('type', 'keyword'),
                     script=dsa.runtime_definition['script']
                 )
             else:
