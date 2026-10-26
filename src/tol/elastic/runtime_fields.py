@@ -179,8 +179,21 @@ class ElasticRuntimeFields(RuntimeFields):
         return script, {}
 
     @classmethod
-    def substring_script(cls, field: str, start: int, end: int, return_type: str = 'keyword') -> str:
-        return super().substring_script(field, start, end, return_type)
+    def substring_script(
+        cls,
+        *,
+        _return_type = 'keyword',
+        field: str,
+        start: int,
+        end: int,
+    ) -> tuple[str, dict[str, Any]]:
+        keyword = '.keyword' if _return_type == 'keyword' else ''
+
+        script = cls.generate_function_script(
+            dependencies=[f'{field}{keyword}'],
+            function_body=f"emit(doc['{field}{keyword}'].value.substring({start}, {end}));"
+        )
+        return script, {}
 
 
 # TODO How does it know what `field_type` is currently when it's a function runtime field?
