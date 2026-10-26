@@ -184,7 +184,7 @@ class ElasticRuntimeFields(RuntimeFields):
     def substring_script(
         cls,
         *,
-        _return_type = 'keyword',
+        _return_type='keyword',
         field: str,
         start: int,
         end: int,
