@@ -2,6 +2,8 @@
 #
 # SPDX-License-Identifier: MIT
 
+from typing import Any
+
 from ..core import RuntimeField, RuntimeFields
 
 
@@ -68,10 +70,9 @@ class ElasticRuntimeFields(RuntimeFields):
         start_date: str,
         end_date: str,
         unit: str = 'days'
-    ) -> tuple[str, list[str]]:
-        params = [start_date, end_date]
+    ) -> tuple[str, dict[str, Any]]:
         script = cls.generate_function_script(
-            dependencies=params,
+            dependencies=[start_date, end_date],
             function_body=f"""
                 ZonedDateTime start = doc['{start_date}'].value;
                 ZonedDateTime end = doc['{end_date}'].value;
@@ -79,11 +80,34 @@ class ElasticRuntimeFields(RuntimeFields):
                 emit(differenceInMilis);
             """
         )
-        return script, params
+        return script, {}
 
     @classmethod
-    def latest_date_script(cls, date_fields: list[str], allow_missing: bool = True) -> str:
-        return super().latest_date_script(date_fields, allow_missing)
+    def latest_date_script(
+        cls,
+        date_fields: list[str],
+        allow_missing: bool = True
+    ) -> tuple[str, dict[str, Any]]:
+        deps = date_fields if not allow_missing else []
+        script = cls.generate_function_script(
+            dependencies=deps,
+            function_body="""
+                ZonedDateTime latestDate = null;
+                for (int i = 0; i < params.dates.size(); i++) {
+                    String dep = params.dates.get(i);
+                    if (doc.containsKey(dep) && doc[dep].size() > 0) {
+                        ZonedDateTime currentDate = doc[dep].value;
+                        if (latestDate == null || currentDate.isAfter(latestDate)) {
+                            latestDate = currentDate;
+                        }
+                    }
+                }
+                if (latestDate != null) {
+                    emit(latestDate.toInstant().toEpochMilli());
+                }
+            """
+        )
+        return script, {'dates': date_fields}
 
     @classmethod
     def math_script(cls, first: str, second: str, operation: str = '/', return_type: str = 'double') -> str:
