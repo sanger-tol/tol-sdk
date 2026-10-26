@@ -20,7 +20,7 @@ class RuntimeField:
     domain-specific format required for the data source, or a standard function, specified by
     `function`, with its arguments provided in `function_kwargs`.
     """
-    type: str
+    type_: str
     script: str | None = None
     function: str | None = None
     function_kwargs: dict[str, Any | RuntimeField] | None = None

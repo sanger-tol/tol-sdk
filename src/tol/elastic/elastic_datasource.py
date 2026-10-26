@@ -1278,14 +1278,15 @@ class ElasticDataSource(
             for field_name, provenance_field in fields.items():
                 if object_type not in runtime_fields:
                     runtime_fields[object_type] = {}
-                runtime_fields[object_type][f'{field_name}.value'] = ElasticRuntimeFields.coalesce_script(
-                    [
-                        f'{field_name}.provenance.{source_order}.value'
-                        for source_order in provenance_field.source_order
-                    ],
-                    _return_type=self.__get_provenance_return_type(object_type, field_name),
-                    null_wins=True,
-                )
+                runtime_fields[object_type][f'{field_name}.value'] = \
+                    ElasticRuntimeFields.coalesce_script(
+                        [
+                            f'{field_name}.provenance.{source_order}.value'
+                            for source_order in provenance_field.source_order
+                        ],
+                        _return_type=self.__get_provenance_return_type(object_type, field_name),
+                        null_wins=True,
+                    )
         return runtime_fields
 
     def __merge_nested_dicts(self, left: dict[str, Any], right: dict[str, Any]) -> dict[str, Any]:

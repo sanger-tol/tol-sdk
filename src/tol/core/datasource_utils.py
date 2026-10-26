@@ -156,13 +156,13 @@ class DataSourceUtils:
             # is not a problem, but having a mixture of the two is.
             if 'function' in dsa.runtime_definition:
                 runtime_fields[object_type][name] = RuntimeField(
-                    type=dsa.runtime_definition['type'],
+                    type_=dsa.runtime_definition['type'],
                     function=dsa.runtime_definition['function'],
                     function_kwargs=dsa.runtime_definition.get('function_kwargs', {}),
                 )
             elif 'script' in dsa.runtime_definition:
                 runtime_fields[object_type][name] = RuntimeField(
-                    type=dsa.runtime_definition.get('type', 'keyword'),
+                    type_=dsa.runtime_definition.get('type', 'keyword'),
                     script=dsa.runtime_definition['script']
                 )
             else:

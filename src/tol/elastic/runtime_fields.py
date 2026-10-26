@@ -15,12 +15,12 @@ class ElasticRuntimeFields(RuntimeFields):
         if runtime_field.function is not None:
             function_script_generator = getattr(cls, f'{runtime_field.function}_script')
             script, params = function_script_generator(
-                _return_type=runtime_field.type,
+                _return_type=runtime_field.type_,
                 **runtime_field.function_kwargs or {}
             )
 
             return {
-                'type': runtime_field.type,
+                'type': runtime_field.type_,
                 'script': {
                     'source': script,
                     'params': params
@@ -28,7 +28,7 @@ class ElasticRuntimeFields(RuntimeFields):
             }
         else:  # is a script runtime field
             return {
-                'type': runtime_field.type,
+                'type': runtime_field.type_,
                 'script': {'source': runtime_field.script}
             }
 
