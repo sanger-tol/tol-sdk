@@ -1283,7 +1283,7 @@ class ElasticDataSource(
                         f'{field_name}.provenance.{source_order}.value'
                         for source_order in provenance_field.source_order
                     ],
-                    return_type=self.__get_provenance_return_type(object_type, field_name),
+                    _return_type=self.__get_provenance_return_type(object_type, field_name),
                     null_wins=True,
                 )
         return runtime_fields

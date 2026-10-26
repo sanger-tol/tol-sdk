@@ -12,7 +12,10 @@ class ElasticRuntimeFields(RuntimeFields):
     def convert_to_request(cls, runtime_field: RuntimeField):
         if runtime_field.function is not None:
             function_script_generator = getattr(cls, f'{runtime_field.function}_script')
-            script, params = function_script_generator(**runtime_field.function_kwargs or {})
+            script, params = function_script_generator(
+                _return_type=runtime_field.type,
+                **runtime_field.function_kwargs or {}
+            )
 
             return {
                 'type': runtime_field.type,
@@ -44,6 +47,7 @@ class ElasticRuntimeFields(RuntimeFields):
     @classmethod
     def generate_function_script(
         cls,
+        *,
         dependencies: list[str],
         function_body: str,
         function_default: str = '',  # An empty string is instead of `| None`
@@ -67,6 +71,7 @@ class ElasticRuntimeFields(RuntimeFields):
     @classmethod
     def date_interval_script(
         cls,
+        *,
         start_date: str,
         end_date: str,
         unit: str = 'days'
@@ -85,6 +90,7 @@ class ElasticRuntimeFields(RuntimeFields):
     @classmethod
     def latest_date_script(
         cls,
+        *,
         date_fields: list[str],
         allow_missing: bool = True
     ) -> tuple[str, dict[str, Any]]:
@@ -112,6 +118,7 @@ class ElasticRuntimeFields(RuntimeFields):
     @classmethod
     def math_script(
         cls,
+        *,
         first: str,
         second: str,
         operation: str = '/'
@@ -125,8 +132,51 @@ class ElasticRuntimeFields(RuntimeFields):
         return script, {}
 
     @classmethod
-    def coalesce_script(cls, fields: list[str], return_type: str = 'keyword', null_wins: bool = False) -> str:
-        return super().coalesce_script(fields, return_type, null_wins)
+    def coalesce_script(
+        cls,
+        *,
+        _return_type: str = 'keyword',
+        fields: list[str],
+        null_wins: bool = False,
+    ) -> tuple[str, dict[str, Any]]:
+        keyword = '.keyword' if _return_type == 'keyword' else ''
+        if _return_type == 'date':
+            emit_value = 'value.toInstant().toEpochMilli()'
+        elif _return_type == 'long':
+            emit_value = '((Number) value).longValue()'
+        elif _return_type == 'double':
+            emit_value = '((Number) value).doubleValue()'
+        else:
+            emit_value = 'value'
+        if null_wins and _return_type == 'keyword':
+            # sentinel is a real indexed keyword value written at upsert time;
+            # standard size > 0 check is sufficient to find it.
+            function_body = 'else '.join(
+                [
+                    f"if (doc.containsKey('{field}{keyword}') "
+                    f"&& doc['{field}{keyword}'].size() > 0) {{"
+                    f"for (def value : doc['{field}{keyword}']) {{emit({emit_value});}}"
+                    f'return;'
+                    f'}}'
+                    for field in fields
+                ]
+            )
+        else:
+            function_body = 'else '.join(
+                [
+                    f"if (doc.containsKey('{field}{keyword}') "
+                    f"&& doc['{field}{keyword}'].size() > 0) {{"
+                    f"for (def value : doc['{field}{keyword}']) {{emit({emit_value});}}"
+                    f'}}'
+                    for field in fields
+                ]
+            )
+
+        script = cls.generate_function_script(
+            dependencies=[],  # No dependencies as we check in function_body
+            function_body=function_body
+        )
+        return script, {}
 
     @classmethod
     def substring_script(cls, field: str, start: int, end: int, return_type: str = 'keyword') -> str:
