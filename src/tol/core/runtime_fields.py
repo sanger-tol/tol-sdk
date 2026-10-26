@@ -49,14 +49,9 @@ class RuntimeFields(ABC):
             for key, runtime_field in runtime_field_dict.items()
         }
 
-    @classmethod
-    def generate_script_for_function(cls, function: str, **function_kwargs):
-        generator = getattr(cls, f'{function}_script')
-        return generator(**function_kwargs)
-
     @abstractmethod
     @classmethod
-    def date_interval_script(cls, start_date: str, end_date: str, unit: str = 'days') -> str:
+    def date_interval_script(cls, start_date: str, end_date: str, unit: str = 'days'):
         """
         Generates the script for the date_interval function, in the format used in this datasource
         """
@@ -64,7 +59,7 @@ class RuntimeFields(ABC):
 
     @abstractmethod
     @classmethod
-    def latest_date_script(cls, date_fields: list[str], allow_missing: bool = True) -> str:
+    def latest_date_script(cls, date_fields: list[str], allow_missing: bool = True):
         """
         Generates the script for the latest_date function, in the format used in this datasource
         """
@@ -91,7 +86,7 @@ class RuntimeFields(ABC):
         fields: list[str],
         return_type: str,
         null_wins: bool = False
-    ) -> str:
+    ):
         """
         Generates the script for the coalesce function, in the format used in this datasource
         """
@@ -105,9 +100,8 @@ class RuntimeFields(ABC):
         start: int,
         end: int,
         return_type: str = 'keyword'
-    ) -> str:
+    ):
         """
         Generates the script for the substring function, in the format used in this datasource
         """
         raise NotImplementedError()
-    

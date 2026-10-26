@@ -2,60 +2,65 @@
 #
 # SPDX-License-Identifier: MIT
 
-from ..core import FunctionRuntimeField, RuntimeField, RuntimeFields
+from ..core import RuntimeField, RuntimeFields
 
 
 class ElasticRuntimeFields(RuntimeFields):
     @classmethod
     def convert_to_request(cls, runtime_field: RuntimeField):
-        if isinstance(runtime_field, FunctionRuntimeField):
-            function_script_generator = getattr(cls, f'{runtime_field.function}')
-            function_script = function_script_generator(**runtime_field.function_kwargs)
+        if runtime_field.function is not None:
+            function_script_generator = getattr(cls, f'{runtime_field.function}_script')
+            script, params = function_script_generator(**runtime_field.function_kwargs or {})
 
             return {
-                'type': runtime_field.function_kwargs['field_type'],
+                'type': runtime_field.type,
                 'script': {
-                    'source': function_script,
-                    'params': runtime_field.function_kwargs.get('params', {})
+                    'source': script,
+                    'params': params
                 }
             }
-        else:  # Instance of ScriptRuntimeField
+        else:  # is a script runtime field
             return {
                 'type': runtime_field.type,
                 'script': {'source': runtime_field.script}
             }
 
     @classmethod
-    def generate_function(
+    def __generate_dependencies_exist_guard(cls, dependencies: list[str]):
+        if dependencies:
+            # Return the two checks that need to be made for each dependency, for every dependency
+            # (separated by && operators)
+            return ' && '.join([
+                f"doc.containsKey('{dep}') && "
+                f"doc['{dep}'].size() > 0" for dep in dependencies
+            ])
+        else:
+            # If this runtime field has no dependencies, there doesn't need to be a guard,
+            # so return a condition that always passes
+            return '1==1'
+
+    @classmethod
+    def generate_function_script(
         cls,
         dependencies: list[str],
         function_body: str,
-        function_default: str = '',
+        function_default: str = '',  # An empty string is instead of `| None`
     ) -> str:
-        main_body = f"""
-            {cls.__if_dependencies_exist(dependencies)} {{
+        """
+        The main part of the script comes from `function_body`, but this method should be wrapped
+        around it to add an if guard for dependencies that may not exist.
+        If there's a `function_default`, it will be used in the script instead of `function_body`
+        if the if guard for the dependencies fails.
+        """
+        dependencies_guard_condition = cls.__generate_dependencies_exist_guard(dependencies)
+
+        return f"""
+            if ({dependencies_guard_condition}) {{
                 {function_body}
+            }} else {{
+                {function_default}
             }}
         """
-        if function_default:
-            main_body += f"""
-                else {{
-                    {function_default}
-                }}
-            """
-        return f'{main_body}'
-
-    @classmethod
-    def __if_dependencies_exist(cls, dependencies: list[str]):
-        conditions = [
-            f"doc.containsKey('{dep}') && "
-            f"doc['{dep}'].size() > 0" for dep in dependencies
-        ]
-        if dependencies:
-            return (
-                f"if ({' && '.join(conditions)})"
-            )
-        return 'if (1==1)'
 
     @classmethod
     def date_interval_script(
@@ -63,12 +68,18 @@ class ElasticRuntimeFields(RuntimeFields):
         start_date: str,
         end_date: str,
         unit: str = 'days'
-    ) -> str:
-        return cls.generate_function(
-            field_type: 'long',
-            dependencies=[start_date, end_date],
+    ) -> tuple[str, list[str]]:
+        params = [start_date, end_date]
+        script = cls.generate_function_script(
+            dependencies=params,
+            function_body=f"""
+                ZonedDateTime start = doc['{start_date}'].value;
+                ZonedDateTime end = doc['{end_date}'].value;
+                long differenceInMilis = ChronoUnit.{unit.upper()}.between(start, end);
+                emit(differenceInMilis);
+            """
         )
-        return super().date_interval_script(start_date, end_date, unit)
+        return script, params
 
     @classmethod
     def latest_date_script(cls, date_fields: list[str], allow_missing: bool = True) -> str:
