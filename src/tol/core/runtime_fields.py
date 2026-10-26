@@ -71,8 +71,7 @@ class RuntimeFields(ABC):
         cls,
         first: str,
         second: str,
-        operation: str = '/',
-        return_type: str = 'double'
+        operation: str = '/'
     ):
         """
         Generates the script for the math function, in the format used in this datasource

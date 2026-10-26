@@ -110,8 +110,19 @@ class ElasticRuntimeFields(RuntimeFields):
         return script, {'dates': date_fields}
 
     @classmethod
-    def math_script(cls, first: str, second: str, operation: str = '/', return_type: str = 'double') -> str:
-        return super().math_script(first, second, operation, return_type)
+    def math_script(
+        cls,
+        first: str,
+        second: str,
+        operation: str = '/'
+    ) -> tuple[str, dict[str, Any]]:
+        script = cls.generate_function_script(
+            dependencies=[first, second],
+            function_body=f"""
+                emit(doc['{first}'].value {operation} doc['{second}'].value)
+            """
+        )
+        return script, {}
 
     @classmethod
     def coalesce_script(cls, fields: list[str], return_type: str = 'keyword', null_wins: bool = False) -> str:
