@@ -1280,12 +1280,12 @@ class ElasticDataSource(
                     runtime_fields[object_type] = {}
                 runtime_fields[object_type][f'{field_name}.value'] = \
                     ElasticRuntimeFields.coalesce_script(
-                        [
+                        fields=[
                             f'{field_name}.provenance.{source_order}.value'
                             for source_order in provenance_field.source_order
                         ],
-                        _return_type=self.__get_provenance_return_type(object_type, field_name),
                         null_wins=True,
+                        _return_type=self.__get_provenance_return_type(object_type, field_name),
                     )
         return runtime_fields
 
