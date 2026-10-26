@@ -8,6 +8,8 @@ from ..core import RuntimeField, RuntimeFields
 
 
 class ElasticRuntimeFields(RuntimeFields):
+    NULL_SENTINEL = '__TOL_PROVENANCE_NULL__'
+
     @classmethod
     def convert_to_request(cls, runtime_field: RuntimeField):
         if runtime_field.function is not None:

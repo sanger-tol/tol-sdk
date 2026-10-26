@@ -13,7 +13,7 @@ import dateutil
 
 from .elastic_utils import ElasticUtils
 from .filter import ElasticFilterConverter
-from .runtime_fields import LEGACYElasticRuntimeFields
+from .runtime_fields import ElasticRuntimeFields
 from ..core import DataObject, DataSourceFilter, DataSourceParser
 
 if TYPE_CHECKING:
@@ -269,7 +269,7 @@ class DefaultElasticApiParser(DataSourceParser[ElasticApiResource, DataObject]):
         )
 
     def __normalise_runtime_value(self, value: Any) -> Any:
-        if value == LEGACYElasticRuntimeFields.NULL_SENTINEL:
+        if value == ElasticRuntimeFields.NULL_SENTINEL:
             return None
         return value
 
@@ -359,7 +359,7 @@ class _ToElasticApiResourceParser:
                 name in self._data_source.provenance_fields[object_type]:
             parsed_value = value
             if value is None and self.__should_use_null_sentinel(object_type, name):
-                parsed_value = LEGACYElasticRuntimeFields.NULL_SENTINEL
+                parsed_value = ElasticRuntimeFields.NULL_SENTINEL
             return {
                 'provenance': {
                     provenance: {'value': parsed_value}
@@ -385,7 +385,7 @@ class _ToElasticApiResourceParser:
                     f'{name}.id' in self._data_source.provenance_fields[object_type]:
                 parsed_value = None
                 if self.__should_use_null_sentinel(object_type, f'{name}.id'):
-                    parsed_value = LEGACYElasticRuntimeFields.NULL_SENTINEL
+                    parsed_value = ElasticRuntimeFields.NULL_SENTINEL
                 return {
                     'id': {
                         'provenance': {
