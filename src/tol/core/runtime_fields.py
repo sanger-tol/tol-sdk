@@ -9,27 +9,21 @@ from dataclasses import dataclass
 from typing import Any
 
 
-@dataclass(slots=True, kw_only=True)
-class FunctionRuntimeField:
-    function: str
-    function_kwargs: dict[str, Any]
-    # TODO I need to be able to nest like a tree. How? Extra kwargs?
-    # DOESN'T MATTER FOR THIS TICKET. COULD IN FUTURE HAVE IS_LAST FLAG, OR DETERMINE WITHIN FUNC?
+@dataclass(frozen=True, slots=True, kw_only=True)
+class RuntimeField:
+    """
+    The Python representation of a runtime field, as specified in the database
+    (from a `runtime_definition` column).
 
-
-@dataclass(slots=True, kw_only=True)
-class ScriptRuntimeField:
+    Every runtime field must specify a return `type`. This is the type from the source being
+    worked with, not the Python type. A runtime field can then either contain a `script` in the
+    domain-specific format required for the data source, or a standard function, specified by
+    `function`, with its arguments provided in `function_kwargs`.
+    """
     type: str
-    script: str
-
-
-type RuntimeField = FunctionRuntimeField | ScriptRuntimeField
-"""
-The Python representation of a field that is evaluated at runtime.
-A RuntimeField can be either a generic function with name and parameters
-(when an instance of `FunctionRuntimeField`) or a domain-specific script
-(when an instance of `ScriptRuntimeField`)
-"""
+    script: str | None = None
+    function: str | None = None
+    function_kwargs: dict[str, Any | RuntimeField] | None = None
 
 
 class RuntimeFields(ABC):

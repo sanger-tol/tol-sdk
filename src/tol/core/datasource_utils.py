@@ -14,7 +14,7 @@ from .datasource_error import DataSourceError
 from .datasource_filter import DataSourceFilter
 from .operator.provenancer import ProvenanceField, ProvenanceFields
 from .relationship import RelationshipConfig
-from .runtime_fields import FunctionRuntimeField, RuntimeField, ScriptRuntimeField
+from .runtime_fields import RuntimeField
 
 
 class DataSourceUtils:
@@ -149,16 +149,19 @@ class DataSourceUtils:
             if dsa.object_type not in runtime_fields:
                 runtime_fields[object_type] = {}
 
-            # Add a `RuntimeField` to `runtime_fields` depending on the variant
+            # Add a `RuntimeField` to `runtime_fields`.
+            # I've done this in two branches, rather than using `.get` each time in a single
+            # `RuntimeField` construction, because it ensures that every runtime field made
+            # is function OR script runtime field. Having both a script and function definition
+            # is not a problem, but having a mixture of the two is.
             if 'function' in dsa.runtime_definition:
-                # Function runtime fields should use the function variant
-                runtime_fields[object_type][name] = FunctionRuntimeField(
+                runtime_fields[object_type][name] = RuntimeField(
+                    type=dsa.runtime_definition['type'],
                     function=dsa.runtime_definition['function'],
-                    function_kwargs=dsa.runtime_definition.get('function_kwargs', {})
+                    function_kwargs=dsa.runtime_definition.get('function_kwargs', {}),
                 )
             elif 'script' in dsa.runtime_definition:
-                # Script runtime fields should use the script variant
-                runtime_fields[object_type][name] = ScriptRuntimeField(
+                runtime_fields[object_type][name] = RuntimeField(
                     type=dsa.runtime_definition.get('type', 'keyword'),
                     script=dsa.runtime_definition['script']
                 )
