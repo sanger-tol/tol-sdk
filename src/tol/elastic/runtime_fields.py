@@ -46,23 +46,12 @@ class ElasticRuntimeFields(RuntimeFields):
         return f'{main_body}'
 
     @classmethod
-    def __unpack_dependencies(cls, dependencies) -> list:
-        ret = []
-        for dependency in dependencies:
-            if isinstance(dependency, ElasticRuntimeField):
-                ret.extend(dependency.dependencies)
-            else:
-                ret.append(dependency)
-        return ret
-
-    @classmethod
     def __if_dependencies_exist(cls, dependencies: list[str]):
-        unpacked_dependencies = cls.__unpack_dependencies(dependencies)
         conditions = [
             f"doc.containsKey('{dep}') && "
-            f"doc['{dep}'].size() > 0" for dep in unpacked_dependencies
+            f"doc['{dep}'].size() > 0" for dep in dependencies
         ]
-        if unpacked_dependencies:
+        if dependencies:
             return (
                 f"if ({' && '.join(conditions)})"
             )
