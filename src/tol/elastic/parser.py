@@ -65,38 +65,45 @@ class DefaultElasticApiParser(DataSourceParser[ElasticApiResource, DataObject]):
             return None
 
     def _convert_data_dict_to_data_object(self, type_, id_, data, runtime_data):
+        attribute_types = self._data_source.attribute_types[type_]
+        provenance_fields = self._data_source.provenance_fields
+        type_provenance_fields = provenance_fields.get(type_, {})
+
         # Enrichment flattens a related object, so its provenanced attributes arrive as
         # plain values and must be treated as standard attributes.
         direct_provenance_attrs = {
-            k for k in self._data_source.provenance_fields.get(type_, {})
+            k for k in type_provenance_fields
             if not k.endswith('.id')
             and not self.__is_enriched_value(data.get(k))
         }
 
         attributes = {
             k: self.__make_dates(type_, k, v) for k, v in data.items()
-            if k in self._data_source.attribute_types[type_]
+            if k in attribute_types
             and k not in direct_provenance_attrs
         }
         runtime_attributes = {
             k: self.__make_dates(type_, k, v[0]) for k, v in runtime_data.items()
-            if k in self._data_source.attribute_types[type_]
+            if k in attribute_types
         }
-        provenanced_attributes = {
-            ElasticUtils.actual_attribute(k): self.__make_dates(
-                type_,
-                ElasticUtils.actual_attribute(k),
-                self.__provenanced_value(type_, ElasticUtils.actual_attribute(k), data, v),
+        provenanced_attributes = {}
+        for runtime_name, runtime_values in runtime_data.items():
+            attribute_name = ElasticUtils.actual_attribute(runtime_name)
+            if (
+                attribute_name not in type_provenance_fields
+                or attribute_name not in attribute_types
+            ):
+                continue
+            value = self.__provenanced_value(
+                type_, attribute_name, data, runtime_values
             )
-            for k, v in runtime_data.items()
-            if type_ in self._data_source.provenance_fields
-            and ElasticUtils.actual_attribute(k) in self._data_source.provenance_fields[type_]
-            and ElasticUtils.actual_attribute(k) in self._data_source.attribute_types[type_]
-        }
+            provenanced_attributes[attribute_name] = self.__make_dates(
+                type_, attribute_name, value
+            )
 
         for attr_name in direct_provenance_attrs:
             if (
-                attr_name in self._data_source.attribute_types.get(type_, {})
+                attr_name in attribute_types
                 and attr_name not in provenanced_attributes
             ):
                 provenanced_attributes[attr_name] = None
@@ -197,10 +204,19 @@ class DefaultElasticApiParser(DataSourceParser[ElasticApiResource, DataObject]):
         return not (isinstance(value, Mapping) and 'provenance' in value)
 
     def __make_dates(self, object_type, attribute_name, value):
+        is_datetime = (
+            self._data_source.attribute_types[object_type][attribute_name] == 'datetime'
+        )
         if isinstance(value, list):
-            return [self.__make_dates(object_type, attribute_name, item) for item in value]
-        if self._data_source.attribute_types[object_type][attribute_name] == 'datetime' and \
-                isinstance(value, str):
+            return [self.__make_date_values(item, is_datetime) for item in value]
+        if is_datetime and isinstance(value, str):
+            return dateutil.parser.parse(value)
+        return value
+
+    def __make_date_values(self, value, is_datetime):
+        if isinstance(value, list):
+            return [self.__make_date_values(item, is_datetime) for item in value]
+        if is_datetime and isinstance(value, str):
             return dateutil.parser.parse(value)
         return value
 

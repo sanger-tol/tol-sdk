@@ -162,15 +162,18 @@ def core_data_object(
             if self.__stub_value:
                 self.__unstub()
 
-            if name in self.__to_one_names:
-                if name in self._to_one_objects:
-                    return self._to_one_objects[name]
-                return self.to_one_relationships.get(name)
+            if self.__relational:
+                cfg = self.__relationship_config
+                if cfg is not None:
+                    if cfg.to_one is not None and name in cfg.to_one:
+                        if name in self._to_one_objects:
+                            return self._to_one_objects[name]
+                        return self.to_one_relationships.get(name)
 
-            if name in self.__to_many_names:
-                if name in self._to_many_objects:
-                    return self._to_many_objects[name]
-                return self.to_many_relationships.get(name, [])
+                    if cfg.to_many is not None and name in cfg.to_many:
+                        if name in self._to_many_objects:
+                            return self._to_many_objects[name]
+                        return self.to_many_relationships.get(name, [])
 
             return self.__attributes.get(name)
 

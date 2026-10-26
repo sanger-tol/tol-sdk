@@ -349,9 +349,14 @@ class TestElasticDataSource:
             }
         }
         assert next(generator) == expected
-        mock_elastic_data_source.helpers.bulk.return_value = (2, 0)
+        mock_elastic_data_source.helpers.streaming_bulk.return_value = iter([
+            (True, {}), (True, {})
+        ])
         mock_elastic_data_source.upsert('index', objects, id_func=lambda x: x.field1)
-        mock_elastic_data_source.helpers.bulk.assert_called_once()
+        mock_elastic_data_source.helpers.streaming_bulk.assert_called_once()
+        assert mock_elastic_data_source.helpers.streaming_bulk.call_args.kwargs[
+            'max_retries'
+        ] == mock_elastic_data_source._SEARCH_MAX_RETRIES
 
     def test_upsert_add_id(self, mock_elastic_data_source: ElasticDataSource):
         CoreDataObject = mock_elastic_data_source.data_object_factory  # noqa N806
@@ -412,14 +417,18 @@ class TestElasticDataSource:
             }
         }
         assert next(generator) == expected
-        mock_elastic_data_source.helpers.bulk.return_value = (2, 0)
+        mock_elastic_data_source.helpers.streaming_bulk.return_value = iter([
+            (True, {}), (True, {})
+        ])
         mock_elastic_data_source.upsert('index', objects, id_func=lambda x: x.field1)
-        mock_elastic_data_source.helpers.bulk.assert_called_once()
+        mock_elastic_data_source.helpers.streaming_bulk.assert_called_once()
 
     def test_upsert_error(self, mock_elastic_data_source: ElasticDataSource):
         objects = [{'field1': 'value1', 'field2': 'value2'},
                    {'field1': 'value3', 'field2': 'value4'}]
-        mock_elastic_data_source.helpers.bulk.return_value = (2, 1)
+        mock_elastic_data_source.helpers.streaming_bulk.return_value = iter([
+            (True, {}), (False, {})
+        ])
         try:
             mock_elastic_data_source.upsert('object_type', objects, id_func=lambda x: x.field1)
         except DataSourceError:
@@ -498,7 +507,7 @@ class TestElasticDataSource:
             }
         }
         assert update_body == expected
-        mock_elastic_data_source.es.update_by_query.return_value = (2, 0)
+        mock_elastic_data_source.es.update_by_query.return_value = {'task': 'test-task'}
         mock_elastic_data_source.update('obj_type', updates, candidate_key=['field1'])
         assert mock_elastic_data_source.es.update_by_query.call_count == 2
 
@@ -506,7 +515,7 @@ class TestElasticDataSource:
         self, mock_elastic_data_source: ElasticDataSource
     ) -> None:
         updates = [(None, {'field5': 'value5', 'field2': 'updated'})]
-        mock_elastic_data_source.es.update_by_query.return_value = (1, 0)
+        mock_elastic_data_source.es.update_by_query.return_value = {'task': 'test-task'}
 
         mock_elastic_data_source.update('obj_type', updates, candidate_key=['field5'])
 
@@ -517,6 +526,25 @@ class TestElasticDataSource:
         ]
         assert kwargs['body']['runtime_mappings'] == \
             mock_elastic_data_source.runtime_fields['obj_type']
+
+    def test_update_retries_version_conflict(
+        self, mock_elastic_data_source: ElasticDataSource, monkeypatch: pytest.MonkeyPatch
+    ):
+        mock_elastic_data_source.es.update_by_query.side_effect = [
+            {'task': 'first-task'}, {'task': 'second-task'}
+        ]
+        mock_elastic_data_source.es.tasks.get.side_effect = [
+            {'completed': True, 'response': {'failures': [], 'version_conflicts': 1}},
+            {'completed': True, 'response': {'failures': [], 'version_conflicts': 0}},
+        ]
+        monkeypatch.setattr('tol.elastic.elastic_datasource.time.sleep', lambda _: None)
+
+        mock_elastic_data_source.update(
+            'obj_type', [(None, {'field1': 'value1'})], candidate_key=['field1']
+        )
+
+        assert mock_elastic_data_source.es.update_by_query.call_count == 2
+        assert mock_elastic_data_source.es.tasks.get.call_count == 2
 
     def test_get_list(self, mock_elastic_data_source: ElasticDataSource):
         mock_elastic_data_source.helpers.scan.return_value = [
@@ -1429,6 +1457,6 @@ class TestElasticDataSource:
                 attributes={'field1': 'value3', 'field2': 'value4'}
             )
         ]
-        mock_elastic_data_source.es.update_by_query.return_value = (2, 0)
+        mock_elastic_data_source.es.update_by_query.return_value = {'task': 'test-task'}
         mock_elastic_data_source.enrich('obj_type', source_data, 'reltype')
         assert mock_elastic_data_source.es.update_by_query.call_count == 2
