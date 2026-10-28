@@ -156,9 +156,9 @@ class TestElasticDataSource:
             '_ElasticDataSource__get_provenance_return_type',
             return_value='keyword',
         ):
-            runtime_fields = (
-                mock_elastic_data_source._ElasticDataSource__add_runtime_fields_from_provenance_fields()
-            )
+            # I had to use a local variable here; otherwise I can't make the line short enough
+            ds = mock_elastic_data_source
+            runtime_fields = ds._ElasticDataSource__add_runtime_fields_from_provenance_fields()
 
         assert set(runtime_fields) == set(mock_elastic_data_source.provenance_fields)
         for object_type, fields in mock_elastic_data_source.provenance_fields.items():
