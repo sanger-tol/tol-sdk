@@ -1384,14 +1384,17 @@ class ElasticDataSource(
                 if object_type not in runtime_fields:
                     runtime_fields[object_type] = {}
                 runtime_fields[object_type][f'{field_name}.value'] = (
-                    ElasticRuntimeFields.coalesce_script(
-                        fields=[
-                            f'{field_name}.provenance.{source_order}.value'
-                            for source_order in provenance_field.source_order
-                        ],
-                        null_wins=True,
-                        _return_type=self.__get_provenance_return_type(object_type, field_name),
-                    )
+                    ElasticRuntimeFields.convert_to_request(RuntimeField(
+                        type_=self.__get_provenance_return_type(object_type, field_name),
+                        function='coalesce',
+                        function_kwargs={
+                            'field': [
+                                f'{field_name}.provenance.{source_order}.value'
+                                for source_order in provenance_field.source_order
+                            ],
+                            'null_wins': True,
+                        }
+                    ))
                 )
         return runtime_fields
 
