@@ -62,13 +62,18 @@ class ElasticRuntimeFields(RuntimeFields):
         """
         dependencies_guard_condition = cls.__generate_dependencies_exist_guard(dependencies)
 
-        return f"""
+        if_clause = f"""
             if ({dependencies_guard_condition}) {{
                 {function_body}
-            }} else {{
+            }}
+        """
+        else_clause = f"""
+            else {{
                 {function_default}
             }}
         """
+
+        return if_clause + (else_clause if function_default else '')
 
     @classmethod
     def date_interval_script(
