@@ -45,8 +45,8 @@ class RuntimeFields(ABC):
         Converts a dict of `RuntimeField`s to a dict of the format used in this datasource
         """
         return {
-            key: cls.convert_to_request(runtime_field)
-            for key, runtime_field in runtime_field_dict.items()
+            name: cls.convert_to_request(runtime_field)
+            for name, runtime_field in runtime_field_dict.items()
         }
 
     @abstractmethod
