@@ -6,13 +6,13 @@ from unittest import mock
 
 import pytest
 
-from tol.core import DefaultAttributeMetadata, core_data_object
+from tol.core import DefaultAttributeMetadata, RuntimeField, core_data_object
 from tol.core.operator.provenancer import ProvenanceField
 from tol.core.relationship import RelationshipConfig
 from tol.elastic import (
     ElasticDataSource,
     ElasticRuntimeField,
-    LEGACYElasticRuntimeFields,
+    ElasticRuntimeFields,
 )
 from tol.elastic.factory import _ConverterFactoriesManager
 
@@ -42,13 +42,18 @@ class MockElasticDataSource(ElasticDataSource):
             object_runtime_fields = runtime_fields.setdefault(object_type, {})
             for field_name, provenance_field in fields.items():
                 return_type = provenance_field.return_type or 'keyword'
-                object_runtime_fields[f'{field_name}.value'] = LEGACYElasticRuntimeFields.coalesce(
-                    [
-                        f'{field_name}.provenance.{source_order}.value'
-                        for source_order in provenance_field.source_order
-                    ],
-                    return_type=return_type,
-                    null_wins=True,
+                object_runtime_fields[f'{field_name}.value'] = (
+                    ElasticRuntimeFields.convert_to_request(RuntimeField(
+                        type_=return_type,
+                        function='coalesce',
+                        function_kwargs={
+                            'fields': [
+                                f'{field_name}.provenance.{source_order}.value'
+                                for source_order in provenance_field.source_order
+                            ],
+                            'null_wins': True
+                        }
+                    ))
                 )
 
         self.runtime_fields = self._ElasticDataSource__merge_nested_dicts(
