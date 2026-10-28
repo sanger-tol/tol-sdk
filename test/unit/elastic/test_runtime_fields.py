@@ -5,29 +5,30 @@
 import pytest
 
 from tol.elastic import (
-    LEGACYElasticRuntimeFields
+    ElasticRuntimeFields
 )
 
 
 class TestRuntimeFields:
     def test_math(self):
-        rf = LEGACYElasticRuntimeFields.math(
-            'field1',
-            'field2',
+        script, params = ElasticRuntimeFields.math_script(
+            first='field1',
+            second='field2',
             operation='/'
         )
-        assert ''.join(rf['script']['source'].split()) == ''.join("""
+        assert ''.join(script.split()) == ''.join("""
             if (doc.containsKey('field1') && doc['field1'].size() > 0
                     && doc.containsKey('field2') && doc['field2'].size() > 0) {
                 emit(doc['field1'].value / doc['field2'].value)
             }
         """.split())
+        assert params == {}
 
     def test_coalesce(self):
-        rf = LEGACYElasticRuntimeFields.coalesce(
-            ['field1', 'field2']
+        script, params = ElasticRuntimeFields.coalesce_script(
+            fields=['field1', 'field2']
         )
-        assert ''.join(rf['script']['source'].split()) == ''.join("""
+        assert ''.join(script.split()) == ''.join("""
             if (1==1) {
                 if (doc.containsKey('field1.keyword') && doc['field1.keyword'].size() > 0) {
                     for (def value : doc['field1.keyword']) {emit(value);}
@@ -36,13 +37,14 @@ class TestRuntimeFields:
                 }
             }
         """.split())
+        assert params == {}
 
     def test_coalesce_keyword_null_wins(self):
-        rf = LEGACYElasticRuntimeFields.coalesce(
-            ['field1', 'field2'],
+        script, params = ElasticRuntimeFields.coalesce_script(
+            fields=['field1', 'field2'],
             null_wins=True,
         )
-        assert ''.join(rf['script']['source'].split()) == ''.join("""
+        assert ''.join(script.split()) == ''.join("""
             if (1==1) {
                 if (doc.containsKey('field1.keyword') && doc['field1.keyword'].size() > 0) {
                     for (def value : doc['field1.keyword']) {emit(value);} return;
@@ -51,7 +53,7 @@ class TestRuntimeFields:
                 }
             }
         """.split())
-        assert rf['script']['params'] == {}
+        assert params == {}
 
     @pytest.mark.parametrize('return_type,conversion', [
         ('long', '((Number) value).longValue()'),
@@ -60,23 +62,22 @@ class TestRuntimeFields:
         ('boolean', 'value'),
     ])
     def test_coalesce_multivalue_conversion(self, return_type, conversion):
-        runtime_field = LEGACYElasticRuntimeFields.coalesce(
-            ['field1', 'field2'],
-            return_type=return_type
+        script, params = ElasticRuntimeFields.coalesce_script(
+            fields=['field1', 'field2'],
+            _return_type=return_type
         )
-        script = runtime_field['script']['source']
-
         assert "for (def value : doc['field1'])" in script
         assert "for (def value : doc['field2'])" in script
         assert f'emit({conversion});' in script
         assert '}else if ' in script
+        assert params == {}
 
     def test_latest_date(self):
-        rf = LEGACYElasticRuntimeFields.latest_date(
-            ['field1', 'field2'],
+        script, params = ElasticRuntimeFields.latest_date_script(
+            date_fields=['field1', 'field2'],
             allow_missing=False
         )
-        assert ''.join(rf['script']['source'].split()) == ''.join("""
+        assert ''.join(script.split()) == ''.join("""
                 if (doc.containsKey('field1') && doc['field1'].size() > 0 &&
                     doc.containsKey('field2') && doc['field2'].size() > 0) {
                     ZonedDateTime latestDate = null;
@@ -94,14 +95,14 @@ class TestRuntimeFields:
                     }
                 }
         """.split())
-        assert rf['script']['params']['dates'] == ['field1', 'field2']
+        assert params['dates'] == ['field1', 'field2']
 
     def test_date_interval(self):
-        rf = LEGACYElasticRuntimeFields.date_interval(
+        script, params = ElasticRuntimeFields.date_interval_script(
             start_date='field1',
             end_date='field2'
         )
-        assert ''.join(rf['script']['source'].split()) == ''.join("""
+        assert ''.join(script.split()) == ''.join("""
             if (doc.containsKey('field1') && doc['field1'].size() > 0 &&
                     doc.containsKey('field2') && doc['field2'].size() > 0) {
                 ZonedDateTime start = doc['field1'].value;
@@ -110,15 +111,17 @@ class TestRuntimeFields:
                 emit(differenceInMillis);
             }
         """.split())
+        assert params == {}
 
     def test_substring(self):
-        rf = LEGACYElasticRuntimeFields.substring(
-            'field1',
+        script, params = ElasticRuntimeFields.substring_script(
+            field='field1',
             start=0,
             end=5
         )
-        assert ''.join(rf['script']['source'].split()) == ''.join("""
+        assert ''.join(script.split()) == ''.join("""
             if (doc.containsKey('field1.keyword') && doc['field1.keyword'].size() > 0) {
                 emit(doc['field1.keyword'].value.substring(0, 5));
             }
         """.split())
+        assert params == {}
