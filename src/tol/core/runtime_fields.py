@@ -33,7 +33,7 @@ class RuntimeFields(ABC):
     """
     @classmethod
     @abstractmethod
-    def convert_to_request(cls, runtime_field: RuntimeField):
+    def convert_to_request(cls, runtime_field: RuntimeField) -> Any:
         """
         Converts a `RuntimeField` to the format used in this datasource
         """
@@ -50,14 +50,14 @@ class RuntimeFields(ABC):
 
     @classmethod
     @abstractmethod
-    def date_interval_script(cls, *, start_date: str, end_date: str, unit: str = 'days'):
+    def date_interval_script(cls, *, start_date: str, end_date: str, unit: str = 'days') -> Any:
         """
         Generates the script for the date_interval function, in the format used in this datasource
         """
 
     @classmethod
     @abstractmethod
-    def latest_date_script(cls, *, date_fields: list[str], allow_missing: bool = True):
+    def latest_date_script(cls, *, date_fields: list[str], allow_missing: bool = True) -> Any:
         """
         Generates the script for the latest_date function, in the format used in this datasource
         """
@@ -70,7 +70,7 @@ class RuntimeFields(ABC):
         first: str,
         second: str,
         operation: str = '/'
-    ):
+    ) -> Any:
         """
         Generates the script for the math function, in the format used in this datasource
         """
@@ -83,7 +83,7 @@ class RuntimeFields(ABC):
         _return_type: str,
         fields: list[str],
         null_wins: bool = False,
-    ):
+    ) -> Any:
         """
         Generates the script for the coalesce function, in the format used in this datasource
         """
@@ -96,7 +96,7 @@ class RuntimeFields(ABC):
         field: str,
         start: int,
         end: int
-    ):
+    ) -> Any:
         """
         Generates the script for the substring function, in the format used in this datasource
         """
