@@ -88,8 +88,8 @@ class ElasticRuntimeFields(RuntimeFields):
             function_body=f"""
                 ZonedDateTime start = doc['{start_date}'].value;
                 ZonedDateTime end = doc['{end_date}'].value;
-                long differenceInMilis = ChronoUnit.{unit.upper()}.between(start, end);
-                emit(differenceInMilis);
+                long differenceInMillis = ChronoUnit.{unit.upper()}.between(start, end);
+                emit(differenceInMillis);
             """
         )
         return script, {}
