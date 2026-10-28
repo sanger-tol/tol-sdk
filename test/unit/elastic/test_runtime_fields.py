@@ -4,12 +4,56 @@
 
 import pytest
 
+from tol.core import RuntimeField
 from tol.elastic import (
     ElasticRuntimeFields
 )
 
 
 class TestRuntimeFields:
+    def test_convert_type_only(self):
+        assert ElasticRuntimeFields.convert_to_request(
+            RuntimeField(type_='double')
+        ) == {'type': 'double'}
+
+    @pytest.mark.parametrize('script', ['emit(1.0);', ''])
+    def test_convert_script(self, script):
+        assert ElasticRuntimeFields.convert_to_request(
+            RuntimeField(type_='double', script=script)
+        ) == {'type': 'double', 'script': {'source': script}}
+
+    def test_convert_function(self):
+        script, params = ElasticRuntimeFields.coalesce_script(
+            _return_type='double',
+            fields=['field1', 'field2'],
+        )
+        assert ElasticRuntimeFields.convert_to_request(
+            RuntimeField(
+                type_='double',
+                function='coalesce',
+                function_kwargs={'fields': ['field1', 'field2']},
+            )
+        ) == {'type': 'double', 'script': {'source': script, 'params': params}}
+
+    def test_convert_to_request_dict(self):
+        assert ElasticRuntimeFields.convert_to_request_dict({
+            'root': {
+                'runtime_column': RuntimeField(type_='boolean', script='emit(true);'),
+            },
+            'related': {
+                'root_int_column_min': RuntimeField(type_='double'),
+                'root_int_column_max': RuntimeField(type_='double'),
+            },
+        }) == {
+            'root': {
+                'runtime_column': {'type': 'boolean', 'script': {'source': 'emit(true);'}},
+            },
+            'related': {
+                'root_int_column_min': {'type': 'double'},
+                'root_int_column_max': {'type': 'double'},
+            },
+        }
+
     def test_math(self):
         script, params = ElasticRuntimeFields.math_script(
             first='field1',

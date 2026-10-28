@@ -19,6 +19,7 @@ class RuntimeField:
     worked with, not the Python type. A runtime field can then either contain a `script` in the
     domain-specific format required for the data source, or a standard function, specified by
     `function`, with its arguments provided in `function_kwargs`.
+    Type-only fields omit both, where supported by the data source.
     """
     type_: str
     script: str | None = None

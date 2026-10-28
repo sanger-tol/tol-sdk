@@ -56,20 +56,20 @@ def elastic_datasource(
         'related_object': 'related',
         'another_related_object': 'related'
     }
-    rtf = {
+    rtf: dict[str, dict[str, RuntimeField]] = {
         'root': {
             'runtime_column': RuntimeField(
                 type_='boolean',
                 script="""
-                    if (doc.containsKey('bool_column') && doc['bool_column'].size() > 0) {{
+                    if (doc.containsKey('bool_column') && doc['bool_column'].size() > 0) {
                         emit(!doc['bool_column'].value)
-                    }}
+                    }
                 """
             )
         },
         'related': {
-            'root_int_column_min': {'type': 'double'},
-            'root_int_column_max': {'type': 'double'},
+            'root_int_column_min': RuntimeField(type_='double'),
+            'root_int_column_max': RuntimeField(type_='double'),
         }
     }
 

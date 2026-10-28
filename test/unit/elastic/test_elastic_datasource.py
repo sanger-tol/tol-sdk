@@ -17,6 +17,7 @@ from tol.core.relationship import RelationshipConfig
 from tol.core.requested_fields import ReqFieldsTree
 from tol.elastic import (
     ElasticDataSource,
+    ElasticRuntimeFields,
     ElasticUpdateInputConverter,
     ElasticUpdateInputResource,
     ElasticUpsertInputConverter,
@@ -148,6 +149,35 @@ class TestUidSubstitution:
 
 
 class TestElasticDataSource:
+
+    def test_provenance_runtime_fields(self, mock_elastic_data_source: ElasticDataSource):
+        with mock.patch.object(
+            mock_elastic_data_source,
+            '_ElasticDataSource__get_provenance_return_type',
+            return_value='keyword',
+        ):
+            runtime_fields = (
+                mock_elastic_data_source._ElasticDataSource__add_runtime_fields_from_provenance_fields()
+            )
+
+        assert set(runtime_fields) == set(mock_elastic_data_source.provenance_fields)
+        for object_type, fields in mock_elastic_data_source.provenance_fields.items():
+            assert set(runtime_fields[object_type]) == {
+                f'{field_name}.value' for field_name in fields
+            }
+            for field_name, provenance_field in fields.items():
+                script, params = ElasticRuntimeFields.coalesce_script(
+                    _return_type='keyword',
+                    fields=[
+                        f'{field_name}.provenance.{source}.value'
+                        for source in provenance_field.source_order
+                    ],
+                    null_wins=True,
+                )
+                assert runtime_fields[object_type][f'{field_name}.value'] == {
+                    'type': 'keyword',
+                    'script': {'source': script, 'params': params},
+                }
 
     def test_default_requested_tree_preserves_runtime_fields(
         self, mock_elastic_data_source: ElasticDataSource

@@ -26,11 +26,13 @@ class ElasticRuntimeFields(RuntimeFields):
                     'params': params
                 }
             }
-        else:  # is a script runtime field
+        elif runtime_field.script is not None:
             return {
                 'type': runtime_field.type_,
                 'script': {'source': runtime_field.script}
             }
+        else:
+            return {'type': runtime_field.type_}
 
     @classmethod
     def __generate_dependencies_exist_guard(cls, dependencies: list[str]):
