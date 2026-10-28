@@ -31,8 +31,8 @@ class RuntimeFields(ABC):
     The base class defining methods for generating runtime fields in the format appropriate for
     the subclass's associated datasource.
     """
-    @abstractmethod
     @classmethod
+    @abstractmethod
     def convert_to_request(cls, runtime_field: RuntimeField):
         """
         Converts a `RuntimeField` to the format used in this datasource
@@ -48,22 +48,22 @@ class RuntimeFields(ABC):
             for name, runtime_field in runtime_field_dict.items()
         }
 
-    @abstractmethod
     @classmethod
+    @abstractmethod
     def date_interval_script(cls, *, start_date: str, end_date: str, unit: str = 'days'):
         """
         Generates the script for the date_interval function, in the format used in this datasource
         """
 
-    @abstractmethod
     @classmethod
+    @abstractmethod
     def latest_date_script(cls, *, date_fields: list[str], allow_missing: bool = True):
         """
         Generates the script for the latest_date function, in the format used in this datasource
         """
 
-    @abstractmethod
     @classmethod
+    @abstractmethod
     def math_script(
         cls,
         *,
@@ -75,8 +75,8 @@ class RuntimeFields(ABC):
         Generates the script for the math function, in the format used in this datasource
         """
 
-    @abstractmethod
     @classmethod
+    @abstractmethod
     def coalesce_script(
         cls,
         *,
@@ -88,8 +88,8 @@ class RuntimeFields(ABC):
         Generates the script for the coalesce function, in the format used in this datasource
         """
 
-    @abstractmethod
     @classmethod
+    @abstractmethod
     def substring_script(
         cls,
         *,
