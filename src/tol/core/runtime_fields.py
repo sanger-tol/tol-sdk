@@ -37,7 +37,6 @@ class RuntimeFields(ABC):
         """
         Converts a `RuntimeField` to the format used in this datasource
         """
-        raise NotImplementedError()
 
     @classmethod
     def convert_to_request_dict(cls, runtime_field_dict: dict[str, RuntimeField]) -> dict:
@@ -55,7 +54,6 @@ class RuntimeFields(ABC):
         """
         Generates the script for the date_interval function, in the format used in this datasource
         """
-        raise NotImplementedError()
 
     @abstractmethod
     @classmethod
@@ -63,7 +61,6 @@ class RuntimeFields(ABC):
         """
         Generates the script for the latest_date function, in the format used in this datasource
         """
-        raise NotImplementedError()
 
     @abstractmethod
     @classmethod
@@ -77,7 +74,6 @@ class RuntimeFields(ABC):
         """
         Generates the script for the math function, in the format used in this datasource
         """
-        raise NotImplementedError()
 
     @abstractmethod
     @classmethod
@@ -91,7 +87,6 @@ class RuntimeFields(ABC):
         """
         Generates the script for the coalesce function, in the format used in this datasource
         """
-        raise NotImplementedError()
 
     @abstractmethod
     @classmethod
@@ -105,4 +100,3 @@ class RuntimeFields(ABC):
         """
         Generates the script for the substring function, in the format used in this datasource
         """
-        raise NotImplementedError()
