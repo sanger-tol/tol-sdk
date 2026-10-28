@@ -60,7 +60,7 @@ def elastic_datasource(
         'root': {
             'runtime_column': RuntimeField(
                 type_='boolean',
-                script=f"""
+                script="""
                     if (doc.containsKey('bool_column') && doc['bool_column'].size() > 0) {{
                         emit(!doc['bool_column'].value)
                     }}

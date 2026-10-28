@@ -129,7 +129,7 @@ def mock_elastic_data_source() -> ElasticDataSource:
                 ),
                 'field8': RuntimeField(
                     type_='date',
-                    script=f"""
+                    script="""
                         if (doc.containsKey('datefield') && doc['datefield'].size() > 0) {{
                             emit(doc['datefield'].value.toEopchMilli())
                         }}
