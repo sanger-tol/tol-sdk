@@ -108,7 +108,7 @@ class ElasticDataSource(
                  data_object_update_converter_factory: DataObjectUpdateConverterFactory,
                  attribute_metadata: AttributeMetadata = DefaultAttributeMetadata,
                  relationship_cfg: dict[str, RelationshipConfig] | None = None,
-                 runtime_fields: dict[str, RuntimeField] = {},
+                 runtime_fields: dict[str, dict[str, RuntimeField]] = {},
                  provenance_fields: ProvenanceFields = {},
                  **kwargs):
         del kwargs

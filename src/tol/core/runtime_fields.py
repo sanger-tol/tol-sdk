@@ -39,13 +39,15 @@ class RuntimeFields(ABC):
         """
 
     @classmethod
-    def convert_to_request_dict(cls, runtime_field_dict: dict[str, RuntimeField]) -> dict:
+    def convert_to_request_dict(cls, runtime_field_dict: dict[str, dict[str, RuntimeField]]) -> dict:
         """
         Converts a dict of `RuntimeField`s to a dict of the format used in this datasource
         """
         return {
-            name: cls.convert_to_request(runtime_field)
-            for name, runtime_field in runtime_field_dict.items()
+            object_type: {
+                name: cls.convert_to_request(runtime_field)
+                for name, runtime_field in object_type_dict.items()
+            } for object_type, object_type_dict in runtime_field_dict.items()
         }
 
     @classmethod
