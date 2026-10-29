@@ -274,7 +274,6 @@ class EnaDataSource(
             accessions = getattr(source, 'run_accession', None)
             if not accessions:
                 return []
-            # The Portal API separates explicitly linked run accessions with semicolons.
             run_ids = list(dict.fromkeys(
                 accession.strip() for accession in accessions.split(';') if accession.strip()
             ))
