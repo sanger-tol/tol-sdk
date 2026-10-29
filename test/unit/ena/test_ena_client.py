@@ -3,6 +3,7 @@
 # SPDX-License-Identifier: MIT
 
 import pytest
+
 import responses
 
 from tol.ena.client import EnaApiClient

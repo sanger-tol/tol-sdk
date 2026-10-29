@@ -6,13 +6,14 @@ from typing import Any, Optional
 from unittest.mock import Mock, create_autospec
 
 import pytest
+
 from requests.exceptions import HTTPError
 
 from tol.core import (
-    core_data_object,
     DataObject,
     DataSourceError,
     DataSourceFilter,
+    core_data_object,
 )
 from tol.ena import EnaDataSource
 
