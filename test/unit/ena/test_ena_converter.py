@@ -5,6 +5,8 @@
 from typing import Any, Optional
 from unittest.mock import Mock, create_autospec
 
+import pytest
+
 from tol.core import DataObject, DataSource
 from tol.core.data_source_dict import DataSourceDict
 from tol.ena.converter import (
@@ -119,3 +121,59 @@ class TestEnaApiConverter:
         second = out_[1]
         assert second.type == 'taxon'
         assert second.id == '10090'
+
+    def test_convert_list_empty(self):
+        """An empty response produces no objects."""
+
+        parser = Mock()
+        converter = EnaApiConverter(parser)
+
+        assert converter.convert_list('read_run', []) == ([], 0)
+        parser.parse.assert_not_called()
+
+    def test_convert_list_experiments_with_shared_parents(self):
+        """Keep distinct experiments even when their sample and study are shared."""
+
+        parser = DefaultParser(_get_mock_ds_dict({'read_experiment': {
+            'experiment_accession': 'str',
+            'sample_accession': 'str',
+            'study_accession': 'str',
+        }}))
+        converter = EnaApiConverter(parser)
+        first = {
+            'experiment_accession': 'ERX123',
+            'sample_accession': 'SAMEA123',
+            'study_accession': 'PRJEB123',
+        }
+        second = {
+            'experiment_accession': 'ERX456',
+            'sample_accession': 'SAMEA123',
+            'study_accession': 'PRJEB123',
+        }
+
+        objects, total = converter.convert_list('read_experiment', [first, second])
+
+        assert [obj.id for obj in objects] == ['ERX123', 'ERX456']
+        assert total == 2
+        for obj in objects:
+            assert obj.type == 'read_experiment'
+            assert obj.attributes['sample_accession'] == 'SAMEA123'
+            assert obj.attributes['study_accession'] == 'PRJEB123'
+
+    @pytest.mark.parametrize('object_type,field,accession', [
+        ('assembly', 'assembly_set_accession', 'GCA_922984935.2'),
+        ('read_experiment', 'experiment_accession', 'ERX123'),
+        ('analysis', 'analysis_accession', 'ERZ123'),
+    ])
+    def test_convert_accession_id(self, object_type, field, accession):
+        """Use the object type accession as the DataObject ID."""
+
+        parser = DefaultParser(_get_mock_ds_dict({object_type: {field: 'str'}}))
+        converter = EnaApiConverter(parser)
+
+        objects, total = converter.convert_list(object_type, [{field: accession}])
+
+        assert total == 1
+        assert objects[0].type == object_type
+        assert objects[0].id == accession
+        assert objects[0].attributes[field] == accession

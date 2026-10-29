@@ -103,7 +103,7 @@ class EnaDataSource(
     def supported_types(self) -> list[str]:
         return [
             'assembly', 'read_run', 'sample', 'study', 'taxon', 'checklist',
-            'submittable_taxon'
+            'submittable_taxon', 'read_experiment', 'analysis'
         ]
 
     def get_by_id(
@@ -191,7 +191,42 @@ class EnaDataSource(
     @property
     @cache
     def relationship_config(self) -> dict[str, RelationshipConfig]:
+        rc_assembly = RelationshipConfig()
+        rc_assembly.to_one = {
+            'study': 'study',
+            'sample': 'sample',
+            'taxon': 'taxon'
+        }
+        rc_assembly.to_many = {'runs': 'read_run'}
+
+        rc_read_run = RelationshipConfig()
+        rc_read_run.to_one = {
+            'experiment': 'read_experiment',
+            'sample': 'sample',
+            'study': 'study',
+            'taxon': 'taxon'
+        }
+
+        rc_read_experiment = RelationshipConfig()
+        rc_read_experiment.to_one = {
+            'study': 'study',
+            'sample': 'sample'
+        }
+        rc_read_experiment.to_many = {'runs': 'read_run'}
+
+        rc_sample = RelationshipConfig()
+        rc_sample.to_one = {'taxon': 'taxon'}
+        rc_sample.to_many = {'experiments': 'read_experiment'}
+
+        rc_study = RelationshipConfig()
+        rc_study.to_many = {'experiments': 'read_experiment'}
+
         return {
+            'assembly': rc_assembly,
+            'read_run': rc_read_run,
+            'read_experiment': rc_read_experiment,
+            'sample': rc_sample,
+            'study': rc_study
         }
 
     def get_to_one_relation(
@@ -199,14 +234,70 @@ class EnaDataSource(
         source: DataObject,
         relation_name: str,
     ) -> Optional[DataObject]:
-        return None
+        relation_fields = {
+            'assembly': {
+                'study': ('study', 'study_accession'),
+                'sample': ('sample', 'sample_accession'),
+                'taxon': ('taxon', 'tax_id'),
+            },
+            'read_run': {
+                'experiment': ('read_experiment', 'experiment_accession'),
+                'sample': ('sample', 'sample_accession'),
+                'study': ('study', 'study_accession'),
+                'taxon': ('taxon', 'tax_id'),
+            },
+            'read_experiment': {
+                'study': ('study', 'study_accession'),
+                'sample': ('sample', 'sample_accession'),
+            },
+            'sample': {
+                'taxon': ('taxon', 'tax_id'),
+            },
+        }
+        relation = relation_fields.get(source.type, {}).get(relation_name)
+        if relation is None:
+            return None
+
+        target_type, accession_field = relation
+        accession = getattr(source, accession_field, None)
+        if accession is None or accession == '':
+            return None
+
+        return self.get_one(target_type, str(accession))
 
     def get_to_many_relations(
         self,
         source: DataObject,
         relation_name: str,
     ) -> Iterable[DataObject]:
-        return []
+        if source.type == 'assembly' and relation_name == 'runs':
+            accessions = getattr(source, 'run_accession', None)
+            if not accessions:
+                return []
+            # The Portal API separates explicitly linked run accessions with semicolons.
+            run_ids = list(dict.fromkeys(
+                accession.strip() for accession in accessions.split(';') if accession.strip()
+            ))
+            return (
+                run for run in self.get_by_ids('read_run', run_ids) if run is not None
+            )
+        if source.type == 'read_experiment' and relation_name == 'runs':
+            target_type = 'read_run'
+            accession_field = 'experiment_accession'
+        elif source.type == 'sample' and relation_name == 'experiments':
+            target_type = 'read_experiment'
+            accession_field = 'sample_accession'
+        elif source.type == 'study' and relation_name == 'experiments':
+            target_type = 'read_experiment'
+            accession_field = 'study_accession'
+        else:
+            return []
+
+        filters = DataSourceFilter()
+        filters.and_ = {
+            accession_field: {'eq': {'value': f'"{source.id}"'}}
+        }
+        return self.get_list(target_type, object_filters=filters)
 
     def post_request(self, command: str, files) -> requests.Response:
         response = requests.post(self.uri + command,

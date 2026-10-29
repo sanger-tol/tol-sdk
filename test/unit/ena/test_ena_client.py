@@ -2,6 +2,7 @@
 #
 # SPDX-License-Identifier: MIT
 
+import pytest
 import responses
 
 from tol.ena.client import EnaApiClient
@@ -221,3 +222,37 @@ class TestEnaClient:
 
         fields = client.get_fields('taxon')
         assert fields == expected_fields
+
+    @pytest.mark.parametrize('object_type,field,ids', [
+        ('assembly', 'assembly_set_accession', ['GCA_922984935.2']),
+        ('assembly', 'assembly_set_accession', ['GCA_922984935.1', 'GCA_922984935.2']),
+        ('read_experiment', 'experiment_accession', ['ERX123']),
+        ('read_experiment', 'experiment_accession', ['ERX123', 'ERX456']),
+        ('analysis', 'analysis_accession', ['ERZ123']),
+        ('analysis', 'analysis_accession', ['ERZ123', 'ERZ456']),
+    ])
+    @responses.activate
+    def test_get_detail_accession_query(self, object_type, field, ids):
+        """Query each object type using its accession field."""
+
+        client = EnaApiClient(
+            ena_url=FAKE_ENA_URL,
+            ena_user=FAKE_ENA_USER,
+            ena_password=FAKE_ENA_PASS,
+            ena_contact_name=FAKE_ENA_CONTACT,
+            ena_contact_email=FAKE_ENA_EMAIL
+        )
+        query = f'{field}=' + f'OR {field}='.join(f' "{id_}" ' for id_ in ids)
+        expected = [{field: id_} for id_ in ids]
+        responses.get(
+            FAKE_ENA_URL + '/ena/portal/api/search',
+            json=expected,
+            match=[responses.matchers.query_param_matcher({
+                'result': object_type,
+                'query': query,
+                'format': 'json',
+                'fields': 'all',
+            })],
+        )
+
+        assert client.get_detail(object_type, ids) == expected

@@ -127,34 +127,23 @@ class EnaApiClient(HttpClient):
             params = {}
             return url, params
 
-        url = f'{self.__ena_url}/ena/portal/api/search'
-
         if object_type == 'assembly':
             query_type = 'assembly_set_accession='
-            ids = 'OR assembly_set_accession='.join(f' "{id_}" ' for id_ in object_ids)
         elif object_type == 'read_run':
             query_type = 'run_accession='
-            ids = 'OR run_accession='.join(f' "{id_}" ' for id_ in object_ids)
+        elif object_type == 'read_experiment':
+            query_type = 'experiment_accession='
+        elif object_type == 'analysis':
+            query_type = 'analysis_accession='
         elif object_type == 'sample':
             query_type = 'sample_accession='
-            ids = 'OR sample_accession='.join(f' "{id_}" ' for id_ in object_ids)
         elif object_type == 'study':
             query_type = 'study_accession='
-            ids = 'OR study_accession='.join(f' "{id_}" ' for id_ in object_ids)
         elif object_type == 'taxon':
             query_type = 'tax_id='
-            ids = 'OR tax_id='.join(f' "{id_}" ' for id_ in object_ids)
 
-        query = query_type + ids
-
-        params = {
-            'result': object_type,
-            'query': query,
-            'format': 'json',
-            'fields': 'all'
-        }
-
-        return url, params
+        ids = f'OR {query_type}'.join(f' "{id_}" ' for id_ in object_ids)
+        return self.__list_url(object_type, query_type + ids)
 
     def __list_url(
         self,

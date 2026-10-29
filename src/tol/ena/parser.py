@@ -83,6 +83,10 @@ class DefaultParser(Parser):
             return transfer['assembly_set_accession']
         elif type_ == 'read_run':
             return transfer['run_accession']
+        elif type_ == 'read_experiment':
+            return transfer['experiment_accession']
+        elif type_ == 'analysis':
+            return transfer['analysis_accession']
         elif type_ == 'sample':
             return transfer['sample_accession']
         elif type_ == 'study':
