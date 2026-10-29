@@ -27,6 +27,9 @@ class RuntimeField:
     function_kwargs: dict[str, Any | RuntimeField] | None = None
 
 
+type FieldNameOrRuntimeField = str | RuntimeField
+
+
 class RuntimeFields(ABC):
     """
     The base class defining methods for generating runtime fields in the format appropriate for
@@ -56,14 +59,25 @@ class RuntimeFields(ABC):
 
     @classmethod
     @abstractmethod
-    def date_interval_script(cls, *, start_date: str, end_date: str, unit: str = 'days') -> Any:
+    def date_interval_script(
+        cls,
+        *,
+        start_date: FieldNameOrRuntimeField,
+        end_date: FieldNameOrRuntimeField,
+        unit: str = 'days'
+    ) -> Any:
         """
         Generates the script for the date_interval function, in the format used in this datasource
         """
 
     @classmethod
     @abstractmethod
-    def latest_date_script(cls, *, date_fields: list[str], allow_missing: bool = True) -> Any:
+    def latest_date_script(
+        cls,
+        *,
+        date_fields: list[FieldNameOrRuntimeField],
+        allow_missing: bool = True
+    ) -> Any:
         """
         Generates the script for the latest_date function, in the format used in this datasource
         """
@@ -73,8 +87,8 @@ class RuntimeFields(ABC):
     def math_script(
         cls,
         *,
-        first: str,
-        second: str,
+        first: FieldNameOrRuntimeField,
+        second: FieldNameOrRuntimeField,
         operation: str = '/'
     ) -> Any:
         """
@@ -87,7 +101,7 @@ class RuntimeFields(ABC):
         cls,
         *,
         _return_type: str,
-        fields: list[str],
+        fields: list[FieldNameOrRuntimeField],
         null_wins: bool = False,
     ) -> Any:
         """
@@ -99,7 +113,7 @@ class RuntimeFields(ABC):
     def substring_script(
         cls,
         *,
-        field: str,
+        field: FieldNameOrRuntimeField,
         start: int,
         end: int
     ) -> Any:

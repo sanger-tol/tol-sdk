@@ -36,6 +36,7 @@ from .handler import Handler  # noqa F401
 from .http_client import HttpClient  # noqa F401
 from .requested_fields import ReqFieldsTree  # noqa: F401
 from .runtime_fields import (  # noqa F401
+    FieldNameOrRuntimeField,
     RuntimeField,
     RuntimeFields
 )
