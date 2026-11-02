@@ -20,6 +20,10 @@ class RuntimeField:
     domain-specific format required for the data source, or a standard function, specified by
     `function`, with its arguments provided in `function_kwargs`.
     Type-only fields omit both, where supported by the data source.
+
+    For Elasticsearch built-in functions, field arguments in `function_kwargs`
+    may be attribute names or nested `RuntimeField` instances. Nested raw scripts
+    and type-only definitions are not supported.
     """
     type_: str
     script: str | None = None
