@@ -6,6 +6,10 @@ SPDX-License-Identifier: MIT
 
 # Changelog
 
+## tol-sdk `3.0.3`
+
+- Add ENA read_experiment and analysis types, sequencing and assembly provenance relationships
+
 ## tol-sdk `3.0.2`
 
 22-10-2026
@@ -13,7 +17,6 @@ SPDX-License-Identifier: MIT
 - Improving download efficiency by refactoring __getattribute__,
 _convert_data_dict_to_data_object and __make_dates
 - Make ElasticDataSource updates/upserts more resilient to errors
-- Add ENA read_experiment and analysis types, sequencing and assembly provenance relationships
 
 ## tol-sdk `3.0.1`
 
