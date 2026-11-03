@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: MIT
 
 from typing import Any, Iterable, Optional
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, patch
 
 import pytest
 
@@ -217,6 +217,38 @@ class TestUtils:
             direct=True
         )
         assert isinstance(ds, DataSource)
+
+    def test_get_datasource_by_datasource_instance_snakecases_kwargs(
+            self
+    ):
+        source_kwargs = {
+            'camelCase': 'value',
+            'PascalCase': 42,
+        }
+        datasource_instance = MagicMock(
+            direct_kwargs=source_kwargs,
+            direct_name='portal',
+            data_source_config=None,
+        )
+
+        with patch.object(
+            DataSourceUtils,
+            'get_datasource_by_name'
+        ) as get_datasource_by_name:
+            DataSourceUtils.get_datasource_by_datasource_instance(
+                datasource_instance,
+                direct=True,
+            )
+
+        get_datasource_by_name.assert_called_once_with(
+            'portal',
+            camel_case='value',
+            pascal_case=42,
+        )
+        assert source_kwargs == {
+            'camelCase': 'value',
+            'PascalCase': 42,
+        }
 
     def test_get_datasource_via_api(
             self,

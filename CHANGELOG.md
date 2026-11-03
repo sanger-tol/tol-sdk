@@ -6,6 +6,14 @@ SPDX-License-Identifier: MIT
 
 # Changelog
 
+## tol-sdk `3.0.3`
+
+03-01-2026
+
+- Added integration test for PrefectDataSource
+- Added tol.sources.api()
+- Added ability to specify datasource kwargs as camelcase in db
+
 ## tol-sdk `3.0.2`
 
 22-10-2026
