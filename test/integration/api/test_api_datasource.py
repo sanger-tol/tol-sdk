@@ -10,9 +10,7 @@ from tol.core import (
 from tol.sources.api import (
     api
 )
-from tol.sources.default import (
-    default
-)
+
 
 class TestApiDataSource:
 

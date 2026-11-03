@@ -6,6 +6,7 @@ import importlib
 from typing import Iterable, Iterator
 
 from caseconverter import snakecase
+
 from dacite import from_dict
 
 from .data_object import DataObject

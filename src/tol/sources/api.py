@@ -2,9 +2,6 @@
 #
 # SPDX-License-Identifier: MIT
 
-import os
-
-from .defaults import Defaults
 from ..api_client import (
     ApiDataSource,
     create_api_datasource
