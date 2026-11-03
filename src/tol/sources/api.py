@@ -21,9 +21,9 @@ def api(
         **kwargs
 ) -> ApiDataSource:
     ds = create_api_datasource(
-        api_url=url + api_path,
+        api_url=f'{url}{api_path}',
         token=token,
-        data_prefix=api_data_path + f'/{dataspace}',
+        data_prefix=f'{api_data_path}/{dataspace}',
         retries=retries
     )
     core_data_object(ds)

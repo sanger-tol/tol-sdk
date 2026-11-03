@@ -19,7 +19,7 @@ def quasar(retries: int = 5, **kwargs) -> ApiDataSource:
         api_url=os.getenv('QUASAR_URL', Defaults.QUASAR_URL)
         + os.getenv('QUASAR_API_PATH', Defaults.QUASAR_API_PATH),
         token=os.getenv('QUASAR_API_KEY'),
-        data_prefix=os.getenv('QUASAR_API_DATA_PATH', Defaults.QUASAR_API_DATA_PATH),
+        data_prefix=os.getenv('QUASAR_API_LOCAL_PATH', Defaults.QUASAR_API_LOCAL_PATH),
         retries=retries
     )
     core_data_object(quasar_ds)

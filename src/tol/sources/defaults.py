@@ -3,9 +3,10 @@
 # SPDX-License-Identifier: MIT
 
 class Defaults:
-    QUASAR_URL = 'https://portal.tol.sanger.ac.uk'
+    QUASAR_URL = 'https://quasar.tol.sanger.ac.uk'
     QUASAR_API_PATH = '/api/v1'
-    QUASAR_API_DATA_PATH = '/local'
+    QUASAR_API_DATA_PATH = '/data'
+    QUASAR_API_LOCAL_PATH = '/local'
 
     PORTAL_URL = 'https://portal.tol.sanger.ac.uk'
     PORTAL_API_PATH = '/api/v1'

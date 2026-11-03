@@ -2,6 +2,8 @@
 #
 # SPDX-License-Identifier: MIT
 
+import os
+
 import pytest
 
 from tol.core import (
@@ -10,17 +12,22 @@ from tol.core import (
 from tol.sources.api import (
     api
 )
+from tol.sources.defaults import Defaults
 
 
 class TestApiDataSource:
 
-    def test_supported_types(self):
-        ds = api(
-            url='https://quasar.tol.sanger.ac.uk',
-            api_path='/api/v1',
-            api_data_path='/data',
-            dataspace='tol_production'
+    def _ds(self, dataspace: str):
+        return api(
+            url=os.getenv('QUASAR_URL', Defaults.QUASAR_URL),
+            api_path=os.getenv('QUASAR_API_PATH', Defaults.QUASAR_API_PATH),
+            api_data_path=os.getenv('QUASAR_API_DATA_PATH', Defaults.QUASAR_API_DATA_PATH),
+            dataspace=dataspace,
+            token=os.getenv('QUASAR_API_KEY')
         )
+
+    def test_supported_types(self):
+        ds = self._ds('tol_production')
         assert 'species' in ds.supported_types
         assert 'sample' in ds.supported_types
         assert 'extraction' in ds.supported_types
@@ -29,21 +36,11 @@ class TestApiDataSource:
         assert 'assembly' in ds.supported_types
         assert 'assembly_analysis' in ds.supported_types
 
-        ds = api(
-            url='https://quasar.tol.sanger.ac.uk',
-            api_path='/api/v1',
-            api_data_path='/data',
-            dataspace='test'
-        )
+        ds = self._ds('test')
         assert 'record' in ds.supported_types
 
     def test_attribute_types(self):
-        ds = api(
-            url='https://quasar.tol.sanger.ac.uk',
-            api_path='/api/v1',
-            api_data_path='/data',
-            dataspace='tol_production'
-        )
+        ds = self._ds('tol_production')
 
         assert 'species' in ds.attribute_types
         assert ds.attribute_types['species']['scientific_name'] == 'str'
@@ -51,23 +48,13 @@ class TestApiDataSource:
         assert ds.attribute_types['species']['sample_submit_date_max'] == 'datetime'
 
     def test_relationship_config(self):
-        ds = api(
-            url='https://quasar.tol.sanger.ac.uk',
-            api_path='/api/v1',
-            api_data_path='/data',
-            dataspace='tol_production'
-        )
+        ds = self._ds('tol_production')
 
         assert 'sample' in ds.relationship_config
         assert ds.relationship_config['sample'].to_one['species'] == 'species'
 
     def test_get_by_id(self):
-        ds = api(
-            url='https://quasar.tol.sanger.ac.uk',
-            api_path='/api/v1',
-            api_data_path='/data',
-            dataspace='tol_production'
-        )
+        ds = self._ds('tol_production')
 
         ret = ds.get_by_ids('species', ['31033'])
         obj1 = next(ret)
@@ -84,12 +71,7 @@ class TestApiDataSource:
             next(ret)
 
     def test_get_list(self):
-        ds = api(
-            url='https://quasar.tol.sanger.ac.uk',
-            api_path='/api/v1',
-            api_data_path='/data',
-            dataspace='tol_production'
-        )
+        ds = self._ds('tol_production')
 
         f = DataSourceFilter()
         f.and_ = {
