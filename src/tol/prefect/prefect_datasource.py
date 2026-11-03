@@ -5,7 +5,7 @@
 from __future__ import annotations
 
 import asyncio
-from typing import TYPE_CHECKING, Any, Callable, Iterable, Optional, Union
+from typing import Any, Callable, Iterable, Optional, TYPE_CHECKING, Union
 from uuid import UUID
 
 from prefect.client.orchestration import PrefectClient

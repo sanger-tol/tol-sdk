@@ -31,7 +31,6 @@ class TestPrefectDataSource:
             os.environ['TEST_PREFECT_DEPLOYMENT_NAME'],
         )
 
-
     def test_insert_and_get_flow_run(self, staging):
         datasource, flow_name, deployment_name = staging
         attributes = {
@@ -60,7 +59,6 @@ class TestPrefectDataSource:
             datasource.delete('flow_run', [inserted.id])
 
         assert datasource.get_one('flow_run', inserted.id) is None
-
 
     def test_get_missing_flow_run(self, staging):
         datasource, _, _ = staging
