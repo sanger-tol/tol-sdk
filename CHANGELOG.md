@@ -6,6 +6,13 @@ SPDX-License-Identifier: MIT
 
 # Changelog
 
+## tol-sdk `4.0.0`
+
+04-11-2026
+
+- Runtime fields are now no longer coupled to Elastic.  
+  Because of this, every runtime field definition in the database now requires its return type
+  to be specified.
 ## tol-sdk `3.0.3`
 
 - Add ENA read_experiment and analysis types, sequencing and assembly provenance relationships

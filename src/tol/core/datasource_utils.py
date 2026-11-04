@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: MIT
 
 import importlib
-from typing import Iterable, Iterator
+from typing import Iterable, Iterator, cast
 
 from dacite import from_dict
 
@@ -14,6 +14,7 @@ from .datasource_error import DataSourceError
 from .datasource_filter import DataSourceFilter
 from .operator.provenancer import ProvenanceField, ProvenanceFields
 from .relationship import RelationshipConfig
+from .runtime_fields import RuntimeField
 
 
 class DataSourceUtils:
@@ -125,23 +126,52 @@ class DataSourceUtils:
     def get_runtime_fields_from_data_source_config(
         cls,
         attributes: Iterable[DataObject]
-    ) -> dict:
-        runtime_fields = {}
+    ) -> dict[str, dict[str, RuntimeField]]:
+        # A dictionary grouping runtime fields by object type,
+        # then their name within that object type
+        runtime_fields: dict[str, dict[str, RuntimeField]] = {}
+
+        # Loop through each attribute config and form a `RuntimeField` from it
+        # (each `dsa` corresponds to a row in the `data_source_config_attribute` table)
         for dsa in attributes:
+            # For typing purposes, extract the name and object type from `dsa`.
+            # `DataObject` assumes any attribute can be `None`, but the corresponding columns
+            # in the database for these attribute are NOT NULL
+            object_type = cast(str, dsa.object_type)
+            name = cast(str, dsa.name)
+
+            # If there's no runtime definition for this field, then it's not a runtime field
+            # (just a regular attribute), so skip it
             if dsa.runtime_definition is None:
                 continue
+
+            # If we haven't seen this object type yet, create its dictionary in `runtime_fields`
             if dsa.object_type not in runtime_fields:
-                runtime_fields[dsa.object_type] = {}
+                runtime_fields[object_type] = {}
+
+            # Add a `RuntimeField` to `runtime_fields`.
+            # I've done this in two branches, rather than using `.get` each time in a single
+            # `RuntimeField` construction, because it ensures that every runtime field made
+            # is function OR script runtime field. Having both a script and function definition
+            # is not a problem, but having a mixture of the two is.
             if 'function' in dsa.runtime_definition:
-                from ..elastic.runtime_fields import RuntimeFields  # Break circular import cycle
-                method = getattr(RuntimeFields, dsa.runtime_definition['function'])
-                runtime_fields[dsa.object_type][dsa.name] = \
-                    method(**dsa.runtime_definition.get('function_kwargs', {}))
-            if 'script' in dsa.runtime_definition:
-                runtime_fields[dsa.object_type][dsa.name] = {
-                    'type': dsa.runtime_definition.get('type', 'keyword'),
-                    'script': {'source': dsa.runtime_definition['script']}
-                }
+                runtime_fields[object_type][name] = RuntimeField(
+                    type_=dsa.runtime_definition['type'],
+                    function=dsa.runtime_definition['function'],
+                    function_kwargs=dsa.runtime_definition.get('function_kwargs', {}),
+                )
+            elif 'script' in dsa.runtime_definition:
+                runtime_fields[object_type][name] = RuntimeField(
+                    type_=dsa.runtime_definition.get('type', 'keyword'),
+                    script=dsa.runtime_definition['script']
+                )
+            else:
+                # Invalid variant
+                raise DataSourceError('Invalid runtime field defintion', (
+                    'The JSON defition of a runtime field should have either a "function" key '
+                    'or a "script" key'
+                ))
+
         return runtime_fields
 
     @classmethod

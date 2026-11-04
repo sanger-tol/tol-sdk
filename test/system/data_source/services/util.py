@@ -12,11 +12,11 @@ from elasticsearch import Elasticsearch
 
 import requests
 
+from tol.core import RuntimeField
 from tol.core.operator.provenancer import ProvenanceField
 from tol.core.relationship import RelationshipConfig
 from tol.elastic import (
     ElasticDataSource,
-    RuntimeField,
     create_elastic_datasource
 )
 
@@ -56,17 +56,20 @@ def elastic_datasource(
         'related_object': 'related',
         'another_related_object': 'related'
     }
-    rtf = {
+    rtf: dict[str, dict[str, RuntimeField]] = {
         'root': {
             'runtime_column': RuntimeField(
-                field_type='boolean',
-                dependencies=['bool_column'],
-                function_body="emit(!doc['bool_column'].value)"
-            ).to_dict(),
+                type_='boolean',
+                script="""
+                    if (doc.containsKey('bool_column') && doc['bool_column'].size() > 0) {
+                        emit(!doc['bool_column'].value)
+                    }
+                """
+            )
         },
         'related': {
-            'root_int_column_min': {'type': 'double'},
-            'root_int_column_max': {'type': 'double'},
+            'root_int_column_min': RuntimeField(type_='double'),
+            'root_int_column_max': RuntimeField(type_='double'),
         }
     }
 

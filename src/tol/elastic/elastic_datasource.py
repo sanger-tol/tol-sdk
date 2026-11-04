@@ -35,7 +35,7 @@ from .converter import (
 from .elastic_utils import ElasticUtils
 from .filter import ElasticFilterConverter
 from .parser import ElasticUpdateInputResource, ElasticUpsertInputResource
-from .runtime_fields import RuntimeFields
+from .runtime_fields import ElasticRuntimeFields
 from ..core import (
     AttributeMetadata,
     DataId,
@@ -44,7 +44,8 @@ from ..core import (
     DataSourceError,
     DataSourceFilter,
     DefaultAttributeMetadata,
-    GroupStatterDataLoader
+    GroupStatterDataLoader,
+    RuntimeField
 )
 from ..core.operator import (
     Aggregator,
@@ -107,7 +108,7 @@ class ElasticDataSource(
                  data_object_update_converter_factory: DataObjectUpdateConverterFactory,
                  attribute_metadata: AttributeMetadata = DefaultAttributeMetadata,
                  relationship_cfg: dict[str, RelationshipConfig] | None = None,
-                 runtime_fields: dict[str, Any] = {},
+                 runtime_fields: dict[str, dict[str, RuntimeField]] = {},
                  provenance_fields: ProvenanceFields = {},
                  **kwargs):
         del kwargs
@@ -127,7 +128,7 @@ class ElasticDataSource(
         attribute_metadata.host = self
         self.provenance_fields = provenance_fields
         self._initialise_elasticsearch()
-        self._base_runtime_fields = runtime_fields
+        self._base_runtime_fields = ElasticRuntimeFields.convert_to_request_dict(runtime_fields)
         self.refresh_provenance_runtime_fields()
         self.__lazy = False
         self._relationship_cfg = relationship_cfg
@@ -1382,13 +1383,18 @@ class ElasticDataSource(
             for field_name, provenance_field in fields.items():
                 if object_type not in runtime_fields:
                     runtime_fields[object_type] = {}
-                runtime_fields[object_type][f'{field_name}.value'] = RuntimeFields.coalesce(
-                    [
-                        f'{field_name}.provenance.{source_order}.value'
-                        for source_order in provenance_field.source_order
-                    ],
-                    return_type=self.__get_provenance_return_type(object_type, field_name),
-                    null_wins=True,
+                runtime_fields[object_type][f'{field_name}.value'] = (
+                    ElasticRuntimeFields.convert_to_request(RuntimeField(
+                        type_=self.__get_provenance_return_type(object_type, field_name),
+                        function='coalesce',
+                        function_kwargs={
+                            'fields': [
+                                f'{field_name}.provenance.{source_order}.value'
+                                for source_order in provenance_field.source_order
+                            ],
+                            'null_wins': True,
+                        }
+                    ))
                 )
         return runtime_fields
 

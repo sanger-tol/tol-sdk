@@ -6,13 +6,12 @@ from unittest import mock
 
 import pytest
 
-from tol.core import DefaultAttributeMetadata, core_data_object
+from tol.core import DefaultAttributeMetadata, RuntimeField, core_data_object
 from tol.core.operator.provenancer import ProvenanceField
 from tol.core.relationship import RelationshipConfig
 from tol.elastic import (
     ElasticDataSource,
-    RuntimeField,
-    RuntimeFields,
+    ElasticRuntimeFields,
 )
 from tol.elastic.factory import _ConverterFactoriesManager
 
@@ -42,13 +41,18 @@ class MockElasticDataSource(ElasticDataSource):
             object_runtime_fields = runtime_fields.setdefault(object_type, {})
             for field_name, provenance_field in fields.items():
                 return_type = provenance_field.return_type or 'keyword'
-                object_runtime_fields[f'{field_name}.value'] = RuntimeFields.coalesce(
-                    [
-                        f'{field_name}.provenance.{source_order}.value'
-                        for source_order in provenance_field.source_order
-                    ],
-                    return_type=return_type,
-                    null_wins=True,
+                object_runtime_fields[f'{field_name}.value'] = (
+                    ElasticRuntimeFields.convert_to_request(RuntimeField(
+                        type_=return_type,
+                        function='coalesce',
+                        function_kwargs={
+                            'fields': [
+                                f'{field_name}.provenance.{source_order}.value'
+                                for source_order in provenance_field.source_order
+                            ],
+                            'null_wins': True
+                        }
+                    ))
                 )
 
         self.runtime_fields = self._ElasticDataSource__merge_nested_dicts(
@@ -120,14 +124,16 @@ def mock_elastic_data_source() -> ElasticDataSource:
         runtime_fields={
             'obj_type': {
                 'field7': RuntimeField(
-                    field_type='keyword',
-                    dependencies=[],
-                    function_body="emit('Hello')"
+                    type_='keyword',
+                    script="emit('Hello')"
                 ),
                 'field8': RuntimeField(
-                    field_type='date',
-                    dependencies=['datefield'],
-                    function_body="emit(doc['datefield'].value.toEpochMilli())"
+                    type_='date',
+                    script="""
+                        if (doc.containsKey('datefield') && doc['datefield'].size() > 0) {{
+                            emit(doc['datefield'].value.toEopchMilli())
+                        }}
+                    """
                 )
             }
         },
