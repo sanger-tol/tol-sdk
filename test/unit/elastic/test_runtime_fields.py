@@ -4,30 +4,75 @@
 
 import pytest
 
+from tol.core import RuntimeField
 from tol.elastic import (
-    RuntimeFields
+    ElasticRuntimeFields
 )
 
 
 class TestRuntimeFields:
+    def test_convert_type_only(self):
+        assert ElasticRuntimeFields.convert_to_request(
+            RuntimeField(type_='double')
+        ) == {'type': 'double'}
+
+    @pytest.mark.parametrize('script', ['emit(1.0);', ''])
+    def test_convert_script(self, script):
+        assert ElasticRuntimeFields.convert_to_request(
+            RuntimeField(type_='double', script=script)
+        ) == {'type': 'double', 'script': {'source': script}}
+
+    def test_convert_function(self):
+        script, params = ElasticRuntimeFields.coalesce_script(
+            _return_type='double',
+            fields=['field1', 'field2'],
+        )
+        assert ElasticRuntimeFields.convert_to_request(
+            RuntimeField(
+                type_='double',
+                function='coalesce',
+                function_kwargs={'fields': ['field1', 'field2']},
+            )
+        ) == {'type': 'double', 'script': {'source': script, 'params': params}}
+
+    def test_convert_to_request_dict(self):
+        assert ElasticRuntimeFields.convert_to_request_dict({
+            'root': {
+                'runtime_column': RuntimeField(type_='boolean', script='emit(true);'),
+            },
+            'related': {
+                'root_int_column_min': RuntimeField(type_='double'),
+                'root_int_column_max': RuntimeField(type_='double'),
+            },
+        }) == {
+            'root': {
+                'runtime_column': {'type': 'boolean', 'script': {'source': 'emit(true);'}},
+            },
+            'related': {
+                'root_int_column_min': {'type': 'double'},
+                'root_int_column_max': {'type': 'double'},
+            },
+        }
+
     def test_math(self):
-        rf = RuntimeFields.math(
-            'field1',
-            'field2',
+        script, params = ElasticRuntimeFields.math_script(
+            first='field1',
+            second='field2',
             operation='/'
         )
-        assert ''.join(rf['script']['source'].split()) == ''.join("""
+        assert ''.join(script.split()) == ''.join("""
             if (doc.containsKey('field1') && doc['field1'].size() > 0
                     && doc.containsKey('field2') && doc['field2'].size() > 0) {
                 emit(doc['field1'].value / doc['field2'].value)
             }
         """.split())
+        assert params == {}
 
     def test_coalesce(self):
-        rf = RuntimeFields.coalesce(
-            ['field1', 'field2']
+        script, params = ElasticRuntimeFields.coalesce_script(
+            fields=['field1', 'field2']
         )
-        assert ''.join(rf['script']['source'].split()) == ''.join("""
+        assert ''.join(script.split()) == ''.join("""
             if (1==1) {
                 if (doc.containsKey('field1.keyword') && doc['field1.keyword'].size() > 0) {
                     for (def value : doc['field1.keyword']) {emit(value);}
@@ -36,13 +81,14 @@ class TestRuntimeFields:
                 }
             }
         """.split())
+        assert params == {}
 
     def test_coalesce_keyword_null_wins(self):
-        rf = RuntimeFields.coalesce(
-            ['field1', 'field2'],
+        script, params = ElasticRuntimeFields.coalesce_script(
+            fields=['field1', 'field2'],
             null_wins=True,
         )
-        assert ''.join(rf['script']['source'].split()) == ''.join("""
+        assert ''.join(script.split()) == ''.join("""
             if (1==1) {
                 if (doc.containsKey('field1.keyword') && doc['field1.keyword'].size() > 0) {
                     for (def value : doc['field1.keyword']) {emit(value);} return;
@@ -51,7 +97,7 @@ class TestRuntimeFields:
                 }
             }
         """.split())
-        assert rf['script']['params'] == {}
+        assert params == {}
 
     @pytest.mark.parametrize('return_type,conversion', [
         ('long', '((Number) value).longValue()'),
@@ -60,20 +106,22 @@ class TestRuntimeFields:
         ('boolean', 'value'),
     ])
     def test_coalesce_multivalue_conversion(self, return_type, conversion):
-        runtime_field = RuntimeFields.coalesce(['field1', 'field2'], return_type=return_type)
-        script = runtime_field['script']['source']
-
+        script, params = ElasticRuntimeFields.coalesce_script(
+            fields=['field1', 'field2'],
+            _return_type=return_type
+        )
         assert "for (def value : doc['field1'])" in script
         assert "for (def value : doc['field2'])" in script
         assert f'emit({conversion});' in script
         assert '}else if ' in script
+        assert params == {}
 
     def test_latest_date(self):
-        rf = RuntimeFields.latest_date(
-            ['field1', 'field2'],
+        script, params = ElasticRuntimeFields.latest_date_script(
+            date_fields=['field1', 'field2'],
             allow_missing=False
         )
-        assert ''.join(rf['script']['source'].split()) == ''.join("""
+        assert ''.join(script.split()) == ''.join("""
                 if (doc.containsKey('field1') && doc['field1'].size() > 0 &&
                     doc.containsKey('field2') && doc['field2'].size() > 0) {
                     ZonedDateTime latestDate = null;
@@ -91,14 +139,14 @@ class TestRuntimeFields:
                     }
                 }
         """.split())
-        assert rf['script']['params']['dates'] == ['field1', 'field2']
+        assert params['dates'] == ['field1', 'field2']
 
     def test_date_interval(self):
-        rf = RuntimeFields.date_interval(
+        script, params = ElasticRuntimeFields.date_interval_script(
             start_date='field1',
             end_date='field2'
         )
-        assert ''.join(rf['script']['source'].split()) == ''.join("""
+        assert ''.join(script.split()) == ''.join("""
             if (doc.containsKey('field1') && doc['field1'].size() > 0 &&
                     doc.containsKey('field2') && doc['field2'].size() > 0) {
                 ZonedDateTime start = doc['field1'].value;
@@ -107,15 +155,17 @@ class TestRuntimeFields:
                 emit(differenceInMillis);
             }
         """.split())
+        assert params == {}
 
     def test_substring(self):
-        rf = RuntimeFields.substring(
-            'field1',
+        script, params = ElasticRuntimeFields.substring_script(
+            field='field1',
             start=0,
             end=5
         )
-        assert ''.join(rf['script']['source'].split()) == ''.join("""
+        assert ''.join(script.split()) == ''.join("""
             if (doc.containsKey('field1.keyword') && doc['field1.keyword'].size() > 0) {
                 emit(doc['field1.keyword'].value.substring(0, 5));
             }
         """.split())
+        assert params == {}
