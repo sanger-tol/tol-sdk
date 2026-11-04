@@ -6,6 +6,9 @@ import os
 
 from .api import api
 from .defaults import Defaults
+from ..api_client import (
+    ApiDataSource
+)
 
 
 def bioscan(retries: int = 5, **kwargs) -> ApiDataSource:

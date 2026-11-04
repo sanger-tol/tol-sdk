@@ -10,6 +10,7 @@ from ..api_client import (
     ApiDataSource
 )
 
+
 def portaldb(retries: int = 5, **kwargs) -> ApiDataSource:
     ds = api(
         url=os.getenv('PORTAL_URL', Defaults.PORTAL_URL),

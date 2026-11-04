@@ -10,6 +10,7 @@ from ..api_client import (
     ApiDataSource
 )
 
+
 def treeofsex(retries: int = 5, **kwargs) -> ApiDataSource:
     ds = api(
         url=os.getenv('TREEOFSEX_URL', Defaults.TREEOFSEX_URL),

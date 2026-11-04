@@ -10,6 +10,7 @@ from ..api_client import (
     ApiDataSource
 )
 
+
 def workflows(retries: int = 5, **kwargs) -> ApiDataSource:
     ds = api(
         url=os.getenv('WORKFLOWS_URL', Defaults.WORKFLOWS_URL),
