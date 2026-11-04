@@ -140,6 +140,39 @@ class TestDbAuthManagerKeycloak:
 
         assert error.value.errors[0]['detail'] == 'Not enough segments'
 
+    def test_database_token_is_accepted_without_jwt_authentication(
+        self,
+        monkeypatch: pytest.MonkeyPatch,
+        jwt_keys: tuple[rsa.RSAPrivateKey, rsa.RSAPublicKey],
+    ) -> None:
+        _, manager, models, session_factory = self.set_up_test(
+            monkeypatch,
+            jwt_keys,
+            db_user_data={
+                'name': 'Alice',
+                'email': 'alice@example.com',
+                'oidc_id': 'alice@example.com',
+            },
+        )
+        token = 'opaque-api-key'
+        with session_factory() as session:
+            user = session.query(models.user_class).one()
+            models.token_class.get_or_create(session, token, user.id)
+
+        monkeypatch.setattr(
+            jwt,
+            'decode',
+            lambda *_args, **_kwargs: pytest.fail(
+                'Database tokens must not be decoded as JWTs'
+            ),
+        )
+        context = AuthContext()
+
+        manager.authenticate(context, token)
+
+        assert context.authenticated
+        assert context.user_id == '1'
+
     def test_issuer_not_being_an_expected_keycloak_realm_is_forbidden(
         self,
         monkeypatch: pytest.MonkeyPatch,
