@@ -78,69 +78,6 @@ class ElasticRuntimeFields(RuntimeFields):
         return if_clause + (else_clause if function_default else '')
 
     @classmethod
-    def date_interval_script(
-        cls,
-        *,
-        start_date: str,
-        end_date: str,
-        unit: str = 'days'
-    ) -> tuple[str, dict[str, Any]]:
-        script = cls.generate_function_script(
-            dependencies=[start_date, end_date],
-            function_body=f"""
-                ZonedDateTime start = doc['{start_date}'].value;
-                ZonedDateTime end = doc['{end_date}'].value;
-                long differenceInMillis = ChronoUnit.{unit.upper()}.between(start, end);
-                emit(differenceInMillis);
-            """
-        )
-        return script, {}
-
-    @classmethod
-    def latest_date_script(
-        cls,
-        *,
-        date_fields: list[str],
-        allow_missing: bool = True
-    ) -> tuple[str, dict[str, Any]]:
-        deps = date_fields if not allow_missing else []
-        script = cls.generate_function_script(
-            dependencies=deps,
-            function_body="""
-                ZonedDateTime latestDate = null;
-                for (int i = 0; i < params.dates.size(); i++) {
-                    String dep = params.dates.get(i);
-                    if (doc.containsKey(dep) && doc[dep].size() > 0) {
-                        ZonedDateTime currentDate = doc[dep].value;
-                        if (latestDate == null || currentDate.isAfter(latestDate)) {
-                            latestDate = currentDate;
-                        }
-                    }
-                }
-                if (latestDate != null) {
-                    emit(latestDate.toInstant().toEpochMilli());
-                }
-            """
-        )
-        return script, {'dates': date_fields}
-
-    @classmethod
-    def math_script(
-        cls,
-        *,
-        first: str,
-        second: str,
-        operation: str = '/'
-    ) -> tuple[str, dict[str, Any]]:
-        script = cls.generate_function_script(
-            dependencies=[first, second],
-            function_body=f"""
-                emit(doc['{first}'].value {operation} doc['{second}'].value)
-            """
-        )
-        return script, {}
-
-    @classmethod
     def coalesce_script(
         cls,
         *,
@@ -186,6 +123,69 @@ class ElasticRuntimeFields(RuntimeFields):
             function_body=function_body
         )
         return script, {}
+
+    @classmethod
+    def math_script(
+        cls,
+        *,
+        first: str,
+        second: str,
+        operation: str = '/'
+    ) -> tuple[str, dict[str, Any]]:
+        script = cls.generate_function_script(
+            dependencies=[first, second],
+            function_body=f"""
+                emit(doc['{first}'].value {operation} doc['{second}'].value)
+            """
+        )
+        return script, {}
+
+    @classmethod
+    def date_interval_script(
+        cls,
+        *,
+        start_date: str,
+        end_date: str,
+        unit: str = 'days'
+    ) -> tuple[str, dict[str, Any]]:
+        script = cls.generate_function_script(
+            dependencies=[start_date, end_date],
+            function_body=f"""
+                ZonedDateTime start = doc['{start_date}'].value;
+                ZonedDateTime end = doc['{end_date}'].value;
+                long differenceInMillis = ChronoUnit.{unit.upper()}.between(start, end);
+                emit(differenceInMillis);
+            """
+        )
+        return script, {}
+
+    @classmethod
+    def latest_date_script(
+        cls,
+        *,
+        date_fields: list[str],
+        allow_missing: bool = True
+    ) -> tuple[str, dict[str, Any]]:
+        deps = date_fields if not allow_missing else []
+        script = cls.generate_function_script(
+            dependencies=deps,
+            function_body="""
+                ZonedDateTime latestDate = null;
+                for (int i = 0; i < params.dates.size(); i++) {
+                    String dep = params.dates.get(i);
+                    if (doc.containsKey(dep) && doc[dep].size() > 0) {
+                        ZonedDateTime currentDate = doc[dep].value;
+                        if (latestDate == null || currentDate.isAfter(latestDate)) {
+                            latestDate = currentDate;
+                        }
+                    }
+                }
+                if (latestDate != null) {
+                    emit(latestDate.toInstant().toEpochMilli());
+                }
+            """
+        )
+        return script, {'dates': date_fields}
 
     @classmethod
     def substring_script(

@@ -56,16 +56,15 @@ class RuntimeFields(ABC):
 
     @classmethod
     @abstractmethod
-    def date_interval_script(cls, *, start_date: str, end_date: str, unit: str = 'days') -> Any:
+    def coalesce_script(
+        cls,
+        *,
+        _return_type: str,
+        fields: list[str],
+        null_wins: bool = False,
+    ) -> Any:
         """
-        Generates the script for the date_interval function, in the format used in this datasource
-        """
-
-    @classmethod
-    @abstractmethod
-    def latest_date_script(cls, *, date_fields: list[str], allow_missing: bool = True) -> Any:
-        """
-        Generates the script for the latest_date function, in the format used in this datasource
+        Generates the script for the coalesce function, in the format used in this datasource
         """
 
     @classmethod
@@ -83,15 +82,16 @@ class RuntimeFields(ABC):
 
     @classmethod
     @abstractmethod
-    def coalesce_script(
-        cls,
-        *,
-        _return_type: str,
-        fields: list[str],
-        null_wins: bool = False,
-    ) -> Any:
+    def date_interval_script(cls, *, start_date: str, end_date: str, unit: str = 'days') -> Any:
         """
-        Generates the script for the coalesce function, in the format used in this datasource
+        Generates the script for the date_interval function, in the format used in this datasource
+        """
+
+    @classmethod
+    @abstractmethod
+    def latest_date_script(cls, *, date_fields: list[str], allow_missing: bool = True) -> Any:
+        """
+        Generates the script for the latest_date function, in the format used in this datasource
         """
 
     @classmethod
