@@ -23,7 +23,7 @@ def api(
     ds = create_api_datasource(
         api_url=f'{url}{api_path}',
         token=token,
-        data_prefix=f'{api_data_path}/{dataspace}',
+        data_prefix=f'{api_data_path}/{dataspace}' if dataspace else api_data_path,
         retries=retries
     )
     core_data_object(ds)
