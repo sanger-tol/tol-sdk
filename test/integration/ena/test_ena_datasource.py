@@ -133,3 +133,101 @@ class TestEnaDataSource(TestCase):
         obj4 = ret[3]
         self.assertEqual(obj4.id, 'GCA_922984935.2')
         self.assertEqual(obj4.sex, 'male')
+
+    def test_relationship_config(self):
+        eds = ena()
+
+        self.assertEqual(eds.relationship_config['assembly'].to_one['study'], 'study')
+        self.assertEqual(eds.relationship_config['assembly'].to_one['sample'], 'sample')
+        self.assertEqual(eds.relationship_config['assembly'].to_one['taxon'], 'taxon')
+        self.assertEqual(eds.relationship_config['assembly'].to_many['runs'], 'read_run')
+        self.assertEqual(
+            eds.relationship_config['read_run'].to_one['experiment'],
+            'read_experiment'
+        )
+        self.assertEqual(eds.relationship_config['read_experiment'].to_many['runs'], 'read_run')
+
+    def test_get_by_id_assembly(self):
+        eds = ena()
+
+        ret = eds.get_by_id('assembly', ['GCA_922984935.2'])
+        assembly = next(ret)
+
+        self.assertIsNotNone(assembly)
+        self.assertEqual(assembly.type, 'assembly')
+        self.assertEqual(assembly.id, 'GCA_922984935.2')
+        self.assertEqual(assembly.assembly_accession, 'GCA_922984935')
+        with self.assertRaises(StopIteration):
+            next(ret)
+
+    def test_get_to_one_relations_assembly(self):
+        eds = ena()
+        assembly = eds.get_one('assembly', 'GCA_922984935.2')
+
+        self.assertIsNotNone(assembly)
+        study = assembly.study
+        sample = assembly.sample
+        taxon = assembly.taxon
+
+        self.assertIsNotNone(study)
+        self.assertEqual(study.type, 'study')
+        self.assertEqual(study.id, 'PRJEB49353')
+        self.assertIsNotNone(sample)
+        self.assertEqual(sample.type, 'sample')
+        self.assertEqual(sample.id, 'SAMEA7524400')
+        self.assertIsNotNone(taxon)
+        self.assertEqual(taxon.type, 'taxon')
+        self.assertEqual(taxon.id, '9662')
+
+    def test_get_to_many_relations_assembly(self):
+        eds = ena()
+        assembly = eds.get_one('assembly', 'GCA_922984935.2')
+
+        self.assertIsNotNone(assembly)
+        runs = list(assembly.runs)
+        run_ids = [run.id for run in runs]
+        expected_ids = set(assembly.run_accession.split(';'))
+
+        self.assertTrue(runs)
+        self.assertEqual(set(run_ids), expected_ids)
+        self.assertEqual(len(run_ids), len(expected_ids))
+        self.assertIn('ERR6688402', run_ids)
+        for run in runs:
+            self.assertEqual(run.type, 'read_run')
+
+    def test_get_to_one_relations_read_run(self):
+        eds = ena()
+        run = eds.get_one('read_run', 'ERR6688402')
+
+        self.assertIsNotNone(run)
+        sample = run.sample
+        experiment = run.experiment
+
+        self.assertIsNotNone(sample)
+        self.assertEqual(sample.type, 'sample')
+        self.assertEqual(sample.id, 'SAMEA7524440')
+        self.assertIsNotNone(experiment)
+        self.assertEqual(experiment.type, 'read_experiment')
+        self.assertEqual(experiment.id, 'ERX6313171')
+        self.assertEqual(experiment.sample.id, sample.id)
+        self.assertEqual(experiment.study.type, 'study')
+        self.assertEqual(experiment.study.id, run.study_accession)
+        self.assertEqual(sample.taxon.type, 'taxon')
+        self.assertEqual(sample.taxon.id, run.tax_id)
+        self.assertEqual(run.instrument_platform, 'ILLUMINA')
+        self.assertEqual(run.library_strategy, 'Hi-C')
+        self.assertIn('library_name', run.attributes)
+        self.assertIn('library_construction_protocol', run.attributes)
+
+    def test_get_to_many_relations_read_experiment(self):
+        eds = ena()
+        experiment = eds.get_one('read_experiment', 'ERX6313171')
+
+        self.assertIsNotNone(experiment)
+        runs = list(experiment.runs)
+
+        self.assertTrue(runs)
+        self.assertIn('ERR6688402', [run.id for run in runs])
+        for run in runs:
+            self.assertEqual(run.type, 'read_run')
+            self.assertEqual(run.experiment_accession, experiment.id)
