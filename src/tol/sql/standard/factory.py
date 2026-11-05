@@ -515,9 +515,6 @@ def create_standard_models(
 
         id: Mapped[str] = mapped_column(primary_key=True)  # noqa A003
 
-        # Leave builtin_name and kwargs in to allow a migration period to direct/api
-        builtin_name: Mapped[str] = mapped_column(nullable=False)
-        kwargs: Mapped[dict] = mapped_column(JSONB, nullable=True)
         direct_name: Mapped[str] = mapped_column(nullable=False)
         direct_kwargs: Mapped[dict] = mapped_column(JSONB, nullable=True)
         api_name: Mapped[str] = mapped_column(nullable=False)
