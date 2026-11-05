@@ -115,7 +115,7 @@ class RuntimeFields(ABC):
     ) -> Any:
         """
         Generates the script for the max function, in the format used in this datasource
-        """    
+        """
 
     @classmethod
     @abstractmethod
