@@ -216,3 +216,16 @@ class TestRuntimeFields:
             }
         """.split())
         assert params == {}
+
+    def test_concatenate(self):
+        script, params = ElasticRuntimeFields.concatenate_script(
+            first='field1',
+            second='field2'
+        )
+        assert ''.join(script.split()) == ''.join("""
+            if (doc.containsKey('field1') && doc['field1'].size() > 0 &&
+                   doc.containsKey('field2') && doc['field2'].size() > 0) {
+                emit(doc['field1'].value + doc['field2'].value);
+            }
+        """.split())
+        assert params == {}

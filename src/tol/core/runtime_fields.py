@@ -143,3 +143,15 @@ class RuntimeFields(ABC):
         """
         Generates the script for the substring function, in the format used in this datasource
         """
+
+    @classmethod
+    @abstractmethod
+    def concatenate_script(
+        cls,
+        *,
+        first: str,
+        second: str
+    ) -> Any:
+        """
+        Generates the script for the concatenate function, in the format used in this datasource
+        """
