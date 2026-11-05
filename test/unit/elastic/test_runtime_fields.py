@@ -54,16 +54,17 @@ class TestRuntimeFields:
             },
         }
 
-    def test_math(self):
-        script, params = ElasticRuntimeFields.math_script(
-            first='field1',
-            second='field2',
-            operation='/'
+    def test_if(self):
+        script, params = ElasticRuntimeFields.if_script(
+            condition='field1',
+            value_if_true='field2',
+            value_if_false='field3'
         )
         assert ''.join(script.split()) == ''.join("""
-            if (doc.containsKey('field1') && doc['field1'].size() > 0
-                    && doc.containsKey('field2') && doc['field2'].size() > 0) {
-                emit(doc['field1'].value / doc['field2'].value)
+            if (doc['field1']) {
+                emit(doc['field2']);
+            } else {
+                emit(doc['field3']);
             }
         """.split())
         assert params == {}
@@ -114,6 +115,20 @@ class TestRuntimeFields:
         assert "for (def value : doc['field2'])" in script
         assert f'emit({conversion});' in script
         assert '}else if ' in script
+        assert params == {}
+
+    def test_math(self):
+        script, params = ElasticRuntimeFields.math_script(
+            first='field1',
+            second='field2',
+            operation='/'
+        )
+        assert ''.join(script.split()) == ''.join("""
+            if (doc.containsKey('field1') && doc['field1'].size() > 0
+                    && doc.containsKey('field2') && doc['field2'].size() > 0) {
+                emit(doc['field1'].value / doc['field2'].value)
+            }
+        """.split())
         assert params == {}
 
     def test_latest_date(self):

@@ -78,6 +78,26 @@ class ElasticRuntimeFields(RuntimeFields):
         return if_clause + (else_clause if function_default else '')
 
     @classmethod
+    def if_script(
+        cls,
+        *,
+        condition: str,
+        value_if_true: str,
+        value_if_false: str
+    ) -> tuple[str, dict[str, Any]]:
+        script = cls.generate_function_script(
+            dependencies=[condition, value_if_true, value_if_false],
+            function_body=f"""
+                if (doc[{condition}]) {{
+                    emit(doc['{value_if_true}']);
+                }} else {{
+                    emit(doc['{value_if_false}']);
+                }}
+            """
+        )
+        return script, {}
+
+    @classmethod
     def coalesce_script(
         cls,
         *,

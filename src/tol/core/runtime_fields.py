@@ -56,6 +56,19 @@ class RuntimeFields(ABC):
 
     @classmethod
     @abstractmethod
+    def if_script(
+        cls,
+        *,
+        condition: str,
+        value_if_true: str,
+        value_if_false: str,
+    ) -> Any:
+        """
+        Generates the script for the if function, in the format used in this datasource
+        """
+
+    @classmethod
+    @abstractmethod
     def coalesce_script(
         cls,
         *,
