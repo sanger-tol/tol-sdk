@@ -5,6 +5,8 @@
 import importlib
 from typing import Iterable, Iterator, cast
 
+from caseconverter import snakecase
+
 from dacite import from_dict
 
 from .data_object import DataObject
@@ -65,7 +67,10 @@ class DataSourceUtils:
             if not direct and datasource_instance.api_name  # The test is for the name being set
             else datasource_instance.direct_kwargs
         )
-        new_kwargs = dict(source_kwargs) if source_kwargs else {}
+        new_kwargs = {
+            snakecase(key): value
+            for key, value in source_kwargs.items()
+        } if source_kwargs else {}
         if kwargs:
             new_kwargs.update(kwargs)
         if datasource_config:

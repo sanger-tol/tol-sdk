@@ -13,6 +13,10 @@ SPDX-License-Identifier: MIT
 - Runtime fields are now no longer coupled to Elastic.  
   Because of this, every runtime field definition in the database now requires its return type
   to be specified.
+- Added integration test for PrefectDataSource
+- Added tol.sources.api()
+- Added ability to specify datasource kwargs as camelcase in db
+
 ## tol-sdk `3.0.3`
 
 - Add ENA read_experiment and analysis types, sequencing and assembly provenance relationships

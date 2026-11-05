@@ -4,13 +4,10 @@
 
 import os
 
+from .api import api
 from .defaults import Defaults
 from ..api_client import (
-    ApiDataSource,
-    create_api_datasource
-)
-from ..core import (
-    core_data_object
+    ApiDataSource
 )
 
 
@@ -19,13 +16,12 @@ def portal(
         dataspace: str = 'tol_production',
         **kwargs
 ) -> ApiDataSource:
-    portal = create_api_datasource(
-        api_url=os.getenv('PORTAL_URL', Defaults.PORTAL_URL)
-        + os.getenv('PORTAL_API_PATH', Defaults.PORTAL_API_PATH),
+    ds = api(
+        url=os.getenv('PORTAL_URL', Defaults.PORTAL_URL),
+        api_path=os.getenv('PORTAL_API_PATH', Defaults.PORTAL_API_PATH),
+        api_data_path=os.getenv('PORTAL_API_DATA_PATH', Defaults.PORTAL_API_DATA_PATH),
+        dataspace=dataspace,
         token=os.getenv('PORTAL_API_KEY'),
-        data_prefix=os.getenv('PORTAL_API_DATA_PATH', Defaults.PORTAL_API_DATA_PATH)
-        + f'/{dataspace}',
         retries=retries
     )
-    core_data_object(portal)
-    return portal
+    return ds

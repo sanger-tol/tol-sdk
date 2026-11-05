@@ -170,12 +170,17 @@ services:
       - ELASTIC_PASSWORD
       - ELASTIC_INDEX_PREFIX
       - QUASAR_URL
+      - QUASAR_API_KEY
       - RABBITMQ_HOST
       - RABBITMQ_PORT
       - RABBITMQ_USERNAME
       - RABBITMQ_PASSWORD
       - RABBITMQ_USE_SSL
       - APP_NAME
+      - PREFECT_URL
+      - PREFECT_API_PATH
+      - TEST_PREFECT_FLOW_NAME
+      - TEST_PREFECT_DEPLOYMENT_NAME
     networks:
       - api-base-test-network
 

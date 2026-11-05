@@ -4,23 +4,20 @@
 
 import os
 
+from .api import api
 from .defaults import Defaults
 from ..api_client import (
-    ApiDataSource,
-    create_api_datasource
-)
-from ..core import (
-    core_data_object
+    ApiDataSource
 )
 
 
 def bioscan(retries: int = 5, **kwargs) -> ApiDataSource:
-    bioscan = create_api_datasource(
-        api_url=os.getenv('BIOSCAN_URL', Defaults.BIOSCAN_URL)
-        + os.getenv('BIOSCAN_API_PATH', Defaults.BIOSCAN_API_PATH),
+    ds = api(
+        url=os.getenv('BIOSCAN_URL', Defaults.BIOSCAN_URL),
+        api_path=os.getenv('BIOSCAN_API_PATH', Defaults.BIOSCAN_API_PATH),
+        api_data_path=os.getenv('BIOSCAN_API_DATA_PATH', Defaults.BIOSCAN_API_DATA_PATH),
+        dataspace=None,
         token=os.getenv('BIOSCAN_API_KEY'),
-        data_prefix=os.getenv('BIOSCAN_API_DATA_PATH', Defaults.BIOSCAN_API_DATA_PATH),
         retries=retries
     )
-    core_data_object(bioscan)
-    return bioscan
+    return ds
