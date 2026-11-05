@@ -161,6 +161,16 @@ class ElasticRuntimeFields(RuntimeFields):
         return script, {}
 
     @classmethod
+    def min_script(cls, *, first: str, second: str) -> tuple[str, dict[str, Any]]:
+        script = cls.generate_function_script(
+            dependencies=[first, second],
+            function_body=f"""
+                emit(Math.min(doc['{first}'].value, doc['{second}'].value));
+            """
+        )
+        return script, {}
+
+    @classmethod
     def date_interval_script(
         cls,
         *,
