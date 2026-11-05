@@ -107,6 +107,18 @@ class RuntimeFields(ABC):
 
     @classmethod
     @abstractmethod
+    def max_script(
+        cls,
+        *,
+        first: str,
+        second: str,
+    ) -> Any:
+        """
+        Generates the script for the max function, in the format used in this datasource
+        """    
+
+    @classmethod
+    @abstractmethod
     def date_interval_script(cls, *, start_date: str, end_date: str, unit: str = 'days') -> Any:
         """
         Generates the script for the date_interval function, in the format used in this datasource

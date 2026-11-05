@@ -150,6 +150,19 @@ class TestRuntimeFields:
         """.split())
         assert params == {}
 
+    def test_max(self):
+        script, params = ElasticRuntimeFields.max_script(
+            first='field1',
+            second='field2'
+        )
+        assert ''.join(script.split()) == ''.join("""
+            if (doc.containsKey('field1') && doc['field1'].size() > 0
+                    && doc.containsKey('field2') && doc['field2'].size() > 0) {
+                emit(Math.max(doc['field1'].value, doc['field2'].value));
+            }
+        """.split())
+        assert params == {}
+
     def test_latest_date(self):
         script, params = ElasticRuntimeFields.latest_date_script(
             date_fields=['field1', 'field2'],
