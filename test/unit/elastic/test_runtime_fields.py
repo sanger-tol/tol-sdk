@@ -61,10 +61,16 @@ class TestRuntimeFields:
             value_if_false='field3'
         )
         assert ''.join(script.split()) == ''.join("""
-            if (doc['field1']) {
-                emit(doc['field2']);
-            } else {
-                emit(doc['field3']);
+            if (
+                doc.containsKey('field1') && doc['field1'].size() > 0 &&
+                doc.containsKey('field2') && doc['field2'].size() > 0 &&
+                doc.containsKey('field3') && doc['field3'].size() > 0
+            ) {
+                if (doc['field1']) {
+                    emit(doc['field2']);
+                } else {
+                    emit(doc['field3']);
+                }
             }
         """.split())
         assert params == {}
