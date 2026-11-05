@@ -245,9 +245,17 @@ class ElasticRuntimeFields(RuntimeFields):
         return script, {}
 
     @classmethod
-    def concatenate_script(cls, *, first: str, second: str) -> tuple[str, dict[str, Any]]:
+    def concatenate_script(
+        cls,
+        *,
+        _return_type='keyword',
+        first: str,
+        second: str
+    ) -> tuple[str, dict[str, Any]]:
+        keyword = '.keyword' if _return_type == 'keyword' else ''
+
         script = cls.generate_function_script(
-            dependencies=[first, second],
-            function_body=f"emit(doc['{first}'].value + doc['{second}'].value);"
+            dependencies=[f'{first}{keyword}', f'{second}{keyword}'],
+            function_body=f"emit(doc['{first}{keyword}'].value + doc['{second}{keyword}'].value);"
         )
         return script, {}
