@@ -10,7 +10,7 @@ from ..fixtures import api_elastic, elastic
 
 class TestRuntimeFields:
     @against(elastic, api_elastic)
-    def test_runtime_fields(self, data_source: OperableDataSource, ds_sleep):
+    def test_script_fields(self, data_source: OperableDataSource, ds_sleep):
         """
         Upsert a `DataObject` instance, and then query a runtime field
         """
@@ -32,9 +32,11 @@ class TestRuntimeFields:
         first = list(data_source.get_by_ids('root', ['1', '2']))
         assert len(first) == 2
         ret = first[0]
+        assert ret is not None
         assert ret.runtime_column is True
         assert ret.attributes['runtime_column'] is True
         ret = first[1]
+        assert ret is not None
         assert ret.runtime_column is False
         assert ret.attributes['runtime_column'] is False
 
