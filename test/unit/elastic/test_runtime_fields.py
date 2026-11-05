@@ -66,10 +66,10 @@ class TestRuntimeFields:
                 doc.containsKey('field2') && doc['field2'].size() > 0 &&
                 doc.containsKey('field3') && doc['field3'].size() > 0
             ) {
-                if (doc['field1']) {
-                    emit(doc['field2']);
+                if (doc['field1'].value) {
+                    emit(doc['field2'].value);
                 } else {
-                    emit(doc['field3']);
+                    emit(doc['field3'].value);
                 }
             }
         """.split())

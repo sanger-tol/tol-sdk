@@ -88,10 +88,10 @@ class ElasticRuntimeFields(RuntimeFields):
         script = cls.generate_function_script(
             dependencies=[condition, value_if_true, value_if_false],
             function_body=f"""
-                if (doc['{condition}']) {{
-                    emit(doc['{value_if_true}']);
+                if (doc['{condition}'].value) {{
+                    emit(doc['{value_if_true}'].value);
                 }} else {{
-                    emit(doc['{value_if_false}']);
+                    emit(doc['{value_if_false}'].value);
                 }}
             """
         )
