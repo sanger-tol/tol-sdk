@@ -81,10 +81,12 @@ class ElasticRuntimeFields(RuntimeFields):
     def if_script(
         cls,
         *,
+        _return_type='NOT REQUIRED FOR THIS FUNCTION',
         condition: str,
         value_if_true: str,
         value_if_false: str
     ) -> tuple[str, dict[str, Any]]:
+        del _return_type
         script = cls.generate_function_script(
             dependencies=[condition, value_if_true, value_if_false],
             function_body=f"""
@@ -148,10 +150,12 @@ class ElasticRuntimeFields(RuntimeFields):
     def math_script(
         cls,
         *,
+        _return_type='NOT REQUIRED FOR THIS FUNCTION',
         first: str,
         second: str,
         operation: str = '/'
     ) -> tuple[str, dict[str, Any]]:
+        del _return_type
         script = cls.generate_function_script(
             dependencies=[first, second],
             function_body=f"""
@@ -161,7 +165,15 @@ class ElasticRuntimeFields(RuntimeFields):
         return script, {}
 
     @classmethod
-    def min_script(cls, *, first: str, second: str) -> tuple[str, dict[str, Any]]:
+    def min_script(
+        cls,
+        *,
+        _return_type='NOT REQUIRED FOR THIS FUNCTION',
+        first:
+        str,
+        second: str
+    ) -> tuple[str, dict[str, Any]]:
+        del _return_type
         script = cls.generate_function_script(
             dependencies=[first, second],
             function_body=f"""
@@ -171,7 +183,14 @@ class ElasticRuntimeFields(RuntimeFields):
         return script, {}
 
     @classmethod
-    def max_script(cls, *, first: str, second: str) -> tuple[str, dict[str, Any]]:
+    def max_script(
+        cls,
+        *,
+        _return_type='NOT REQUIRED FOR THIS FUNCTION',
+        first: str,
+        second: str
+    ) -> tuple[str, dict[str, Any]]:
+        del _return_type
         script = cls.generate_function_script(
             dependencies=[first, second],
             function_body=f"""
@@ -184,10 +203,12 @@ class ElasticRuntimeFields(RuntimeFields):
     def date_interval_script(
         cls,
         *,
+        _return_type='NOT REQUIRED FOR THIS FUNCTION',
         start_date: str,
         end_date: str,
         unit: str = 'days'
     ) -> tuple[str, dict[str, Any]]:
+        del _return_type
         script = cls.generate_function_script(
             dependencies=[start_date, end_date],
             function_body=f"""
@@ -203,9 +224,11 @@ class ElasticRuntimeFields(RuntimeFields):
     def latest_date_script(
         cls,
         *,
+        _return_type='NOT REQUIRED FOR THIS FUNCTION',
         date_fields: list[str],
         allow_missing: bool = True
     ) -> tuple[str, dict[str, Any]]:
+        del _return_type
         deps = date_fields if not allow_missing else []
         script = cls.generate_function_script(
             dependencies=deps,
