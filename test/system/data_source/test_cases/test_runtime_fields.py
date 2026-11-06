@@ -80,7 +80,7 @@ class TestRuntimeFields:
     def test_if_function(
         self,
         data_source: OperableDataSource,
-        ds_sleep: Callable[[float], None] 
+        ds_sleep: Callable[[float], None]
     ):
         # Upsert data objects where half have the condition fulfilled and half do not
         data_objects = [
@@ -108,7 +108,7 @@ class TestRuntimeFields:
         assert ret is not None
         assert ret.if_runtime_field == 'second_1'
         assert ret.attributes['if_runtime_field'] == 'second_1'
-        
+
         # The second one should have its condition pass (`bool_column` is True)
         # so it have the value in `str_column`
         ret = first[1]
