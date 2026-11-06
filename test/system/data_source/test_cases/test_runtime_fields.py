@@ -122,3 +122,10 @@ class TestRuntimeFields:
         f.and_ = {'if_runtime_field': {'contains': {'value': 'first'}}}
         second = list(data_source.get_list('root', object_filters=f))
         assert len(second) == 5
+
+        # Do the same but with get_list_page.
+        # Half of them should have the condition fail
+        f = DataSourceFilter()
+        f.and_ = {'if_runtime_field': {'contains': {'value': 'second'}}}
+        third, _ = data_source.get_list_page('root', 1, object_filters=f, page_size=20)
+        assert len(list(third)) == 5
