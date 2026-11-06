@@ -115,3 +115,10 @@ class TestRuntimeFields:
         assert ret is not None
         assert ret.if_runtime_field == 'first_2'
         assert ret.attributes['if_runtime_field'] == 'first_2'
+
+        # Get list by runtime field query.
+        # Half of them should have the condition pass
+        f = DataSourceFilter()
+        f.and_ = {'if_runtime_field': {'contains': {'value': 'first'}}}
+        second = list(data_source.get_list('root', object_filters=f))
+        assert len(second) == 5
