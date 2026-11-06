@@ -79,7 +79,7 @@ def elastic_datasource(
                 type_='keyword',
                 function='coalesce',
                 function_kwargs={
-                    'fields': ['str_column.keyword', 'str_column_2.keyword'],
+                    'fields': ['str_column', 'str_column_2'],
                     # TODO Add null wins version
                 }
             )

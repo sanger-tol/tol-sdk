@@ -176,7 +176,7 @@ class TestRuntimeFields:
         ret = first[0]
         assert ret is not None
         assert ret.coalesce_runtime_field is None
-        assert ret.attributes['coalesce_runtime_field'] is None
+        assert 'coalesce_runtime_field' not in ret.attributes
 
         # The second one should resolve to the value of `str_column_2`
         # because 2 is divisible by 2 but not by 3
