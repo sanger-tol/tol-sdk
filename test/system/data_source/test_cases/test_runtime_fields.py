@@ -158,7 +158,7 @@ class TestRuntimeFields:
         data_source: OperableDataSource,
         ds_sleep: Callable[[float], None]
     ):
-        # Upsert data objects where half have the condition fulfilled and half do not
+        # Upsert data objects with different combinations of null and non-null columns
         data_objects = [
             data_source.data_object_factory(
                 'root',
