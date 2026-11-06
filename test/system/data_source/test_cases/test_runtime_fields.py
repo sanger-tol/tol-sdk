@@ -75,3 +75,43 @@ class TestRuntimeFields:
         assert fourth[3].script_runtime_field is False
         assert fourth[4].script_runtime_field is False
         assert fourth[5].script_runtime_field is False
+
+    @against(elastic, api_elastic)
+    def test_if_function(
+        self,
+        data_source: OperableDataSource,
+        ds_sleep: Callable[[float], None] 
+    ):
+        # Upsert data objects where half have the condition fulfilled and half do not
+        data_objects = [
+            data_source.data_object_factory(
+                'root',
+                str(id_),
+                attributes={
+                    'bool_column': True if id_ % 2 == 0 else False,
+                    'str_column': f'first_{id_}',
+                    'str_column_2': f'second_{id_}'
+                },
+            )
+            for id_ in range(10)
+        ]
+        data_source.upsert('root', data_objects, provenance='source1')
+        ds_sleep(2)
+
+        # Get by ID
+        first = list(data_source.get_by_ids('root', ['1', '2']))
+        assert len(first) == 2
+
+        # The first one should have its condition fail (`bool_column` is False)
+        # so it have the value in `str_column_2`
+        ret = first[0]
+        assert ret is not None
+        assert ret.if_runtime_field == 'second_1'
+        assert ret.attributes['if_runtime_field'] == 'second_1'
+        
+        # The second one should have its condition pass (`bool_column` is True)
+        # so it have the value in `str_column`
+        ret = first[1]
+        assert ret is not None
+        assert ret.if_runtime_field == 'first_2'
+        assert ret.attributes['if_runtime_field'] == 'first_2'

@@ -65,6 +65,15 @@ def elastic_datasource(
                         emit(!doc['bool_column'].value)
                     }
                 """
+            ),
+            'if_runtime_field': RuntimeField(
+                type_='keyword',
+                function='if',
+                function_kwargs={
+                    'condition': 'bool_column',
+                    'value_if_true': 'str_column.keyword',
+                    'value_if_false': 'str_column_2.keyword'
+                }
             )
         },
         'related': {
@@ -211,6 +220,7 @@ def upsert_archetypes(prefix: str) -> None:
         id='#YOLO',
         document={
             'str_column': 'abc',
+            'str_column_2': 'def',
             'int_column': 42,
             'datetime_column': datetime(2020, 1, 1, 0, 0, 0),
             'bool_column': True,
@@ -284,6 +294,7 @@ def upsert_archetypes(prefix: str) -> None:
         id='#REL',
         document={
             'str_column': 'abc',
+            'str_column_2': 'def',
             'int_column': 42,
             'datetime_column': datetime(2020, 1, 1, 0, 0, 0),
             'bool_column': True,
