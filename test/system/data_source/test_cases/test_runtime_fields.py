@@ -66,15 +66,21 @@ class TestRuntimeFields:
 
         # Perform a get_list filtered on a different field, then check the runtime field
         f = DataSourceFilter()
-        f.and_ = {'bool_column': {'eq': {'value': True}}}
+        f.and_ = {
+            'bool_column': {'eq': {'value': True}},
+            # Exclude archetypes
+            'id': {
+                'exists': {},
+                'contains': {'value': '#', 'negate': True}
+            },
+        }
         fourth = list(data_source.get_list('root', object_filters=f))
-        assert len(fourth) == 6  # 5 plus archetype
+        assert len(fourth) == 5
         assert fourth[0].script_runtime_field is False
         assert fourth[1].script_runtime_field is False
         assert fourth[2].script_runtime_field is False
         assert fourth[3].script_runtime_field is False
         assert fourth[4].script_runtime_field is False
-        assert fourth[5].script_runtime_field is False
 
     @against(elastic, api_elastic)
     def test_if_function(
