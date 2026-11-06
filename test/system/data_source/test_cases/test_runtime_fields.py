@@ -192,39 +192,20 @@ class TestRuntimeFields:
         assert ret.coalesce_runtime_field == 'first_6'
         assert ret.attributes['coalesce_runtime_field'] == 'first_6'
 
+        # Get list by runtime field query.
+        # As we're filtering the *coalesced* result, the only IDs that should resolve to the
+        # second field are 2, 4, and 8.
+        f = DataSourceFilter()
+        f.and_ = {'coalesce_runtime_field': {'contains': {'value': 'second'}}}
+        second = list(data_source.get_list('root', object_filters=f))
+        print([obj.id for obj in second])
+        assert len(second) == 3
 
-
-
-
-        # # The first one should fall back to the value of `str_column_2` because `str_column`
-        # # is None
-        # # The first one should have its condition fail (`bool_column` is False)
-        # # so it have the value in `str_column_2`
-        # ret = first[0]
-        # assert ret is not None
-        # assert ret.if_runtime_field == 'second_1'
-        # assert ret.attributes['if_runtime_field'] == 'second_1'
-
-        # # The second one should have its condition pass (`bool_column` is True)
-        # # so it have the value in `str_column`
-        # ret = first[1]
-        # assert ret is not None
-        # assert ret.if_runtime_field == 'first_2'
-        # assert ret.attributes['if_runtime_field'] == 'first_2'
-
-        # # Get list by runtime field query.
-        # # Half of them should have the condition pass
-        # f = DataSourceFilter()
-        # f.and_ = {'if_runtime_field': {'contains': {'value': 'first'}}}
-        # second = list(data_source.get_list('root', object_filters=f))
-        # assert len(second) == 5
-
-        # # Do the same but with get_list_page.
-        # # Half of them should have the condition fail
-        # f = DataSourceFilter()
-        # f.and_ = {'if_runtime_field': {'contains': {'value': 'second'}}}
-        # third, _ = data_source.get_list_page('root', 1, object_filters=f, page_size=20)
-        # assert len(list(third)) == 5
+        # Do the same but with get_list_page
+        f = DataSourceFilter()
+        f.and_ = {'coalesce_runtime_field': {'contains': {'value': 'second'}}}
+        third, _ = data_source.get_list_page('root', 1, object_filters=f, page_size=20)
+        assert len(list(third)) == 3
 
         # # Perform a get_list filtered on a different field, then check the runtime field
         # f = DataSourceFilter()
