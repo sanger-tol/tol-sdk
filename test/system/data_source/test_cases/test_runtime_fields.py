@@ -64,7 +64,7 @@ class TestRuntimeFields:
         third, _ = data_source.get_list_page('root', 1, object_filters=f, page_size=20)
         assert len(list(third)) == 5
 
-        # Get list and check runtime field
+        # Perform a get_list filtered on a different field, then check the runtime field
         f = DataSourceFilter()
         f.and_ = {'bool_column': {'eq': {'value': True}}}
         fourth = list(data_source.get_list('root', object_filters=f))
@@ -129,3 +129,19 @@ class TestRuntimeFields:
         f.and_ = {'if_runtime_field': {'contains': {'value': 'second'}}}
         third, _ = data_source.get_list_page('root', 1, object_filters=f, page_size=20)
         assert len(list(third)) == 5
+
+        # Perform a get_list filtered on a different field, then check the runtime field
+        f = DataSourceFilter()
+        f.and_ = {
+            'bool_column': {'eq': {'value': True}},
+            # Exclude archetypes
+            'id': {
+                'exists': {},
+                'contains': {'value': '#', 'negate': True}
+            },
+        }
+        fourth = list(data_source.get_list('root', object_filters=f))
+        assert len(fourth) == 5
+        for obj in fourth:
+            assert type(obj.if_runtime_field) == str
+            assert 'first' in obj.if_runtime_field
