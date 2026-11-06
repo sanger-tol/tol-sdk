@@ -159,7 +159,8 @@ class TestRuntimeFields:
                 str(id_),
                 attributes={
                     'str_column': f'first_{id_}' if id_ % 3 == 0 else None,
-                    'str_column_2': f'second_{id_}' if id_ % 2 == 0 else None
+                    'str_column_2': f'second_{id_}' if id_ % 2 == 0 else None,
+                    'bool_column': True if id_ % 2 == 0 else False
                 },
             )
             for id_ in range(10)
@@ -207,18 +208,20 @@ class TestRuntimeFields:
         third, _ = data_source.get_list_page('root', 1, object_filters=f, page_size=20)
         assert len(list(third)) == 3
 
-        # # Perform a get_list filtered on a different field, then check the runtime field
-        # f = DataSourceFilter()
-        # f.and_ = {
-        #     'bool_column': {'eq': {'value': True}},
-        #     # Exclude archetypes
-        #     'id': {
-        #         'exists': {},
-        #         'contains': {'value': '#', 'negate': True}
-        #     },
-        # }
-        # fourth = list(data_source.get_list('root', object_filters=f))
-        # assert len(fourth) == 5
-        # for obj in fourth:
-        #     assert type(obj.if_runtime_field) == str
-        #     assert 'first' in obj.if_runtime_field
+        # Perform a get_list filtered on a different field, then check the runtime field
+        f = DataSourceFilter()
+        f.and_ = {
+            'bool_column': {'eq': {'value': True}},
+            # Exclude archetypes
+            'id': {
+                'exists': {},
+                'contains': {'value': '#', 'negate': True}
+            },
+        }
+        fourth = list(data_source.get_list('root', object_filters=f))
+        assert len(fourth) == 5
+        assert fourth[0].coalesce_runtime_field == 'first_0'   # id 0
+        assert fourth[1].coalesce_runtime_field == 'second_2'  # id 2
+        assert fourth[2].coalesce_runtime_field == 'second_4'  # id 4
+        assert fourth[3].coalesce_runtime_field == 'first_6'   # id 6
+        assert fourth[4].coalesce_runtime_field == 'second_8'  # id 8
