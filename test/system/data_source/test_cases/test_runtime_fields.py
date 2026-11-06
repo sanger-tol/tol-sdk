@@ -2,6 +2,8 @@
 #
 # SPDX-License-Identifier: MIT
 
+from collections.abc import Callable
+
 from tol.core import DataSourceFilter, OperableDataSource
 
 from ..dec import against
@@ -10,10 +12,22 @@ from ..fixtures import api_elastic, elastic
 
 class TestRuntimeFields:
     @against(elastic, api_elastic)
-    def test_script_fields(self, data_source: OperableDataSource, ds_sleep):
+    def test_script_field(
+        self,
+        data_source: OperableDataSource,
+        ds_sleep: Callable[[float], None]
+    ):
         """
-        Upsert a `DataObject` instance, and then query a runtime field
+        Test a script runtime field.
+        
+        Tests against the `runtime_column` column in the archetype, which is a boolean that's
+        the opposite of whatever `bool_column` holds.
+        This test upserts data objects, then checks that the runtime field functions correctly
+        when fetching data.
         """
+        # Upsert some data objects to the elastic index.
+        # They each have a value for `bool_column`, which is a dependency of the `runtime_column`
+        # runtime field that will be queried
         data_objects = [
             data_source.data_object_factory(
                 'root',
