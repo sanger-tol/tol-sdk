@@ -74,6 +74,14 @@ def elastic_datasource(
                     'value_if_true': 'str_column.keyword',
                     'value_if_false': 'str_column_2.keyword'
                 }
+            ),
+            'coalesce_runtime_field': RuntimeField(
+                type_='keyword',
+                function='coalesce',
+                function_kwargs={
+                    'fields': ['str_column.keyword', 'str_column_2.keyword'],
+                    # TODO Add null wins version
+                }
             )
         },
         'related': {
