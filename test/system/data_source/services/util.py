@@ -58,7 +58,7 @@ def elastic_datasource(
     }
     rtf: dict[str, dict[str, RuntimeField]] = {
         'root': {
-            'runtime_column': RuntimeField(
+            'script_runtime_field': RuntimeField(
                 type_='boolean',
                 script="""
                     if (doc.containsKey('bool_column') && doc['bool_column'].size() > 0) {

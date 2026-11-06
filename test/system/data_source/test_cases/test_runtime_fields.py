@@ -20,14 +20,14 @@ class TestRuntimeFields:
         """
         Test a script runtime field.
         
-        Tests against the `runtime_column` column in the archetype, which is a boolean that's
+        Tests against the `script_runtime_field` column in the archetype, which is a boolean that's
         the opposite of whatever `bool_column` holds.
         This test upserts data objects, then checks that the runtime field functions correctly
         when fetching data.
         """
         # Upsert some data objects to the elastic index.
-        # They each have a value for `bool_column`, which is a dependency of the `runtime_column`
-        # runtime field that will be queried
+        # They each have a value for `bool_column`, which is a dependency of the
+        # `script_runtime_field` runtime field that will be queried
         data_objects = [
             data_source.data_object_factory(
                 'root',
@@ -47,16 +47,16 @@ class TestRuntimeFields:
         assert len(first) == 2
         ret = first[0]
         assert ret is not None
-        assert ret.runtime_column is True
-        assert ret.attributes['runtime_column'] is True
+        assert ret.script_runtime_field is True
+        assert ret.attributes['script_runtime_field'] is True
         ret = first[1]
         assert ret is not None
-        assert ret.runtime_column is False
-        assert ret.attributes['runtime_column'] is False
+        assert ret.script_runtime_field is False
+        assert ret.attributes['script_runtime_field'] is False
 
         # Get list by runtime field query
         f = DataSourceFilter()
-        f.and_ = {'runtime_column': {'eq': {'value': True}}}
+        f.and_ = {'script_runtime_field': {'eq': {'value': True}}}
         second = list(data_source.get_list('root', object_filters=f))
         assert len(second) == 5
 
@@ -69,9 +69,9 @@ class TestRuntimeFields:
         f.and_ = {'bool_column': {'eq': {'value': True}}}
         fourth = list(data_source.get_list('root', object_filters=f))
         assert len(fourth) == 6  # 5 plus archetype
-        assert fourth[0].runtime_column is False
-        assert fourth[1].runtime_column is False
-        assert fourth[2].runtime_column is False
-        assert fourth[3].runtime_column is False
-        assert fourth[4].runtime_column is False
-        assert fourth[5].runtime_column is False
+        assert fourth[0].script_runtime_field is False
+        assert fourth[1].script_runtime_field is False
+        assert fourth[2].script_runtime_field is False
+        assert fourth[3].script_runtime_field is False
+        assert fourth[4].script_runtime_field is False
+        assert fourth[5].script_runtime_field is False
