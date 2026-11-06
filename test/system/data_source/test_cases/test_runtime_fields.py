@@ -19,7 +19,7 @@ class TestRuntimeFields:
     ):
         """
         Test a script runtime field.
-        
+
         Tests against the `script_runtime_field` column in the archetype, which is a boolean that's
         the opposite of whatever `bool_column` holds.
         This test upserts data objects, then checks that the runtime field functions correctly
