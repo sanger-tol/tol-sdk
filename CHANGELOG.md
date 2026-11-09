@@ -15,6 +15,7 @@ SPDX-License-Identifier: MIT
   - `min`
   - `max`
   - `concatenate`
+- Added system tests for runtime fields
 
 ## tol-sdk `4.0.0`
 
