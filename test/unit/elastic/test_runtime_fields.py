@@ -212,7 +212,9 @@ class TestRuntimeFields:
         )
         assert ''.join(script.split()) == ''.join("""
             if (doc.containsKey('field1.keyword') && doc['field1.keyword'].size() > 0) {
-                emit(doc['field1.keyword'].value.substring(0, 5));
+                String value = doc['field1.keyword'].value;
+                emit(value.substring(0 < value.length() ? 0 : value.length(),
+                                     5 < value.length() ? 5 : value.length()));
             }
         """.split())
         assert params == {}

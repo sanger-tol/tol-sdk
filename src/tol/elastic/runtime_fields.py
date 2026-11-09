@@ -259,11 +259,16 @@ class ElasticRuntimeFields(RuntimeFields):
         start: int,
         end: int,
     ) -> tuple[str, dict[str, Any]]:
+        """Extract a substring, clamping indices to the available string length."""
         keyword = '.keyword' if _return_type == 'keyword' else ''
 
         script = cls.generate_function_script(
             dependencies=[f'{field}{keyword}'],
-            function_body=f"emit(doc['{field}{keyword}'].value.substring({start}, {end}));"
+            function_body=f"""
+                String value = doc['{field}{keyword}'].value;
+                emit(value.substring({start} < value.length() ? {start} : value.length(),
+                                     {end} < value.length() ? {end} : value.length()));
+            """
         )
         return script, {}
 
