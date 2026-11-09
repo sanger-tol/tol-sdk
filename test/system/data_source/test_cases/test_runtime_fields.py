@@ -4,6 +4,7 @@
 
 from collections.abc import Callable
 from datetime import datetime, timedelta, timezone
+from typing import Any
 
 from tol.core import DataObject, DataSourceFilter, OperableDataSource
 
@@ -12,6 +13,33 @@ from ..fixtures import api_elastic, elastic
 
 
 class TestRuntimeFields:
+    def upsert_data_objects(
+        self,
+        data_source: OperableDataSource,
+        ds_sleep: Callable[[float], None],
+        *,
+        attributes: Callable[[int], dict[str, Any]]
+    ) -> None:
+        """
+        To be called to set up each test.
+
+        Upserts 10 data objects into the Elastic index, where the bool_column alternates
+        between True and False, and they also have the attributes provided (based on their ID).
+        """
+        data_objects = [
+            data_source.data_object_factory(
+                'root',
+                str(id_),
+                attributes={
+                    'bool_column': True if id_ % 2 == 0 else False,
+                    **attributes(id_)
+                },
+            )
+            for id_ in range(10)
+        ]
+        data_source.upsert('root', data_objects, provenance='source1')
+        ds_sleep(2)
+
     def get_every_other_data_object(self, data_source: OperableDataSource) -> list[DataObject]:
         """
         The upserted data objects have bool_column be True on records with even IDs.
@@ -42,22 +70,13 @@ class TestRuntimeFields:
         This test upserts data objects, then checks that the runtime field functions correctly
         when fetching data.
         """
-        # Upsert some data objects to the elastic index.
-        # They each have a value for `bool_column`, which is a dependency of the
-        # `script_runtime_field` runtime field that will be queried
-        data_objects = [
-            data_source.data_object_factory(
-                'root',
-                str(id_),
-                attributes={
-                    'str_column': f'test_{id_}',
-                    'bool_column': True if id_ % 2 == 0 else False,
-                },
-            )
-            for id_ in range(10)
-        ]
-        data_source.upsert('root', data_objects, provenance='source1')
-        ds_sleep(2)
+        self.upsert_data_objects(
+            data_source,
+            ds_sleep,
+            attributes=lambda id_ : {
+                'str_column': f'test_{id_}'
+            }
+        )
 
         # Get by ID
         first = list(data_source.get_by_ids('root', ['1', '2']))
@@ -97,20 +116,14 @@ class TestRuntimeFields:
         ds_sleep: Callable[[float], None]
     ):
         # Upsert data objects where half have the condition fulfilled and half do not
-        data_objects = [
-            data_source.data_object_factory(
-                'root',
-                str(id_),
-                attributes={
-                    'bool_column': True if id_ % 2 == 0 else False,
-                    'str_column': f'first_{id_}',
-                    'str_column_2': f'second_{id_}'
-                },
-            )
-            for id_ in range(10)
-        ]
-        data_source.upsert('root', data_objects, provenance='source1')
-        ds_sleep(2)
+        self.upsert_data_objects(
+            data_source,
+            ds_sleep,
+            attributes=lambda id_ : {
+                'str_column': f'first_{id_}',
+                'str_column_2': f'second_{id_}'
+            }
+        )
 
         # Get by ID
         first = list(data_source.get_by_ids('root', ['1', '2']))
@@ -158,20 +171,14 @@ class TestRuntimeFields:
         ds_sleep: Callable[[float], None]
     ):
         # Upsert data objects with different combinations of null and non-null columns
-        data_objects = [
-            data_source.data_object_factory(
-                'root',
-                str(id_),
-                attributes={
-                    'str_column': f'first_{id_}' if id_ % 3 == 0 else None,
-                    'str_column_2': f'second_{id_}' if id_ % 2 == 0 else None,
-                    'bool_column': True if id_ % 2 == 0 else False
-                },
-            )
-            for id_ in range(10)
-        ]
-        data_source.upsert('root', data_objects, provenance='source1')
-        ds_sleep(2)
+        self.upsert_data_objects(
+            data_source,
+            ds_sleep,
+            attributes=lambda id_ : {
+                'str_column': f'first_{id_}' if id_ % 3 == 0 else None,
+                'str_column_2': f'second_{id_}' if id_ % 2 == 0 else None
+            }
+        )
 
         # Get by ID
         first = list(data_source.get_by_ids('root', ['1', '2', '6']))
@@ -228,21 +235,14 @@ class TestRuntimeFields:
         data_source: OperableDataSource,
         ds_sleep: Callable[[float], None]
     ):
-        # Upsert data objects
-        data_objects = [
-            data_source.data_object_factory(
-                'root',
-                str(id_),
-                attributes={
-                    'int_column': 144,
-                    'double_column': float(id_),
-                    'bool_column': True if id_ % 2 == 0 else False
-                },
-            )
-            for id_ in range(10)
-        ]
-        data_source.upsert('root', data_objects, provenance='source1')
-        ds_sleep(2)
+        self.upsert_data_objects(
+            data_source,
+            ds_sleep,
+            attributes=lambda id_ : {
+                'int_column': 144,
+                'double_column': float(id_)
+            }
+        )
 
         # Get by ID
         first = list(data_source.get_by_ids('root', ['0', '2', '6']))
@@ -312,21 +312,14 @@ class TestRuntimeFields:
         data_source: OperableDataSource,
         ds_sleep: Callable[[float], None]
     ):
-        # Upsert data objects
-        data_objects = [
-            data_source.data_object_factory(
-                'root',
-                str(id_),
-                attributes={
-                    'int_column': 5,
-                    'double_column': float(id_),
-                    'bool_column': True if id_ % 2 == 0 else False
-                },
-            )
-            for id_ in range(10)
-        ]
-        data_source.upsert('root', data_objects, provenance='source1')
-        ds_sleep(2)
+        self.upsert_data_objects(
+            data_source,
+            ds_sleep,
+            attributes=lambda id_ : {
+                'int_column': 5,
+                'double_column': float(id_)
+            }
+        )
 
         # Get by ID
         first = list(data_source.get_by_ids('root', ['1', '5', '8']))
@@ -393,21 +386,14 @@ class TestRuntimeFields:
         data_source: OperableDataSource,
         ds_sleep: Callable[[float], None]
     ):
-        # Upsert data objects
-        data_objects = [
-            data_source.data_object_factory(
-                'root',
-                str(id_),
-                attributes={
-                    'int_column': 5,
-                    'double_column': float(id_),
-                    'bool_column': True if id_ % 2 == 0 else False
-                },
-            )
-            for id_ in range(10)
-        ]
-        data_source.upsert('root', data_objects, provenance='source1')
-        ds_sleep(2)
+        self.upsert_data_objects(
+            data_source,
+            ds_sleep,
+            attributes=lambda id_ : {
+                'int_column': 5,
+                'double_column': float(id_)
+            }
+        )
 
         # Get by ID
         first = list(data_source.get_by_ids('root', ['1', '5', '8']))
@@ -474,22 +460,16 @@ class TestRuntimeFields:
         data_source: OperableDataSource,
         ds_sleep: Callable[[float], None]
     ):
-        # Upsert objects with day intervals matching their IDs, crossing a leap day.
+        # Upsert objects with day intervals matching their IDs, crossing a leap day
         start = datetime(2020, 2, 27)
-        data_objects = [
-            data_source.data_object_factory(
-                'root',
-                str(id_),
-                attributes={
-                    'datetime_column': start,
-                    'datetime_column_2': start + timedelta(days=id_),
-                    'bool_column': True if id_ % 2 == 0 else False
-                },
-            )
-            for id_ in range(10)
-        ]
-        data_source.upsert('root', data_objects, provenance='source1')
-        ds_sleep(2)
+        self.upsert_data_objects(
+            data_source,
+            ds_sleep,
+            attributes=lambda id_ : {
+                'datetime_column': start,
+                'datetime_column_2': start + timedelta(days=id_)
+            }
+        )
 
         # Get by ID
         first = list(data_source.get_by_ids('root', ['0', '2', '6']))
@@ -555,27 +535,21 @@ class TestRuntimeFields:
         ds_sleep: Callable[[float], None]
     ):
         # Upsert objects where either column can hold the latest date.
-        # ID 0 has neither date, ID 1 only the first, and ID 2 only the second.
+        # ID 0 has neither date, ID 1 only the first, and ID 2 only the second
         start = datetime(2020, 2, 27, tzinfo=timezone.utc)
-        data_objects = [
-            data_source.data_object_factory(
-                'root',
-                str(id_),
-                attributes={
-                    'datetime_column': (
-                        start + timedelta(days=id_) if id_ not in (0, 2) else None
-                    ),
-                    'datetime_column_2': (
-                        start + timedelta(days=id_ - 1 if id_ % 2 == 0 else id_ + 1)
-                        if id_ not in (0, 1) else None
-                    ),
-                    'bool_column': True if id_ % 2 == 0 else False
-                },
-            )
-            for id_ in range(10)
-        ]
-        data_source.upsert('root', data_objects, provenance='source1')
-        ds_sleep(2)
+        self.upsert_data_objects(
+            data_source,
+            ds_sleep,
+            attributes=lambda id_ : {
+                'datetime_column': (
+                    start + timedelta(days=id_) if id_ not in (0, 2) else None
+                ),
+                'datetime_column_2': (
+                    start + timedelta(days=id_ - 1 if id_ % 2 == 0 else id_ + 1)
+                    if id_ not in (0, 1) else None
+                )
+            }
+        )
 
         # Get by ID: check missing dates, each single-date case, and both column orders.
         first = list(data_source.get_by_ids('root', ['0', '1', '2', '3', '4']))
@@ -649,20 +623,14 @@ class TestRuntimeFields:
         ds_sleep: Callable[[float], None]
     ):
         # Upsert strings whose first character is A for even IDs and B for odd IDs.
-        # The remaining characters should not appear in the runtime field.
-        data_objects = [
-            data_source.data_object_factory(
-                'root',
-                str(id_),
-                attributes={
-                    'str_column': f'{"A" if id_ % 2 == 0 else "B"}_value_{id_}',
-                    'bool_column': True if id_ % 2 == 0 else False
-                },
-            )
-            for id_ in range(10)
-        ]
-        data_source.upsert('root', data_objects, provenance='source1')
-        ds_sleep(2)
+        # The remaining characters should not appear in the runtime field
+        self.upsert_data_objects(
+            data_source,
+            ds_sleep,
+            attributes=lambda id_ : {
+                'str_column': f'{"A" if id_ % 2 == 0 else "B"}_value_{id_}'
+            }
+        )
 
         # Get by ID
         first = list(data_source.get_by_ids('root', ['1', '2', '6']))
@@ -755,21 +723,15 @@ class TestRuntimeFields:
         ds_sleep: Callable[[float], None]
     ):
         # Upsert strings with different prefixes for even and odd IDs.
-        # Include the separator in the first field: concatenate should not add one.
-        data_objects = [
-            data_source.data_object_factory(
-                'root',
-                str(id_),
-                attributes={
-                    'str_column': 'even_' if id_ % 2 == 0 else 'odd_',
-                    'str_column_2': f'value_{id_}',
-                    'bool_column': True if id_ % 2 == 0 else False
-                },
-            )
-            for id_ in range(10)
-        ]
-        data_source.upsert('root', data_objects, provenance='source1')
-        ds_sleep(2)
+        # Include the separator in the first field: concatenate should not add one
+        self.upsert_data_objects(
+            data_source,
+            ds_sleep,
+            attributes=lambda id_ : {
+                'str_column': 'even_' if id_ % 2 == 0 else 'odd_',
+                'str_column_2': f'value_{id_}'
+            }
+        )
 
         # Get by ID
         first = list(data_source.get_by_ids('root', ['1', '2', '6']))
