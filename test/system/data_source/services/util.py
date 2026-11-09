@@ -82,6 +82,15 @@ def elastic_datasource(
                     'fields': ['str_column', 'str_column_2'],
                     # TODO Add null wins version
                 }
+            ),
+            'math_runtime_field': RuntimeField(
+                type_='double',
+                function='math',
+                function_kwargs={
+                    'first': 'int_column',
+                    'second': 'double_column',
+                    'operation': '/'
+                }
             )
         },
         'related': {
@@ -230,6 +239,7 @@ def upsert_archetypes(prefix: str) -> None:
             'str_column': 'abc',
             'str_column_2': 'def',
             'int_column': 42,
+            'double_column': 7.0,
             'datetime_column': datetime(2020, 1, 1, 0, 0, 0),
             'bool_column': True,
             'list_column': ['item'],
@@ -304,6 +314,7 @@ def upsert_archetypes(prefix: str) -> None:
             'str_column': 'abc',
             'str_column_2': 'def',
             'int_column': 42,
+            'double_column': 7.0,
             'datetime_column': datetime(2020, 1, 1, 0, 0, 0),
             'bool_column': True,
             'list_column': ['item'],
