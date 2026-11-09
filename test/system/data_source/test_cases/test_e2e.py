@@ -1260,9 +1260,21 @@ class TestEndToEnd:
         cnt = data_source.get_count('root', object_filters=f)
         assert cnt == 3
 
+    # TODO Move this code to the end of test_count when runtime fields are on SQL sources
+    @against(elastic, api_elastic)
+    def test_runtime_count(self, data_source: OperableDataSource, ds_sleep):
+        data_objects = [
+            data_source.data_object_factory(
+                'root', str(id_), attributes={'bool_column': id_ % 2 == 0}
+            )
+            for id_ in range(10)
+        ]
+        data_source.upsert('root', data_objects, provenance='source1')
+        ds_sleep(2)
+
         # Count with filter on runtime field
         f = DataSourceFilter()
-        f.and_ = {'runtime_column': {'eq': {'value': True}}}
+        f.and_ = {'script_runtime_field': {'eq': {'value': True}}}
 
         cnt = data_source.get_count('root', object_filters=f)
         assert cnt == 5
