@@ -3,6 +3,7 @@
 # SPDX-License-Identifier: MIT
 
 from collections.abc import Callable
+from datetime import datetime, timedelta
 from typing import Any
 
 from tol.core import DataSourceFilter, OperableDataSource
@@ -505,3 +506,92 @@ class TestRuntimeFields:
         assert fourth[2].min_runtime_field == 5  # id 4
         assert fourth[3].min_runtime_field == 6  # id 6
         assert fourth[4].min_runtime_field == 8  # id 8
+
+    @against(elastic, api_elastic)
+    def test_date_interval_function(
+        self,
+        data_source: OperableDataSource,
+        ds_sleep: Callable[[float], None]
+    ):
+        # Upsert objects with day intervals matching their IDs, crossing a leap day.
+        start = datetime(2020, 2, 27)
+        data_objects = [
+            data_source.data_object_factory(
+                'root',
+                str(id_),
+                attributes={
+                    'datetime_column': start,
+                    'datetime_column_2': start + timedelta(days=id_),
+                    'bool_column': True if id_ % 2 == 0 else False
+                },
+            )
+            for id_ in range(10)
+        ]
+        data_source.upsert('root', data_objects, provenance='source1')
+        ds_sleep(2)
+
+        # Get by ID
+        first = list(data_source.get_by_ids('root', ['0', '2', '6']))
+        assert len(first) == 3
+
+        # The first one has identical dates, so the interval should be zero.
+        ret = first[0]
+        assert ret is not None
+        assert ret.date_interval_runtime_field == 0
+        assert ret.attributes['date_interval_runtime_field'] == 0
+
+        # The second interval ends on February 29, two days after the start.
+        ret = first[1]
+        assert ret is not None
+        assert ret.date_interval_runtime_field == 2
+        assert ret.attributes['date_interval_runtime_field'] == 2
+
+        # The third interval crosses into March and should be six days.
+        ret = first[2]
+        assert ret is not None
+        assert ret.date_interval_runtime_field == 6
+        assert ret.attributes['date_interval_runtime_field'] == 6
+
+        # Get list by runtime field query: half the intervals should be less than five days.
+        f = DataSourceFilter()
+        f.and_ = {
+            'date_interval_runtime_field': {'lt': {'value': 5}},
+            # Exclude archetypes
+            'id': {
+                'exists': {},
+                'contains': {'value': '#', 'negate': True}
+            },
+        }
+        second = list(data_source.get_list('root', object_filters=f))
+        assert len(second) == 5
+
+        # Do the same with get_list_page, checking intervals of at least five days.
+        f = DataSourceFilter()
+        f.and_ = {
+            'date_interval_runtime_field': {'gte': {'value': 5}},
+            # Exclude archetypes
+            'id': {
+                'exists': {},
+                'contains': {'value': '#', 'negate': True}
+            },
+        }
+        third, _ = data_source.get_list_page('root', 1, object_filters=f, page_size=20)
+        assert len(list(third)) == 5
+
+        # Filter on a different field, then check the runtime field for the even IDs.
+        f = DataSourceFilter()
+        f.and_ = {
+            'bool_column': {'eq': {'value': True}},
+            # Exclude archetypes
+            'id': {
+                'exists': {},
+                'contains': {'value': '#', 'negate': True}
+            },
+        }
+        fourth = list(data_source.get_list('root', object_filters=f))
+        assert len(fourth) == 5
+        assert fourth[0].date_interval_runtime_field == 0  # id 0
+        assert fourth[1].date_interval_runtime_field == 2  # id 2
+        assert fourth[2].date_interval_runtime_field == 4  # id 4
+        assert fourth[3].date_interval_runtime_field == 6  # id 6
+        assert fourth[4].date_interval_runtime_field == 8  # id 8

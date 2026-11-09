@@ -107,6 +107,15 @@ def elastic_datasource(
                     'first': 'int_column',
                     'second': 'double_column'
                 }
+            ),
+            'date_interval_runtime_field': RuntimeField(
+                type_='long',
+                function='date_interval',
+                function_kwargs={
+                    'start_date': 'datetime_column',
+                    'end_date': 'datetime_column_2',
+                    'unit': 'days'
+                }
             )
         },
         'related': {
@@ -257,6 +266,7 @@ def upsert_archetypes(prefix: str) -> None:
             'int_column': 42,
             'double_column': 7.0,
             'datetime_column': datetime(2020, 1, 1, 0, 0, 0),
+            'datetime_column_2': datetime(2021, 1, 1, 0, 0, 0),
             'bool_column': True,
             'list_column': ['item'],
             'str_column_prov': {
