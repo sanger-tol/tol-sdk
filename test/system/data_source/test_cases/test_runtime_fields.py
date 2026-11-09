@@ -3,8 +3,7 @@
 # SPDX-License-Identifier: MIT
 
 from collections.abc import Callable
-from datetime import datetime, timedelta
-from typing import Any
+from datetime import datetime, timedelta, timezone
 
 from tol.core import DataSourceFilter, OperableDataSource
 
@@ -595,3 +594,106 @@ class TestRuntimeFields:
         assert fourth[2].date_interval_runtime_field == 4  # id 4
         assert fourth[3].date_interval_runtime_field == 6  # id 6
         assert fourth[4].date_interval_runtime_field == 8  # id 8
+
+    @against(elastic, api_elastic)
+    def test_latest_date_function(
+        self,
+        data_source: OperableDataSource,
+        ds_sleep: Callable[[float], None]
+    ):
+        # Upsert objects where either column can hold the latest date.
+        # ID 0 has neither date, ID 1 only the first, and ID 2 only the second.
+        start = datetime(2020, 2, 27, tzinfo=timezone.utc)
+        data_objects = [
+            data_source.data_object_factory(
+                'root',
+                str(id_),
+                attributes={
+                    'datetime_column': (
+                        start + timedelta(days=id_) if id_ not in (0, 2) else None
+                    ),
+                    'datetime_column_2': (
+                        start + timedelta(days=id_ - 1 if id_ % 2 == 0 else id_ + 1)
+                        if id_ not in (0, 1) else None
+                    ),
+                    'bool_column': True if id_ % 2 == 0 else False
+                },
+            )
+            for id_ in range(10)
+        ]
+        data_source.upsert('root', data_objects, provenance='source1')
+        ds_sleep(2)
+
+        # Get by ID: check missing dates, each single-date case, and both column orders.
+        first = list(data_source.get_by_ids('root', ['0', '1', '2', '3', '4']))
+        assert len(first) == 5
+
+        # Neither date exists, so the runtime field should be absent.
+        ret = first[0]
+        assert ret is not None
+        assert ret.latest_date_runtime_field is None
+        assert 'latest_date_runtime_field' not in ret.attributes
+
+        # The only date should be returned, regardless of which column contains it.
+        ret = first[1]
+        assert ret is not None
+        assert ret.latest_date_runtime_field == start + timedelta(days=1)
+        assert ret.attributes['latest_date_runtime_field'] == start + timedelta(days=1)
+        ret = first[2]
+        assert ret is not None
+        assert ret.latest_date_runtime_field == start + timedelta(days=1)
+        assert ret.attributes['latest_date_runtime_field'] == start + timedelta(days=1)
+
+        # ID 3 has a later second date, while ID 4 has a later first date.
+        ret = first[3]
+        assert ret is not None
+        assert ret.latest_date_runtime_field == start + timedelta(days=4)
+        assert ret.attributes['latest_date_runtime_field'] == start + timedelta(days=4)
+        ret = first[4]
+        assert ret is not None
+        assert ret.latest_date_runtime_field == start + timedelta(days=4)
+        assert ret.attributes['latest_date_runtime_field'] == start + timedelta(days=4)
+
+        # Get list by runtime field query: IDs 1 through 4 have dates before day five.
+        f = DataSourceFilter()
+        f.and_ = {
+            'latest_date_runtime_field': {'lt': {'value': start + timedelta(days=5)}},
+            # Exclude archetypes
+            'id': {
+                'exists': {},
+                'contains': {'value': '#', 'negate': True}
+            },
+        }
+        second = list(data_source.get_list('root', object_filters=f))
+        assert len(second) == 4
+
+        # Do the same with get_list_page, checking dates on or after day five.
+        f = DataSourceFilter()
+        f.and_ = {
+            'latest_date_runtime_field': {'gte': {'value': start + timedelta(days=5)}},
+            # Exclude archetypes
+            'id': {
+                'exists': {},
+                'contains': {'value': '#', 'negate': True}
+            },
+        }
+        third, _ = data_source.get_list_page('root', 1, object_filters=f, page_size=20)
+        assert len(list(third)) == 5
+
+        # Filter on a different field, then check the latest dates for the even IDs.
+        f = DataSourceFilter()
+        f.and_ = {
+            'bool_column': {'eq': {'value': True}},
+            # Exclude archetypes
+            'id': {
+                'exists': {},
+                'contains': {'value': '#', 'negate': True}
+            },
+        }
+        fourth = list(data_source.get_list('root', object_filters=f))
+        assert len(fourth) == 5
+        assert fourth[0].latest_date_runtime_field is None  # id 0
+        assert fourth[1].latest_date_runtime_field == start + timedelta(days=1)  # id 2
+        assert fourth[2].latest_date_runtime_field == start + timedelta(days=4)  # id 4
+        assert fourth[3].latest_date_runtime_field == start + timedelta(days=6)  # id 6
+        assert fourth[4].latest_date_runtime_field == start + timedelta(days=8)  # id 8

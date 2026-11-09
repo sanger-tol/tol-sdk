@@ -116,6 +116,13 @@ def elastic_datasource(
                     'end_date': 'datetime_column_2',
                     'unit': 'days'
                 }
+            ),
+            'latest_date_runtime_field': RuntimeField(
+                type_='date',
+                function='latest_date',
+                function_kwargs={
+                    'date_fields': ['datetime_column', 'datetime_column_2']
+                }
             )
         },
         'related': {
