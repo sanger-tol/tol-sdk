@@ -132,6 +132,14 @@ def elastic_datasource(
                     'start': 0,
                     'end': 1
                 }
+            ),
+            'concatenate_runtime_field': RuntimeField(
+                type_='keyword',
+                function='concatenate',
+                function_kwargs={
+                    'first': 'str_column',
+                    'second': 'str_column_2'
+                }
             )
         },
         'related': {
