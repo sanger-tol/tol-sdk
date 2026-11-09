@@ -787,6 +787,33 @@ class TestRuntimeFields:
         assert fourth[4].substring_runtime_field == 'A'  # id 8
 
     @against(elastic, api_elastic)
+    def test_substring_short_strings(
+        self,
+        data_source: OperableDataSource,
+        ds_sleep: Callable[[float], None]
+    ):
+        # Empty and single-character strings must not fail the whole search.
+        data_objects = [
+            data_source.data_object_factory('root', str(id_), attributes={'str_column': value})
+            for id_, value in enumerate(['', 'A', None])
+        ]
+        data_source.upsert('root', data_objects, provenance='source1')
+        ds_sleep(2)
+
+        objs = list(data_source.get_by_ids('root', ['0', '1', '2']))
+        assert len(objs) == 3
+
+        assert objs[0] is not None
+        assert objs[0].substring_runtime_field == ''
+        assert objs[0].attributes['substring_runtime_field'] == ''
+        assert objs[1] is not None
+        assert objs[1].substring_runtime_field == 'A'
+        assert objs[1].attributes['substring_runtime_field'] == 'A'
+        assert objs[2] is not None
+        assert objs[2].substring_runtime_field is None
+        assert 'substring_runtime_field' not in objs[2].attributes
+
+    @against(elastic, api_elastic)
     def test_concatenate_function(
         self,
         data_source: OperableDataSource,
