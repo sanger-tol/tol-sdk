@@ -91,6 +91,14 @@ def elastic_datasource(
                     'second': 'double_column',
                     'operation': '/'
                 }
+            ),
+            'min_runtime_field': RuntimeField(
+                type_='double',
+                function='min',
+                function_kwargs={
+                    'first': 'int_column',
+                    'second': 'double_column'
+                }
             )
         },
         'related': {

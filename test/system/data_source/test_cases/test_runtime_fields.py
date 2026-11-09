@@ -3,6 +3,7 @@
 # SPDX-License-Identifier: MIT
 
 from collections.abc import Callable
+from typing import Any
 
 from tol.core import DataSourceFilter, OperableDataSource
 
@@ -325,3 +326,94 @@ class TestRuntimeFields:
         assert fourth[2].math_runtime_field == 36  # id 4
         assert fourth[3].math_runtime_field == 24  # id 6
         assert fourth[4].math_runtime_field == 18  # id 8
+
+    @against(elastic, api_elastic)
+    def test_min_function(
+        self,
+        data_source: OperableDataSource,
+        ds_sleep: Callable[[float], None]
+    ):
+        # Upsert data objects
+        data_objects = [
+            data_source.data_object_factory(
+                'root',
+                str(id_),
+                attributes={
+                    'int_column': 5,
+                    'double_column': float(id_),
+                    'bool_column': True if id_ % 2 == 0 else False
+                },
+            )
+            for id_ in range(10)
+        ]
+        data_source.upsert('root', data_objects, provenance='source1')
+        ds_sleep(2)
+
+        # Get by ID
+        first = list(data_source.get_by_ids('root', ['1', '5', '8']))
+        assert len(first) == 3
+
+        # For the first one, the ID is less than 5 so should take precedence
+        ret = first[0]
+        assert ret is not None
+        assert ret.min_runtime_field == 1
+        assert ret.attributes['min_runtime_field'] == 1
+
+        # For the second one, they're the same value
+        ret = first[1]
+        assert ret is not None
+        assert ret.min_runtime_field == 5
+        assert ret.attributes['min_runtime_field'] == 5
+
+        # For the third one, the ID is greater than 5
+        ret = first[2]
+        assert ret is not None
+        assert ret.min_runtime_field == 5
+        assert ret.attributes['min_runtime_field'] == 5
+
+        # Get list by runtime field query.
+        # Half of them should be less than 5 (as they're the min)
+        f = DataSourceFilter()
+        f.and_ = {
+            'min_runtime_field': {'lt': {'value': 5}},
+            # Exclude archetypes
+            'id': {
+                'exists': {},
+                'contains': {'value': '#', 'negate': True}
+            },
+        }
+        second = list(data_source.get_list('root', object_filters=f))
+        print([obj.id for obj in second])
+        assert len(second) == 5
+
+        # Do the same but with get_list_page
+        # (but this time we check for the other half, so they should all be 5)
+        f = DataSourceFilter()
+        f.and_ = {
+            'min_runtime_field': {'eq': {'value': 5}},
+            # Exclude archetypes
+            'id': {
+                'exists': {},
+                'contains': {'value': '#', 'negate': True}
+            },
+        }
+        third, _ = data_source.get_list_page('root', 1, object_filters=f, page_size=20)
+        assert len(list(third)) == 5
+
+        # Perform a get_list filtered on a different field, then check the runtime field
+        f = DataSourceFilter()
+        f.and_ = {
+            'bool_column': {'eq': {'value': True}},
+            # Exclude archetypes
+            'id': {
+                'exists': {},
+                'contains': {'value': '#', 'negate': True}
+            },
+        }
+        fourth = list(data_source.get_list('root', object_filters=f))
+        assert len(fourth) == 5
+        assert fourth[0].min_runtime_field == 0  # id 0
+        assert fourth[1].min_runtime_field == 2  # id 2
+        assert fourth[2].min_runtime_field == 4  # id 4
+        assert fourth[3].min_runtime_field == 5  # id 6
+        assert fourth[4].min_runtime_field == 5  # id 8
