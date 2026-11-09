@@ -66,13 +66,13 @@ class TestRuntimeFields:
     def get_list_filtered(
         self,
         data_source: OperableDataSource,
-        filter: AndFilter,
+        filter_: AndFilter,
         *,
         paged: bool = False
     ) -> list[DataObject]:
         f = DataSourceFilter()
         f.and_ = {
-            **filter,
+            **filter_,
             # Exclude archetypes
             'id': {
                 'exists': {},
@@ -109,7 +109,7 @@ class TestRuntimeFields:
         self.upsert_data_objects(
             data_source,
             ds_sleep,
-            attributes=lambda id_ : {
+            attributes=lambda id_: {
                 'str_column': f'test_{id_}'
             }
         )
@@ -155,7 +155,7 @@ class TestRuntimeFields:
         self.upsert_data_objects(
             data_source,
             ds_sleep,
-            attributes=lambda id_ : {
+            attributes=lambda id_: {
                 'str_column': f'first_{id_}',
                 'str_column_2': f'second_{id_}'
             }
@@ -210,7 +210,7 @@ class TestRuntimeFields:
         self.upsert_data_objects(
             data_source,
             ds_sleep,
-            attributes=lambda id_ : {
+            attributes=lambda id_: {
                 'str_column': f'first_{id_}' if id_ % 3 == 0 else None,
                 'str_column_2': f'second_{id_}' if id_ % 2 == 0 else None
             }
@@ -273,7 +273,7 @@ class TestRuntimeFields:
         self.upsert_data_objects(
             data_source,
             ds_sleep,
-            attributes=lambda id_ : {
+            attributes=lambda id_: {
                 'int_column': 144,
                 'double_column': float(id_)
             }
@@ -285,10 +285,10 @@ class TestRuntimeFields:
             'math_runtime_field',
             [
                 # The first one is a division by zero.
-                # TODO Return this as a value to display error in the UI. For now, I've just removed
-                # ID 0.
-                # We can't use pytest.raises for the division by zero here because the error happens
-                # within the runtime field in Elastic.
+                # TODO Return this as a value to display error in the UI.
+                # For now, I've just removed ID 0.
+                # We can't use pytest.raises for the division by zero here
+                # because the error happens within the runtime field in Elastic.
                 # ...
                 # The second one should divide 144 by 2
                 72,
@@ -337,7 +337,7 @@ class TestRuntimeFields:
         self.upsert_data_objects(
             data_source,
             ds_sleep,
-            attributes=lambda id_ : {
+            attributes=lambda id_: {
                 'int_column': 5,
                 'double_column': float(id_)
             }
@@ -398,7 +398,7 @@ class TestRuntimeFields:
         self.upsert_data_objects(
             data_source,
             ds_sleep,
-            attributes=lambda id_ : {
+            attributes=lambda id_: {
                 'int_column': 5,
                 'double_column': float(id_)
             }
@@ -461,7 +461,7 @@ class TestRuntimeFields:
         self.upsert_data_objects(
             data_source,
             ds_sleep,
-            attributes=lambda id_ : {
+            attributes=lambda id_: {
                 'datetime_column': start,
                 'datetime_column_2': start + timedelta(days=id_)
             }
@@ -523,7 +523,7 @@ class TestRuntimeFields:
         self.upsert_data_objects(
             data_source,
             ds_sleep,
-            attributes=lambda id_ : {
+            attributes=lambda id_: {
                 'datetime_column': (
                     start + timedelta(days=id_) if id_ not in (0, 2) else None
                 ),
@@ -591,7 +591,7 @@ class TestRuntimeFields:
         self.upsert_data_objects(
             data_source,
             ds_sleep,
-            attributes=lambda id_ : {
+            attributes=lambda id_: {
                 'str_column': f'{"A" if id_ % 2 == 0 else "B"}_value_{id_}'
             }
         )
@@ -675,7 +675,7 @@ class TestRuntimeFields:
         self.upsert_data_objects(
             data_source,
             ds_sleep,
-            attributes=lambda id_ : {
+            attributes=lambda id_: {
                 'str_column': 'even_' if id_ % 2 == 0 else 'odd_',
                 'str_column_2': f'value_{id_}'
             }
