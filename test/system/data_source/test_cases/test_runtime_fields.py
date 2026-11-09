@@ -5,13 +5,29 @@
 from collections.abc import Callable
 from datetime import datetime, timedelta, timezone
 
-from tol.core import DataSourceFilter, OperableDataSource
+from tol.core import DataObject, DataSourceFilter, OperableDataSource
 
 from ..dec import against
 from ..fixtures import api_elastic, elastic
 
 
 class TestRuntimeFields:
+    def get_every_other_data_object(self, data_source: OperableDataSource) -> list[DataObject]:
+        """
+        The upserted data objects have bool_column be True on records with even IDs.
+        This returns only those records.
+        """
+        f = DataSourceFilter()
+        f.and_ = {
+            'bool_column': {'eq': {'value': True}},
+            # Exclude archetypes
+            'id': {
+                'exists': {},
+                'contains': {'value': '#', 'negate': True}
+            },
+        }
+        return list(data_source.get_list('root', object_filters=f))
+
     @against(elastic, api_elastic)
     def test_script_field(
         self,
@@ -66,16 +82,7 @@ class TestRuntimeFields:
         assert len(list(third)) == 5
 
         # Perform a get_list filtered on a different field, then check the runtime field
-        f = DataSourceFilter()
-        f.and_ = {
-            'bool_column': {'eq': {'value': True}},
-            # Exclude archetypes
-            'id': {
-                'exists': {},
-                'contains': {'value': '#', 'negate': True}
-            },
-        }
-        fourth = list(data_source.get_list('root', object_filters=f))
+        fourth = self.get_every_other_data_object(data_source)
         assert len(fourth) == 5
         assert fourth[0].script_runtime_field is False
         assert fourth[1].script_runtime_field is False
@@ -138,16 +145,7 @@ class TestRuntimeFields:
         assert len(list(third)) == 5
 
         # Perform a get_list filtered on a different field, then check the runtime field
-        f = DataSourceFilter()
-        f.and_ = {
-            'bool_column': {'eq': {'value': True}},
-            # Exclude archetypes
-            'id': {
-                'exists': {},
-                'contains': {'value': '#', 'negate': True}
-            },
-        }
-        fourth = list(data_source.get_list('root', object_filters=f))
+        fourth = self.get_every_other_data_object(data_source)
         assert len(fourth) == 5
         for obj in fourth:
             assert type(obj.if_runtime_field) == str
@@ -216,16 +214,7 @@ class TestRuntimeFields:
         assert len(list(third)) == 3
 
         # Perform a get_list filtered on a different field, then check the runtime field
-        f = DataSourceFilter()
-        f.and_ = {
-            'bool_column': {'eq': {'value': True}},
-            # Exclude archetypes
-            'id': {
-                'exists': {},
-                'contains': {'value': '#', 'negate': True}
-            },
-        }
-        fourth = list(data_source.get_list('root', object_filters=f))
+        fourth = self.get_every_other_data_object(data_source)
         assert len(fourth) == 5
         assert fourth[0].coalesce_runtime_field == 'first_0'   # id 0
         assert fourth[1].coalesce_runtime_field == 'second_2'  # id 2
@@ -309,16 +298,7 @@ class TestRuntimeFields:
         assert len(list(third)) == 5
 
         # Perform a get_list filtered on a different field, then check the runtime field
-        f = DataSourceFilter()
-        f.and_ = {
-            'bool_column': {'eq': {'value': True}},
-            # Exclude archetypes
-            'id': {
-                'exists': {},
-                'contains': {'value': '#', 'negate': True}
-            },
-        }
-        fourth = list(data_source.get_list('root', object_filters=f))
+        fourth = self.get_every_other_data_object(data_source)
         assert len(fourth) == 5
         # assert fourth[0].math_runtime_field == 'first_0'   # id 0
         assert fourth[1].math_runtime_field == 72  # id 2
@@ -399,16 +379,7 @@ class TestRuntimeFields:
         assert len(list(third)) == 5
 
         # Perform a get_list filtered on a different field, then check the runtime field
-        f = DataSourceFilter()
-        f.and_ = {
-            'bool_column': {'eq': {'value': True}},
-            # Exclude archetypes
-            'id': {
-                'exists': {},
-                'contains': {'value': '#', 'negate': True}
-            },
-        }
-        fourth = list(data_source.get_list('root', object_filters=f))
+        fourth = self.get_every_other_data_object(data_source)
         assert len(fourth) == 5
         assert fourth[0].min_runtime_field == 0  # id 0
         assert fourth[1].min_runtime_field == 2  # id 2
@@ -489,16 +460,7 @@ class TestRuntimeFields:
         assert len(list(third)) == 6
 
         # Perform a get_list filtered on a different field, then check the runtime field
-        f = DataSourceFilter()
-        f.and_ = {
-            'bool_column': {'eq': {'value': True}},
-            # Exclude archetypes
-            'id': {
-                'exists': {},
-                'contains': {'value': '#', 'negate': True}
-            },
-        }
-        fourth = list(data_source.get_list('root', object_filters=f))
+        fourth = self.get_every_other_data_object(data_source)
         assert len(fourth) == 5
         assert fourth[0].max_runtime_field == 5  # id 0
         assert fourth[1].max_runtime_field == 5  # id 2
@@ -578,16 +540,7 @@ class TestRuntimeFields:
         assert len(list(third)) == 5
 
         # Filter on a different field, then check the runtime field for the even IDs.
-        f = DataSourceFilter()
-        f.and_ = {
-            'bool_column': {'eq': {'value': True}},
-            # Exclude archetypes
-            'id': {
-                'exists': {},
-                'contains': {'value': '#', 'negate': True}
-            },
-        }
-        fourth = list(data_source.get_list('root', object_filters=f))
+        fourth = self.get_every_other_data_object(data_source)
         assert len(fourth) == 5
         assert fourth[0].date_interval_runtime_field == 0  # id 0
         assert fourth[1].date_interval_runtime_field == 2  # id 2
@@ -681,16 +634,7 @@ class TestRuntimeFields:
         assert len(list(third)) == 5
 
         # Filter on a different field, then check the latest dates for the even IDs.
-        f = DataSourceFilter()
-        f.and_ = {
-            'bool_column': {'eq': {'value': True}},
-            # Exclude archetypes
-            'id': {
-                'exists': {},
-                'contains': {'value': '#', 'negate': True}
-            },
-        }
-        fourth = list(data_source.get_list('root', object_filters=f))
+        fourth = self.get_every_other_data_object(data_source)
         assert len(fourth) == 5
         assert fourth[0].latest_date_runtime_field is None  # id 0
         assert fourth[1].latest_date_runtime_field == start + timedelta(days=1)  # id 2
@@ -769,16 +713,7 @@ class TestRuntimeFields:
         assert len(list(third)) == 5
 
         # Filter on a different field, then check the substring for the even IDs.
-        f = DataSourceFilter()
-        f.and_ = {
-            'bool_column': {'eq': {'value': True}},
-            # Exclude archetypes
-            'id': {
-                'exists': {},
-                'contains': {'value': '#', 'negate': True}
-            },
-        }
-        fourth = list(data_source.get_list('root', object_filters=f))
+        fourth = self.get_every_other_data_object(data_source)
         assert len(fourth) == 5
         assert fourth[0].substring_runtime_field == 'A'  # id 0
         assert fourth[1].substring_runtime_field == 'A'  # id 2
@@ -885,16 +820,7 @@ class TestRuntimeFields:
         assert len(list(third)) == 5
 
         # Filter on a different field, then check the concatenated strings for the even IDs.
-        f = DataSourceFilter()
-        f.and_ = {
-            'bool_column': {'eq': {'value': True}},
-            # Exclude archetypes
-            'id': {
-                'exists': {},
-                'contains': {'value': '#', 'negate': True}
-            },
-        }
-        fourth = list(data_source.get_list('root', object_filters=f))
+        fourth = self.get_every_other_data_object(data_source)
         assert len(fourth) == 5
         assert fourth[0].concatenate_runtime_field == 'even_value_0'  # id 0
         assert fourth[1].concatenate_runtime_field == 'even_value_2'  # id 2
