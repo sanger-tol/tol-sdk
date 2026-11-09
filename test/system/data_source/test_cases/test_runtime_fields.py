@@ -689,7 +689,9 @@ class TestRuntimeFields:
         data_source: OperableDataSource,
         ds_sleep: Callable[[float], None]
     ):
-        # Empty and single-character strings must not fail the whole search.
+        """
+        Empty and single-character strings must not fail the whole search
+        """
         data_objects = [
             data_source.data_object_factory('root', str(id_), attributes={'str_column': value})
             for id_, value in enumerate(['', 'A', None])
