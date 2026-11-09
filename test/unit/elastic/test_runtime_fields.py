@@ -54,24 +54,26 @@ class TestRuntimeFields:
             },
         }
 
-    def test_if(self):
+    @pytest.mark.parametrize('return_type, keyword', [('keyword', '.keyword'), ('double', '')])
+    def test_if(self, return_type, keyword):
         script, params = ElasticRuntimeFields.if_script(
+            _return_type=return_type,
             condition='field1',
             value_if_true='field2',
             value_if_false='field3'
         )
-        assert ''.join(script.split()) == ''.join("""
+        assert ''.join(script.split()) == ''.join(f"""
             if (
                 doc.containsKey('field1') && doc['field1'].size() > 0 &&
-                doc.containsKey('field2') && doc['field2'].size() > 0 &&
-                doc.containsKey('field3') && doc['field3'].size() > 0
-            ) {
-                if (doc['field1'].value) {
-                    emit(doc['field2'].value);
-                } else {
-                    emit(doc['field3'].value);
-                }
-            }
+                doc.containsKey('field2{keyword}') && doc['field2{keyword}'].size() > 0 &&
+                doc.containsKey('field3{keyword}') && doc['field3{keyword}'].size() > 0
+            ) {{
+                if (doc['field1'].value) {{
+                    emit(doc['field2{keyword}'].value);
+                }} else {{
+                    emit(doc['field3{keyword}'].value);
+                }}
+            }}
         """.split())
         assert params == {}
 

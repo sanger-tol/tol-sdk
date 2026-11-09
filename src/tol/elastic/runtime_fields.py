@@ -89,7 +89,7 @@ class ElasticRuntimeFields(RuntimeFields):
         keyword = '.keyword' if _return_type == 'keyword' else ''
 
         script = cls.generate_function_script(
-            dependencies=[condition, value_if_true, value_if_false],
+            dependencies=[condition, f'{value_if_true}{keyword}', f'{value_if_false}{keyword}'],
             function_body=f"""
                 if (doc['{condition}'].value) {{
                     emit(doc['{value_if_true}{keyword}'].value);
