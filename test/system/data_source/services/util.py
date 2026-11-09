@@ -123,6 +123,15 @@ def elastic_datasource(
                 function_kwargs={
                     'date_fields': ['datetime_column', 'datetime_column_2']
                 }
+            ),
+            'substring_runtime_field': RuntimeField(
+                type_='keyword',
+                function='substring',
+                function_kwargs={
+                    'field': 'str_column',
+                    'start': 0,
+                    'end': 1
+                }
             )
         },
         'related': {

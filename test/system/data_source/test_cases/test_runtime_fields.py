@@ -697,3 +697,91 @@ class TestRuntimeFields:
         assert fourth[2].latest_date_runtime_field == start + timedelta(days=4)  # id 4
         assert fourth[3].latest_date_runtime_field == start + timedelta(days=6)  # id 6
         assert fourth[4].latest_date_runtime_field == start + timedelta(days=8)  # id 8
+
+    @against(elastic, api_elastic)
+    def test_substring_function(
+        self,
+        data_source: OperableDataSource,
+        ds_sleep: Callable[[float], None]
+    ):
+        # Upsert strings whose first character is A for even IDs and B for odd IDs.
+        # The remaining characters should not appear in the runtime field.
+        data_objects = [
+            data_source.data_object_factory(
+                'root',
+                str(id_),
+                attributes={
+                    'str_column': f'{"A" if id_ % 2 == 0 else "B"}_value_{id_}',
+                    'bool_column': True if id_ % 2 == 0 else False
+                },
+            )
+            for id_ in range(10)
+        ]
+        data_source.upsert('root', data_objects, provenance='source1')
+        ds_sleep(2)
+
+        # Get by ID
+        first = list(data_source.get_by_ids('root', ['1', '2', '6']))
+        assert len(first) == 3
+
+        # The first string starts with B; the end index is exclusive.
+        ret = first[0]
+        assert ret is not None
+        assert ret.substring_runtime_field == 'B'
+        assert ret.attributes['substring_runtime_field'] == 'B'
+
+        # The second string starts with A.
+        ret = first[1]
+        assert ret is not None
+        assert ret.substring_runtime_field == 'A'
+        assert ret.attributes['substring_runtime_field'] == 'A'
+
+        # Different source strings with the same first character yield the same substring.
+        ret = first[2]
+        assert ret is not None
+        assert ret.substring_runtime_field == 'A'
+        assert ret.attributes['substring_runtime_field'] == 'A'
+
+        # Get list by runtime field query: the five even IDs should resolve to A.
+        f = DataSourceFilter()
+        f.and_ = {
+            'substring_runtime_field': {'eq': {'value': 'A'}},
+            # Exclude archetypes
+            'id': {
+                'exists': {},
+                'contains': {'value': '#', 'negate': True}
+            },
+        }
+        second = list(data_source.get_list('root', object_filters=f))
+        assert len(second) == 5
+
+        # Do the same with get_list_page, checking the odd IDs that resolve to B.
+        f = DataSourceFilter()
+        f.and_ = {
+            'substring_runtime_field': {'eq': {'value': 'B'}},
+            # Exclude archetypes
+            'id': {
+                'exists': {},
+                'contains': {'value': '#', 'negate': True}
+            },
+        }
+        third, _ = data_source.get_list_page('root', 1, object_filters=f, page_size=20)
+        assert len(list(third)) == 5
+
+        # Filter on a different field, then check the substring for the even IDs.
+        f = DataSourceFilter()
+        f.and_ = {
+            'bool_column': {'eq': {'value': True}},
+            # Exclude archetypes
+            'id': {
+                'exists': {},
+                'contains': {'value': '#', 'negate': True}
+            },
+        }
+        fourth = list(data_source.get_list('root', object_filters=f))
+        assert len(fourth) == 5
+        assert fourth[0].substring_runtime_field == 'A'  # id 0
+        assert fourth[1].substring_runtime_field == 'A'  # id 2
+        assert fourth[2].substring_runtime_field == 'A'  # id 4
+        assert fourth[3].substring_runtime_field == 'A'  # id 6
+        assert fourth[4].substring_runtime_field == 'A'  # id 8
