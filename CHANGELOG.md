@@ -6,6 +6,17 @@ SPDX-License-Identifier: MIT
 
 # Changelog
 
+## tol-sdk `4.1.0`
+
+05-11-2026
+
+- Added new runtime field functions:
+  - `if`
+  - `min`
+  - `max`
+  - `concatenate`
+- Added system tests for runtime fields
+
 ## tol-sdk `4.0.0`
 
 04-11-2026

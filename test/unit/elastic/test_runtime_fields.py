@@ -54,17 +54,26 @@ class TestRuntimeFields:
             },
         }
 
-    def test_math(self):
-        script, params = ElasticRuntimeFields.math_script(
-            first='field1',
-            second='field2',
-            operation='/'
+    @pytest.mark.parametrize('return_type, keyword', [('keyword', '.keyword'), ('double', '')])
+    def test_if(self, return_type, keyword):
+        script, params = ElasticRuntimeFields.if_script(
+            _return_type=return_type,
+            condition='field1',
+            value_if_true='field2',
+            value_if_false='field3'
         )
-        assert ''.join(script.split()) == ''.join("""
-            if (doc.containsKey('field1') && doc['field1'].size() > 0
-                    && doc.containsKey('field2') && doc['field2'].size() > 0) {
-                emit(doc['field1'].value / doc['field2'].value)
-            }
+        assert ''.join(script.split()) == ''.join(f"""
+            if (
+                doc.containsKey('field1') && doc['field1'].size() > 0 &&
+                doc.containsKey('field2{keyword}') && doc['field2{keyword}'].size() > 0 &&
+                doc.containsKey('field3{keyword}') && doc['field3{keyword}'].size() > 0
+            ) {{
+                if (doc['field1'].value) {{
+                    emit(doc['field2{keyword}'].value);
+                }} else {{
+                    emit(doc['field3{keyword}'].value);
+                }}
+            }}
         """.split())
         assert params == {}
 
@@ -116,6 +125,46 @@ class TestRuntimeFields:
         assert '}else if ' in script
         assert params == {}
 
+    def test_math(self):
+        script, params = ElasticRuntimeFields.math_script(
+            first='field1',
+            second='field2',
+            operation='/'
+        )
+        assert ''.join(script.split()) == ''.join("""
+            if (doc.containsKey('field1') && doc['field1'].size() > 0
+                    && doc.containsKey('field2') && doc['field2'].size() > 0) {
+                emit(doc['field1'].value / doc['field2'].value)
+            }
+        """.split())
+        assert params == {}
+
+    def test_min(self):
+        script, params = ElasticRuntimeFields.min_script(
+            first='field1',
+            second='field2'
+        )
+        assert ''.join(script.split()) == ''.join("""
+            if (doc.containsKey('field1') && doc['field1'].size() > 0
+                    && doc.containsKey('field2') && doc['field2'].size() > 0) {
+                emit(Math.min(doc['field1'].value, doc['field2'].value));
+            }
+        """.split())
+        assert params == {}
+
+    def test_max(self):
+        script, params = ElasticRuntimeFields.max_script(
+            first='field1',
+            second='field2'
+        )
+        assert ''.join(script.split()) == ''.join("""
+            if (doc.containsKey('field1') && doc['field1'].size() > 0
+                    && doc.containsKey('field2') && doc['field2'].size() > 0) {
+                emit(Math.max(doc['field1'].value, doc['field2'].value));
+            }
+        """.split())
+        assert params == {}
+
     def test_latest_date(self):
         script, params = ElasticRuntimeFields.latest_date_script(
             date_fields=['field1', 'field2'],
@@ -165,7 +214,22 @@ class TestRuntimeFields:
         )
         assert ''.join(script.split()) == ''.join("""
             if (doc.containsKey('field1.keyword') && doc['field1.keyword'].size() > 0) {
-                emit(doc['field1.keyword'].value.substring(0, 5));
+                String value = doc['field1.keyword'].value;
+                emit(value.substring(0 < value.length() ? 0 : value.length(),
+                                     5 < value.length() ? 5 : value.length()));
+            }
+        """.split())
+        assert params == {}
+
+    def test_concatenate(self):
+        script, params = ElasticRuntimeFields.concatenate_script(
+            first='field1',
+            second='field2'
+        )
+        assert ''.join(script.split()) == ''.join("""
+            if (doc.containsKey('field1.keyword') && doc['field1.keyword'].size() > 0 &&
+                   doc.containsKey('field2.keyword') && doc['field2.keyword'].size() > 0) {
+                emit(doc['field1.keyword'].value + doc['field2.keyword'].value);
             }
         """.split())
         assert params == {}

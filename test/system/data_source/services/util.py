@@ -58,13 +58,88 @@ def elastic_datasource(
     }
     rtf: dict[str, dict[str, RuntimeField]] = {
         'root': {
-            'runtime_column': RuntimeField(
+            'script_runtime_field': RuntimeField(
                 type_='boolean',
                 script="""
                     if (doc.containsKey('bool_column') && doc['bool_column'].size() > 0) {
                         emit(!doc['bool_column'].value)
                     }
                 """
+            ),
+            'if_runtime_field': RuntimeField(
+                type_='keyword',
+                function='if',
+                function_kwargs={
+                    'condition': 'bool_column',
+                    'value_if_true': 'str_column',
+                    'value_if_false': 'str_column_2'
+                }
+            ),
+            'coalesce_runtime_field': RuntimeField(
+                type_='keyword',
+                function='coalesce',
+                function_kwargs={
+                    'fields': ['str_column', 'str_column_2'],
+                    # TODO Add null wins version
+                }
+            ),
+            'math_runtime_field': RuntimeField(
+                type_='double',
+                function='math',
+                function_kwargs={
+                    'first': 'int_column',
+                    'second': 'double_column',
+                    'operation': '/'
+                }
+            ),
+            'min_runtime_field': RuntimeField(
+                type_='double',
+                function='min',
+                function_kwargs={
+                    'first': 'int_column',
+                    'second': 'double_column'
+                }
+            ),
+            'max_runtime_field': RuntimeField(
+                type_='double',
+                function='max',
+                function_kwargs={
+                    'first': 'int_column',
+                    'second': 'double_column'
+                }
+            ),
+            'date_interval_runtime_field': RuntimeField(
+                type_='long',
+                function='date_interval',
+                function_kwargs={
+                    'start_date': 'datetime_column',
+                    'end_date': 'datetime_column_2',
+                    'unit': 'days'
+                }
+            ),
+            'latest_date_runtime_field': RuntimeField(
+                type_='date',
+                function='latest_date',
+                function_kwargs={
+                    'date_fields': ['datetime_column', 'datetime_column_2']
+                }
+            ),
+            'substring_runtime_field': RuntimeField(
+                type_='keyword',
+                function='substring',
+                function_kwargs={
+                    'field': 'str_column',
+                    'start': 0,
+                    'end': 1
+                }
+            ),
+            'concatenate_runtime_field': RuntimeField(
+                type_='keyword',
+                function='concatenate',
+                function_kwargs={
+                    'first': 'str_column',
+                    'second': 'str_column_2'
+                }
             )
         },
         'related': {
@@ -211,8 +286,11 @@ def upsert_archetypes(prefix: str) -> None:
         id='#YOLO',
         document={
             'str_column': 'abc',
+            'str_column_2': 'def',
             'int_column': 42,
+            'double_column': 7.0,
             'datetime_column': datetime(2020, 1, 1, 0, 0, 0),
+            'datetime_column_2': datetime(2021, 1, 1, 0, 0, 0),
             'bool_column': True,
             'list_column': ['item'],
             'str_column_prov': {
@@ -284,7 +362,9 @@ def upsert_archetypes(prefix: str) -> None:
         id='#REL',
         document={
             'str_column': 'abc',
+            'str_column_2': 'def',
             'int_column': 42,
+            'double_column': 7.0,
             'datetime_column': datetime(2020, 1, 1, 0, 0, 0),
             'bool_column': True,
             'list_column': ['item'],

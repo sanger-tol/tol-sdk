@@ -10,7 +10,7 @@ services:
     command: pytest -v unit
 
   tol-sdk-python-db:
-    image: postgres:14
+    image: postgres:18
     container_name: db
     # Useful when debugging to show all SQL statements in the log:
     # command: ["postgres", "-c", "log_statement=all"]
