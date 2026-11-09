@@ -139,12 +139,11 @@ class TestRuntimeFields:
 
         # Perform a get_list filtered on a different field, then check the runtime field
         fourth = self.get_every_other_data_object(data_source)
-        assert len(fourth) == 5
-        assert fourth[0].script_runtime_field is False
-        assert fourth[1].script_runtime_field is False
-        assert fourth[2].script_runtime_field is False
-        assert fourth[3].script_runtime_field is False
-        assert fourth[4].script_runtime_field is False
+        self.assert_correct_runtime_field_values(
+            fourth,
+            'script_runtime_field',
+            [False, False, False, False, False]
+        )
 
     @against(elastic, api_elastic)
     def test_if_function(
