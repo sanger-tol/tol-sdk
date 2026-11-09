@@ -81,19 +81,20 @@ class ElasticRuntimeFields(RuntimeFields):
     def if_script(
         cls,
         *,
-        _return_type='NOT REQUIRED FOR THIS FUNCTION',
+        _return_type='keyword',
         condition: str,
         value_if_true: str,
         value_if_false: str
     ) -> tuple[str, dict[str, Any]]:
-        del _return_type
+        keyword = '.keyword' if _return_type == 'keyword' else ''
+
         script = cls.generate_function_script(
             dependencies=[condition, value_if_true, value_if_false],
             function_body=f"""
                 if (doc['{condition}'].value) {{
-                    emit(doc['{value_if_true}'].value);
+                    emit(doc['{value_if_true}{keyword}'].value);
                 }} else {{
-                    emit(doc['{value_if_false}'].value);
+                    emit(doc['{value_if_false}{keyword}'].value);
                 }}
             """
         )

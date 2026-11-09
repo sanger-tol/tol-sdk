@@ -71,8 +71,8 @@ def elastic_datasource(
                 function='if',
                 function_kwargs={
                     'condition': 'bool_column',
-                    'value_if_true': 'str_column.keyword',
-                    'value_if_false': 'str_column_2.keyword'
+                    'value_if_true': 'str_column',
+                    'value_if_false': 'str_column_2'
                 }
             ),
             'coalesce_runtime_field': RuntimeField(
