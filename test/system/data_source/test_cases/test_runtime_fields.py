@@ -7,6 +7,7 @@ from datetime import datetime, timedelta, timezone
 from typing import Any
 
 from tol.core import DataObject, DataSourceFilter, OperableDataSource
+from tol.core.datasource_filter import AndFilter
 
 from ..dec import against
 from ..fixtures import api_elastic, elastic
@@ -62,21 +63,34 @@ class TestRuntimeFields:
                 assert getattr(obj, attribute_name) == expected_value
                 assert obj.attributes[attribute_name] == expected_value
 
+    def get_list_filtered(
+        self,
+        data_source: OperableDataSource,
+        filter: AndFilter,
+        *,
+        paged: bool = False
+    ) -> list[DataObject]:
+        f = DataSourceFilter()
+        f.and_ = {
+            **filter,
+            # Exclude archetypes
+            'id': {
+                'exists': {},
+                'contains': {'value': '#', 'negate': True}
+            }
+        }
+
+        if paged:
+            return list(data_source.get_list_page('root', 1, object_filters=f, page_size=20)[0])
+        else:
+            return list(data_source.get_list('root', object_filters=f))
+
     def get_every_other_data_object(self, data_source: OperableDataSource) -> list[DataObject]:
         """
         The upserted data objects have bool_column be True on records with even IDs.
         This returns only those records.
         """
-        f = DataSourceFilter()
-        f.and_ = {
-            'bool_column': {'eq': {'value': True}},
-            # Exclude archetypes
-            'id': {
-                'exists': {},
-                'contains': {'value': '#', 'negate': True}
-            },
-        }
-        return list(data_source.get_list('root', object_filters=f))
+        return self.get_list_filtered(data_source, {'bool_column': {'eq': {'value': True}}})
 
     @against(elastic, api_elastic)
     def test_script_field(
@@ -109,14 +123,19 @@ class TestRuntimeFields:
         )
 
         # Get list by runtime field query
-        f = DataSourceFilter()
-        f.and_ = {'script_runtime_field': {'eq': {'value': True}}}
-        second = list(data_source.get_list('root', object_filters=f))
+        second = self.get_list_filtered(
+            data_source,
+            {'script_runtime_field': {'eq': {'value': True}}},
+        )
         assert len(second) == 5
 
         # Get list page by runtime field query
-        third, _ = data_source.get_list_page('root', 1, object_filters=f, page_size=20)
-        assert len(list(third)) == 5
+        third = self.get_list_filtered(
+            data_source,
+            {'script_runtime_field': {'eq': {'value': True}}},
+            paged=True
+        )
+        assert len(third) == 5
 
         # Perform a get_list filtered on a different field, then check the runtime field
         fourth = self.get_every_other_data_object(data_source)
@@ -160,17 +179,20 @@ class TestRuntimeFields:
 
         # Get list by runtime field query.
         # Half of them should have the condition pass
-        f = DataSourceFilter()
-        f.and_ = {'if_runtime_field': {'contains': {'value': 'first'}}}
-        second = list(data_source.get_list('root', object_filters=f))
+        second = self.get_list_filtered(
+            data_source,
+            {'if_runtime_field': {'contains': {'value': 'first'}}},
+        )
         assert len(second) == 5
 
         # Do the same but with get_list_page.
         # Half of them should have the condition fail
-        f = DataSourceFilter()
-        f.and_ = {'if_runtime_field': {'contains': {'value': 'second'}}}
-        third, _ = data_source.get_list_page('root', 1, object_filters=f, page_size=20)
-        assert len(list(third)) == 5
+        third = self.get_list_filtered(
+            data_source,
+            {'if_runtime_field': {'contains': {'value': 'second'}}},
+            paged=True
+        )
+        assert len(third) == 5
 
         # Perform a get_list filtered on a different field, then check the runtime field
         fourth = self.get_every_other_data_object(data_source)
@@ -215,16 +237,19 @@ class TestRuntimeFields:
         # Get list by runtime field query.
         # As we're filtering the *coalesced* result, the only IDs that should resolve to the
         # second field are 2, 4, and 8.
-        f = DataSourceFilter()
-        f.and_ = {'coalesce_runtime_field': {'contains': {'value': 'second'}}}
-        second = list(data_source.get_list('root', object_filters=f))
+        second = self.get_list_filtered(
+            data_source,
+            {'coalesce_runtime_field': {'contains': {'value': 'second'}}},
+        )
         assert len(second) == 3
 
         # Do the same but with get_list_page
-        f = DataSourceFilter()
-        f.and_ = {'coalesce_runtime_field': {'contains': {'value': 'second'}}}
-        third, _ = data_source.get_list_page('root', 1, object_filters=f, page_size=20)
-        assert len(list(third)) == 3
+        third = self.get_list_filtered(
+            data_source,
+            {'coalesce_runtime_field': {'contains': {'value': 'second'}}},
+            paged=True
+        )
+        assert len(third) == 3
 
         # Perform a get_list filtered on a different field, then check the runtime field
         fourth = self.get_every_other_data_object(data_source)
@@ -276,31 +301,20 @@ class TestRuntimeFields:
         # Get list by runtime field query.
         # 28.8 is 144/5, so it should include exactly half of the data objects
         # (as `gt` is non-inclusive)
-        f = DataSourceFilter()
-        f.and_ = {
-            'math_runtime_field': {'gt': {'value': 28.8}},
-            # Exclude archetypes
-            'id': {
-                'exists': {},
-                'contains': {'value': '#', 'negate': True}
-            },
-        }
-        second = list(data_source.get_list('root', object_filters=f))
+        second = self.get_list_filtered(
+            data_source,
+            {'math_runtime_field': {'gt': {'value': 28.8}}},
+        )
         assert len(second) == 5
 
         # Do the same but with get_list_page
         # (but this time we check for the other half)
-        f = DataSourceFilter()
-        f.and_ = {
-            'math_runtime_field': {'lt': {'value': 36}},
-            # Exclude archetypes
-            'id': {
-                'exists': {},
-                'contains': {'value': '#', 'negate': True}
-            },
-        }
-        third, _ = data_source.get_list_page('root', 1, object_filters=f, page_size=20)
-        assert len(list(third)) == 5
+        third = self.get_list_filtered(
+            data_source,
+            {'math_runtime_field': {'lt': {'value': 36}}},
+            paged=True
+        )
+        assert len(third) == 5
 
         # Perform a get_list filtered on a different field, then check the runtime field
         fourth = self.get_every_other_data_object(data_source)
@@ -347,31 +361,20 @@ class TestRuntimeFields:
 
         # Get list by runtime field query.
         # Half of them should be less than 5 (as they're the min)
-        f = DataSourceFilter()
-        f.and_ = {
-            'min_runtime_field': {'lt': {'value': 5}},
-            # Exclude archetypes
-            'id': {
-                'exists': {},
-                'contains': {'value': '#', 'negate': True}
-            },
-        }
-        second = list(data_source.get_list('root', object_filters=f))
+        second = self.get_list_filtered(
+            data_source,
+            {'min_runtime_field': {'lt': {'value': 5}}},
+        )
         assert len(second) == 5
 
         # Do the same but with get_list_page
         # (but this time we check for the other half, so they should all be 5)
-        f = DataSourceFilter()
-        f.and_ = {
-            'min_runtime_field': {'eq': {'value': 5}},
-            # Exclude archetypes
-            'id': {
-                'exists': {},
-                'contains': {'value': '#', 'negate': True}
-            },
-        }
-        third, _ = data_source.get_list_page('root', 1, object_filters=f, page_size=20)
-        assert len(list(third)) == 5
+        third = self.get_list_filtered(
+            data_source,
+            {'min_runtime_field': {'eq': {'value': 5}}},
+            paged=True
+        )
+        assert len(third) == 5
 
         # Perform a get_list filtered on a different field, then check the runtime field
         fourth = self.get_every_other_data_object(data_source)
@@ -419,31 +422,20 @@ class TestRuntimeFields:
 
         # Get list by runtime field query.
         # IDs 6 through 9 should have a maximum greater than 5.
-        f = DataSourceFilter()
-        f.and_ = {
-            'max_runtime_field': {'gt': {'value': 5}},
-            # Exclude archetypes
-            'id': {
-                'exists': {},
-                'contains': {'value': '#', 'negate': True}
-            },
-        }
-        second = list(data_source.get_list('root', object_filters=f))
+        second = self.get_list_filtered(
+            data_source,
+            {'max_runtime_field': {'gt': {'value': 5}}},
+        )
         assert len(second) == 4
 
         # Do the same but with get_list_page
         # IDs 0 through 5 should all have a maximum of 5.
-        f = DataSourceFilter()
-        f.and_ = {
-            'max_runtime_field': {'eq': {'value': 5}},
-            # Exclude archetypes
-            'id': {
-                'exists': {},
-                'contains': {'value': '#', 'negate': True}
-            },
-        }
-        third, _ = data_source.get_list_page('root', 1, object_filters=f, page_size=20)
-        assert len(list(third)) == 6
+        third = self.get_list_filtered(
+            data_source,
+            {'max_runtime_field': {'eq': {'value': 5}}},
+            paged=True
+        )
+        assert len(third) == 6
 
         # Perform a get_list filtered on a different field, then check the runtime field
         fourth = self.get_every_other_data_object(data_source)
@@ -492,30 +484,19 @@ class TestRuntimeFields:
         )
 
         # Get list by runtime field query: half the intervals should be less than five days.
-        f = DataSourceFilter()
-        f.and_ = {
-            'date_interval_runtime_field': {'lt': {'value': 5}},
-            # Exclude archetypes
-            'id': {
-                'exists': {},
-                'contains': {'value': '#', 'negate': True}
-            },
-        }
-        second = list(data_source.get_list('root', object_filters=f))
+        second = self.get_list_filtered(
+            data_source,
+            {'date_interval_runtime_field': {'lt': {'value': 5}}},
+        )
         assert len(second) == 5
 
         # Do the same with get_list_page, checking intervals of at least five days.
-        f = DataSourceFilter()
-        f.and_ = {
-            'date_interval_runtime_field': {'gte': {'value': 5}},
-            # Exclude archetypes
-            'id': {
-                'exists': {},
-                'contains': {'value': '#', 'negate': True}
-            },
-        }
-        third, _ = data_source.get_list_page('root', 1, object_filters=f, page_size=20)
-        assert len(list(third)) == 5
+        third = self.get_list_filtered(
+            data_source,
+            {'date_interval_runtime_field': {'gte': {'value': 5}}},
+            paged=True
+        )
+        assert len(third) == 5
 
         # Filter on a different field, then check the runtime field for the even IDs.
         fourth = self.get_every_other_data_object(data_source)
@@ -572,30 +553,19 @@ class TestRuntimeFields:
         )
 
         # Get list by runtime field query: IDs 1 through 4 have dates before day five.
-        f = DataSourceFilter()
-        f.and_ = {
-            'latest_date_runtime_field': {'lt': {'value': start + timedelta(days=5)}},
-            # Exclude archetypes
-            'id': {
-                'exists': {},
-                'contains': {'value': '#', 'negate': True}
-            },
-        }
-        second = list(data_source.get_list('root', object_filters=f))
+        second = self.get_list_filtered(
+            data_source,
+            {'latest_date_runtime_field': {'lt': {'value': start + timedelta(days=5)}}},
+        )
         assert len(second) == 4
 
         # Do the same with get_list_page, checking dates on or after day five.
-        f = DataSourceFilter()
-        f.and_ = {
-            'latest_date_runtime_field': {'gte': {'value': start + timedelta(days=5)}},
-            # Exclude archetypes
-            'id': {
-                'exists': {},
-                'contains': {'value': '#', 'negate': True}
-            },
-        }
-        third, _ = data_source.get_list_page('root', 1, object_filters=f, page_size=20)
-        assert len(list(third)) == 5
+        third = self.get_list_filtered(
+            data_source,
+            {'latest_date_runtime_field': {'gte': {'value': start + timedelta(days=5)}}},
+            paged=True
+        )
+        assert len(third) == 5
 
         # Filter on a different field, then check the latest dates for the even IDs.
         fourth = self.get_every_other_data_object(data_source)
@@ -644,30 +614,19 @@ class TestRuntimeFields:
         )
 
         # Get list by runtime field query: the five even IDs should resolve to A.
-        f = DataSourceFilter()
-        f.and_ = {
-            'substring_runtime_field': {'eq': {'value': 'A'}},
-            # Exclude archetypes
-            'id': {
-                'exists': {},
-                'contains': {'value': '#', 'negate': True}
-            },
-        }
-        second = list(data_source.get_list('root', object_filters=f))
+        second = self.get_list_filtered(
+            data_source,
+            {'substring_runtime_field': {'eq': {'value': 'A'}}},
+        )
         assert len(second) == 5
 
         # Do the same with get_list_page, checking the odd IDs that resolve to B.
-        f = DataSourceFilter()
-        f.and_ = {
-            'substring_runtime_field': {'eq': {'value': 'B'}},
-            # Exclude archetypes
-            'id': {
-                'exists': {},
-                'contains': {'value': '#', 'negate': True}
-            },
-        }
-        third, _ = data_source.get_list_page('root', 1, object_filters=f, page_size=20)
-        assert len(list(third)) == 5
+        third = self.get_list_filtered(
+            data_source,
+            {'substring_runtime_field': {'eq': {'value': 'B'}}},
+            paged=True
+        )
+        assert len(third) == 5
 
         # Filter on a different field, then check the substring for the even IDs.
         fourth = self.get_every_other_data_object(data_source)
@@ -740,30 +699,19 @@ class TestRuntimeFields:
         )
 
         # Get list by runtime field query: the five even IDs should have the even prefix.
-        f = DataSourceFilter()
-        f.and_ = {
-            'concatenate_runtime_field': {'contains': {'value': 'even_value_'}},
-            # Exclude archetypes
-            'id': {
-                'exists': {},
-                'contains': {'value': '#', 'negate': True}
-            },
-        }
-        second = list(data_source.get_list('root', object_filters=f))
+        second = self.get_list_filtered(
+            data_source,
+            {'concatenate_runtime_field': {'contains': {'value': 'even_value_'}}},
+        )
         assert len(second) == 5
 
         # Do the same with get_list_page, checking the odd prefix for the other half.
-        f = DataSourceFilter()
-        f.and_ = {
-            'concatenate_runtime_field': {'contains': {'value': 'odd_value_'}},
-            # Exclude archetypes
-            'id': {
-                'exists': {},
-                'contains': {'value': '#', 'negate': True}
-            },
-        }
-        third, _ = data_source.get_list_page('root', 1, object_filters=f, page_size=20)
-        assert len(list(third)) == 5
+        third = self.get_list_filtered(
+            data_source,
+            {'concatenate_runtime_field': {'contains': {'value': 'odd_value_'}}},
+            paged=True
+        )
+        assert len(third) == 5
 
         # Filter on a different field, then check the concatenated strings for the even IDs.
         fourth = self.get_every_other_data_object(data_source)
