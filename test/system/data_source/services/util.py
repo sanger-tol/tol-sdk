@@ -99,6 +99,14 @@ def elastic_datasource(
                     'first': 'int_column',
                     'second': 'double_column'
                 }
+            ),
+            'max_runtime_field': RuntimeField(
+                type_='double',
+                function='max',
+                function_kwargs={
+                    'first': 'int_column',
+                    'second': 'double_column'
+                }
             )
         },
         'related': {
