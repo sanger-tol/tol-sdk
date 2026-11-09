@@ -292,7 +292,6 @@ class TestRuntimeFields:
             },
         }
         second = list(data_source.get_list('root', object_filters=f))
-        print([obj.id for obj in second])
         assert len(second) == 5
 
         # Do the same but with get_list_page
@@ -383,7 +382,6 @@ class TestRuntimeFields:
             },
         }
         second = list(data_source.get_list('root', object_filters=f))
-        print([obj.id for obj in second])
         assert len(second) == 5
 
         # Do the same but with get_list_page
