@@ -445,26 +445,26 @@ class TestRuntimeFields:
         # For the first one, the ID is less than 5 so should be overridden
         ret = first[0]
         assert ret is not None
-        assert ret.min_runtime_field == 5
-        assert ret.attributes['min_runtime_field'] == 5
+        assert ret.max_runtime_field == 5
+        assert ret.attributes['max_runtime_field'] == 5
 
         # For the second one, they're the same value
         ret = first[1]
         assert ret is not None
-        assert ret.min_runtime_field == 5
-        assert ret.attributes['min_runtime_field'] == 5
+        assert ret.max_runtime_field == 5
+        assert ret.attributes['max_runtime_field'] == 5
 
         # For the third one, the ID is greater than 5
         ret = first[2]
         assert ret is not None
-        assert ret.min_runtime_field == 8
-        assert ret.attributes['min_runtime_field'] == 8
+        assert ret.max_runtime_field == 8
+        assert ret.attributes['max_runtime_field'] == 8
 
         # Get list by runtime field query.
-        # Half of them should be less than 5 (as they're the max)
+        # IDs 6 through 9 should have a maximum greater than 5.
         f = DataSourceFilter()
         f.and_ = {
-            'min_runtime_field': {'gt': {'value': 5}},
+            'max_runtime_field': {'gt': {'value': 5}},
             # Exclude archetypes
             'id': {
                 'exists': {},
@@ -472,13 +472,13 @@ class TestRuntimeFields:
             },
         }
         second = list(data_source.get_list('root', object_filters=f))
-        assert len(second) == 5
+        assert len(second) == 4
 
         # Do the same but with get_list_page
-        # (but this time we check for the other half, so they should all be 5)
+        # IDs 0 through 5 should all have a maximum of 5.
         f = DataSourceFilter()
         f.and_ = {
-            'min_runtime_field': {'eq': {'value': 5}},
+            'max_runtime_field': {'eq': {'value': 5}},
             # Exclude archetypes
             'id': {
                 'exists': {},
@@ -486,7 +486,7 @@ class TestRuntimeFields:
             },
         }
         third, _ = data_source.get_list_page('root', 1, object_filters=f, page_size=20)
-        assert len(list(third)) == 5
+        assert len(list(third)) == 6
 
         # Perform a get_list filtered on a different field, then check the runtime field
         f = DataSourceFilter()
@@ -500,11 +500,11 @@ class TestRuntimeFields:
         }
         fourth = list(data_source.get_list('root', object_filters=f))
         assert len(fourth) == 5
-        assert fourth[0].min_runtime_field == 5  # id 0
-        assert fourth[1].min_runtime_field == 5  # id 2
-        assert fourth[2].min_runtime_field == 5  # id 4
-        assert fourth[3].min_runtime_field == 6  # id 6
-        assert fourth[4].min_runtime_field == 8  # id 8
+        assert fourth[0].max_runtime_field == 5  # id 0
+        assert fourth[1].max_runtime_field == 5  # id 2
+        assert fourth[2].max_runtime_field == 5  # id 4
+        assert fourth[3].max_runtime_field == 6  # id 6
+        assert fourth[4].max_runtime_field == 8  # id 8
 
     @against(elastic, api_elastic)
     def test_date_interval_function(
