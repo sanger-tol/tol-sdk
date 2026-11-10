@@ -84,12 +84,18 @@ class DefaultParser(Parser):
         # Attributes with values in fields
         normal_fields = [
             'genome_size', 'chromosome_number',
-            'haploid_number', 'ploidy', 'assembly_level', 'assembly_span'
+            'haploid_number', 'ploidy', 'assembly_level', 'assembly_span',
+            'redlist_category'
         ]
-        one_or_list_fields = ['echabs92', 'habreg_2017', 'marhabreg-2017', 'waca_1981',
-                              'isb_wildlife_act_1976', 'protection_of_badgers_act_1992',
-                              'family_representative', 'long_list', 'sample_collected',
-                              'country_list']
+        # These attributes are either single values or lists in GoaT and so
+        # we will force convert them to lists to maintain consistency
+        one_or_list_fields = [
+            'echabs92', 'habreg_2017', 'marhabreg-2017', 'waca_1981',
+            'isb_wildlife_act_1976', 'protection_of_badgers_act_1992',
+            'family_representative', 'long_list', 'sample_collected',
+            'country_list', 'conservation_list', 'cites_category',
+            'redlist_category', 'redlist_scopes', 'redlist_population_trend'
+        ]
         if 'fields' in attributes:
             for att in normal_fields + one_or_list_fields:
                 if att in attributes['fields']:

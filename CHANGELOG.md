@@ -6,6 +6,13 @@ SPDX-License-Identifier: MIT
 
 # Changelog
 
+## tol-sdk `4.1.1`
+
+10-11-2026
+
+- Corrected MLWH study IDs
+- Pull in more conservation data from GoaT
+
 ## tol-sdk `4.1.0`
 
 05-11-2026
