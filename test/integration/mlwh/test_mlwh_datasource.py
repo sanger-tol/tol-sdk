@@ -122,7 +122,7 @@ class TestMlwhDataSource(TestCase):
         }
         ret = mds.get_list('study', object_filters=f)
         obj1 = next(ret)
-        self.assertEqual(obj1.id_study_lims, '6798')
+        self.assertEqual(obj1.id, '6798')
 
         with self.assertRaises(StopIteration):
             next(ret)
