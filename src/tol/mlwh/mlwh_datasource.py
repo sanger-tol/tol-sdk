@@ -355,10 +355,10 @@ class MlwhDataSource(DataSource, DetailGetter, ListGetter):
 
     def _get_column_mappings_study(self):
         return {
-            'id': 'id_study_tmp',
+            'id': 'id_study_lims',
             'id_lims': 'id_lims',
             'uuid_study_lims': 'uuid_study_lims',
-            'id_study_lims': 'id_study_lims',
+            'id_study_tmp': 'id_study_tmp',
             'last_updated': 'last_updated',
             'recorded_at': 'recorded_at',
             'deleted_at': 'deleted_at',

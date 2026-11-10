@@ -99,6 +99,12 @@ class GoatDataSource(
                 'sample_collected': 'List[str]',
                 'country_list': 'List[str]',
                 'assembly_span': 'int',
+                'long_list': 'List[str]',
+                'cites_category': 'str',
+                'conservation_list': 'List[str]',
+                'redlist_category': 'List[str]',
+                'redlist_population_trend': 'str',
+                'redlist_scopes': 'List[str]'
             }
         }
 
