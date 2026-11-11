@@ -6,7 +6,7 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, Literal
 
 
 type FieldName = str
@@ -90,7 +90,7 @@ class RuntimeFields(ABC):
         *,
         first: FieldName,
         second: FieldName,
-        operation: str = '/'
+        operation: Literal['+', '-', '*', '/'] = '/'
     ) -> Any:
         """
         Generates the script for the math function, in the format used in this datasource
@@ -127,7 +127,7 @@ class RuntimeFields(ABC):
         *,
         start_date: FieldName,
         end_date: FieldName,
-        unit: str = 'days'
+        unit: Literal['seconds', 'minutes', 'hours', 'days', 'months', 'years'] = 'days'
     ) -> Any:
         """
         Generates the script for the date_interval function, in the format used in this datasource
