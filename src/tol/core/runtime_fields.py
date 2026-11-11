@@ -9,6 +9,9 @@ from dataclasses import dataclass
 from typing import Any
 
 
+type FieldName = str
+
+
 @dataclass(frozen=True, slots=True, kw_only=True)
 class RuntimeField:
     """
@@ -59,9 +62,9 @@ class RuntimeFields(ABC):
     def if_script(
         cls,
         *,
-        condition: str,
-        value_if_true: str,
-        value_if_false: str,
+        condition: FieldName,
+        value_if_true: FieldName,
+        value_if_false: FieldName,
     ) -> Any:
         """
         Generates the script for the if function, in the format used in this datasource
@@ -72,8 +75,8 @@ class RuntimeFields(ABC):
     def coalesce_script(
         cls,
         *,
-        _return_type: str,
-        fields: list[str],
+        _return_type: FieldName,
+        fields: list[FieldName],
         null_wins: bool = False,
     ) -> Any:
         """
@@ -85,8 +88,8 @@ class RuntimeFields(ABC):
     def math_script(
         cls,
         *,
-        first: str,
-        second: str,
+        first: FieldName,
+        second: FieldName,
         operation: str = '/'
     ) -> Any:
         """
@@ -98,8 +101,8 @@ class RuntimeFields(ABC):
     def min_script(
         cls,
         *,
-        first: str,
-        second: str,
+        first: FieldName,
+        second: FieldName,
     ) -> Any:
         """
         Generates the script for the min function, in the format used in this datasource
@@ -110,8 +113,8 @@ class RuntimeFields(ABC):
     def max_script(
         cls,
         *,
-        first: str,
-        second: str,
+        first: FieldName,
+        second: FieldName,
     ) -> Any:
         """
         Generates the script for the max function, in the format used in this datasource
@@ -119,14 +122,25 @@ class RuntimeFields(ABC):
 
     @classmethod
     @abstractmethod
-    def date_interval_script(cls, *, start_date: str, end_date: str, unit: str = 'days') -> Any:
+    def date_interval_script(
+        cls,
+        *,
+        start_date: FieldName,
+        end_date: FieldName,
+        unit: str = 'days'
+    ) -> Any:
         """
         Generates the script for the date_interval function, in the format used in this datasource
         """
 
     @classmethod
     @abstractmethod
-    def latest_date_script(cls, *, date_fields: list[str], allow_missing: bool = True) -> Any:
+    def latest_date_script(
+        cls,
+        *,
+        date_fields: list[FieldName],
+        allow_missing: bool = True
+    ) -> Any:
         """
         Generates the script for the latest_date function, in the format used in this datasource
         """
@@ -136,7 +150,7 @@ class RuntimeFields(ABC):
     def substring_script(
         cls,
         *,
-        field: str,
+        field: FieldName,
         start: int,
         end: int
     ) -> Any:
@@ -149,8 +163,8 @@ class RuntimeFields(ABC):
     def concatenate_script(
         cls,
         *,
-        first: str,
-        second: str
+        first: FieldName,
+        second: FieldName
     ) -> Any:
         """
         Generates the script for the concatenate function, in the format used in this datasource
