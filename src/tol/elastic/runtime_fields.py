@@ -2,9 +2,9 @@
 #
 # SPDX-License-Identifier: MIT
 
-from typing import Any
+from typing import Any, Literal
 
-from ..core import RuntimeField, RuntimeFields
+from ..core import FieldName, RuntimeField, RuntimeFields
 
 
 class ElasticRuntimeFields(RuntimeFields):
@@ -82,9 +82,9 @@ class ElasticRuntimeFields(RuntimeFields):
         cls,
         *,
         _return_type='keyword',
-        condition: str,
-        value_if_true: str,
-        value_if_false: str
+        condition: FieldName,
+        value_if_true: FieldName,
+        value_if_false: FieldName
     ) -> tuple[str, dict[str, Any]]:
         keyword = '.keyword' if _return_type == 'keyword' else ''
 
@@ -105,7 +105,7 @@ class ElasticRuntimeFields(RuntimeFields):
         cls,
         *,
         _return_type: str = 'keyword',
-        fields: list[str],
+        fields: list[FieldName],
         null_wins: bool = False,
     ) -> tuple[str, dict[str, Any]]:
         keyword = '.keyword' if _return_type == 'keyword' else ''
@@ -152,9 +152,9 @@ class ElasticRuntimeFields(RuntimeFields):
         cls,
         *,
         _return_type='NOT REQUIRED FOR THIS FUNCTION',
-        first: str,
-        second: str,
-        operation: str = '/'
+        first: FieldName,
+        second: FieldName,
+        operation: Literal['+', '-', '*', '/'] = '/'
     ) -> tuple[str, dict[str, Any]]:
         del _return_type
         script = cls.generate_function_script(
@@ -170,9 +170,8 @@ class ElasticRuntimeFields(RuntimeFields):
         cls,
         *,
         _return_type='NOT REQUIRED FOR THIS FUNCTION',
-        first:
-        str,
-        second: str
+        first: FieldName,
+        second: FieldName
     ) -> tuple[str, dict[str, Any]]:
         del _return_type
         script = cls.generate_function_script(
@@ -188,8 +187,8 @@ class ElasticRuntimeFields(RuntimeFields):
         cls,
         *,
         _return_type='NOT REQUIRED FOR THIS FUNCTION',
-        first: str,
-        second: str
+        first: FieldName,
+        second: FieldName
     ) -> tuple[str, dict[str, Any]]:
         del _return_type
         script = cls.generate_function_script(
@@ -205,9 +204,9 @@ class ElasticRuntimeFields(RuntimeFields):
         cls,
         *,
         _return_type='NOT REQUIRED FOR THIS FUNCTION',
-        start_date: str,
-        end_date: str,
-        unit: str = 'days'
+        start_date: FieldName,
+        end_date: FieldName,
+        unit: Literal['seconds', 'minutes', 'hours', 'days', 'months', 'years'] = 'days'
     ) -> tuple[str, dict[str, Any]]:
         del _return_type
         script = cls.generate_function_script(
@@ -226,7 +225,7 @@ class ElasticRuntimeFields(RuntimeFields):
         cls,
         *,
         _return_type='NOT REQUIRED FOR THIS FUNCTION',
-        date_fields: list[str],
+        date_fields: list[FieldName],
         allow_missing: bool = True
     ) -> tuple[str, dict[str, Any]]:
         del _return_type
@@ -256,7 +255,7 @@ class ElasticRuntimeFields(RuntimeFields):
         cls,
         *,
         _return_type='keyword',
-        field: str,
+        field: FieldName,
         start: int,
         end: int,
     ) -> tuple[str, dict[str, Any]]:
@@ -278,8 +277,8 @@ class ElasticRuntimeFields(RuntimeFields):
         cls,
         *,
         _return_type='keyword',
-        first: str,
-        second: str
+        first: FieldName,
+        second: FieldName
     ) -> tuple[str, dict[str, Any]]:
         keyword = '.keyword' if _return_type == 'keyword' else ''
 
