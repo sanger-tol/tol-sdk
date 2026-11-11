@@ -47,6 +47,8 @@ class StandardModels(IterableABC[type[Model]]):
     board: type[Model]
     web_app: type[Model]
     entity_diff: type[Model]
+    custom_field: type[Model]
+    runtime_field_function: type[Model]
 
     _user_mixin: type[Any]
 
@@ -69,6 +71,8 @@ class StandardModels(IterableABC[type[Model]]):
                 self.data_source_config_attribute,
                 self.loader_instance,
                 self.data_source_instance,
+                self.custom_field,
+                self.runtime_field_function,
                 self.data_source_config,
                 self.loader,
                 self.web_app,
@@ -691,6 +695,37 @@ def create_standard_models(
             server_default='{}'  # noqa P103
         )
 
+    class CustomField(base_model_class):
+        __tablename__ = 'custom_field'
+
+        id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)  # noqa A003
+
+        user_id: Mapped[int] = mapped_column(
+            ForeignKey(f'{user_table_name}.id'),
+            nullable=False
+        )
+        data_source_config_id: Mapped[int] = mapped_column(
+            ForeignKey('data_source_config.id'),
+            nullable=False
+        )
+
+        object_type: Mapped[str] = mapped_column(nullable=False)
+        display_name: Mapped[str] = mapped_column(nullable=False)
+        description: Mapped[str | None] = mapped_column(nullable=True)
+        runtime_definition: Mapped[dict[str, Any]] = mapped_column(
+            JSONB,
+            nullable=False
+        )
+
+    class RuntimeFieldFunction(base_model_class):
+        __tablename__ = 'runtime_field_function'
+
+        id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)  # noqa A003
+
+        name: Mapped[str] = mapped_column(nullable=False)
+        params: Mapped[dict[str, Any]] = mapped_column(JSONB, nullable=False)
+        description: Mapped[str] = mapped_column(nullable=False)
+
     class _UserMixin:
         tours_seen: Mapped[dict] = mapped_column(
             JSONB,
@@ -758,5 +793,7 @@ def create_standard_models(
         board=Board,
         entity_diff=EntityDiff,
         web_app=WebApp,
+        custom_field=CustomField,
+        runtime_field_function=RuntimeFieldFunction,
         _user_mixin=_UserMixin
     )
