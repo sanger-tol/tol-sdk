@@ -128,17 +128,19 @@ class TestDbAuthManagerKeycloak:
         )
         return private_key, private_key.public_key()
 
-    def test_missing_token_is_forbidden(
+    @pytest.mark.parametrize('token', ['', 'f5af9f51-07e6-4332-8f1a-c0c11c1e3728'])
+    def test_non_jwt_token_is_ignored(
         self,
         monkeypatch: pytest.MonkeyPatch,
         jwt_keys: tuple[rsa.RSAPrivateKey, rsa.RSAPublicKey],
+        token: str,
     ) -> None:
         _, manager, _, _ = self.set_up_test(monkeypatch, jwt_keys)
+        context = AuthContext()
 
-        with pytest.raises(ForbiddenError) as error:
-            manager.authenticate(AuthContext(), '')
+        manager.authenticate(context, token)
 
-        assert error.value.errors[0]['detail'] == 'Not enough segments'
+        assert not context.authenticated
 
     def test_database_token_is_accepted_without_jwt_authentication(
         self,
@@ -173,7 +175,7 @@ class TestDbAuthManagerKeycloak:
         assert context.authenticated
         assert context.user_id == '1'
 
-    def test_issuer_not_being_an_expected_keycloak_realm_is_forbidden(
+    def test_issuer_not_being_an_expected_keycloak_realm_is_ignored(
         self,
         monkeypatch: pytest.MonkeyPatch,
         jwt_keys: tuple[rsa.RSAPrivateKey, rsa.RSAPublicKey],
@@ -184,8 +186,11 @@ class TestDbAuthManagerKeycloak:
             token_issuer='https://notkeycloak.com/dev',
         )
 
-        with pytest.raises(ForbiddenError):
-            manager.authenticate(AuthContext(), token)
+        context = AuthContext()
+
+        manager.authenticate(context, token)
+
+        assert not context.authenticated
 
     def test_audience_of_quasar_but_no_matching_tokens_is_forbidden(
         self,
