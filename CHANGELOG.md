@@ -6,6 +6,12 @@ SPDX-License-Identifier: MIT
 
 # Changelog
 
+## tol-sdk `4.1.2`
+
+19-11-2026
+
+- Updated GoatDataSource to use v3 api and cursor paging behind the scenes
+
 ## tol-sdk `4.1.1`
 
 10-11-2026

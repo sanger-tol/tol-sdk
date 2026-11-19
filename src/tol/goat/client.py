@@ -2,8 +2,7 @@
 #
 # SPDX-License-Identifier: MIT
 
-from typing import Dict, Optional, Tuple
-from urllib.parse import quote
+from typing import Any, Dict, List, Optional, Tuple
 
 import requests
 
@@ -13,8 +12,22 @@ from .converter import GoatApiTransfer
 class GoatApiClient:
     """
     Takes GoaT API transfers and connects to a remote
-    GoaT API.
+    GoaT API (v3).
     """
+
+    __names = ['common_name', 'tolid_prefix', 'synonym']
+    __fields = [
+        'genome_size', 'chromosome_number', 'assembly_level', 'haploid_number',
+        'ploidy', 'echabs92', 'habreg_2017', 'marhabreg-2017', 'waca_1981',
+        'isb_wildlife_act_1976', 'protection_of_badgers_act_1992',
+        'family_representative', 'long_list', 'sample_collected',
+        'country_list', 'assembly_span', 'cites_category', 'conservation_list',
+        'redlist_category', 'redlist_population_trend', 'redlist_scopes'
+    ]
+    __ranks = [
+        'subspecies', 'species', 'genus', 'family', 'superfamily', 'order',
+        'class', 'phylum', 'kingdom', 'superkingdom', 'domain'
+    ]
 
     def __init__(
         self,
@@ -25,86 +38,123 @@ class GoatApiClient:
     def get_detail(
         self,
         object_type: str,
-        object_ids: str
-    ) -> Optional[GoatApiTransfer]:
+        object_ids: list[str]
+    ) -> Tuple[GoatApiTransfer, int]:
         """
         Gets a list of GoaT API transfers for the objects of specified
-        `object_type` and `object_id`, or returns None if not found.
+        `object_type` and `object_ids`.
         """
 
-        url, params = self.__detail_url(object_type, object_ids)
-        return self.__fetch_detail(url, params)
+        body = self.__build_body(
+            object_type,
+            query_filters={'taxa': [str(i) for i in object_ids]},
+            page_size=len(object_ids)
+        )
+        results, total, _ = self.__post_search(body)
+        return results, total
 
     def get_list_page(
         self,
         object_type: str,
         page: Optional[int] = None,
         page_size: Optional[int] = None,
-        filter_string: Optional[str] = None,
-        sort_by: Optional[str] = None
-    ) -> Tuple[GoatApiTransfer, int]:
-        url, params = self.__page_url(object_type, page, page_size, filter_string, sort_by)
-        return self.__fetch_detail(url, params)
+        query_filters: Optional[Dict[str, Any]] = None,
+        sort_by: Optional[str] = None,
+        search_after: Optional[list] = None
+    ) -> Tuple[GoatApiTransfer, int, Optional[list]]:
+        """
+        Gets one page of results. If `search_after` (the cursor returned
+        by a previous call) is given, it takes precedence over `page`.
 
-    def __fetch_detail(
+        Returns a tuple of:
+
+        - the list of results
+        - the total number of hits
+        - the `search_after` cursor for the next page (or `None`)
+        """
+
+        body = self.__build_body(
+            object_type,
+            query_filters=query_filters,
+            page=page,
+            page_size=page_size,
+            sort_by=sort_by,
+            search_after=search_after
+        )
+        return self.__post_search(body)
+
+    def __post_search(
         self,
-        url: str,
-        params: Dict = {}
-    ) -> Optional[GoatApiTransfer]:
-        r = requests.get(url, params=params)
+        body: Dict[str, Any]
+    ) -> Tuple[GoatApiTransfer, int, Optional[list]]:
+        r = requests.post(f'{self.__goat_url}/search', json=body)
         if r.status_code == 404:
-            return [], 0
+            return [], 0, None
         r.raise_for_status()
-        return r.json()['results'] if 'results' in r.json() else [], r.json()['status']['hits']
+        payload = r.json()
+        status = payload.get('status', {})
+        if not status.get('success', True):
+            raise requests.HTTPError(
+                f'GoaT API error: {status.get("error", "unknown error")}',
+                response=r
+            )
+        return (
+            payload.get('results', []),
+            status.get('hits', 0),
+            payload.get('search_after')
+        )
 
-    def __detail_url(self, object_type: str, object_ids: list[str]) -> Tuple[str, Dict]:
-        obj_ids_str = ','.join(object_ids)
-        return self.__page_url(object_type, 1, len(object_ids), f'tax_name({obj_ids_str})')
-
-    def __page_url(
+    def __build_body(
         self,
         object_type: str,
-        page: int,
-        page_size: int,
-        filter_string: Optional[str] = None,
-        sort_by: Optional[str] = None
-    ) -> Tuple[str, Dict]:
-        url = f'{self.__goat_url}/search?query={quote(filter_string)}'
+        query_filters: Optional[Dict[str, Any]] = None,
+        page: Optional[int] = None,
+        page_size: Optional[int] = None,
+        sort_by: Optional[str] = None,
+        search_after: Optional[list] = None
+    ) -> Dict[str, Any]:
+        query = {
+            'index': object_type,
+            'names': self.__names,
+            'fields': self.__fields,
+            'ranks': self.__ranks
+        }
+        if query_filters:
+            query.update(query_filters)
+        if 'taxa' in query:
+            query.setdefault('taxon_filter_type', 'name')
+        elif 'rank' in query:
+            # A rank restriction only applies within a taxon scope,
+            # so search the whole tree from Eukaryota
+            query['taxa'] = ['2759']
+            query['taxon_filter_type'] = 'tree'
         params = {
-            # 'query': filter_string,  # We encode the query string manually to ensure space->%20
-            'result': object_type,
-            'includeEstimates': 'true',
-            'summaryValues': 'count',
             'taxonomy': 'ncbi',
-            'names': 'common_name,tolid_prefix,synonym',
-            'fields': 'genome_size,chromosome_number,assembly_level,haploid_number,ploidy,'
-                      'echabs92,habreg_2017,marhabreg-2017,waca_1981,isb_wildlife_act_1976,'
-                      'protection_of_badgers_act_1992,family_representative,long_list,'
-                      'sample_collected,country_list,assembly_span,cites_category,'
-                      'conservation_list,redlist_category,redlist_population_trend,redlist_scopes',
-            'ranks': 'subspecies,species,genus,family,superfamily,order,class,phylum,kingdom,'
-                     'superkingdom,domain'
-        } | self.__get_sort_params(sort_by) | self.__get_page_params(page, page_size)
-        return url, params
-
-    def __get_page_params(self, page: int, page_size: int) -> Dict:
-        ret = {}
-        if page is not None:
-            ret['offset'] = (page - 1) * page_size
+            'include_estimates': True,
+            'include_taxon_names': True,
+            'include_lineage': True,
+            'sort': self.__get_sort(sort_by)
+        }
         if page_size is not None:
-            ret['size'] = page_size
-        return ret
+            params['size'] = page_size
+        if search_after is not None:
+            params['search_after'] = search_after
+        elif page is not None:
+            params['page'] = page
+        return {'params': params, 'query': query}
 
-    def __get_sort_params(self, sort_by: str) -> Dict:
-        if sort_by is None:
-            return {}
-        elif sort_by.startswith('-'):
-            return {
-                'sortBy': sort_by[1:] if sort_by[1:] != 'id' else 'taxon_id',
-                'sortOrder': 'desc'
-            }
-        else:
-            return {
-                'sortBy': sort_by if sort_by != 'id' else 'taxon_id',
-                'sortOrder': 'asc'
-            }
+    def __get_sort(self, sort_by: Optional[str]) -> List[Dict[str, str]]:
+        sort = []
+        if sort_by is not None:
+            order = 'asc'
+            if sort_by.startswith('-'):
+                order = 'desc'
+                sort_by = sort_by[1:]
+            if sort_by == 'id':
+                sort_by = 'taxon_id'
+            sort.append({'by': sort_by, 'order': order})
+        if not any(s['by'] == 'taxon_id' for s in sort):
+            # A deterministic tiebreaker, so that search_after
+            # cursors are returned and are unambiguous
+            sort.append({'by': 'taxon_id', 'order': 'asc'})
+        return sort

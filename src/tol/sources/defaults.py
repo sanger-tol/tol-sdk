@@ -40,7 +40,7 @@ class Defaults:
     WORKFLOWS_API_DATA_PATH = '/data'
 
     GOAT_URL = 'https://goat.genomehubs.org'
-    GOAT_API_PATH = '/api/v2'
+    GOAT_API_PATH = '/api/v3'
 
     BOLD_URL = 'https://data.boldsystems.org'
     BOLD_PORTAL_URL = 'https://portal.boldsystems.org'

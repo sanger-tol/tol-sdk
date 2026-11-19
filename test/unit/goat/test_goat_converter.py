@@ -75,62 +75,54 @@ class TestGoatApiConverter:
                         'sample_collected': {'value': 'DTOL'},
                         'country_list': {'value': ['AT', 'BE']}
                     },
-                    'names': {
-                        'tolid_prefix': {
-                            'class': [
-                                'tolid_prefix'
-                            ],
-                            'name': [
-                                'mMelMel'
-                            ],
-                            'source': [
-                                'dtol sample naming'
-                            ]
+                    'taxon_names': [
+                        {
+                            'class': 'tolid prefix',
+                            'name': 'mMelMel',
+                            'source': 'dtol sample naming'
                         },
-                        'common_name': {
-                            'class': [
-                                'common_name'
-                            ],
-                            'name': [
-                                'Melon'
-                            ],
-                            'source': [
-                                'animal genome size database'
-                            ]
+                        {
+                            'class': 'common_name',
+                            'name': 'Melon',
+                            'source': 'animal genome size database'
                         },
-                        'synonym': {
-                            'class': [
-                                'synonym'
-                            ],
-                            'name': [
-                                'Meles alba',
-                                'Meles britannicus'
-                            ],
-                            'source': [
-                                'some source'
-                            ]
+                        {
+                            'class': 'synonym',
+                            'name': 'Meles alba',
+                            'source': 'some source'
+                        },
+                        {
+                            'class': 'synonym',
+                            'name': 'Meles britannicus',
+                            'source': 'some source'
                         }
-                    },
-                    'ranks': {
-                        'species': {
+                    ],
+                    'lineage': [
+                        {
                             'taxon_rank': 'species',
                             'scientific_name': 'Meles meles',
                             'taxon_id': '9662',
                             'node_depth': 0
                         },
-                        'genus': {
+                        {
                             'taxon_rank': 'genus',
                             'scientific_name': 'Meles',
                             'taxon_id': '9661',
                             'node_depth': 1
                         },
-                        'family': {
+                        {
+                            'taxon_rank': 'subfamily',
+                            'scientific_name': 'Melinae',
+                            'taxon_id': '169424',
+                            'node_depth': 2
+                        },
+                        {
                             'taxon_rank': 'family',
                             'scientific_name': 'Mustelidae',
                             'taxon_id': '9655',
                             'node_depth': 3
                         }
-                    }
+                    ]
                 }
             },
             {

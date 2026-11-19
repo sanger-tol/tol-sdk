@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: MIT
 
 from typing import Any, Optional
-from unittest.mock import Mock
+from unittest.mock import Mock, call
 
 import pytest
 
@@ -122,3 +122,44 @@ class TestGoatDataSource:
         observed = ds.supported_types
 
         assert observed == expected
+
+    def test_get_list_page_uses_search_after_cursor(self):
+        """A sequential page uses the cursor returned by the prior page"""
+
+        mock_client = Mock()
+        mock_client.get_list_page.side_effect = [
+            ([{'result': {'taxon_id': '1'}}], 3, ['1']),
+            ([{'result': {'taxon_id': '2'}}], 3, ['2'])
+        ]
+        mock_converter = Mock()
+        mock_converter.convert_list.side_effect = [
+            ([_get_mock_data_object('taxon', '1')], 1),
+            ([_get_mock_data_object('taxon', '2')], 1)
+        ]
+        ds = GoatDataSource(
+            lambda: mock_client,
+            lambda: mock_converter,
+            None
+        )
+
+        ds.get_list_page('taxon', page_number=1, page_size=1, sort_by='id')
+        ds.get_list_page('taxon', page_number=2, page_size=1, sort_by='id')
+
+        assert mock_client.get_list_page.call_args_list == [
+            call(
+                'taxon',
+                page=1,
+                page_size=1,
+                query_filters={},
+                sort_by='id',
+                search_after=None
+            ),
+            call(
+                'taxon',
+                page=2,
+                page_size=1,
+                query_filters={},
+                sort_by='id',
+                search_after=['1']
+            )
+        ]
