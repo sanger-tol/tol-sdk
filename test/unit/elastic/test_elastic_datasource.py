@@ -193,6 +193,24 @@ class TestElasticDataSource:
         assert set(fields) == expected_fields
         assert set(cast(dict, runtime_mappings)) == expected_fields
 
+    def test_filter_on_unrequested_provenance_field(
+        self, mock_elastic_data_source: ElasticDataSource
+    ):
+        filters = DataSourceFilter(and_={'field5': {'exists': {}}})
+        requested_tree = ReqFieldsTree('obj_type', mock_elastic_data_source, ['field8'])
+
+        _, query, fields, runtime_mappings = mock_elastic_data_source._prepare_get_parameters(
+            object_type='obj_type',
+            object_filters=filters,
+            requested_tree=requested_tree,
+        )
+
+        assert query['bool']['must'] == [{'exists': {'field': 'field5.value'}}]
+        assert 'field5.value' in fields
+        assert cast(dict, runtime_mappings)['field5.value'] == (
+            mock_elastic_data_source.runtime_fields['obj_type']['field5.value']
+        )
+
     def test_requested_tree_filtering(self, mock_elastic_data_source: ElasticDataSource):
         # Test no requested tree
         f = DataSourceFilter()
