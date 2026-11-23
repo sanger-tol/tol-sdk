@@ -46,6 +46,11 @@ class Parser(ABC):
 
 class DefaultParser(Parser):
 
+    __ranks = [
+        'subspecies', 'species', 'genus', 'family', 'superfamily', 'order',
+        'class', 'phylum', 'kingdom', 'superkingdom', 'domain'
+    ]
+
     def __init__(self, data_source_dict: dict[str, DataSource]) -> None:
         self.__dict = data_source_dict
 
@@ -106,24 +111,44 @@ class DefaultParser(Parser):
                             ret[att] = [att_value['value']]
                         else:
                             ret[att] = att_value['value']
-        if 'names' in attributes:
-            for att in attributes['names']:
-                if att == 'synonym':
-                    synonym_value = attributes['names'][att]['name']
-                    if isinstance(synonym_value, list):
-                        ret[att] = synonym_value
-                    else:
-                        ret[att] = [synonym_value]
-                else:
-                    ret[att] = attributes['names'][att]['name'][0]
+        if 'taxon_names' in attributes:
+            name_classes: dict[str, list] = {}
+            for name in attributes['taxon_names']:
+                name_classes.setdefault(
+                    name.get('class'), []
+                ).append(name.get('name'))
+            if 'synonym' in name_classes:
+                ret['synonym'] = name_classes['synonym']
+            for att in ['common_name', 'tolid_prefix']:
+                # Prefer an exact class match, falling back to the
+                # space-separated form (e.g. "tolid prefix")
+                values = name_classes.get(att) \
+                    or name_classes.get(att.replace('_', ' '))
+                if values:
+                    ret[att] = values[0]
 
         # Lineage
-        if 'ranks' in attributes:
+        if 'lineage' in attributes:
             ret['lineage'] = []
-            for _, ancestor in attributes['ranks'].items():
+            for ancestor in self.__lineage_by_rank(attributes).values():
                 ret['lineage'] = [ancestor['scientific_name']] + ret['lineage']
 
         return ret
+
+    def __lineage_by_rank(
+        self,
+        raw_attributes: dict[str, Any]
+    ) -> dict[str, dict[str, Any]]:
+        """
+        Maps each standard rank to its (nearest) entry in the
+        `lineage` array, ordered from the taxon itself upwards.
+        """
+        by_rank: dict[str, dict[str, Any]] = {}
+        for ancestor in raw_attributes.get('lineage') or []:
+            rank = ancestor.get('taxon_rank')
+            if rank in self.__ranks and rank not in by_rank:
+                by_rank[rank] = ancestor
+        return by_rank
 
     def __get_id(
         self,
@@ -148,5 +173,5 @@ class DefaultParser(Parser):
         raw_attributes = transfer.get('result')
         return {
             k: self.parse({'result': v})
-            for k, v in raw_attributes.get('ranks', {}).items()
+            for k, v in self.__lineage_by_rank(raw_attributes).items()
         }

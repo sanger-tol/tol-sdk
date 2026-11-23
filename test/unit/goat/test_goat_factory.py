@@ -63,42 +63,28 @@ class TestCreateGoatDatasource:
                         'isb_wildlife_act_1976': {'value': 'IWA-Sch5'},
                         'protection_of_badgers_act_1992': {'value': 'Badgers92'}
                     },
-                    'names': {
-                        'tolid_prefix': {
-                            'class': [
-                                'tolid_prefix'
-                            ],
-                            'name': [
-                                'mMelMel'
-                            ],
-                            'source': [
-                                'dtol sample naming'
-                            ]
+                    'taxon_names': [
+                        {
+                            'class': 'tolid prefix',
+                            'name': 'mMelMel',
+                            'source': 'dtol sample naming'
                         },
-                        'common_name': {
-                            'class': [
-                                'common_name'
-                            ],
-                            'name': [
-                                'Melon'
-                            ],
-                            'source': [
-                                'animal genome size database'
-                            ]
+                        {
+                            'class': 'common_name',
+                            'name': 'Melon',
+                            'source': 'animal genome size database'
                         },
-                        'synonym': {
-                            'class': [
-                                'synonym'
-                            ],
-                            'name': [
-                                'Meles alba',
-                                'Meles britannicus'
-                            ],
-                            'source': [
-                                'some source'
-                            ]
+                        {
+                            'class': 'synonym',
+                            'name': 'Meles alba',
+                            'source': 'some source'
+                        },
+                        {
+                            'class': 'synonym',
+                            'name': 'Meles britannicus',
+                            'source': 'some source'
                         }
-                    },
+                    ],
                 }
             }],
             'status': {
@@ -106,7 +92,7 @@ class TestCreateGoatDatasource:
             }
         }
 
-        responses.get(
+        responses.post(
             f'{FAKE_API_URL}/search',
             json=in_
         )
@@ -166,42 +152,28 @@ class TestCreateGoatDatasource:
                         'isb_wildlife_act_1976': {'value': 'IWA-Sch5'},
                         'protection_of_badgers_act_1992': {'value': 'Badgers92'}
                     },
-                    'names': {
-                        'tolid_prefix': {
-                            'class': [
-                                'tolid_prefix'
-                            ],
-                            'name': [
-                                'mMelMel'
-                            ],
-                            'source': [
-                                'dtol sample naming'
-                            ]
+                    'taxon_names': [
+                        {
+                            'class': 'tolid prefix',
+                            'name': 'mMelMel',
+                            'source': 'dtol sample naming'
                         },
-                        'common_name': {
-                            'class': [
-                                'common_name'
-                            ],
-                            'name': [
-                                'Melon'
-                            ],
-                            'source': [
-                                'animal genome size database'
-                            ]
+                        {
+                            'class': 'common_name',
+                            'name': 'Melon',
+                            'source': 'animal genome size database'
                         },
-                        'synonym': {
-                            'class': [
-                                'synonym'
-                            ],
-                            'name': [
-                                'Meles alba',
-                                'Meles britannicus'
-                            ],
-                            'source': [
-                                'some source'
-                            ]
+                        {
+                            'class': 'synonym',
+                            'name': 'Meles alba',
+                            'source': 'some source'
+                        },
+                        {
+                            'class': 'synonym',
+                            'name': 'Meles britannicus',
+                            'source': 'some source'
                         }
-                    },
+                    ],
                 }
             }],
             'status': {
@@ -209,7 +181,7 @@ class TestCreateGoatDatasource:
             }
         }
 
-        responses.get(
+        responses.post(
             f'{FAKE_API_URL}/search',
             json=in_
         )
