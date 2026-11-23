@@ -652,6 +652,33 @@ def create_standard_models(
             foreign_keys=[data_source_config_id]
         )
 
+    class CustomField(base_model_class):
+        __tablename__ = 'custom_field'
+
+        id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)  # noqa A003
+
+        user_id: Mapped[int] = mapped_column(
+            ForeignKey(f'{user_table_name}.id'),
+            nullable=False
+        )
+        data_source_config_id: Mapped[int] = mapped_column(
+            ForeignKey('data_source_config.id'),
+            nullable=False
+        )
+
+        data_source_config: Mapped['DataSourceConfig'] = relationship(  # noqa F821
+            back_populates='custom_fields',
+            foreign_keys=[data_source_config_id]
+        )
+
+        object_type: Mapped[str] = mapped_column(nullable=False)
+        display_name: Mapped[str] = mapped_column(nullable=False)
+        description: Mapped[str | None] = mapped_column(nullable=True)
+        runtime_definition: Mapped[dict[str, Any]] = mapped_column(
+            JSONB,
+            nullable=False
+        )
+
     class DataSourceConfig(base_model_class):
         __tablename__ = 'data_source_config'
 
@@ -676,6 +703,10 @@ def create_standard_models(
             back_populates='data_source_config',
             foreign_keys=[DataSourceConfigSummary.data_source_config_id]
         )
+        custom_fields: Mapped[list['CustomField']] = relationship(
+            back_populates='data_source_config',
+            foreign_keys=[CustomField.data_source_config_id]
+        )
 
     class WebApp(base_model_class):
         __tablename__ = 'web_app'
@@ -693,28 +724,6 @@ def create_standard_models(
             nullable=False,
             default={},
             server_default='{}'  # noqa P103
-        )
-
-    class CustomField(base_model_class):
-        __tablename__ = 'custom_field'
-
-        id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)  # noqa A003
-
-        user_id: Mapped[int] = mapped_column(
-            ForeignKey(f'{user_table_name}.id'),
-            nullable=False
-        )
-        data_source_config_id: Mapped[int] = mapped_column(
-            ForeignKey('data_source_config.id'),
-            nullable=False
-        )
-
-        object_type: Mapped[str] = mapped_column(nullable=False)
-        display_name: Mapped[str] = mapped_column(nullable=False)
-        description: Mapped[str | None] = mapped_column(nullable=True)
-        runtime_definition: Mapped[dict[str, Any]] = mapped_column(
-            JSONB,
-            nullable=False
         )
 
     class RuntimeFieldFunction(base_model_class):
