@@ -83,10 +83,15 @@ class DataSourceUtils:
             runtime_fields = cls.get_runtime_fields_from_data_source_config(
                 attributes=attributes
             )
+            # TODO Replace with a bespoke system for custom fields rather than pretending they're
+            # data source config attributes
+            custom_fields = cls.get_runtime_fields_from_data_source_config(
+                attributes=list(datasource_config.custom_fields)
+            )
             new_kwargs.update({
                 'relationship_cfg': relationship_config,
                 'attribute_metadata': amd,
-                'runtime_fields': runtime_fields,
+                'runtime_fields': custom_fields | runtime_fields,  # runtime_fields take precedence
                 'provenance_fields': cls.get_provenance_fields(
                     attributes=attributes,
                     relationships=relationships
