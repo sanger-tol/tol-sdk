@@ -6,10 +6,10 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from typing import Any, Literal
+from typing import Any, Literal, TypeAlias
 
 
-type FieldName = str
+FieldName: TypeAlias = str
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
