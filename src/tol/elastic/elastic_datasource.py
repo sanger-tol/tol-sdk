@@ -551,6 +551,19 @@ class ElasticDataSource(
                     or len(requested_tree.attribute_names) == 0
                 )
 
+            def provenance_field_used_in_filter(field_name: str) -> bool:
+                """Check whether a provenance runtime field is used in the filter."""
+                if not field_name.endswith('.value'):
+                    return False
+
+                base_field_name = ElasticUtils.actual_attribute(field_name)
+                return (
+                    base_field_name in self.provenance_fields.get(object_type, {})
+                    and object_filters is not None
+                    and object_filters.and_ is not None
+                    and base_field_name in object_filters.and_
+                )
+
             # Filter fields to fetch based on whether they're in the requested tree
             fields = list(filter(
                 lambda field: (
@@ -561,6 +574,7 @@ class ElasticDataSource(
                         and (
                             field in object_filters.and_.keys()
                             or f'{field}.id' in object_filters.and_.keys()
+                            or provenance_field_used_in_filter(field)
                         )
                     )
                     or (
