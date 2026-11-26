@@ -15,8 +15,39 @@ import click
 from dotenv import load_dotenv
 
 from ..core import (
-    DataSourceFilter
+    DataSourceFilter,
+    DataSourceUtils
 )
+from ..sources.quasar import quasar
+
+
+class LazyChoice(click.ParamType):
+    name = 'choice'
+
+    def __init__(self, choices_fn):
+        self.choices_fn = choices_fn
+
+    def _choice(self, ctx):
+        choices = ctx.meta.setdefault('tol.cli.lazy_choices', {})
+        if self not in choices:
+            choices[self] = click.Choice(self.choices_fn(ctx))
+        return choices[self]
+
+    def get_metavar(self, param):
+        return self._choice(click.get_current_context()).get_metavar(param)
+
+    def convert(self, value, param, ctx):
+        return self._choice(ctx or click.get_current_context()).convert(value, param, ctx)
+
+    def shell_complete(self, ctx, param, incomplete):
+        return self._choice(ctx).shell_complete(ctx, param, incomplete)
+
+
+def get_source_choices(ctx):
+    env_file = ctx.find_root().params['env_file']
+    if os.path.exists(env_file):
+        load_dotenv(env_file)
+    return [instance.id for instance in quasar().get_list('data_source_instance')]
 
 
 @click.group()
@@ -380,18 +411,8 @@ def flow(ctx, filename):
 @click.option(
     '--source',
     default='portal',
-    type=click.Choice(
-        [
-            'portal',
-            'goat',
-            'grit',
-            'sts',
-            'tolid',
-            'tolqc',
-            'workflows',
-        ]
-    ),
-    help='Source DataSource',
+    type=LazyChoice(get_source_choices),
+    help='Source DataSource (available sources are fetched from Quasar).',
     show_default=True,
 )
 @click.option(
@@ -432,17 +453,11 @@ def flow(ctx, filename):
     help='Format of the output.',
     show_default=True,
 )
-@click.pass_context
-def data(ctx, source, operation, type_, filter_, fields, converter, output):
+def data(source, operation, type_, filter_, fields, converter, output):
     """
     Fetch data from a DataSource.
     """
-    env_file = ctx.parent.params['env_file']
-    if os.path.exists(env_file):
-        load_dotenv(ctx.parent.params['env_file'])
-    module = importlib.import_module(f'tol.sources.{source}')
-    class_ = getattr(module, source)
-    ds = class_()
+    ds = DataSourceUtils.get_datasource(source)
     f = DataSourceFilter()
     if filter_ is not None:
         try:
