@@ -1345,7 +1345,10 @@ class ElasticDataSource(
         return {
             object_type: {
                 name: value
-                for name, value in (custom_field_attribute_types.get(object_type, {}) | host_attribute_types.get(object_type, {})).items()
+                for name, value in (
+                    custom_field_attribute_types.get(object_type, {})
+                    | host_attribute_types.get(object_type, {})
+                ).items()
             } for object_type in object_types
         }
 
