@@ -1343,13 +1343,11 @@ class ElasticDataSource(
         object_types = host_attribute_types.keys() | custom_field_attribute_types.keys()
 
         return {
-            object_type: {
-                name: value
-                for name, value in (
-                    custom_field_attribute_types.get(object_type, {})
-                    | host_attribute_types.get(object_type, {})
-                ).items()
-            } for object_type in object_types
+            object_type: (
+                custom_field_attribute_types.get(object_type, {})
+                | host_attribute_types.get(object_type, {})
+            )
+            for object_type in object_types
         }
 
     @property
