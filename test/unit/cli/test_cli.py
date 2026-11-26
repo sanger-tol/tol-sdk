@@ -7,8 +7,9 @@ import os
 from types import SimpleNamespace
 from unittest.mock import Mock
 
-import pytest
 from click.testing import CliRunner
+
+import pytest
 
 
 cli_module = importlib.import_module('tol.cli.cli')
