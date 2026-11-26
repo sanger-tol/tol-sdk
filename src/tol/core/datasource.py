@@ -45,7 +45,7 @@ class DataSource(ABC):
             attribute_metadata: type[AttributeMetadata] = DefaultAttributeMetadata,
             **kwargs):
         self.__data_object_factory: Optional[DataObjectFactory] = None
-        self.__attribute_metadata = attribute_metadata
+        self._attribute_metadata_class = attribute_metadata
         self.__validate_config(config, expected)
         for k, v in config.items():
             setattr(self, k, v)
@@ -117,7 +117,7 @@ class DataSource(ABC):
             available_on_relationships
         """
         ret: dict[str, dict[str, dict[str, Any]]] = {}
-        am = self.__attribute_metadata()
+        am = self._attribute_metadata_class()
         for object_type, attribute in self.attribute_types.items():
             ret[object_type] = {}
             for attribute_name, attribute_type in attribute.items():

@@ -1327,11 +1327,11 @@ class ElasticDataSource(
         }
 
     def __get_custom_field_types_from_attribute_metadata(self) -> dict[str, dict[str, str]]:
-        custom_fields = self.__attribute_metadata.get_custom_fields()
+        custom_fields = self._attribute_metadata_class().get_custom_fields()
         return {
             object_type: {
-                custom_fields[object_type][name]: custom_fields[object_type][name].runtime_definition['type']
-                for name in custom_fields[object_type]
+                name: custom_fields[object_type][name].runtime_definition['type']
+                for name in custom_fields.get(object_type, {})
             }
             for object_type in self.supported_types
         }

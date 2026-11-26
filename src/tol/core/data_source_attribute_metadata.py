@@ -43,7 +43,7 @@ def data_source_attribute_metadata(
             dsc = data_source_config._host.get_one(
                 'data_source_config', data_source_config.id
             )
-            for field in dsc.custom_fields:
+            for field in dsc.custom_fields or []:
                 field_name = f'custom_{field.id}'
 
                 if field.object_type not in ret:
