@@ -1340,7 +1340,7 @@ class ElasticDataSource(
     def attribute_types(self) -> dict[str, dict[str, str]]:
         host_attribute_types = self.__get_attribute_types_from_host()
         custom_field_attribute_types = self.__get_custom_field_types_from_attribute_metadata()
-        object_types = frozenset(list(host_attribute_types.keys()) + list(custom_field_attribute_types.keys()))
+        object_types = host_attribute_types.keys() | custom_field_attribute_types.keys()
 
         return {
             object_type: {
