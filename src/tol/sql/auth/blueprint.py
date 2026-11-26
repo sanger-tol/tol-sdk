@@ -177,6 +177,10 @@ class DbAuthManager(AuthManager):
                 token,
                 options={'verify_signature': False}
             ).get('iss')
+        except jwt.DecodeError:
+            return
+
+        try:
             allowed_issuers = {
                 os.getenv(name) for name in (
                     'KEYCLOAK_DEV_REALM_URL',
@@ -188,7 +192,7 @@ class DbAuthManager(AuthManager):
                 )
             }
             if unverified_issuer is None or unverified_issuer not in allowed_issuers:
-                raise ForbiddenError()
+                return
             jwks_client = PyJWKClient(
                 f'{unverified_issuer}/protocol/openid-connect/certs',
                 ssl_context=ssl._create_unverified_context()

@@ -135,6 +135,108 @@ class TestGoatDataSource(TestCase):
             if len(obj.synonym) > 0:
                 self.assertIsInstance(obj.synonym[0], str)
 
+    def test_get_list_filter_operators(self):
+        gds = goat()
+        taxon_ids = ['4113', '1857951']
+
+        def ids_for_filter(attribute_filter):
+            filters = DataSourceFilter()
+            filters.and_ = {
+                'id': {'in_list': {'value': taxon_ids}},
+                **attribute_filter
+            }
+            objects, total = gds.get_list_page(
+                'taxon',
+                page_number=1,
+                page_size=10,
+                object_filters=filters
+            )
+            self.assertEqual(len(objects), total)
+            return {obj.id for obj in objects}
+
+        self.assertEqual(
+            {'4113', '1857951'},
+            ids_for_filter({
+                'assembly_level': {'eq': {'value': 'Chromosome'}}
+            })
+        )
+        self.assertEqual(
+            {'4113', '1857951'},
+            ids_for_filter({
+                'assembly_level': {
+                    'eq': {'value': 'Contig', 'negate': True}
+                }
+            })
+        )
+        self.assertEqual(
+            {'1857951'},
+            ids_for_filter({
+                'genome_size': {'lt': {'value': '1000000000'}}
+            })
+        )
+        self.assertEqual(
+            {'1857951'},
+            ids_for_filter({
+                'genome_size': {'lte': {'value': '1000000000'}}
+            })
+        )
+        self.assertEqual(
+            {'4113'},
+            ids_for_filter({
+                'genome_size': {'gt': {'value': '1000000000'}}
+            })
+        )
+        self.assertEqual(
+            {'4113'},
+            ids_for_filter({
+                'genome_size': {'gte': {'value': '1000000000'}}
+            })
+        )
+        self.assertEqual(
+            {'4113', '1857951'},
+            ids_for_filter({
+                'long_list': {'in_list': {'value': ['DTOL']}}
+            })
+        )
+        self.assertEqual(
+            {'4113', '1857951'},
+            ids_for_filter({
+                'genome_size': {'exists': {}}
+            })
+        )
+
+        contains_filter = DataSourceFilter()
+        contains_filter.and_ = {
+            'scientific_name': {
+                'contains': {'value': 'Solanum tuberosum'}
+            }
+        }
+        objects, _ = gds.get_list_page(
+            'taxon',
+            page_number=1,
+            page_size=100,
+            object_filters=contains_filter
+        )
+        self.assertIn('4113', {obj.id for obj in objects})
+
+    def test_get_list_pages_with_small_page_size(self):
+        gds = goat()
+        gds.page_size = 1
+        expected_ids = {'4113', '1857951', '9925'}
+        filters = DataSourceFilter()
+        filters.and_ = {
+            'id': {'in_list': {'value': sorted(expected_ids)}}
+        }
+
+        objects = list(gds.get_list(
+            'taxon',
+            object_filters=filters
+        ))
+
+        observed_ids = [obj.id for obj in objects]
+        self.assertEqual(expected_ids, set(observed_ids))
+        self.assertEqual(len(expected_ids), len(observed_ids))
+
     def test_get_list_page_sort_custom(self):
         gds = goat()
 

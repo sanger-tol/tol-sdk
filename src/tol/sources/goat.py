@@ -20,4 +20,5 @@ def goat(**kwargs) -> GoatDataSource:
         + os.getenv('GOAT_API_PATH', Defaults.GOAT_API_PATH)
     )
     core_data_object(goat)
+    goat.page_size = 300
     return goat

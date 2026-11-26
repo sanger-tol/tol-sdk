@@ -4,9 +4,10 @@
 
 from __future__ import annotations
 
+import json
 import typing
 from functools import cache
-from typing import Callable, Iterable, List, Optional
+from typing import Any, Callable, Iterable, List, Optional
 
 from .client import GoatApiClient
 from .converter import (
@@ -63,15 +64,16 @@ class GoatDataSource(
         self.__client_factory = client_factory
         self.__gc_factory = goat_converter_factory
         self.__filter_factory = filter_factory
+        self.__page_cursors: dict[tuple, dict[int, list]] = {}
         super().__init__({})
 
-    def __get_filter_string(
+    def __get_query(
         self,
         object_filters: Optional[DataSourceFilter]
-    ) -> Optional[str]:
+    ) -> dict[str, Any]:
 
         if object_filters is None:
-            return ''
+            return {}
         return self.__filter_factory().dumps(object_filters)
 
     @property
@@ -148,14 +150,29 @@ class GoatDataSource(
     ) -> tuple[Iterable[DataObject], int]:
         if page_size is None:
             page_size = self.get_page_size()
-        filter_string = self.__get_filter_string(object_filters)
-        objects, total = self.__client_factory().get_list_page(
+        query = self.__get_query(object_filters)
+        # Use a search_after cursor (cached from the previous page) if
+        # available, so that sequential paging works beyond the offset
+        # limit imposed by GoaT
+        cursor_key = (
+            object_type,
+            json.dumps(query, sort_keys=True),
+            sort_by,
+            page_size
+        )
+        search_after = self.__page_cursors.get(cursor_key, {}).get(page_number)
+        objects, total, next_cursor = self.__client_factory().get_list_page(
             object_type,
             page=page_number,
             page_size=page_size,
-            filter_string=filter_string,
-            sort_by=sort_by
+            query_filters=query,
+            sort_by=sort_by,
+            search_after=search_after
         )
+        if next_cursor is not None:
+            self.__page_cursors.setdefault(
+                cursor_key, {}
+            )[page_number + 1] = next_cursor
         converted_objects, _ = self.__gc_factory().convert_list(objects)
         return converted_objects, total
 
@@ -166,16 +183,26 @@ class GoatDataSource(
         session: Optional[OperableSession] = None,
         **kwargs
     ) -> Iterable[DataObject]:
-        # There is no way to page beyond 10000 in GoaT. After discussions with GoaT they
-        # users to set off long queries. Therefore, we just set a large size and no offset here.
-        filter_string = self.__get_filter_string(object_filters)
-        objects, total = self.__client_factory().get_list_page(
-            object_type,
-            page_size=10000000,  # large enough not to matter
-            filter_string=filter_string,
-        )
-        converted_objects, _ = self.__gc_factory().convert_list(objects)
-        return iter(converted_objects)
+        # There is no way to page beyond 10000 in GoaT using offsets, so
+        # we iterate using search_after cursors instead.
+        page_size = self.get_page_size()
+        if not 1 <= page_size <= 10000:
+            raise ValueError('page_size must be between 1 and 10000')
+        query = self.__get_query(object_filters)
+        client = self.__client_factory()
+        goat_converter = self.__gc_factory()
+        search_after = None
+        while True:
+            objects, _, search_after = client.get_list_page(
+                object_type,
+                page_size=page_size,
+                query_filters=query,
+                search_after=search_after
+            )
+            converted_objects, _ = goat_converter.convert_list(objects)
+            yield from converted_objects
+            if not objects or search_after is None:
+                break
 
     @property
     @cache

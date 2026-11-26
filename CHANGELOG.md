@@ -6,6 +6,18 @@ SPDX-License-Identifier: MIT
 
 # Changelog
 
+## tol-sdk `4.1.3`
+
+24-11-2026
+
+- Fixed bug: Discrepancy with provenance fields when in filter and not in requested_fields
+
+## tol-sdk `4.1.2`
+
+19-11-2026
+
+- Updated GoatDataSource to use v3 api and cursor paging behind the scenes
+
 ## tol-sdk `4.1.1`
 
 10-11-2026
