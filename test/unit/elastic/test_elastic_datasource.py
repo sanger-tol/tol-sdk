@@ -6,9 +6,9 @@ from datetime import datetime
 from typing import cast
 from unittest import mock
 
-import pytest
-
 from elasticsearch.exceptions import TransportError
+
+import pytest
 
 from tol.core import (
     DataObject,
