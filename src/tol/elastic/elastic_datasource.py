@@ -162,10 +162,15 @@ class ElasticDataSource(
         return RelationWriteMode.FUSED
 
     _SEARCH_RETRY_STATUS_CODES = (429,)
+    _UPDATE_SUBMISSION_RETRY_STATUS_CODES = (429,)
     _UPDATE_RETRY_STATUS_CODES = (429, 502, 503, 504)
+    # A wait for task completion that times out returns a 500 timeout_exception
+    _TASK_WAIT_RETRY_STATUS_CODES = (429, 500)
     _SEARCH_MAX_RETRIES = 5
-    _SEARCH_BASE_DELAY = 1.0   # seconds
-    _SEARCH_MAX_DELAY = 60.0  # seconds
+    _UPDATE_MAX_RETRIES = 5
+    _TASK_WAIT_MAX_RETRIES = 15  # About 10 minutes of backoff, plus request time
+    _BACKOFF_BASE_DELAY = 1.0  # seconds
+    _BACKOFF_MAX_DELAY = 60.0  # seconds
     _UPDATE_MAX_CONCURRENT_TASKS = 10
 
     def _initialise_elasticsearch(self):
@@ -179,26 +184,42 @@ class ElasticDataSource(
         )
         self.helpers = helpers
 
-    def __with_backoff(self, fn: Callable, **kwargs):
-        """Call `fn(**kwargs)` with exponential backoff on transient 429 errors."""
-        for attempt in range(self._SEARCH_MAX_RETRIES + 1):
+    def __with_backoff(
+        self,
+        fn: Callable,
+        retry_status_codes: tuple[int, ...],
+        max_retries: int,
+        **kwargs,
+    ):
+        """Call `fn(**kwargs)` with exponential backoff on the given statuses."""
+        for attempt in range(max_retries + 1):
             try:
                 return fn(**kwargs)
             except TransportError as exc:
-                if exc.status_code not in self._SEARCH_RETRY_STATUS_CODES \
-                        or attempt == self._SEARCH_MAX_RETRIES:
+                if exc.status_code not in retry_status_codes \
+                        or attempt == max_retries:
                     raise
                 delay = min(
-                    self._SEARCH_BASE_DELAY * (2 ** attempt) + random.uniform(0, 1),
-                    self._SEARCH_MAX_DELAY,
+                    self._BACKOFF_BASE_DELAY * (2 ** attempt) + random.uniform(0, 1),
+                    self._BACKOFF_MAX_DELAY,
                 )
                 time.sleep(delay)
 
     def _search_with_backoff(self, **kwargs) -> dict:
-        return self.__with_backoff(self.es.search, **kwargs)
+        return self.__with_backoff(
+            self.es.search,
+            retry_status_codes=self._SEARCH_RETRY_STATUS_CODES,
+            max_retries=self._SEARCH_MAX_RETRIES,
+            **kwargs,
+        )
 
     def _update_by_query_with_backoff(self, **kwargs) -> dict:
-        return self.__with_backoff(self.es.update_by_query, **kwargs)
+        return self.__with_backoff(
+            self.es.update_by_query,
+            retry_status_codes=self._UPDATE_SUBMISSION_RETRY_STATUS_CODES,
+            max_retries=self._UPDATE_MAX_RETRIES,
+            **kwargs,
+        )
 
     @staticmethod
     def __is_retryable_update_failure(failure: Any) -> bool:
@@ -221,6 +242,8 @@ class ElasticDataSource(
         while True:
             task = self.__with_backoff(
                 self.es.tasks.get,
+                retry_status_codes=self._TASK_WAIT_RETRY_STATUS_CODES,
+                max_retries=self._TASK_WAIT_MAX_RETRIES,
                 task_id=task_id,
                 wait_for_completion=True,
                 timeout='1s',
@@ -230,7 +253,7 @@ class ElasticDataSource(
 
     def __update_with_backoff(self, index: str, body: dict) -> None:
         last_failure: Any = None
-        for attempt in range(self._SEARCH_MAX_RETRIES + 1):
+        for attempt in range(self._UPDATE_MAX_RETRIES + 1):
             try:
                 submission = self._update_by_query_with_backoff(
                     index=index,
@@ -267,13 +290,13 @@ class ElasticDataSource(
                     raise
                 last_failure = exc
 
-            if attempt == self._SEARCH_MAX_RETRIES:
+            if attempt == self._UPDATE_MAX_RETRIES:
                 raise DataSourceError(
                     f'Update failed after {attempt + 1} attempts: {last_failure}'
                 )
             delay = min(
-                self._SEARCH_BASE_DELAY * (2 ** attempt) + random.uniform(0, 1),
-                self._SEARCH_MAX_DELAY,
+                self._BACKOFF_BASE_DELAY * (2 ** attempt) + random.uniform(0, 1),
+                self._BACKOFF_MAX_DELAY,
             )
             time.sleep(delay)
 
@@ -329,9 +352,9 @@ class ElasticDataSource(
                     )
                 ),
                 chunk_size=chunk_size,
-                max_retries=self._SEARCH_MAX_RETRIES,
-                initial_backoff=self._SEARCH_BASE_DELAY,
-                max_backoff=self._SEARCH_MAX_DELAY,
+                max_retries=self._UPDATE_MAX_RETRIES,
+                initial_backoff=self._BACKOFF_BASE_DELAY,
+                max_backoff=self._BACKOFF_MAX_DELAY,
                 raise_on_error=False,
         ):
             no_of_operations += 1

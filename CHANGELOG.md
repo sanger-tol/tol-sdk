@@ -6,6 +6,12 @@ SPDX-License-Identifier: MIT
 
 # Changelog
 
+## tol-sdk `4.1.4`
+
+26-11-2026
+
+- Better handle task waiting with backoffs in ElasticDataSource
+
 ## tol-sdk `4.1.3`
 
 24-11-2026

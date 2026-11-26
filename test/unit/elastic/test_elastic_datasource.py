@@ -8,6 +8,8 @@ from unittest import mock
 
 import pytest
 
+from elasticsearch.exceptions import TransportError
+
 from tol.core import (
     DataObject,
     DataSourceError,
@@ -296,7 +298,11 @@ class TestElasticDataSource:
             'field7', 'field8', 'field5.value', 'relationship.id.value'
         }
 
-    def test_upsert(self, mock_elastic_data_source: ElasticDataSource):
+    def test_upsert(
+        self, mock_elastic_data_source: ElasticDataSource, monkeypatch: pytest.MonkeyPatch
+    ):
+        monkeypatch.setattr(mock_elastic_data_source, '_SEARCH_MAX_RETRIES', 1)
+        monkeypatch.setattr(mock_elastic_data_source, '_UPDATE_MAX_RETRIES', 2)
         CoreDataObject = mock_elastic_data_source.data_object_factory  # noqa N806
 
         objects = [
@@ -404,7 +410,7 @@ class TestElasticDataSource:
         mock_elastic_data_source.helpers.streaming_bulk.assert_called_once()
         assert mock_elastic_data_source.helpers.streaming_bulk.call_args.kwargs[
             'max_retries'
-        ] == mock_elastic_data_source._SEARCH_MAX_RETRIES
+        ] == 2
 
     def test_upsert_add_id(self, mock_elastic_data_source: ElasticDataSource):
         CoreDataObject = mock_elastic_data_source.data_object_factory  # noqa N806
@@ -593,6 +599,97 @@ class TestElasticDataSource:
 
         assert mock_elastic_data_source.es.update_by_query.call_count == 2
         assert mock_elastic_data_source.es.tasks.get.call_count == 2
+
+    def test_update_retries_task_wait_timeout(
+        self, mock_elastic_data_source: ElasticDataSource, monkeypatch: pytest.MonkeyPatch
+    ):
+        mock_elastic_data_source.es.update_by_query.return_value = {'task': 'test-task'}
+        mock_elastic_data_source.es.tasks.get.side_effect = [
+            TransportError(500, 'timeout_exception', 'timed out after [1s/1000ms]'),
+        ] * 7 + [
+            {'completed': True, 'response': {'failures': [], 'version_conflicts': 0}},
+        ]
+        monkeypatch.setattr(mock_elastic_data_source, '_SEARCH_MAX_RETRIES', 0)
+        monkeypatch.setattr(mock_elastic_data_source, '_UPDATE_MAX_RETRIES', 0)
+        monkeypatch.setattr(mock_elastic_data_source, '_TASK_WAIT_MAX_RETRIES', 7)
+        monkeypatch.setattr('tol.elastic.elastic_datasource.time.sleep', lambda _: None)
+
+        mock_elastic_data_source.update(
+            'obj_type', [(None, {'field1': 'value1'})], candidate_key=['field1']
+        )
+
+        assert mock_elastic_data_source.es.update_by_query.call_count == 1
+        assert mock_elastic_data_source.es.tasks.get.call_count == 8
+
+    def test_update_task_wait_timeout_exhausts_retries(
+        self, mock_elastic_data_source: ElasticDataSource, monkeypatch: pytest.MonkeyPatch
+    ):
+        mock_elastic_data_source.es.update_by_query.return_value = {'task': 'test-task'}
+        mock_elastic_data_source.es.tasks.get.side_effect = TransportError(
+            500, 'timeout_exception', 'timed out after [1s/1000ms]'
+        )
+        delays = []
+        monkeypatch.setattr('tol.elastic.elastic_datasource.time.sleep', delays.append)
+        monkeypatch.setattr('tol.elastic.elastic_datasource.random.uniform', lambda a, b: 0)
+
+        with pytest.raises(DataSourceError, match='timeout_exception'):
+            mock_elastic_data_source.update(
+                'obj_type', [(None, {'field1': 'value1'})], candidate_key=['field1']
+            )
+
+        max_retries = ElasticDataSource._TASK_WAIT_MAX_RETRIES
+        assert mock_elastic_data_source.es.tasks.get.call_count == max_retries + 1
+        mock_elastic_data_source.es.update_by_query.assert_called_once()
+        assert len(delays) == max_retries
+        assert 590 <= sum(delays) <= 630
+
+    def test_search_uses_search_backoff_retries(
+        self, mock_elastic_data_source: ElasticDataSource, monkeypatch: pytest.MonkeyPatch
+    ):
+        mock_elastic_data_source.es.search.side_effect = TransportError(
+            429, 'rejected', 'too many requests'
+        )
+        monkeypatch.setattr(mock_elastic_data_source, '_SEARCH_MAX_RETRIES', 1)
+        monkeypatch.setattr(mock_elastic_data_source, '_UPDATE_MAX_RETRIES', 0)
+        monkeypatch.setattr('tol.elastic.elastic_datasource.time.sleep', lambda _: None)
+
+        with pytest.raises(TransportError):
+            mock_elastic_data_source._search_with_backoff(index='test')
+
+        assert mock_elastic_data_source.es.search.call_count == 2
+
+    def test_update_submission_uses_update_backoff_retries(
+        self, mock_elastic_data_source: ElasticDataSource, monkeypatch: pytest.MonkeyPatch
+    ):
+        mock_elastic_data_source.es.update_by_query.side_effect = TransportError(
+            429, 'rejected', 'too many requests'
+        )
+        monkeypatch.setattr(mock_elastic_data_source, '_SEARCH_MAX_RETRIES', 0)
+        monkeypatch.setattr(mock_elastic_data_source, '_UPDATE_MAX_RETRIES', 2)
+        monkeypatch.setattr('tol.elastic.elastic_datasource.time.sleep', lambda _: None)
+
+        with pytest.raises(TransportError):
+            mock_elastic_data_source._update_by_query_with_backoff(index='test', body={})
+
+        assert mock_elastic_data_source.es.update_by_query.call_count == 3
+
+    def test_update_retries_version_conflicts_with_update_limit(
+        self, mock_elastic_data_source: ElasticDataSource, monkeypatch: pytest.MonkeyPatch
+    ):
+        mock_elastic_data_source.es.update_by_query.return_value = {'task': 'test-task'}
+        mock_elastic_data_source.es.tasks.get.return_value = {
+            'completed': True, 'response': {'failures': [], 'version_conflicts': 1}
+        }
+        monkeypatch.setattr(mock_elastic_data_source, '_SEARCH_MAX_RETRIES', 0)
+        monkeypatch.setattr(mock_elastic_data_source, '_UPDATE_MAX_RETRIES', 2)
+        monkeypatch.setattr('tol.elastic.elastic_datasource.time.sleep', lambda _: None)
+
+        with pytest.raises(DataSourceError, match='Update failed after 3 attempts'):
+            mock_elastic_data_source.update(
+                'obj_type', [(None, {'field1': 'value1'})], candidate_key=['field1']
+            )
+
+        assert mock_elastic_data_source.es.update_by_query.call_count == 3
 
     def test_get_list(self, mock_elastic_data_source: ElasticDataSource):
         mock_elastic_data_source.helpers.scan.return_value = [
