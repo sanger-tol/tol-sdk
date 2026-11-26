@@ -10,6 +10,12 @@ from typing import Optional
 
 class AttributeMetadata(ABC):
     @abstractmethod
+    def get_custom_fields(self) -> dict[str, dict[str, str]]:
+        """
+        Gets all defined custom fields
+        """
+
+    @abstractmethod
     def get_display_name(
             self,
             object_type: str,
@@ -89,6 +95,9 @@ class AttributeMetadata(ABC):
 
 
 class DefaultAttributeMetadata(AttributeMetadata):
+    def get_custom_fields(self) -> dict[str, dict[str, str]]:
+        return {}
+
     def get_display_name(
             self,
             object_type: str,

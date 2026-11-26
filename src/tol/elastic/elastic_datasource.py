@@ -140,7 +140,7 @@ class ElasticDataSource(
             self._base_runtime_fields,
             self.__add_runtime_fields_from_provenance_fields(),
         )
-        type(self).attribute_types.fget.cache_clear()
+        type(self).__get_attribute_types_from_host.cache_clear()
 
     @property
     def lazy_fetch(self) -> bool:
@@ -1305,12 +1305,34 @@ class ElasticDataSource(
         } if object_type in self.provenance_fields else {}
         return standard_types | runtime_types | provenance_types
 
-    @property
     @ttl_cache(ttl=3600)
-    def attribute_types(self) -> dict[str, dict[str, str]]:
+    def __get_attribute_types_from_host(self) -> dict[str, dict[str, str]]:
         return {
             t: self._get_attribute_types_for_object_type(t)
             for t in self.supported_types
+        }
+
+    def __get_custom_field_types_from_attribute_metadata(self) -> dict[str, dict[str, str]]:
+        custom_fields = self.__attribute_metadata.get_custom_fields()
+        return {
+            object_type: {
+                custom_fields[object_type][name]: custom_fields[object_type][name].runtime_definition['type']
+                for name in custom_fields[object_type]
+            }
+            for object_type in self.supported_types
+        }
+
+    @property
+    def attribute_types(self) -> dict[str, dict[str, str]]:
+        host_attribute_types = self.__get_attribute_types_from_host()
+        custom_field_attribute_types = self.__get_custom_field_types_from_attribute_metadata()
+        object_types = frozenset(list(host_attribute_types.keys()) + list(custom_field_attribute_types.keys()))
+
+        return {
+            object_type: {
+                name: value
+                for name, value in (custom_field_attribute_types.get(object_type, {}) | host_attribute_types.get(object_type, {})).items()
+            } for object_type in object_types
         }
 
     @property

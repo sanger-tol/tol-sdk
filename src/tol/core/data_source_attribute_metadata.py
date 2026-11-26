@@ -37,6 +37,20 @@ def data_source_attribute_metadata(
                 ret[attribute.object_type][attribute.name] = attribute
             return ret
 
+        def get_custom_fields(self):
+            ret = {}
+            # Recreate the data_source_config
+            dsc = data_source_config._host.get_one(
+                'data_source_config', data_source_config.id
+            )
+            for field in dsc.custom_fields:
+                field_name = f'custom_{field.id}'
+
+                if field.object_type not in ret:
+                    ret[field.object_type] = {}
+                ret[field.object_type][field_name] = field
+            return ret
+
         @ttl_cache(ttl=3600)
         def __read_cardinality_from_datasource(self, object_type):
             ret = {}
@@ -62,9 +76,12 @@ def data_source_attribute_metadata(
                 object_type: str,
                 attribute_name: str) -> str:
             attributes = self.__read_attributes_from_datasource()
-            if object_type in attributes:
-                if attribute_name in attributes[object_type]:
-                    return attributes[object_type][attribute_name]
+            custom_fields = self.get_custom_fields()
+            all_attributes = custom_fields | attributes
+
+            if object_type in all_attributes:
+                if attribute_name in all_attributes[object_type]:
+                    return all_attributes[object_type][attribute_name]
             return None
 
         def get_display_name(
@@ -81,7 +98,7 @@ def data_source_attribute_metadata(
                 object_type: str,
                 attribute_name: str) -> bool:
             attribute = self.__get_attribute(object_type, attribute_name)
-            if attribute is None:
+            if attribute is None or attribute.available_on_relationships is None:
                 return False  # available attributes must be in DataSource
             return attribute.available_on_relationships
 
@@ -90,7 +107,7 @@ def data_source_attribute_metadata(
                 object_type: str,
                 attribute_name: str) -> bool:
             attribute = self.__get_attribute(object_type, attribute_name)
-            if attribute is None:
+            if attribute is None or attribute.is_authoritative is None:
                 return False  # authoritative attributes must be in DataSource
             return attribute.is_authoritative
 
