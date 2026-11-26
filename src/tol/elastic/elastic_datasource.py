@@ -1338,17 +1338,10 @@ class ElasticDataSource(
 
     @property
     def attribute_types(self) -> dict[str, dict[str, str]]:
-        host_attribute_types = self.__get_attribute_types_from_host()
-        custom_field_attribute_types = self.__get_custom_field_types_from_attribute_metadata()
-        object_types = host_attribute_types.keys() | custom_field_attribute_types.keys()
-
-        return {
-            object_type: (
-                custom_field_attribute_types.get(object_type, {})
-                | host_attribute_types.get(object_type, {})
-            )
-            for object_type in object_types
-        }
+        return self.__merge_nested_dicts(
+            self.__get_attribute_types_from_host(),
+            self.__get_custom_field_types_from_attribute_metadata()
+        )
 
     @property
     def relationship_config(self) -> dict[str, RelationshipConfig]:
